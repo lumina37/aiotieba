@@ -1,0 +1,15 @@
+{
+    "BDUSS": {
+        "default": ""
+    },
+    "MySQL": {
+        "host": "",
+        "port": 4396,
+        "user": "",
+        "passwd": ""
+    },
+    "tieba_name_mapping": {
+        "元气骑士": "soulknight",
+        "asoul": "asoul"
+    }
+}
