@@ -1,5 +1,5 @@
 # -*- coding:utf-8 -*-
-__all__ = ('MODULE_PATH', 'SCRIPT_PATH', 'FILENAME', 'SHOTNAME',
+__all__ = ('MODULE_DIR', 'SCRIPT_DIR',
            'UserInfo', 'UserInfo_Dict',
            'Thread', 'Post', 'Comment',
            'Threads', 'Posts', 'Comments',
@@ -8,12 +8,12 @@ __all__ = ('MODULE_PATH', 'SCRIPT_PATH', 'FILENAME', 'SHOTNAME',
 
 import os
 import sys
+from pathlib import Path
 import traceback
 
 import re
 
 from .logger import log
-
 
 import signal
 
@@ -25,9 +25,8 @@ def terminate(signalNumber, frame):
 signal.signal(signal.SIGTERM, terminate)
 
 
-MODULE_PATH = os.path.split(os.path.realpath(__file__))[0]
-SCRIPT_PATH, FILENAME = os.path.split(os.path.realpath(sys.argv[0]))
-SHOTNAME = os.path.splitext(FILENAME)[0]
+MODULE_DIR = Path(__file__).parent
+SCRIPT_DIR = Path(sys.argv[0]).parent
 
 
 class UserInfo(object):
@@ -342,8 +341,8 @@ class Threads(list):
                         'voice_info', None) else False
                     thread.has_video = True if thread_raw.get(
                         'video_info', None) else False
-                    thread.like = thread_raw.get('agree_num',0)
-                    thread.dislike = thread_raw.get('disagree_num',0)
+                    thread.like = thread_raw.get('agree_num', 0)
+                    thread.dislike = thread_raw.get('disagree_num', 0)
                     thread.last_time = thread_raw['last_time_int']
                     self.append(thread)
                 except:

@@ -7,8 +7,8 @@ import json
 
 import mysql.connector
 
-from .core import SCRIPT_PATH
-from .browser import config
+from .core import SCRIPT_DIR
+from .utils import config
 from .logger import log
 
 
@@ -82,9 +82,11 @@ class MySQL(object):
         create_table_pid_whitelist(tieba_name)
         """
 
-        self.mycursor.execute(f"SHOW TABLES LIKE 'pid_whitelist_{tieba_name_eng}'")
+        self.mycursor.execute(
+            f"SHOW TABLES LIKE 'pid_whitelist_{tieba_name_eng}'")
         if not self.mycursor.fetchone():
-            self.mycursor.execute(f"CREATE TABLE pid_whitelist_{tieba_name_eng} (pid BIGINT NOT NULL PRIMARY KEY, record_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)")
+            self.mycursor.execute(
+                f"CREATE TABLE pid_whitelist_{tieba_name_eng} (pid BIGINT NOT NULL PRIMARY KEY, record_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)")
             self.mycursor.execute(f"""CREATE EVENT event_auto_del_pid_whitelist_{tieba_name_eng}
             ON SCHEDULE
             EVERY 1 DAY STARTS '2000-01-01 00:00:00'
@@ -99,7 +101,8 @@ class MySQL(object):
         """
 
         try:
-            self.mycursor.execute(f"INSERT IGNORE INTO pid_whitelist_{tieba_name_eng} VALUES ({pid},DEFAULT)")
+            self.mycursor.execute(
+                f"INSERT IGNORE INTO pid_whitelist_{tieba_name_eng} VALUES ({pid},DEFAULT)")
         except mysql.connector.errors.DatabaseError:
             log.error(f"MySQL Error: Failed to insert {pid}!")
             return False
@@ -115,7 +118,8 @@ class MySQL(object):
         """
 
         try:
-            self.mycursor.execute(f"SELECT NULL FROM pid_whitelist_{tieba_name_eng} WHERE pid={pid}")
+            self.mycursor.execute(
+                f"SELECT NULL FROM pid_whitelist_{tieba_name_eng} WHERE pid={pid}")
         except mysql.connector.errors.DatabaseError:
             log.error(f"MySQL Error: Failed to select {pid}!")
             return False
@@ -130,13 +134,16 @@ class MySQL(object):
         """
 
         try:
-            self.mycursor.execute(f"DELETE FROM pid_whitelist_{tieba_name_eng} WHERE record_time>(CURRENT_TIMESTAMP() + INTERVAL -{hour} HOUR)")
+            self.mycursor.execute(
+                f"DELETE FROM pid_whitelist_{tieba_name_eng} WHERE record_time>(CURRENT_TIMESTAMP() + INTERVAL -{hour} HOUR)")
         except mysql.connector.errors.DatabaseError:
-            log.error(f"MySQL Error: Failed to delete pid in pid_whitelist_{tieba_name_eng}")
+            log.error(
+                f"MySQL Error: Failed to delete pid in pid_whitelist_{tieba_name_eng}")
             return False
         else:
             self.mydb.commit()
-            log.info(f"Successfully deleted pid in pid_whitelist_{tieba_name_eng} within {hour} hour(s)")
+            log.info(
+                f"Successfully deleted pid in pid_whitelist_{tieba_name_eng} within {hour} hour(s)")
             return True
 
     @translate_tieba_name
@@ -152,12 +159,14 @@ class MySQL(object):
         """
 
         try:
-            self.mycursor.execute(f"INSERT INTO tid_indroplist_{tieba_name_eng} VALUES ({tid},{mode},DEFAULT) ON DUPLICATE KEY UPDATE need_rec={mode}")
+            self.mycursor.execute(
+                f"INSERT INTO tid_indroplist_{tieba_name_eng} VALUES ({tid},{mode},DEFAULT) ON DUPLICATE KEY UPDATE need_rec={mode}")
         except mysql.connector.errors.DatabaseError:
             log.error(f"MySQL Error: Failed to insert {tid}!")
             return False
         else:
-            log.info(f"Successfully set {tid} in table of {tieba_name_eng} mode:{mode}")
+            log.info(
+                f"Successfully set {tid} in table of {tieba_name_eng} mode:{mode}")
             self.mydb.commit()
             return True
 
@@ -172,7 +181,8 @@ class MySQL(object):
         """
 
         try:
-            self.mycursor.execute(f"SELECT need_rec FROM tid_indroplist_{tieba_name_eng} WHERE tid={tid} LIMIT 1")
+            self.mycursor.execute(
+                f"SELECT need_rec FROM tid_indroplist_{tieba_name_eng} WHERE tid={tid} LIMIT 1")
         except mysql.connector.errors.DatabaseError:
             log.error(f"MySQL Error: Failed to select {tid}!")
             return None
@@ -191,12 +201,14 @@ class MySQL(object):
         """
 
         try:
-            self.mycursor.execute(f"DELETE FROM tid_indroplist_{tieba_name_eng} WHERE tid={tid}")
+            self.mycursor.execute(
+                f"DELETE FROM tid_indroplist_{tieba_name_eng} WHERE tid={tid}")
         except mysql.connector.errors.DatabaseError:
             log.error(f"MySQL Error: Failed to delete {tid}!")
             return False
         else:
-            log.info(f"Successfully deleted {tid} from table of {tieba_name_eng}")
+            log.info(
+                f"Successfully deleted {tid} from table of {tieba_name_eng}")
             self.mydb.commit()
             return True
 
@@ -215,7 +227,8 @@ class MySQL(object):
 
         for i in range(sys.maxsize):
             try:
-                self.mycursor.execute(f"SELECT tid FROM tid_indroplist_{tieba_name_eng} WHERE need_rec=1 LIMIT {batch_size} OFFSET {i * batch_size}")
+                self.mycursor.execute(
+                    f"SELECT tid FROM tid_indroplist_{tieba_name_eng} WHERE need_rec=1 LIMIT {batch_size} OFFSET {i * batch_size}")
             except mysql.connector.errors.DatabaseError:
                 log.error(f"MySQL Error: Failed to select {tid}!")
                 return False
@@ -235,7 +248,8 @@ class MySQL(object):
 
         self.mycursor.execute(f"SHOW TABLES LIKE 'portrait_{tieba_name_eng}'")
         if not self.mycursor.fetchone():
-            self.mycursor.execute(f"CREATE TABLE portrait_{tieba_name_eng} (portrait CHAR(36) NOT NULL PRIMARY KEY, user_name VARCHAR(14), is_white BOOL NOT NULL DEFAULT TRUE, record_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP)")
+            self.mycursor.execute(
+                f"CREATE TABLE portrait_{tieba_name_eng} (portrait CHAR(36) NOT NULL PRIMARY KEY, user_name VARCHAR(14), is_white BOOL NOT NULL DEFAULT TRUE, record_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP)")
 
     @translate_tieba_name
     def update_portrait(self, tieba_name_eng, portrait, user_name, mode):
@@ -245,12 +259,14 @@ class MySQL(object):
         """
 
         try:
-            self.mycursor.execute(f"INSERT INTO portrait_{tieba_name_eng} VALUES ({portrait},{user_name},{mode},DEFAULT) ON DUPLICATE KEY UPDATE is_white={mode}")
+            self.mycursor.execute(
+                f"INSERT INTO portrait_{tieba_name_eng} VALUES ({portrait},{user_name},{mode},DEFAULT) ON DUPLICATE KEY UPDATE is_white={mode}")
         except mysql.connector.errors.DatabaseError:
             log.error(f"MySQL Error: Failed to insert {portrait}!")
             return False
         else:
-            log.info(f"Successfully added {portrait}/{user_name} to table of {tieba_name_eng} mode:{mode}")
+            log.info(
+                f"Successfully added {portrait}/{user_name} to table of {tieba_name_eng} mode:{mode}")
             self.mydb.commit()
             return True
 
@@ -262,12 +278,14 @@ class MySQL(object):
         """
 
         try:
-            self.mycursor.execute(f"DELETE FROM portrait_{tieba_name_eng} WHERE portrait='{portrait}'")
+            self.mycursor.execute(
+                f"DELETE FROM portrait_{tieba_name_eng} WHERE portrait='{portrait}'")
         except mysql.connector.errors.DatabaseError:
             log.error(f"MySQL Error: Failed to delete {portrait}!")
             return False
         else:
-            log.info(f"Successfully deleted {portrait} from table of {tieba_name_eng}")
+            log.info(
+                f"Successfully deleted {portrait} from table of {tieba_name_eng}")
             self.mydb.commit()
             return True
 
@@ -282,7 +300,8 @@ class MySQL(object):
         """
 
         try:
-            self.mycursor.execute(f"SELECT is_white FROM portrait_{tieba_name_eng} WHERE portrait='{portrait}' LIMIT 1")
+            self.mycursor.execute(
+                f"SELECT is_white FROM portrait_{tieba_name_eng} WHERE portrait='{portrait}' LIMIT 1")
         except mysql.connector.errors.DatabaseError:
             return None
         else:

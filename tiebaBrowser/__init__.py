@@ -19,5 +19,5 @@
 
 from .core import *
 from .logger import log
-from .browser import *
+from .utils import *
 from .cloud_review import *

@@ -14,15 +14,13 @@ from io import BytesIO
 import pyzbar.pyzbar as pyzbar
 import imagehash
 
-#import pypinyin as pinyin
 import requests as req
 import mysql.connector
 from urllib.parse import unquote
 
-from .core import SHOTNAME
 from .mysql import MySQL
 from .logger import log
-from .browser import Browser
+from .utils import Browser
 
 
 class RegularExp(object):
@@ -183,20 +181,4 @@ class CloudReview(Browser):
 
         dhash = imagehash.dhash(image)
         return dhash
-
-    # def _homophones_check(self,check_str:str,words:list):
-    #    """
-    #    检查非常用谐音
-    #    """
-
-    #    def __get_pinyin(_str):
-    #        pinyin_list = pinyin.lazy_pinyin(_str,errors='ignore')
-    #        pinyin_str = ' '.join(pinyin_list)
-    #        return pinyin_str
-
-    #    check_pinyin = __get_pinyin(check_str)
-    #    for word in words:
-    #        if word not in check_str and __get_pinyin(word) in check_pinyin:
-    #            return True
-
-    #    return False
+        

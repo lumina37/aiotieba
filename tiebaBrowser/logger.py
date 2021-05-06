@@ -1,17 +1,17 @@
 # -*- coding:utf-8 -*-
-__all__ = ('SCRIPT_PATH', 'FILENAME', 'SHOTNAME',
+__all__ = ('SCRIPT_DIR',
            'MyLogger', 'log')
 
 
 import os
 import sys
+from pathlib import Path
 import time
 
 import logging
 
 
-SCRIPT_PATH, FILENAME = os.path.split(os.path.realpath(sys.argv[0]))
-SHOTNAME = os.path.splitext(FILENAME)[0]
+SCRIPT_DIR = Path(sys.path[0])
 
 
 class MyLogger(logging.Logger):
@@ -21,26 +21,27 @@ class MyLogger(logging.Logger):
     自定义的日志记录类
     """
 
-    def __init__(self, name=__name__):
+    def __init__(self, name):
 
-        super().__init__(__name__)
+        super().__init__(name)
 
-        log_dir = os.path.join(SCRIPT_PATH, 'log')
-        if not os.path.exists(log_dir):
-            os.mkdir(log_dir)
+        log_dir = SCRIPT_DIR.joinpath('log')
+        log_dir.mkdir(0o755, exist_ok=True)
         recent_time = time.strftime('%Y-%m-%d', time.localtime(time.time()))
 
-        log_filepath = os.path.join(log_dir, f'{SHOTNAME}_{recent_time}.log')
+        log_filepath = log_dir.joinpath(
+            f'{SCRIPT_DIR.stem}_{recent_time}.log')
         try:
-            file_handler = logging.FileHandler(log_filepath, encoding='utf-8')
+            file_handler = logging.FileHandler(
+                str(log_filepath), encoding='utf-8')
         except:
             try:
-                os.remove(log_filepath)
+                log_filepath.unlink()
             except:
                 raise OSError(f"Unable to read or remove {log_filepath}")
             else:
                 file_handler = logging.FileHandler(
-                    log_filepath, encoding='utf-8')
+                    str(log_filepath), encoding='utf-8')
 
         stream_handler = logging.StreamHandler(sys.stdout)
 

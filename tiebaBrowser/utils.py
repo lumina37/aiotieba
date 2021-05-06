@@ -22,9 +22,9 @@ import tiebaBrowser.api as api
 
 config = None
 try:
-    with open(os.path.join(SCRIPT_PATH, 'config/config.json'), 'r', encoding='utf-8') as file:
+    with SCRIPT_DIR.joinpath('config/config.json').open('r', encoding='utf-8') as file:
         config = json.load(file)
-except IOError:
+except Exception:
     log.critical("Unable to read config.json!")
     raise
 
@@ -111,16 +111,16 @@ class Browser(object):
 
     def __init__(self, BDUSS_key):
 
-        cache_dir = os.path.join(MODULE_PATH, 'cache')
-        if not os.path.exists(cache_dir):
-            os.mkdir(cache_dir)
-        fid_cache_filepath = os.path.join(cache_dir, 'fid_cache.pk')
+        cache_dir = MODULE_DIR.joinpath('cache')
+        cache_dir.mkdir(0o700, exist_ok=True)
+        fid_cache_filepath = cache_dir.joinpath('fid_cache.pk')
 
         try:
-            with open(fid_cache_filepath, 'rb') as pickle_file:
+            with fid_cache_filepath.open('rb') as pickle_file:
                 self.fid_dict = pickle.load(pickle_file)
         except:
-            log.warning(f"Failed to read fid_cache in `{fid_cache_filepath}`. Create a new one.")
+            log.warning(
+                f"Failed to read fid_cache in `{fid_cache_filepath}`. Create a new one.")
             self.fid_dict = {}
 
         self.sessions = Sessions(BDUSS_key)
@@ -130,10 +130,10 @@ class Browser(object):
         自动缓存fid信息
         """
 
-        fid_cache_filepath = os.path.join(MODULE_PATH, 'cache/fid_cache.pk')
+        fid_cache_filepath = MODULE_DIR.joinpath('cache/fid_cache.pk')
 
         try:
-            with open(fid_cache_filepath, 'wb') as pickle_file:
+            with fid_cache_filepath.open('wb') as pickle_file:
                 pickle.dump(self.fid_dict, pickle_file)
         except AttributeError:
             log.error("Failed to save fid cache!")
@@ -287,10 +287,10 @@ class Browser(object):
             rn: int 每页帖子数
 
         返回值:
-            threads: list(Thread)
+            threads: core.Threads
         """
 
-        payload = {'BDUSS':self.sessions.BDUSS,
+        payload = {'BDUSS': self.sessions.BDUSS,
                    '_client_id': 'wappc_1600500414046_633',
                    '_client_type': 2,
                    '_client_version': '12.4.8.23',
@@ -331,10 +331,10 @@ class Browser(object):
 
         返回值:
             has_next: bool 是否还有下一页
-            posts: list(Post)
+            posts: core.Posts
         """
 
-        payload = {'BDUSS':self.sessions.BDUSS,
+        payload = {'BDUSS': self.sessions.BDUSS,
                    '_client_id': 'wappc_1600500414046_633',
                    '_client_type': 2,
                    '_client_version': '12.4.8.23',
@@ -375,10 +375,10 @@ class Browser(object):
 
         返回值:
             has_next: bool 是否还有下一页
-            comments: list(Comment)
+            comments: core.Comments
         """
 
-        payload = {'BDUSS':self.sessions.BDUSS,
+        payload = {'BDUSS': self.sessions.BDUSS,
                    '_client_id': 'wappc_1600500414046_633',
                    '_client_type': '2',
                    '_client_version': '12.4.8.23',
@@ -558,10 +558,12 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            log.error(f"Failed to block {user.logname} in {tieba_name} Reason:{err}")
+            log.error(
+                f"Failed to block {user.logname} in {tieba_name} Reason:{err}")
             return False, user
 
-        log.info(f"Successfully blocked {user.logname} in {tieba_name} for {payload['day']} days")
+        log.info(
+            f"Successfully blocked {user.logname} in {tieba_name} for {payload['day']} days")
         return True, user
 
     def del_thread(self, tieba_name, tid):
@@ -598,7 +600,8 @@ class Browser(object):
                 raise ValueError(main_json['err_code'])
 
         except Exception as err:
-            log.error(f"Failed to delete thread {tid} in {tieba_name} Reason:{err}")
+            log.error(
+                f"Failed to delete thread {tid} in {tieba_name} Reason:{err}")
             return False
 
         log.info(f"Successfully deleted thread {tid} in {tieba_name}")
@@ -638,7 +641,8 @@ class Browser(object):
                 raise ValueError(main_json['err_code'])
 
         except Exception as err:
-            log.error(f"Failed to delete thread {tids} in {tieba_name}. Reason:{err}")
+            log.error(
+                f"Failed to delete thread {tids} in {tieba_name}. Reason:{err}")
             return False
 
         log.info(f"Successfully deleted thread {tid} in {tieba_name}")
@@ -722,10 +726,12 @@ class Browser(object):
                 raise ValueError(main_json['errmsg'])
 
         except Exception as err:
-            log.error(f"Failed to add {user.logname} to black_list in {tieba_name}. Reason:{err}")
+            log.error(
+                f"Failed to add {user.logname} to black_list in {tieba_name}. Reason:{err}")
             return False
 
-        log.info(f"Successfully added {user.logname} to black_list in {tieba_name}")
+        log.info(
+            f"Successfully added {user.logname} to black_list in {tieba_name}")
         return True
 
     def blacklist_get(self, tieba_name, pn=1):
@@ -760,7 +766,8 @@ class Browser(object):
             ) for black_raw in content.find_all("tr")]
 
         except Exception as err:
-            log.error(f"Failed to get black_list of {tieba_name}. Reason:{err}")
+            log.error(
+                f"Failed to get black_list of {tieba_name}. Reason:{err}")
             return False, []
 
         return has_next, black_list
@@ -804,7 +811,8 @@ class Browser(object):
                 raise ValueError(main_json['errmsg'])
 
         except Exception as err:
-            log.error(f"Failed to delete {ids} from black_list in {tieba_name}. Reason:{err}")
+            log.error(
+                f"Failed to delete {ids} from black_list in {tieba_name}. Reason:{err}")
             return False
 
         log.info(f"Successfully deleted {ids} from black_list in {tieba_name}")
@@ -863,7 +871,8 @@ class Browser(object):
                 raise ValueError(main_json['error'])
 
         except Exception as err:
-            log.error(f"Failed to recover tid:{tid} pid:{pid} in {tieba_name}. Reason:{err}")
+            log.error(
+                f"Failed to recover tid:{tid} pid:{pid} in {tieba_name}. Reason:{err}")
             return False
 
         log.info(f"Successfully recovered tid:{tid} pid:{pid} in {tieba_name}")
@@ -906,7 +915,8 @@ class Browser(object):
                 raise ValueError(main_json['error'])
 
         except Exception as err:
-            log.error(f"Failed to unblock {user.logname} in {tieba_name}. Reason:{err}")
+            log.error(
+                f"Failed to unblock {user.logname} in {tieba_name}. Reason:{err}")
             return False
 
         log.info(f"Successfully unblocked {user.logname} in {tieba_name}")
@@ -949,7 +959,8 @@ class Browser(object):
                 raise ValueError(main_json['data']['msg'])
 
         except Exception as err:
-            log.error(f"Failed to recommend {tid} in {tieba_name}. Reason:{err}")
+            log.error(
+                f"Failed to recommend {tid} in {tieba_name}. Reason:{err}")
             return False
 
         log.info(f"Successfully recommended {tid} in {tieba_name}")
@@ -996,10 +1007,12 @@ class Browser(object):
                     raise ValueError(main_json['errmsg'])
 
             except Exception as err:
-                log.error(f"Failed to handle {appeal_id} in {tieba_name}. Reason:{err}")
+                log.error(
+                    f"Failed to handle {appeal_id} in {tieba_name}. Reason:{err}")
                 return False
 
-            log.info(f"Successfully handled {appeal_id} in {tieba_name} refuse:{refuse}")
+            log.info(
+                f"Successfully handled {appeal_id} in {tieba_name} refuse:{refuse}")
             return True
 
         def __get_appeal_list(pn=1):
@@ -1034,7 +1047,8 @@ class Browser(object):
                               for raw in main_json['appealRecordList']]
 
             except Exception as err:
-                log.error(f"Failed to get appeal_list of {tieba_name}. Reason:{err}")
+                log.error(
+                    f"Failed to get appeal_list of {tieba_name}. Reason:{err}")
                 has_next = False
                 appeal_ids = []
 
