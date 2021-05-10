@@ -271,7 +271,7 @@ class Browser(object):
             user = UserInfo(main_json['data'])
 
         except Exception as err:
-            log.error("Failed to get UserInfo of {id} Reason:{err}")
+            log.error(f"Failed to get UserInfo of {id} Reason:{err}")
             user = UserInfo()
 
         return user

@@ -260,7 +260,7 @@ class MySQL(object):
 
         try:
             self.mycursor.execute(
-                f"INSERT INTO portrait_{tieba_name_eng} VALUES ({portrait},{user_name},{mode},DEFAULT) ON DUPLICATE KEY UPDATE is_white={mode}")
+                f"INSERT INTO portrait_{tieba_name_eng} VALUES ('{portrait}','{user_name}',{mode},DEFAULT) ON DUPLICATE KEY UPDATE is_white={mode}")
         except mysql.connector.errors.DatabaseError:
             log.error(f"MySQL Error: Failed to insert {portrait}!")
             return False
