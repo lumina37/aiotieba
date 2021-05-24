@@ -41,10 +41,12 @@ class MySQL(object):
         self.db_name = db_name
 
         try:
-            self.mydb = mysql.connector.connect(**mysql_json, database=db_name)
+            self.mydb = mysql.connector.connect(
+                **mysql_json, database=db_name, auth_plugin='mysql_native_password')
             self.mycursor = self.mydb.cursor()
         except mysql.connector.errors.ProgrammingError:
-            self.mydb = mysql.connector.connect(**mysql_json)
+            self.mydb = mysql.connector.connect(
+                **mysql_json, auth_plugin='mysql_native_password')
             self.mycursor = self.mydb.cursor()
             self.mycursor.execute(f"CREATE DATABASE {db_name}")
             self.mycursor.execute(f"USE {db_name}")
@@ -249,24 +251,24 @@ class MySQL(object):
         self.mycursor.execute(f"SHOW TABLES LIKE 'portrait_{tieba_name_eng}'")
         if not self.mycursor.fetchone():
             self.mycursor.execute(
-                f"CREATE TABLE portrait_{tieba_name_eng} (portrait CHAR(36) NOT NULL PRIMARY KEY, user_name VARCHAR(14), is_white BOOL NOT NULL DEFAULT TRUE, record_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP)")
+                f"CREATE TABLE portrait_{tieba_name_eng} (portrait CHAR(36) NOT NULL PRIMARY KEY, is_white BOOL NOT NULL DEFAULT TRUE, record_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP)")
 
     @translate_tieba_name
-    def update_portrait(self, tieba_name_eng, portrait, user_name, mode):
+    def update_portrait(self, tieba_name_eng, portrait, mode):
         """
         更新portrait在portrait_{tieba_name_eng}中的状态
-        update_portrait(tieba_name,portrait,user_name,mode)
+        update_portrait(tieba_name,portrait,mode)
         """
 
         try:
             self.mycursor.execute(
-                f"INSERT INTO portrait_{tieba_name_eng} VALUES ('{portrait}','{user_name}',{mode},DEFAULT) ON DUPLICATE KEY UPDATE is_white={mode}")
+                f"INSERT INTO portrait_{tieba_name_eng} VALUES ('{portrait}',{mode},DEFAULT) ON DUPLICATE KEY UPDATE is_white={mode}")
         except mysql.connector.errors.DatabaseError:
             log.error(f"MySQL Error: Failed to insert {portrait}!")
             return False
         else:
             log.info(
-                f"Successfully added {portrait}/{user_name} to table of {tieba_name_eng} mode:{mode}")
+                f"Successfully updated {portrait} to table of {tieba_name_eng} mode:{mode}")
             self.mydb.commit()
             return True
 

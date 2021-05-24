@@ -94,6 +94,8 @@ class UserInfo(object):
             if not new_portrait.startswith('tb.'):
                 raise
             self._portrait = new_portrait[:36]
+            if self._portrait.endswith('?'):
+                self._portrait = self._portrait[:-1]
         except:
             self._portrait = ''
 
@@ -499,11 +501,10 @@ class Posts(list):
             users = UserInfo_Dict(main_json['user_list'])
             try:
                 thread_owner_id = main_json["thread"]['author']['id']
-                fid = main_json['forum']['id']
                 tid = main_json['thread']['id']
+                fid = main_json['forum'].get('id', 0)
             except Exception:
                 log.warning(traceback.format_exc())
-                raise
 
             for post_raw in main_json['post_list']:
                 try:

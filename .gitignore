@@ -20,3 +20,4 @@ create_whitelist.py
 recover_v.py
 test.py
 vote.py
+config/block_cycle_10.json
