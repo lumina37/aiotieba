@@ -22,7 +22,7 @@ import tiebaBrowser.api as api
 
 config = None
 try:
-    with SCRIPT_DIR.joinpath('config/config.json').open('r', encoding='utf-8') as file:
+    with SCRIPT_DIR.parent.joinpath('config/config.json').open('r', encoding='utf-8') as file:
         config = json.load(file)
 except Exception:
     log.critical("Unable to read config.json!")
@@ -290,8 +290,7 @@ class Browser(object):
             threads: core.Threads
         """
 
-        payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_id': 'wappc_1600500414046_633',
+        payload = {'_client_id': 'wappc_1600500414046_633',
                    '_client_type': 2,
                    '_client_version': '12.4.8.23',
                    '_phone_imei': '000000000000000',
@@ -334,8 +333,7 @@ class Browser(object):
             posts: core.Posts
         """
 
-        payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_id': 'wappc_1600500414046_633',
+        payload = {'_client_id': 'wappc_1600500414046_633',
                    '_client_type': 2,
                    '_client_version': '12.4.8.23',
                    '_phone_imei': '000000000000000',
@@ -378,8 +376,7 @@ class Browser(object):
             comments: core.Comments
         """
 
-        payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_id': 'wappc_1600500414046_633',
+        payload = {'_client_id': 'wappc_1600500414046_633',
                    '_client_type': '2',
                    '_client_version': '12.4.8.23',
                    '_phone_imei': '000000000000000',

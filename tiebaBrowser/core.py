@@ -13,7 +13,7 @@ import traceback
 
 import re
 
-from .logger import log
+from .logger import log,SCRIPT_DIR
 
 import signal
 
@@ -26,7 +26,6 @@ signal.signal(signal.SIGTERM, terminate)
 
 
 MODULE_DIR = Path(__file__).parent
-SCRIPT_DIR = Path(sys.argv[0]).parent
 
 
 class UserInfo(object):

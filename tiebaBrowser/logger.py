@@ -11,7 +11,7 @@ import time
 import logging
 
 
-SCRIPT_DIR = Path(sys.path[0])
+SCRIPT_DIR = Path(sys.argv[0])
 
 
 class MyLogger(logging.Logger):
@@ -25,7 +25,7 @@ class MyLogger(logging.Logger):
 
         super().__init__(name)
 
-        log_dir = SCRIPT_DIR.joinpath('log')
+        log_dir = SCRIPT_DIR.parent.joinpath('log')
         log_dir.mkdir(0o755, exist_ok=True)
         recent_time = time.strftime('%Y-%m-%d', time.localtime(time.time()))
 
