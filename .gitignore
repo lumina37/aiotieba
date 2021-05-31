@@ -10,7 +10,6 @@ config/config.json
 config/headers.txt
 cloud_review_v.py
 cloud_review_soulknight.py
-cloud_review_asoul.py
 block_cycle.py
 admin_operation.py
 admin_listen.py
