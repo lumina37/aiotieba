@@ -140,7 +140,7 @@ class UserInfo(object):
         if self.user_name:
             return self.user_name
         else:
-            return '/'.join([self.nick_name, self.portrait])
+            return f'{self.nick_name}/{self.portrait}'
 
 
 class UserInfo_Dict(dict):
@@ -241,7 +241,7 @@ class Thread(_BaseContent):
     @property
     def text(self):
         if not self._text:
-            self._text = '{}\n{}'.format(self.title, self.first_floor_text)
+            self._text = f'{self.title}\n{self.first_floor_text}'
         return self._text
 
     @property
@@ -327,6 +327,8 @@ class Threads(list):
 
             for thread_raw in main_json['thread_list']:
                 try:
+                    if thread_raw.__contains__('task_info'):
+                        continue
                     thread = Thread()
                     thread.user = users.get(
                         thread_raw['author_id'], UserInfo())
@@ -416,7 +418,7 @@ class Post(_BaseContent):
     @property
     def text(self):
         if not self._text:
-            self._text = '{}\n{}'.format(self.content, self.sign)
+            self._text = f'{self.content}\n{self.sign}'
         return self._text
 
     @property

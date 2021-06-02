@@ -143,11 +143,9 @@ class CloudReview(Browser):
 
         try:
             if not re.search('\.(jpg|jpeg|png)', img_url):
-                log.error("Wrong image format")
+                raise ValueError("Wrong image format")
             res = self.sessions.web.get(img_url, timeout=(3, 10))
             image = Image.open(BytesIO(res.content))
-            if not image:
-                raise IOError("Empty image")
         except Exception as err:
             log.error(f"Failed to get image {img_url}. Reason:{err}")
             image = None
@@ -163,12 +161,14 @@ class CloudReview(Browser):
         if not image:
             return None
 
-        raw = pyzbar.decode(image)
-        if raw:
-            data = unquote(raw[0].data.decode('utf-8'))
-            return data
-        else:
+        try:
+            raw = pyzbar.decode(image)
+        except Exception as err:
+            log.error(f"Failed to decode image {img_url}. Reason:{err}")
             return None
+
+        data = unquote(raw[0].data.decode('utf-8'))
+        return data
 
     def _get_imgdhash(self, img_url):
         """

@@ -80,7 +80,7 @@ class CloudReview(tiebaBrowser.CloudReview):
             elif flag == 2:
                 return True
             else:
-                tiebaBrowser.log.error('Wrong flag {flag} in _check_thread!'.format(flag=flag))
+                tiebaBrowser.log.error(f'Wrong flag {flag} in _check_thread!')
 
         return False
 

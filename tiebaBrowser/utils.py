@@ -683,8 +683,7 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            log.error("Failed to delete post {} in {} in {}. Reason:{}".format(
-                pid, tid, tieba_name, str(err)))
+            log.error(f"Failed to delete post {pid} in {tid} in {tieba_name}. Reason:{err}")
             return False
 
         log.info(f"Successfully deleted post {pid} in {tid} in {tieba_name}")
