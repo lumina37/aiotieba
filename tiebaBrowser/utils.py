@@ -499,14 +499,14 @@ class Browser(object):
         log.info(f"Successfully set privacy to {tid}")
         return True
 
-    def block(self, user, tieba_name, day, reason='null'):
+    def block(self, tieba_name, user, day, reason='null'):
         """
         使用客户端api的封禁，支持小吧主、语音小编封10天
-        block(user,tieba_name,day,reason='null')
+        block(tieba_name,user,day,reason='null')
 
         参数:
-            user: UserInfo类 待封禁用户信息
             tieba_name: str 吧名
+            user: UserInfo类 待封禁用户信息
             day: int 封禁天数
             reason: str 封禁理由（可选）
 
