@@ -15,15 +15,6 @@ import re
 
 from .logger import log,SCRIPT_DIR
 
-import signal
-
-
-def terminate(signalNumber, frame):
-    sys.exit()
-
-
-signal.signal(signal.SIGTERM, terminate)
-
 
 MODULE_DIR = Path(__file__).parent
 
@@ -39,31 +30,32 @@ class UserInfo(object):
     gender: 性别（1男2女0未知）
     """
 
-    __slots__ = ('user_name',
+    __slots__ = ['user_name',
                  '_nick_name',
                  '_portrait',
                  '_user_id',
                  '_level',
-                 '_gender')
+                 '_gender']
 
     def __init__(self, _dict=None):
-        if isinstance(_dict, dict):
-            try:
-                self.user_name = _dict.get('name', '')
-                self.nick_name = _dict.get('name_show', '')
-                self.portrait = _dict['portrait']
-                self.user_id = _dict.get('id', None)
-                self.level = _dict.get('level_id', None)
-                self.gender = _dict.get('gender', None)
-            except:
-                log.warning(traceback.format_exc())
-                self.set_null()
-        else:
-            self.set_null()
+        if not isinstance(_dict, dict):
+            self._set_null()
+            return
 
-    def set_null(self):
+        try:
+            self.user_name = _dict.get('name', '')
+            self.nick_name = _dict.get('name_show', '')
+            self.portrait = _dict['portrait']
+            self.user_id = _dict.get('id', None)
+            self.level = _dict.get('level_id', None)
+            self.gender = _dict.get('gender', None)
+        except Exception:
+            log.warning(traceback.format_exc())
+            self._set_null()
+
+    def _set_null(self):
         self.user_name = ''
-        self.nick_name = ''
+        self._nick_name = ''
         self._portrait = ''
         self._user_id = 0
         self._level = 0
@@ -76,11 +68,11 @@ class UserInfo(object):
     @nick_name.setter
     def nick_name(self, new_nick_name):
         try:
-            if type(new_nick_name) is str and new_nick_name != self.user_name:
-                self._nick_name = new_nick_name
+            if new_nick_name != self.user_name:
+                self._nick_name = str(new_nick_name)
             else:
                 self._nick_name = ''
-        except:
+        except Exception:
             self._nick_name = ''
 
     @property
@@ -90,12 +82,10 @@ class UserInfo(object):
     @portrait.setter
     def portrait(self, new_portrait):
         try:
-            if not new_portrait.startswith('tb.'):
-                raise
-            self._portrait = new_portrait[:36]
-            if self._portrait.endswith('?'):
-                self._portrait = self._portrait[:-1]
-        except:
+            assert new_portrait.startswith('tb.'),f"portrait:{new_portrait} do not start with tb."
+            new_portrait = new_portrait[:36]
+            self._portrait = self._portrait[:-1] if new_portrait.endswith('?') else new_portrait
+        except Exception:
             self._portrait = ''
 
     @property
@@ -104,9 +94,9 @@ class UserInfo(object):
 
     @user_id.setter
     def user_id(self, new_user_id):
-        if new_user_id:
+        try:
             self._user_id = int(new_user_id)
-        else:
+        except Exception:
             self._user_id = 0
 
     @property
@@ -115,9 +105,9 @@ class UserInfo(object):
 
     @level.setter
     def level(self, new_level):
-        if new_level:
+        try:
             self._level = int(new_level)
-        else:
+        except Exception:
             self._level = 0
 
     @property
@@ -126,9 +116,9 @@ class UserInfo(object):
 
     @gender.setter
     def gender(self, new_gender):
-        if new_gender:
+        try:
             self._gender = int(new_gender)
-        else:
+        except Exception:
             self._gender = 0
 
     @property
@@ -168,9 +158,9 @@ class _BaseContent(object):
     user: UserInfo类 发布者信息
     """
 
-    __slots__ = ('_fid', '_tid', '_pid',
+    __slots__ = ['_fid', '_tid', '_pid',
                  '_text',
-                 'user')
+                 'user']
 
     def __init__(self):
         self._fid = 0
@@ -228,15 +218,14 @@ class Thread(_BaseContent):
     user: UserInfo类 发布者信息
     """
 
-    __slots__ = ('first_floor_text', 'title',
+    __slots__ = ['first_floor_text', 'title',
                  '_reply_num',
                  'has_audio', 'has_video',
                  '_like', '_dislike',
-                 '_create_time', '_last_time')
+                 '_create_time', '_last_time']
 
     def __init__(self):
         self._text = ''
-        pass
 
     @property
     def text(self):
@@ -258,10 +247,7 @@ class Thread(_BaseContent):
 
     @like.setter
     def like(self, new_like):
-        if new_like:
-            self._like = int(new_like)
-        else:
-            self._like = 0
+        self._like = int(new_like)
 
     @property
     def dislike(self):
@@ -269,10 +255,7 @@ class Thread(_BaseContent):
 
     @dislike.setter
     def dislike(self, new_dislike):
-        if new_dislike:
-            self._dislike = int(new_dislike)
-        else:
-            self._dislike = 0
+        self._dislike = int(new_dislike)
 
     @property
     def create_time(self):
@@ -296,15 +279,16 @@ class Thread(_BaseContent):
         _init_content(content_fragments:list)
         """
 
-        texts = []
+        if not isinstance(content_fragments,list):
+            self.first_floor_text=''
+            return
 
+        texts = []
         for fragment in content_fragments:
             if fragment['type'] in ['0', '4', '9', '18']:
                 texts.append(fragment['text'])
             elif fragment['type'] == '1':
-                texts.append(fragment['link'])
-                texts.append(' ' + fragment['text'])
-
+                texts.append(f"{fragment['link']} {fragment['text']}")
         self.first_floor_text = ''.join(texts)
 
 
@@ -313,7 +297,7 @@ class Threads(list):
     thread列表
     """
 
-    __slots__ = ('_current_pn', '_total_pn')
+    __slots__ = ['_current_pn', '_total_pn']
 
     def __init__(self, main_json=None):
 
@@ -337,7 +321,7 @@ class Threads(list):
                     thread.tid = thread_raw['tid']
                     thread.pid = thread_raw['first_post_id']
                     thread._init_content(
-                        thread_raw.get('first_post_content', []))
+                        thread_raw.get('first_post_content', None))
                     thread.reply_num = thread_raw['reply_num']
                     thread.create_time = thread_raw['create_time']
                     thread.has_audio = True if thread_raw.get(
@@ -402,14 +386,14 @@ class Post(_BaseContent):
     is_thread_owner: 是否楼主
     """
 
-    __slots__ = ('content',
+    __slots__ = ['content',
                  '_reply_num',
                  '_like', '_dislike',
                  '_floor',
                  'has_audio',
                  '_create_time',
                  'sign', 'imgs', 'smileys',
-                 'is_thread_owner')
+                 'is_thread_owner']
 
     def __init__(self):
         self._text = ''
@@ -494,7 +478,7 @@ class Posts(list):
     total_pn: 总页数
     """
 
-    __slots__ = ('_current_pn', '_total_pn')
+    __slots__ = ['_current_pn', '_total_pn']
 
     def __init__(self, main_json=None):
 
@@ -503,7 +487,7 @@ class Posts(list):
             try:
                 thread_owner_id = main_json["thread"]['author']['id']
                 tid = main_json['thread']['id']
-                fid = main_json['forum'].get('id', 0)
+                fid = main_json['forum']['id']
             except Exception:
                 log.warning(traceback.format_exc())
 
@@ -572,10 +556,10 @@ class Comment(_BaseContent):
     user: UserInfo类 发布者信息
     """
 
-    __slots__ = ('_like', '_dislike',
+    __slots__ = ['_like', '_dislike',
                  'has_audio',
                  '_create_time',
-                 'smileys')
+                 'smileys']
 
     def __init__(self):
         pass
@@ -634,14 +618,14 @@ class Comments(list):
     total_pn: 总页数
     """
 
-    __slots__ = ('_current_pn', '_total_pn')
+    __slots__ = ['_current_pn', '_total_pn']
 
     def __init__(self, main_json=None):
 
         if main_json:
             try:
-                fid = main_json['forum']['id']
                 tid = main_json['thread']['id']
+                fid = main_json['forum']['id']
             except:
                 log.warning(traceback.format_exc())
                 raise
@@ -703,7 +687,7 @@ class At(_BaseContent):
     user: UserInfo类 发布者信息
     """
 
-    __slots__ = ('tieba_name', '_create_time',)
+    __slots__ = ['tieba_name', '_create_time']
 
     def __init__(self):
         super().__init__()

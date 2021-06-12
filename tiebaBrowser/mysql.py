@@ -5,9 +5,9 @@ from functools import wraps
 
 import json
 
-import mysql.connector
+import pymysql
 
-from .core import SCRIPT_DIR
+from .data_structure import SCRIPT_DIR
 from .utils import config
 from .logger import log
 
@@ -32,7 +32,7 @@ class MySQL(object):
     MySQL(db_name)
     """
 
-    __slots__ = ('db_name', 'mydb', 'mycursor')
+    __slots__ = ['db_name', 'mydb', 'mycursor']
 
     def __init__(self, db_name):
 
@@ -41,10 +41,9 @@ class MySQL(object):
         self.db_name = db_name
 
         try:
-            self.mydb = mysql.connector.connect(
-                **mysql_json, database=db_name, auth_plugin='mysql_native_password')
+            self.mydb = pymysql.connect(**mysql_json, database=db_name)
             self.mycursor = self.mydb.cursor()
-        except mysql.connector.errors.ProgrammingError:
+        except pymysql.ProgrammingError:
             self.mydb = mysql.connector.connect(
                 **mysql_json, auth_plugin='mysql_native_password')
             self.mycursor = self.mydb.cursor()
@@ -65,12 +64,12 @@ class MySQL(object):
 
         try:
             self.mydb.cmd_ping()
-        except:
+        except pymysql.MySQLError:
             try:
                 self.mydb.reconnect()
                 self.mycursor = self.mydb.cursor()
                 self.mycursor.execute(f"USE {self.db_name}")
-            except:
+            except pymysql.MySQLError:
                 return False
             else:
                 return True
@@ -105,7 +104,7 @@ class MySQL(object):
         try:
             self.mycursor.execute(
                 f"INSERT IGNORE INTO pid_whitelist_{tieba_name_eng} VALUES ({pid},DEFAULT)")
-        except mysql.connector.errors.DatabaseError:
+        except pymysql.DatabaseError:
             log.error(f"MySQL Error: Failed to insert {pid}!")
             return False
         else:
@@ -122,7 +121,7 @@ class MySQL(object):
         try:
             self.mycursor.execute(
                 f"SELECT NULL FROM pid_whitelist_{tieba_name_eng} WHERE pid={pid}")
-        except mysql.connector.errors.DatabaseError:
+        except pymysql.DatabaseError:
             log.error(f"MySQL Error: Failed to select {pid}!")
             return False
         else:
@@ -138,7 +137,7 @@ class MySQL(object):
         try:
             self.mycursor.execute(
                 f"DELETE FROM pid_whitelist_{tieba_name_eng} WHERE record_time>(CURRENT_TIMESTAMP() + INTERVAL -{hour} HOUR)")
-        except mysql.connector.errors.DatabaseError:
+        except pymysql.DatabaseError:
             log.error(
                 f"MySQL Error: Failed to delete pid in pid_whitelist_{tieba_name_eng}")
             return False
@@ -163,7 +162,7 @@ class MySQL(object):
         try:
             self.mycursor.execute(
                 f"INSERT INTO tid_indroplist_{tieba_name_eng} VALUES ({tid},{mode},DEFAULT) ON DUPLICATE KEY UPDATE need_rec={mode}")
-        except mysql.connector.errors.DatabaseError:
+        except pymysql.DatabaseError:
             log.error(f"MySQL Error: Failed to insert {tid}!")
             return False
         else:
@@ -185,7 +184,7 @@ class MySQL(object):
         try:
             self.mycursor.execute(
                 f"SELECT need_rec FROM tid_indroplist_{tieba_name_eng} WHERE tid={tid} LIMIT 1")
-        except mysql.connector.errors.DatabaseError:
+        except pymysql.DatabaseError:
             log.error(f"MySQL Error: Failed to select {tid}!")
             return None
         else:
@@ -205,7 +204,7 @@ class MySQL(object):
         try:
             self.mycursor.execute(
                 f"DELETE FROM tid_indroplist_{tieba_name_eng} WHERE tid={tid}")
-        except mysql.connector.errors.DatabaseError:
+        except pymysql.DatabaseError:
             log.error(f"MySQL Error: Failed to delete {tid}!")
             return False
         else:
@@ -231,7 +230,7 @@ class MySQL(object):
             try:
                 self.mycursor.execute(
                     f"SELECT tid FROM tid_indroplist_{tieba_name_eng} WHERE need_rec=1 LIMIT {batch_size} OFFSET {i * batch_size}")
-            except mysql.connector.errors.DatabaseError:
+            except pymysql.DatabaseError:
                 log.error(f"MySQL Error: Failed to select {tid}!")
                 return False
             else:
@@ -263,7 +262,7 @@ class MySQL(object):
         try:
             self.mycursor.execute(
                 f"INSERT INTO portrait_{tieba_name_eng} VALUES ('{portrait}',{mode},DEFAULT) ON DUPLICATE KEY UPDATE is_white={mode}")
-        except mysql.connector.errors.DatabaseError:
+        except pymysql.DatabaseError:
             log.error(f"MySQL Error: Failed to insert {portrait}!")
             return False
         else:
@@ -282,7 +281,7 @@ class MySQL(object):
         try:
             self.mycursor.execute(
                 f"DELETE FROM portrait_{tieba_name_eng} WHERE portrait='{portrait}'")
-        except mysql.connector.errors.DatabaseError:
+        except pymysql.DatabaseError:
             log.error(f"MySQL Error: Failed to delete {portrait}!")
             return False
         else:
@@ -304,7 +303,7 @@ class MySQL(object):
         try:
             self.mycursor.execute(
                 f"SELECT is_white FROM portrait_{tieba_name_eng} WHERE portrait='{portrait}' LIMIT 1")
-        except mysql.connector.errors.DatabaseError:
+        except pymysql.DatabaseError:
             return None
         else:
             res_tuple = self.mycursor.fetchone()

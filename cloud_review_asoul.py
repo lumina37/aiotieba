@@ -1,9 +1,8 @@
 # -*- coding:utf-8 -*-
 import os
-import sys
 import time
-import datetime as dt
 import argparse
+import traceback
 
 import re
 import tiebaBrowser
@@ -40,32 +39,47 @@ class CloudReview(tiebaBrowser.CloudReview):
                 threads = self.get_threads(self.tieba_name)
                 for thread in threads:
                     if self._check_thread(thread):
-                        tiebaBrowser.log.info(f"Try to delete thread {thread.text} post by {thread.user.logname}")
+                        tiebaBrowser.log.info(
+                            f"Try to delete thread {thread.text} post by {thread.user.logname}")
                         self.del_thread(self.tieba_name, thread.tid)
-
+                tiebaBrowser.log.debug('heartbeat')
                 if self.sleep_time:
                     time.sleep(self.sleep_time)
-            except Exception as err:
-                tiebaBrowser.log.error(f"Unexcepted error:{err}")
+            except Exception:
+                tiebaBrowser.log.error(
+                    f"Unexcepted error:{traceback.format_exc()}")
 
     def _check_thread(self, thread: tiebaBrowser.Thread):
         """
         检查thread内容
         """
 
-        posts = self.get_posts(thread.tid, 9999)
-        if posts and posts[0].floor == 1:
-            thread.user.level = posts[0].user.level
-            flag = self._check_text(thread)
-            if flag == -1:
-                pass
-            elif flag == 1:
-                return True
-            elif flag == 0:
-                pass
-            else:
-                tiebaBrowser.log.error(f'Wrong flag {flag} in _check_thread!')
-                pass
+        posts = self.get_posts(thread.tid)
+        if len(posts) == 0:
+            return False
+
+        thread.user.level = posts[0].user.level
+        flag = self._check_text(thread)
+        if flag == -1:
+            pass
+        elif flag == 1:
+            return True
+        elif flag == 0:
+            pass
+        else:
+            tiebaBrowser.log.error(f'Wrong flag {flag} in _check_thread!')
+            pass
+
+        if len(posts) > 1:
+            second_floor = posts[1]
+            if second_floor.reply_num > 0:
+                for comment in self.get_comments(second_floor.tid, second_floor.pid):
+                    if re.search('面团',comment.text):
+                        self.block(self.tieba_name,ccomment.user,10)
+                        self.del_post(self.tieba_name,comment.tid,comment.pid)
+
+        if posts.current_pn > 1:
+            posts = self.get_posts(thread.tid, 9999)
 
         for post in posts:
             flag = self._check_post(post)
@@ -75,7 +89,8 @@ class CloudReview(tiebaBrowser.CloudReview):
                 if post.floor == 1:
                     return True
                 else:
-                    tiebaBrowser.log.info(f"Try to delete post {post.text} post by {post.user.logname}")
+                    tiebaBrowser.log.info(
+                        f"Try to delete post {post.text} post by {post.user.logname}")
                     self.del_post(self.tieba_name, post.tid, post.pid)
             elif flag == 2:
                 return True
@@ -111,12 +126,13 @@ class CloudReview(tiebaBrowser.CloudReview):
         self.mysql.add_pid(self.tieba_name, post.pid)
         return 0
 
-    def _check_text(self, obj, level=None):
+    def _check_text(self, obj):
 
         if self.mysql.has_pid(self.tieba_name, obj.pid):
             return -1
 
-        is_white = self.mysql.iswhite_portrait(self.tieba_name, obj.user.portrait)
+        is_white = self.mysql.iswhite_portrait(
+            self.tieba_name, obj.user.portrait)
         if is_white is True:
             return -1
         elif is_white is False:
@@ -130,8 +146,10 @@ class CloudReview(tiebaBrowser.CloudReview):
             return -1
         text = obj.text
 
-        has_rare_contact = True if self.exp.contact_rare_exp.search(text) else False
-        has_contact = True if (has_rare_contact or self.exp.contact_exp.search(text)) else False
+        has_rare_contact = True if self.exp.contact_rare_exp.search(
+            text) else False
+        has_contact = True if (
+            has_rare_contact or self.exp.contact_exp.search(text)) else False
         has_white_kw = True if self.white_kw_exp.search(text) else False
 
         if has_white_kw:

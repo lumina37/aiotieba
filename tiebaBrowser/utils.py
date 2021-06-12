@@ -15,7 +15,7 @@ import re
 import json
 import pickle
 
-from .core import *
+from .data_structure import *
 from .logger import log
 import tiebaBrowser.api as api
 

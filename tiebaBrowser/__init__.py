@@ -17,7 +17,12 @@
     用 [sudo pip install pyzbar] 来安装pyzbar
 """
 
-from .core import *
+from .data_structure import *
 from .logger import log
 from .utils import *
 from .cloud_review import *
+
+import signal
+def terminate(signalNumber, frame):
+    sys.exit()
+signal.signal(signal.SIGTERM, terminate)
