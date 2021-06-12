@@ -75,7 +75,7 @@ class CloudReview(tiebaBrowser.CloudReview):
             if second_floor.reply_num > 0:
                 for comment in self.get_comments(second_floor.tid, second_floor.pid):
                     if re.search('面团',comment.text):
-                        self.block(self.tieba_name,ccomment.user,10)
+                        self.block(self.tieba_name,comment.user,10)
                         self.del_post(self.tieba_name,comment.tid,comment.pid)
 
         if posts.current_pn > 1:
