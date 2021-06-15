@@ -193,7 +193,7 @@ class Browser(object):
             tbs = main_json['tbs']
 
         except Exception as err:
-            log.error("Failed to get tbs Reason:" + str(err))
+            log.error(f"Failed to get tbs Reason: {err}")
             tbs = ''
 
         return tbs

@@ -6,10 +6,9 @@ __all__ = ('SCRIPT_DIR',
 import os
 import sys
 from pathlib import Path
-import time
 
 import logging
-
+import logging.handlers
 
 SCRIPT_DIR = Path(sys.argv[0])
 
@@ -27,21 +26,20 @@ class MyLogger(logging.Logger):
 
         log_dir = SCRIPT_DIR.parent.joinpath('log')
         log_dir.mkdir(0o755, exist_ok=True)
-        recent_time = time.strftime('%Y-%m-%d', time.localtime(time.time()))
 
         log_filepath = log_dir.joinpath(
-            f'{SCRIPT_DIR.stem}_{recent_time}.log')
+            f'{SCRIPT_DIR.stem}.log')
         try:
-            file_handler = logging.FileHandler(
-                str(log_filepath), encoding='utf-8')
-        except:
+            file_handler = logging.handlers.TimedRotatingFileHandler(
+                str(log_filepath), when='D', backupCount=5, encoding='utf-8')
+        except Exception:
             try:
                 log_filepath.unlink()
             except:
                 raise OSError(f"Unable to read or remove {log_filepath}")
             else:
-                file_handler = logging.FileHandler(
-                    str(log_filepath), encoding='utf-8')
+                file_handler = logging.handlers.TimedRotatingFileHandler(
+                    str(log_filepath), when='D', backupCount=5, encoding='utf-8')
 
         stream_handler = logging.StreamHandler(sys.stdout)
 

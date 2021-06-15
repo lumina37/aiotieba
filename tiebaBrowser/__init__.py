@@ -24,5 +24,6 @@ from .cloud_review import *
 
 import signal
 def terminate(signalNumber, frame):
+    import sys
     sys.exit()
 signal.signal(signal.SIGTERM, terminate)

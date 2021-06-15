@@ -303,11 +303,7 @@ class Threads(list):
 
         if main_json:
             users = UserInfo_Dict(main_json['user_list'])
-            try:
-                fid = main_json['forum']['id']
-            except Exception:
-                log.warning(traceback.format_exc())
-                raise
+            fid = main_json['forum']['id']
 
             for thread_raw in main_json['thread_list']:
                 try:
@@ -328,8 +324,8 @@ class Threads(list):
                         'voice_info', None) else False
                     thread.has_video = True if thread_raw.get(
                         'video_info', None) else False
-                    thread.like = thread_raw.get('agree_num', 0)
-                    thread.dislike = thread_raw.get('disagree_num', 0)
+                    thread.like = thread_raw['agree_num']
+                    thread.dislike = thread_raw['disagree_num']
                     thread.last_time = thread_raw['last_time_int']
                     self.append(thread)
                 except:
@@ -484,12 +480,9 @@ class Posts(list):
 
         if main_json:
             users = UserInfo_Dict(main_json['user_list'])
-            try:
-                thread_owner_id = main_json["thread"]['author']['id']
-                tid = main_json['thread']['id']
-                fid = main_json['forum']['id']
-            except Exception:
-                log.warning(traceback.format_exc())
+            thread_owner_id = main_json["thread"]['author']['id']
+            tid = main_json['thread']['id']
+            fid = main_json['forum']['id']
 
             for post_raw in main_json['post_list']:
                 try:
@@ -623,12 +616,8 @@ class Comments(list):
     def __init__(self, main_json=None):
 
         if main_json:
-            try:
-                tid = main_json['thread']['id']
-                fid = main_json['forum']['id']
-            except:
-                log.warning(traceback.format_exc())
-                raise
+            tid = main_json['thread']['id']
+            fid = main_json['forum']['id']
 
             for comment_raw in main_json['subpost_list']:
                 try:
