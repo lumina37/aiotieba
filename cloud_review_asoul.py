@@ -74,7 +74,7 @@ class CloudReview(tiebaBrowser.CloudReview):
             second_floor = posts[1]
             if second_floor.reply_num > 0:
                 for comment in self.get_comments(second_floor.tid, second_floor.pid):
-                    if re.search('面团',comment.text):
+                    if comment.user.level == 1 and re.search('面团',comment.text):
                         self.block(self.tieba_name,comment.user,10)
                         self.del_post(self.tieba_name,comment.tid,comment.pid)
 
@@ -131,7 +131,7 @@ class CloudReview(tiebaBrowser.CloudReview):
         if self.mysql.has_pid(self.tieba_name, obj.pid):
             return -1
 
-        is_white = self.mysql.iswhite_portrait(
+        is_white = self.mysql.is_portrait_white(
             self.tieba_name, obj.user.portrait)
         if is_white is True:
             return -1

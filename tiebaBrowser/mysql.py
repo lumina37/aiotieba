@@ -4,6 +4,7 @@ import sys
 from functools import wraps
 
 import json
+from hashlib import md5
 
 import pymysql
 
@@ -291,10 +292,10 @@ class MySQL(object):
             return True
 
     @translate_tieba_name
-    def iswhite_portrait(self, tieba_name_eng, portrait):
+    def is_portrait_white(self, tieba_name_eng, portrait):
         """
         检索portrait的黑/白名单状态
-        iswhite_portrait(tieba_name,portrait)
+        is_portrait_white(tieba_name,portrait)
 
         返回值:
             iswhite: True 白名单 / False 黑名单 / None 不在名单中
@@ -302,7 +303,7 @@ class MySQL(object):
 
         try:
             self.mycursor.execute(
-                f"SELECT is_white FROM portrait_{tieba_name_eng} WHERE portrait='{portrait}' LIMIT 1")
+                f"SELECT is_white FROM portrait_{tieba_name_eng} WHERE portrait='{portrait}'")
         except pymysql.DatabaseError:
             return None
         else:
@@ -311,3 +312,71 @@ class MySQL(object):
                 return True if res_tuple[0] else False
             else:
                 return None
+
+    def create_table_admin(self):
+        """
+        创建表admin
+        create_table_admin()
+        """
+
+        self.mycursor.execute(f"SHOW TABLES LIKE 'admin'")
+        if not self.mycursor.fetchone():
+            self.mycursor.execute(
+                f"CREATE TABLE admin (md5 CHAR(32) NOT NULL PRIMARY KEY, portrait CHAR(36) NOT NULL, tieba_name CHAR(16) NOT NULL, level TINYINT NOT NULL DEFAULT 0)")
+
+    def update_admin(self, tieba_name, portrait):
+        """
+        更新portrait在admin中的状态
+        update_admin(tieba_name,portrait)
+        """
+
+        md5_str=md5('{portrait}_{tieba_name}'.encode('utf-8')).hexdigest().upper()
+        try:
+            self.mycursor.execute(
+                f"INSERT INTO admin VALUES ('{md5_str}','{portrait}','{tieba_name}',{level}) ON DUPLICATE KEY UPDATE level={level}")
+        except pymysql.DatabaseError:
+            log.error(f"MySQL Error: Failed to insert {portrait} !")
+            return False
+        else:
+            log.info(
+                f"Successfully updated {portrait} in {tieba_name} level:{level}")
+            self.mydb.commit()
+            return True
+
+    def del_admin(self, tieba_name, portrait):
+        """
+        删除admin
+        del_admin(tieba_name,portrait)
+        """
+
+        md5_str=md5('{portrait}_{tieba_name}'.encode('utf-8')).hexdigest().upper()
+        try:
+            self.mycursor.execute(
+                f"DELETE FROM admin WHERE md5='{md5_str}'")
+        except pymysql.DatabaseError:
+            log.error(f"MySQL Error: Failed to delete {portrait} in {tieba_name}!")
+            return False
+        else:
+            log.info(
+                f"Successfully deleted {portrait} in {tieba_name}")
+            self.mydb.commit()
+            return True
+
+    def get_admin_level(self, tieba_name, portrait):
+        """
+        检索portrait的管理员等级
+        get_admin_level(tieba_name,portrait)
+
+        返回值:
+            level: int 管理员等级
+        """
+
+        md5_str=md5('{portrait}_{tieba_name}'.encode('utf-8')).hexdigest().upper()
+        try:
+            self.mycursor.execute(
+                f"SELECT level FROM admin WHERE md5='{md5_str}'")
+        except pymysql.DatabaseError:
+            return None
+        else:
+            res_tuple = self.mycursor.fetchone()
+            return res_tuple[0] if res_tuple else 0
