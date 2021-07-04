@@ -44,7 +44,7 @@ class Sessions(object):
         self.app = req.Session()
         self.app.headers = req.structures.CaseInsensitiveDict({'Content-Type': 'application/x-www-form-urlencoded',
                                                                'Charset': 'UTF-8',
-                                                               'User-Agent': 'bdtb for Android 12.4.8.23',
+                                                               'User-Agent': 'bdtb for Android 12.6.3.0',
                                                                'Connection': 'Keep-Alive',
                                                                'client_logid': '1600505010776',
                                                                'client_user_token': '957339815',
@@ -60,9 +60,9 @@ class Sessions(object):
 
         self.web = req.Session()
         self.web.headers = req.structures.CaseInsensitiveDict({'Host': 'tieba.baidu.com',
-                                                               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:84.0) Gecko/20100101 Firefox/84.0',
-                                                               'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                                                               'Accept-Language': 'zh-CN,zh;q=0.8,en-US;q=0.7,en;q=0.5,zh-TW;q=0.3,zh-HK;q=0.2',
+                                                               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
+                                                               'Accept': '*/*',
+                                                               'Accept-Language': 'zh-CN',
                                                                'Accept-Encoding': 'gzip, deflate, br',
                                                                'DNT': '1',
                                                                'Cache-Control': 'no-cache',
@@ -170,7 +170,7 @@ class Browser(object):
         if self.sessions.set_host(url):
             return True
         else:
-            log.warning("Wrong type of url `{url}`")
+            log.warning(f"Wrong type of url `{url}`")
             return False
 
     def _get_tbs(self):
@@ -290,10 +290,8 @@ class Browser(object):
             threads: core.Threads
         """
 
-        payload = {'_client_id': 'wappc_1600500414046_633',
-                   '_client_type': 2,
-                   '_client_version': '12.4.8.23',
-                   '_phone_imei': '000000000000000',
+        payload = {'BDUSS': self.sessions.BDUSS,
+                   '_client_version': '12.6.3.0',
                    'kw': tieba_name,
                    'pn': pn,
                    'rn': rn
@@ -333,10 +331,7 @@ class Browser(object):
             posts: core.Posts
         """
 
-        payload = {'_client_id': 'wappc_1600500414046_633',
-                   '_client_type': 2,
-                   '_client_version': '12.4.8.23',
-                   '_phone_imei': '000000000000000',
+        payload = {'_client_version': '12.6.3.0',
                    'kz': tid,
                    'pn': pn,
                    'rn': rn
@@ -376,10 +371,7 @@ class Browser(object):
             comments: core.Comments
         """
 
-        payload = {'_client_id': 'wappc_1600500414046_633',
-                   '_client_type': '2',
-                   '_client_version': '12.4.8.23',
-                   '_phone_imei': '000000000000000',
+        payload = {'_client_version': '12.6.3.0',
                    'kz': tid,
                    'pid': pid,
                    'pn': pn
@@ -411,12 +403,7 @@ class Browser(object):
         get_self_at()
         """
 
-        payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_id': 'wappc_1600500414046_633',
-                   '_client_type': '2',
-                   '_client_version': '12.4.8.23',
-                   '_phone_imei': '000000000000000'
-                   }
+        payload = {'BDUSS': self.sessions.BDUSS}
 
         try:
             res = self.sessions.app.post(
@@ -430,7 +417,7 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            log.error("Failed to get ats Reason:{err}")
+            log.error(f"Failed to get ats Reason:{err}")
             return []
 
         ats = []
@@ -468,7 +455,7 @@ class Browser(object):
             payload = {'BDUSS': self.sessions.BDUSS,
                        '_client_id': 'wappc_1600500414046_633',
                        '_client_type': 2,
-                       '_client_version': '12.4.8.23',
+                       '_client_version': '12.6.3.0',
                        '_phone_imei': '000000000000000',
                        'cuid': self.sessions.app_headers['cuid'],
                        'cuid_galaxy2': self.sessions.app_headers['cuid_galaxy2'],
@@ -525,10 +512,7 @@ class Browser(object):
                 return False, user
 
         payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_id': 'wappc_1600500414046_633',
-                   '_client_type': 2,
-                   '_client_version': '12.4.8.23',
-                   '_phone_imei': '000000000000000',
+                   '_client_version': '12.6.3.0',
                    'day': day,
                    'fid': self._tbname2fid(tieba_name),
                    'nick_name': user.nick_name if user.nick_name else user.user_name,
@@ -540,7 +524,6 @@ class Browser(object):
                    'un': user.user_name,
                    'word': tieba_name,
                    'z': '6955178525',
-                   'z_id': 'E90411739518335BA49F4AD85559B3F1CD'
                    }
 
         try:
@@ -660,10 +643,7 @@ class Browser(object):
         """
 
         payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_id': 'wappc_1600500414046_633',
-                   '_client_type': 2,
-                   '_client_version': '12.4.8.23',
-                   '_phone_imei': '000000000000000',
+                   '_client_version': '12.6.3.0',
                    'fid': self._tbname2fid(tieba_name),
                    'is_vipdel': 0,
                    'pid': pid,
@@ -932,10 +912,7 @@ class Browser(object):
         """
 
         payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_id': 'wappc_1600500414046_633',
-                   '_client_type': '2',
-                   '_client_version': '12.4.8.23',
-                   '_phone_imei': '000000000000000',
+                   '_client_version': '12.6.3.0',
                    'forum_id': self._tbname2fid(tieba_name),
                    'tbs': self._get_tbs(),
                    'thread_id': tid

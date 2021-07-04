@@ -307,7 +307,7 @@ class Threads(list):
 
             for thread_raw in main_json['thread_list']:
                 try:
-                    if thread_raw.__contains__('task_info'):
+                    if thread_raw['task_info']:
                         continue
                     thread = Thread()
                     thread.user = users.get(
@@ -324,8 +324,8 @@ class Threads(list):
                         'voice_info', None) else False
                     thread.has_video = True if thread_raw.get(
                         'video_info', None) else False
-                    thread.like = thread_raw['agree_num']
-                    thread.dislike = thread_raw['disagree_num']
+                    thread.like = thread_raw['agree']['agree_num']
+                    thread.dislike = thread_raw['agree']['disagree_num']
                     thread.last_time = thread_raw['last_time_int']
                     self.append(thread)
                 except:

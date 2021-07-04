@@ -4,10 +4,9 @@
 *.pyc
 *.log
 .vs/
+config/
+log/
 tiebaBrowser/cache/
-config/backup
-config/config.json
-config/headers.txt
 cloud_review_v.py
 cloud_review_soulknight.py
 block_cycle.py
@@ -19,4 +18,3 @@ create_whitelist.py
 recover_v.py
 test.py
 vote.py
-config/block_cycle_10.json
