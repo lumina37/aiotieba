@@ -21,12 +21,12 @@
         
 + pip安装需要的Python库
 ```
-sudo pip3 install mysql-connector
-sudo pip3 install lxml
-sudo pip3 install bs4
-sudo pip3 install pillow
+pip install pymysql
+pip install lxml
+pip install bs4
+pip install pillow
 sudo yum install zbar-devel
-sudo pip3 install pyzbar
+pip install pyzbar
 ```
 + 附加说明
 
@@ -38,11 +38,11 @@ sudo pip3 install pyzbar
         
     + 各第三方库的用途说明
     
-        + **mysql-connector** 连接MySQL
+        + **pymysql** 连接MySQL
         + **lxml** 用于BeautifulSoup解析
         + **bs4** BeautifulSoup解析HTML
         + **pillow** 图像库
-        + **zbar-devel** 二维码检测的底层支持代码
+        + **zbar-devel** 二维码检测的支持库
         + **pyzbar** 它是zbar的一个Python封装
         
 ## config/config.json设置
@@ -53,16 +53,15 @@ sudo pip3 install pyzbar
 ## 自定义审查行为
 请参照我给出的例子自己编程修改**cloud_review_soulknight.py**，注释比较规范全面，请自行理解各api的功能
 
-## 设置定时任务
-给出我的crontab设置作为示例
+## 编写重启脚本
+给出我的脚本作为示例
 ```
-SHELL=/bin/bash
-PATH=/sbin:/bin:/usr/sbin:/usr/bin
-MAILTO=""
-25 0 * * * . /etc/profile; python /.../block_cycle.py -bc /.../block_cycle_1.json
-0 0 */3 * * . /etc/profile; python /.../block_cycle.py -bc /.../user_control/block_cycle_10.json
-*/6 6-23,0 * * * . /etc/profile; python /.../cloud_review.py
-*/20 1-5 * * * . /etc/profile; python /.../cloud_review.py
+#! /bin/bash
+pids=`ps -ef | grep "cloud_review_.*py" | grep -v grep | awk '{print $2}'`
+if [ -n "$pids" ]; then
+    kill -15 $pids
+fi
+nohup /usr/bin/python /home/starry/Scripts/tieba/cloud_review_asoul.py -st 20 >/dev/null 2>&1 &
 ```
 
 ## 结束
