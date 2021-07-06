@@ -85,8 +85,7 @@ class UserInfo(object):
             assert new_portrait.startswith(
                 'tb.'), f"portrait:{new_portrait} do not start with tb."
             new_portrait = new_portrait[:36]
-            self._portrait = self._portrait[:-
-                                            1] if new_portrait.endswith('?') else new_portrait
+            self._portrait = new_portrait[:-1] if new_portrait.endswith('?') else new_portrait
         except Exception:
             self._portrait = ''
 
