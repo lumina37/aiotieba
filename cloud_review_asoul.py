@@ -17,7 +17,7 @@ def exit_hanle():
 
 class CloudReview(tiebaBrowser.CloudReview):
 
-    __slots__ = ('white_kw_exp')
+    __slots__ = ['white_kw_exp']
 
     def __init__(self, BDUSS_key, tieba_name, sleep_time):
         super().__init__(BDUSS_key, tieba_name, sleep_time)

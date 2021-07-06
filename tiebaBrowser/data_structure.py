@@ -13,7 +13,7 @@ import traceback
 
 import re
 
-from .logger import log,SCRIPT_DIR
+from .logger import log, SCRIPT_DIR
 
 
 MODULE_DIR = Path(__file__).parent
@@ -82,9 +82,11 @@ class UserInfo(object):
     @portrait.setter
     def portrait(self, new_portrait):
         try:
-            assert new_portrait.startswith('tb.'),f"portrait:{new_portrait} do not start with tb."
+            assert new_portrait.startswith(
+                'tb.'), f"portrait:{new_portrait} do not start with tb."
             new_portrait = new_portrait[:36]
-            self._portrait = self._portrait[:-1] if new_portrait.endswith('?') else new_portrait
+            self._portrait = self._portrait[:-
+                                            1] if new_portrait.endswith('?') else new_portrait
         except Exception:
             self._portrait = ''
 
@@ -279,8 +281,8 @@ class Thread(_BaseContent):
         _init_content(content_fragments:list)
         """
 
-        if not isinstance(content_fragments,list):
-            self.first_floor_text=''
+        if not isinstance(content_fragments, list):
+            self.first_floor_text = ''
             return
 
         texts = []
@@ -324,8 +326,12 @@ class Threads(list):
                         'voice_info', None) else False
                     thread.has_video = True if thread_raw.get(
                         'video_info', None) else False
-                    thread.like = thread_raw['agree']['agree_num']
-                    thread.dislike = thread_raw['agree']['disagree_num']
+                    if isinstance(thread_raw['agree'], dict):
+                        thread.like = thread_raw['agree']['agree_num']
+                        thread.dislike = thread_raw['agree']['disagree_num']
+                    else:
+                        thread.like = thread_raw['agree_num']
+                        thread.dislike = 0
                     thread.last_time = thread_raw['last_time_int']
                     self.append(thread)
                 except:

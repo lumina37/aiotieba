@@ -17,7 +17,6 @@ import pickle
 
 from .data_structure import *
 from .logger import log
-import tiebaBrowser.api as api
 
 
 config = None
@@ -37,7 +36,7 @@ class Sessions(object):
         BDUSS_key: str 用于获取BDUSS
     """
 
-    __slots__ = ('app', 'web', 'BDUSS')
+    __slots__ = ['app', 'web', 'BDUSS']
 
     def __init__(self, BDUSS_key):
 
@@ -88,13 +87,6 @@ class Sessions(object):
         self.web.cookies = req.cookies.cookiejar_from_dict(
             {'BDUSS': self.BDUSS})
 
-    def set_host(self, url):
-        try:
-            self.web.headers['Host'] = re.search('://(.+?)/', url).group(1)
-        except AttributeError:
-            return False
-        else:
-            return True
 
 
 class Browser(object):
@@ -106,8 +98,8 @@ class Browser(object):
         BDUSS_key: str 用于获取BDUSS
     """
 
-    __slots__ = ('fid_dict',
-                 'sessions')
+    __slots__ = ['fid_dict',
+                 'sessions']
 
     def __init__(self, BDUSS_key):
 
@@ -182,9 +174,8 @@ class Browser(object):
             tbs: str 反csrf校验码tbs
         """
 
-        self.set_host(api.tbs_api)
         try:
-            res = self.sessions.web.get(api.tbs_api, timeout=(3, 10))
+            res = self.sessions.web.get("http://tieba.baidu.com/dc/common/tbs", timeout=(3, 10))
 
             if res.status_code != 200:
                 raise ValueError("status code is not 200")
@@ -213,10 +204,9 @@ class Browser(object):
         fid = self.fid_dict.get(tieba_name, None)
 
         if not fid:
-            self.set_host(api.fid_api)
             try:
                 res = self.sessions.web.get(
-                    api.fid_api, params={'kw': tieba_name, 'ie': 'utf-8'}, timeout=(3, 10))
+                    "http://tieba.baidu.com/sign/info", params={'kw': tieba_name, 'ie': 'utf-8'}, timeout=(3, 10))
 
                 if res.status_code != 200:
                     raise ValueError("status code is not 200")
@@ -256,10 +246,9 @@ class Browser(object):
         else:
             params = {'un': id}
 
-        self.set_host(api.panel_api)
         try:
             res = self.sessions.web.get(
-                api.panel_api, params=params, timeout=(3, 10))
+                "https://tieba.baidu.com/home/get/panel", params=params, timeout=(3, 10))
 
             if res.status_code != 200:
                 raise ValueError("status code is not 200")
@@ -299,7 +288,7 @@ class Browser(object):
 
         try:
             res = self.sessions.app.post(
-                api.app_thread_api, data=self._app_sign(payload), timeout=(3, 10))
+                "http://c.tieba.baidu.com/c/f/frs/page", data=self._app_sign(payload), timeout=(3, 10))
 
             if res.status_code != 200:
                 raise ValueError("status code is not 200")
@@ -339,7 +328,7 @@ class Browser(object):
 
         try:
             res = self.sessions.app.post(
-                api.app_post_api, data=self._app_sign(payload), timeout=(3, 10))
+                "http://c.tieba.baidu.com/c/f/pb/page", data=self._app_sign(payload), timeout=(3, 10))
 
             if res.status_code != 200:
                 raise ValueError("status code is not 200")
@@ -379,7 +368,7 @@ class Browser(object):
 
         try:
             res = self.sessions.app.post(
-                api.app_comment_api, data=self._app_sign(payload), timeout=(3, 10))
+                "http://c.tieba.baidu.com/c/f/pb/floor", data=self._app_sign(payload), timeout=(3, 10))
 
             if res.status_code != 200:
                 raise ValueError("status code is not 200")
@@ -407,7 +396,7 @@ class Browser(object):
 
         try:
             res = self.sessions.app.post(
-                api.self_at_api, data=self._app_sign(payload), timeout=(3, 10))
+                "http://c.tieba.baidu.com/c/u/feed/atme", data=self._app_sign(payload), timeout=(3, 10))
 
             if res.status_code != 200:
                 raise ValueError("status code is not 200")
@@ -470,7 +459,7 @@ class Browser(object):
                        }
 
             res = self.sessions.app.post(
-                api.set_privacy_api, data=self._app_sign(payload), timeout=(3, 10))
+                "http://c.tieba.baidu.com/c/c/thread/setPrivacy", data=self._app_sign(payload), timeout=(3, 10))
 
             if res.status_code != 200:
                 raise ValueError("status code is not 200")
@@ -528,7 +517,7 @@ class Browser(object):
 
         try:
             res = self.sessions.app.post(
-                api.block_api, data=self._app_sign(payload), timeout=(3, 10))
+                "http://c.tieba.baidu.com/c/c/bawu/commitprison", data=self._app_sign(payload), timeout=(3, 10))
 
             if res.status_code != 200:
                 raise ValueError("status code is not 200")
@@ -566,11 +555,10 @@ class Browser(object):
                    'fid': self._tbname2fid(tieba_name),
                    'tid': tid
                    }
-        self.set_host(api.del_thread_api)
 
         try:
             res = self.sessions.web.post(
-                api.del_thread_api, data=payload, timeout=(3, 10))
+                "https://tieba.baidu.com/f/commit/thread/delete", data=payload, timeout=(3, 10))
 
             if res.status_code != 200:
                 raise ValueError("status code is not 200")
@@ -607,11 +595,10 @@ class Browser(object):
                    'tid': '_'.join([str(tid) for tid in tids]),
                    'isBan': 0
                    }
-        self.set_host(api.del_threads_api)
 
         try:
             res = self.sessions.web.post(
-                api.del_threads_api, data=payload, timeout=(3, 10))
+                "https://tieba.baidu.com/f/commit/thread/batchDelete", data=payload, timeout=(3, 10))
 
             if res.status_code != 200:
                 raise ValueError("status code is not 200")
@@ -653,7 +640,7 @@ class Browser(object):
 
         try:
             res = self.sessions.app.post(
-                api.del_post_api, data=self._app_sign(payload), timeout=(3, 10))
+                "http://c.tieba.baidu.com/c/c/bawu/delpost", data=self._app_sign(payload), timeout=(3, 10))
 
             if res.status_code != 200:
                 raise ValueError("status code is not 200")
@@ -689,10 +676,9 @@ class Browser(object):
                    'ie': 'utf-8'
                    }
 
-        self.set_host(api.blacklist_add_api)
         try:
             res = self.sessions.web.post(
-                api.blacklist_add_api, data=payload, timeout=(3, 10))
+                "http://tieba.baidu.com/bawu2/platform/addBlack", data=payload, timeout=(3, 10))
 
             if res.status_code != 200:
                 raise ValueError("status code is not 200")
@@ -727,11 +713,10 @@ class Browser(object):
         params = {'word': tieba_name,
                   'pn': pn
                   }
-        self.set_host(api.blacklist_get_api)
 
         try:
             res = self.sessions.web.get(
-                api.blacklist_get_api, params=params, timeout=(3, 10))
+                "http://tieba.baidu.com/bawu2/platform/listBlackUser", params=params, timeout=(3, 10))
 
             has_next = True if re.search(
                 'class="next_page"', res.text) else False
@@ -773,11 +758,9 @@ class Browser(object):
         if not payload['list[]']:
             return False
 
-        self.set_host(api.blacklist_add_api)
-
         try:
             res = self.sessions.web.post(
-                api.blacklist_cancel_api, data=payload, timeout=(3, 10))
+                "http://tieba.baidu.com/bawu2/platform/cancelBlack", data=payload, timeout=(3, 10))
 
             if res.status_code != 200:
                 raise ValueError("status code is not 200")
@@ -833,11 +816,9 @@ class Browser(object):
                    'type_list[]': 1 if pid else 0
                    }
 
-        self.set_host(api.recover_api)
-
         try:
             res = self.sessions.web.post(
-                api.recover_api, data=payload, timeout=(3, 10))
+                "https://tieba.baidu.com/mo/q/bawurecoverthread", data=payload, timeout=(3, 10))
 
             if res.status_code != 200:
                 raise ValueError("status code is not 200")
@@ -877,11 +858,9 @@ class Browser(object):
                    'tbs': self._get_tbs()
                    }
 
-        self.set_host(api.unblock_api)
-
         try:
             res = self.sessions.web.post(
-                api.unblock_api, data=payload, timeout=(3, 10))
+                "https://tieba.baidu.com/mo/q/bawublockclear", data=payload, timeout=(3, 10))
 
             if res.status_code != 200:
                 raise ValueError("status code is not 200")
@@ -920,7 +899,7 @@ class Browser(object):
 
         try:
             res = self.sessions.app.post(
-                api.recommend_api, data=self._app_sign(payload), timeout=(3, 10))
+                "http://c.tieba.baidu.com/c/c/bawu/pushRecomToPersonalized", data=self._app_sign(payload), timeout=(3, 10))
 
             if res.status_code != 200:
                 raise ValueError("status code is not 200")
@@ -966,11 +945,9 @@ class Browser(object):
                        'ie': 'gbk'
                        }
 
-            self.set_host(api.appeal_handle_api)
-
             try:
                 res = self.sessions.web.post(
-                    api.appeal_handle_api, data=payload, timeout=(3, 10))
+                    "http://tieba.baidu.com/bawu2/appeal/commit", data=payload, timeout=(3, 10))
 
                 if res.status_code != 200:
                     raise ValueError("status code is not 200")
@@ -1000,11 +977,10 @@ class Browser(object):
             params = {'forum_id': self._tbname2fid(tieba_name),
                       'page': pn
                       }
-            self.set_host(api.appeal_list_api)
 
             try:
                 res = self.sessions.web.get(
-                    api.appeal_list_api, params=params, timeout=(3, 10))
+                    "http://tieba.baidu.com/bawu2/appeal/list", params=params, timeout=(3, 10))
 
                 if res.status_code != 200:
                     raise ValueError("status code is not 200")
