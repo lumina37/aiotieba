@@ -68,8 +68,8 @@ class UserInfo(object):
     @nick_name.setter
     def nick_name(self, new_nick_name):
         try:
-            if new_nick_name != self.user_name:
-                self._nick_name = str(new_nick_name)
+            if self.user_name != new_nick_name:
+                self._nick_name = new_nick_name
             else:
                 self._nick_name = ''
         except Exception:

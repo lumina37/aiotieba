@@ -167,8 +167,8 @@ class CloudReview(tiebaBrowser.CloudReview):
                 return 1
 
             if self.exp.maipian_exp.search(text):
-                if has_contact or level < 3:
-                    return 1
+                self.block(self.tieba_name, obj.user, day=10)
+                return 1
             if obj.user.gender == 2:
                 if self.exp.female_check_exp.search(text):
                     if level == 1:

@@ -139,9 +139,7 @@ class Browser(object):
         if data.__contains__('sign'):
             del data['sign']
 
-        raw_list = []
-        for key, value in data.items():
-            raw_list.extend([str(key), '=', str(value)])
+        raw_list = [f"{key}={value}" for key, value in data.items()]
         raw_str = "".join(raw_list) + "tiebaclient!!!"
 
         md5 = hashlib.md5()
@@ -149,21 +147,6 @@ class Browser(object):
         data['sign'] = md5.hexdigest().upper()
 
         return data
-
-    def set_host(self, url):
-        """
-        设置消息头的host字段
-        set_host(url)
-
-        参数:
-            url: str 待请求的地址
-        """
-
-        if self.sessions.set_host(url):
-            return True
-        else:
-            log.warning(f"Wrong type of url `{url}`")
-            return False
 
     def _get_tbs(self):
         """
