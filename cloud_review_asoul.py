@@ -1,5 +1,5 @@
 # -*- coding:utf-8 -*-
-import os
+import sys
 import time
 import argparse
 import traceback
@@ -136,7 +136,7 @@ class CloudReview(tiebaBrowser.CloudReview):
         if is_white is True:
             return -1
         elif is_white is False:
-            self.block(self.tieba_name, obj.user, day=10)
+            self.block(self.tieba_name, obj.user, day=10, reason=f"line:{sys._getframe().f_lineno}")
             return 1
         else:
             pass
@@ -157,17 +157,17 @@ class CloudReview(tiebaBrowser.CloudReview):
 
         if level < 3:
             if self.exp.job_nocheck_exp.search(text):
-                self.block(self.tieba_name, obj.user, day=10)
+                self.block(self.tieba_name, obj.user, day=10, reason=f"line:{sys._getframe().f_lineno}")
                 return 1
             if self.exp.app_nocheck_exp.search(text):
-                self.block(self.tieba_name, obj.user, day=10)
+                self.block(self.tieba_name, obj.user, day=10, reason=f"line:{sys._getframe().f_lineno}")
                 return 1
             if self.exp.game_nocheck_exp.search(text):
-                self.block(self.tieba_name, obj.user, day=10)
+                self.block(self.tieba_name, obj.user, day=10, reason=f"line:{sys._getframe().f_lineno}")
                 return 1
 
             if self.exp.maipian_exp.search(text):
-                self.block(self.tieba_name, obj.user, day=10)
+                self.block(self.tieba_name, obj.user, day=10, reason=f"line:{sys._getframe().f_lineno}")
                 return 1
             if obj.user.gender == 2:
                 if self.exp.female_check_exp.search(text):
@@ -198,7 +198,7 @@ class CloudReview(tiebaBrowser.CloudReview):
         if level == 1:
             if obj.user.user_name:
                 if self.exp.name_nocheck_exp.search(obj.user.user_name):
-                    self.block(self.tieba_name, obj.user, day=10)
+                    self.block(self.tieba_name, obj.user, day=10, reason=f"line:{sys._getframe().f_lineno}")
                     return 1
                 if self.exp.name_exp.search(obj.user.user_name):
                     if self.exp.name_check_exp.search(obj.user.user_name) or has_contact:
