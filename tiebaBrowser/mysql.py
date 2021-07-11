@@ -4,7 +4,6 @@ import sys
 from functools import wraps
 
 import json
-from hashlib import md5
 
 import pymysql
 
@@ -45,18 +44,19 @@ class MySQL(object):
             self.mydb = pymysql.connect(**mysql_json, database=db_name)
             self.mycursor = self.mydb.cursor()
         except pymysql.ProgrammingError:
-            self.mydb = mysql.connector.connect(
-                **mysql_json, auth_plugin='mysql_native_password')
-            self.mycursor = self.mydb.cursor()
-            self.mycursor.execute(f"CREATE DATABASE {db_name}")
-            self.mycursor.execute(f"USE {db_name}")
-        except:
             log.critical(f"Cannot link to the database {db_name}!")
             raise
 
     def close(self):
         self.mydb.commit()
         self.mydb.close()
+
+    def init_database(self):
+        self.mydb = mysql.connector.connect(
+            **mysql_json, auth_plugin='mysql_native_password')
+        self.mycursor = self.mydb.cursor()
+        self.mycursor.execute(f"CREATE DATABASE {db_name}")
+        self.mycursor.execute(f"USE {db_name}")
 
     def ping(self):
         """
@@ -313,70 +313,67 @@ class MySQL(object):
             else:
                 return None
 
-    def create_table_admin(self):
+    @translate_tieba_name
+    def create_table_img_blacklist(self, tieba_name_eng):
         """
-        创建表admin
-        create_table_admin()
+        创建表img_blacklist_{tieba_name_eng}
+        create_table_img_blacklist(tieba_name)
         """
 
-        self.mycursor.execute(f"SHOW TABLES LIKE 'admin'")
+        self.mycursor.execute(
+            f"SHOW TABLES LIKE 'img_blacklist_{tieba_name_eng}'")
         if not self.mycursor.fetchone():
             self.mycursor.execute(
-                f"CREATE TABLE admin (md5 CHAR(32) NOT NULL PRIMARY KEY, portrait CHAR(36) NOT NULL, tieba_name CHAR(16) NOT NULL, level TINYINT NOT NULL DEFAULT 0)")
+                f"CREATE TABLE img_blacklist_{tieba_name_eng} (img_hash CHAR(16) NOT NULL PRIMARY KEY)")
 
-    def update_admin(self, tieba_name, portrait):
+    @translate_tieba_name
+    def add_img_hash(self, tieba_name_eng, img_hash):
         """
-        更新portrait在admin中的状态
-        update_admin(tieba_name,portrait)
+        向img_blacklist_{tieba_name_eng}插入img_hash
+        add_img_hash(tieba_name,img_hash)
         """
 
-        md5_str=md5('{portrait}_{tieba_name}'.encode('utf-8')).hexdigest().upper()
         try:
             self.mycursor.execute(
-                f"INSERT INTO admin VALUES ('{md5_str}','{portrait}','{tieba_name}',{level}) ON DUPLICATE KEY UPDATE level={level}")
+                f"INSERT IGNORE INTO img_blacklist_{tieba_name_eng} SET img_hash='{img_hash}'")
         except pymysql.DatabaseError:
-            log.error(f"MySQL Error: Failed to insert {portrait} !")
+            log.error(f"MySQL Error: Failed to insert {img_hash}!")
             return False
         else:
-            log.info(
-                f"Successfully updated {portrait} in {tieba_name} level:{level}")
             self.mydb.commit()
             return True
 
-    def del_admin(self, tieba_name, portrait):
+    @translate_tieba_name
+    def has_img_hash(self, tieba_name_eng, img_hash):
         """
-        删除admin
-        del_admin(tieba_name,portrait)
+        检索img_blacklist_{tieba_name_eng}中是否已有img_hash
+        has_img_hash(tieba_name,img_hash)
         """
 
-        md5_str=md5('{portrait}_{tieba_name}'.encode('utf-8')).hexdigest().upper()
         try:
             self.mycursor.execute(
-                f"DELETE FROM admin WHERE md5='{md5_str}'")
+                f"SELECT NULL FROM img_blacklist_{tieba_name_eng} WHERE img_hash='{img_hash}'")
         except pymysql.DatabaseError:
-            log.error(f"MySQL Error: Failed to delete {portrait} in {tieba_name}!")
+            log.error(f"MySQL Error: Failed to select {img_hash}!")
+            return False
+        else:
+            return True if self.mycursor.fetchone() else False
+
+    @translate_tieba_name
+    def del_img_hash(self, tieba_name_eng, img_hash):
+        """
+        从img_blacklist_{tieba_name_eng}中删除img_hash
+        del_img_hash(tieba_name,img_hash)
+        """
+
+        try:
+            self.mycursor.execute(
+                f"DELETE FROM img_blacklist_{tieba_name_eng} WHERE tid={img_hash}")
+        except pymysql.DatabaseError:
+            log.error(f"MySQL Error: Failed to delete {img_hash}!")
             return False
         else:
             log.info(
-                f"Successfully deleted {portrait} in {tieba_name}")
+                f"Successfully deleted {img_hash} from table of {tieba_name_eng}")
             self.mydb.commit()
             return True
-
-    def get_admin_level(self, tieba_name, portrait):
-        """
-        检索portrait的管理员等级
-        get_admin_level(tieba_name,portrait)
-
-        返回值:
-            level: int 管理员等级
-        """
-
-        md5_str=md5('{portrait}_{tieba_name}'.encode('utf-8')).hexdigest().upper()
-        try:
-            self.mycursor.execute(
-                f"SELECT level FROM admin WHERE md5='{md5_str}'")
-        except pymysql.DatabaseError:
-            return None
-        else:
-            res_tuple = self.mycursor.fetchone()
-            return res_tuple[0] if res_tuple else 0

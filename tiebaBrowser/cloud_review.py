@@ -133,32 +133,63 @@ class CloudReview(Browser):
 
         return self.mysql.del_portrait(self.tieba_name, user.portrait)
 
-    def _url2image(self, img_url: str):
+    def add_img_hash(self,img_url):
+        """
+        向img_blacklist_{tieba_name_eng}插入图片
+        add_img_hash(img_url)
+        """
+
+        img_hash=self.get_imgdhash(img_url)
+        if img_hash is None:
+            return False
+
+        return self.mysql.add_img_hash(self.tieba_name,img_hash)
+
+    def has_img_hash(self,img_url):
+        """
+        检索img_blacklist_{tieba_name_eng}中是否已有图片
+        has_img_hash(img_url)
+        """
+
+        img_hash=self.get_imgdhash(img_url)
+        if img_hash is None:
+            return False
+
+        return self.mysql.has_img_hash(self.tieba_name,img_hash)
+
+    def del_img_hash(self,img_url):
+        """
+        从img_blacklist_{tieba_name_eng}中删除图片
+        del_img_hash(img_url)
+        """
+
+        img_hash=self.get_imgdhash(img_url)
+        if img_hash is None:
+            return False
+
+        return self.mysql.del_img_hash(self.tieba_name,img_hash)
+
+    def _url2image(self, img_url):
         """
         从链接获取静态图像
         """
 
-        try:
-            if not re.search('\.(jpg|jpeg|png)', img_url):
-                raise ValueError("Wrong image format")
-            res = self.sessions.web.get(img_url, timeout=(3, 10))
-            image = Image.open(BytesIO(res.content))
-        except Exception as err:
-            log.error(f"Failed to get image {img_url}. Reason:{err}")
-            image = None
+        if not re.search('\.(jpg|jpeg|png)', img_url):
+            raise ValueError("Wrong image format")
+        self.set_host(img_url)
+        res = self.sessions.web.get(img_url, timeout=(3, 10))
+        image = Image.open(BytesIO(res.content))
 
         return image
 
-    def _scan_QRcode(self, img_url: str):
+    def scan_QRcode(self, img_url):
         """
         扫描img_url指定的图像中的二维码
         """
 
-        image = self._url2image(img_url)
-        if not image:
-            return None
 
         try:
+            image = self._url2image(img_url)
             raw = pyzbar.decode(image)
             data = unquote(raw[0].data.decode('utf-8')) if raw else None
         except Exception as err:
@@ -167,14 +198,16 @@ class CloudReview(Browser):
 
         return data
 
-    def _get_imgdhash(self, img_url):
+    def get_imgdhash(self, img_url):
         """
         获取链接图像的dhash值
         """
 
-        image = self._url2image(img_url)
-        if not image:
-            return None
+        try:
+            image = self._url2image(img_url)
+            dhash = imagehash.dhash(image)
+        except Exception as err:
+            log.error(f"Failed to get dhash of {img_url}. Reason:{err}")
+            dhash = None
 
-        dhash = imagehash.dhash(image)
         return dhash

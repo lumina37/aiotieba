@@ -117,7 +117,7 @@ class CloudReview(tiebaBrowser.CloudReview):
                     return 1
                 if post.user.level < 3 and not self.white_kw_exp.search(post.text):
                     for img in post.imgs:
-                        url = self._scan_QRcode(img)
+                        url = self.scan_QRcode(img)
                         if url and url.startswith('http'):
                             return 1
         else:

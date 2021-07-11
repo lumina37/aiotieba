@@ -75,6 +75,14 @@ class Sessions(object):
         self.app.close()
         self.web.close()
 
+    def set_host(self, url):
+        try:
+            self.web.headers['Host'] = re.search('://(.+?)/', url).group(1)
+        except AttributeError:
+            return False
+        else:
+            return True
+
     def renew_BDUSS(self, BDUSS_key):
         """
         更新BDUSS
@@ -148,6 +156,20 @@ class Browser(object):
 
         return data
 
+    def set_host(self, url):
+        """
+        设置消息头的host字段
+        set_host(url)
+        参数:
+            url: str 待请求的地址
+        """
+
+        if self.sessions.set_host(url):
+            return True
+        else:
+            log.warning("Wrong type of url `{url}`")
+            return False
+
     def _get_tbs(self):
         """
         获取贴吧反csrf校验码tbs
@@ -158,6 +180,7 @@ class Browser(object):
         """
 
         try:
+            self.set_host("http://tieba.baidu.com")
             res = self.sessions.web.get("http://tieba.baidu.com/dc/common/tbs", timeout=(3, 10))
 
             if res.status_code != 200:
@@ -188,6 +211,7 @@ class Browser(object):
 
         if not fid:
             try:
+                self.set_host("http://tieba.baidu.com")
                 res = self.sessions.web.get(
                     "http://tieba.baidu.com/sign/info", params={'kw': tieba_name, 'ie': 'utf-8'}, timeout=(3, 10))
 
@@ -230,6 +254,7 @@ class Browser(object):
             params = {'un': id}
 
         try:
+            self.set_host("http://tieba.baidu.com")
             res = self.sessions.web.get(
                 "https://tieba.baidu.com/home/get/panel", params=params, timeout=(3, 10))
 
@@ -540,6 +565,7 @@ class Browser(object):
                    }
 
         try:
+            self.set_host("http://tieba.baidu.com")
             res = self.sessions.web.post(
                 "https://tieba.baidu.com/f/commit/thread/delete", data=payload, timeout=(3, 10))
 
@@ -580,6 +606,7 @@ class Browser(object):
                    }
 
         try:
+            self.set_host("http://tieba.baidu.com")
             res = self.sessions.web.post(
                 "https://tieba.baidu.com/f/commit/thread/batchDelete", data=payload, timeout=(3, 10))
 
@@ -660,6 +687,7 @@ class Browser(object):
                    }
 
         try:
+            self.set_host("http://tieba.baidu.com")
             res = self.sessions.web.post(
                 "http://tieba.baidu.com/bawu2/platform/addBlack", data=payload, timeout=(3, 10))
 
@@ -698,6 +726,7 @@ class Browser(object):
                   }
 
         try:
+            self.set_host("http://tieba.baidu.com")
             res = self.sessions.web.get(
                 "http://tieba.baidu.com/bawu2/platform/listBlackUser", params=params, timeout=(3, 10))
 
@@ -742,6 +771,7 @@ class Browser(object):
             return False
 
         try:
+            self.set_host("http://tieba.baidu.com")
             res = self.sessions.web.post(
                 "http://tieba.baidu.com/bawu2/platform/cancelBlack", data=payload, timeout=(3, 10))
 
@@ -800,6 +830,7 @@ class Browser(object):
                    }
 
         try:
+            self.set_host("http://tieba.baidu.com")
             res = self.sessions.web.post(
                 "https://tieba.baidu.com/mo/q/bawurecoverthread", data=payload, timeout=(3, 10))
 
@@ -842,6 +873,7 @@ class Browser(object):
                    }
 
         try:
+            self.set_host("http://tieba.baidu.com")
             res = self.sessions.web.post(
                 "https://tieba.baidu.com/mo/q/bawublockclear", data=payload, timeout=(3, 10))
 
@@ -929,6 +961,7 @@ class Browser(object):
                        }
 
             try:
+                self.set_host("http://tieba.baidu.com")
                 res = self.sessions.web.post(
                     "http://tieba.baidu.com/bawu2/appeal/commit", data=payload, timeout=(3, 10))
 
@@ -962,6 +995,7 @@ class Browser(object):
                       }
 
             try:
+                self.set_host("http://tieba.baidu.com")
                 res = self.sessions.web.get(
                     "http://tieba.baidu.com/bawu2/appeal/list", params=params, timeout=(3, 10))
 
