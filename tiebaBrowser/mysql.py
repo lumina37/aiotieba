@@ -340,6 +340,7 @@ class MySQL(object):
             log.error(f"MySQL Error: Failed to insert {img_hash}!")
             return False
         else:
+            log.info(f"Successfully add {img_hash} to table of {tieba_name_eng}")
             self.mydb.commit()
             return True
 
@@ -368,7 +369,7 @@ class MySQL(object):
 
         try:
             self.mycursor.execute(
-                f"DELETE FROM img_blacklist_{tieba_name_eng} WHERE tid={img_hash}")
+                f"DELETE FROM img_blacklist_{tieba_name_eng} WHERE img_hash='{img_hash}'")
         except pymysql.DatabaseError:
             log.error(f"MySQL Error: Failed to delete {img_hash}!")
             return False

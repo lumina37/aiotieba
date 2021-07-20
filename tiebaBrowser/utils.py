@@ -13,6 +13,7 @@ import requests as req
 
 import re
 import json
+from bs4 import BeautifulSoup
 import pickle
 
 from .data_structure import *
@@ -96,7 +97,6 @@ class Sessions(object):
             {'BDUSS': self.BDUSS})
 
 
-
 class Browser(object):
     """
     贴吧浏览、参数获取等API的封装
@@ -167,7 +167,7 @@ class Browser(object):
         if self.sessions.set_host(url):
             return True
         else:
-            log.warning("Wrong type of url `{url}`")
+            log.warning(f"Wrong type of url `{url}`")
             return False
 
     def _get_tbs(self):
@@ -180,8 +180,9 @@ class Browser(object):
         """
 
         try:
-            self.set_host("http://tieba.baidu.com")
-            res = self.sessions.web.get("http://tieba.baidu.com/dc/common/tbs", timeout=(3, 10))
+            self.set_host("http://tieba.baidu.com/")
+            res = self.sessions.web.get(
+                "http://tieba.baidu.com/dc/common/tbs", timeout=(3, 10))
 
             if res.status_code != 200:
                 raise ValueError("status code is not 200")
@@ -211,9 +212,9 @@ class Browser(object):
 
         if not fid:
             try:
-                self.set_host("http://tieba.baidu.com")
-                res = self.sessions.web.get(
-                    "http://tieba.baidu.com/sign/info", params={'kw': tieba_name, 'ie': 'utf-8'}, timeout=(3, 10))
+                self.set_host("http://tieba.baidu.com/")
+                res = self.sessions.web.get("http://tieba.baidu.com/sign/info", params={
+                                            'kw': tieba_name, 'ie': 'utf-8'}, timeout=(3, 10))
 
                 if res.status_code != 200:
                     raise ValueError("status code is not 200")
@@ -254,7 +255,7 @@ class Browser(object):
             params = {'un': id}
 
         try:
-            self.set_host("http://tieba.baidu.com")
+            self.set_host("http://tieba.baidu.com/")
             res = self.sessions.web.get(
                 "https://tieba.baidu.com/home/get/panel", params=params, timeout=(3, 10))
 
@@ -565,7 +566,7 @@ class Browser(object):
                    }
 
         try:
-            self.set_host("http://tieba.baidu.com")
+            self.set_host("http://tieba.baidu.com/")
             res = self.sessions.web.post(
                 "https://tieba.baidu.com/f/commit/thread/delete", data=payload, timeout=(3, 10))
 
@@ -606,7 +607,7 @@ class Browser(object):
                    }
 
         try:
-            self.set_host("http://tieba.baidu.com")
+            self.set_host("http://tieba.baidu.com/")
             res = self.sessions.web.post(
                 "https://tieba.baidu.com/f/commit/thread/batchDelete", data=payload, timeout=(3, 10))
 
@@ -660,7 +661,8 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            log.error(f"Failed to delete post {pid} in {tid} in {tieba_name}. Reason:{err}")
+            log.error(
+                f"Failed to delete post {pid} in {tid} in {tieba_name}. Reason:{err}")
             return False
 
         log.info(f"Successfully deleted post {pid} in {tid} in {tieba_name}")
@@ -687,7 +689,7 @@ class Browser(object):
                    }
 
         try:
-            self.set_host("http://tieba.baidu.com")
+            self.set_host("http://tieba.baidu.com/")
             res = self.sessions.web.post(
                 "http://tieba.baidu.com/bawu2/platform/addBlack", data=payload, timeout=(3, 10))
 
@@ -726,7 +728,7 @@ class Browser(object):
                   }
 
         try:
-            self.set_host("http://tieba.baidu.com")
+            self.set_host("http://tieba.baidu.com/")
             res = self.sessions.web.get(
                 "http://tieba.baidu.com/bawu2/platform/listBlackUser", params=params, timeout=(3, 10))
 
@@ -771,7 +773,7 @@ class Browser(object):
             return False
 
         try:
-            self.set_host("http://tieba.baidu.com")
+            self.set_host("http://tieba.baidu.com/")
             res = self.sessions.web.post(
                 "http://tieba.baidu.com/bawu2/platform/cancelBlack", data=payload, timeout=(3, 10))
 
@@ -830,7 +832,7 @@ class Browser(object):
                    }
 
         try:
-            self.set_host("http://tieba.baidu.com")
+            self.set_host("http://tieba.baidu.com/")
             res = self.sessions.web.post(
                 "https://tieba.baidu.com/mo/q/bawurecoverthread", data=payload, timeout=(3, 10))
 
@@ -873,7 +875,7 @@ class Browser(object):
                    }
 
         try:
-            self.set_host("http://tieba.baidu.com")
+            self.set_host("http://tieba.baidu.com/")
             res = self.sessions.web.post(
                 "https://tieba.baidu.com/mo/q/bawublockclear", data=payload, timeout=(3, 10))
 
@@ -952,25 +954,24 @@ class Browser(object):
                 refuse: bool 是否拒绝申诉
             """
 
-            payload = {'status': 2 if refuse else 1,
-                       'reason': 'null',
-                       'tbs': self._get_tbs(),
-                       'appeal_id': appeal_id,
-                       'forum_id': self._tbname2fid(tieba_name),
-                       'ie': 'gbk'
+            payload = {'fn': tieba_name,
+                       'fid': self._tbname2fid(tieba_name),
+                       'status': 2 if refuse else 1,
+                       'refuse_reason': 'Auto Refuse',
+                       'appeal_id': appeal_id
                        }
 
             try:
-                self.set_host("http://tieba.baidu.com")
+                self.set_host("https://tieba.baidu.com/")
                 res = self.sessions.web.post(
-                    "http://tieba.baidu.com/bawu2/appeal/commit", data=payload, timeout=(3, 10))
+                    "https://tieba.baidu.com/mo/q/bawuappealhandle", data=payload, timeout=(3, 10))
 
                 if res.status_code != 200:
                     raise ValueError("status code is not 200")
 
                 main_json = res.json()
-                if int(main_json['errno']):
-                    raise ValueError(main_json['errmsg'])
+                if int(main_json['no']):
+                    raise ValueError(main_json['error'])
 
             except Exception as err:
                 log.error(
@@ -981,47 +982,43 @@ class Browser(object):
                 f"Successfully handled {appeal_id} in {tieba_name} refuse:{refuse}")
             return True
 
-        def __get_appeal_list(pn=1):
+        def __get_appeal_list():
             """
-            获取吧申诉列表
-            __get_appeal_list(pn=1)
+            迭代返回申诉请求的编号(appeal_id)
+            __get_appeal_list()
 
-            参数:
-                pn: int 页数
+            返回:
+                appeal_id: int 申诉请求的编号
             """
 
-            params = {'forum_id': self._tbname2fid(tieba_name),
-                      'page': pn
+            params = {'fn': tieba_name,
+                      'fid': self._tbname2fid(tieba_name)
                       }
 
             try:
-                self.set_host("http://tieba.baidu.com")
-                res = self.sessions.web.get(
-                    "http://tieba.baidu.com/bawu2/appeal/list", params=params, timeout=(3, 10))
+                self.set_host("https://tieba.baidu.com/")
+                while 1:
+                    res = self.sessions.web.get(
+                        "https://tieba.baidu.com/mo/q/bawuappeal", params=params, timeout=(3, 10))
 
-                if res.status_code != 200:
-                    raise ValueError("status code is not 200")
+                    if res.status_code != 200:
+                        raise ValueError("status code is not 200")
 
-                main_json = res.json()
-                if int(main_json['errno']):
-                    raise ValueError(main_json['errmsg'])
+                    soup = BeautifulSoup(res.text, 'lxml')
 
-                has_next = True if int(
-                    main_json['pageInfo']['totalPage']) else Flase
-
-                appeal_ids = [int(raw['appeal_id'])
-                              for raw in main_json['appealRecordList']]
+                    items = soup.find_all(
+                        'li', class_='appeal_list_item j_appeal_list_item')
+                    if not items:
+                        return
+                    for item in items:
+                        appeal_id = int(
+                            re.search('aid=(\d+)', item.a['href']).group(1))
+                        yield appeal_id
 
             except Exception as err:
                 log.error(
                     f"Failed to get appeal_list of {tieba_name}. Reason:{err}")
-                has_next = False
-                appeal_ids = []
+                return
 
-            return has_next, appeal_ids
-
-        has_next = True
-        while has_next:
-            has_next, appeal_ids = __get_appeal_list()
-            for appeal_id in appeal_ids:
-                __appeal_handle(appeal_id)
+        for appeal_id in __get_appeal_list():
+            __appeal_handle(appeal_id)

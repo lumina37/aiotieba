@@ -39,15 +39,13 @@ class CloudReview(tiebaBrowser.CloudReview):
                 threads = self.get_threads(self.tieba_name)
                 for thread in threads:
                     if self._check_thread(thread):
-                        tiebaBrowser.log.info(
-                            f"Try to delete thread {thread.text} post by {thread.user.logname}")
+                        tiebaBrowser.log.info(f"Try to delete thread {thread.text} post by {thread.user.logname}")
                         self.del_thread(self.tieba_name, thread.tid)
                 tiebaBrowser.log.debug('heartbeat')
                 if self.sleep_time:
                     time.sleep(self.sleep_time)
             except Exception:
-                tiebaBrowser.log.error(
-                    f"Unexcepted error:{traceback.format_exc()}")
+                tiebaBrowser.log.error(f"Unexcepted error:{traceback.format_exc()}")
 
     def _check_thread(self, thread: tiebaBrowser.Thread):
         """
@@ -89,8 +87,7 @@ class CloudReview(tiebaBrowser.CloudReview):
                 if post.floor == 1:
                     return True
                 else:
-                    tiebaBrowser.log.info(
-                        f"Try to delete post {post.text} post by {post.user.logname}")
+                    tiebaBrowser.log.info(f"Try to delete post {post.text} post by {post.user.logname}")
                     self.del_post(self.tieba_name, post.tid, post.pid)
             elif flag == 2:
                 return True
@@ -104,6 +101,11 @@ class CloudReview(tiebaBrowser.CloudReview):
         检查回复内容
         """
 
+        if post.imgs:
+            for img in post.imgs:
+                if self.has_img_hash(img):
+                    return 1
+                    
         flag = self._check_text(post)
         if flag == -1:
             return 0
@@ -113,8 +115,6 @@ class CloudReview(tiebaBrowser.CloudReview):
             if post.is_thread_owner and post.user.level < 6 and self.exp.kill_thread_exp.search(post.text):
                 return 2
             if post.imgs:
-                if len(post.imgs) == 1 and post.imgs[0].endswith('.gif'):
-                    return 1
                 if post.user.level < 3 and not self.white_kw_exp.search(post.text):
                     for img in post.imgs:
                         url = self.scan_QRcode(img)
@@ -131,8 +131,11 @@ class CloudReview(tiebaBrowser.CloudReview):
         if self.mysql.has_pid(self.tieba_name, obj.pid):
             return -1
 
-        is_white = self.mysql.is_portrait_white(
-            self.tieba_name, obj.user.portrait)
+        text = obj.text
+        if re.search("[^t](a|v|嘉|＋|\+|➕|梓|罐|豆)(÷|/|／|➗|畜|处|除)",text,re.I):
+            return 1
+
+        is_white = self.mysql.is_portrait_white(self.tieba_name, obj.user.portrait)
         if is_white is True:
             return -1
         elif is_white is False:
@@ -144,12 +147,9 @@ class CloudReview(tiebaBrowser.CloudReview):
         level = obj.user.level
         if level > 2:
             return -1
-        text = obj.text
-
-        has_rare_contact = True if self.exp.contact_rare_exp.search(
-            text) else False
-        has_contact = True if (
-            has_rare_contact or self.exp.contact_exp.search(text)) else False
+        
+        has_rare_contact = True if self.exp.contact_rare_exp.search(text) else False
+        has_contact = True if (has_rare_contact or self.exp.contact_exp.search(text)) else False
         has_white_kw = True if self.white_kw_exp.search(text) else False
 
         if has_white_kw:
