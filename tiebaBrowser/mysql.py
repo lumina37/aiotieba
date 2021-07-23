@@ -129,7 +129,26 @@ class MySQL(object):
             return True if self.mycursor.fetchone() else False
 
     @translate_tieba_name
-    def del_pid(self, tieba_name_eng, hour):
+    def del_pid(self, tieba_name_eng, pid):
+        """
+        从pid_whitelist_{tieba_name_eng}中删除pid
+        del_pid(tieba_name,pid)
+        """
+
+        try:
+            self.mycursor.execute(
+                f"DELETE FROM pid_whitelist_{tieba_name_eng} WHERE pid={pid}")
+        except pymysql.DatabaseError:
+            log.error(f"MySQL Error: Failed to delete {pid}!")
+            return False
+        else:
+            log.info(
+                f"Successfully deleted {pid} from table of {tieba_name_eng}")
+            self.mydb.commit()
+            return True
+
+    @translate_tieba_name
+    def del_pids(self, tieba_name_eng, hour):
         """
         删除最近hour个小时pid_whitelist_{tieba_name_eng}中记录的pid
         del_pid(tieba_name,hour)

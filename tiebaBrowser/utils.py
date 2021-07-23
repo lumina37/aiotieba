@@ -22,7 +22,7 @@ from .logger import log
 
 config = None
 try:
-    with SCRIPT_DIR.parent.joinpath('config/config.json').open('r', encoding='utf-8') as file:
+    with (SCRIPT_DIR.parent / 'config/config.json').open('r', encoding='utf-8') as file:
         config = json.load(file)
 except Exception:
     log.critical("Unable to read config.json!")
@@ -111,9 +111,9 @@ class Browser(object):
 
     def __init__(self, BDUSS_key):
 
-        cache_dir = MODULE_DIR.joinpath('cache')
+        cache_dir = MODULE_DIR / 'cache'
         cache_dir.mkdir(0o700, exist_ok=True)
-        fid_cache_filepath = cache_dir.joinpath('fid_cache.pk')
+        fid_cache_filepath = cache_dir / 'fid_cache.pk'
 
         try:
             with fid_cache_filepath.open('rb') as pickle_file:
@@ -130,7 +130,7 @@ class Browser(object):
         自动缓存fid信息
         """
 
-        fid_cache_filepath = MODULE_DIR.joinpath('cache/fid_cache.pk')
+        fid_cache_filepath = MODULE_DIR / 'cache/fid_cache.pk'
 
         try:
             with fid_cache_filepath.open('wb') as pickle_file:
@@ -575,7 +575,7 @@ class Browser(object):
 
             main_json = res.json()
             if int(main_json['err_code']):
-                raise ValueError(main_json['err_code'])
+                raise ValueError(main_json['error'])
 
         except Exception as err:
             log.error(
