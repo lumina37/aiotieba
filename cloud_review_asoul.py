@@ -26,8 +26,8 @@ class CloudReview(tiebaBrowser.CloudReview):
                          '(a|b|睿|皇协|批|p)站|b博|海鲜|(v|a)(吧|8)|nga|404|ytb|论坛|字幕组|粉丝群|直播间',
                          '4v|樱花妹|中之人|国v|个人势|holo|虹|🌈|2434|杏|vr|木口|猴楼|皮套|纸片人|套皮|主播|小红|团长|嘉然|然然|向晚|晚晚|乃琳|奶琳|贝拉|拉姐|珈乐|p\+|p家|帕里|爬犁|a(骚|s)|向晚|梓|(海|孩)子姐|七海|爱丽丝',
                          '联动|歌回|杂谈|歌力|企划|前世|sc|弹幕|二次元|开播|取关|bv',
-                         '谜语|拉胯|虚无|成分|黑屁|黑料|破防|真可怜|开团|(好|烂)活|干碎|对线|整活|乐了|乐子|橄榄|罢了|可爱|钓鱼|梁木|节奏|冲锋|yygq|芜狐|别尬|阴间|泪目|图一乐|差不多得了',
-                         '懂哥|孝子|懂哥|mmr|gachi|anti|粉丝|太监|天狗|crew|杏奴|贵物|沙口|小鬼|后浪|人(↑|上)人|仌|鼠人|幻官|宦官|幻士|嘉心糖|顶碗人|贝极星|奶淇淋|皇珈|泥哥|小兔子']
+                         '谜语|拉胯|虚无|成分|黑屁|黑料|破防|真可怜|开团|(好|烂)活|干碎|对线|整活|乐了|乐子|橄榄|罢了|可爱|钓鱼|梁木|节奏|冲锋|yygq|芜狐|别尬|阴间|泪目|图一乐',
+                         '懂哥|孝子|mmr|gachi|anti|粉丝|太监|天狗|crew|杏奴|贵物|沙口|小鬼|后浪|人(↑|上)人|仌|鼠人|幻官|宦官|幻士|嘉心糖|顶碗人|贝极星|奶淇淋|皇珈|泥哥|小兔子']
         self.white_kw_exp = re.compile('|'.join(white_kw_list), re.I)
 
     def close(self):
@@ -77,7 +77,7 @@ class CloudReview(tiebaBrowser.CloudReview):
             second_floor = posts[1]
             if second_floor.reply_num > 0:
                 for comment in self.get_comments(second_floor.tid, second_floor.pid):
-                    if comment.user.level < 5 and re.search('面团', comment.text):
+                    if comment.user.level < 5 and re.search('面团|宅.{0,5}度娘|免費', comment.text):
                         self.block(self.tieba_name, comment.user, 10)
                         self.del_post(self.tieba_name,
                                       comment.tid, comment.pid)
@@ -110,10 +110,6 @@ class CloudReview(tiebaBrowser.CloudReview):
 
         flag = self._check_text(post)
         if flag == -1:
-            if post.imgs:
-                for img in post.imgs:
-                    if self.has_img_hash(img):
-                        return 1
             return 0
         elif flag == 1:
             return 1
@@ -121,9 +117,6 @@ class CloudReview(tiebaBrowser.CloudReview):
             if post.is_thread_owner and post.user.level < 6 and self.exp.kill_thread_exp.search(post.text):
                 return 2
             if post.imgs:
-                for img in post.imgs:
-                    if self.has_img_hash(img):
-                        return 1
                 if post.user.level < 3 and not self.white_kw_exp.search(post.text):
                     for img in post.imgs:
                         url = self.scan_QRcode(img)
@@ -140,15 +133,20 @@ class CloudReview(tiebaBrowser.CloudReview):
         if self.mysql.has_pid(self.tieba_name, obj.pid):
             return -1
 
+        if type(obj) is tiebaBrowser.Post:
+            for img in obj.imgs:
+                if self.has_img_hash(img):
+                    return 1
+
         text = obj.text
-        if re.search("[^t](a|v|嘉|＋|\+|➕|梓|罐|豆)(÷|/|／|➗|畜|处|除)", text, re.I):
+        if re.search("(a|(?<!t)v|嘉|＋|\+|➕|梓|罐|豆)(÷|/|／|➗|畜|处|除)|皮套狗", text, re.I) is not None:
             return 1
 
         is_white = self.mysql.is_portrait_white(
             self.tieba_name, obj.user.portrait)
-        if is_white is True:
+        if is_white == True:
             return -1
-        elif is_white is False:
+        elif is_white == False:
             self.block(self.tieba_name, obj.user, day=10,
                        reason=f"line:{sys._getframe().f_lineno}")
             return 1
