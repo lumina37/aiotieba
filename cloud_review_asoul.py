@@ -24,10 +24,11 @@ class CloudReview(tiebaBrowser.CloudReview):
 
         white_kw_list = ['vup|管人|(哪个|什么)v',
                          '(a|b|睿|皇协|批|p)站|b博|海鲜|(v|a)(吧|8)|nga|404|ytb|论坛|字幕组|粉丝群|直播间',
-                         '4v|樱花妹|中之人|国v|个人势|holo|虹|🌈|2434|杏|vr|木口|猴楼|皮套|纸片人|套皮|主播|小红|团长|嘉然|然然|向晚|晚晚|乃琳|奶琳|贝拉|拉姐|珈乐|p\+|p家|帕里|爬犁|a(骚|s)|向晚|梓|(海|孩)子姐|七海|爱丽丝',
+                         '4v|樱花妹|中之人|国v|个人势|holo|asoul|2434|vr|木口|猴楼|皮套|纸片人|套皮|主播|小红|团长|嘉然|然然|向晚|晚晚|乃琳|奶琳|贝拉|拉姐|珈乐|p\+|p家|帕里|爬犁|a(骚|s)|向晚|梓|(海|孩)子姐|七海|爱丽丝',
                          '联动|歌回|杂谈|歌力|企划|前世|sc|弹幕|二次元|开播|取关|bv',
-                         '谜语|拉胯|虚无|成分|黑屁|黑料|破防|真可怜|开团|(好|烂)活|干碎|对线|整活|乐了|乐子|橄榄|罢了|可爱|钓鱼|梁木|节奏|冲锋|yygq|芜狐|别尬|阴间|泪目|图一乐',
-                         '懂哥|孝子|mmr|gachi|anti|粉丝|太监|天狗|crew|杏奴|贵物|沙口|小鬼|后浪|人(↑|上)人|仌|鼠人|幻官|宦官|幻士|嘉心糖|顶碗人|贝极星|奶淇淋|皇珈|泥哥|小兔子']
+                         '谜语|拉胯|虚无|成分|黑屁|黑料|破防|真可怜|开团|(好|烂)活|干碎|对线|整活|乐了|乐子|橄榄|罢了|钓鱼|梁木|节奏|冲锋|yygq|阴间|泪目|图一乐|晚安',
+                         '懂哥|孝子|mmr|粉丝|天狗|crew|杏奴|幻官|宦官|幻士|嘉心糖|顶碗人|贝极星|奶淇淋|n70|皇(珈|家)|泥哥|小兔子|(a|b)u|一个魂',
+                         '空子|有空有空']
         self.white_kw_exp = re.compile('|'.join(white_kw_list), re.I)
 
     def close(self):
@@ -54,9 +55,6 @@ class CloudReview(tiebaBrowser.CloudReview):
         检查thread内容
         """
 
-        if thread.user.user_name in ['yqm思念',]:
-            return True
-
         posts = self.get_posts(thread.tid)
         if len(posts) == 0:
             return False
@@ -77,12 +75,12 @@ class CloudReview(tiebaBrowser.CloudReview):
             second_floor = posts[1]
             if second_floor.reply_num > 0:
                 for comment in self.get_comments(second_floor.tid, second_floor.pid):
-                    if comment.user.level < 5 and re.search('面团|宅.{0,5}度娘|免費', comment.text):
+                    if comment.user.level < 5 and re.search('面团|宅.{0,5}度娘|免費|[𝟙-𝟡]|仓井空在等尼', comment.text):
                         self.block(self.tieba_name, comment.user, 10)
                         self.del_post(self.tieba_name,
                                       comment.tid, comment.pid)
 
-        if posts.current_pn > 1:
+        if posts.total_pn > 1:
             posts = self.get_posts(thread.tid, 9999)
 
         for post in posts:
@@ -150,12 +148,12 @@ class CloudReview(tiebaBrowser.CloudReview):
             self.block(self.tieba_name, obj.user, day=10,
                        reason=f"line:{sys._getframe().f_lineno}")
             return 1
-        else:
-            pass
 
         level = obj.user.level
-        if level > 2:
+        if level > 4:
             return -1
+        elif level == 1:
+            return 1
 
         has_white_kw = True if self.white_kw_exp.search(text) else False
         if has_white_kw:

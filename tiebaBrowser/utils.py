@@ -288,8 +288,7 @@ class Browser(object):
             threads: core.Threads
         """
 
-        payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_version': '12.7.5.3',
+        payload = {'_client_version': '12.7.5.3',
                    'kw': tieba_name,
                    'pn': pn,
                    'rn': rn
