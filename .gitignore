@@ -9,7 +9,6 @@ log/
 tiebaBrowser/cache/
 cloud_review_v.py
 cloud_review_soulknight.py
-block_cycle.py
 admin_operation.py
 admin_listen.py
 mysql_operation.py
