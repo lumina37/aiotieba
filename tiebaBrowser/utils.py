@@ -450,17 +450,9 @@ class Browser(object):
 
         try:
             payload = {'BDUSS': self.sessions.BDUSS,
-                       '_client_id': 'wappc_1600500414046_633',
-                       '_client_type': 2,
                        '_client_version': '12.7.5.3',
-                       '_phone_imei': '000000000000000',
-                       'cuid': self.sessions.app_headers['cuid'],
-                       'cuid_galaxy2': self.sessions.app_headers['cuid_galaxy2'],
-                       'cuid_gid': '',
                        'forum_id': posts[0].fid,
-                       'is_hide': hide,
-                       'model': 'TAS-AN00',
-                       'net_type': 1,
+                       'is_hide': int(hide),
                        'post_id': posts[0].pid,
                        'tbs': self._get_tbs(),
                        'thread_id': tid

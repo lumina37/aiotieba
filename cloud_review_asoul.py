@@ -37,20 +37,21 @@ class CloudReview(tiebaBrowser.CloudReview):
     def run(self):
         while True:
             try:
-                threads = self.get_threads(self.tieba_name)
+                _threads = self.get_threads(self.tieba_name)
                 users = {}
-                for thread in threads:
+                for thread in _threads:
                     if self._check_thread(thread):
                         tiebaBrowser.log.info(f"Try to delete thread {thread.text} post by {thread.user.logname}")
                         self.del_thread(self.tieba_name, thread.tid)
                         continue
-                    user_tids = users.get(thread.user.portrait,[])
-                    user_tids.append(thread.tid)
-                    users[thread.user.portrait] = user_tids
-                for portrait,tids in users.items():
-                    if len(tids) >= 4:
-                        for tid in tids:
-                            self.del_thread(self.tieba_name,tid)
+                    user_threads = users.get(thread.user.portrait,[])
+                    user_threads.append(thread)
+                    users[thread.user.portrait] = user_threads
+                for portrait,_threads in users.items():
+                    if len(_threads) >= 4:
+                        for thread in _threads:
+                            if thread.like < 30 or thread.reply_num < 30:
+                                self.del_thread(self.tieba_name,thread)
                 tiebaBrowser.log.debug('heartbeat')
                 if self.sleep_time:
                     time.sleep(self.sleep_time)
@@ -157,8 +158,6 @@ class CloudReview(tiebaBrowser.CloudReview):
         level = obj.user.level
         if level > 4:
             return -1
-        elif level == 1:
-            return 1
 
         has_white_kw = True if self.white_kw_exp.search(text) else False
         if has_white_kw:
