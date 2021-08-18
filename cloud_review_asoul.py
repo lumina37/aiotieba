@@ -51,7 +51,7 @@ class CloudReview(tiebaBrowser.CloudReview):
                     if len(_threads) >= 4:
                         for thread in _threads:
                             if thread.like < 30 or thread.reply_num < 30:
-                                self.del_thread(self.tieba_name,thread)
+                                self.del_thread(self.tieba_name,thread.tid)
                 tiebaBrowser.log.debug('heartbeat')
                 if self.sleep_time:
                     time.sleep(self.sleep_time)
