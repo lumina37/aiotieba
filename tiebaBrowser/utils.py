@@ -43,16 +43,8 @@ class Sessions(object):
 
         self.app = req.Session()
         self.app.headers = req.structures.CaseInsensitiveDict({'Content-Type': 'application/x-www-form-urlencoded',
-                                                               'Charset': 'UTF-8',
-                                                               'User-Agent': 'bdtb for Android 12.7.5.3',
+                                                               'User-Agent': 'bdtb for Android 12.8.2.1',
                                                                'Connection': 'Keep-Alive',
-                                                               'client_logid': '1600505010776',
-                                                               'client_user_token': '957339815',
-                                                               'cuid': '573B24810C196E865FCB86C51EF8AC09|VDVSTWVBW',
-                                                               'cuid_galaxy2': '573B24810C196E865FCB86C51EF8AC09|VDVSTWVBW',
-                                                               'cuid_gid': '',
-                                                               'c3_aid': 'A00-J63VLDXPDOTDMRZVGYYOLCWFVKGRXMQO-UVT3YYGX',
-                                                               'client_type': '2',
                                                                'Accept-Encoding': 'gzip',
                                                                'Accept': '*/*',
                                                                'Host': 'c.tieba.baidu.com',
@@ -60,9 +52,8 @@ class Sessions(object):
 
         self.web = req.Session()
         self.web.headers = req.structures.CaseInsensitiveDict({'Host': 'tieba.baidu.com',
-                                                               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
+                                                               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101 Firefox/91.0',
                                                                'Accept': '*/*',
-                                                               'Accept-Language': 'zh-CN',
                                                                'Accept-Encoding': 'gzip, deflate, br',
                                                                'DNT': '1',
                                                                'Cache-Control': 'no-cache',
@@ -288,7 +279,7 @@ class Browser(object):
             threads: core.Threads
         """
 
-        payload = {'_client_version': '12.7.5.3',
+        payload = {'_client_version': '12.8.2.1',
                    'kw': tieba_name,
                    'pn': pn,
                    'rn': rn
@@ -328,7 +319,7 @@ class Browser(object):
             posts: core.Posts
         """
 
-        payload = {'_client_version': '12.7.5.3',
+        payload = {'_client_version': '12.8.2.1',
                    'kz': tid,
                    'pn': pn,
                    'rn': rn
@@ -368,7 +359,7 @@ class Browser(object):
             comments: core.Comments
         """
 
-        payload = {'_client_version': '12.7.5.3',
+        payload = {'_client_version': '12.8.2.1',
                    'kz': tid,
                    'pid': pid,
                    'pn': pn
@@ -450,7 +441,7 @@ class Browser(object):
 
         try:
             payload = {'BDUSS': self.sessions.BDUSS,
-                       '_client_version': '12.7.5.3',
+                       '_client_version': '12.8.2.1',
                        'forum_id': posts[0].fid,
                        'is_hide': int(hide),
                        'post_id': posts[0].pid,
@@ -501,7 +492,7 @@ class Browser(object):
                 return False, user
 
         payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_version': '12.7.5.3',
+                   '_client_version': '12.8.2.1',
                    'day': day,
                    'fid': self._tbname2fid(tieba_name),
                    'nick_name': user.nick_name if user.nick_name else user.user_name,
@@ -549,7 +540,7 @@ class Browser(object):
         """
 
         payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_version': '12.7.5.3',
+                   '_client_version': '12.8.2.1',
                    'fid': self._tbname2fid(tieba_name),
                    'is_vipdel': 0,
                    'tbs': self._get_tbs(),
@@ -631,7 +622,7 @@ class Browser(object):
         """
 
         payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_version': '12.7.5.3',
+                   '_client_version': '12.8.2.1',
                    'fid': self._tbname2fid(tieba_name),
                    'is_vipdel': 0,
                    'pid': pid,
@@ -898,7 +889,7 @@ class Browser(object):
         """
 
         payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_version': '12.7.5.3',
+                   '_client_version': '12.8.2.1',
                    'forum_id': self._tbname2fid(tieba_name),
                    'tbs': self._get_tbs(),
                    'thread_id': tid

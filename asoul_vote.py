@@ -16,7 +16,7 @@ vote_res_list = []
 
 start_time = time.time()
 for tid in tids:
-    for post_pn in range(1, 3):
+    for post_pn in range(1, 0xff):
         posts = brow.get_posts(tid, post_pn)
 
         for post in posts:
@@ -33,7 +33,7 @@ for tid in tids:
                 for comment in comments:
                     if comment.user.level < 8:
                         continue
-                    if '支持' not in comment.text:
+                    if re.search('支持|(支|枝|吱)$|字词',comment.text) is None:
                         tb.log.warning(
                             f"Incorrect format. tid:{tid} floor:{post.floor} author:{comment.user.logname} text:{comment.text}")
                         continue
