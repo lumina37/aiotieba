@@ -138,21 +138,21 @@ class CloudReview(tiebaBrowser.CloudReview):
         if self.mysql.has_pid(self.tieba_name, obj.pid):
             return -1
 
-        if type(obj) is tiebaBrowser.Post:
-            for img in obj.imgs:
-                if self.has_img_hash(img):
-                    return 1
-
-        text = obj.text
-        if re.search("(a|(?<!t)v|嘉|＋|\+|➕|梓|罐|豆)(÷|/|／|➗|畜|处|除)|皮套狗", text, re.I) is not None:
-            return 1
-
         is_white = self.mysql.is_portrait_white(self.tieba_name, obj.user.portrait)
         if is_white == True:
             return -1
         elif is_white == False:
             self.block(self.tieba_name, obj.user, day=10,
                        reason=f"line:{sys._getframe().f_lineno}")
+            return 1
+
+        if type(obj) is tiebaBrowser.Post:
+            for img in obj.imgs:
+                if self.has_img_hash(img):
+                    return 1
+
+        text = obj.text
+        if re.search("(a|(?<!t)v|嘉|＋|\+|➕|梓|罐|豆|鸟|鲨)(÷|/|／|➗|畜|处|除)|皮套狗", text, re.I) is not None:
             return 1
 
         level = obj.user.level

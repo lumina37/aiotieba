@@ -64,16 +64,9 @@ class MySQL(object):
         """
 
         try:
-            self.mydb.cmd_ping()
+            self.mydb.ping()
         except pymysql.MySQLError:
-            try:
-                self.mydb.reconnect()
-                self.mycursor = self.mydb.cursor()
-                self.mycursor.execute(f"USE {self.db_name}")
-            except pymysql.MySQLError:
-                return False
-            else:
-                return True
+            return False
         else:
             return True
 
