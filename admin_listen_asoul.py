@@ -122,7 +122,7 @@ class Listener(object):
 
     def scan(self):
         self.time_range.set()
-        ats = self.listener.get_self_ats()
+        ats = self.listener.get_ats()
 
         need_post = False
         if ats:

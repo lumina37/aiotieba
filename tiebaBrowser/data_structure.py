@@ -21,6 +21,7 @@ MODULE_DIR = Path(__file__).parent
 
 class UserInfo(object):
     """
+    UserInfo()
     用户属性，一般包括下列五项
 
     user_name: 发帖用户名
@@ -37,42 +38,23 @@ class UserInfo(object):
                  '_level',
                  '_gender']
 
-    def __init__(self, _dict=None):
-        if not isinstance(_dict, dict):
-            self._set_null()
-            return
-
-        try:
-            self.user_name = _dict.get('name', '')
-            self.nick_name = _dict.get('name_show', '')
-            self.portrait = _dict['portrait']
-            self.user_id = _dict.get('id', None)
-            self.level = _dict.get('level_id', None)
-            self.gender = _dict.get('gender', None)
-        except Exception:
-            log.warning(traceback.format_exc())
-            self._set_null()
-
-    def _set_null(self):
-        self.user_name = ''
-        self._nick_name = ''
-        self._portrait = ''
-        self._user_id = 0
-        self._level = 0
-        self._gender = 0
+    def __init__(self, user_name='', nick_name='', portrait='', user_id=0, level=0, gender=0):
+        self.user_name = user_name
+        self.nick_name = nick_name
+        self.portrait = portrait
+        self.user_id = user_id
+        self.level = level
+        self.gender = gender
 
     @property
     def nick_name(self):
         return self._nick_name
 
     @nick_name.setter
-    def nick_name(self, new_nick_name):
-        try:
-            if self.user_name != new_nick_name:
-                self._nick_name = new_nick_name
-            else:
-                self._nick_name = ''
-        except Exception:
+    def nick_name(self, new_nick_name: str):
+        if self.user_name != new_nick_name:
+            self._nick_name = new_nick_name
+        else:
             self._nick_name = ''
 
     @property
@@ -80,12 +62,13 @@ class UserInfo(object):
         return self._portrait
 
     @portrait.setter
-    def portrait(self, new_portrait):
+    def portrait(self, new_portrait: str):
         try:
             assert new_portrait.startswith(
                 'tb.'), f"portrait:{new_portrait} do not start with tb."
             new_portrait = new_portrait[:36]
-            self._portrait = new_portrait[:-1] if new_portrait.endswith('?') else new_portrait
+            self._portrait = new_portrait[:-
+                                          1] if new_portrait.endswith('?') else new_portrait
         except Exception:
             self._portrait = ''
 
@@ -134,20 +117,6 @@ class UserInfo(object):
             return f'{self.nick_name}/{self.portrait}'
 
 
-class UserInfo_Dict(dict):
-    """
-    可按id检索用户的字典
-    UserInfo_Dict(user_list:list)
-
-    参数:
-        user_list: list 必须是从app接口获取的用户信息列表！
-    """
-
-    def __init__(self, user_list: list):
-        for user_dict in user_list:
-            self[user_dict['id']] = UserInfo(user_dict)
-
-
 class _BaseContent(object):
     """
     基本的内容信息
@@ -159,16 +128,14 @@ class _BaseContent(object):
     user: UserInfo类 发布者信息
     """
 
-    __slots__ = ['_fid', '_tid', '_pid',
-                 '_text',
-                 'user']
+    __slots__ = ['_fid', '_tid', '_pid', '_text', 'user']
 
-    def __init__(self):
-        self._fid = 0
-        self._tid = 0
-        self._pid = 0
-        self._text = ''
-        self.user = UserInfo()
+    def __init__(self, fid=0, tid=0, pid=0, text='', user=UserInfo()):
+        self._fid = fid
+        self._tid = tid
+        self._pid = pid
+        self._text = text
+        self.user = user
 
     @property
     def fid(self):
@@ -207,26 +174,32 @@ class Thread(_BaseContent):
     fid: 所在吧id
     tid: 帖子编号
     pid: 回复编号
+    user: UserInfo类 发布者信息
     title: 标题内容
     first_floor_text: 首楼内容
-    reply_num: 回复数
     has_audio: 是否含有音频
     has_video: 是否含有视频
+    reply_num: 回复数
     like: 点赞数
     dislike: 点踩数
     create_time: 10位时间戳 创建时间
     last_time: 10位时间戳 最后回复时间
-    user: UserInfo类 发布者信息
     """
 
-    __slots__ = ['first_floor_text', 'title',
-                 '_reply_num',
-                 'has_audio', 'has_video',
-                 '_like', '_dislike',
-                 '_create_time', '_last_time']
+    __slots__ = ['title', 'first_floor_text', 'has_audio', 'has_video',
+                 '_reply_num', '_like', '_dislike', '_create_time', '_last_time']
 
-    def __init__(self):
-        self._text = ''
+    def __init__(self, fid=0, tid=0, pid=0, user=UserInfo(), title='', first_floor_text='', has_audio=False, has_video=False, reply_num=0, like=0, dislike=0, create_time=0, last_time=0):
+        super().__init__(fid=fid, tid=tid, pid=pid, user=user)
+        self.title = title
+        self.first_floor_text = first_floor_text
+        self.has_audio = has_audio
+        self.has_video = has_video
+        self.reply_num = reply_num
+        self.like = like
+        self.dislike = dislike
+        self.create_time = create_time
+        self.last_time = last_time
 
     @property
     def text(self):
@@ -274,24 +247,6 @@ class Thread(_BaseContent):
     def last_time(self, new_last_time):
         self._last_time = int(new_last_time)
 
-    def _init_content(self, content_fragments: list):
-        """
-        从回复内容的碎片列表中提取有用信息
-        _init_content(content_fragments:list)
-        """
-
-        if not isinstance(content_fragments, list):
-            self.first_floor_text = ''
-            return
-
-        texts = []
-        for fragment in content_fragments:
-            if fragment['type'] in ['0', '4', '9', '18']:
-                texts.append(fragment['text'])
-            elif fragment['type'] == '1':
-                texts.append(f"{fragment['link']} {fragment['text']}")
-        self.first_floor_text = ''.join(texts)
-
 
 class Threads(list):
     """
@@ -303,39 +258,59 @@ class Threads(list):
     def __init__(self, main_json=None):
 
         if main_json:
-            users = UserInfo_Dict(main_json['user_list'])
+            users = {}
+            for user_dict in main_json['user_list']:
+                users[user_dict['id']] = UserInfo(user_name=user_dict['name'],
+                                                  nick_name=user_dict['name_show'],
+                                                  portrait=user_dict['portrait'],
+                                                  user_id=user_dict['id'],
+                                                  gender=user_dict['gender'])
             fid = main_json['forum']['id']
 
             for thread_raw in main_json['thread_list']:
                 try:
                     if thread_raw['task_info']:
                         continue
-                    thread = Thread()
-                    thread.user = users.get(
-                        thread_raw['author_id'], UserInfo())
-                    thread.title = thread_raw['title']
-                    thread.fid = fid
-                    thread.tid = thread_raw['tid']
-                    thread.pid = thread_raw['first_post_id']
-                    thread._init_content(
-                        thread_raw.get('first_post_content', None))
-                    thread.reply_num = thread_raw['reply_num']
-                    thread.create_time = thread_raw['create_time']
-                    thread.has_audio = True if thread_raw.get(
-                        'voice_info', None) else False
-                    thread.has_video = True if thread_raw.get(
-                        'video_info', None) else False
+
+                    texts = []
+                    for fragment in thread_raw['first_post_content']:
+                        if fragment['type'] in ['0', '4', '9', '18']:
+                            texts.append(fragment['text'])
+                        elif fragment['type'] == '1':
+                            texts.append(
+                                f"{fragment['link']} {fragment['text']}")
+                    first_floor_text = ''.join(texts)
+
                     if isinstance(thread_raw['agree'], dict):
-                        thread.like = thread_raw['agree']['agree_num']
-                        thread.dislike = thread_raw['agree']['disagree_num']
+                        like = thread_raw['agree']['agree_num']
+                        dislike = thread_raw['agree']['disagree_num']
                     else:
-                        thread.like = thread_raw['agree_num']
-                        thread.dislike = 0
-                    thread.last_time = thread_raw['last_time_int']
+                        like = thread_raw['agree_num']
+                        dislike = 0
+
+                    thread = Thread(fid=fid,
+                                    tid=thread_raw['tid'],
+                                    pid=thread_raw['first_post_id'],
+                                    user=users.get(
+                                        thread_raw['author_id'], UserInfo()),
+                                    title=thread_raw['title'],
+                                    first_floor_text=first_floor_text,
+                                    has_audio=True if thread_raw.get(
+                                        'voice_info', None) else False,
+                                    has_video=True if thread_raw.get(
+                                        'video_info', None) else False,
+                                    reply_num=thread_raw['reply_num'],
+                                    like=like,
+                                    dislike=dislike,
+                                    create_time=thread_raw['create_time'],
+                                    last_time=thread_raw['last_time_int']
+                                    )
+
                     self.append(thread)
+
                 except:
                     log.warning(traceback.format_exc())
-                    raise
+                    continue
 
             self.current_pn = main_json['page']['current_page']
             self.total_pn = main_json['page']['total_page']
@@ -370,35 +345,39 @@ class Post(_BaseContent):
     楼层信息
 
     text: 所有文本
-    content: 正文
     fid: 所在吧id
     tid: 帖子编号
     pid: 回复编号
-    reply_num: 楼中楼回复数
-    like: 点赞数
-    dislike: 点踩数
-    floor: 楼层数
-    has_audio: 是否含有音频
-    create_time: 10位时间戳，创建时间
+    user: UserInfo类 发布者信息
+    content: 正文
     sign: 小尾巴
     imgs: 图片列表
     smileys: 表情列表
-    user: UserInfo类 发布者信息
+    has_audio: 是否含有音频
+    floor: 楼层数
+    reply_num: 楼中楼回复数
+    like: 点赞数
+    dislike: 点踩数
+    create_time: 10位时间戳，创建时间
     is_thread_owner: 是否楼主
     """
 
-    __slots__ = ['content',
-                 '_reply_num',
-                 '_like', '_dislike',
-                 '_floor',
-                 'has_audio',
-                 '_create_time',
-                 'sign', 'imgs', 'smileys',
-                 'is_thread_owner']
+    __slots__ = ['content', 'sign', 'imgs', 'smileys', 'has_audio', '_floor',
+                 '_reply_num', '_like', '_dislike', '_create_time', 'is_thread_owner']
 
-    def __init__(self):
-        self._text = ''
-        pass
+    def __init__(self, fid=0, tid=0, pid=0, user=UserInfo(), content='', sign='', imgs=[], smileys=[], has_audio=False, floor=0, reply_num=0, like=0, dislike=0, create_time=0, is_thread_owner=False):
+        super().__init__(fid=fid, tid=tid, pid=pid, user=user)
+        self.content = content
+        self.sign = sign
+        self.imgs = imgs
+        self.smileys = smileys
+        self.has_audio = has_audio
+        self.floor = floor
+        self.reply_num = reply_num
+        self.like = like
+        self.dislike = dislike
+        self.create_time = create_time
+        self.is_thread_owner = is_thread_owner
 
     @property
     def text(self):
@@ -446,30 +425,6 @@ class Post(_BaseContent):
     def create_time(self, new_create_time):
         self._create_time = int(new_create_time)
 
-    def _init_content(self, content_fragments: list):
-        """
-        从回复内容的碎片列表中提取有用信息
-        _init_content(content_fragments:list)
-        """
-
-        texts = []
-        self.imgs = []
-        self.smileys = []
-        self.has_audio = False
-        for fragment in content_fragments:
-            if fragment['type'] in ['0', '4', '9', '18']:
-                texts.append(fragment['text'])
-            elif fragment['type'] == '1':
-                texts.append(fragment['link'])
-                texts.append(' ' + fragment['text'])
-            elif fragment['type'] == '2':
-                self.smileys.append(fragment['text'])
-            elif fragment['type'] == '3':
-                self.imgs.append(fragment['origin_src'])
-            elif fragment['type'] == '10':
-                self.has_audio = True
-        self.content = ''.join(texts)
-
 
 class Posts(list):
     """
@@ -484,32 +439,66 @@ class Posts(list):
     def __init__(self, main_json=None):
 
         if main_json:
-            users = UserInfo_Dict(main_json['user_list'])
+            users = {}
+            for user_dict in main_json['user_list']:
+                if not user_dict.get('portrait', None):
+                    continue
+                users[user_dict['id']] = UserInfo(user_name=user_dict['name'],
+                                                  nick_name=user_dict['name_show'],
+                                                  portrait=user_dict['portrait'],
+                                                  user_id=user_dict['id'],
+                                                  level=user_dict.get(
+                                                      'level_id', 0),
+                                                  gender=user_dict['gender'])
+
             thread_owner_id = main_json["thread"]['author']['id']
-            tid = main_json['thread']['id']
             fid = main_json['forum']['id']
+            tid = main_json['thread']['id']
 
             for post_raw in main_json['post_list']:
                 try:
-                    post = Post()
-                    post.user = users.get(post_raw['author_id'], UserInfo())
-                    post.fid = fid
-                    post.tid = tid
-                    post.pid = post_raw['id']
-                    post._init_content(post_raw['content'])
-                    post.reply_num = post_raw['sub_post_number']
-                    post.create_time = post_raw['time']
-                    post.like = post_raw['agree']['agree_num']
-                    post.dislike = post_raw['agree']['disagree_num']
-                    post.floor = post_raw['floor']
-                    post.is_thread_owner = post_raw['author_id'] == thread_owner_id
-                    post.sign = ''.join([sign['text'] for sign in post_raw['signature']['content']
-                                        if sign['type'] == '0']) if post_raw.get('signature', None) else ''
+
+                    texts = []
+                    imgs = []
+                    smileys = []
+                    has_audio = False
+                    for fragment in post_raw['content']:
+                        if fragment['type'] in ['0', '4', '9', '18']:
+                            texts.append(fragment['text'])
+                        elif fragment['type'] == '1':
+                            texts.append(fragment['link'])
+                            texts.append(' ' + fragment['text'])
+                        elif fragment['type'] == '2':
+                            smileys.append(fragment['text'])
+                        elif fragment['type'] == '3':
+                            imgs.append(fragment['origin_src'])
+                        elif fragment['type'] == '10':
+                            has_audio = True
+                    content = ''.join(texts)
+
+                    post = Post(fid=fid,
+                                tid=tid,
+                                pid=post_raw['id'],
+                                user=users.get(
+                                    post_raw['author_id'], UserInfo()),
+                                content=content,
+                                sign=''.join([sign['text'] for sign in post_raw['signature']['content']
+                                              if sign['type'] == '0']) if post_raw.get('signature', None) else '',
+                                imgs=imgs,
+                                smileys=smileys,
+                                has_audio=has_audio,
+                                floor=post_raw['floor'],
+                                reply_num=post_raw['sub_post_number'],
+                                like=post_raw['agree']['agree_num'],
+                                dislike=post_raw['agree']['disagree_num'],
+                                is_thread_owner=post_raw['author_id'] == thread_owner_id,
+                                )
+
                     self.append(post)
 
                 except Exception:
                     log.warning(traceback.format_exc())
-                    raise
+                    continue
 
             self.current_pn = main_json['page']['current_page']
             self.total_pn = main_json['page']['total_page']
@@ -544,23 +533,27 @@ class Comment(_BaseContent):
     楼中楼信息
 
     text: 正文
+    fid: 所在吧id
     tid: 帖子编号
     pid: 回复编号
+    user: UserInfo类 发布者信息
     like: 点赞数
     dislike: 点踩数
     has_audio: 是否含有音频
     create_time: 10位时间戳，创建时间
     smileys: 表情列表
-    user: UserInfo类 发布者信息
     """
 
-    __slots__ = ['_like', '_dislike',
-                 'has_audio',
-                 '_create_time',
-                 'smileys']
+    __slots__ = ['smileys', 'has_audio', '_like', '_dislike', '_create_time']
 
-    def __init__(self):
-        pass
+    def __init__(self, fid=0, tid=0, pid=0, user=UserInfo(), text='', smileys=[], has_audio=False, like=0, dislike=0, create_time=0):
+        super().__init__(fid=fid, tid=tid, pid=pid, user=user)
+        self._text = text
+        self.smileys = smileys
+        self.has_audio = has_audio
+        self.like = like
+        self.dislike = dislike
+        self.create_time = create_time
 
     @property
     def like(self):
@@ -621,25 +614,51 @@ class Comments(list):
     def __init__(self, main_json=None):
 
         if main_json:
-            tid = main_json['thread']['id']
             fid = main_json['forum']['id']
+            tid = main_json['thread']['id']
 
             for comment_raw in main_json['subpost_list']:
                 try:
-                    comment = Comment()
-                    comment.fid = fid
-                    comment.tid = tid
-                    comment.pid = comment_raw['id']
-                    comment._init_content(comment_raw['content'])
-                    comment.create_time = comment_raw['time']
-                    comment.like = comment_raw['agree']['agree_num']
-                    comment.dislike = comment_raw['agree']['disagree_num']
-                    comment.user = UserInfo(comment_raw['author'])
+                    texts = []
+                    smileys = []
+                    has_audio = False
+                    for fragment in comment_raw['content']:
+                        if fragment['type'] in ['0', '4', '9']:
+                            texts.append(fragment['text'])
+                        elif fragment['type'] == '1':
+                            texts.append(fragment['link'])
+                            texts.append(' ' + fragment['text'])
+                        elif fragment['type'] == '2':
+                            self.smileys.append(fragment['text'])
+                        elif fragment['type'] == '10':
+                            self.has_audio = True
+                    text = ''.join(texts)
+
+                    user_dict = comment_raw['author']
+                    user = UserInfo(user_name=user_dict['name'],
+                                    nick_name=user_dict['name_show'],
+                                    portrait=user_dict['portrait'],
+                                    user_id=user_dict['id'],
+                                    level=user_dict['level_id'],
+                                    gender=user_dict['gender'])
+
+                    comment = Comment(fid=fid,
+                                      tid=tid,
+                                      pid=comment_raw['id'],
+                                      user=user,
+                                      text=text,
+                                      smileys=smileys,
+                                      has_audio=has_audio,
+                                      like=comment_raw['agree']['agree_num'],
+                                      dislike=comment_raw['agree']['disagree_num'],
+                                      create_time=comment_raw['time']
+                                      )
+
                     self.append(comment)
 
                 except:
                     log.warning(traceback.format_exc())
-                    raise
+                    continue
 
             self.current_pn = main_json['page']['current_page']
             self.total_pn = main_json['page']['total_page']
@@ -669,7 +688,7 @@ class Comments(list):
         return self._current_pn < self._total_pn
 
 
-class At(_BaseContent):
+class At(object):
     """
     @信息
 
@@ -677,16 +696,35 @@ class At(_BaseContent):
     tieba_name: 帖子所在吧
     tid: 帖子编号
     pid: 回复编号
-    create_time: 10位时间戳，创建时间
     user: UserInfo类 发布者信息
+    create_time: 10位时间戳，创建时间
     """
 
-    __slots__ = ['tieba_name', '_create_time']
+    __slots__ = ['tieba_name', '_tid', '_pid', 'user', 'text', '_create_time']
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, tieba_name='', tid=0, pid=0, user=UserInfo(), text='', create_time=0):
         self.tieba_name = ''
-        self._create_time = 0
+        self.tid = tid
+        self.pid = pid
+        self.user = user
+        self.text = text
+        self.create_time = create_time
+
+    @property
+    def tid(self):
+        return self._tid
+
+    @tid.setter
+    def tid(self, new_tid):
+        self._tid = int(new_tid)
+
+    @property
+    def pid(self):
+        return self._pid
+
+    @pid.setter
+    def pid(self, new_pid):
+        self._pid = int(new_pid)
 
     @property
     def create_time(self):

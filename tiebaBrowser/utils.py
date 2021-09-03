@@ -257,7 +257,19 @@ class Browser(object):
             if int(main_json['no']):
                 raise ValueError(main_json['error'])
 
-            user = UserInfo(main_json['data'])
+            data=main_json['data']
+            sex=data['sex']
+            if sex=='male':
+                gender=1
+            elif sex=='female':
+                gender=2
+            else:
+                gender=0
+            user = UserInfo(user_name=data['name'],
+                            nick_name=data['name_show'],
+                            portrait=data['portrait'],
+                            user_id=data['id'],
+                            gender=gender)
 
         except Exception as err:
             log.error(f"Failed to get UserInfo of {id} Reason:{err}")
@@ -384,7 +396,7 @@ class Browser(object):
 
         return comments
 
-    def get_self_ats(self):
+    def get_ats(self):
         """
         获取@信息
 
@@ -410,13 +422,19 @@ class Browser(object):
 
         ats = []
         for at_raw in main_json['at_list']:
-            at = At()
-            at.tieba_name = at_raw['fname']
-            at.tid = at_raw['thread_id']
-            at.pid = at_raw['post_id']
-            at._text = at_raw['content'].lstrip()
-            at.user = UserInfo(at_raw['quote_user'])
-            at.create_time = at_raw['time']
+
+            user_dict=at_raw['quote_user']
+            user = UserInfo(user_name=user_dict['name'],
+                            nick_name=user_dict['name_show'],
+                            portrait=user_dict['portrait'])
+
+            at = At(tieba_name = at_raw['fname'],
+                    tid = at_raw['thread_id'],
+                    pid = at_raw['post_id'],
+                    text = at_raw['content'].lstrip(),
+                    user=user,
+                    create_time = at_raw['time'])
+
             ats.append(at)
 
         return ats
