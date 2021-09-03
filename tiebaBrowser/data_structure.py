@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 __all__ = ('MODULE_DIR', 'SCRIPT_DIR',
-           'UserInfo', 'UserInfo_Dict',
+           'UserInfo',
            'Thread', 'Post', 'Comment',
            'Threads', 'Posts', 'Comments',
            'At')
