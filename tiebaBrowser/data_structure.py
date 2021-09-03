@@ -1,6 +1,5 @@
 # -*- coding:utf-8 -*-
-__all__ = ('MODULE_DIR', 'SCRIPT_DIR',
-           'UserInfo',
+__all__ = ('UserInfo',
            'Thread', 'Post', 'Comment',
            'Threads', 'Posts', 'Comments',
            'At')
@@ -8,15 +7,11 @@ __all__ = ('MODULE_DIR', 'SCRIPT_DIR',
 
 import os
 import sys
-from pathlib import Path
 import traceback
 
 import re
 
-from .logger import log, SCRIPT_DIR
-
-
-MODULE_DIR = Path(__file__).parent
+from .logger import log
 
 
 class UserInfo(object):
@@ -579,27 +574,6 @@ class Comment(_BaseContent):
     def create_time(self, new_create_time):
         self._create_time = int(new_create_time)
 
-    def _init_content(self, content_fragments: list):
-        """
-        从回复内容的碎片列表中提取有用信息
-        _init_content(content_fragments:list)
-        """
-
-        texts = []
-        self.smileys = []
-        self.has_audio = False
-        for fragment in content_fragments:
-            if fragment['type'] in ['0', '4', '9']:
-                texts.append(fragment['text'])
-            elif fragment['type'] == '1':
-                texts.append(fragment['link'])
-                texts.append(' ' + fragment['text'])
-            elif fragment['type'] == '2':
-                self.smileys.append(fragment['text'])
-            elif fragment['type'] == '10':
-                self.has_audio = True
-        self._text = ''.join(texts)
-
 
 class Comments(list):
     """
@@ -629,9 +603,9 @@ class Comments(list):
                             texts.append(fragment['link'])
                             texts.append(' ' + fragment['text'])
                         elif fragment['type'] == '2':
-                            self.smileys.append(fragment['text'])
+                            smileys.append(fragment['text'])
                         elif fragment['type'] == '10':
-                            self.has_audio = True
+                            has_audio = True
                     text = ''.join(texts)
 
                     user_dict = comment_raw['author']

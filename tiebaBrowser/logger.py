@@ -11,6 +11,7 @@ import logging
 import logging.handlers
 
 SCRIPT_DIR = Path(sys.argv[0])
+MODULE_DIR = Path(__file__).parent
 
 
 class MyLogger(logging.Logger):

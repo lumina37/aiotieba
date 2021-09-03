@@ -7,9 +7,8 @@ import json
 
 import pymysql
 
-from .data_structure import SCRIPT_DIR
 from .utils import config
-from .logger import log
+from .logger import log, SCRIPT_DIR
 
 
 def translate_tieba_name(func):
@@ -352,7 +351,8 @@ class MySQL(object):
             log.error(f"MySQL Error: Failed to insert {img_hash}!")
             return False
         else:
-            log.info(f"Successfully add {img_hash} to table of {tieba_name_eng}")
+            log.info(
+                f"Successfully add {img_hash} to table of {tieba_name_eng}")
             self.mydb.commit()
             return True
 

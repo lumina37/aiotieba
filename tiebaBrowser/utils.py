@@ -6,6 +6,7 @@ import os
 import sys
 import time
 import traceback
+from pathlib import Path
 
 import hashlib
 
@@ -17,7 +18,7 @@ from bs4 import BeautifulSoup
 import pickle
 
 from .data_structure import *
-from .logger import log
+from .logger import log, SCRIPT_DIR, MODULE_DIR
 
 
 config = None
@@ -257,14 +258,14 @@ class Browser(object):
             if int(main_json['no']):
                 raise ValueError(main_json['error'])
 
-            data=main_json['data']
-            sex=data['sex']
-            if sex=='male':
-                gender=1
-            elif sex=='female':
-                gender=2
+            data = main_json['data']
+            sex = data['sex']
+            if sex == 'male':
+                gender = 1
+            elif sex == 'female':
+                gender = 2
             else:
-                gender=0
+                gender = 0
             user = UserInfo(user_name=data['name'],
                             nick_name=data['name_show'],
                             portrait=data['portrait'],
@@ -423,17 +424,17 @@ class Browser(object):
         ats = []
         for at_raw in main_json['at_list']:
 
-            user_dict=at_raw['quote_user']
+            user_dict = at_raw['quote_user']
             user = UserInfo(user_name=user_dict['name'],
                             nick_name=user_dict['name_show'],
                             portrait=user_dict['portrait'])
 
-            at = At(tieba_name = at_raw['fname'],
-                    tid = at_raw['thread_id'],
-                    pid = at_raw['post_id'],
-                    text = at_raw['content'].lstrip(),
+            at = At(tieba_name=at_raw['fname'],
+                    tid=at_raw['thread_id'],
+                    pid=at_raw['post_id'],
+                    text=at_raw['content'].lstrip(),
                     user=user,
-                    create_time = at_raw['time'])
+                    create_time=at_raw['time'])
 
             ats.append(at)
 
