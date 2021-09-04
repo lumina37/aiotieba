@@ -677,7 +677,7 @@ class At(object):
     __slots__ = ['tieba_name', '_tid', '_pid', 'user', 'text', '_create_time']
 
     def __init__(self, tieba_name='', tid=0, pid=0, user=UserInfo(), text='', create_time=0):
-        self.tieba_name = ''
+        self.tieba_name = tieba_name
         self.tid = tid
         self.pid = pid
         self.user = user
