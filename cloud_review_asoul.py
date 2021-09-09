@@ -49,7 +49,7 @@ class CloudReview(tiebaBrowser.CloudReview):
                         user_threads.append(thread)
                         users[thread.user.portrait] = user_threads
                 for portrait,_threads in users.items():
-                    if len(_threads) >= 5 and not self.mysql.is_portrait_white(self.tieba_name, portrait):
+                    if len(_threads) >= 4 and not self.mysql.is_portrait_white(self.tieba_name, portrait):
                         for thread in _threads[1:]:
                             self.del_thread(self.tieba_name,thread.tid)
                 tiebaBrowser.log.debug('heartbeat')

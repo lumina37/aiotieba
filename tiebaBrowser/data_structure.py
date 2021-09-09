@@ -174,6 +174,7 @@ class Thread(_BaseContent):
     first_floor_text: 首楼内容
     has_audio: 是否含有音频
     has_video: 是否含有视频
+    view_num: 浏览量
     reply_num: 回复数
     like: 点赞数
     dislike: 点踩数
@@ -182,14 +183,15 @@ class Thread(_BaseContent):
     """
 
     __slots__ = ['title', 'first_floor_text', 'has_audio', 'has_video',
-                 '_reply_num', '_like', '_dislike', '_create_time', '_last_time']
+                 '_view_num', '_reply_num', '_like', '_dislike', '_create_time', '_last_time']
 
-    def __init__(self, fid=0, tid=0, pid=0, user=UserInfo(), title='', first_floor_text='', has_audio=False, has_video=False, reply_num=0, like=0, dislike=0, create_time=0, last_time=0):
+    def __init__(self, fid=0, tid=0, pid=0, user=UserInfo(), title='', first_floor_text='', has_audio=False, has_video=False, view_num=0, reply_num=0, like=0, dislike=0, create_time=0, last_time=0):
         super().__init__(fid=fid, tid=tid, pid=pid, user=user)
         self.title = title
         self.first_floor_text = first_floor_text
         self.has_audio = has_audio
         self.has_video = has_video
+        self.view_num = view_num
         self.reply_num = reply_num
         self.like = like
         self.dislike = dislike
@@ -209,6 +211,14 @@ class Thread(_BaseContent):
     @reply_num.setter
     def reply_num(self, new_reply_num):
         self._reply_num = int(new_reply_num)
+
+    @property
+    def view_num(self):
+        return self._view_num
+
+    @view_num.setter
+    def view_num(self, new_view_num):
+        self._view_num = int(new_view_num)
 
     @property
     def like(self):
@@ -294,6 +304,7 @@ class Threads(list):
                                         'voice_info', None) else False,
                                     has_video=True if thread_raw.get(
                                         'video_info', None) else False,
+                                    view_num=thread_raw['view_num'],
                                     reply_num=thread_raw['reply_num'],
                                     like=like,
                                     dislike=dislike,
