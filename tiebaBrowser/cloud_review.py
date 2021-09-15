@@ -114,7 +114,7 @@ class CloudReview(Browser):
             log.warning("Wrong mode in update_portrait!")
             return False
 
-        user = self._get_userinfo(id)
+        user = self.get_userinfo(id)
         if not user.portrait:
             return False
 
@@ -126,7 +126,7 @@ class CloudReview(Browser):
         del_portrait(id=None)
         """
 
-        user = self._get_userinfo(id)
+        user = self.get_userinfo(id)
         if not user.portrait:
             return False
 

@@ -279,9 +279,10 @@ class Threads(list):
 
                     texts = []
                     for fragment in thread_raw['first_post_content']:
-                        if fragment['type'] in ['0', '4', '9', '18']:
+                        ftype = int(fragment['type'])
+                        if ftype in [0, 4, 9, 18]:
                             texts.append(fragment['text'])
-                        elif fragment['type'] == '1':
+                        elif ftype == 1:
                             texts.append(
                                 f"{fragment['link']} {fragment['text']}")
                     first_floor_text = ''.join(texts)
@@ -469,18 +470,17 @@ class Posts(list):
                     smileys = []
                     has_audio = False
                     for fragment in post_raw['content']:
-                        if not fragment.__contains__('type'):
-                            continue
-                        if fragment['type'] in ['0', '4', '9', '18']:
+                        ftype = int(fragment.get('type',0))
+                        if ftype in [0, 4, 9, 18]:
                             texts.append(fragment['text'])
-                        elif fragment['type'] == '1':
+                        elif ftype == 1:
                             texts.append(fragment['link'])
                             texts.append(' ' + fragment['text'])
-                        elif fragment['type'] == '2':
+                        elif ftype == 2:
                             smileys.append(fragment['text'])
-                        elif fragment['type'] == '3':
+                        elif ftype == 3:
                             imgs.append(fragment['origin_src'])
-                        elif fragment['type'] == '10':
+                        elif ftype == 10:
                             has_audio = True
                     content = ''.join(texts)
 
@@ -610,14 +610,15 @@ class Comments(list):
                     smileys = []
                     has_audio = False
                     for fragment in comment_raw['content']:
-                        if fragment['type'] in ['0', '4', '9']:
+                        ftype = int(fragment['type'])
+                        if ftype in [0, 4, 9]:
                             texts.append(fragment['text'])
-                        elif fragment['type'] == '1':
+                        elif ftype == 1:
                             texts.append(fragment['link'])
                             texts.append(' ' + fragment['text'])
-                        elif fragment['type'] == '2':
+                        elif ftype == 2:
                             smileys.append(fragment['text'])
-                        elif fragment['type'] == '10':
+                        elif ftype == 10:
                             has_audio = True
                     text = ''.join(texts)
 

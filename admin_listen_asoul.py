@@ -268,7 +268,7 @@ class Listener(object):
 
         tb.log.info(f"{post.user.user_name}: {post.text}")
 
-        user = self.listener._get_userinfo(id)
+        user = self.listener.get_userinfo(id)
 
         return self.admin.block(self.tieba_name, user, day=10)[0]
 

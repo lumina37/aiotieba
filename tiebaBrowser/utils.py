@@ -140,7 +140,8 @@ class Browser(object):
             del data['sign']
 
         raw_list = [f"{key}={value}" for key, value in data.items()]
-        raw_str = "".join(raw_list) + "tiebaclient!!!"
+        raw_list.append("tiebaclient!!!")
+        raw_str = "".join(raw_list)
 
         md5 = hashlib.md5()
         md5.update(raw_str.encode('utf-8'))
@@ -229,10 +230,10 @@ class Browser(object):
 
         return fid
 
-    def _get_userinfo(self, id):
+    def get_userinfo(self, id):
         """
         通过用户名或昵称或portrait获取用户信息
-        _name2portrait(name)
+        get_userinfo(id)
 
         参数:
             id: str user_name或nick_name或portrait
@@ -503,9 +504,9 @@ class Browser(object):
 
         if not user.user_name:
             if user.portrait:
-                user = self._get_userinfo(user.portrait)
+                user = self.get_userinfo(user.portrait)
             elif user.nick_name:
-                user = self._get_userinfo(user.nick_name)
+                user = self.get_userinfo(user.nick_name)
             else:
                 log.error(f"Empty params in {tieba_name}")
                 return False, user
@@ -681,7 +682,7 @@ class Browser(object):
             flag: bool 操作是否成功
         """
 
-        user = self._get_userinfo(id)
+        user = self.get_userinfo(id)
         payload = {'tbs': self._get_tbs(),
                    'user_id': user.user_id,
                    'word': tieba_name,
@@ -766,7 +767,7 @@ class Browser(object):
                    'list[]': []}
 
         for id in ids:
-            user = self._get_userinfo(id)
+            user = self.get_userinfo(id)
             if user.user_id:
                 payload['list[]'].append(user.user_id)
         if not payload['list[]']:
@@ -865,7 +866,7 @@ class Browser(object):
             flag: bool 操作是否成功
         """
 
-        user = self._get_userinfo(id)
+        user = self.get_userinfo(id)
 
         payload = {'fn': tieba_name,
                    'fid': self._tbname2fid(tieba_name),
