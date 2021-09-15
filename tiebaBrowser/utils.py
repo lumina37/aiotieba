@@ -828,7 +828,8 @@ class Browser(object):
                    'fid': self._tbname2fid(tieba_name),
                    'tid_list[]': tid,
                    'pid_list[]': pid,
-                   'type_list[]': 1 if pid else 0
+                   'type_list[]': 1 if pid else 0,
+                   'is_frs_mask_list[]': 0
                    }
 
         try:

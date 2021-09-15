@@ -469,6 +469,8 @@ class Posts(list):
                     smileys = []
                     has_audio = False
                     for fragment in post_raw['content']:
+                        if not fragment.__contains__('type'):
+                            continue
                         if fragment['type'] in ['0', '4', '9', '18']:
                             texts.append(fragment['text'])
                         elif fragment['type'] == '1':
