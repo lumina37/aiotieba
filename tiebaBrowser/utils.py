@@ -131,23 +131,20 @@ class Browser(object):
             log.error("Failed to save fid cache!")
 
     @staticmethod
-    def _app_sign(data: dict):
+    def _app_sign(payload: dict):
         """
         对参数字典做贴吧客户端签名
         """
 
-        if data.__contains__('sign'):
-            del data['sign']
-
-        raw_list = [f"{key}={value}" for key, value in data.items()]
+        raw_list = [f"{key}={value}" for key, value in payload.items()]
         raw_list.append("tiebaclient!!!")
         raw_str = "".join(raw_list)
 
         md5 = hashlib.md5()
         md5.update(raw_str.encode('utf-8'))
-        data['sign'] = md5.hexdigest().upper()
+        sign = md5.hexdigest().upper()
 
-        return data
+        return sign
 
     def set_host(self, url):
         """
@@ -298,10 +295,11 @@ class Browser(object):
                    'pn': pn,
                    'rn': rn
                    }
+        payload['sign'] = self._app_sign(payload)
 
         try:
             res = self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/f/frs/page", data=self._app_sign(payload), timeout=(3, 10))
+                "http://c.tieba.baidu.com/c/f/frs/page", data=payload, timeout=(3, 10))
 
             if res.status_code != 200:
                 raise ValueError("status code is not 200")
@@ -338,10 +336,11 @@ class Browser(object):
                    'pn': pn,
                    'rn': rn
                    }
+        payload['sign'] = self._app_sign(payload)
 
         try:
             res = self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/f/pb/page", data=self._app_sign(payload), timeout=(3, 10))
+                "http://c.tieba.baidu.com/c/f/pb/page", data=payload, timeout=(3, 10))
 
             if res.status_code != 200:
                 raise ValueError("status code is not 200")
@@ -378,10 +377,11 @@ class Browser(object):
                    'pid': pid,
                    'pn': pn
                    }
+        payload['sign'] = self._app_sign(payload)
 
         try:
             res = self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/f/pb/floor", data=self._app_sign(payload), timeout=(3, 10))
+                "http://c.tieba.baidu.com/c/f/pb/floor", data=payload, timeout=(3, 10))
 
             if res.status_code != 200:
                 raise ValueError("status code is not 200")
@@ -406,10 +406,11 @@ class Browser(object):
         """
 
         payload = {'BDUSS': self.sessions.BDUSS}
+        payload['sign'] = self._app_sign(payload)
 
         try:
             res = self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/u/feed/atme", data=self._app_sign(payload), timeout=(3, 10))
+                "http://c.tieba.baidu.com/c/u/feed/atme", data=payload, timeout=(3, 10))
 
             if res.status_code != 200:
                 raise ValueError("status code is not 200")
@@ -431,11 +432,11 @@ class Browser(object):
                             portrait=user_dict['portrait'])
 
             at = At(tieba_name=at_raw['fname'],
-                    tid=at_raw['thread_id'],
-                    pid=at_raw['post_id'],
+                    tid=int(at_raw['thread_id']),
+                    pid=int(at_raw['post_id']),
                     text=at_raw['content'].lstrip(),
                     user=user,
-                    create_time=at_raw['time'])
+                    create_time=int(at_raw['time']))
 
             ats.append(at)
 
@@ -468,9 +469,10 @@ class Browser(object):
                        'tbs': self._get_tbs(),
                        'thread_id': tid
                        }
+            payload['sign'] = self._app_sign(payload)
 
             res = self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/thread/setPrivacy", data=self._app_sign(payload), timeout=(3, 10))
+                "http://c.tieba.baidu.com/c/c/thread/setPrivacy", data=payload, timeout=(3, 10))
 
             if res.status_code != 200:
                 raise ValueError("status code is not 200")
@@ -523,12 +525,13 @@ class Browser(object):
                    'tbs': self._get_tbs(),
                    'un': user.user_name,
                    'word': tieba_name,
-                   'z': '6955178525',
+                   'z': '9998732423',
                    }
+        payload['sign'] = self._app_sign(payload)
 
         try:
             res = self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/bawu/commitprison", data=self._app_sign(payload), timeout=(3, 10))
+                "http://c.tieba.baidu.com/c/c/bawu/commitprison", data=payload, timeout=(3, 10))
 
             if res.status_code != 200:
                 raise ValueError("status code is not 200")
@@ -566,10 +569,11 @@ class Browser(object):
                    'tbs': self._get_tbs(),
                    'z': tid
                    }
+        payload['sign'] = self._app_sign(payload)
 
         try:
             res = self.sessions.app.post(
-                "http://c.tieba.baidu.com//c/c/bawu/delthread", data=self._app_sign(payload), timeout=(3, 10))
+                "http://c.tieba.baidu.com//c/c/bawu/delthread", data=payload, timeout=(3, 10))
 
             if res.status_code != 200:
                 raise ValueError("status code is not 200")
@@ -649,10 +653,11 @@ class Browser(object):
                    'tbs': self._get_tbs(),
                    'z': tid
                    }
+        payload['sign'] = self._app_sign(payload)
 
         try:
             res = self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/bawu/delpost", data=self._app_sign(payload), timeout=(3, 10))
+                "http://c.tieba.baidu.com/c/c/bawu/delpost", data=payload, timeout=(3, 10))
 
             if res.status_code != 200:
                 raise ValueError("status code is not 200")
@@ -830,7 +835,7 @@ class Browser(object):
                    'tid_list[]': tid,
                    'pid_list[]': pid,
                    'type_list[]': 1 if pid else 0,
-                   'is_frs_mask_list[]': 0
+                   'is_frs_mask_list[]': 0  # 0 if del, 1 if hide
                    }
 
         try:
@@ -915,10 +920,11 @@ class Browser(object):
                    'tbs': self._get_tbs(),
                    'thread_id': tid
                    }
+        payload['sign'] = self._app_sign(payload)
 
         try:
             res = self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/bawu/pushRecomToPersonalized", data=self._app_sign(payload), timeout=(3, 10))
+                "http://c.tieba.baidu.com/c/c/bawu/pushRecomToPersonalized", data=payload, timeout=(3, 10))
 
             if res.status_code != 200:
                 raise ValueError("status code is not 200")
