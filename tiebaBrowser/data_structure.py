@@ -424,12 +424,13 @@ class Comments(list):
                     text = ''.join(texts)
 
                     user_dict = comment_raw['author']
+                    gender = int(user_dict['gender']) if user_dict['gender'] else 0
                     user = UserInfo(user_name=user_dict['name'],
                                     nick_name=user_dict['name_show'],
                                     portrait=user_dict['portrait'],
                                     user_id=int(user_dict['id']),
                                     level=int(user_dict['level_id']),
-                                    gender=int(user_dict['gender']))
+                                    gender=gender)
 
                     comment = Comment(fid=fid,
                                       tid=tid,
