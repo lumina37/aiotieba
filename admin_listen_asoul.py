@@ -70,6 +70,8 @@ class Listener(object):
                          'unblock': self.cmd_unblock,
                          'block': self.cmd_block,
                          'recover': self.cmd_recover,
+                         'hide': self.cmd_hide,
+                         'unhide': self.cmd_unhide,
                          'blacklist_add': self.cmd_blacklist_add,
                          'blacklist_cancel': self.cmd_blacklist_cancel,
                          'mysql_white': self.cmd_mysql_white,
@@ -302,6 +304,52 @@ class Listener(object):
             self.admin.mysql.add_pid(pid)
 
         return self.admin.recover(self.tieba_name, tid, pid)
+
+    def cmd_hide(self, at, arg):
+        """
+        hide指令
+        屏蔽指令所在主题帖
+
+        权限: 2
+        限制: 监听帖禁用
+        """
+
+        if at.tid == self.listen_tid:
+            return False
+        if at.tieba_name != self.tieba_name:
+            return None
+        if self.access_user.get(at.user.user_name, 0) < 2:
+            return None
+
+        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+
+        if self.admin.del_thread(self.tieba_name, at.tid, is_frs_mask=True):
+            return True
+        else:
+            return None
+
+    def cmd_unhide(self, at, arg):
+        """
+        unhide指令
+        解除指令所在主题帖的屏蔽
+
+        权限: 2
+        限制: 监听帖禁用
+        """
+
+        if at.tid == self.listen_tid:
+            return False
+        if at.tieba_name != self.tieba_name:
+            return None
+        if self.access_user.get(at.user.user_name, 0) < 2:
+            return None
+
+        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+
+        if self.admin.recover(self.tieba_name, at.tid, is_frs_mask=True):
+            return True
+        else:
+            return None
 
     def cmd_blacklist_add(self, post, id):
         """

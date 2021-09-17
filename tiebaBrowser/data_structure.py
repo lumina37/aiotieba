@@ -291,13 +291,14 @@ class Posts(list):
                 if not user_dict.get('portrait', None):
                     continue
                 user_id = int(user_dict['id'])
+                gender = int(user_dict['gender']) if user_dict['gender'] else 0
                 users[user_id] = UserInfo(user_name=user_dict['name'],
                                           nick_name=user_dict['name_show'],
                                           portrait=user_dict['portrait'],
                                           user_id=user_id,
                                           level=int(user_dict.get(
                                               'level_id', 0)),
-                                          gender=int(user_dict['gender']))
+                                          gender=gender)
 
             thread_owner_id = int(main_json["thread"]['author']['id'])
             fid = int(main_json['forum']['id'])

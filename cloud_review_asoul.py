@@ -41,22 +41,25 @@ class CloudReview(tiebaBrowser.CloudReview):
                 users = {}
                 for thread in _threads:
                     if self._check_thread(thread):
-                        tiebaBrowser.log.info(f"Try to delete thread {thread.text} post by {thread.user.logname}")
+                        tiebaBrowser.log.info(
+                            f"Try to delete thread {thread.text} post by {thread.user.logname}")
                         self.del_thread(self.tieba_name, thread.tid)
                         continue
                     if thread.like < 30 and thread.reply_num < 30:
-                        user_threads = users.get(thread.user.portrait,[])
+                        user_threads = users.get(thread.user.portrait, [])
                         user_threads.append(thread)
                         users[thread.user.portrait] = user_threads
-                for portrait,_threads in users.items():
+                for portrait, _threads in users.items():
                     if len(_threads) >= 4 and not self.mysql.is_portrait_white(self.tieba_name, portrait):
                         for thread in _threads[1:]:
-                            self.del_thread(self.tieba_name,thread.tid)
+                            self.del_thread(self.tieba_name,
+                                            thread.tid, is_frs_mask=True)
                 tiebaBrowser.log.debug('heartbeat')
                 if self.sleep_time:
                     time.sleep(self.sleep_time)
             except Exception:
-                tiebaBrowser.log.error(f"Unexcepted error:{traceback.format_exc()}")
+                tiebaBrowser.log.error(
+                    f"Unexcepted error:{traceback.format_exc()}")
 
     def _check_thread(self, thread: tiebaBrowser.Thread):
         """
@@ -99,7 +102,8 @@ class CloudReview(tiebaBrowser.CloudReview):
                 if post.floor == 1:
                     return True
                 else:
-                    tiebaBrowser.log.info(f"Try to delete post {post.text} post by {post.user.logname}")
+                    tiebaBrowser.log.info(
+                        f"Try to delete post {post.text} post by {post.user.logname}")
                     self.del_post(self.tieba_name, post.tid, post.pid)
             elif flag == 2:
                 return True
@@ -138,7 +142,8 @@ class CloudReview(tiebaBrowser.CloudReview):
         if self.mysql.has_pid(self.tieba_name, obj.pid):
             return -1
 
-        is_white = self.mysql.is_portrait_white(self.tieba_name, obj.user.portrait)
+        is_white = self.mysql.is_portrait_white(
+            self.tieba_name, obj.user.portrait)
         if is_white == True:
             return -1
         elif is_white == False:
@@ -163,8 +168,10 @@ class CloudReview(tiebaBrowser.CloudReview):
         if has_white_kw:
             return 0
 
-        has_rare_contact = True if self.exp.contact_rare_exp.search(text) else False
-        has_contact = True if (has_rare_contact or self.exp.contact_exp.search(text)) else False
+        has_rare_contact = True if self.exp.contact_rare_exp.search(
+            text) else False
+        has_contact = True if (
+            has_rare_contact or self.exp.contact_exp.search(text)) else False
 
         if level < 3:
             if self.exp.job_nocheck_exp.search(text):

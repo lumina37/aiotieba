@@ -44,7 +44,7 @@ class Sessions(object):
 
         self.app = req.Session()
         self.app.headers = req.structures.CaseInsensitiveDict({'Content-Type': 'application/x-www-form-urlencoded',
-                                                               'User-Agent': 'bdtb for Android 12.8.2.1',
+                                                               'User-Agent': 'bdtb for Android 12.10.1.0',
                                                                'Connection': 'Keep-Alive',
                                                                'Accept-Encoding': 'gzip',
                                                                'Accept': '*/*',
@@ -203,8 +203,8 @@ class Browser(object):
         if not fid:
             try:
                 self.set_host("http://tieba.baidu.com/")
-                res = self.sessions.web.get("http://tieba.baidu.com/sign/info", params={
-                                            'kw': tieba_name, 'ie': 'utf-8'}, timeout=(3, 10))
+                res = self.sessions.web.get("http://tieba.baidu.com/f/commit/share/fnameShareApi", params={
+                                            'fname': tieba_name, 'ie': 'utf-8'}, timeout=(3, 10))
 
                 if res.status_code != 200:
                     raise ValueError("status code is not 200")
@@ -212,11 +212,8 @@ class Browser(object):
                 main_json = res.json()
                 if int(main_json['no']):
                     raise ValueError(main_json['error'])
-                if int(main_json['data']['errno']):
-                    raise ValueError(main_json['data']['errmsg'])
 
-                fid = int(main_json['data']['forum_info']
-                          ['forum_info']['forum_id'])
+                fid = int(main_json['data']['fid'])
 
             except Exception as err:
                 error_msg = f"Failed to get fid of {tieba_name} Reason:{err}"
@@ -290,7 +287,7 @@ class Browser(object):
             threads: core.Threads
         """
 
-        payload = {'_client_version': '12.8.2.1',
+        payload = {'_client_version': '12.10.1.0',
                    'kw': tieba_name,
                    'pn': pn,
                    'rn': rn
@@ -331,7 +328,7 @@ class Browser(object):
             posts: core.Posts
         """
 
-        payload = {'_client_version': '12.8.2.1',
+        payload = {'_client_version': '12.10.1.0',
                    'kz': tid,
                    'pn': pn,
                    'rn': rn
@@ -372,7 +369,7 @@ class Browser(object):
             comments: core.Comments
         """
 
-        payload = {'_client_version': '12.8.2.1',
+        payload = {'_client_version': '12.10.1.0',
                    'kz': tid,
                    'pid': pid,
                    'pn': pn
@@ -462,7 +459,7 @@ class Browser(object):
 
         try:
             payload = {'BDUSS': self.sessions.BDUSS,
-                       '_client_version': '12.8.2.1',
+                       '_client_version': '12.10.1.0',
                        'forum_id': posts[0].fid,
                        'is_hide': int(hide),
                        'post_id': posts[0].pid,
@@ -514,7 +511,7 @@ class Browser(object):
                 return False, user
 
         payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_version': '12.8.2.1',
+                   '_client_version': '12.10.1.0',
                    'day': day,
                    'fid': self._tbname2fid(tieba_name),
                    'nick_name': user.nick_name if user.nick_name else user.user_name,
@@ -549,7 +546,7 @@ class Browser(object):
             f"Successfully blocked {user.logname} in {tieba_name} for {payload['day']} days")
         return True, user
 
-    def del_thread(self, tieba_name, tid):
+    def del_thread(self, tieba_name, tid, is_frs_mask=False):
         """
         删除主题帖
         del_thread(tieba_name,tid)
@@ -557,15 +554,16 @@ class Browser(object):
         参数:
             tieba_name: str 帖子所在的贴吧名
             tid: int 待删除的主题帖tid
+            is_frs_mask: bool False则删帖，True则屏蔽帖，默认为False
 
         返回值:
             flag: bool 操作是否成功
         """
 
         payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_version': '12.8.2.1',
+                   '_client_version': '12.10.1.0',
                    'fid': self._tbname2fid(tieba_name),
-                   'is_vipdel': 0,
+                   'is_frs_mask': int(is_frs_mask),
                    'tbs': self._get_tbs(),
                    'z': tid
                    }
@@ -573,7 +571,7 @@ class Browser(object):
 
         try:
             res = self.sessions.app.post(
-                "http://c.tieba.baidu.com//c/c/bawu/delthread", data=payload, timeout=(3, 10))
+                "http://c.tieba.baidu.com/c/c/bawu/delthread", data=payload, timeout=(3, 10))
 
             if res.status_code != 200:
                 raise ValueError("status code is not 200")
@@ -587,48 +585,7 @@ class Browser(object):
                 f"Failed to delete thread {tid} in {tieba_name} Reason:{err}")
             return False
 
-        log.info(f"Successfully deleted thread {tid} in {tieba_name}")
-        return True
-
-    def del_threads(self, tieba_name, tids):
-        """
-        批量删除主题帖
-        del_threads(tieba_name,tids)
-
-        参数:
-            tieba_name: str 帖子所在的贴吧名
-            tids: list(int) 待删除的主题帖tid列表
-
-        返回值:
-            flag: bool 操作是否成功
-        """
-
-        payload = {'ie': 'utf-8',
-                   'tbs': self._get_tbs(),
-                   'kw': tieba_name,
-                   'fid': self._tbname2fid(tieba_name),
-                   'tid': '_'.join([str(tid) for tid in tids]),
-                   'isBan': 0
-                   }
-
-        try:
-            self.set_host("http://tieba.baidu.com/")
-            res = self.sessions.web.post(
-                "https://tieba.baidu.com/f/commit/thread/batchDelete", data=payload, timeout=(3, 10))
-
-            if res.status_code != 200:
-                raise ValueError("status code is not 200")
-
-            main_json = res.json()
-            if int(main_json['err_code']):
-                raise ValueError(main_json['err_code'])
-
-        except Exception as err:
-            log.error(
-                f"Failed to delete thread {tids} in {tieba_name}. Reason:{err}")
-            return False
-
-        log.info(f"Successfully deleted thread {tid} in {tieba_name}")
+        log.info(f"Successfully deleted thread {tid} hide:{is_frs_mask} in {tieba_name}")
         return True
 
     def del_post(self, tieba_name, tid, pid):
@@ -646,9 +603,8 @@ class Browser(object):
         """
 
         payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_version': '12.8.2.1',
+                   '_client_version': '12.10.1.0',
                    'fid': self._tbname2fid(tieba_name),
-                   'is_vipdel': 0,
                    'pid': pid,
                    'tbs': self._get_tbs(),
                    'z': tid
@@ -816,7 +772,7 @@ class Browser(object):
         else:
             return False
 
-    def recover(self, tieba_name, tid, pid=0):
+    def recover(self, tieba_name, tid, pid=0, is_frs_mask=False):
         """
         恢复帖子
         recover(tieba_name,tid,pid=0)
@@ -825,6 +781,7 @@ class Browser(object):
             tieba_name: str 帖子所在的贴吧名
             tid: int 回复所在的主题帖tid
             pid: int 待恢复的回复pid
+            is_frs_mask: bool False则恢复删帖，True则取消屏蔽帖，默认为False
 
         返回值:
             flag: bool 操作是否成功
@@ -835,7 +792,7 @@ class Browser(object):
                    'tid_list[]': tid,
                    'pid_list[]': pid,
                    'type_list[]': 1 if pid else 0,
-                   'is_frs_mask_list[]': 0  # 0 if del, 1 if hide
+                   'is_frs_mask_list[]': int(is_frs_mask)
                    }
 
         try:
@@ -855,7 +812,7 @@ class Browser(object):
                 f"Failed to recover tid:{tid} pid:{pid} in {tieba_name}. Reason:{err}")
             return False
 
-        log.info(f"Successfully recovered tid:{tid} pid:{pid} in {tieba_name}")
+        log.info(f"Successfully recovered tid:{tid} pid:{pid} hide:{is_frs_mask} in {tieba_name}")
         return True
 
     def unblock(self, tieba_name, id):
@@ -915,7 +872,7 @@ class Browser(object):
         """
 
         payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_version': '12.8.2.1',
+                   '_client_version': '12.10.1.0',
                    'forum_id': self._tbname2fid(tieba_name),
                    'tbs': self._get_tbs(),
                    'thread_id': tid
