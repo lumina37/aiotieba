@@ -416,26 +416,23 @@ class Browser(object):
             if int(main_json['error_code']):
                 raise ValueError(main_json['error_msg'])
 
+            ats = []
+            for at_raw in main_json['at_list']:
+                user_dict = at_raw['quote_user']
+                user = UserInfo(user_name=user_dict['name'],
+                                nick_name=user_dict['name_show'],
+                                portrait=user_dict['portrait'])
+                at = At(tieba_name=at_raw['fname'],
+                        tid=int(at_raw['thread_id']),
+                        pid=int(at_raw['post_id']),
+                        text=at_raw['content'].lstrip(),
+                        user=user,
+                        create_time=int(at_raw['time']))
+                ats.append(at)
+
         except Exception as err:
             log.error(f"Failed to get ats Reason:{err}")
-            return []
-
-        ats = []
-        for at_raw in main_json['at_list']:
-
-            user_dict = at_raw['quote_user']
-            user = UserInfo(user_name=user_dict['name'],
-                            nick_name=user_dict['name_show'],
-                            portrait=user_dict['portrait'])
-
-            at = At(tieba_name=at_raw['fname'],
-                    tid=int(at_raw['thread_id']),
-                    pid=int(at_raw['post_id']),
-                    text=at_raw['content'].lstrip(),
-                    user=user,
-                    create_time=int(at_raw['time']))
-
-            ats.append(at)
+            ats = []
 
         return ats
 
