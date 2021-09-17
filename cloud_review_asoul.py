@@ -45,15 +45,14 @@ class CloudReview(tiebaBrowser.CloudReview):
                             f"Try to delete thread {thread.text} post by {thread.user.logname}")
                         self.del_thread(self.tieba_name, thread.tid)
                         continue
-                    if thread.like < 30 and thread.reply_num < 30:
+                    if thread.like < 25 and thread.reply_num < 25:
                         user_threads = users.get(thread.user.portrait, [])
                         user_threads.append(thread)
                         users[thread.user.portrait] = user_threads
                 for portrait, _threads in users.items():
-                    if len(_threads) >= 4 and not self.mysql.is_portrait_white(self.tieba_name, portrait):
+                    if portrait and len(_threads) >= 4 and not self.mysql.is_portrait_white(self.tieba_name, portrait):
                         for thread in _threads[1:]:
-                            self.del_thread(self.tieba_name,
-                                            thread.tid, is_frs_mask=True)
+                            self.del_thread(self.tieba_name,thread.tid,is_frs_mask=True)
                 tiebaBrowser.log.debug('heartbeat')
                 if self.sleep_time:
                     time.sleep(self.sleep_time)
@@ -99,12 +98,9 @@ class CloudReview(tiebaBrowser.CloudReview):
             if flag == 0:
                 pass
             elif flag == 1:
-                if post.floor == 1:
-                    return True
-                else:
-                    tiebaBrowser.log.info(
-                        f"Try to delete post {post.text} post by {post.user.logname}")
-                    self.del_post(self.tieba_name, post.tid, post.pid)
+                tiebaBrowser.log.info(
+                    f"Try to delete post {post.text} post by {post.user.logname}")
+                self.del_post(self.tieba_name, post.tid, post.pid)
             elif flag == 2:
                 return True
             else:
@@ -243,7 +239,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='贴吧云审查', allow_abbrev=False)
     parser.add_argument('--BDUSS_key', '-k',
                         type=str,
-                        default='default',
+                        default='noob',
                         help='用于获取BDUSS')
 
     parser.add_argument('--tieba_name', '-b',

@@ -44,7 +44,7 @@ class Sessions(object):
 
         self.app = req.Session()
         self.app.headers = req.structures.CaseInsensitiveDict({'Content-Type': 'application/x-www-form-urlencoded',
-                                                               'User-Agent': 'bdtb for Android 12.10.1.0',
+                                                               'User-Agent': 'bdtb for Android 7.9.2',
                                                                'Connection': 'Keep-Alive',
                                                                'Accept-Encoding': 'gzip',
                                                                'Accept': '*/*',
@@ -53,7 +53,7 @@ class Sessions(object):
 
         self.web = req.Session()
         self.web.headers = req.structures.CaseInsensitiveDict({'Host': 'tieba.baidu.com',
-                                                               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101 Firefox/91.0',
+                                                               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:92.0) Gecko/20100101 Firefox/92.0',
                                                                'Accept': '*/*',
                                                                'Accept-Encoding': 'gzip, deflate, br',
                                                                'DNT': '1',
@@ -133,7 +133,7 @@ class Browser(object):
     @staticmethod
     def _app_sign(payload: dict):
         """
-        对参数字典做贴吧客户端签名
+        计算字典payload的贴吧客户端签名值sign
         """
 
         raw_list = [f"{key}={value}" for key, value in payload.items()]
@@ -284,10 +284,10 @@ class Browser(object):
             rn: int 每页帖子数
 
         返回值:
-            threads: core.Threads
+            threads: Threads
         """
 
-        payload = {'_client_version': '12.10.1.0',
+        payload = {'_client_version': '7.9.2',
                    'kw': tieba_name,
                    'pn': pn,
                    'rn': rn
@@ -325,10 +325,10 @@ class Browser(object):
 
         返回值:
             has_next: bool 是否还有下一页
-            posts: core.Posts
+            posts: Posts
         """
 
-        payload = {'_client_version': '12.10.1.0',
+        payload = {'_client_version': '7.9.2',
                    'kz': tid,
                    'pn': pn,
                    'rn': rn
@@ -366,10 +366,10 @@ class Browser(object):
 
         返回值:
             has_next: bool 是否还有下一页
-            comments: core.Comments
+            comments: Comments
         """
 
-        payload = {'_client_version': '12.10.1.0',
+        payload = {'_client_version': '7.9.2',
                    'kz': tid,
                    'pid': pid,
                    'pn': pn
@@ -456,7 +456,7 @@ class Browser(object):
 
         try:
             payload = {'BDUSS': self.sessions.BDUSS,
-                       '_client_version': '12.10.1.0',
+                       '_client_version': '7.9.2',
                        'forum_id': posts[0].fid,
                        'is_hide': int(hide),
                        'post_id': posts[0].pid,
@@ -489,13 +489,13 @@ class Browser(object):
 
         参数:
             tieba_name: str 吧名
-            user: UserInfo类 待封禁用户信息
+            user: UserInfo 待封禁用户信息
             day: int 封禁天数
             reason: str 封禁理由（可选）
 
         返回值:
             flag: bool 操作是否成功
-            user: UserInfo类 补充后的用户信息
+            user: UserInfo 补充后的用户信息
         """
 
         if not user.user_name:
@@ -508,7 +508,7 @@ class Browser(object):
                 return False, user
 
         payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_version': '12.10.1.0',
+                   '_client_version': '7.9.2',
                    'day': day,
                    'fid': self._tbname2fid(tieba_name),
                    'nick_name': user.nick_name if user.nick_name else user.user_name,
@@ -558,7 +558,7 @@ class Browser(object):
         """
 
         payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_version': '12.10.1.0',
+                   '_client_version': '7.9.2',
                    'fid': self._tbname2fid(tieba_name),
                    'is_frs_mask': int(is_frs_mask),
                    'tbs': self._get_tbs(),
@@ -600,7 +600,7 @@ class Browser(object):
         """
 
         payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_version': '12.10.1.0',
+                   '_client_version': '7.9.2',
                    'fid': self._tbname2fid(tieba_name),
                    'pid': pid,
                    'tbs': self._get_tbs(),
@@ -679,7 +679,7 @@ class Browser(object):
 
         返回值:
             flag: bool 操作是否成功
-            black_list: list(str) 黑名单用户列表
+            black_list: List[str] 黑名单用户列表
         """
 
         params = {'word': tieba_name,
@@ -713,7 +713,7 @@ class Browser(object):
 
         参数:
             tieba_name: str 所在贴吧名
-            ids: list(str) 用户名或昵称或portrait的列表
+            ids: List[str] 用户名或昵称或portrait的列表
 
         返回值:
             flag: bool 操作是否成功
@@ -869,7 +869,7 @@ class Browser(object):
         """
 
         payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_version': '12.10.1.0',
+                   '_client_version': '7.9.2',
                    'forum_id': self._tbname2fid(tieba_name),
                    'tbs': self._get_tbs(),
                    'thread_id': tid

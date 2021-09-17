@@ -160,12 +160,18 @@ class Threads(list):
         if main_json:
             users = {}
             for user_dict in main_json['user_list']:
-                user_id = int(user_dict['id'])
-                users[user_id] = UserInfo(user_name=user_dict['name'],
-                                          nick_name=user_dict['name_show'],
-                                          portrait=user_dict['portrait'],
-                                          user_id=user_id,
-                                          gender=user_dict['gender'])
+                try:
+                    user_id = int(user_dict['id'])
+                    users[user_id] = UserInfo(user_name=user_dict['name'],
+                                              nick_name=user_dict['name_show'],
+                                              portrait=user_dict['portrait'],
+                                              user_id=user_id)
+                except Exception:
+                    log.warning(traceback.format_exc())
+                    continue
+
+            self.current_pn = int(main_json['page']['current_page'])
+            self.total_pn = int(main_json['page']['total_page'])
             fid = int(main_json['forum']['id'])
 
             for thread_raw in main_json['thread_list']:
@@ -215,16 +221,13 @@ class Threads(list):
                     log.warning(traceback.format_exc())
                     continue
 
-            self.current_pn = int(main_json['page']['current_page'])
-            self.total_pn = int(main_json['page']['total_page'])
-
         else:
             self.current_pn = 0
             self.total_pn = 0
 
     @property
     def has_next(self):
-        return self._current_pn < self._total_pn
+        return self.current_pn < self.total_pn
 
 
 class Post(_BaseContent):
@@ -288,18 +291,22 @@ class Posts(list):
         if main_json:
             users = {}
             for user_dict in main_json['user_list']:
-                if not user_dict.get('portrait', None):
+                try:
+                    if not user_dict.get('portrait', None):
+                        continue
+                    user_id = int(user_dict['id'])
+                    users[user_id] = UserInfo(user_name=user_dict['name'],
+                                              nick_name=user_dict['name_show'],
+                                              portrait=user_dict['portrait'],
+                                              user_id=user_id,
+                                              level=int(user_dict['level_id']),
+                                              gender=int(user_dict['gender']))
+                except Exception:
+                    log.warning(traceback.format_exc())
                     continue
-                user_id = int(user_dict['id'])
-                gender = int(user_dict['gender']) if user_dict['gender'] else 0
-                users[user_id] = UserInfo(user_name=user_dict['name'],
-                                          nick_name=user_dict['name_show'],
-                                          portrait=user_dict['portrait'],
-                                          user_id=user_id,
-                                          level=int(user_dict.get(
-                                              'level_id', 0)),
-                                          gender=gender)
 
+            self.current_pn = int(main_json['page']['current_page'])
+            self.total_pn = int(main_json['page']['total_page'])
             thread_owner_id = int(main_json["thread"]['author']['id'])
             fid = int(main_json['forum']['id'])
             tid = int(main_json['thread']['id'])
@@ -350,16 +357,13 @@ class Posts(list):
                     log.warning(traceback.format_exc())
                     continue
 
-            self.current_pn = int(main_json['page']['current_page'])
-            self.total_pn = int(main_json['page']['total_page'])
-
         else:
             self.current_pn = 0
             self.total_pn = 0
 
     @property
     def has_next(self):
-        return self._current_pn < self._total_pn
+        return self.current_pn < self.total_pn
 
 
 class Comment(_BaseContent):
@@ -403,6 +407,9 @@ class Comments(list):
     def __init__(self, main_json=None):
 
         if main_json:
+
+            self.current_pn = int(main_json['page']['current_page'])
+            self.total_pn = int(main_json['page']['total_page'])
             fid = int(main_json['forum']['id'])
             tid = int(main_json['thread']['id'])
 
@@ -425,13 +432,13 @@ class Comments(list):
                     text = ''.join(texts)
 
                     user_dict = comment_raw['author']
-                    gender = int(user_dict['gender']) if user_dict['gender'] else 0
+                    gender = user_dict['gender']
                     user = UserInfo(user_name=user_dict['name'],
                                     nick_name=user_dict['name_show'],
                                     portrait=user_dict['portrait'],
                                     user_id=int(user_dict['id']),
                                     level=int(user_dict['level_id']),
-                                    gender=gender)
+                                    gender=int(gender) if gender else 0)
 
                     comment = Comment(fid=fid,
                                       tid=tid,
@@ -453,16 +460,13 @@ class Comments(list):
                     log.warning(traceback.format_exc())
                     continue
 
-            self.current_pn = int(main_json['page']['current_page'])
-            self.total_pn = int(main_json['page']['total_page'])
-
         else:
             self.current_pn = 0
             self.total_pn = 0
 
     @property
     def has_next(self):
-        return self._current_pn < self._total_pn
+        return self.current_pn < self.total_pn
 
 
 class At(object):
