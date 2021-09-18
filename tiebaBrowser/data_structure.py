@@ -5,11 +5,7 @@ __all__ = ('UserInfo',
            'At')
 
 
-import os
-import sys
 import traceback
-
-import re
 
 from .logger import log
 
@@ -295,12 +291,13 @@ class Posts(list):
                     if not user_dict.get('portrait', None):
                         continue
                     user_id = int(user_dict['id'])
+                    gender = user_dict['gender']
                     users[user_id] = UserInfo(user_name=user_dict['name'],
                                               nick_name=user_dict['name_show'],
                                               portrait=user_dict['portrait'],
                                               user_id=user_id,
                                               level=int(user_dict['level_id']),
-                                              gender=int(user_dict['gender']))
+                                              gender=int(gender) if gender else 0)
                 except Exception:
                     log.warning(traceback.format_exc())
                     continue

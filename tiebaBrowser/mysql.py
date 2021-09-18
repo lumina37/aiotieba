@@ -1,14 +1,14 @@
 # -*- coding:utf-8 -*-
-import os
+__all__ = ('MySQL',)
+
+
 import sys
 from functools import wraps
 
-import json
-
 import pymysql
 
-from .utils import config
-from .logger import log, SCRIPT_DIR
+from .config import SCRIPT_DIR, config
+from .logger import log
 
 
 def translate_tieba_name(func):
@@ -50,12 +50,11 @@ class MySQL(object):
         self.mydb.commit()
         self.mydb.close()
 
-    def init_database(self):
-        self.mydb = mysql.connector.connect(
-            **mysql_json, auth_plugin='mysql_native_password')
+    def init_database(self, mysql_json):
+        self.mydb = pymysql.connect(**mysql_json)
         self.mycursor = self.mydb.cursor()
-        self.mycursor.execute(f"CREATE DATABASE {db_name}")
-        self.mycursor.execute(f"USE {db_name}")
+        self.mycursor.execute(f"CREATE DATABASE {self.db_name}")
+        self.mycursor.execute(f"USE {self.db_name}")
 
     def ping(self):
         """
@@ -80,7 +79,7 @@ class MySQL(object):
             f"SHOW TABLES LIKE 'pid_whitelist_{tieba_name_eng}'")
         if not self.mycursor.fetchone():
             self.mycursor.execute(
-                f"CREATE TABLE pid_whitelist_{tieba_name_eng} (pid BIGINT NOT NULL PRIMARY KEY, record_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)")
+                f"CREATE TABLE pid_whitelist_{tieba_name_eng} (pid BIGINT PRIMARY KEY, record_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)")
             self.mycursor.execute(f"""CREATE EVENT event_auto_del_pid_whitelist_{tieba_name_eng}
             ON SCHEDULE
             EVERY 1 DAY STARTS '2000-01-01 00:00:00'
@@ -160,9 +159,22 @@ class MySQL(object):
             return True
 
     @translate_tieba_name
+    def create_table_tid_tmphide(self, tieba_name_eng):
+        """
+        创建表tid_tmphide_{tieba_name_eng}
+        create_table_tid_tmphide(tieba_name)
+        """
+
+        self.mycursor.execute(
+            f"SHOW TABLES LIKE 'tid_tmphide_{tieba_name_eng}'")
+        if not self.mycursor.fetchone():
+            self.mycursor.execute(
+                f"CREATE TABLE tid_tmphide_{tieba_name_eng} (tid BIGINT PRIMARY KEY, need_rec BOOL NOT NULL DEFAULT TRUE, record_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)")
+
+    @translate_tieba_name
     def set_tid(self, tieba_name_eng, tid, mode=False):
         """
-        在tid_indroplist_{tieba_name_eng}中设置tid的待恢复状态
+        在tid_tmphide_{tieba_name_eng}中设置tid的待恢复状态
         set_tid(tieba_name,tid,mode)
 
         参数:
@@ -173,7 +185,7 @@ class MySQL(object):
 
         try:
             self.mycursor.execute(
-                f"INSERT INTO tid_indroplist_{tieba_name_eng} VALUES ({tid},{mode},DEFAULT) ON DUPLICATE KEY UPDATE need_rec={mode}")
+                f"INSERT INTO tid_tmphide_{tieba_name_eng} VALUES ({tid},{mode},DEFAULT) ON DUPLICATE KEY UPDATE need_rec={mode}")
         except pymysql.DatabaseError:
             log.error(f"MySQL Error: Failed to insert {tid}!")
             return False
@@ -186,7 +198,7 @@ class MySQL(object):
     @translate_tieba_name
     def get_tid(self, tieba_name_eng, tid):
         """
-        获取tid_indroplist_{tieba_name_eng}中某个tid的待恢复状态
+        获取tid_tmphide_{tieba_name_eng}中某个tid的待恢复状态
         get_tid(tieba_name,tid)
 
         返回值:
@@ -195,7 +207,7 @@ class MySQL(object):
 
         try:
             self.mycursor.execute(
-                f"SELECT need_rec FROM tid_indroplist_{tieba_name_eng} WHERE tid={tid} LIMIT 1")
+                f"SELECT need_rec FROM tid_tmphide_{tieba_name_eng} WHERE tid={tid}")
         except pymysql.DatabaseError:
             log.error(f"MySQL Error: Failed to select {tid}!")
             return None
@@ -209,13 +221,13 @@ class MySQL(object):
     @translate_tieba_name
     def del_tid(self, tieba_name_eng, tid):
         """
-        从tid_indroplist_{tieba_name_eng}中删除tid
+        从tid_tmphide_{tieba_name_eng}中删除tid
         del_tid(tieba_name,tid)
         """
 
         try:
             self.mycursor.execute(
-                f"DELETE FROM tid_indroplist_{tieba_name_eng} WHERE tid={tid}")
+                f"DELETE FROM tid_tmphide_{tieba_name_eng} WHERE tid={tid}")
         except pymysql.DatabaseError:
             log.error(f"MySQL Error: Failed to delete {tid}!")
             return False
@@ -228,8 +240,8 @@ class MySQL(object):
     @translate_tieba_name
     def get_tids(self, tieba_name_eng, batch_size=100):
         """
-        获取tid_indroplist_{tieba_name_eng}中所有待恢复的tid
-        get_tids(tieba_name,batch_size)
+        获取tid_tmphide_{tieba_name_eng}中所有待恢复的tid
+        get_tids(tieba_name,batch_size=100)
 
         参数:
             batch_size: int 分包大小
@@ -241,7 +253,7 @@ class MySQL(object):
         for i in range(sys.maxsize):
             try:
                 self.mycursor.execute(
-                    f"SELECT tid FROM tid_indroplist_{tieba_name_eng} WHERE need_rec=1 LIMIT {batch_size} OFFSET {i * batch_size}")
+                    f"SELECT tid FROM tid_tmphide_{tieba_name_eng} WHERE need_rec=1 LIMIT {batch_size} OFFSET {i * batch_size}")
             except pymysql.DatabaseError:
                 log.error(f"MySQL Error: Failed to select {tid}!")
                 return False
@@ -262,7 +274,7 @@ class MySQL(object):
         self.mycursor.execute(f"SHOW TABLES LIKE 'portrait_{tieba_name_eng}'")
         if not self.mycursor.fetchone():
             self.mycursor.execute(
-                f"CREATE TABLE portrait_{tieba_name_eng} (portrait CHAR(36) NOT NULL PRIMARY KEY, is_white BOOL NOT NULL DEFAULT TRUE, record_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP)")
+                f"CREATE TABLE portrait_{tieba_name_eng} (portrait CHAR(36) PRIMARY KEY, is_white BOOL NOT NULL DEFAULT TRUE, record_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP)")
 
     @translate_tieba_name
     def update_portrait(self, tieba_name_eng, portrait, mode):
@@ -335,7 +347,7 @@ class MySQL(object):
             f"SHOW TABLES LIKE 'img_blacklist_{tieba_name_eng}'")
         if not self.mycursor.fetchone():
             self.mycursor.execute(
-                f"CREATE TABLE img_blacklist_{tieba_name_eng} (img_hash CHAR(16) NOT NULL PRIMARY KEY)")
+                f"CREATE TABLE img_blacklist_{tieba_name_eng} (img_hash CHAR(16) PRIMARY KEY)")
 
     @translate_tieba_name
     def add_img_hash(self, tieba_name_eng, img_hash):

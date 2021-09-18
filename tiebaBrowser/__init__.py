@@ -16,12 +16,12 @@
     用 [pip install pyzbar] 来安装pyzbar
 """
 
+import signal
+
+from .cloud_review import CloudReview
 from .data_structure import *
 from .logger import log
-from .utils import *
-from .cloud_review import *
-
-import signal
+from .utils import Browser
 
 
 def terminate(signalNumber, frame):

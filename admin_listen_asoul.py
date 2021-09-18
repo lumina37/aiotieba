@@ -45,15 +45,9 @@ class TimeRange(object):
         return self.lower < check_time <= self.upper
 
 
-
-class Handler(object):
-    def __init__(self):
-        pass
-
-
 class Listener(object):
 
-    access_user = {'kk不好玩': 3, 'Noob_legend': 3, '梨木利亚': 3,
+    access_user = {'kk不好玩': 3, 'Noob_legend': 3, '梨木利亚': 3, 'v_guard': 3,
                    'NEXTCR': 3, '云淡一青山': 3, '高端大气00后': 3, 'LIN_S_H': 3, 'shejans': 3, 'jkpp丶': 3, '王重阳双子': 3, '闪打快手丿': 3, 'miiint444': 3, '咿呀呼哈啾': 3, 'earth汉1314': 3, '绝对很囧': 3, '嘿嘿哈哈哈ch': 3}
 
     def __init__(self, admin_BDUSS_key, listener_BDUSS_key, tieba_name, listen_tid):
@@ -72,6 +66,8 @@ class Listener(object):
                          'recover': self.cmd_recover,
                          'hide': self.cmd_hide,
                          'unhide': self.cmd_unhide,
+                         'tmphide': self.cmd_tmphide,
+                         'tmpunhide': self.cmd_tmpunhide,
                          'blacklist_add': self.cmd_blacklist_add,
                          'blacklist_cancel': self.cmd_blacklist_cancel,
                          'mysql_white': self.cmd_mysql_white,
@@ -351,6 +347,51 @@ class Listener(object):
         else:
             return None
 
+    def cmd_tmphide(self, at, arg):
+        """
+        tmphide指令
+        临时屏蔽指令所在主题帖
+
+        权限: 2
+        限制: 监听帖禁用
+        """
+
+        if at.tid == self.listen_tid:
+            return False
+        if at.tieba_name != self.tieba_name:
+            return None
+        if self.access_user.get(at.user.user_name, 0) < 2:
+            return None
+
+        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+
+        flag = self.admin.mysql.set_tid(self.tieba_name, at.tid)
+        flag = flag and self.admin.del_thread(self.tieba_name, at.tid, is_frs_mask=True)
+
+        return True if flag else None
+
+    def cmd_tmpunhide(self, at, arg):
+        """
+        tmpunhide指令
+        解除所有被临时屏蔽主题帖的屏蔽
+
+        权限: 2
+        限制: 仅在监听帖可用
+        """
+
+        if at.tid != self.listen_tid:
+            return False
+        if self.access_user.get(at.user.user_name, 0) < 2:
+            return None
+
+        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+
+        for tid in self.admin.mysql.get_tids(self.tieba_name):
+            if self.admin.recover(self.tieba_name,tid,is_frs_mask=True):
+                self.admin.mysql.del_tid(self.tieba_name,tid)
+
+        return True
+
     def cmd_blacklist_add(self, post, id):
         """
         blacklist_add指令
@@ -476,7 +517,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='大吧主放权脚本', allow_abbrev=False)
     parser.add_argument('--admin_BDUSS_key', '-ak',
                         type=str,
-                        default='default',
+                        default='noob',
                         help='用于获取BDUSS，该BDUSS为对应吧的大吧主')
     parser.add_argument('--listener_BDUSS_key', '-lk',
                         type=str,
@@ -485,8 +526,8 @@ if __name__ == '__main__':
 
     parser.add_argument('--tieba_name', '-b',
                         type=str,
-                        help='执行大吧主操作的贴吧名',
-                        required=True)
+                        default='asoul',
+                        help='执行大吧主操作的贴吧名')
 
     parser.add_argument('--listen_tid', '-t',
                         type=int,

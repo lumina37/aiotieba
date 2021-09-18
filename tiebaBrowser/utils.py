@@ -2,32 +2,16 @@
 __all__ = ('Browser',)
 
 
-import os
-import sys
-import time
-import traceback
-from pathlib import Path
-
 import hashlib
+import re
+import traceback
 
 import requests as req
-
-import re
-import json
 from bs4 import BeautifulSoup
-import pickle
 
+from .config import MODULE_DIR, SCRIPT_DIR, config
 from .data_structure import *
-from .logger import log, SCRIPT_DIR, MODULE_DIR
-
-
-config = None
-try:
-    with (SCRIPT_DIR.parent / 'config/config.json').open('r', encoding='utf-8') as file:
-        config = json.load(file)
-except Exception:
-    log.critical("Unable to read config.json!")
-    raise
+from .logger import log
 
 
 class Sessions(object):
@@ -103,32 +87,11 @@ class Browser(object):
 
     def __init__(self, BDUSS_key):
 
-        cache_dir = MODULE_DIR / 'cache'
-        cache_dir.mkdir(0o700, exist_ok=True)
-        fid_cache_filepath = cache_dir / 'fid_cache.pk'
-
-        try:
-            with fid_cache_filepath.open('rb') as pickle_file:
-                self.fid_dict = pickle.load(pickle_file)
-        except:
-            log.warning(
-                f"Failed to read fid_cache in `{fid_cache_filepath}`. Create a new one.")
-            self.fid_dict = {}
-
+        self.fid_dict = {}
         self.sessions = Sessions(BDUSS_key)
 
     def close(self):
-        """
-        自动缓存fid信息
-        """
-
-        fid_cache_filepath = MODULE_DIR / 'cache/fid_cache.pk'
-
-        try:
-            with fid_cache_filepath.open('wb') as pickle_file:
-                pickle.dump(self.fid_dict, pickle_file)
-        except AttributeError:
-            log.error("Failed to save fid cache!")
+        pass
 
     @staticmethod
     def _app_sign(payload: dict):
@@ -582,7 +545,8 @@ class Browser(object):
                 f"Failed to delete thread {tid} in {tieba_name} Reason:{err}")
             return False
 
-        log.info(f"Successfully deleted thread {tid} hide:{is_frs_mask} in {tieba_name}")
+        log.info(
+            f"Successfully deleted thread {tid} hide:{is_frs_mask} in {tieba_name}")
         return True
 
     def del_post(self, tieba_name, tid, pid):
@@ -695,9 +659,9 @@ class Browser(object):
                 'class="next_page"', res.text) else False
             raw = re.search('<tbody>.*</tbody>', res.text, re.S).group()
 
-            content = BeautifulSoup(raw, 'lxml')
+            soup = BeautifulSoup(raw, 'lxml')
             black_list = [black_raw.find("a", class_='avatar_link').text.strip(
-            ) for black_raw in content.find_all("tr")]
+            ) for black_raw in soup.find_all("tr")]
 
         except Exception as err:
             log.error(
@@ -809,7 +773,8 @@ class Browser(object):
                 f"Failed to recover tid:{tid} pid:{pid} in {tieba_name}. Reason:{err}")
             return False
 
-        log.info(f"Successfully recovered tid:{tid} pid:{pid} hide:{is_frs_mask} in {tieba_name}")
+        log.info(
+            f"Successfully recovered tid:{tid} pid:{pid} hide:{is_frs_mask} in {tieba_name}")
         return True
 
     def unblock(self, tieba_name, id):

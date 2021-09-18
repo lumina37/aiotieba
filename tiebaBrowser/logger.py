@@ -3,15 +3,11 @@ __all__ = ('SCRIPT_DIR',
            'MyLogger', 'log')
 
 
-import os
-import sys
-from pathlib import Path
-
 import logging
 import logging.handlers
+import sys
 
-SCRIPT_DIR = Path(sys.argv[0])
-MODULE_DIR = Path(__file__).parent
+from .config import MODULE_DIR, SCRIPT_DIR
 
 
 class MyLogger(logging.Logger):
