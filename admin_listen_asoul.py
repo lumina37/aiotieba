@@ -47,7 +47,7 @@ class TimeRange(object):
 
 class Listener(object):
 
-    access_user = {'kk不好玩': 3, 'Noob_legend': 3, '梨木利亚': 3, 'v_guard': 3,
+    access_user = {'kk不好玩': 3, 'Noob_legend': 3, '梨木利亚': 3, '荧光_Starry': 3,
                    'NEXTCR': 3, '云淡一青山': 3, '高端大气00后': 3, 'LIN_S_H': 3, 'shejans': 3, 'jkpp丶': 3, '王重阳双子': 3, '闪打快手丿': 3, 'miiint444': 3, '咿呀呼哈啾': 3, 'earth汉1314': 3, '绝对很囧': 3, '嘿嘿哈哈哈ch': 3}
 
     def __init__(self, admin_BDUSS_key, listener_BDUSS_key, tieba_name, listen_tid):
@@ -365,7 +365,7 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        flag = self.admin.mysql.set_tid(self.tieba_name, at.tid)
+        flag = self.admin.mysql.add_tid(self.tieba_name, at.tid)
         flag = flag and self.admin.del_thread(self.tieba_name, at.tid, is_frs_mask=True)
 
         return True if flag else None

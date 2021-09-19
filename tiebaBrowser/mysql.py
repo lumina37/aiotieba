@@ -169,29 +169,28 @@ class MySQL(object):
             f"SHOW TABLES LIKE 'tid_tmphide_{tieba_name_eng}'")
         if not self.mycursor.fetchone():
             self.mycursor.execute(
-                f"CREATE TABLE tid_tmphide_{tieba_name_eng} (tid BIGINT PRIMARY KEY, need_rec BOOL NOT NULL DEFAULT TRUE, record_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)")
+                f"CREATE TABLE tid_tmphide_{tieba_name_eng} (tid BIGINT PRIMARY KEY)")
 
     @translate_tieba_name
-    def set_tid(self, tieba_name_eng, tid, mode=False):
+    def add_tid(self, tieba_name_eng, tid):
         """
         在tid_tmphide_{tieba_name_eng}中设置tid的待恢复状态
-        set_tid(tieba_name,tid,mode)
+        add_tid(tieba_name,tid)
 
         参数:
             tieba_name: str 贴吧名
             tid: int
-            mode: bool 若为True则该帖需要定时恢复
         """
 
         try:
             self.mycursor.execute(
-                f"INSERT INTO tid_tmphide_{tieba_name_eng} VALUES ({tid},{mode},DEFAULT) ON DUPLICATE KEY UPDATE need_rec={mode}")
+                f"INSERT INTO tid_tmphide_{tieba_name_eng} VALUES ({tid})")
         except pymysql.DatabaseError:
             log.error(f"MySQL Error: Failed to insert {tid}!")
             return False
         else:
             log.info(
-                f"Successfully set {tid} in table of {tieba_name_eng} mode:{mode}")
+                f"Successfully set {tid} in table of {tieba_name_eng}")
             self.mydb.commit()
             return True
 
@@ -202,21 +201,17 @@ class MySQL(object):
         get_tid(tieba_name,tid)
 
         返回值:
-            mode: bool 若为True则该帖需要定时恢复
+            mode: bool 若为True则该帖待恢复
         """
 
         try:
             self.mycursor.execute(
-                f"SELECT need_rec FROM tid_tmphide_{tieba_name_eng} WHERE tid={tid}")
+                f"SELECT NULL FROM tid_tmphide_{tieba_name_eng} WHERE tid={tid}")
         except pymysql.DatabaseError:
             log.error(f"MySQL Error: Failed to select {tid}!")
             return None
         else:
-            res_tuple = self.mycursor.fetchone()
-            if res_tuple:
-                return True if res_tuple[0] else False
-            else:
-                return None
+            return True if self.mycursor.fetchone() else False
 
     @translate_tieba_name
     def del_tid(self, tieba_name_eng, tid):
@@ -253,7 +248,7 @@ class MySQL(object):
         for i in range(sys.maxsize):
             try:
                 self.mycursor.execute(
-                    f"SELECT tid FROM tid_tmphide_{tieba_name_eng} WHERE need_rec=1 LIMIT {batch_size} OFFSET {i * batch_size}")
+                    f"SELECT tid FROM tid_tmphide_{tieba_name_eng} LIMIT {batch_size} OFFSET {i * batch_size}")
             except pymysql.DatabaseError:
                 log.error(f"MySQL Error: Failed to select {tid}!")
                 return False

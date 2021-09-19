@@ -52,7 +52,7 @@ class CloudReview(tiebaBrowser.CloudReview):
                 for portrait, _threads in users.items():
                     if portrait and len(_threads) >= 4 and not self.mysql.is_portrait_white(self.tieba_name, portrait):
                         for thread in _threads[1:]:
-                            self.del_thread(self.tieba_name,thread.tid,is_frs_mask=True)
+                            self.del_thread(self.tieba_name,thread.tid)
                 tiebaBrowser.log.debug('heartbeat')
                 if self.sleep_time:
                     time.sleep(self.sleep_time)
@@ -239,7 +239,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='贴吧云审查', allow_abbrev=False)
     parser.add_argument('--BDUSS_key', '-k',
                         type=str,
-                        default='noob',
+                        default='default',
                         help='用于获取BDUSS')
 
     parser.add_argument('--tieba_name', '-b',

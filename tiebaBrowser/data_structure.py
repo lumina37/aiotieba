@@ -25,9 +25,9 @@ class UserInfo(object):
     __slots__ = ['user_name',
                  '_nick_name',
                  '_portrait',
-                 'user_id',
-                 'level',
-                 'gender']
+                 '_user_id',
+                 '_level',
+                 '_gender']
 
     def __init__(self, user_name='', nick_name='', portrait='', user_id=0, level=0, gender=0):
         self.user_name = user_name
@@ -62,6 +62,39 @@ class UserInfo(object):
                                           1] if new_portrait.endswith('?') else new_portrait
         except Exception:
             self._portrait = ''
+
+    @property
+    def user_id(self):
+        return self._user_id
+
+    @user_id.setter
+    def user_id(self, new_user_id):
+        if new_user_id:
+            self._user_id = int(new_user_id)
+        else:
+            self._user_id = 0
+
+    @property
+    def level(self):
+        return self._level
+
+    @level.setter
+    def level(self, new_level):
+        if new_level:
+            self._level = int(new_level)
+        else:
+            self._level = 0
+
+    @property
+    def gender(self):
+        return self._gender
+
+    @gender.setter
+    def gender(self, new_gender):
+        if new_gender:
+            self._gender = int(new_gender)
+        else:
+            self._gender = 0
 
     @property
     def name(self):
@@ -156,15 +189,12 @@ class Threads(list):
         if main_json:
             users = {}
             for user_dict in main_json['user_list']:
-                try:
-                    user_id = int(user_dict['id'])
-                    users[user_id] = UserInfo(user_name=user_dict['name'],
-                                              nick_name=user_dict['name_show'],
-                                              portrait=user_dict['portrait'],
-                                              user_id=user_id)
-                except Exception:
-                    log.warning(traceback.format_exc())
-                    continue
+                user_id = int(user_dict['id'])
+                users[user_id] = UserInfo(user_name=user_dict['name'],
+                                          nick_name=user_dict['name_show'],
+                                          portrait=user_dict['portrait'],
+                                          user_id=user_id,
+                                          gender=user_dict['gender'])
 
             self.current_pn = int(main_json['page']['current_page'])
             self.total_pn = int(main_json['page']['total_page'])
@@ -287,20 +317,15 @@ class Posts(list):
         if main_json:
             users = {}
             for user_dict in main_json['user_list']:
-                try:
-                    if not user_dict.get('portrait', None):
-                        continue
-                    user_id = int(user_dict['id'])
-                    gender = user_dict['gender']
-                    users[user_id] = UserInfo(user_name=user_dict['name'],
-                                              nick_name=user_dict['name_show'],
-                                              portrait=user_dict['portrait'],
-                                              user_id=user_id,
-                                              level=int(user_dict['level_id']),
-                                              gender=int(gender) if gender else 0)
-                except Exception:
-                    log.warning(traceback.format_exc())
+                if not user_dict.get('portrait', None):
                     continue
+                user_id = int(user_dict['id'])
+                users[user_id] = UserInfo(user_name=user_dict['name'],
+                                          nick_name=user_dict['name_show'],
+                                          portrait=user_dict['portrait'],
+                                          user_id=user_id,
+                                          level=user_dict['level_id'],
+                                          gender=user_dict['gender'])
 
             self.current_pn = int(main_json['page']['current_page'])
             self.total_pn = int(main_json['page']['total_page'])
@@ -429,13 +454,12 @@ class Comments(list):
                     text = ''.join(texts)
 
                     user_dict = comment_raw['author']
-                    gender = user_dict['gender']
                     user = UserInfo(user_name=user_dict['name'],
                                     nick_name=user_dict['name_show'],
                                     portrait=user_dict['portrait'],
-                                    user_id=int(user_dict['id']),
-                                    level=int(user_dict['level_id']),
-                                    gender=int(gender) if gender else 0)
+                                    user_id=user_dict['id'],
+                                    level=user_dict['level_id'],
+                                    gender=user_dict['gender'])
 
                     comment = Comment(fid=fid,
                                       tid=tid,
