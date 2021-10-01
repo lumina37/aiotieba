@@ -48,7 +48,7 @@ class TimeRange(object):
 class Listener(object):
 
     access_user = {'kk不好玩': 3, 'Noob_legend': 3, '梨木利亚': 3, '荧光_Starry': 3,
-                   'NEXTCR': 3, '云淡一青山': 3, '高端大气00后': 3, 'LIN_S_H': 3, 'shejans': 3, 'jkpp丶': 3, '王重阳双子': 3, '闪打快手丿': 3, 'miiint444': 3, '咿呀呼哈啾': 3, 'earth汉1314': 3, '绝对很囧': 3, '嘿嘿哈哈哈ch': 3}
+                   'NEXTCR': 3, '云淡一青山': 3, '高端大气00后': 3, 'LIN_S_H': 3, 'shejans': 3, 'jkpp丶': 3, '王重阳双子': 3, '闪打快手丿': 3, 'miiint444': 3, '咿呀呼哈啾': 3, 'earth汉1314': 3, '绝对很囧': 3, '嘿嘿哈哈哈ch': 3, '或将世界颠覆': 3, '无影的索菲娅': 3, '里氏深魔炼': 3, '魔法少年氢': 3}
 
     def __init__(self, admin_BDUSS_key, listener_BDUSS_key, tieba_name, listen_tid):
         self.listener = tb.Browser(listener_BDUSS_key)
@@ -57,7 +57,7 @@ class Listener(object):
         self.tieba_name = tieba_name
         self.listen_tid = listen_tid
 
-        self.time_range = TimeRange((-1200, -10))
+        self.time_range = TimeRange((-40, -10))
 
         self.func_map = {'recommend': self.cmd_recommend,
                          'drop': self.cmd_drop,

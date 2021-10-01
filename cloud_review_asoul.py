@@ -51,6 +51,7 @@ class CloudReview(tiebaBrowser.CloudReview):
                         users[thread.user.portrait] = user_threads
                 for portrait, _threads in users.items():
                     if portrait and len(_threads) >= 4 and not self.mysql.is_portrait_white(self.tieba_name, portrait):
+                        tiebaBrowser.log.info(f"Clear Water {thread.user.logname}")
                         for thread in _threads[1:]:
                             self.del_thread(self.tieba_name,thread.tid)
                 tiebaBrowser.log.debug('heartbeat')
@@ -153,7 +154,7 @@ class CloudReview(tiebaBrowser.CloudReview):
                     return 1
 
         text = obj.text
-        if re.search("(a|(?<![a-z])v|嘉|＋|\+|➕|梓|罐|豆|鸟|鲨)(÷|/|／|➗|畜|处|除)|皮套狗", text, re.I) is not None:
+        if re.search("(a|(?<![a-z])v|嘉|＋|\+|➕|梓|罐|豆|鸟|鲨)(÷|/|／|➗|畜|处|除|初)|皮套狗|李奕|椰子汁|🥥", text, re.I) is not None:
             return 1
 
         level = obj.user.level
