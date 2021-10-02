@@ -189,12 +189,15 @@ class Threads(list):
         if main_json:
             users = {}
             for user_dict in main_json['user_list']:
-                user_id = int(user_dict['id'])
-                users[user_id] = UserInfo(user_name=user_dict['name'],
-                                          nick_name=user_dict['name_show'],
-                                          portrait=user_dict['portrait'],
-                                          user_id=user_id,
-                                          gender=user_dict['gender'])
+                try:
+                    user_id = int(user_dict['id'])
+                    users[user_id] = UserInfo(user_name=user_dict['name'],
+                                              nick_name=user_dict['name_show'],
+                                              portrait=user_dict['portrait'],
+                                              user_id=user_id,
+                                              gender=user_dict['gender'])
+                except Exception:
+                    continue
 
             self.current_pn = int(main_json['page']['current_page'])
             self.total_pn = int(main_json['page']['total_page'])
@@ -317,15 +320,16 @@ class Posts(list):
         if main_json:
             users = {}
             for user_dict in main_json['user_list']:
-                if not user_dict.get('portrait', None):
+                try:
+                    user_id = int(user_dict['id'])
+                    users[user_id] = UserInfo(user_name=user_dict['name'],
+                                              nick_name=user_dict['name_show'],
+                                              portrait=user_dict['portrait'],
+                                              user_id=user_id,
+                                              level=user_dict['level_id'],
+                                              gender=user_dict['gender'])
+                except Exception:
                     continue
-                user_id = int(user_dict['id'])
-                users[user_id] = UserInfo(user_name=user_dict['name'],
-                                          nick_name=user_dict['name_show'],
-                                          portrait=user_dict['portrait'],
-                                          user_id=user_id,
-                                          level=user_dict['level_id'],
-                                          gender=user_dict['gender'])
 
             self.current_pn = int(main_json['page']['current_page'])
             self.total_pn = int(main_json['page']['total_page'])
