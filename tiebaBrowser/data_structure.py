@@ -205,7 +205,7 @@ class Threads(list):
                                               user_id=user_id,
                                               gender=user_dict['gender'])
                 except Exception as err:
-                    log.warning(
+                    log.error(
                         f"Failed to init UserInfo of {user_dict['portrait']} in fid:{fid}. reason:{traceback.format_tb(err.__traceback__)[-1]}")
                     continue
 
@@ -253,7 +253,7 @@ class Threads(list):
                     self.append(thread)
 
                 except:
-                    log.warning(
+                    log.error(
                         f"Failed to init Thread in {fid}. reason:{traceback.format_tb(err.__traceback__)[-1]}")
                     continue
 
@@ -346,7 +346,7 @@ class Posts(list):
                                               level=user_dict['level_id'],
                                               gender=user_dict['gender'])
                 except Exception as err:
-                    log.warning(
+                    log.error(
                         f"Failed to init UserInfo of {user_dict['portrait']} in tid:{tid}. reason:{traceback.format_tb(err.__traceback__)[-1]}")
                     continue
 
@@ -393,7 +393,7 @@ class Posts(list):
                     self.append(post)
 
                 except Exception as err:
-                    log.warning(
+                    log.error(
                         f"Failed to init Post in {tid}. reason:{traceback.format_tb(err.__traceback__)[-1]}")
                     continue
 
@@ -499,7 +499,7 @@ class Comments(list):
                     self.append(comment)
 
                 except Exception as err:
-                    log.warning(
+                    log.error(
                         f"Failed to init Comment in {tid}. reason:{traceback.format_tb(err.__traceback__)[-1]}")
                     continue
 
