@@ -144,7 +144,7 @@ class Browser(object):
             tbs = main_json['tbs']
 
         except Exception as err:
-            log.error(f"Failed to get tbs Reason: {err}")
+            log.error(f"Failed to get tbs reason: {err}")
             tbs = ''
 
         return tbs
@@ -179,7 +179,7 @@ class Browser(object):
                 fid = int(main_json['data']['fid'])
 
             except Exception as err:
-                error_msg = f"Failed to get fid of {tieba_name} Reason:{err}"
+                error_msg = f"Failed to get fid of {tieba_name} reason:{err}"
                 log.critical(error_msg)
                 raise ValueError(error_msg)
 
@@ -231,7 +231,7 @@ class Browser(object):
                             gender=gender)
 
         except Exception as err:
-            log.error(f"Failed to get UserInfo of {id} Reason:{err}")
+            log.error(f"Failed to get UserInfo of {id} reason:{err}")
             user = UserInfo()
 
         return user
@@ -271,7 +271,7 @@ class Browser(object):
             threads = Threads(main_json)
 
         except Exception as err:
-            log.error(f"Failed to get threads of {tieba_name} Reason:{err}")
+            log.error(f"Failed to get threads of {tieba_name} reason:{err}")
             threads = Threads()
 
         return threads
@@ -312,7 +312,7 @@ class Browser(object):
             posts = Posts(main_json)
 
         except Exception as err:
-            log.error(f"Failed to get posts of {tid} Reason:{err}")
+            log.error(f"Failed to get posts of {tid} reason:{err}")
             posts = Posts()
 
         return posts
@@ -353,7 +353,7 @@ class Browser(object):
             comments = Comments(main_json)
 
         except Exception as err:
-            log.error(f"Failed to get comments of {pid} in {tid} Reason:{err}")
+            log.error(f"Failed to get comments of {pid} in {tid} reason:{err}")
             comments = Comments()
 
         return comments
@@ -394,7 +394,7 @@ class Browser(object):
                 ats.append(at)
 
         except Exception as err:
-            log.error(f"Failed to get ats Reason:{err}")
+            log.error(f"Failed to get ats reason:{err}")
             ats = []
 
         return ats
@@ -439,7 +439,7 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            log.error(f"Failed to set privacy to {tid} Reason:{err}")
+            log.error(f"Failed to set privacy to {tid} reason:{err}")
             return False
 
         log.info(f"Successfully set privacy to {tid}")
@@ -499,7 +499,7 @@ class Browser(object):
 
         except Exception as err:
             log.error(
-                f"Failed to block {user.logname} in {tieba_name} Reason:{err}")
+                f"Failed to block {user.logname} in {tieba_name} reason:{err}")
             return False, user
 
         log.info(
@@ -542,7 +542,7 @@ class Browser(object):
 
         except Exception as err:
             log.error(
-                f"Failed to delete thread {tid} in {tieba_name} Reason:{err}")
+                f"Failed to delete thread {tid} in {tieba_name} reason:{err}")
             return False
 
         log.info(
@@ -585,7 +585,7 @@ class Browser(object):
 
         except Exception as err:
             log.error(
-                f"Failed to delete post {pid} in {tid} in {tieba_name}. Reason:{err}")
+                f"Failed to delete post {pid} in {tid} in {tieba_name}. reason:{err}")
             return False
 
         log.info(f"Successfully deleted post {pid} in {tid} in {tieba_name}")
@@ -625,7 +625,7 @@ class Browser(object):
 
         except Exception as err:
             log.error(
-                f"Failed to add {user.logname} to black_list in {tieba_name}. Reason:{err}")
+                f"Failed to add {user.logname} to black_list in {tieba_name}. reason:{err}")
             return False
 
         log.info(
@@ -665,7 +665,7 @@ class Browser(object):
 
         except Exception as err:
             log.error(
-                f"Failed to get black_list of {tieba_name}. Reason:{err}")
+                f"Failed to get black_list of {tieba_name}. reason:{err}")
             return False, []
 
         return has_next, black_list
@@ -709,7 +709,7 @@ class Browser(object):
 
         except Exception as err:
             log.error(
-                f"Failed to delete {ids} from black_list in {tieba_name}. Reason:{err}")
+                f"Failed to delete {ids} from black_list in {tieba_name}. reason:{err}")
             return False
 
         log.info(f"Successfully deleted {ids} from black_list in {tieba_name}")
@@ -770,7 +770,7 @@ class Browser(object):
 
         except Exception as err:
             log.error(
-                f"Failed to recover tid:{tid} pid:{pid} in {tieba_name}. Reason:{err}")
+                f"Failed to recover tid:{tid} pid:{pid} in {tieba_name}. reason:{err}")
             return False
 
         log.info(
@@ -814,7 +814,7 @@ class Browser(object):
 
         except Exception as err:
             log.error(
-                f"Failed to unblock {user.logname} in {tieba_name}. Reason:{err}")
+                f"Failed to unblock {user.logname} in {tieba_name}. reason:{err}")
             return False
 
         log.info(f"Successfully unblocked {user.logname} in {tieba_name}")
@@ -856,7 +856,7 @@ class Browser(object):
 
         except Exception as err:
             log.error(
-                f"Failed to recommend {tid} in {tieba_name}. Reason:{err}")
+                f"Failed to recommend {tid} in {tieba_name}. reason:{err}")
             return False
 
         log.info(f"Successfully recommended {tid} in {tieba_name}")
@@ -902,11 +902,11 @@ class Browser(object):
 
             except Exception as err:
                 log.error(
-                    f"Failed to handle {appeal_id} in {tieba_name}. Reason:{err}")
+                    f"Failed to handle {appeal_id} in {tieba_name}. reason:{err}")
                 return False
 
             log.info(
-                f"Successfully handled {appeal_id} in {tieba_name} refuse:{refuse}")
+                f"Successfully handled {appeal_id} in {tieba_name}. refuse:{refuse}")
             return True
 
         def __get_appeal_list():
@@ -944,7 +944,7 @@ class Browser(object):
 
             except Exception as err:
                 log.error(
-                    f"Failed to get appeal_list of {tieba_name}. Reason:{err}")
+                    f"Failed to get appeal_list of {tieba_name}. reason:{err}")
                 return
 
         for appeal_id in __get_appeal_list():

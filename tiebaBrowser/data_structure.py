@@ -187,6 +187,13 @@ class Threads(list):
     def __init__(self, main_json=None):
 
         if main_json:
+            try:
+                self.current_pn = int(main_json['page']['current_page'])
+                self.total_pn = int(main_json['page']['total_page'])
+                fid = int(main_json['forum']['id'])
+            except Exception as err:
+                raise ValueError(f"Null value at line:{err.__traceback__.tb_lineno}")
+
             users = {}
             for user_dict in main_json['user_list']:
                 try:
@@ -196,12 +203,9 @@ class Threads(list):
                                               portrait=user_dict['portrait'],
                                               user_id=user_id,
                                               gender=user_dict['gender'])
-                except Exception:
+                except Exception as err:
+                    log.warning(f"Failed to init UserInfo of {user_dict['portrait']} in fid:{fid}. reason:{traceback.format_tb(err.__traceback__)[-1]}")
                     continue
-
-            self.current_pn = int(main_json['page']['current_page'])
-            self.total_pn = int(main_json['page']['total_page'])
-            fid = int(main_json['forum']['id'])
 
             for thread_raw in main_json['thread_list']:
                 try:
@@ -247,7 +251,7 @@ class Threads(list):
                     self.append(thread)
 
                 except:
-                    log.warning(traceback.format_exc())
+                    log.warning(f"Failed to init Thread in {fid}. reason:{traceback.format_tb(err.__traceback__)[-1]}")
                     continue
 
         else:
@@ -318,6 +322,15 @@ class Posts(list):
     def __init__(self, main_json=None):
 
         if main_json:
+            try:
+                self.current_pn = int(main_json['page']['current_page'])
+                self.total_pn = int(main_json['page']['total_page'])
+                thread_owner_id = int(main_json["thread"]['author']['id'])
+                fid = int(main_json['forum']['id'])
+                tid = int(main_json['thread']['id'])
+            except Exception as err:
+                raise ValueError(f"Null value at line:{err.__traceback__.tb_lineno}")
+
             users = {}
             for user_dict in main_json['user_list']:
                 try:
@@ -328,14 +341,9 @@ class Posts(list):
                                               user_id=user_id,
                                               level=user_dict['level_id'],
                                               gender=user_dict['gender'])
-                except Exception:
+                except Exception as err:
+                    log.warning(f"Failed to init UserInfo of {user_dict['portrait']} in tid:{tid}. reason:{traceback.format_tb(err.__traceback__)[-1]}")
                     continue
-
-            self.current_pn = int(main_json['page']['current_page'])
-            self.total_pn = int(main_json['page']['total_page'])
-            thread_owner_id = int(main_json["thread"]['author']['id'])
-            fid = int(main_json['forum']['id'])
-            tid = int(main_json['thread']['id'])
 
             for post_raw in main_json['post_list']:
                 try:
@@ -379,8 +387,8 @@ class Posts(list):
 
                     self.append(post)
 
-                except Exception:
-                    log.warning(traceback.format_exc())
+                except Exception as err:
+                    log.warning(f"Failed to init Post in {tid}. reason:{traceback.format_tb(err.__traceback__)[-1]}")
                     continue
 
         else:
@@ -433,11 +441,13 @@ class Comments(list):
     def __init__(self, main_json=None):
 
         if main_json:
-
-            self.current_pn = int(main_json['page']['current_page'])
-            self.total_pn = int(main_json['page']['total_page'])
-            fid = int(main_json['forum']['id'])
-            tid = int(main_json['thread']['id'])
+            try:
+                self.current_pn = int(main_json['page']['current_page'])
+                self.total_pn = int(main_json['page']['total_page'])
+                fid = int(main_json['forum']['id'])
+                tid = int(main_json['thread']['id'])
+            except Exception as err:
+                raise ValueError(f"Null value at line:{err.__traceback__.tb_lineno}")
 
             for comment_raw in main_json['subpost_list']:
                 try:
@@ -481,8 +491,8 @@ class Comments(list):
 
                     self.append(comment)
 
-                except:
-                    log.warning(traceback.format_exc())
+                except Exception as err:
+                    log.warning(f"Failed to init Comment in {tid}. reason:{traceback.format_tb(err.__traceback__)[-1]}")
                     continue
 
         else:

@@ -185,7 +185,7 @@ class CloudReview(Browser):
             raw = pyzbar.decode(image)
             data = unquote(raw[0].data.decode('utf-8')) if raw else None
         except Exception as err:
-            log.error(f"Failed to decode image {img_url}. Reason:{err}")
+            log.error(f"Failed to decode image {img_url}. reason:{err}")
             data = None
 
         return data
@@ -199,7 +199,7 @@ class CloudReview(Browser):
             image = self._url2image(img_url)
             dhash = imagehash.dhash(image)
         except Exception as err:
-            log.error(f"Failed to get dhash of {img_url}. Reason:{err}")
+            log.error(f"Failed to get dhash of {img_url}. reason:{err}")
             dhash = None
 
         return dhash
