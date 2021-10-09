@@ -193,7 +193,7 @@ class Threads(list):
                 fid = int(main_json['forum']['id'])
             except Exception as err:
                 raise ValueError(
-                    f"Null value at line{err.__traceback__.tb_lineno}")
+                    f"Null value at line {err.__traceback__.tb_lineno}")
 
             users = {}
             for user_dict in main_json['user_list']:
@@ -333,7 +333,7 @@ class Posts(list):
                 tid = int(main_json['thread']['id'])
             except Exception as err:
                 raise ValueError(
-                    f"Null value at line{err.__traceback__.tb_lineno}")
+                    f"Null value at line {err.__traceback__.tb_lineno}")
 
             users = {}
             for user_dict in main_json['user_list']:
@@ -454,7 +454,7 @@ class Comments(list):
                 tid = int(main_json['thread']['id'])
             except Exception as err:
                 raise ValueError(
-                    f"Null value at line{err.__traceback__.tb_lineno}")
+                    f"Null value at line {err.__traceback__.tb_lineno}")
 
             for comment_raw in main_json['subpost_list']:
                 try:
