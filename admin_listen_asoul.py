@@ -47,8 +47,33 @@ class TimeRange(object):
 
 class Listener(object):
 
-    access_user = {'kk不好玩': 3, 'Noob_legend': 3, '梨木利亚': 3, '荧光_Starry': 3,
-                   'NEXTCR': 3, '云淡一青山': 3, '高端大气00后': 3, 'LIN_S_H': 3, 'shejans': 3, 'jkpp丶': 3, '王重阳双子': 3, '闪打快手丿': 3, 'miiint444': 3, '咿呀呼哈啾': 3, 'earth汉1314': 3, '绝对很囧': 3, '嘿嘿哈哈哈ch': 3, '或将世界颠覆': 3, '无影的索菲娅': 3, '里氏深魔炼': 3, '魔法少年氢': 3}
+    access_user = {'kk不好玩': 3,
+                   'Noob_legend': 3,
+                   '梨木利亚': 3,
+                   '荧光_Starry': 3,
+                   'NEXTCR': 3,
+                   '云淡一青山': 3,
+                   '高端大气00后': 3,
+                   'LIN_S_H': 3,
+                   'shejans': 3,
+                   'jkpp丶': 3,
+                   '王重阳双子': 3,
+                   '闪打快手丿': 3,
+                   'miiint444': 3,
+                   '咿呀呼哈啾': 3,
+                   'earth汉1314': 3,
+                   '绝对很囧': 3,
+                   '嘿嘿哈哈哈ch': 3,
+                   '或将世界颠覆': 3,
+                   '无影的索菲娅': 3,
+                   '里氏深魔炼': 3,
+                   '魔法少年氢': 3,
+                   '夢野敬二abc': 3,
+                   'SSSSYuan16': 3,
+                   '雷神幻影38535': 3,
+                   '某宅FZ': 3,
+                   '帅111哥': 3,
+                   '追秒小宝开': 3, }
 
     def __init__(self, admin_BDUSS_key, listener_BDUSS_key, tieba_name, listen_tid):
         self.listener = tb.Browser(listener_BDUSS_key)
@@ -193,7 +218,8 @@ class Listener(object):
         if not posts:
             return None
 
-        tb.log.info(f"Try to delete thread {posts[0].text} post by {posts[0].user.logname}")
+        tb.log.info(
+            f"Try to delete thread {posts[0].text} post by {posts[0].user.logname}")
 
         self.admin.block(self.tieba_name, posts[0].user, day=10)
         self.admin.del_post(self.tieba_name, at.tid, at.pid)
@@ -366,7 +392,8 @@ class Listener(object):
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
         flag = self.admin.mysql.add_tid(self.tieba_name, at.tid)
-        flag = flag and self.admin.del_thread(self.tieba_name, at.tid, is_frs_mask=True)
+        flag = flag and self.admin.del_thread(
+            self.tieba_name, at.tid, is_frs_mask=True)
 
         return True if flag else None
 
@@ -387,8 +414,8 @@ class Listener(object):
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
         for tid in self.admin.mysql.get_tids(self.tieba_name):
-            if self.admin.recover(self.tieba_name,tid,is_frs_mask=True):
-                self.admin.mysql.del_tid(self.tieba_name,tid)
+            if self.admin.recover(self.tieba_name, tid, is_frs_mask=True):
+                self.admin.mysql.del_tid(self.tieba_name, tid)
 
         return True
 

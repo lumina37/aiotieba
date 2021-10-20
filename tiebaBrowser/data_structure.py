@@ -328,7 +328,7 @@ class Posts(list):
             try:
                 self.current_pn = int(main_json['page']['current_page'])
                 self.total_pn = int(main_json['page']['total_page'])
-                thread_owner_id = int(main_json["thread"]['author']['id'])
+                thread_owner_id = int(main_json['thread']['author']['id'])
                 fid = int(main_json['forum']['id'])
                 tid = int(main_json['thread']['id'])
             except Exception as err:

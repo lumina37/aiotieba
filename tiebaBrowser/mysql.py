@@ -42,7 +42,7 @@ class MySQL(object):
         try:
             self.mydb = pymysql.connect(**mysql_json, database=db_name)
             self.mycursor = self.mydb.cursor()
-        except pymysql.ProgrammingError:
+        except pymysql.MySQLError:
             log.critical(f"Cannot link to the database {db_name}!")
             raise
 
