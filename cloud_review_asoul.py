@@ -24,11 +24,10 @@ class CloudReview(tiebaBrowser.CloudReview):
 
         white_kw_list = ['vup|管人|(哪个|什么)v',
                          '(a|b|睿|皇协|批|p)站|b博|海鲜|(v|a)(吧|8)|nga|404|ytb|论坛|字幕组|粉丝群|直播间',
-                         '4v|樱花妹|中之人|国v|个人势|holo|asoul|2434|vr|木口|猴楼|皮套|纸片人|套皮|主播|小红|团长|嘉然|然然|向晚|晚晚|乃琳|奶琳|贝拉|拉姐|珈乐|p\+|p家|帕里|爬犁|a(骚|s)|向晚|梓|(海|孩)子姐|七海|爱丽丝',
+                         '4v|樱花妹|中之人|国v|个人势|holo|asoul|2434|vr|木口|猴楼|皮套|纸片人|套皮|嘉然|然然|向晚|晚晚|乃琳|奶琳|贝拉|拉姐|珈乐|p\+|p家|a(骚|s)|向晚|梓|(海|孩)子姐|七海|爱丽丝',
                          '联动|歌回|杂谈|歌力|企划|前世|sc|弹幕|二次元|开播|取关|bv',
                          '谜语|拉胯|虚无|成分|黑屁|黑料|破防|真可怜|开团|(好|烂)活|干碎|对线|整活|乐了|乐子|橄榄|罢了|钓鱼|梁木|节奏|冲锋|yygq|阴间|泪目|图一乐|晚安',
-                         '懂哥|孝子|mmr|粉丝|天狗|crew|杏奴|幻官|宦官|幻士|嘉心糖|顶碗人|贝极星|奶淇淋|n70|皇(珈|家)|泥哥|小兔子|(a|b)u|一个魂',
-                         '空子|有空有空']
+                         '懂哥|孝子|mmr|粉丝|天狗|crew|杏奴|幻官|宦官|幻士|嘉心糖|顶碗人|贝极星|奶淇淋|n70|皇(珈|家)|泥哥|小兔子|(a|b)u|一个魂']
         self.white_kw_exp = re.compile('|'.join(white_kw_list), re.I)
 
     def close(self):
@@ -45,15 +44,15 @@ class CloudReview(tiebaBrowser.CloudReview):
                             f"Try to delete thread {thread.text} post by {thread.user.logname}")
                         self.del_thread(self.tieba_name, thread.tid)
                         continue
-                    if thread.like < 25 and thread.reply_num < 25:
+                    if thread.like < 25 and thread.reply_num < 25 and not self.white_kw_exp.search(thread.text):
                         user_threads = users.get(thread.user.portrait, [])
                         user_threads.append(thread)
                         users[thread.user.portrait] = user_threads
                 for portrait, _threads in users.items():
                     if portrait and len(_threads) >= 4 and not self.mysql.is_portrait_white(self.tieba_name, portrait):
                         tiebaBrowser.log.info(f"Clear Water {thread.user.logname}")
-                        for thread in _threads[1:]:
-                            self.del_thread(self.tieba_name,thread.tid)
+                        for thread in _threads:
+                            self.del_thread(self.tieba_name,thread.tid,is_frs_mask=True)
                 tiebaBrowser.log.debug('heartbeat')
                 if self.sleep_time:
                     time.sleep(self.sleep_time)
@@ -154,7 +153,7 @@ class CloudReview(tiebaBrowser.CloudReview):
                     return 1
 
         text = obj.text
-        if re.search("(a|(?<![a-z])v|嘉|＋|\+|➕|梓|罐|豆|鸟|鲨)(÷|/|／|➗|畜|处|除|初)|皮套狗|李奕|椰子汁|🥥", text, re.I) is not None:
+        if re.search("(a|(?<![a-z])v|瞳|嘉|＋|\+|➕|梓|罐|豆|鸟|鲨)(÷|/|／|➗|畜|处|除|初)|皮套狗|李奕|椰子汁|🥥", text, re.I) is not None:
             return 1
 
         level = obj.user.level
