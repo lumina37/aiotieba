@@ -44,15 +44,19 @@ class CloudReview(tiebaBrowser.CloudReview):
                             f"Try to delete thread {thread.text} post by {thread.user.logname}")
                         self.del_thread(self.tieba_name, thread.tid)
                         continue
-                    if thread.like < 25 and thread.reply_num < 25 and not self.white_kw_exp.search(thread.text):
+                    if thread.like < 30 and thread.reply_num < 20 and not self.white_kw_exp.search(thread.text):
                         user_threads = users.get(thread.user.portrait, [])
                         user_threads.append(thread)
                         users[thread.user.portrait] = user_threads
                 for portrait, _threads in users.items():
-                    if portrait and len(_threads) >= 4 and not self.mysql.is_portrait_white(self.tieba_name, portrait):
-                        tiebaBrowser.log.info(f"Clear Water {thread.user.logname}")
+                    if portrait and len(_threads) >= 5 and not self.mysql.is_portrait_white(self.tieba_name, portrait):
+                        tiebaBrowser.log.info(
+                            f"Clear Water {thread.user.logname}")
+                        self.block(
+                            self.tieba_name, _threads[0].user, 1, reason=f"line:{sys._getframe().f_lineno}")
                         for thread in _threads:
-                            self.del_thread(self.tieba_name,thread.tid,is_frs_mask=True)
+                            self.del_thread(self.tieba_name,
+                                            thread.tid, is_frs_mask=True)
                 tiebaBrowser.log.debug('heartbeat')
                 if self.sleep_time:
                     time.sleep(self.sleep_time)

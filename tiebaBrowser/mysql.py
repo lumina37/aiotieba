@@ -250,7 +250,7 @@ class MySQL(object):
                 self.mycursor.execute(
                     f"SELECT tid FROM tid_tmphide_{tieba_name_eng} LIMIT {batch_size} OFFSET {i * batch_size}")
             except pymysql.DatabaseError:
-                log.error(f"MySQL Error: Failed to select {tid}!")
+                log.error(f"MySQL Error: Failed to get tids in {tieba_name_eng}!")
                 return False
             else:
                 tid_list = self.mycursor.fetchall()
@@ -330,6 +330,33 @@ class MySQL(object):
                 return True if res_tuple[0] else False
             else:
                 return None
+
+    @translate_tieba_name
+    def get_portraits(self, tieba_name_eng, batch_size=30):
+        """
+        获得portrait列表
+        get_portraits(tieba_name,batch_size=30)
+
+        参数:
+            batch_size: int 分包大小
+
+        返回值:
+            portrait
+        """
+
+        for i in range(sys.maxsize):
+            try:
+                self.mycursor.execute(
+                    f"SELECT portrait FROM portrait_{tieba_name_eng} LIMIT {batch_size} OFFSET {i * batch_size}")
+            except pymysql.DatabaseError:
+                log.error(f"MySQL Error: Failed to get portraits in {tieba_name_eng}!")
+                return False
+            else:
+                portraits = self.mycursor.fetchall()
+                for portrait in portraits:
+                    yield portrait[0]
+                if len(portraits) != batch_size:
+                    break
 
     @translate_tieba_name
     def create_table_img_blacklist(self, tieba_name_eng):
