@@ -228,7 +228,7 @@ class Threads(list):
                         like = int(thread_raw['agree']['agree_num'])
                         dislike = int(thread_raw['agree']['disagree_num'])
                     else:
-                        like = int(thread_raw['agree_num'])
+                        like = 0
                         dislike = 0
 
                     thread = Thread(fid=fid,
@@ -252,7 +252,7 @@ class Threads(list):
 
                     self.append(thread)
 
-                except:
+                except Exception as err:
                     log.error(
                         f"Failed to init Thread in {fid}. reason:{traceback.format_tb(err.__traceback__)[-1]}")
                     continue
