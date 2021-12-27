@@ -4,7 +4,7 @@ __all__ = ('UserInfo',
            'Threads', 'Posts', 'Comments',
            'At')
 
-
+import re
 import traceback
 
 from .logger import log
@@ -54,13 +54,12 @@ class UserInfo(object):
 
     @portrait.setter
     def portrait(self, new_portrait: str):
-        try:
-            assert new_portrait.startswith(
-                'tb.'), f"portrait:{new_portrait} do not start with tb."
-            new_portrait = new_portrait[:36]
-            self._portrait = new_portrait[:-
-                                          1] if new_portrait.endswith('?') else new_portrait
-        except Exception:
+        if new_portrait and new_portrait.startswith('tb.'):
+            try:
+                self._portrait = re.match('[\w\-_.]+', new_portrait).group(0)
+            except Exception:
+                self._portrait = ''
+        else:
             self._portrait = ''
 
     @property

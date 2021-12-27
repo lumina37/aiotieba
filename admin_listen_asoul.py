@@ -85,6 +85,7 @@ class Listener(object):
 
         self.func_map = {'recommend': self.cmd_recommend,
                          'drop': self.cmd_drop,
+                         'delete': self.cmd_delete,
                          'unblock': self.cmd_unblock,
                          'block': self.cmd_block,
                          'recover': self.cmd_recover,
@@ -221,6 +222,36 @@ class Listener(object):
             f"Try to delete thread {posts[0].text} post by {posts[0].user.logname}")
 
         self.admin.block(self.tieba_name, posts[0].user, day=10)
+        self.admin.del_post(self.tieba_name, at.tid, at.pid)
+        self.admin.del_thread(self.tieba_name, at.tid)
+
+        return None
+
+    def cmd_delete(self, at, arg):
+        """
+        delete指令
+        删除指令所在主题帖
+
+        权限: 2
+        限制: 监听帖禁用
+        """
+
+        if at.tid == self.listen_tid:
+            return False
+        if at.tieba_name != self.tieba_name:
+            return None
+        if self.access_user.get(at.user.user_name, 0) < 2:
+            return None
+
+        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+
+        posts = self.listener.get_posts(at.tid)
+        if not posts:
+            return None
+
+        tb.log.info(
+            f"Try to delete thread {posts[0].text} post by {posts[0].user.logname}")
+
         self.admin.del_post(self.tieba_name, at.tid, at.pid)
         self.admin.del_thread(self.tieba_name, at.tid)
 
