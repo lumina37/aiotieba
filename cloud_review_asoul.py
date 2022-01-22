@@ -157,7 +157,11 @@ class CloudReview(tiebaBrowser.CloudReview):
                     return 1
 
         text = obj.text
-        if re.search("(a|(?<![a-z])v|瞳|嘉|＋|\+|➕|梓|罐|豆|鸟|鲨)(÷|/|／|➗|畜|处|除|初)|皮套狗|李奕|椰子汁|🥥", text, re.I) is not None:
+        if re.search("李奕|读物配音|有声书", text, re.I) is not None:
+            self.block(self.tieba_name, obj.user, day=10,
+                       reason=f"line:{sys._getframe().f_lineno}")
+            return 1
+        if re.search("((?<![a-z])(a|v)|瞳|嘉|＋|\+|➕|梓|罐|豆|鸟|鲨)(÷|/|／|➗|畜|处|除|初)|椰子汁|🥥", text, re.I) is not None:
             return 1
 
         level = obj.user.level

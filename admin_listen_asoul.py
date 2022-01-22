@@ -48,12 +48,10 @@ class TimeRange(object):
 class Listener(object):
 
     access_user = {'Noob_legend': 3,
-                   'NEXTCR': 3,
                    'LIN_S_H': 3,
                    'kk不好玩': 3,
                    '闪打快手丿': 3,
                    '咿呀呼哈啾': 3,
-                   'earth汉1314': 3,
                    '绝对很囧': 3,
                    '夢野敬二abc': 3,
                    '雷神幻影38535': 3,
