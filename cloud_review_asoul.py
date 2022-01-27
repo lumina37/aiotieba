@@ -156,7 +156,6 @@ class CloudReview(tiebaBrowser.CloudReview):
                 if self.has_img_hash(img):
                     return 1
 
-
         text = obj.text
         if re.search("李奕|读物配音|有声书", text, re.I) is not None:
             self.block(self.tieba_name, obj.user, day=10,
@@ -167,6 +166,8 @@ class CloudReview(tiebaBrowser.CloudReview):
 
         level = obj.user.level
         if level > 4:
+            return -1
+        if obj.user.is_vip or obj.user.is_god:
             return -1
 
         has_white_kw = True if self.white_kw_exp.search(text) else False

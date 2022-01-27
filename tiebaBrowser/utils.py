@@ -228,7 +228,8 @@ class Browser(object):
                             nick_name=data['name_show'],
                             portrait=data['portrait'],
                             user_id=data['id'],
-                            gender=gender)
+                            gender=gender,
+                            is_vip=bool(data['vipInfo']))
 
         except Exception as err:
             log.error(f"Failed to get UserInfo of {id} reason:{err}")
@@ -301,6 +302,7 @@ class Browser(object):
             data = main_json['chatUser']
             user = UserInfo(user_name=data['uname'],
                             nick_name=data['show_nickname'],
+                            user_id=user_id,
                             portrait=data['portrait'])
 
         except Exception as err:
@@ -518,7 +520,7 @@ class Browser(object):
         log.info(f"Successfully set privacy to {tid}")
         return True
 
-    def block(self, tieba_name, user, day, reason='null'):
+    def block(self, tieba_name, user, day, reason=''):
         """
         使用客户端api的封禁，支持小吧主、语音小编封10天
         block(tieba_name,user,day,reason='null')
