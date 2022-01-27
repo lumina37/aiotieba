@@ -1,12 +1,8 @@
 # -*- coding:utf-8 -*-
-import os
-import sys
-import time
 import argparse
-
 import json
-import tiebaBrowser
 
+import tiebaBrowser
 
 if __name__ == '__main__':
 

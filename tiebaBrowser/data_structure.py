@@ -145,6 +145,7 @@ class Thread(_BaseContent):
     first_floor_text: 首楼内容
     has_audio: 是否含有音频
     has_video: 是否含有视频
+    reply_able: 是否可以回复
     view_num: 浏览量
     reply_num: 回复数
     like: 点赞数
@@ -153,15 +154,16 @@ class Thread(_BaseContent):
     last_time: 10位时间戳 最后回复时间
     """
 
-    __slots__ = ['title', 'first_floor_text', 'has_audio', 'has_video',
+    __slots__ = ['title', 'first_floor_text', 'has_audio', 'has_video', 'reply_able',
                  'view_num', 'reply_num', 'like', 'dislike', 'create_time', 'last_time']
 
-    def __init__(self, fid=0, tid=0, pid=0, user=UserInfo(), title='', first_floor_text='', has_audio=False, has_video=False, view_num=0, reply_num=0, like=0, dislike=0, create_time=0, last_time=0):
+    def __init__(self, fid=0, tid=0, pid=0, user=UserInfo(), title='', first_floor_text='', has_audio=False, has_video=False, reply_able=True, view_num=0, reply_num=0, like=0, dislike=0, create_time=0, last_time=0):
         super().__init__(fid=fid, tid=tid, pid=pid, user=user)
         self.title = title
         self.first_floor_text = first_floor_text
         self.has_audio = has_audio
         self.has_video = has_video
+        self.reply_able = reply_able
         self.view_num = view_num
         self.reply_num = reply_num
         self.like = like
@@ -195,6 +197,7 @@ class Threads(list):
                     f"Null value at line {err.__traceback__.tb_lineno}")
 
             users = {}
+            reply_access = {}
             for user_dict in main_json['user_list']:
                 try:
                     user_id = int(user_dict['id'])
@@ -203,6 +206,11 @@ class Threads(list):
                                               portrait=user_dict['portrait'],
                                               user_id=user_id,
                                               gender=user_dict['gender'])
+                    if user_dict['priv_sets']:
+                        reply_access[user_id] = int(
+                            user_dict['priv_sets'].get('reply', 1)) == 1
+                    else:
+                        reply_access[user_id] = True
                 except Exception as err:
                     log.error(
                         f"Failed to init UserInfo of {user_dict['portrait']} in fid:{fid}. reason:{traceback.format_tb(err.__traceback__)[-1]}")
@@ -230,17 +238,19 @@ class Threads(list):
                         like = 0
                         dislike = 0
 
+                    author_id = int(thread_raw['author_id'])
                     thread = Thread(fid=fid,
                                     tid=int(thread_raw['tid']),
                                     pid=int(thread_raw['first_post_id']),
-                                    user=users.get(
-                                        int(thread_raw['author_id']), UserInfo()),
+                                    user=users.get(author_id, UserInfo()),
                                     title=thread_raw['title'],
                                     first_floor_text=first_floor_text,
                                     has_audio=True if thread_raw.get(
                                         'voice_info', None) else False,
                                     has_video=True if thread_raw.get(
                                         'video_info', None) else False,
+                                    reply_able=reply_access.get(
+                                        author_id, True),
                                     view_num=int(thread_raw['view_num']),
                                     reply_num=int(thread_raw['reply_num']),
                                     like=like,

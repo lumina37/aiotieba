@@ -8,7 +8,6 @@ from urllib.parse import unquote
 
 import imagehash
 import pyzbar.pyzbar as pyzbar
-import requests as req
 from PIL import Image
 
 from .logger import log
@@ -98,108 +97,79 @@ class CloudReview(Browser):
         self.mysql.close()
         super().close()
 
-    def update_portrait(self, id, mode=True):
+    def update_user_id(self, id, mode=True):
         """
-        向名单中插入portrait
-        update_portrait(id,mode=True)
+        向名单中插入user_id
+        update_user_id(id,mode=True)
         """
 
         if type(mode) != bool:
-            log.warning("Wrong mode in update_portrait!")
+            log.warning("Wrong mode in update_user_id!")
             return False
 
-        user = self.get_userinfo(id)
-        if not user.portrait:
+        user = self.get_userinfo_weak(id)
+        if not user.user_id:
             return False
 
-        return self.mysql.update_portrait(self.tieba_name, user.portrait, mode)
+        return self.mysql.update_user_id(self.tieba_name, user.user_id, mode)
 
-    def del_portrait(self, id=None):
+    def del_user_id(self, id=None):
         """
-        从名单中删除portrait
-        del_portrait(id=None)
+        从名单中删除user_id
+        del_user_id(id=None)
         """
 
-        user = self.get_userinfo(id)
-        if not user.portrait:
+        user = self.get_userinfo_weak(id)
+        if not user.user_id:
             return False
 
-        return self.mysql.del_portrait(self.tieba_name, user.portrait)
+        return self.mysql.del_user_id(self.tieba_name, user.user_id)
 
-    def add_img_hash(self, img_url):
-        """
-        向img_blacklist_{tieba_name_eng}插入图片
-        add_img_hash(img_url)
-        """
-
-        img_hash = self.get_imgdhash(img_url)
-        if img_hash is None:
-            return False
-
-        return self.mysql.add_img_hash(self.tieba_name, img_hash)
-
-    def has_img_hash(self, img_url):
-        """
-        检索img_blacklist_{tieba_name_eng}中是否已有图片
-        has_img_hash(img_url)
-        """
-
-        img_hash = self.get_imgdhash(img_url)
-        if img_hash is None:
-            return False
-
-        return self.mysql.has_img_hash(self.tieba_name, img_hash)
-
-    def del_img_hash(self, img_url):
-        """
-        从img_blacklist_{tieba_name_eng}中删除图片
-        del_img_hash(img_url)
-        """
-
-        img_hash = self.get_imgdhash(img_url)
-        if img_hash is None:
-            return False
-
-        return self.mysql.del_img_hash(self.tieba_name, img_hash)
-
-    def _url2image(self, img_url):
+    def url2image(self, img_url):
         """
         从链接获取静态图像
         """
+        try:
+            if not re.search('\.(jpg|jpeg|png)', img_url):
+                raise ValueError("Wrong image format")
 
-        if not re.search('\.(jpg|jpeg|png)', img_url):
-            raise ValueError("Wrong image format")
-        self.set_host(img_url)
-        res = self.sessions.web.get(img_url, timeout=(3, 10))
-        image = Image.open(BytesIO(res.content))
+            self.set_host(img_url)
+            res = self.sessions.web.get(img_url, timeout=(3, 10))
+            image = Image.open(BytesIO(res.content))
+
+        except Exception as err:
+            log.error(f"Failed to get image {img_url}. reason:{err}")
+            image = None
 
         return image
 
     def scan_QRcode(self, img_url):
         """
-        扫描img_url指定的图像中的二维码
+        扫描img_url对应图像中的二维码
         """
 
         try:
-            image = self._url2image(img_url)
-            raw = pyzbar.decode(image)
-            data = unquote(raw[0].data.decode('utf-8')) if raw else None
+            image = self.url2image(img_url)
+            if image:
+                raw = pyzbar.decode(image)
+                data = unquote(raw[0].data.decode('utf-8')) if raw else None
         except Exception as err:
-            log.error(f"Failed to decode image {img_url}. reason:{err}")
+            log.error(f"Failed to decode image. reason:{err}")
             data = None
 
         return data
 
-    def get_imgdhash(self, img_url):
+    def has_img_hash(self, img_url):
         """
-        获取链接图像的dhash值
+        判断img_url对应的图像的dhash是否在黑名单中
         """
 
-        try:
-            image = self._url2image(img_url)
-            dhash = imagehash.dhash(image)
-        except Exception as err:
-            log.error(f"Failed to get dhash of {img_url}. reason:{err}")
-            dhash = None
-
-        return dhash
+        image = self.url2image(img_url)
+        if image:
+            img_hash = imagehash.dhash(image)
+            if self.mysql.has_img_hash(self.tieba_name, img_hash):
+                return True
+            else:
+                return False
+        else:
+            return False

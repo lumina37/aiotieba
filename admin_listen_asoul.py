@@ -1,12 +1,11 @@
 # -*- coding:utf-8 -*-
-import time
 import argparse
+import atexit
+import re
+import time
 import traceback
 
-import re
 import tiebaBrowser as tb
-
-import atexit
 
 
 @atexit.register

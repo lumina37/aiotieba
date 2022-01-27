@@ -1,13 +1,12 @@
 # -*- coding:utf-8 -*-
+import argparse
+import atexit
+import re
 import sys
 import time
-import argparse
 import traceback
 
-import re
 import tiebaBrowser
-
-import atexit
 
 
 @atexit.register
@@ -80,7 +79,8 @@ class CloudReview(tiebaBrowser.CloudReview):
         elif flag == 1:
             return True
         elif flag == 0:
-            pass
+            if not thread.reply_able:
+                return True
         else:
             tiebaBrowser.log.error(f'Wrong flag {flag} in _check_thread!')
             pass
@@ -142,8 +142,8 @@ class CloudReview(tiebaBrowser.CloudReview):
         if self.mysql.has_pid(self.tieba_name, obj.pid):
             return -1
 
-        is_white = self.mysql.is_portrait_white(
-            self.tieba_name, obj.user.portrait)
+        is_white = self.mysql.is_user_id_white(
+            self.tieba_name, obj.user.user_id)
         if is_white == True:
             return -1
         elif is_white == False:
@@ -156,12 +156,13 @@ class CloudReview(tiebaBrowser.CloudReview):
                 if self.has_img_hash(img):
                     return 1
 
+
         text = obj.text
         if re.search("李奕|读物配音|有声书", text, re.I) is not None:
             self.block(self.tieba_name, obj.user, day=10,
                        reason=f"line:{sys._getframe().f_lineno}")
             return 1
-        if re.search("((?<![a-z])(a|v)|瞳|嘉|＋|\+|➕|梓|罐|豆|鸟|鲨)(÷|/|／|➗|畜|处|除|初)|椰子汁|🥥", text, re.I) is not None:
+        if re.search("((?<![a-z])(a|v)|瞳|嘉|＋|\+|➕|梓|罐|豆|鸟|鲨)(÷|/|／|➗|畜|处|除|初)|阿楚|椰子汁|🥥", text, re.I) is not None:
             return 1
 
         level = obj.user.level

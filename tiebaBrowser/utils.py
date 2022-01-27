@@ -4,12 +4,11 @@ __all__ = ('Browser',)
 
 import hashlib
 import re
-import traceback
 
 import requests as req
 from bs4 import BeautifulSoup
 
-from .config import MODULE_DIR, SCRIPT_DIR, config
+from .config import config
 from .data_structure import *
 from .logger import log
 
@@ -22,7 +21,7 @@ class Sessions(object):
         BDUSS_key: str 用于获取BDUSS
     """
 
-    __slots__ = ['app', 'web', 'BDUSS']
+    __slots__ = ['app', 'web', 'BDUSS', 'STOKEN']
 
     def __init__(self, BDUSS_key):
 
@@ -37,7 +36,7 @@ class Sessions(object):
 
         self.web = req.Session()
         self.web.headers = req.structures.CaseInsensitiveDict({'Host': 'tieba.baidu.com',
-                                                               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:92.0) Gecko/20100101 Firefox/92.0',
+                                                               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:96.0) Gecko/20100101 Firefox/96.0',
                                                                'Accept': '*/*',
                                                                'Accept-Encoding': 'gzip, deflate, br',
                                                                'DNT': '1',
@@ -69,8 +68,9 @@ class Sessions(object):
         """
 
         self.BDUSS = config['BDUSS'][BDUSS_key]
+        self.STOKEN = config['STOKEN'].get(BDUSS_key, '')
         self.web.cookies = req.cookies.cookiejar_from_dict(
-            {'BDUSS': self.BDUSS})
+            {'BDUSS': self.BDUSS, 'STOKEN': self.STOKEN})
 
 
 class Browser(object):
@@ -232,6 +232,79 @@ class Browser(object):
 
         except Exception as err:
             log.error(f"Failed to get UserInfo of {id} reason:{err}")
+            user = UserInfo()
+
+        return user
+
+    def get_userinfo_weak(self, id):
+        """
+        通过用户名或昵称或portrait获取简略版用户信息
+        由于api的编码限制，返回结果仅包含user_id和portrait
+        get_userinfo_weak(id)
+
+        参数:
+            id: str user_name或nick_name或portrait
+
+        返回值:
+            user: UserInfo 用户信息
+        """
+
+        if id.startswith('tb.'):
+            params = {'id': id}
+        else:
+            params = {'un': id, 'ie': 'utf-8'}
+
+        try:
+            self.set_host("http://tieba.baidu.com/")
+            res = self.sessions.web.get(
+                "http://tieba.baidu.com/i/sys/user_json", params=params, timeout=(3, 10))
+
+            if res.status_code != 200:
+                raise ValueError("status code is not 200")
+
+            main_json = res.json()
+
+            data = main_json['creator']
+            user = UserInfo(user_id=data['id'],
+                            portrait=data['portrait'])
+
+        except Exception as err:
+            log.error(f"Failed to get UserInfo of {id} reason:{err}")
+            user = UserInfo()
+
+        return user
+
+    def uid2userinfo(self, user_id):
+        """
+        通过user_id获取简略版用户信息（不包含gender）
+        uid2userinfo(user_id)
+
+        参数:
+            user_id: int
+
+        返回值:
+            user: UserInfo 用户信息
+        """
+
+        try:
+            self.set_host("http://tieba.baidu.com/")
+            res = self.sessions.web.get(
+                "http://tieba.baidu.com/im/pcmsg/query/getUserInfo", params={'chatUid': user_id}, timeout=(3, 10))
+
+            if res.status_code != 200:
+                raise ValueError("status code is not 200")
+
+            main_json = res.json()
+            if int(main_json['errno']):
+                raise ValueError(main_json['errmsg'])
+
+            data = main_json['chatUser']
+            user = UserInfo(user_name=data['uname'],
+                            nick_name=data['show_nickname'],
+                            portrait=data['portrait'])
+
+        except Exception as err:
+            log.error(f"Failed to get UserInfo of {user_id} reason:{err}")
             user = UserInfo()
 
         return user
@@ -604,7 +677,7 @@ class Browser(object):
             flag: bool 操作是否成功
         """
 
-        user = self.get_userinfo(id)
+        user = self.get_userinfo_weak(id)
         payload = {'tbs': self._get_tbs(),
                    'user_id': user.user_id,
                    'word': tieba_name,
@@ -689,7 +762,7 @@ class Browser(object):
                    'list[]': []}
 
         for id in ids:
-            user = self.get_userinfo(id)
+            user = self.get_userinfo_weak(id)
             if user.user_id:
                 payload['list[]'].append(user.user_id)
         if not payload['list[]']:
@@ -865,7 +938,7 @@ class Browser(object):
     def refuse_appeals(self, tieba_name):
         """
         拒绝吧内所有解封申诉
-        refuse_appeals(self,tieba_name)
+        refuse_appeals(tieba_name)
 
         参数:
             tieba_name: str 所在贴吧名
@@ -949,3 +1022,34 @@ class Browser(object):
 
         for appeal_id in __get_appeal_list():
             __appeal_handle(appeal_id)
+
+    def get_adminlist(self, tieba_name):
+        """
+        获取吧务用户名列表
+        get_adminlist(tieba_name)
+
+        参数:
+            tieba_name: str 所在贴吧名
+        """
+
+        try:
+            self.set_host("http://tieba.baidu.com/")
+            res = self.sessions.web.get(
+                "http://tieba.baidu.com/f/bawu/admin_group", params={'kw': tieba_name, 'ie': 'utf-8'}, timeout=(3, 10))
+
+            if res.status_code != 200:
+                raise ValueError("status code is not 200")
+
+            soup = BeautifulSoup(res.text, 'lxml')
+
+            items = soup.find_all('a')
+            if not items:
+                return
+            for item in items:
+                user_name = item.text
+                yield user_name
+
+        except Exception as err:
+            log.error(f"Failed to get admin list reason: {err}")
+
+        return

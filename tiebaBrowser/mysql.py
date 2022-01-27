@@ -7,7 +7,7 @@ from functools import wraps
 
 import pymysql
 
-from .config import SCRIPT_DIR, config
+from .config import config
 from .logger import log
 
 
@@ -250,7 +250,8 @@ class MySQL(object):
                 self.mycursor.execute(
                     f"SELECT tid FROM tid_tmphide_{tieba_name_eng} LIMIT {batch_size} OFFSET {i * batch_size}")
             except pymysql.DatabaseError:
-                log.error(f"MySQL Error: Failed to get tids in {tieba_name_eng}!")
+                log.error(
+                    f"MySQL Error: Failed to get tids in {tieba_name_eng}!")
                 return False
             else:
                 tid_list = self.mycursor.fetchall()
@@ -260,60 +261,60 @@ class MySQL(object):
                     break
 
     @translate_tieba_name
-    def create_table_portrait(self, tieba_name_eng):
+    def create_table_user_id(self, tieba_name_eng):
         """
-        创建表portrait_{tieba_name_eng}
-        create_table_portrait(tieba_name)
+        创建表user_id_{tieba_name_eng}
+        create_table_user_id(tieba_name)
         """
 
-        self.mycursor.execute(f"SHOW TABLES LIKE 'portrait_{tieba_name_eng}'")
+        self.mycursor.execute(f"SHOW TABLES LIKE 'user_id_{tieba_name_eng}'")
         if not self.mycursor.fetchone():
             self.mycursor.execute(
-                f"CREATE TABLE portrait_{tieba_name_eng} (portrait CHAR(36) PRIMARY KEY, is_white BOOL NOT NULL DEFAULT TRUE, record_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP)")
+                f"CREATE TABLE user_id_{tieba_name_eng} (user_id BIGINT PRIMARY KEY, is_white BOOL NOT NULL DEFAULT TRUE, record_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP)")
 
     @translate_tieba_name
-    def update_portrait(self, tieba_name_eng, portrait, mode):
+    def update_user_id(self, tieba_name_eng, user_id, mode):
         """
-        更新portrait在portrait_{tieba_name_eng}中的状态
-        update_portrait(tieba_name,portrait,mode)
+        更新user_id在user_id_{tieba_name_eng}中的状态
+        update_user_id(tieba_name,user_id,mode)
         """
 
         try:
             self.mycursor.execute(
-                f"INSERT INTO portrait_{tieba_name_eng} VALUES ('{portrait}',{mode},DEFAULT) ON DUPLICATE KEY UPDATE is_white={mode}")
+                f"INSERT INTO user_id_{tieba_name_eng} VALUES ({user_id},{mode},DEFAULT) ON DUPLICATE KEY UPDATE is_white={mode}")
         except pymysql.DatabaseError:
-            log.error(f"MySQL Error: Failed to insert {portrait}!")
+            log.error(f"MySQL Error: Failed to insert {user_id}!")
             return False
         else:
             log.info(
-                f"Successfully updated {portrait} to table of {tieba_name_eng} mode:{mode}")
+                f"Successfully updated {user_id} to table of {tieba_name_eng} mode:{mode}")
             self.mydb.commit()
             return True
 
     @translate_tieba_name
-    def del_portrait(self, tieba_name_eng, portrait):
+    def del_user_id(self, tieba_name_eng, user_id):
         """
-        从黑/白名单中删除portrait
-        del_portrait(tieba_name,portrait)
+        从黑/白名单中删除user_id
+        del_user_id(tieba_name,user_id)
         """
 
         try:
             self.mycursor.execute(
-                f"DELETE FROM portrait_{tieba_name_eng} WHERE portrait='{portrait}'")
+                f"DELETE FROM user_id_{tieba_name_eng} WHERE user_id={user_id}")
         except pymysql.DatabaseError:
-            log.error(f"MySQL Error: Failed to delete {portrait}!")
+            log.error(f"MySQL Error: Failed to delete {user_id}!")
             return False
         else:
             log.info(
-                f"Successfully deleted {portrait} from table of {tieba_name_eng}")
+                f"Successfully deleted {user_id} from table of {tieba_name_eng}")
             self.mydb.commit()
             return True
 
     @translate_tieba_name
-    def is_portrait_white(self, tieba_name_eng, portrait):
+    def is_user_id_white(self, tieba_name_eng, user_id):
         """
-        检索portrait的黑/白名单状态
-        is_portrait_white(tieba_name,portrait)
+        检索user_id的黑/白名单状态
+        is_user_id_white(tieba_name,user_id)
 
         返回值:
             iswhite: True 白名单 / False 黑名单 / None 不在名单中
@@ -321,7 +322,7 @@ class MySQL(object):
 
         try:
             self.mycursor.execute(
-                f"SELECT is_white FROM portrait_{tieba_name_eng} WHERE portrait='{portrait}'")
+                f"SELECT is_white FROM user_id_{tieba_name_eng} WHERE user_id={user_id}")
         except pymysql.DatabaseError:
             return None
         else:
@@ -332,30 +333,31 @@ class MySQL(object):
                 return None
 
     @translate_tieba_name
-    def get_portraits(self, tieba_name_eng, batch_size=30):
+    def get_user_ids(self, tieba_name_eng, batch_size=30):
         """
-        获得portrait列表
-        get_portraits(tieba_name,batch_size=30)
+        获得user_id列表
+        get_user_ids(tieba_name,batch_size=30)
 
         参数:
             batch_size: int 分包大小
 
         返回值:
-            portrait
+            user_id
         """
 
         for i in range(sys.maxsize):
             try:
                 self.mycursor.execute(
-                    f"SELECT portrait FROM portrait_{tieba_name_eng} LIMIT {batch_size} OFFSET {i * batch_size}")
+                    f"SELECT user_id FROM user_id_{tieba_name_eng} LIMIT {batch_size} OFFSET {i * batch_size}")
             except pymysql.DatabaseError:
-                log.error(f"MySQL Error: Failed to get portraits in {tieba_name_eng}!")
+                log.error(
+                    f"MySQL Error: Failed to get user_ids in {tieba_name_eng}!")
                 return False
             else:
-                portraits = self.mycursor.fetchall()
-                for portrait in portraits:
-                    yield portrait[0]
-                if len(portraits) != batch_size:
+                user_ids = self.mycursor.fetchall()
+                for user_id in user_ids:
+                    yield user_id[0]
+                if len(user_ids) != batch_size:
                     break
 
     @translate_tieba_name
@@ -369,18 +371,18 @@ class MySQL(object):
             f"SHOW TABLES LIKE 'img_blacklist_{tieba_name_eng}'")
         if not self.mycursor.fetchone():
             self.mycursor.execute(
-                f"CREATE TABLE img_blacklist_{tieba_name_eng} (img_hash CHAR(16) PRIMARY KEY)")
+                f"CREATE TABLE img_blacklist_{tieba_name_eng} (img_hash CHAR(16) PRIMARY KEY, raw_hash CHAR(40) NOT NULL)")
 
     @translate_tieba_name
-    def add_img_hash(self, tieba_name_eng, img_hash):
+    def add_img_hash(self, tieba_name_eng, img_hash, raw_hash):
         """
         向img_blacklist_{tieba_name_eng}插入img_hash
-        add_img_hash(tieba_name,img_hash)
+        add_img_hash(tieba_name,img_hash,raw_hash)
         """
 
         try:
             self.mycursor.execute(
-                f"INSERT IGNORE INTO img_blacklist_{tieba_name_eng} SET img_hash='{img_hash}'")
+                f"INSERT IGNORE INTO img_blacklist_{tieba_name_eng} VALUES ('{img_hash}','{raw_hash}')")
         except pymysql.DatabaseError:
             log.error(f"MySQL Error: Failed to insert {img_hash}!")
             return False
