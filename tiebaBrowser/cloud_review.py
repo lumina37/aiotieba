@@ -89,7 +89,7 @@ class CloudReview(Browser):
         self.tieba_name = tieba_name
         self.sleep_time = sleep_time
 
-        self.mysql = MySQL('tieba_cloud_review')
+        self.mysql = MySQL()
 
         self.exp = RegularExp()
 

@@ -33,7 +33,7 @@ class MySQL(object):
 
     __slots__ = ['db_name', 'mydb', 'mycursor']
 
-    def __init__(self, db_name):
+    def __init__(self, db_name='tieba_cloud_review'):
 
         mysql_json = config['MySQL']
 
@@ -43,8 +43,8 @@ class MySQL(object):
             self.mydb = pymysql.connect(**mysql_json, database=db_name)
             self.mycursor = self.mydb.cursor()
         except pymysql.MySQLError:
-            log.critical(f"Cannot link to the database {db_name}!")
-            raise
+            log.warning(f"Cannot link to the database {db_name}!")
+            self.init_database(mysql_json)
 
     def close(self):
         self.mydb.commit()
@@ -55,6 +55,12 @@ class MySQL(object):
         self.mycursor = self.mydb.cursor()
         self.mycursor.execute(f"CREATE DATABASE {self.db_name}")
         self.mycursor.execute(f"USE {self.db_name}")
+
+        for tieba_name in config['tieba_name_mapping'].keys():
+            self.create_table_pid_whitelist(tieba_name)
+            self.create_table_user_id(tieba_name)
+            self.create_table_img_blacklist(tieba_name)
+            self.create_table_tid_tmphide(tieba_name)
 
     def ping(self):
         """
