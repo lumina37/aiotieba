@@ -972,48 +972,6 @@ class Browser(object):
 
         return ats
 
-    def get_profile(self, tieba_name, tid):
-        """
-        获取用户档案
-        recommend(tieba_name,tid)
-
-        参数:
-            tieba_name: str 帖子所在贴吧名
-            tid: int 待推荐的主题帖tid
-
-        返回值:
-            flag: bool 操作是否成功
-        """
-
-        payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_version': '7.9.2',
-                   'forum_id': self.get_fid(tieba_name),
-                   'tbs': self.get_tbs(),
-                   'thread_id': tid
-                   }
-        payload['sign'] = self.app_sign(payload)
-
-        try:
-            res = self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/bawu/pushRecomToPersonalized", data=payload, timeout=(3, 10))
-
-            if res.status_code != 200:
-                raise ValueError("status code is not 200")
-
-            main_json = res.json()
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
-            if int(main_json['data']['is_push_success']) != 1:
-                raise ValueError(main_json['data']['msg'])
-
-        except Exception as err:
-            log.error(
-                f"Failed to recommend {tid} in {tieba_name}. reason:{err}")
-            return False
-
-        log.info(f"Successfully recommended {tid} in {tieba_name}")
-        return True
-
     def get_adminlist(self, tieba_name: str) -> str:
         """
         获取吧务用户名列表
