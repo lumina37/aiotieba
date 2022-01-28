@@ -7,7 +7,7 @@ import logging
 import logging.handlers
 import sys
 
-from .config import MODULE_DIR, SCRIPT_DIR
+from .config import SCRIPT_DIR
 
 
 class MyLogger(logging.Logger):

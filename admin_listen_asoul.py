@@ -6,6 +6,7 @@ import time
 import traceback
 
 import tiebaBrowser as tb
+from tiebaBrowser.data_structure import UserInfo
 
 
 @atexit.register
@@ -319,9 +320,7 @@ class Listener(object):
 
         tb.log.info(f"{post.user.user_name}: {post.text}")
 
-        user = self.listener.get_userinfo(id)
-
-        return self.admin.block(self.tieba_name, user, day=10)[0]
+        return self.admin.block(self.tieba_name, UserInfo(id), day=10)[0]
 
     def cmd_recover(self, post, url):
         """

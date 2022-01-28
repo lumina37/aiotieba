@@ -23,7 +23,8 @@ if __name__ == '__main__':
         with open(args.block_ctrl_filepath, 'r', encoding='utf-8-sig') as block_ctrl_file:
             block_list = json.loads(block_ctrl_file.read())
     except FileExistsError:
-        tiebaBrowser.log.critical("block control json not exist! Please create it!")
+        tiebaBrowser.log.critical(
+            "block control json not exist! Please create it!")
         raise
     except AttributeError:
         tiebaBrowser.log.critical("Incorrect format of block_control.json!")
@@ -40,7 +41,7 @@ if __name__ == '__main__':
         flag = True
         if user.user_name or user.nick_name or user.portrait:
             flag, user = brow.block(
-                block['tieba_name'], user, block['day'], block.get('reason','null'))
+                block['tieba_name'], user, block['day'], block.get('reason', 'null'))
 
         block['user_name'] = user.user_name
         block['nick_name'] = user.nick_name

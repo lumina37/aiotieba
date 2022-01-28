@@ -19,7 +19,7 @@ import signal
 from .cloud_review import CloudReview
 from .data_structure import *
 from .logger import log
-from .utils import Browser
+from .api import Browser
 
 
 def terminate(signalNumber, frame):

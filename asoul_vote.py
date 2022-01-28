@@ -113,6 +113,7 @@ def vote_2side():
     csv_writer.writerows(vote_res_list)
     csv_file.close()
 
+
 def vote_simple():
     csv_file = open(
         f"asoul_vote_{time.time()}.csv", 'w', encoding='utf-8-sig', newline='')
@@ -155,6 +156,7 @@ def vote_simple():
     vote_res_list.sort(key=lambda row: row[-1], reverse=True)
     csv_writer.writerows(vote_res_list)
     csv_file.close()
+
 
 if __name__ == "__main__":
     vote_simple()

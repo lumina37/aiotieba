@@ -31,15 +31,32 @@ class UserInfo(object):
                  'is_vip',
                  'is_god']
 
-    def __init__(self, user_name='', nick_name='', portrait='', user_id=0, level=0, gender=0, is_vip=False, is_god=False):
-        self.user_name = user_name
+    def __init__(self, _id=None, user_name='', nick_name='', portrait='', user_id=0, level=0, gender=0, is_vip=False, is_god=False):
+        if _id:
+            if isinstance(_id, int):
+                self.user_id = _id
+                self.portrait = portrait
+                self.user_name = user_name
+            else:
+                self.portrait = _id
+                if not self.portrait:
+                    self.user_name = _id
+                else:
+                    self.user_name = user_name
+                self.user_id = user_id
+        else:
+            self.portrait = portrait
+            self.user_name = user_name
+            self.user_id = user_id
+
         self.nick_name = nick_name
-        self.portrait = portrait
-        self.user_id = user_id
         self.level = level
         self.gender = gender
         self.is_vip = is_vip
         self.is_god = is_god
+
+    def __str__(self) -> str:
+        return f"user_name={self.user_name}\nnick_name={self._nick_name}\nportrait={self._portrait}\nuser_id={self._user_id}"
 
     @property
     def nick_name(self):
@@ -210,8 +227,10 @@ class Threads(list):
                                               portrait=user_dict['portrait'],
                                               user_id=user_id,
                                               gender=user_dict['gender'],
-                                              is_vip=bool(user_dict['new_tshow_icon']),
-                                              is_god=user_dict.__contains__('new_god_data')
+                                              is_vip=bool(
+                                                  user_dict['new_tshow_icon']),
+                                              is_god=user_dict.__contains__(
+                                                  'new_god_data')
                                               )
                     if user_dict['priv_sets']:
                         reply_access[user_id] = int(
@@ -361,8 +380,9 @@ class Posts(list):
                                               user_id=user_id,
                                               level=user_dict['level_id'],
                                               gender=user_dict['gender'],
-                                              is_vip=bool(user_dict['new_tshow_icon']),
-                                              is_god=user_dict['new_god_data']['field_id']!='')
+                                              is_vip=bool(
+                                                  user_dict['new_tshow_icon']),
+                                              is_god=user_dict['new_god_data']['field_id'] != '')
                 except Exception as err:
                     log.error(
                         f"Failed to init UserInfo of {user_dict['portrait']} in tid:{tid}. reason:{traceback.format_tb(err.__traceback__)[-1]}")
@@ -500,7 +520,7 @@ class Comments(list):
                                     level=user_dict['level_id'],
                                     gender=user_dict['gender'],
                                     is_vip=bool(user_dict['new_tshow_icon']),
-                                    is_god=user_dict['new_god_data']['field_id']!=''
+                                    is_god=user_dict['new_god_data']['field_id'] != ''
                                     )
 
                     comment = Comment(fid=fid,

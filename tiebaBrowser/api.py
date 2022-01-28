@@ -25,9 +25,14 @@ class Sessions(object):
 
     __slots__ = ['app', 'web', 'BDUSS', 'STOKEN']
 
-    def __init__(self, BDUSS_key):
+    def __init__(self, BDUSS_key=None):
 
         self.app = req.Session()
+        self.web = req.Session()
+
+        if BDUSS_key:
+            self.renew_BDUSS(BDUSS_key)
+
         self.app.headers = req.structures.CaseInsensitiveDict({'Content-Type': 'application/x-www-form-urlencoded',
                                                                'User-Agent': 'bdtb for Android 7.9.2',
                                                                'Connection': 'Keep-Alive',
@@ -35,8 +40,6 @@ class Sessions(object):
                                                                'Accept': '*/*',
                                                                'Host': 'c.tieba.baidu.com',
                                                                })
-
-        self.web = req.Session()
         self.web.headers = req.structures.CaseInsensitiveDict({'Host': 'tieba.baidu.com',
                                                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:96.0) Gecko/20100101 Firefox/96.0',
                                                                'Accept': '*/*',
@@ -47,19 +50,17 @@ class Sessions(object):
                                                                'Upgrade-Insecure-Requests': '1'
                                                                })
 
-        self.renew_BDUSS(BDUSS_key)
-
     def close(self):
         self.app.close()
         self.web.close()
 
     def set_host(self, url):
-        try:
-            self.web.headers['Host'] = re.search('://(.+?)/', url).group(1)
-        except AttributeError:
-            return False
-        else:
+        match_res = re.search('://(.+?)/', url)
+        if match_res:
+            self.web.headers['Host'] = match_res.group(1)
             return True
+        else:
+            return False
 
     def renew_BDUSS(self, BDUSS_key):
         """
@@ -189,27 +190,22 @@ class Browser(object):
 
         return fid
 
-    def get_userinfo(self, id):
+    def get_userinfo(self, user):
         """
-        通过用户名或portrait获取用户信息
-        get_userinfo(id)
+        补全完整版用户信息
+        get_userinfo(user)
 
         参数:
-            id: str user_name或portrait
+            user: UserInfo 待补全的用户信息
 
         返回值:
-            user: UserInfo 用户信息
+            user: UserInfo 完整版用户信息
         """
-
-        if id.startswith('tb.'):
-            params = {'id': id}
-        else:
-            params = {'un': id}
 
         try:
             self.set_host("http://tieba.baidu.com/")
-            res = self.sessions.web.get(
-                "https://tieba.baidu.com/home/get/panel", params=params, timeout=(3, 10))
+            res = self.sessions.web.get("https://tieba.baidu.com/home/get/panel", params={
+                                        'id': user.portrait, 'un': user.user_name or user.nick_name}, timeout=(3, 10))
 
             if res.status_code != 200:
                 raise ValueError("status code is not 200")
@@ -219,19 +215,18 @@ class Browser(object):
                 raise ValueError(main_json['error'])
 
             data = main_json['data']
+            user.user_name = data['name']
+            user.nick_name = data['name_show']
+            user.portrait = data['portrait']
+            user.user_id = data['id']
             sex = data['sex']
             if sex == 'male':
-                gender = 1
+                user.gender = 1
             elif sex == 'female':
-                gender = 2
+                user.gender = 2
             else:
-                gender = 0
-            user = UserInfo(user_name=data['name'],
-                            nick_name=data['name_show'],
-                            portrait=data['portrait'],
-                            user_id=data['id'],
-                            gender=gender,
-                            is_vip=bool(data['vipInfo']))
+                user.gender = 0
+            user.is_vip = bool(data['vipInfo'])
 
         except Exception as err:
             log.error(f"Failed to get UserInfo of {id} reason:{err}")
@@ -239,37 +234,39 @@ class Browser(object):
 
         return user
 
-    def get_userinfo_weak(self, id):
+    def get_userinfo_weak(self, user):
         """
-        通过用户名或portrait获取简略版用户信息
-        get_userinfo_weak(id)
+        补全简略版用户信息
+        get_userinfo_weak(user)
 
         参数:
-            id: str user_name或portrait
+            user: UserInfo 待补全的用户信息
 
         返回值:
-            user: UserInfo 用户信息
+            user: UserInfo 简略版用户信息，仅保证包含portrait、user_id和user_name
         """
 
-        if id.startswith('tb.'):
-            return self.get_userinfo(id)
+        if user.user_name:
+            return self.name2userinfo(user)
+        elif user.user_id:
+            return self.uid2userinfo(user)
         else:
-            return self.name2userinfo(id)
+            return self.get_userinfo(user)
 
-    def name2userinfo(self, name):
+    def name2userinfo(self, user):
         """
-        通过用户名获取简略版用户信息
-        由于api的编码限制，返回结果仅包含user_id和portrait
+        通过用户名补全简略版用户信息
+        由于api的编码限制，仅支持补全user_id和portrait
         name2userinfo(name)
 
         参数:
-            name: str user_name
+            user: UserInfo 待补全的用户信息
 
         返回值:
-            user: UserInfo 用户信息
+            user: UserInfo 简略版用户信息，仅保证包含portrait、user_id和user_name
         """
 
-        params = {'un': name, 'ie': 'utf-8'}
+        params = {'un': user.user_name, 'ie': 'utf-8'}
 
         try:
             self.set_host("http://tieba.baidu.com/")
@@ -282,8 +279,8 @@ class Browser(object):
             main_json = res.json()
 
             data = main_json['creator']
-            user = UserInfo(user_id=data['id'],
-                            portrait=data['portrait'])
+            user.user_id = data['id']
+            user.portrait = data['portrait']
 
         except Exception as err:
             log.error(f"Failed to get UserInfo of {name} reason:{err}")
@@ -291,22 +288,22 @@ class Browser(object):
 
         return user
 
-    def uid2userinfo(self, user_id):
+    def uid2userinfo(self, user):
         """
-        通过user_id获取简略版用户信息（不包含gender）
-        uid2userinfo(user_id)
+        通过user_id补全简略版用户信息
+        uid2userinfo(user)
 
         参数:
-            user_id: int
+            user: UserInfo 待补全的用户信息
 
         返回值:
-            user: UserInfo 用户信息
+            user: UserInfo 简略版用户信息，仅保证包含portrait、user_id和user_name
         """
 
         try:
             self.set_host("http://tieba.baidu.com/")
             res = self.sessions.web.get(
-                "http://tieba.baidu.com/im/pcmsg/query/getUserInfo", params={'chatUid': user_id}, timeout=(3, 10))
+                "http://tieba.baidu.com/im/pcmsg/query/getUserInfo", params={'chatUid': user.user_id}, timeout=(3, 10))
 
             if res.status_code != 200:
                 raise ValueError("status code is not 200")
@@ -316,10 +313,8 @@ class Browser(object):
                 raise ValueError(main_json['errmsg'])
 
             data = main_json['chatUser']
-            user = UserInfo(user_name=data['uname'],
-                            nick_name=data['show_nickname'],
-                            user_id=user_id,
-                            portrait=data['portrait'])
+            user.user_name = data['uname']
+            user.portrait = data['portrait']
 
         except Exception as err:
             log.error(f"Failed to get UserInfo of {user_id} reason:{err}")
@@ -466,13 +461,7 @@ class Browser(object):
         """
 
         if not user.user_name:
-            if user.portrait:
-                user = self.get_userinfo(user.portrait)
-            elif user.nick_name:
-                user = self.get_userinfo(user.nick_name)
-            else:
-                log.error(f"Empty params in {tieba_name}")
-                return False, user
+            user = self.get_userinfo(user)
 
         payload = {'BDUSS': self.sessions.BDUSS,
                    '_client_version': '7.9.2',
@@ -523,7 +512,8 @@ class Browser(object):
             flag: bool 操作是否成功
         """
 
-        user = self.get_userinfo(id)
+        user = UserInfo(id)
+        user = self.get_userinfo(user)
 
         payload = {'fn': tieba_name,
                    'fid': self.get_fid(tieba_name),
@@ -651,7 +641,8 @@ class Browser(object):
             flag: bool 操作是否成功
         """
 
-        user = self.get_userinfo_weak(id)
+        user = UserInfo(id)
+        user = self.get_userinfo_weak(user)
         payload = {'tbs': self.get_tbs(),
                    'user_id': user.user_id,
                    'word': tieba_name,
@@ -698,7 +689,8 @@ class Browser(object):
                    'list[]': []}
 
         for id in ids:
-            user = self.get_userinfo_weak(id)
+            user = UserInfo(id)
+            user = self.get_userinfo_weak(user)
             if user.user_id:
                 payload['list[]'].append(user.user_id)
         if not payload['list[]']:

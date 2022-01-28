@@ -10,7 +10,7 @@ import pyzbar.pyzbar as pyzbar
 
 from .logger import log
 from .mysql import MySQL
-from .utils import Browser
+from .api import Browser
 
 
 class RegularExp(object):
@@ -105,7 +105,8 @@ class CloudReview(Browser):
             log.warning("Wrong mode in update_user_id!")
             return False
 
-        user = self.get_userinfo_weak(id)
+        user = UserInfo(id)
+        user = self.get_userinfo_weak(user)
         if not user.user_id:
             return False
 
@@ -117,7 +118,8 @@ class CloudReview(Browser):
         del_user_id(id=None)
         """
 
-        user = self.get_userinfo_weak(id)
+        user = UserInfo(id)
+        user = self.get_userinfo_weak(user)
         if not user.user_id:
             return False
 
