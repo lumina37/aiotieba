@@ -65,7 +65,7 @@ if __name__ == '__main__':
         try:
             image = brow.url2image(
                 f"http://tiebapic.baidu.com/forum/pic/item/{args.img}.jpg")
-            img_hash = imagehash.dhash(image)
+            img_hash = str(imagehash.dhash(image))
         except Exception as err:
             brow.log.error(f"Failed to get dhash of {args.img}. reason:{err}")
         else:

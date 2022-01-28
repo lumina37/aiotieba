@@ -4,6 +4,7 @@ __all__ = ('MySQL',)
 
 import sys
 from functools import wraps
+from typing import Dict, Union
 
 import pymysql
 
@@ -33,7 +34,7 @@ class MySQL(object):
 
     __slots__ = ['db_name', 'mydb', 'mycursor']
 
-    def __init__(self, db_name='tieba_cloud_review'):
+    def __init__(self, db_name: str = 'tieba_cloud_review'):
 
         mysql_json = config['MySQL']
 
@@ -46,11 +47,11 @@ class MySQL(object):
             log.warning(f"Cannot link to the database {db_name}!")
             self.init_database(mysql_json)
 
-    def close(self):
+    def close(self) -> None:
         self.mydb.commit()
         self.mydb.close()
 
-    def init_database(self, mysql_json):
+    def init_database(self, mysql_json: Dict) -> None:
         self.mydb = pymysql.connect(**mysql_json)
         self.mycursor = self.mydb.cursor()
         self.mycursor.execute(f"CREATE DATABASE {self.db_name}")
@@ -62,7 +63,7 @@ class MySQL(object):
             self.create_table_img_blacklist(tieba_name)
             self.create_table_tid_tmphide(tieba_name)
 
-    def ping(self):
+    def ping(self) -> bool:
         """
         尝试重连
         """
@@ -75,7 +76,7 @@ class MySQL(object):
             return True
 
     @translate_tieba_name
-    def create_table_pid_whitelist(self, tieba_name_eng):
+    def create_table_pid_whitelist(self, tieba_name_eng: str) -> None:
         """
         创建表pid_whitelist_{tieba_name_eng}
         create_table_pid_whitelist(tieba_name)
@@ -93,7 +94,7 @@ class MySQL(object):
             DELETE FROM pid_whitelist_{tieba_name_eng} WHERE record_time<(CURRENT_TIMESTAMP() + INTERVAL -15 DAY)""")
 
     @translate_tieba_name
-    def add_pid(self, tieba_name_eng, pid):
+    def add_pid(self, tieba_name_eng: str, pid: int) -> bool:
         """
         向pid_whitelist_{tieba_name_eng}插入pid
         add_pid(tieba_name,pid)
@@ -110,7 +111,7 @@ class MySQL(object):
             return True
 
     @translate_tieba_name
-    def has_pid(self, tieba_name_eng, pid):
+    def has_pid(self, tieba_name_eng: str, pid: int) -> bool:
         """
         检索pid_whitelist_{tieba_name_eng}中是否已有pid
         has_pid(tieba_name,pid)
@@ -126,7 +127,7 @@ class MySQL(object):
             return True if self.mycursor.fetchone() else False
 
     @translate_tieba_name
-    def del_pid(self, tieba_name_eng, pid):
+    def del_pid(self, tieba_name_eng: str, pid: int) -> bool:
         """
         从pid_whitelist_{tieba_name_eng}中删除pid
         del_pid(tieba_name,pid)
@@ -145,7 +146,7 @@ class MySQL(object):
             return True
 
     @translate_tieba_name
-    def del_pids(self, tieba_name_eng, hour):
+    def del_pids(self, tieba_name_eng: str, hour: int) -> bool:
         """
         删除最近hour个小时pid_whitelist_{tieba_name_eng}中记录的pid
         del_pid(tieba_name,hour)
@@ -165,7 +166,7 @@ class MySQL(object):
             return True
 
     @translate_tieba_name
-    def create_table_tid_tmphide(self, tieba_name_eng):
+    def create_table_tid_tmphide(self, tieba_name_eng: str) -> None:
         """
         创建表tid_tmphide_{tieba_name_eng}
         create_table_tid_tmphide(tieba_name)
@@ -178,7 +179,7 @@ class MySQL(object):
                 f"CREATE TABLE tid_tmphide_{tieba_name_eng} (tid BIGINT PRIMARY KEY)")
 
     @translate_tieba_name
-    def add_tid(self, tieba_name_eng, tid):
+    def add_tid(self, tieba_name_eng: str, tid: int) -> bool:
         """
         在tid_tmphide_{tieba_name_eng}中设置tid的待恢复状态
         add_tid(tieba_name,tid)
@@ -201,7 +202,7 @@ class MySQL(object):
             return True
 
     @translate_tieba_name
-    def get_tid(self, tieba_name_eng, tid):
+    def get_tid(self, tieba_name_eng: str, tid: int) -> bool:
         """
         获取tid_tmphide_{tieba_name_eng}中某个tid的待恢复状态
         get_tid(tieba_name,tid)
@@ -220,7 +221,7 @@ class MySQL(object):
             return True if self.mycursor.fetchone() else False
 
     @translate_tieba_name
-    def del_tid(self, tieba_name_eng, tid):
+    def del_tid(self, tieba_name_eng: str, tid: int) -> bool:
         """
         从tid_tmphide_{tieba_name_eng}中删除tid
         del_tid(tieba_name,tid)
@@ -239,7 +240,7 @@ class MySQL(object):
             return True
 
     @translate_tieba_name
-    def get_tids(self, tieba_name_eng, batch_size=100):
+    def get_tids(self, tieba_name_eng: str, batch_size: int = 100) -> int:
         """
         获取tid_tmphide_{tieba_name_eng}中所有待恢复的tid
         get_tids(tieba_name,batch_size=100)
@@ -247,7 +248,7 @@ class MySQL(object):
         参数:
             batch_size: int 分包大小
 
-        返回值:
+        迭代返回值:
             tid: int
         """
 
@@ -258,16 +259,16 @@ class MySQL(object):
             except pymysql.DatabaseError:
                 log.error(
                     f"MySQL Error: Failed to get tids in {tieba_name_eng}!")
-                return False
+                return
             else:
                 tid_list = self.mycursor.fetchall()
                 for tid in tid_list:
                     yield tid[0]
                 if len(tid_list) != batch_size:
-                    break
+                    return
 
     @translate_tieba_name
-    def create_table_user_id(self, tieba_name_eng):
+    def create_table_user_id(self, tieba_name_eng: str) -> None:
         """
         创建表user_id_{tieba_name_eng}
         create_table_user_id(tieba_name)
@@ -279,10 +280,13 @@ class MySQL(object):
                 f"CREATE TABLE user_id_{tieba_name_eng} (user_id BIGINT PRIMARY KEY, is_white BOOL NOT NULL DEFAULT TRUE, record_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP)")
 
     @translate_tieba_name
-    def update_user_id(self, tieba_name_eng, user_id, mode):
+    def update_user_id(self, tieba_name_eng: str, user_id: int, mode: bool) -> bool:
         """
         更新user_id在user_id_{tieba_name_eng}中的状态
         update_user_id(tieba_name,user_id,mode)
+
+        参数:
+            mode: bool True对应白名单，False对应黑名单
         """
 
         try:
@@ -298,7 +302,7 @@ class MySQL(object):
             return True
 
     @translate_tieba_name
-    def del_user_id(self, tieba_name_eng, user_id):
+    def del_user_id(self, tieba_name_eng: str, user_id: int) -> bool:
         """
         从黑/白名单中删除user_id
         del_user_id(tieba_name,user_id)
@@ -317,7 +321,7 @@ class MySQL(object):
             return True
 
     @translate_tieba_name
-    def is_user_id_white(self, tieba_name_eng, user_id):
+    def is_user_id_white(self, tieba_name_eng: str, user_id: int) -> Union[bool, None]:
         """
         检索user_id的黑/白名单状态
         is_user_id_white(tieba_name,user_id)
@@ -339,7 +343,7 @@ class MySQL(object):
                 return None
 
     @translate_tieba_name
-    def get_user_ids(self, tieba_name_eng, batch_size=30):
+    def get_user_ids(self, tieba_name_eng: str, batch_size: int = 30) -> int:
         """
         获得user_id列表
         get_user_ids(tieba_name,batch_size=30)
@@ -358,16 +362,16 @@ class MySQL(object):
             except pymysql.DatabaseError:
                 log.error(
                     f"MySQL Error: Failed to get user_ids in {tieba_name_eng}!")
-                return False
+                return
             else:
                 user_ids = self.mycursor.fetchall()
                 for user_id in user_ids:
                     yield user_id[0]
                 if len(user_ids) != batch_size:
-                    break
+                    return
 
     @translate_tieba_name
-    def create_table_img_blacklist(self, tieba_name_eng):
+    def create_table_img_blacklist(self, tieba_name_eng: str) -> None:
         """
         创建表img_blacklist_{tieba_name_eng}
         create_table_img_blacklist(tieba_name)
@@ -380,7 +384,7 @@ class MySQL(object):
                 f"CREATE TABLE img_blacklist_{tieba_name_eng} (img_hash CHAR(16) PRIMARY KEY, raw_hash CHAR(40) NOT NULL)")
 
     @translate_tieba_name
-    def add_img_hash(self, tieba_name_eng, img_hash, raw_hash):
+    def add_img_hash(self, tieba_name_eng: str, img_hash: str, raw_hash: str) -> bool:
         """
         向img_blacklist_{tieba_name_eng}插入img_hash
         add_img_hash(tieba_name,img_hash,raw_hash)
@@ -399,7 +403,7 @@ class MySQL(object):
             return True
 
     @translate_tieba_name
-    def has_img_hash(self, tieba_name_eng, img_hash):
+    def has_img_hash(self, tieba_name_eng: str, img_hash: str) -> bool:
         """
         检索img_blacklist_{tieba_name_eng}中是否已有img_hash
         has_img_hash(tieba_name,img_hash)
@@ -415,7 +419,7 @@ class MySQL(object):
             return True if self.mycursor.fetchone() else False
 
     @translate_tieba_name
-    def del_img_hash(self, tieba_name_eng, img_hash):
+    def del_img_hash(self, tieba_name_eng: str, img_hash: str) -> bool:
         """
         从img_blacklist_{tieba_name_eng}中删除img_hash
         del_img_hash(tieba_name,img_hash)

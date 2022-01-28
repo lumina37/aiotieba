@@ -5,6 +5,7 @@ import hashlib
 import re
 import sys
 from io import BytesIO
+from typing import List, Tuple, Union
 
 import requests as req
 from bs4 import BeautifulSoup
@@ -25,7 +26,7 @@ class Sessions(object):
 
     __slots__ = ['app', 'web', 'BDUSS', 'STOKEN']
 
-    def __init__(self, BDUSS_key=None):
+    def __init__(self, BDUSS_key: Union[str, None] = None):
 
         self.app = req.Session()
         self.web = req.Session()
@@ -50,11 +51,11 @@ class Sessions(object):
                                                                'Upgrade-Insecure-Requests': '1'
                                                                })
 
-    def close(self):
+    def close(self) -> None:
         self.app.close()
         self.web.close()
 
-    def set_host(self, url):
+    def set_host(self, url: str) -> bool:
         match_res = re.search('://(.+?)/', url)
         if match_res:
             self.web.headers['Host'] = match_res.group(1)
@@ -62,7 +63,7 @@ class Sessions(object):
         else:
             return False
 
-    def renew_BDUSS(self, BDUSS_key):
+    def renew_BDUSS(self, BDUSS_key: str) -> None:
         """
         更新BDUSS
 
@@ -88,15 +89,14 @@ class Browser(object):
     __slots__ = ['fid_dict',
                  'sessions']
 
-    def __init__(self, BDUSS_key):
-
+    def __init__(self, BDUSS_key: Union[str, None]):
         self.fid_dict = {}
         self.sessions = Sessions(BDUSS_key)
 
     def close(self):
         pass
 
-    def set_host(self, url):
+    def set_host(self, url: str) -> bool:
         """
         设置消息头的host字段
         set_host(url)
@@ -111,7 +111,7 @@ class Browser(object):
             return False
 
     @staticmethod
-    def app_sign(payload: dict):
+    def app_sign(payload: dict) -> str:
         """
         计算字典payload的贴吧客户端签名值sign
         """
@@ -126,7 +126,7 @@ class Browser(object):
 
         return sign
 
-    def get_tbs(self):
+    def get_tbs(self) -> str:
         """
         获取贴吧反csrf校验码tbs
         get_tbs()
@@ -152,7 +152,7 @@ class Browser(object):
 
         return tbs
 
-    def get_fid(self, tieba_name):
+    def get_fid(self, tieba_name: str) -> int:
         """
         通过贴吧名获取forum_id
         get_fid(tieba_name)
@@ -190,7 +190,7 @@ class Browser(object):
 
         return fid
 
-    def get_userinfo(self, user):
+    def get_userinfo(self, user: UserInfo) -> UserInfo:
         """
         补全完整版用户信息
         get_userinfo(user)
@@ -229,12 +229,12 @@ class Browser(object):
             user.is_vip = bool(data['vipInfo'])
 
         except Exception as err:
-            log.error(f"Failed to get UserInfo of {id} reason:{err}")
+            log.error(f"Failed to get UserInfo of {user} reason:{err}")
             user = UserInfo()
 
         return user
 
-    def get_userinfo_weak(self, user):
+    def get_userinfo_weak(self, user: UserInfo) -> UserInfo:
         """
         补全简略版用户信息
         get_userinfo_weak(user)
@@ -253,7 +253,7 @@ class Browser(object):
         else:
             return self.get_userinfo(user)
 
-    def name2userinfo(self, user):
+    def name2userinfo(self, user: UserInfo) -> UserInfo:
         """
         通过用户名补全简略版用户信息
         由于api的编码限制，仅支持补全user_id和portrait
@@ -283,12 +283,13 @@ class Browser(object):
             user.portrait = data['portrait']
 
         except Exception as err:
-            log.error(f"Failed to get UserInfo of {name} reason:{err}")
+            log.error(
+                f"Failed to get UserInfo of {user.user_name} reason:{err}")
             user = UserInfo()
 
         return user
 
-    def uid2userinfo(self, user):
+    def uid2userinfo(self, user: UserInfo) -> UserInfo:
         """
         通过user_id补全简略版用户信息
         uid2userinfo(user)
@@ -317,20 +318,19 @@ class Browser(object):
             user.portrait = data['portrait']
 
         except Exception as err:
-            log.error(f"Failed to get UserInfo of {user_id} reason:{err}")
+            log.error(f"Failed to get UserInfo of {user.user_id} reason:{err}")
             user = UserInfo()
 
         return user
 
-    def get_threads(self, tieba_name, pn=1, rn=30):
+    def get_threads(self, tieba_name: str, pn: int = 1) -> Threads:
         """
         使用客户端api获取首页帖子
-        get_threads(tieba_name,pn=1,rn=30)
+        get_threads(tieba_name,pn=1)
 
         参数:
             tieba_name: str 贴吧名
             pn: int 页码
-            rn: int 每页帖子数
 
         返回值:
             threads: Threads
@@ -339,7 +339,7 @@ class Browser(object):
         payload = {'_client_version': '7.9.2',
                    'kw': tieba_name,
                    'pn': pn,
-                   'rn': rn
+                   'rn': 30
                    }
         payload['sign'] = self.app_sign(payload)
 
@@ -362,15 +362,14 @@ class Browser(object):
 
         return threads
 
-    def get_posts(self, tid, pn=1, rn=30):
+    def get_posts(self, tid: int, pn: int = 1) -> Posts:
         """
         使用客户端api获取主题帖内回复
-        get_posts(tid,pn=1,rn=30)
+        get_posts(tid,pn=1)
 
         参数:
             tid: int 主题帖tid
             pn: int 页码
-            rn: int 每页帖子数
 
         返回值:
             has_next: bool 是否还有下一页
@@ -380,7 +379,7 @@ class Browser(object):
         payload = {'_client_version': '7.9.2',
                    'kz': tid,
                    'pn': pn,
-                   'rn': rn
+                   'rn': 30
                    }
         payload['sign'] = self.app_sign(payload)
 
@@ -403,7 +402,7 @@ class Browser(object):
 
         return posts
 
-    def get_comments(self, tid, pid, pn=1):
+    def get_comments(self, tid: int, pid: int, pn: int = 1) -> Comments:
         """
         使用客户端api获取楼中楼回复
         get_comments(tid,pid,pn=1)
@@ -444,7 +443,7 @@ class Browser(object):
 
         return comments
 
-    def block(self, tieba_name, user, day, reason=''):
+    def block(self, tieba_name: str, user: UserInfo, day: int, reason: str = '') -> Tuple[bool, UserInfo]:
         """
         使用客户端api的封禁，支持小吧主、语音小编封10天
         block(tieba_name,user,day,reason='null')
@@ -499,7 +498,7 @@ class Browser(object):
             f"Successfully blocked {user.logname} in {tieba_name} for {payload['day']} days")
         return True, user
 
-    def unblock(self, tieba_name, id):
+    def unblock(self, tieba_name: str, id: str) -> bool:
         """
         解封用户
         unblock(tieba_name,id)
@@ -543,7 +542,7 @@ class Browser(object):
         log.info(f"Successfully unblocked {user.logname} in {tieba_name}")
         return True
 
-    def del_thread(self, tieba_name, tid, is_frs_mask=False):
+    def del_thread(self, tieba_name: str, tid: int, is_frs_mask: bool = False) -> bool:
         """
         删除主题帖
         del_thread(tieba_name,tid)
@@ -586,7 +585,7 @@ class Browser(object):
             f"Successfully deleted thread {tid} hide:{is_frs_mask} in {tieba_name}")
         return True
 
-    def del_post(self, tieba_name, tid, pid):
+    def del_post(self, tieba_name: str, tid: int, pid: int) -> bool:
         """
         删除回复
         del_post(tieba_name,tid,pid)
@@ -628,14 +627,14 @@ class Browser(object):
         log.info(f"Successfully deleted post {pid} in {tid} in {tieba_name}")
         return True
 
-    def blacklist_add(self, tieba_name, id):
+    def blacklist_add(self, tieba_name: str, id: Union[str, int]) -> bool:
         """
         添加用户至黑名单
         blacklist_add(tieba_name,name)
 
         参数:
             tieba_name: str 所在贴吧名
-            id: str 用户名或portrait
+            id: str|int 用户名或portrait或user_id
 
         返回值:
             flag: bool 操作是否成功
@@ -670,7 +669,7 @@ class Browser(object):
             f"Successfully added {user.logname} to black_list in {tieba_name}")
         return True
 
-    def blacklist_cancels(self, tieba_name, ids):
+    def blacklist_cancels(self, tieba_name: str, ids: List[str]) -> bool:
         """
         解除黑名单
         blacklist_cancels(tieba_name,ids)
@@ -716,7 +715,7 @@ class Browser(object):
         log.info(f"Successfully deleted {ids} from black_list in {tieba_name}")
         return True
 
-    def blacklist_cancel(self, tieba_name, id):
+    def blacklist_cancel(self, tieba_name: str, id: str) -> bool:
         """
         解除黑名单
         blacklist_cancel(tieba_name,id)
@@ -734,10 +733,10 @@ class Browser(object):
         else:
             return False
 
-    def recover(self, tieba_name, tid, pid=0, is_frs_mask=False):
+    def recover(self, tieba_name, tid: int = 0, pid: int = 0, is_frs_mask: bool = False) -> bool:
         """
         恢复帖子
-        recover(tieba_name,tid,pid=0)
+        recover(tieba_name,tid=0,pid=0)
 
         参数:
             tieba_name: str 帖子所在的贴吧名
@@ -778,7 +777,7 @@ class Browser(object):
             f"Successfully recovered tid:{tid} pid:{pid} hide:{is_frs_mask} in {tieba_name}")
         return True
 
-    def recommend(self, tieba_name, tid):
+    def recommend(self, tieba_name: str, tid: int) -> bool:
         """
         推荐上首页
         recommend(tieba_name,tid)
@@ -820,16 +819,19 @@ class Browser(object):
         log.info(f"Successfully recommended {tid} in {tieba_name}")
         return True
 
-    def refuse_appeals(self, tieba_name):
+    def refuse_appeals(self, tieba_name: str) -> bool:
         """
         拒绝吧内所有解封申诉
         refuse_appeals(tieba_name)
 
         参数:
             tieba_name: str 所在贴吧名
+
+        返回值:
+            flag: bool 操作是否成功
         """
 
-        def __appeal_handle(appeal_id, refuse=True):
+        def __appeal_handle(appeal_id: int, refuse: bool = True) -> bool:
             """
             拒绝或通过解封申诉
             __appeal_handle(appeal_id,refuse=True)
@@ -867,7 +869,7 @@ class Browser(object):
                 f"Successfully handled {appeal_id} in {tieba_name}. refuse:{refuse}")
             return True
 
-        def __get_appeal_list():
+        def __get_appeal_list() -> int:
             """
             迭代返回申诉请求的编号(appeal_id)
             __get_appeal_list()
@@ -908,9 +910,12 @@ class Browser(object):
         for appeal_id in __get_appeal_list():
             __appeal_handle(appeal_id)
 
-    def url2image(self, img_url):
+    def url2image(self, img_url: str) -> Union[Image.Image, None]:
         """
         从链接获取静态图像
+
+        返回值:
+            image: Image 图像
         """
 
         try:
@@ -924,11 +929,13 @@ class Browser(object):
 
         return image
 
-    def get_ats(self):
+    def get_ats(self) -> List[At]:
         """
         获取@信息
+        get_ats()
 
-        get_self_at()
+        返回值:
+            Ats: List[At] at列表
         """
 
         payload = {'BDUSS': self.sessions.BDUSS}
@@ -965,7 +972,49 @@ class Browser(object):
 
         return ats
 
-    def get_adminlist(self, tieba_name):
+    def get_profile(self, tieba_name, tid):
+        """
+        获取用户档案
+        recommend(tieba_name,tid)
+
+        参数:
+            tieba_name: str 帖子所在贴吧名
+            tid: int 待推荐的主题帖tid
+
+        返回值:
+            flag: bool 操作是否成功
+        """
+
+        payload = {'BDUSS': self.sessions.BDUSS,
+                   '_client_version': '7.9.2',
+                   'forum_id': self.get_fid(tieba_name),
+                   'tbs': self.get_tbs(),
+                   'thread_id': tid
+                   }
+        payload['sign'] = self.app_sign(payload)
+
+        try:
+            res = self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/c/bawu/pushRecomToPersonalized", data=payload, timeout=(3, 10))
+
+            if res.status_code != 200:
+                raise ValueError("status code is not 200")
+
+            main_json = res.json()
+            if int(main_json['error_code']):
+                raise ValueError(main_json['error_msg'])
+            if int(main_json['data']['is_push_success']) != 1:
+                raise ValueError(main_json['data']['msg'])
+
+        except Exception as err:
+            log.error(
+                f"Failed to recommend {tid} in {tieba_name}. reason:{err}")
+            return False
+
+        log.info(f"Successfully recommended {tid} in {tieba_name}")
+        return True
+
+    def get_adminlist(self, tieba_name: str) -> str:
         """
         获取吧务用户名列表
         get_adminlist(tieba_name)
@@ -999,7 +1048,7 @@ class Browser(object):
 
         return
 
-    def get_rank(self, tieba_name, level_thre=4):
+    def get_rank(self, tieba_name: str, level_thre: int = 4) -> Tuple[str, int, int]:
         """
         获得贴吧等级排行榜
         get_rank(tieba_name,level_thre=4)
@@ -1014,7 +1063,7 @@ class Browser(object):
             exp: int 经验值
         """
 
-        def __get_pn_rank(pn):
+        def __get_pn_rank(pn: int) -> Tuple[str, int, int]:
             """
             获得pn页的排行
             __get_pn_rank(pn)
@@ -1058,7 +1107,7 @@ class Browser(object):
 
         return
 
-    def get_member(self, tieba_name):
+    def get_member(self, tieba_name: str) -> Tuple[str, str, int]:
         """
         获得贴吧最新关注用户列表
         get_member(tieba_name)
@@ -1072,7 +1121,7 @@ class Browser(object):
             level: int 等级
         """
 
-        def __get_pn_member(pn):
+        def __get_pn_member(pn: int) -> Tuple[str, str, int]:
             """
             获得pn页的最新关注用户列表
             __get_pn_member(pn)
@@ -1112,7 +1161,7 @@ class Browser(object):
 
         return
 
-    def set_privacy(self, tid, hide=True):
+    def set_privacy(self, tid: int, hide: bool = True) -> bool:
         """
         隐藏主题帖
         set_privacy(tid)

@@ -6,6 +6,7 @@ __all__ = ('UserInfo',
 
 import re
 import traceback
+from typing import Dict, List, Union
 
 from .logger import log
 
@@ -31,7 +32,7 @@ class UserInfo(object):
                  'is_vip',
                  'is_god']
 
-    def __init__(self, _id=None, user_name='', nick_name='', portrait='', user_id=0, level=0, gender=0, is_vip=False, is_god=False):
+    def __init__(self, _id: Union[str, None] = None, user_name: str = '', nick_name: str = '', portrait: str = '', user_id: int = 0, level: int = 0, gender: int = 0, is_vip: bool = False, is_god: bool = False):
         if _id:
             if isinstance(_id, int):
                 self.user_id = _id
@@ -56,10 +57,10 @@ class UserInfo(object):
         self.is_god = is_god
 
     def __str__(self) -> str:
-        return f"user_name={self.user_name}\nnick_name={self._nick_name}\nportrait={self._portrait}\nuser_id={self._user_id}"
+        return f"user_name:{self.user_name} / nick_name:{self._nick_name} / portrait:{self._portrait} / user_id:{self._user_id}"
 
     @property
-    def nick_name(self):
+    def nick_name(self) -> str:
         return self._nick_name
 
     @nick_name.setter
@@ -70,7 +71,7 @@ class UserInfo(object):
             self._nick_name = ''
 
     @property
-    def portrait(self):
+    def portrait(self) -> str:
         return self._portrait
 
     @portrait.setter
@@ -84,7 +85,7 @@ class UserInfo(object):
             self._portrait = ''
 
     @property
-    def user_id(self):
+    def user_id(self) -> int:
         return self._user_id
 
     @user_id.setter
@@ -95,7 +96,7 @@ class UserInfo(object):
             self._user_id = 0
 
     @property
-    def level(self):
+    def level(self) -> int:
         return self._level
 
     @level.setter
@@ -106,7 +107,7 @@ class UserInfo(object):
             self._level = 0
 
     @property
-    def gender(self):
+    def gender(self) -> int:
         return self._gender
 
     @gender.setter
@@ -117,11 +118,11 @@ class UserInfo(object):
             self._gender = 0
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.user_name if self.user_name else self.nick_name
 
     @property
-    def logname(self):
+    def logname(self) -> str:
         if self.user_name:
             return self.user_name
         else:
@@ -141,7 +142,7 @@ class _BaseContent(object):
 
     __slots__ = ['fid', 'tid', 'pid', '_text', 'user']
 
-    def __init__(self, fid=0, tid=0, pid=0, text='', user=UserInfo()):
+    def __init__(self, fid: int = 0, tid: int = 0, pid: int = 0, text: str = '', user: UserInfo = UserInfo()):
         self.fid = fid
         self.tid = tid
         self.pid = pid
@@ -149,7 +150,7 @@ class _BaseContent(object):
         self.user = user
 
     @property
-    def text(self):
+    def text(self) -> str:
         return self._text
 
 
@@ -178,7 +179,7 @@ class Thread(_BaseContent):
     __slots__ = ['title', 'first_floor_text', 'has_audio', 'has_video', 'reply_able',
                  'view_num', 'reply_num', 'like', 'dislike', 'create_time', 'last_time']
 
-    def __init__(self, fid=0, tid=0, pid=0, user=UserInfo(), title='', first_floor_text='', has_audio=False, has_video=False, reply_able=True, view_num=0, reply_num=0, like=0, dislike=0, create_time=0, last_time=0):
+    def __init__(self, fid: int = 0, tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), title: str = '', first_floor_text: str = '', has_audio: bool = False, has_video: bool = False, reply_able: bool = True, view_num: int = 0, reply_num: int = 0, like: int = 0, dislike: int = 0, create_time: int = 0, last_time: int = 0):
         super().__init__(fid=fid, tid=tid, pid=pid, user=user)
         self.title = title
         self.first_floor_text = first_floor_text
@@ -193,7 +194,7 @@ class Thread(_BaseContent):
         self.last_time = last_time
 
     @property
-    def text(self):
+    def text(self) -> str:
         if not self._text:
             self._text = f'{self.title}\n{self.first_floor_text}'
         return self._text
@@ -206,7 +207,7 @@ class Threads(list):
 
     __slots__ = ['current_pn', 'total_pn']
 
-    def __init__(self, main_json=None):
+    def __init__(self, main_json: Union[Dict, None] = None):
 
         if main_json:
             try:
@@ -297,7 +298,7 @@ class Threads(list):
             self.total_pn = 0
 
     @property
-    def has_next(self):
+    def has_next(self) -> bool:
         return self.current_pn < self.total_pn
 
 
@@ -326,7 +327,7 @@ class Post(_BaseContent):
     __slots__ = ['content', 'sign', 'imgs', 'smileys', 'has_audio', 'floor',
                  'reply_num', 'like', 'dislike', 'create_time', 'is_thread_owner']
 
-    def __init__(self, fid=0, tid=0, pid=0, user=UserInfo(), content='', sign='', imgs=[], smileys=[], has_audio=False, floor=0, reply_num=0, like=0, dislike=0, create_time=0, is_thread_owner=False):
+    def __init__(self, fid: int = 0, tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), content: str = '', sign: str = '', imgs: List[str] = [], smileys: List[str] = [], has_audio: bool = False, floor: int = 0, reply_num: int = 0, like: int = 0, dislike: int = 0, create_time: int = 0, is_thread_owner: bool = False):
         super().__init__(fid=fid, tid=tid, pid=pid, user=user)
         self.content = content
         self.sign = sign
@@ -341,7 +342,7 @@ class Post(_BaseContent):
         self.is_thread_owner = is_thread_owner
 
     @property
-    def text(self):
+    def text(self) -> str:
         if not self._text:
             self._text = f'{self.content}\n{self.sign}'
         return self._text
@@ -357,7 +358,7 @@ class Posts(list):
 
     __slots__ = ['current_pn', 'total_pn']
 
-    def __init__(self, main_json=None):
+    def __init__(self, main_json: Union[Dict, None] = None):
 
         if main_json:
             try:
@@ -440,7 +441,7 @@ class Posts(list):
             self.total_pn = 0
 
     @property
-    def has_next(self):
+    def has_next(self) -> bool:
         return self.current_pn < self.total_pn
 
 
@@ -462,7 +463,7 @@ class Comment(_BaseContent):
 
     __slots__ = ['smileys', 'has_audio', 'like', 'dislike', 'create_time']
 
-    def __init__(self, fid=0, tid=0, pid=0, user=UserInfo(), text='', smileys=[], has_audio=False, like=0, dislike=0, create_time=0):
+    def __init__(self, fid: int = 0, tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), text: str = '', smileys: List[str] = [], has_audio: bool = False, like: int = 0, dislike: int = 0, create_time: int = 0):
         super().__init__(fid=fid, tid=tid, pid=pid, user=user)
         self._text = text
         self.smileys = smileys
@@ -482,7 +483,7 @@ class Comments(list):
 
     __slots__ = ['current_pn', 'total_pn']
 
-    def __init__(self, main_json=None):
+    def __init__(self, main_json: Union[Dict, None] = None):
 
         if main_json:
             try:
@@ -549,7 +550,7 @@ class Comments(list):
             self.total_pn = 0
 
     @property
-    def has_next(self):
+    def has_next(self) -> bool:
         return self.current_pn < self.total_pn
 
 
@@ -567,7 +568,7 @@ class At(object):
 
     __slots__ = ['tieba_name', 'tid', 'pid', 'user', 'text', 'create_time']
 
-    def __init__(self, tieba_name='', tid=0, pid=0, user=UserInfo(), text='', create_time=0):
+    def __init__(self, tieba_name: str = '', tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), text: str = '', create_time: int = 0):
         self.tieba_name = tieba_name
         self.tid = tid
         self.pid = pid

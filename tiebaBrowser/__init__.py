@@ -16,10 +16,10 @@
 
 import signal
 
+from .api import Browser
 from .cloud_review import CloudReview
 from .data_structure import *
 from .logger import log
-from .api import Browser
 
 
 def terminate(signalNumber, frame):

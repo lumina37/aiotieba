@@ -17,7 +17,7 @@ class MyLogger(logging.Logger):
     自定义的日志记录类
     """
 
-    def __init__(self, name):
+    def __init__(self, name: str):
 
         super().__init__(name)
 

@@ -3,14 +3,16 @@ __all__ = ('CloudReview',)
 
 
 import re
+from typing import Union
 from urllib.parse import unquote
 
 import imagehash
 import pyzbar.pyzbar as pyzbar
 
+from .api import Browser
+from .data_structure import UserInfo
 from .logger import log
 from .mysql import MySQL
-from .api import Browser
 
 
 class RegularExp(object):
@@ -81,7 +83,7 @@ class CloudReview(Browser):
                  'exp',
                  'mysql']
 
-    def __init__(self, BDUSS_key, tieba_name, sleep_time=0):
+    def __init__(self, BDUSS_key: Union[str, None], tieba_name: str, sleep_time: float = 0):
         super().__init__(BDUSS_key)
 
         self.tieba_name = tieba_name
@@ -91,11 +93,11 @@ class CloudReview(Browser):
 
         self.exp = RegularExp()
 
-    def close(self):
+    def close(self) -> None:
         self.mysql.close()
         super().close()
 
-    def update_user_id(self, id, mode=True):
+    def update_user_id(self, id: Union[str, int], mode: bool = True) -> bool:
         """
         向名单中插入user_id
         update_user_id(id,mode=True)
@@ -112,10 +114,10 @@ class CloudReview(Browser):
 
         return self.mysql.update_user_id(self.tieba_name, user.user_id, mode)
 
-    def del_user_id(self, id=None):
+    def del_user_id(self, id: Union[str, int]):
         """
         从名单中删除user_id
-        del_user_id(id=None)
+        del_user_id(id)
         """
 
         user = UserInfo(id)
@@ -125,7 +127,7 @@ class CloudReview(Browser):
 
         return self.mysql.del_user_id(self.tieba_name, user.user_id)
 
-    def scan_QRcode(self, img_url):
+    def scan_QRcode(self, img_url: str) -> Union[str, None]:
         """
         扫描img_url对应图像中的二维码
         """
@@ -141,14 +143,14 @@ class CloudReview(Browser):
 
         return data
 
-    def has_img_hash(self, img_url):
+    def has_img_hash(self, img_url: str) -> bool:
         """
         判断img_url对应的图像的dhash是否在黑名单中
         """
 
         image = self.url2image(img_url)
         if image:
-            img_hash = imagehash.dhash(image)
+            img_hash = str(imagehash.dhash(image))
             if self.mysql.has_img_hash(self.tieba_name, img_hash):
                 return True
             else:
