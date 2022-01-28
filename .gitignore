@@ -6,6 +6,7 @@
 .vs/
 config/
 log/
+charles/
 tiebaBrowser/cache/
 cloud_review_v.py
 cloud_review_soulknight.py

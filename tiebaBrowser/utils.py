@@ -1,12 +1,14 @@
 # -*- coding:utf-8 -*-
 __all__ = ('Browser',)
 
-
 import hashlib
 import re
+import sys
+from io import BytesIO
 
 import requests as req
 from bs4 import BeautifulSoup
+from PIL import Image
 
 from .config import config
 from .data_structure import *
@@ -93,22 +95,6 @@ class Browser(object):
     def close(self):
         pass
 
-    @staticmethod
-    def _app_sign(payload: dict):
-        """
-        计算字典payload的贴吧客户端签名值sign
-        """
-
-        raw_list = [f"{key}={value}" for key, value in payload.items()]
-        raw_list.append("tiebaclient!!!")
-        raw_str = "".join(raw_list)
-
-        md5 = hashlib.md5()
-        md5.update(raw_str.encode('utf-8'))
-        sign = md5.hexdigest().upper()
-
-        return sign
-
     def set_host(self, url):
         """
         设置消息头的host字段
@@ -123,10 +109,26 @@ class Browser(object):
             log.warning(f"Wrong type of url `{url}`")
             return False
 
-    def _get_tbs(self):
+    @staticmethod
+    def app_sign(payload: dict):
+        """
+        计算字典payload的贴吧客户端签名值sign
+        """
+
+        raw_list = [f"{key}={value}" for key, value in payload.items()]
+        raw_list.append("tiebaclient!!!")
+        raw_str = "".join(raw_list)
+
+        md5 = hashlib.md5()
+        md5.update(raw_str.encode('utf-8'))
+        sign = md5.hexdigest().upper()
+
+        return sign
+
+    def get_tbs(self):
         """
         获取贴吧反csrf校验码tbs
-        _get_tbs()
+        get_tbs()
 
         返回值:
             tbs: str 反csrf校验码tbs
@@ -149,10 +151,10 @@ class Browser(object):
 
         return tbs
 
-    def _tbname2fid(self, tieba_name):
+    def get_fid(self, tieba_name):
         """
         通过贴吧名获取forum_id
-        _tbname2fid(tieba_name)
+        get_fid(tieba_name)
 
         参数:
             tieba_name: str 贴吧名
@@ -330,7 +332,7 @@ class Browser(object):
                    'pn': pn,
                    'rn': rn
                    }
-        payload['sign'] = self._app_sign(payload)
+        payload['sign'] = self.app_sign(payload)
 
         try:
             res = self.sessions.app.post(
@@ -371,7 +373,7 @@ class Browser(object):
                    'pn': pn,
                    'rn': rn
                    }
-        payload['sign'] = self._app_sign(payload)
+        payload['sign'] = self.app_sign(payload)
 
         try:
             res = self.sessions.app.post(
@@ -412,7 +414,7 @@ class Browser(object):
                    'pid': pid,
                    'pn': pn
                    }
-        payload['sign'] = self._app_sign(payload)
+        payload['sign'] = self.app_sign(payload)
 
         try:
             res = self.sessions.app.post(
@@ -432,93 +434,6 @@ class Browser(object):
             comments = Comments()
 
         return comments
-
-    def get_ats(self):
-        """
-        获取@信息
-
-        get_self_at()
-        """
-
-        payload = {'BDUSS': self.sessions.BDUSS}
-        payload['sign'] = self._app_sign(payload)
-
-        try:
-            res = self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/u/feed/atme", data=payload, timeout=(3, 10))
-
-            if res.status_code != 200:
-                raise ValueError("status code is not 200")
-
-            main_json = res.json()
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
-
-            ats = []
-            for at_raw in main_json['at_list']:
-                user_dict = at_raw['quote_user']
-                user = UserInfo(user_name=user_dict['name'],
-                                nick_name=user_dict['name_show'],
-                                portrait=user_dict['portrait'])
-                at = At(tieba_name=at_raw['fname'],
-                        tid=int(at_raw['thread_id']),
-                        pid=int(at_raw['post_id']),
-                        text=at_raw['content'].lstrip(),
-                        user=user,
-                        create_time=int(at_raw['time']))
-                ats.append(at)
-
-        except Exception as err:
-            log.error(f"Failed to get ats reason:{err}")
-            ats = []
-
-        return ats
-
-    def set_privacy(self, tid, hide=True):
-        """
-        隐藏主题帖
-        set_privacy(tid)
-
-        参数:
-            tid: int 主题帖tid
-            hide: bool 是否设为隐藏
-
-        返回值:
-            flag: bool 操作是否成功
-        """
-
-        posts = self.get_posts(tid)
-        if not posts:
-            log.error(f"Failed to set privacy to {tid}")
-            return False
-
-        try:
-            payload = {'BDUSS': self.sessions.BDUSS,
-                       '_client_version': '7.9.2',
-                       'forum_id': posts[0].fid,
-                       'is_hide': int(hide),
-                       'post_id': posts[0].pid,
-                       'tbs': self._get_tbs(),
-                       'thread_id': tid
-                       }
-            payload['sign'] = self._app_sign(payload)
-
-            res = self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/thread/setPrivacy", data=payload, timeout=(3, 10))
-
-            if res.status_code != 200:
-                raise ValueError("status code is not 200")
-
-            main_json = res.json()
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
-
-        except Exception as err:
-            log.error(f"Failed to set privacy to {tid} reason:{err}")
-            return False
-
-        log.info(f"Successfully set privacy to {tid}")
-        return True
 
     def block(self, tieba_name, user, day, reason=''):
         """
@@ -548,18 +463,18 @@ class Browser(object):
         payload = {'BDUSS': self.sessions.BDUSS,
                    '_client_version': '7.9.2',
                    'day': day,
-                   'fid': self._tbname2fid(tieba_name),
+                   'fid': self.get_fid(tieba_name),
                    'nick_name': user.nick_name if user.nick_name else user.user_name,
                    'ntn': 'banid',
                    'portrait': user.portrait,
                    'post_id': 'null',
                    'reason': reason,
-                   'tbs': self._get_tbs(),
+                   'tbs': self.get_tbs(),
                    'un': user.user_name,
                    'word': tieba_name,
                    'z': '9998732423',
                    }
-        payload['sign'] = self._app_sign(payload)
+        payload['sign'] = self.app_sign(payload)
 
         try:
             res = self.sessions.app.post(
@@ -581,6 +496,49 @@ class Browser(object):
             f"Successfully blocked {user.logname} in {tieba_name} for {payload['day']} days")
         return True, user
 
+    def unblock(self, tieba_name, id):
+        """
+        解封用户
+        unblock(tieba_name,id)
+
+        参数:
+            tieba_name: str 所在贴吧名
+            id: str 用户名或昵称或portrait
+
+        返回值:
+            flag: bool 操作是否成功
+        """
+
+        user = self.get_userinfo(id)
+
+        payload = {'fn': tieba_name,
+                   'fid': self.get_fid(tieba_name),
+                   'block_un': user.user_name,
+                   'block_uid': user.user_id,
+                   'block_nickname': user.nick_name,
+                   'tbs': self.get_tbs()
+                   }
+
+        try:
+            self.set_host("http://tieba.baidu.com/")
+            res = self.sessions.web.post(
+                "https://tieba.baidu.com/mo/q/bawublockclear", data=payload, timeout=(3, 10))
+
+            if res.status_code != 200:
+                raise ValueError("status code is not 200")
+
+            main_json = res.json()
+            if int(main_json['no']):
+                raise ValueError(main_json['error'])
+
+        except Exception as err:
+            log.error(
+                f"Failed to unblock {user.logname} in {tieba_name}. reason:{err}")
+            return False
+
+        log.info(f"Successfully unblocked {user.logname} in {tieba_name}")
+        return True
+
     def del_thread(self, tieba_name, tid, is_frs_mask=False):
         """
         删除主题帖
@@ -597,12 +555,12 @@ class Browser(object):
 
         payload = {'BDUSS': self.sessions.BDUSS,
                    '_client_version': '7.9.2',
-                   'fid': self._tbname2fid(tieba_name),
+                   'fid': self.get_fid(tieba_name),
                    'is_frs_mask': int(is_frs_mask),
-                   'tbs': self._get_tbs(),
+                   'tbs': self.get_tbs(),
                    'z': tid
                    }
-        payload['sign'] = self._app_sign(payload)
+        payload['sign'] = self.app_sign(payload)
 
         try:
             res = self.sessions.app.post(
@@ -640,12 +598,12 @@ class Browser(object):
 
         payload = {'BDUSS': self.sessions.BDUSS,
                    '_client_version': '7.9.2',
-                   'fid': self._tbname2fid(tieba_name),
+                   'fid': self.get_fid(tieba_name),
                    'pid': pid,
-                   'tbs': self._get_tbs(),
+                   'tbs': self.get_tbs(),
                    'z': tid
                    }
-        payload['sign'] = self._app_sign(payload)
+        payload['sign'] = self.app_sign(payload)
 
         try:
             res = self.sessions.app.post(
@@ -680,7 +638,7 @@ class Browser(object):
         """
 
         user = self.get_userinfo_weak(id)
-        payload = {'tbs': self._get_tbs(),
+        payload = {'tbs': self.get_tbs(),
                    'user_id': user.user_id,
                    'word': tieba_name,
                    'ie': 'utf-8'
@@ -707,44 +665,6 @@ class Browser(object):
             f"Successfully added {user.logname} to black_list in {tieba_name}")
         return True
 
-    def blacklist_get(self, tieba_name, pn=1):
-        """
-        获取黑名单列表
-        blacklist_get(tieba_name,pn=1)
-
-        参数:
-            tieba_name: str 所在贴吧名
-            pn: int 页数
-
-        返回值:
-            flag: bool 操作是否成功
-            black_list: List[str] 黑名单用户列表
-        """
-
-        params = {'word': tieba_name,
-                  'pn': pn
-                  }
-
-        try:
-            self.set_host("http://tieba.baidu.com/")
-            res = self.sessions.web.get(
-                "http://tieba.baidu.com/bawu2/platform/listBlackUser", params=params, timeout=(3, 10))
-
-            has_next = True if re.search(
-                'class="next_page"', res.text) else False
-            raw = re.search('<tbody>.*</tbody>', res.text, re.S).group()
-
-            soup = BeautifulSoup(raw, 'lxml')
-            black_list = [black_raw.find("a", class_='avatar_link').text.strip(
-            ) for black_raw in soup.find_all("tr")]
-
-        except Exception as err:
-            log.error(
-                f"Failed to get black_list of {tieba_name}. reason:{err}")
-            return False, []
-
-        return has_next, black_list
-
     def blacklist_cancels(self, tieba_name, ids):
         """
         解除黑名单
@@ -760,7 +680,7 @@ class Browser(object):
 
         payload = {'ie': 'utf-8',
                    'word': tieba_name,
-                   'tbs': self._get_tbs(),
+                   'tbs': self.get_tbs(),
                    'list[]': []}
 
         for id in ids:
@@ -824,7 +744,7 @@ class Browser(object):
         """
 
         payload = {'fn': tieba_name,
-                   'fid': self._tbname2fid(tieba_name),
+                   'fid': self.get_fid(tieba_name),
                    'tid_list[]': tid,
                    'pid_list[]': pid,
                    'type_list[]': 1 if pid else 0,
@@ -852,49 +772,6 @@ class Browser(object):
             f"Successfully recovered tid:{tid} pid:{pid} hide:{is_frs_mask} in {tieba_name}")
         return True
 
-    def unblock(self, tieba_name, id):
-        """
-        解封用户
-        unblock(tieba_name,id)
-
-        参数:
-            tieba_name: str 所在贴吧名
-            id: str 用户名或昵称或portrait
-
-        返回值:
-            flag: bool 操作是否成功
-        """
-
-        user = self.get_userinfo(id)
-
-        payload = {'fn': tieba_name,
-                   'fid': self._tbname2fid(tieba_name),
-                   'block_un': user.user_name,
-                   'block_uid': user.user_id,
-                   'block_nickname': user.nick_name,
-                   'tbs': self._get_tbs()
-                   }
-
-        try:
-            self.set_host("http://tieba.baidu.com/")
-            res = self.sessions.web.post(
-                "https://tieba.baidu.com/mo/q/bawublockclear", data=payload, timeout=(3, 10))
-
-            if res.status_code != 200:
-                raise ValueError("status code is not 200")
-
-            main_json = res.json()
-            if int(main_json['no']):
-                raise ValueError(main_json['error'])
-
-        except Exception as err:
-            log.error(
-                f"Failed to unblock {user.logname} in {tieba_name}. reason:{err}")
-            return False
-
-        log.info(f"Successfully unblocked {user.logname} in {tieba_name}")
-        return True
-
     def recommend(self, tieba_name, tid):
         """
         推荐上首页
@@ -910,11 +787,11 @@ class Browser(object):
 
         payload = {'BDUSS': self.sessions.BDUSS,
                    '_client_version': '7.9.2',
-                   'forum_id': self._tbname2fid(tieba_name),
-                   'tbs': self._get_tbs(),
+                   'forum_id': self.get_fid(tieba_name),
+                   'tbs': self.get_tbs(),
                    'thread_id': tid
                    }
-        payload['sign'] = self._app_sign(payload)
+        payload['sign'] = self.app_sign(payload)
 
         try:
             res = self.sessions.app.post(
@@ -957,7 +834,7 @@ class Browser(object):
             """
 
             payload = {'fn': tieba_name,
-                       'fid': self._tbname2fid(tieba_name),
+                       'fid': self.get_fid(tieba_name),
                        'status': 2 if refuse else 1,
                        'refuse_reason': 'Auto Refuse',
                        'appeal_id': appeal_id
@@ -989,12 +866,12 @@ class Browser(object):
             迭代返回申诉请求的编号(appeal_id)
             __get_appeal_list()
 
-            返回:
+            迭代返回值:
                 appeal_id: int 申诉请求的编号
             """
 
             params = {'fn': tieba_name,
-                      'fid': self._tbname2fid(tieba_name)
+                      'fid': self.get_fid(tieba_name)
                       }
 
             try:
@@ -1025,6 +902,65 @@ class Browser(object):
         for appeal_id in __get_appeal_list():
             __appeal_handle(appeal_id)
 
+    def url2image(self, img_url):
+        """
+        从链接获取静态图像
+        """
+        try:
+            if not re.search('\.(jpg|jpeg|png)', img_url):
+                raise ValueError("Wrong image format")
+
+            self.set_host(img_url)
+            res = self.sessions.web.get(img_url, timeout=(3, 10))
+            image = Image.open(BytesIO(res.content))
+
+        except Exception as err:
+            log.error(f"Failed to get image {img_url}. reason:{err}")
+            image = None
+
+        return image
+
+    def get_ats(self):
+        """
+        获取@信息
+
+        get_self_at()
+        """
+
+        payload = {'BDUSS': self.sessions.BDUSS}
+        payload['sign'] = self.app_sign(payload)
+
+        try:
+            res = self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/u/feed/atme", data=payload, timeout=(3, 10))
+
+            if res.status_code != 200:
+                raise ValueError("status code is not 200")
+
+            main_json = res.json()
+            if int(main_json['error_code']):
+                raise ValueError(main_json['error_msg'])
+
+            ats = []
+            for at_raw in main_json['at_list']:
+                user_dict = at_raw['quote_user']
+                user = UserInfo(user_name=user_dict['name'],
+                                nick_name=user_dict['name_show'],
+                                portrait=user_dict['portrait'])
+                at = At(tieba_name=at_raw['fname'],
+                        tid=int(at_raw['thread_id']),
+                        pid=int(at_raw['post_id']),
+                        text=at_raw['content'].lstrip(),
+                        user=user,
+                        create_time=int(at_raw['time']))
+                ats.append(at)
+
+        except Exception as err:
+            log.error(f"Failed to get ats reason:{err}")
+            ats = []
+
+        return ats
+
     def get_adminlist(self, tieba_name):
         """
         获取吧务用户名列表
@@ -1032,6 +968,9 @@ class Browser(object):
 
         参数:
             tieba_name: str 所在贴吧名
+
+        迭代返回值:
+            user_name: str 用户名
         """
 
         try:
@@ -1055,3 +994,162 @@ class Browser(object):
             log.error(f"Failed to get admin list reason: {err}")
 
         return
+
+    def get_rank(self, tieba_name, level_thre=4):
+        """
+        获得贴吧等级排行榜
+        get_rank(tieba_name,level_thre=4)
+
+        参数:
+            tieba_name: str 贴吧名
+            level_thre: int 等级下限阈值，等级大于等于该值的用户都会被采集
+
+        迭代返回值:
+            user_name: str 用户名
+            level: int 等级
+            exp: int 经验值
+        """
+
+        def __get_pn_rank(pn):
+            """
+            获得pn页的排行
+            __get_pn_rank(pn)
+            """
+
+            try:
+                res = self.sessions.web.get(
+                    "http://tieba.baidu.com/f/like/furank", params={'kw': tieba_name, 'pn': pn, 'ie': 'utf-8'})
+
+                if res.status_code != 200:
+                    raise ValueError("status code is not 200")
+
+                soup = BeautifulSoup(res.text, 'lxml')
+                items = soup.select('tr[class^=drl_list_item]')
+                if not items:
+                    raise StopIteration
+
+                for item in items:
+                    user_name_item = item.td.next_sibling
+                    user_name = user_name_item.text
+                    level_item = user_name_item.next_sibling
+                    # e.g. get level 16 from string "bg_lv16" by slicing [5:]
+                    level = int(level_item.div['class'][0][5:])
+                    if level < level_thre:
+                        raise StopIteration
+                    exp_item = level_item.next_sibling
+                    exp = int(exp_item.text)
+                    yield user_name, level, exp
+
+            except StopIteration:
+                raise
+            except Exception as err:
+                log.error(
+                    f"Failed to get rank of {tieba_name} pn:{pn} reason:{err}")
+
+        for pn in range(1, sys.maxsize):
+            try:
+                yield from __get_pn_rank(pn)
+            except RuntimeError:  # need Python 3.7+ https://www.python.org/dev/peps/pep-0479/
+                break
+
+        return
+
+    def get_member(self, tieba_name):
+        """
+        获得贴吧最新关注用户列表
+        get_member(tieba_name)
+
+        参数:
+            tieba_name: str 贴吧名
+
+        迭代返回值:
+            user_name: str 用户名
+            portrait: str
+            level: int 等级
+        """
+
+        def __get_pn_member(pn):
+            """
+            获得pn页的最新关注用户列表
+            __get_pn_member(pn)
+            """
+
+            try:
+                res = self.sessions.web.get(
+                    "http://tieba.baidu.com/bawu2/platform/listMemberInfo", params={'word': tieba_name, 'pn': pn, 'ie': 'utf-8'})
+
+                if res.status_code != 200:
+                    raise ValueError("status code is not 200")
+
+                soup = BeautifulSoup(res.text, 'lxml')
+                items = soup.find_all('div', class_='name_wrap')
+                if not items:
+                    raise StopIteration
+
+                for item in items:
+                    user_item = item.a
+                    user_name = user_item['title']
+                    portrait = user_item['href'][14:]
+                    level_item = item.span
+                    level = int(level_item['class'][1][12:])
+                    yield user_name, portrait, level
+
+            except StopIteration:
+                raise
+            except Exception as err:
+                log.error(
+                    f"Failed to get member of {tieba_name} pn:{pn} reason:{err}")
+
+        for pn in range(1, sys.maxsize):
+            try:
+                yield from __get_pn_member(pn)
+            except RuntimeError:  # need Python 3.7+ https://www.python.org/dev/peps/pep-0479/
+                break
+
+        return
+
+    def set_privacy(self, tid, hide=True):
+        """
+        隐藏主题帖
+        set_privacy(tid)
+
+        参数:
+            tid: int 主题帖tid
+            hide: bool 是否设为隐藏
+
+        返回值:
+            flag: bool 操作是否成功
+        """
+
+        posts = self.get_posts(tid)
+        if not posts:
+            log.error(f"Failed to set privacy to {tid}")
+            return False
+
+        try:
+            payload = {'BDUSS': self.sessions.BDUSS,
+                       '_client_version': '7.9.2',
+                       'forum_id': posts[0].fid,
+                       'is_hide': int(hide),
+                       'post_id': posts[0].pid,
+                       'tbs': self.get_tbs(),
+                       'thread_id': tid
+                       }
+            payload['sign'] = self.app_sign(payload)
+
+            res = self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/c/thread/setPrivacy", data=payload, timeout=(3, 10))
+
+            if res.status_code != 200:
+                raise ValueError("status code is not 200")
+
+            main_json = res.json()
+            if int(main_json['error_code']):
+                raise ValueError(main_json['error_msg'])
+
+        except Exception as err:
+            log.error(f"Failed to set privacy to {tid} reason:{err}")
+            return False
+
+        log.info(f"Successfully set privacy to {tid}")
+        return True

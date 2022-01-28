@@ -3,12 +3,10 @@ __all__ = ('CloudReview',)
 
 
 import re
-from io import BytesIO
 from urllib.parse import unquote
 
 import imagehash
 import pyzbar.pyzbar as pyzbar
-from PIL import Image
 
 from .logger import log
 from .mysql import MySQL
@@ -124,24 +122,6 @@ class CloudReview(Browser):
             return False
 
         return self.mysql.del_user_id(self.tieba_name, user.user_id)
-
-    def url2image(self, img_url):
-        """
-        从链接获取静态图像
-        """
-        try:
-            if not re.search('\.(jpg|jpeg|png)', img_url):
-                raise ValueError("Wrong image format")
-
-            self.set_host(img_url)
-            res = self.sessions.web.get(img_url, timeout=(3, 10))
-            image = Image.open(BytesIO(res.content))
-
-        except Exception as err:
-            log.error(f"Failed to get image {img_url}. reason:{err}")
-            image = None
-
-        return image
 
     def scan_QRcode(self, img_url):
         """
