@@ -191,11 +191,11 @@ class Browser(object):
 
     def get_userinfo(self, id):
         """
-        通过用户名或昵称或portrait获取用户信息
+        通过用户名或portrait获取用户信息
         get_userinfo(id)
 
         参数:
-            id: str user_name或nick_name或portrait
+            id: str user_name或portrait
 
         返回值:
             user: UserInfo 用户信息
@@ -241,21 +241,35 @@ class Browser(object):
 
     def get_userinfo_weak(self, id):
         """
-        通过用户名或昵称或portrait获取简略版用户信息
-        由于api的编码限制，返回结果仅包含user_id和portrait
+        通过用户名或portrait获取简略版用户信息
         get_userinfo_weak(id)
 
         参数:
-            id: str user_name或nick_name或portrait
+            id: str user_name或portrait
 
         返回值:
             user: UserInfo 用户信息
         """
 
         if id.startswith('tb.'):
-            params = {'id': id}
+            return self.get_userinfo(id)
         else:
-            params = {'un': id, 'ie': 'utf-8'}
+            return self.name2userinfo(id)
+
+    def name2userinfo(self, name):
+        """
+        通过用户名获取简略版用户信息
+        由于api的编码限制，返回结果仅包含user_id和portrait
+        name2userinfo(name)
+
+        参数:
+            name: str user_name
+
+        返回值:
+            user: UserInfo 用户信息
+        """
+
+        params = {'un': name, 'ie': 'utf-8'}
 
         try:
             self.set_host("http://tieba.baidu.com/")
@@ -272,7 +286,7 @@ class Browser(object):
                             portrait=data['portrait'])
 
         except Exception as err:
-            log.error(f"Failed to get UserInfo of {id} reason:{err}")
+            log.error(f"Failed to get UserInfo of {name} reason:{err}")
             user = UserInfo()
 
         return user
@@ -503,7 +517,7 @@ class Browser(object):
 
         参数:
             tieba_name: str 所在贴吧名
-            id: str 用户名或昵称或portrait
+            id: str 用户名或portrait
 
         返回值:
             flag: bool 操作是否成功
@@ -631,7 +645,7 @@ class Browser(object):
 
         参数:
             tieba_name: str 所在贴吧名
-            id: str 用户名或昵称或portrait
+            id: str 用户名或portrait
 
         返回值:
             flag: bool 操作是否成功
@@ -672,7 +686,7 @@ class Browser(object):
 
         参数:
             tieba_name: str 所在贴吧名
-            ids: List[str] 用户名或昵称或portrait的列表
+            ids: List[str] 用户名或portrait的列表
 
         返回值:
             flag: bool 操作是否成功
@@ -717,7 +731,7 @@ class Browser(object):
 
         参数:
             tieba_name: str 所在贴吧名
-            id: str 用户名或昵称
+            id: str 用户名或portrait
 
         返回值:
             flag: bool 操作是否成功
@@ -906,10 +920,8 @@ class Browser(object):
         """
         从链接获取静态图像
         """
-        try:
-            if not re.search('\.(jpg|jpeg|png)', img_url):
-                raise ValueError("Wrong image format")
 
+        try:
             self.set_host(img_url)
             res = self.sessions.web.get(img_url, timeout=(3, 10))
             image = Image.open(BytesIO(res.content))
@@ -1100,7 +1112,7 @@ class Browser(object):
                 log.error(
                     f"Failed to get member of {tieba_name} pn:{pn} reason:{err}")
 
-        for pn in range(1, sys.maxsize):
+        for pn in range(1, 459):
             try:
                 yield from __get_pn_member(pn)
             except RuntimeError:  # need Python 3.7+ https://www.python.org/dev/peps/pep-0479/
