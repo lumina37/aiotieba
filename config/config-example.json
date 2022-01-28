@@ -2,6 +2,9 @@
     "BDUSS": {
         "default": ""
     },
+    "STOKEN": {
+        "default": ""
+    },
     "MySQL": {
         "host": "",
         "port": 4396,
