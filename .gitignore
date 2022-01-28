@@ -7,14 +7,8 @@
 config/
 log/
 charles/
-tiebaBrowser/cache/
-cloud_review_v.py
 cloud_review_soulknight.py
-admin_operation.py
-admin_listen.py
-mysql_operation.py
-rank_spider.py
 create_whitelist.py
-recover_v.py
 test.py
 vote.py
+asoul_vote.py
