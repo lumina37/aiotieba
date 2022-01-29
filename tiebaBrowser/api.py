@@ -1081,8 +1081,7 @@ class Browser(object):
                 yield tieba_name, fid, level, score
 
         except Exception as err:
-            log.error(
-                f"Failed to get profile of {user_id}. reason:{err}")
+            log.error(f"Failed to get forumlist of {user_id}. reason:{err}")
             return
 
     def get_adminlist(self, tieba_name: str) -> str:
@@ -1116,8 +1115,7 @@ class Browser(object):
 
         except Exception as err:
             log.error(f"Failed to get admin list reason: {err}")
-
-        return
+            return
 
     def get_rank(self, tieba_name: str, level_thre: int = 4) -> Tuple[str, int, int, bool]:
         """
@@ -1176,9 +1174,7 @@ class Browser(object):
             try:
                 yield from __get_pn_rank(pn)
             except RuntimeError:  # need Python 3.7+ https://www.python.org/dev/peps/pep-0479/
-                break
-
-        return
+                return
 
     def get_member(self, tieba_name: str) -> Tuple[str, str, int]:
         """
@@ -1230,9 +1226,7 @@ class Browser(object):
             try:
                 yield from __get_pn_member(pn)
             except RuntimeError:  # need Python 3.7+ https://www.python.org/dev/peps/pep-0479/
-                break
-
-        return
+                return
 
     def set_privacy(self, tid: int, hide: bool = True) -> bool:
         """
