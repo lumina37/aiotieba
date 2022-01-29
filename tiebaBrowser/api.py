@@ -966,13 +966,13 @@ class Browser(object):
 
         return ats
 
-    def get_profile(self, portrait: str) -> Tuple[UserInfo, List[Thread]]:
+    def get_homepage(self, portrait: str) -> Tuple[UserInfo, List[Thread]]:
         """
         获取用户个人页
-        get_profile(portrait)
+        get_homepage(portrait)
 
         参数:
-            portrait: str
+            portrait: str 用户portrait
         """
 
         payload = {'_client_type': 2,  # 删除该字段会导致post_list为空

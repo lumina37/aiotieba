@@ -14,7 +14,9 @@ from .logger import log
 class UserInfo(object):
     """
     UserInfo()
-    用户属性，一般包括下列五项
+    用户属性
+
+    _id: 用于快速构造UserInfo的自适应参数 输入用户名或portrait或user_id
 
     user_name: 发帖用户名
     nick_name: 发帖人昵称
@@ -34,7 +36,7 @@ class UserInfo(object):
                  'is_vip',
                  'is_god']
 
-    def __init__(self, _id: Union[str, None] = None, user_name: str = '', nick_name: str = '', portrait: str = '', user_id: int = 0, level: int = 0, gender: int = 0, is_vip: bool = False, is_god: bool = False):
+    def __init__(self, _id: Union[str, int, None] = None, user_name: str = '', nick_name: str = '', portrait: str = '', user_id: int = 0, level: int = 0, gender: int = 0, is_vip: bool = False, is_god: bool = False):
         if _id:
             if isinstance(_id, int):
                 self.user_id = _id
