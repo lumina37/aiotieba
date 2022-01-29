@@ -4,6 +4,7 @@ __all__ = ('Browser',)
 import hashlib
 import re
 import sys
+import traceback
 from io import BytesIO
 from typing import List, Tuple, Union
 
@@ -981,6 +982,10 @@ class Browser(object):
 
         参数:
             portrait: str 用户portrait
+
+        返回值:
+            user: UserInfo 用户信息
+            threads: List[Thread] 帖子列表
         """
 
         payload = {'_client_type': 2,  # 删除该字段会导致post_list为空
@@ -1004,47 +1009,56 @@ class Browser(object):
         except Exception as err:
             log.error(
                 f"Failed to get profile of {portrait}. reason:{err}")
-            return dict()
+            return UserInfo(), []
 
-        user_dict = main_json['user']
-        user = UserInfo(user_name=user_dict['name'],
-                        nick_name=user_dict['name_show'],
-                        portrait=user_dict['portrait'],
-                        user_id=user_dict['id'],
-                        gender=user_dict['sex'],
-                        is_vip=bool(user_dict['vipInfo']),
-                        is_god=user_dict['new_god_data']['field_id'] != '',
-                        priv_like=user_dict['priv_sets']['like'],
-                        priv_reply=user_dict['priv_sets']['reply'])
+        try:
+            user_dict = main_json['user']
+            user = UserInfo(user_name=user_dict['name'],
+                            nick_name=user_dict['name_show'],
+                            portrait=user_dict['portrait'],
+                            user_id=user_dict['id'],
+                            gender=user_dict['sex'],
+                            is_vip=bool(user_dict['vipInfo']),
+                            is_god=user_dict['new_god_data']['field_id'] != '',
+                            priv_like=user_dict['priv_sets']['like'],
+                            priv_reply=user_dict['priv_sets']['reply'])
+        except Exception as err:
+            log.error(
+                f"Failed to init UserInfo. reason:{traceback.format_tb(err.__traceback__)[-1]}")
+            user = UserInfo()
 
-        def __init_thread(thread_raw):
-            texts = []
-            for fragment in thread_raw.get('first_post_content', []):
-                ftype = int(fragment['type'])
-                if ftype in [0, 4, 9, 18]:
-                    texts.append(fragment['text'])
-                elif ftype == 1:
-                    texts.append(
-                        f"{fragment['link']} {fragment['text']}")
-            first_floor_text = ''.join(texts)
+        threads = []
+        for thread_raw in main_json['post_list']:
+            try:
+                texts = []
+                for fragment in thread_raw.get('first_post_content', []):
+                    ftype = int(fragment['type'])
+                    if ftype in [0, 4, 9, 18]:
+                        texts.append(fragment['text'])
+                    elif ftype == 1:
+                        texts.append(
+                            f"{fragment['link']} {fragment['text']}")
+                first_floor_text = ''.join(texts)
 
-            thread = Thread(fid=int(thread_raw['forum_id']),
-                            tid=int(thread_raw['thread_id']),
-                            pid=int(thread_raw['post_id']),
-                            user=user,
-                            title=thread_raw['title'],
-                            first_floor_text=first_floor_text,
-                            view_num=int(thread_raw['freq_num']),
-                            reply_num=int(thread_raw['reply_num']),
-                            like=int(thread_raw['agree']['agree_num']),
-                            dislike=int(thread_raw['agree']['disagree_num']),
-                            create_time=int(thread_raw['create_time'])
-                            )
+                thread = Thread(fid=int(thread_raw['forum_id']),
+                                tid=int(thread_raw['thread_id']),
+                                pid=int(thread_raw['post_id']),
+                                user=user,
+                                title=thread_raw['title'],
+                                first_floor_text=first_floor_text,
+                                view_num=int(thread_raw['freq_num']),
+                                reply_num=int(thread_raw['reply_num']),
+                                like=int(thread_raw['agree']['agree_num']),
+                                dislike=int(
+                                    thread_raw['agree']['disagree_num']),
+                                create_time=int(thread_raw['create_time'])
+                                )
+            except Exception as err:
+                log.error(
+                    f"Failed to init Thread. reason:{traceback.format_tb(err.__traceback__)[-1]}")
+                thread = Thread()
 
-            return thread
-
-        threads = [__init_thread(thread_raw)
-                   for thread_raw in main_json['post_list']]
+            threads.append(thread)
 
         return user, threads
 
