@@ -21,6 +21,8 @@ class UserInfo(object):
     portrait: 用户头像portrait值
     level: 等级
     gender: 性别（1男2女0未知）
+    is_vip: 是否vip
+    is_god: 是否贴吧大神
     """
 
     __slots__ = ['user_name',

@@ -507,7 +507,7 @@ class Listener(object):
             tb.log.error("Failed to excute!")
             return False
 
-        return self.admin.update_portrait(id, True)
+        return self.admin.update_user_id(id, True)
 
     def cmd_mysql_black(self, post, id):
         """
@@ -531,7 +531,7 @@ class Listener(object):
             tb.log.error("Failed to excute!")
             return False
 
-        return self.admin.update_portrait(id, False)
+        return self.admin.update_user_id(id, False)
 
     def cmd_mysql_reset(self, post, id):
         """
@@ -555,7 +555,7 @@ class Listener(object):
             tb.log.error("Failed to excute!")
             return False
 
-        return self.admin.del_portrait(id)
+        return self.admin.del_user_id(id)
 
     def cmd_default(self, obj, arg):
         """

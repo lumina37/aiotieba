@@ -214,19 +214,19 @@ class Browser(object):
             if int(main_json['no']):
                 raise ValueError(main_json['error'])
 
-            data = main_json['data']
-            user.user_name = data['name']
-            user.nick_name = data['name_show']
-            user.portrait = data['portrait']
-            user.user_id = data['id']
-            sex = data['sex']
+            user_dict = main_json['data']
+            user.user_name = user_dict['name']
+            user.nick_name = user_dict['name_show']
+            user.portrait = user_dict['portrait']
+            user.user_id = user_dict['id']
+            sex = user_dict['sex']
             if sex == 'male':
                 user.gender = 1
             elif sex == 'female':
                 user.gender = 2
             else:
                 user.gender = 0
-            user.is_vip = bool(data['vipInfo'])
+            user.is_vip = bool(user_dict['vipInfo'])
 
         except Exception as err:
             log.error(f"Failed to get UserInfo of {user} reason:{err}")
@@ -278,9 +278,9 @@ class Browser(object):
 
             main_json = res.json()
 
-            data = main_json['creator']
-            user.user_id = data['id']
-            user.portrait = data['portrait']
+            user_dict = main_json['creator']
+            user.user_id = user_dict['id']
+            user.portrait = user_dict['portrait']
 
         except Exception as err:
             log.error(
@@ -313,9 +313,9 @@ class Browser(object):
             if int(main_json['errno']):
                 raise ValueError(main_json['errmsg'])
 
-            data = main_json['chatUser']
-            user.user_name = data['uname']
-            user.portrait = data['portrait']
+            user_dict = main_json['chatUser']
+            user.user_name = user_dict['uname']
+            user.portrait = user_dict['portrait']
 
         except Exception as err:
             log.error(f"Failed to get UserInfo of {user.user_id} reason:{err}")
@@ -336,7 +336,7 @@ class Browser(object):
             threads: Threads
         """
 
-        payload = {'_client_version': '7.9.2',
+        payload = {'_client_version': '7.9.2',  # 因新版app使用file传参，改动此处的版本号可能导致列表为空！
                    'kw': tieba_name,
                    'pn': pn,
                    'rn': 30
@@ -376,7 +376,7 @@ class Browser(object):
             posts: Posts
         """
 
-        payload = {'_client_version': '7.9.2',
+        payload = {'_client_version': '7.9.2',  # 因新版app使用file传参，改动此处的版本号可能导致列表为空！
                    'kz': tid,
                    'pn': pn,
                    'rn': 30
@@ -417,7 +417,7 @@ class Browser(object):
             comments: Comments
         """
 
-        payload = {'_client_version': '7.9.2',
+        payload = {'_client_version': '7.9.2',  # 因新版app使用file传参，改动此处的版本号可能导致列表为空！
                    'kz': tid,
                    'pid': pid,
                    'pn': pn
@@ -463,13 +463,11 @@ class Browser(object):
             user = self.get_userinfo(user)
 
         payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_version': '7.9.2',
                    'day': day,
                    'fid': self.get_fid(tieba_name),
                    'nick_name': user.nick_name if user.nick_name else user.user_name,
                    'ntn': 'banid',
                    'portrait': user.portrait,
-                   'post_id': 'null',
                    'reason': reason,
                    'tbs': self.get_tbs(),
                    'un': user.user_name,
@@ -557,7 +555,6 @@ class Browser(object):
         """
 
         payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_version': '7.9.2',
                    'fid': self.get_fid(tieba_name),
                    'is_frs_mask': int(is_frs_mask),
                    'tbs': self.get_tbs(),
@@ -600,7 +597,6 @@ class Browser(object):
         """
 
         payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_version': '7.9.2',
                    'fid': self.get_fid(tieba_name),
                    'pid': pid,
                    'tbs': self.get_tbs(),
@@ -791,9 +787,7 @@ class Browser(object):
         """
 
         payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_version': '7.9.2',
                    'forum_id': self.get_fid(tieba_name),
-                   'tbs': self.get_tbs(),
                    'thread_id': tid
                    }
         payload['sign'] = self.app_sign(payload)
@@ -972,6 +966,125 @@ class Browser(object):
 
         return ats
 
+    def get_profile(self, portrait: str) -> Tuple[UserInfo, List[Thread]]:
+        """
+        获取用户个人页
+        get_profile(portrait)
+
+        参数:
+            portrait: str
+        """
+
+        payload = {'_client_type': 2,  # 删除该字段会导致post_list为空
+                   '_client_version': '12.5.6.0',  # 删除该字段会导致post_list和dynamic_list为空
+                   'friend_uid_portrait': portrait
+                   # 'uid':user_id  # 用该字段检查共同关注的吧
+                   }
+        payload['sign'] = self.app_sign(payload)
+
+        try:
+            res = self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/u/user/profile", data=payload, timeout=(3, 10))
+
+            if res.status_code != 200:
+                raise ValueError("status code is not 200")
+
+            main_json = res.json()
+            if int(main_json['error_code']):
+                raise ValueError(main_json['error_msg'])
+
+        except Exception as err:
+            log.error(
+                f"Failed to get profile of {portrait}. reason:{err}")
+            return dict()
+
+        user_dict = main_json['user']
+        user = UserInfo(user_name=user_dict['name'],
+                        nick_name=user_dict['name_show'],
+                        portrait=user_dict['portrait'],
+                        user_id=user_dict['id'],
+                        gender=user_dict['sex'],
+                        is_vip=bool(user_dict['vipInfo']),
+                        is_god=user_dict['new_god_data']['field_id'] != '')
+        reply_able=int(user_dict['priv_sets']['reply']) == 1
+
+        def __init_thread(thread_raw):
+            texts = []
+            for fragment in thread_raw['first_post_content']:
+                ftype = int(fragment['type'])
+                if ftype in [0, 4, 9, 18]:
+                    texts.append(fragment['text'])
+                elif ftype == 1:
+                    texts.append(
+                        f"{fragment['link']} {fragment['text']}")
+            first_floor_text = ''.join(texts)
+
+            thread = Thread(fid=int(thread_raw['forum_id']),
+                            tid=int(thread_raw['thread_id']),
+                            pid=int(thread_raw['post_id']),
+                            user=user,
+                            title=thread_raw['title'],
+                            first_floor_text=first_floor_text,
+                            reply_able=reply_able,
+                            view_num=int(thread_raw['freq_num']),
+                            reply_num=int(thread_raw['reply_num']),
+                            like=int(thread_raw['agree']['agree_num']),
+                            dislike=int(thread_raw['agree']['disagree_num']),
+                            create_time=int(thread_raw['create_time'])
+                            )
+
+            return thread
+
+        threads = [__init_thread(thread_raw)
+                   for thread_raw in main_json['post_list']]
+
+        return user, threads
+
+    def get_forumlist(self, user_id: int) -> Tuple[str, int, int, int]:
+        """
+        获取用户关注贴吧列表
+        get_forumlist(user_id)
+
+        参数:
+            user_id: int
+
+        迭代返回值:
+            fid: int 贴吧id
+            tieba_name: str 贴吧名
+            level: int 等级
+            score: int 等级积分
+        """
+
+        payload = {'BDUSS': self.sessions.BDUSS,
+                   # '_client_version':'12.5.6.0',  # 添加该字段可以查看共同关注，删除该字段以提升解析性能
+                   'friend_uid': user_id,
+                   # 'page_no': 1  # 加入client_version后会限制每页数量，使用该字段控制页数
+                   }
+        payload['sign'] = self.app_sign(payload)
+
+        try:
+            res = self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/f/forum/like", data=payload, timeout=(3, 10))
+
+            if res.status_code != 200:
+                raise ValueError("status code is not 200")
+
+            main_json = res.json()
+            if int(main_json['error_code']):
+                raise ValueError(main_json['error_msg'])
+
+            for forum in main_json.get('forum_list', []):
+                fid = int(forum['id'])
+                tieba_name = forum['name']
+                level = int(forum['level_id'])
+                score = int(forum['cur_score'])
+                yield tieba_name, fid, level, score
+
+        except Exception as err:
+            log.error(
+                f"Failed to get profile of {user_id}. reason:{err}")
+            return
+
     def get_adminlist(self, tieba_name: str) -> str:
         """
         获取吧务用户名列表
@@ -1006,9 +1119,9 @@ class Browser(object):
 
         return
 
-    def get_rank(self, tieba_name: str, level_thre: int = 4) -> Tuple[str, int, int]:
+    def get_rank(self, tieba_name: str, level_thre: int = 4) -> Tuple[str, int, int, bool]:
         """
-        获得贴吧等级排行榜
+        获取贴吧等级排行榜
         get_rank(tieba_name,level_thre=4)
 
         参数:
@@ -1021,9 +1134,9 @@ class Browser(object):
             exp: int 经验值
         """
 
-        def __get_pn_rank(pn: int) -> Tuple[str, int, int]:
+        def __get_pn_rank(pn: int) -> Tuple[str, int, int, bool]:
             """
-            获得pn页的排行
+            获取pn页的排行
             __get_pn_rank(pn)
             """
 
@@ -1042,6 +1155,7 @@ class Browser(object):
                 for item in items:
                     user_name_item = item.td.next_sibling
                     user_name = user_name_item.text
+                    is_vip = 'drl_item_vip' in user_name_item.div['class']
                     level_item = user_name_item.next_sibling
                     # e.g. get level 16 from string "bg_lv16" by slicing [5:]
                     level = int(level_item.div['class'][0][5:])
@@ -1049,7 +1163,8 @@ class Browser(object):
                         raise StopIteration
                     exp_item = level_item.next_sibling
                     exp = int(exp_item.text)
-                    yield user_name, level, exp
+
+                    yield user_name, level, exp, is_vip
 
             except StopIteration:
                 raise
@@ -1067,7 +1182,7 @@ class Browser(object):
 
     def get_member(self, tieba_name: str) -> Tuple[str, str, int]:
         """
-        获得贴吧最新关注用户列表
+        获取贴吧最新关注用户列表
         get_member(tieba_name)
 
         参数:
@@ -1081,7 +1196,7 @@ class Browser(object):
 
         def __get_pn_member(pn: int) -> Tuple[str, str, int]:
             """
-            获得pn页的最新关注用户列表
+            获取pn页的最新关注用户列表
             __get_pn_member(pn)
             """
 
@@ -1139,11 +1254,9 @@ class Browser(object):
 
         try:
             payload = {'BDUSS': self.sessions.BDUSS,
-                       '_client_version': '7.9.2',
                        'forum_id': posts[0].fid,
                        'is_hide': int(hide),
                        'post_id': posts[0].pid,
-                       'tbs': self.get_tbs(),
                        'thread_id': tid
                        }
             payload['sign'] = self.app_sign(payload)
@@ -1162,5 +1275,5 @@ class Browser(object):
             log.error(f"Failed to set privacy to {tid} reason:{err}")
             return False
 
-        log.info(f"Successfully set privacy to {tid}")
+        log.info(f"Successfully set privacy to {tid}. is_hide:{is_hide}")
         return True

@@ -345,7 +345,7 @@ class MySQL(object):
     @translate_tieba_name
     def get_user_ids(self, tieba_name_eng: str, batch_size: int = 30) -> int:
         """
-        获得user_id列表
+        获取user_id列表
         get_user_ids(tieba_name,batch_size=30)
 
         参数:
