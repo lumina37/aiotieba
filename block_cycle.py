@@ -2,7 +2,7 @@
 import argparse
 import json
 
-import tiebaBrowser
+import tiebaBrowser as tb
 
 if __name__ == '__main__':
 
@@ -23,29 +23,22 @@ if __name__ == '__main__':
         with open(args.block_ctrl_filepath, 'r', encoding='utf-8-sig') as block_ctrl_file:
             block_list = json.loads(block_ctrl_file.read())
     except FileExistsError:
-        tiebaBrowser.log.critical(
+        tb.log.critical(
             "block control json not exist! Please create it!")
         raise
     except AttributeError:
-        tiebaBrowser.log.critical("Incorrect format of block_control.json!")
+        tb.log.critical("Incorrect format of block_control.json!")
         raise
 
-    brow = tiebaBrowser.Browser(args.BDUSS_key)
+    brow = tb.Browser(args.BDUSS_key)
 
     for i, block in enumerate(block_list):
-        user = tiebaBrowser.UserInfo()
-        user.user_name = block.get('user_name', '')
-        user.nick_name = block.get('nick_name', '')
-        user.portrait = block.get('portrait', '')
+        user = tb.UserInfo(user_name=block.get('user_name', ''),
+                           nick_name=block.get('nick_name', ''),
+                           portrait=block.get('portrait', ''))
 
-        flag = True
-        if user.user_name or user.nick_name or user.portrait:
-            flag, user = brow.block(
-                block['tieba_name'], user, block['day'], block.get('reason', 'null'))
-
-        block['user_name'] = user.user_name
-        block['nick_name'] = user.nick_name
-        block['portrait'] = user.portrait
+        flag = brow.block(block['tieba_name'], user,
+                          block['day'], block.get('reason', ''))
         if not flag:
             block['reason'] = 'ERROR'
 

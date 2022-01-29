@@ -40,7 +40,7 @@ class CloudReview(tiebaBrowser.CloudReview):
                 for thread in _threads:
                     if self._check_thread(thread):
                         tiebaBrowser.log.info(
-                            f"Try to delete thread {thread.text} post by {thread.user.logname}")
+                            f"Try to delete thread {thread.text} post by {thread.user.log_name}")
                         self.del_thread(self.tieba_name, thread.tid)
                         continue
                     if thread.like < 30 and thread.reply_num < 20 and not self.white_kw_exp.search(thread.text):
@@ -50,7 +50,7 @@ class CloudReview(tiebaBrowser.CloudReview):
                 for portrait, _threads in users.items():
                     if portrait and len(_threads) >= 5 and not self.mysql.is_portrait_white(self.tieba_name, portrait):
                         tiebaBrowser.log.info(
-                            f"Clear Water {thread.user.logname}")
+                            f"Clear Water {thread.user.log_name}")
                         self.block(
                             self.tieba_name, _threads[0].user, 1, reason=f"line:{sys._getframe().f_lineno}")
                         for thread in _threads:
@@ -79,7 +79,7 @@ class CloudReview(tiebaBrowser.CloudReview):
         elif flag == 1:
             return True
         elif flag == 0:
-            if not thread.reply_able:
+            if thread.user.priv_reply == 3:
                 return True
         else:
             tiebaBrowser.log.error(f'Wrong flag {flag} in _check_thread!')
@@ -103,7 +103,7 @@ class CloudReview(tiebaBrowser.CloudReview):
                 pass
             elif flag == 1:
                 tiebaBrowser.log.info(
-                    f"Try to delete post {post.text} post by {post.user.logname}")
+                    f"Try to delete post {post.text} post by {post.user.log_name}")
                 self.del_post(self.tieba_name, post.tid, post.pid)
             elif flag == 2:
                 return True

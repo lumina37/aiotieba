@@ -217,7 +217,7 @@ class Listener(object):
             return None
 
         tb.log.info(
-            f"Try to delete thread {posts[0].text} post by {posts[0].user.logname}")
+            f"Try to delete thread {posts[0].text} post by {posts[0].user.log_name}")
 
         self.admin.block(self.tieba_name, posts[0].user, day=10)
         self.admin.del_post(self.tieba_name, at.tid, at.pid)
@@ -248,7 +248,7 @@ class Listener(object):
             return None
 
         tb.log.info(
-            f"Try to delete thread {posts[0].text} post by {posts[0].user.logname}")
+            f"Try to delete thread {posts[0].text} post by {posts[0].user.log_name}")
 
         self.admin.del_post(self.tieba_name, at.tid, at.pid)
         self.admin.del_thread(self.tieba_name, at.tid)
@@ -586,7 +586,7 @@ if __name__ == '__main__':
                         type=int,
                         help='监听帖子的tid',
                         metavar='TID',
-                        required=True)
+                        default=7672050788)
 
     listener = Listener(**vars(parser.parse_args()))
 

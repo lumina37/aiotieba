@@ -10,7 +10,7 @@ import imagehash
 import pyzbar.pyzbar as pyzbar
 
 from .api import Browser
-from .data_structure import UserInfo
+from .data_structure import BasicUserInfo
 from .logger import log
 from .mysql import MySQL
 
@@ -107,7 +107,7 @@ class CloudReview(Browser):
             log.warning("Wrong mode in update_user_id!")
             return False
 
-        user = UserInfo(id)
+        user = BasicUserInfo(id)
         user = self.get_userinfo_weak(user)
         if not user.user_id:
             return False
@@ -120,7 +120,7 @@ class CloudReview(Browser):
         del_user_id(id)
         """
 
-        user = UserInfo(id)
+        user = BasicUserInfo(id)
         user = self.get_userinfo_weak(user)
         if not user.user_id:
             return False
@@ -150,7 +150,10 @@ class CloudReview(Browser):
 
         image = self.url2image(img_url)
         if image:
-            img_hash = str(imagehash.dhash(image))
+            try:
+                img_hash = str(imagehash.dhash(image))
+            except OSError:
+                return False
             if self.mysql.has_img_hash(self.tieba_name, img_hash):
                 return True
             else:

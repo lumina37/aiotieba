@@ -234,16 +234,16 @@ class Browser(object):
 
         return user
 
-    def get_userinfo_weak(self, user: UserInfo) -> UserInfo:
+    def get_userinfo_weak(self, user: BasicUserInfo) -> BasicUserInfo:
         """
         补全简略版用户信息
         get_userinfo_weak(user)
 
         参数:
-            user: UserInfo 待补全的用户信息
+            user: BasicUserInfo 待补全的用户信息
 
         返回值:
-            user: UserInfo 简略版用户信息，仅保证包含portrait、user_id和user_name
+            user: BasicUserInfo 简略版用户信息，仅保证包含portrait、user_id和user_name
         """
 
         if user.user_name:
@@ -253,17 +253,17 @@ class Browser(object):
         else:
             return self.get_userinfo(user)
 
-    def name2userinfo(self, user: UserInfo) -> UserInfo:
+    def name2userinfo(self, user: BasicUserInfo) -> BasicUserInfo:
         """
         通过用户名补全简略版用户信息
         由于api的编码限制，仅支持补全user_id和portrait
         name2userinfo(name)
 
         参数:
-            user: UserInfo 待补全的用户信息
+            user: BasicUserInfo 待补全的用户信息
 
         返回值:
-            user: UserInfo 简略版用户信息，仅保证包含portrait、user_id和user_name
+            user: BasicUserInfo 简略版用户信息，仅保证包含portrait、user_id和user_name
         """
 
         params = {'un': user.user_name, 'ie': 'utf-8'}
@@ -285,11 +285,11 @@ class Browser(object):
         except Exception as err:
             log.error(
                 f"Failed to get UserInfo of {user.user_name} reason:{err}")
-            user = UserInfo()
+            user = BasicUserInfo()
 
         return user
 
-    def uid2userinfo(self, user: UserInfo) -> UserInfo:
+    def uid2userinfo(self, user: BasicUserInfo) -> BasicUserInfo:
         """
         通过user_id补全简略版用户信息
         uid2userinfo(user)
@@ -319,7 +319,7 @@ class Browser(object):
 
         except Exception as err:
             log.error(f"Failed to get UserInfo of {user.user_id} reason:{err}")
-            user = UserInfo()
+            user = BasicUserInfo()
 
         return user
 
@@ -443,10 +443,10 @@ class Browser(object):
 
         return comments
 
-    def block(self, tieba_name: str, user: UserInfo, day: int, reason: str = '') -> Tuple[bool, UserInfo]:
+    def block(self, tieba_name: str, user: UserInfo, day: int, reason: str = '') -> bool:
         """
         使用客户端api的封禁，支持小吧主、语音小编封10天
-        block(tieba_name,user,day,reason='null')
+        block(tieba_name,user,day,reason='')
 
         参数:
             tieba_name: str 吧名
@@ -456,7 +456,6 @@ class Browser(object):
 
         返回值:
             flag: bool 操作是否成功
-            user: UserInfo 补充后的用户信息
         """
 
         if not user.user_name:
@@ -465,7 +464,7 @@ class Browser(object):
         payload = {'BDUSS': self.sessions.BDUSS,
                    'day': day,
                    'fid': self.get_fid(tieba_name),
-                   'nick_name': user.nick_name if user.nick_name else user.user_name,
+                   'nick_name': user.show_name,
                    'ntn': 'banid',
                    'portrait': user.portrait,
                    'reason': reason,
@@ -489,11 +488,11 @@ class Browser(object):
 
         except Exception as err:
             log.error(
-                f"Failed to block {user.logname} in {tieba_name} reason:{err}")
+                f"Failed to block {user.log_name} in {tieba_name} reason:{err}")
             return False, user
 
         log.info(
-            f"Successfully blocked {user.logname} in {tieba_name} for {payload['day']} days")
+            f"Successfully blocked {user.log_name} in {tieba_name} for {payload['day']} days")
         return True, user
 
     def unblock(self, tieba_name: str, id: str) -> bool:
@@ -534,10 +533,10 @@ class Browser(object):
 
         except Exception as err:
             log.error(
-                f"Failed to unblock {user.logname} in {tieba_name}. reason:{err}")
+                f"Failed to unblock {user.log_name} in {tieba_name}. reason:{err}")
             return False
 
-        log.info(f"Successfully unblocked {user.logname} in {tieba_name}")
+        log.info(f"Successfully unblocked {user.log_name} in {tieba_name}")
         return True
 
     def del_thread(self, tieba_name: str, tid: int, is_frs_mask: bool = False) -> bool:
@@ -636,7 +635,7 @@ class Browser(object):
             flag: bool 操作是否成功
         """
 
-        user = UserInfo(id)
+        user = BasicUserInfo(id)
         user = self.get_userinfo_weak(user)
         payload = {'tbs': self.get_tbs(),
                    'user_id': user.user_id,
@@ -658,11 +657,11 @@ class Browser(object):
 
         except Exception as err:
             log.error(
-                f"Failed to add {user.logname} to black_list in {tieba_name}. reason:{err}")
+                f"Failed to add {user.log_name} to black_list in {tieba_name}. reason:{err}")
             return False
 
         log.info(
-            f"Successfully added {user.logname} to black_list in {tieba_name}")
+            f"Successfully added {user.log_name} to black_list in {tieba_name}")
         return True
 
     def blacklist_cancels(self, tieba_name: str, ids: List[str]) -> bool:
@@ -684,7 +683,7 @@ class Browser(object):
                    'list[]': []}
 
         for id in ids:
-            user = UserInfo(id)
+            user = BasicUserInfo(id)
             user = self.get_userinfo_weak(user)
             if user.user_id:
                 payload['list[]'].append(user.user_id)
@@ -948,16 +947,25 @@ class Browser(object):
 
             ats = []
             for at_raw in main_json['at_list']:
-                user_dict = at_raw['quote_user']
+                user_dict = at_raw['replyer']
+                priv_sets = user_dict['priv_sets']
+                if not priv_sets:
+                    priv_sets = {}
                 user = UserInfo(user_name=user_dict['name'],
                                 nick_name=user_dict['name_show'],
-                                portrait=user_dict['portrait'])
+                                portrait=user_dict['portrait'],
+                                user_id=user_dict['id'],
+                                is_god=user_dict.__contains__('new_god_data'),
+                                priv_like=priv_sets.get('like', None),
+                                priv_reply=priv_sets.get('reply', None)
+                                )
                 at = At(tieba_name=at_raw['fname'],
                         tid=int(at_raw['thread_id']),
                         pid=int(at_raw['post_id']),
                         text=at_raw['content'].lstrip(),
                         user=user,
-                        create_time=int(at_raw['time']))
+                        create_time=int(at_raw['time'])
+                        )
                 ats.append(at)
 
         except Exception as err:
@@ -1005,12 +1013,13 @@ class Browser(object):
                         user_id=user_dict['id'],
                         gender=user_dict['sex'],
                         is_vip=bool(user_dict['vipInfo']),
-                        is_god=user_dict['new_god_data']['field_id'] != '')
-        reply_able = int(user_dict['priv_sets']['reply']) == 1
+                        is_god=user_dict['new_god_data']['field_id'] != '',
+                        priv_like=user_dict['priv_sets']['like'],
+                        priv_reply=user_dict['priv_sets']['reply'])
 
         def __init_thread(thread_raw):
             texts = []
-            for fragment in thread_raw['first_post_content']:
+            for fragment in thread_raw.get('first_post_content', []):
                 ftype = int(fragment['type'])
                 if ftype in [0, 4, 9, 18]:
                     texts.append(fragment['text'])
@@ -1025,7 +1034,6 @@ class Browser(object):
                             user=user,
                             title=thread_raw['title'],
                             first_floor_text=first_floor_text,
-                            reply_able=reply_able,
                             view_num=int(thread_raw['freq_num']),
                             reply_num=int(thread_raw['reply_num']),
                             like=int(thread_raw['agree']['agree_num']),
@@ -1130,6 +1138,7 @@ class Browser(object):
             user_name: str 用户名
             level: int 等级
             exp: int 经验值
+            is_vip: bool 是否vip
         """
 
         def __get_pn_rank(pn: int) -> Tuple[str, int, int, bool]:

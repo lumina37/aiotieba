@@ -1,5 +1,5 @@
 # -*- coding:utf-8 -*-
-__all__ = ('UserInfo',
+__all__ = ('BasicUserInfo', 'UserInfo',
            'Thread', 'Post', 'Comment',
            'Threads', 'Posts', 'Comments',
            'At')
@@ -11,32 +11,22 @@ from typing import Dict, List, Union
 from .logger import log
 
 
-class UserInfo(object):
+class BasicUserInfo(object):
     """
-    UserInfo()
-    用户属性
+    BasicUserInfo()
+    基本用户属性
 
     _id: 用于快速构造UserInfo的自适应参数 输入用户名或portrait或user_id
 
     user_name: 发帖用户名
     nick_name: 发帖人昵称
     portrait: 用户头像portrait值
-    level: 等级
-    gender: 性别（1男2女0未知）
-    is_vip: 是否vip
-    is_god: 是否贴吧大神
+    user_id: 贴吧旧版uid
     """
 
-    __slots__ = ['user_name',
-                 '_nick_name',
-                 '_portrait',
-                 '_user_id',
-                 '_level',
-                 '_gender',
-                 'is_vip',
-                 'is_god']
+    __slots__ = ['user_name', '_nick_name', '_portrait', '_user_id']
 
-    def __init__(self, _id: Union[str, int, None] = None, user_name: str = '', nick_name: str = '', portrait: str = '', user_id: int = 0, level: int = 0, gender: int = 0, is_vip: bool = False, is_god: bool = False):
+    def __init__(self, _id: Union[str, int, None] = None, user_name: str = '', nick_name: str = '', portrait: str = '', user_id: int = 0):
         if _id:
             if isinstance(_id, int):
                 self.user_id = _id
@@ -55,10 +45,6 @@ class UserInfo(object):
             self.user_id = user_id
 
         self.nick_name = nick_name
-        self.level = level
-        self.gender = gender
-        self.is_vip = is_vip
-        self.is_god = is_god
 
     def __str__(self) -> str:
         return f"user_name:{self.user_name} / nick_name:{self._nick_name} / portrait:{self._portrait} / user_id:{self._user_id}"
@@ -93,18 +79,61 @@ class UserInfo(object):
         return self._user_id
 
     @user_id.setter
-    def user_id(self, new_user_id):
+    def user_id(self, new_user_id: int):
         if new_user_id:
             self._user_id = int(new_user_id)
         else:
             self._user_id = 0
 
     @property
+    def show_name(self) -> str:
+        return self.nick_name if self.nick_name else self.user_name
+
+    @property
+    def log_name(self) -> str:
+        if self.user_name:
+            return self.user_name
+        else:
+            return f'{self.nick_name}/{self.portrait}'
+
+
+class UserInfo(BasicUserInfo):
+    """
+    UserInfo()
+    用户属性
+
+    _id: 用于快速构造UserInfo的自适应参数 输入用户名或portrait或user_id
+
+    user_name: 发帖用户名
+    nick_name: 发帖人昵称
+    portrait: 用户头像portrait值
+    user_id: 贴吧旧版uid
+    level: 等级
+    gender: 性别（1男2女0未知）
+    is_vip: 是否vip
+    is_god: 是否贴吧大神
+    priv_like: 是否公开关注贴吧（1完全可见2好友可见3完全隐藏）
+    priv_reply: 帖子评论权限（1所有人2我的粉丝3我的关注）
+    """
+
+    __slots__ = ['_level', '_gender',
+                 'is_vip', 'is_god', '_priv_like', '_priv_reply']
+
+    def __init__(self, _id: Union[str, int, None] = None, user_name: str = '', nick_name: str = '', portrait: str = '', user_id: int = 0, level: int = 0, gender: int = 0, is_vip: bool = False, is_god: bool = False, priv_like: int = 3, priv_reply: int = 1):
+        super().__init__(_id, user_name, nick_name, portrait, user_id)
+        self.level = level
+        self.gender = gender
+        self.is_vip = is_vip
+        self.is_god = is_god
+        self.priv_like = priv_like
+        self.priv_reply = priv_reply
+
+    @property
     def level(self) -> int:
         return self._level
 
     @level.setter
-    def level(self, new_level):
+    def level(self, new_level: int):
         if new_level:
             self._level = int(new_level)
         else:
@@ -115,25 +144,42 @@ class UserInfo(object):
         return self._gender
 
     @gender.setter
-    def gender(self, new_gender):
+    def gender(self, new_gender: int):
         if new_gender:
-            self._gender = int(new_gender)
+            new_gender = int(new_gender)
+            if 0 <= new_gender <= 2:
+                self._gender = new_gender
         else:
             self._gender = 0
 
     @property
-    def name(self) -> str:
-        return self.user_name if self.user_name else self.nick_name
+    def priv_like(self) -> int:
+        return self._priv_like
+
+    @priv_like.setter
+    def priv_like(self, new_priv_like: int):
+        if new_priv_like:
+            new_priv_like = int(new_priv_like)
+            if 1 <= new_priv_like <= 3:
+                self._priv_like = new_priv_like
+        else:
+            self._priv_like = 3
 
     @property
-    def logname(self) -> str:
-        if self.user_name:
-            return self.user_name
+    def priv_reply(self) -> int:
+        return self._priv_reply
+
+    @priv_reply.setter
+    def priv_reply(self, new_priv_reply: int):
+        if new_priv_reply:
+            new_priv_reply = int(new_priv_reply)
+            if 1 <= new_priv_reply <= 3:
+                self._priv_reply = new_priv_reply
         else:
-            return f'{self.nick_name}/{self.portrait}'
+            self._priv_reply = 1
 
 
-class _BaseContent(object):
+class BaseContent(object):
     """
     基本的内容信息
 
@@ -158,7 +204,7 @@ class _BaseContent(object):
         return self._text
 
 
-class Thread(_BaseContent):
+class Thread(BaseContent):
     """
     主题帖信息
 
@@ -171,7 +217,6 @@ class Thread(_BaseContent):
     first_floor_text: 首楼内容
     has_audio: 是否含有音频
     has_video: 是否含有视频
-    reply_able: 是否可以回复
     view_num: 浏览量
     reply_num: 回复数
     like: 点赞数
@@ -180,16 +225,15 @@ class Thread(_BaseContent):
     last_time: 10位时间戳 最后回复时间
     """
 
-    __slots__ = ['title', 'first_floor_text', 'has_audio', 'has_video', 'reply_able',
+    __slots__ = ['title', 'first_floor_text', 'has_audio', 'has_video',
                  'view_num', 'reply_num', 'like', 'dislike', 'create_time', 'last_time']
 
-    def __init__(self, fid: int = 0, tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), title: str = '', first_floor_text: str = '', has_audio: bool = False, has_video: bool = False, reply_able: bool = True, view_num: int = 0, reply_num: int = 0, like: int = 0, dislike: int = 0, create_time: int = 0, last_time: int = 0):
+    def __init__(self, fid: int = 0, tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), title: str = '', first_floor_text: str = '', has_audio: bool = False, has_video: bool = False, view_num: int = 0, reply_num: int = 0, like: int = 0, dislike: int = 0, create_time: int = 0, last_time: int = 0):
         super().__init__(fid=fid, tid=tid, pid=pid, user=user)
         self.title = title
         self.first_floor_text = first_floor_text
         self.has_audio = has_audio
         self.has_video = has_video
-        self.reply_able = reply_able
         self.view_num = view_num
         self.reply_num = reply_num
         self.like = like
@@ -227,6 +271,9 @@ class Threads(list):
             for user_dict in main_json['user_list']:
                 try:
                     user_id = int(user_dict['id'])
+                    priv_sets = user_dict['priv_sets']
+                    if not priv_sets:
+                        priv_sets = {}
                     users[user_id] = UserInfo(user_name=user_dict['name'],
                                               nick_name=user_dict['name_show'],
                                               portrait=user_dict['portrait'],
@@ -235,13 +282,12 @@ class Threads(list):
                                               is_vip=bool(
                                                   user_dict['new_tshow_icon']),
                                               is_god=user_dict.__contains__(
-                                                  'new_god_data')
+                                                  'new_god_data'),
+                                              priv_like=priv_sets.get(
+                                                  'like', None),
+                                              priv_reply=priv_sets.get(
+                                                  'reply', None)
                                               )
-                    if user_dict['priv_sets']:
-                        reply_access[user_id] = int(
-                            user_dict['priv_sets'].get('reply', 1)) == 1
-                    else:
-                        reply_access[user_id] = True
                 except Exception as err:
                     log.error(
                         f"Failed to init UserInfo of {user_dict['portrait']} in fid:{fid}. reason:{traceback.format_tb(err.__traceback__)[-1]}")
@@ -280,8 +326,6 @@ class Threads(list):
                                         'voice_info', None) else False,
                                     has_video=True if thread_raw.get(
                                         'video_info', None) else False,
-                                    reply_able=reply_access.get(
-                                        author_id, True),
                                     view_num=int(thread_raw['view_num']),
                                     reply_num=int(thread_raw['reply_num']),
                                     like=like,
@@ -306,7 +350,7 @@ class Threads(list):
         return self.current_pn < self.total_pn
 
 
-class Post(_BaseContent):
+class Post(BaseContent):
     """
     楼层信息
 
@@ -379,6 +423,9 @@ class Posts(list):
             for user_dict in main_json['user_list']:
                 try:
                     user_id = int(user_dict['id'])
+                    priv_sets = user_dict['priv_sets']
+                    if not priv_sets:
+                        priv_sets = {}
                     users[user_id] = UserInfo(user_name=user_dict['name'],
                                               nick_name=user_dict['name_show'],
                                               portrait=user_dict['portrait'],
@@ -387,7 +434,12 @@ class Posts(list):
                                               gender=user_dict['gender'],
                                               is_vip=bool(
                                                   user_dict['new_tshow_icon']),
-                                              is_god=user_dict['new_god_data']['field_id'] != '')
+                                              is_god=user_dict['new_god_data']['field_id'] != '',
+                                              priv_like=priv_sets.get(
+                                                  'like', None),
+                                              priv_reply=priv_sets.get(
+                                                  'reply', None)
+                                              )
                 except Exception as err:
                     log.error(
                         f"Failed to init UserInfo of {user_dict['portrait']} in tid:{tid}. reason:{traceback.format_tb(err.__traceback__)[-1]}")
@@ -449,7 +501,7 @@ class Posts(list):
         return self.current_pn < self.total_pn
 
 
-class Comment(_BaseContent):
+class Comment(BaseContent):
     """
     楼中楼信息
 
@@ -518,6 +570,9 @@ class Comments(list):
                     text = ''.join(texts)
 
                     user_dict = comment_raw['author']
+                    priv_sets = user_dict['priv_sets']
+                    if not priv_sets:
+                        priv_sets = {}
                     user = UserInfo(user_name=user_dict['name'],
                                     nick_name=user_dict['name_show'],
                                     portrait=user_dict['portrait'],
@@ -525,7 +580,9 @@ class Comments(list):
                                     level=user_dict['level_id'],
                                     gender=user_dict['gender'],
                                     is_vip=bool(user_dict['new_tshow_icon']),
-                                    is_god=user_dict['new_god_data']['field_id'] != ''
+                                    is_god=user_dict['new_god_data']['field_id'] != '',
+                                    priv_like=priv_sets.get('like', None),
+                                    priv_reply=priv_sets.get('reply', None)
                                     )
 
                     comment = Comment(fid=fid,
