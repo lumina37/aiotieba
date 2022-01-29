@@ -12,3 +12,4 @@ create_whitelist.py
 test.py
 vote.py
 asoul_vote.py
+spider.py
