@@ -35,7 +35,7 @@ class Sessions(object):
             self.renew_BDUSS(BDUSS_key)
 
         self.app.headers = req.structures.CaseInsensitiveDict({'Content-Type': 'application/x-www-form-urlencoded',
-                                                               'User-Agent': 'bdtb for Android 7.9.2',
+                                                               'User-Agent': 'bdtb for Android 12.19.1.0',
                                                                'Connection': 'Keep-Alive',
                                                                'Accept-Encoding': 'gzip',
                                                                'Accept': '*/*',
@@ -976,7 +976,7 @@ class Browser(object):
         """
 
         payload = {'_client_type': 2,  # 删除该字段会导致post_list为空
-                   '_client_version': '12.5.6.0',  # 删除该字段会导致post_list和dynamic_list为空
+                   '_client_version': '12.19.1.0',  # 删除该字段会导致post_list和dynamic_list为空
                    'friend_uid_portrait': portrait
                    # 'uid':user_id  # 用该字段检查共同关注的吧
                    }
@@ -1006,7 +1006,7 @@ class Browser(object):
                         gender=user_dict['sex'],
                         is_vip=bool(user_dict['vipInfo']),
                         is_god=user_dict['new_god_data']['field_id'] != '')
-        reply_able=int(user_dict['priv_sets']['reply']) == 1
+        reply_able = int(user_dict['priv_sets']['reply']) == 1
 
         def __init_thread(thread_raw):
             texts = []
@@ -1056,7 +1056,7 @@ class Browser(object):
         """
 
         payload = {'BDUSS': self.sessions.BDUSS,
-                   # '_client_version':'12.5.6.0',  # 添加该字段可以查看共同关注，删除该字段以提升解析性能
+                   # '_client_version':'12.19.1.0',  # 添加该字段可以查看共同关注，删除该字段以提升解析性能
                    'friend_uid': user_id,
                    # 'page_no': 1  # 加入client_version后会限制每页数量，使用该字段控制页数
                    }
@@ -1275,5 +1275,5 @@ class Browser(object):
             log.error(f"Failed to set privacy to {tid} reason:{err}")
             return False
 
-        log.info(f"Successfully set privacy to {tid}. is_hide:{is_hide}")
+        log.info(f"Successfully set privacy to {tid}. is_hide:{hide}")
         return True
