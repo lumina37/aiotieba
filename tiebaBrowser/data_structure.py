@@ -49,6 +49,9 @@ class BasicUserInfo(object):
     def __str__(self) -> str:
         return f"user_name:{self.user_name} / nick_name:{self._nick_name} / portrait:{self._portrait} / user_id:{self._user_id}"
 
+    def __hash__(self) -> int:
+        return self._user_id.__hash__()
+
     @property
     def nick_name(self) -> str:
         return self._nick_name

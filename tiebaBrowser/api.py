@@ -16,6 +16,9 @@ from .config import config
 from .data_structure import *
 from .logger import log
 
+req.packages.urllib3.disable_warnings(
+    req.packages.urllib3.exceptions.InsecureRequestWarning)
+
 
 class Sessions(object):
     """
@@ -51,6 +54,11 @@ class Sessions(object):
                                                                'Connection': 'keep-alive',
                                                                'Upgrade-Insecure-Requests': '1'
                                                                })
+
+        self.app.trust_env = False
+        self.web.trust_env = False
+        self.app.verify = False
+        self.web.verify = False
 
     def close(self) -> None:
         self.app.close()
@@ -216,18 +224,20 @@ class Browser(object):
                 raise ValueError(main_json['error'])
 
             user_dict = main_json['data']
-            user.user_name = user_dict['name']
-            user.nick_name = user_dict['name_show']
-            user.portrait = user_dict['portrait']
-            user.user_id = user_dict['id']
             sex = user_dict['sex']
             if sex == 'male':
-                user.gender = 1
+                gender = 1
             elif sex == 'female':
-                user.gender = 2
+                gender = 2
             else:
-                user.gender = 0
-            user.is_vip = bool(user_dict['vipInfo'])
+                gender = 0
+            user = UserInfo(user_name=user_dict['name'],
+                            nick_name=user_dict['name_show'],
+                            portrait=user_dict['portrait'],
+                            user_id=user_dict['id'],
+                            gender=gender,
+                            is_vip=bool(user_dict['vipInfo'])
+                            )
 
         except Exception as err:
             log.error(f"Failed to get UserInfo of {user} reason:{err}")
@@ -1005,6 +1015,8 @@ class Browser(object):
             main_json = res.json()
             if int(main_json['error_code']):
                 raise ValueError(main_json['error_msg'])
+            if not main_json.__contains__('user'):
+                raise ValueError("Invalid params")
 
         except Exception as err:
             log.error(
@@ -1018,7 +1030,7 @@ class Browser(object):
                             portrait=user_dict['portrait'],
                             user_id=user_dict['id'],
                             gender=user_dict['sex'],
-                            is_vip=bool(user_dict['vipInfo']),
+                            is_vip=int(user_dict['vipInfo']['v_level']) != 0,
                             is_god=user_dict['new_god_data']['field_id'] != '',
                             priv_like=user_dict['priv_sets']['like'],
                             priv_reply=user_dict['priv_sets']['reply'])
