@@ -1,10 +1,7 @@
 # -*- coding:utf-8 -*-
 import argparse
-import csv
 import os
-import re
 import sys
-import time
 
 import imagehash
 
@@ -19,10 +16,10 @@ if __name__ == '__main__':
     parser.add_argument('tieba_name',
                         type=str,
                         help='贴吧名')
-    parser.add_argument('-id', '-i',
+    parser.add_argument('--id', '-i',
                         type=str,
                         help='用户id')
-    parser.add_argument('-img',
+    parser.add_argument('--image', '-img',
                         type=str,
                         help='图像id')
     parser.add_argument('--post_id', '-p',
@@ -60,21 +57,21 @@ if __name__ == '__main__':
         else:
             brow.update_user_id(args.id, args.flag)
 
-    if args.img:
-        img_url = f"http://tiebapic.baidu.com/forum/pic/item/{args.img}.jpg"
+    if args.image:
+        img_url = f"http://tiebapic.baidu.com/forum/pic/item/{args.image}.jpg"
         try:
             image = brow.url2image(
-                f"http://tiebapic.baidu.com/forum/pic/item/{args.img}.jpg")
+                f"http://tiebapic.baidu.com/forum/pic/item/{args.image}.jpg")
             img_hash = str(imagehash.dhash(image))
         except Exception as err:
-            brow.log.error(f"Failed to get dhash of {args.img}. reason:{err}")
+            brow.log.error(f"Failed to get dhash of {args.image}. reason:{err}")
         else:
             if args.delete:
                 brow.mysql.del_img_hash(args.tieba_name, img_hash)
             elif args.search:
                 print(brow.mysql.has_img_hash(args.tieba_name, img_hash))
             else:
-                brow.mysql.add_img_hash(args.tieba_name, img_hash, args.img)
+                brow.mysql.add_img_hash(args.tieba_name, img_hash, args.image)
 
     if args.post_id:
         if args.delete:

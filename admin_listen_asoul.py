@@ -300,7 +300,9 @@ class Listener(object):
 
         tb.log.info(f"{post.user.user_name}: {post.text}")
 
-        return self.admin.unblock(self.tieba_name, id)
+        user = self.listener.get_userinfo(UserInfo(id))
+
+        return self.admin.unblock(self.tieba_name, user)
 
     def cmd_block(self, post, id):
         """
@@ -463,7 +465,9 @@ class Listener(object):
 
         tb.log.info(f"{post.user.user_name}: {post.text}")
 
-        return self.admin.blacklist_add(self.tieba_name, id)
+        user = self.listener.get_userinfo_weak(BasicUserInfo(id))
+
+        return self.admin.blacklist_add(self.tieba_name, user)
 
     def cmd_blacklist_cancel(self, post, id):
         """

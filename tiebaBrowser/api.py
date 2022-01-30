@@ -506,21 +506,18 @@ class Browser(object):
             f"Successfully blocked {user.log_name} in {tieba_name} for {payload['day']} days")
         return True, user
 
-    def unblock(self, tieba_name: str, id: str) -> bool:
+    def unblock(self, tieba_name: str, user: BasicUserInfo) -> bool:
         """
         解封用户
         unblock(tieba_name,id)
 
         参数:
             tieba_name: str 所在贴吧名
-            id: str 用户名或portrait
+            user: BasicUserInfo 基本用户信息
 
         返回值:
             flag: bool 操作是否成功
         """
-
-        user = UserInfo(id)
-        user = self.get_userinfo(user)
 
         payload = {'fn': tieba_name,
                    'fid': self.get_fid(tieba_name),
@@ -633,21 +630,19 @@ class Browser(object):
         log.info(f"Successfully deleted post {pid} in {tid} in {tieba_name}")
         return True
 
-    def blacklist_add(self, tieba_name: str, id: Union[str, int]) -> bool:
+    def blacklist_add(self, tieba_name: str, user: BasicUserInfo) -> bool:
         """
         添加用户至黑名单
         blacklist_add(tieba_name,name)
 
         参数:
             tieba_name: str 所在贴吧名
-            id: str|int 用户名或portrait或user_id
+            user: BasicUserInfo 基本用户信息
 
         返回值:
             flag: bool 操作是否成功
         """
 
-        user = BasicUserInfo(id)
-        user = self.get_userinfo_weak(user)
         payload = {'tbs': self.get_tbs(),
                    'user_id': user.user_id,
                    'word': tieba_name,
@@ -675,14 +670,14 @@ class Browser(object):
             f"Successfully added {user.log_name} to black_list in {tieba_name}")
         return True
 
-    def blacklist_cancels(self, tieba_name: str, ids: List[str]) -> bool:
+    def blacklist_cancels(self, tieba_name: str, users: List[BasicUserInfo]) -> bool:
         """
         解除黑名单
-        blacklist_cancels(tieba_name,ids)
+        blacklist_cancels(tieba_name,users)
 
         参数:
             tieba_name: str 所在贴吧名
-            ids: List[str] 用户名或portrait的列表
+            users: List[BasicUserInfo] 基本用户信息的列表
 
         返回值:
             flag: bool 操作是否成功
@@ -691,15 +686,7 @@ class Browser(object):
         payload = {'ie': 'utf-8',
                    'word': tieba_name,
                    'tbs': self.get_tbs(),
-                   'list[]': []}
-
-        for id in ids:
-            user = BasicUserInfo(id)
-            user = self.get_userinfo_weak(user)
-            if user.user_id:
-                payload['list[]'].append(user.user_id)
-        if not payload['list[]']:
-            return False
+                   'list[]': [user.user_id for user in users]}
 
         try:
             self.set_host("http://tieba.baidu.com/")
@@ -715,27 +702,27 @@ class Browser(object):
 
         except Exception as err:
             log.error(
-                f"Failed to delete {ids} from black_list in {tieba_name}. reason:{err}")
+                f"Failed to delete users from black_list in {tieba_name}. reason:{err}")
             return False
 
-        log.info(f"Successfully deleted {ids} from black_list in {tieba_name}")
+        log.info(f"Successfully deleted users from black_list in {tieba_name}")
         return True
 
-    def blacklist_cancel(self, tieba_name: str, id: str) -> bool:
+    def blacklist_cancel(self, tieba_name: str, user: BasicUserInfo) -> bool:
         """
         解除黑名单
-        blacklist_cancel(tieba_name,id)
+        blacklist_cancel(tieba_name,user)
 
         参数:
             tieba_name: str 所在贴吧名
-            id: str 用户名或portrait
+            user: BasicUserInfo 基本用户信息
 
         返回值:
             flag: bool 操作是否成功
         """
 
-        if tieba_name and id:
-            return self.blacklist_cancels(tieba_name, [str(id), ])
+        if tieba_name and user.user_id:
+            return self.blacklist_cancels(tieba_name, [user, ])
         else:
             return False
 

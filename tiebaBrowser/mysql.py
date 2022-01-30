@@ -191,7 +191,7 @@ class MySQL(object):
 
         try:
             self.mycursor.execute(
-                f"INSERT INTO tid_tmphide_{tieba_name_eng} VALUES ({tid})")
+                f"INSERT IGNORE INTO tid_tmphide_{tieba_name_eng} VALUES ({tid})")
         except pymysql.DatabaseError:
             log.error(f"MySQL Error: Failed to insert {tid}!")
             return False
@@ -291,7 +291,7 @@ class MySQL(object):
 
         try:
             self.mycursor.execute(
-                f"INSERT INTO user_id_{tieba_name_eng} VALUES ({user_id},{mode},DEFAULT) ON DUPLICATE KEY UPDATE is_white={mode}")
+                f"REPLACE INTO user_id_{tieba_name_eng} VALUES ({user_id},{mode},DEFAULT)")
         except pymysql.DatabaseError:
             log.error(f"MySQL Error: Failed to insert {user_id}!")
             return False
@@ -392,7 +392,7 @@ class MySQL(object):
 
         try:
             self.mycursor.execute(
-                f"INSERT IGNORE INTO img_blacklist_{tieba_name_eng} VALUES ('{img_hash}','{raw_hash}')")
+                f"REPLACE INTO img_blacklist_{tieba_name_eng} VALUES ('{img_hash}','{raw_hash}')")
         except pymysql.DatabaseError:
             log.error(f"MySQL Error: Failed to insert {img_hash}!")
             return False
