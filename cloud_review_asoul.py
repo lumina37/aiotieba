@@ -161,7 +161,7 @@ class CloudReview(tiebaBrowser.CloudReview):
             self.block(self.tieba_name, obj.user, day=10,
                        reason=f"line:{sys._getframe().f_lineno}")
             return 1
-        if re.search("((?<![a-z])(a|v)|瞳|嘉|＋|\+|➕|梓|罐|豆|鸟|鲨)(÷|/|／|➗|畜|处|除|初)|阿楚|椰子汁|🥥", text, re.I) is not None:
+        if re.search("((?<![a-z])v|瞳|梓|罐|豆|鸟|鲨)(÷|/|／|➗|畜|处|除|初)|椰子汁|🥥", text, re.I) is not None:
             return 1
 
         level = obj.user.level
