@@ -630,6 +630,56 @@ class Browser(object):
         log.info(f"Successfully deleted post {pid} in {tid} in {tieba_name}")
         return True
 
+    def get_blacklist(self, tieba_name: str) -> BasicUserInfo:
+        """
+        获取贴吧黑名单
+        get_blacklist(tieba_name)
+
+        参数:
+            tieba_name: str 所在贴吧名
+
+        迭代返回值:
+            user: BasicUserInfo 基本用户信息
+        """
+
+        def __get_pn_blacklist(pn: int) -> BasicUserInfo:
+            """
+            获取pn页的黑名单
+            __get_pn_blacklist(pn)
+            """
+
+            try:
+                res = self.sessions.web.get(
+                    "http://tieba.baidu.com/bawu2/platform/listBlackUser", params={'word': tieba_name, 'pn': pn})
+
+                if res.status_code != 200:
+                    raise ValueError("status code is not 200")
+
+                soup = BeautifulSoup(res.text, 'lxml')
+                items = soup.find_all('td', class_='left_cell')
+                if not items:
+                    raise StopIteration
+
+                for item in items:
+                    user_info_item = item.previous_sibling.input
+                    user = BasicUserInfo(user_name=user_info_item['data-user-name'],
+                                         user_id=int(
+                                             user_info_item['data-user-id']),
+                                         portrait=item.a.img['src'][43:])
+                    yield user
+
+            except StopIteration:
+                raise
+            except Exception as err:
+                log.error(
+                    f"Failed to get blacklist of {tieba_name} pn:{pn} reason:{err}")
+
+        for pn in range(1, sys.maxsize):
+            try:
+                yield from __get_pn_blacklist(pn)
+            except RuntimeError:  # need Python 3.7+ https://www.python.org/dev/peps/pep-0479/
+                return
+
     def blacklist_add(self, tieba_name: str, user: BasicUserInfo) -> bool:
         """
         添加用户至黑名单
@@ -683,10 +733,11 @@ class Browser(object):
             flag: bool 操作是否成功
         """
 
-        payload = {'ie': 'utf-8',
-                   'word': tieba_name,
+        payload = {'word': tieba_name,
                    'tbs': self.tbs,
-                   'list[]': [user.user_id for user in users]}
+                   'list[]': [user.user_id for user in users],
+                   'ie': 'utf-8'
+                   }
 
         try:
             self.set_host("http://tieba.baidu.com/")
@@ -1444,33 +1495,28 @@ class Browser(object):
             tieba_name :str
 
         返回值:
-            flag: bool 操作是否成功
+            flag: bool 签到是否成功，不考虑cash的问题
         """
 
         try:
+            # 这里列出的参数一条都不能少，少一条就不能拿cash
             payload = {'BDUSS': self.sessions.BDUSS,
-                       #'_client_id': 'wappc_1643272928181_511',
-                       #'_client_type': '2',
+                       '_client_id': 'NULL',
+                       '_client_type': 2,
                        '_client_version': '12.19.1.0',
-                       #'_phone_imei': '351564600817621',
-                       #'active_timestamp': '1643272964632',
-                       #'c3_aid': 'A00-WGF47YI5OMGPRPDQI5HFKD4J56B6B5YX-AZRCBBHI',
-                       #'cmode': '1',
-                       #'cuid': '89EC02B413436B80CB1A8873CD56AFFF|V6JXX7UB7',
-                       #'cuid_galaxy2': '89EC02B413436B80CB1A8873CD56AFFF|V6JXX7UB7',
-                       #'cuid_gid': '',
-                       #'event_day': '2022131',
-                       #'fid': self.get_fid(tieba_name),
-                       #'first_install_time': '1643271649873',
-                       #'from': '1008621x',
+                       '_phone_imei': '000000000000000',
+                       'c3_aid': 'NULL',
+                       'cmode': 1,
+                       'cuid': 'NULL',
+                       'cuid_galaxy2': 'NULL',
+                       'cuid_gid': '',
+                       'event_day': '000000',
+                       'fid': self.get_fid(tieba_name),
+                       'first_install_time': 0,
                        'kw': tieba_name,
-                       #'last_update_time': '1643271649873',
-                       #'model': 'LIO-AN00',
-                       #'net_type': '1',
-                       #'sign_from': 'frs',
-                       #'stoken': 'b6ae34d2c8db30814b4e5c61b048ae757da723c309f0938b49bc140a73e644fc',
+                       'last_update_time': 0,
+                       'sign_from': 'frs',
                        'tbs': self.tbs,
-                       #'timestamp': '1643592207717',
                        }
             payload['sign'] = self.app_sign(payload)
 
@@ -1483,16 +1529,16 @@ class Browser(object):
             main_json = res.json()
             if int(main_json['error_code']):
                 raise ValueError(main_json['error_msg'])
-            if int(main_json['error']['errno']):
-                raise ValueError(main_json['error']['errmsg'])
             if int(main_json['user_info']['sign_bonus_point']) == 0:
                 raise ValueError("sign_bonus_point is 0")
+
+            cash = main_json['user_info'].__contains__('get_packet_cash')
 
         except Exception as err:
             log.error(f"Failed to sign forum {tieba_name} reason:{err}")
             return False
 
-        log.info(f"Successfully sign forum {tieba_name}")
+        log.info(f"Successfully sign forum {tieba_name}. cash:{cash}")
         return True
 
     def set_privacy(self, tid: int, hide: bool = True) -> bool:
