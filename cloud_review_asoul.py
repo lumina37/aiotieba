@@ -89,7 +89,7 @@ class CloudReview(tiebaBrowser.CloudReview):
             second_floor = posts[1]
             if second_floor.reply_num > 0:
                 for comment in self.get_comments(second_floor.tid, second_floor.pid):
-                    if comment.user.level < 5 and re.search('面团|宅.{0,5}度娘|免費|[𝟙-𝟡]|仓井空在等尼', comment.text):
+                    if comment.user.level < 5 and re.search('免費|[𝟙-𝟡]|仓井空在等尼', comment.text):
                         self.block(self.tieba_name, comment.user, 10)
                         self.del_post(self.tieba_name,
                                       comment.tid, comment.pid)
@@ -161,7 +161,7 @@ class CloudReview(tiebaBrowser.CloudReview):
             self.block(self.tieba_name, obj.user, day=10,
                        reason=f"line:{sys._getframe().f_lineno}")
             return 1
-        if re.search("((?<![a-z])v|瞳|梓|罐|豆|鸟|鲨)(÷|/|／|➗|畜|处|除|初)|椰子汁|🥥", text, re.I) is not None:
+        if re.search("((?<![a-z])v|瞳|梓|罐|豆|鸟|鲨)(÷|/|／|➗|畜|处|除|初)|椰子汁|🥥|东雪莲|莲宝", text, re.I) is not None:
             return 1
 
         level = obj.user.level
