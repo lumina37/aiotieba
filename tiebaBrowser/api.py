@@ -1485,13 +1485,16 @@ class Browser(object):
     def post_add(self, tieba_name: str, tid: int, content: str) -> bool:
         """
         回帖
-        本接口仍处于测试阶段，有极高的永封风险！请谨慎使用！
         post_add(tieba_name,tid,content)
+
+        注意：
+        本接口仍处于测试阶段，有一定永封风险！请谨慎使用！
+        已通过的测试：cookie号（2元/个）以3分钟的发送间隔发15条回复不吞楼不封号
 
         参数:
             tieba_name: str 要回复的主题帖所在吧名
             tid: int 要回复的主题帖的tid
-            content: 回复内容
+            content: str 回复内容
 
         返回值:
             flag: bool 回帖是否成功
@@ -1513,10 +1516,6 @@ class Browser(object):
                        'fid': self.get_fid(tieba_name),
                        'from': '1008621x',
                        'from_fourm_id': 'null',
-                       'is_ad': 0,
-                       'is_barrage': 0,
-                       'is_feedback': 0,
-                       'is_location': 0,
                        'kw': tieba_name,
                        'net_type': 1,
                        'new_vcode': 1,
