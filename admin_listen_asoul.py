@@ -6,7 +6,7 @@ import time
 import traceback
 
 import tiebaBrowser as tb
-from tiebaBrowser.data_structure import UserInfo
+from tiebaBrowser.data_structure import BasicUserInfo, UserInfo
 
 
 @atexit.register
@@ -52,7 +52,6 @@ class Listener(object):
                    'kk不好玩': 3,
                    '闪打快手丿': 3,
                    '咿呀呼哈啾': 3,
-                   '绝对很囧': 3,
                    '夢野敬二abc': 3,
                    '雷神幻影38535': 3,
                    '帅111哥': 3,

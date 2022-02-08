@@ -43,7 +43,7 @@ class CloudReview(tiebaBrowser.CloudReview):
                             f"Try to delete thread {thread.text} post by {thread.user.log_name}")
                         self.del_thread(self.tieba_name, thread.tid)
                         continue
-                    if thread.like < 30 and thread.reply_num < 20 and not self.white_kw_exp.search(thread.text):
+                    if thread.like < 30 and thread.reply_num < 20:
                         user_threads = users.get(thread.user.portrait, [])
                         user_threads.append(thread)
                         users[thread.user.portrait] = user_threads

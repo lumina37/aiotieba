@@ -935,6 +935,40 @@ class Browser(object):
 
         return image
 
+    def get_self_info(self):
+        """
+        获取本账号信息
+        get_self_info()
+
+        返回值:
+            user: BasicUserInfo 简略版用户信息，仅保证包含portrait、user_id和user_name
+        """
+
+        payload = {'_client_version': '12.19.1.0',
+                   'bdusstoken': self.sessions.BDUSS,
+                   }
+        payload['sign'] = self.app_sign(payload)
+
+        try:
+            res = self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/s/login", data=payload, timeout=(3, 10))
+            res.raise_for_status()
+
+            main_json = res.json()
+            if int(main_json['error_code']):
+                raise ValueError(main_json['error_msg'])
+
+            user_dict = main_json['user']
+            user = BasicUserInfo(user_name=user_dict['name'],
+                                 portrait=user_dict['portrait'],
+                                 user_id=user_dict['id'])
+
+        except Exception as err:
+            log.error(f"Failed to get msg reason:{err}")
+            user = BasicUserInfo()
+
+        return user
+
     def get_newmsg(self) -> Dict[str, bool]:
         """
         获取消息通知
@@ -1028,40 +1062,6 @@ class Browser(object):
 
         return ats
 
-    def get_self_info(self):
-        """
-        获取本账号信息
-        get_self_info()
-
-        返回值:
-            user: BasicUserInfo 简略版用户信息，仅保证包含portrait、user_id和user_name
-        """
-
-        payload = {'_client_version': '12.19.1.0',
-                   'bdusstoken': self.sessions.BDUSS,
-                   }
-        payload['sign'] = self.app_sign(payload)
-
-        try:
-            res = self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/s/login", data=payload, timeout=(3, 10))
-            res.raise_for_status()
-
-            main_json = res.json()
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
-
-            user_dict = main_json['user']
-            user = BasicUserInfo(user_name=user_dict['name'],
-                                 portrait=user_dict['portrait'],
-                                 user_id=user_dict['id'])
-
-        except Exception as err:
-            log.error(f"Failed to get msg reason:{err}")
-            user = BasicUserInfo()
-
-        return user
-
     def get_homepage(self, portrait: str) -> Tuple[UserInfo, List[Thread]]:
         """
         获取用户个人页
@@ -1150,13 +1150,10 @@ class Browser(object):
 
         return user, threads
 
-    def get_self_forumlist(self, user_id: int) -> Tuple[str, int, int, int]:
+    def get_self_forumlist(self) -> Tuple[str, int, int, int]:
         """
         获取本人关注贴吧列表
-        get_forumlist(user_id)
-
-        参数:
-            user_id: int
+        get_forumlist()
 
         迭代返回值:
             tieba_name: str 贴吧名
@@ -1164,6 +1161,8 @@ class Browser(object):
             level: int 等级
             exp: int 经验值
         """
+
+        user = self.get_self_info()
 
         def __parse_foruminfo(forum_dict: Dict[str, str]) -> Tuple[str, int, int, int]:
             fid = int(forum_dict['id'])
@@ -1175,7 +1174,7 @@ class Browser(object):
         def __get_pn_forumlist(pn):
             payload = {'BDUSS': self.sessions.BDUSS,
                        '_client_version': '12.19.1.0',  # 删除该字段可直接获取前200个吧，但无法翻页
-                       'friend_uid': user_id,
+                       'friend_uid': user.user_id,
                        'page_no': pn  # 加入client_version后，使用该字段控制页数
                        }
             payload['sign'] = self.app_sign(payload)
@@ -1195,7 +1194,7 @@ class Browser(object):
 
             except Exception as err:
                 log.error(
-                    f"Failed to get forumlist of {user_id}. reason:{err}")
+                    f"Failed to get forumlist of {user.user_id}. reason:{err}")
                 return
 
             nonofficial_forums = forum_list.get('non-gconforum', [])
@@ -1283,7 +1282,7 @@ class Browser(object):
                 yield user_name
 
         except Exception as err:
-            log.error(f"Failed to get admin list reason: {err}")
+            log.error(f"Failed to get adminlist reason: {err}")
             return
 
     def get_rank(self, tieba_name: str, level_thre: int = 4) -> Tuple[str, int, int, bool]:
@@ -1481,6 +1480,66 @@ class Browser(object):
             return False
 
         log.info(f"Successfully sign forum {tieba_name}. cash:{cash}")
+        return True
+
+    def post_add(self, tieba_name: str, tid: int, content: str) -> bool:
+        """
+        回帖
+        本接口仍处于测试阶段，有极高的永封风险！请谨慎使用！
+        post_add(tieba_name,tid,content)
+
+        参数:
+            tieba_name: str 要回复的主题帖所在吧名
+            tid: int 要回复的主题帖的tid
+            content: 回复内容
+
+        返回值:
+            flag: bool 回帖是否成功
+        """
+
+        try:
+            payload = {'BDUSS': self.sessions.BDUSS,
+                       '_client_id': 'NULL',
+                       '_client_type': 2,
+                       '_client_version': '9.1.0.0',
+                       '_phone_imei': '000000000000000',
+                       'anonymous': 1,
+                       'barrage_time': 0,
+                       'can_no_forum': 0,
+                       'content': content,
+                       'cuid': 'NULL',
+                       'cuid_galaxy2': 'NULL',
+                       'cuid_gid': '',
+                       'fid': self.get_fid(tieba_name),
+                       'from': '1008621x',
+                       'from_fourm_id': 'null',
+                       'is_ad': 0,
+                       'is_barrage': 0,
+                       'is_feedback': 0,
+                       'is_location': 0,
+                       'kw': tieba_name,
+                       'net_type': 1,
+                       'new_vcode': 1,
+                       'post_from': 3,
+                       'subapp_type': 'mini',
+                       'tbs': self.tbs,
+                       'tid': tid
+                       }
+            payload['sign'] = self.app_sign(payload)
+
+            res = self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/c/post/add", data=payload, timeout=(3, 10))
+            res.raise_for_status()
+
+            main_json = res.json()
+            if int(main_json['error_code']):
+                raise ValueError(main_json['error_msg'])
+
+        except Exception as err:
+            log.error(f"Failed to add post in {tid} reason:{err}")
+            return False
+
+        log.info(f"Successfully add post in {tid}")
         return True
 
     def set_privacy(self, tid: int, hide: bool = True) -> bool:
