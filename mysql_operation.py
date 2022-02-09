@@ -5,7 +5,9 @@ import sys
 
 import imagehash
 
-import tiebaBrowser
+import tiebaBrowser as tb
+import tiebaBrowser.cloud_review as cr
+
 
 PATH = os.path.split(os.path.realpath(sys.argv[0]))[0]
 
@@ -42,7 +44,7 @@ if __name__ == '__main__':
                         metavar='HOUR')
     args = parser.parse_args()
 
-    brow = tiebaBrowser.CloudReview('default', args.tieba_name)
+    brow = cr.CloudReview('default', args.tieba_name)
 
     if args.delete_new:
         brow.mysql.del_pids(args.tieba_name, args.delete_new)
@@ -51,7 +53,7 @@ if __name__ == '__main__':
         if args.delete:
             brow.del_user_id(args.id)
         elif args.search:
-            user = tiebaBrowser.BasicUserInfo(args.id)
+            user = tb.BasicUserInfo(args.id)
             user = brow.get_userinfo_weak(user)
             print(brow.mysql.is_user_id_white(args.tieba_name, user.user_id))
         else:
@@ -64,7 +66,8 @@ if __name__ == '__main__':
                 f"http://tiebapic.baidu.com/forum/pic/item/{args.image}.jpg")
             img_hash = str(imagehash.dhash(image))
         except Exception as err:
-            brow.log.error(f"Failed to get dhash of {args.image}. reason:{err}")
+            brow.log.error(
+                f"Failed to get dhash of {args.image}. reason:{err}")
         else:
             if args.delete:
                 brow.mysql.del_img_hash(args.tieba_name, img_hash)

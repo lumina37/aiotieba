@@ -6,6 +6,7 @@ import time
 import traceback
 
 import tiebaBrowser as tb
+import tiebaBrowser.cloud_review as cr
 from tiebaBrowser.data_structure import BasicUserInfo, UserInfo
 
 
@@ -73,7 +74,7 @@ class Listener(object):
 
     def __init__(self, admin_BDUSS_key, listener_BDUSS_key, tieba_name, listen_tid):
         self.listener = tb.Browser(listener_BDUSS_key)
-        self.admin = tb.CloudReview(admin_BDUSS_key, tieba_name)
+        self.admin = cr.CloudReview(admin_BDUSS_key, tieba_name)
 
         self.tieba_name = tieba_name
         self.listen_tid = listen_tid

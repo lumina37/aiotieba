@@ -1482,10 +1482,10 @@ class Browser(object):
         log.info(f"Successfully sign forum {tieba_name}. cash:{cash}")
         return True
 
-    def post_add(self, tieba_name: str, tid: int, content: str) -> bool:
+    def add_post(self, tieba_name: str, tid: int, content: str) -> bool:
         """
         回帖
-        post_add(tieba_name,tid,content)
+        add_post(tieba_name,tid,content)
 
         注意：
         本接口仍处于测试阶段，有一定永封风险！请谨慎使用！

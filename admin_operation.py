@@ -1,9 +1,8 @@
 # -*- coding:utf-8 -*-
 import argparse
 import os
-import re
 
-import tiebaBrowser
+import tiebaBrowser as tb
 from tiebaBrowser.data_structure import BasicUserInfo
 
 PATH = os.path.split(os.path.realpath(__file__))[0]
@@ -72,7 +71,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     tieba_name = args.tieba_name
-    brow = tiebaBrowser.Browser(args.BDUSS_key)
+    brow = tb.Browser(args.BDUSS_key)
 
     if args.id:
         user = brow.get_userinfo(BasicUserInfo(args.id))

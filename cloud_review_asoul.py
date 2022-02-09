@@ -6,7 +6,8 @@ import sys
 import time
 import traceback
 
-import tiebaBrowser
+import tiebaBrowser as tb
+import tiebaBrowser.cloud_review as cr
 
 
 @atexit.register
@@ -14,7 +15,7 @@ def exit_hanle():
     review.close()
 
 
-class CloudReview(tiebaBrowser.CloudReview):
+class CloudReview(cr.CloudReview):
 
     __slots__ = ['white_kw_exp']
 
@@ -39,7 +40,7 @@ class CloudReview(tiebaBrowser.CloudReview):
                 users = {}
                 for thread in _threads:
                     if self._check_thread(thread):
-                        tiebaBrowser.log.info(
+                        tb.log.info(
                             f"Try to delete thread {thread.text} post by {thread.user.log_name}")
                         self.del_thread(self.tieba_name, thread.tid)
                         continue
@@ -49,21 +50,21 @@ class CloudReview(tiebaBrowser.CloudReview):
                         users[thread.user.user_id] = user_threads
                 for user_id, _threads in users.items():
                     if user_id and len(_threads) >= 5 and not self.mysql.is_user_id_white(self.tieba_name, user_id):
-                        tiebaBrowser.log.info(
+                        tb.log.info(
                             f"Clear Water {thread.user.log_name}")
                         self.block(
                             self.tieba_name, _threads[0].user, 1, reason=f"line:{sys._getframe().f_lineno}")
                         for thread in _threads:
                             self.del_thread(self.tieba_name,
                                             thread.tid, is_frs_mask=True)
-                tiebaBrowser.log.debug('heartbeat')
+                tb.log.debug('heartbeat')
                 if self.sleep_time:
                     time.sleep(self.sleep_time)
             except Exception:
-                tiebaBrowser.log.error(
+                tb.log.error(
                     f"Unexcepted error:{traceback.format_exc()}")
 
-    def _check_thread(self, thread: tiebaBrowser.Thread):
+    def _check_thread(self, thread: tb.Thread):
         """
         检查thread内容
         """
@@ -82,7 +83,7 @@ class CloudReview(tiebaBrowser.CloudReview):
             if thread.user.priv_reply == 3:
                 return True
         else:
-            tiebaBrowser.log.error(f'Wrong flag {flag} in _check_thread!')
+            tb.log.error(f'Wrong flag {flag} in _check_thread!')
             pass
 
         if len(posts) > 1:
@@ -102,17 +103,17 @@ class CloudReview(tiebaBrowser.CloudReview):
             if flag == 0:
                 pass
             elif flag == 1:
-                tiebaBrowser.log.info(
+                tb.log.info(
                     f"Try to delete post {post.text} post by {post.user.log_name}")
                 self.del_post(self.tieba_name, post.tid, post.pid)
             elif flag == 2:
                 return True
             else:
-                tiebaBrowser.log.error(f'Wrong flag {flag} in _check_thread!')
+                tb.log.error(f'Wrong flag {flag} in _check_thread!')
 
         return False
 
-    def _check_post(self, post: tiebaBrowser.Post):
+    def _check_post(self, post: tb.Post):
         """
         检查回复内容
         """
@@ -132,7 +133,7 @@ class CloudReview(tiebaBrowser.CloudReview):
                         if url and url.startswith('http'):
                             return 1
         else:
-            tiebaBrowser.log.error(f'Wrong flag {flag} in _check_post!')
+            tb.log.error(f'Wrong flag {flag} in _check_post!')
 
         self.mysql.add_pid(self.tieba_name, post.pid)
         return 0
@@ -151,7 +152,7 @@ class CloudReview(tiebaBrowser.CloudReview):
                        reason=f"line:{sys._getframe().f_lineno}")
             return 1
 
-        if type(obj) is tiebaBrowser.Post:
+        if type(obj) is tb.Post:
             for img in obj.imgs:
                 if self.has_img_hash(img):
                     return 1
