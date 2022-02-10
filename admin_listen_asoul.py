@@ -487,7 +487,9 @@ class Listener(object):
 
         tb.log.info(f"{post.user.user_name}: {post.text}")
 
-        return self.admin.blacklist_cancel(self.tieba_name, id)
+        user = self.listener.get_userinfo_weak(BasicUserInfo(id))
+
+        return self.admin.blacklist_cancel(self.tieba_name, user)
 
     def cmd_mysql_white(self, post, id):
         """

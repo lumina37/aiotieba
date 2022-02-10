@@ -45,6 +45,7 @@ class Sessions(object):
                                                                'Accept-Encoding': 'gzip',
                                                                'Accept': '*/*',
                                                                'Host': 'c.tieba.baidu.com',
+                                                               'Connection': 'keep-alive'
                                                                })
         self.web.headers = req.structures.CaseInsensitiveDict({'Host': 'tieba.baidu.com',
                                                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:96.0) Gecko/20100101 Firefox/96.0',
@@ -111,6 +112,7 @@ class Browser(object):
         """
         设置消息头的host字段
         set_host(url)
+
         参数:
             url: str 待请求的地址
         """
@@ -124,7 +126,7 @@ class Browser(object):
     @property
     def tbs(self) -> str:
         """
-        贴吧反csrf校验码tbs
+        获取贴吧反csrf校验码tbs
         """
 
         if not self._tbs or time.time()-self._tbs_renew_time > 5:
@@ -147,6 +149,10 @@ class Browser(object):
     def app_sign(payload: dict) -> str:
         """
         计算字典payload的贴吧客户端签名值sign
+        app_sign(payload)
+
+        返回值:
+            sign: str 贴吧客户端签名值sign
         """
 
         raw_list = [f"{key}={value}" for key, value in payload.items()]
@@ -262,7 +268,7 @@ class Browser(object):
         """
         通过用户名补全简略版用户信息
         由于api的编码限制，仅支持补全user_id和portrait
-        name2userinfo(name)
+        name2userinfo(user)
 
         参数:
             user: BasicUserInfo 待补全的用户信息
@@ -446,7 +452,7 @@ class Browser(object):
         block(tieba_name,user,day,reason='')
 
         参数:
-            tieba_name: str 吧名
+            tieba_name: str 贴吧名
             user: UserInfo 待封禁用户信息
             day: int 封禁天数
             reason: str 封禁理由（可选）
@@ -493,10 +499,10 @@ class Browser(object):
     def unblock(self, tieba_name: str, user: BasicUserInfo) -> bool:
         """
         解封用户
-        unblock(tieba_name,id)
+        unblock(tieba_name,user)
 
         参数:
-            tieba_name: str 所在贴吧名
+            tieba_name: str 贴吧名
             user: BasicUserInfo 基本用户信息
 
         返回值:
@@ -532,7 +538,7 @@ class Browser(object):
     def del_thread(self, tieba_name: str, tid: int, is_frs_mask: bool = False) -> bool:
         """
         删除主题帖
-        del_thread(tieba_name,tid)
+        del_thread(tieba_name,tid,is_frs_mask=False)
 
         参数:
             tieba_name: str 帖子所在的贴吧名
@@ -614,7 +620,7 @@ class Browser(object):
         get_blacklist(tieba_name)
 
         参数:
-            tieba_name: str 所在贴吧名
+            tieba_name: str 贴吧名
 
         迭代返回值:
             user: BasicUserInfo 基本用户信息
@@ -659,10 +665,10 @@ class Browser(object):
     def blacklist_add(self, tieba_name: str, user: BasicUserInfo) -> bool:
         """
         添加用户至黑名单
-        blacklist_add(tieba_name,name)
+        blacklist_add(tieba_name,user)
 
         参数:
-            tieba_name: str 所在贴吧名
+            tieba_name: str 贴吧名
             user: BasicUserInfo 基本用户信息
 
         返回值:
@@ -700,7 +706,7 @@ class Browser(object):
         blacklist_cancels(tieba_name,users)
 
         参数:
-            tieba_name: str 所在贴吧名
+            tieba_name: str 贴吧名
             users: List[BasicUserInfo] 基本用户信息的列表
 
         返回值:
@@ -737,7 +743,7 @@ class Browser(object):
         blacklist_cancel(tieba_name,user)
 
         参数:
-            tieba_name: str 所在贴吧名
+            tieba_name: str 贴吧名
             user: BasicUserInfo 基本用户信息
 
         返回值:
@@ -752,13 +758,13 @@ class Browser(object):
     def recover(self, tieba_name, tid: int = 0, pid: int = 0, is_frs_mask: bool = False) -> bool:
         """
         恢复帖子
-        recover(tieba_name,tid=0,pid=0)
+        recover(tieba_name,tid=0,pid=0,is_frs_mask=False)
 
         参数:
             tieba_name: str 帖子所在的贴吧名
             tid: int 回复所在的主题帖tid
             pid: int 待恢复的回复pid
-            is_frs_mask: bool False则恢复删帖，True则取消屏蔽帖，默认为False
+            is_frs_mask: bool False则恢复删帖，True则取消屏蔽主题帖，默认为False
 
         返回值:
             flag: bool 操作是否成功
@@ -835,7 +841,7 @@ class Browser(object):
         refuse_appeals(tieba_name)
 
         参数:
-            tieba_name: str 所在贴吧名
+            tieba_name: str 贴吧名
 
         返回值:
             flag: bool 操作是否成功
@@ -919,6 +925,7 @@ class Browser(object):
     def url2image(self, img_url: str) -> Union[Image.Image, None]:
         """
         从链接获取静态图像
+        url2image(img_url)
 
         返回值:
             image: Image 图像
@@ -1153,7 +1160,7 @@ class Browser(object):
     def get_self_forumlist(self) -> Tuple[str, int, int, int]:
         """
         获取本人关注贴吧列表
-        get_forumlist()
+        get_self_forumlist()
 
         迭代返回值:
             tieba_name: str 贴吧名
@@ -1260,7 +1267,7 @@ class Browser(object):
         get_adminlist(tieba_name)
 
         参数:
-            tieba_name: str 所在贴吧名
+            tieba_name: str 贴吧名
 
         迭代返回值:
             user_name: str 用户名
@@ -1399,7 +1406,7 @@ class Browser(object):
         forum_like(tieba_name)
 
         参数:
-            tieba_name :str
+            tieba_name :str 贴吧名
 
         返回值:
             flag: bool 操作是否成功
@@ -1435,7 +1442,7 @@ class Browser(object):
         forum_sign(tieba_name)
 
         参数:
-            tieba_name :str
+            tieba_name :str 贴吧名
 
         返回值:
             flag: bool 签到是否成功，不考虑cash的问题
@@ -1489,7 +1496,7 @@ class Browser(object):
 
         注意：
         本接口仍处于测试阶段，有一定永封风险！请谨慎使用！
-        已通过的测试：cookie号（2元/个）以3分钟的发送间隔发15条回复不吞楼不封号
+        已通过的测试：cookie白板号（无头像无关注吧无发帖记录，2元/个）通过异地阿里云ip出口以3分钟的发送间隔发15条回复不吞楼不封号
 
         参数:
             tieba_name: str 要回复的主题帖所在吧名
@@ -1506,20 +1513,34 @@ class Browser(object):
                        '_client_type': 2,
                        '_client_version': '9.1.0.0',
                        '_phone_imei': '000000000000000',
+                       'anonymous': 1,
+                       'barrage_time': 0,
+                       'can_no_forum': 0,
                        'content': content,
                        'cuid': 'NULL',
                        'cuid_galaxy2': 'NULL',
                        'cuid_gid': '',
+                       'entrance_type': 0,
                        'fid': self.get_fid(tieba_name),
                        'from': '1008621x',
                        'from_fourm_id': 'null',
+                       'is_ad': 0,
+                       'is_barrage': 0,
+                       'is_feedback': 0,
                        'kw': tieba_name,
+                       'model': 'NULL',
                        'net_type': 1,
                        'new_vcode': 1,
                        'post_from': 3,
+                       'reply_uid': 'null',
                        'subapp_type': 'mini',
                        'tbs': self.tbs,
-                       'tid': tid
+                       'tid': tid,
+                       'timestamp': int(time.time()),
+                       'v_fid': '',
+                       'v_fname': '',
+                       'vcode_tag': 12,
+                       'z_id': 'NULL'
                        }
             payload['sign'] = self.app_sign(payload)
 
