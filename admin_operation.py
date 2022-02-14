@@ -96,7 +96,7 @@ if __name__ == '__main__':
             brow.recover(tieba_name, tid, pid)
         if tid:
             if args.delete:
-                brow.del_post(tieba_name, tid, pid)
+                brow.del_thread(tieba_name, tid, is_frs_mask=False)
             if args.hide:
                 brow.del_thread(tieba_name, tid, is_frs_mask=True)
             if args.unhide:

@@ -461,9 +461,6 @@ class Browser(object):
             flag: bool 操作是否成功
         """
 
-        if not user.user_name:
-            user = self.get_userinfo(user)
-
         payload = {'BDUSS': self.sessions.BDUSS,
                    'day': day,
                    'fid': self.get_fid(tieba_name),
@@ -1005,7 +1002,7 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
             msg = {key: bool(int(value))
-                   for key, value in main_json['message']}
+                   for key, value in main_json['message'].items()}
 
         except Exception as err:
             log.error(f"Failed to get msg reason:{err}")
@@ -1509,7 +1506,7 @@ class Browser(object):
 
         try:
             payload = {'BDUSS': self.sessions.BDUSS,
-                       '_client_id': 'NULL',
+                       '_client_id': 'wappc_1643365995770_873',
                        '_client_type': 2,
                        '_client_version': '9.1.0.0',
                        '_phone_imei': '000000000000000',
@@ -1517,8 +1514,8 @@ class Browser(object):
                        'barrage_time': 0,
                        'can_no_forum': 0,
                        'content': content,
-                       'cuid': 'NULL',
-                       'cuid_galaxy2': 'NULL',
+                       'cuid': '89EC02B413436B80CB1A8873CD56AFFF|V6JXX7UB7',
+                       'cuid_galaxy2': '89EC02B413436B80CB1A8873CD56AFFF|V6JXX7UB7',
                        'cuid_gid': '',
                        'entrance_type': 0,
                        'fid': self.get_fid(tieba_name),
@@ -1528,11 +1525,13 @@ class Browser(object):
                        'is_barrage': 0,
                        'is_feedback': 0,
                        'kw': tieba_name,
-                       'model': 'NULL',
+                       'model': 'LIO-AN00',
+                       'name_show': '',
                        'net_type': 1,
                        'new_vcode': 1,
                        'post_from': 3,
                        'reply_uid': 'null',
+                       'stoken': '',
                        'subapp_type': 'mini',
                        'tbs': self.tbs,
                        'tid': tid,
@@ -1540,7 +1539,7 @@ class Browser(object):
                        'v_fid': '',
                        'v_fname': '',
                        'vcode_tag': 12,
-                       'z_id': 'NULL'
+                       'z_id': 'JI1_agz9DopKt49pZDe1PDSF67IAAX_vcRSakJUUYCQEfbWL-oor2HZYWUgxjaUcXOppYijyxk8LwnUPaFOLn2g'
                        }
             payload['sign'] = self.app_sign(payload)
 

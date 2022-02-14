@@ -21,11 +21,10 @@ class MyLogger(logging.Logger):
 
         super().__init__(name)
 
-        log_dir = SCRIPT_DIR.parent.joinpath('log')
+        log_dir = SCRIPT_DIR.parent / 'log'
         log_dir.mkdir(0o755, exist_ok=True)
 
-        log_filepath = log_dir.joinpath(
-            f'{SCRIPT_DIR.stem}.log')
+        log_filepath = log_dir / f'{SCRIPT_DIR.stem}.log'
         try:
             file_handler = logging.handlers.TimedRotatingFileHandler(
                 str(log_filepath), when='D', backupCount=5, encoding='utf-8')

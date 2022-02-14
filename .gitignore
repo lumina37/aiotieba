@@ -6,5 +6,6 @@
 !admin_operation.py
 !block_cycle.py
 !mysql_operation.py
-!mysql_operation.py
-!mysql_operation.py
+!config/block_cycle-example.json
+!config/listen_config.json
+!config/config-example.json
