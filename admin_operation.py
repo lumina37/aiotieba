@@ -73,21 +73,21 @@ if __name__ == '__main__':
     tieba_name = args.tieba_name
     brow = tb.Browser(args.BDUSS_key)
 
+    user = None
     if args.id:
         user = brow.get_userinfo(BasicUserInfo(args.id))
+    if args.user_id:
+        user = brow.get_userinfo_weak(BasicUserInfo(int(args.user_id)))
+    if user and user.portrait:
         print(user)
-
-        if args.user_id:
-            user = brow.get_userinfo_weak(BasicUserInfo(args.user_id))
-        if user.portrait:
-            if args.block:
-                brow.block(tieba_name, user, day=10)
-            if args.unblock:
-                brow.unblock(tieba_name, user)
-            if args.blacklist_add:
-                brow.blacklist_add(tieba_name, user)
-            if args.blacklist_cancel:
-                brow.blacklist_cancel(tieba_name, user)
+        if args.block:
+            brow.block(tieba_name, user, day=10)
+        if args.unblock:
+            brow.unblock(tieba_name, user)
+        if args.blacklist_add:
+            brow.blacklist_add(tieba_name, user)
+        if args.blacklist_cancel:
+            brow.blacklist_cancel(tieba_name, user)
 
     tid = args.tid
     pid = args.pid

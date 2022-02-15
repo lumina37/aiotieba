@@ -2,7 +2,7 @@
 */
 !tiebaBrowser/
 !cloud_review_asoul.py
-!admin_listen_asoul.py
+!admin_listen.py
 !admin_operation.py
 !block_cycle.py
 !mysql_operation.py

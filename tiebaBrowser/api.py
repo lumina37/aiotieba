@@ -1539,7 +1539,7 @@ class Browser(object):
                        'v_fid': '',
                        'v_fname': '',
                        'vcode_tag': 12,
-                       'z_id': 'JI1_agz9DopKt49pZDe1PDSF67IAAX_vcRSakJUUYCQEfbWL-oor2HZYWUgxjaUcXOppYijyxk8LwnUPaFOLn2g'
+                       'z_id': 'NULL'
                        }
             payload['sign'] = self.app_sign(payload)
 

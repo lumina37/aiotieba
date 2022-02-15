@@ -62,7 +62,7 @@ class Listener(object):
             self.tieba[tieba_name]['admin'] = cr.CloudReview(
                 admin_key, tieba_name)
 
-        self.time_range = TimeRange((-60, -10))
+        self.time_range = TimeRange((-40, -5))
 
         self.func_map = {'recommend': self.cmd_recommend,
                          'drop': self.cmd_drop,
@@ -85,8 +85,6 @@ class Listener(object):
 
     def scan(self):
         self.time_range.set()
-        if not self.listener.get_newmsg()['atme']:
-            return
         ats = self.listener.get_ats()
 
         if ats:
@@ -395,6 +393,6 @@ if __name__ == '__main__':
         try:
             listener.scan()
             tb.log.debug('heartbeat')
-            time.sleep(10)
+            time.sleep(7.5)
         except Exception as err:
             tb.log.error(f"Unhandled error:{traceback.format_exc()}")
