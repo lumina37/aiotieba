@@ -12,6 +12,8 @@
 
 ## 基本环境部署
 
++ 确保你的Python版本在3.9及以上。脚本中包含了较新的类型检查功能
+
 + 在任一目录里解包工程，目录示例: **/root/scripts/Tieba-Manager**
 
 + 修改config/config.json，填入你的BDUSS
