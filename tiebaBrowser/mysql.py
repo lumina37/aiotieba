@@ -4,7 +4,7 @@ __all__ = ('MySQL',)
 
 import sys
 from functools import wraps
-from typing import Dict, Union
+from typing import Optional
 
 import pymysql
 
@@ -51,7 +51,7 @@ class MySQL(object):
         self.mydb.commit()
         self.mydb.close()
 
-    def init_database(self, mysql_json: Dict) -> None:
+    def init_database(self, mysql_json: dict) -> None:
         self.mydb = pymysql.connect(**mysql_json)
         self.mycursor = self.mydb.cursor()
         self.mycursor.execute(f"CREATE DATABASE {self.db_name}")
@@ -197,7 +197,7 @@ class MySQL(object):
             return False
         else:
             log.info(
-                f"Successfully set {tid} in table of {tieba_name_eng}")
+                f"Successfully add {tid} to table of {tieba_name_eng}")
             self.mydb.commit()
             return True
 
@@ -321,7 +321,7 @@ class MySQL(object):
             return True
 
     @translate_tieba_name
-    def is_user_id_white(self, tieba_name_eng: str, user_id: int) -> Union[bool, None]:
+    def is_user_id_white(self, tieba_name_eng: str, user_id: int) -> Optional[bool]:
         """
         检索user_id的黑/白名单状态
         is_user_id_white(tieba_name,user_id)

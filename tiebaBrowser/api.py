@@ -7,7 +7,7 @@ import sys
 import time
 import traceback
 from io import BytesIO
-from typing import Dict, List, Tuple, Union
+from typing import NoReturn, Optional, Tuple
 
 import requests as req
 from bs4 import BeautifulSoup
@@ -31,7 +31,7 @@ class Sessions(object):
 
     __slots__ = ['app', 'web', 'BDUSS', 'STOKEN']
 
-    def __init__(self, BDUSS_key: Union[str, None] = None):
+    def __init__(self, BDUSS_key: Optional[str] = None):
 
         self.app = req.Session()
         self.web = req.Session()
@@ -99,19 +99,19 @@ class Browser(object):
 
     __slots__ = ['fid_dict', 'sessions', '_tbs', '_tbs_renew_time']
 
-    def __init__(self, BDUSS_key: Union[str, None]):
+    def __init__(self, BDUSS_key: Optional[str]):
         self.fid_dict = {}
         self.sessions = Sessions(BDUSS_key)
         self._tbs = ''
         self._tbs_renew_time = 0
 
-    def close(self):
+    def close(self) -> NoReturn:
         pass
 
-    def set_host(self, url: str) -> bool:
+    def _set_host(self, url: str) -> bool:
         """
         设置消息头的host字段
-        set_host(url)
+        _set_host(url)
 
         参数:
             url: str 待请求的地址
@@ -131,7 +131,7 @@ class Browser(object):
 
         if not self._tbs or time.time()-self._tbs_renew_time > 5:
             try:
-                self.set_host("http://tieba.baidu.com/")
+                self._set_host("http://tieba.baidu.com/")
                 res = self.sessions.web.get(
                     "http://tieba.baidu.com/dc/common/tbs", timeout=(3, 10))
                 res.raise_for_status()
@@ -146,7 +146,7 @@ class Browser(object):
         return self._tbs
 
     @staticmethod
-    def app_sign(payload: dict) -> str:
+    def _app_sign(payload: dict) -> str:
         """
         计算字典payload的贴吧客户端签名值sign
         app_sign(payload)
@@ -181,7 +181,7 @@ class Browser(object):
 
         if not fid:
             try:
-                self.set_host("http://tieba.baidu.com/")
+                self._set_host("http://tieba.baidu.com/")
                 res = self.sessions.web.get("http://tieba.baidu.com/f/commit/share/fnameShareApi", params={
                                             'fname': tieba_name, 'ie': 'utf-8'}, timeout=(3, 10))
                 res.raise_for_status()
@@ -214,7 +214,7 @@ class Browser(object):
         """
 
         try:
-            self.set_host("http://tieba.baidu.com/")
+            self._set_host("http://tieba.baidu.com/")
             res = self.sessions.web.get("https://tieba.baidu.com/home/get/panel", params={
                                         'id': user.portrait, 'un': user.user_name or user.nick_name}, timeout=(3, 10))
             res.raise_for_status()
@@ -280,7 +280,7 @@ class Browser(object):
         params = {'un': user.user_name, 'ie': 'utf-8'}
 
         try:
-            self.set_host("http://tieba.baidu.com/")
+            self._set_host("http://tieba.baidu.com/")
             res = self.sessions.web.get(
                 "http://tieba.baidu.com/i/sys/user_json", params=params, timeout=(3, 10))
             res.raise_for_status()
@@ -313,7 +313,7 @@ class Browser(object):
         """
 
         try:
-            self.set_host("http://tieba.baidu.com/")
+            self._set_host("http://tieba.baidu.com/")
             res = self.sessions.web.get(
                 "http://tieba.baidu.com/im/pcmsg/query/getUserInfo", params={'chatUid': user.user_id}, timeout=(3, 10))
             res.raise_for_status()
@@ -350,7 +350,7 @@ class Browser(object):
                    'pn': pn,
                    'rn': 30
                    }
-        payload['sign'] = self.app_sign(payload)
+        payload['sign'] = self._app_sign(payload)
 
         try:
             res = self.sessions.app.post(
@@ -388,7 +388,7 @@ class Browser(object):
                    'pn': pn,
                    'rn': 30
                    }
-        payload['sign'] = self.app_sign(payload)
+        payload['sign'] = self._app_sign(payload)
 
         try:
             res = self.sessions.app.post(
@@ -427,7 +427,7 @@ class Browser(object):
                    'pid': pid,
                    'pn': pn
                    }
-        payload['sign'] = self.app_sign(payload)
+        payload['sign'] = self._app_sign(payload)
 
         try:
             res = self.sessions.app.post(
@@ -473,7 +473,7 @@ class Browser(object):
                    'word': tieba_name,
                    'z': '9998732423',
                    }
-        payload['sign'] = self.app_sign(payload)
+        payload['sign'] = self._app_sign(payload)
 
         try:
             res = self.sessions.app.post(
@@ -515,7 +515,7 @@ class Browser(object):
                    }
 
         try:
-            self.set_host("http://tieba.baidu.com/")
+            self._set_host("http://tieba.baidu.com/")
             res = self.sessions.web.post(
                 "https://tieba.baidu.com/mo/q/bawublockclear", data=payload, timeout=(3, 10))
             res.raise_for_status()
@@ -552,7 +552,7 @@ class Browser(object):
                    'tbs': self.tbs,
                    'z': tid
                    }
-        payload['sign'] = self.app_sign(payload)
+        payload['sign'] = self._app_sign(payload)
 
         try:
             res = self.sessions.app.post(
@@ -592,7 +592,7 @@ class Browser(object):
                    'tbs': self.tbs,
                    'z': tid
                    }
-        payload['sign'] = self.app_sign(payload)
+        payload['sign'] = self._app_sign(payload)
 
         try:
             res = self.sessions.app.post(
@@ -623,10 +623,13 @@ class Browser(object):
             user: BasicUserInfo 基本用户信息
         """
 
-        def __get_pn_blacklist(pn: int) -> BasicUserInfo:
+        def _get_pn_blacklist(pn: int) -> BasicUserInfo:
             """
             获取pn页的黑名单
-            __get_pn_blacklist(pn)
+            _get_pn_blacklist(pn)
+
+            迭代返回值:
+                user: BasicUserInfo 基本用户信息
             """
 
             try:
@@ -655,7 +658,7 @@ class Browser(object):
 
         for pn in range(1, sys.maxsize):
             try:
-                yield from __get_pn_blacklist(pn)
+                yield from _get_pn_blacklist(pn)
             except RuntimeError:  # need Python 3.7+ https://www.python.org/dev/peps/pep-0479/
                 return
 
@@ -679,7 +682,7 @@ class Browser(object):
                    }
 
         try:
-            self.set_host("http://tieba.baidu.com/")
+            self._set_host("http://tieba.baidu.com/")
             res = self.sessions.web.post(
                 "http://tieba.baidu.com/bawu2/platform/addBlack", data=payload, timeout=(3, 10))
             res.raise_for_status()
@@ -697,7 +700,7 @@ class Browser(object):
             f"Successfully added {user.log_name} to black_list in {tieba_name}")
         return True
 
-    def blacklist_cancels(self, tieba_name: str, users: List[BasicUserInfo]) -> bool:
+    def blacklist_cancels(self, tieba_name: str, users: list[BasicUserInfo]) -> bool:
         """
         解除黑名单
         blacklist_cancels(tieba_name,users)
@@ -717,7 +720,7 @@ class Browser(object):
                    }
 
         try:
-            self.set_host("http://tieba.baidu.com/")
+            self._set_host("http://tieba.baidu.com/")
             res = self.sessions.web.post(
                 "http://tieba.baidu.com/bawu2/platform/cancelBlack", data=payload, timeout=(3, 10))
             res.raise_for_status()
@@ -776,7 +779,7 @@ class Browser(object):
                    }
 
         try:
-            self.set_host("http://tieba.baidu.com/")
+            self._set_host("http://tieba.baidu.com/")
             res = self.sessions.web.post(
                 "https://tieba.baidu.com/mo/q/bawurecoverthread", data=payload, timeout=(3, 10))
             res.raise_for_status()
@@ -811,7 +814,7 @@ class Browser(object):
                    'forum_id': self.get_fid(tieba_name),
                    'thread_id': tid
                    }
-        payload['sign'] = self.app_sign(payload)
+        payload['sign'] = self._app_sign(payload)
 
         try:
             res = self.sessions.app.post(
@@ -844,10 +847,10 @@ class Browser(object):
             flag: bool 操作是否成功
         """
 
-        def __appeal_handle(appeal_id: int, refuse: bool = True) -> bool:
+        def _appeal_handle(appeal_id: int, refuse: bool = True) -> bool:
             """
             拒绝或通过解封申诉
-            __appeal_handle(appeal_id,refuse=True)
+            _appeal_handle(appeal_id,refuse=True)
 
             参数:
                 appeal_id: int 申诉请求的编号
@@ -862,7 +865,7 @@ class Browser(object):
                        }
 
             try:
-                self.set_host("https://tieba.baidu.com/")
+                self._set_host("https://tieba.baidu.com/")
                 res = self.sessions.web.post(
                     "https://tieba.baidu.com/mo/q/bawuappealhandle", data=payload, timeout=(3, 10))
                 res.raise_for_status()
@@ -880,10 +883,10 @@ class Browser(object):
                 f"Successfully handled {appeal_id} in {tieba_name}. refuse:{refuse}")
             return True
 
-        def __get_appeal_list() -> int:
+        def _get_appeal_list() -> int:
             """
             迭代返回申诉请求的编号(appeal_id)
-            __get_appeal_list()
+            _get_appeal_list()
 
             迭代返回值:
                 appeal_id: int 申诉请求的编号
@@ -894,7 +897,7 @@ class Browser(object):
                       }
 
             try:
-                self.set_host("https://tieba.baidu.com/")
+                self._set_host("https://tieba.baidu.com/")
                 while 1:
                     res = self.sessions.web.get(
                         "https://tieba.baidu.com/mo/q/bawuappeal", params=params, timeout=(3, 10))
@@ -916,10 +919,10 @@ class Browser(object):
                     f"Failed to get appeal_list of {tieba_name}. reason:{err}")
                 return
 
-        for appeal_id in __get_appeal_list():
-            __appeal_handle(appeal_id)
+        for appeal_id in _get_appeal_list():
+            _appeal_handle(appeal_id)
 
-    def url2image(self, img_url: str) -> Union[Image.Image, None]:
+    def url2image(self, img_url: str) -> Optional[Image.Image]:
         """
         从链接获取静态图像
         url2image(img_url)
@@ -929,7 +932,7 @@ class Browser(object):
         """
 
         try:
-            self.set_host(img_url)
+            self._set_host(img_url)
             res = self.sessions.web.get(img_url, timeout=(3, 10))
             image = Image.open(BytesIO(res.content))
 
@@ -939,7 +942,7 @@ class Browser(object):
 
         return image
 
-    def get_self_info(self):
+    def get_self_info(self) -> BasicUserInfo:
         """
         获取本账号信息
         get_self_info()
@@ -951,7 +954,7 @@ class Browser(object):
         payload = {'_client_version': '12.19.1.0',
                    'bdusstoken': self.sessions.BDUSS,
                    }
-        payload['sign'] = self.app_sign(payload)
+        payload['sign'] = self._app_sign(payload)
 
         try:
             res = self.sessions.app.post(
@@ -973,7 +976,7 @@ class Browser(object):
 
         return user
 
-    def get_newmsg(self) -> Dict[str, bool]:
+    def get_newmsg(self) -> dict[str, bool]:
         """
         获取消息通知
         get_newmsg()
@@ -990,7 +993,7 @@ class Browser(object):
         """
 
         payload = {'BDUSS': self.sessions.BDUSS}
-        payload['sign'] = self.app_sign(payload)
+        payload['sign'] = self._app_sign(payload)
 
         try:
             res = self.sessions.app.post(
@@ -1016,7 +1019,7 @@ class Browser(object):
 
         return msg
 
-    def get_ats(self) -> List[At]:
+    def get_ats(self) -> list[At]:
         """
         获取@信息
         get_ats()
@@ -1026,7 +1029,7 @@ class Browser(object):
         """
 
         payload = {'BDUSS': self.sessions.BDUSS}
-        payload['sign'] = self.app_sign(payload)
+        payload['sign'] = self._app_sign(payload)
 
         try:
             res = self.sessions.app.post(
@@ -1066,7 +1069,7 @@ class Browser(object):
 
         return ats
 
-    def get_homepage(self, portrait: str) -> Tuple[UserInfo, List[Thread]]:
+    def get_homepage(self, portrait: str) -> Tuple[UserInfo, list[Thread]]:
         """
         获取用户个人页
         get_homepage(portrait)
@@ -1085,7 +1088,7 @@ class Browser(object):
                    'need_post_count': 1,  # 删除该字段会导致无法获取发帖回帖数量
                    # 'uid':user_id  # 用该字段检查共同关注的吧
                    }
-        payload['sign'] = self.app_sign(payload)
+        payload['sign'] = self._app_sign(payload)
 
         try:
             res = self.sessions.app.post(
@@ -1168,20 +1171,42 @@ class Browser(object):
 
         user = self.get_self_info()
 
-        def __parse_foruminfo(forum_dict: Dict[str, str]) -> Tuple[str, int, int, int]:
-            fid = int(forum_dict['id'])
+        def _parse_foruminfo(forum_dict: dict[str, str]) -> Tuple[str, int, int, int]:
+            """
+            解析关注贴吧的信息
+            _parse_foruminfo(forum_dict)
+
+            返回值:
+                tieba_name: str 贴吧名
+                fid: int 贴吧id
+                level: int 等级
+                exp: int 经验值
+            """
+
             tieba_name = forum_dict['name']
+            fid = int(forum_dict['id'])
             level = int(forum_dict['level_id'])
             exp = int(forum_dict['cur_score'])
             return tieba_name, fid, level, exp
 
-        def __get_pn_forumlist(pn):
+        def _get_pn_forumlist(pn):
+            """
+            获取pn页的关注贴吧信息
+            _get_pn_forumlist(pn)
+
+            迭代返回值:
+                tieba_name: str 贴吧名
+                fid: int 贴吧id
+                level: int 等级
+                exp: int 经验值
+            """
+
             payload = {'BDUSS': self.sessions.BDUSS,
                        '_client_version': '12.19.1.0',  # 删除该字段可直接获取前200个吧，但无法翻页
                        'friend_uid': user.user_id,
                        'page_no': pn  # 加入client_version后，使用该字段控制页数
                        }
-            payload['sign'] = self.app_sign(payload)
+            payload['sign'] = self._app_sign(payload)
 
             try:
                 res = self.sessions.app.post(
@@ -1205,16 +1230,16 @@ class Browser(object):
             official_forums = forum_list.get('gconforum', [])
 
             for forum_dict in nonofficial_forums:
-                yield __parse_foruminfo(forum_dict)
+                yield _parse_foruminfo(forum_dict)
             for forum_dict in official_forums:
-                yield __parse_foruminfo(forum_dict)
+                yield _parse_foruminfo(forum_dict)
 
             if len(nonofficial_forums)+len(official_forums) != 50:
                 raise StopIteration
 
         for pn in range(1, sys.maxsize):
             try:
-                yield from __get_pn_forumlist(pn)
+                yield from _get_pn_forumlist(pn)
             except RuntimeError:  # need Python 3.7+ https://www.python.org/dev/peps/pep-0479/
                 return
 
@@ -1236,7 +1261,7 @@ class Browser(object):
         payload = {'BDUSS': self.sessions.BDUSS,
                    'friend_uid': user_id,
                    }
-        payload['sign'] = self.app_sign(payload)
+        payload['sign'] = self._app_sign(payload)
 
         try:
             res = self.sessions.app.post(
@@ -1271,7 +1296,7 @@ class Browser(object):
         """
 
         try:
-            self.set_host("http://tieba.baidu.com/")
+            self._set_host("http://tieba.baidu.com/")
             res = self.sessions.web.get(
                 "http://tieba.baidu.com/f/bawu/admin_group", params={'kw': tieba_name, 'ie': 'utf-8'}, timeout=(3, 10))
             res.raise_for_status()
@@ -1305,10 +1330,10 @@ class Browser(object):
             is_vip: bool 是否vip
         """
 
-        def __get_pn_rank(pn: int) -> Tuple[str, int, int, bool]:
+        def _get_pn_rank(pn: int) -> Tuple[str, int, int, bool]:
             """
             获取pn页的排行
-            __get_pn_rank(pn)
+            _get_pn_rank(pn)
             """
 
             try:
@@ -1343,7 +1368,7 @@ class Browser(object):
 
         for pn in range(1, sys.maxsize):
             try:
-                yield from __get_pn_rank(pn)
+                yield from _get_pn_rank(pn)
             except RuntimeError:  # need Python 3.7+ https://www.python.org/dev/peps/pep-0479/
                 return
 
@@ -1361,10 +1386,10 @@ class Browser(object):
             level: int 等级
         """
 
-        def __get_pn_member(pn: int) -> Tuple[str, str, int]:
+        def _get_pn_member(pn: int) -> Tuple[str, str, int]:
             """
             获取pn页的最新关注用户列表
-            __get_pn_member(pn)
+            _get_pn_member(pn)
             """
 
             try:
@@ -1393,7 +1418,7 @@ class Browser(object):
 
         for pn in range(1, 459):
             try:
-                yield from __get_pn_member(pn)
+                yield from _get_pn_member(pn)
             except RuntimeError:  # need Python 3.7+ https://www.python.org/dev/peps/pep-0479/
                 return
 
@@ -1414,7 +1439,7 @@ class Browser(object):
                        'fid': self.get_fid(tieba_name),
                        'tbs': self.tbs
                        }
-            payload['sign'] = self.app_sign(payload)
+            payload['sign'] = self._app_sign(payload)
 
             res = self.sessions.app.post(
                 "http://c.tieba.baidu.com/c/c/forum/like", data=payload, timeout=(3, 10))
@@ -1465,7 +1490,7 @@ class Browser(object):
                        'sign_from': 'frs',
                        'tbs': self.tbs,
                        }
-            payload['sign'] = self.app_sign(payload)
+            payload['sign'] = self._app_sign(payload)
 
             res = self.sessions.app.post(
                 "http://c.tieba.baidu.com/c/c/forum/sign", data=payload, timeout=(3, 10))
@@ -1541,7 +1566,7 @@ class Browser(object):
                        'vcode_tag': 12,
                        'z_id': 'NULL'
                        }
-            payload['sign'] = self.app_sign(payload)
+            payload['sign'] = self._app_sign(payload)
 
             res = self.sessions.app.post(
                 "http://c.tieba.baidu.com/c/c/post/add", data=payload, timeout=(3, 10))
@@ -1583,7 +1608,7 @@ class Browser(object):
                        'post_id': posts[0].pid,
                        'thread_id': tid
                        }
-            payload['sign'] = self.app_sign(payload)
+            payload['sign'] = self._app_sign(payload)
 
             res = self.sessions.app.post(
                 "http://c.tieba.baidu.com/c/c/thread/setPrivacy", data=payload, timeout=(3, 10))

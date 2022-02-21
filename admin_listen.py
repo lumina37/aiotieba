@@ -71,6 +71,8 @@ class Listener(object):
                          'block': self.cmd_block,
                          'hide': self.cmd_hide,
                          'unhide': self.cmd_unhide,
+                         'tmphide': self.cmd_tmphide,
+                         'tmpunhide': self.cmd_tmpunhide,
                          'blacklist_add': self.cmd_blacklist_add,
                          'blacklist_cancel': self.cmd_blacklist_cancel,
                          'mysql_white': self.cmd_mysql_white,
@@ -265,6 +267,51 @@ class Listener(object):
 
         if tieba_dict['admin'].recover(at.tieba_name, at.tid, is_frs_mask=True):
             tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+
+    def cmd_tmphide(self, at, arg):
+        """
+        tmphide指令
+        暂时屏蔽指令所在主题帖
+        """
+
+        tieba_dict = self.tieba.get(at.tieba_name, None)
+        if not tieba_dict:
+            return None
+        if at.user.user_name not in tieba_dict['access_user']:
+            return None
+
+        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+
+        if not tieba_dict['admin'].mysql.ping():
+            tb.log.error("Failed to ping:{at.tieba_name}")
+            return
+
+        tieba_dict['admin'].mysql.add_tid(at.tieba_name, at.tid)
+        if tieba_dict['admin'].del_thread(at.tieba_name, at.tid, is_frs_mask=True):
+            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+
+    def cmd_tmpunhide(self, at, arg):
+        """
+        tmpunhide指令
+        解除指令所在主题帖的屏蔽
+        """
+
+        tieba_dict = self.tieba.get(at.tieba_name, None)
+        if not tieba_dict:
+            return None
+        if at.user.user_name not in tieba_dict['access_user']:
+            return None
+
+        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+
+        if not tieba_dict['admin'].mysql.ping():
+            tb.log.error("Failed to ping:{at.tieba_name}")
+            return
+
+        tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+        for tid in tieba_dict['admin'].mysql.get_tids(at.tieba_name):
+            if tieba_dict['admin'].recover(at.tieba_name, tid, is_frs_mask=True):
+                tieba_dict['admin'].mysql.del_tid(at.tieba_name, tid)
 
     def cmd_blacklist_add(self, at, id):
         """

@@ -3,15 +3,9 @@
 @Author: Starry
 @License: MIT
 @Homepage: https://github.com/Starry-OvO/Tieba-Cloud-Review
-@Require Python 3.7+
-@Required Modules:
-    pip install pymysql
-    pip install lxml
-    pip install bs4
-    pip install pillow
-    pip install imagehash
-    yum install zbar-devel
-    pip install pyzbar
+@Require Python 3.9+
+@Basic Required Modules: requests,lxml,bs4
+@CloudReview Required Modules: pymysql,pillow,pyzbar
 """
 
 import signal

@@ -3,7 +3,7 @@ __all__ = ('CloudReview',)
 
 
 import re
-from typing import Union
+from typing import Optional, Union
 from urllib.parse import unquote
 
 import imagehash
@@ -83,7 +83,7 @@ class CloudReview(Browser):
                  'exp',
                  'mysql']
 
-    def __init__(self, BDUSS_key: Union[str, None], tieba_name: str, sleep_time: float = 0):
+    def __init__(self, BDUSS_key: Optional[str], tieba_name: str, sleep_time: float = 0):
         super().__init__(BDUSS_key)
 
         self.tieba_name = tieba_name
@@ -127,7 +127,7 @@ class CloudReview(Browser):
 
         return self.mysql.del_user_id(self.tieba_name, user.user_id)
 
-    def scan_QRcode(self, img_url: str) -> Union[str, None]:
+    def scan_QRcode(self, img_url: str) -> Optional[str]:
         """
         扫描img_url对应图像中的二维码
         """

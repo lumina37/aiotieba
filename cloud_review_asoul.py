@@ -51,7 +51,7 @@ class CloudReview(cr.CloudReview):
                 for user_id, _threads in users.items():
                     if user_id and len(_threads) >= 5 and not self.mysql.is_user_id_white(self.tieba_name, user_id):
                         tb.log.info(
-                            f"Clear Water {thread.user.log_name}")
+                            f"Clear Water {user_id}")
                         self.block(
                             self.tieba_name, _threads[0].user, 1, reason=f"line:{sys._getframe().f_lineno}")
                         for thread in _threads:
@@ -162,7 +162,7 @@ class CloudReview(cr.CloudReview):
             self.block(self.tieba_name, obj.user, day=10,
                        reason=f"line:{sys._getframe().f_lineno}")
             return 1
-        if re.search("((?<![a-z])v|瞳|梓|罐|豆|鸟|鲨)(÷|/|／|➗|畜|处|除|初)|椰子汁|🥥|东雪莲|莲宝", text, re.I) is not None:
+        if re.search("((?<![a-z])v|瞳|梓|罐|豆|鸟|鲨)(÷|/|／|➗|畜|处|除|初|醋)|椰子汁|🥥|东雪莲|莲宝", text, re.I) is not None:
             return 1
 
         level = obj.user.level

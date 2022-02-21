@@ -6,7 +6,7 @@ __all__ = ('BasicUserInfo', 'UserInfo',
 
 import re
 import traceback
-from typing import Dict, List, Union
+from typing import NoReturn, Optional, Union
 
 from .logger import log
 
@@ -57,7 +57,7 @@ class BasicUserInfo(object):
         return self._nick_name
 
     @nick_name.setter
-    def nick_name(self, new_nick_name: str):
+    def nick_name(self, new_nick_name: str) -> NoReturn:
         if self.user_name != new_nick_name:
             self._nick_name = new_nick_name
         else:
@@ -68,7 +68,7 @@ class BasicUserInfo(object):
         return self._portrait
 
     @portrait.setter
-    def portrait(self, new_portrait: str):
+    def portrait(self, new_portrait: str) -> NoReturn:
         if new_portrait and new_portrait.startswith('tb.'):
             try:
                 self._portrait = re.match('[\w\-_.]+', new_portrait).group(0)
@@ -82,7 +82,7 @@ class BasicUserInfo(object):
         return self._user_id
 
     @user_id.setter
-    def user_id(self, new_user_id: int):
+    def user_id(self, new_user_id: int) -> NoReturn:
         if new_user_id:
             self._user_id = int(new_user_id)
         else:
@@ -136,7 +136,7 @@ class UserInfo(BasicUserInfo):
         return self._level
 
     @level.setter
-    def level(self, new_level: int):
+    def level(self, new_level: int) -> NoReturn:
         if new_level:
             self._level = int(new_level)
         else:
@@ -147,7 +147,7 @@ class UserInfo(BasicUserInfo):
         return self._gender
 
     @gender.setter
-    def gender(self, new_gender: int):
+    def gender(self, new_gender: int) -> NoReturn:
         if new_gender:
             new_gender = int(new_gender)
             if 0 <= new_gender <= 2:
@@ -160,7 +160,7 @@ class UserInfo(BasicUserInfo):
         return self._priv_like
 
     @priv_like.setter
-    def priv_like(self, new_priv_like: int):
+    def priv_like(self, new_priv_like: int) -> NoReturn:
         if new_priv_like:
             new_priv_like = int(new_priv_like)
             if 1 <= new_priv_like <= 3:
@@ -173,7 +173,7 @@ class UserInfo(BasicUserInfo):
         return self._priv_reply
 
     @priv_reply.setter
-    def priv_reply(self, new_priv_reply: int):
+    def priv_reply(self, new_priv_reply: int) -> NoReturn:
         if new_priv_reply:
             new_priv_reply = int(new_priv_reply)
             if 1 <= new_priv_reply <= 3:
@@ -258,7 +258,7 @@ class Threads(list):
 
     __slots__ = ['current_pn', 'total_pn']
 
-    def __init__(self, main_json: Union[Dict, None] = None):
+    def __init__(self, main_json: Optional[dict] = None):
 
         if main_json:
             try:
@@ -378,7 +378,7 @@ class Post(BaseContent):
     __slots__ = ['content', 'sign', 'imgs', 'smileys', 'has_audio', 'floor',
                  'reply_num', 'like', 'dislike', 'create_time', 'is_thread_owner']
 
-    def __init__(self, fid: int = 0, tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), content: str = '', sign: str = '', imgs: List[str] = [], smileys: List[str] = [], has_audio: bool = False, floor: int = 0, reply_num: int = 0, like: int = 0, dislike: int = 0, create_time: int = 0, is_thread_owner: bool = False):
+    def __init__(self, fid: int = 0, tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), content: str = '', sign: str = '', imgs: list[str] = [], smileys: list[str] = [], has_audio: bool = False, floor: int = 0, reply_num: int = 0, like: int = 0, dislike: int = 0, create_time: int = 0, is_thread_owner: bool = False):
         super().__init__(fid=fid, tid=tid, pid=pid, user=user)
         self.content = content
         self.sign = sign
@@ -409,7 +409,7 @@ class Posts(list):
 
     __slots__ = ['current_pn', 'total_pn']
 
-    def __init__(self, main_json: Union[Dict, None] = None):
+    def __init__(self, main_json: Optional[dict] = None):
 
         if main_json:
             try:
@@ -522,7 +522,7 @@ class Comment(BaseContent):
 
     __slots__ = ['smileys', 'has_audio', 'like', 'dislike', 'create_time']
 
-    def __init__(self, fid: int = 0, tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), text: str = '', smileys: List[str] = [], has_audio: bool = False, like: int = 0, dislike: int = 0, create_time: int = 0):
+    def __init__(self, fid: int = 0, tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), text: str = '', smileys: list[str] = [], has_audio: bool = False, like: int = 0, dislike: int = 0, create_time: int = 0):
         super().__init__(fid=fid, tid=tid, pid=pid, user=user)
         self._text = text
         self.smileys = smileys
@@ -542,7 +542,7 @@ class Comments(list):
 
     __slots__ = ['current_pn', 'total_pn']
 
-    def __init__(self, main_json: Union[Dict, None] = None):
+    def __init__(self, main_json: Optional[dict] = None):
 
         if main_json:
             try:
