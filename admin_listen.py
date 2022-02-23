@@ -65,14 +65,18 @@ class Listener(object):
         self.time_range = TimeRange((-40, -5))
 
         self.func_map = {'recommend': self.cmd_recommend,
-                         'drop': self.cmd_drop,
-                         'delete': self.cmd_delete,
-                         'unblock': self.cmd_unblock,
-                         'block': self.cmd_block,
+                         'good': self.cmd_good,
+                         'ungood': self.cmd_ungood,
+                         'top': self.cmd_top,
+                         'untop': self.cmd_untop,
                          'hide': self.cmd_hide,
                          'unhide': self.cmd_unhide,
+                         'drop': self.cmd_drop,
+                         'delete': self.cmd_delete,
                          'tmphide': self.cmd_tmphide,
                          'tmpunhide': self.cmd_tmpunhide,
+                         'block': self.cmd_block,
+                         'unblock': self.cmd_unblock,
                          'blacklist_add': self.cmd_blacklist_add,
                          'blacklist_cancel': self.cmd_blacklist_cancel,
                          'mysql_white': self.cmd_mysql_white,
@@ -134,13 +138,117 @@ class Listener(object):
 
         tieba_dict = self.tieba.get(at.tieba_name, None)
         if not tieba_dict:
-            return None
+            return
         if at.user.user_name not in tieba_dict['access_user']:
-            return None
+            return
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
         if tieba_dict['admin'].recommend(at.tieba_name, at.tid):
+            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+
+    def cmd_good(self, at, cid):
+        """
+        good指令
+        将指令所在主题帖加到从左往右数的第cid个（不包括“全部”在内）精华分区。cid不填默认为0即不分区
+        """
+
+        tieba_dict = self.tieba.get(at.tieba_name, None)
+        if not tieba_dict:
+            return
+        if at.user.user_name not in tieba_dict['access_user']:
+            return
+        if not cid:
+            cid = 0
+
+        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+
+        if tieba_dict['admin'].good(at.tieba_name, at.tid, cid):
+            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+
+    def cmd_ungood(self, at, arg):
+        """
+        ungood指令
+        撤销指令所在主题帖的精华
+        """
+
+        tieba_dict = self.tieba.get(at.tieba_name, None)
+        if not tieba_dict:
+            return
+        if at.user.user_name not in tieba_dict['access_user']:
+            return
+
+        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+
+        if tieba_dict['admin'].ungood(at.tieba_name, at.tid):
+            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+
+    def cmd_top(self, at, arg):
+        """
+        top指令
+        置顶指令所在主题帖
+        """
+
+        tieba_dict = self.tieba.get(at.tieba_name, None)
+        if not tieba_dict:
+            return
+        if at.user.user_name not in tieba_dict['access_user']:
+            return
+
+        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+
+        if tieba_dict['admin'].top(at.tieba_name, at.tid):
+            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+
+    def cmd_untop(self, at, arg):
+        """
+        untop指令
+        撤销指令所在主题帖的置顶
+        """
+
+        tieba_dict = self.tieba.get(at.tieba_name, None)
+        if not tieba_dict:
+            return
+        if at.user.user_name not in tieba_dict['access_user']:
+            return
+
+        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+
+        if tieba_dict['admin'].untop(at.tieba_name, at.tid):
+            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+
+    def cmd_hide(self, at, arg):
+        """
+        hide指令
+        屏蔽指令所在主题帖
+        """
+
+        tieba_dict = self.tieba.get(at.tieba_name, None)
+        if not tieba_dict:
+            return
+        if at.user.user_name not in tieba_dict['access_user']:
+            return
+
+        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+
+        if tieba_dict['admin'].del_thread(at.tieba_name, at.tid, is_frs_mask=True):
+            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+
+    def cmd_unhide(self, at, arg):
+        """
+        unhide指令
+        解除指令所在主题帖的屏蔽
+        """
+
+        tieba_dict = self.tieba.get(at.tieba_name, None)
+        if not tieba_dict:
+            return
+        if at.user.user_name not in tieba_dict['access_user']:
+            return
+
+        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+
+        if tieba_dict['admin'].recover(at.tieba_name, at.tid, is_frs_mask=True):
             tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     def cmd_drop(self, at, arg):
@@ -151,15 +259,15 @@ class Listener(object):
 
         tieba_dict = self.tieba.get(at.tieba_name, None)
         if not tieba_dict:
-            return None
+            return
         if at.user.user_name not in tieba_dict['access_user']:
-            return None
+            return
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
         posts = self.listener.get_posts(at.tid)
         if not posts:
-            return None
+            return
 
         tb.log.info(
             f"Try to delete thread {posts[0].text} post by {posts[0].user.log_name}")
@@ -176,15 +284,15 @@ class Listener(object):
 
         tieba_dict = self.tieba.get(at.tieba_name, None)
         if not tieba_dict:
-            return None
+            return
         if at.user.user_name not in tieba_dict['access_user']:
-            return None
+            return
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
         posts = self.listener.get_posts(at.tid)
         if not posts:
-            return None
+            return
 
         tb.log.info(
             f"Try to delete thread {posts[0].text} post by {posts[0].user.log_name}")
@@ -192,26 +300,50 @@ class Listener(object):
         tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
         tieba_dict['admin'].del_thread(at.tieba_name, at.tid)
 
-    def cmd_unblock(self, at, id):
+    def cmd_tmphide(self, at, arg):
         """
-        unblock指令
-        通过id解封用户
+        tmphide指令
+        暂时屏蔽指令所在主题帖
         """
 
-        if not id:
-            return
         tieba_dict = self.tieba.get(at.tieba_name, None)
         if not tieba_dict:
             return
         if at.user.user_name not in tieba_dict['access_user']:
             return
 
-        tb.log.info(f"{at.user.user_name}: {at.text}")
+        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        user = self.listener.get_userinfo(UserInfo(id))
+        if not tieba_dict['admin'].mysql.ping():
+            tb.log.error("Failed to ping:{at.tieba_name}")
+            return
 
-        if tieba_dict['admin'].unblock(at.tieba_name, user):
+        tieba_dict['admin'].mysql.add_tid(at.tieba_name, at.tid)
+        if tieba_dict['admin'].del_thread(at.tieba_name, at.tid, is_frs_mask=True):
             tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+
+    def cmd_tmpunhide(self, at, arg):
+        """
+        tmpunhide指令
+        解除指令所在主题帖的屏蔽
+        """
+
+        tieba_dict = self.tieba.get(at.tieba_name, None)
+        if not tieba_dict:
+            return
+        if at.user.user_name not in tieba_dict['access_user']:
+            return
+
+        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+
+        if not tieba_dict['admin'].mysql.ping():
+            tb.log.error("Failed to ping:{at.tieba_name}")
+            return
+
+        tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+        for tid in tieba_dict['admin'].mysql.get_tids(at.tieba_name):
+            if tieba_dict['admin'].recover(at.tieba_name, tid, is_frs_mask=True):
+                tieba_dict['admin'].mysql.del_tid(at.tieba_name, tid)
 
     def cmd_block(self, at, id):
         """
@@ -234,84 +366,26 @@ class Listener(object):
         if tieba_dict['admin'].block(at.tieba_name, user, day=10):
             tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    def cmd_hide(self, at, arg):
+    def cmd_unblock(self, at, id):
         """
-        hide指令
-        屏蔽指令所在主题帖
+        unblock指令
+        通过id解封用户
         """
 
+        if not id:
+            return
         tieba_dict = self.tieba.get(at.tieba_name, None)
         if not tieba_dict:
-            return None
+            return
         if at.user.user_name not in tieba_dict['access_user']:
-            return None
-
-        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
-
-        if tieba_dict['admin'].del_thread(at.tieba_name, at.tid, is_frs_mask=True):
-            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
-
-    def cmd_unhide(self, at, arg):
-        """
-        unhide指令
-        解除指令所在主题帖的屏蔽
-        """
-
-        tieba_dict = self.tieba.get(at.tieba_name, None)
-        if not tieba_dict:
-            return None
-        if at.user.user_name not in tieba_dict['access_user']:
-            return None
-
-        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
-
-        if tieba_dict['admin'].recover(at.tieba_name, at.tid, is_frs_mask=True):
-            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
-
-    def cmd_tmphide(self, at, arg):
-        """
-        tmphide指令
-        暂时屏蔽指令所在主题帖
-        """
-
-        tieba_dict = self.tieba.get(at.tieba_name, None)
-        if not tieba_dict:
-            return None
-        if at.user.user_name not in tieba_dict['access_user']:
-            return None
-
-        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
-
-        if not tieba_dict['admin'].mysql.ping():
-            tb.log.error("Failed to ping:{at.tieba_name}")
             return
 
-        tieba_dict['admin'].mysql.add_tid(at.tieba_name, at.tid)
-        if tieba_dict['admin'].del_thread(at.tieba_name, at.tid, is_frs_mask=True):
+        tb.log.info(f"{at.user.user_name}: {at.text}")
+
+        user = self.listener.get_userinfo(UserInfo(id))
+
+        if tieba_dict['admin'].unblock(at.tieba_name, user):
             tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
-
-    def cmd_tmpunhide(self, at, arg):
-        """
-        tmpunhide指令
-        解除指令所在主题帖的屏蔽
-        """
-
-        tieba_dict = self.tieba.get(at.tieba_name, None)
-        if not tieba_dict:
-            return None
-        if at.user.user_name not in tieba_dict['access_user']:
-            return None
-
-        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
-
-        if not tieba_dict['admin'].mysql.ping():
-            tb.log.error("Failed to ping:{at.tieba_name}")
-            return
-
-        tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
-        for tid in tieba_dict['admin'].mysql.get_tids(at.tieba_name):
-            if tieba_dict['admin'].recover(at.tieba_name, tid, is_frs_mask=True):
-                tieba_dict['admin'].mysql.del_tid(at.tieba_name, tid)
 
     def cmd_blacklist_add(self, at, id):
         """

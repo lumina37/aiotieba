@@ -61,9 +61,6 @@ if __name__ == '__main__':
     parser.add_argument('--unhide',
                         action='store_true',
                         help='解除屏蔽帖子')
-    parser.add_argument('--recommend', '-rc',
-                        action='store_true',
-                        help='推荐帖子')
 
     parser.add_argument('--refuse_appeals', '-ra',
                         action='store_true',
@@ -101,8 +98,6 @@ if __name__ == '__main__':
                 brow.del_thread(tieba_name, tid, is_frs_mask=True)
             if args.unhide:
                 brow.recover(tieba_name, tid, is_frs_mask=True)
-            if args.recommend:
-                brow.recommend(tieba_name, tid)
 
     if args.refuse_appeals:
         brow.refuse_appeals(tieba_name)

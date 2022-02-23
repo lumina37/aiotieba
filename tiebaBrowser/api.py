@@ -611,6 +611,242 @@ class Browser(object):
         log.info(f"Successfully deleted post {pid} in {tid} in {tieba_name}")
         return True
 
+    def recover(self, tieba_name, tid: int = 0, pid: int = 0, is_frs_mask: bool = False) -> bool:
+        """
+        恢复帖子
+        recover(tieba_name,tid=0,pid=0,is_frs_mask=False)
+
+        参数:
+            tieba_name: str 帖子所在的贴吧名
+            tid: int 回复所在的主题帖tid
+            pid: int 待恢复的回复pid
+            is_frs_mask: bool False则恢复删帖，True则取消屏蔽主题帖，默认为False
+
+        返回值:
+            flag: bool 操作是否成功
+        """
+
+        payload = {'fn': tieba_name,
+                   'fid': self.get_fid(tieba_name),
+                   'tid_list[]': tid,
+                   'pid_list[]': pid,
+                   'type_list[]': 1 if pid else 0,
+                   'is_frs_mask_list[]': int(is_frs_mask)
+                   }
+
+        try:
+            self._set_host("http://tieba.baidu.com/")
+            res = self.sessions.web.post(
+                "https://tieba.baidu.com/mo/q/bawurecoverthread", data=payload, timeout=(3, 10))
+            res.raise_for_status()
+
+            main_json = res.json()
+            if int(main_json['no']):
+                raise ValueError(main_json['error'])
+
+        except Exception as err:
+            log.error(
+                f"Failed to recover tid:{tid} pid:{pid} in {tieba_name}. reason:{err}")
+            return False
+
+        log.info(
+            f"Successfully recovered tid:{tid} pid:{pid} hide:{is_frs_mask} in {tieba_name}")
+        return True
+
+    def recommend(self, tieba_name: str, tid: int) -> bool:
+        """
+        推荐上首页
+        recommend(tieba_name,tid)
+
+        参数:
+            tieba_name: str 帖子所在贴吧名
+            tid: int 待推荐的主题帖tid
+
+        返回值:
+            flag: bool 操作是否成功
+        """
+
+        payload = {'BDUSS': self.sessions.BDUSS,
+                   'forum_id': self.get_fid(tieba_name),
+                   'thread_id': tid
+                   }
+        payload['sign'] = self._app_sign(payload)
+
+        try:
+            res = self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/c/bawu/pushRecomToPersonalized", data=payload, timeout=(3, 10))
+            res.raise_for_status()
+
+            main_json = res.json()
+            if int(main_json['error_code']):
+                raise ValueError(main_json['error_msg'])
+            if int(main_json['data']['is_push_success']) != 1:
+                raise ValueError(main_json['data']['msg'])
+
+        except Exception as err:
+            log.error(
+                f"Failed to recommend {tid} in {tieba_name}. reason:{err}")
+            return False
+
+        log.info(f"Successfully recommended {tid} in {tieba_name}")
+        return True
+
+    def good(self, tieba_name: str, tid: int, cid: int = 0) -> bool:
+        """
+        加精主题帖
+        good(tieba_name,tid,cid=0)
+
+        参数:
+            tieba_name: str 帖子所在贴吧名
+            tid: int 待加精的主题帖tid
+            cid: int 将主题帖加到从左往右数的第cid个（不包括“全部”在内）精华分区。cid默认为0即不分区
+
+        返回值:
+            flag: bool 操作是否成功
+        """
+
+        payload = {'BDUSS': self.sessions.BDUSS,
+                   'cid': cid,
+                   'fid': self.get_fid(tieba_name),
+                   'ntn': 'set',
+                   'tbs': self.tbs,
+                   'word': tieba_name,
+                   'z': tid
+                   }
+        payload['sign'] = self._app_sign(payload)
+
+        try:
+            res = self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/c/bawu/commitgood", data=payload, timeout=(3, 10))
+            res.raise_for_status()
+
+            main_json = res.json()
+            if int(main_json['error_code']):
+                raise ValueError(main_json['error_msg'])
+
+        except Exception as err:
+            log.error(
+                f"Failed to add {tid} to goodlist in {tieba_name}. reason:{err}")
+            return False
+
+        log.info(f"Successfully add {tid} to goodlist in {tieba_name}. cid:{cid}")
+        return True
+
+    def ungood(self, tieba_name: str, tid: int) -> bool:
+        """
+        撤精主题帖
+        ungood(tieba_name,tid)
+
+        参数:
+            tieba_name: str 帖子所在贴吧名
+            tid: int 待撤精的主题帖tid
+
+        返回值:
+            flag: bool 操作是否成功
+        """
+
+        payload = {'BDUSS': self.sessions.BDUSS,
+                   'fid': self.get_fid(tieba_name),
+                   'tbs': self.tbs,
+                   'word': tieba_name,
+                   'z': tid
+                   }
+        payload['sign'] = self._app_sign(payload)
+
+        try:
+            res = self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/c/bawu/commitgood", data=payload, timeout=(3, 10))
+            res.raise_for_status()
+
+            main_json = res.json()
+            if int(main_json['error_code']):
+                raise ValueError(main_json['error_msg'])
+
+        except Exception as err:
+            log.error(
+                f"Failed to remove {tid} from goodlist in {tieba_name}. reason:{err}")
+            return False
+
+        log.info(f"Successfully removed {tid} from goodlist in {tieba_name}")
+        return True
+
+    def top(self, tieba_name: str, tid: int) -> bool:
+        """
+        置顶主题帖
+        top(tieba_name,tid)
+
+        参数:
+            tieba_name: str 帖子所在贴吧名
+            tid: int 待置顶的主题帖tid
+
+        返回值:
+            flag: bool 操作是否成功
+        """
+
+        payload = {'BDUSS': self.sessions.BDUSS,
+                   'fid': self.get_fid(tieba_name),
+                   'ntn': 'set',
+                   'tbs': self.tbs,
+                   'word': tieba_name,
+                   'z': tid
+                   }
+        payload['sign'] = self._app_sign(payload)
+
+        try:
+            res = self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/c/bawu/committop", data=payload, timeout=(3, 10))
+            res.raise_for_status()
+
+            main_json = res.json()
+            if int(main_json['error_code']):
+                raise ValueError(main_json['error_msg'])
+
+        except Exception as err:
+            log.error(
+                f"Failed to add {tid} to toplist in {tieba_name}. reason:{err}")
+            return False
+
+        log.info(f"Successfully add {tid} to toplist in {tieba_name}")
+        return True
+
+    def untop(self, tieba_name: str, tid: int) -> bool:
+        """
+        撤销置顶主题帖
+        untop(tieba_name,tid)
+
+        参数:
+            tieba_name: str 帖子所在贴吧名
+            tid: int 待撤销置顶的主题帖tid
+
+        返回值:
+            flag: bool 操作是否成功
+        """
+
+        payload = {'BDUSS': self.sessions.BDUSS,
+                   'fid': self.get_fid(tieba_name),
+                   'tbs': self.tbs,
+                   'word': tieba_name,
+                   'z': tid
+                   }
+        payload['sign'] = self._app_sign(payload)
+
+        try:
+            res = self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/c/bawu/committop", data=payload, timeout=(3, 10))
+            res.raise_for_status()
+
+            main_json = res.json()
+            if int(main_json['error_code']):
+                raise ValueError(main_json['error_msg'])
+
+        except Exception as err:
+            log.error(
+                f"Failed to remove {tid} from toplist in {tieba_name}. reason:{err}")
+            return False
+
+        log.info(f"Successfully removed {tid} from toplist in {tieba_name}")
+        return True
+
     def get_blacklist(self, tieba_name: str) -> BasicUserInfo:
         """
         获取贴吧黑名单
@@ -731,10 +967,10 @@ class Browser(object):
 
         except Exception as err:
             log.error(
-                f"Failed to delete users from black_list in {tieba_name}. reason:{err}")
+                f"Failed to remove users from black_list in {tieba_name}. reason:{err}")
             return False
 
-        log.info(f"Successfully deleted users from black_list in {tieba_name}")
+        log.info(f"Successfully removed users from black_list in {tieba_name}")
         return True
 
     def blacklist_cancel(self, tieba_name: str, user: BasicUserInfo) -> bool:
@@ -754,86 +990,6 @@ class Browser(object):
             return self.blacklist_cancels(tieba_name, [user, ])
         else:
             return False
-
-    def recover(self, tieba_name, tid: int = 0, pid: int = 0, is_frs_mask: bool = False) -> bool:
-        """
-        恢复帖子
-        recover(tieba_name,tid=0,pid=0,is_frs_mask=False)
-
-        参数:
-            tieba_name: str 帖子所在的贴吧名
-            tid: int 回复所在的主题帖tid
-            pid: int 待恢复的回复pid
-            is_frs_mask: bool False则恢复删帖，True则取消屏蔽主题帖，默认为False
-
-        返回值:
-            flag: bool 操作是否成功
-        """
-
-        payload = {'fn': tieba_name,
-                   'fid': self.get_fid(tieba_name),
-                   'tid_list[]': tid,
-                   'pid_list[]': pid,
-                   'type_list[]': 1 if pid else 0,
-                   'is_frs_mask_list[]': int(is_frs_mask)
-                   }
-
-        try:
-            self._set_host("http://tieba.baidu.com/")
-            res = self.sessions.web.post(
-                "https://tieba.baidu.com/mo/q/bawurecoverthread", data=payload, timeout=(3, 10))
-            res.raise_for_status()
-
-            main_json = res.json()
-            if int(main_json['no']):
-                raise ValueError(main_json['error'])
-
-        except Exception as err:
-            log.error(
-                f"Failed to recover tid:{tid} pid:{pid} in {tieba_name}. reason:{err}")
-            return False
-
-        log.info(
-            f"Successfully recovered tid:{tid} pid:{pid} hide:{is_frs_mask} in {tieba_name}")
-        return True
-
-    def recommend(self, tieba_name: str, tid: int) -> bool:
-        """
-        推荐上首页
-        recommend(tieba_name,tid)
-
-        参数:
-            tieba_name: str 帖子所在贴吧名
-            tid: int 待推荐的主题帖tid
-
-        返回值:
-            flag: bool 操作是否成功
-        """
-
-        payload = {'BDUSS': self.sessions.BDUSS,
-                   'forum_id': self.get_fid(tieba_name),
-                   'thread_id': tid
-                   }
-        payload['sign'] = self._app_sign(payload)
-
-        try:
-            res = self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/bawu/pushRecomToPersonalized", data=payload, timeout=(3, 10))
-            res.raise_for_status()
-
-            main_json = res.json()
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
-            if int(main_json['data']['is_push_success']) != 1:
-                raise ValueError(main_json['data']['msg'])
-
-        except Exception as err:
-            log.error(
-                f"Failed to recommend {tid} in {tieba_name}. reason:{err}")
-            return False
-
-        log.info(f"Successfully recommended {tid} in {tieba_name}")
-        return True
 
     def refuse_appeals(self, tieba_name: str) -> bool:
         """
@@ -1422,10 +1578,10 @@ class Browser(object):
             except RuntimeError:  # need Python 3.7+ https://www.python.org/dev/peps/pep-0479/
                 return
 
-    def forum_like(self, tieba_name: str) -> bool:
+    def like_forum(self, tieba_name: str) -> bool:
         """
         关注吧
-        forum_like(tieba_name)
+        like_forum(tieba_name)
 
         参数:
             tieba_name :str 贴吧名
@@ -1458,10 +1614,10 @@ class Browser(object):
         log.info(f"Successfully like forum {tieba_name}")
         return True
 
-    def forum_sign(self, tieba_name: str) -> bool:
+    def sign_forum(self, tieba_name: str) -> bool:
         """
         签到吧
-        forum_sign(tieba_name)
+        sign_forum(tieba_name)
 
         参数:
             tieba_name :str 贴吧名
