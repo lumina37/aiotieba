@@ -232,7 +232,7 @@ class Browser(object):
             else:
                 gender = 0
             user = UserInfo(user_name=user_dict['name'],
-                            nick_name=user_dict['name_show'],
+                            nick_name=user_dict['show_nickname'],
                             portrait=user_dict['portrait'],
                             user_id=user_dict['id'],
                             gender=gender,
@@ -383,7 +383,7 @@ class Browser(object):
             posts: Posts
         """
 
-        payload = {'_client_version': '7.9.2',  # 因新版app使用file传参，改动此处的版本号可能导致列表为空！
+        payload = {'_client_version': '12.20.0.3',
                    'kz': tid,
                    'pn': pn,
                    'rn': 30
@@ -422,7 +422,7 @@ class Browser(object):
             comments: Comments
         """
 
-        payload = {'_client_version': '7.9.2',  # 因新版app使用file传参，改动此处的版本号可能导致列表为空！
+        payload = {'_client_version': '12.20.0.3',
                    'kz': tid,
                    'pid': pid,
                    'pn': pn

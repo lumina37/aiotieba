@@ -270,10 +270,11 @@ class Threads(list):
                     f"Null value at line {err.__traceback__.tb_lineno}")
 
             users = {}
-            reply_access = {}
             for user_dict in main_json['user_list']:
                 try:
                     user_id = int(user_dict['id'])
+                    if not user_id:
+                        continue
                     priv_sets = user_dict['priv_sets']
                     if not priv_sets:
                         priv_sets = {}
@@ -426,6 +427,8 @@ class Posts(list):
             for user_dict in main_json['user_list']:
                 try:
                     user_id = int(user_dict['id'])
+                    if not user_id:
+                        continue
                     priv_sets = user_dict['priv_sets']
                     if not priv_sets:
                         priv_sets = {}
