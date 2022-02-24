@@ -151,9 +151,7 @@ class UserInfo(BasicUserInfo):
     @gender.setter
     def gender(self, new_gender: int) -> NoReturn:
         if new_gender:
-            new_gender = int(new_gender)
-            if 0 <= new_gender <= 2:
-                self._gender = new_gender
+            self._gender = int(new_gender)
         else:
             self._gender = 0
 
@@ -164,9 +162,7 @@ class UserInfo(BasicUserInfo):
     @priv_like.setter
     def priv_like(self, new_priv_like: int) -> NoReturn:
         if new_priv_like:
-            new_priv_like = int(new_priv_like)
-            if 1 <= new_priv_like <= 3:
-                self._priv_like = new_priv_like
+            self._priv_like = int(new_priv_like)
         else:
             self._priv_like = 3
 
