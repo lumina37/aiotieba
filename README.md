@@ -24,18 +24,14 @@
 pip install requests
 pip install lxml
 pip install bs4
+pip install pymysql
+pip install pillow
+pip install opencv-contrib-python
 ```
 
 ## 若要开启云审查功能
 
-+ 安装额外的Python库，并记得import tiebaBrowser.cloud_review解锁云审查功能
-
-```bash
-pip install pymysql
-pip install pillow
-pip install pyzbar
-```
-
++ 记得import tiebaBrowser.cloud_review以解锁云审查功能
 + 在config/config.json中配置MySQL连接。你需要一个数据库用来缓存通过检测的回复的**pid**以及记录黑、白名单用户
 + 在config/config.json中配置tieba_name_mapping。你需要为每个贴吧设置对应的英文名以方便建立数据库
 + 使用函数init_database一键建库
@@ -52,11 +48,11 @@ pip install pyzbar
 + 各第三方库的用途说明
 
   + **requests** 支持最基本的网络IO功能
-  + **lxml** 用于BeautifulSoup解析的lxml格式支持
-  + **bs4** 用于解析HTML
+  + **lxml** 支持BeautifulSoup以lxml格式解析HTML
+  + **bs4** 解析HTML
   + **pymysql** 连接MySQL
-  + **pillow** 图像库
-  + **pyzbar** 它是二维码检测库zbar的一个Python封装
+  + **pillow** 提供解码gif图像的方法
+  + **opencv-contrib-python** 提供图像哈希、定位解析二维码的方法
 
 ## 编写用于一键重启的bash脚本
 

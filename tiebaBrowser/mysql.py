@@ -384,10 +384,10 @@ class MySQL(object):
                 f"CREATE TABLE img_blacklist_{tieba_name_eng} (img_hash CHAR(16) PRIMARY KEY, raw_hash CHAR(40) NOT NULL)")
 
     @translate_tieba_name
-    def add_img_hash(self, tieba_name_eng: str, img_hash: str, raw_hash: str) -> bool:
+    def add_imghash(self, tieba_name_eng: str, img_hash: str, raw_hash: str) -> bool:
         """
         向img_blacklist_{tieba_name_eng}插入img_hash
-        add_img_hash(tieba_name,img_hash,raw_hash)
+        add_imghash(tieba_name,img_hash,raw_hash)
         """
 
         try:
@@ -403,10 +403,10 @@ class MySQL(object):
             return True
 
     @translate_tieba_name
-    def has_img_hash(self, tieba_name_eng: str, img_hash: str) -> bool:
+    def has_imghash(self, tieba_name_eng: str, img_hash: str) -> bool:
         """
         检索img_blacklist_{tieba_name_eng}中是否已有img_hash
-        has_img_hash(tieba_name,img_hash)
+        has_imghash(tieba_name,img_hash)
         """
 
         try:
@@ -419,10 +419,10 @@ class MySQL(object):
             return True if self.mycursor.fetchone() else False
 
     @translate_tieba_name
-    def del_img_hash(self, tieba_name_eng: str, img_hash: str) -> bool:
+    def del_imghash(self, tieba_name_eng: str, img_hash: str) -> bool:
         """
         从img_blacklist_{tieba_name_eng}中删除img_hash
-        del_img_hash(tieba_name,img_hash)
+        del_imghash(tieba_name,img_hash)
         """
 
         try:

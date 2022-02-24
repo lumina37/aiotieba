@@ -9,6 +9,8 @@ import traceback
 from io import BytesIO
 from typing import NoReturn, Optional, Tuple
 
+import cv2 as cv
+import numpy as np
 import requests as req
 from bs4 import BeautifulSoup
 from PIL import Image
@@ -729,7 +731,8 @@ class Browser(object):
                 f"Failed to add {tid} to goodlist in {tieba_name}. reason:{err}")
             return False
 
-        log.info(f"Successfully add {tid} to goodlist in {tieba_name}. cid:{cid}")
+        log.info(
+            f"Successfully add {tid} to goodlist in {tieba_name}. cid:{cid}")
         return True
 
     def ungood(self, tieba_name: str, tid: int) -> bool:
@@ -1078,19 +1081,20 @@ class Browser(object):
         for appeal_id in _get_appeal_list():
             _appeal_handle(appeal_id)
 
-    def url2image(self, img_url: str) -> Optional[Image.Image]:
+    def url2image(self, img_url: str) -> Optional[np.ndarray]:
         """
-        从链接获取静态图像
+        从链接获取静态图像。若为gif则仅读取第一帧即透明通道帧
         url2image(img_url)
 
         返回值:
-            image: Image 图像
+            image: numpy.array 图像
         """
 
         try:
             self._set_host(img_url)
             res = self.sessions.web.get(img_url, timeout=(3, 10))
-            image = Image.open(BytesIO(res.content))
+            pil_img = Image.open(BytesIO(res.content))
+            image = cv.cvtColor(np.asarray(pil_img), cv.COLOR_RGB2BGR)
 
         except Exception as err:
             log.error(f"Failed to get image {img_url}. reason:{err}")

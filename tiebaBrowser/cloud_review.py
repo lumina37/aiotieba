@@ -2,12 +2,11 @@
 __all__ = ('CloudReview',)
 
 
+import binascii
 import re
 from typing import Optional, Union
-from urllib.parse import unquote
 
-import imagehash
-import pyzbar.pyzbar as pyzbar
+import cv2 as cv
 
 from .api import Browser
 from .data_structure import BasicUserInfo
@@ -80,8 +79,9 @@ class CloudReview(Browser):
 
     __slots__ = ['tieba_name',
                  'sleep_time',
-                 'exp',
-                 'mysql']
+                 'expressions',
+                 'mysql',
+                 'qrdetector']
 
     def __init__(self, BDUSS_key: Optional[str], tieba_name: str, sleep_time: float = 0):
         super().__init__(BDUSS_key)
@@ -89,9 +89,9 @@ class CloudReview(Browser):
         self.tieba_name = tieba_name
         self.sleep_time = sleep_time
 
+        self.expressions = RegularExp()
         self.mysql = MySQL()
-
-        self.exp = RegularExp()
+        self.qrdetector = cv.QRCodeDetector()
 
     def close(self) -> None:
         self.mysql.close()
@@ -134,29 +134,42 @@ class CloudReview(Browser):
 
         try:
             image = self.url2image(img_url)
-            if image:
-                raw = pyzbar.decode(image)
-                data = unquote(raw[0].data.decode('utf-8')) if raw else None
+            if image is not None:
+                data = self.qrdetector.detectAndDecode(image)[0]
+            else:
+                data = None
         except Exception as err:
             log.error(f"Failed to decode image. reason:{err}")
             data = None
 
         return data
 
-    def has_img_hash(self, img_url: str) -> bool:
+    def get_imghash(self, img_url: str) -> Optional[str]:
         """
-        判断img_url对应的图像的dhash是否在黑名单中
+        计算img_url对应的图像的phash
         """
 
         image = self.url2image(img_url)
-        if image:
+        if image is not None:
             try:
-                img_hash = str(imagehash.dhash(image))
-            except OSError:
-                return False
-            if self.mysql.has_img_hash(self.tieba_name, img_hash):
-                return True
-            else:
-                return False
+                img_hash_array = cv.img_hash.pHash(image)
+                img_hash = binascii.b2a_hex(img_hash_array.tobytes()).decode()
+            except Exception as err:
+                log.error(
+                    f"Failed to get imagehash of {img_url}. reason:{err}")
+                img_hash = None
+        else:
+            img_hash = None
+
+        return img_hash
+
+    def has_imghash(self, img_url: str) -> bool:
+        """
+        判断img_url对应的图像的phash是否在黑名单中
+        """
+
+        img_hash = self.get_imghash(img_url)
+        if img_hash and self.mysql.has_imghash(self.tieba_name, img_hash):
+            return True
         else:
             return False

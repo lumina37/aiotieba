@@ -3,8 +3,6 @@ import argparse
 import os
 import sys
 
-import imagehash
-
 import tiebaBrowser as tb
 import tiebaBrowser.cloud_review as cr
 
@@ -61,20 +59,14 @@ if __name__ == '__main__':
 
     if args.image:
         img_url = f"http://tiebapic.baidu.com/forum/pic/item/{args.image}.jpg"
-        try:
-            image = brow.url2image(
-                f"http://tiebapic.baidu.com/forum/pic/item/{args.image}.jpg")
-            img_hash = str(imagehash.dhash(image))
-        except Exception as err:
-            brow.log.error(
-                f"Failed to get dhash of {args.image}. reason:{err}")
-        else:
+        img_hash = brow.get_imghash(img_url)
+        if img_hash:
             if args.delete:
-                brow.mysql.del_img_hash(args.tieba_name, img_hash)
+                brow.mysql.del_imghash(args.tieba_name, img_hash)
             elif args.search:
-                print(brow.mysql.has_img_hash(args.tieba_name, img_hash))
+                print(brow.mysql.has_imghash(args.tieba_name, img_hash))
             else:
-                brow.mysql.add_img_hash(args.tieba_name, img_hash, args.image)
+                brow.mysql.add_imghash(args.tieba_name, img_hash, args.image)
 
     if args.post_id:
         if args.delete:

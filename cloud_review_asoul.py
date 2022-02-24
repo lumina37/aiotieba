@@ -124,7 +124,7 @@ class CloudReview(cr.CloudReview):
         elif flag == 1:
             return 1
         elif flag == 0:
-            if post.is_thread_owner and post.user.level < 6 and self.exp.kill_thread_exp.search(post.text):
+            if post.is_thread_owner and post.user.level < 6 and self.expressions.kill_thread_exp.search(post.text):
                 return 2
             if post.imgs:
                 if post.user.level < 3 and not self.white_kw_exp.search(post.text):
@@ -154,7 +154,7 @@ class CloudReview(cr.CloudReview):
 
         if type(obj) is tb.Post:
             for img in obj.imgs:
-                if self.has_img_hash(img):
+                if self.has_imghash(img):
                     return 1
 
         text = obj.text
@@ -175,31 +175,31 @@ class CloudReview(cr.CloudReview):
         if has_white_kw:
             return 0
 
-        has_rare_contact = True if self.exp.contact_rare_exp.search(
+        has_rare_contact = True if self.expressions.contact_rare_exp.search(
             text) else False
         has_contact = True if (
-            has_rare_contact or self.exp.contact_exp.search(text)) else False
+            has_rare_contact or self.expressions.contact_exp.search(text)) else False
 
         if level < 3:
-            if self.exp.job_nocheck_exp.search(text):
+            if self.expressions.job_nocheck_exp.search(text):
                 self.block(self.tieba_name, obj.user, day=10,
                            reason=f"line:{sys._getframe().f_lineno}")
                 return 1
-            if self.exp.app_nocheck_exp.search(text):
+            if self.expressions.app_nocheck_exp.search(text):
                 self.block(self.tieba_name, obj.user, day=10,
                            reason=f"line:{sys._getframe().f_lineno}")
                 return 1
-            if self.exp.game_nocheck_exp.search(text):
+            if self.expressions.game_nocheck_exp.search(text):
                 self.block(self.tieba_name, obj.user, day=10,
                            reason=f"line:{sys._getframe().f_lineno}")
                 return 1
 
-            if self.exp.maipian_exp.search(text):
+            if self.expressions.maipian_exp.search(text):
                 self.block(self.tieba_name, obj.user, day=10,
                            reason=f"line:{sys._getframe().f_lineno}")
                 return 1
             if obj.user.gender == 2:
-                if self.exp.female_check_exp.search(text):
+                if self.expressions.female_check_exp.search(text):
                     if level == 1:
                         return 1
                     elif not has_white_kw:
@@ -207,39 +207,39 @@ class CloudReview(cr.CloudReview):
                 if obj.has_audio:
                     return 1
 
-            if self.exp.business_exp.search(text):
+            if self.expressions.business_exp.search(text):
                 return 1
 
-            has_job = True if self.exp.job_exp.search(text) else False
+            has_job = True if self.expressions.job_exp.search(text) else False
             if has_job and level == 1:
                 return 1
-            if self.exp.job_check_exp.search(text) and (has_job or has_contact):
+            if self.expressions.job_check_exp.search(text) and (has_job or has_contact):
                 return 1
-            if self.exp.app_exp.search(text) and (self.exp.app_check_exp.search(text) or has_contact):
+            if self.expressions.app_exp.search(text) and (self.expressions.app_check_exp.search(text) or has_contact):
                 return 1
-            if self.exp.course_exp.search(text) and self.exp.course_check_exp.search(text):
+            if self.expressions.course_exp.search(text) and self.expressions.course_check_exp.search(text):
                 return 1
-            if self.exp.game_exp.search(text) and self.exp.game_check_exp.search(text):
+            if self.expressions.game_exp.search(text) and self.expressions.game_check_exp.search(text):
                 return 1
-            if self.exp.hospital_exp.search(text):
+            if self.expressions.hospital_exp.search(text):
                 return 1
 
         if level == 1:
             if obj.user.user_name:
-                if self.exp.name_nocheck_exp.search(obj.user.user_name):
+                if self.expressions.name_nocheck_exp.search(obj.user.user_name):
                     self.block(self.tieba_name, obj.user, day=10,
                                reason=f"line:{sys._getframe().f_lineno}")
                     return 1
-                if self.exp.name_exp.search(obj.user.user_name):
-                    if self.exp.name_check_exp.search(obj.user.user_name) or has_contact:
+                if self.expressions.name_exp.search(obj.user.user_name):
+                    if self.expressions.name_check_exp.search(obj.user.user_name) or has_contact:
                         return 1
             if obj.user.nick_name:
-                if self.exp.name_nocheck_exp.search(obj.user.nick_name):
+                if self.expressions.name_nocheck_exp.search(obj.user.nick_name):
                     return 1
-                if self.exp.name_exp.search(obj.user.nick_name):
-                    if self.exp.name_check_exp.search(obj.user.nick_name) or has_contact:
+                if self.expressions.name_exp.search(obj.user.nick_name):
+                    if self.expressions.name_check_exp.search(obj.user.nick_name) or has_contact:
                         return 1
-            if self.exp.lv1_exp.search(text):
+            if self.expressions.lv1_exp.search(text):
                 return 1
 
         return 0
