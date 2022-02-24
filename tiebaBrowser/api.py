@@ -1463,12 +1463,7 @@ class Browser(object):
 
             soup = BeautifulSoup(res.text, 'lxml')
 
-            items = soup.find_all('a')
-            if not items:
-                return
-            for item in items:
-                user_name = item.text
-                yield user_name
+            yield from {a.text for a in soup.find_all('a')}
 
         except Exception as err:
             log.error(f"Failed to get adminlist reason: {err}")

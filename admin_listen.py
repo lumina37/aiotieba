@@ -62,27 +62,9 @@ class Listener(object):
             self.tieba[tieba_name]['admin'] = cr.CloudReview(
                 admin_key, tieba_name)
 
-        self.time_range = TimeRange((-40, -5))
-
-        self.func_map = {'recommend': self.cmd_recommend,
-                         'good': self.cmd_good,
-                         'ungood': self.cmd_ungood,
-                         'top': self.cmd_top,
-                         'untop': self.cmd_untop,
-                         'hide': self.cmd_hide,
-                         'unhide': self.cmd_unhide,
-                         'drop': self.cmd_drop,
-                         'delete': self.cmd_delete,
-                         'tmphide': self.cmd_tmphide,
-                         'tmpunhide': self.cmd_tmpunhide,
-                         'block': self.cmd_block,
-                         'unblock': self.cmd_unblock,
-                         'blacklist_add': self.cmd_blacklist_add,
-                         'blacklist_cancel': self.cmd_blacklist_cancel,
-                         'mysql_white': self.cmd_mysql_white,
-                         'mysql_black': self.cmd_mysql_black,
-                         'mysql_reset': self.cmd_mysql_reset
-                         }
+        self.func_map = {func_name[4:]: getattr(self, func_name) for func_name in dir(
+            self) if func_name.startswith("cmd")}
+        self.time_range = TimeRange((-30, -1))
 
     def close(self):
         self.listener.close()
@@ -276,6 +258,31 @@ class Listener(object):
         tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
         tieba_dict['admin'].del_thread(at.tieba_name, at.tid)
 
+    def cmd_exdrop(self, at, arg):
+        """
+        exdrop指令
+        删除指令所在主题帖并将楼主加入脚本黑名单+封禁十天
+        """
+
+        tieba_dict = self.tieba.get(at.tieba_name, None)
+        if not tieba_dict:
+            return
+        if at.user.user_name not in tieba_dict['access_user']:
+            return
+
+        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+
+        posts = self.listener.get_posts(at.tid)
+        if not posts:
+            return
+
+        tb.log.info(
+            f"Try to delete thread {posts[0].text} post by {posts[0].user.log_name}")
+
+        if tieba_dict['admin'].block(at.tieba_name, posts[0].user, day=10) and tieba_dict['admin'].mysql.update_user_id(at.tieba_name, posts[0].user.user_id, False):
+            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+        tieba_dict['admin'].del_thread(at.tieba_name, at.tid)
+
     def cmd_delete(self, at, arg):
         """
         delete指令
@@ -348,7 +355,7 @@ class Listener(object):
     def cmd_block(self, at, id):
         """
         block指令
-        通过id封禁用户
+        通过id封禁用户十天
         """
 
         if not id:
@@ -364,6 +371,27 @@ class Listener(object):
         user = self.listener.get_userinfo(UserInfo(id))
 
         if tieba_dict['admin'].block(at.tieba_name, user, day=10):
+            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+
+    def cmd_block3(self, at, id):
+        """
+        block指令
+        通过id封禁用户三天
+        """
+
+        if not id:
+            return
+        tieba_dict = self.tieba.get(at.tieba_name, None)
+        if not tieba_dict:
+            return
+        if at.user.user_name not in tieba_dict['access_user']:
+            return
+
+        tb.log.info(f"{at.user.user_name}: {at.text}")
+
+        user = self.listener.get_userinfo(UserInfo(id))
+
+        if tieba_dict['admin'].block(at.tieba_name, user, day=3):
             tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     def cmd_unblock(self, at, id):
@@ -497,6 +525,22 @@ class Listener(object):
 
         if tieba_dict['admin'].del_user_id(id):
             tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+
+    def cmd_ping(self, at, arg):
+        """
+        ping指令
+        用于测试bot可用性的空指令
+        """
+
+        tieba_dict = self.tieba.get(at.tieba_name, None)
+        if not tieba_dict:
+            return
+        if at.user.user_name not in tieba_dict['access_user']:
+            return
+
+        tb.log.info(f"{at.user.user_name}: {at.text}")
+
+        tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     def cmd_default(self, at, arg):
         """
