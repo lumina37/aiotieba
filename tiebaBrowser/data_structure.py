@@ -6,9 +6,11 @@ __all__ = ('BasicUserInfo', 'UserInfo',
 
 import re
 import traceback
-from typing import NoReturn, Optional, Union
+from typing import Generic, Iterator, NoReturn, Optional, TypeVar, Union
 
 from .logger import log
+
+T = TypeVar('T')
 
 
 class BasicUserInfo(object):
@@ -205,6 +207,31 @@ class BaseContent(object):
         return self._text
 
 
+class BaseContents(Generic[T]):
+    """
+    Threads/Posts/Comments的泛型基类
+    约定取内容的通用接口
+    """
+
+    __slots__ = ['current_pn', 'total_pn', '_objs']
+
+    def __init__(self) -> NoReturn:
+        super().__init__()
+
+    def __iter__(self) -> Iterator[T]:
+        return iter(self._objs)
+
+    def __getitem__(self, idx: int) -> T:
+        return self._objs[idx]
+
+    def __len__(self) -> int:
+        return len(self._objs)
+
+    @property
+    def has_next(self) -> bool:
+        return self.current_pn < self.total_pn
+
+
 class Thread(BaseContent):
     """
     主题帖信息
@@ -249,14 +276,83 @@ class Thread(BaseContent):
         return self._text
 
 
-class Threads(list):
+class Threads(BaseContents[Thread]):
     """
     thread列表
     """
 
-    __slots__ = ['current_pn', 'total_pn']
+    __slots__ = []
 
     def __init__(self, main_json: Optional[dict] = None):
+
+        def _init_userinfo(user_dict: dict) -> UserInfo:
+            try:
+                user_id = int(user_dict['id'])
+                if not user_id:
+                    return UserInfo()
+                priv_sets = user_dict['priv_sets']
+                if not priv_sets:
+                    priv_sets = {}
+                user = UserInfo(user_name=user_dict['name'],
+                                nick_name=user_dict['name_show'],
+                                portrait=user_dict['portrait'],
+                                user_id=user_id,
+                                gender=user_dict['gender'],
+                                is_vip=bool(user_dict['new_tshow_icon']),
+                                is_god=user_dict.__contains__('new_god_data'),
+                                priv_like=priv_sets.get('like', None),
+                                priv_reply=priv_sets.get('reply', None)
+                                )
+                return user
+
+            except Exception as err:
+                log.error(
+                    f"Failed to init UserInfo of {user_id} in {fid}. reason:{traceback.format_tb(err.__traceback__)[-1]}")
+                return UserInfo()
+
+        def _init_obj(obj_dict: dict) -> Thread:
+            try:
+                texts = []
+                for fragment in obj_dict['first_post_content']:
+                    ftype = int(fragment['type'])
+                    if ftype in [0, 4, 9, 18]:
+                        texts.append(fragment['text'])
+                    elif ftype == 1:
+                        texts.append(
+                            f"{fragment['link']} {fragment['text']}")
+                first_floor_text = ''.join(texts)
+
+                if isinstance(obj_dict['agree'], dict):
+                    like = int(obj_dict['agree']['agree_num'])
+                    dislike = int(obj_dict['agree']['disagree_num'])
+                else:
+                    like = 0
+                    dislike = 0
+
+                author_id = int(obj_dict['author_id'])
+                thread = Thread(fid=fid,
+                                tid=int(obj_dict['tid']),
+                                pid=int(obj_dict['first_post_id']),
+                                user=users.get(author_id, UserInfo()),
+                                title=obj_dict['title'],
+                                first_floor_text=first_floor_text,
+                                has_audio=True if obj_dict.get(
+                                    'voice_info', None) else False,
+                                has_video=True if obj_dict.get(
+                                    'video_info', None) else False,
+                                view_num=int(obj_dict['view_num']),
+                                reply_num=int(obj_dict['reply_num']),
+                                like=like,
+                                dislike=dislike,
+                                create_time=int(obj_dict['create_time']),
+                                last_time=int(obj_dict['last_time_int'])
+                                )
+                return thread
+
+            except Exception as err:
+                log.error(
+                    f"Failed to init Thread in {fid}. reason:{traceback.format_tb(err.__traceback__)[-1]}")
+                return Thread()
 
         if main_json:
             try:
@@ -267,89 +363,15 @@ class Threads(list):
                 raise ValueError(
                     f"Null value at line {err.__traceback__.tb_lineno}")
 
-            users = {}
-            for user_dict in main_json['user_list']:
-                try:
-                    user_id = int(user_dict['id'])
-                    if not user_id:
-                        continue
-                    priv_sets = user_dict['priv_sets']
-                    if not priv_sets:
-                        priv_sets = {}
-                    users[user_id] = UserInfo(user_name=user_dict['name'],
-                                              nick_name=user_dict['name_show'],
-                                              portrait=user_dict['portrait'],
-                                              user_id=user_id,
-                                              gender=user_dict['gender'],
-                                              is_vip=bool(
-                                                  user_dict['new_tshow_icon']),
-                                              is_god=user_dict.__contains__(
-                                                  'new_god_data'),
-                                              priv_like=priv_sets.get(
-                                                  'like', None),
-                                              priv_reply=priv_sets.get(
-                                                  'reply', None)
-                                              )
-                except Exception as err:
-                    log.error(
-                        f"Failed to init UserInfo of {user_dict['portrait']} in fid:{fid}. reason:{traceback.format_tb(err.__traceback__)[-1]}")
-                    continue
-
-            for thread_raw in main_json['thread_list']:
-                try:
-                    if thread_raw['task_info']:
-                        continue
-
-                    texts = []
-                    for fragment in thread_raw['first_post_content']:
-                        ftype = int(fragment['type'])
-                        if ftype in [0, 4, 9, 18]:
-                            texts.append(fragment['text'])
-                        elif ftype == 1:
-                            texts.append(
-                                f"{fragment['link']} {fragment['text']}")
-                    first_floor_text = ''.join(texts)
-
-                    if isinstance(thread_raw['agree'], dict):
-                        like = int(thread_raw['agree']['agree_num'])
-                        dislike = int(thread_raw['agree']['disagree_num'])
-                    else:
-                        like = 0
-                        dislike = 0
-
-                    author_id = int(thread_raw['author_id'])
-                    thread = Thread(fid=fid,
-                                    tid=int(thread_raw['tid']),
-                                    pid=int(thread_raw['first_post_id']),
-                                    user=users.get(author_id, UserInfo()),
-                                    title=thread_raw['title'],
-                                    first_floor_text=first_floor_text,
-                                    has_audio=True if thread_raw.get(
-                                        'voice_info', None) else False,
-                                    has_video=True if thread_raw.get(
-                                        'video_info', None) else False,
-                                    view_num=int(thread_raw['view_num']),
-                                    reply_num=int(thread_raw['reply_num']),
-                                    like=like,
-                                    dislike=dislike,
-                                    create_time=int(thread_raw['create_time']),
-                                    last_time=int(thread_raw['last_time_int'])
-                                    )
-
-                    self.append(thread)
-
-                except Exception as err:
-                    log.error(
-                        f"Failed to init Thread in {fid}. reason:{traceback.format_tb(err.__traceback__)[-1]}")
-                    continue
+            users = {int(user_dict['id']): _init_userinfo(user_dict)
+                     for user_dict in main_json['user_list']}
+            self._objs = [_init_obj(obj_dict)
+                          for obj_dict in main_json['thread_list']]
 
         else:
+            self._objs = []
             self.current_pn = 0
             self.total_pn = 0
-
-    @property
-    def has_next(self) -> bool:
-        return self.current_pn < self.total_pn
 
 
 class Post(BaseContent):
@@ -398,7 +420,7 @@ class Post(BaseContent):
         return self._text
 
 
-class Posts(list):
+class Posts(BaseContents[Post]):
     """
     post列表
 
@@ -406,9 +428,82 @@ class Posts(list):
     total_pn: 总页数
     """
 
-    __slots__ = ['current_pn', 'total_pn']
+    __slots__ = []
 
     def __init__(self, main_json: Optional[dict] = None):
+
+        def _init_userinfo(user_dict: dict) -> UserInfo:
+            try:
+                user_id = int(user_dict['id'])
+                if not user_id:
+                    return UserInfo()
+                priv_sets = user_dict['priv_sets']
+                if not priv_sets:
+                    priv_sets = {}
+                user = UserInfo(user_name=user_dict['name'],
+                                nick_name=user_dict['name_show'],
+                                portrait=user_dict['portrait'],
+                                user_id=user_id,
+                                level=user_dict['level_id'],
+                                gender=user_dict['gender'],
+                                is_vip=bool(user_dict['new_tshow_icon']),
+                                is_god=user_dict['new_god_data']['field_id'] != '',
+                                priv_like=priv_sets.get('like', None),
+                                priv_reply=priv_sets.get('reply', None)
+                                )
+                return user
+
+            except Exception as err:
+                log.error(
+                    f"Failed to init UserInfo of {user_id} in {tid}. reason:{traceback.format_tb(err.__traceback__)[-1]}")
+                return UserInfo()
+
+        def _init_obj(obj_dict: dict) -> Post:
+            try:
+                texts = []
+                imgs = []
+                smileys = []
+                has_audio = False
+                for fragment in obj_dict['content']:
+                    ftype = int(fragment.get('type', 0))
+                    if ftype in [0, 4, 9, 18]:
+                        texts.append(fragment['text'])
+                    elif ftype == 1:
+                        texts.append(fragment['link'])
+                        texts.append(' ' + fragment['text'])
+                    elif ftype == 2:
+                        smileys.append(fragment['text'])
+                    elif ftype == 3:
+                        imgs.append(fragment['origin_src'])
+                    elif ftype == 10:
+                        has_audio = True
+                content = ''.join(texts)
+
+                author_id = int(obj_dict['author_id'])
+                post = Post(fid=fid,
+                            tid=tid,
+                            pid=int(obj_dict['id']),
+                            user=users.get(author_id, UserInfo()),
+                            content=content,
+                            sign=''.join([sign['text'] for sign in obj_dict['signature']['content']
+                                         if sign['type'] == '0']) if obj_dict.get('signature', None) else '',
+                            imgs=imgs,
+                            smileys=smileys,
+                            has_audio=has_audio,
+                            floor=int(obj_dict['floor']),
+                            reply_num=int(obj_dict['sub_post_number']),
+                            like=int(obj_dict['agree']['agree_num']),
+                            dislike=int(obj_dict['agree']['disagree_num']),
+                            create_time=int(obj_dict['time']),
+                            is_thread_owner=author_id == thread_owner_id,
+                            )
+
+                return post
+
+            except Exception as err:
+                log.error(
+                    f"Failed to init Post in {tid}. reason:{traceback.format_tb(err.__traceback__)[-1]}")
+                return Post()
 
         if main_json:
             try:
@@ -421,88 +516,15 @@ class Posts(list):
                 raise ValueError(
                     f"Null value at line {err.__traceback__.tb_lineno}")
 
-            users = {}
-            for user_dict in main_json['user_list']:
-                try:
-                    user_id = int(user_dict['id'])
-                    if not user_id:
-                        continue
-                    priv_sets = user_dict['priv_sets']
-                    if not priv_sets:
-                        priv_sets = {}
-                    users[user_id] = UserInfo(user_name=user_dict['name'],
-                                              nick_name=user_dict['name_show'],
-                                              portrait=user_dict['portrait'],
-                                              user_id=user_id,
-                                              level=user_dict['level_id'],
-                                              gender=user_dict['gender'],
-                                              is_vip=bool(
-                                                  user_dict['new_tshow_icon']),
-                                              is_god=user_dict['new_god_data']['field_id'] != '',
-                                              priv_like=priv_sets.get(
-                                                  'like', None),
-                                              priv_reply=priv_sets.get(
-                                                  'reply', None)
-                                              )
-                except Exception as err:
-                    log.error(
-                        f"Failed to init UserInfo of {user_dict['portrait']} in tid:{tid}. reason:{traceback.format_tb(err.__traceback__)[-1]}")
-                    continue
-
-            for post_raw in main_json['post_list']:
-                try:
-                    texts = []
-                    imgs = []
-                    smileys = []
-                    has_audio = False
-                    for fragment in post_raw['content']:
-                        ftype = int(fragment.get('type', 0))
-                        if ftype in [0, 4, 9, 18]:
-                            texts.append(fragment['text'])
-                        elif ftype == 1:
-                            texts.append(fragment['link'])
-                            texts.append(' ' + fragment['text'])
-                        elif ftype == 2:
-                            smileys.append(fragment['text'])
-                        elif ftype == 3:
-                            imgs.append(fragment['origin_src'])
-                        elif ftype == 10:
-                            has_audio = True
-                    content = ''.join(texts)
-
-                    author_id = int(post_raw['author_id'])
-                    post = Post(fid=fid,
-                                tid=tid,
-                                pid=int(post_raw['id']),
-                                user=users.get(author_id, UserInfo()),
-                                content=content,
-                                sign=''.join([sign['text'] for sign in post_raw['signature']['content']
-                                              if sign['type'] == '0']) if post_raw.get('signature', None) else '',
-                                imgs=imgs,
-                                smileys=smileys,
-                                has_audio=has_audio,
-                                floor=int(post_raw['floor']),
-                                reply_num=int(post_raw['sub_post_number']),
-                                like=int(post_raw['agree']['agree_num']),
-                                dislike=int(post_raw['agree']['disagree_num']),
-                                create_time=int(post_raw['time']),
-                                is_thread_owner=author_id == thread_owner_id,
-                                )
-
-                    self.append(post)
-
-                except Exception as err:
-                    log.error(
-                        f"Failed to init Post in {tid}. reason:{traceback.format_tb(err.__traceback__)[-1]}")
-                    continue
+            users = {int(user_dict['id']): _init_userinfo(user_dict)
+                     for user_dict in main_json['user_list']}
+            self._objs = [_init_obj(obj_dict)
+                          for obj_dict in main_json['post_list']]
 
         else:
+            self._objs = []
             self.current_pn = 0
             self.total_pn = 0
-
-    @property
-    def has_next(self) -> bool:
-        return self.current_pn < self.total_pn
 
 
 class Comment(BaseContent):
@@ -533,7 +555,7 @@ class Comment(BaseContent):
         self.create_time = create_time
 
 
-class Comments(list):
+class Comments(BaseContents[Comment]):
     """
     comment列表
 
@@ -541,9 +563,62 @@ class Comments(list):
     total_pn: 总页数
     """
 
-    __slots__ = ['current_pn', 'total_pn']
+    __slots__ = []
 
     def __init__(self, main_json: Optional[dict] = None):
+
+        def _init_obj(obj_dict: dict) -> Comment:
+            try:
+                texts = []
+                smileys = []
+                has_audio = False
+                for fragment in obj_dict['content']:
+                    ftype = int(fragment['type'])
+                    if ftype in [0, 4, 9]:
+                        texts.append(fragment['text'])
+                    elif ftype == 1:
+                        texts.append(fragment['link'])
+                        texts.append(' ' + fragment['text'])
+                    elif ftype == 2:
+                        smileys.append(fragment['text'])
+                    elif ftype == 10:
+                        has_audio = True
+                text = ''.join(texts)
+
+                user_dict = obj_dict['author']
+                priv_sets = user_dict['priv_sets']
+                if not priv_sets:
+                    priv_sets = {}
+                user = UserInfo(user_name=user_dict['name'],
+                                nick_name=user_dict['name_show'],
+                                portrait=user_dict['portrait'],
+                                user_id=user_dict['id'],
+                                level=user_dict['level_id'],
+                                gender=user_dict['gender'],
+                                is_vip=bool(user_dict['new_tshow_icon']),
+                                is_god=user_dict['new_god_data']['field_id'] != '',
+                                priv_like=priv_sets.get('like', None),
+                                priv_reply=priv_sets.get('reply', None)
+                                )
+
+                comment = Comment(fid=fid,
+                                  tid=tid,
+                                  pid=int(obj_dict['id']),
+                                  user=user,
+                                  text=text,
+                                  smileys=smileys,
+                                  has_audio=has_audio,
+                                  like=int(obj_dict['agree']['agree_num']),
+                                  dislike=int(
+                                      obj_dict['agree']['disagree_num']),
+                                  create_time=int(obj_dict['time'])
+                                  )
+                return comment
+
+            except Exception as err:
+                log.error(
+                    f"Failed to init Comment in {tid}. reason:{traceback.format_tb(err.__traceback__)[-1]}")
+                return Comment()
 
         if main_json:
             try:
@@ -555,62 +630,11 @@ class Comments(list):
                 raise ValueError(
                     f"Null value at line {err.__traceback__.tb_lineno}")
 
-            for comment_raw in main_json['subpost_list']:
-                try:
-                    texts = []
-                    smileys = []
-                    has_audio = False
-                    for fragment in comment_raw['content']:
-                        ftype = int(fragment['type'])
-                        if ftype in [0, 4, 9]:
-                            texts.append(fragment['text'])
-                        elif ftype == 1:
-                            texts.append(fragment['link'])
-                            texts.append(' ' + fragment['text'])
-                        elif ftype == 2:
-                            smileys.append(fragment['text'])
-                        elif ftype == 10:
-                            has_audio = True
-                    text = ''.join(texts)
-
-                    user_dict = comment_raw['author']
-                    priv_sets = user_dict['priv_sets']
-                    if not priv_sets:
-                        priv_sets = {}
-                    user = UserInfo(user_name=user_dict['name'],
-                                    nick_name=user_dict['name_show'],
-                                    portrait=user_dict['portrait'],
-                                    user_id=user_dict['id'],
-                                    level=user_dict['level_id'],
-                                    gender=user_dict['gender'],
-                                    is_vip=bool(user_dict['new_tshow_icon']),
-                                    is_god=user_dict['new_god_data']['field_id'] != '',
-                                    priv_like=priv_sets.get('like', None),
-                                    priv_reply=priv_sets.get('reply', None)
-                                    )
-
-                    comment = Comment(fid=fid,
-                                      tid=tid,
-                                      pid=int(comment_raw['id']),
-                                      user=user,
-                                      text=text,
-                                      smileys=smileys,
-                                      has_audio=has_audio,
-                                      like=int(
-                                          comment_raw['agree']['agree_num']),
-                                      dislike=int(
-                                          comment_raw['agree']['disagree_num']),
-                                      create_time=int(comment_raw['time'])
-                                      )
-
-                    self.append(comment)
-
-                except Exception as err:
-                    log.error(
-                        f"Failed to init Comment in {tid}. reason:{traceback.format_tb(err.__traceback__)[-1]}")
-                    continue
+            self._objs = [_init_obj(obj_dict)
+                          for obj_dict in main_json['subpost_list']]
 
         else:
+            self._objs = []
             self.current_pn = 0
             self.total_pn = 0
 

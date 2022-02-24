@@ -42,7 +42,7 @@ class Sessions(object):
             self.renew_BDUSS(BDUSS_key)
 
         self.app.headers = req.structures.CaseInsensitiveDict({'Content-Type': 'application/x-www-form-urlencoded',
-                                                               'User-Agent': 'bdtb for Android 12.19.1.0',
+                                                               'User-Agent': 'bdtb for Android 12.20.0.3',
                                                                'Connection': 'Keep-Alive',
                                                                'Accept-Encoding': 'gzip',
                                                                'Accept': '*/*',
@@ -125,6 +125,26 @@ class Browser(object):
             log.warning(f"Wrong type of url `{url}`")
             return False
 
+    @staticmethod
+    def _app_sign(payload: dict) -> str:
+        """
+        计算字典payload的贴吧客户端签名值sign
+        app_sign(payload)
+
+        返回值:
+            sign: str 贴吧客户端签名值sign
+        """
+
+        raw_list = [f"{key}={value}" for key, value in payload.items()]
+        raw_list.append("tiebaclient!!!")
+        raw_str = "".join(raw_list)
+
+        md5 = hashlib.md5()
+        md5.update(raw_str.encode('utf-8'))
+        sign = md5.hexdigest()
+
+        return sign
+
     @property
     def tbs(self) -> str:
         """
@@ -146,26 +166,6 @@ class Browser(object):
                 self._tbs = ''
 
         return self._tbs
-
-    @staticmethod
-    def _app_sign(payload: dict) -> str:
-        """
-        计算字典payload的贴吧客户端签名值sign
-        app_sign(payload)
-
-        返回值:
-            sign: str 贴吧客户端签名值sign
-        """
-
-        raw_list = [f"{key}={value}" for key, value in payload.items()]
-        raw_list.append("tiebaclient!!!")
-        raw_str = "".join(raw_list)
-
-        md5 = hashlib.md5()
-        md5.update(raw_str.encode('utf-8'))
-        sign = md5.hexdigest()
-
-        return sign
 
     def get_fid(self, tieba_name: str) -> int:
         """
