@@ -116,7 +116,7 @@ class UserInfo(BasicUserInfo):
     is_vip: 是否vip
     is_god: 是否贴吧大神
     priv_like: 是否公开关注贴吧（1完全可见2好友可见3完全隐藏）
-    priv_reply: 帖子评论权限（1所有人2我的粉丝3我的关注）
+    priv_reply: 帖子评论权限（1所有人5我的粉丝6我的关注）
     """
 
     __slots__ = ['_level', '_gender',
@@ -175,9 +175,7 @@ class UserInfo(BasicUserInfo):
     @priv_reply.setter
     def priv_reply(self, new_priv_reply: int) -> NoReturn:
         if new_priv_reply:
-            new_priv_reply = int(new_priv_reply)
-            if 1 <= new_priv_reply <= 3:
-                self._priv_reply = new_priv_reply
+            self._priv_reply = int(new_priv_reply)
         else:
             self._priv_reply = 1
 

@@ -80,7 +80,7 @@ class CloudReview(cr.CloudReview):
         elif flag == 1:
             return True
         elif flag == 0:
-            if thread.user.priv_reply == 3:
+            if thread.user.priv_reply == 6:
                 return True
         else:
             tb.log.error(f'Wrong flag {flag} in _check_thread!')

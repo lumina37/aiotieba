@@ -1093,8 +1093,8 @@ class Browser(object):
         try:
             self._set_host(img_url)
             res = self.sessions.web.get(img_url, timeout=(3, 10))
-            pil_img = Image.open(BytesIO(res.content))
-            image = cv.cvtColor(np.asarray(pil_img), cv.COLOR_RGB2BGR)
+            pil_image = Image.open(BytesIO(res.content))
+            image = cv.cvtColor(np.asarray(pil_image), cv.COLOR_RGB2BGR)
 
         except Exception as err:
             log.error(f"Failed to get image {img_url}. reason:{err}")
