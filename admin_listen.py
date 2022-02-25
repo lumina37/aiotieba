@@ -64,7 +64,7 @@ class Listener(object):
 
         self.func_map = {func_name[4:]: getattr(self, func_name) for func_name in dir(
             self) if func_name.startswith("cmd")}
-        self.time_range = TimeRange((-30, -1))
+        self.time_range = TimeRange((-30, 0))
 
     def close(self):
         self.listener.close()

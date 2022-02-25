@@ -41,7 +41,7 @@ class CloudReview(cr.CloudReview):
                 for thread in _threads:
                     if self._check_thread(thread):
                         tb.log.info(
-                            f"Try to delete thread {thread.text} post by {thread.user.log_name}")
+                            f"Try to delete thread {thread.text} post by {thread.user.log_name}. level:{thread.user.level}")
                         self.del_thread(self.tieba_name, thread.tid)
                         continue
                     if thread.like < 30 and thread.reply_num < 20:
@@ -90,7 +90,7 @@ class CloudReview(cr.CloudReview):
             second_floor = posts[1]
             if second_floor.reply_num > 0:
                 for comment in self.get_comments(second_floor.tid, second_floor.pid):
-                    if comment.user.level < 5 and re.search('免費|[𝟙-𝟡]|仓井空在等尼', comment.text):
+                    if comment.user.level < 6 and re.search('免費|[𝟙-𝟡]|仓井空在等尼', comment.text):
                         self.block(self.tieba_name, comment.user, 10)
                         self.del_post(self.tieba_name,
                                       comment.tid, comment.pid)
@@ -104,7 +104,7 @@ class CloudReview(cr.CloudReview):
                 pass
             elif flag == 1:
                 tb.log.info(
-                    f"Try to delete post {post.text} post by {post.user.log_name}")
+                    f"Try to delete post {post.text} post by {post.user.log_name}. level:{post.user.level}")
                 self.del_post(self.tieba_name, post.tid, post.pid)
             elif flag == 2:
                 return True
@@ -124,14 +124,18 @@ class CloudReview(cr.CloudReview):
         elif flag == 1:
             return 1
         elif flag == 0:
-            if post.is_thread_owner and post.user.level < 6 and self.expressions.kill_thread_exp.search(post.text):
+            if post.is_thread_owner and self.expressions.kill_thread_exp.search(post.text):
                 return 2
-            if post.imgs:
-                if post.user.level < 3 and not self.white_kw_exp.search(post.text):
-                    for img in post.imgs:
-                        url = self.scan_QRcode(img)
-                        if url and url.startswith('http'):
-                            return 1
+            for img_url in post.imgs:
+                img = self.url2image(img_url)
+                if img is None:
+                    continue
+                if self.has_imghash(img):
+                    return 1
+                if post.user.level < 6:
+                    url = self.scan_QRcode(img)
+                    if url and url.startswith('http'):
+                        return 1
         else:
             tb.log.error(f'Wrong flag {flag} in _check_post!')
 
@@ -152,11 +156,6 @@ class CloudReview(cr.CloudReview):
                        reason=f"line:{sys._getframe().f_lineno}")
             return 1
 
-        if type(obj) is tb.Post:
-            for img in obj.imgs:
-                if self.has_imghash(img):
-                    return 1
-
         text = obj.text
         if re.search("李奕|读物配音|有声书", text, re.I) is not None:
             self.block(self.tieba_name, obj.user, day=10,
@@ -166,8 +165,8 @@ class CloudReview(cr.CloudReview):
             return 1
 
         level = obj.user.level
-        if level > 4:
-            return -1
+        if level > 6:
+            return 0
         if obj.user.is_vip or obj.user.is_god:
             return -1
 
@@ -180,66 +179,19 @@ class CloudReview(cr.CloudReview):
         has_contact = True if (
             has_rare_contact or self.expressions.contact_exp.search(text)) else False
 
-        if level < 3:
+        if level < 7:
             if self.expressions.job_nocheck_exp.search(text):
                 self.block(self.tieba_name, obj.user, day=10,
                            reason=f"line:{sys._getframe().f_lineno}")
                 return 1
-            if self.expressions.app_nocheck_exp.search(text):
-                self.block(self.tieba_name, obj.user, day=10,
-                           reason=f"line:{sys._getframe().f_lineno}")
-                return 1
-            if self.expressions.game_nocheck_exp.search(text):
-                self.block(self.tieba_name, obj.user, day=10,
-                           reason=f"line:{sys._getframe().f_lineno}")
-                return 1
-
-            if self.expressions.maipian_exp.search(text):
-                self.block(self.tieba_name, obj.user, day=10,
-                           reason=f"line:{sys._getframe().f_lineno}")
-                return 1
-            if obj.user.gender == 2:
-                if self.expressions.female_check_exp.search(text):
-                    if level == 1:
-                        return 1
-                    elif not has_white_kw:
-                        return 1
-                if obj.has_audio:
-                    return 1
 
             if self.expressions.business_exp.search(text):
                 return 1
 
             has_job = True if self.expressions.job_exp.search(text) else False
-            if has_job and level == 1:
-                return 1
             if self.expressions.job_check_exp.search(text) and (has_job or has_contact):
                 return 1
-            if self.expressions.app_exp.search(text) and (self.expressions.app_check_exp.search(text) or has_contact):
-                return 1
             if self.expressions.course_exp.search(text) and self.expressions.course_check_exp.search(text):
-                return 1
-            if self.expressions.game_exp.search(text) and self.expressions.game_check_exp.search(text):
-                return 1
-            if self.expressions.hospital_exp.search(text):
-                return 1
-
-        if level == 1:
-            if obj.user.user_name:
-                if self.expressions.name_nocheck_exp.search(obj.user.user_name):
-                    self.block(self.tieba_name, obj.user, day=10,
-                               reason=f"line:{sys._getframe().f_lineno}")
-                    return 1
-                if self.expressions.name_exp.search(obj.user.user_name):
-                    if self.expressions.name_check_exp.search(obj.user.user_name) or has_contact:
-                        return 1
-            if obj.user.nick_name:
-                if self.expressions.name_nocheck_exp.search(obj.user.nick_name):
-                    return 1
-                if self.expressions.name_exp.search(obj.user.nick_name):
-                    if self.expressions.name_check_exp.search(obj.user.nick_name) or has_contact:
-                        return 1
-            if self.expressions.lv1_exp.search(text):
                 return 1
 
         return 0

@@ -1,16 +1,14 @@
 # -*- coding:utf-8 -*-
 __all__ = ('BasicUserInfo', 'UserInfo',
-           'Thread', 'Post', 'Comment',
-           'Threads', 'Posts', 'Comments',
-           'At')
+           'Thread', 'Post', 'Comment', 'At',
+           'Threads', 'Posts', 'Comments', 'Ats'
+           )
 
 import re
 import traceback
-from typing import Generic, Iterator, NoReturn, Optional, TypeVar, Union
+from typing import Generic, Iterator, NoReturn, Optional, TypeVar, Union, final
 
 from .logger import log
-
-T = TypeVar('T')
 
 
 class BasicUserInfo(object):
@@ -185,40 +183,57 @@ class BaseContent(object):
     fid: 所在吧id
     tid: 帖子编号
     pid: 回复编号
-    text: 文本内容
     user: UserInfo类 发布者信息
+    text: 文本内容
     """
 
-    __slots__ = ['fid', 'tid', 'pid', '_text', 'user']
+    __slots__ = ['fid', 'tid', 'pid', 'user', '_text']
 
-    def __init__(self, fid: int = 0, tid: int = 0, pid: int = 0, text: str = '', user: UserInfo = UserInfo()):
+    def __init__(self, fid: int = 0, tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), text: str = ''):
         self.fid = fid
         self.tid = tid
         self.pid = pid
-        self._text = text
         self.user = user
+        self._text = text
 
     @property
     def text(self) -> str:
         return self._text
 
 
+T = TypeVar('T')
+
+
 class BaseContents(Generic[T]):
     """
-    Threads/Posts/Comments的泛型基类
+    Threads/Posts/Comments/Ats的泛型基类
     约定取内容的通用接口
+
+    current_pn: 当前页数
+    total_pn: 总页数
+    has_next: 是否有下一页
     """
 
     __slots__ = ['current_pn', 'total_pn', '_objs']
 
     def __init__(self) -> NoReturn:
-        super().__init__()
+        pass
 
     def __iter__(self) -> Iterator[T]:
         return iter(self._objs)
 
     def __getitem__(self, idx: int) -> T:
         return self._objs[idx]
+
+    @final
+    def __setitem__(self, idx, val):
+        raise NotImplementedError(
+            f"{self.__class__.__name__}.__setitem__ not implemented!")
+
+    @final
+    def __delitem__(self, idx):
+        raise NotImplementedError(
+            f"{self.__class__.__name__}.__delitem__ not implemented!")
 
     def __len__(self) -> int:
         return len(self._objs)
@@ -238,7 +253,9 @@ class Thread(BaseContent):
     pid: 回复编号
     user: UserInfo类 发布者信息
     title: 标题内容
-    first_floor_text: 首楼内容
+    first_floor_text: 首楼文本
+    imgs: 图片列表
+    emojis: 表情列表
     has_audio: 是否含有音频
     has_video: 是否含有视频
     view_num: 浏览量
@@ -249,13 +266,15 @@ class Thread(BaseContent):
     last_time: 10位时间戳 最后回复时间
     """
 
-    __slots__ = ['title', 'first_floor_text', 'has_audio', 'has_video',
+    __slots__ = ['title', 'first_floor_text', 'imgs', 'emojis', 'has_audio', 'has_video',
                  'view_num', 'reply_num', 'like', 'dislike', 'create_time', 'last_time']
 
-    def __init__(self, fid: int = 0, tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), title: str = '', first_floor_text: str = '', has_audio: bool = False, has_video: bool = False, view_num: int = 0, reply_num: int = 0, like: int = 0, dislike: int = 0, create_time: int = 0, last_time: int = 0):
+    def __init__(self, fid: int = 0, tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), title: str = '', first_floor_text: str = '', imgs: list[str] = [], emojis: list[str] = [], has_audio: bool = False, has_video: bool = False, view_num: int = 0, reply_num: int = 0, like: int = 0, dislike: int = 0, create_time: int = 0, last_time: int = 0):
         super().__init__(fid=fid, tid=tid, pid=pid, user=user)
         self.title = title
         self.first_floor_text = first_floor_text
+        self.imgs = imgs
+        self.emojis = emojis
         self.has_audio = has_audio
         self.has_video = has_video
         self.view_num = view_num
@@ -274,7 +293,11 @@ class Thread(BaseContent):
 
 class Threads(BaseContents[Thread]):
     """
-    thread列表
+    Thread列表
+
+    current_pn: 当前页数
+    total_pn: 总页数
+    has_next: 是否有下一页
     """
 
     __slots__ = []
@@ -309,6 +332,8 @@ class Threads(BaseContents[Thread]):
         def _init_obj(obj_dict: dict) -> Thread:
             try:
                 texts = []
+                imgs = []
+                emojis = []
                 for fragment in obj_dict['first_post_content']:
                     ftype = int(fragment['type'])
                     if ftype in [0, 4, 9, 18]:
@@ -316,6 +341,10 @@ class Threads(BaseContents[Thread]):
                     elif ftype == 1:
                         texts.append(
                             f"{fragment['link']} {fragment['text']}")
+                    elif ftype == 2:
+                        emojis.append(fragment['text'])
+                    elif ftype == 3:
+                        imgs.append(fragment['origin_src'])
                 first_floor_text = ''.join(texts)
 
                 if isinstance(obj_dict['agree'], dict):
@@ -332,6 +361,8 @@ class Threads(BaseContents[Thread]):
                                 user=users.get(author_id, UserInfo()),
                                 title=obj_dict['title'],
                                 first_floor_text=first_floor_text,
+                                imgs=imgs,
+                                emojis=emojis,
                                 has_audio=True if obj_dict.get(
                                     'voice_info', None) else False,
                                 has_video=True if obj_dict.get(
@@ -363,6 +394,7 @@ class Threads(BaseContents[Thread]):
                      for user_dict in main_json['user_list']}
             self._objs = [_init_obj(obj_dict)
                           for obj_dict in main_json['thread_list']]
+            pass
 
         else:
             self._objs = []
@@ -374,15 +406,15 @@ class Post(BaseContent):
     """
     楼层信息
 
-    text: 所有文本
     fid: 所在吧id
     tid: 帖子编号
     pid: 回复编号
     user: UserInfo类 发布者信息
+    text: 所有文本
     content: 正文
     sign: 小尾巴
     imgs: 图片列表
-    smileys: 表情列表
+    emojis: 表情列表
     has_audio: 是否含有音频
     floor: 楼层数
     reply_num: 楼中楼回复数
@@ -392,15 +424,15 @@ class Post(BaseContent):
     is_thread_owner: 是否楼主
     """
 
-    __slots__ = ['content', 'sign', 'imgs', 'smileys', 'has_audio', 'floor',
+    __slots__ = ['content', 'sign', 'imgs', 'emojis', 'has_audio', 'floor',
                  'reply_num', 'like', 'dislike', 'create_time', 'is_thread_owner']
 
-    def __init__(self, fid: int = 0, tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), content: str = '', sign: str = '', imgs: list[str] = [], smileys: list[str] = [], has_audio: bool = False, floor: int = 0, reply_num: int = 0, like: int = 0, dislike: int = 0, create_time: int = 0, is_thread_owner: bool = False):
+    def __init__(self, fid: int = 0, tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), content: str = '', sign: str = '', imgs: list[str] = [], emojis: list[str] = [], has_audio: bool = False, floor: int = 0, reply_num: int = 0, like: int = 0, dislike: int = 0, create_time: int = 0, is_thread_owner: bool = False):
         super().__init__(fid=fid, tid=tid, pid=pid, user=user)
         self.content = content
         self.sign = sign
         self.imgs = imgs
-        self.smileys = smileys
+        self.emojis = emojis
         self.has_audio = has_audio
         self.floor = floor
         self.reply_num = reply_num
@@ -418,10 +450,11 @@ class Post(BaseContent):
 
 class Posts(BaseContents[Post]):
     """
-    post列表
+    Post列表
 
     current_pn: 当前页数
     total_pn: 总页数
+    has_next: 是否有下一页
     """
 
     __slots__ = []
@@ -458,17 +491,17 @@ class Posts(BaseContents[Post]):
             try:
                 texts = []
                 imgs = []
-                smileys = []
+                emojis = []
                 has_audio = False
                 for fragment in obj_dict['content']:
                     ftype = int(fragment.get('type', 0))
                     if ftype in [0, 4, 9, 18]:
                         texts.append(fragment['text'])
                     elif ftype == 1:
-                        texts.append(fragment['link'])
-                        texts.append(' ' + fragment['text'])
+                        texts.append(
+                            f"{fragment['link']} {fragment['text']}")
                     elif ftype == 2:
-                        smileys.append(fragment['text'])
+                        emojis.append(fragment['text'])
                     elif ftype == 3:
                         imgs.append(fragment['origin_src'])
                     elif ftype == 10:
@@ -484,7 +517,7 @@ class Posts(BaseContents[Post]):
                             sign=''.join([sign['text'] for sign in obj_dict['signature']['content']
                                          if sign['type'] == '0']) if obj_dict.get('signature', None) else '',
                             imgs=imgs,
-                            smileys=smileys,
+                            emojis=emojis,
                             has_audio=has_audio,
                             floor=int(obj_dict['floor']),
                             reply_num=int(obj_dict['sub_post_number']),
@@ -527,24 +560,23 @@ class Comment(BaseContent):
     """
     楼中楼信息
 
-    text: 正文
     fid: 所在吧id
     tid: 帖子编号
     pid: 回复编号
     user: UserInfo类 发布者信息
+    text: 文本
+    emojis: 表情列表
+    has_audio: 是否含有音频
     like: 点赞数
     dislike: 点踩数
-    has_audio: 是否含有音频
     create_time: 10位时间戳，创建时间
-    smileys: 表情列表
     """
 
-    __slots__ = ['smileys', 'has_audio', 'like', 'dislike', 'create_time']
+    __slots__ = ['emojis', 'has_audio', 'like', 'dislike', 'create_time']
 
-    def __init__(self, fid: int = 0, tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), text: str = '', smileys: list[str] = [], has_audio: bool = False, like: int = 0, dislike: int = 0, create_time: int = 0):
-        super().__init__(fid=fid, tid=tid, pid=pid, user=user)
-        self._text = text
-        self.smileys = smileys
+    def __init__(self, fid: int = 0, tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), text: str = '', emojis: list[str] = [], has_audio: bool = False, like: int = 0, dislike: int = 0, create_time: int = 0):
+        super().__init__(fid=fid, tid=tid, pid=pid, user=user, text=text)
+        self.emojis = emojis
         self.has_audio = has_audio
         self.like = like
         self.dislike = dislike
@@ -553,10 +585,11 @@ class Comment(BaseContent):
 
 class Comments(BaseContents[Comment]):
     """
-    comment列表
+    Comment列表
 
     current_pn: 当前页数
     total_pn: 总页数
+    has_next: 是否有下一页
     """
 
     __slots__ = []
@@ -566,17 +599,17 @@ class Comments(BaseContents[Comment]):
         def _init_obj(obj_dict: dict) -> Comment:
             try:
                 texts = []
-                smileys = []
+                emojis = []
                 has_audio = False
                 for fragment in obj_dict['content']:
                     ftype = int(fragment['type'])
                     if ftype in [0, 4, 9]:
                         texts.append(fragment['text'])
                     elif ftype == 1:
-                        texts.append(fragment['link'])
-                        texts.append(' ' + fragment['text'])
+                        texts.append(
+                            f"{fragment['link']} {fragment['text']}")
                     elif ftype == 2:
-                        smileys.append(fragment['text'])
+                        emojis.append(fragment['text'])
                     elif ftype == 10:
                         has_audio = True
                 text = ''.join(texts)
@@ -602,7 +635,7 @@ class Comments(BaseContents[Comment]):
                                   pid=int(obj_dict['id']),
                                   user=user,
                                   text=text,
-                                  smileys=smileys,
+                                  emojis=emojis,
                                   has_audio=has_audio,
                                   like=int(obj_dict['agree']['agree_num']),
                                   dislike=int(
@@ -643,11 +676,11 @@ class At(object):
     """
     @信息
 
-    text: 标题文本
-    tieba_name: 帖子所在吧
+    tieba_name: 所在贴吧名
     tid: 帖子编号
     pid: 回复编号
     user: UserInfo类 发布者信息
+    text: 文本
     create_time: 10位时间戳，创建时间
     """
 
@@ -660,3 +693,61 @@ class At(object):
         self.user = user
         self.text = text
         self.create_time = create_time
+
+
+class Ats(BaseContents[At]):
+    """
+    At列表
+
+    current_pn: 当前页数
+    has_next: 是否有下一页
+    """
+
+    def __init__(self, main_json: Optional[dict] = None):
+
+        def _init_obj(obj_dict: dict) -> At:
+            try:
+                user_dict = obj_dict['replyer']
+                priv_sets = user_dict['priv_sets']
+                if not priv_sets:
+                    priv_sets = {}
+                user = UserInfo(user_name=user_dict['name'],
+                                nick_name=user_dict['name_show'],
+                                portrait=user_dict['portrait'],
+                                user_id=user_dict['id'],
+                                is_god=user_dict.__contains__('new_god_data'),
+                                priv_like=priv_sets.get('like', None),
+                                priv_reply=priv_sets.get('reply', None)
+                                )
+                at = At(tieba_name=obj_dict['fname'],
+                        tid=int(obj_dict['thread_id']),
+                        pid=int(obj_dict['post_id']),
+                        text=obj_dict['content'].lstrip(),
+                        user=user,
+                        create_time=int(obj_dict['time'])
+                        )
+                return at
+
+            except Exception as err:
+                log.error(
+                    f"Failed to init At. reason:{traceback.format_tb(err.__traceback__)[-1]}")
+                return At()
+
+        if main_json:
+            try:
+                self.current_pn = int(main_json['page']['current_page'])
+                if int(main_json['page']['has_more']) == 1:
+                    self.total_pn = self.current_pn+1
+                else:
+                    self.total_pn = self.current_pn
+            except Exception as err:
+                raise ValueError(
+                    f"Null value at line {err.__traceback__.tb_lineno}")
+
+            self._objs = [_init_obj(obj_dict)
+                          for obj_dict in main_json['at_list']]
+
+        else:
+            self._objs = []
+            self.current_pn = 0
+            self.total_pn = 0

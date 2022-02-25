@@ -1185,7 +1185,7 @@ class Browser(object):
         get_ats()
 
         返回值:
-            Ats: List[At] at列表
+            Ats: at列表
         """
 
         payload = {'BDUSS': self.sessions.BDUSS}
@@ -1200,32 +1200,11 @@ class Browser(object):
             if int(main_json['error_code']):
                 raise ValueError(main_json['error_msg'])
 
-            ats = []
-            for at_raw in main_json['at_list']:
-                user_dict = at_raw['replyer']
-                priv_sets = user_dict['priv_sets']
-                if not priv_sets:
-                    priv_sets = {}
-                user = UserInfo(user_name=user_dict['name'],
-                                nick_name=user_dict['name_show'],
-                                portrait=user_dict['portrait'],
-                                user_id=user_dict['id'],
-                                is_god=user_dict.__contains__('new_god_data'),
-                                priv_like=priv_sets.get('like', None),
-                                priv_reply=priv_sets.get('reply', None)
-                                )
-                at = At(tieba_name=at_raw['fname'],
-                        tid=int(at_raw['thread_id']),
-                        pid=int(at_raw['post_id']),
-                        text=at_raw['content'].lstrip(),
-                        user=user,
-                        create_time=int(at_raw['time'])
-                        )
-                ats.append(at)
+            ats = Ats(main_json)
 
         except Exception as err:
             log.error(f"Failed to get ats reason:{err}")
-            ats = []
+            ats = Ats()
 
         return ats
 

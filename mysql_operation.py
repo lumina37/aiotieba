@@ -59,7 +59,8 @@ if __name__ == '__main__':
 
     if args.image:
         img_url = f"http://tiebapic.baidu.com/forum/pic/item/{args.image}.jpg"
-        img_hash = brow.get_imghash(img_url)
+        img = brow.url2image(img_url)
+        img_hash = brow.get_imghash(img)
         if img_hash:
             if args.delete:
                 brow.mysql.del_imghash(args.tieba_name, img_hash)
