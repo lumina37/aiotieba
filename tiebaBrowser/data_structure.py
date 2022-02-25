@@ -227,16 +227,17 @@ class BaseContents(Generic[T]):
 
     @final
     def __setitem__(self, idx, val):
-        raise NotImplementedError(
-            f"{self.__class__.__name__}.__setitem__ not implemented!")
+        raise NotImplementedError
 
     @final
     def __delitem__(self, idx):
-        raise NotImplementedError(
-            f"{self.__class__.__name__}.__delitem__ not implemented!")
+        raise NotImplementedError
 
     def __len__(self) -> int:
         return len(self._objs)
+
+    def __bool__(self) -> bool:
+        return len(self._objs) > 0
 
     @property
     def has_next(self) -> bool:

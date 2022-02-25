@@ -156,7 +156,8 @@ class Browser(object):
                 self._set_host("http://tieba.baidu.com/")
                 res = self.sessions.web.get(
                     "http://tieba.baidu.com/dc/common/tbs", timeout=(3, 10))
-                res.raise_for_status()
+                if res.status_code != 200:
+                    raise IOError(f"status_code is {res.status_code}")
 
                 main_json = res.json()
                 self._tbs = main_json['tbs']
@@ -186,7 +187,8 @@ class Browser(object):
                 self._set_host("http://tieba.baidu.com/")
                 res = self.sessions.web.get("http://tieba.baidu.com/f/commit/share/fnameShareApi", params={
                                             'fname': tieba_name, 'ie': 'utf-8'}, timeout=(3, 10))
-                res.raise_for_status()
+                if res.status_code != 200:
+                    raise IOError(f"status_code is {res.status_code}")
 
                 main_json = res.json()
                 if int(main_json['no']):
@@ -219,7 +221,8 @@ class Browser(object):
             self._set_host("http://tieba.baidu.com/")
             res = self.sessions.web.get("https://tieba.baidu.com/home/get/panel", params={
                                         'id': user.portrait, 'un': user.user_name or user.nick_name}, timeout=(3, 10))
-            res.raise_for_status()
+            if res.status_code != 200:
+                raise IOError(f"status_code is {res.status_code}")
 
             main_json = res.json()
             if int(main_json['no']):
@@ -285,10 +288,12 @@ class Browser(object):
             self._set_host("http://tieba.baidu.com/")
             res = self.sessions.web.get(
                 "http://tieba.baidu.com/i/sys/user_json", params=params, timeout=(3, 10))
-            res.raise_for_status()
+            if res.status_code != 200:
+                raise IOError(f"status_code is {res.status_code}")
 
             if not res.content:
                 raise ValueError("empty response")
+
             main_json = res.json()
 
             user_dict = main_json['creator']
@@ -318,7 +323,8 @@ class Browser(object):
             self._set_host("http://tieba.baidu.com/")
             res = self.sessions.web.get(
                 "http://tieba.baidu.com/im/pcmsg/query/getUserInfo", params={'chatUid': user.user_id}, timeout=(3, 10))
-            res.raise_for_status()
+            if res.status_code != 200:
+                raise IOError(f"status_code is {res.status_code}")
 
             main_json = res.json()
             if int(main_json['errno']):
@@ -357,7 +363,8 @@ class Browser(object):
         try:
             res = self.sessions.app.post(
                 "http://c.tieba.baidu.com/c/f/frs/page", data=payload, timeout=(3, 10))
-            res.raise_for_status()
+            if res.status_code != 200:
+                raise IOError(f"status_code is {res.status_code}")
 
             main_json = res.json()
             if int(main_json['error_code']):
@@ -395,7 +402,8 @@ class Browser(object):
         try:
             res = self.sessions.app.post(
                 "http://c.tieba.baidu.com/c/f/pb/page", data=payload, timeout=(3, 10))
-            res.raise_for_status()
+            if res.status_code != 200:
+                raise IOError(f"status_code is {res.status_code}")
 
             main_json = res.json()
             if int(main_json['error_code']):
@@ -434,7 +442,8 @@ class Browser(object):
         try:
             res = self.sessions.app.post(
                 "http://c.tieba.baidu.com/c/f/pb/floor", data=payload, timeout=(3, 10))
-            res.raise_for_status()
+            if res.status_code != 200:
+                raise IOError(f"status_code is {res.status_code}")
 
             main_json = res.json()
             if int(main_json['error_code']):
@@ -480,7 +489,8 @@ class Browser(object):
         try:
             res = self.sessions.app.post(
                 "http://c.tieba.baidu.com/c/c/bawu/commitprison", data=payload, timeout=(3, 10))
-            res.raise_for_status()
+            if res.status_code != 200:
+                raise IOError(f"status_code is {res.status_code}")
 
             main_json = res.json()
             if int(main_json['error_code']):
@@ -520,7 +530,8 @@ class Browser(object):
             self._set_host("http://tieba.baidu.com/")
             res = self.sessions.web.post(
                 "https://tieba.baidu.com/mo/q/bawublockclear", data=payload, timeout=(3, 10))
-            res.raise_for_status()
+            if res.status_code != 200:
+                raise IOError(f"status_code is {res.status_code}")
 
             main_json = res.json()
             if int(main_json['no']):
@@ -559,7 +570,8 @@ class Browser(object):
         try:
             res = self.sessions.app.post(
                 "http://c.tieba.baidu.com/c/c/bawu/delthread", data=payload, timeout=(3, 10))
-            res.raise_for_status()
+            if res.status_code != 200:
+                raise IOError(f"status_code is {res.status_code}")
 
             main_json = res.json()
             if int(main_json['error_code']):
@@ -599,7 +611,8 @@ class Browser(object):
         try:
             res = self.sessions.app.post(
                 "http://c.tieba.baidu.com/c/c/bawu/delpost", data=payload, timeout=(3, 10))
-            res.raise_for_status()
+            if res.status_code != 200:
+                raise IOError(f"status_code is {res.status_code}")
 
             main_json = res.json()
             if int(main_json['error_code']):
@@ -640,7 +653,8 @@ class Browser(object):
             self._set_host("http://tieba.baidu.com/")
             res = self.sessions.web.post(
                 "https://tieba.baidu.com/mo/q/bawurecoverthread", data=payload, timeout=(3, 10))
-            res.raise_for_status()
+            if res.status_code != 200:
+                raise IOError(f"status_code is {res.status_code}")
 
             main_json = res.json()
             if int(main_json['no']):
@@ -677,7 +691,8 @@ class Browser(object):
         try:
             res = self.sessions.app.post(
                 "http://c.tieba.baidu.com/c/c/bawu/pushRecomToPersonalized", data=payload, timeout=(3, 10))
-            res.raise_for_status()
+            if res.status_code != 200:
+                raise IOError(f"status_code is {res.status_code}")
 
             main_json = res.json()
             if int(main_json['error_code']):
@@ -720,7 +735,8 @@ class Browser(object):
         try:
             res = self.sessions.app.post(
                 "http://c.tieba.baidu.com/c/c/bawu/commitgood", data=payload, timeout=(3, 10))
-            res.raise_for_status()
+            if res.status_code != 200:
+                raise IOError(f"status_code is {res.status_code}")
 
             main_json = res.json()
             if int(main_json['error_code']):
@@ -759,7 +775,8 @@ class Browser(object):
         try:
             res = self.sessions.app.post(
                 "http://c.tieba.baidu.com/c/c/bawu/commitgood", data=payload, timeout=(3, 10))
-            res.raise_for_status()
+            if res.status_code != 200:
+                raise IOError(f"status_code is {res.status_code}")
 
             main_json = res.json()
             if int(main_json['error_code']):
@@ -798,7 +815,8 @@ class Browser(object):
         try:
             res = self.sessions.app.post(
                 "http://c.tieba.baidu.com/c/c/bawu/committop", data=payload, timeout=(3, 10))
-            res.raise_for_status()
+            if res.status_code != 200:
+                raise IOError(f"status_code is {res.status_code}")
 
             main_json = res.json()
             if int(main_json['error_code']):
@@ -836,7 +854,8 @@ class Browser(object):
         try:
             res = self.sessions.app.post(
                 "http://c.tieba.baidu.com/c/c/bawu/committop", data=payload, timeout=(3, 10))
-            res.raise_for_status()
+            if res.status_code != 200:
+                raise IOError(f"status_code is {res.status_code}")
 
             main_json = res.json()
             if int(main_json['error_code']):
@@ -874,7 +893,8 @@ class Browser(object):
             try:
                 res = self.sessions.web.get(
                     "http://tieba.baidu.com/bawu2/platform/listBlackUser", params={'word': tieba_name, 'pn': pn})
-                res.raise_for_status()
+                if res.status_code != 200:
+                    raise IOError(f"status_code is {res.status_code}")
 
                 soup = BeautifulSoup(res.text, 'lxml')
                 items = soup.find_all('td', class_='left_cell')
@@ -924,7 +944,8 @@ class Browser(object):
             self._set_host("http://tieba.baidu.com/")
             res = self.sessions.web.post(
                 "http://tieba.baidu.com/bawu2/platform/addBlack", data=payload, timeout=(3, 10))
-            res.raise_for_status()
+            if res.status_code != 200:
+                raise IOError(f"status_code is {res.status_code}")
 
             main_json = res.json()
             if int(main_json['errno']):
@@ -962,7 +983,8 @@ class Browser(object):
             self._set_host("http://tieba.baidu.com/")
             res = self.sessions.web.post(
                 "http://tieba.baidu.com/bawu2/platform/cancelBlack", data=payload, timeout=(3, 10))
-            res.raise_for_status()
+            if res.status_code != 200:
+                raise IOError(f"status_code is {res.status_code}")
 
             main_json = res.json()
             if int(main_json['errno']):
@@ -1027,7 +1049,8 @@ class Browser(object):
                 self._set_host("https://tieba.baidu.com/")
                 res = self.sessions.web.post(
                     "https://tieba.baidu.com/mo/q/bawuappealhandle", data=payload, timeout=(3, 10))
-                res.raise_for_status()
+                if res.status_code != 200:
+                    raise IOError(f"status_code is {res.status_code}")
 
                 main_json = res.json()
                 if int(main_json['no']):
@@ -1060,7 +1083,8 @@ class Browser(object):
                 while 1:
                     res = self.sessions.web.get(
                         "https://tieba.baidu.com/mo/q/bawuappeal", params=params, timeout=(3, 10))
-                    res.raise_for_status()
+                    if res.status_code != 200:
+                        raise IOError(f"status_code is {res.status_code}")
 
                     soup = BeautifulSoup(res.text, 'lxml')
 
@@ -1092,7 +1116,14 @@ class Browser(object):
 
         try:
             self._set_host(img_url)
+
             res = self.sessions.web.get(img_url, timeout=(3, 10))
+            if res.status_code != 200:
+                raise IOError(f"status_code is {res.status_code}")
+
+            if not res.content:
+                raise ValueError("empty response")
+
             pil_image = Image.open(BytesIO(res.content))
             image = cv.cvtColor(np.asarray(pil_image), cv.COLOR_RGB2BGR)
 
@@ -1119,7 +1150,8 @@ class Browser(object):
         try:
             res = self.sessions.app.post(
                 "http://c.tieba.baidu.com/c/s/login", data=payload, timeout=(3, 10))
-            res.raise_for_status()
+            if res.status_code != 200:
+                raise IOError(f"status_code is {res.status_code}")
 
             main_json = res.json()
             if int(main_json['error_code']):
@@ -1194,7 +1226,8 @@ class Browser(object):
         try:
             res = self.sessions.app.post(
                 "http://c.tieba.baidu.com/c/u/feed/atme", data=payload, timeout=(3, 10))
-            res.raise_for_status()
+            if res.status_code != 200:
+                raise IOError(f"status_code is {res.status_code}")
 
             main_json = res.json()
             if int(main_json['error_code']):
@@ -1232,7 +1265,8 @@ class Browser(object):
         try:
             res = self.sessions.app.post(
                 "http://c.tieba.baidu.com/c/u/user/profile", data=payload, timeout=(3, 10))
-            res.raise_for_status()
+            if res.status_code != 200:
+                raise IOError(f"status_code is {res.status_code}")
 
             main_json = res.json()
             if int(main_json['error_code']):
@@ -1350,7 +1384,8 @@ class Browser(object):
             try:
                 res = self.sessions.app.post(
                     "http://c.tieba.baidu.com/c/f/forum/like", data=payload, timeout=(3, 10))
-                res.raise_for_status()
+                if res.status_code != 200:
+                    raise IOError(f"status_code is {res.status_code}")
 
                 main_json = res.json()
                 if int(main_json['error_code']):
@@ -1405,7 +1440,8 @@ class Browser(object):
         try:
             res = self.sessions.app.post(
                 "http://c.tieba.baidu.com/c/f/forum/like", data=payload, timeout=(3, 10))
-            res.raise_for_status()
+            if res.status_code != 200:
+                raise IOError(f"status_code is {res.status_code}")
 
             main_json = res.json()
             if int(main_json['error_code']):
@@ -1438,7 +1474,8 @@ class Browser(object):
             self._set_host("http://tieba.baidu.com/")
             res = self.sessions.web.get(
                 "http://tieba.baidu.com/f/bawu/admin_group", params={'kw': tieba_name, 'ie': 'utf-8'}, timeout=(3, 10))
-            res.raise_for_status()
+            if res.status_code != 200:
+                raise IOError(f"status_code is {res.status_code}")
 
             soup = BeautifulSoup(res.text, 'lxml')
 
@@ -1473,7 +1510,8 @@ class Browser(object):
             try:
                 res = self.sessions.web.get(
                     "http://tieba.baidu.com/f/like/furank", params={'kw': tieba_name, 'pn': pn, 'ie': 'utf-8'})
-                res.raise_for_status()
+                if res.status_code != 200:
+                    raise IOError(f"status_code is {res.status_code}")
 
                 soup = BeautifulSoup(res.text, 'lxml')
                 items = soup.select('tr[class^=drl_list_item]')
@@ -1529,7 +1567,8 @@ class Browser(object):
             try:
                 res = self.sessions.web.get(
                     "http://tieba.baidu.com/bawu2/platform/listMemberInfo", params={'word': tieba_name, 'pn': pn, 'ie': 'utf-8'})
-                res.raise_for_status()
+                if res.status_code != 200:
+                    raise IOError(f"status_code is {res.status_code}")
 
                 soup = BeautifulSoup(res.text, 'lxml')
                 items = soup.find_all('div', class_='name_wrap')
@@ -1577,7 +1616,8 @@ class Browser(object):
 
             res = self.sessions.app.post(
                 "http://c.tieba.baidu.com/c/c/forum/like", data=payload, timeout=(3, 10))
-            res.raise_for_status()
+            if res.status_code != 200:
+                raise IOError(f"status_code is {res.status_code}")
 
             main_json = res.json()
             if int(main_json['error_code']):
@@ -1628,7 +1668,8 @@ class Browser(object):
 
             res = self.sessions.app.post(
                 "http://c.tieba.baidu.com/c/c/forum/sign", data=payload, timeout=(3, 10))
-            res.raise_for_status()
+            if res.status_code != 200:
+                raise IOError(f"status_code is {res.status_code}")
 
             main_json = res.json()
             if int(main_json['error_code']):
@@ -1704,7 +1745,8 @@ class Browser(object):
 
             res = self.sessions.app.post(
                 "http://c.tieba.baidu.com/c/c/post/add", data=payload, timeout=(3, 10))
-            res.raise_for_status()
+            if res.status_code != 200:
+                raise IOError(f"status_code is {res.status_code}")
 
             main_json = res.json()
             if int(main_json['error_code']):
@@ -1746,7 +1788,8 @@ class Browser(object):
 
             res = self.sessions.app.post(
                 "http://c.tieba.baidu.com/c/c/thread/setPrivacy", data=payload, timeout=(3, 10))
-            res.raise_for_status()
+            if res.status_code != 200:
+                raise IOError(f"status_code is {res.status_code}")
 
             main_json = res.json()
             if int(main_json['error_code']):
