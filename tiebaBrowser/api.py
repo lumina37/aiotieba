@@ -1182,7 +1182,7 @@ class Browser(object):
         url2image(img_url)
 
         返回值:
-            image: numpy.array 图像
+            image: numpy.array | None 图像
         """
 
         try:

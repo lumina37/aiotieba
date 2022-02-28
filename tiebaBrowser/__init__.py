@@ -4,7 +4,7 @@
 @License: MIT
 @Homepage: https://github.com/Starry-OvO/Tieba-Cloud-Review
 @Require Python 3.9+
-@Required Modules: requests,lxml,bs4,pymysql,pillow,opencv-contrib-python
+@Required Modules: requests lxml bs4 pymysql pillow opencv-contrib-python
 """
 
 import signal

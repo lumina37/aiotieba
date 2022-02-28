@@ -395,7 +395,6 @@ class Threads(BaseContents[Thread]):
                      for user_dict in main_json['user_list']}
             self._objs = [_init_obj(obj_dict)
                           for obj_dict in main_json['thread_list']]
-            pass
 
         else:
             self._objs = []

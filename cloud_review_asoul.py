@@ -134,7 +134,7 @@ class CloudReview(cr.CloudReview):
                     return 1
                 if post.user.level < 6:
                     url = self.scan_QRcode(img)
-                    if url and url.startswith('http'):
+                    if url.startswith('http'):
                         return 1
         else:
             tb.log.error(f'Wrong flag {flag} in _check_post!')

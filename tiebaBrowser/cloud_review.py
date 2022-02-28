@@ -128,7 +128,7 @@ class CloudReview(Browser):
 
         return self.mysql.del_user_id(self.tieba_name, user.user_id)
 
-    def scan_QRcode(self, image: np.ndarray) -> Optional[str]:
+    def scan_QRcode(self, image: np.ndarray) -> str:
         """
         扫描图像中的二维码
         """
@@ -137,11 +137,11 @@ class CloudReview(Browser):
             data = self.qrdetector.detectAndDecode(image)[0]
         except Exception as err:
             log.error(f"Failed to decode image. reason:{err}")
-            data = None
+            data = ''
 
         return data
 
-    def get_imghash(self, image: np.ndarray) -> Optional[str]:
+    def get_imghash(self, image: np.ndarray) -> str:
         """
         计算图像的phash
         """
@@ -152,7 +152,7 @@ class CloudReview(Browser):
         except Exception as err:
             log.error(
                 f"Failed to get imagehash. reason:{err}")
-            img_hash = None
+            img_hash = ''
 
         return img_hash
 
