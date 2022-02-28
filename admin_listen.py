@@ -129,10 +129,10 @@ class Listener(object):
         if tieba_dict['admin'].recommend(at.tieba_name, at.tid):
             tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    def cmd_good(self, at, cid):
+    def cmd_good(self, at, cname):
         """
         good指令
-        将指令所在主题帖加到从左往右数的第cid个（不包括“全部”在内）精华分区。cid不填默认为0即不分区
+        将指令所在主题帖加到以cname为名的精华分区。cname默认为''即不分区
         """
 
         tieba_dict = self.tieba.get(at.tieba_name, None)
@@ -140,12 +140,12 @@ class Listener(object):
             return
         if at.user.user_name not in tieba_dict['access_user']:
             return
-        if not cid:
-            cid = 0
+        if not cname:
+            cname = ''
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        if tieba_dict['admin'].good(at.tieba_name, at.tid, cid):
+        if tieba_dict['admin'].good(at.tieba_name, at.tid, cname):
             tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     def cmd_ungood(self, at, arg):
@@ -272,6 +272,10 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
+        if not tieba_dict['admin'].mysql.ping():
+            tb.log.error("Failed to ping:{at.tieba_name}")
+            return
+
         posts = self.listener.get_posts(at.tid)
         if not posts:
             return
@@ -355,7 +359,7 @@ class Listener(object):
     def cmd_block(self, at, id):
         """
         block指令
-        通过id封禁用户十天
+        通过id封禁对应用户十天
         """
 
         if not id:
@@ -376,7 +380,7 @@ class Listener(object):
     def cmd_block3(self, at, id):
         """
         block指令
-        通过id封禁用户三天
+        通过id封禁对应用户三天
         """
 
         if not id:

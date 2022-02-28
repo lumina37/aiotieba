@@ -1,11 +1,8 @@
 # -*- coding:utf-8 -*-
 import argparse
-import os
 
 import tiebaBrowser as tb
 from tiebaBrowser.data_structure import BasicUserInfo
-
-PATH = os.path.split(os.path.realpath(__file__))[0]
 
 
 if __name__ == '__main__':
@@ -23,7 +20,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--id', '-i',
                         type=str,
-                        help='用户id（user_name或nick_name或portrait）')
+                        help='用户id（user_name或portrait）')
     parser.add_argument('--user_id', '-uid',
                         type=int,
                         help='用户user_id')
@@ -59,6 +56,13 @@ if __name__ == '__main__':
                         action='store_true',
                         help='屏蔽帖子')
     parser.add_argument('--unhide',
+                        action='store_true',
+                        help='解除屏蔽帖子')
+    parser.add_argument('--good', '-g',
+                        type=str,
+                        default=None,
+                        help='加精分区名')
+    parser.add_argument('--ungood',
                         action='store_true',
                         help='解除屏蔽帖子')
 
@@ -98,6 +102,10 @@ if __name__ == '__main__':
                 brow.del_thread(tieba_name, tid, is_frs_mask=True)
             if args.unhide:
                 brow.recover(tieba_name, tid, is_frs_mask=True)
+            if args.good is not None:
+                brow.good(tieba_name, tid, args.good)
+            if args.ungood:
+                brow.ungood(tieba_name, tid)
 
     if args.refuse_appeals:
         brow.refuse_appeals(tieba_name)

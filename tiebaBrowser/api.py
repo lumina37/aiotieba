@@ -708,48 +708,110 @@ class Browser(object):
         log.info(f"Successfully recommended {tid} in {tieba_name}")
         return True
 
-    def good(self, tieba_name: str, tid: int, cid: int = 0) -> bool:
+    def good(self, tieba_name: str, tid: int, cname: str = '') -> bool:
         """
         加精主题帖
-        good(tieba_name,tid,cid=0)
+        good(tieba_name,tid,cname='')
 
         参数:
             tieba_name: str 帖子所在贴吧名
             tid: int 待加精的主题帖tid
-            cid: int 将主题帖加到从左往右数的第cid个（不包括“全部”在内）精华分区。cid默认为0即不分区
+            cname: str 待添加的精华分区名称。cname默认为''即不分区
 
         返回值:
             flag: bool 操作是否成功
         """
 
-        payload = {'BDUSS': self.sessions.BDUSS,
-                   'cid': cid,
-                   'fid': self.get_fid(tieba_name),
-                   'ntn': 'set',
-                   'tbs': self.tbs,
-                   'word': tieba_name,
-                   'z': tid
-                   }
-        payload['sign'] = self._app_sign(payload)
+        def _cname2cid() -> int:
+            """
+            _cname2cid()
+            由加精分区名cname获取cid
 
-        try:
-            res = self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/bawu/commitgood", data=payload, timeout=(3, 10))
-            if res.status_code != 200:
-                raise IOError(f"status_code is {res.status_code}")
+            闭包参数:
+                tieba_name
+                cname
 
-            main_json = res.json()
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
+            返回值:
+                cid: int
+            """
 
-        except Exception as err:
-            log.error(
-                f"Failed to add {tid} to goodlist in {tieba_name}. reason:{err}")
-            return False
+            payload = {'BDUSS': self.sessions.BDUSS,
+                       'word': tieba_name,
+                       }
+            payload['sign'] = self._app_sign(payload)
 
-        log.info(
-            f"Successfully add {tid} to goodlist in {tieba_name}. cid:{cid}")
-        return True
+            try:
+                res = self.sessions.app.post(
+                    "http://c.tieba.baidu.com/c/c/bawu/goodlist", data=payload, timeout=(3, 10))
+                if res.status_code != 200:
+                    raise IOError(f"status_code is {res.status_code}")
+
+                main_json = res.json()
+                if int(main_json['error_code']):
+                    raise ValueError(main_json['error_msg'])
+
+                cid = 0
+                for item in main_json['cates']:
+                    if cname == item['class_name']:
+                        cid = int(item['class_id'])
+                        break
+
+                if cid == 0:
+                    raise ValueError("Can not find matched result")
+
+            except Exception as err:
+                log.error(
+                    f"Failed to get cid of {cname} in {tieba_name}. reason:{err}")
+                return 0
+
+            return cid
+
+        def _good(cid: int = 0) -> bool:
+            """
+            加精主题帖
+            good(cid=0)
+
+            参数:
+                cid: int 将主题帖加到cid对应的精华分区。cid默认为0即不分区
+
+            闭包参数:
+                tieba_name
+                tid
+
+            返回值:
+                flag: bool 操作是否成功
+            """
+
+            payload = {'BDUSS': self.sessions.BDUSS,
+                       'cid': cid,
+                       'fid': self.get_fid(tieba_name),
+                       'ntn': 'set',
+                       'tbs': self.tbs,
+                       'word': tieba_name,
+                       'z': tid
+                       }
+            payload['sign'] = self._app_sign(payload)
+
+            try:
+                res = self.sessions.app.post(
+                    "http://c.tieba.baidu.com/c/c/bawu/commitgood", data=payload, timeout=(3, 10))
+                if res.status_code != 200:
+                    raise IOError(f"status_code is {res.status_code}")
+
+                main_json = res.json()
+                if int(main_json['error_code']):
+                    raise ValueError(main_json['error_msg'])
+
+            except Exception as err:
+                log.error(
+                    f"Failed to add {tid} to goodlist in {tieba_name}. reason:{err}")
+                return False
+
+            log.info(
+                f"Successfully add {tid} to goodlist in {tieba_name}. cid:{cid}")
+            return True
+
+        return _good(_cname2cid())
 
     def ungood(self, tieba_name: str, tid: int) -> bool:
         """
@@ -885,6 +947,9 @@ class Browser(object):
             """
             获取pn页的黑名单
             _get_pn_blacklist(pn)
+
+            闭包参数:
+                tieba_name
 
             迭代返回值:
                 user: BasicUserInfo 基本用户信息
@@ -1033,6 +1098,9 @@ class Browser(object):
             拒绝或通过解封申诉
             _appeal_handle(appeal_id,refuse=True)
 
+            闭包参数:
+                tieba_name
+
             参数:
                 appeal_id: int 申诉请求的编号
                 refuse: bool 是否拒绝申诉
@@ -1069,6 +1137,9 @@ class Browser(object):
             """
             迭代返回申诉请求的编号(appeal_id)
             _get_appeal_list()
+
+            闭包参数:
+                tieba_name
 
             迭代返回值:
                 appeal_id: int 申诉请求的编号
@@ -1349,6 +1420,9 @@ class Browser(object):
             解析关注贴吧的信息
             _parse_foruminfo(forum_dict)
 
+            参数:
+                forum_dict: dict 关注贴吧信息
+
             返回值:
                 tieba_name: str 贴吧名
                 fid: int 贴吧id
@@ -1366,6 +1440,12 @@ class Browser(object):
             """
             获取pn页的关注贴吧信息
             _get_pn_forumlist(pn)
+
+            参数:
+                pn: int 页数
+
+            闭包参数:
+                user
 
             迭代返回值:
                 tieba_name: str 贴吧名
@@ -1423,7 +1503,7 @@ class Browser(object):
         get_forumlist(user_id)
 
         参数:
-            user_id: int
+            user_id: int 用户user_id
 
         迭代返回值:
             tieba_name: str 贴吧名
@@ -1505,6 +1585,18 @@ class Browser(object):
             """
             获取pn页的排行
             _get_pn_rank(pn)
+
+            参数:
+                pn: int 页数
+
+            闭包参数:
+                tieba_name
+
+            返回值:
+                user_name: str 用户名
+                level: int 等级
+                exp: int 经验值
+                is_vip: bool 是否vip
             """
 
             try:
@@ -1562,6 +1654,17 @@ class Browser(object):
             """
             获取pn页的最新关注用户列表
             _get_pn_member(pn)
+
+            参数:
+                pn: int 页数
+
+            闭包参数:
+                tieba_name
+
+            返回值:
+                user_name: str 用户名
+                portrait: str
+                level: int 等级
             """
 
             try:
