@@ -52,8 +52,7 @@ class CloudReview(cr.CloudReview):
                     if user_id and len(_threads) >= 5 and not self.mysql.is_user_id_white(self.tieba_name, user_id):
                         tb.log.info(
                             f"Clear Water {user_id}")
-                        self.block(
-                            self.tieba_name, _threads[0].user, 1, reason=f"line:{sys._getframe().f_lineno}")
+                        #self.block(self.tieba_name, _threads[0].user, 1, reason=f"line:{sys._getframe().f_lineno}")
                         for thread in _threads:
                             self.del_thread(self.tieba_name,
                                             thread.tid, is_frs_mask=True)

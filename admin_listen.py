@@ -562,6 +562,6 @@ if __name__ == '__main__':
         try:
             listener.scan()
             tb.log.debug('heartbeat')
-            time.sleep(7.5)
+            time.sleep(5)
         except Exception as err:
             tb.log.error(f"Unhandled error:{traceback.format_exc()}")
