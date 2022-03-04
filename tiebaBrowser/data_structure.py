@@ -5,10 +5,34 @@ __all__ = ('BasicUserInfo', 'UserInfo',
            )
 
 import re
-import traceback
-from typing import Generic, Iterator, NoReturn, Optional, TypeVar, Union, final
+from typing import (Any, Callable, Generic, Iterator, NoReturn, Optional,
+                    TypeVar, Union, final)
 
 from .logger import log
+
+
+def _int_prop_check_ignore_none(default_val: int):
+    """
+    装饰器实现对int类型属性的赋值前检查。忽略传入None的异常
+
+    参数:
+        default_val: 传入None时采用的默认值
+    """
+
+    def wrapper(func) -> Callable[[Any, Any], NoReturn]:
+        def foo(self: Any, new_val: Any) -> NoReturn:
+            if new_val:
+                try:
+                    new_val = int(new_val)
+                except ValueError as err:
+                    log.warning(f"{err} happens in {func.__name__}")
+                    new_val = default_val
+            else:
+                new_val = default_val
+            return func(self, new_val)
+        return foo
+
+    return wrapper
 
 
 class BasicUserInfo(object):
@@ -26,9 +50,9 @@ class BasicUserInfo(object):
 
     __slots__ = ['user_name', '_nick_name', '_portrait', '_user_id']
 
-    def __init__(self, _id: Union[str, int, None] = None, user_name: str = '', nick_name: str = '', portrait: str = '', user_id: int = 0):
+    def __init__(self, _id: Union[str, int, None] = None, user_name: str = '', nick_name: str = '', portrait: str = '', user_id: int = 0) -> NoReturn:
         if _id:
-            if isinstance(_id, int):
+            if type(_id) == int:
                 self.user_id = _id
                 self.portrait = portrait
                 self.user_name = user_name
@@ -82,11 +106,9 @@ class BasicUserInfo(object):
         return self._user_id
 
     @user_id.setter
+    @_int_prop_check_ignore_none(0)
     def user_id(self, new_user_id: int) -> NoReturn:
-        if new_user_id:
-            self._user_id = int(new_user_id)
-        else:
-            self._user_id = 0
+        self._user_id = int(new_user_id)
 
     @property
     def show_name(self) -> str:
@@ -122,7 +144,7 @@ class UserInfo(BasicUserInfo):
     __slots__ = ['_level', '_gender',
                  'is_vip', 'is_god', '_priv_like', '_priv_reply']
 
-    def __init__(self, _id: Union[str, int, None] = None, user_name: str = '', nick_name: str = '', portrait: str = '', user_id: int = 0, level: int = 0, gender: int = 0, is_vip: bool = False, is_god: bool = False, priv_like: int = 3, priv_reply: int = 1):
+    def __init__(self, _id: Union[str, int, None] = None, user_name: str = '', nick_name: str = '', portrait: str = '', user_id: int = 0, level: int = 1, gender: int = 0, is_vip: bool = False, is_god: bool = False, priv_like: int = 3, priv_reply: int = 1) -> NoReturn:
         super().__init__(_id, user_name, nick_name, portrait, user_id)
         self.level = level
         self.gender = gender
@@ -136,47 +158,39 @@ class UserInfo(BasicUserInfo):
         return self._level
 
     @level.setter
+    @_int_prop_check_ignore_none(0)
     def level(self, new_level: int) -> NoReturn:
-        if new_level:
-            self._level = int(new_level)
-        else:
-            self._level = 0
+        self._level = new_level
 
     @property
     def gender(self) -> int:
         return self._gender
 
     @gender.setter
+    @_int_prop_check_ignore_none(0)
     def gender(self, new_gender: int) -> NoReturn:
-        if new_gender:
-            self._gender = int(new_gender)
-        else:
-            self._gender = 0
+        self._gender = new_gender
 
     @property
     def priv_like(self) -> int:
         return self._priv_like
 
     @priv_like.setter
+    @_int_prop_check_ignore_none(3)
     def priv_like(self, new_priv_like: int) -> NoReturn:
-        if new_priv_like:
-            self._priv_like = int(new_priv_like)
-        else:
-            self._priv_like = 3
+        self._priv_like = new_priv_like
 
     @property
     def priv_reply(self) -> int:
         return self._priv_reply
 
     @priv_reply.setter
+    @_int_prop_check_ignore_none(1)
     def priv_reply(self, new_priv_reply: int) -> NoReturn:
-        if new_priv_reply:
-            self._priv_reply = int(new_priv_reply)
-        else:
-            self._priv_reply = 1
+        self._priv_reply = new_priv_reply
 
 
-class BaseContent(object):
+class _Container(object):
     """
     基本的内容信息
 
@@ -189,7 +203,7 @@ class BaseContent(object):
 
     __slots__ = ['fid', 'tid', 'pid', 'user', '_text']
 
-    def __init__(self, fid: int = 0, tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), text: str = ''):
+    def __init__(self, fid: int = 0, tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), text: str = '') -> NoReturn:
         self.fid = fid
         self.tid = tid
         self.pid = pid
@@ -204,7 +218,7 @@ class BaseContent(object):
 T = TypeVar('T')
 
 
-class BaseContents(Generic[T]):
+class _Containers(Generic[T]):
     """
     Threads/Posts/Comments/Ats的泛型基类
     约定取内容的通用接口
@@ -244,7 +258,7 @@ class BaseContents(Generic[T]):
         return self.current_pn < self.total_pn
 
 
-class Thread(BaseContent):
+class Thread(_Container):
     """
     主题帖信息
 
@@ -270,7 +284,7 @@ class Thread(BaseContent):
     __slots__ = ['title', 'first_floor_text', 'imgs', 'emojis', 'has_audio', 'has_video',
                  'view_num', 'reply_num', 'like', 'dislike', 'create_time', 'last_time']
 
-    def __init__(self, fid: int = 0, tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), title: str = '', first_floor_text: str = '', imgs: list[str] = [], emojis: list[str] = [], has_audio: bool = False, has_video: bool = False, view_num: int = 0, reply_num: int = 0, like: int = 0, dislike: int = 0, create_time: int = 0, last_time: int = 0):
+    def __init__(self, fid: int = 0, tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), title: str = '', first_floor_text: str = '', imgs: list[str] = [], emojis: list[str] = [], has_audio: bool = False, has_video: bool = False, view_num: int = 0, reply_num: int = 0, like: int = 0, dislike: int = 0, create_time: int = 0, last_time: int = 0) -> NoReturn:
         super().__init__(fid=fid, tid=tid, pid=pid, user=user)
         self.title = title
         self.first_floor_text = first_floor_text
@@ -292,7 +306,7 @@ class Thread(BaseContent):
         return self._text
 
 
-class Threads(BaseContents[Thread]):
+class Threads(_Containers[Thread]):
     """
     Thread列表
 
@@ -303,12 +317,12 @@ class Threads(BaseContents[Thread]):
 
     __slots__ = []
 
-    def __init__(self, main_json: Optional[dict] = None):
+    def __init__(self, main_json: Optional[dict] = None) -> NoReturn:
 
         def _init_userinfo(user_dict: dict) -> UserInfo:
             try:
                 user_id = int(user_dict['id'])
-                if not user_id:
+                if 0 >= user_id:
                     return UserInfo()
                 priv_sets = user_dict['priv_sets']
                 if not priv_sets:
@@ -327,7 +341,7 @@ class Threads(BaseContents[Thread]):
 
             except Exception as err:
                 log.error(
-                    f"Failed to init UserInfo of {user_id} in {fid}. reason:{traceback.format_tb(err.__traceback__)[-1]}")
+                    f"Failed to init UserInfo of {user_id} in {fid}. reason:line {err.__traceback__.tb_lineno} {err}")
                 return UserInfo()
 
         def _init_obj(obj_dict: dict) -> Thread:
@@ -337,7 +351,7 @@ class Threads(BaseContents[Thread]):
                 emojis = []
                 for fragment in obj_dict['first_post_content']:
                     ftype = int(fragment['type'])
-                    if ftype in [0, 4, 9, 18]:
+                    if ftype in [0, 4, 9, 18]:  # 0纯文本 4手机号 9@ 18话题
                         texts.append(fragment['text'])
                     elif ftype == 1:
                         texts.append(
@@ -348,7 +362,7 @@ class Threads(BaseContents[Thread]):
                         imgs.append(fragment['origin_src'])
                 first_floor_text = ''.join(texts)
 
-                if isinstance(obj_dict['agree'], dict):
+                if type(obj_dict['agree']) == dict:
                     like = int(obj_dict['agree']['agree_num'])
                     dislike = int(obj_dict['agree']['disagree_num'])
                 else:
@@ -379,7 +393,7 @@ class Threads(BaseContents[Thread]):
 
             except Exception as err:
                 log.error(
-                    f"Failed to init Thread in {fid}. reason:{traceback.format_tb(err.__traceback__)[-1]}")
+                    f"Failed to init Thread in {fid}. reason:line {err.__traceback__.tb_lineno} {err}")
                 return Thread()
 
         if main_json:
@@ -388,8 +402,7 @@ class Threads(BaseContents[Thread]):
                 self.total_pn = int(main_json['page']['total_page'])
                 fid = int(main_json['forum']['id'])
             except Exception as err:
-                raise ValueError(
-                    f"Null value at line {err.__traceback__.tb_lineno}")
+                raise ValueError(f"line {err.__traceback__.tb_lineno} {err}")
 
             users = {int(user_dict['id']): _init_userinfo(user_dict)
                      for user_dict in main_json['user_list']}
@@ -402,7 +415,7 @@ class Threads(BaseContents[Thread]):
             self.total_pn = 0
 
 
-class Post(BaseContent):
+class Post(_Container):
     """
     楼层信息
 
@@ -427,7 +440,7 @@ class Post(BaseContent):
     __slots__ = ['content', 'sign', 'imgs', 'emojis', 'has_audio', 'floor',
                  'reply_num', 'like', 'dislike', 'create_time', 'is_thread_owner']
 
-    def __init__(self, fid: int = 0, tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), content: str = '', sign: str = '', imgs: list[str] = [], emojis: list[str] = [], has_audio: bool = False, floor: int = 0, reply_num: int = 0, like: int = 0, dislike: int = 0, create_time: int = 0, is_thread_owner: bool = False):
+    def __init__(self, fid: int = 0, tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), content: str = '', sign: str = '', imgs: list[str] = [], emojis: list[str] = [], has_audio: bool = False, floor: int = 0, reply_num: int = 0, like: int = 0, dislike: int = 0, create_time: int = 0, is_thread_owner: bool = False) -> NoReturn:
         super().__init__(fid=fid, tid=tid, pid=pid, user=user)
         self.content = content
         self.sign = sign
@@ -448,7 +461,7 @@ class Post(BaseContent):
         return self._text
 
 
-class Posts(BaseContents[Post]):
+class Posts(_Containers[Post]):
     """
     Post列表
 
@@ -459,12 +472,12 @@ class Posts(BaseContents[Post]):
 
     __slots__ = []
 
-    def __init__(self, main_json: Optional[dict] = None):
+    def __init__(self, main_json: Optional[dict] = None) -> NoReturn:
 
         def _init_userinfo(user_dict: dict) -> UserInfo:
             try:
                 user_id = int(user_dict['id'])
-                if not user_id:
+                if 0 >= user_id:
                     return UserInfo()
                 priv_sets = user_dict['priv_sets']
                 if not priv_sets:
@@ -484,7 +497,7 @@ class Posts(BaseContents[Post]):
 
             except Exception as err:
                 log.error(
-                    f"Failed to init UserInfo of {user_id} in {tid}. reason:{traceback.format_tb(err.__traceback__)[-1]}")
+                    f"Failed to init UserInfo of {user_id} in {tid}. reason:line {err.__traceback__.tb_lineno} {err}")
                 return UserInfo()
 
         def _init_obj(obj_dict: dict) -> Post:
@@ -495,7 +508,7 @@ class Posts(BaseContents[Post]):
                 has_audio = False
                 for fragment in obj_dict['content']:
                     ftype = int(fragment.get('type', 0))
-                    if ftype in [0, 4, 9, 18]:
+                    if ftype in [0, 4, 9, 18]:  # 0纯文本 4手机号 9@ 18话题
                         texts.append(fragment['text'])
                     elif ftype == 1:
                         texts.append(
@@ -531,7 +544,7 @@ class Posts(BaseContents[Post]):
 
             except Exception as err:
                 log.error(
-                    f"Failed to init Post in {tid}. reason:{traceback.format_tb(err.__traceback__)[-1]}")
+                    f"Failed to init Post in {tid}. reason:line {err.__traceback__.tb_lineno} {err}")
                 return Post()
 
         if main_json:
@@ -542,8 +555,7 @@ class Posts(BaseContents[Post]):
                 fid = int(main_json['forum']['id'])
                 tid = int(main_json['thread']['id'])
             except Exception as err:
-                raise ValueError(
-                    f"Null value at line {err.__traceback__.tb_lineno}")
+                raise ValueError(f"line {err.__traceback__.tb_lineno}: {err}")
 
             users = {int(user_dict['id']): _init_userinfo(user_dict)
                      for user_dict in main_json['user_list']}
@@ -556,7 +568,7 @@ class Posts(BaseContents[Post]):
             self.total_pn = 0
 
 
-class Comment(BaseContent):
+class Comment(_Container):
     """
     楼中楼信息
 
@@ -574,7 +586,7 @@ class Comment(BaseContent):
 
     __slots__ = ['emojis', 'has_audio', 'like', 'dislike', 'create_time']
 
-    def __init__(self, fid: int = 0, tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), text: str = '', emojis: list[str] = [], has_audio: bool = False, like: int = 0, dislike: int = 0, create_time: int = 0):
+    def __init__(self, fid: int = 0, tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), text: str = '', emojis: list[str] = [], has_audio: bool = False, like: int = 0, dislike: int = 0, create_time: int = 0) -> NoReturn:
         super().__init__(fid=fid, tid=tid, pid=pid, user=user, text=text)
         self.emojis = emojis
         self.has_audio = has_audio
@@ -583,7 +595,7 @@ class Comment(BaseContent):
         self.create_time = create_time
 
 
-class Comments(BaseContents[Comment]):
+class Comments(_Containers[Comment]):
     """
     Comment列表
 
@@ -594,7 +606,7 @@ class Comments(BaseContents[Comment]):
 
     __slots__ = []
 
-    def __init__(self, main_json: Optional[dict] = None):
+    def __init__(self, main_json: Optional[dict] = None) -> NoReturn:
 
         def _init_obj(obj_dict: dict) -> Comment:
             try:
@@ -603,7 +615,7 @@ class Comments(BaseContents[Comment]):
                 has_audio = False
                 for fragment in obj_dict['content']:
                     ftype = int(fragment['type'])
-                    if ftype in [0, 4, 9]:
+                    if ftype in [0, 4, 9, 18]:  # 0纯文本 4手机号 9@ 18话题
                         texts.append(fragment['text'])
                     elif ftype == 1:
                         texts.append(
@@ -646,7 +658,7 @@ class Comments(BaseContents[Comment]):
 
             except Exception as err:
                 log.error(
-                    f"Failed to init Comment in {tid}. reason:{traceback.format_tb(err.__traceback__)[-1]}")
+                    f"Failed to init Comment in {tid}. reason:line {err.__traceback__.tb_lineno} {err}")
                 return Comment()
 
         if main_json:
@@ -656,8 +668,7 @@ class Comments(BaseContents[Comment]):
                 fid = int(main_json['forum']['id'])
                 tid = int(main_json['thread']['id'])
             except Exception as err:
-                raise ValueError(
-                    f"Null value at line {err.__traceback__.tb_lineno}")
+                raise ValueError(f"line {err.__traceback__.tb_lineno}: {err}")
 
             self._objs = [_init_obj(obj_dict)
                           for obj_dict in main_json['subpost_list']]
@@ -686,7 +697,7 @@ class At(object):
 
     __slots__ = ['tieba_name', 'tid', 'pid', 'user', 'text', 'create_time']
 
-    def __init__(self, tieba_name: str = '', tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), text: str = '', create_time: int = 0):
+    def __init__(self, tieba_name: str = '', tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), text: str = '', create_time: int = 0) -> NoReturn:
         self.tieba_name = tieba_name
         self.tid = tid
         self.pid = pid
@@ -695,7 +706,7 @@ class At(object):
         self.create_time = create_time
 
 
-class Ats(BaseContents[At]):
+class Ats(_Containers[At]):
     """
     At列表
 
@@ -703,7 +714,7 @@ class Ats(BaseContents[At]):
     has_next: 是否有下一页
     """
 
-    def __init__(self, main_json: Optional[dict] = None):
+    def __init__(self, main_json: Optional[dict] = None) -> NoReturn:
 
         def _init_obj(obj_dict: dict) -> At:
             try:
@@ -730,7 +741,7 @@ class Ats(BaseContents[At]):
 
             except Exception as err:
                 log.error(
-                    f"Failed to init At. reason:{traceback.format_tb(err.__traceback__)[-1]}")
+                    f"Failed to init At. reason:line {err.__traceback__.tb_lineno} {err}")
                 return At()
 
         if main_json:
@@ -741,8 +752,7 @@ class Ats(BaseContents[At]):
                 else:
                     self.total_pn = self.current_pn
             except Exception as err:
-                raise ValueError(
-                    f"Null value at line {err.__traceback__.tb_lineno}")
+                raise ValueError(f"line {err.__traceback__.tb_lineno}: {err}")
 
             self._objs = [_init_obj(obj_dict)
                           for obj_dict in main_json['at_list']]

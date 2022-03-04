@@ -33,7 +33,7 @@ class Sessions(object):
 
     __slots__ = ['app', 'web', 'BDUSS', 'STOKEN']
 
-    def __init__(self, BDUSS_key: Optional[str] = None):
+    def __init__(self, BDUSS_key: Optional[str] = None) -> NoReturn:
 
         self.app = req.Session()
         self.web = req.Session()
@@ -101,7 +101,7 @@ class Browser(object):
 
     __slots__ = ['fid_dict', 'sessions', '_tbs', '_tbs_renew_time']
 
-    def __init__(self, BDUSS_key: Optional[str]):
+    def __init__(self, BDUSS_key: Optional[str]) -> NoReturn:
         self.fid_dict = {}
         self.sessions = Sessions(BDUSS_key)
         self._tbs = ''
@@ -1337,7 +1337,7 @@ class Browser(object):
                             priv_reply=user_dict['priv_sets']['reply'])
         except Exception as err:
             log.error(
-                f"Failed to init UserInfo. reason:{traceback.format_tb(err.__traceback__)[-1]}")
+                f"Failed to init UserInfo. reason:line {err.__traceback__.tb_lineno} {err}")
             user = UserInfo()
 
         threads = []
@@ -1368,7 +1368,7 @@ class Browser(object):
                                 )
             except Exception as err:
                 log.error(
-                    f"Failed to init Thread. reason:{traceback.format_tb(err.__traceback__)[-1]}")
+                    f"Failed to init Thread. reason:line {err.__traceback__.tb_lineno} {err}")
                 thread = Thread()
 
             threads.append(thread)

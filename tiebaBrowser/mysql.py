@@ -43,7 +43,7 @@ class MySQL(object):
         try:
             self.mydb = pymysql.connect(**mysql_json, database=db_name)
             self.mycursor = self.mydb.cursor()
-        except pymysql.MySQLError:
+        except pymysql.Error:
             log.warning(f"Cannot link to the database {db_name}!")
             self.init_database(mysql_json)
 
@@ -69,8 +69,8 @@ class MySQL(object):
         """
 
         try:
-            self.mydb.ping()
-        except pymysql.MySQLError:
+            self.mydb.ping(reconnect=True)
+        except pymysql.Error:
             return False
         else:
             return True
@@ -103,7 +103,7 @@ class MySQL(object):
         try:
             self.mycursor.execute(
                 f"INSERT IGNORE INTO pid_whitelist_{tieba_name_eng} VALUES ({pid},DEFAULT)")
-        except pymysql.DatabaseError:
+        except pymysql.Error:
             log.error(f"MySQL Error: Failed to insert {pid}!")
             return False
         else:
@@ -120,7 +120,7 @@ class MySQL(object):
         try:
             self.mycursor.execute(
                 f"SELECT NULL FROM pid_whitelist_{tieba_name_eng} WHERE pid={pid}")
-        except pymysql.DatabaseError:
+        except pymysql.Error:
             log.error(f"MySQL Error: Failed to select {pid}!")
             return False
         else:
@@ -136,7 +136,7 @@ class MySQL(object):
         try:
             self.mycursor.execute(
                 f"DELETE FROM pid_whitelist_{tieba_name_eng} WHERE pid={pid}")
-        except pymysql.DatabaseError:
+        except pymysql.Error:
             log.error(f"MySQL Error: Failed to delete {pid}!")
             return False
         else:
@@ -155,7 +155,7 @@ class MySQL(object):
         try:
             self.mycursor.execute(
                 f"DELETE FROM pid_whitelist_{tieba_name_eng} WHERE record_time>(CURRENT_TIMESTAMP() + INTERVAL -{hour} HOUR)")
-        except pymysql.DatabaseError:
+        except pymysql.Error:
             log.error(
                 f"MySQL Error: Failed to delete pid in pid_whitelist_{tieba_name_eng}")
             return False
@@ -192,7 +192,7 @@ class MySQL(object):
         try:
             self.mycursor.execute(
                 f"INSERT IGNORE INTO tid_tmphide_{tieba_name_eng} VALUES ({tid})")
-        except pymysql.DatabaseError:
+        except pymysql.Error:
             log.error(f"MySQL Error: Failed to insert {tid}!")
             return False
         else:
@@ -214,7 +214,7 @@ class MySQL(object):
         try:
             self.mycursor.execute(
                 f"SELECT NULL FROM tid_tmphide_{tieba_name_eng} WHERE tid={tid}")
-        except pymysql.DatabaseError:
+        except pymysql.Error:
             log.error(f"MySQL Error: Failed to select {tid}!")
             return None
         else:
@@ -230,7 +230,7 @@ class MySQL(object):
         try:
             self.mycursor.execute(
                 f"DELETE FROM tid_tmphide_{tieba_name_eng} WHERE tid={tid}")
-        except pymysql.DatabaseError:
+        except pymysql.Error:
             log.error(f"MySQL Error: Failed to delete {tid}!")
             return False
         else:
@@ -256,7 +256,7 @@ class MySQL(object):
             try:
                 self.mycursor.execute(
                     f"SELECT tid FROM tid_tmphide_{tieba_name_eng} LIMIT {batch_size} OFFSET {i * batch_size}")
-            except pymysql.DatabaseError:
+            except pymysql.Error:
                 log.error(
                     f"MySQL Error: Failed to get tids in {tieba_name_eng}!")
                 return
@@ -292,7 +292,7 @@ class MySQL(object):
         try:
             self.mycursor.execute(
                 f"REPLACE INTO user_id_{tieba_name_eng} VALUES ({user_id},{mode},DEFAULT)")
-        except pymysql.DatabaseError:
+        except pymysql.Error:
             log.error(f"MySQL Error: Failed to insert {user_id}!")
             return False
         else:
@@ -311,7 +311,7 @@ class MySQL(object):
         try:
             self.mycursor.execute(
                 f"DELETE FROM user_id_{tieba_name_eng} WHERE user_id={user_id}")
-        except pymysql.DatabaseError:
+        except pymysql.Error:
             log.error(f"MySQL Error: Failed to delete {user_id}!")
             return False
         else:
@@ -333,7 +333,7 @@ class MySQL(object):
         try:
             self.mycursor.execute(
                 f"SELECT is_white FROM user_id_{tieba_name_eng} WHERE user_id={user_id}")
-        except pymysql.DatabaseError:
+        except pymysql.Error:
             return None
         else:
             res_tuple = self.mycursor.fetchone()
@@ -359,7 +359,7 @@ class MySQL(object):
             try:
                 self.mycursor.execute(
                     f"SELECT user_id FROM user_id_{tieba_name_eng} LIMIT {batch_size} OFFSET {i * batch_size}")
-            except pymysql.DatabaseError:
+            except pymysql.Error:
                 log.error(
                     f"MySQL Error: Failed to get user_ids in {tieba_name_eng}!")
                 return
@@ -393,7 +393,7 @@ class MySQL(object):
         try:
             self.mycursor.execute(
                 f"REPLACE INTO img_blacklist_{tieba_name_eng} VALUES ('{img_hash}','{raw_hash}')")
-        except pymysql.DatabaseError:
+        except pymysql.Error:
             log.error(f"MySQL Error: Failed to insert {img_hash}!")
             return False
         else:
@@ -412,7 +412,7 @@ class MySQL(object):
         try:
             self.mycursor.execute(
                 f"SELECT NULL FROM img_blacklist_{tieba_name_eng} WHERE img_hash='{img_hash}'")
-        except pymysql.DatabaseError:
+        except pymysql.Error:
             log.error(f"MySQL Error: Failed to select {img_hash}!")
             return False
         else:
@@ -428,7 +428,7 @@ class MySQL(object):
         try:
             self.mycursor.execute(
                 f"DELETE FROM img_blacklist_{tieba_name_eng} WHERE img_hash='{img_hash}'")
-        except pymysql.DatabaseError:
+        except pymysql.Error:
             log.error(f"MySQL Error: Failed to delete {img_hash}!")
             return False
         else:

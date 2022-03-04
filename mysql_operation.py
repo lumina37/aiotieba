@@ -1,13 +1,8 @@
 # -*- coding:utf-8 -*-
 import argparse
-import os
-import sys
 
 import tiebaBrowser as tb
 import tiebaBrowser.cloud_review as cr
-
-
-PATH = os.path.split(os.path.realpath(sys.argv[0]))[0]
 
 
 if __name__ == '__main__':
