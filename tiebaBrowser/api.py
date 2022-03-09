@@ -99,9 +99,11 @@ class Browser(object):
         BDUSS_key: str 用于获取BDUSS
     """
 
-    __slots__ = ['fid_dict', 'sessions', '_tbs', '_tbs_renew_time']
+    __slots__ = ['BDUSS_key', 'fid_dict',
+                 'sessions', '_tbs', '_tbs_renew_time']
 
     def __init__(self, BDUSS_key: Optional[str]) -> NoReturn:
+        self.BDUSS_key = BDUSS_key
         self.fid_dict = {}
         self.sessions = Sessions(BDUSS_key)
         self._tbs = ''
@@ -188,6 +190,9 @@ class Browser(object):
                                             'fname': tieba_name, 'ie': 'utf-8'}, timeout=(3, 10))
                 res.raise_for_status()
 
+                if not res.text.startswith('{'):
+                    raise ValueError("incorrect json format")
+
                 main_json = res.json()
                 if int(main_json['no']):
                     raise ValueError(main_json['error'])
@@ -195,11 +200,10 @@ class Browser(object):
                 fid = int(main_json['data']['fid'])
 
             except Exception as err:
-                error_msg = f"Failed to get fid of {tieba_name} reason:{err}"
-                log.critical(error_msg)
-                raise ValueError(error_msg)
-
-            self.fid_dict[tieba_name] = fid
+                log.error(f"Failed to get fid of {tieba_name} reason:{err}")
+                fid = 0
+            else:
+                self.fid_dict[tieba_name] = fid
 
         return fid
 

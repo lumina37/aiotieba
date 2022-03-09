@@ -59,6 +59,8 @@ class CloudReview(cr.CloudReview):
                 tb.log.debug('heartbeat')
                 if self.sleep_time:
                     time.sleep(self.sleep_time)
+            except KeyboardInterrupt:
+                break
             except Exception:
                 tb.log.error(
                     f"Unexcepted error:{traceback.format_exc()}")
@@ -160,7 +162,7 @@ class CloudReview(cr.CloudReview):
             self.block(self.tieba_name, obj.user, day=10,
                        reason=f"line:{sys._getframe().f_lineno}")
             return 1
-        if re.search("((?<![a-z])v|瞳|梓|罐|豆|鸟|鲨)(÷|/|／|➗|畜|处|除|初|醋)|椰子汁|🥥|东雪莲|莲宝", text, re.I) is not None:
+        if re.search("((?<![a-z])v|瞳|梓|罐|豆|鸟|鲨)(÷|/|／|➗|畜|处|除|初|醋)|椰子汁|🥥|东雪莲|莲宝|然姨", text, re.I) is not None:
             return 1
 
         level = obj.user.level

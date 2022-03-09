@@ -5,8 +5,8 @@ __all__ = ('BasicUserInfo', 'UserInfo',
            )
 
 import re
-from typing import (Any, Callable, Generic, Iterator, NoReturn, Optional,
-                    TypeVar, Union, final)
+from typing import (Any, Callable, Generic, Iterator, Literal, NoReturn,
+                    Optional, TypeVar, Union, final)
 
 from .logger import log
 
@@ -168,7 +168,7 @@ class UserInfo(BasicUserInfo):
 
     @gender.setter
     @_int_prop_check_ignore_none(0)
-    def gender(self, new_gender: int) -> NoReturn:
+    def gender(self, new_gender: Literal[0, 1, 2]) -> NoReturn:
         self._gender = new_gender
 
     @property
@@ -177,7 +177,7 @@ class UserInfo(BasicUserInfo):
 
     @priv_like.setter
     @_int_prop_check_ignore_none(3)
-    def priv_like(self, new_priv_like: int) -> NoReturn:
+    def priv_like(self, new_priv_like: Literal[1, 2, 3]) -> NoReturn:
         self._priv_like = new_priv_like
 
     @property
@@ -186,7 +186,7 @@ class UserInfo(BasicUserInfo):
 
     @priv_reply.setter
     @_int_prop_check_ignore_none(1)
-    def priv_reply(self, new_priv_reply: int) -> NoReturn:
+    def priv_reply(self, new_priv_reply: Literal[1, 5, 6]) -> NoReturn:
         self._priv_reply = new_priv_reply
 
 

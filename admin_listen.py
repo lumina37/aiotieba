@@ -4,6 +4,7 @@ import json
 import re
 import time
 import traceback
+from collections import OrderedDict
 
 import tiebaBrowser as tb
 import tiebaBrowser.cloud_review as cr
@@ -16,18 +17,22 @@ def exit_hanle():
     listener.close()
 
 
-class TimeRange(object):
+class Timer(object):
     """
-    时间范围记录
-    TimeRange(shiftpair)
+    时间记录
+    Timer(shiftpair)
 
     参数:
-        shiftpair: tuple (下界偏移,上界偏移) 用于指示时间范围
+        shiftpair: tuple (下界偏移,上界偏移) 用于根据当前时间计算容许范围
     """
 
-    __slots__ = ['shiftpair', 'lower', 'upper']
+    __slots__ = ['shiftpair', 'lower', 'upper',
+                 'last_execute_time', 'execute_interval']
 
-    def __init__(self, shiftpair):
+    def __init__(self, shiftpair, execute_interval):
+        self.last_execute_time = 0
+        self.execute_interval = execute_interval
+
         if shiftpair[0] >= shiftpair[1]:
             raise ValueError("Invalid shiftpair")
 
@@ -46,38 +51,61 @@ class TimeRange(object):
     def is_inrange(self, check_time):
         return self.lower < check_time <= self.upper
 
+    def allow_execute(self):
+        current_time = time.time()
+        if current_time-self.last_execute_time > self.execute_interval:
+            self.last_execute_time = current_time
+            return True
+        else:
+            return False
+
 
 class Listener(object):
 
     def __init__(self):
 
-        config_path = SCRIPT_DIR.parent.joinpath('config/listen_config.json')
-        with config_path.open('r', encoding='utf-8') as file:
-            config = json.load(file)
-        self.listener = tb.Browser(config['listener'])
-        self.tieba = config['tieba_list']
+        self.config_path = SCRIPT_DIR.parent.joinpath(
+            'config/listen_config.json')
+        with self.config_path.open('r', encoding='utf-8') as _file:
+            self.config = json.load(_file)
+
+        self.listener = tb.Browser(self.config['listener'])
+        self.speaker = tb.Browser(self.config['speaker'])
+        self.tieba = self.config['tieba_list']
 
         for tieba_name, tieba_dict in self.tieba.items():
             admin_key = tieba_dict['admin']
-            self.tieba[tieba_name]['admin'] = cr.CloudReview(
+            tieba_dict['admin'] = cr.CloudReview(
                 admin_key, tieba_name)
+            tieba_dict['access_user'] = OrderedDict.fromkeys(
+                tieba_dict['access_user'])
 
         self.func_map = {func_name[4:]: getattr(self, func_name) for func_name in dir(
             self) if func_name.startswith("cmd")}
-        self.time_range = TimeRange((-30, 0))
+        self.timer = Timer((-30, 0), 120)
 
     def close(self):
         self.listener.close()
         for tieba_dict in self.tieba.values():
             tieba_dict['admin'].close()
 
+        for tieba_dict in self.tieba.values():
+            tieba_dict['admin'] = tieba_dict['admin'].BDUSS_key
+            tieba_dict['access_user'] = list(
+                tieba_dict['access_user'].keys())
+
+        with self.config_path.open('w', encoding='utf-8') as _file:
+            json.dump(self.config, _file, sort_keys=False,
+                      indent=4, separators=(',', ':'), ensure_ascii=False)
+
     def scan(self):
-        self.time_range.set()
+        self.timer.set()
         ats = self.listener.get_ats()
 
         if ats:
             for end_index, at in enumerate(ats):
-                if not self.time_range.is_inrange(at.create_time):
+                if not self.timer.is_inrange(at.create_time):
+                    self.timer.lower = at.create_time
                     ats = ats[:end_index]
                     break
 
@@ -121,7 +149,7 @@ class Listener(object):
         tieba_dict = self.tieba.get(at.tieba_name, None)
         if not tieba_dict:
             return
-        if at.user.user_name not in tieba_dict['access_user']:
+        if not tieba_dict['access_user'].__contains__(at.user.user_name):
             return
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
@@ -138,7 +166,7 @@ class Listener(object):
         tieba_dict = self.tieba.get(at.tieba_name, None)
         if not tieba_dict:
             return
-        if at.user.user_name not in tieba_dict['access_user']:
+        if not tieba_dict['access_user'].__contains__(at.user.user_name):
             return
         if not cname:
             cname = ''
@@ -157,7 +185,7 @@ class Listener(object):
         tieba_dict = self.tieba.get(at.tieba_name, None)
         if not tieba_dict:
             return
-        if at.user.user_name not in tieba_dict['access_user']:
+        if not tieba_dict['access_user'].__contains__(at.user.user_name):
             return
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
@@ -174,7 +202,7 @@ class Listener(object):
         tieba_dict = self.tieba.get(at.tieba_name, None)
         if not tieba_dict:
             return
-        if at.user.user_name not in tieba_dict['access_user']:
+        if not tieba_dict['access_user'].__contains__(at.user.user_name):
             return
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
@@ -191,7 +219,7 @@ class Listener(object):
         tieba_dict = self.tieba.get(at.tieba_name, None)
         if not tieba_dict:
             return
-        if at.user.user_name not in tieba_dict['access_user']:
+        if not tieba_dict['access_user'].__contains__(at.user.user_name):
             return
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
@@ -208,7 +236,7 @@ class Listener(object):
         tieba_dict = self.tieba.get(at.tieba_name, None)
         if not tieba_dict:
             return
-        if at.user.user_name not in tieba_dict['access_user']:
+        if not tieba_dict['access_user'].__contains__(at.user.user_name):
             return
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
@@ -225,7 +253,7 @@ class Listener(object):
         tieba_dict = self.tieba.get(at.tieba_name, None)
         if not tieba_dict:
             return
-        if at.user.user_name not in tieba_dict['access_user']:
+        if not tieba_dict['access_user'].__contains__(at.user.user_name):
             return
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
@@ -242,7 +270,7 @@ class Listener(object):
         tieba_dict = self.tieba.get(at.tieba_name, None)
         if not tieba_dict:
             return
-        if at.user.user_name not in tieba_dict['access_user']:
+        if not tieba_dict['access_user'].__contains__(at.user.user_name):
             return
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
@@ -267,7 +295,7 @@ class Listener(object):
         tieba_dict = self.tieba.get(at.tieba_name, None)
         if not tieba_dict:
             return
-        if at.user.user_name not in tieba_dict['access_user']:
+        if not tieba_dict['access_user'].__contains__(at.user.user_name):
             return
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
@@ -296,7 +324,7 @@ class Listener(object):
         tieba_dict = self.tieba.get(at.tieba_name, None)
         if not tieba_dict:
             return
-        if at.user.user_name not in tieba_dict['access_user']:
+        if not tieba_dict['access_user'].__contains__(at.user.user_name):
             return
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
@@ -320,7 +348,7 @@ class Listener(object):
         tieba_dict = self.tieba.get(at.tieba_name, None)
         if not tieba_dict:
             return
-        if at.user.user_name not in tieba_dict['access_user']:
+        if not tieba_dict['access_user'].__contains__(at.user.user_name):
             return
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
@@ -342,7 +370,7 @@ class Listener(object):
         tieba_dict = self.tieba.get(at.tieba_name, None)
         if not tieba_dict:
             return
-        if at.user.user_name not in tieba_dict['access_user']:
+        if not tieba_dict['access_user'].__contains__(at.user.user_name):
             return
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
@@ -367,7 +395,7 @@ class Listener(object):
         tieba_dict = self.tieba.get(at.tieba_name, None)
         if not tieba_dict:
             return
-        if at.user.user_name not in tieba_dict['access_user']:
+        if not tieba_dict['access_user'].__contains__(at.user.user_name):
             return
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
@@ -388,7 +416,7 @@ class Listener(object):
         tieba_dict = self.tieba.get(at.tieba_name, None)
         if not tieba_dict:
             return
-        if at.user.user_name not in tieba_dict['access_user']:
+        if not tieba_dict['access_user'].__contains__(at.user.user_name):
             return
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
@@ -409,7 +437,7 @@ class Listener(object):
         tieba_dict = self.tieba.get(at.tieba_name, None)
         if not tieba_dict:
             return
-        if at.user.user_name not in tieba_dict['access_user']:
+        if not tieba_dict['access_user'].__contains__(at.user.user_name):
             return
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
@@ -430,7 +458,7 @@ class Listener(object):
         tieba_dict = self.tieba.get(at.tieba_name, None)
         if not tieba_dict:
             return
-        if at.user.user_name not in tieba_dict['access_user']:
+        if not tieba_dict['access_user'].__contains__(at.user.user_name):
             return
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
@@ -451,7 +479,7 @@ class Listener(object):
         tieba_dict = self.tieba.get(at.tieba_name, None)
         if not tieba_dict:
             return
-        if at.user.user_name not in tieba_dict['access_user']:
+        if not tieba_dict['access_user'].__contains__(at.user.user_name):
             return
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
@@ -472,7 +500,7 @@ class Listener(object):
         tieba_dict = self.tieba.get(at.tieba_name, None)
         if not tieba_dict:
             return
-        if at.user.user_name not in tieba_dict['access_user']:
+        if not tieba_dict['access_user'].__contains__(at.user.user_name):
             return
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
@@ -495,7 +523,7 @@ class Listener(object):
         tieba_dict = self.tieba.get(at.tieba_name, None)
         if not tieba_dict:
             return
-        if at.user.user_name not in tieba_dict['access_user']:
+        if not tieba_dict['access_user'].__contains__(at.user.user_name):
             return
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
@@ -518,7 +546,7 @@ class Listener(object):
         tieba_dict = self.tieba.get(at.tieba_name, None)
         if not tieba_dict:
             return
-        if at.user.user_name not in tieba_dict['access_user']:
+        if not tieba_dict['access_user'].__contains__(at.user.user_name):
             return
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
@@ -530,6 +558,44 @@ class Listener(object):
         if tieba_dict['admin'].del_user_id(id):
             tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
+    def cmd_holyshit(self, at, extra_info):
+        """
+        holyshit指令
+        召唤五名活跃吧务，使用参数extra_info来附带额外的召唤需求
+        """
+
+        tieba_dict = self.tieba.get(at.tieba_name, None)
+        if not tieba_dict:
+            return
+        if not self.timer.allow_execute():
+            return
+
+        active_admin_list = list(tieba_dict['access_user'].keys())[:5]
+        content = f'{extra_info}@'+' @'.join(active_admin_list)
+
+        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+
+        if self.speaker.add_post(at.tieba_name, at.tid, content):
+            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+
+    def cmd_register(self, at, arg):
+        """
+        register指令
+        将发起指令的吧务移动到活跃吧务队列的最前端，以响应holyshit指令
+        """
+
+        tieba_dict = self.tieba.get(at.tieba_name, None)
+        if not tieba_dict:
+            return
+        if not tieba_dict['access_user'].__contains__(at.user.user_name):
+            return
+
+        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+
+        tieba_dict['access_user'].move_to_end(at.user.user_name, last=False)
+
+        tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+
     def cmd_ping(self, at, arg):
         """
         ping指令
@@ -539,7 +605,7 @@ class Listener(object):
         tieba_dict = self.tieba.get(at.tieba_name, None)
         if not tieba_dict:
             return
-        if at.user.user_name not in tieba_dict['access_user']:
+        if not tieba_dict['access_user'].__contains__(at.user.user_name):
             return
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
@@ -563,5 +629,7 @@ if __name__ == '__main__':
             listener.scan()
             tb.log.debug('heartbeat')
             time.sleep(5)
+        except KeyboardInterrupt:
+            break
         except Exception as err:
             tb.log.error(f"Unhandled error:{traceback.format_exc()}")
