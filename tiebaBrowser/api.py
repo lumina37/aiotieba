@@ -443,6 +443,9 @@ class Browser(object):
                 "http://c.tieba.baidu.com/c/f/pb/floor", data=payload, timeout=(3, 10))
             res.raise_for_status()
 
+            if not res.text.startswith('{'):
+                raise ValueError("incorrect json format")
+
             main_json = res.json()
             if int(main_json['error_code']):
                 raise ValueError(main_json['error_msg'])
