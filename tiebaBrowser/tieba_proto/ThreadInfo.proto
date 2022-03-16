@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+import "PbContent.proto";
+import "Agree.proto";
+
+message ThreadInfo {
+    int64 tid = 2;
+    string title = 3;
+    int32 reply_num = 4;
+    int32 view_num = 5;
+    int32 last_time_int = 7;
+    int64 fid = 27;
+    int64 first_post_id = 40;
+    int32 create_time = 45;
+    int64 author_id = 56;
+    Agree agree = 126;
+    repeated PbContent first_post_content = 142;
+}

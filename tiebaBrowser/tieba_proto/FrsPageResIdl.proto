@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+import "ForumInfo.proto";
+import "Page.proto";
+import "ThreadInfo.proto";
+import "User.proto";
+import "Error.proto";
+
+message FrsPageResIdl {
+    message DataRes {
+        ForumInfo forum = 2;
+        Page page = 4;
+        repeated ThreadInfo thread_list = 7;
+        repeated User user_list = 17;
+    }
+    Error error = 1;
+    DataRes data = 2;
+}

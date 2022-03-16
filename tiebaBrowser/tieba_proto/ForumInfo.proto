@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+message ForumInfo {
+    int64 id = 1;
+    string name = 2;
+    int32 member_num = 9;
+    int32 thread_num = 10;
+    int32 post_num = 12;
+}

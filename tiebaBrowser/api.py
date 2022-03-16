@@ -5,7 +5,6 @@ import hashlib
 import re
 import sys
 import time
-import traceback
 from io import BytesIO
 from typing import NoReturn, Optional, Tuple
 
@@ -15,6 +14,7 @@ import requests as req
 from bs4 import BeautifulSoup
 from PIL import Image
 
+from .tieba_proto import CommonReq_pb2, GetUserInfoReqIdl_pb2, GetUserInfoResIdl_pb2, FrsPageReqIdl_pb2, FrsPageResIdl_pb2
 from .config import config
 from .data_structure import *
 from .logger import log
@@ -31,21 +31,29 @@ class Sessions(object):
         BDUSS_key: str 用于获取BDUSS
     """
 
-    __slots__ = ['app', 'web', 'BDUSS', 'STOKEN']
+    __slots__ = ['app','app_proto', 'web', 'BDUSS', 'STOKEN']
 
     def __init__(self, BDUSS_key: Optional[str] = None) -> NoReturn:
 
         self.app = req.Session()
+        self.app_proto = req.Session()
         self.web = req.Session()
 
         if BDUSS_key:
             self.renew_BDUSS(BDUSS_key)
 
-        self.app.headers = req.structures.CaseInsensitiveDict({'Content-Type': 'application/x-www-form-urlencoded',
-                                                               'User-Agent': 'bdtb for Android 12.20.0.3',
+        self.app.headers = req.structures.CaseInsensitiveDict({'User-Agent': 'bdtb for Android 9.1.0.0',
+                                                               'Charset': 'UTF-8',
                                                                'Connection': 'Keep-Alive',
                                                                'Accept-Encoding': 'gzip',
-                                                               'Accept': '*/*',
+                                                               'Host': 'c.tieba.baidu.com',
+                                                               'Connection': 'keep-alive'
+                                                               })
+        self.app_proto.headers = req.structures.CaseInsensitiveDict({'User-Agent': 'bdtb for Android 9.1.0.0',
+                                                               'x_bd_data_type': 'protobuf',
+                                                               'Charset': 'UTF-8',
+                                                               'Connection': 'Keep-Alive',
+                                                               'Accept-Encoding': 'gzip',
                                                                'Host': 'c.tieba.baidu.com',
                                                                'Connection': 'keep-alive'
                                                                })
@@ -59,9 +67,8 @@ class Sessions(object):
                                                                'Upgrade-Insecure-Requests': '1'
                                                                })
 
-        self.app.trust_env = False
-        self.web.trust_env = False
         self.app.verify = False
+        self.app_proto.verify = False
         self.web.verify = False
 
     def close(self) -> None:
@@ -137,13 +144,14 @@ class Browser(object):
             sign: str 贴吧客户端签名值sign
         """
 
-        raw_list = [f"{key}={value}" for key, value in payload.items()]
+        raw_list = [f"{key}={value}" for key,
+                    value in payload.items() if key != 'sign']
         raw_list.append("tiebaclient!!!")
         raw_str = "".join(raw_list)
 
         md5 = hashlib.md5()
         md5.update(raw_str.encode('utf-8'))
-        sign = md5.hexdigest()
+        sign = md5.hexdigest().upper()
 
         return sign
 
@@ -307,35 +315,48 @@ class Browser(object):
 
         return user
 
-    def uid2userinfo(self, user: BasicUserInfo) -> BasicUserInfo:
+    def uid2userinfo(self, user: UserInfo) -> UserInfo:
         """
-        通过user_id补全简略版用户信息
+        通过user_id补全用户信息
         uid2userinfo(user)
 
         参数:
             user: UserInfo 待补全的用户信息
 
         返回值:
-            user: UserInfo 简略版用户信息，仅保证包含portrait、user_id和user_name
+            user: UserInfo 完整版用户信息
         """
 
+        common = CommonReq_pb2.CommonReq()
+        data = GetUserInfoReqIdl_pb2.GetUserInfoReqIdl.DataReq()
+        data.common.CopyFrom(common)
+        data.uid = user.user_id
+        userinfo_req = GetUserInfoReqIdl_pb2.GetUserInfoReqIdl()
+        userinfo_req.data.CopyFrom(data)
+
+        files = {'data': ('file', userinfo_req.SerializeToString())}
+
         try:
-            self._set_host("http://tieba.baidu.com/")
-            res = self.sessions.web.get(
-                "http://tieba.baidu.com/im/pcmsg/query/getUserInfo", params={'chatUid': user.user_id}, timeout=(3, 10))
+            res = self.sessions.app_proto.post(
+                "http://c.tieba.baidu.com/c/u/user/getuserinfo?cmd=303024", files=files, timeout=(3, 10))
             res.raise_for_status()
 
-            main_json = res.json()
-            if int(main_json['errno']):
-                raise ValueError(main_json['errmsg'])
+            main_proto = GetUserInfoResIdl_pb2.GetUserInfoResIdl()
+            main_proto.ParseFromString(res.content)
+            if int(main_proto.error.errorno):
+                raise ValueError(main_proto.error.errmsg)
 
-            user_dict = main_json['chatUser']
-            user.user_name = user_dict['uname']
-            user.portrait = user_dict['portrait']
+            user_proto = main_proto.data.user
+            user = UserInfo(user_name=user_proto.name,
+                            nick_name=user_proto.name_show,
+                            portrait=user_proto.portrait,
+                            user_id=user_proto.id,
+                            gender=user_proto.gender,
+                            is_vip=bool(user_proto.vipInfo))
 
         except Exception as err:
-            log.error(f"Failed to get UserInfo of {user.user_id} reason:{err}")
-            user = BasicUserInfo()
+            log.error(f"Failed to get msg reason:{err}")
+            user = UserInfo()
 
         return user
 
@@ -352,23 +373,34 @@ class Browser(object):
             threads: Threads
         """
 
-        payload = {'_client_version': '7.9.2',  # 因新版app使用file传参，改动此处的版本号可能导致列表为空！
-                   'kw': tieba_name,
-                   'pn': pn,
-                   'rn': 30
-                   }
-        payload['sign'] = self._app_sign(payload)
+        common = CommonReq_pb2.CommonReq()
+        common.BDUSS = self.sessions.BDUSS
+        common._client_version = '9.1.0.0'
+        data = FrsPageReqIdl_pb2.FrsPageReqIdl.DataReq()
+        data.common.CopyFrom(common)
+        data.kw = tieba_name
+        data.pn = pn
+        data.rn = 30
+        data.cid = 0
+        data.is_good = 0
+        data.q_type = 2
+        data.sort_type = 0
+        frspage_req = FrsPageReqIdl_pb2.FrsPageReqIdl()
+        frspage_req.data.CopyFrom(data)
+
+        files = {'data': ('file', frspage_req.SerializeToString())}
 
         try:
-            res = self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/f/frs/page", data=payload, timeout=(3, 10))
+            res = self.sessions.app_proto.post(
+                "http://c.tieba.baidu.com/c/f/frs/page?cmd=301001", files=files, timeout=(3, 10))
             res.raise_for_status()
 
-            main_json = res.json()
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
+            main_proto = FrsPageResIdl_pb2.FrsPageResIdl()
+            main_proto.ParseFromString(res.content)
+            if int(main_proto.error.errorno):
+                raise ValueError(main_proto.error.errmsg)
 
-            threads = Threads(main_json)
+            threads = Threads(main_proto)
 
         except Exception as err:
             log.error(f"Failed to get threads of {tieba_name} reason:{err}")
@@ -390,7 +422,7 @@ class Browser(object):
             posts: Posts
         """
 
-        payload = {'_client_version': '12.20.0.3',
+        payload = {'_client_version': '9.1.0.0',
                    'kz': tid,
                    'pn': pn,
                    'rn': 30
@@ -431,7 +463,7 @@ class Browser(object):
             comments: Comments
         """
 
-        payload = {'_client_version': '12.20.0.3',
+        payload = {'_client_version': '9.1.0.0',
                    'kz': tid,
                    'pid': pid,
                    'pn': pn
@@ -1197,7 +1229,7 @@ class Browser(object):
             user: BasicUserInfo 简略版用户信息，仅保证包含portrait、user_id和user_name
         """
 
-        payload = {'_client_version': '12.19.1.0',
+        payload = {'_client_version': '9.1.0.0',
                    'bdusstoken': self.sessions.BDUSS,
                    }
         payload['sign'] = self._app_sign(payload)

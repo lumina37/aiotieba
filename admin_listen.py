@@ -261,59 +261,51 @@ class Listener(object):
         if tieba_dict['admin'].recover(at.tieba_name, at.tid, is_frs_mask=True):
             tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    def cmd_drop(self, at, arg):
-        """
-        drop指令
-        删除指令所在主题帖并封禁楼主十天
-        """
+    #def cmd_drop(self, at, arg):
+    #    """
+    #    drop指令
+    #    删除指令所在主题帖并封禁楼主十天
+    #    """
 
-        tieba_dict = self.tieba.get(at.tieba_name, None)
-        if not tieba_dict:
-            return
-        if not tieba_dict['access_user'].__contains__(at.user.user_name):
-            return
+    #    tieba_dict = self.tieba.get(at.tieba_name, None)
+    #    if not tieba_dict:
+    #        return
+    #    if not tieba_dict['access_user'].__contains__(at.user.user_name):
+    #        return
 
-        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+    #    tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        posts = self.listener.get_posts(at.tid)
-        if not posts:
-            return
+    #    tb.log.info(
+    #        f"Try to delete thread {posts[0].text} post by {posts[0].user.log_name}")
 
-        tb.log.info(
-            f"Try to delete thread {posts[0].text} post by {posts[0].user.log_name}")
+    #    tieba_dict['admin'].block(at.tieba_name, posts[0].user, day=10)
+    #    tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+    #    tieba_dict['admin'].del_thread(at.tieba_name, at.tid)
 
-        tieba_dict['admin'].block(at.tieba_name, posts[0].user, day=10)
-        tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
-        tieba_dict['admin'].del_thread(at.tieba_name, at.tid)
+    #def cmd_exdrop(self, at, arg):
+    #    """
+    #    exdrop指令
+    #    删除指令所在主题帖并将楼主加入脚本黑名单+封禁十天
+    #    """
 
-    def cmd_exdrop(self, at, arg):
-        """
-        exdrop指令
-        删除指令所在主题帖并将楼主加入脚本黑名单+封禁十天
-        """
+    #    tieba_dict = self.tieba.get(at.tieba_name, None)
+    #    if not tieba_dict:
+    #        return
+    #    if not tieba_dict['access_user'].__contains__(at.user.user_name):
+    #        return
 
-        tieba_dict = self.tieba.get(at.tieba_name, None)
-        if not tieba_dict:
-            return
-        if not tieba_dict['access_user'].__contains__(at.user.user_name):
-            return
+    #    tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+    #    if not tieba_dict['admin'].mysql.ping():
+    #        tb.log.error("Failed to ping:{at.tieba_name}")
+    #        return
 
-        if not tieba_dict['admin'].mysql.ping():
-            tb.log.error("Failed to ping:{at.tieba_name}")
-            return
+    #    tb.log.info(
+    #        f"Try to delete thread {posts[0].text} post by {posts[0].user.log_name}")
 
-        posts = self.listener.get_posts(at.tid)
-        if not posts:
-            return
-
-        tb.log.info(
-            f"Try to delete thread {posts[0].text} post by {posts[0].user.log_name}")
-
-        if tieba_dict['admin'].block(at.tieba_name, posts[0].user, day=10) and tieba_dict['admin'].mysql.update_user_id(at.tieba_name, posts[0].user.user_id, False):
-            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
-        tieba_dict['admin'].del_thread(at.tieba_name, at.tid)
+    #    if tieba_dict['admin'].block(at.tieba_name, posts[0].user, day=10) and tieba_dict['admin'].mysql.update_user_id(at.tieba_name, posts[0].user.user_id, False):
+    #        tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+    #    tieba_dict['admin'].del_thread(at.tieba_name, at.tid)
 
     def cmd_delete(self, at, arg):
         """
@@ -328,13 +320,6 @@ class Listener(object):
             return
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
-
-        posts = self.listener.get_posts(at.tid)
-        if not posts:
-            return
-
-        tb.log.info(
-            f"Try to delete thread {posts[0].text} post by {posts[0].user.log_name}")
 
         tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
         tieba_dict['admin'].del_thread(at.tieba_name, at.tid)

@@ -73,6 +73,8 @@ class CloudReview(cr.CloudReview):
         posts = self.get_posts(thread.tid)
         if len(posts) == 0:
             return False
+        if thread.tid == 7738342092:
+            return False
 
         thread.user.level = posts[0].user.level
         flag = self._check_text(thread)

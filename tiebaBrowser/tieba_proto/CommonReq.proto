@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+message CommonReq {
+    string BDUSS = 10;
+    int32 _client_type = 1;
+    string _client_version = 2;
+    string _client_id = 3;
+    string apid = 4;
+    string _phone_imei = 5;
+    string _from = 6;
+    string cuid = 7;
+    int64 _timestamp = 8;
+    string model = 9;
+    string tbs = 11;
+    int32 net_type = 12;
+    string subapp_type = 13;
+    string _phone_newimei = 14;
+    string ka = 15;
+    string m_api = 16;
+    string m_logid = 17;
+    string m_cost = 18;
+    string m_result = 19;
+    string m_size_u = 20;
+    string m_size_d = 21;
+    string smallflow = 22;
+    string sign = 23;
+    string pversion = 24;
+    string brand = 26;
+    string brand_type = 27;
+    string lego_lib_version = 28;
+    string applist = 29;
+    string stoken = 30;
+    string z_id = 31;
+    string cuid_galaxy2 = 32;
+    string cuid_gid = 33;
+}

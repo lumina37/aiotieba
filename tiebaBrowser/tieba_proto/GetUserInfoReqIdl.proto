@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+import "CommonReq.proto";
+
+message GetUserInfoReqIdl {
+    message DataReq {
+        CommonReq common = 1;
+        int32 scr_w = 3;
+        int64 uid = 2;
+    }
+    DataReq data = 1;
+}

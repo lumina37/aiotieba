@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+message Page {
+    int32 current_page = 3;
+    int32 has_more = 6;
+    int32 has_prev = 7;
+    int32 total_page = 5;
+}

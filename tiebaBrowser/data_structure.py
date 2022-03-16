@@ -271,8 +271,6 @@ class Thread(_Container):
     first_floor_text: 首楼文本
     imgs: 图片列表
     emojis: 表情列表
-    has_audio: 是否含有音频
-    has_video: 是否含有视频
     view_num: 浏览量
     reply_num: 回复数
     like: 点赞数
@@ -281,17 +279,15 @@ class Thread(_Container):
     last_time: 10位时间戳 最后回复时间
     """
 
-    __slots__ = ['title', 'first_floor_text', 'imgs', 'emojis', 'has_audio', 'has_video',
+    __slots__ = ['title', 'first_floor_text', 'imgs', 'emojis',
                  'view_num', 'reply_num', 'like', 'dislike', 'create_time', 'last_time']
 
-    def __init__(self, fid: int = 0, tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), title: str = '', first_floor_text: str = '', imgs: list[str] = [], emojis: list[str] = [], has_audio: bool = False, has_video: bool = False, view_num: int = 0, reply_num: int = 0, like: int = 0, dislike: int = 0, create_time: int = 0, last_time: int = 0) -> NoReturn:
+    def __init__(self, fid: int = 0, tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), title: str = '', first_floor_text: str = '', imgs: list[str] = [], emojis: list[str] = [], view_num: int = 0, reply_num: int = 0, like: int = 0, dislike: int = 0, create_time: int = 0, last_time: int = 0) -> NoReturn:
         super().__init__(fid=fid, tid=tid, pid=pid, user=user)
         self.title = title
         self.first_floor_text = first_floor_text
         self.imgs = imgs
         self.emojis = emojis
-        self.has_audio = has_audio
-        self.has_video = has_video
         self.view_num = view_num
         self.reply_num = reply_num
         self.like = like
@@ -317,25 +313,21 @@ class Threads(_Containers[Thread]):
 
     __slots__ = []
 
-    def __init__(self, main_json: Optional[dict] = None) -> NoReturn:
+    def __init__(self, main_proto = None) -> NoReturn:
 
-        def _init_userinfo(user_dict: dict) -> UserInfo:
+        def _init_userinfo(user_proto) -> UserInfo:
             try:
-                user_id = int(user_dict['id'])
+                user_id = user_proto.id
                 if 0 >= user_id:
                     return UserInfo()
-                priv_sets = user_dict['priv_sets']
-                if not priv_sets:
-                    priv_sets = {}
-                user = UserInfo(user_name=user_dict['name'],
-                                nick_name=user_dict['name_show'],
-                                portrait=user_dict['portrait'],
+                priv_proto = user_proto.priv_sets
+                user = UserInfo(user_name=user_proto.name,
+                                nick_name=user_proto.name_show,
+                                portrait=user_proto.portrait,
                                 user_id=user_id,
-                                gender=user_dict['gender'],
-                                is_vip=bool(user_dict['new_tshow_icon']),
-                                is_god=user_dict.__contains__('new_god_data'),
-                                priv_like=priv_sets.get('like', None),
-                                priv_reply=priv_sets.get('reply', None)
+                                gender=user_proto.gender,
+                                priv_like=priv_proto.like,
+                                priv_reply=priv_proto.reply
                                 )
                 return user
 
@@ -344,50 +336,39 @@ class Threads(_Containers[Thread]):
                     f"Failed to init UserInfo of {user_id} in {fid}. reason:line {err.__traceback__.tb_lineno} {err}")
                 return UserInfo()
 
-        def _init_obj(obj_dict: dict) -> Thread:
+        def _init_obj(obj_proto) -> Thread:
             try:
                 texts = []
                 imgs = []
                 emojis = []
-                for fragment in obj_dict['first_post_content']:
-                    ftype = int(fragment['type'])
+                for fragment in obj_proto.first_post_content:
+                    ftype = fragment.type
                     if ftype in [0, 4, 9, 18]:  # 0纯文本 4手机号 9@ 18话题
-                        texts.append(fragment['text'])
+                        texts.append(fragment.text)
                     elif ftype == 1:
                         texts.append(
-                            f"{fragment['link']} {fragment['text']}")
+                            f"{fragment.link} {fragment.text}")
                     elif ftype == 2:
-                        emojis.append(fragment['text'])
+                        emojis.append(fragment.text)
                     elif ftype == 3:
-                        imgs.append(fragment['origin_src'])
+                        imgs.append(fragment.cdn_src)
                 first_floor_text = ''.join(texts)
 
-                if type(obj_dict['agree']) == dict:
-                    like = int(obj_dict['agree']['agree_num'])
-                    dislike = int(obj_dict['agree']['disagree_num'])
-                else:
-                    like = 0
-                    dislike = 0
-
-                author_id = int(obj_dict['author_id'])
+                author_id = obj_proto.author_id
                 thread = Thread(fid=fid,
-                                tid=int(obj_dict['tid']),
-                                pid=int(obj_dict['first_post_id']),
+                                tid=obj_proto.tid,
+                                pid=obj_proto.first_post_id,
                                 user=users.get(author_id, UserInfo()),
-                                title=obj_dict['title'],
+                                title=obj_proto.title,
                                 first_floor_text=first_floor_text,
                                 imgs=imgs,
                                 emojis=emojis,
-                                has_audio=True if obj_dict.get(
-                                    'voice_info', None) else False,
-                                has_video=True if obj_dict.get(
-                                    'video_info', None) else False,
-                                view_num=int(obj_dict['view_num']),
-                                reply_num=int(obj_dict['reply_num']),
-                                like=like,
-                                dislike=dislike,
-                                create_time=int(obj_dict['create_time']),
-                                last_time=int(obj_dict['last_time_int'])
+                                view_num=obj_proto.view_num,
+                                reply_num=obj_proto.reply_num,
+                                like=obj_proto.agree.agree_num,
+                                dislike=obj_proto.agree.disagree_num,
+                                create_time=obj_proto.create_time,
+                                last_time=obj_proto.last_time_int
                                 )
                 return thread
 
@@ -396,18 +377,19 @@ class Threads(_Containers[Thread]):
                     f"Failed to init Thread in {fid}. reason:line {err.__traceback__.tb_lineno} {err}")
                 return Thread()
 
-        if main_json:
+        if main_proto:
+            data_proto=main_proto.data
             try:
-                self.current_pn = int(main_json['page']['current_page'])
-                self.total_pn = int(main_json['page']['total_page'])
-                fid = int(main_json['forum']['id'])
+                self.current_pn = int(data_proto.page.current_page)
+                self.total_pn = int(data_proto.page.total_page)
+                fid = data_proto.forum.id
             except Exception as err:
                 raise ValueError(f"line {err.__traceback__.tb_lineno} {err}")
 
-            users = {int(user_dict['id']): _init_userinfo(user_dict)
-                     for user_dict in main_json['user_list']}
-            self._objs = [_init_obj(obj_dict)
-                          for obj_dict in main_json['thread_list']]
+            users = {user_proto.id: _init_userinfo(user_proto)
+                     for user_proto in data_proto.user_list}
+            self._objs = [_init_obj(obj_proto)
+                          for obj_proto in data_proto.thread_list]
 
         else:
             self._objs = []
