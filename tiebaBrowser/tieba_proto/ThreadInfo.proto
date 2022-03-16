@@ -4,7 +4,7 @@ import "PbContent.proto";
 import "Agree.proto";
 
 message ThreadInfo {
-    int64 tid = 2;
+    int64 id = 1;
     string title = 3;
     int32 reply_num = 4;
     int32 view_num = 5;

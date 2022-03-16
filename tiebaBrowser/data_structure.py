@@ -135,21 +135,16 @@ class UserInfo(BasicUserInfo):
     user_id: 贴吧旧版uid
     level: 等级
     gender: 性别（1男2女0未知）
-    is_vip: 是否vip
-    is_god: 是否贴吧大神
     priv_like: 是否公开关注贴吧（1完全可见2好友可见3完全隐藏）
     priv_reply: 帖子评论权限（1所有人5我的粉丝6我的关注）
     """
 
-    __slots__ = ['_level', '_gender',
-                 'is_vip', 'is_god', '_priv_like', '_priv_reply']
+    __slots__ = ['_level', '_gender', '_priv_like', '_priv_reply']
 
-    def __init__(self, _id: Union[str, int, None] = None, user_name: str = '', nick_name: str = '', portrait: str = '', user_id: int = 0, level: int = 1, gender: int = 0, is_vip: bool = False, is_god: bool = False, priv_like: int = 3, priv_reply: int = 1) -> NoReturn:
+    def __init__(self, _id: Union[str, int, None] = None, user_name: str = '', nick_name: str = '', portrait: str = '', user_id: int = 0, level: int = 1, gender: int = 0, priv_like: int = 3, priv_reply: int = 1) -> NoReturn:
         super().__init__(_id, user_name, nick_name, portrait, user_id)
         self.level = level
         self.gender = gender
-        self.is_vip = is_vip
-        self.is_god = is_god
         self.priv_like = priv_like
         self.priv_reply = priv_reply
 
@@ -313,7 +308,7 @@ class Threads(_Containers[Thread]):
 
     __slots__ = []
 
-    def __init__(self, main_proto = None) -> NoReturn:
+    def __init__(self, main_proto=None) -> NoReturn:
 
         def _init_userinfo(user_proto) -> UserInfo:
             try:
@@ -356,7 +351,7 @@ class Threads(_Containers[Thread]):
 
                 author_id = obj_proto.author_id
                 thread = Thread(fid=fid,
-                                tid=obj_proto.tid,
+                                tid=obj_proto.id,
                                 pid=obj_proto.first_post_id,
                                 user=users.get(author_id, UserInfo()),
                                 title=obj_proto.title,
@@ -378,10 +373,10 @@ class Threads(_Containers[Thread]):
                 return Thread()
 
         if main_proto:
-            data_proto=main_proto.data
+            data_proto = main_proto.data
             try:
-                self.current_pn = int(data_proto.page.current_page)
-                self.total_pn = int(data_proto.page.total_page)
+                self.current_pn = data_proto.page.current_page
+                self.total_pn = data_proto.page.total_page
                 fid = data_proto.forum.id
             except Exception as err:
                 raise ValueError(f"line {err.__traceback__.tb_lineno} {err}")
@@ -454,26 +449,21 @@ class Posts(_Containers[Post]):
 
     __slots__ = []
 
-    def __init__(self, main_json: Optional[dict] = None) -> NoReturn:
+    def __init__(self, main_proto=None) -> NoReturn:
 
-        def _init_userinfo(user_dict: dict) -> UserInfo:
+        def _init_userinfo(user_proto) -> UserInfo:
             try:
-                user_id = int(user_dict['id'])
+                user_id = user_proto.id
                 if 0 >= user_id:
                     return UserInfo()
-                priv_sets = user_dict['priv_sets']
-                if not priv_sets:
-                    priv_sets = {}
-                user = UserInfo(user_name=user_dict['name'],
-                                nick_name=user_dict['name_show'],
-                                portrait=user_dict['portrait'],
+                priv_proto = user_proto.priv_sets
+                user = UserInfo(user_name=user_proto.name,
+                                nick_name=user_proto.name_show,
+                                portrait=user_proto.portrait,
                                 user_id=user_id,
-                                level=user_dict['level_id'],
-                                gender=user_dict['gender'],
-                                is_vip=bool(user_dict['new_tshow_icon']),
-                                is_god=user_dict['new_god_data']['field_id'] != '',
-                                priv_like=priv_sets.get('like', None),
-                                priv_reply=priv_sets.get('reply', None)
+                                gender=user_proto.gender,
+                                priv_like=priv_proto.like,
+                                priv_reply=priv_proto.reply
                                 )
                 return user
 
@@ -482,43 +472,43 @@ class Posts(_Containers[Post]):
                     f"Failed to init UserInfo of {user_id} in {tid}. reason:line {err.__traceback__.tb_lineno} {err}")
                 return UserInfo()
 
-        def _init_obj(obj_dict: dict) -> Post:
+        def _init_obj(obj_proto) -> Post:
             try:
                 texts = []
                 imgs = []
                 emojis = []
                 has_audio = False
-                for fragment in obj_dict['content']:
-                    ftype = int(fragment.get('type', 0))
+                for fragment in obj_proto.content:
+                    ftype = fragment.type
                     if ftype in [0, 4, 9, 18]:  # 0纯文本 4手机号 9@ 18话题
-                        texts.append(fragment['text'])
+                        texts.append(fragment.text)
                     elif ftype == 1:
                         texts.append(
-                            f"{fragment['link']} {fragment['text']}")
+                            f"{fragment.link} {fragment.text}")
                     elif ftype == 2:
-                        emojis.append(fragment['text'])
+                        emojis.append(fragment.text)
                     elif ftype == 3:
-                        imgs.append(fragment['origin_src'])
+                        imgs.append(fragment.cdn_src)
                     elif ftype == 10:
                         has_audio = True
                 content = ''.join(texts)
 
-                author_id = int(obj_dict['author_id'])
+                author_id = obj_proto.author_id
                 post = Post(fid=fid,
                             tid=tid,
-                            pid=int(obj_dict['id']),
+                            pid=obj_proto.id,
                             user=users.get(author_id, UserInfo()),
                             content=content,
-                            sign=''.join([sign['text'] for sign in obj_dict['signature']['content']
-                                         if sign['type'] == '0']) if obj_dict.get('signature', None) else '',
+                            sign=''.join(
+                                [sign.text for sign in obj_proto.signature.content if sign.type == 0]),
                             imgs=imgs,
                             emojis=emojis,
                             has_audio=has_audio,
-                            floor=int(obj_dict['floor']),
-                            reply_num=int(obj_dict['sub_post_number']),
-                            like=int(obj_dict['agree']['agree_num']),
-                            dislike=int(obj_dict['agree']['disagree_num']),
-                            create_time=int(obj_dict['time']),
+                            floor=obj_proto.floor,
+                            reply_num=obj_proto.sub_post_number,
+                            like=obj_proto.agree.agree_num,
+                            dislike=obj_proto.agree.disagree_num,
+                            create_time=obj_proto.time,
                             is_thread_owner=author_id == thread_owner_id,
                             )
 
@@ -529,20 +519,21 @@ class Posts(_Containers[Post]):
                     f"Failed to init Post in {tid}. reason:line {err.__traceback__.tb_lineno} {err}")
                 return Post()
 
-        if main_json:
+        if main_proto:
+            data_proto = main_proto.data
             try:
-                self.current_pn = int(main_json['page']['current_page'])
-                self.total_pn = int(main_json['page']['total_page'])
-                thread_owner_id = int(main_json['thread']['author']['id'])
-                fid = int(main_json['forum']['id'])
-                tid = int(main_json['thread']['id'])
+                self.current_pn = data_proto.page.current_page
+                self.total_pn = data_proto.page.total_page
+                thread_owner_id = data_proto.thread.author_id
+                fid = data_proto.forum.id
+                tid = data_proto.thread.id
             except Exception as err:
                 raise ValueError(f"line {err.__traceback__.tb_lineno}: {err}")
 
-            users = {int(user_dict['id']): _init_userinfo(user_dict)
-                     for user_dict in main_json['user_list']}
-            self._objs = [_init_obj(obj_dict)
-                          for obj_dict in main_json['post_list']]
+            users = {user_proto.id: _init_userinfo(user_proto)
+                     for user_proto in data_proto.user_list}
+            self._objs = [_init_obj(obj_proto)
+                          for obj_proto in data_proto.post_list]
 
         else:
             self._objs = []
@@ -588,53 +579,47 @@ class Comments(_Containers[Comment]):
 
     __slots__ = []
 
-    def __init__(self, main_json: Optional[dict] = None) -> NoReturn:
+    def __init__(self, main_proto=None) -> NoReturn:
 
-        def _init_obj(obj_dict: dict) -> Comment:
+        def _init_obj(obj_proto) -> Comment:
             try:
                 texts = []
                 emojis = []
                 has_audio = False
-                for fragment in obj_dict['content']:
-                    ftype = int(fragment['type'])
+                for fragment in obj_proto.content:
+                    ftype = fragment.type
                     if ftype in [0, 4, 9, 18]:  # 0纯文本 4手机号 9@ 18话题
-                        texts.append(fragment['text'])
+                        texts.append(fragment.text)
                     elif ftype == 1:
                         texts.append(
-                            f"{fragment['link']} {fragment['text']}")
+                            f"{fragment.link} {fragment.text}")
                     elif ftype == 2:
-                        emojis.append(fragment['text'])
+                        emojis.append(fragment.text)
                     elif ftype == 10:
                         has_audio = True
                 text = ''.join(texts)
 
-                user_dict = obj_dict['author']
-                priv_sets = user_dict['priv_sets']
-                if not priv_sets:
-                    priv_sets = {}
-                user = UserInfo(user_name=user_dict['name'],
-                                nick_name=user_dict['name_show'],
-                                portrait=user_dict['portrait'],
-                                user_id=user_dict['id'],
-                                level=user_dict['level_id'],
-                                gender=user_dict['gender'],
-                                is_vip=bool(user_dict['new_tshow_icon']),
-                                is_god=user_dict['new_god_data']['field_id'] != '',
-                                priv_like=priv_sets.get('like', None),
-                                priv_reply=priv_sets.get('reply', None)
+                user_proto = obj_proto.author
+                priv_proto = user_proto.priv_sets
+                user = UserInfo(user_name=user_proto.name,
+                                nick_name=user_proto.name_show,
+                                portrait=user_proto.portrait,
+                                user_id=user_proto.id,
+                                gender=user_proto.gender,
+                                priv_like=priv_proto.like,
+                                priv_reply=priv_proto.reply
                                 )
 
                 comment = Comment(fid=fid,
                                   tid=tid,
-                                  pid=int(obj_dict['id']),
+                                  pid=obj_proto.id,
                                   user=user,
                                   text=text,
                                   emojis=emojis,
                                   has_audio=has_audio,
-                                  like=int(obj_dict['agree']['agree_num']),
-                                  dislike=int(
-                                      obj_dict['agree']['disagree_num']),
-                                  create_time=int(obj_dict['time'])
+                                  like=obj_proto.agree.agree_num,
+                                  dislike=obj_proto.agree.disagree_num,
+                                  create_time=obj_proto.time
                                   )
                 return comment
 
@@ -643,17 +628,18 @@ class Comments(_Containers[Comment]):
                     f"Failed to init Comment in {tid}. reason:line {err.__traceback__.tb_lineno} {err}")
                 return Comment()
 
-        if main_json:
+        if main_proto:
+            data_proto = main_proto.data
             try:
-                self.current_pn = int(main_json['page']['current_page'])
-                self.total_pn = int(main_json['page']['total_page'])
-                fid = int(main_json['forum']['id'])
-                tid = int(main_json['thread']['id'])
+                self.current_pn = data_proto.page.current_page
+                self.total_pn = data_proto.page.total_page
+                fid = data_proto.forum.id
+                tid = data_proto.thread.id
             except Exception as err:
                 raise ValueError(f"line {err.__traceback__.tb_lineno}: {err}")
 
-            self._objs = [_init_obj(obj_dict)
-                          for obj_dict in main_json['subpost_list']]
+            self._objs = [_init_obj(obj_proto)
+                          for obj_proto in data_proto.subpost_list]
 
         else:
             self._objs = []

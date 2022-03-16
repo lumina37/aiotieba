@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+import "SimpleForum.proto";
+import "Page.proto";
+import "Post.proto";
+import "ThreadInfo.proto";
+import "SubPostList.proto";
+import "Error.proto";
+
+message PbFloorResIdl {
+    message DataRes {
+        Page page = 1;
+        Post post = 3;
+        repeated SubPostList subpost_list = 4;
+        ThreadInfo thread = 5;
+        SimpleForum forum = 6;
+    }
+    Error error = 1;
+    DataRes data = 2;
+}

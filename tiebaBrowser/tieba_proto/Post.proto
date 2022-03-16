@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+import "PbContent.proto";
+import "Agree.proto";
+
+message Post {
+    int64 id = 1;
+    string title = 2;
+    uint32 floor = 3;
+    uint32 time = 4;
+    repeated PbContent content = 5;
+    uint32 sub_post_number = 13;
+    int64 author_id = 19;
+    message SignatureData {
+        int32 signature_id = 1;
+        string fontKeyName = 2;
+        string fontColor = 3;
+        message SignatureContent {
+            int32 type = 1;
+            string text = 2;
+        }
+        repeated SignatureContent content = 4;
+    }
+    SignatureData signature = 21;
+    Agree agree = 37;
+}

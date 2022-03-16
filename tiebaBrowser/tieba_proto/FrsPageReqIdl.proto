@@ -5,7 +5,6 @@ import "CommonReq.proto";
 message FrsPageReqIdl {
     message DataReq {
         CommonReq common = 39;
-        string forum_name = 21;
         string kw = 1;
         int32 pn = 15;
         int32 rn = 2;

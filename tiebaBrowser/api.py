@@ -14,10 +14,13 @@ import requests as req
 from bs4 import BeautifulSoup
 from PIL import Image
 
-from .tieba_proto import CommonReq_pb2, GetUserInfoReqIdl_pb2, GetUserInfoResIdl_pb2, FrsPageReqIdl_pb2, FrsPageResIdl_pb2
 from .config import config
 from .data_structure import *
 from .logger import log
+from .tieba_proto import (CommonReq_pb2, FrsPageReqIdl_pb2, FrsPageResIdl_pb2,
+                          GetUserInfoReqIdl_pb2, GetUserInfoResIdl_pb2,
+                          PbFloorReqIdl_pb2, PbFloorResIdl_pb2,
+                          PbPageReqIdl_pb2, PbPageResIdl_pb2)
 
 req.packages.urllib3.disable_warnings(
     req.packages.urllib3.exceptions.InsecureRequestWarning)
@@ -31,7 +34,7 @@ class Sessions(object):
         BDUSS_key: str 用于获取BDUSS
     """
 
-    __slots__ = ['app','app_proto', 'web', 'BDUSS', 'STOKEN']
+    __slots__ = ['app', 'app_proto', 'web', 'BDUSS', 'STOKEN']
 
     def __init__(self, BDUSS_key: Optional[str] = None) -> NoReturn:
 
@@ -42,21 +45,6 @@ class Sessions(object):
         if BDUSS_key:
             self.renew_BDUSS(BDUSS_key)
 
-        self.app.headers = req.structures.CaseInsensitiveDict({'User-Agent': 'bdtb for Android 9.1.0.0',
-                                                               'Charset': 'UTF-8',
-                                                               'Connection': 'Keep-Alive',
-                                                               'Accept-Encoding': 'gzip',
-                                                               'Host': 'c.tieba.baidu.com',
-                                                               'Connection': 'keep-alive'
-                                                               })
-        self.app_proto.headers = req.structures.CaseInsensitiveDict({'User-Agent': 'bdtb for Android 9.1.0.0',
-                                                               'x_bd_data_type': 'protobuf',
-                                                               'Charset': 'UTF-8',
-                                                               'Connection': 'Keep-Alive',
-                                                               'Accept-Encoding': 'gzip',
-                                                               'Host': 'c.tieba.baidu.com',
-                                                               'Connection': 'keep-alive'
-                                                               })
         self.web.headers = req.structures.CaseInsensitiveDict({'Host': 'tieba.baidu.com',
                                                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:96.0) Gecko/20100101 Firefox/96.0',
                                                                'Accept': '*/*',
@@ -66,10 +54,25 @@ class Sessions(object):
                                                                'Connection': 'keep-alive',
                                                                'Upgrade-Insecure-Requests': '1'
                                                                })
+        self.app.headers = req.structures.CaseInsensitiveDict({'User-Agent': 'bdtb for Android 9.1.0.0',
+                                                               'Charset': 'UTF-8',
+                                                               'Connection': 'Keep-Alive',
+                                                               'Accept-Encoding': 'gzip',
+                                                               'Host': 'c.tieba.baidu.com',
+                                                               'Connection': 'keep-alive'
+                                                               })
+        self.app_proto.headers = req.structures.CaseInsensitiveDict({'User-Agent': 'bdtb for Android 9.1.0.0',
+                                                                     'x_bd_data_type': 'protobuf',
+                                                                     'Charset': 'UTF-8',
+                                                                     'Connection': 'Keep-Alive',
+                                                                     'Accept-Encoding': 'gzip',
+                                                                     'Host': 'c.tieba.baidu.com',
+                                                                     'Connection': 'keep-alive'
+                                                                     })
 
+        self.web.verify = False
         self.app.verify = False
         self.app_proto.verify = False
-        self.web.verify = False
 
     def close(self) -> None:
         self.app.close()
@@ -422,25 +425,31 @@ class Browser(object):
             posts: Posts
         """
 
-        payload = {'_client_version': '9.1.0.0',
-                   'kz': tid,
-                   'pn': pn,
-                   'rn': 30
-                   }
-        payload['sign'] = self._app_sign(payload)
+        common = CommonReq_pb2.CommonReq()
+        common.BDUSS = self.sessions.BDUSS
+        common._client_version = '9.1.0.0'
+        data = PbPageReqIdl_pb2.PbPageReqIdl.DataReq()
+        data.common.CopyFrom(common)
+        data.kz = tid
+        data.pn = pn
+        data.rn = 30
+        data.q_type = 2
+        pbpage_req = PbPageReqIdl_pb2.PbPageReqIdl()
+        pbpage_req.data.CopyFrom(data)
+
+        files = {'data': ('file', pbpage_req.SerializeToString())}
 
         try:
-            res = self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/f/pb/page", data=payload, timeout=(3, 10))
+            res = self.sessions.app_proto.post(
+                "http://c.tieba.baidu.com/c/f/pb/page?cmd=302001", files=files, timeout=(3, 10))
             res.raise_for_status()
-            if not res.text.startswith('{'):
-                raise ValueError("incorrect json format")
 
-            main_json = res.json()
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
+            main_proto = PbPageResIdl_pb2.PbPageResIdl()
+            main_proto.ParseFromString(res.content)
+            if int(main_proto.error.errorno):
+                raise ValueError(main_proto.error.errmsg)
 
-            posts = Posts(main_json)
+            posts = Posts(main_proto)
 
         except Exception as err:
             log.error(f"Failed to get posts of {tid} reason:{err}")
@@ -463,26 +472,30 @@ class Browser(object):
             comments: Comments
         """
 
-        payload = {'_client_version': '9.1.0.0',
-                   'kz': tid,
-                   'pid': pid,
-                   'pn': pn
-                   }
-        payload['sign'] = self._app_sign(payload)
+        common = CommonReq_pb2.CommonReq()
+        common.BDUSS = self.sessions.BDUSS
+        common._client_version = '9.1.0.0'
+        data = PbFloorReqIdl_pb2.PbFloorReqIdl.DataReq()
+        data.common.CopyFrom(common)
+        data.kz = tid
+        data.pid = pid
+        data.pn = pn
+        pbpage_req = PbFloorReqIdl_pb2.PbFloorReqIdl()
+        pbpage_req.data.CopyFrom(data)
+
+        files = {'data': ('file', pbpage_req.SerializeToString())}
 
         try:
-            res = self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/f/pb/floor", data=payload, timeout=(3, 10))
+            res = self.sessions.app_proto.post(
+                "http://c.tieba.baidu.com/c/f/pb/floor?cmd=302002", files=files, timeout=(3, 10))
             res.raise_for_status()
 
-            if not res.text.startswith('{'):
-                raise ValueError("incorrect json format")
+            main_proto = PbFloorResIdl_pb2.PbFloorResIdl()
+            main_proto.ParseFromString(res.content)
+            if int(main_proto.error.errorno):
+                raise ValueError(main_proto.error.errmsg)
 
-            main_json = res.json()
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
-
-            comments = Comments(main_json)
+            comments = Comments(main_proto)
 
         except Exception as err:
             log.error(f"Failed to get comments of {pid} in {tid} reason:{err}")

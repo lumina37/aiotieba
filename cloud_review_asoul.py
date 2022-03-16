@@ -170,8 +170,6 @@ class CloudReview(cr.CloudReview):
         level = obj.user.level
         if level > 6:
             return 0
-        if obj.user.is_vip or obj.user.is_god:
-            return -1
 
         has_white_kw = True if self.white_kw_exp.search(text) else False
         if has_white_kw:

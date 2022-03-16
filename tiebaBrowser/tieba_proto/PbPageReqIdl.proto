@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+import "CommonReq.proto";
+
+message PbPageReqIdl {
+    message DataReq {
+        CommonReq common = 25;
+        int64 kz = 4;
+        int32 with_floor = 8;
+        int32 rn = 13;
+        int32 q_type = 17;
+        int32 pn = 18;
+        int32 is_comm_reverse = 33;
+        int32 is_jumpfloor = 34;
+        int32 jumpfloor_num = 35;
+        int64 forum_id = 56;
+    }
+    DataReq data = 1;
+}

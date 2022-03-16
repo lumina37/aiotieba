@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+message SimpleForum {
+    int64 id = 1;
+    string name = 2;
+    int32 member_num = 12;
+    int32 post_num = 13;
+}

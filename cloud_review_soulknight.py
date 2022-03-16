@@ -138,8 +138,6 @@ class CloudReview(cr.CloudReview):
         level = obj.user.level
         if level > 4:
             return 0
-        if obj.user.is_vip or obj.user.is_god:
-            return -1
 
         text = obj.text
 
