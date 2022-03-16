@@ -253,7 +253,6 @@ class Browser(object):
                             portrait=user_dict['portrait'],
                             user_id=user_dict['id'],
                             gender=gender,
-                            is_vip=bool(user_dict['vipInfo'])
                             )
 
         except Exception as err:
@@ -354,8 +353,7 @@ class Browser(object):
                             nick_name=user_proto.name_show,
                             portrait=user_proto.portrait,
                             user_id=user_proto.id,
-                            gender=user_proto.gender,
-                            is_vip=bool(user_proto.vipInfo))
+                            gender=user_proto.gender)
 
         except Exception as err:
             log.error(f"Failed to get msg reason:{err}")
@@ -1383,8 +1381,6 @@ class Browser(object):
                             portrait=user_dict['portrait'],
                             user_id=user_dict['id'],
                             gender=user_dict['sex'],
-                            is_vip=int(user_dict['vipInfo']['v_level']) != 0,
-                            is_god=user_dict['new_god_data']['field_id'] != '',
                             priv_like=user_dict['priv_sets']['like'],
                             priv_reply=user_dict['priv_sets']['reply'])
         except Exception as err:

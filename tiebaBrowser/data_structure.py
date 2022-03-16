@@ -694,7 +694,6 @@ class Ats(_Containers[At]):
                                 nick_name=user_dict['name_show'],
                                 portrait=user_dict['portrait'],
                                 user_id=user_dict['id'],
-                                is_god=user_dict.__contains__('new_god_data'),
                                 priv_like=priv_sets.get('like', None),
                                 priv_reply=priv_sets.get('reply', None)
                                 )
