@@ -14,7 +14,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nPage.proto\"T\n\x04Page\x12\x14\n\x0c\x63urrent_page\x18\x03 \x01(\x05\x12\x10\n\x08has_more\x18\x06 \x01(\x05\x12\x10\n\x08has_prev\x18\x07 \x01(\x05\x12\x12\n\ntotal_page\x18\x05 \x01(\x05\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nPage.proto\"\x91\x02\n\x04Page\x12\x11\n\tpage_size\x18\x01 \x01(\x05\x12\x0e\n\x06offset\x18\x02 \x01(\x05\x12\x14\n\x0c\x63urrent_page\x18\x03 \x01(\x05\x12\x13\n\x0btotal_count\x18\x04 \x01(\x05\x12\x12\n\ntotal_page\x18\x05 \x01(\x05\x12\x10\n\x08has_more\x18\x06 \x01(\x05\x12\x10\n\x08has_prev\x18\x07 \x01(\x05\x12\x13\n\x0b\x63ur_good_id\x18\x08 \x01(\x05\x12\x0f\n\x07req_num\x18\t \x01(\x05\x12\x0c\n\x04pnum\x18\n \x01(\x05\x12\x0c\n\x04tnum\x18\x0b \x01(\x05\x12\x11\n\ttotal_num\x18\x0c \x01(\x05\x12\x16\n\x0elz_total_floor\x18\r \x01(\x05\x12\x16\n\x0enew_total_page\x18\x0e \x01(\x05\x62\x06proto3')
 
 
 
@@ -29,6 +29,6 @@ _sym_db.RegisterMessage(Page)
 if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
-  _PAGE._serialized_start=14
-  _PAGE._serialized_end=98
+  _PAGE._serialized_start=15
+  _PAGE._serialized_end=288
 # @@protoc_insertion_point(module_scope)

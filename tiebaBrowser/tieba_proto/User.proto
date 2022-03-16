@@ -5,8 +5,10 @@ message User {
     string name = 3;
     string name_show = 4;
     string portrait = 5;
+    int32 is_coreuser = 20;
     int32 level_id = 23;
     int32 is_bawu = 25;
+    string bawu_type = 26;
     string BDUSS = 29;
     int32 post_num = 37;
     string tb_age = 38;
@@ -19,13 +21,17 @@ message User {
         int32 friend = 5;
         int32 live = 6;
         int32 reply = 7;
+        int32 bazhu_show_inside = 8;
+        int32 bazhu_show_outside = 9;
     }
     PrivSets priv_sets = 45;
+    int32 is_friend = 46;
     message LikeForumInfo {
         string forum_name = 1;
         uint64 forum_id = 2;
     }
     repeated LikeForumInfo likeForum = 47;
+    int32 is_guanfang = 52;
     message UserVipInfo {
         uint32 v_status = 1;
         uint32 s_time = 2;
@@ -37,15 +43,15 @@ message User {
         string icon_url = 8;
     }
     UserVipInfo vipInfo = 61;
-    message GodInfo {
-        int64 id = 1;
-        string intro = 2;
-        int32 type = 3;
-        int64 fid = 4;
-        int32 followed = 5;
-        string recommend_reason = 6;
-        string forum_name = 7;
-        int32 can_send_msg = 8;
+    int32 is_fans = 91;
+    message NewGodInfo {
+        int32 status = 1;
+        uint32 field_id = 2;
+        string field_name = 3;
+        uint32 type = 4;
+        string type_name = 5;
     }
-    GodInfo god_data = 62;
+    NewGodInfo new_god_data = 101;
+    int32 is_default_avatar = 106;
+    string tieba_uid = 120;
 }

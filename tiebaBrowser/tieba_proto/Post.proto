@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 import "PbContent.proto";
+import "SubPostList.proto";
 import "Agree.proto";
 
 message Post {
@@ -11,6 +12,11 @@ message Post {
     repeated PbContent content = 5;
     uint32 sub_post_number = 13;
     int64 author_id = 19;
+    message SubPost {
+        uint64 pid = 1;
+        SubPostList sub_post_list = 2;
+    }
+    SubPost sub_post_list = 15;
     message SignatureData {
         int32 signature_id = 1;
         string fontKeyName = 2;

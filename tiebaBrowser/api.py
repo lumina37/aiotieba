@@ -46,7 +46,7 @@ class Sessions(object):
             self.renew_BDUSS(BDUSS_key)
 
         self.web.headers = req.structures.CaseInsensitiveDict({'Host': 'tieba.baidu.com',
-                                                               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:96.0) Gecko/20100101 Firefox/96.0',
+                                                               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:98.0) Gecko/20100101 Firefox/98.0',
                                                                'Accept': '*/*',
                                                                'Accept-Encoding': 'gzip, deflate, br',
                                                                'DNT': '1',
@@ -54,14 +54,14 @@ class Sessions(object):
                                                                'Connection': 'keep-alive',
                                                                'Upgrade-Insecure-Requests': '1'
                                                                })
-        self.app.headers = req.structures.CaseInsensitiveDict({'User-Agent': 'bdtb for Android 9.1.0.0',
+        self.app.headers = req.structures.CaseInsensitiveDict({'User-Agent': 'bdtb for Android 12.21.1.0',
                                                                'Charset': 'UTF-8',
                                                                'Connection': 'Keep-Alive',
                                                                'Accept-Encoding': 'gzip',
                                                                'Host': 'c.tieba.baidu.com',
                                                                'Connection': 'keep-alive'
                                                                })
-        self.app_proto.headers = req.structures.CaseInsensitiveDict({'User-Agent': 'bdtb for Android 9.1.0.0',
+        self.app_proto.headers = req.structures.CaseInsensitiveDict({'User-Agent': 'bdtb for Android 12.21.1.0',
                                                                      'x_bd_data_type': 'protobuf',
                                                                      'Charset': 'UTF-8',
                                                                      'Connection': 'Keep-Alive',
@@ -376,7 +376,7 @@ class Browser(object):
 
         common = CommonReq_pb2.CommonReq()
         common.BDUSS = self.sessions.BDUSS
-        common._client_version = '9.1.0.0'
+        common._client_version = '12.21.1.0'
         data = FrsPageReqIdl_pb2.FrsPageReqIdl.DataReq()
         data.common.CopyFrom(common)
         data.kw = tieba_name
@@ -425,7 +425,7 @@ class Browser(object):
 
         common = CommonReq_pb2.CommonReq()
         common.BDUSS = self.sessions.BDUSS
-        common._client_version = '9.1.0.0'
+        common._client_version = '12.21.1.0'
         data = PbPageReqIdl_pb2.PbPageReqIdl.DataReq()
         data.common.CopyFrom(common)
         data.kz = tid
@@ -472,7 +472,7 @@ class Browser(object):
 
         common = CommonReq_pb2.CommonReq()
         common.BDUSS = self.sessions.BDUSS
-        common._client_version = '9.1.0.0'
+        common._client_version = '12.21.1.0'
         data = PbFloorReqIdl_pb2.PbFloorReqIdl.DataReq()
         data.common.CopyFrom(common)
         data.kz = tid
@@ -1240,7 +1240,7 @@ class Browser(object):
             user: BasicUserInfo 简略版用户信息，仅保证包含portrait、user_id和user_name
         """
 
-        payload = {'_client_version': '9.1.0.0',
+        payload = {'_client_version': '12.21.1.0',
                    'bdusstoken': self.sessions.BDUSS,
                    }
         payload['sign'] = self._app_sign(payload)
@@ -1351,7 +1351,7 @@ class Browser(object):
         """
 
         payload = {'_client_type': 2,  # 删除该字段会导致post_list为空
-                   '_client_version': '12.19.1.0',  # 删除该字段会导致post_list和dynamic_list为空
+                   '_client_version': '12.21.1.0',  # 删除该字段会导致post_list和dynamic_list为空
                    'friend_uid_portrait': portrait,
                    'need_post_count': 1,  # 删除该字段会导致无法获取发帖回帖数量
                    # 'uid':user_id  # 用该字段检查共同关注的吧
@@ -1477,7 +1477,7 @@ class Browser(object):
             """
 
             payload = {'BDUSS': self.sessions.BDUSS,
-                       '_client_version': '12.19.1.0',  # 删除该字段可直接获取前200个吧，但无法翻页
+                       '_client_version': '12.21.1.0',  # 删除该字段可直接获取前200个吧，但无法翻页
                        'friend_uid': user.user_id,
                        'page_no': pn  # 加入client_version后，使用该字段控制页数
                        }
@@ -1768,7 +1768,7 @@ class Browser(object):
             payload = {'BDUSS': self.sessions.BDUSS,
                        '_client_id': 'NULL',
                        '_client_type': 2,
-                       '_client_version': '12.19.1.0',
+                       '_client_version': '12.21.1.0',
                        '_phone_imei': '000000000000000',
                        'c3_aid': 'NULL',
                        'cmode': 1,
@@ -1826,7 +1826,7 @@ class Browser(object):
             payload = {'BDUSS': self.sessions.BDUSS,
                        '_client_id': 'wappc_1643365995770_873',
                        '_client_type': 2,
-                       '_client_version': '9.1.0.0',
+                       '_client_version': '12.21.1.0',
                        '_phone_imei': '000000000000000',
                        'anonymous': 1,
                        'barrage_time': 0,
