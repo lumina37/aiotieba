@@ -1,5 +1,6 @@
 .*/
 __*/
+*.exe
 *.csv
 *.xlsx
 *.pyproj
