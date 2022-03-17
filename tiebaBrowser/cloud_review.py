@@ -10,7 +10,6 @@ import cv2 as cv
 import numpy as np
 
 from .api import Browser
-from .data_structure import BasicUserInfo
 from .logger import log
 from .mysql import MySQL
 
@@ -108,8 +107,7 @@ class CloudReview(Browser):
             log.warning("Wrong mode in update_user_id!")
             return False
 
-        user = BasicUserInfo(id)
-        user = self.get_userinfo_weak(user)
+        user = self.get_userinfo_weak(id)
         if not user.user_id:
             return False
 
@@ -121,8 +119,7 @@ class CloudReview(Browser):
         del_user_id(id)
         """
 
-        user = BasicUserInfo(id)
-        user = self.get_userinfo_weak(user)
+        user = self.get_userinfo_weak(id)
         if not user.user_id:
             return False
 

@@ -9,6 +9,7 @@ from typing import (Any, Callable, Generic, Iterator, Literal, NoReturn,
                     Optional, TypeVar, Union, final)
 
 from .logger import log
+from .tieba_proto import *
 
 
 def _int_prop_check_ignore_none(default_val: int):
@@ -40,41 +41,45 @@ class BasicUserInfo(object):
     BasicUserInfo()
     基本用户属性
 
-    _id: 用于快速构造UserInfo的自适应参数 输入用户名或portrait或user_id
+    参数:
+        _id: 用于快速构造UserInfo的自适应参数 输入用户名或portrait或user_id
+        user_proto: User_pb2.User
 
-    user_name: 发帖用户名
-    nick_name: 发帖人昵称
-    portrait: 用户头像portrait值
-    user_id: 贴吧旧版uid
+    字段:
+        user_name: 发帖用户名
+        nick_name: 发帖人昵称
+        portrait: 用户头像portrait值
+        user_id: 贴吧旧版uid
     """
 
     __slots__ = ['user_name', '_nick_name', '_portrait', '_user_id']
 
-    def __init__(self, _id: Union[str, int, None] = None, user_name: str = '', nick_name: str = '', portrait: str = '', user_id: int = 0) -> NoReturn:
+    def __init__(self, _id: Union[str, int, None] = None, user_proto: Optional[User_pb2.User] = None) -> NoReturn:
+        self.user_name = ''
+        self._nick_name = ''
+        self._portrait = ''
+        self._user_id = 0
         if _id:
             if type(_id) == int:
                 self.user_id = _id
-                self.portrait = portrait
-                self.user_name = user_name
             else:
                 self.portrait = _id
                 if not self.portrait:
                     self.user_name = _id
-                else:
-                    self.user_name = user_name
-                self.user_id = user_id
-        else:
-            self.portrait = portrait
-            self.user_name = user_name
-            self.user_id = user_id
-
-        self.nick_name = nick_name
+        elif user_proto:
+            self.user_name = user_proto.name
+            self.nick_name = user_proto.name_show
+            self.portrait = user_proto.portrait
+            self.user_id = user_proto.id
 
     def __str__(self) -> str:
         return f"user_name:{self.user_name} / nick_name:{self._nick_name} / portrait:{self._portrait} / user_id:{self._user_id}"
 
     def __hash__(self) -> int:
         return self._user_id.__hash__()
+
+    def __int__(self) -> int:
+        return self._user_id
 
     @property
     def nick_name(self) -> str:
@@ -127,26 +132,31 @@ class UserInfo(BasicUserInfo):
     UserInfo()
     用户属性
 
-    _id: 用于快速构造UserInfo的自适应参数 输入用户名或portrait或user_id
+    参数:
+        _id: Union[str, int, None] 用于快速构造UserInfo的自适应参数 输入用户名或portrait或user_id
+        proto: Optional[User_pb2.User]
 
-    user_name: 发帖用户名
-    nick_name: 发帖人昵称
-    portrait: 用户头像portrait值
-    user_id: 贴吧旧版uid
-    level: 等级
-    gender: 性别（1男2女0未知）
-    priv_like: 是否公开关注贴吧（1完全可见2好友可见3完全隐藏）
-    priv_reply: 帖子评论权限（1所有人5我的粉丝6我的关注）
+    字段:
+        user_name: 发帖用户名
+        nick_name: 发帖人昵称
+        portrait: 用户头像portrait值
+        user_id: 贴吧旧版uid
+        level: 等级
+        gender: 性别（1男2女0未知）
+        priv_like: 是否公开关注贴吧（1完全可见2好友可见3完全隐藏）
+        priv_reply: 帖子评论权限（1所有人5我的粉丝6我的关注）
     """
 
     __slots__ = ['_level', '_gender', '_priv_like', '_priv_reply']
 
-    def __init__(self, _id: Union[str, int, None] = None, user_name: str = '', nick_name: str = '', portrait: str = '', user_id: int = 0, level: int = 1, gender: int = 0, priv_like: int = 3, priv_reply: int = 1) -> NoReturn:
-        super().__init__(_id, user_name, nick_name, portrait, user_id)
-        self.level = level
-        self.gender = gender
-        self.priv_like = priv_like
-        self.priv_reply = priv_reply
+    def __init__(self, _id: Union[str, int, None] = None, user_proto: Optional[User_pb2.User] = None) -> NoReturn:
+        super().__init__(_id, user_proto)
+        if user_proto:
+            priv_proto = user_proto.priv_sets
+            self.level = user_proto.level_id
+            self.gender = user_proto.gender
+            self.priv_like = priv_proto.like
+            self.priv_reply = priv_proto.reply
 
     @property
     def level(self) -> int:
@@ -198,12 +208,8 @@ class _Container(object):
 
     __slots__ = ['fid', 'tid', 'pid', 'user', '_text']
 
-    def __init__(self, fid: int = 0, tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), text: str = '') -> NoReturn:
-        self.fid = fid
-        self.tid = tid
-        self.pid = pid
-        self.user = user
-        self._text = text
+    def __init__(self) -> NoReturn:
+        self._text = ''
 
     @property
     def text(self) -> str:
@@ -277,18 +283,35 @@ class Thread(_Container):
     __slots__ = ['title', 'first_floor_text', 'imgs', 'emojis',
                  'view_num', 'reply_num', 'like', 'dislike', 'create_time', 'last_time']
 
-    def __init__(self, fid: int = 0, tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), title: str = '', first_floor_text: str = '', imgs: list[str] = [], emojis: list[str] = [], view_num: int = 0, reply_num: int = 0, like: int = 0, dislike: int = 0, create_time: int = 0, last_time: int = 0) -> NoReturn:
-        super().__init__(fid=fid, tid=tid, pid=pid, user=user)
-        self.title = title
-        self.first_floor_text = first_floor_text
-        self.imgs = imgs
-        self.emojis = emojis
-        self.view_num = view_num
-        self.reply_num = reply_num
-        self.like = like
-        self.dislike = dislike
-        self.create_time = create_time
-        self.last_time = last_time
+    def __init__(self, obj_proto: ThreadInfo_pb2.ThreadInfo) -> NoReturn:
+        super().__init__()
+        texts = []
+        self.imgs = []
+        self.emojis = []
+        for fragment in obj_proto.first_post_content:
+            ftype = fragment.type
+            if ftype in [0, 4, 9, 18]:  # 0纯文本 4手机号 9@ 18话题
+                texts.append(fragment.text)
+            elif ftype == 1:
+                texts.append(
+                    f"{fragment.link} {fragment.text}")
+            elif ftype == 2:
+                self.emojis.append(fragment.text)
+            elif ftype == 3:
+                self.imgs.append(fragment.cdn_src)
+        self.first_floor_text = ''.join(texts)
+
+        self.fid = obj_proto.fid
+        self.tid = obj_proto.id
+        self.pid = obj_proto.first_post_id
+        self.user = obj_proto.author_id
+        self.title = obj_proto.title
+        self.view_num = obj_proto.view_num
+        self.reply_num = obj_proto.reply_num
+        self.like = obj_proto.agree.agree_num
+        self.dislike = obj_proto.agree.disagree_num
+        self.create_time = obj_proto.create_time
+        self.last_time = obj_proto.last_time_int
 
     @property
     def text(self) -> str:
@@ -310,81 +333,16 @@ class Threads(_Containers[Thread]):
 
     def __init__(self, main_proto=None) -> NoReturn:
 
-        def _init_userinfo(user_proto) -> UserInfo:
-            try:
-                user_id = user_proto.id
-                if 0 >= user_id:
-                    return UserInfo()
-                priv_proto = user_proto.priv_sets
-                user = UserInfo(user_name=user_proto.name,
-                                nick_name=user_proto.name_show,
-                                portrait=user_proto.portrait,
-                                user_id=user_id,
-                                gender=user_proto.gender,
-                                priv_like=priv_proto.like,
-                                priv_reply=priv_proto.reply
-                                )
-                return user
-
-            except Exception as err:
-                log.error(
-                    f"Failed to init UserInfo of {user_id} in {fid}. reason:line {err.__traceback__.tb_lineno} {err}")
-                return UserInfo()
-
-        def _init_obj(obj_proto) -> Thread:
-            try:
-                texts = []
-                imgs = []
-                emojis = []
-                for fragment in obj_proto.first_post_content:
-                    ftype = fragment.type
-                    if ftype in [0, 4, 9, 18]:  # 0纯文本 4手机号 9@ 18话题
-                        texts.append(fragment.text)
-                    elif ftype == 1:
-                        texts.append(
-                            f"{fragment.link} {fragment.text}")
-                    elif ftype == 2:
-                        emojis.append(fragment.text)
-                    elif ftype == 3:
-                        imgs.append(fragment.cdn_src)
-                first_floor_text = ''.join(texts)
-
-                author_id = obj_proto.author_id
-                thread = Thread(fid=fid,
-                                tid=obj_proto.id,
-                                pid=obj_proto.first_post_id,
-                                user=users.get(author_id, UserInfo()),
-                                title=obj_proto.title,
-                                first_floor_text=first_floor_text,
-                                imgs=imgs,
-                                emojis=emojis,
-                                view_num=obj_proto.view_num,
-                                reply_num=obj_proto.reply_num,
-                                like=obj_proto.agree.agree_num,
-                                dislike=obj_proto.agree.disagree_num,
-                                create_time=obj_proto.create_time,
-                                last_time=obj_proto.last_time_int
-                                )
-                return thread
-
-            except Exception as err:
-                log.error(
-                    f"Failed to init Thread in {fid}. reason:line {err.__traceback__.tb_lineno} {err}")
-                return Thread()
-
         if main_proto:
             data_proto = main_proto.data
-            try:
-                self.current_pn = data_proto.page.current_page
-                self.total_pn = data_proto.page.total_page
-                fid = data_proto.forum.id
-            except Exception as err:
-                raise ValueError(f"line {err.__traceback__.tb_lineno} {err}")
-
-            users = {user_proto.id: _init_userinfo(user_proto)
-                     for user_proto in data_proto.user_list}
-            self._objs = [_init_obj(obj_proto)
+            self.current_pn = data_proto.page.current_page
+            self.total_pn = data_proto.page.total_page
+            users = {user_proto.id: UserInfo(
+                user_proto=user_proto) for user_proto in data_proto.user_list}
+            self._objs = [Thread(obj_proto)
                           for obj_proto in data_proto.thread_list]
+            for obj in self._objs:
+                obj.user = users.get(obj.user, UserInfo())
 
         else:
             self._objs = []
@@ -417,19 +375,38 @@ class Post(_Container):
     __slots__ = ['content', 'sign', 'imgs', 'emojis', 'has_audio', 'floor',
                  'reply_num', 'like', 'dislike', 'create_time', 'is_thread_owner']
 
-    def __init__(self, fid: int = 0, tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), content: str = '', sign: str = '', imgs: list[str] = [], emojis: list[str] = [], has_audio: bool = False, floor: int = 0, reply_num: int = 0, like: int = 0, dislike: int = 0, create_time: int = 0, is_thread_owner: bool = False) -> NoReturn:
-        super().__init__(fid=fid, tid=tid, pid=pid, user=user)
-        self.content = content
-        self.sign = sign
-        self.imgs = imgs
-        self.emojis = emojis
-        self.has_audio = has_audio
-        self.floor = floor
-        self.reply_num = reply_num
-        self.like = like
-        self.dislike = dislike
-        self.create_time = create_time
-        self.is_thread_owner = is_thread_owner
+    def __init__(self, obj_proto: Post_pb2.Post) -> NoReturn:
+        super().__init__()
+        texts = []
+        self.imgs = []
+        self.emojis = []
+        self.has_audio = False
+        for fragment in obj_proto.content:
+            ftype = fragment.type
+            if ftype in [0, 4, 9, 18]:  # 0纯文本 4手机号 9@ 18话题
+                texts.append(fragment.text)
+            elif ftype == 1:
+                texts.append(
+                    f"{fragment.link} {fragment.text}")
+            elif ftype == 2:
+                self.emojis.append(fragment.text)
+            elif ftype == 3:
+                self.imgs.append(fragment.cdn_src)
+            elif ftype == 10:
+                self.has_audio = True
+        self.content = ''.join(texts)
+
+        self.fid = obj_proto.from_forum.id
+        self.tid = obj_proto.tid
+        self.pid = obj_proto.id
+        self.user = obj_proto.author_id
+        self.sign = ''.join(
+            [sign.text for sign in obj_proto.signature.content if sign.type == 0])
+        self.floor = obj_proto.floor
+        self.reply_num = obj_proto.sub_post_number
+        self.like = obj_proto.agree.agree_num
+        self.dislike = obj_proto.agree.disagree_num
+        self.create_time = obj_proto.time
 
     @property
     def text(self) -> str:
@@ -451,89 +428,19 @@ class Posts(_Containers[Post]):
 
     def __init__(self, main_proto=None) -> NoReturn:
 
-        def _init_userinfo(user_proto) -> UserInfo:
-            try:
-                user_id = user_proto.id
-                if 0 >= user_id:
-                    return UserInfo()
-                priv_proto = user_proto.priv_sets
-                user = UserInfo(user_name=user_proto.name,
-                                nick_name=user_proto.name_show,
-                                portrait=user_proto.portrait,
-                                user_id=user_id,
-                                gender=user_proto.gender,
-                                priv_like=priv_proto.like,
-                                priv_reply=priv_proto.reply
-                                )
-                return user
-
-            except Exception as err:
-                log.error(
-                    f"Failed to init UserInfo of {user_id} in {tid}. reason:line {err.__traceback__.tb_lineno} {err}")
-                return UserInfo()
-
-        def _init_obj(obj_proto) -> Post:
-            try:
-                texts = []
-                imgs = []
-                emojis = []
-                has_audio = False
-                for fragment in obj_proto.content:
-                    ftype = fragment.type
-                    if ftype in [0, 4, 9, 18]:  # 0纯文本 4手机号 9@ 18话题
-                        texts.append(fragment.text)
-                    elif ftype == 1:
-                        texts.append(
-                            f"{fragment.link} {fragment.text}")
-                    elif ftype == 2:
-                        emojis.append(fragment.text)
-                    elif ftype == 3:
-                        imgs.append(fragment.cdn_src)
-                    elif ftype == 10:
-                        has_audio = True
-                content = ''.join(texts)
-
-                author_id = obj_proto.author_id
-                post = Post(fid=fid,
-                            tid=tid,
-                            pid=obj_proto.id,
-                            user=users.get(author_id, UserInfo()),
-                            content=content,
-                            sign=''.join(
-                                [sign.text for sign in obj_proto.signature.content if sign.type == 0]),
-                            imgs=imgs,
-                            emojis=emojis,
-                            has_audio=has_audio,
-                            floor=obj_proto.floor,
-                            reply_num=obj_proto.sub_post_number,
-                            like=obj_proto.agree.agree_num,
-                            dislike=obj_proto.agree.disagree_num,
-                            create_time=obj_proto.time,
-                            is_thread_owner=author_id == thread_owner_id,
-                            )
-
-                return post
-
-            except Exception as err:
-                log.error(
-                    f"Failed to init Post in {tid}. reason:line {err.__traceback__.tb_lineno} {err}")
-                return Post()
-
         if main_proto:
             data_proto = main_proto.data
-            try:
-                self.current_pn = data_proto.page.current_page
-                self.total_pn = data_proto.page.total_page
-                thread_owner_id = data_proto.thread.author_id
-                fid = data_proto.forum.id
-                tid = data_proto.thread.id
-            except Exception as err:
-                raise ValueError(f"line {err.__traceback__.tb_lineno}: {err}")
+            self.current_pn = data_proto.page.current_page
+            self.total_pn = data_proto.page.total_page
+            thread_owner_id = data_proto.thread.author_id
 
-            users = {user_proto.id: _init_userinfo(user_proto)
-                     for user_proto in data_proto.user_list}
-            self._objs = [_init_obj(obj_proto)
+            users = {user_proto.id: UserInfo(
+                user_proto=user_proto) for user_proto in data_proto.user_list}
+            self._objs = [Post(obj_proto)
                           for obj_proto in data_proto.post_list]
+            for obj in self._objs:
+                obj.is_thread_owner = thread_owner_id == obj.user
+                obj.user = users.get(obj.user, UserInfo())
 
         else:
             self._objs = []
@@ -559,13 +466,29 @@ class Comment(_Container):
 
     __slots__ = ['emojis', 'has_audio', 'like', 'dislike', 'create_time']
 
-    def __init__(self, fid: int = 0, tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), text: str = '', emojis: list[str] = [], has_audio: bool = False, like: int = 0, dislike: int = 0, create_time: int = 0) -> NoReturn:
-        super().__init__(fid=fid, tid=tid, pid=pid, user=user, text=text)
-        self.emojis = emojis
-        self.has_audio = has_audio
-        self.like = like
-        self.dislike = dislike
-        self.create_time = create_time
+    def __init__(self, obj_proto: SubPostList_pb2.SubPostList) -> NoReturn:
+        super().__init__()
+        texts = []
+        self.emojis = []
+        self.has_audio = False
+        for fragment in obj_proto.content:
+            ftype = fragment.type
+            if ftype in [0, 4, 9, 18]:  # 0纯文本 4手机号 9@ 18话题
+                texts.append(fragment.text)
+            elif ftype == 1:
+                texts.append(
+                    f"{fragment.link} {fragment.text}")
+            elif ftype == 2:
+                self.emojis.append(fragment.text)
+            elif ftype == 10:
+                self.has_audio = True
+        self._text = ''.join(texts)
+
+        self.pid = obj_proto.id
+        self.user = UserInfo(user_proto=obj_proto.author)
+        self.like = obj_proto.agree.agree_num
+        self.dislike = obj_proto.agree.disagree_num
+        self.create_time = obj_proto.time
 
 
 class Comments(_Containers[Comment]):
@@ -581,65 +504,18 @@ class Comments(_Containers[Comment]):
 
     def __init__(self, main_proto=None) -> NoReturn:
 
-        def _init_obj(obj_proto) -> Comment:
-            try:
-                texts = []
-                emojis = []
-                has_audio = False
-                for fragment in obj_proto.content:
-                    ftype = fragment.type
-                    if ftype in [0, 4, 9, 18]:  # 0纯文本 4手机号 9@ 18话题
-                        texts.append(fragment.text)
-                    elif ftype == 1:
-                        texts.append(
-                            f"{fragment.link} {fragment.text}")
-                    elif ftype == 2:
-                        emojis.append(fragment.text)
-                    elif ftype == 10:
-                        has_audio = True
-                text = ''.join(texts)
-
-                user_proto = obj_proto.author
-                priv_proto = user_proto.priv_sets
-                user = UserInfo(user_name=user_proto.name,
-                                nick_name=user_proto.name_show,
-                                portrait=user_proto.portrait,
-                                user_id=user_proto.id,
-                                gender=user_proto.gender,
-                                priv_like=priv_proto.like,
-                                priv_reply=priv_proto.reply
-                                )
-
-                comment = Comment(fid=fid,
-                                  tid=tid,
-                                  pid=obj_proto.id,
-                                  user=user,
-                                  text=text,
-                                  emojis=emojis,
-                                  has_audio=has_audio,
-                                  like=obj_proto.agree.agree_num,
-                                  dislike=obj_proto.agree.disagree_num,
-                                  create_time=obj_proto.time
-                                  )
-                return comment
-
-            except Exception as err:
-                log.error(
-                    f"Failed to init Comment in {tid}. reason:line {err.__traceback__.tb_lineno} {err}")
-                return Comment()
-
         if main_proto:
             data_proto = main_proto.data
-            try:
-                self.current_pn = data_proto.page.current_page
-                self.total_pn = data_proto.page.total_page
-                fid = data_proto.forum.id
-                tid = data_proto.thread.id
-            except Exception as err:
-                raise ValueError(f"line {err.__traceback__.tb_lineno}: {err}")
+            self.current_pn = data_proto.page.current_page
+            self.total_pn = data_proto.page.total_page
+            fid = data_proto.forum.id
+            tid = data_proto.thread.id
 
-            self._objs = [_init_obj(obj_proto)
+            self._objs = [Comment(obj_proto)
                           for obj_proto in data_proto.subpost_list]
+            for obj in self._objs:
+                obj.fid = fid
+                obj.tid = tid
 
         else:
             self._objs = []
@@ -690,13 +566,13 @@ class Ats(_Containers[At]):
                 priv_sets = user_dict['priv_sets']
                 if not priv_sets:
                     priv_sets = {}
-                user = UserInfo(user_name=user_dict['name'],
-                                nick_name=user_dict['name_show'],
-                                portrait=user_dict['portrait'],
-                                user_id=user_dict['id'],
-                                priv_like=priv_sets.get('like', None),
-                                priv_reply=priv_sets.get('reply', None)
-                                )
+                user = UserInfo()
+                user.user_name=user_dict['name']
+                user.nick_name=user_dict['name_show']
+                user.portrait=user_dict['portrait']
+                user.user_id=user_dict['id']
+                user.priv_like=priv_sets.get('like', None)
+                user.priv_reply=priv_sets.get('reply', None)
                 at = At(tieba_name=obj_dict['fname'],
                         tid=int(obj_dict['thread_id']),
                         pid=int(obj_dict['post_id']),

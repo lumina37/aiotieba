@@ -6,7 +6,7 @@ import re
 import sys
 import time
 from io import BytesIO
-from typing import NoReturn, Optional, Tuple
+from typing import NoReturn, Optional, Tuple, Union
 
 import cv2 as cv
 import numpy as np
@@ -17,10 +17,7 @@ from PIL import Image
 from .config import config
 from .data_structure import *
 from .logger import log
-from .tieba_proto import (CommonReq_pb2, FrsPageReqIdl_pb2, FrsPageResIdl_pb2,
-                          GetUserInfoReqIdl_pb2, GetUserInfoResIdl_pb2,
-                          PbFloorReqIdl_pb2, PbFloorResIdl_pb2,
-                          PbPageReqIdl_pb2, PbPageResIdl_pb2)
+from .tieba_proto import *
 
 req.packages.urllib3.disable_warnings(
     req.packages.urllib3.exceptions.InsecureRequestWarning)
@@ -211,17 +208,55 @@ class Browser(object):
                 fid = int(main_json['data']['fid'])
 
             except Exception as err:
-                log.error(f"Failed to get fid of {tieba_name} reason:{err}")
+                log.error(f"Failed to get fid of {tieba_name}. reason:{err}")
                 fid = 0
             else:
                 self.fid_dict[tieba_name] = fid
 
         return fid
 
-    def get_userinfo(self, user: UserInfo) -> UserInfo:
+    def get_userinfo(self, _id: Union[str, int]) -> UserInfo:
         """
         补全完整版用户信息
-        get_userinfo(user)
+        _name2userinfo(user)
+
+        参数:
+            user: UserInfo 待补全的用户信息
+
+        返回值:
+            user: UserInfo 完整版用户信息
+        """
+
+        user = UserInfo(_id)
+        if user.user_id:
+            return self._uid2userinfo(user)
+        else:
+            return self._name2userinfo(user)
+
+    def get_userinfo_weak(self, _id: Union[str, int]) -> BasicUserInfo:
+        """
+        补全简略版用户信息
+        get_userinfo_weak(user)
+
+        参数:
+            user: BasicUserInfo 待补全的用户信息
+
+        返回值:
+            user: BasicUserInfo 简略版用户信息，仅保证包含portrait、user_id和user_name
+        """
+
+        user = BasicUserInfo(_id)
+        if user.user_id:
+            return self._uid2userinfo_weak(user)
+        elif user.user_name:
+            return self._user_name2userinfo_weak(user)
+        else:
+            return self._name2userinfo(user)
+
+    def _name2userinfo(self, user: UserInfo) -> UserInfo:
+        """
+        通过用户名或昵称补全完整版用户信息
+        _name2userinfo(user)
 
         参数:
             user: UserInfo 待补全的用户信息
@@ -248,43 +283,24 @@ class Browser(object):
                 gender = 2
             else:
                 gender = 0
-            user = UserInfo(user_name=user_dict['name'],
-                            nick_name=user_dict['show_nickname'],
-                            portrait=user_dict['portrait'],
-                            user_id=user_dict['id'],
-                            gender=gender,
-                            )
+
+            user.user_name = user_dict['name']
+            user.nick_name = user_dict['show_nickname']
+            user.portrait = user_dict['portrait']
+            user.user_id = user_dict['id']
+            user.gender = gender
 
         except Exception as err:
-            log.error(f"Failed to get UserInfo of {user} reason:{err}")
+            log.error(f"Failed to get UserInfo of {user}. reason:{err}")
             user = UserInfo()
 
         return user
 
-    def get_userinfo_weak(self, user: BasicUserInfo) -> BasicUserInfo:
-        """
-        补全简略版用户信息
-        get_userinfo_weak(user)
-
-        参数:
-            user: BasicUserInfo 待补全的用户信息
-
-        返回值:
-            user: BasicUserInfo 简略版用户信息，仅保证包含portrait、user_id和user_name
-        """
-
-        if user.user_name:
-            return self.name2userinfo(user)
-        elif user.user_id:
-            return self.uid2userinfo(user)
-        else:
-            return self.get_userinfo(user)
-
-    def name2userinfo(self, user: BasicUserInfo) -> BasicUserInfo:
+    def _user_name2userinfo_weak(self, user: BasicUserInfo) -> BasicUserInfo:
         """
         通过用户名补全简略版用户信息
         由于api的编码限制，仅支持补全user_id和portrait
-        name2userinfo(user)
+        _user_name2userinfo_weak(user)
 
         参数:
             user: BasicUserInfo 待补全的用户信息
@@ -312,15 +328,15 @@ class Browser(object):
 
         except Exception as err:
             log.error(
-                f"Failed to get UserInfo of {user.user_name} reason:{err}")
+                f"Failed to get UserInfo of {user.user_name}. reason:{err}")
             user = BasicUserInfo()
 
         return user
 
-    def uid2userinfo(self, user: UserInfo) -> UserInfo:
+    def _uid2userinfo(self, user: UserInfo) -> UserInfo:
         """
         通过user_id补全用户信息
-        uid2userinfo(user)
+        _uid2userinfo(user)
 
         参数:
             user: UserInfo 待补全的用户信息
@@ -349,15 +365,41 @@ class Browser(object):
                 raise ValueError(main_proto.error.errmsg)
 
             user_proto = main_proto.data.user
-            user = UserInfo(user_name=user_proto.name,
-                            nick_name=user_proto.name_show,
-                            portrait=user_proto.portrait,
-                            user_id=user_proto.id,
-                            gender=user_proto.gender)
+            user = UserInfo(user_proto=user_proto)
 
         except Exception as err:
             log.error(f"Failed to get msg reason:{err}")
             user = UserInfo()
+
+        return user
+
+    def _uid2userinfo_weak(self, user: BasicUserInfo) -> BasicUserInfo:
+        """
+        通过user_id补全简略版用户信息
+        _uid2userinfo_weak(user)
+        参数:
+            user: UserInfo 待补全的用户信息
+        返回值:
+            user: UserInfo 简略版用户信息，仅保证包含portrait、user_id和user_name
+        """
+
+        try:
+            self._set_host("http://tieba.baidu.com/")
+            res = self.sessions.web.get(
+                "http://tieba.baidu.com/im/pcmsg/query/getUserInfo", params={'chatUid': user.user_id}, timeout=(3, 10))
+            res.raise_for_status()
+
+            main_json = res.json()
+            if int(main_json['errno']):
+                raise ValueError(main_json['errmsg'])
+
+            user_dict = main_json['chatUser']
+            user.user_name = user_dict['uname']
+            user.portrait = user_dict['portrait']
+
+        except Exception as err:
+            log.error(f"Failed to get UserInfo of {user.user_id} reason:{err}")
+            user = BasicUserInfo()
 
         return user
 
@@ -404,7 +446,7 @@ class Browser(object):
             threads = Threads(main_proto)
 
         except Exception as err:
-            log.error(f"Failed to get threads of {tieba_name} reason:{err}")
+            log.error(f"Failed to get threads of {tieba_name}. reason:{err}")
             threads = Threads()
 
         return threads
@@ -450,7 +492,7 @@ class Browser(object):
             posts = Posts(main_proto)
 
         except Exception as err:
-            log.error(f"Failed to get posts of {tid} reason:{err}")
+            log.error(f"Failed to get posts of {tid}. reason:{err}")
             posts = Posts()
 
         return posts
@@ -496,7 +538,8 @@ class Browser(object):
             comments = Comments(main_proto)
 
         except Exception as err:
-            log.error(f"Failed to get comments of {pid} in {tid} reason:{err}")
+            log.error(
+                f"Failed to get comments of {pid} in {tid}. reason:{err}")
             comments = Comments()
 
         return comments
@@ -541,7 +584,7 @@ class Browser(object):
 
         except Exception as err:
             log.error(
-                f"Failed to block {user.log_name} in {tieba_name} reason:{err}")
+                f"Failed to block {user.log_name} in {tieba_name}. reason:{err}")
             return False, user
 
         log.info(
@@ -620,7 +663,7 @@ class Browser(object):
 
         except Exception as err:
             log.error(
-                f"Failed to delete thread {tid} in {tieba_name} reason:{err}")
+                f"Failed to delete thread {tid} in {tieba_name}. reason:{err}")
             return False
 
         log.info(
@@ -708,6 +751,112 @@ class Browser(object):
             f"Successfully recovered tid:{tid} pid:{pid} hide:{is_frs_mask} in {tieba_name}")
         return True
 
+    def move(self, tieba_name: str, tid: int, to_tab_name: str, from_tab_id: int = 0):
+        """
+        将主题帖移动至另一分区
+        move(tieba_name,tid,to_tab_name,from_tab_id=0)
+
+        参数:
+            tieba_name: str 帖子所在贴吧名
+            tid: int 待加精的主题帖tid
+            to_tab_name: str 目标分区名称
+            from_tab_id: int 来源分区id
+
+        返回值:
+            flag: bool 操作是否成功
+        """
+
+        def _tab_name2tab_id():
+            """
+            _tab_name2tab_id()
+            由分区名to_tab_name获取tab_id
+
+            闭包参数:
+                tieba_name
+                to_tab_name
+
+            返回值:
+                tab_id: int
+            """
+
+            common = CommonReq_pb2.CommonReq()
+            common.BDUSS = self.sessions.BDUSS
+            common._client_version = '12.21.1.0'
+            data = SearchPostForumReqIdl_pb2.SearchPostForumReqIdl.DataReq()
+            data.common.CopyFrom(common)
+            data.word = tieba_name
+            searchforum_req = SearchPostForumReqIdl_pb2.SearchPostForumReqIdl()
+            searchforum_req.data.CopyFrom(data)
+
+            files = {'data': ('file', searchforum_req.SerializeToString())}
+
+            try:
+                res = self.sessions.app_proto.post(
+                    "http://c.tieba.baidu.com/c/f/forum/searchPostForum?cmd=309466", files=files, timeout=(3, 10))
+                res.raise_for_status()
+
+                main_proto = SearchPostForumResIdl_pb2.SearchPostForumResIdl()
+                main_proto.ParseFromString(res.content)
+                if int(main_proto.error.errorno):
+                    raise ValueError(main_proto.error.errmsg)
+
+                tab_id = 0
+                for tabinfo_proto in main_proto.data.exact_match.tab_info:
+                    if to_tab_name == tabinfo_proto.tab_name:
+                        tab_id = tabinfo_proto.tab_id
+                        break
+
+            except Exception as err:
+                log.error(
+                    f"Failed to get tab_id of {to_tab_name}. reason:{err}")
+                tab_id = 0
+
+            return tab_id
+
+        def _move(to_tab_id):
+            """
+            将主题帖移动至另一分区
+            _move(to_tab_id)
+
+            参数:
+                to_tab_id: int 将主题帖移动到to_tab_id对应的分区。to_tab_id默认为0即不分区
+
+            闭包参数:
+                tieba_name
+                tid
+
+            返回值:
+                flag: bool 操作是否成功
+            """
+
+            payload = {'BDUSS': self.sessions.BDUSS,
+                       '_client_version': '12.21.1.0',
+                       'forum_id': self.get_fid(tieba_name),
+                       'tbs': self.tbs,
+                       'threads': str([{'thread_id': tid, 'from_tab_id': from_tab_id, 'to_tab_id': to_tab_id}]).replace('\'', '"'),
+                       }
+            payload['sign'] = self._app_sign(payload)
+
+            try:
+                res = self.sessions.app.post(
+                    "http://c.tieba.baidu.com/c/c/bawu/moveTabThread", data=payload, timeout=(3, 10))
+                res.raise_for_status()
+
+                main_json = res.json()
+                if int(main_json['error_code']):
+                    raise ValueError(main_json['error_msg'])
+
+            except Exception as err:
+                log.error(
+                    f"Failed to add {tid} to tab:{to_tab_name} in {tieba_name}. reason:{err}")
+                return False
+
+            log.info(
+                f"Successfully add {tid} to tab:{to_tab_name} in {tieba_name}")
+            return True
+
+        return _move(_tab_name2tab_id())
+
     def recommend(self, tieba_name: str, tid: int) -> bool:
         """
         推荐上首页
@@ -793,9 +942,6 @@ class Browser(object):
                         cid = int(item['class_id'])
                         break
 
-                if cid == 0:
-                    raise ValueError("Can not find matched result")
-
             except Exception as err:
                 log.error(
                     f"Failed to get cid of {cname} in {tieba_name}. reason:{err}")
@@ -840,11 +986,11 @@ class Browser(object):
 
             except Exception as err:
                 log.error(
-                    f"Failed to add {tid} to goodlist in {tieba_name}. reason:{err}")
+                    f"Failed to add {tid} to good:{cname} in {tieba_name}. reason:{err}")
                 return False
 
             log.info(
-                f"Successfully add {tid} to goodlist in {tieba_name}. cid:{cid}")
+                f"Successfully add {tid} to good:{cname} in {tieba_name}")
             return True
 
         return _good(_cname2cid())
@@ -1010,7 +1156,7 @@ class Browser(object):
                 raise
             except Exception as err:
                 log.error(
-                    f"Failed to get blacklist of {tieba_name} pn:{pn} reason:{err}")
+                    f"Failed to get blacklist of {tieba_name} pn:{pn}. reason:{err}")
 
         for pn in range(1, sys.maxsize):
             try:
@@ -1646,7 +1792,7 @@ class Browser(object):
                 raise
             except Exception as err:
                 log.error(
-                    f"Failed to get rank of {tieba_name} pn:{pn} reason:{err}")
+                    f"Failed to get rank of {tieba_name} pn:{pn}. reason:{err}")
 
         for pn in range(1, sys.maxsize):
             try:
@@ -1707,7 +1853,7 @@ class Browser(object):
                 raise
             except Exception as err:
                 log.error(
-                    f"Failed to get member of {tieba_name} pn:{pn} reason:{err}")
+                    f"Failed to get member of {tieba_name} pn:{pn}. reason:{err}")
 
         for pn in range(1, 459):
             try:
@@ -1745,7 +1891,7 @@ class Browser(object):
                 raise ValueError(main_json['error']['errmsg'])
 
         except Exception as err:
-            log.error(f"Failed to like forum {tieba_name} reason:{err}")
+            log.error(f"Failed to like forum {tieba_name}. reason:{err}")
             return False
 
         log.info(f"Successfully like forum {tieba_name}")
@@ -1798,7 +1944,7 @@ class Browser(object):
             cash = main_json['user_info'].__contains__('get_packet_cash')
 
         except Exception as err:
-            log.error(f"Failed to sign forum {tieba_name} reason:{err}")
+            log.error(f"Failed to sign forum {tieba_name}. reason:{err}")
             return False
 
         log.info(f"Successfully sign forum {tieba_name}. cash:{cash}")
@@ -1870,7 +2016,7 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            log.error(f"Failed to add post in {tid} reason:{err}")
+            log.error(f"Failed to add post in {tid}. reason:{err}")
             return False
 
         log.info(f"Successfully add post in {tid}")
@@ -1912,7 +2058,7 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            log.error(f"Failed to set privacy to {tid} reason:{err}")
+            log.error(f"Failed to set privacy to {tid}. reason:{err}")
             return False
 
         log.info(f"Successfully set privacy to {tid}. is_hide:{hide}")

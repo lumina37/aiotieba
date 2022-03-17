@@ -2,7 +2,6 @@
 import argparse
 
 import tiebaBrowser as tb
-from tiebaBrowser.data_structure import BasicUserInfo
 
 
 if __name__ == '__main__':
@@ -76,9 +75,9 @@ if __name__ == '__main__':
 
     user = None
     if args.id:
-        user = brow.get_userinfo(BasicUserInfo(args.id))
+        user = brow.get_userinfo(args.id)
     if args.user_id:
-        user = brow.get_userinfo_weak(BasicUserInfo(int(args.user_id)))
+        user = brow.get_userinfo_weak(args.user_id)
     if user and user.portrait:
         print(user)
         if args.block:

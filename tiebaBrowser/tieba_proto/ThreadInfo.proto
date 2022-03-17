@@ -22,6 +22,7 @@ message ThreadInfo {
     Agree agree = 126;
     int32 is_god = 131;
     repeated PbContent first_post_content = 142; 
+    int32 tab_id = 175;
     int32 is_deleted = 181;
     int32 is_frs_mask = 198;
 }

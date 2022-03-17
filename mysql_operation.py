@@ -46,8 +46,7 @@ if __name__ == '__main__':
         if args.delete:
             brow.del_user_id(args.id)
         elif args.search:
-            user = tb.BasicUserInfo(args.id)
-            user = brow.get_userinfo_weak(user)
+            user = brow.get_userinfo_weak(args.id)
             print(brow.mysql.is_user_id_white(args.tieba_name, user.user_id))
         else:
             brow.update_user_id(args.id, args.flag)

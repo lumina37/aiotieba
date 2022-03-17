@@ -9,7 +9,6 @@ from collections import OrderedDict
 import tiebaBrowser as tb
 import tiebaBrowser.cloud_review as cr
 from tiebaBrowser.config import SCRIPT_DIR
-from tiebaBrowser.data_structure import BasicUserInfo, UserInfo
 
 
 @atexit.register
@@ -155,6 +154,23 @@ class Listener(object):
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
         if tieba_dict['admin'].recommend(at.tieba_name, at.tid):
+            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+
+    def cmd_move(self, at, tab_name):
+        """
+        move指令
+        将指令所在主题帖移动至名为tab_name的分区
+        """
+
+        tieba_dict = self.tieba.get(at.tieba_name, None)
+        if not tieba_dict:
+            return
+        if not tieba_dict['access_user'].__contains__(at.user.user_name):
+            return
+
+        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+
+        if tieba_dict['admin'].move(at.tieba_name, at.tid, tab_name):
             tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     def cmd_good(self, at, cname):
@@ -398,7 +414,7 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
-        user = self.listener.get_userinfo(UserInfo(id))
+        user = self.listener.get_userinfo(id)
 
         if tieba_dict['admin'].block(at.tieba_name, user, day=10):
             tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
@@ -419,7 +435,7 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
-        user = self.listener.get_userinfo(UserInfo(id))
+        user = self.listener.get_userinfo(id)
 
         if tieba_dict['admin'].block(at.tieba_name, user, day=3):
             tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
@@ -440,7 +456,7 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
-        user = self.listener.get_userinfo(UserInfo(id))
+        user = self.listener.get_userinfo(id)
 
         if tieba_dict['admin'].unblock(at.tieba_name, user):
             tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
@@ -461,7 +477,7 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
-        user = self.listener.get_userinfo_weak(BasicUserInfo(id))
+        user = self.listener.get_userinfo_weak(id)
 
         if tieba_dict['admin'].blacklist_add(at.tieba_name, user):
             tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
@@ -482,7 +498,7 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
-        user = self.listener.get_userinfo_weak(BasicUserInfo(id))
+        user = self.listener.get_userinfo_weak(id)
 
         if tieba_dict['admin'].blacklist_cancel(at.tieba_name, user):
             tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)

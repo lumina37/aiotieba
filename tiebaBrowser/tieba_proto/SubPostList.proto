@@ -8,7 +8,6 @@ message SubPostList {
     int64 id = 1;
     repeated PbContent content = 2;
     uint32 time = 3;
-    int64 author_id = 4;
     string title = 5;
     uint32 floor = 6;
     User author = 7;

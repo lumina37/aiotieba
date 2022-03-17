@@ -3,6 +3,7 @@ syntax = "proto3";
 import "PbContent.proto";
 import "SubPostList.proto";
 import "Agree.proto";
+import "SimpleForum.proto";
 
 message Post {
     int64 id = 1;
@@ -29,4 +30,6 @@ message Post {
     }
     SignatureData signature = 21;
     Agree agree = 37;
+    SimpleForum from_forum = 38;
+    int64 tid = 46;
 }

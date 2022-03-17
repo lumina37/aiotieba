@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+import "CommonReq.proto";
+
+message SearchPostForumReqIdl {
+    message DataReq {
+        CommonReq common = 1;
+        string word = 2;
+    }
+    DataReq data = 1;
+}
