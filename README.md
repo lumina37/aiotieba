@@ -4,15 +4,16 @@
 
 ## 功能特点
 
-+ 优先使用app版贴吧接口，更新进度紧贴官方版本。部分接口为独家开源
-+ 得益于Python语言的强大扩展能力，脚本可以支持二维码识别、dhash等方法
-+ 自定义修改函数，不再拘束于傻瓜式脚本的关键词组合判断，而是可以定义复杂的正则表达式，从用户等级/评论图片等等方面入手判断删帖与封禁条件
++ 优先使用最新版贴吧app的接口实现功能
++ 优先使用最新版贴吧app使用的Google Protocol Buffer（Protobuf）协议序列化网络请求&响应数据
++ 得益于Python语言的强大扩展能力，管理器可以支持二维码识别、dhash等方法
++ 极高的功能自由度，不再拘束于"傻瓜式"的关键词组合判断，而是可以定义复杂的正则表达式，以及从用户等级/评论图片等等方面入手判断删帖与封禁条件
 + 签到、回复、关注贴吧等摸鱼函数允许你边跑审查边水经验
 + 多样的爬虫函数，方便实现简易爬虫
 
 ## 基本环境部署
 
-+ 确保你的Python版本在3.9及以上。脚本中包含了较新的类型检查功能
++ 确保你的Python版本为3.9+，因为脚本中包含了较新的类型检查功能
 
 + 在任一目录里解包工程，目录示例: **/root/scripts/Tieba-Manager**
 
@@ -27,6 +28,7 @@ pip install bs4
 pip install pymysql
 pip install pillow
 pip install opencv-contrib-python
+pip install protobuf
 ```
 
 ## 若要开启云审查功能
@@ -53,10 +55,11 @@ pip install opencv-contrib-python
   + **pymysql** 连接MySQL
   + **pillow** 提供解码gif图像的方法
   + **opencv-contrib-python** 提供图像哈希、定位解析二维码的方法
+  + **protobuf** 支持以proto格式序列化网络请求和反序列化响应
 
 ## 编写用于一键重启的bash脚本
 
-给出我的脚本作为示例
+给出我的脚本restart.sh作为示例。需要重启时就bash restart.sh就行了
 
 ```bash
 #! /bin/bash
