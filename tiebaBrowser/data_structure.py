@@ -346,16 +346,17 @@ class Threads(_Containers[Thread]):
     has_next: 是否有下一页
     """
 
-    __slots__ = ['forum','tab_map']
+    __slots__ = ['forum', 'tab_map']
 
-    def __init__(self, main_proto=None) -> NoReturn:
+    def __init__(self, main_proto: Optional[FrsPageResIdl_pb2.FrsPageResIdl] = None) -> NoReturn:
 
         if main_proto:
             data_proto = main_proto.data
             self.current_pn = data_proto.page.current_page
             self.total_pn = data_proto.page.total_page
             self.forum = Forum(data_proto.forum)
-            self.tab_map={tab_proto.tab_name:tab_proto.tab_id for tab_proto in data_proto.nav_tab_info.tab}
+            self.tab_map = {
+                tab_proto.tab_name: tab_proto.tab_id for tab_proto in data_proto.nav_tab_info.tab}
 
             users = {user_proto.id: UserInfo(
                 user_proto=user_proto) for user_proto in data_proto.user_list}
@@ -368,7 +369,7 @@ class Threads(_Containers[Thread]):
             self._objs = []
             self.current_pn = 0
             self.total_pn = 0
-            self.tab_map={}
+            self.tab_map = {}
 
 
 class Post(_Container):
@@ -445,7 +446,7 @@ class Posts(_Containers[Post]):
 
     __slots__ = ['forum', 'thread']
 
-    def __init__(self, main_proto=None) -> NoReturn:
+    def __init__(self, main_proto: Optional[PbPageResIdl_pb2.PbPageResIdl] = None) -> NoReturn:
 
         if main_proto:
             data_proto = main_proto.data
@@ -525,7 +526,7 @@ class Comments(_Containers[Comment]):
 
     __slots__ = ['forum', 'thread', 'post']
 
-    def __init__(self, main_proto=None) -> NoReturn:
+    def __init__(self, main_proto: Optional[PbFloorResIdl_pb2.PbFloorResIdl] = None) -> NoReturn:
 
         if main_proto:
             data_proto = main_proto.data

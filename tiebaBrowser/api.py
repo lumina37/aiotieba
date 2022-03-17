@@ -1537,7 +1537,7 @@ class Browser(object):
             exp = int(forum_dict['cur_score'])
             return tieba_name, fid, level, exp
 
-        def _get_pn_forumlist(pn):
+        def _get_pn_forumlist(pn: int):
             """
             获取pn页的关注贴吧信息
             _get_pn_forumlist(pn)
@@ -1701,7 +1701,7 @@ class Browser(object):
 
         except Exception as err:
             log.error(
-                f"Failed to get tab_id of {to_tab_name}. reason:{err}")
+                f"Failed to get tab_map of {tieba_name}. reason:{err}")
             tab_map = {}
 
         return tab_map
