@@ -6,7 +6,7 @@ import re
 import sys
 import time
 from io import BytesIO
-from typing import NoReturn, Optional, Tuple, Union
+from typing import Dict, NoReturn, Optional, Tuple, Union
 
 import cv2 as cv
 import numpy as np
@@ -423,11 +423,12 @@ class Browser(object):
         data.common.CopyFrom(common)
         data.kw = tieba_name
         data.pn = pn
-        data.rn = 30
+        data.rn = 90
+        data.rn_need = 30
         data.cid = 0
         data.is_good = 0
         data.q_type = 2
-        data.sort_type = 0
+        data.sort_type = 1
         frspage_req = FrsPageReqIdl_pb2.FrsPageReqIdl()
         frspage_req.data.CopyFrom(data)
 
@@ -751,111 +752,46 @@ class Browser(object):
             f"Successfully recovered tid:{tid} pid:{pid} hide:{is_frs_mask} in {tieba_name}")
         return True
 
-    def move(self, tieba_name: str, tid: int, to_tab_name: str, from_tab_id: int = 0):
+    def move(self, tieba_name: str, tid: int, to_tab_id: int, from_tab_id: int = 0):
         """
         将主题帖移动至另一分区
-        move(tieba_name,tid,to_tab_name,from_tab_id=0)
+        move(tieba_name,tid,to_tab_id,from_tab_id=0)
 
         参数:
             tieba_name: str 帖子所在贴吧名
-            tid: int 待加精的主题帖tid
-            to_tab_name: str 目标分区名称
+            tid: int 待移动的主题帖tid
+            to_tab_id: int 目标分区id
             from_tab_id: int 来源分区id
 
         返回值:
             flag: bool 操作是否成功
         """
 
-        def _tab_name2tab_id():
-            """
-            _tab_name2tab_id()
-            由分区名to_tab_name获取tab_id
+        payload = {'BDUSS': self.sessions.BDUSS,
+                   '_client_version': '12.21.1.0',
+                   'forum_id': self.get_fid(tieba_name),
+                   'tbs': self.tbs,
+                   'threads': str([{'thread_id': tid, 'from_tab_id': from_tab_id, 'to_tab_id': to_tab_id}]).replace('\'', '"'),
+                   }
+        payload['sign'] = self._app_sign(payload)
 
-            闭包参数:
-                tieba_name
-                to_tab_name
+        try:
+            res = self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/c/bawu/moveTabThread", data=payload, timeout=(3, 10))
+            res.raise_for_status()
 
-            返回值:
-                tab_id: int
-            """
+            main_json = res.json()
+            if int(main_json['error_code']):
+                raise ValueError(main_json['error_msg'])
 
-            common = CommonReq_pb2.CommonReq()
-            common.BDUSS = self.sessions.BDUSS
-            common._client_version = '12.21.1.0'
-            data = SearchPostForumReqIdl_pb2.SearchPostForumReqIdl.DataReq()
-            data.common.CopyFrom(common)
-            data.word = tieba_name
-            searchforum_req = SearchPostForumReqIdl_pb2.SearchPostForumReqIdl()
-            searchforum_req.data.CopyFrom(data)
+        except Exception as err:
+            log.error(
+                f"Failed to add {tid} to tab:{to_tab_id} in {tieba_name}. reason:{err}")
+            return False
 
-            files = {'data': ('file', searchforum_req.SerializeToString())}
-
-            try:
-                res = self.sessions.app_proto.post(
-                    "http://c.tieba.baidu.com/c/f/forum/searchPostForum?cmd=309466", files=files, timeout=(3, 10))
-                res.raise_for_status()
-
-                main_proto = SearchPostForumResIdl_pb2.SearchPostForumResIdl()
-                main_proto.ParseFromString(res.content)
-                if int(main_proto.error.errorno):
-                    raise ValueError(main_proto.error.errmsg)
-
-                tab_id = 0
-                for tabinfo_proto in main_proto.data.exact_match.tab_info:
-                    if to_tab_name == tabinfo_proto.tab_name:
-                        tab_id = tabinfo_proto.tab_id
-                        break
-
-            except Exception as err:
-                log.error(
-                    f"Failed to get tab_id of {to_tab_name}. reason:{err}")
-                tab_id = 0
-
-            return tab_id
-
-        def _move(to_tab_id):
-            """
-            将主题帖移动至另一分区
-            _move(to_tab_id)
-
-            参数:
-                to_tab_id: int 将主题帖移动到to_tab_id对应的分区。to_tab_id默认为0即不分区
-
-            闭包参数:
-                tieba_name
-                tid
-
-            返回值:
-                flag: bool 操作是否成功
-            """
-
-            payload = {'BDUSS': self.sessions.BDUSS,
-                       '_client_version': '12.21.1.0',
-                       'forum_id': self.get_fid(tieba_name),
-                       'tbs': self.tbs,
-                       'threads': str([{'thread_id': tid, 'from_tab_id': from_tab_id, 'to_tab_id': to_tab_id}]).replace('\'', '"'),
-                       }
-            payload['sign'] = self._app_sign(payload)
-
-            try:
-                res = self.sessions.app.post(
-                    "http://c.tieba.baidu.com/c/c/bawu/moveTabThread", data=payload, timeout=(3, 10))
-                res.raise_for_status()
-
-                main_json = res.json()
-                if int(main_json['error_code']):
-                    raise ValueError(main_json['error_msg'])
-
-            except Exception as err:
-                log.error(
-                    f"Failed to add {tid} to tab:{to_tab_name} in {tieba_name}. reason:{err}")
-                return False
-
-            log.info(
-                f"Successfully add {tid} to tab:{to_tab_name} in {tieba_name}")
-            return True
-
-        return _move(_tab_name2tab_id())
+        log.info(
+            f"Successfully add {tid} to tab:{to_tab_id} in {tieba_name}")
+        return True
 
     def recommend(self, tieba_name: str, tid: int) -> bool:
         """
@@ -1729,6 +1665,49 @@ class Browser(object):
         except Exception as err:
             log.error(f"Failed to get adminlist reason: {err}")
             return
+
+    def get_tab_map(self, tieba_name: str) -> Dict[str, int]:
+        """
+        get_tab_map()
+        获取分区名到分区id的映射字典
+
+        参数:
+            tieba_name: str 贴吧名
+
+        返回值:
+            tab_map: Dict[str, int] 分区名:分区id
+        """
+
+        common = CommonReq_pb2.CommonReq()
+        common.BDUSS = self.sessions.BDUSS
+        common._client_version = '12.21.1.0'
+        data = SearchPostForumReqIdl_pb2.SearchPostForumReqIdl.DataReq()
+        data.common.CopyFrom(common)
+        data.word = tieba_name
+        searchforum_req = SearchPostForumReqIdl_pb2.SearchPostForumReqIdl()
+        searchforum_req.data.CopyFrom(data)
+
+        files = {'data': ('file', searchforum_req.SerializeToString())}
+
+        try:
+            res = self.sessions.app_proto.post(
+                "http://c.tieba.baidu.com/c/f/forum/searchPostForum?cmd=309466", files=files, timeout=(3, 10))
+            res.raise_for_status()
+
+            main_proto = SearchPostForumResIdl_pb2.SearchPostForumResIdl()
+            main_proto.ParseFromString(res.content)
+            if int(main_proto.error.errorno):
+                raise ValueError(main_proto.error.errmsg)
+
+            tab_map = {
+                tab_proto.tab_name: tab_proto.tab_id for tab_proto in main_proto.data.exact_match.tab_info}
+
+        except Exception as err:
+            log.error(
+                f"Failed to get tab_id of {to_tab_name}. reason:{err}")
+            tab_map = {}
+
+        return tab_map
 
     def get_rank(self, tieba_name: str, level_thre: int = 4) -> Tuple[str, int, int, bool]:
         """

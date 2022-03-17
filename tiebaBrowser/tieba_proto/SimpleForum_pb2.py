@@ -12,9 +12,10 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 
+from . import FrsTabInfo_pb2 as FrsTabInfo__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x11SimpleForum.proto\"M\n\x0bSimpleForum\x12\n\n\x02id\x18\x01 \x01(\x03\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x12\n\nmember_num\x18\x0c \x01(\x05\x12\x10\n\x08post_num\x18\r \x01(\x05\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x11SimpleForum.proto\x1a\x10\x46rsTabInfo.proto\"l\n\x0bSimpleForum\x12\n\n\x02id\x18\x01 \x01(\x03\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x12\n\nmember_num\x18\x0c \x01(\x05\x12\x10\n\x08post_num\x18\r \x01(\x05\x12\x1d\n\x08tab_info\x18\x0f \x03(\x0b\x32\x0b.FrsTabInfob\x06proto3')
 
 
 
@@ -29,6 +30,6 @@ _sym_db.RegisterMessage(SimpleForum)
 if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
-  _SIMPLEFORUM._serialized_start=21
-  _SIMPLEFORUM._serialized_end=98
+  _SIMPLEFORUM._serialized_start=39
+  _SIMPLEFORUM._serialized_end=147
 # @@protoc_insertion_point(module_scope)

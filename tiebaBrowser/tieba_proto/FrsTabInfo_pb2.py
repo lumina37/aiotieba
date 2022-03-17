@@ -14,7 +14,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x10\x46rsTabInfo.proto\".\n\nFrsTabInfo\x12\x0e\n\x06tab_id\x18\x01 \x01(\x05\x12\x10\n\x08tab_name\x18\x03 \x01(\tb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x10\x46rsTabInfo.proto\"F\n\nFrsTabInfo\x12\x0e\n\x06tab_id\x18\x01 \x01(\x05\x12\x10\n\x08tab_name\x18\x03 \x01(\t\x12\x16\n\x0eis_general_tab\x18\x07 \x01(\x05\x62\x06proto3')
 
 
 
@@ -30,5 +30,5 @@ if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
   _FRSTABINFO._serialized_start=20
-  _FRSTABINFO._serialized_end=66
+  _FRSTABINFO._serialized_end=90
 # @@protoc_insertion_point(module_scope)

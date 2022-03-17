@@ -195,6 +195,21 @@ class UserInfo(BasicUserInfo):
         self._priv_reply = new_priv_reply
 
 
+class Forum(object):
+    """
+    吧信息
+
+    fid: 吧id
+    name: 吧名
+    """
+
+    __slots__ = ['fid', 'name']
+
+    def __init__(self, obj_proto) -> NoReturn:
+        self.fid = obj_proto.id
+        self.name = obj_proto.name
+
+
 class _Container(object):
     """
     基本的内容信息
@@ -267,6 +282,7 @@ class Thread(_Container):
     fid: 所在吧id
     tid: 帖子编号
     pid: 回复编号
+    tab_id: 分区编号
     user: UserInfo类 发布者信息
     title: 标题内容
     first_floor_text: 首楼文本
@@ -280,7 +296,7 @@ class Thread(_Container):
     last_time: 10位时间戳 最后回复时间
     """
 
-    __slots__ = ['title', 'first_floor_text', 'imgs', 'emojis',
+    __slots__ = ['tab_id', 'title', 'first_floor_text', 'imgs', 'emojis',
                  'view_num', 'reply_num', 'like', 'dislike', 'create_time', 'last_time']
 
     def __init__(self, obj_proto: ThreadInfo_pb2.ThreadInfo) -> NoReturn:
@@ -304,6 +320,7 @@ class Thread(_Container):
         self.fid = obj_proto.fid
         self.tid = obj_proto.id
         self.pid = obj_proto.first_post_id
+        self.tab_id = obj_proto.tab_id
         self.user = obj_proto.author_id
         self.title = obj_proto.title
         self.view_num = obj_proto.view_num
@@ -329,7 +346,7 @@ class Threads(_Containers[Thread]):
     has_next: 是否有下一页
     """
 
-    __slots__ = []
+    __slots__ = ['forum','tab_map']
 
     def __init__(self, main_proto=None) -> NoReturn:
 
@@ -337,6 +354,9 @@ class Threads(_Containers[Thread]):
             data_proto = main_proto.data
             self.current_pn = data_proto.page.current_page
             self.total_pn = data_proto.page.total_page
+            self.forum = Forum(data_proto.forum)
+            self.tab_map={tab_proto.tab_name:tab_proto.tab_id for tab_proto in data_proto.nav_tab_info.tab}
+
             users = {user_proto.id: UserInfo(
                 user_proto=user_proto) for user_proto in data_proto.user_list}
             self._objs = [Thread(obj_proto)
@@ -348,6 +368,7 @@ class Threads(_Containers[Thread]):
             self._objs = []
             self.current_pn = 0
             self.total_pn = 0
+            self.tab_map={}
 
 
 class Post(_Container):
@@ -396,8 +417,6 @@ class Post(_Container):
                 self.has_audio = True
         self.content = ''.join(texts)
 
-        self.fid = obj_proto.from_forum.id
-        self.tid = obj_proto.tid
         self.pid = obj_proto.id
         self.user = obj_proto.author_id
         self.sign = ''.join(
@@ -424,7 +443,7 @@ class Posts(_Containers[Post]):
     has_next: 是否有下一页
     """
 
-    __slots__ = []
+    __slots__ = ['forum', 'thread']
 
     def __init__(self, main_proto=None) -> NoReturn:
 
@@ -432,7 +451,9 @@ class Posts(_Containers[Post]):
             data_proto = main_proto.data
             self.current_pn = data_proto.page.current_page
             self.total_pn = data_proto.page.total_page
-            thread_owner_id = data_proto.thread.author_id
+            self.forum = Forum(data_proto.forum)
+            self.thread = Thread(data_proto.thread)
+            thread_owner_id = self.thread.user
 
             users = {user_proto.id: UserInfo(
                 user_proto=user_proto) for user_proto in data_proto.user_list}
@@ -440,6 +461,8 @@ class Posts(_Containers[Post]):
                           for obj_proto in data_proto.post_list]
             for obj in self._objs:
                 obj.is_thread_owner = thread_owner_id == obj.user
+                obj.fid = self.forum.fid
+                obj.tid = self.thread.tid
                 obj.user = users.get(obj.user, UserInfo())
 
         else:
@@ -500,7 +523,7 @@ class Comments(_Containers[Comment]):
     has_next: 是否有下一页
     """
 
-    __slots__ = []
+    __slots__ = ['forum', 'thread', 'post']
 
     def __init__(self, main_proto=None) -> NoReturn:
 
@@ -508,14 +531,15 @@ class Comments(_Containers[Comment]):
             data_proto = main_proto.data
             self.current_pn = data_proto.page.current_page
             self.total_pn = data_proto.page.total_page
-            fid = data_proto.forum.id
-            tid = data_proto.thread.id
+            self.forum = Forum(data_proto.forum)
+            self.thread = Thread(data_proto.thread)
+            self.post = Post(data_proto.post)
 
             self._objs = [Comment(obj_proto)
                           for obj_proto in data_proto.subpost_list]
             for obj in self._objs:
-                obj.fid = fid
-                obj.tid = tid
+                obj.fid = self.forum.fid
+                obj.tid = self.thread.tid
 
         else:
             self._objs = []
@@ -567,12 +591,12 @@ class Ats(_Containers[At]):
                 if not priv_sets:
                     priv_sets = {}
                 user = UserInfo()
-                user.user_name=user_dict['name']
-                user.nick_name=user_dict['name_show']
-                user.portrait=user_dict['portrait']
-                user.user_id=user_dict['id']
-                user.priv_like=priv_sets.get('like', None)
-                user.priv_reply=priv_sets.get('reply', None)
+                user.user_name = user_dict['name']
+                user.nick_name = user_dict['name_show']
+                user.portrait = user_dict['portrait']
+                user.user_id = user_dict['id']
+                user.priv_like = priv_sets.get('like', None)
+                user.priv_reply = priv_sets.get('reply', None)
                 at = At(tieba_name=obj_dict['fname'],
                         tid=int(obj_dict['thread_id']),
                         pid=int(obj_dict['post_id']),

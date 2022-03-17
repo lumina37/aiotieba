@@ -25,30 +25,17 @@ class Timer(object):
         shiftpair: tuple (下界偏移,上界偏移) 用于根据当前时间计算容许范围
     """
 
-    __slots__ = ['shiftpair', 'lower', 'upper',
+    __slots__ = ['timerange',
                  'last_execute_time', 'execute_interval']
 
-    def __init__(self, shiftpair, execute_interval):
+    def __init__(self, timerange_shift, execute_interval):
+
         self.last_execute_time = 0
         self.execute_interval = execute_interval
-
-        if shiftpair[0] >= shiftpair[1]:
-            raise ValueError("Invalid shiftpair")
-
-        self.shiftpair = shiftpair
-        self.set()
-
-    def set(self):
-        """
-        用当前时间更新时间范围
-        """
-
-        current_time = time.time()
-        self.lower = current_time + self.shiftpair[0]
-        self.upper = current_time + self.shiftpair[1]
+        self.timerange = time.time() - timerange_shift
 
     def is_inrange(self, check_time):
-        return self.lower < check_time <= self.upper
+        return self.timerange < check_time
 
     def allow_execute(self):
         current_time = time.time()
@@ -81,7 +68,7 @@ class Listener(object):
 
         self.func_map = {func_name[4:]: getattr(self, func_name) for func_name in dir(
             self) if func_name.startswith("cmd")}
-        self.timer = Timer((-30, 0), 120)
+        self.timer = Timer(60, 120)
 
     def close(self):
         self.listener.close()
@@ -98,13 +85,12 @@ class Listener(object):
                       indent=4, separators=(',', ':'), ensure_ascii=False)
 
     def scan(self):
-        self.timer.set()
         ats = self.listener.get_ats()
 
         if ats:
             for end_index, at in enumerate(ats):
                 if not self.timer.is_inrange(at.create_time):
-                    self.timer.lower = at.create_time
+                    self.timer.timerange = ats[0].create_time
                     ats = ats[:end_index]
                     break
 
@@ -168,9 +154,19 @@ class Listener(object):
         if not tieba_dict['access_user'].__contains__(at.user.user_name):
             return
 
+        threads = self.listener.get_threads(at.tieba_name)
+        if not threads:
+            return
+
+        from_tab_id = 0
+        for thread in threads:
+            if thread.tid == at.tid:
+                from_tab_id = thread.tab_id
+        to_tab_id = threads.tab_map.get(tab_name, 0)
+
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        if tieba_dict['admin'].move(at.tieba_name, at.tid, tab_name):
+        if tieba_dict['admin'].move(at.tieba_name, at.tid, to_tab_id, from_tab_id):
             tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     def cmd_good(self, at, cname):
