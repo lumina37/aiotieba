@@ -117,7 +117,7 @@ class Browser(object):
         self._tbs_renew_time = 0
 
     def close(self) -> NoReturn:
-        pass
+        self.sessions.close()
 
     def _set_host(self, url: str) -> bool:
         """
@@ -218,7 +218,7 @@ class Browser(object):
     def get_userinfo(self, _id: Union[str, int]) -> UserInfo:
         """
         补全完整版用户信息
-        _name2userinfo(user)
+        get_userinfo(user)
 
         参数:
             user: UserInfo 待补全的用户信息

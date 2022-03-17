@@ -6,6 +6,7 @@ __all__ = ('SCRIPT_DIR',
 import logging
 import logging.handlers
 import sys
+from typing import NoReturn
 
 from .config import SCRIPT_DIR
 
@@ -17,8 +18,7 @@ class MyLogger(logging.Logger):
     自定义的日志记录类
     """
 
-    def __init__(self, name: str):
-
+    def __init__(self, name: str) -> NoReturn:
         super().__init__(name)
 
         log_dir = SCRIPT_DIR.parent / 'log'

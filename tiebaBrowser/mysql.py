@@ -4,7 +4,7 @@ __all__ = ('MySQL',)
 
 import sys
 from functools import wraps
-from typing import Optional
+from typing import NoReturn, Optional
 
 import pymysql
 
@@ -34,7 +34,7 @@ class MySQL(object):
 
     __slots__ = ['db_name', 'mydb', 'mycursor']
 
-    def __init__(self, db_name: str = 'tieba_cloud_review'):
+    def __init__(self, db_name: str = 'tieba_cloud_review') -> NoReturn:
 
         mysql_json = config['MySQL']
 
@@ -47,11 +47,11 @@ class MySQL(object):
             log.warning(f"Cannot link to the database {db_name}!")
             self.init_database(mysql_json)
 
-    def close(self) -> None:
+    def close(self) -> NoReturn:
         self.mydb.commit()
         self.mydb.close()
 
-    def init_database(self, mysql_json: dict) -> None:
+    def init_database(self, mysql_json: dict) -> NoReturn:
         self.mydb = pymysql.connect(**mysql_json)
         self.mycursor = self.mydb.cursor()
         self.mycursor.execute(f"CREATE DATABASE {self.db_name}")
@@ -76,7 +76,7 @@ class MySQL(object):
             return True
 
     @translate_tieba_name
-    def create_table_pid_whitelist(self, tieba_name_eng: str) -> None:
+    def create_table_pid_whitelist(self, tieba_name_eng: str) -> NoReturn:
         """
         创建表pid_whitelist_{tieba_name_eng}
         create_table_pid_whitelist(tieba_name)
@@ -166,7 +166,7 @@ class MySQL(object):
             return True
 
     @translate_tieba_name
-    def create_table_tid_tmphide(self, tieba_name_eng: str) -> None:
+    def create_table_tid_tmphide(self, tieba_name_eng: str) -> NoReturn:
         """
         创建表tid_tmphide_{tieba_name_eng}
         create_table_tid_tmphide(tieba_name)
@@ -268,7 +268,7 @@ class MySQL(object):
                     return
 
     @translate_tieba_name
-    def create_table_user_id(self, tieba_name_eng: str) -> None:
+    def create_table_user_id(self, tieba_name_eng: str) -> NoReturn:
         """
         创建表user_id_{tieba_name_eng}
         create_table_user_id(tieba_name)
@@ -371,7 +371,7 @@ class MySQL(object):
                     return
 
     @translate_tieba_name
-    def create_table_img_blacklist(self, tieba_name_eng: str) -> None:
+    def create_table_img_blacklist(self, tieba_name_eng: str) -> NoReturn:
         """
         创建表img_blacklist_{tieba_name_eng}
         create_table_img_blacklist(tieba_name)
