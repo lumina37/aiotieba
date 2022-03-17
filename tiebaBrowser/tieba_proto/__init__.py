@@ -1,4 +1,9 @@
 # -*- coding:utf-8 -*-
+"""
+@Author: Starry
+@License: Unlicense
+@Homepage: https://github.com/Starry-OvO/Tieba-Cloud-Review
+"""
 
 from . import (CommonReq_pb2, User_pb2, ThreadInfo_pb2, Post_pb2, SubPostList_pb2,
                FrsPageReqIdl_pb2, FrsPageResIdl_pb2,
