@@ -417,7 +417,6 @@ class Browser(object):
         """
 
         common = CommonReq_pb2.CommonReq()
-        common.BDUSS = self.sessions.BDUSS
         common._client_version = '12.21.1.0'
         data = FrsPageReqIdl_pb2.FrsPageReqIdl.DataReq()
         data.common.CopyFrom(common)
@@ -467,7 +466,6 @@ class Browser(object):
         """
 
         common = CommonReq_pb2.CommonReq()
-        common.BDUSS = self.sessions.BDUSS
         common._client_version = '12.21.1.0'
         data = PbPageReqIdl_pb2.PbPageReqIdl.DataReq()
         data.common.CopyFrom(common)
@@ -514,7 +512,6 @@ class Browser(object):
         """
 
         common = CommonReq_pb2.CommonReq()
-        common.BDUSS = self.sessions.BDUSS
         common._client_version = '12.21.1.0'
         data = PbFloorReqIdl_pb2.PbFloorReqIdl.DataReq()
         data.common.CopyFrom(common)
