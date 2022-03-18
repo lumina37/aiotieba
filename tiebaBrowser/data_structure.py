@@ -314,7 +314,7 @@ class Fragments(object):
 
     __slots__ = ['_frags', '_text', 'texts', 'imgs', 'emojis', 'voice']
 
-    def __init__(self, content_protos) -> NoReturn:
+    def __init__(self, content_protos=None) -> NoReturn:
 
         def _init_by_type(content_proto) -> _Fragment:
             _type = content_proto.type
@@ -341,8 +341,12 @@ class Fragments(object):
         self.imgs = []
         self.emojis = []
         self.voice = None
-        self._frags = [_init_by_type(content_proto)
-                       for content_proto in content_protos]
+
+        if content_protos:
+            self._frags = [_init_by_type(content_proto)
+                           for content_proto in content_protos]
+        else:
+            self._frags = []
 
     @property
     def text(self) -> str:
@@ -468,23 +472,42 @@ class Thread(_Container):
     __slots__ = ['tab_id', 'title', 'view_num', 'reply_num',
                  'like', 'dislike', 'create_time', 'last_time']
 
-    def __init__(self, obj_proto: ThreadInfo_pb2.ThreadInfo) -> NoReturn:
+    def __init__(self, obj_proto: Optional[ThreadInfo_pb2.ThreadInfo] = None) -> NoReturn:
         super().__init__()
-        self.contents = Fragments(obj_proto.first_post_content)
 
-        self.fid = obj_proto.fid
-        self.tid = obj_proto.id
-        self.pid = obj_proto.first_post_id
-        self.user = obj_proto.author_id
+        if obj_proto:
+            self.contents = Fragments(obj_proto.first_post_content)
 
-        self.tab_id = obj_proto.tab_id
-        self.title = obj_proto.title
-        self.view_num = obj_proto.view_num
-        self.reply_num = obj_proto.reply_num
-        self.like = obj_proto.agree.agree_num
-        self.dislike = obj_proto.agree.disagree_num
-        self.create_time = obj_proto.create_time
-        self.last_time = obj_proto.last_time_int
+            self.fid = obj_proto.fid
+            self.tid = obj_proto.id
+            self.pid = obj_proto.first_post_id
+            self.user = obj_proto.author_id
+
+            self.tab_id = obj_proto.tab_id
+            self.title = obj_proto.title
+            self.view_num = obj_proto.view_num
+            self.reply_num = obj_proto.reply_num
+            self.like = obj_proto.agree.agree_num
+            self.dislike = obj_proto.agree.disagree_num
+            self.create_time = obj_proto.create_time
+            self.last_time = obj_proto.last_time_int
+
+        else:
+            self.contents = Fragments()
+
+            self.fid = 0
+            self.tid = 0
+            self.pid = 0
+            self.user = 0
+
+            self.tab_id = 0
+            self.title = ''
+            self.view_num = 0
+            self.reply_num = 0
+            self.like = 0
+            self.dislike = 0
+            self.create_time = 0
+            self.last_time = 0
 
     @property
     def text(self) -> str:
@@ -554,21 +577,39 @@ class Post(_Container):
     __slots__ = ['sign', 'comments', 'floor', 'reply_num',
                  'like', 'dislike', 'create_time', 'is_thread_owner']
 
-    def __init__(self, obj_proto: Post_pb2.Post) -> NoReturn:
+    def __init__(self, obj_proto: Optional[Post_pb2.Post] = None) -> NoReturn:
         super().__init__()
-        self.contents = Fragments(obj_proto.content)
-        self.sign = ''.join(
-            [sign.text for sign in obj_proto.signature.content if sign.type == 0])
-        self.comments = [Comment(comment_proto)
-                         for comment_proto in obj_proto.sub_post_list.sub_post_list]
 
-        self.pid = obj_proto.id
-        self.user = obj_proto.author_id
-        self.floor = obj_proto.floor
-        self.reply_num = obj_proto.sub_post_number
-        self.like = obj_proto.agree.agree_num
-        self.dislike = obj_proto.agree.disagree_num
-        self.create_time = obj_proto.time
+        if obj_proto:
+            self.contents = Fragments(obj_proto.content)
+            self.sign = ''.join(
+                [sign.text for sign in obj_proto.signature.content if sign.type == 0])
+            self.comments = [Comment(comment_proto)
+                             for comment_proto in obj_proto.sub_post_list.sub_post_list]
+
+            self.pid = obj_proto.id
+            self.user = obj_proto.author_id
+            self.floor = obj_proto.floor
+            self.reply_num = obj_proto.sub_post_number
+            self.like = obj_proto.agree.agree_num
+            self.dislike = obj_proto.agree.disagree_num
+            self.create_time = obj_proto.time
+
+        else:
+            self.contents = Fragments()
+            self.sign = ''
+            self.comments = []
+
+            self.fid = 0
+            self.tid = 0
+            self.pid = 0
+            self.user = UserInfo()
+            self.floor = 0
+            self.reply_num = 0
+            self.like = 0
+            self.dislike = 0
+            self.create_time = 0
+            self.is_thread_owner = False
 
     @property
     def text(self) -> str:
@@ -634,14 +675,30 @@ class Comment(_Container):
 
     __slots__ = ['like', 'dislike', 'create_time']
 
-    def __init__(self, obj_proto: SubPostList_pb2.SubPostList) -> NoReturn:
+    def __init__(self, obj_proto: Optional[SubPostList_pb2.SubPostList] = None) -> NoReturn:
         super().__init__()
-        self.contents = Fragments(obj_proto.content)
-        self.pid = obj_proto.id
-        self.user = UserInfo(user_proto=obj_proto.author)
-        self.like = obj_proto.agree.agree_num
-        self.dislike = obj_proto.agree.disagree_num
-        self.create_time = obj_proto.time
+
+        if obj_proto:
+            self.contents = Fragments(obj_proto.content)
+
+            self.pid = obj_proto.id
+            self.user = UserInfo(user_proto=obj_proto.author)
+
+            self.like = obj_proto.agree.agree_num
+            self.dislike = obj_proto.agree.disagree_num
+            self.create_time = obj_proto.time
+
+        else:
+            self.contents = Fragments()
+
+            self.fid = 0
+            self.tid = 0
+            self.pid = 0
+            self.user = UserInfo()
+
+            self.like = 0
+            self.dislike = 0
+            self.create_time = 0
 
 
 class Comments(_Containers[Comment]):

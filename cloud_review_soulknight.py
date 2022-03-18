@@ -187,8 +187,6 @@ class CloudReview(cr.CloudReview):
                 if self.expressions.female_check_exp.search(text):
                     if level == 1:
                         return 1
-                if obj.has_audio:
-                    return 1
 
         if level < 3:
             if self.expressions.business_exp.search(text):

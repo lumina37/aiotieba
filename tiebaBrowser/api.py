@@ -402,7 +402,7 @@ class Browser(object):
 
         return user
 
-    def get_threads(self, tieba_name: str, pn: int = 1) -> Threads:
+    def get_threads(self, tieba_name: str, pn: int = 1, sort_type: int = 5, is_good: bool = False) -> Threads:
         """
         使用客户端api获取首页帖子
         get_threads(tieba_name,pn=1)
@@ -410,6 +410,8 @@ class Browser(object):
         参数:
             tieba_name: str 贴吧名
             pn: int 页码
+            sort_type: int 排序方式，对于有热门区的贴吧来说0是热门排序，1是按发布时间，5是按回复时间
+            is_good: bool True为获取精品区帖子，False为获取普通区帖子
 
         返回值:
             threads: Threads
@@ -421,11 +423,10 @@ class Browser(object):
         data.common.CopyFrom(common)
         data.kw = tieba_name
         data.pn = pn
-        data.rn = 90
-        data.rn_need = 30
-        data.is_good = 0
+        data.rn = 30
+        data.is_good = is_good
         data.q_type = 2
-        data.sort_type = 1
+        data.sort_type = sort_type
         frspage_req = FrsPageReqIdl_pb2.FrsPageReqIdl()
         frspage_req.data.CopyFrom(data)
 
@@ -446,7 +447,7 @@ class Browser(object):
         except Exception as err:
             log.error(f"Failed to get threads of {tieba_name}. reason:{err}")
             threads = Threads()
-            raise
+
         return threads
 
     def get_posts(self, tid: int, pn: int = 1, with_comments: bool = False) -> Posts:
@@ -1455,13 +1456,14 @@ class Browser(object):
 
         try:
             user_dict = main_json['user']
-            user = UserInfo(user_name=user_dict['name'],
-                            nick_name=user_dict['name_show'],
-                            portrait=user_dict['portrait'],
-                            user_id=user_dict['id'],
-                            gender=user_dict['sex'],
-                            priv_like=user_dict['priv_sets']['like'],
-                            priv_reply=user_dict['priv_sets']['reply'])
+            user = UserInfo()
+            user.user_name = user_dict['name']
+            user.nick_name = user_dict['name_show']
+            user.portrait = user_dict['portrait']
+            user.user_id = int(user_dict['id'])
+            user.gender = int(user_dict['sex'])
+            user.priv_like = int(user_dict['priv_sets']['like'])
+            user.priv_reply = int(user_dict['priv_sets']['reply'])
         except Exception as err:
             log.error(
                 f"Failed to init UserInfo. reason:line {err.__traceback__.tb_lineno} {err}")
@@ -1470,6 +1472,8 @@ class Browser(object):
         threads = []
         for thread_raw in main_json['post_list']:
             try:
+                thread = Thread()
+
                 texts = []
                 for fragment in thread_raw.get('first_post_content', []):
                     ftype = int(fragment['type'])
@@ -1478,21 +1482,18 @@ class Browser(object):
                     elif ftype == 1:
                         texts.append(
                             f"{fragment['link']} {fragment['text']}")
-                first_floor_text = ''.join(texts)
+                thread.contents._text = ''.join(texts)
 
-                thread = Thread(fid=int(thread_raw['forum_id']),
-                                tid=int(thread_raw['thread_id']),
-                                pid=int(thread_raw['post_id']),
-                                user=user,
-                                title=thread_raw['title'],
-                                first_floor_text=first_floor_text,
-                                view_num=int(thread_raw['freq_num']),
-                                reply_num=int(thread_raw['reply_num']),
-                                like=int(thread_raw['agree']['agree_num']),
-                                dislike=int(
-                                    thread_raw['agree']['disagree_num']),
-                                create_time=int(thread_raw['create_time'])
-                                )
+                thread.fid = int(thread_raw['forum_id'])
+                thread.tid = int(thread_raw['thread_id'])
+                thread.pid = int(thread_raw['post_id'])
+                thread.user = user
+                thread.title = thread_raw['title']
+                thread.view_num = int(thread_raw['freq_num'])
+                thread.reply_num = int(thread_raw['reply_num'])
+                thread.like = int(thread_raw['agree']['agree_num'])
+                thread.dislike = int(thread_raw['agree']['disagree_num'])
+                thread.create_time = int(thread_raw['create_time'])
             except Exception as err:
                 log.error(
                     f"Failed to init Thread. reason:line {err.__traceback__.tb_lineno} {err}")
