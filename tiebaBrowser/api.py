@@ -107,7 +107,7 @@ class Browser(object):
     """
 
     __slots__ = ['BDUSS_key', 'fid_dict',
-                 'sessions', '_tbs', '_tbs_renew_time']
+                 'sessions', '_tbs']
 
     def __init__(self, BDUSS_key: Optional[str]) -> NoReturn:
         self.BDUSS_key = BDUSS_key
@@ -161,7 +161,7 @@ class Browser(object):
         获取贴吧反csrf校验码tbs
         """
 
-        if not self._tbs or time.time()-self._tbs_renew_time > 5:
+        if not self._tbs:
             try:
                 self._set_host("http://tieba.baidu.com/")
                 res = self.sessions.web.get(
@@ -424,7 +424,6 @@ class Browser(object):
         data.pn = pn
         data.rn = 90
         data.rn_need = 30
-        data.cid = 0
         data.is_good = 0
         data.q_type = 2
         data.sort_type = 1
@@ -448,7 +447,7 @@ class Browser(object):
         except Exception as err:
             log.error(f"Failed to get threads of {tieba_name}. reason:{err}")
             threads = Threads()
-
+            raise
         return threads
 
     def get_posts(self, tid: int, pn: int = 1) -> Posts:
@@ -461,7 +460,6 @@ class Browser(object):
             pn: int 页码
 
         返回值:
-            has_next: bool 是否还有下一页
             posts: Posts
         """
 
@@ -470,6 +468,7 @@ class Browser(object):
         data = PbPageReqIdl_pb2.PbPageReqIdl.DataReq()
         data.common.CopyFrom(common)
         data.kz = tid
+        data.with_floor = 1
         data.pn = pn
         data.rn = 30
         data.q_type = 2
@@ -507,7 +506,6 @@ class Browser(object):
             pn: int 页码
 
         返回值:
-            has_next: bool 是否还有下一页
             comments: Comments
         """
 

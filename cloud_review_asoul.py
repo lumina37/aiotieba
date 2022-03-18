@@ -129,8 +129,8 @@ class CloudReview(cr.CloudReview):
         elif flag == 0:
             if post.is_thread_owner and self.expressions.kill_thread_exp.search(post.text):
                 return 2
-            for img_url in post.imgs:
-                img = self.url2image(img_url)
+            for img_content in post.contents.imgs:
+                img = self.url2image(img_content.cdn_src)
                 if img is None:
                     continue
                 if self.has_imghash(img):

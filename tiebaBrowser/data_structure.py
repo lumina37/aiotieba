@@ -12,6 +12,10 @@ from .logger import log
 from .tieba_proto import *
 
 
+TContent = TypeVar('TContent')
+TContainer = TypeVar('TContainer')
+
+
 def _int_prop_check_ignore_none(default_val: int):
     """
     装饰器实现对int类型属性的赋值前检查。忽略传入None的异常
@@ -163,7 +167,6 @@ class UserInfo(BasicUserInfo):
         return self._level
 
     @level.setter
-    @_int_prop_check_ignore_none(0)
     def level(self, new_level: int) -> NoReturn:
         self._level = new_level
 
@@ -172,7 +175,6 @@ class UserInfo(BasicUserInfo):
         return self._gender
 
     @gender.setter
-    @_int_prop_check_ignore_none(0)
     def gender(self, new_gender: Literal[0, 1, 2]) -> NoReturn:
         self._gender = new_gender
 
@@ -181,7 +183,6 @@ class UserInfo(BasicUserInfo):
         return self._priv_like
 
     @priv_like.setter
-    @_int_prop_check_ignore_none(3)
     def priv_like(self, new_priv_like: Literal[1, 2, 3]) -> NoReturn:
         self._priv_like = new_priv_like
 
@@ -190,7 +191,6 @@ class UserInfo(BasicUserInfo):
         return self._priv_reply
 
     @priv_reply.setter
-    @_int_prop_check_ignore_none(1)
     def priv_reply(self, new_priv_reply: Literal[1, 5, 6]) -> NoReturn:
         self._priv_reply = new_priv_reply
 
@@ -210,6 +210,165 @@ class Forum(object):
         self.name = obj_proto.name
 
 
+class _Fragment(Generic[TContent]):
+    """
+    基本的内容碎片信息
+
+    _str: 文本内容
+    """
+
+    __slots__ = ['_str']
+
+    def __init__(self) -> NoReturn:
+        pass
+
+    def __str__(self) -> str:
+        return self._str
+
+
+class FragText(_Fragment):
+    """
+    纯文本碎片
+    """
+
+    __slots__ = []
+
+    def __init__(self, content_proto: PbContent_pb2.PbContent) -> NoReturn:
+        self._str = content_proto.text
+
+
+class FragLink(_Fragment):
+    """
+    链接碎片
+
+    title: 链接标题
+    link: 链接url
+    """
+
+    __slots__ = ['title', 'link']
+
+    def __init__(self, content_proto: PbContent_pb2.PbContent) -> NoReturn:
+        self.title = content_proto.text
+        self.link = content_proto.link
+        self._str = f"{content_proto.link} {content_proto.title}"
+
+
+class FragEmoji(_Fragment):
+    """
+    表情碎片
+
+    emoji_id: 表情id
+    """
+
+    __slots__ = ['emoji_id']
+
+    def __init__(self, content_proto: PbContent_pb2.PbContent) -> NoReturn:
+        self._str = content_proto.text
+        self.emoji_id = content_proto.text
+
+
+class FragImage(_Fragment):
+    """
+    音频碎片
+
+    src: 图像源url
+    cdn_src: cdn压缩图像url
+    big_cdn_src: cdn大图url
+    """
+
+    __slots__ = ['src', 'cdn_src', 'big_cdn_src']
+
+    def __init__(self, content_proto: PbContent_pb2.PbContent) -> NoReturn:
+        self._str = content_proto.src
+        self.src = content_proto.src
+        self.cdn_src = content_proto.cdn_src
+        self.big_cdn_src = content_proto.big_cdn_src
+
+
+class FragVoice(_Fragment):
+    """
+    音频碎片
+
+    voice_md5: 声音md5
+    """
+
+    __slots__ = ['voice_md5']
+
+    def __init__(self, content_proto: PbContent_pb2.PbContent) -> NoReturn:
+        self._str = content_proto.voice_md5
+        self.voice_md5 = content_proto.voice_md5
+
+
+class Fragments(object):
+    """
+    碎片列表
+
+    texts: 纯文本碎片列表
+    imgs: 图像碎片列表
+    emojis: 表情碎片列表
+    """
+
+    __slots__ = ['_frags', '_text', 'texts', 'imgs', 'emojis']
+
+    def __init__(self, content_protos) -> NoReturn:
+
+        def _init_by_type(content_proto) -> _Fragment:
+            _type = content_proto.type
+            fragment = _Fragment()
+            if _type in [0, 4, 9, 18]:
+                fragment = FragText(content_proto)
+                self.texts.append(fragment)
+            elif _type == 1:
+                fragment = FragLink(content_proto)
+                self.texts.append(fragment)
+            elif _type == 2:
+                fragment = FragEmoji(content_proto)
+                self.emojis.append(fragment)
+            elif _type == 3:
+                fragment = FragImage(content_proto)
+                self.imgs.append(fragment)
+            elif _type == 10:
+                fragment = FragVoice(content_proto)
+            return fragment
+
+        self._text = ''
+        self.texts = []
+        self.imgs = []
+        self.emojis = []
+        self._frags = [_init_by_type(content_proto)
+                       for content_proto in content_protos]
+
+    @property
+    def text(self) -> str:
+        if not self._text:
+            self._text = ''.join([str(text) for text in self.texts])
+        return self._text
+
+    @final
+    def __iter__(self) -> Iterator[TContent]:
+        return iter(self._frags)
+
+    @final
+    def __getitem__(self, idx: int) -> TContent:
+        return self._frags[idx]
+
+    @final
+    def __setitem__(self, idx, val):
+        raise NotImplementedError
+
+    @final
+    def __delitem__(self, idx):
+        raise NotImplementedError
+
+    @final
+    def __len__(self) -> int:
+        return len(self._frags)
+
+    @final
+    def __bool__(self) -> bool:
+        return bool(self._frags)
+
+
 class _Container(object):
     """
     基本的内容信息
@@ -221,20 +380,17 @@ class _Container(object):
     text: 文本内容
     """
 
-    __slots__ = ['fid', 'tid', 'pid', 'user', '_text']
+    __slots__ = ['_text', 'contents', 'fid', 'tid', 'pid', 'user']
 
     def __init__(self) -> NoReturn:
         self._text = ''
 
     @property
     def text(self) -> str:
-        return self._text
+        return self.contents.text
 
 
-T = TypeVar('T')
-
-
-class _Containers(Generic[T]):
+class _Containers(Generic[TContainer]):
     """
     Threads/Posts/Comments/Ats的泛型基类
     约定取内容的通用接口
@@ -249,10 +405,12 @@ class _Containers(Generic[T]):
     def __init__(self) -> NoReturn:
         pass
 
-    def __iter__(self) -> Iterator[T]:
+    @final
+    def __iter__(self) -> Iterator[TContainer]:
         return iter(self._objs)
 
-    def __getitem__(self, idx: int) -> T:
+    @final
+    def __getitem__(self, idx: int) -> TContainer:
         return self._objs[idx]
 
     @final
@@ -263,11 +421,13 @@ class _Containers(Generic[T]):
     def __delitem__(self, idx):
         raise NotImplementedError
 
+    @final
     def __len__(self) -> int:
         return len(self._objs)
 
+    @final
     def __bool__(self) -> bool:
-        return len(self._objs) > 0
+        return bool(self._objs)
 
     @property
     def has_next(self) -> bool:
@@ -296,27 +456,12 @@ class Thread(_Container):
     last_time: 10位时间戳 最后回复时间
     """
 
-    __slots__ = ['tab_id', 'title', 'first_floor_text', 'imgs', 'emojis',
-                 'view_num', 'reply_num', 'like', 'dislike', 'create_time', 'last_time']
+    __slots__ = ['tab_id', 'title', 'view_num', 'reply_num',
+                 'like', 'dislike', 'create_time', 'last_time']
 
     def __init__(self, obj_proto: ThreadInfo_pb2.ThreadInfo) -> NoReturn:
         super().__init__()
-        texts = []
-        self.imgs = []
-        self.emojis = []
-        for fragment in obj_proto.first_post_content:
-            ftype = fragment.type
-            if ftype in [0, 4, 9, 18]:  # 0纯文本 4手机号 9@ 18话题
-                texts.append(fragment.text)
-            elif ftype == 1:
-                texts.append(
-                    f"{fragment.link} {fragment.text}")
-            elif ftype == 2:
-                self.emojis.append(fragment.text)
-            elif ftype == 3:
-                self.imgs.append(fragment.cdn_src)
-        self.first_floor_text = ''.join(texts)
-
+        self.contents = Fragments(obj_proto.first_post_content)
         self.fid = obj_proto.fid
         self.tid = obj_proto.id
         self.pid = obj_proto.first_post_id
@@ -333,7 +478,7 @@ class Thread(_Container):
     @property
     def text(self) -> str:
         if not self._text:
-            self._text = f'{self.title}\n{self.first_floor_text}'
+            self._text = f'{self.title}\n{self.contents.text}'
         return self._text
 
 
@@ -394,30 +539,13 @@ class Post(_Container):
     is_thread_owner: 是否楼主
     """
 
-    __slots__ = ['content', 'sign', 'imgs', 'emojis', 'has_audio', 'floor',
-                 'reply_num', 'like', 'dislike', 'create_time', 'is_thread_owner']
+    __slots__ = ['content', 'sign', 'has_audio', 'floor', 'reply_num',
+                 'like', 'dislike', 'create_time', 'is_thread_owner']
 
     def __init__(self, obj_proto: Post_pb2.Post) -> NoReturn:
         super().__init__()
-        texts = []
-        self.imgs = []
-        self.emojis = []
+        self.contents = Fragments(obj_proto.content)
         self.has_audio = False
-        for fragment in obj_proto.content:
-            ftype = fragment.type
-            if ftype in [0, 4, 9, 18]:  # 0纯文本 4手机号 9@ 18话题
-                texts.append(fragment.text)
-            elif ftype == 1:
-                texts.append(
-                    f"{fragment.link} {fragment.text}")
-            elif ftype == 2:
-                self.emojis.append(fragment.text)
-            elif ftype == 3:
-                self.imgs.append(fragment.cdn_src)
-            elif ftype == 10:
-                self.has_audio = True
-        self.content = ''.join(texts)
-
         self.pid = obj_proto.id
         self.user = obj_proto.author_id
         self.sign = ''.join(
@@ -431,7 +559,7 @@ class Post(_Container):
     @property
     def text(self) -> str:
         if not self._text:
-            self._text = f'{self.content}\n{self.sign}'
+            self._text = f'{self.contents.text}\n{self.sign}'
         return self._text
 
 
@@ -488,26 +616,11 @@ class Comment(_Container):
     create_time: 10位时间戳，创建时间
     """
 
-    __slots__ = ['emojis', 'has_audio', 'like', 'dislike', 'create_time']
+    __slots__ = ['has_audio', 'like', 'dislike', 'create_time']
 
     def __init__(self, obj_proto: SubPostList_pb2.SubPostList) -> NoReturn:
         super().__init__()
-        texts = []
-        self.emojis = []
-        self.has_audio = False
-        for fragment in obj_proto.content:
-            ftype = fragment.type
-            if ftype in [0, 4, 9, 18]:  # 0纯文本 4手机号 9@ 18话题
-                texts.append(fragment.text)
-            elif ftype == 1:
-                texts.append(
-                    f"{fragment.link} {fragment.text}")
-            elif ftype == 2:
-                self.emojis.append(fragment.text)
-            elif ftype == 10:
-                self.has_audio = True
-        self._text = ''.join(texts)
-
+        self.contents = Fragments(obj_proto.content)
         self.pid = obj_proto.id
         self.user = UserInfo(user_proto=obj_proto.author)
         self.like = obj_proto.agree.agree_num

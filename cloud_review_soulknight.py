@@ -103,8 +103,8 @@ class CloudReview(cr.CloudReview):
                            reason=f"line:{sys._getframe().f_lineno}")
                 return 2
             
-            for img_url in post.imgs:
-                img = self.url2image(img_url)
+            for img_content in post.contents.imgs:
+                img = self.url2image(img_content.cdn_src)
                 if img is None:
                     continue
                 if self.has_imghash(img):

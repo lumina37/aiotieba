@@ -13,3 +13,8 @@ message SubPostList {
     User author = 7;
     Agree agree = 9;
 }
+
+message SubPost {
+    uint64 pid = 1;
+    repeated SubPostList sub_post_list = 2;
+}
