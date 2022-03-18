@@ -212,7 +212,7 @@ class Forum(object):
 
 class _Fragment(Generic[TContent]):
     """
-    基本的内容碎片信息
+    内容碎片基类
 
     _str: 文本内容
     """
@@ -224,6 +224,9 @@ class _Fragment(Generic[TContent]):
 
     def __str__(self) -> str:
         return self._str
+
+    def __bool__(self) -> bool:
+        return bool(self._str)
 
 
 class FragText(_Fragment):
@@ -301,14 +304,15 @@ class FragVoice(_Fragment):
 
 class Fragments(object):
     """
-    碎片列表
+    内容碎片列表
 
     texts: 纯文本碎片列表
     imgs: 图像碎片列表
     emojis: 表情碎片列表
+    voice: 音频碎片
     """
 
-    __slots__ = ['_frags', '_text', 'texts', 'imgs', 'emojis']
+    __slots__ = ['_frags', '_text', 'texts', 'imgs', 'emojis', 'voice']
 
     def __init__(self, content_protos) -> NoReturn:
 
@@ -329,12 +333,14 @@ class Fragments(object):
                 self.imgs.append(fragment)
             elif _type == 10:
                 fragment = FragVoice(content_proto)
+                self.voice = fragment
             return fragment
 
         self._text = ''
         self.texts = []
         self.imgs = []
         self.emojis = []
+        self.voice = None
         self._frags = [_init_by_type(content_proto)
                        for content_proto in content_protos]
 
@@ -373,11 +379,13 @@ class _Container(object):
     """
     基本的内容信息
 
+    text: 文本内容
+    contents: 内容碎片列表
+
     fid: 所在吧id
     tid: 帖子编号
     pid: 回复编号
-    user: UserInfo类 发布者信息
-    text: 文本内容
+    user: UserInfo 发布者信息
     """
 
     __slots__ = ['_text', 'contents', 'fid', 'tid', 'pid', 'user']
@@ -397,6 +405,7 @@ class _Containers(Generic[TContainer]):
 
     current_pn: 当前页数
     total_pn: 总页数
+
     has_next: 是否有下一页
     """
 
@@ -438,16 +447,16 @@ class Thread(_Container):
     """
     主题帖信息
 
-    text: 所有文本
+    text: 文本内容
+    contents: 内容碎片列表
+
     fid: 所在吧id
     tid: 帖子编号
     pid: 回复编号
+    user: UserInfo 发布者信息
+
     tab_id: 分区编号
-    user: UserInfo类 发布者信息
     title: 标题内容
-    first_floor_text: 首楼文本
-    imgs: 图片列表
-    emojis: 表情列表
     view_num: 浏览量
     reply_num: 回复数
     like: 点赞数
@@ -462,11 +471,13 @@ class Thread(_Container):
     def __init__(self, obj_proto: ThreadInfo_pb2.ThreadInfo) -> NoReturn:
         super().__init__()
         self.contents = Fragments(obj_proto.first_post_content)
+
         self.fid = obj_proto.fid
         self.tid = obj_proto.id
         self.pid = obj_proto.first_post_id
-        self.tab_id = obj_proto.tab_id
         self.user = obj_proto.author_id
+
+        self.tab_id = obj_proto.tab_id
         self.title = obj_proto.title
         self.view_num = obj_proto.view_num
         self.reply_num = obj_proto.reply_num
@@ -488,6 +499,7 @@ class Threads(_Containers[Thread]):
 
     current_pn: 当前页数
     total_pn: 总页数
+
     has_next: 是否有下一页
     """
 
@@ -521,16 +533,16 @@ class Post(_Container):
     """
     楼层信息
 
+    text: 文本内容
+    contents: 内容碎片列表
+    sign: 小尾巴
+    comments: 高赞楼中楼
+
     fid: 所在吧id
     tid: 帖子编号
     pid: 回复编号
-    user: UserInfo类 发布者信息
-    text: 所有文本
-    content: 正文
-    sign: 小尾巴
-    imgs: 图片列表
-    emojis: 表情列表
-    has_audio: 是否含有音频
+    user: UserInfo 发布者信息
+
     floor: 楼层数
     reply_num: 楼中楼回复数
     like: 点赞数
@@ -539,17 +551,19 @@ class Post(_Container):
     is_thread_owner: 是否楼主
     """
 
-    __slots__ = ['content', 'sign', 'has_audio', 'floor', 'reply_num',
+    __slots__ = ['sign', 'comments', 'floor', 'reply_num',
                  'like', 'dislike', 'create_time', 'is_thread_owner']
 
     def __init__(self, obj_proto: Post_pb2.Post) -> NoReturn:
         super().__init__()
         self.contents = Fragments(obj_proto.content)
-        self.has_audio = False
-        self.pid = obj_proto.id
-        self.user = obj_proto.author_id
         self.sign = ''.join(
             [sign.text for sign in obj_proto.signature.content if sign.type == 0])
+        self.comments = [Comment(comment_proto)
+                         for comment_proto in obj_proto.sub_post_list.sub_post_list]
+
+        self.pid = obj_proto.id
+        self.user = obj_proto.author_id
         self.floor = obj_proto.floor
         self.reply_num = obj_proto.sub_post_number
         self.like = obj_proto.agree.agree_num
@@ -569,6 +583,7 @@ class Posts(_Containers[Post]):
 
     current_pn: 当前页数
     total_pn: 总页数
+
     has_next: 是否有下一页
     """
 
@@ -604,19 +619,20 @@ class Comment(_Container):
     """
     楼中楼信息
 
+    text: 文本内容
+    contents: 内容碎片列表
+
     fid: 所在吧id
     tid: 帖子编号
     pid: 回复编号
-    user: UserInfo类 发布者信息
-    text: 文本
-    emojis: 表情列表
-    has_audio: 是否含有音频
+    user: UserInfo 发布者信息
+
     like: 点赞数
     dislike: 点踩数
     create_time: 10位时间戳，创建时间
     """
 
-    __slots__ = ['has_audio', 'like', 'dislike', 'create_time']
+    __slots__ = ['like', 'dislike', 'create_time']
 
     def __init__(self, obj_proto: SubPostList_pb2.SubPostList) -> NoReturn:
         super().__init__()
@@ -669,22 +685,26 @@ class At(object):
     """
     @信息
 
+    text: 文本
+
     tieba_name: 所在贴吧名
     tid: 帖子编号
     pid: 回复编号
-    user: UserInfo类 发布者信息
-    text: 文本
+    user: UserInfo 发布者信息
+
     create_time: 10位时间戳，创建时间
     """
 
     __slots__ = ['tieba_name', 'tid', 'pid', 'user', 'text', 'create_time']
 
     def __init__(self, tieba_name: str = '', tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), text: str = '', create_time: int = 0) -> NoReturn:
+        self.text = text
+
         self.tieba_name = tieba_name
         self.tid = tid
         self.pid = pid
         self.user = user
-        self.text = text
+
         self.create_time = create_time
 
 
@@ -711,6 +731,7 @@ class Ats(_Containers[At]):
                 user.user_id = user_dict['id']
                 user.priv_like = priv_sets.get('like', None)
                 user.priv_reply = priv_sets.get('reply', None)
+
                 at = At(tieba_name=obj_dict['fname'],
                         tid=int(obj_dict['thread_id']),
                         pid=int(obj_dict['post_id']),

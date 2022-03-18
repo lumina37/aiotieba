@@ -12,6 +12,7 @@ message PbContent {
     string big_cdn_src = 9;
     string imgtype = 10;
     string voice_md5 = 12;
+    int64 uid = 15;
     uint32 width = 18;
     uint32 height = 19;
     string packet_name = 20;

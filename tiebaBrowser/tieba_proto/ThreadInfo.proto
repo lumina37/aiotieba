@@ -11,13 +11,24 @@ message ThreadInfo {
     int32 last_time_int = 7;
     int32 is_top = 9;
     int32 is_good = 10;
-    int32 is_vote = 11;
+    int32 is_voice_thread = 15;
     int64 fid = 27;
     int64 first_post_id = 40;
     int32 is_global_top = 42;
     int32 create_time = 45;
     int64 author_id = 56;
     uint32 is_ad = 59;
+    message PollInfo {
+        int32 is_multi = 2;
+        int32 options_count = 4;
+        message PollOption {
+            string text = 3;
+            string image = 4;
+        }
+        repeated PollOption options = 9;
+        string title = 12;
+    }
+    PollInfo poll_info = 74;
     int32 is_godthread_recommend = 85;
     Agree agree = 126;
     int32 is_god = 131;

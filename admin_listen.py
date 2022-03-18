@@ -253,7 +253,7 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        if tieba_dict['admin'].del_thread(at.tieba_name, at.tid, is_frs_mask=True):
+        if tieba_dict['admin'].del_thread(at.tieba_name, at.tid, is_hide=True):
             tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     def cmd_unhide(self, at, arg):
@@ -270,7 +270,7 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        if tieba_dict['admin'].recover(at.tieba_name, at.tid, is_frs_mask=True):
+        if tieba_dict['admin'].recover(at.tieba_name, at.tid, is_hide=True):
             tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     def cmd_drop(self, at, arg):
@@ -368,7 +368,7 @@ class Listener(object):
             return
 
         tieba_dict['admin'].mysql.add_tid(at.tieba_name, at.tid)
-        if tieba_dict['admin'].del_thread(at.tieba_name, at.tid, is_frs_mask=True):
+        if tieba_dict['admin'].del_thread(at.tieba_name, at.tid, is_hide=True):
             tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     def cmd_tmpunhide(self, at, arg):
@@ -391,7 +391,7 @@ class Listener(object):
 
         tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
         for tid in tieba_dict['admin'].mysql.get_tids(at.tieba_name):
-            if tieba_dict['admin'].recover(at.tieba_name, tid, is_frs_mask=True):
+            if tieba_dict['admin'].recover(at.tieba_name, tid, is_hide=True):
                 tieba_dict['admin'].mysql.del_tid(at.tieba_name, tid)
 
     def cmd_block(self, at, id):

@@ -96,11 +96,11 @@ if __name__ == '__main__':
             brow.recover(tieba_name, tid, pid)
         if tid:
             if args.delete:
-                brow.del_thread(tieba_name, tid, is_frs_mask=False)
+                brow.del_thread(tieba_name, tid, is_hide=False)
             if args.hide:
-                brow.del_thread(tieba_name, tid, is_frs_mask=True)
+                brow.del_thread(tieba_name, tid, is_hide=True)
             if args.unhide:
-                brow.recover(tieba_name, tid, is_frs_mask=True)
+                brow.recover(tieba_name, tid, is_hide=True)
             if args.good is not None:
                 brow.good(tieba_name, tid, args.good)
             if args.ungood:

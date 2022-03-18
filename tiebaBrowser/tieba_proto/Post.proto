@@ -15,7 +15,7 @@ message Post {
     int64 author_id = 19;
     message SubPost {
         uint64 pid = 1;
-        SubPostList sub_post_list = 2;
+        repeated SubPostList sub_post_list = 2;
     }
     SubPost sub_post_list = 15;
     message SignatureData {

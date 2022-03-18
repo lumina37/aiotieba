@@ -54,7 +54,7 @@ class CloudReview(cr.CloudReview):
                         #self.block(self.tieba_name, _threads[0].user, 1, reason=f"line:{sys._getframe().f_lineno}")
                         for thread in _threads:
                             self.del_thread(self.tieba_name,
-                                            thread.tid, is_frs_mask=True)
+                                            thread.tid, is_hide=True)
                 tb.log.debug('heartbeat')
                 if self.sleep_time:
                     time.sleep(self.sleep_time)

@@ -449,14 +449,15 @@ class Browser(object):
             raise
         return threads
 
-    def get_posts(self, tid: int, pn: int = 1) -> Posts:
+    def get_posts(self, tid: int, pn: int = 1, with_comments: bool = False) -> Posts:
         """
         使用客户端api获取主题帖内回复
-        get_posts(tid,pn=1)
+        get_posts(tid,pn=1,with_comments=False)
 
         参数:
             tid: int 主题帖tid
             pn: int 页码
+            with_comment: bool 是否同时请求高赞楼中楼
 
         返回值:
             posts: Posts
@@ -467,7 +468,7 @@ class Browser(object):
         data = PbPageReqIdl_pb2.PbPageReqIdl.DataReq()
         data.common.CopyFrom(common)
         data.kz = tid
-        data.with_floor = 1
+        data.with_floor = with_comments
         data.pn = pn
         data.rn = 30
         data.q_type = 2
@@ -625,15 +626,15 @@ class Browser(object):
         log.info(f"Successfully unblocked {user.log_name} in {tieba_name}")
         return True
 
-    def del_thread(self, tieba_name: str, tid: int, is_frs_mask: bool = False) -> bool:
+    def del_thread(self, tieba_name: str, tid: int, is_hide: bool = False) -> bool:
         """
         删除主题帖
-        del_thread(tieba_name,tid,is_frs_mask=False)
+        del_thread(tieba_name,tid,is_hide=False)
 
         参数:
             tieba_name: str 帖子所在的贴吧名
             tid: int 待删除的主题帖tid
-            is_frs_mask: bool False则删帖，True则屏蔽帖，默认为False
+            is_hide: bool False则删帖，True则屏蔽帖，默认为False
 
         返回值:
             flag: bool 操作是否成功
@@ -641,7 +642,7 @@ class Browser(object):
 
         payload = {'BDUSS': self.sessions.BDUSS,
                    'fid': self.get_fid(tieba_name),
-                   'is_frs_mask': int(is_frs_mask),
+                   'is_frs_mask': int(is_hide),
                    'tbs': self.tbs,
                    'z': tid
                    }
@@ -662,7 +663,7 @@ class Browser(object):
             return False
 
         log.info(
-            f"Successfully deleted thread {tid} hide:{is_frs_mask} in {tieba_name}")
+            f"Successfully deleted thread {tid} hide:{is_hide} in {tieba_name}")
         return True
 
     def del_post(self, tieba_name: str, tid: int, pid: int) -> bool:
@@ -704,16 +705,16 @@ class Browser(object):
         log.info(f"Successfully deleted post {pid} in {tid} in {tieba_name}")
         return True
 
-    def recover(self, tieba_name, tid: int = 0, pid: int = 0, is_frs_mask: bool = False) -> bool:
+    def recover(self, tieba_name, tid: int = 0, pid: int = 0, is_hide: bool = False) -> bool:
         """
         恢复帖子
-        recover(tieba_name,tid=0,pid=0,is_frs_mask=False)
+        recover(tieba_name,tid=0,pid=0,is_hide=False)
 
         参数:
             tieba_name: str 帖子所在的贴吧名
             tid: int 回复所在的主题帖tid
             pid: int 待恢复的回复pid
-            is_frs_mask: bool False则恢复删帖，True则取消屏蔽主题帖，默认为False
+            is_hide: bool False则恢复删帖，True则取消屏蔽主题帖，默认为False
 
         返回值:
             flag: bool 操作是否成功
@@ -724,7 +725,7 @@ class Browser(object):
                    'tid_list[]': tid,
                    'pid_list[]': pid,
                    'type_list[]': 1 if pid else 0,
-                   'is_frs_mask_list[]': int(is_frs_mask)
+                   'is_frs_mask_list[]': int(is_hide)
                    }
 
         try:
@@ -743,7 +744,7 @@ class Browser(object):
             return False
 
         log.info(
-            f"Successfully recovered tid:{tid} pid:{pid} hide:{is_frs_mask} in {tieba_name}")
+            f"Successfully recovered tid:{tid} pid:{pid} hide:{is_hide} in {tieba_name}")
         return True
 
     def move(self, tieba_name: str, tid: int, to_tab_id: int, from_tab_id: int = 0):
@@ -1393,7 +1394,9 @@ class Browser(object):
             Ats: at列表
         """
 
-        payload = {'BDUSS': self.sessions.BDUSS}
+        payload = {'BDUSS': self.sessions.BDUSS,
+                   '_client_version': '12.21.1.0'
+                   }
         payload['sign'] = self._app_sign(payload)
 
         try:
