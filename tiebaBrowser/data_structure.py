@@ -250,7 +250,7 @@ class FragLink(_Fragment):
     def __init__(self, content_proto: PbContent_pb2.PbContent) -> NoReturn:
         self.title = content_proto.text
         self.link = content_proto.link
-        self._str = f"{content_proto.link} {content_proto.title}"
+        self._str = f"{self.link} {self.title}"
 
 
 class FragEmoji(_Fragment):

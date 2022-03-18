@@ -24,10 +24,9 @@ class CloudReview(cr.CloudReview):
 
         white_kw_list = ['vup|管人|(哪个|什么)v',
                          '(a|b|睿|皇协|批|p)站|b博|海鲜|(v|a)(吧|8)|nga|404|ytb|论坛|字幕组|粉丝群|直播间',
-                         '4v|樱花妹|中之人|国v|个人势|holo|asoul|2434|vr|木口|猴楼|皮套|纸片人|套皮|嘉然|然然|向晚|晚晚|乃琳|奶琳|贝拉|拉姐|珈乐|羊驼|p\+|p家|a(骚|s|手)|向晚|梓|(海|孩)子姐|七海|爱丽丝',
+                         'asoul|皮套|纸片人|套皮|嘉然|然然|向晚|晚晚|乃琳|奶琳|贝拉|拉姐|珈乐|羊驼|p\+|p家|a(骚|s|手)|向晚',
                          '联动|歌回|杂谈|歌力|企划|前世|sc|弹幕|二次元|开播|取关|bv',
-                         '谜语|拉胯|虚无|成分|黑屁|黑料|破防|真可怜|开团|(好|烂)活|干碎|对线|整活|乐了|乐子|橄榄|罢了|钓鱼|梁木|节奏|冲锋|yygq|阴间|泪目|图一乐|晚安',
-                         '懂哥|孝子|mmr|粉丝|天狗|crew|杏奴|幻官|宦官|幻士|嘉心糖|顶碗人|贝极星|奶淇淋|n70|皇(珈|家)|泥哥|小兔子|(a|b)u|一个魂']
+                         '嘉心糖|顶碗人|贝极星|奶淇淋|n70|皇(珈|家)|泥哥|(a|b|豆|d|抖|快)(u|友)|一个魂']
         self.white_kw_exp = re.compile('|'.join(white_kw_list), re.I)
 
     def close(self):
@@ -44,7 +43,7 @@ class CloudReview(cr.CloudReview):
                             f"Try to delete thread {thread.text} post by {thread.user.log_name}. level:{thread.user.level}")
                         self.del_thread(self.tieba_name, thread.tid)
                         continue
-                    if thread.like < 30 and thread.reply_num < 20:
+                    if thread.user.user_id != 0 and thread.reply_num < 15 and not self.white_kw_exp.search(thread.text):
                         user_threads = users.get(thread.user.user_id, [])
                         user_threads.append(thread)
                         users[thread.user.user_id] = user_threads
@@ -70,13 +69,15 @@ class CloudReview(cr.CloudReview):
         检查thread内容
         """
 
-        posts = self.get_posts(thread.tid)
-        if len(posts) == 0:
-            return False
         if thread.tid == 7738342092:
             return False
 
-        thread.user.level = posts[0].user.level
+        posts = self.get_posts(thread.tid, 9999)
+        if len(posts) == 0:
+            return False
+        if posts[0].floor == 1:
+            thread.user.level = posts[0].user.level
+
         flag = self._check_text(thread)
         if flag == -1:
             pass
@@ -85,21 +86,15 @@ class CloudReview(cr.CloudReview):
         elif flag == 0:
             if thread.user.priv_reply == 6:
                 return True
-        else:
-            tb.log.error(f'Wrong flag {flag} in _check_thread!')
-            pass
 
-        if len(posts) > 1:
-            second_floor = posts[1]
-            if second_floor.reply_num > 0:
-                for comment in self.get_comments(second_floor.tid, second_floor.pid):
-                    if comment.user.level < 6 and re.search('免費|[𝟙-𝟡]|仓井空在等尼', comment.text):
-                        self.block(self.tieba_name, comment.user, 10)
-                        self.del_post(self.tieba_name,
-                                      comment.tid, comment.pid)
-
-        if posts.total_pn > 1:
-            posts = self.get_posts(thread.tid, 9999)
+        #if len(posts) > 1:
+        #    second_floor = posts[1]
+        #    if second_floor.reply_num > 0:
+        #        for comment in self.get_comments(thread.tid, second_floor.pid):
+        #            if comment.user.level < 6 and re.search('免費|[𝟙-𝟡]|仓井空在等尼', comment.text):
+        #                self.block(self.tieba_name, comment.user, 10)
+        #                self.del_post(self.tieba_name,
+        #                              comment.tid, comment.pid)
 
         for post in posts:
             flag = self._check_post(post)
@@ -111,8 +106,6 @@ class CloudReview(cr.CloudReview):
                 self.del_post(self.tieba_name, post.tid, post.pid)
             elif flag == 2:
                 return True
-            else:
-                tb.log.error(f'Wrong flag {flag} in _check_thread!')
 
         return False
 

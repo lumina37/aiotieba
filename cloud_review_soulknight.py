@@ -60,6 +60,7 @@ class CloudReview(cr.CloudReview):
                 self.block(self.tieba_name, thread.user, day=10,
                            reason=f"line:{sys._getframe().f_lineno}")
                 return True
+
             flag = self._check_text(thread)
             if flag == -1:
                 pass
@@ -68,9 +69,6 @@ class CloudReview(cr.CloudReview):
             elif flag == 0:
                 if thread.user.priv_reply == 6:
                     return True
-            else:
-                tb.log.error(f'Wrong flag {flag} in _check_thread!')
-                pass
 
         for post in posts:
             flag = self._check_post(post)
@@ -82,8 +80,6 @@ class CloudReview(cr.CloudReview):
                 self.del_post(self.tieba_name, post.tid, post.pid)
             elif flag == 2:
                 return True
-            else:
-                tb.log.error(f'Wrong flag {flag} in _check_thread!')
 
         return False
 
@@ -132,8 +128,6 @@ class CloudReview(cr.CloudReview):
             self.block(self.tieba_name, obj.user, day=10,
                        reason=f"line:{sys._getframe().f_lineno}")
             return 1
-        else:
-            pass
 
         level = obj.user.level
         if level > 4:
