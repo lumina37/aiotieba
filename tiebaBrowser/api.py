@@ -114,7 +114,6 @@ class Browser(object):
         self.fid_dict = {}
         self.sessions = Sessions(BDUSS_key)
         self._tbs = ''
-        self._tbs_renew_time = 0
 
     def close(self) -> NoReturn:
         self.sessions.close()
