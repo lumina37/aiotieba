@@ -54,19 +54,21 @@ class Sessions(object):
                                                                })
         self.app.headers = req.structures.CaseInsensitiveDict({'User-Agent': 'bdtb for Android 12.21.1.0',
                                                                'Charset': 'UTF-8',
-                                                               'Connection': 'Keep-Alive',
+                                                               'Connection': 'keep-alive',
                                                                'Accept-Encoding': 'gzip',
                                                                'Host': 'c.tieba.baidu.com',
-                                                               'Connection': 'keep-alive'
                                                                })
         self.app_proto.headers = req.structures.CaseInsensitiveDict({'User-Agent': 'bdtb for Android 12.21.1.0',
                                                                      'x_bd_data_type': 'protobuf',
                                                                      'Charset': 'UTF-8',
-                                                                     'Connection': 'Keep-Alive',
+                                                                     'Connection': 'keep-alive',
                                                                      'Accept-Encoding': 'gzip',
                                                                      'Host': 'c.tieba.baidu.com',
-                                                                     'Connection': 'keep-alive'
                                                                      })
+
+        self.web.trust_env = False
+        self.app.trust_env = False
+        self.app_proto.trust_env = False
 
         self.web.verify = False
         self.app.verify = False
