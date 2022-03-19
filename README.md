@@ -15,9 +15,10 @@
 
 + 确保你的Python版本为3.9+，因为脚本中包含了较新的类型检查功能
 
-+ """bash
-git clone <https://github.com/Starry-OvO/Tieba-Manager.git>
-"""
++ 拉取代码
+```bash
+git clone https://github.com/Starry-OvO/Tieba-Manager.git
+```
 
 + 修改config/config.json，填入你的BDUSS
 
@@ -33,6 +34,20 @@ pip install opencv-contrib-python
 pip install protobuf
 ```
 
+## 尝试一下
+```python
+# -*- coding:utf-8 -*-
+import tiebaBrowser as tb
+
+brow = tb.Browser("default")
+
+user = brow.get_self_info()
+print(f"当前用户信息:{user}")
+
+for thread in brow.get_threads('asoul'):
+    print(f"tid:{thread.tid} 最后回复时间戳:{thread.last_time} 标题:{thread.title}")
+```
+
 ## 若要开启云审查功能
 
 + 记得import tiebaBrowser.cloud_review以解锁云审查功能
@@ -45,8 +60,8 @@ pip install protobuf
 
 + config/config.json设置
 
-  + BDUSS key（用于快速调用）:value（你的BDUSS）
-  + MySQL 用于连接到数据库
+  + BDUSS_key（用于快捷调出BDUSS）:value（你的BDUSS的实际值）
+  + MySQL 配置用于连接到数据库的ip、端口、用户名等信息
   + tieba_name_mapping key（贴吧中文名）:value（自定义的贴吧英文名，建库时用得到）
 
 + 各第三方库的用途说明
