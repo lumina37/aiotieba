@@ -42,7 +42,8 @@ class Sessions(object):
         if BDUSS_key:
             self.renew_BDUSS(BDUSS_key)
 
-        self.web.headers = req.structures.CaseInsensitiveDict({'Host': 'tieba.baidu.com',
+        self.web.headers = req.structures.CaseInsensitiveDict({'Content-Type': 'application/x-www-form-urlencoded',
+                                                               'Host': 'tieba.baidu.com',
                                                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:98.0) Gecko/20100101 Firefox/98.0',
                                                                'Accept': '*/*',
                                                                'Accept-Encoding': 'gzip, deflate, br',
@@ -1946,41 +1947,54 @@ class Browser(object):
         """
 
         try:
+            fid = self.get_fid(tieba_name)
+            ts = time.time()
+            ts_ms = int(time.time() * 1000)
+            ts_struct = time.localtime(ts)
             payload = {'BDUSS': self.sessions.BDUSS,
-                       '_client_id': 'wappc_1643365995770_873',
+                       '_client_id': 'wappc_1643725546500_150',
                        '_client_type': 2,
                        '_client_version': '12.21.1.0',
                        '_phone_imei': '000000000000000',
+                       'active_timestamp': ts_ms-86400000,
+                       'android_id': '31760cd1d096538d',
                        'anonymous': 1,
+                       'authsid': 'null',
                        'barrage_time': 0,
+                       'brand': 'HUAWEI',
+                       'c3_aid': 'A00-WGF47YI5OMGPRPDQI5HFKD4J56B6B5YX-AZRCBBHI',
                        'can_no_forum': 0,
+                       'cmode': 1,
                        'content': content,
                        'cuid': '89EC02B413436B80CB1A8873CD56AFFF|V6JXX7UB7',
                        'cuid_galaxy2': '89EC02B413436B80CB1A8873CD56AFFF|V6JXX7UB7',
                        'cuid_gid': '',
                        'entrance_type': 0,
-                       'fid': self.get_fid(tieba_name),
+                       'event_day': f'{ts_struct.tm_year}{ts_struct.tm_mon}{ts_struct.tm_mday}',
+                       'fid': fid,
+                       'first_install_time': ts_ms-86400000,
                        'from': '1008621x',
-                       'from_fourm_id': 'null',
+                       'from_fourm_id': fid,
                        'is_ad': 0,
                        'is_barrage': 0,
                        'is_feedback': 0,
                        'kw': tieba_name,
+                       'last_update_time': ts_ms-86400000,
                        'model': 'LIO-AN00',
                        'name_show': '',
                        'net_type': 1,
                        'new_vcode': 1,
                        'post_from': 3,
                        'reply_uid': 'null',
-                       'stoken': '',
-                       'subapp_type': 'mini',
+                       'stoken': self.sessions.STOKEN,
+                       'takephoto_num': 0,
                        'tbs': self.tbs,
                        'tid': tid,
-                       'timestamp': int(time.time()),
+                       'timestamp': ts_ms,
                        'v_fid': '',
                        'v_fname': '',
                        'vcode_tag': 12,
-                       'z_id': 'NULL'
+                       'z_id': ''
                        }
             payload['sign'] = self._app_sign(payload)
 
@@ -1991,6 +2005,8 @@ class Browser(object):
             main_json = res.json()
             if int(main_json['error_code']):
                 raise ValueError(main_json['error_msg'])
+            if int(main_json['info']['need_vcode']):
+                raise ValueError(f"need verify code")
 
         except Exception as err:
             log.error(f"Failed to add post in {tid}. reason:{err}")
