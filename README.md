@@ -1,6 +1,6 @@
 # Tieba-Manager
 
-百度贴吧接口合集 / 云审查管理器 / 爬虫工具
+百度贴吧接口合集 / 云审查工具 / 指令管理器 / 爬虫工具
 
 ## 功能概览
 
@@ -31,6 +31,7 @@
 + 确保你的Python版本为3.9+，因为脚本中包含了较新的类型检查功能
 
 + 拉取代码
+
 ```bash
 git clone https://github.com/Starry-OvO/Tieba-Manager.git
 ```
@@ -50,6 +51,7 @@ pip install protobuf
 ```
 
 ## 尝试一下
+
 ```python
 # -*- coding:utf-8 -*-
 import tiebaBrowser as tb

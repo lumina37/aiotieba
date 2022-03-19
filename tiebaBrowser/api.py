@@ -1421,7 +1421,7 @@ class Browser(object):
 
     def get_homepage(self, portrait: str) -> Tuple[UserInfo, list[Thread]]:
         """
-        获取用户个人页
+        获取用户主页
         get_homepage(portrait)
 
         参数:
