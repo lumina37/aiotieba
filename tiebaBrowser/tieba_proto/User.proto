@@ -34,13 +34,7 @@ message User {
     int32 is_guanfang = 52;
     message UserVipInfo {
         uint32 v_status = 1;
-        uint32 s_time = 2;
-        uint32 e_time = 3;
-        uint32 ext_score = 4;
         uint32 v_level = 5;
-        int32 a_score = 6;
-        uint32 n_score = 7;
-        string icon_url = 8;
     }
     UserVipInfo vipInfo = 61;
     int32 is_fans = 91;
@@ -48,8 +42,6 @@ message User {
         int32 status = 1;
         uint32 field_id = 2;
         string field_name = 3;
-        uint32 type = 4;
-        string type_name = 5;
     }
     NewGodInfo new_god_data = 101;
     int32 is_default_avatar = 106;

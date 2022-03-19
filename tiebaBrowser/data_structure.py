@@ -5,6 +5,7 @@ __all__ = ('BasicUserInfo', 'UserInfo',
            )
 
 import re
+from google.protobuf.json_format import ParseDict
 from typing import (Any, Callable, Generic, Iterator, Literal, NoReturn,
                     Optional, TypeVar, Union, final)
 
@@ -63,6 +64,7 @@ class BasicUserInfo(object):
         self._nick_name = ''
         self._portrait = ''
         self._user_id = 0
+
         if _id:
             if type(_id) == int:
                 self.user_id = _id
@@ -70,6 +72,7 @@ class BasicUserInfo(object):
                 self.portrait = _id
                 if not self.portrait:
                     self.user_name = _id
+
         elif user_proto:
             self.user_name = user_proto.name
             self.nick_name = user_proto.name_show
@@ -155,6 +158,7 @@ class UserInfo(BasicUserInfo):
 
     def __init__(self, _id: Union[str, int, None] = None, user_proto: Optional[User_pb2.User] = None) -> NoReturn:
         super().__init__(_id, user_proto)
+
         if user_proto:
             priv_proto = user_proto.priv_sets
             self.level = user_proto.level_id
@@ -162,37 +166,47 @@ class UserInfo(BasicUserInfo):
             self.priv_like = priv_proto.like
             self.priv_reply = priv_proto.reply
 
+        else:
+            self.level = 0
+            self.gender = 0
+            self.priv_like = 3
+            self.priv_reply = 1
+
     @property
     def level(self) -> int:
         return self._level
 
     @level.setter
+    @_int_prop_check_ignore_none(0)
     def level(self, new_level: int) -> NoReturn:
-        self._level = new_level
+        self._level = int(new_level)
 
     @property
     def gender(self) -> int:
         return self._gender
 
     @gender.setter
+    @_int_prop_check_ignore_none(0)
     def gender(self, new_gender: Literal[0, 1, 2]) -> NoReturn:
-        self._gender = new_gender
+        self._gender = int(new_gender)
 
     @property
     def priv_like(self) -> int:
         return self._priv_like
 
     @priv_like.setter
+    @_int_prop_check_ignore_none(3)
     def priv_like(self, new_priv_like: Literal[1, 2, 3]) -> NoReturn:
-        self._priv_like = new_priv_like
+        self._priv_like = int(new_priv_like)
 
     @property
     def priv_reply(self) -> int:
         return self._priv_reply
 
     @priv_reply.setter
+    @_int_prop_check_ignore_none(1)
     def priv_reply(self, new_priv_reply: Literal[1, 5, 6]) -> NoReturn:
-        self._priv_reply = new_priv_reply
+        self._priv_reply = int(new_priv_reply)
 
 
 class Forum(object):
@@ -458,19 +472,20 @@ class Thread(_Container):
     tid: 帖子编号
     pid: 回复编号
     user: UserInfo 发布者信息
+    author_id: int 发布者user_id
 
     tab_id: 分区编号
     title: 标题内容
     view_num: 浏览量
     reply_num: 回复数
-    like: 点赞数
-    dislike: 点踩数
+    agree: 点赞数
+    disagree: 点踩数
     create_time: 10位时间戳 创建时间
     last_time: 10位时间戳 最后回复时间
     """
 
-    __slots__ = ['tab_id', 'title', 'view_num', 'reply_num',
-                 'like', 'dislike', 'create_time', 'last_time']
+    __slots__ = ['author_id', 'tab_id', 'title', 'view_num', 'reply_num',
+                 'agree', 'disagree', 'create_time', 'last_time']
 
     def __init__(self, obj_proto: Optional[ThreadInfo_pb2.ThreadInfo] = None) -> NoReturn:
         super().__init__()
@@ -481,14 +496,16 @@ class Thread(_Container):
             self.fid = obj_proto.fid
             self.tid = obj_proto.id
             self.pid = obj_proto.first_post_id
-            self.user = obj_proto.author_id
+            self.user = UserInfo(
+                user_proto=obj_proto.author) if obj_proto.author.id else UserInfo()
+            self.author_id = obj_proto.author_id
 
             self.tab_id = obj_proto.tab_id
             self.title = obj_proto.title
             self.view_num = obj_proto.view_num
             self.reply_num = obj_proto.reply_num
-            self.like = obj_proto.agree.agree_num
-            self.dislike = obj_proto.agree.disagree_num
+            self.agree = obj_proto.agree.agree_num
+            self.disagree = obj_proto.agree.disagree_num
             self.create_time = obj_proto.create_time
             self.last_time = obj_proto.last_time_int
 
@@ -498,14 +515,15 @@ class Thread(_Container):
             self.fid = 0
             self.tid = 0
             self.pid = 0
-            self.user = 0
+            self.user = UserInfo()
+            self.author_id = 0
 
             self.tab_id = 0
             self.title = ''
             self.view_num = 0
             self.reply_num = 0
-            self.like = 0
-            self.dislike = 0
+            self.agree = 0
+            self.disagree = 0
             self.create_time = 0
             self.last_time = 0
 
@@ -568,14 +586,14 @@ class Post(_Container):
 
     floor: 楼层数
     reply_num: 楼中楼回复数
-    like: 点赞数
-    dislike: 点踩数
+    agree: 点赞数
+    disagree: 点踩数
     create_time: 10位时间戳，创建时间
     is_thread_owner: 是否楼主
     """
 
     __slots__ = ['sign', 'comments', 'floor', 'reply_num',
-                 'like', 'dislike', 'create_time', 'is_thread_owner']
+                 'agree', 'disagree', 'create_time', 'is_thread_owner']
 
     def __init__(self, obj_proto: Optional[Post_pb2.Post] = None) -> NoReturn:
         super().__init__()
@@ -591,8 +609,8 @@ class Post(_Container):
             self.user = obj_proto.author_id
             self.floor = obj_proto.floor
             self.reply_num = obj_proto.sub_post_number
-            self.like = obj_proto.agree.agree_num
-            self.dislike = obj_proto.agree.disagree_num
+            self.agree = obj_proto.agree.agree_num
+            self.disagree = obj_proto.agree.disagree_num
             self.create_time = obj_proto.time
 
         else:
@@ -606,8 +624,8 @@ class Post(_Container):
             self.user = UserInfo()
             self.floor = 0
             self.reply_num = 0
-            self.like = 0
-            self.dislike = 0
+            self.agree = 0
+            self.disagree = 0
             self.create_time = 0
             self.is_thread_owner = False
 
@@ -668,12 +686,12 @@ class Comment(_Container):
     pid: 回复编号
     user: UserInfo 发布者信息
 
-    like: 点赞数
-    dislike: 点踩数
+    agree: 点赞数
+    disagree: 点踩数
     create_time: 10位时间戳，创建时间
     """
 
-    __slots__ = ['like', 'dislike', 'create_time']
+    __slots__ = ['agree', 'disagree', 'create_time']
 
     def __init__(self, obj_proto: Optional[SubPostList_pb2.SubPostList] = None) -> NoReturn:
         super().__init__()
@@ -684,8 +702,8 @@ class Comment(_Container):
             self.pid = obj_proto.id
             self.user = UserInfo(user_proto=obj_proto.author)
 
-            self.like = obj_proto.agree.agree_num
-            self.dislike = obj_proto.agree.disagree_num
+            self.agree = obj_proto.agree.agree_num
+            self.disagree = obj_proto.agree.disagree_num
             self.create_time = obj_proto.time
 
         else:
@@ -696,8 +714,8 @@ class Comment(_Container):
             self.pid = 0
             self.user = UserInfo()
 
-            self.like = 0
-            self.dislike = 0
+            self.agree = 0
+            self.disagree = 0
             self.create_time = 0
 
 
@@ -778,16 +796,9 @@ class Ats(_Containers[At]):
         def _init_obj(obj_dict: dict) -> At:
             try:
                 user_dict = obj_dict['replyer']
-                priv_sets = user_dict['priv_sets']
-                if not priv_sets:
-                    priv_sets = {}
-                user = UserInfo()
-                user.user_name = user_dict['name']
-                user.nick_name = user_dict['name_show']
-                user.portrait = user_dict['portrait']
-                user.user_id = user_dict['id']
-                user.priv_like = priv_sets.get('like', None)
-                user.priv_reply = priv_sets.get('reply', None)
+                user_proto = ParseDict(
+                    user_dict, User_pb2.User(), ignore_unknown_fields=True)
+                user = UserInfo(user_proto=user_proto)
 
                 at = At(tieba_name=obj_dict['fname'],
                         tid=int(obj_dict['thread_id']),

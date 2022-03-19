@@ -1,10 +1,11 @@
 {
   "listener": "listener",
-  "speaker": "listener",
+  "speaker": "default",
   "tieba_list": {
     "asoul": {
       "admin": "noob",
       "access_user": [
+        "香香香强强强",
         "让娜舍露安",
         "kk不好玩",
         "闪打快手丿",
@@ -19,7 +20,6 @@
         "呼谄沟倩钥",
         "One心向晚",
         "thinerthanflow",
-        "香香香强强强",
         "夢野敬二abc",
         "薇雨安",
         "物理1901",

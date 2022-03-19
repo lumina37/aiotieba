@@ -68,7 +68,7 @@ class Listener(object):
 
         self.func_map = {func_name[4:]: getattr(self, func_name) for func_name in dir(
             self) if func_name.startswith("cmd")}
-        self.timer = Timer(60, 120)
+        self.timer = Timer(60, 30)
 
     def close(self):
         self.listener.close()
@@ -82,7 +82,7 @@ class Listener(object):
 
         with self.config_path.open('w', encoding='utf-8') as _file:
             json.dump(self.config, _file, sort_keys=False,
-                      indent=4, separators=(',', ':'), ensure_ascii=False)
+                      indent=2, separators=(',', ':'), ensure_ascii=False)
 
     def scan(self):
         ats = self.listener.get_ats()
@@ -581,7 +581,30 @@ class Listener(object):
             return
 
         active_admin_list = list(tieba_dict['access_user'].keys())[:5]
-        content = f'{extra_info}@'+' @'.join(active_admin_list)
+        content = f"{extra_info}@"+" @".join(active_admin_list)
+
+        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+
+        if self.speaker.add_post(at.tieba_name, at.tid, content):
+            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+
+    def cmd_recom_status(self, at, arg):
+        """
+        recom_status指令
+        获取大吧主推荐功能的月度配额状态
+        """
+
+        tieba_dict = self.tieba.get(at.tieba_name, None)
+        if not tieba_dict:
+            return
+        if not self.timer.allow_execute():
+            return
+        if not tieba_dict['access_user'].__contains__(at.user.user_name):
+            return
+
+        total_recom_num, used_recom_num = tieba_dict['admin'].get_recom_status(
+            at.tieba_name)
+        content = f"@{at.user.user_name}\n本月总推荐配额{total_recom_num}\n本月已使用的推荐配额{used_recom_num}\n本月已使用百分比{used_recom_num/total_recom_num*100:.2f}%"
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 

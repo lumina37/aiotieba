@@ -12,6 +12,7 @@ import cv2 as cv
 import numpy as np
 import requests as req
 from bs4 import BeautifulSoup
+from google.protobuf.json_format import ParseDict
 from PIL import Image
 
 from .config import config
@@ -42,8 +43,7 @@ class Sessions(object):
         if BDUSS_key:
             self.renew_BDUSS(BDUSS_key)
 
-        self.web.headers = req.structures.CaseInsensitiveDict({'Content-Type': 'application/x-www-form-urlencoded',
-                                                               'Host': 'tieba.baidu.com',
+        self.web.headers = req.structures.CaseInsensitiveDict({'Host': 'tieba.baidu.com',
                                                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:98.0) Gecko/20100101 Firefox/98.0',
                                                                'Accept': '*/*',
                                                                'Accept-Encoding': 'gzip, deflate, br',
@@ -52,7 +52,8 @@ class Sessions(object):
                                                                'Connection': 'keep-alive',
                                                                'Upgrade-Insecure-Requests': '1'
                                                                })
-        self.app.headers = req.structures.CaseInsensitiveDict({'User-Agent': 'bdtb for Android 12.21.1.0',
+        self.app.headers = req.structures.CaseInsensitiveDict({'Content-Type': 'application/x-www-form-urlencoded',
+                                                               'User-Agent': 'bdtb for Android 12.21.1.0',
                                                                'Charset': 'UTF-8',
                                                                'Connection': 'keep-alive',
                                                                'Accept-Encoding': 'gzip',
@@ -286,6 +287,7 @@ class Browser(object):
             else:
                 gender = 0
 
+            user = UserInfo()
             user.user_name = user_dict['name']
             user.nick_name = user_dict['show_nickname']
             user.portrait = user_dict['portrait']
@@ -569,7 +571,7 @@ class Browser(object):
                    'tbs': self.tbs,
                    'un': user.user_name,
                    'word': tieba_name,
-                   'z': '9998732423',
+                   'z': '672328094',
                    }
         payload['sign'] = self._app_sign(payload)
 
@@ -1081,10 +1083,10 @@ class Browser(object):
 
                 for item in items:
                     user_info_item = item.previous_sibling.input
-                    user = BasicUserInfo(user_name=user_info_item['data-user-name'],
-                                         user_id=int(
-                                             user_info_item['data-user-id']),
-                                         portrait=item.a.img['src'][43:])
+                    user = BasicUserInfo()
+                    user.user_name = user_info_item['data-user-name']
+                    user.user_id = int(user_info_item['data-user-id'])
+                    user.portrait = item.a.img['src'][43:]
                     yield user
 
             except StopIteration:
@@ -1336,10 +1338,9 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
             user_dict = main_json['user']
-            user = BasicUserInfo()
-            user.user_name=user_dict['name']
-            user.portrait=user_dict['portrait']
-            user.user_id=user_dict['id']
+            user_proto = ParseDict(
+                user_dict, User_pb2.User(), ignore_unknown_fields=True)
+            user = BasicUserInfo(user_proto=user_proto)
 
         except Exception as err:
             log.error(f"Failed to get msg reason:{err}")
@@ -1458,59 +1459,27 @@ class Browser(object):
                 f"Failed to get profile of {portrait}. reason:{err}")
             return UserInfo(), []
 
-        try:
-            user_dict = main_json['user']
-            user = UserInfo()
-            user.user_name = user_dict['name']
-            user.nick_name = user_dict['name_show']
-            user.portrait = user_dict['portrait']
-            user.user_id = int(user_dict['id'])
-            user.gender = int(user_dict['sex'])
-            user.priv_like = int(user_dict['priv_sets']['like'])
-            user.priv_reply = int(user_dict['priv_sets']['reply'])
-        except Exception as err:
-            log.error(
-                f"Failed to init UserInfo. reason:line {err.__traceback__.tb_lineno} {err}")
-            user = UserInfo()
+        user_dict = main_json['user']
+        user_proto = ParseDict(
+            user_dict, User_pb2.User(), ignore_unknown_fields=True)
+        user = UserInfo(user_proto=user_proto)
 
-        threads = []
-        for thread_raw in main_json['post_list']:
-            try:
-                thread = Thread()
+        def _init_thread(thread_dict: dict):
+            thread_proto = ParseDict(
+                thread_dict, ThreadInfo_pb2.ThreadInfo(), ignore_unknown_fields=True)
+            thread = Thread(obj_proto=thread_proto)
+            thread.user = user
+            return thread
 
-                texts = []
-                for fragment in thread_raw.get('first_post_content', []):
-                    ftype = int(fragment['type'])
-                    if ftype in [0, 4, 9, 18]:
-                        texts.append(fragment['text'])
-                    elif ftype == 1:
-                        texts.append(
-                            f"{fragment['link']} {fragment['text']}")
-                thread.contents._text = ''.join(texts)
-
-                thread.fid = int(thread_raw['forum_id'])
-                thread.tid = int(thread_raw['thread_id'])
-                thread.pid = int(thread_raw['post_id'])
-                thread.user = user
-                thread.title = thread_raw['title']
-                thread.view_num = int(thread_raw['freq_num'])
-                thread.reply_num = int(thread_raw['reply_num'])
-                thread.like = int(thread_raw['agree']['agree_num'])
-                thread.dislike = int(thread_raw['agree']['disagree_num'])
-                thread.create_time = int(thread_raw['create_time'])
-            except Exception as err:
-                log.error(
-                    f"Failed to init Thread. reason:line {err.__traceback__.tb_lineno} {err}")
-                thread = Thread()
-
-            threads.append(thread)
+        threads = [_init_thread(thread_dict)
+                   for thread_dict in main_json['post_list']]
 
         return user, threads
 
-    def get_self_forumlist(self) -> Tuple[str, int, int, int]:
+    def get_self_forum_list(self) -> Tuple[str, int, int, int]:
         """
         获取本人关注贴吧列表
-        get_self_forumlist()
+        get_self_forum_list()
 
         迭代返回值:
             tieba_name: str 贴吧名
@@ -1521,10 +1490,10 @@ class Browser(object):
 
         user = self.get_self_info()
 
-        def _parse_foruminfo(forum_dict: dict[str, str]) -> Tuple[str, int, int, int]:
+        def _parse_forum_info(forum_dict: dict[str, str]) -> Tuple[str, int, int, int]:
             """
             解析关注贴吧的信息
-            _parse_foruminfo(forum_dict)
+            _parse_forum_info(forum_dict)
 
             参数:
                 forum_dict: dict 关注贴吧信息
@@ -1542,10 +1511,10 @@ class Browser(object):
             exp = int(forum_dict['cur_score'])
             return tieba_name, fid, level, exp
 
-        def _get_pn_forumlist(pn: int):
+        def _get_pn_forum_list(pn: int):
             """
             获取pn页的关注贴吧信息
-            _get_pn_forumlist(pn)
+            _get_pn_forum_list(pn)
 
             参数:
                 pn: int 页数
@@ -1583,29 +1552,29 @@ class Browser(object):
             except Exception as err:
                 log.error(
                     f"Failed to get forumlist of {user.user_id}. reason:{err}")
-                return
+                raise StopIteration
 
             nonofficial_forums = forum_list.get('non-gconforum', [])
             official_forums = forum_list.get('gconforum', [])
 
             for forum_dict in nonofficial_forums:
-                yield _parse_foruminfo(forum_dict)
+                yield _parse_forum_info(forum_dict)
             for forum_dict in official_forums:
-                yield _parse_foruminfo(forum_dict)
+                yield _parse_forum_info(forum_dict)
 
             if len(nonofficial_forums)+len(official_forums) != 50:
                 raise StopIteration
 
         for pn in range(1, sys.maxsize):
             try:
-                yield from _get_pn_forumlist(pn)
+                yield from _get_pn_forum_list(pn)
             except RuntimeError:  # need Python 3.7+ https://www.python.org/dev/peps/pep-0479/
                 return
 
-    def get_forumlist(self, user_id: int) -> Tuple[str, int, int, int]:
+    def get_forum_list(self, user_id: int) -> Tuple[str, int, int, int]:
         """
         获取用户关注贴吧列表
-        get_forumlist(user_id)
+        get_forum_list(user_id)
 
         参数:
             user_id: int 用户user_id
@@ -1642,10 +1611,10 @@ class Browser(object):
             log.error(f"Failed to get forumlist of {user_id}. reason:{err}")
             return
 
-    def get_adminlist(self, tieba_name: str) -> str:
+    def get_admin_list(self, tieba_name: str) -> str:
         """
         获取吧务用户名列表
-        get_adminlist(tieba_name)
+        get_admin_list(tieba_name)
 
         参数:
             tieba_name: str 贴吧名
@@ -1710,6 +1679,137 @@ class Browser(object):
             tab_map = {}
 
         return tab_map
+
+    def get_recom_list(self, tieba_name: str):
+        """
+        获取大吧主推荐帖列表
+        get_recom_list(tieba_name)
+
+        参数:
+            tieba_name: str 贴吧名
+
+        迭代返回值:
+            thread: Thread 被推荐帖子信息
+            add_view: int 新增浏览量
+        """
+
+        def _get_pn_recom_list(pn: int):
+            """
+            获取pn页的大吧主推荐帖列表
+            _get_pn_recom_list(pn)
+
+            参数:
+                pn: int 页数
+
+            闭包参数:
+                tieba_name
+
+            迭代返回值:
+                thread: Thread 被推荐帖子信息
+                add_view: int 新增浏览量
+            """
+
+            payload = {'BDUSS': self.sessions.BDUSS,
+                       '_client_version': '12.21.1.0',
+                       'forum_id': self.get_fid(tieba_name),
+                       'pn': pn,
+                       'rn': 30,
+                       }
+            payload['sign'] = self._app_sign(payload)
+
+            try:
+                res = self.sessions.app.post(
+                    "http://c.tieba.baidu.com/c/f/bawu/getRecomThreadHistory", data=payload, timeout=(3, 10))
+                res.raise_for_status()
+
+                main_json = res.json()
+                if int(main_json['error_code']):
+                    raise ValueError(main_json['error_msg'])
+
+            except Exception as err:
+                log.error(
+                    f"Failed to get recom_list of {tieba_name}. reason:{err}")
+                raise StopIteration
+
+            for data_dict in main_json['recom_thread_list']:
+
+                thread_dict = data_dict['thread_list']
+                thread = Thread()
+                thread.fid = int(thread_dict['fid'])
+                thread.tid = int(thread_dict['id'])
+                thread.pid = int(thread_dict['first_post_id'])
+                thread.author_id = int(thread_dict['author_id'])
+                thread.title = thread_dict['title']
+                thread.view_num = int(thread_dict['view_num'])
+                thread.reply_num = int(thread_dict['reply_num'])
+                thread.agree = int(thread_dict['agree']['agree_num'])
+                thread.disagree = int(thread_dict['agree']['disagree_num'])
+                thread.create_time = int(thread_dict['create_time'])
+                thread.last_time = int(thread_dict['last_time_int'])
+
+                user_dict = thread_dict['author']
+                user = UserInfo()
+                user.user_name = user_dict['name']
+                user.nick_name = user_dict['name_show']
+                user.portrait = user_dict['portrait']
+                user.user_id = user_dict['id']
+                user.gender = user_dict['sex']
+                priv_dict = user_dict['priv_sets']
+                if not priv_dict:
+                    priv_dict = {}
+                user.priv_like = priv_dict.get('agree', None)
+                user.priv_reply = priv_dict.get('reply', None)
+                thread.user = user
+
+                add_view = thread.view_num-int(data_dict['current_pv'])
+
+                yield thread, add_view
+
+            if int(main_json['is_has_more']) == 0:
+                raise StopIteration
+
+        for pn in range(1, sys.maxsize):
+            try:
+                yield from _get_pn_recom_list(pn)
+            except RuntimeError:  # need Python 3.7+ https://www.python.org/dev/peps/pep-0479/
+                return
+
+    def get_recom_status(self, tieba_name: str):
+        """
+        获取大吧主推荐功能的月度配额状态
+        get_recom_status(tieba_name)
+
+        参数:
+            tieba_name: str 贴吧名
+
+        返回值:
+            total_recom_num: int 本月总推荐配额
+            used_recom_num: int 本月已使用的推荐配额
+        """
+
+        payload = {'BDUSS': self.sessions.BDUSS,
+                   '_client_version': '12.21.1.0',
+                   'forum_id': self.get_fid(tieba_name),
+                   'pn': 1,
+                   'rn': 0,
+                   }
+        payload['sign'] = self._app_sign(payload)
+
+        try:
+            res = self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/f/bawu/getRecomThreadList", data=payload, timeout=(3, 10))
+            res.raise_for_status()
+
+            main_json = res.json()
+            if int(main_json['error_code']):
+                raise ValueError(main_json['error_msg'])
+
+            return int(main_json['total_recommend_num']), int(main_json['used_recommend_num'])
+
+        except Exception as err:
+            log.error(
+                f"Failed to get recom_status of {tieba_name}. reason:{err}")
+            return 0, 0
 
     def get_rank(self, tieba_name: str, level_thre: int = 4) -> Tuple[str, int, int, bool]:
         """
@@ -1952,14 +2052,13 @@ class Browser(object):
         try:
             fid = self.get_fid(tieba_name)
             ts = time.time()
-            ts_ms = int(time.time() * 1000)
+            ts_ms = int(ts * 1000)
             ts_struct = time.localtime(ts)
             payload = {'BDUSS': self.sessions.BDUSS,
                        '_client_id': 'wappc_1643725546500_150',
                        '_client_type': 2,
-                       '_client_version': '12.21.1.0',
+                       '_client_version': '9.1.0.0',
                        '_phone_imei': '000000000000000',
-                       'active_timestamp': ts_ms-86400000,
                        'android_id': '31760cd1d096538d',
                        'anonymous': 1,
                        'authsid': 'null',
@@ -1975,14 +2074,12 @@ class Browser(object):
                        'entrance_type': 0,
                        'event_day': f'{ts_struct.tm_year}{ts_struct.tm_mon}{ts_struct.tm_mday}',
                        'fid': fid,
-                       'first_install_time': ts_ms-86400000,
                        'from': '1008621x',
                        'from_fourm_id': fid,
                        'is_ad': 0,
                        'is_barrage': 0,
                        'is_feedback': 0,
                        'kw': tieba_name,
-                       'last_update_time': ts_ms-86400000,
                        'model': 'LIO-AN00',
                        'name_show': '',
                        'net_type': 1,
@@ -1990,6 +2087,7 @@ class Browser(object):
                        'post_from': 3,
                        'reply_uid': 'null',
                        'stoken': self.sessions.STOKEN,
+                       'subapp_type': 'mini',
                        'takephoto_num': 0,
                        'tbs': self.tbs,
                        'tid': tid,

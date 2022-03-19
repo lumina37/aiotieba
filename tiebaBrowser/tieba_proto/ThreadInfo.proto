@@ -1,5 +1,6 @@
 syntax = "proto3";
 
+import "User.proto";
 import "PbContent.proto";
 import "Agree.proto";
 
@@ -12,6 +13,7 @@ message ThreadInfo {
     int32 is_top = 9;
     int32 is_good = 10;
     int32 is_voice_thread = 15;
+    User author = 18;
     int64 fid = 27;
     int64 first_post_id = 40;
     int32 is_global_top = 42;
