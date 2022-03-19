@@ -1334,9 +1334,10 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
             user_dict = main_json['user']
-            user = BasicUserInfo(user_name=user_dict['name'],
-                                 portrait=user_dict['portrait'],
-                                 user_id=user_dict['id'])
+            user = BasicUserInfo()
+            user.user_name=user_dict['name']
+            user.portrait=user_dict['portrait']
+            user.user_id=user_dict['id']
 
         except Exception as err:
             log.error(f"Failed to get msg reason:{err}")
