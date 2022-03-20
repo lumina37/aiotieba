@@ -1468,15 +1468,38 @@ class Browser(object):
             return UserInfo(), []
 
         user_dict = main_json['user']
-        user_proto = ParseDict(
-            user_dict, User_pb2.User(), ignore_unknown_fields=True)
-        user = UserInfo(user_proto=user_proto)
+        user = UserInfo()
+        user.user_name = user_dict['name']
+        user.nick_name = user_dict['name_show']
+        user.portrait = user_dict['portrait']
+        user.user_id = user_dict['id']
+        user.gender = user_dict['sex']
+        priv_dict = user_dict['priv_sets']
+        if not priv_dict:
+            priv_dict = {}
+        user.priv_like = priv_dict.get('agree', None)
+        user.priv_reply = priv_dict.get('reply', None)
+
+        def _contents(content_dicts: list[dict]):
+            for content_dict in content_dicts:
+                yield ParseDict(content_dict, PbContent_pb2.PbContent(), ignore_unknown_fields=True)
 
         def _init_thread(thread_dict: dict):
-            thread_proto = ParseDict(
-                thread_dict, ThreadInfo_pb2.ThreadInfo(), ignore_unknown_fields=True)
-            thread = Thread(obj_proto=thread_proto)
+            thread = Thread()
+            thread.contents = Fragments(
+                _contents(thread_dict.get('first_post_content', [])))
+            thread.fid = int(thread_dict['forum_id'])
+            thread.tid = int(thread_dict['thread_id'])
+            thread.pid = int(thread_dict['post_id'])
             thread.user = user
+            thread.author_id = int(thread_dict['user_id'])
+
+            thread.title = thread_dict['title']
+            thread.view_num = int(thread_dict['freq_num'])
+            thread.reply_num = int(thread_dict['reply_num'])
+            thread.agree = int(thread_dict['agree']['agree_num'])
+            thread.disagree = int(thread_dict['agree']['disagree_num'])
+            thread.create_time = int(thread_dict['create_time'])
             return thread
 
         threads = [_init_thread(thread_dict)
@@ -1739,10 +1762,16 @@ class Browser(object):
                     f"Failed to get recom_list of {tieba_name}. reason:{err}")
                 raise StopIteration
 
+            def _contents(content_dicts: list[dict]):
+                for content_dict in content_dicts:
+                    yield ParseDict(content_dict, PbContent_pb2.PbContent(), ignore_unknown_fields=True)
+
             for data_dict in main_json['recom_thread_list']:
 
                 thread_dict = data_dict['thread_list']
                 thread = Thread()
+                thread.contents = Fragments(
+                    _contents(thread_dict.get('first_post_content', [])))
                 thread.fid = int(thread_dict['fid'])
                 thread.tid = int(thread_dict['id'])
                 thread.pid = int(thread_dict['first_post_id'])

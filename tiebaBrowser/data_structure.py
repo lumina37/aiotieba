@@ -1,7 +1,8 @@
 # -*- coding:utf-8 -*-
 __all__ = ('BasicUserInfo', 'UserInfo',
            'Thread', 'Post', 'Comment', 'At',
-           'Threads', 'Posts', 'Comments', 'Ats'
+           'Threads', 'Posts', 'Comments', 'Ats',
+           'Fragments'
            )
 
 import re
