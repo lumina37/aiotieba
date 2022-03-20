@@ -22,3 +22,4 @@ test*
 !/cloud_review_soulknight.py
 !/sign.py
 !/water.py
+!/spider.py
