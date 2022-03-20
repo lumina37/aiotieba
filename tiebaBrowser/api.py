@@ -67,9 +67,9 @@ class Sessions(object):
                                                                      'Host': 'c.tieba.baidu.com',
                                                                      })
 
-        #self.web.trust_env = False
-        #self.app.trust_env = False
-        #self.app_proto.trust_env = False
+        self.web.trust_env = False
+        self.app.trust_env = False
+        self.app_proto.trust_env = False
 
         self.web.verify = False
         self.app.verify = False
@@ -407,7 +407,7 @@ class Browser(object):
 
         return user
 
-    def get_threads(self, tieba_name: str, pn: int = 1, sort_type: int = 5, is_good: bool = False) -> Threads:
+    def get_threads(self, tieba_name: str, pn: int = 1, sort: int = 5, is_good: bool = False) -> Threads:
         """
         获取首页帖子
         get_threads(tieba_name,pn=1)
@@ -415,7 +415,7 @@ class Browser(object):
         参数:
             tieba_name: str 贴吧名
             pn: int 页码
-            sort_type: int 排序方式，对于有热门区的贴吧来说0是热门排序，1是按发布时间，5是按回复时间
+            sort: int 排序方式，对于有热门区的贴吧来说0是热门排序，1是按发布时间，5是按回复时间
             is_good: bool True为获取精品区帖子，False为获取普通区帖子
 
         返回值:
@@ -428,10 +428,11 @@ class Browser(object):
         data.common.CopyFrom(common)
         data.kw = tieba_name
         data.pn = pn
-        data.rn = 30
+        data.rn = 90
+        data.rn_need = 30
         data.is_good = is_good
         data.q_type = 2
-        data.sort_type = sort_type
+        data.sort_type = sort
         frspage_req = FrsPageReqIdl_pb2.FrsPageReqIdl()
         frspage_req.data.CopyFrom(data)
 
@@ -455,7 +456,7 @@ class Browser(object):
 
         return threads
 
-    def get_posts(self, tid: int, pn: int = 1, reverse: bool = False, with_comments: bool = False, comment_sort_by_agree: bool = True) -> Posts:
+    def get_posts(self, tid: int, pn: int = 1, reverse: bool = False, with_comments: bool = False, comment_sort_by_agree: bool = True, comment_rn: int = 4) -> Posts:
         """
         获取主题帖内回复
         get_posts(tid,pn=1,reverse=False,with_comments=False,comment_sort_by_agree=True)
@@ -466,6 +467,7 @@ class Browser(object):
             reverse: bool True则按时间倒序请求，Flase则按时间顺序请求
             with_comment: bool True则同时请求高赞楼中楼，False则comments字段为空列表
             comment_sort_by_agree: bool True则楼中楼按点赞数顺序，False则楼中楼按时间顺序
+            comment_rn: int 请求的楼中楼数量
 
         返回值:
             posts: Posts
@@ -480,9 +482,10 @@ class Browser(object):
         data.rn = 30
         data.q_type = 2
         data.r = reverse
-        data.with_floor = with_comments
-        data.floor_rn = 10
-        data.floor_sort_type = comment_sort_by_agree
+        if with_comments:
+            data.with_floor = with_comments
+            data.floor_sort_type = comment_sort_by_agree
+            data.floor_rn = comment_rn
         pbpage_req = PbPageReqIdl_pb2.PbPageReqIdl()
         pbpage_req.data.CopyFrom(data)
 
