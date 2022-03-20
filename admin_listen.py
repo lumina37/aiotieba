@@ -604,7 +604,7 @@ class Listener(object):
 
         total_recom_num, used_recom_num = tieba_dict['admin'].get_recom_status(
             at.tieba_name)
-        content = f"@{at.user.user_name}\n本月总推荐配额{total_recom_num}\n本月已使用的推荐配额{used_recom_num}\n本月已使用百分比{used_recom_num/total_recom_num*100:.2f}%"
+        content = f"@{at.user.user_name} \n本月总推荐配额{total_recom_num}\n本月已使用的推荐配额{used_recom_num}\n本月已使用百分比{used_recom_num/total_recom_num*100:.2f}%"
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 

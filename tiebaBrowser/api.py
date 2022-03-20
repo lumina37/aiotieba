@@ -67,9 +67,9 @@ class Sessions(object):
                                                                      'Host': 'c.tieba.baidu.com',
                                                                      })
 
-        self.web.trust_env = False
-        self.app.trust_env = False
-        self.app_proto.trust_env = False
+        #self.web.trust_env = False
+        #self.app.trust_env = False
+        #self.app_proto.trust_env = False
 
         self.web.verify = False
         self.app.verify = False
@@ -409,7 +409,7 @@ class Browser(object):
 
     def get_threads(self, tieba_name: str, pn: int = 1, sort_type: int = 5, is_good: bool = False) -> Threads:
         """
-        使用客户端api获取首页帖子
+        获取首页帖子
         get_threads(tieba_name,pn=1)
 
         参数:
@@ -455,15 +455,17 @@ class Browser(object):
 
         return threads
 
-    def get_posts(self, tid: int, pn: int = 1, with_comments: bool = False) -> Posts:
+    def get_posts(self, tid: int, pn: int = 1, reverse: bool = False, with_comments: bool = False, comment_sort_by_agree: bool = True) -> Posts:
         """
-        使用客户端api获取主题帖内回复
-        get_posts(tid,pn=1,with_comments=False)
+        获取主题帖内回复
+        get_posts(tid,pn=1,reverse=False,with_comments=False,comment_sort_by_agree=True)
 
         参数:
             tid: int 主题帖tid
             pn: int 页码
-            with_comment: bool 是否同时请求高赞楼中楼
+            reverse: bool True则按时间倒序请求，Flase则按时间顺序请求
+            with_comment: bool True则同时请求高赞楼中楼，False则comments字段为空列表
+            comment_sort_by_agree: bool True则楼中楼按点赞数顺序，False则楼中楼按时间顺序
 
         返回值:
             posts: Posts
@@ -474,10 +476,13 @@ class Browser(object):
         data = PbPageReqIdl_pb2.PbPageReqIdl.DataReq()
         data.common.CopyFrom(common)
         data.kz = tid
-        data.with_floor = with_comments
         data.pn = pn
         data.rn = 30
         data.q_type = 2
+        data.r = reverse
+        data.with_floor = with_comments
+        data.floor_rn = 10
+        data.floor_sort_type = comment_sort_by_agree
         pbpage_req = PbPageReqIdl_pb2.PbPageReqIdl()
         pbpage_req.data.CopyFrom(data)
 
@@ -503,7 +508,7 @@ class Browser(object):
 
     def get_comments(self, tid: int, pid: int, pn: int = 1) -> Comments:
         """
-        使用客户端api获取楼中楼回复
+        获取楼中楼回复
         get_comments(tid,pid,pn=1)
 
         参数:

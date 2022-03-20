@@ -404,9 +404,10 @@ class _Container(object):
     tid: 帖子编号
     pid: 回复编号
     user: UserInfo 发布者信息
+    author_id: int 发布者user_id
     """
 
-    __slots__ = ['_text', 'contents', 'fid', 'tid', 'pid', 'user']
+    __slots__ = ['_text', 'contents', 'fid', 'tid', 'pid', 'user', 'author_id']
 
     def __init__(self) -> NoReturn:
         self._text = ''
@@ -484,7 +485,7 @@ class Thread(_Container):
     last_time: 10位时间戳 最后回复时间
     """
 
-    __slots__ = ['author_id', 'tab_id', 'title', 'view_num', 'reply_num',
+    __slots__ = ['tab_id', 'title', 'view_num', 'reply_num',
                  'agree', 'disagree', 'create_time', 'last_time']
 
     def __init__(self, obj_proto: Optional[ThreadInfo_pb2.ThreadInfo] = None) -> NoReturn:
@@ -561,7 +562,7 @@ class Threads(_Containers[Thread]):
             self._objs = [Thread(obj_proto)
                           for obj_proto in data_proto.thread_list]
             for obj in self._objs:
-                obj.user = users.get(obj.user, UserInfo())
+                obj.user = users.get(obj.author_id, UserInfo())
 
         else:
             self._objs = []
@@ -583,6 +584,7 @@ class Post(_Container):
     tid: 帖子编号
     pid: 回复编号
     user: UserInfo 发布者信息
+    author_id: int 发布者user_id
 
     floor: 楼层数
     reply_num: 楼中楼回复数
@@ -606,7 +608,8 @@ class Post(_Container):
                              for comment_proto in obj_proto.sub_post_list.sub_post_list]
 
             self.pid = obj_proto.id
-            self.user = obj_proto.author_id
+            self.author_id = obj_proto.author_id
+
             self.floor = obj_proto.floor
             self.reply_num = obj_proto.sub_post_number
             self.agree = obj_proto.agree.agree_num
@@ -663,10 +666,12 @@ class Posts(_Containers[Post]):
             self._objs = [Post(obj_proto)
                           for obj_proto in data_proto.post_list]
             for obj in self._objs:
-                obj.is_thread_owner = thread_owner_id == obj.user
+                obj.is_thread_owner = thread_owner_id == obj.author_id
                 obj.fid = self.forum.fid
                 obj.tid = self.thread.tid
-                obj.user = users.get(obj.user, UserInfo())
+                obj.user = users.get(obj.author_id, UserInfo())
+                for comment in obj.comments:
+                    comment.user = users.get(comment.author_id, UserInfo())
 
         else:
             self._objs = []
@@ -685,6 +690,7 @@ class Comment(_Container):
     tid: 帖子编号
     pid: 回复编号
     user: UserInfo 发布者信息
+    author_id: int 发布者user_id
 
     agree: 点赞数
     disagree: 点踩数
@@ -701,6 +707,7 @@ class Comment(_Container):
 
             self.pid = obj_proto.id
             self.user = UserInfo(user_proto=obj_proto.author)
+            self.author_id = obj_proto.author_id
 
             self.agree = obj_proto.agree.agree_num
             self.disagree = obj_proto.agree.disagree_num
