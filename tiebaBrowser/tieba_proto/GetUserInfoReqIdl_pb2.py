@@ -15,7 +15,7 @@ _sym_db = _symbol_database.Default()
 from . import CommonReq_pb2 as CommonReq__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x17GetUserInfoReqIdl.proto\x1a\x0f\x43ommonReq.proto\"\x80\x01\n\x11GetUserInfoReqIdl\x12(\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x1a.GetUserInfoReqIdl.DataReq\x1a\x41\n\x07\x44\x61taReq\x12\x1a\n\x06\x63ommon\x18\x01 \x01(\x0b\x32\n.CommonReq\x12\r\n\x05scr_w\x18\x03 \x01(\x05\x12\x0b\n\x03uid\x18\x02 \x01(\x03\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x17GetUserInfoReqIdl.proto\x1a\x0f\x43ommonReq.proto\"q\n\x11GetUserInfoReqIdl\x12(\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x1a.GetUserInfoReqIdl.DataReq\x1a\x32\n\x07\x44\x61taReq\x12\x1a\n\x06\x63ommon\x18\x01 \x01(\x0b\x32\n.CommonReq\x12\x0b\n\x03uid\x18\x02 \x01(\x03\x62\x06proto3')
 
 
 
@@ -39,8 +39,8 @@ _sym_db.RegisterMessage(GetUserInfoReqIdl.DataReq)
 if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
-  _GETUSERINFOREQIDL._serialized_start=45
-  _GETUSERINFOREQIDL._serialized_end=173
-  _GETUSERINFOREQIDL_DATAREQ._serialized_start=108
-  _GETUSERINFOREQIDL_DATAREQ._serialized_end=173
+  _GETUSERINFOREQIDL._serialized_start=44
+  _GETUSERINFOREQIDL._serialized_end=157
+  _GETUSERINFOREQIDL_DATAREQ._serialized_start=107
+  _GETUSERINFOREQIDL_DATAREQ._serialized_end=157
 # @@protoc_insertion_point(module_scope)

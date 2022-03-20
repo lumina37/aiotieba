@@ -415,7 +415,7 @@ class Browser(object):
         参数:
             tieba_name: str 贴吧名
             pn: int 页码
-            sort: int 排序方式，对于有热门区的贴吧来说0是热门排序，1是按发布时间，5是按回复时间
+            sort: int 排序方式，对于有热门区的贴吧来说0是热门排序1是按发布时间2报错34都是热门排序>=5是按回复时间，对无热门区的贴吧来说0是按回复时间1是按发布时间2报错>=3是按回复时间
             is_good: bool True为获取精品区帖子，False为获取普通区帖子
 
         返回值:
@@ -459,7 +459,7 @@ class Browser(object):
     def get_posts(self, tid: int, pn: int = 1, reverse: bool = False, with_comments: bool = False, comment_sort_by_agree: bool = True, comment_rn: int = 4) -> Posts:
         """
         获取主题帖内回复
-        get_posts(tid,pn=1,reverse=False,with_comments=False,comment_sort_by_agree=True)
+        get_posts(tid,pn=1,reverse=False,with_comments=False,comment_sort_by_agree=True,comment_rn=4)
 
         参数:
             tid: int 主题帖tid
