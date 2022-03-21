@@ -19,9 +19,10 @@
 
 ## 功能特点
 
-+ 优先使用最新版贴吧app（12.21.1.0）的接口实现功能
-+ 优先使用最新版贴吧app使用的[Google Protocol Buffer (Protobuf)](https://developers.google.cn/protocol-buffers/)协议序列化网络请求&响应数据
-+ 得益于`Python`语言的强大扩展能力，云审查管理器支持二维码识别、图像phash等功能
++ 优先使用最新版贴吧app（12.22.0.3）的接口实现功能
++ 优先使用最新版贴吧app使用的[Google Protocol Buffer (Protobuf)](https://developers.google.cn/protocol-buffers)协议序列化网络请求&响应数据
++ 使用[`aiohttp`](https://github.com/aio-libs/aiohttp)作为网络库，所有涉及网络IO的函数均支持异步
++ 得益于[`Python`](https://www.python.org/downloads)语言的强大扩展能力，云审查管理器支持二维码识别、图像phash等功能
 + 极高的功能自由度，可以自定义复杂的正则表达式，可以从用户等级/评论图片/小尾巴内容等等方面入手判断删帖与封禁条件
 + 签到、回复、关注贴吧等摸鱼函数允许你边跑审查边水经验
 + 额外的爬虫函数，方便实现简易爬虫
@@ -41,7 +42,8 @@ git clone https://github.com/Starry-OvO/Tieba-Manager.git
 + `pip`安装必需的`Python`库
 
 ```bash
-pip install requests
+pip install asyncio
+pip install aiohttp
 pip install lxml
 pip install bs4
 pip install pymysql
@@ -53,17 +55,30 @@ pip install protobuf
 ## 尝试一下
 
 ```python
-# -- coding:utf-8 --
+# -*- coding:utf-8 -*-
+import asyncio
+
 import tiebaBrowser as tb
 
-# 创建客户端，使用的BDUSS对应到键名"default"
-brow = tb.Browser("default")
 
-user = brow.get_self_info()
-print(f"当前用户信息:{user}")
+async def main():
+    # 创建客户端，使用的BDUSS对应到键名"default"
+    async with tb.Browser("default") as brow:
+        # 同时请求用户个人信息和asoul吧首页前30帖
+        # asyncio.gather会为两个协程brow.get_self_info和brow.get_threads自动创建任务然后“合并”为一个协程
+        # await释放当前协程持有的CPU资源并等待协程asyncio.gather执行完毕
+        # 参考https://docs.python.org/zh-cn/3/library/asyncio-task.html#asyncio.gather
+        user, threads = await asyncio.gather(brow.get_self_info(), brow.get_threads('asoul'))
 
-for thread in brow.get_threads('asoul'):
-    print(f"tid:{thread.tid} 最后回复时间戳:{thread.last_time} 标题:{thread.title}")
+        # 同步输出
+        print(f"当前用户信息:{user}")
+        for thread in threads:
+            print(
+                f"tid:{thread.tid} 最后回复时间戳:{thread.last_time} 标题:{thread.title}")
+
+# 执行协程main
+# 参考https://docs.python.org/zh-cn/3/library/asyncio-task.html#asyncio.run
+asyncio.run(main())
 ```
 
 ## 若要开启云审查功能
@@ -84,7 +99,8 @@ for thread in brow.get_threads('asoul'):
 
 + 各第三方库的用途说明
 
-  + **requests** 支持最基本的网络IO功能
+  + **asyncio** 支持`Python`协程相关功能
+  + **aiohttp** 支持网络IO（异步）
   + **lxml** 支持HTML格式解析
   + **bs4** 解析HTML
   + **pymysql** 连接MySQL

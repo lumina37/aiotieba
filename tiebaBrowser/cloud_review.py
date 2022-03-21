@@ -2,6 +2,7 @@
 __all__ = ('CloudReview',)
 
 
+import asyncio
 import binascii
 import re
 from typing import Optional, Union
@@ -58,7 +59,8 @@ class RegularExp(object):
     female_check_exp = re.compile(
         '9\d年|(盆|朋|交|处).?友|有人聊|聊天|表姐|老娘|好孤单|单身|睡不着|恋爱|爱会消失|爱情|对象|奔现|网恋|亲密|约会|(超|甜)甜|干点啥|对我做|无聊|手牵手|我的b|被你骑|(約|悦)炮|小gg|勾搭|(大|小)可爱|憋疯了|认识一下|我.?有趣|呆在家里|带个人回家|相个?亲|认真处|真心|性感|希望遇到|嫁不出去|大叔|越来越懒|可悦|签收|手纸|内衣|陪我|发泄|身材|婚|我都有|的我')
 
-    hospital_exp = re.compile('医院.*好不好|狐臭|痔疮|性腺|阳痿|早泄|不孕不育|前列腺|妇科|会所|手相|(邪|手)淫.{0,3}危害')
+    hospital_exp = re.compile(
+        '医院.*好不好|狐臭|痔疮|性腺|阳痿|早泄|不孕不育|前列腺|妇科|会所|手相|(邪|手)淫.{0,3}危害')
 
     lv1_exp = re.compile(
         '公众号|传媒|新媒体|婚恋|财经|鱼胶|信︄用卡|出租|塔罗|代骂|消灾|问卷调查|有意者|急需.{0,10}钱|(免费|资源)分享|懂(的|得)来|代练|我发表了一篇图片')
@@ -74,7 +76,6 @@ class CloudReview(Browser):
     参数:
         BDUSS_key: str 用于获取BDUSS
         tieba_name: str 贴吧名
-        sleep_time: float 每两次云审查的间隔时间
     """
 
     __slots__ = ['tieba_name',
@@ -83,21 +84,22 @@ class CloudReview(Browser):
                  'mysql',
                  'qrdetector']
 
-    def __init__(self, BDUSS_key: Optional[str], tieba_name: str, sleep_time: float = 0):
+    def __init__(self, BDUSS_key: Optional[str], tieba_name: str):
         super().__init__(BDUSS_key)
 
         self.tieba_name = tieba_name
-        self.sleep_time = sleep_time
 
         self.expressions = RegularExp()
         self.mysql = MySQL()
         self.qrdetector = cv.QRCodeDetector()
 
-    def close(self) -> None:
-        self.mysql.close()
-        super().close()
+    async def close(self) -> None:
+        await asyncio.gather(self.mysql.close(), super().close(), return_exceptions=True)
 
-    def update_user_id(self, id: Union[str, int], mode: bool = True) -> bool:
+    async def __aenter__(self) -> "CloudReview":
+        return self
+
+    async def update_user_id(self, id: Union[str, int], mode: bool = True) -> bool:
         """
         向名单中插入user_id
         update_user_id(id,mode=True)
@@ -107,23 +109,23 @@ class CloudReview(Browser):
             log.warning("Wrong mode in update_user_id!")
             return False
 
-        user = self.get_userinfo_weak(id)
+        user = await self.get_userinfo_weak(id)
         if not user.user_id:
             return False
 
-        return self.mysql.update_user_id(self.tieba_name, user.user_id, mode)
+        return await self.mysql.update_user_id(self.tieba_name, user.user_id, mode)
 
-    def del_user_id(self, id: Union[str, int]):
+    async def del_user_id(self, id: Union[str, int]):
         """
         从名单中删除user_id
         del_user_id(id)
         """
 
-        user = self.get_userinfo_weak(id)
+        user = await self.get_userinfo_weak(id)
         if not user.user_id:
             return False
 
-        return self.mysql.del_user_id(self.tieba_name, user.user_id)
+        return await self.mysql.del_user_id(self.tieba_name, user.user_id)
 
     def scan_QRcode(self, image: np.ndarray) -> str:
         """
@@ -153,13 +155,13 @@ class CloudReview(Browser):
 
         return img_hash
 
-    def has_imghash(self, image: np.ndarray) -> bool:
+    async def has_imghash(self, image: np.ndarray) -> bool:
         """
         判断图像的phash是否在黑名单中
         """
 
         img_hash = self.get_imghash(image)
-        if img_hash and self.mysql.has_imghash(self.tieba_name, img_hash):
+        if img_hash and await self.mysql.has_imghash(self.tieba_name, img_hash):
             return True
         else:
             return False

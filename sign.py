@@ -1,7 +1,14 @@
 ﻿# -*- coding:utf-8 -*-
+import asyncio
+
 import tiebaBrowser as tb
 
-for key in ['default', 'backup', 'listener']:
-    brow = tb.Browser(key)
-    for tb_name in ['asoul', 'v', 'vtuber自由讨论']:
-        brow.sign_forum(tb_name)
+
+async def main():
+
+    for key in ['default', 'backup', 'listener']:
+        async with tb.Browser(key) as brow:
+            for tb_name in ['asoul', 'v', 'vtuber自由讨论']:
+                await brow.sign_forum(tb_name)
+
+asyncio.run(main())

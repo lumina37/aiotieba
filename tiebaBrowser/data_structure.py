@@ -6,13 +6,13 @@ __all__ = ('BasicUserInfo', 'UserInfo',
            )
 
 import re
+from typing import (Any, Callable, Generic, Iterable, Iterator, Literal,
+                    NoReturn, Optional, TypeVar, Union, final)
+
 from google.protobuf.json_format import ParseDict
-from typing import (Any, Callable, Generic, Iterator, Literal, NoReturn,
-                    Optional, TypeVar, Union, final)
 
 from .logger import log
 from .tieba_proto import *
-
 
 TContent = TypeVar('TContent')
 TContainer = TypeVar('TContainer')
@@ -329,7 +329,7 @@ class Fragments(object):
 
     __slots__ = ['_frags', '_text', 'texts', 'imgs', 'emojis', 'voice']
 
-    def __init__(self, content_protos=None) -> NoReturn:
+    def __init__(self, content_protos: Optional[Iterable] = None) -> NoReturn:
 
         def _init_by_type(content_proto) -> _Fragment:
             _type = content_proto.type

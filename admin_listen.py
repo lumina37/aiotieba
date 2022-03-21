@@ -1,19 +1,16 @@
 # -*- coding:utf-8 -*-
-import atexit
+import asyncio
 import json
 import re
 import time
 import traceback
 from collections import OrderedDict
+from types import TracebackType
+from typing import NoReturn, Optional, Tuple, Type
 
 import tiebaBrowser as tb
 import tiebaBrowser.cloud_review as cr
 from tiebaBrowser.config import SCRIPT_DIR
-
-
-@atexit.register
-def exit_hanle():
-    listener.close()
 
 
 class Timer(object):
@@ -70,10 +67,11 @@ class Listener(object):
             self) if func_name.startswith("cmd")}
         self.timer = Timer(60, 30)
 
-    def close(self):
-        self.listener.close()
-        for tieba_dict in self.tieba.values():
-            tieba_dict['admin'].close()
+    async def close(self) -> NoReturn:
+        coros = [tieba_dict['admin'].close()
+                 for tieba_dict in self.tieba.values()]
+        coros.append(self.listener.close())
+        asyncio.gather(*coros, return_exceptions=False)
 
         for tieba_dict in self.tieba.values():
             tieba_dict['admin'] = tieba_dict['admin'].BDUSS_key
@@ -84,8 +82,26 @@ class Listener(object):
             json.dump(self.config, _file, sort_keys=False,
                       indent=2, separators=(',', ':'), ensure_ascii=False)
 
-    def scan(self):
-        ats = self.listener.get_ats()
+    async def __aenter__(self) -> "Listener":
+        return self
+
+    async def __aexit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[BaseException], exc_tb: Optional[TracebackType]) -> NoReturn:
+        await self.close()
+
+    async def run(self):
+
+        while 1:
+            try:
+                await self.scan()
+                tb.log.debug('heartbeat')
+                await asyncio.sleep(5)
+
+            except Exception as err:
+                tb.log.error(f"Unhandled error:{traceback.format_exc()}")
+                return
+
+    async def scan(self) -> NoReturn:
+        ats = await self.listener.get_ats()
 
         if ats:
             for end_index, at in enumerate(ats):
@@ -94,15 +110,15 @@ class Listener(object):
                     ats = ats[:end_index]
                     break
 
-        for at in ats:
-            self._handle_cmd(at)
+        coros = [self._handle_cmd(at) for at in ats]
+        asyncio.gather(*coros)
 
-    def _handle_cmd(self, at):
-        cmd_type, arg = self._prase_cmd(at.text)
+    async def _handle_cmd(self, at) -> NoReturn:
+        cmd_type, arg = self._parse_cmd(at.text)
         func = self.func_map.get(cmd_type, self.cmd_default)
-        func(at, arg)
+        await func(at, arg)
 
-    def _prase_cmd(self, text):
+    def _parse_cmd(self, text) -> Tuple[str, str]:
         """
         解析指令
         """
@@ -125,7 +141,7 @@ class Listener(object):
 
         return cmd_type, arg
 
-    def cmd_recommend(self, at, arg):
+    async def cmd_recommend(self, at, arg):
         """
         recommend指令
         对指令所在主题帖执行“大吧主首页推荐”操作
@@ -139,10 +155,10 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        if tieba_dict['admin'].recommend(at.tieba_name, at.tid):
-            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+        if await tieba_dict['admin'].recommend(at.tieba_name, at.tid):
+            await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    def cmd_move(self, at, tab_name):
+    async def cmd_move(self, at, tab_name):
         """
         move指令
         将指令所在主题帖移动至名为tab_name的分区
@@ -154,7 +170,7 @@ class Listener(object):
         if not tieba_dict['access_user'].__contains__(at.user.user_name):
             return
 
-        threads = self.listener.get_threads(at.tieba_name)
+        threads = await self.listener.get_threads(at.tieba_name)
         if not threads:
             return
 
@@ -166,10 +182,10 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        if tieba_dict['admin'].move(at.tieba_name, at.tid, to_tab_id, from_tab_id):
-            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+        if await tieba_dict['admin'].move(at.tieba_name, at.tid, to_tab_id, from_tab_id):
+            await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    def cmd_good(self, at, cname):
+    async def cmd_good(self, at, cname):
         """
         good指令
         将指令所在主题帖加到以cname为名的精华分区。cname默认为''即不分区
@@ -185,10 +201,10 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        if tieba_dict['admin'].good(at.tieba_name, at.tid, cname):
-            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+        if await tieba_dict['admin'].good(at.tieba_name, at.tid, cname):
+            await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    def cmd_ungood(self, at, arg):
+    async def cmd_ungood(self, at, arg):
         """
         ungood指令
         撤销指令所在主题帖的精华
@@ -202,10 +218,10 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        if tieba_dict['admin'].ungood(at.tieba_name, at.tid):
-            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+        if await tieba_dict['admin'].ungood(at.tieba_name, at.tid):
+            await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    def cmd_top(self, at, arg):
+    async def cmd_top(self, at, arg):
         """
         top指令
         置顶指令所在主题帖
@@ -219,10 +235,10 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        if tieba_dict['admin'].top(at.tieba_name, at.tid):
-            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+        if await tieba_dict['admin'].top(at.tieba_name, at.tid):
+            await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    def cmd_untop(self, at, arg):
+    async def cmd_untop(self, at, arg):
         """
         untop指令
         撤销指令所在主题帖的置顶
@@ -236,10 +252,10 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        if tieba_dict['admin'].untop(at.tieba_name, at.tid):
-            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+        if await tieba_dict['admin'].untop(at.tieba_name, at.tid):
+            await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    def cmd_hide(self, at, arg):
+    async def cmd_hide(self, at, arg):
         """
         hide指令
         屏蔽指令所在主题帖
@@ -253,10 +269,10 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        if tieba_dict['admin'].del_thread(at.tieba_name, at.tid, is_hide=True):
-            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+        if await tieba_dict['admin'].del_thread(at.tieba_name, at.tid, is_hide=True):
+            await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    def cmd_unhide(self, at, arg):
+    async def cmd_unhide(self, at, arg):
         """
         unhide指令
         解除指令所在主题帖的屏蔽
@@ -270,10 +286,10 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        if tieba_dict['admin'].recover(at.tieba_name, at.tid, is_hide=True):
-            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+        if await tieba_dict['admin'].recover(at.tieba_name, at.tid, is_hide=True):
+            await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    def cmd_drop(self, at, arg):
+    async def cmd_drop(self, at, arg):
         """
         drop指令
         删除指令所在主题帖并封禁楼主十天
@@ -294,11 +310,10 @@ class Listener(object):
         tb.log.info(
             f"Try to delete thread {posts[0].text} post by {posts[0].user.log_name}")
 
-        tieba_dict['admin'].block(at.tieba_name, posts[0].user, day=10)
-        tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
-        tieba_dict['admin'].del_thread(at.tieba_name, at.tid)
+        await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+        await asyncio.gather(tieba_dict['admin'].block(at.tieba_name, posts[0].user, day=10), tieba_dict['admin'].del_thread(at.tieba_name, at.tid))
 
-    def cmd_exdrop(self, at, arg):
+    async def cmd_exdrop(self, at, arg):
         """
         exdrop指令
         删除指令所在主题帖并将楼主加入脚本黑名单+封禁十天
@@ -316,18 +331,19 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        if not tieba_dict['admin'].mysql.ping():
+        if not await tieba_dict['admin'].mysql.ping():
             tb.log.error("Failed to ping:{at.tieba_name}")
             return
 
         tb.log.info(
             f"Try to delete thread {posts[0].text} post by {posts[0].user.log_name}")
 
-        if tieba_dict['admin'].block(at.tieba_name, posts[0].user, day=10) and tieba_dict['admin'].mysql.update_user_id(at.tieba_name, posts[0].user.user_id, False):
-            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
-        tieba_dict['admin'].del_thread(at.tieba_name, at.tid)
+        results = await asyncio.gather(tieba_dict['admin'].block(at.tieba_name, posts[0].user, day=10), tieba_dict['admin'].mysql.update_user_id(at.tieba_name, posts[0].user.user_id, False))
+        if results[0] and results[1]:
+            await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+        await tieba_dict['admin'].del_thread(at.tieba_name, at.tid)
 
-    def cmd_delete(self, at, arg):
+    async def cmd_delete(self, at, arg):
         """
         delete指令
         删除指令所在主题帖
@@ -346,10 +362,10 @@ class Listener(object):
             tb.log.info(
                 f"Try to delete thread {posts[0].text} post by {posts[0].user.log_name}")
 
-        tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
-        tieba_dict['admin'].del_thread(at.tieba_name, at.tid)
+        await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+        await tieba_dict['admin'].del_thread(at.tieba_name, at.tid)
 
-    def cmd_tmphide(self, at, arg):
+    async def cmd_tmphide(self, at, arg):
         """
         tmphide指令
         暂时屏蔽指令所在主题帖
@@ -363,15 +379,14 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        if not tieba_dict['admin'].mysql.ping():
+        if not await tieba_dict['admin'].mysql.ping():
             tb.log.error("Failed to ping:{at.tieba_name}")
             return
 
-        tieba_dict['admin'].mysql.add_tid(at.tieba_name, at.tid)
-        if tieba_dict['admin'].del_thread(at.tieba_name, at.tid, is_hide=True):
-            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+        if await tieba_dict['admin'].mysql.add_tid(at.tieba_name, at.tid) and await tieba_dict['admin'].del_thread(at.tieba_name, at.tid, is_hide=True):
+            await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    def cmd_tmpunhide(self, at, arg):
+    async def cmd_tmpunhide(self, at, arg):
         """
         tmpunhide指令
         解除指令所在主题帖的屏蔽
@@ -385,16 +400,16 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        if not tieba_dict['admin'].mysql.ping():
+        if not await tieba_dict['admin'].mysql.ping():
             tb.log.error("Failed to ping:{at.tieba_name}")
             return
 
-        tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
-        for tid in tieba_dict['admin'].mysql.get_tids(at.tieba_name):
-            if tieba_dict['admin'].recover(at.tieba_name, tid, is_hide=True):
-                tieba_dict['admin'].mysql.del_tid(at.tieba_name, tid)
+        await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+        async for tid in tieba_dict['admin'].mysql.get_tids(at.tieba_name):
+            if await tieba_dict['admin'].recover(at.tieba_name, tid, is_hide=True):
+                await tieba_dict['admin'].mysql.del_tid(at.tieba_name, tid)
 
-    def cmd_block(self, at, id):
+    async def cmd_block(self, at, id):
         """
         block指令
         通过id封禁对应用户十天
@@ -410,12 +425,12 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
-        user = self.listener.get_userinfo(id)
+        user = await self.listener.get_userinfo(id)
 
-        if tieba_dict['admin'].block(at.tieba_name, user, day=10):
-            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+        if await tieba_dict['admin'].block(at.tieba_name, user, day=10):
+            await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    def cmd_block3(self, at, id):
+    async def cmd_block3(self, at, id):
         """
         block指令
         通过id封禁对应用户三天
@@ -431,12 +446,12 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
-        user = self.listener.get_userinfo(id)
+        user = await self.listener.get_userinfo(id)
 
-        if tieba_dict['admin'].block(at.tieba_name, user, day=3):
-            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+        if await tieba_dict['admin'].block(at.tieba_name, user, day=3):
+            await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    def cmd_unblock(self, at, id):
+    async def cmd_unblock(self, at, id):
         """
         unblock指令
         通过id解封用户
@@ -452,12 +467,12 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
-        user = self.listener.get_userinfo(id)
+        user = await self.listener.get_userinfo(id)
 
-        if tieba_dict['admin'].unblock(at.tieba_name, user):
-            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+        if await tieba_dict['admin'].unblock(at.tieba_name, user):
+            await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    def cmd_blacklist_add(self, at, id):
+    async def cmd_blacklist_add(self, at, id):
         """
         blacklist_add指令
         将id加入贴吧黑名单
@@ -473,12 +488,12 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
-        user = self.listener.get_userinfo_weak(id)
+        user = await self.listener.get_userinfo_weak(id)
 
-        if tieba_dict['admin'].blacklist_add(at.tieba_name, user):
-            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+        if await tieba_dict['admin'].blacklist_add(at.tieba_name, user):
+            await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    def cmd_blacklist_cancel(self, at, id):
+    async def cmd_blacklist_cancel(self, at, id):
         """
         blacklist_cancel指令
         将id移出贴吧黑名单
@@ -494,12 +509,12 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
-        user = self.listener.get_userinfo_weak(id)
+        user = await self.listener.get_userinfo_weak(id)
 
-        if tieba_dict['admin'].blacklist_cancel(at.tieba_name, user):
-            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+        if await tieba_dict['admin'].blacklist_cancel(at.tieba_name, user):
+            await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    def cmd_mysql_white(self, at, id):
+    async def cmd_mysql_white(self, at, id):
         """
         mysql_white指令
         将id加入脚本白名单
@@ -515,14 +530,14 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
-        if not tieba_dict['admin'].mysql.ping():
+        if not await tieba_dict['admin'].mysql.ping():
             tb.log.error("Failed to ping:{at.tieba_name}")
             return
 
-        if tieba_dict['admin'].update_user_id(id, True):
-            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+        if await tieba_dict['admin'].update_user_id(id, True):
+            await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    def cmd_mysql_black(self, at, id):
+    async def cmd_mysql_black(self, at, id):
         """
         mysql_black指令
         将id加入脚本黑名单
@@ -538,14 +553,14 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
-        if not tieba_dict['admin'].mysql.ping():
+        if not await tieba_dict['admin'].mysql.ping():
             tb.log.error("Failed to ping:{at.tieba_name}")
             return
 
-        if tieba_dict['admin'].update_user_id(id, False):
-            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+        if await tieba_dict['admin'].update_user_id(id, False):
+            await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    def cmd_mysql_reset(self, at, id):
+    async def cmd_mysql_reset(self, at, id):
         """
         mysql_reset指令
         清除id的脚本黑/白名单状态
@@ -561,14 +576,14 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
-        if not tieba_dict['admin'].mysql.ping():
+        if not await tieba_dict['admin'].mysql.ping():
             tb.log.error("Failed to ping:{at.tieba_name}")
             return
 
-        if tieba_dict['admin'].del_user_id(id):
-            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+        if await tieba_dict['admin'].del_user_id(id):
+            await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    def cmd_holyshit(self, at, extra_info):
+    async def cmd_holyshit(self, at, extra_info):
         """
         holyshit指令
         召唤五名活跃吧务，使用参数extra_info来附带额外的召唤需求
@@ -585,10 +600,10 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        if self.speaker.add_post(at.tieba_name, at.tid, content):
-            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+        if await self.speaker.add_post(at.tieba_name, at.tid, content):
+            await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    def cmd_recom_status(self, at, arg):
+    async def cmd_recom_status(self, at, arg):
         """
         recom_status指令
         获取大吧主推荐功能的月度配额状态
@@ -602,16 +617,15 @@ class Listener(object):
         if not tieba_dict['access_user'].__contains__(at.user.user_name):
             return
 
-        total_recom_num, used_recom_num = tieba_dict['admin'].get_recom_status(
-            at.tieba_name)
+        total_recom_num, used_recom_num = await tieba_dict['admin'].get_recom_status(at.tieba_name)
         content = f"@{at.user.user_name} \n本月总推荐配额{total_recom_num}\n本月已使用的推荐配额{used_recom_num}\n本月已使用百分比{used_recom_num/total_recom_num*100:.2f}%"
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        if self.speaker.add_post(at.tieba_name, at.tid, content):
-            tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+        if await self.speaker.add_post(at.tieba_name, at.tid, content):
+            await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    def cmd_register(self, at, arg):
+    async def cmd_register(self, at, arg):
         """
         register指令
         将发起指令的吧务移动到活跃吧务队列的最前端，以响应holyshit指令
@@ -627,9 +641,9 @@ class Listener(object):
 
         tieba_dict['access_user'].move_to_end(at.user.user_name, last=False)
 
-        tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+        await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    def cmd_ping(self, at, arg):
+    async def cmd_ping(self, at, arg):
         """
         ping指令
         用于测试bot可用性的空指令
@@ -643,9 +657,9 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
-        tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+        await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    def cmd_default(self, at, arg):
+    async def cmd_default(self, at, arg):
         """
         default指令
         """
@@ -655,14 +669,8 @@ class Listener(object):
 
 if __name__ == '__main__':
 
-    listener = Listener()
+    async def main():
+        async with Listener() as listener:
+            await listener.run()
 
-    while 1:
-        try:
-            listener.scan()
-            tb.log.debug('heartbeat')
-            time.sleep(5)
-        except KeyboardInterrupt:
-            break
-        except Exception as err:
-            tb.log.error(f"Unhandled error:{traceback.format_exc()}")
+    asyncio.run(main())
