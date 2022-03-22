@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 """
-@Version 2.0.0_rc2
+@Version 2.0.1_rc1
 @Author: Starry
 @License: Unlicense
 @Homepage: https://github.com/Starry-OvO/Tieba-Cloud-Review
@@ -11,13 +11,13 @@
 import signal
 
 from .api import Browser
+from .cloud_review import CloudReview
 from .data_structure import *
 from .logger import log
 
 
 def terminate(signalNumber, frame):
-    import sys
-    sys.exit()
+    raise KeyboardInterrupt
 
 
 signal.signal(signal.SIGTERM, terminate)

@@ -151,11 +151,14 @@ class UserInfo(BasicUserInfo):
         user_id: 贴吧旧版uid
         level: 等级
         gender: 性别（1男2女0未知）
+        is_vip: 是否vip
+        is_god: 是否大神
         priv_like: 是否公开关注贴吧（1完全可见2好友可见3完全隐藏）
         priv_reply: 帖子评论权限（1所有人5我的粉丝6我的关注）
     """
 
-    __slots__ = ['_level', '_gender', '_priv_like', '_priv_reply']
+    __slots__ = ['_level', '_gender', 'is_vip',
+                 'is_god', '_priv_like', '_priv_reply']
 
     def __init__(self, _id: Union[str, int, None] = None, user_proto: Optional[User_pb2.User] = None) -> NoReturn:
         super().__init__(_id, user_proto)
@@ -164,12 +167,16 @@ class UserInfo(BasicUserInfo):
             priv_proto = user_proto.priv_sets
             self.level = user_proto.level_id
             self.gender = user_proto.gender
+            self.is_vip = bool(user_proto.vipInfo.v_status)
+            self.is_god = bool(user_proto.new_god_data.status)
             self.priv_like = priv_proto.like
             self.priv_reply = priv_proto.reply
 
         else:
             self.level = 0
             self.gender = 0
+            self.is_vip = False
+            self.is_god = False
             self.priv_like = 3
             self.priv_reply = 1
 
@@ -478,6 +485,8 @@ class Thread(_Container):
 
     tab_id: 分区编号
     title: 标题内容
+    vote_info: 投票内容
+    share_origin: 转发来的原帖内容
     view_num: 浏览量
     reply_num: 回复数
     agree: 点赞数
@@ -487,7 +496,45 @@ class Thread(_Container):
     """
 
     __slots__ = ['tab_id', 'title', 'view_num', 'reply_num',
-                 'agree', 'disagree', 'create_time', 'last_time']
+                 'agree', 'disagree', 'create_time', 'last_time', 'vote_info', 'share_origin']
+
+    class VoteInfo(object):
+
+        __slots__ = ['title', 'options',
+                     'is_multi', 'total_vote', 'total_user']
+
+        class VoteOption(object):
+
+            __slots__ = ['vote_num', 'text', 'image']
+
+            def __init__(self, obj_proto: Optional[ThreadInfo_pb2.PollInfo.PollOption] = None) -> NoReturn:
+
+                if obj_proto:
+                    self.vote_num = obj_proto.num
+                    self.text = obj_proto.text
+                    self.image = obj_proto.image
+
+                else:
+                    self.vote_num = 0
+                    self.text = ''
+                    self.image = ''
+
+        def __init__(self, obj_proto: Optional[ThreadInfo_pb2.PollInfo] = None) -> NoReturn:
+
+            if obj_proto:
+                self.title = obj_proto.title
+                self.options = [self.VoteOption(
+                    opt_proto) for opt_proto in obj_proto.options]
+                self.is_multi = bool(obj_proto.is_multi)
+                self.total_vote = obj_proto.total_poll
+                self.total_user = obj_proto.total_num
+
+            else:
+                self.title = ''
+                self.options = []
+                self.is_multi = False
+                self.total_vote = 0
+                self.total_user = 0
 
     def __init__(self, obj_proto: Optional[ThreadInfo_pb2.ThreadInfo] = None) -> NoReturn:
         super().__init__()
@@ -504,6 +551,8 @@ class Thread(_Container):
 
             self.tab_id = obj_proto.tab_id
             self.title = obj_proto.title
+            self.vote_info = self.VoteInfo(obj_proto.poll_info)
+            self.share_origin = None
             self.view_num = obj_proto.view_num
             self.reply_num = obj_proto.reply_num
             self.agree = obj_proto.agree.agree_num
@@ -522,6 +571,8 @@ class Thread(_Container):
 
             self.tab_id = 0
             self.title = ''
+            self.vote_info = self.VoteInfo()
+            self.share_origin = None
             self.view_num = 0
             self.reply_num = 0
             self.agree = 0
@@ -551,6 +602,22 @@ class Threads(_Containers[Thread]):
     def __init__(self, main_proto: Optional[FrsPageResIdl_pb2.FrsPageResIdl] = None) -> NoReturn:
 
         if main_proto:
+
+            def _init_thread(obj_proto):
+                thread = Thread(obj_proto)
+                if obj_proto.is_share_thread:
+                    share_proto = obj_proto.origin_thread_info
+                    share_origin = Thread()
+                    share_origin.fid = share_proto.fid
+                    share_origin.tid = int(share_proto.tid)
+                    share_origin.pid = share_proto.pid
+                    share_origin.contents = Fragments(share_proto.content)
+                    share_origin.title = share_proto.title
+                    share_origin.vote_info = Thread.VoteInfo(
+                        share_proto.poll_info)
+                    thread.share_origin = share_origin
+                return thread
+
             data_proto = main_proto.data
             self.current_pn = data_proto.page.current_page
             self.total_pn = data_proto.page.total_page
@@ -560,7 +627,7 @@ class Threads(_Containers[Thread]):
 
             users = {user_proto.id: UserInfo(
                 user_proto=user_proto) for user_proto in data_proto.user_list}
-            self._objs = [Thread(obj_proto)
+            self._objs = [_init_thread(obj_proto)
                           for obj_proto in data_proto.thread_list]
             for obj in self._objs:
                 obj.user = users.get(obj.author_id, UserInfo())

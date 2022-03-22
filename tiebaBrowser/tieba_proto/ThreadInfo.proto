@@ -4,6 +4,19 @@ import "User.proto";
 import "PbContent.proto";
 import "Agree.proto";
 
+message PollInfo {
+    int32 is_multi = 2;
+    int64 total_num = 3;
+    message PollOption {
+        int64 num = 2;
+        string text = 3;
+        string image = 4;
+    }
+    repeated PollOption options = 9;
+    int64 total_poll = 11;
+    string title = 12;
+}
+
 message ThreadInfo {
     int64 id = 1;
     string title = 3;
@@ -20,21 +33,21 @@ message ThreadInfo {
     int32 create_time = 45;
     int64 author_id = 56;
     uint32 is_ad = 59;
-    message PollInfo {
-        int32 is_multi = 2;
-        int32 options_count = 4;
-        message PollOption {
-            string text = 3;
-            string image = 4;
-        }
-        repeated PollOption options = 9;
-        string title = 12;
-    }
     PollInfo poll_info = 74;
     int32 is_godthread_recommend = 85;
     Agree agree = 126;
     int32 is_god = 131;
-    repeated PbContent first_post_content = 142; 
+    message OriginThreadInfo {
+        string title = 1;
+        string tid = 5;
+        int64 fid = 7;
+        repeated PbContent content = 14;
+        PollInfo poll_info = 21;
+        int64 pid = 25;
+    }
+    OriginThreadInfo origin_thread_info = 141;
+    repeated PbContent first_post_content = 142;
+    int32 is_share_thread = 143;
     int32 tab_id = 175;
     int32 is_deleted = 181;
     int32 is_frs_mask = 198;

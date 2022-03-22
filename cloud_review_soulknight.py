@@ -287,4 +287,7 @@ if __name__ == '__main__':
         async with SoulknightCloudReview('default', '元气骑士') as review:
             await review.run()
 
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except:
+        pass

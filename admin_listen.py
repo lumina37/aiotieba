@@ -65,13 +65,14 @@ class Listener(object):
 
         self.func_map = {func_name[4:]: getattr(self, func_name) for func_name in dir(
             self) if func_name.startswith("cmd")}
-        self.timer = Timer(60, 30)
+        self.timer = Timer(300, 30)
 
     async def close(self) -> NoReturn:
         coros = [tieba_dict['admin'].close()
                  for tieba_dict in self.tieba.values()]
         coros.append(self.listener.close())
-        asyncio.gather(*coros, return_exceptions=False)
+        coros.append(self.speaker.close())
+        await asyncio.gather(*coros, return_exceptions=False)
 
         for tieba_dict in self.tieba.values():
             tieba_dict['admin'] = tieba_dict['admin'].BDUSS_key
@@ -96,6 +97,8 @@ class Listener(object):
                 tb.log.debug('heartbeat')
                 await asyncio.sleep(5)
 
+            except asyncio.CancelledError:
+                raise
             except Exception as err:
                 tb.log.error(f"Unhandled error:{traceback.format_exc()}")
                 return
@@ -365,10 +368,10 @@ class Listener(object):
         await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
         await tieba_dict['admin'].del_thread(at.tieba_name, at.tid)
 
-    async def cmd_tmphide(self, at, arg):
+    async def cmd_water(self, at, arg):
         """
-        tmphide指令
-        暂时屏蔽指令所在主题帖
+        water指令
+        将指令所在主题帖标记为无关水，并临时屏蔽
         """
 
         tieba_dict = self.tieba.get(at.tieba_name, None)
@@ -383,13 +386,13 @@ class Listener(object):
             tb.log.error("Failed to ping:{at.tieba_name}")
             return
 
-        if await tieba_dict['admin'].mysql.add_tid(at.tieba_name, at.tid) and await tieba_dict['admin'].del_thread(at.tieba_name, at.tid, is_hide=True):
+        if await tieba_dict['admin'].mysql.update_tid(at.tieba_name, at.tid, True) and await tieba_dict['admin'].del_thread(at.tieba_name, at.tid, is_hide=True):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    async def cmd_tmpunhide(self, at, arg):
+    async def cmd_unwater(self, at, arg):
         """
-        tmpunhide指令
-        解除指令所在主题帖的屏蔽
+        unwater指令
+        清除指令所在主题帖的无关水标记，并立刻解除屏蔽
         """
 
         tieba_dict = self.tieba.get(at.tieba_name, None)
@@ -404,10 +407,36 @@ class Listener(object):
             tb.log.error("Failed to ping:{at.tieba_name}")
             return
 
-        await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
-        async for tid in tieba_dict['admin'].mysql.get_tids(at.tieba_name):
-            if await tieba_dict['admin'].recover(at.tieba_name, tid, is_hide=True):
-                await tieba_dict['admin'].mysql.del_tid(at.tieba_name, tid)
+        if await tieba_dict['admin'].mysql.del_tid(at.tieba_name, at.tid) and await tieba_dict['admin'].recover(at.tieba_name, at.tid, is_hide=True):
+            await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+
+    async def cmd_water_restrict(self, at, mode):
+        """
+        water_restrict指令
+        控制当前吧的云审查脚本的无关水管控状态
+        """
+
+        tieba_dict = self.tieba.get(at.tieba_name, None)
+        if not tieba_dict:
+            return
+        if not tieba_dict['access_user'].__contains__(at.user.user_name):
+            return
+
+        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+
+        if not await tieba_dict['admin'].mysql.ping():
+            tb.log.error("Failed to ping:{at.tieba_name}")
+            return
+
+        if mode == "enter":
+            if await tieba_dict['admin'].mysql.update_tid(at.tieba_name, 0, True):
+                await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+        if mode == "exit":
+            if await tieba_dict['admin'].mysql.update_tid(at.tieba_name, 0, False):
+                await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+            async for tid in tieba_dict['admin'].mysql.get_tids(at.tieba_name):
+                if await tieba_dict['admin'].recover(at.tieba_name, tid, is_hide=True):
+                    await tieba_dict['admin'].mysql.update_tid(at.tieba_name, at.tid, False)
 
     async def cmd_block(self, at, id):
         """
@@ -673,4 +702,7 @@ if __name__ == '__main__':
         async with Listener() as listener:
             await listener.run()
 
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except:
+        pass

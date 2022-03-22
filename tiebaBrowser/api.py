@@ -37,7 +37,7 @@ class Sessions(object):
 
     def __init__(self, BDUSS_key: Optional[str] = None) -> NoReturn:
 
-        _timeout = aiohttp.ClientTimeout(sock_connect=3, sock_read=10)
+        _timeout = aiohttp.ClientTimeout(sock_connect=3, sock_read=8)
         _connector = aiohttp.TCPConnector(
             verify_ssl=False, keepalive_timeout=60, limit=None, family=socket.AF_INET)
 
@@ -151,15 +151,7 @@ class Browser(object):
         """
 
         if not self._tbs:
-            try:
-                res = await self.sessions.web.get("http://tieba.baidu.com/dc/common/tbs")
-
-                main_json = await res.json(content_type='text/html')
-                self._tbs = main_json['tbs']
-
-            except Exception as err:
-                log.error(f"Failed to get tbs reason: {err}")
-                self._tbs = ''
+            await self.get_self_info()
 
         return self._tbs
 
@@ -267,6 +259,7 @@ class Browser(object):
             user.portrait = user_dict['portrait']
             user.user_id = user_dict['id']
             user.gender = gender
+            user.is_vip = bool(user_dict['vipInfo'])
 
         except Exception as err:
             log.error(
@@ -1260,9 +1253,12 @@ class Browser(object):
                 user_dict, User_pb2.User(), ignore_unknown_fields=True)
             user = BasicUserInfo(user_proto=user_proto)
 
+            self._tbs = main_json['anti']['tbs']
+
         except Exception as err:
             log.error(f"Failed to get UserInfo. reason:{err}")
             user = BasicUserInfo()
+            self._tbs = ''
 
         return user
 
@@ -1364,7 +1360,7 @@ class Browser(object):
             if int(main_json['error_code']):
                 raise ValueError(main_json['error_msg'])
             if not main_json.__contains__('user'):
-                raise ValueError("Invalid params")
+                raise ValueError("invalid params")
 
         except Exception as err:
             log.error(
@@ -1378,6 +1374,8 @@ class Browser(object):
         user.portrait = user_dict['portrait']
         user.user_id = user_dict['id']
         user.gender = user_dict['sex']
+        user.is_vip = int(user_dict['vipInfo']['v_status']) != 0
+        user.is_god = bool(user_dict['new_god_data']['field_id'])
         priv_dict = user_dict['priv_sets']
         if not priv_dict:
             priv_dict = {}
@@ -1688,6 +1686,8 @@ class Browser(object):
                 user.portrait = user_dict['portrait']
                 user.user_id = user_dict['id']
                 user.gender = user_dict['sex']
+                user.is_vip = bool(user_dict['vipInfo'])
+                user.is_god = bool(user_dict['new_god_data']['field_id'])
                 priv_dict = user_dict['priv_sets']
                 if not priv_dict:
                     priv_dict = {}

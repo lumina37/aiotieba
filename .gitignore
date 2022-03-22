@@ -17,7 +17,7 @@ test*
 /*.proto
 !/admin_listen.py
 !/admin_operation.py
-!/mysql_operation.py
+!/sql_operation.py
 !/block_cycle.py
 !/cloud_review_soulknight.py
 !/sign.py

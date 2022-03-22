@@ -1,10 +1,10 @@
 {
-  "listener": "listener",
-  "speaker": "default",
-  "tieba_list": {
-    "asoul": {
-      "admin": "noob",
-      "access_user": [
+  "listener":"listener",
+  "speaker":"default",
+  "tieba_list":{
+    "asoul":{
+      "admin":"noob",
+      "access_user":[
         "香香香强强强",
         "让娜舍露安",
         "kk不好玩",
@@ -30,9 +30,9 @@
         "ridertimezio"
       ]
     },
-    "元气骑士": {
-      "admin": "default",
-      "access_user": [
+    "元气骑士":{
+      "admin":"default",
+      "access_user":[
         "413_王不",
         "孤身夜行者",
         "jjq1949445625",
@@ -47,21 +47,21 @@
         "帖吧管家"
       ]
     },
-    "soulknight": {
-      "admin": "default",
-      "access_user": [
+    "soulknight":{
+      "admin":"default",
+      "access_user":[
         "kk不好玩"
       ]
     },
-    "starry": {
-      "admin": "default",
-      "access_user": [
+    "starry":{
+      "admin":"default",
+      "access_user":[
         "kk不好玩"
       ]
     },
-    "vtuber自由讨论": {
-      "admin": "default",
-      "access_user": [
+    "vtuber自由讨论":{
+      "admin":"default",
+      "access_user":[
         "老李汉闯天涯",
         "我Q996401711",
         "未知错误已发生",
