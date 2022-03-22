@@ -3,6 +3,7 @@ __all__ = ('Browser',)
 
 import asyncio
 import hashlib
+import json
 import re
 import socket
 import sys
@@ -292,7 +293,8 @@ class Browser(object):
         try:
             res = await self.sessions.web.get("http://tieba.baidu.com/i/sys/user_json", params=params)
 
-            main_json = await res.json(content_type='text/html')
+            text = await res.text(errors='ignore')
+            main_json = json.loads(text)
             if not main_json:
                 raise ValueError("empty response")
 

@@ -301,7 +301,7 @@ class Listener(object):
         if not tieba_dict['access_user'].__contains__(at.user.user_name):
             return
 
-        posts = self.listener.get_posts(at.tid)
+        posts = await self.listener.get_posts(at.tid)
         if not posts:
             return
 
@@ -325,7 +325,7 @@ class Listener(object):
         if not tieba_dict['access_user'].__contains__(at.user.user_name):
             return
 
-        posts = self.listener.get_posts(at.tid)
+        posts = await self.listener.get_posts(at.tid)
         if not posts:
             return
 
@@ -357,7 +357,7 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        posts = self.listener.get_posts(at.tid)
+        posts = await self.listener.get_posts(at.tid)
         if posts:
             tb.log.info(
                 f"Try to delete thread {posts[0].text} post by {posts[0].user.log_name}")
