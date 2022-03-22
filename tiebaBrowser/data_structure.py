@@ -227,9 +227,9 @@ class Forum(object):
 
     __slots__ = ['fid', 'name']
 
-    def __init__(self, obj_proto) -> NoReturn:
-        self.fid = obj_proto.id
-        self.name = obj_proto.name
+    def __init__(self, forum_proto) -> NoReturn:
+        self.fid = forum_proto.id
+        self.name = forum_proto.name
 
 
 class _Fragment(Generic[TContent]):
@@ -507,27 +507,27 @@ class Thread(_Container):
 
             __slots__ = ['vote_num', 'text', 'image']
 
-            def __init__(self, obj_proto: Optional[ThreadInfo_pb2.PollInfo.PollOption] = None) -> NoReturn:
+            def __init__(self, option_proto: Optional[ThreadInfo_pb2.PollInfo.PollOption] = None) -> NoReturn:
 
-                if obj_proto:
-                    self.vote_num = obj_proto.num
-                    self.text = obj_proto.text
-                    self.image = obj_proto.image
+                if option_proto:
+                    self.vote_num = option_proto.num
+                    self.text = option_proto.text
+                    self.image = option_proto.image
 
                 else:
                     self.vote_num = 0
                     self.text = ''
                     self.image = ''
 
-        def __init__(self, obj_proto: Optional[ThreadInfo_pb2.PollInfo] = None) -> NoReturn:
+        def __init__(self, vote_proto: Optional[ThreadInfo_pb2.PollInfo] = None) -> NoReturn:
 
-            if obj_proto:
-                self.title = obj_proto.title
+            if vote_proto:
+                self.title = vote_proto.title
                 self.options = [self.VoteOption(
-                    opt_proto) for opt_proto in obj_proto.options]
-                self.is_multi = bool(obj_proto.is_multi)
-                self.total_vote = obj_proto.total_poll
-                self.total_user = obj_proto.total_num
+                    option_proto) for option_proto in vote_proto.options]
+                self.is_multi = bool(vote_proto.is_multi)
+                self.total_vote = vote_proto.total_poll
+                self.total_user = vote_proto.total_num
 
             else:
                 self.title = ''
@@ -536,29 +536,29 @@ class Thread(_Container):
                 self.total_vote = 0
                 self.total_user = 0
 
-    def __init__(self, obj_proto: Optional[ThreadInfo_pb2.ThreadInfo] = None) -> NoReturn:
+    def __init__(self, thread_proto: Optional[ThreadInfo_pb2.ThreadInfo] = None) -> NoReturn:
         super().__init__()
 
-        if obj_proto:
-            self.contents = Fragments(obj_proto.first_post_content)
+        if thread_proto:
+            self.contents = Fragments(thread_proto.first_post_content)
 
-            self.fid = obj_proto.fid
-            self.tid = obj_proto.id
-            self.pid = obj_proto.first_post_id
+            self.fid = thread_proto.fid
+            self.tid = thread_proto.id
+            self.pid = thread_proto.first_post_id
             self.user = UserInfo(
-                user_proto=obj_proto.author) if obj_proto.author.id else UserInfo()
-            self.author_id = obj_proto.author_id
+                user_proto=thread_proto.author) if thread_proto.author.id else UserInfo()
+            self.author_id = thread_proto.author_id
 
-            self.tab_id = obj_proto.tab_id
-            self.title = obj_proto.title
-            self.vote_info = self.VoteInfo(obj_proto.poll_info)
+            self.tab_id = thread_proto.tab_id
+            self.title = thread_proto.title
+            self.vote_info = self.VoteInfo(thread_proto.poll_info)
             self.share_origin = None
-            self.view_num = obj_proto.view_num
-            self.reply_num = obj_proto.reply_num
-            self.agree = obj_proto.agree.agree_num
-            self.disagree = obj_proto.agree.disagree_num
-            self.create_time = obj_proto.create_time
-            self.last_time = obj_proto.last_time_int
+            self.view_num = thread_proto.view_num
+            self.reply_num = thread_proto.reply_num
+            self.agree = thread_proto.agree.agree_num
+            self.disagree = thread_proto.agree.disagree_num
+            self.create_time = thread_proto.create_time
+            self.last_time = thread_proto.last_time_int
 
         else:
             self.contents = Fragments()
@@ -599,14 +599,14 @@ class Threads(_Containers[Thread]):
 
     __slots__ = ['forum', 'tab_map']
 
-    def __init__(self, main_proto: Optional[FrsPageResIdl_pb2.FrsPageResIdl] = None) -> NoReturn:
+    def __init__(self, threads_proto: Optional[FrsPageResIdl_pb2.FrsPageResIdl] = None) -> NoReturn:
 
-        if main_proto:
+        if threads_proto:
 
-            def _init_thread(obj_proto):
-                thread = Thread(obj_proto)
-                if obj_proto.is_share_thread:
-                    share_proto = obj_proto.origin_thread_info
+            def _init_thread(thread_proto):
+                thread = Thread(thread_proto)
+                if thread_proto.is_share_thread:
+                    share_proto = thread_proto.origin_thread_info
                     share_origin = Thread()
                     share_origin.fid = share_proto.fid
                     share_origin.tid = int(share_proto.tid)
@@ -618,7 +618,7 @@ class Threads(_Containers[Thread]):
                     thread.share_origin = share_origin
                 return thread
 
-            data_proto = main_proto.data
+            data_proto = threads_proto.data
             self.current_pn = data_proto.page.current_page
             self.total_pn = data_proto.page.total_page
             self.forum = Forum(data_proto.forum)
@@ -627,10 +627,10 @@ class Threads(_Containers[Thread]):
 
             users = {user_proto.id: UserInfo(
                 user_proto=user_proto) for user_proto in data_proto.user_list}
-            self._objs = [_init_thread(obj_proto)
-                          for obj_proto in data_proto.thread_list]
-            for obj in self._objs:
-                obj.user = users.get(obj.author_id, UserInfo())
+            self._objs = [_init_thread(thread_proto)
+                          for thread_proto in data_proto.thread_list]
+            for thread in self._objs:
+                thread.user = users.get(thread.author_id, UserInfo())
 
         else:
             self._objs = []
@@ -665,24 +665,24 @@ class Post(_Container):
     __slots__ = ['sign', 'comments', 'floor', 'reply_num',
                  'agree', 'disagree', 'create_time', 'is_thread_owner']
 
-    def __init__(self, obj_proto: Optional[Post_pb2.Post] = None) -> NoReturn:
+    def __init__(self, post_proto: Optional[Post_pb2.Post] = None) -> NoReturn:
         super().__init__()
 
-        if obj_proto:
-            self.contents = Fragments(obj_proto.content)
+        if post_proto:
+            self.contents = Fragments(post_proto.content)
             self.sign = ''.join(
-                [sign.text for sign in obj_proto.signature.content if sign.type == 0])
+                [sign.text for sign in post_proto.signature.content if sign.type == 0])
             self.comments = [Comment(comment_proto)
-                             for comment_proto in obj_proto.sub_post_list.sub_post_list]
+                             for comment_proto in post_proto.sub_post_list.sub_post_list]
 
-            self.pid = obj_proto.id
-            self.author_id = obj_proto.author_id
+            self.pid = post_proto.id
+            self.author_id = post_proto.author_id
 
-            self.floor = obj_proto.floor
-            self.reply_num = obj_proto.sub_post_number
-            self.agree = obj_proto.agree.agree_num
-            self.disagree = obj_proto.agree.disagree_num
-            self.create_time = obj_proto.time
+            self.floor = post_proto.floor
+            self.reply_num = post_proto.sub_post_number
+            self.agree = post_proto.agree.agree_num
+            self.disagree = post_proto.agree.disagree_num
+            self.create_time = post_proto.time
 
         else:
             self.contents = Fragments()
@@ -719,10 +719,10 @@ class Posts(_Containers[Post]):
 
     __slots__ = ['forum', 'thread']
 
-    def __init__(self, main_proto: Optional[PbPageResIdl_pb2.PbPageResIdl] = None) -> NoReturn:
+    def __init__(self, posts_proto: Optional[PbPageResIdl_pb2.PbPageResIdl] = None) -> NoReturn:
 
-        if main_proto:
-            data_proto = main_proto.data
+        if posts_proto:
+            data_proto = posts_proto.data
             self.current_pn = data_proto.page.current_page
             self.total_pn = data_proto.page.total_page
             self.forum = Forum(data_proto.forum)
@@ -731,14 +731,14 @@ class Posts(_Containers[Post]):
 
             users = {user_proto.id: UserInfo(
                 user_proto=user_proto) for user_proto in data_proto.user_list}
-            self._objs = [Post(obj_proto)
-                          for obj_proto in data_proto.post_list]
-            for obj in self._objs:
-                obj.is_thread_owner = thread_owner_id == obj.author_id
-                obj.fid = self.forum.fid
-                obj.tid = self.thread.tid
-                obj.user = users.get(obj.author_id, UserInfo())
-                for comment in obj.comments:
+            self._objs = [Post(post_proto)
+                          for post_proto in data_proto.post_list]
+            for comment in self._objs:
+                comment.is_thread_owner = thread_owner_id == comment.author_id
+                comment.fid = self.forum.fid
+                comment.tid = self.thread.tid
+                comment.user = users.get(comment.author_id, UserInfo())
+                for comment in comment.comments:
                     comment.user = users.get(comment.author_id, UserInfo())
 
         else:
@@ -767,19 +767,19 @@ class Comment(_Container):
 
     __slots__ = ['agree', 'disagree', 'create_time']
 
-    def __init__(self, obj_proto: Optional[SubPostList_pb2.SubPostList] = None) -> NoReturn:
+    def __init__(self, comment_proto: Optional[SubPostList_pb2.SubPostList] = None) -> NoReturn:
         super().__init__()
 
-        if obj_proto:
-            self.contents = Fragments(obj_proto.content)
+        if comment_proto:
+            self.contents = Fragments(comment_proto.content)
 
-            self.pid = obj_proto.id
-            self.user = UserInfo(user_proto=obj_proto.author)
-            self.author_id = obj_proto.author_id
+            self.pid = comment_proto.id
+            self.user = UserInfo(user_proto=comment_proto.author)
+            self.author_id = comment_proto.author_id
 
-            self.agree = obj_proto.agree.agree_num
-            self.disagree = obj_proto.agree.disagree_num
-            self.create_time = obj_proto.time
+            self.agree = comment_proto.agree.agree_num
+            self.disagree = comment_proto.agree.disagree_num
+            self.create_time = comment_proto.time
 
         else:
             self.contents = Fragments()
@@ -805,21 +805,21 @@ class Comments(_Containers[Comment]):
 
     __slots__ = ['forum', 'thread', 'post']
 
-    def __init__(self, main_proto: Optional[PbFloorResIdl_pb2.PbFloorResIdl] = None) -> NoReturn:
+    def __init__(self, comments_proto: Optional[PbFloorResIdl_pb2.PbFloorResIdl] = None) -> NoReturn:
 
-        if main_proto:
-            data_proto = main_proto.data
+        if comments_proto:
+            data_proto = comments_proto.data
             self.current_pn = data_proto.page.current_page
             self.total_pn = data_proto.page.total_page
             self.forum = Forum(data_proto.forum)
             self.thread = Thread(data_proto.thread)
             self.post = Post(data_proto.post)
 
-            self._objs = [Comment(obj_proto)
-                          for obj_proto in data_proto.subpost_list]
-            for obj in self._objs:
-                obj.fid = self.forum.fid
-                obj.tid = self.thread.tid
+            self._objs = [Comment(comment_proto)
+                          for comment_proto in data_proto.subpost_list]
+            for comment in self._objs:
+                comment.fid = self.forum.fid
+                comment.tid = self.thread.tid
 
         else:
             self._objs = []
@@ -866,21 +866,21 @@ class Ats(_Containers[At]):
     has_next: 是否有下一页
     """
 
-    def __init__(self, main_json: Optional[dict] = None) -> NoReturn:
+    def __init__(self, ats_dict: Optional[dict] = None) -> NoReturn:
 
-        def _init_obj(obj_dict: dict) -> At:
+        def _init_obj(at_dict: dict) -> At:
             try:
-                user_dict = obj_dict['replyer']
+                user_dict = at_dict['replyer']
                 user_proto = ParseDict(
                     user_dict, User_pb2.User(), ignore_unknown_fields=True)
                 user = UserInfo(user_proto=user_proto)
 
-                at = At(tieba_name=obj_dict['fname'],
-                        tid=int(obj_dict['thread_id']),
-                        pid=int(obj_dict['post_id']),
-                        text=obj_dict['content'].lstrip(),
+                at = At(tieba_name=at_dict['fname'],
+                        tid=int(at_dict['thread_id']),
+                        pid=int(at_dict['post_id']),
+                        text=at_dict['content'].lstrip(),
                         user=user,
-                        create_time=int(obj_dict['time'])
+                        create_time=int(at_dict['time'])
                         )
                 return at
 
@@ -889,18 +889,18 @@ class Ats(_Containers[At]):
                     f"Failed to init At. reason:line {err.__traceback__.tb_lineno} {err}")
                 return At()
 
-        if main_json:
+        if ats_dict:
             try:
-                self.current_pn = int(main_json['page']['current_page'])
-                if int(main_json['page']['has_more']) == 1:
+                self.current_pn = int(ats_dict['page']['current_page'])
+                if int(ats_dict['page']['has_more']) == 1:
                     self.total_pn = self.current_pn+1
                 else:
                     self.total_pn = self.current_pn
             except Exception as err:
                 raise ValueError(f"line {err.__traceback__.tb_lineno}: {err}")
 
-            self._objs = [_init_obj(obj_dict)
-                          for obj_dict in main_json['at_list']]
+            self._objs = [_init_obj(at_dict)
+                          for at_dict in ats_dict['at_list']]
 
         else:
             self._objs = []
