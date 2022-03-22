@@ -20,7 +20,7 @@
 ## 功能特点
 
 + 优先使用最新版贴吧app（12.22.0.3）的接口实现功能
-+ 优先使用最新版贴吧app使用的[Google Protocol Buffer (Protobuf)](https://developers.google.cn/protocol-buffers)协议序列化网络请求&响应数据
++ 优先使用最新版贴吧app使用的[`Google Protocol Buffer (Protobuf)`](https://developers.google.cn/protocol-buffers)协议序列化网络请求&响应数据
 + 使用[`aiohttp`](https://github.com/aio-libs/aiohttp)作为网络库，所有涉及网络IO的函数均支持异步
 + 得益于[`Python`](https://www.python.org/downloads)语言的强大扩展能力，云审查管理器支持二维码识别、图像phash等功能
 + 极高的功能自由度，可以自定义复杂的正则表达式，可以从用户等级/评论图片/小尾巴内容等等方面入手判断删帖与封禁条件

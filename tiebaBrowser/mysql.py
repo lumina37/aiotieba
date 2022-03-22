@@ -250,7 +250,7 @@ class MySQL(object):
     async def get_tids(self, tieba_name_eng: str, batch_size: int = 128) -> int:
         """
         获取tid_water_{tieba_name_eng}中所有待恢复的tid
-        get_tids(tieba_name,batch_size=100)
+        get_tids(tieba_name,batch_size=128)
 
         参数:
             batch_size: int 分包大小
@@ -353,7 +353,7 @@ class MySQL(object):
     async def get_user_ids(self, tieba_name_eng: str, batch_size: int = 128) -> int:
         """
         获取user_id列表
-        get_user_ids(tieba_name,batch_size=30)
+        get_user_ids(tieba_name,batch_size=128)
 
         参数:
             batch_size: int 分包大小
