@@ -20,4 +20,17 @@ message PbContent {
     uint32 e_type = 24;
     string origin_src = 25;
     uint32 origin_size = 27;
+    message TiebaPlusInfo {
+        string title = 1;
+        string desc = 2;
+        string jump_url = 3;
+        string app_icon = 6;
+        int32 target_type = 12;
+        int32 h5_jump_type = 13;
+        string h5_jump_number = 14;
+        string h5_jump_param = 15;
+        int32 jump_type = 16;
+        string button_desc = 23;
+    }
+    TiebaPlusInfo tiebaplus_info = 40;
 }

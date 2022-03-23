@@ -241,8 +241,8 @@ class _Fragment(Generic[TContent]):
 
     __slots__ = ['_str']
 
-    def __init__(self) -> NoReturn:
-        pass
+    def __init__(self, content_proto: PbContent_pb2.PbContent) -> NoReturn:
+        self._str = ''
 
     def __str__(self) -> str:
         return self._str
@@ -254,6 +254,8 @@ class _Fragment(Generic[TContent]):
 class FragText(_Fragment):
     """
     纯文本碎片
+
+    _str: 文本内容
     """
 
     __slots__ = []
@@ -266,16 +268,15 @@ class FragLink(_Fragment):
     """
     链接碎片
 
-    title: 链接标题
+    _str: 链接标题
     link: 链接url
     """
 
     __slots__ = ['title', 'link']
 
     def __init__(self, content_proto: PbContent_pb2.PbContent) -> NoReturn:
-        self.title = content_proto.text
+        self._str = content_proto.text
         self.link = content_proto.link
-        self._str = f"{self.link} {self.title}"
 
 
 class FragEmoji(_Fragment):
@@ -304,7 +305,7 @@ class FragImage(_Fragment):
     __slots__ = ['src', 'cdn_src', 'big_cdn_src']
 
     def __init__(self, content_proto: PbContent_pb2.PbContent) -> NoReturn:
-        self._str = content_proto.src
+        self._str = ''
         self.src = content_proto.src
         self.cdn_src = content_proto.cdn_src
         self.big_cdn_src = content_proto.big_cdn_src
@@ -338,6 +339,22 @@ class FragVoice(_Fragment):
         self.voice_md5 = content_proto.voice_md5
 
 
+class FragTiebaPlus(_Fragment):
+    """
+    tiebaplus碎片
+
+    _str: 描述文本
+    jump_url: 跳转链接
+    """
+
+    __slots__ = ['jump_url']
+
+    def __init__(self, content_proto: PbContent_pb2.PbContent) -> NoReturn:
+        tiebaplus_proto = content_proto.tiebaplus_info
+        self._str = tiebaplus_proto.desc
+        self.jump_url = tiebaplus_proto.jump_url
+
+
 class Fragments(object):
     """
     内容碎片列表
@@ -354,13 +371,9 @@ class Fragments(object):
 
         def _init_by_type(content_proto) -> _Fragment:
             _type = content_proto.type
-            fragment = _Fragment()
             # 0纯文本 9电话号 18话题 27百科词条 35tiebaplus跳转链接
-            if _type in [0, 9, 18, 27, 35]:  
+            if _type in [0, 9, 18, 27, 35]:
                 fragment = FragText(content_proto)
-                self.texts.append(fragment)
-            elif _type == 1:
-                fragment = FragLink(content_proto)
                 self.texts.append(fragment)
             elif _type == 2:
                 fragment = FragEmoji(content_proto)
@@ -371,9 +384,21 @@ class Fragments(object):
             elif _type == 4:
                 fragment = FragAt(content_proto)
                 self.texts.append(fragment)
+            elif _type == 1:
+                fragment = FragLink(content_proto)
+                self.texts.append(fragment)
+            elif _type == 5:
+                fragment = _Fragment()
             elif _type == 10:
                 fragment = FragVoice(content_proto)
                 self.voice = fragment
+            elif _type in [35, 36]:
+                fragment = FragTiebaPlus(content_proto)
+                self.texts.append(fragment)
+            else:
+                fragment = _Fragment()
+                log.warning(f"Unknown fragment type:{_type}")
+
             return fragment
 
         self._text = ''
@@ -903,7 +928,7 @@ class Ats(_Containers[At]):
                 return at
 
             except Exception as err:
-                log.error(
+                log.warning(
                     f"Failed to init At. reason:line {err.__traceback__.tb_lineno} {err}")
                 return At()
 

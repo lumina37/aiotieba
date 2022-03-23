@@ -102,7 +102,7 @@ class MySQL(object):
             self.cursor.execute(
                 f"REPLACE INTO pid_whitelist_{tieba_name_eng} VALUES ({pid},DEFAULT)")
         except pymysql.Error:
-            log.error(f"MySQL Error: Failed to insert {pid}!")
+            log.warning(f"MySQL Error: Failed to insert {pid}!")
             return False
         else:
             self.conn.commit()
@@ -119,7 +119,7 @@ class MySQL(object):
             self.cursor.execute(
                 f"SELECT NULL FROM pid_whitelist_{tieba_name_eng} WHERE pid={pid}")
         except pymysql.Error:
-            log.error(f"MySQL Error: Failed to select {pid}!")
+            log.warning(f"MySQL Error: Failed to select {pid}!")
             return False
         else:
             return True if self.cursor.fetchone() else False
@@ -135,7 +135,7 @@ class MySQL(object):
             self.cursor.execute(
                 f"DELETE FROM pid_whitelist_{tieba_name_eng} WHERE pid={pid}")
         except pymysql.Error:
-            log.error(f"MySQL Error: Failed to delete {pid}!")
+            log.warning(f"MySQL Error: Failed to delete {pid}!")
             return False
         else:
             log.info(
@@ -154,7 +154,7 @@ class MySQL(object):
             self.cursor.execute(
                 f"DELETE FROM pid_whitelist_{tieba_name_eng} WHERE record_time>(CURRENT_TIMESTAMP() + INTERVAL -{hour} HOUR)")
         except pymysql.Error:
-            log.error(
+            log.warning(
                 f"MySQL Error: Failed to delete pid in pid_whitelist_{tieba_name_eng}")
             return False
         else:
@@ -196,7 +196,7 @@ class MySQL(object):
             self.cursor.execute(
                 f"REPLACE INTO tid_water_{tieba_name_eng} VALUES ({tid},{mode},DEFAULT)")
         except pymysql.Error:
-            log.error(f"MySQL Error: Failed to insert {tid}!")
+            log.warning(f"MySQL Error: Failed to insert {tid}!")
             return False
         else:
             log.info(
@@ -218,7 +218,7 @@ class MySQL(object):
             self.cursor.execute(
                 f"SELECT is_hide FROM tid_water_{tieba_name_eng} WHERE tid={tid}")
         except pymysql.Error:
-            log.error(f"MySQL Error: Failed to select {tid}!")
+            log.warning(f"MySQL Error: Failed to select {tid}!")
             return None
         else:
             res_tuple = self.cursor.fetchone()
@@ -238,7 +238,7 @@ class MySQL(object):
             self.cursor.execute(
                 f"DELETE FROM tid_water_{tieba_name_eng} WHERE tid={tid}")
         except pymysql.Error:
-            log.error(f"MySQL Error: Failed to delete {tid}!")
+            log.warning(f"MySQL Error: Failed to delete {tid}!")
             return False
         else:
             log.info(
@@ -264,7 +264,7 @@ class MySQL(object):
                 self.cursor.execute(
                     f"SELECT tid FROM tid_water_{tieba_name_eng} WHERE is_hide=TRUE LIMIT {batch_size} OFFSET {i * batch_size}")
             except pymysql.Error:
-                log.error(
+                log.warning(
                     f"MySQL Error: Failed to get tids in {tieba_name_eng}!")
                 return
             else:
@@ -300,7 +300,7 @@ class MySQL(object):
             self.cursor.execute(
                 f"REPLACE INTO user_id_{tieba_name_eng} VALUES ({user_id},{mode},DEFAULT)")
         except pymysql.Error:
-            log.error(f"MySQL Error: Failed to insert {user_id}!")
+            log.warning(f"MySQL Error: Failed to insert {user_id}!")
             return False
         else:
             log.info(
@@ -319,7 +319,7 @@ class MySQL(object):
             self.cursor.execute(
                 f"DELETE FROM user_id_{tieba_name_eng} WHERE user_id={user_id}")
         except pymysql.Error:
-            log.error(f"MySQL Error: Failed to delete {user_id}!")
+            log.warning(f"MySQL Error: Failed to delete {user_id}!")
             return False
         else:
             log.info(
@@ -367,7 +367,7 @@ class MySQL(object):
                 self.cursor.execute(
                     f"SELECT user_id FROM user_id_{tieba_name_eng} LIMIT {batch_size} OFFSET {i * batch_size}")
             except pymysql.Error:
-                log.error(
+                log.warning(
                     f"MySQL Error: Failed to get user_ids in {tieba_name_eng}!")
                 return
             else:
@@ -401,7 +401,7 @@ class MySQL(object):
             self.cursor.execute(
                 f"REPLACE INTO img_blacklist_{tieba_name_eng} VALUES ('{img_hash}','{raw_hash}')")
         except pymysql.Error:
-            log.error(f"MySQL Error: Failed to insert {img_hash}!")
+            log.warning(f"MySQL Error: Failed to insert {img_hash}!")
             return False
         else:
             log.info(
@@ -420,7 +420,7 @@ class MySQL(object):
             self.cursor.execute(
                 f"SELECT NULL FROM img_blacklist_{tieba_name_eng} WHERE img_hash='{img_hash}'")
         except pymysql.Error:
-            log.error(f"MySQL Error: Failed to select {img_hash}!")
+            log.warning(f"MySQL Error: Failed to select {img_hash}!")
             return False
         else:
             return True if self.cursor.fetchone() else False
@@ -436,7 +436,7 @@ class MySQL(object):
             self.cursor.execute(
                 f"DELETE FROM img_blacklist_{tieba_name_eng} WHERE img_hash='{img_hash}'")
         except pymysql.Error:
-            log.error(f"MySQL Error: Failed to delete {img_hash}!")
+            log.warning(f"MySQL Error: Failed to delete {img_hash}!")
             return False
         else:
             log.info(

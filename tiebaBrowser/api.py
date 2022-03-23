@@ -180,7 +180,7 @@ class Browser(object):
                 fid = int(main_json['data']['fid'])
 
             except Exception as err:
-                log.error(f"Failed to get fid of {tieba_name}. reason:{err}")
+                log.warning(f"Failed to get fid of {tieba_name}. reason:{err}")
                 fid = 0
             else:
                 self.fid_dict[tieba_name] = fid
@@ -262,7 +262,7 @@ class Browser(object):
             user.is_vip = bool(user_dict['vipInfo'])
 
         except Exception as err:
-            log.error(
+            log.warning(
                 f"Failed to get UserInfo of {user.log_name}. reason:{err}")
             user = UserInfo()
 
@@ -296,7 +296,7 @@ class Browser(object):
             user.portrait = user_dict['portrait']
 
         except Exception as err:
-            log.error(
+            log.warning(
                 f"Failed to get UserInfo of {user.user_name}. reason:{err}")
             user = BasicUserInfo()
 
@@ -337,7 +337,7 @@ class Browser(object):
             user = UserInfo(user_proto=user_proto)
 
         except Exception as err:
-            log.error(
+            log.warning(
                 f"Failed to get UserInfo of {user.user_id}. reason:{err}")
             user = UserInfo()
 
@@ -365,7 +365,7 @@ class Browser(object):
             user.portrait = user_dict['portrait']
 
         except Exception as err:
-            log.error(
+            log.warning(
                 f"Failed to get UserInfo of {user.user_id}. reason:{err}")
             user = BasicUserInfo()
 
@@ -415,7 +415,7 @@ class Browser(object):
             threads = Threads(main_proto)
 
         except Exception as err:
-            log.error(f"Failed to get threads of {tieba_name}. reason:{err}")
+            log.warning(f"Failed to get threads of {tieba_name}. reason:{err}")
             threads = Threads()
 
         return threads
@@ -468,8 +468,9 @@ class Browser(object):
             posts = Posts(main_proto)
 
         except Exception as err:
-            log.error(f"Failed to get posts of {tid}. reason:{err}")
+            log.warning(f"Failed to get posts of {tid}. reason:{err}")
             posts = Posts()
+            raise
 
         return posts
 
@@ -512,7 +513,7 @@ class Browser(object):
             comments = Comments(main_proto)
 
         except Exception as err:
-            log.error(
+            log.warning(
                 f"Failed to get comments of {pid} in {tid}. reason:{err}")
             comments = Comments()
 
@@ -556,7 +557,7 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            log.error(
+            log.warning(
                 f"Failed to block {user.log_name} in {tieba_name}. reason:{err}")
             return False, user
 
@@ -593,7 +594,7 @@ class Browser(object):
                 raise ValueError(main_json['error'])
 
         except Exception as err:
-            log.error(
+            log.warning(
                 f"Failed to unblock {user.log_name} in {tieba_name}. reason:{err}")
             return False
 
@@ -630,7 +631,7 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            log.error(
+            log.warning(
                 f"Failed to delete thread {tid} in {tieba_name}. reason:{err}")
             return False
 
@@ -668,7 +669,7 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            log.error(
+            log.warning(
                 f"Failed to delete post {pid} in {tid} in {tieba_name}. reason:{err}")
             return False
 
@@ -706,7 +707,7 @@ class Browser(object):
                 raise ValueError(main_json['error'])
 
         except Exception as err:
-            log.error(
+            log.warning(
                 f"Failed to recover tid:{tid} pid:{pid} in {tieba_name}. reason:{err}")
             return False
 
@@ -745,7 +746,7 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            log.error(
+            log.warning(
                 f"Failed to add {tid} to tab:{to_tab_id} in {tieba_name}. reason:{err}")
             return False
 
@@ -782,7 +783,7 @@ class Browser(object):
                 raise ValueError(main_json['data']['msg'])
 
         except Exception as err:
-            log.error(
+            log.warning(
                 f"Failed to recommend {tid} in {tieba_name}. reason:{err}")
             return False
 
@@ -835,7 +836,7 @@ class Browser(object):
                         break
 
             except Exception as err:
-                log.error(
+                log.warning(
                     f"Failed to get cid of {cname} in {tieba_name}. reason:{err}")
                 return 0
 
@@ -875,7 +876,7 @@ class Browser(object):
                     raise ValueError(main_json['error_msg'])
 
             except Exception as err:
-                log.error(
+                log.warning(
                     f"Failed to add {tid} to good:{cname} in {tieba_name}. reason:{err}")
                 return False
 
@@ -914,7 +915,7 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            log.error(
+            log.warning(
                 f"Failed to remove {tid} from goodlist in {tieba_name}. reason:{err}")
             return False
 
@@ -951,7 +952,7 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            log.error(
+            log.warning(
                 f"Failed to add {tid} to toplist in {tieba_name}. reason:{err}")
             return False
 
@@ -987,7 +988,7 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            log.error(
+            log.warning(
                 f"Failed to remove {tid} from toplist in {tieba_name}. reason:{err}")
             return False
 
@@ -1024,7 +1025,7 @@ class Browser(object):
                 yield user
 
         except Exception as err:
-            log.error(
+            log.warning(
                 f"Failed to get blacklist of {tieba_name} pn:{pn}. reason:{err}")
             return
 
@@ -1055,7 +1056,7 @@ class Browser(object):
                 raise ValueError(main_json['errmsg'])
 
         except Exception as err:
-            log.error(
+            log.warning(
                 f"Failed to add {user.log_name} to black_list in {tieba_name}. reason:{err}")
             return False
 
@@ -1090,7 +1091,7 @@ class Browser(object):
                 raise ValueError(main_json['errmsg'])
 
         except Exception as err:
-            log.error(
+            log.warning(
                 f"Failed to remove users from black_list in {tieba_name}. reason:{err}")
             return False
 
@@ -1155,7 +1156,7 @@ class Browser(object):
                     raise ValueError(main_json['error'])
 
             except Exception as err:
-                log.error(
+                log.warning(
                     f"Failed to handle {appeal_id} in {tieba_name}. reason:{err}")
                 return False
 
@@ -1195,7 +1196,7 @@ class Browser(object):
                         yield appeal_id
 
             except Exception as err:
-                log.error(
+                log.warning(
                     f"Failed to get appeal_list of {tieba_name}. reason:{err}")
                 return
 
@@ -1222,7 +1223,7 @@ class Browser(object):
             image = cv.cvtColor(np.asarray(pil_image), cv.COLOR_RGB2BGR)
 
         except Exception as err:
-            log.error(f"Failed to get image {img_url}. reason:{err}")
+            log.warning(f"Failed to get image {img_url}. reason:{err}")
             image = None
 
         return image
@@ -1256,7 +1257,7 @@ class Browser(object):
             self._tbs = main_json['anti']['tbs']
 
         except Exception as err:
-            log.error(f"Failed to get UserInfo. reason:{err}")
+            log.warning(f"Failed to get UserInfo. reason:{err}")
             user = BasicUserInfo()
             self._tbs = ''
 
@@ -1292,7 +1293,7 @@ class Browser(object):
                    for key, value in main_json['message'].items()}
 
         except Exception as err:
-            log.error(f"Failed to get msg reason:{err}")
+            log.warning(f"Failed to get msg reason:{err}")
             msg = {'fans': False,
                    'replyme': False,
                    'atme': False,
@@ -1327,7 +1328,7 @@ class Browser(object):
             ats = Ats(main_json)
 
         except Exception as err:
-            log.error(f"Failed to get ats reason:{err}")
+            log.warning(f"Failed to get ats reason:{err}")
             ats = Ats()
 
         return ats
@@ -1363,7 +1364,7 @@ class Browser(object):
                 raise ValueError("invalid params")
 
         except Exception as err:
-            log.error(
+            log.warning(
                 f"Failed to get profile of {portrait}. reason:{err}")
             return UserInfo(), []
 
@@ -1481,7 +1482,7 @@ class Browser(object):
                     return
 
             except Exception as err:
-                log.error(
+                log.warning(
                     f"Failed to get forumlist of {user.user_id}. reason:{err}")
                 raise StopAsyncIteration
 
@@ -1538,7 +1539,7 @@ class Browser(object):
                 yield tieba_name, fid, level, exp
 
         except Exception as err:
-            log.error(f"Failed to get forumlist of {user_id}. reason:{err}")
+            log.warning(f"Failed to get forumlist of {user_id}. reason:{err}")
             return
 
     async def get_bawu_dict(self, tieba_name: str) -> dict[str, list[BasicUserInfo]]:
@@ -1588,7 +1589,7 @@ class Browser(object):
                 roleinfo_proto) for roleinfo_proto in roledes_proto.role_info] for roledes_proto in roledes_protos}
 
         except Exception as err:
-            log.error(f"Failed to get adminlist reason: {err}")
+            log.warning(f"Failed to get adminlist reason: {err}")
             bawu_dict = {}
 
         return bawu_dict
@@ -1630,7 +1631,7 @@ class Browser(object):
                 tab_proto.tab_name: tab_proto.tab_id for tab_proto in main_proto.data.exact_match.tab_info}
 
         except Exception as err:
-            log.error(
+            log.warning(
                 f"Failed to get tab_map of {tieba_name}. reason:{err}")
             tab_map = {}
 
@@ -1681,7 +1682,7 @@ class Browser(object):
                     raise ValueError(main_json['error_msg'])
 
             except Exception as err:
-                log.error(
+                log.warning(
                     f"Failed to get recom_list of {tieba_name}. reason:{err}")
                 raise StopAsyncIteration
 
@@ -1769,7 +1770,7 @@ class Browser(object):
             used_recom_num = int(main_json['used_recommend_num'])
 
         except Exception as err:
-            log.error(
+            log.warning(
                 f"Failed to get recom_status of {tieba_name}. reason:{err}")
             total_recom_num = 0
             used_recom_num = 0
@@ -1835,7 +1836,7 @@ class Browser(object):
             except StopAsyncIteration:
                 raise
             except Exception as err:
-                log.error(
+                log.warning(
                     f"Failed to get rank of {tieba_name} pn:{pn}. reason:{err}")
 
         for pn in range(1, sys.maxsize):
@@ -1895,7 +1896,7 @@ class Browser(object):
             except StopAsyncIteration:
                 raise
             except Exception as err:
-                log.error(
+                log.warning(
                     f"Failed to get member of {tieba_name} pn:{pn}. reason:{err}")
 
         for pn in range(1, 459):
@@ -1933,7 +1934,7 @@ class Browser(object):
                 raise ValueError(main_json['error']['errmsg'])
 
         except Exception as err:
-            log.error(f"Failed to like forum {tieba_name}. reason:{err}")
+            log.warning(f"Failed to like forum {tieba_name}. reason:{err}")
             return False
 
         log.info(f"Successfully like forum {tieba_name}")
@@ -1984,7 +1985,7 @@ class Browser(object):
             cash = main_json['user_info'].__contains__('get_packet_cash')
 
         except Exception as err:
-            log.error(f"Failed to sign forum {tieba_name}. reason:{err}")
+            log.warning(f"Failed to sign forum {tieba_name}. reason:{err}")
             return False
 
         log.info(f"Successfully sign forum {tieba_name}. cash:{cash}")
@@ -2067,7 +2068,7 @@ class Browser(object):
                 raise ValueError(f"need verify code")
 
         except Exception as err:
-            log.error(f"Failed to add post in {tid}. reason:{err}")
+            log.warning(f"Failed to add post in {tid}. reason:{err}")
             return False
 
         log.info(f"Successfully add post in {tid}")
@@ -2088,7 +2089,7 @@ class Browser(object):
 
         posts = self.get_posts(tid)
         if not posts:
-            log.error(f"Failed to set privacy to {tid}")
+            log.warning(f"Failed to set privacy to {tid}")
             return False
 
         try:
@@ -2107,7 +2108,7 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            log.error(f"Failed to set privacy to {tid}. reason:{err}")
+            log.warning(f"Failed to set privacy to {tid}. reason:{err}")
             return False
 
         log.info(f"Successfully set privacy to {tid}. is_hide:{hide}")

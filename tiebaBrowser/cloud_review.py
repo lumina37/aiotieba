@@ -135,7 +135,7 @@ class CloudReview(Browser):
         try:
             data = self.qrdetector.detectAndDecode(image)[0]
         except Exception as err:
-            log.error(f"Failed to decode image. reason:{err}")
+            log.warning(f"Failed to decode image. reason:{err}")
             data = ''
 
         return data
@@ -149,7 +149,7 @@ class CloudReview(Browser):
             img_hash_array = cv.img_hash.pHash(image)
             img_hash = binascii.b2a_hex(img_hash_array.tobytes()).decode()
         except Exception as err:
-            log.error(
+            log.warning(
                 f"Failed to get imagehash. reason:{err}")
             img_hash = ''
 

@@ -33,7 +33,7 @@ class SoulknightCloudReview(tb.CloudReview):
                 await asyncio.sleep(20)
 
             except Exception:
-                tb.log.error(
+                tb.log.critical(
                     f"Unexcepted error:{traceback.format_exc()}")
                 return
 

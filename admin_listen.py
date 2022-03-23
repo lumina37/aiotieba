@@ -99,7 +99,7 @@ class Listener(object):
             except asyncio.CancelledError:
                 raise
             except Exception as err:
-                tb.log.error(f"Unhandled error:{traceback.format_exc()}")
+                tb.log.critical(f"Unhandled error:{traceback.format_exc()}")
                 return
 
     async def scan(self) -> NoReturn:
@@ -334,7 +334,7 @@ class Listener(object):
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
         if not await tieba_dict['admin'].mysql.ping():
-            tb.log.error("Failed to ping:{at.tieba_name}")
+            tb.log.warning("Failed to ping:{at.tieba_name}")
             return
 
         tb.log.info(
@@ -382,7 +382,7 @@ class Listener(object):
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
         if not await tieba_dict['admin'].mysql.ping():
-            tb.log.error("Failed to ping:{at.tieba_name}")
+            tb.log.warning("Failed to ping:{at.tieba_name}")
             return
 
         if await tieba_dict['admin'].mysql.update_tid(at.tieba_name, at.tid, True) and await tieba_dict['admin'].del_thread(at.tieba_name, at.tid, is_hide=True):
@@ -403,7 +403,7 @@ class Listener(object):
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
         if not await tieba_dict['admin'].mysql.ping():
-            tb.log.error("Failed to ping:{at.tieba_name}")
+            tb.log.warning("Failed to ping:{at.tieba_name}")
             return
 
         if await tieba_dict['admin'].mysql.del_tid(at.tieba_name, at.tid) and await tieba_dict['admin'].recover(at.tieba_name, at.tid, is_hide=True):
@@ -424,7 +424,7 @@ class Listener(object):
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
         if not await tieba_dict['admin'].mysql.ping():
-            tb.log.error("Failed to ping:{at.tieba_name}")
+            tb.log.warning("Failed to ping:{at.tieba_name}")
             return
 
         if mode == "enter":
@@ -559,7 +559,7 @@ class Listener(object):
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
         if not await tieba_dict['admin'].mysql.ping():
-            tb.log.error("Failed to ping:{at.tieba_name}")
+            tb.log.warning("Failed to ping:{at.tieba_name}")
             return
 
         if await tieba_dict['admin'].update_user_id(id, True):
@@ -582,7 +582,7 @@ class Listener(object):
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
         if not await tieba_dict['admin'].mysql.ping():
-            tb.log.error("Failed to ping:{at.tieba_name}")
+            tb.log.warning("Failed to ping:{at.tieba_name}")
             return
 
         if await tieba_dict['admin'].update_user_id(id, False):
@@ -605,7 +605,7 @@ class Listener(object):
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
         if not await tieba_dict['admin'].mysql.ping():
-            tb.log.error("Failed to ping:{at.tieba_name}")
+            tb.log.warning("Failed to ping:{at.tieba_name}")
             return
 
         if await tieba_dict['admin'].del_user_id(id):
