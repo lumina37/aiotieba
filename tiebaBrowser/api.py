@@ -1541,10 +1541,10 @@ class Browser(object):
             log.error(f"Failed to get forumlist of {user_id}. reason:{err}")
             return
 
-    async def get_admin_list(self, tieba_name: str) -> dict[str, list[BasicUserInfo]]:
+    async def get_bawu_dict(self, tieba_name: str) -> dict[str, list[BasicUserInfo]]:
         """
-        获取吧务用户名列表
-        get_admin_list(tieba_name)
+        获取吧务信息
+        get_bawu_dict(tieba_name)
 
         参数:
             tieba_name: str 贴吧名

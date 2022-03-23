@@ -116,13 +116,13 @@ asyncio.run(main())
 #! /bin/bash
 pids=`ps -ef | grep "\.py" | grep -v grep | awk '{print $2}'`
 if [ -n "$pids" ]; then
-    kill -15 $pids
+    kill $pids
 fi
 
 TIEBA_MANAGER_PATH="$HOME/Scripts/Tieba-Manager"
 nohup python $TIEBA_MANAGER_PATH/admin_listen.py >/dev/null 2>&1 &
-nohup python $TIEBA_MANAGER_PATH/cloud_review_soulknight.py -st 60 >/dev/null 2>&1 &
-nohup python $TIEBA_MANAGER_PATH/cloud_review_asoul.py -st 10 >/dev/null 2>&1 &
+nohup python $TIEBA_MANAGER_PATH/cloud_review_soulknight.py >/dev/null 2>&1 &
+nohup python $TIEBA_MANAGER_PATH/cloud_review_asoul.py >/dev/null 2>&1 &
 ```
 
 ## 结束
