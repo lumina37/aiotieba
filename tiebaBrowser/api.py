@@ -470,7 +470,6 @@ class Browser(object):
         except Exception as err:
             log.warning(f"Failed to get posts of {tid}. reason:{err}")
             posts = Posts()
-            raise
 
         return posts
 
