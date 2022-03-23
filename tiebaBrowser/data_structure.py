@@ -241,7 +241,7 @@ class _Fragment(Generic[TContent]):
 
     __slots__ = ['_str']
 
-    def __init__(self, content_proto: PbContent_pb2.PbContent) -> NoReturn:
+    def __init__(self, content_proto: Optional[PbContent_pb2.PbContent] = None) -> NoReturn:
         self._str = ''
 
     def __str__(self) -> str:
