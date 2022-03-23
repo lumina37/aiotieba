@@ -1,5 +1,5 @@
 # -*- coding:utf-8 -*-
-__all__ = ('MySQL',)
+__all__ = ['MySQL']
 
 
 import sys

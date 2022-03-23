@@ -1,9 +1,9 @@
 # -*- coding:utf-8 -*-
-__all__ = ('BasicUserInfo', 'UserInfo',
+__all__ = ['BasicUserInfo', 'UserInfo',
            'Thread', 'Post', 'Comment', 'At',
            'Threads', 'Posts', 'Comments', 'Ats',
            'Fragments'
-           )
+           ]
 
 import re
 from typing import (Any, Callable, Generic, Iterable, Iterator, Literal,

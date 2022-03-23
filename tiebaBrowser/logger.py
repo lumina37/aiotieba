@@ -1,6 +1,5 @@
 # -*- coding:utf-8 -*-
-__all__ = ('SCRIPT_DIR',
-           'MyLogger', 'log')
+__all__ = ['MyLogger', 'log']
 
 
 import logging
@@ -8,7 +7,7 @@ import logging.handlers
 import sys
 from typing import NoReturn
 
-from .config import SCRIPT_DIR
+from .config import SCRIPT_PATH
 
 
 class MyLogger(logging.Logger):
@@ -21,10 +20,10 @@ class MyLogger(logging.Logger):
     def __init__(self, name: str) -> NoReturn:
         super().__init__(name)
 
-        log_dir = SCRIPT_DIR.parent / 'log'
+        log_dir = SCRIPT_PATH.parent / 'log'
         log_dir.mkdir(0o755, exist_ok=True)
 
-        log_filepath = log_dir / f'{SCRIPT_DIR.stem}.log'
+        log_filepath = log_dir / f'{SCRIPT_PATH.stem}.log'
         try:
             file_handler = logging.handlers.TimedRotatingFileHandler(
                 str(log_filepath), when='D', backupCount=5, encoding='utf-8')

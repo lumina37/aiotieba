@@ -1,5 +1,5 @@
 # -*- coding:utf-8 -*-
-__all__ = ('Browser',)
+__all__ = ['Browser']
 
 import asyncio
 import hashlib
@@ -37,7 +37,7 @@ class Sessions(object):
 
     def __init__(self, BDUSS_key: Optional[str] = None) -> NoReturn:
 
-        _timeout = aiohttp.ClientTimeout(sock_connect=3, sock_read=8)
+        _timeout = aiohttp.ClientTimeout(sock_connect=3, sock_read=10)
         _connector = aiohttp.TCPConnector(
             verify_ssl=False, keepalive_timeout=60, limit=None, family=socket.AF_INET)
 
@@ -1541,7 +1541,7 @@ class Browser(object):
             log.error(f"Failed to get forumlist of {user_id}. reason:{err}")
             return
 
-    async def get_admin_list(self, tieba_name: str) -> str:
+    async def get_admin_list(self, tieba_name: str) -> dict[str, list[BasicUserInfo]]:
         """
         获取吧务用户名列表
         get_admin_list(tieba_name)
@@ -1549,21 +1549,49 @@ class Browser(object):
         参数:
             tieba_name: str 贴吧名
 
-        迭代返回值:
-            user_name: str 用户名
+        返回值:
+            bawu_dict: dict[str,list[BasicUserInfo]] {吧务类型:吧务信息列表}
         """
 
+        common = CommonReq_pb2.CommonReq()
+        common._client_version = '12.22.0.3'
+        data = GetBawuInfoReqIdl_pb2.GetBawuInfoReqIdl.DataReq()
+        data.common.CopyFrom(common)
+        data.forum_id = await self.get_fid(tieba_name)
+        bawuinfo_req = GetBawuInfoReqIdl_pb2.GetBawuInfoReqIdl()
+        bawuinfo_req.data.CopyFrom(data)
+
+        payload = aiohttp.FormData()
+        payload.add_field('data', bawuinfo_req.SerializeToString(),
+                          filename='file', content_type='multipart/form-data')
+
         try:
-            res = await self.sessions.web.get("http://tieba.baidu.com/f/bawu/admin_group", params={'kw': tieba_name, 'ie': 'utf-8'})
+            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/f/forum/getBawuInfo?cmd=301007", data=payload)
 
-            soup = BeautifulSoup(await res.text(), 'lxml')
+            main_proto = GetBawuInfoResIdl_pb2.GetBawuInfoResIdl()
+            main_proto.ParseFromString(await res.content.read())
+            if int(main_proto.error.errorno):
+                raise ValueError(main_proto.error.errmsg)
 
-            for user_name in {a.text for a in soup.find_all('a')}:
-                yield user_name
+            def _parse_roleinfo(roleinfo_proto):
+
+                user = BasicUserInfo()
+                user.user_name = roleinfo_proto.user_name
+                user.nick_name = roleinfo_proto.name_show
+                user.portrait = roleinfo_proto.portrait
+                user.user_id = roleinfo_proto.user_id
+
+                return user
+
+            roledes_protos = main_proto.data.bawu_team_info.bawu_team_list
+            bawu_dict = {roledes_proto.role_name: [_parse_roleinfo(
+                roleinfo_proto) for roleinfo_proto in roledes_proto.role_info] for roledes_proto in roledes_protos}
 
         except Exception as err:
             log.error(f"Failed to get adminlist reason: {err}")
-            return
+            bawu_dict = {}
+
+        return bawu_dict
 
     async def get_tab_map(self, tieba_name: str) -> Dict[str, int]:
         """

@@ -9,8 +9,7 @@ from types import TracebackType
 from typing import NoReturn, Optional, Tuple, Type
 
 import tiebaBrowser as tb
-import tiebaBrowser.cloud_review as cr
-from tiebaBrowser.config import SCRIPT_DIR
+from tiebaBrowser.config import SCRIPT_PATH
 
 
 class Timer(object):
@@ -47,7 +46,7 @@ class Listener(object):
 
     def __init__(self):
 
-        self.config_path = SCRIPT_DIR.parent.joinpath(
+        self.config_path = SCRIPT_PATH.parent.joinpath(
             'config/listen_config.json')
         with self.config_path.open('r', encoding='utf-8') as _file:
             self.config = json.load(_file)
@@ -58,7 +57,7 @@ class Listener(object):
 
         for tieba_name, tieba_dict in self.tieba.items():
             admin_key = tieba_dict['admin']
-            tieba_dict['admin'] = cr.CloudReview(
+            tieba_dict['admin'] = tb.CloudReview(
                 admin_key, tieba_name)
             tieba_dict['access_user'] = OrderedDict.fromkeys(
                 tieba_dict['access_user'])

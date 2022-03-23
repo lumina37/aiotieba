@@ -5,10 +5,9 @@ import sys
 import traceback
 
 import tiebaBrowser as tb
-import tiebaBrowser.cloud_review as cr
 
 
-class SoulknightCloudReview(cr.CloudReview):
+class SoulknightCloudReview(tb.CloudReview):
 
     __slots__ = ['white_kw_exp']
 

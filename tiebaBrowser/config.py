@@ -1,16 +1,15 @@
 # -*- coding:utf-8 -*-
-__all__ = ('SCRIPT_DIR', 'MODULE_DIR',
-           'config')
+__all__ = ['SCRIPT_PATH', 'MODULE_DIR', 'config']
 
 import json
 import sys
 from pathlib import Path
 
-SCRIPT_DIR = Path(sys.argv[0])
+SCRIPT_PATH = Path(sys.argv[0])
 MODULE_DIR = Path(__file__).parent
 
 config = None
-with (SCRIPT_DIR.parent / 'config/config.json').open('r', encoding='utf-8') as file:
+with (SCRIPT_PATH.parent / 'config/config.json').open('r', encoding='utf-8') as file:
     config = json.load(file)
 if not config.__contains__('BDUSS'):
     config['BDUSS'] = {}
