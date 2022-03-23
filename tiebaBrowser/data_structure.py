@@ -310,6 +310,20 @@ class FragImage(_Fragment):
         self.big_cdn_src = content_proto.big_cdn_src
 
 
+class FragAt(_Fragment):
+    """
+    @碎片
+
+    user_id: 被@用户的user_id
+    """
+
+    __slots__ = ['user_id']
+
+    def __init__(self, content_proto: PbContent_pb2.PbContent) -> NoReturn:
+        self._str = content_proto.text
+        self.user_id = content_proto.uid
+
+
 class FragVoice(_Fragment):
     """
     音频碎片
@@ -341,7 +355,8 @@ class Fragments(object):
         def _init_by_type(content_proto) -> _Fragment:
             _type = content_proto.type
             fragment = _Fragment()
-            if _type in [0, 4, 9, 18]:
+            # 0纯文本 9电话号 18话题 27百科词条 35tiebaplus跳转链接
+            if _type in [0, 9, 18, 27, 35]:  
                 fragment = FragText(content_proto)
                 self.texts.append(fragment)
             elif _type == 1:
@@ -353,6 +368,9 @@ class Fragments(object):
             elif _type == 3:
                 fragment = FragImage(content_proto)
                 self.imgs.append(fragment)
+            elif _type == 4:
+                fragment = FragAt(content_proto)
+                self.texts.append(fragment)
             elif _type == 10:
                 fragment = FragVoice(content_proto)
                 self.voice = fragment
