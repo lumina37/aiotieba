@@ -43,7 +43,7 @@ git clone https://github.com/Starry-OvO/Tieba-Manager.git
 
 ```bash
 pip install asyncio
-pip install aiohttp
+pip install aiohttp[speedups]
 pip install lxml
 pip install bs4
 pip install pymysql
