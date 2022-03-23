@@ -83,7 +83,6 @@ asyncio.run(main())
 
 ## 若要开启云审查功能
 
-+ 记得`import tiebaBrowser.cloud_review`以解锁云审查功能
 + 在`config/config.json`中配置`MySQL`连接。你需要一个数据库用来缓存通过检测的回复的pid以及记录黑、白名单用户
 + 在`config/config.json`中配置`tieba_name_mapping`。你需要为每个贴吧设置对应的英文名以方便建立数据库
 + 使用函数`my_cloud_review.mysql.init_database()`一键建库
