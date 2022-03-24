@@ -51,7 +51,7 @@ class Sessions(object):
                        'Host': 'c.tieba.baidu.com',
                        }
         self.app = aiohttp.ClientSession(connector=_connector, headers=app_headers, version=aiohttp.HttpVersion11,
-                                         cookie_jar=aiohttp.DummyCookieJar(), raise_for_status=True, timeout=_timeout, trust_env=True)
+                                         cookie_jar=aiohttp.CookieJar(), raise_for_status=True, timeout=_timeout, trust_env=True)
 
         # Init app protobuf client
         app_proto_headers = {'User-Agent': 'bdtb for Android 12.22.1.0',
@@ -62,7 +62,7 @@ class Sessions(object):
                              'Host': 'c.tieba.baidu.com',
                              }
         self.app_proto = aiohttp.ClientSession(connector=_connector, headers=app_proto_headers, version=aiohttp.HttpVersion11,
-                                               cookie_jar=aiohttp.DummyCookieJar(), raise_for_status=True, timeout=_timeout, trust_env=True)
+                                               cookie_jar=aiohttp.CookieJar(), raise_for_status=True, timeout=_timeout, trust_env=True)
 
         # Init web client
         web_headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:98.0) Gecko/20100101 Firefox/98.0',
@@ -72,16 +72,16 @@ class Sessions(object):
                        'Cache-Control': 'no-cache',
                        'Connection': 'keep-alive',
                        }
+
+        web_cookie_jar = aiohttp.CookieJar()
         if BDUSS_key:
             self.BDUSS = config['BDUSS'][BDUSS_key]
             self.STOKEN = config['STOKEN'].get(BDUSS_key, '')
-            web_cookie_jar = aiohttp.CookieJar()
             web_cookie_jar.update_cookies(
                 {'BDUSS': self.BDUSS, 'STOKEN': self.STOKEN}, yarl.URL("http://tieba.baidu.com"))
         else:
             self.BDUSS = ''
             self.STOKEN = ''
-            web_cookie_jar = aiohttp.DummyCookieJar()
         self.web = aiohttp.ClientSession(connector=_connector, headers=web_headers, version=aiohttp.HttpVersion11,
                                          cookie_jar=web_cookie_jar, raise_for_status=True, timeout=_timeout, trust_env=True)
 
@@ -93,6 +93,32 @@ class Sessions(object):
 
     async def __aexit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[BaseException], exc_tb: Optional[TracebackType]) -> NoReturn:
         await self.close()
+
+    @staticmethod
+    def get_tieba_multipart_writer(proto_bytes):
+        """
+        将proto封装为贴吧客户端专用的aiohttp.MultipartWriter
+
+        参数:
+            proto_bytes: Bytes protobuf序列化后的二进制数据
+
+        返回值:
+            writer: aiohttp.MultipartWriter 只可用于贴吧客户端
+        """
+
+        writer = aiohttp.MultipartWriter(
+            'form-data', boundary="*--asoul-diana-bilibili-uid672328094")
+        payload_headers = {aiohttp.hdrs.CONTENT_DISPOSITION: aiohttp.helpers.content_disposition_header(
+            'form-data', name='data', filename='file')}
+        payload = aiohttp.BytesPayload(
+            proto_bytes, content_type='', headers=payload_headers)
+        writer.append_payload(payload)
+
+        # 删除无用参数
+        writer._parts[0][0]._headers.popone(aiohttp.hdrs.CONTENT_TYPE)
+        writer._parts[0][0]._headers.popone(aiohttp.hdrs.CONTENT_LENGTH)
+
+        return writer
 
 
 class Browser(object):
@@ -323,12 +349,11 @@ class Browser(object):
         userinfo_req = GetUserInfoReqIdl_pb2.GetUserInfoReqIdl()
         userinfo_req.data.CopyFrom(data)
 
-        payload = aiohttp.FormData()
-        payload.add_field('data', userinfo_req.SerializeToString(),
-                          filename='file', content_type='multipart/form-data')
+        multipart_writer = self.sessions.get_tieba_multipart_writer(
+            userinfo_req.SerializeToString())
 
         try:
-            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/u/user/getuserinfo?cmd=303024", data=payload)
+            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/u/user/getuserinfo?cmd=303024", data=multipart_writer)
 
             main_proto = GetUserInfoResIdl_pb2.GetUserInfoResIdl()
             main_proto.ParseFromString(await res.content.read())
@@ -402,12 +427,11 @@ class Browser(object):
         frspage_req = FrsPageReqIdl_pb2.FrsPageReqIdl()
         frspage_req.data.CopyFrom(data)
 
-        payload = aiohttp.FormData()
-        payload.add_field('data', frspage_req.SerializeToString(),
-                          filename='file', content_type='multipart/form-data')
+        multipart_writer = self.sessions.get_tieba_multipart_writer(
+            frspage_req.SerializeToString())
 
         try:
-            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/f/frs/page?cmd=301001", data=payload)
+            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/f/frs/page?cmd=301001", data=multipart_writer)
 
             main_proto = FrsPageResIdl_pb2.FrsPageResIdl()
             main_proto.ParseFromString(await res.content.read())
@@ -455,12 +479,11 @@ class Browser(object):
         pbpage_req = PbPageReqIdl_pb2.PbPageReqIdl()
         pbpage_req.data.CopyFrom(data)
 
-        payload = aiohttp.FormData()
-        payload.add_field('data', pbpage_req.SerializeToString(),
-                          filename='file', content_type='multipart/form-data')
+        multipart_writer = self.sessions.get_tieba_multipart_writer(
+            pbpage_req.SerializeToString())
 
         try:
-            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/f/pb/page?cmd=302001", data=payload)
+            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/f/pb/page?cmd=302001", data=multipart_writer)
 
             main_proto = PbPageResIdl_pb2.PbPageResIdl()
             main_proto.ParseFromString(await res.content.read())
@@ -499,12 +522,11 @@ class Browser(object):
         pbfloor_req = PbFloorReqIdl_pb2.PbFloorReqIdl()
         pbfloor_req.data.CopyFrom(data)
 
-        payload = aiohttp.FormData()
-        payload.add_field('data', pbfloor_req.SerializeToString(),
-                          filename='file', content_type='multipart/form-data')
+        multipart_writer = self.sessions.get_tieba_multipart_writer(
+            pbfloor_req.SerializeToString())
 
         try:
-            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/f/pb/floor?cmd=302002", data=payload)
+            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/f/pb/floor?cmd=302002", data=multipart_writer)
 
             main_proto = PbFloorResIdl_pb2.PbFloorResIdl()
             main_proto.ParseFromString(await res.content.read())
@@ -1563,12 +1585,11 @@ class Browser(object):
         bawuinfo_req = GetBawuInfoReqIdl_pb2.GetBawuInfoReqIdl()
         bawuinfo_req.data.CopyFrom(data)
 
-        payload = aiohttp.FormData()
-        payload.add_field('data', bawuinfo_req.SerializeToString(),
-                          filename='file', content_type='multipart/form-data')
+        multipart_writer = self.sessions.get_tieba_multipart_writer(
+            bawuinfo_req.SerializeToString())
 
         try:
-            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/f/forum/getBawuInfo?cmd=301007", data=payload)
+            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/f/forum/getBawuInfo?cmd=301007", data=multipart_writer)
 
             main_proto = GetBawuInfoResIdl_pb2.GetBawuInfoResIdl()
             main_proto.ParseFromString(await res.content.read())
@@ -1616,12 +1637,11 @@ class Browser(object):
         searchforum_req = SearchPostForumReqIdl_pb2.SearchPostForumReqIdl()
         searchforum_req.data.CopyFrom(data)
 
-        payload = aiohttp.FormData()
-        payload.add_field('data', searchforum_req.SerializeToString(),
-                          filename='file', content_type='multipart/form-data')
+        multipart_writer = self.sessions.get_tieba_multipart_writer(
+            searchforum_req.SerializeToString())
 
         try:
-            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/f/forum/searchPostForum?cmd=309466", data=payload)
+            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/f/forum/searchPostForum?cmd=309466", data=multipart_writer)
 
             main_proto = SearchPostForumResIdl_pb2.SearchPostForumResIdl()
             main_proto.ParseFromString(await res.content.read())

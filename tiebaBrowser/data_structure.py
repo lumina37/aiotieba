@@ -341,7 +341,7 @@ class FragVoice(_Fragment):
 
 class FragTiebaPlus(_Fragment):
     """
-    tiebaplus碎片
+    贴吧+碎片
 
     _str: 描述文本
     jump_url: 跳转链接
@@ -362,10 +362,12 @@ class Fragments(object):
     texts: 纯文本碎片列表
     imgs: 图像碎片列表
     emojis: 表情碎片列表
+    ats: @碎片列表
     voice: 音频碎片
+    tiebapluses: 贴吧+碎片列表
     """
 
-    __slots__ = ['_frags', '_text', 'texts', 'imgs', 'emojis', 'voice']
+    __slots__ = ['_frags', '_text', 'texts', 'imgs', 'emojis', 'ats', 'voice', 'tiebapluses']
 
     def __init__(self, content_protos: Optional[Iterable] = None) -> NoReturn:
 
@@ -384,6 +386,7 @@ class Fragments(object):
             elif _type == 4:
                 fragment = FragAt(content_proto)
                 self.texts.append(fragment)
+                self.ats.append(fragment)
             elif _type == 1:
                 fragment = FragLink(content_proto)
                 self.texts.append(fragment)
@@ -395,6 +398,7 @@ class Fragments(object):
             elif _type in [35, 36]:
                 fragment = FragTiebaPlus(content_proto)
                 self.texts.append(fragment)
+                self.tiebapluses.append(fragment)
             else:
                 fragment = _Fragment()
                 log.warning(f"Unknown fragment type:{_type}")
@@ -405,7 +409,9 @@ class Fragments(object):
         self.texts = []
         self.imgs = []
         self.emojis = []
+        self.ats = []
         self.voice = None
+        self.tiebapluses = []
 
         if content_protos:
             self._frags = [_init_by_type(content_proto)
