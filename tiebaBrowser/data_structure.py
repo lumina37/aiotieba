@@ -367,7 +367,8 @@ class Fragments(object):
     tiebapluses: 贴吧+碎片列表
     """
 
-    __slots__ = ['_frags', '_text', 'texts', 'imgs', 'emojis', 'ats', 'voice', 'tiebapluses']
+    __slots__ = ['_frags', '_text', 'texts', 'imgs',
+                 'emojis', 'ats', 'voice', 'tiebapluses']
 
     def __init__(self, content_protos: Optional[Iterable] = None) -> NoReturn:
 
