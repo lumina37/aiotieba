@@ -282,15 +282,12 @@ class FragLink(_Fragment):
 class FragEmoji(_Fragment):
     """
     表情碎片
-
-    emoji_id: 表情id
     """
 
-    __slots__ = ['emoji_id']
+    __slots__ = []
 
     def __init__(self, content_proto: PbContent_pb2.PbContent) -> NoReturn:
-        self._str = content_proto.text
-        self.emoji_id = content_proto.text
+        self._str = content_proto.c
 
 
 class FragImage(_Fragment):
@@ -355,6 +352,20 @@ class FragTiebaPlus(_Fragment):
         self.jump_url = tiebaplus_proto.jump_url
 
 
+class FragItem(_Fragment):
+    """
+    item碎片
+
+    _str: item名称
+    """
+
+    __slots__ = []
+
+    def __init__(self, content_proto: PbContent_pb2.PbContent) -> NoReturn:
+        item_proto = content_proto.item
+        self._str = item_proto.item_name
+
+
 class Fragments(object):
     """
     内容碎片列表
@@ -396,10 +407,20 @@ class Fragments(object):
             elif _type == 10:
                 fragment = FragVoice(content_proto)
                 self.voice = fragment
-            elif _type in [35, 36]:
+            elif _type == 20:  # e.g. tid=5470214675
+                fragment = FragImage(content_proto)
+                self.imgs.append(fragment)
+            elif _type in [35, 36]:  # e.g. tid=7769728331
                 fragment = FragTiebaPlus(content_proto)
                 self.texts.append(fragment)
                 self.tiebapluses.append(fragment)
+            elif _type == 37:  # e.g. tid=7760184147
+                fragment = FragTiebaPlus(content_proto)
+                self.texts.append(fragment)
+                self.tiebapluses.append(fragment)
+            elif _type == 11:  # e.g. tid=5047676428
+                fragment = FragEmoji(content_proto)
+                self.emojis.append(fragment)
             else:
                 fragment = _Fragment()
                 log.warning(f"Unknown fragment type:{_type}")

@@ -11,6 +11,7 @@ message PbContent {
     string cdn_src = 8;
     string big_cdn_src = 9;
     string imgtype = 10;
+    string c = 11;
     string voice_md5 = 12;
     int64 uid = 15;
     uint32 width = 18;
@@ -33,4 +34,8 @@ message PbContent {
         string button_desc = 23;
     }
     TiebaPlusInfo tiebaplus_info = 40;
+    message Item {
+        string item_name = 2;
+    }
+    Item item = 41;
 }

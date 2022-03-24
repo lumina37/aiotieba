@@ -1400,7 +1400,7 @@ class Browser(object):
         priv_dict = user_dict['priv_sets']
         if not priv_dict:
             priv_dict = {}
-        user.priv_like = priv_dict.get('agree', None)
+        user.priv_like = priv_dict.get('like', None)
         user.priv_reply = priv_dict.get('reply', None)
 
         def _contents(content_dicts: list[dict]):
@@ -1738,7 +1738,7 @@ class Browser(object):
                 priv_dict = user_dict['priv_sets']
                 if not priv_dict:
                     priv_dict = {}
-                user.priv_like = priv_dict.get('agree', None)
+                user.priv_like = priv_dict.get('like', None)
                 user.priv_reply = priv_dict.get('reply', None)
                 thread.user = user
 
