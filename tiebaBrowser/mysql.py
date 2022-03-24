@@ -59,7 +59,7 @@ class MySQL(object):
             await self.create_table_pid_whitelist(tieba_name)
             await self.create_table_user_id(tieba_name)
             await self.create_table_img_blacklist(tieba_name)
-            await self.create_table_tid_tmphide(tieba_name)
+            await self.create_table_tid_water(tieba_name)
 
     async def ping(self) -> bool:
         """
