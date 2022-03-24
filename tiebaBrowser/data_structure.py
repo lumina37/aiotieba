@@ -374,8 +374,8 @@ class Fragments(object):
 
         def _init_by_type(content_proto) -> _Fragment:
             _type = content_proto.type
-            # 0纯文本 9电话号 18话题 27百科词条 35tiebaplus跳转链接
-            if _type in [0, 9, 18, 27, 35]:
+            # 0纯文本 9电话号 18话题 27百科词条
+            if _type in [0, 9, 18, 27]:
                 fragment = FragText(content_proto)
                 self.texts.append(fragment)
             elif _type == 2:

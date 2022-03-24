@@ -51,7 +51,7 @@ class Sessions(object):
                        aiohttp.hdrs.HOST: 'c.tieba.baidu.com',
                        }
         self.app = aiohttp.ClientSession(connector=self._connector, headers=app_headers, version=aiohttp.HttpVersion11, cookie_jar=aiohttp.CookieJar(
-        ), connector_owner=False, raise_for_status=True, timeout=self._timeout, trust_env=True)
+        ), connector_owner=False, raise_for_status=True, timeout=self._timeout, trust_env=False)
 
         # Init app protobuf client
         app_proto_headers = {aiohttp.hdrs.USER_AGENT: 'bdtb for Android 12.22.1.0',
@@ -61,7 +61,7 @@ class Sessions(object):
                              aiohttp.hdrs.HOST: 'c.tieba.baidu.com',
                              }
         self.app_proto = aiohttp.ClientSession(connector=self._connector, headers=app_proto_headers, version=aiohttp.HttpVersion11, cookie_jar=aiohttp.CookieJar(
-        ), connector_owner=False, raise_for_status=True, timeout=self._timeout, trust_env=True)
+        ), connector_owner=False, raise_for_status=True, timeout=self._timeout, trust_env=False)
 
         # Init web client
         web_headers = {aiohttp.hdrs.USER_AGENT: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:98.0) Gecko/20100101 Firefox/98.0',
@@ -80,7 +80,7 @@ class Sessions(object):
             self.BDUSS = ''
             self.STOKEN = ''
         self.web = aiohttp.ClientSession(connector=self._connector, headers=web_headers, version=aiohttp.HttpVersion11,
-                                         cookie_jar=web_cookie_jar, connector_owner=False, raise_for_status=True, timeout=self._timeout, trust_env=True)
+                                         cookie_jar=web_cookie_jar, connector_owner=False, raise_for_status=True, timeout=self._timeout, trust_env=False)
 
     async def close(self) -> NoReturn:
         await asyncio.gather(self.app.close(), self.app_proto.close(), self.web.close(), self._connector.close(), return_exceptions=True)
