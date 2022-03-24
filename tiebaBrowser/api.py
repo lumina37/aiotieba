@@ -153,7 +153,7 @@ class Browser(object):
         """
 
         writer = aiohttp.MultipartWriter(
-            'form-data', boundary="*--asoul-diana-bilibili-uid672328094")
+            'form-data', boundary="*--asoul-diana-bili-uid672328094")
         payload_headers = {aiohttp.hdrs.CONTENT_DISPOSITION: aiohttp.helpers.content_disposition_header(
             'form-data', name='data', filename='file')}
         payload = aiohttp.BytesPayload(

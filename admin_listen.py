@@ -435,7 +435,7 @@ class Listener(object):
                 await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
             async for tid in tieba_dict['admin'].mysql.get_tids(at.tieba_name):
                 if await tieba_dict['admin'].recover(at.tieba_name, tid, is_hide=True):
-                    await tieba_dict['admin'].mysql.update_tid(at.tieba_name, at.tid, False)
+                    await tieba_dict['admin'].mysql.update_tid(at.tieba_name, tid, False)
 
     async def cmd_block(self, at, id):
         """

@@ -21,3 +21,4 @@ test*
 !/sql_operation.py
 !/sign.py
 !/water.py
+!/spider.py
