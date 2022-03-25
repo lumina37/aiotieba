@@ -3,10 +3,13 @@
 [![license](https://badgen.net/github/license/Starry-OvO/Tieba-Manager?icon=github)](https://github.com/Starry-OvO/Tieba-Manager/blob/main/LICENSE)
 [![release](https://badgen.net/github/release/Starry-OvO/Tieba-Manager?icon=github)](https://github.com/Starry-OvO/Tieba-Manager/releases)
 
+## 工具链接
+
 + [百度贴吧接口合集](https://github.com/Starry-OvO/Tieba-Manager/blob/main/tiebaBrowser/api.py)
-+ [云审查工具](https://github.com/Starry-OvO/Tieba-Manager/blob/main/cloud_review_soulknight.py)
++ [云审查案例](https://github.com/Starry-OvO/Tieba-Manager/blob/main/cloud_review_soulknight.py)
 + [指令管理器](https://github.com/Starry-OvO/Tieba-Manager/blob/main/admin_listen.py)
-+ [爬虫工具](https://github.com/Starry-OvO/Tieba-Manager/blob/main/spider.py)
++ [爬虫案例](https://github.com/Starry-OvO/Tieba-Manager/blob/main/spider.py)
++ [另一个仍在活跃更新的贴吧管理器（有用户界面 仅限Windows平台）](https://github.com/dog194/TiebaManager)
 
 ## 功能概览
 
