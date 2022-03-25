@@ -5,7 +5,7 @@
 
 ## 工具链接
 
-+ [百度贴吧接口合集](https://github.com/Starry-OvO/Tieba-Manager/blob/main/tiebaBrowser/api.py)
++ [百度贴吧接口合集](https://github.com/Starry-OvO/Tieba-Manager/blob/main/tiebaBrowser/_api.py#L393)
 + [云审查案例](https://github.com/Starry-OvO/Tieba-Manager/blob/main/cloud_review_soulknight.py)
 + [指令管理器](https://github.com/Starry-OvO/Tieba-Manager/blob/main/admin_listen.py)
 + [爬虫案例](https://github.com/Starry-OvO/Tieba-Manager/blob/main/spider.py)
@@ -13,7 +13,7 @@
 
 ## 功能概览
 
-+ 按回复时间/发布时间/热门序获取贴吧主题帖/精华帖列表。支持获取转发/投票/转发嵌套投票的主题帖信息，支持`页码`翻页
++ 按回复时间/发布时间/热门序获取贴吧主题帖/精华帖列表。支持获取带转发/投票/转发嵌套投票/各种卡片的主题帖信息，支持`页码`翻页
 + 获取带图片链接、小尾巴内容、点赞情况、用户信息（`用户名` `user_id` `portrait` `等级` `性别` `是否锁回复` `是否vip` `是否大神`）、每条回复的前排楼中楼（参数支持按`点赞数`排序）的回复列表，支持`页码`翻页
 + 获取带所有前述用户信息的楼中楼列表，支持`页码`翻页
 + 根据`用户名` `昵称` `portrait` `user_id`中的任一项反查其他用户信息
