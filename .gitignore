@@ -15,10 +15,8 @@ charles/
 test*
 /*.py
 /*.proto
+
 !/admin_listen.py
 !/cloud_review_soulknight.py
-!/admin_operation.py
-!/sql_operation.py
-!/sign.py
-!/water.py
 !/spider.py
+!/StatDatabase_pb2.py

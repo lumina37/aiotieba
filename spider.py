@@ -1,6 +1,5 @@
 # -*- coding:utf-8 -*-
 import asyncio
-import csv
 import re
 import time
 from pathlib import Path
@@ -16,6 +15,7 @@ async def stat_word(tieba_name):
     stat_word 贴吧主题帖、回复、楼中楼词频统计
     """
 
+    import csv
     import jieba
 
     async with tb.Browser("default") as brow:
@@ -71,11 +71,17 @@ async def stat_rank(tieba_name):
     async with tb.Browser("default") as brow:
 
         rank_db_proto = StatDatabase_pb2.RankUserDatabase()
-        async for row in brow.get_rank(tieba_name):
+        level_thre = 14 if debug else 4
+        idx = 0
+
+        async for user_name, level, exp, is_vip in brow.get_rank(tieba_name, level_thre):
+            print(f"{idx}. user_name:{user_name} level:{level}")
             user = rank_db_proto.users.add()
-            user.user_name = row[0]
-            user.level = row[1]
-            user.exp = row[2]
+            user.user_name = user_name
+            user.level = level
+            user.exp = exp
+            user.is_vip = is_vip
+            idx += 1
 
         with open(f'{tieba_name}_rank_stat{debug}.bin', 'wb') as proto_file:
             proto_file.write(rank_db_proto.SerializeToString())
@@ -104,6 +110,9 @@ async def collect_risk_user(tieba_name):
             running_flag = False
 
         async def _handle_task(i):
+
+            await asyncio.sleep(i/2)
+
             while 1:
                 try:
                     idx, rank_user_proto = await asyncio.wait_for(task_queue.get(), timeout=1)
@@ -112,6 +121,7 @@ async def collect_risk_user(tieba_name):
                     if running_flag == False:
                         tb.log.debug(f"Worker coroutine {i} exit")
                         return
+
                 user_name = rank_user_proto.user_name
                 if not user_name or re.search('[*.#]', user_name):
                     continue
@@ -121,8 +131,9 @@ async def collect_risk_user(tieba_name):
 
                 user_proto = risk_db_proto.users.add()
 
-                # 收集用户user_id和头像哈希
+                # 收集用户信息和头像哈希
                 user_proto.user_id = user.user_id
+                user_proto.portrait = user.portrait
                 image = await brow.url2image(f"http://tb.himg.baidu.com/sys/portraitn/item/{user.portrait}")
                 user_proto.portrait_hash = brow.get_imghash(image)
 
@@ -131,23 +142,28 @@ async def collect_risk_user(tieba_name):
                     f"{idx}. User:{user_name} / level:{rank_user_proto.level} / target:homepage")
                 user, threads = await brow.get_homepage(user.portrait)
                 for thread in threads:
-                    thread_proto = user_proto.thread.add()
+                    thread_proto = user_proto.threads.add()
+
                     thread_proto.fid = thread.fid
                     thread_proto.tid = thread.tid
+                    thread_proto.agree = thread.agree
+                    thread_proto.view_num = thread.view_num
+                    thread_proto.reply_num = thread.reply_num
+                    thread_proto.text = thread.text
 
                 # 收集用户关注吧
                 if 3 != user.priv_like:
                     tb.log.info(
                         f"{idx}. User:{user_name} / level:{rank_user_proto.level} / target:forumlist")
-                    async for forum_info in brow.get_forum_list(user.user_id):
+                    async for _, fid, level, exp in brow.get_forum_list(user.user_id):
                         fid2fname[forum_info[1]] = forum_info[0]
-                        forum_proto = user_proto.forum.add()
-                        forum_proto.fid = forum_info[1]
-                        forum_proto.level = forum_info[2]
-                        forum_proto.exp = forum_info[3]
+                        forum_proto = user_proto.forums.add()
+                        forum_proto.fid = fid
+                        forum_proto.level = level
+                        forum_proto.exp = exp
 
         workers = [_handle_task(i) for i in range(4)]
-        await asyncio.gather(*workers, _generate_task(), return_exceptions=False)
+        await asyncio.gather(*workers, _generate_task(), return_exceptions=True)
 
     tb.log.info(
         f"Spider complete. Time cost:{time.perf_counter()-start_time}")
@@ -158,21 +174,21 @@ async def collect_risk_user(tieba_name):
     with open(f'{tieba_name}_risk_user_stat{debug}.bin', 'wb') as proto_file:
         proto_file.write(risk_db_proto.SerializeToString())
 
-    forum_map_list_proto = StatDatabase_pb2.ForumMapList()
+    forum_list_proto = StatDatabase_pb2.ForumList()
     for fid, fname in fid2fname.items():
-        forum_map_proto = forum_map_list_proto.forum_map.add()
+        forum_map_proto = forum_list_proto.forums.add()
         forum_map_proto.fid = fid
         forum_map_proto.fname = fname
     with open(f'{tieba_name}_forum_map_list{debug}.bin', 'wb') as proto_file:
-        proto_file.write(forum_map_list_proto.SerializeToString())
+        proto_file.write(forum_list_proto.SerializeToString())
 
     tb.log.info(
         f"Serialize complete. Time cost:{time.perf_counter()-start_time}")
 
 
 async def main():
-    #await stat_rank('asoul')
-    await collect_risk_user('asoul')
+    await stat_rank('asoul')
+    # await collect_risk_user('asoul')
 
 
 if __name__ == "__main__":
