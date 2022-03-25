@@ -3,13 +3,14 @@ __all__ = ['MySQL']
 
 
 import sys
+from collections.abc import AsyncIterator, Coroutine
 from functools import wraps
-from typing import NoReturn, Optional
+from typing import Optional
 
 import pymysql
 
-from .config import config
-from .logger import log
+from ._config import config
+from ._logger import log
 
 
 def translate_tieba_name(func):
@@ -27,14 +28,15 @@ def translate_tieba_name(func):
 
 class MySQL(object):
     """
-    MySQL链接基类
+    MySQL连接基类
 
-    MySQL(db_name)
+    Args:
+        db_name (str, optional): 连接的数据库名. Defaults to 'tieba_cloud_review'.
     """
 
     __slots__ = ['db_name', 'conn', 'cursor']
 
-    def __init__(self, db_name: str = 'tieba_cloud_review') -> NoReturn:
+    def __init__(self, db_name: str = 'tieba_cloud_review') -> None:
 
         self.db_name = db_name
 
@@ -45,11 +47,15 @@ class MySQL(object):
             log.warning(f"Cannot link to the database {db_name}!")
             self.init_database()
 
-    async def close(self) -> NoReturn:
+    async def close(self) -> None:
         self.conn.commit()
         self.conn.close()
 
-    async def init_database(self) -> NoReturn:
+    async def init_database(self) -> None:
+        """
+        初始化数据库
+        """
+
         self.conn = pymysql.connect(**config['MySQL'])
         self.cursor = self.conn.cursor()
         self.cursor.execute(f"CREATE DATABASE {self.db_name}")
@@ -61,9 +67,12 @@ class MySQL(object):
             await self.create_table_img_blacklist(tieba_name)
             await self.create_table_tid_water(tieba_name)
 
-    async def ping(self) -> bool:
+    async def ping(self) -> Coroutine[None, None, bool]:
         """
-        尝试重连
+        检测连接状态 若断连则尝试重连
+
+        Returns:
+            Coroutine[None, None, bool]: 是否连接成功
         """
 
         try:
@@ -74,10 +83,12 @@ class MySQL(object):
             return True
 
     @translate_tieba_name
-    async def create_table_pid_whitelist(self, tieba_name_eng: str) -> NoReturn:
+    async def create_table_pid_whitelist(self, tieba_name_eng: str) -> None:
         """
         创建表pid_whitelist_{tieba_name_eng}
-        create_table_pid_whitelist(tieba_name)
+
+        Args:
+            tieba_name (str): 贴吧名
         """
 
         self.cursor.execute(
@@ -92,10 +103,16 @@ class MySQL(object):
             DELETE FROM pid_whitelist_{tieba_name_eng} WHERE record_time<(CURRENT_TIMESTAMP() + INTERVAL -15 DAY)""")
 
     @translate_tieba_name
-    async def add_pid(self, tieba_name_eng: str, pid: int) -> bool:
+    async def add_pid(self, tieba_name_eng: str, pid: int) -> Coroutine[None, None, bool]:
         """
         向pid_whitelist_{tieba_name_eng}插入pid
-        add_pid(tieba_name,pid)
+
+        Args:
+            tieba_name (str): 贴吧名
+            pid (int)
+
+        Returns:
+            Coroutine[None, None, bool]: 操作是否成功
         """
 
         try:
@@ -109,10 +126,16 @@ class MySQL(object):
             return True
 
     @translate_tieba_name
-    async def has_pid(self, tieba_name_eng: str, pid: int) -> bool:
+    async def has_pid(self, tieba_name_eng: str, pid: int) -> Coroutine[None, None, bool]:
         """
         检索pid_whitelist_{tieba_name_eng}中是否已有pid
-        has_pid(tieba_name,pid)
+
+        Args:
+            tieba_name (str): 贴吧名
+            pid (int)
+
+        Returns:
+            Coroutine[None, None, bool]: True表示表中已有pid False表示表中无pid或查询失败
         """
 
         try:
@@ -125,10 +148,16 @@ class MySQL(object):
             return True if self.cursor.fetchone() else False
 
     @translate_tieba_name
-    async def del_pid(self, tieba_name_eng: str, pid: int) -> bool:
+    async def del_pid(self, tieba_name_eng: str, pid: int) -> Coroutine[None, None, bool]:
         """
         从pid_whitelist_{tieba_name_eng}中删除pid
-        del_pid(tieba_name,pid)
+
+        Args:
+            tieba_name (str): 贴吧名
+            pid (int)
+
+        Returns:
+            Coroutine[None, None, bool]: 操作是否成功
         """
 
         try:
@@ -144,10 +173,16 @@ class MySQL(object):
             return True
 
     @translate_tieba_name
-    async def del_pids(self, tieba_name_eng: str, hour: int) -> bool:
+    async def del_pids(self, tieba_name_eng: str, hour: int) -> Coroutine[None, None, bool]:
         """
         删除最近hour个小时pid_whitelist_{tieba_name_eng}中记录的pid
-        del_pid(tieba_name,hour)
+
+        Args:
+            tieba_name (str): 贴吧名
+            hour (int): 小时数
+
+        Returns:
+            Coroutine[None, None, bool]: 操作是否成功
         """
 
         try:
@@ -164,10 +199,12 @@ class MySQL(object):
             return True
 
     @translate_tieba_name
-    async def create_table_tid_water(self, tieba_name_eng: str) -> NoReturn:
+    async def create_table_tid_water(self, tieba_name_eng: str) -> None:
         """
         创建表tid_water_{tieba_name_eng}
-        create_table_tid_water(tieba_name)
+
+        Args:
+            tieba_name (str): 贴吧名
         """
 
         self.cursor.execute(
@@ -182,14 +219,16 @@ class MySQL(object):
             DELETE FROM tid_water_{tieba_name_eng} WHERE record_time<(CURRENT_TIMESTAMP() + INTERVAL -15 DAY)""")
 
     @translate_tieba_name
-    async def update_tid(self, tieba_name_eng: str, tid: int, mode: bool) -> bool:
+    async def update_tid(self, tieba_name_eng: str, tid: int, mode: bool) -> Coroutine[None, None, bool]:
         """
         在tid_water_{tieba_name_eng}中更新tid的待恢复状态
-        add_tid(tieba_name,tid,mode)
 
-        参数:
-            tieba_name: str 贴吧名
-            mode: bool True对应待恢复，False对应已恢复
+        Args:
+            tieba_name (str): 贴吧名
+            mode (bool): 待恢复状态 True对应待恢复 False对应已恢复
+
+        Returns:
+            Coroutine[None, None, bool]: 操作是否成功
         """
 
         try:
@@ -205,13 +244,16 @@ class MySQL(object):
             return True
 
     @translate_tieba_name
-    async def is_tid_hide(self, tieba_name_eng: str, tid: int) -> bool:
+    async def is_tid_hide(self, tieba_name_eng: str, tid: int) -> Coroutine[None, None, Optional[bool]]:
         """
         检索tid的待恢复状态
-        is_tid_hide(tieba_name,tid)
 
-        返回值:
-            is_hide: True 待恢复 / False 已恢复 / None 表中无记录
+        Args:
+            tieba_name (str): 贴吧名
+            tid (int)
+
+        Returns:
+            Coroutine[None, None, Optional[bool]]: True表示tid待恢复 False表示tid已恢复 None表示表中无记录
         """
 
         try:
@@ -228,10 +270,15 @@ class MySQL(object):
                 return None
 
     @translate_tieba_name
-    async def del_tid(self, tieba_name_eng: str, tid: int) -> bool:
+    async def del_tid(self, tieba_name_eng: str, tid: int) -> Coroutine[None, None, bool]:
         """
         从tid_water_{tieba_name_eng}中删除tid
-        del_tid(tieba_name,tid)
+
+        Args:
+            tieba_name (str): 贴吧名
+
+        Returns:
+            Coroutine[None, None, bool]: 操作是否成功
         """
 
         try:
@@ -247,16 +294,17 @@ class MySQL(object):
             return True
 
     @translate_tieba_name
-    async def get_tids(self, tieba_name_eng: str, batch_size: int = 128) -> int:
+    async def get_tids(self, tieba_name_eng: str, batch_size: int = 128) -> AsyncIterator[int]:
         """
         获取tid_water_{tieba_name_eng}中所有待恢复的tid
         get_tids(tieba_name,batch_size=128)
 
-        参数:
-            batch_size: int 分包大小
+        Args:
+            tieba_name (str): 贴吧名
+            batch_size (int): 分包大小
 
-        迭代返回值:
-            tid: int
+        Yields:
+            AsyncIterator[int]: tid
         """
 
         for i in range(sys.maxsize):
@@ -275,10 +323,12 @@ class MySQL(object):
                     return
 
     @translate_tieba_name
-    async def create_table_user_id(self, tieba_name_eng: str) -> NoReturn:
+    async def create_table_user_id(self, tieba_name_eng: str) -> None:
         """
         创建表user_id_{tieba_name_eng}
-        create_table_user_id(tieba_name)
+
+        Args:
+            tieba_name (str): 贴吧名
         """
 
         self.cursor.execute(f"SHOW TABLES LIKE 'user_id_{tieba_name_eng}'")
@@ -287,13 +337,14 @@ class MySQL(object):
                 f"CREATE TABLE user_id_{tieba_name_eng} (user_id BIGINT PRIMARY KEY, is_white BOOL NOT NULL DEFAULT TRUE, record_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP)")
 
     @translate_tieba_name
-    async def update_user_id(self, tieba_name_eng: str, user_id: int, mode: bool) -> bool:
+    async def update_user_id(self, tieba_name_eng: str, user_id: int, mode: bool) -> Coroutine[None, None, bool]:
         """
         更新user_id在user_id_{tieba_name_eng}中的状态
-        update_user_id(tieba_name,user_id,mode)
+        Args:
+            tieba_name (str): 贴吧名
 
-        参数:
-            mode: bool True对应白名单，False对应黑名单
+        Returns:
+            Coroutine[None, None, bool]: 操作是否成功
         """
 
         try:
@@ -309,10 +360,16 @@ class MySQL(object):
             return True
 
     @translate_tieba_name
-    async def del_user_id(self, tieba_name_eng: str, user_id: int) -> bool:
+    async def del_user_id(self, tieba_name_eng: str, user_id: int) -> Coroutine[None, None, bool]:
         """
         从黑/白名单中删除user_id
-        del_user_id(tieba_name,user_id)
+
+        Args:
+            tieba_name (str): 贴吧名
+            user_id (int)
+
+        Returns:
+            Coroutine[None, None, bool]: 操作是否成功
         """
 
         try:
@@ -328,13 +385,16 @@ class MySQL(object):
             return True
 
     @translate_tieba_name
-    async def is_user_id_white(self, tieba_name_eng: str, user_id: int) -> Optional[bool]:
+    async def is_user_id_white(self, tieba_name_eng: str, user_id: int) -> Coroutine[None, None, Optional[bool]]:
         """
         检索user_id的黑/白名单状态
-        is_user_id_white(tieba_name,user_id)
 
-        返回值:
-            is_white: True 白名单 / False 黑名单 / None 表中无记录
+        Args:
+            tieba_name (str): 贴吧名
+            user_id (int)
+
+        Returns:
+            Coroutine[None, None, Optional[bool]]: True表示user_id为白名单 False表示user_id为黑名单 None表示表中无记录
         """
 
         try:
@@ -350,16 +410,16 @@ class MySQL(object):
                 return None
 
     @translate_tieba_name
-    async def get_user_ids(self, tieba_name_eng: str, batch_size: int = 128) -> int:
+    async def get_user_ids(self, tieba_name_eng: str, batch_size: int = 128) -> AsyncIterator[int]:
         """
         获取user_id列表
-        get_user_ids(tieba_name,batch_size=128)
 
-        参数:
-            batch_size: int 分包大小
+        Args:
+            tieba_name (str): 贴吧名
+            batch_size (int): 分包大小
 
-        迭代返回值:
-            user_id
+        Yields:
+            AsyncIterator[int]: user_id
         """
 
         for i in range(sys.maxsize):
@@ -378,10 +438,12 @@ class MySQL(object):
                     return
 
     @translate_tieba_name
-    async def create_table_img_blacklist(self, tieba_name_eng: str) -> NoReturn:
+    async def create_table_img_blacklist(self, tieba_name_eng: str) -> None:
         """
         创建表img_blacklist_{tieba_name_eng}
-        create_table_img_blacklist(tieba_name)
+
+        Args:
+            tieba_name (str): 贴吧名
         """
 
         self.cursor.execute(
@@ -391,10 +453,17 @@ class MySQL(object):
                 f"CREATE TABLE img_blacklist_{tieba_name_eng} (img_hash CHAR(16) PRIMARY KEY, raw_hash CHAR(40) NOT NULL)")
 
     @translate_tieba_name
-    async def add_imghash(self, tieba_name_eng: str, img_hash: str, raw_hash: str) -> bool:
+    async def add_imghash(self, tieba_name_eng: str, img_hash: str, raw_hash: str) -> Coroutine[None, None, bool]:
         """
         向img_blacklist_{tieba_name_eng}插入img_hash
-        add_imghash(tieba_name,img_hash,raw_hash)
+
+        Args:
+            tieba_name (str): 贴吧名
+            img_hash (str)
+            raw_hash (str): 贴吧图床hash
+
+        Returns:
+            Coroutine[None, None, bool]: 操作是否成功
         """
 
         try:
@@ -410,10 +479,16 @@ class MySQL(object):
             return True
 
     @translate_tieba_name
-    async def has_imghash(self, tieba_name_eng: str, img_hash: str) -> bool:
+    async def has_imghash(self, tieba_name_eng: str, img_hash: str) -> Coroutine[None, None, bool]:
         """
         检索img_blacklist_{tieba_name_eng}中是否已有img_hash
-        has_imghash(tieba_name,img_hash)
+
+        Args:
+            tieba_name (str): 贴吧名
+            img_hash (str)
+
+        Returns:
+            Coroutine[None, None, bool]: True表示表中已有img_hash False表示表中无img_hash或查询失败
         """
 
         try:
@@ -426,10 +501,16 @@ class MySQL(object):
             return True if self.cursor.fetchone() else False
 
     @translate_tieba_name
-    async def del_imghash(self, tieba_name_eng: str, img_hash: str) -> bool:
+    async def del_imghash(self, tieba_name_eng: str, img_hash: str) -> Coroutine[None, None, bool]:
         """
         从img_blacklist_{tieba_name_eng}中删除img_hash
-        del_imghash(tieba_name,img_hash)
+
+        Args:
+            tieba_name (str): 贴吧名
+            img_hash (str)
+
+        Returns:
+            Coroutine[None, None, bool]: 操作是否成功
         """
 
         try:

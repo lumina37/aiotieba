@@ -5,17 +5,21 @@ __all__ = ['CloudReview']
 import asyncio
 import binascii
 import re
+from collections.abc import Coroutine
 from typing import Optional, Union
 
 import cv2 as cv
 import numpy as np
 
-from .api import Browser
-from .logger import log
+from ._api import Browser
+from ._logger import log
 from .mysql import MySQL
 
 
 class RegularExp(object):
+    """
+    贴吧常用的审查正则表达式
+    """
 
     contact_exp = re.compile(
         '(\+|加|联系|私|找).{0,2}我|(d|滴)我|(私|s)(信|我|聊)|滴滴|di?di?', re.I)
@@ -71,20 +75,15 @@ class RegularExp(object):
 class CloudReview(Browser):
     """
     云审查基类
-    CloudReview(BDUSS_key,tieba_name,sleep_time=0)
 
-    参数:
-        BDUSS_key: str 用于获取BDUSS
-        tieba_name: str 贴吧名
+    Args:
+        tieba_name (str): 贴吧名
+        BDUSS_key (str): 用于从config.json中提取BDUSS
     """
 
-    __slots__ = ['tieba_name',
-                 'sleep_time',
-                 'expressions',
-                 'mysql',
-                 'qrdetector']
+    __slots__ = ['tieba_name', 'expressions', 'mysql', 'qrdetector']
 
-    def __init__(self, BDUSS_key: Optional[str], tieba_name: str):
+    def __init__(self, BDUSS_key: str, tieba_name: str):
         super().__init__(BDUSS_key)
 
         self.tieba_name = tieba_name
@@ -99,29 +98,40 @@ class CloudReview(Browser):
     async def __aenter__(self) -> "CloudReview":
         return self
 
-    async def update_user_id(self, id: Union[str, int], mode: bool = True) -> bool:
+    async def update_user_id(self, _id: Union[str, int], mode: bool = True) -> Coroutine[None, None, bool]:
         """
         向名单中插入user_id
-        update_user_id(id,mode=True)
+
+        Args:
+            _id (Union[str, int]): 用户id user_name/portrait/user_id
+            mode (bool, optional): True则加入白名单 False则加入黑名单. Defaults to True.
+
+        Returns:
+            Coroutine[None, None, bool]: 操作是否成功
         """
 
         if type(mode) is not bool:
             log.warning("Wrong mode in update_user_id!")
             return False
 
-        user = await self.get_userinfo_weak(id)
+        user = await self.get_basic_user_info(_id)
         if not user.user_id:
             return False
 
         return await self.mysql.update_user_id(self.tieba_name, user.user_id, mode)
 
-    async def del_user_id(self, id: Union[str, int]):
+    async def del_user_id(self, id: Union[str, int]) -> Coroutine[None, None, bool]:
         """
         从名单中删除user_id
-        del_user_id(id)
+
+        Args:
+            id (Union[str, int]): 用户id user_name/portrait/user_id
+
+        Returns:
+            Coroutine[None, None, bool]: 操作是否成功
         """
 
-        user = await self.get_userinfo_weak(id)
+        user = await self.get_basic_user_info(id)
         if not user.user_id:
             return False
 
@@ -130,6 +140,12 @@ class CloudReview(Browser):
     def scan_QRcode(self, image: np.ndarray) -> str:
         """
         扫描图像中的二维码
+
+        Args:
+            image (np.ndarray): 图像
+
+        Returns:
+            str: 二维码信息 解析失败时返回''
         """
 
         try:
@@ -142,7 +158,13 @@ class CloudReview(Browser):
 
     def get_imghash(self, image: np.ndarray) -> str:
         """
-        计算图像的phash
+        获取图像的phash
+
+        Args:
+            image (np.ndarray): 图像
+
+        Returns:
+            str: 图像的phash
         """
 
         try:
@@ -155,9 +177,15 @@ class CloudReview(Browser):
 
         return img_hash
 
-    async def has_imghash(self, image: np.ndarray) -> bool:
+    async def has_imghash(self, image: np.ndarray) -> Coroutine[None, None, bool]:
         """
         判断图像的phash是否在黑名单中
+
+        Args:
+            image (np.ndarray): 图像
+
+        Returns:
+            Coroutine[None, None, bool]: True则为黑名单图像
         """
 
         img_hash = self.get_imghash(image)

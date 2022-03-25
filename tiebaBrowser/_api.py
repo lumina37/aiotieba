@@ -8,9 +8,10 @@ import re
 import socket
 import sys
 import time
+from collections.abc import AsyncIterator, Coroutine, Iterator
 from io import BytesIO
 from types import TracebackType
-from typing import Dict, NoReturn, Optional, Tuple, Type, Union
+from typing import Optional, Type, Union
 
 import aiohttp
 import cv2 as cv
@@ -20,9 +21,9 @@ from bs4 import BeautifulSoup
 from google.protobuf.json_format import ParseDict
 from PIL import Image
 
-from .config import config
-from .data_structure import *
-from .logger import log
+from ._config import config
+from ._logger import log
+from ._types import *
 from .tieba_proto import *
 
 
@@ -30,14 +31,14 @@ class Sessions(object):
     """
     保持会话
 
-    参数:
-        BDUSS_key: str 用于获取BDUSS
+    Args:
+        BDUSS_key (str, optional): 用于从config.json中提取BDUSS. Defaults to None.
     """
 
     __slots__ = ['_timeout', '_connector', 'app',
                  'app_proto', 'web', 'BDUSS', 'STOKEN']
 
-    def __init__(self, BDUSS_key: Optional[str] = None) -> NoReturn:
+    def __init__(self, BDUSS_key: Optional[str] = None) -> None:
 
         self._timeout = aiohttp.ClientTimeout(
             connect=5, sock_connect=3, sock_read=10)
@@ -82,51 +83,52 @@ class Sessions(object):
         self.web = aiohttp.ClientSession(connector=self._connector, headers=web_headers, version=aiohttp.HttpVersion11,
                                          cookie_jar=web_cookie_jar, connector_owner=False, raise_for_status=True, timeout=self._timeout, trust_env=False)
 
-    async def close(self) -> NoReturn:
+    async def close(self) -> None:
         await asyncio.gather(self.app.close(), self.app_proto.close(), self.web.close(), self._connector.close(), return_exceptions=True)
 
     async def __aenter__(self) -> "Sessions":
         return self
 
-    async def __aexit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[BaseException], exc_tb: Optional[TracebackType]) -> NoReturn:
+    async def __aexit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[BaseException], exc_tb: Optional[TracebackType]) -> None:
         await self.close()
 
 
 class Browser(object):
     """
     贴吧浏览、参数获取等API的封装
-    Browser(BDUSS_key)
 
-    参数:
-        BDUSS_key: str 用于获取BDUSS
+    Args:
+        BDUSS_key (str, optional): 用于从config.json中提取BDUSS. Defaults to None.
     """
 
     __slots__ = ['BDUSS_key', 'fid_dict',
                  'sessions', '_tbs']
 
-    def __init__(self, BDUSS_key: Optional[str]) -> NoReturn:
+    def __init__(self, BDUSS_key: Optional[str] = None) -> None:
         self.BDUSS_key = BDUSS_key
         self.fid_dict = {}
         self.sessions = Sessions(BDUSS_key)
         self._tbs = ''
 
-    async def close(self) -> NoReturn:
+    async def close(self) -> None:
         await self.sessions.close()
 
     async def __aenter__(self) -> "Browser":
         return self
 
-    async def __aexit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[BaseException], exc_tb: Optional[TracebackType]) -> NoReturn:
+    async def __aexit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[BaseException], exc_tb: Optional[TracebackType]) -> None:
         await self.close()
 
     @staticmethod
     def _app_sign(payload: dict) -> str:
         """
-        计算字典payload的贴吧客户端签名值sign
-        app_sign(payload)
+        计算form参数字典的贴吧客户端签名值sign
 
-        返回值:
-            sign: str 贴吧客户端签名值sign
+        Args:
+            payload (dict): form参数字典
+
+        Returns:
+            str: 贴吧客户端签名值sign
         """
 
         raw_list = [f"{key}={value}" for key,
@@ -141,15 +143,15 @@ class Browser(object):
         return sign
 
     @staticmethod
-    def get_tieba_multipart_writer(proto_bytes):
+    def get_tieba_multipart_writer(proto_bytes: bytes) -> aiohttp.MultipartWriter:
         """
-        将proto封装为贴吧客户端专用的aiohttp.MultipartWriter
+        将proto_bytes封装为贴吧客户端专用的aiohttp.MultipartWriter
 
-        参数:
-            proto_bytes: Bytes protobuf序列化后的二进制数据
+        Args:
+            proto_bytes (bytes): protobuf序列化后的二进制数据
 
-        返回值:
-            writer: aiohttp.MultipartWriter 只可用于贴吧客户端
+        Returns:
+            aiohttp.MultipartWriter: 只可用于贴吧客户端
         """
 
         writer = aiohttp.MultipartWriter(
@@ -166,13 +168,12 @@ class Browser(object):
 
         return writer
 
-    async def get_tbs(self) -> str:
+    async def get_tbs(self) -> Coroutine[None, None, str]:
         """
         获取贴吧反csrf校验码tbs
-        get_tbs()
 
-        返回值:
-            tbs: str 贴吧反csrf校验码tbs
+        Returns:
+            Coroutine[None, None, str]: 贴吧反csrf校验码tbs
         """
 
         if not self._tbs:
@@ -180,16 +181,15 @@ class Browser(object):
 
         return self._tbs
 
-    async def get_fid(self, tieba_name: str) -> int:
+    async def get_fid(self, tieba_name: str) -> Coroutine[None, None, int]:
         """
         通过贴吧名获取forum_id
-        get_fid(tieba_name)
 
-        参数:
-            tieba_name: str 贴吧名
+        Args:
+            tieba_name (str): 贴吧名
 
-        返回值:
-            fid: int 该贴吧的forum_id
+        Returns:
+            Coroutine[None, None, int]: 该贴吧的forum_id
         """
 
         fid = self.fid_dict.get(tieba_name, 0)
@@ -212,54 +212,51 @@ class Browser(object):
 
         return fid
 
-    async def get_userinfo(self, _id: Union[str, int]) -> UserInfo:
+    async def get_user_info(self, _id: Union[str, int]) -> Coroutine[None, None, UserInfo]:
         """
         补全完整版用户信息
-        get_userinfo(user)
 
-        参数:
-            user: UserInfo 待补全的用户信息
+        Args:
+            _id (Union[str, int]): 用户id user_name或portrait或user_id
 
-        返回值:
-            user: UserInfo 完整版用户信息
+        Returns:
+            Coroutine[None, None, UserInfo]: 完整版用户信息
         """
 
         user = UserInfo(_id)
         if user.user_id:
-            return await self._uid2userinfo(user)
+            return await self._user_id2user_info(user)
         else:
-            return await self._name2userinfo(user)
+            return await self._name2user_info(user)
 
-    async def get_userinfo_weak(self, _id: Union[str, int]) -> BasicUserInfo:
+    async def get_basic_user_info(self, _id: Union[str, int]) -> Coroutine[None, None, BasicUserInfo]:
         """
         补全简略版用户信息
-        get_userinfo_weak(user)
 
-        参数:
-            user: BasicUserInfo 待补全的用户信息
+        Args:
+            _id (Union[str, int]): 用户id user_name/portrait/user_id
 
-        返回值:
-            user: BasicUserInfo 简略版用户信息，仅保证包含portrait、user_id和user_name
+        Returns:
+            Coroutine[None, None, BasicUserInfo]: 简略版用户信息 仅保证包含user_name/portrait/user_id
         """
 
         user = BasicUserInfo(_id)
         if user.user_id:
-            return await self._uid2userinfo_weak(user)
+            return await self._user_id2basic_user_info(user)
         elif user.user_name:
-            return await self._user_name2userinfo_weak(user)
+            return await self._user_name2basic_user_info(user)
         else:
-            return await self._name2userinfo(user)
+            return await self._name2user_info(user)
 
-    async def _name2userinfo(self, user: UserInfo) -> UserInfo:
+    async def _name2user_info(self, user: UserInfo) -> Coroutine[None, None, UserInfo]:
         """
         通过用户名或昵称补全完整版用户信息
-        _name2userinfo(user)
 
-        参数:
-            user: UserInfo 待补全的用户信息
+        Args:
+            user (UserInfo): 待补全的用户信息
 
-        返回值:
-            user: UserInfo 完整版用户信息
+        Returns:
+            Coroutine[None, None, UserInfo]: 完整版用户信息
         """
 
         try:
@@ -293,17 +290,15 @@ class Browser(object):
 
         return user
 
-    async def _user_name2userinfo_weak(self, user: BasicUserInfo) -> BasicUserInfo:
+    async def _user_name2basic_user_info(self, user: BasicUserInfo) -> Coroutine[None, None, BasicUserInfo]:
         """
         通过用户名补全简略版用户信息
-        由于api的编码限制，仅支持补全user_id和portrait
-        _user_name2userinfo_weak(user)
 
-        参数:
-            user: BasicUserInfo 待补全的用户信息
+        Args:
+            user (BasicUserInfo): 待补全的用户信息
 
-        返回值:
-            user: BasicUserInfo 简略版用户信息，仅保证包含portrait、user_id和user_name
+        Returns:
+            Coroutine[None, None, BasicUserInfo]: 简略版用户信息 仅保证包含user_name/portrait/user_id
         """
 
         params = {'un': user.user_name, 'ie': 'utf-8'}
@@ -327,16 +322,15 @@ class Browser(object):
 
         return user
 
-    async def _uid2userinfo(self, user: UserInfo) -> UserInfo:
+    async def _user_id2user_info(self, user: UserInfo) -> Coroutine[None, None, UserInfo]:
         """
         通过user_id补全用户信息
-        _uid2userinfo(user)
 
-        参数:
-            user: UserInfo 待补全的用户信息
+        Args:
+            user (UserInfo): 待补全的用户信息
 
-        返回值:
-            user: UserInfo 完整版用户信息
+        Returns:
+            Coroutine[None, None, UserInfo]: 完整版用户信息
         """
 
         common = CommonReq_pb2.CommonReq()
@@ -367,14 +361,15 @@ class Browser(object):
 
         return user
 
-    async def _uid2userinfo_weak(self, user: BasicUserInfo) -> BasicUserInfo:
+    async def _user_id2basic_user_info(self, user: BasicUserInfo) -> Coroutine[None, None, BasicUserInfo]:
         """
         通过user_id补全简略版用户信息
-        _uid2userinfo_weak(user)
-        参数:
-            user: UserInfo 待补全的用户信息
-        返回值:
-            user: UserInfo 简略版用户信息，仅保证包含portrait、user_id和user_name
+
+        Args:
+            user (BasicUserInfo): 待补全的用户信息
+
+        Returns:
+            Coroutine[None, None, BasicUserInfo]: 简略版用户信息 仅保证包含user_name/portrait/user_id
         """
 
         try:
@@ -395,19 +390,18 @@ class Browser(object):
 
         return user
 
-    async def get_threads(self, tieba_name: str, pn: int = 1, sort: int = 5, is_good: bool = False) -> Threads:
+    async def get_threads(self, tieba_name: str, pn: int = 1, sort: int = 5, is_good: bool = False) -> Coroutine[None, None, Threads]:
         """
         获取首页帖子
-        get_threads(tieba_name,pn=1)
 
-        参数:
-            tieba_name: str 贴吧名
-            pn: int 页码
-            sort: int 排序方式，对于有热门区的贴吧来说0是热门排序1是按发布时间2报错34都是热门排序>=5是按回复时间，对无热门区的贴吧来说0是按回复时间1是按发布时间2报错>=3是按回复时间
-            is_good: bool True为获取精品区帖子，False为获取普通区帖子
+        Args:
+            tieba_name (str): 贴吧名
+            pn (int, optional): 页码. Defaults to 1.
+            sort (int, optional): 排序方式 对于有热门分区的贴吧0是热门排序1是按发布时间2报错34都是热门排序>=5是按回复时间 对于无热门分区的贴吧0是按回复时间1是按发布时间2报错>=3是按回复时间. Defaults to 5.
+            is_good (bool, optional): True为获取精品区帖子 False为获取普通区帖子. Defaults to False.
 
-        返回值:
-            threads: Threads
+        Returns:
+            Coroutine[None, None, Threads]: 帖子列表
         """
 
         common = CommonReq_pb2.CommonReq()
@@ -443,21 +437,20 @@ class Browser(object):
 
         return threads
 
-    async def get_posts(self, tid: int, pn: int = 1, reverse: bool = False, with_comments: bool = False, comment_sort_by_agree: bool = True, comment_rn: int = 4) -> Posts:
+    async def get_posts(self, tid: int, pn: int = 1, reverse: bool = False, with_comments: bool = False, comment_sort_by_agree: bool = True, comment_rn: int = 4) -> Coroutine[None, None, Posts]:
         """
         获取主题帖内回复
-        get_posts(tid,pn=1,reverse=False,with_comments=False,comment_sort_by_agree=True,comment_rn=4)
 
-        参数:
-            tid: int 主题帖tid
-            pn: int 页码
-            reverse: bool True则按时间倒序请求，Flase则按时间顺序请求
-            with_comment: bool True则同时请求高赞楼中楼，False则comments字段为空列表
-            comment_sort_by_agree: bool True则楼中楼按点赞数顺序，False则楼中楼按时间顺序
-            comment_rn: int 请求的楼中楼数量
+        Args:
+            tid (int): 主题帖tid
+            pn (int, optional): 页码. Defaults to 1.
+            reverse (bool, optional): True则按时间倒序请求 Flase则按时间顺序请求. Defaults to False.
+            with_comments (bool, optional): True则同时请求高赞楼中楼 False则返回的Posts.comments为空. Defaults to False.
+            comment_sort_by_agree (bool, optional): True则楼中楼按点赞数顺序 False则楼中楼按时间顺序. Defaults to True.
+            comment_rn (int, optional): 请求的楼中楼数量. Defaults to 4.
 
-        返回值:
-            posts: Posts
+        Returns:
+            Coroutine[None, None, Posts]: 回复列表
         """
 
         common = CommonReq_pb2.CommonReq()
@@ -495,18 +488,17 @@ class Browser(object):
 
         return posts
 
-    async def get_comments(self, tid: int, pid: int, pn: int = 1) -> Comments:
+    async def get_comments(self, tid: int, pid: int, pn: int = 1) -> Coroutine[None, None, Comments]:
         """
         获取楼中楼回复
-        get_comments(tid,pid,pn=1)
 
-        参数:
-            tid: int 主题帖tid
-            pid: int 回复pid
-            pn: int 页码
+        Args:
+            tid (int): 主题帖tid
+            pid (int): 回复pid
+            pn (int, optional): 页码. Defaults to 1.
 
-        返回值:
-            comments: Comments
+        Returns:
+            Coroutine[None, None, Comments]: 楼中楼列表
         """
 
         common = CommonReq_pb2.CommonReq()
@@ -539,20 +531,18 @@ class Browser(object):
 
         return comments
 
-    async def block(self, tieba_name: str, user: UserInfo, day: int, reason: str = '') -> bool:
+    async def block(self, tieba_name: str, user: UserInfo, day: int, reason: str = '') -> Coroutine[None, None, bool]:
         """
-        使用客户端api的封禁，支持小吧主、语音小编封10天
-        block(tieba_name,user,day,reason='')
+        封禁用户 支持小吧主/语音小编封3/10天
 
-        参数:
-            tieba_name: str 贴吧名
-            user: UserInfo 待封禁用户信息
-            day: int 封禁天数
-            reason: str 封禁理由（可选）
+        Args:
+            tieba_name (str): 贴吧名
+            user (UserInfo): 待封禁用户信息
+            day (int): 封禁天数
+            reason (str, optional): 封禁理由. Defaults to ''.
 
-        返回值:
-            flag: bool 操作是否成功
-            user: UserInfo 补全的用户信息
+        Returns:
+            Coroutine[None, None, bool]: 操作是否成功
         """
 
         payload = {'BDUSS': self.sessions.BDUSS,
@@ -585,17 +575,16 @@ class Browser(object):
             f"Successfully blocked {user.log_name} in {tieba_name} for {payload['day']} days")
         return True, user
 
-    async def unblock(self, tieba_name: str, user: BasicUserInfo) -> bool:
+    async def unblock(self, tieba_name: str, user: BasicUserInfo) -> Coroutine[None, None, bool]:
         """
         解封用户
-        unblock(tieba_name,user)
 
-        参数:
-            tieba_name: str 贴吧名
-            user: BasicUserInfo 基本用户信息
+        Args:
+            tieba_name (str): 贴吧名
+            user (BasicUserInfo): 基本用户信息
 
-        返回值:
-            flag: bool 操作是否成功
+        Returns:
+            Coroutine[None, None, bool]: 操作是否成功
         """
 
         payload = {'fn': tieba_name,
@@ -621,18 +610,45 @@ class Browser(object):
         log.info(f"Successfully unblocked {user.log_name} in {tieba_name}")
         return True
 
-    async def del_thread(self, tieba_name: str, tid: int, is_hide: bool = False) -> bool:
+    async def hide_thread(self, tieba_name: str, tid: int) -> Coroutine[None, None, bool]:
+        """
+        屏蔽主题帖
+
+        Args:
+            tieba_name (str): 帖子所在的贴吧名
+            tid (int): 待屏蔽的主题帖tid
+
+        Returns:
+            Coroutine[None, None, bool]: 操作是否成功
+        """
+
+        return await self._del_thread(tieba_name, tid, is_hide=True)
+
+    async def del_thread(self, tieba_name: str, tid: int) -> Coroutine[None, None, bool]:
         """
         删除主题帖
-        del_thread(tieba_name,tid,is_hide=False)
 
-        参数:
-            tieba_name: str 帖子所在的贴吧名
-            tid: int 待删除的主题帖tid
-            is_hide: bool False则删帖，True则屏蔽帖，默认为False
+        Args:
+            tieba_name (str): 帖子所在的贴吧名
+            tid (int): 待删除的主题帖tid
 
-        返回值:
-            flag: bool 操作是否成功
+        Returns:
+            Coroutine[None, None, bool]: 操作是否成功
+        """
+
+        return await self._del_thread(tieba_name, tid, is_hide=False)
+
+    async def _del_thread(self, tieba_name: str, tid: int, is_hide: bool = False) -> Coroutine[None, None, bool]:
+        """
+        删除/屏蔽主题帖
+
+        Args:
+            tieba_name (str): 帖子所在的贴吧名
+            tid (int): 待删除/屏蔽的主题帖tid
+            is_hide (bool, optional): True则屏蔽帖 False则删除帖. Defaults to False.
+
+        Returns:
+            Coroutine[None, None, bool]: 操作是否成功
         """
 
         payload = {'BDUSS': self.sessions.BDUSS,
@@ -659,18 +675,17 @@ class Browser(object):
             f"Successfully deleted thread {tid} hide:{is_hide} in {tieba_name}")
         return True
 
-    async def del_post(self, tieba_name: str, tid: int, pid: int) -> bool:
+    async def del_post(self, tieba_name: str, tid: int, pid: int) -> Coroutine[None, None, bool]:
         """
         删除回复
-        del_post(tieba_name,tid,pid)
 
-        参数:
-            tieba_name: str 帖子所在的贴吧名
-            tid: int 回复所在的主题帖tid
-            pid: int 待删除的回复pid
+        Args:
+            tieba_name (str): 帖子所在的贴吧名
+            tid (int): 回复所在的主题帖tid
+            pid (int): 待删除的回复pid
 
-        返回值:
-            flag: bool 操作是否成功
+        Returns:
+            bool: 操作是否成功
         """
 
         payload = {'BDUSS': self.sessions.BDUSS,
@@ -696,19 +711,60 @@ class Browser(object):
         log.info(f"Successfully deleted post {pid} in {tid} in {tieba_name}")
         return True
 
-    async def recover(self, tieba_name, tid: int = 0, pid: int = 0, is_hide: bool = False) -> bool:
+    async def unhide_thread(self, tieba_name, tid: int) -> Coroutine[None, None, bool]:
+        """
+        解除主题帖屏蔽
+
+        Args:
+            tieba_name (_type_): 帖子所在的贴吧名
+            tid (int, optional): 待解除屏蔽的主题帖tid
+
+        Returns:
+            Coroutine[None, None, bool]: 操作是否成功
+        """
+
+        return await self._recover(tieba_name, tid=tid, is_hide=True)
+
+    async def recover_thread(self, tieba_name, tid: int) -> Coroutine[None, None, bool]:
+        """
+        恢复主题帖
+
+        Args:
+            tieba_name (_type_): 帖子所在的贴吧名
+            tid (int, optional): 待恢复的主题帖tid
+
+        Returns:
+            Coroutine[None, None, bool]: 操作是否成功
+        """
+
+        return await self._recover(tieba_name, tid=tid, is_hide=False)
+
+    async def recover_post(self, tieba_name, pid: int) -> Coroutine[None, None, bool]:
+        """
+        恢复主题帖
+
+        Args:
+            tieba_name (_type_): 帖子所在的贴吧名
+            tid (int, optional): 待恢复的主题帖tid
+
+        Returns:
+            Coroutine[None, None, bool]: 操作是否成功
+        """
+
+        return await self._recover(tieba_name, pid=pid, is_hide=False)
+
+    async def _recover(self, tieba_name, tid: int = 0, pid: int = 0, is_hide: bool = False) -> Coroutine[None, None, bool]:
         """
         恢复帖子
-        recover(tieba_name,tid=0,pid=0,is_hide=False)
 
-        参数:
-            tieba_name: str 帖子所在的贴吧名
-            tid: int 回复所在的主题帖tid
-            pid: int 待恢复的回复pid
-            is_hide: bool False则恢复删帖，True则取消屏蔽主题帖，默认为False
+        Args:
+            tieba_name (_type_): 帖子所在的贴吧名
+            tid (int, optional): 待恢复的主题帖tid. Defaults to 0.
+            pid (int, optional): 待恢复的回复pid. Defaults to 0.
+            is_hide (bool, optional): True则取消屏蔽主题帖 False则恢复删帖. Defaults to False.
 
-        返回值:
-            flag: bool 操作是否成功
+        Returns:
+            bool: 操作是否成功
         """
 
         payload = {'fn': tieba_name,
@@ -735,19 +791,18 @@ class Browser(object):
             f"Successfully recovered tid:{tid} pid:{pid} hide:{is_hide} in {tieba_name}")
         return True
 
-    async def move(self, tieba_name: str, tid: int, to_tab_id: int, from_tab_id: int = 0):
+    async def move(self, tieba_name: str, tid: int, to_tab_id: int, from_tab_id: int = 0) -> Coroutine[None, None, bool]:
         """
         将主题帖移动至另一分区
-        move(tieba_name,tid,to_tab_id,from_tab_id=0)
 
-        参数:
-            tieba_name: str 帖子所在贴吧名
-            tid: int 待移动的主题帖tid
-            to_tab_id: int 目标分区id
-            from_tab_id: int 来源分区id
+        Args:
+            tieba_name (str): 帖子所在贴吧名
+            tid (int): 待移动的主题帖tid
+            to_tab_id (int): 目标分区id
+            from_tab_id (int, optional): 来源分区id 默认为0即无分区. Defaults to 0.
 
-        返回值:
-            flag: bool 操作是否成功
+        Returns:
+            Coroutine[None, None, bool]: 操作是否成功
         """
 
         payload = {'BDUSS': self.sessions.BDUSS,
@@ -774,17 +829,16 @@ class Browser(object):
             f"Successfully add {tid} to tab:{to_tab_id} in {tieba_name}")
         return True
 
-    async def recommend(self, tieba_name: str, tid: int) -> bool:
+    async def recommend(self, tieba_name: str, tid: int) -> Coroutine[None, None, bool]:
         """
-        推荐上首页
-        recommend(tieba_name,tid)
+        大吧主首页推荐
 
-        参数:
-            tieba_name: str 帖子所在贴吧名
-            tid: int 待推荐的主题帖tid
+        Args:
+            tieba_name (str): 帖子所在贴吧名
+            tid (int): 待推荐的主题帖tid
 
-        返回值:
-            flag: bool 操作是否成功
+        Returns:
+            Coroutine[None, None, bool]: 操作是否成功
         """
 
         payload = {'BDUSS': self.sessions.BDUSS,
@@ -810,31 +864,29 @@ class Browser(object):
         log.info(f"Successfully recommended {tid} in {tieba_name}")
         return True
 
-    async def good(self, tieba_name: str, tid: int, cname: str = '') -> bool:
+    async def good(self, tieba_name: str, tid: int, cname: str = '') -> Coroutine[None, None, bool]:
         """
         加精主题帖
-        good(tieba_name,tid,cname='')
 
-        参数:
-            tieba_name: str 帖子所在贴吧名
-            tid: int 待加精的主题帖tid
-            cname: str 待添加的精华分区名称。cname默认为''即不分区
+        Args:
+            tieba_name (str): 帖子所在贴吧名
+            tid (int): 待加精的主题帖tid
+            cname (str, optional): 待添加的精华分区名称 默认为''即不分区. Defaults to ''.
 
-        返回值:
-            flag: bool 操作是否成功
+        Returns:
+            Coroutine[None, None, bool]: 操作是否成功
         """
 
-        async def _cname2cid() -> int:
+        async def _cname2cid() -> Coroutine[None, None, int]:
             """
-            _cname2cid()
             由加精分区名cname获取cid
 
-            闭包参数:
-                tieba_name
-                cname
+            Closure Args:
+                tieba_name (str): 帖子所在贴吧名
+                cname (str, optional): 待添加的精华分区名称 默认为''即不分区. Defaults to ''.
 
-            返回值:
-                cid: int
+            Returns:
+                int: cname对应的分区id
             """
 
             payload = {'BDUSS': self.sessions.BDUSS,
@@ -862,20 +914,18 @@ class Browser(object):
 
             return cid
 
-        async def _good(cid: int = 0) -> bool:
+        async def _good(cid: int = 0) -> Coroutine[None, None, bool]:
             """
             加精主题帖
-            good(cid=0)
 
-            参数:
-                cid: int 将主题帖加到cid对应的精华分区。cid默认为0即不分区
+            Args:
+                cid (int, optional): 将主题帖加到cid对应的精华分区 cid默认为0即不分区. Defaults to 0.
 
-            闭包参数:
-                tieba_name
-                tid
+            Closure Args:
+                tieba_name (str): 帖子所在贴吧名
 
-            返回值:
-                flag: bool 操作是否成功
+            Returns:
+                Coroutine[None, None, bool]: 操作是否成功
             """
 
             payload = {'BDUSS': self.sessions.BDUSS,
@@ -906,17 +956,16 @@ class Browser(object):
 
         return await _good(await _cname2cid())
 
-    async def ungood(self, tieba_name: str, tid: int) -> bool:
+    async def ungood(self, tieba_name: str, tid: int) -> Coroutine[None, None, bool]:
         """
         撤精主题帖
-        ungood(tieba_name,tid)
 
-        参数:
-            tieba_name: str 帖子所在贴吧名
-            tid: int 待撤精的主题帖tid
+        Args:
+            tieba_name (str): 帖子所在贴吧名
+            tid (int): 待撤精的主题帖tid
 
-        返回值:
-            flag: bool 操作是否成功
+        Returns:
+            Coroutine[None, None, bool]: 操作是否成功
         """
 
         payload = {'BDUSS': self.sessions.BDUSS,
@@ -942,17 +991,16 @@ class Browser(object):
         log.info(f"Successfully removed {tid} from goodlist in {tieba_name}")
         return True
 
-    async def top(self, tieba_name: str, tid: int) -> bool:
+    async def top(self, tieba_name: str, tid: int) -> Coroutine[None, None, bool]:
         """
         置顶主题帖
-        top(tieba_name,tid)
 
-        参数:
-            tieba_name: str 帖子所在贴吧名
-            tid: int 待置顶的主题帖tid
+        Args:
+            tieba_name (str): 帖子所在贴吧名
+            tid (int): 待置顶的主题帖tid
 
-        返回值:
-            flag: bool 操作是否成功
+        Returns:
+            Coroutine[None, None, bool]: 操作是否成功
         """
 
         payload = {'BDUSS': self.sessions.BDUSS,
@@ -979,17 +1027,16 @@ class Browser(object):
         log.info(f"Successfully add {tid} to toplist in {tieba_name}")
         return True
 
-    async def untop(self, tieba_name: str, tid: int) -> bool:
+    async def untop(self, tieba_name: str, tid: int) -> Coroutine[None, None, bool]:
         """
         撤销置顶主题帖
-        untop(tieba_name,tid)
 
-        参数:
-            tieba_name: str 帖子所在贴吧名
-            tid: int 待撤销置顶的主题帖tid
+        Args:
+            tieba_name (str): 帖子所在贴吧名
+            tid (int): 待撤销置顶的主题帖tid
 
-        返回值:
-            flag: bool 操作是否成功
+        Returns:
+            Coroutine[None, None, bool]: 操作是否成功
         """
 
         payload = {'BDUSS': self.sessions.BDUSS,
@@ -1015,17 +1062,16 @@ class Browser(object):
         log.info(f"Successfully removed {tid} from toplist in {tieba_name}")
         return True
 
-    async def get_pn_blacklist(self, tieba_name: str, pn: int = 1) -> BasicUserInfo:
+    async def get_pn_blacklist(self, tieba_name: str, pn: int = 1) -> AsyncIterator[BasicUserInfo]:
         """
         获取pn页的黑名单
-        get_pn_blacklist(tieba_name,pn=1)
 
-        参数:
-            tieba_name: str 贴吧名
-            pn: int 页码
+        Args:
+            tieba_name (str): 贴吧名
+            pn (int, optional): 页码. Defaults to 1.
 
-        迭代返回值:
-            user: BasicUserInfo 基本用户信息
+        Yields:
+            AsyncIterator[BasicUserInfo]: 基本用户信息
         """
 
         try:
@@ -1049,17 +1095,16 @@ class Browser(object):
                 f"Failed to get blacklist of {tieba_name} pn:{pn}. reason:{err}")
             return
 
-    async def blacklist_add(self, tieba_name: str, user: BasicUserInfo) -> bool:
+    async def blacklist_add(self, tieba_name: str, user: BasicUserInfo) -> Coroutine[None, None, bool]:
         """
         添加用户至黑名单
-        blacklist_add(tieba_name,user)
 
-        参数:
-            tieba_name: str 贴吧名
-            user: BasicUserInfo 基本用户信息
+        Args:
+            tieba_name (str): 贴吧名
+            user (BasicUserInfo): 基本用户信息
 
-        返回值:
-            flag: bool 操作是否成功
+        Returns:
+            Coroutine[None, None, bool]: 操作是否成功
         """
 
         payload = {'tbs': await self.get_tbs(),
@@ -1084,17 +1129,16 @@ class Browser(object):
             f"Successfully added {user.log_name} to black_list in {tieba_name}")
         return True
 
-    async def blacklist_cancels(self, tieba_name: str, users: list[BasicUserInfo]) -> bool:
+    async def blacklist_cancels(self, tieba_name: str, users: list[BasicUserInfo]) -> Coroutine[None, None, bool]:
         """
-        解除黑名单
-        blacklist_cancels(tieba_name,users)
+        批量解除黑名单
 
-        参数:
-            tieba_name: str 贴吧名
-            users: List[BasicUserInfo] 基本用户信息的列表
+        Args:
+            tieba_name (str): 贴吧名
+            users (list[BasicUserInfo]): 基本用户信息的列表
 
-        返回值:
-            flag: bool 操作是否成功
+        Returns:
+            Coroutine[None, None, bool]: 操作是否成功
         """
 
         payload = {'word': tieba_name,
@@ -1118,17 +1162,16 @@ class Browser(object):
         log.info(f"Successfully removed users from black_list in {tieba_name}")
         return True
 
-    async def blacklist_cancel(self, tieba_name: str, user: BasicUserInfo) -> bool:
+    async def blacklist_cancel(self, tieba_name: str, user: BasicUserInfo) -> Coroutine[None, None, bool]:
         """
         解除黑名单
-        blacklist_cancel(tieba_name,user)
 
-        参数:
-            tieba_name: str 贴吧名
-            user: BasicUserInfo 基本用户信息
+        Args:
+            tieba_name (str): 贴吧名
+            user (BasicUserInfo): 基本用户信息
 
-        返回值:
-            flag: bool 操作是否成功
+        Returns:
+            Coroutine[None, None, bool]: 操作是否成功
         """
 
         if tieba_name and user.user_id:
@@ -1136,29 +1179,30 @@ class Browser(object):
         else:
             return False
 
-    async def refuse_appeals(self, tieba_name: str) -> bool:
+    async def refuse_appeals(self, tieba_name: str) -> Coroutine[None, None, bool]:
         """
         拒绝吧内所有解封申诉
-        refuse_appeals(tieba_name)
 
-        参数:
-            tieba_name: str 贴吧名
+        Args:
+            tieba_name (str): 贴吧名
 
-        返回值:
-            flag: bool 操作是否成功
+        Returns:
+            Coroutine[None, None, bool]: 操作是否成功
         """
 
-        async def _appeal_handle(appeal_id: int, refuse: bool = True) -> bool:
+        async def _appeal_handle(appeal_id: int, refuse: bool = True) -> Coroutine[None, None, bool]:
             """
             拒绝或通过解封申诉
-            _appeal_handle(appeal_id,refuse=True)
 
-            闭包参数:
-                tieba_name
+            Args:
+                appeal_id (int): 申诉请求的编号
+                refuse (bool, optional): True则拒绝申诉 False则接受申诉. Defaults to True.
 
-            参数:
-                appeal_id: int 申诉请求的编号
-                refuse: bool 是否拒绝申诉
+            Closure Args:
+                tieba_name (str): 贴吧名
+
+            Returns:
+                Coroutine[None, None, bool]: 操作是否成功
             """
 
             payload = {'fn': tieba_name,
@@ -1184,16 +1228,15 @@ class Browser(object):
                 f"Successfully handled {appeal_id} in {tieba_name}. refuse:{refuse}")
             return True
 
-        async def _get_appeal_list() -> int:
+        async def _get_appeal_list() -> AsyncIterator[int]:
             """
-            迭代返回申诉请求的编号(appeal_id)
-            _get_appeal_list()
+            异步迭代返回申诉请求的编号(appeal_id)
 
-            闭包参数:
-                tieba_name
+            Closure Args:
+                tieba_name (str): 贴吧名
 
-            迭代返回值:
-                appeal_id: int 申诉请求的编号
+            Yields:
+                AsyncIterator[int]: 申诉请求的编号
             """
 
             params = {'fn': tieba_name,
@@ -1223,13 +1266,15 @@ class Browser(object):
         async for appeal_id in _get_appeal_list():
             await _appeal_handle(appeal_id)
 
-    async def url2image(self, img_url: str) -> Optional[np.ndarray]:
+    async def url2image(self, img_url: str) -> Coroutine[None, None, Optional[np.ndarray]]:
         """
-        从链接获取静态图像。若为gif则仅读取第一帧即透明通道帧
-        url2image(img_url)
+        从链接获取静态图像 若为gif则仅读取第一帧即透明通道帧
 
-        返回值:
-            image: numpy.array | None 图像
+        Args:
+            img_url (str): 图像链接
+
+        Returns:
+            Coroutine[None, None, Optional[np.ndarray]]: 图像或None
         """
 
         try:
@@ -1248,13 +1293,12 @@ class Browser(object):
 
         return image
 
-    async def get_self_info(self) -> BasicUserInfo:
+    async def get_self_info(self) -> Coroutine[None, None, BasicUserInfo]:
         """
         获取本账号信息
-        get_self_info()
 
-        返回值:
-            user: BasicUserInfo 简略版用户信息，仅保证包含portrait、user_id和user_name
+        Returns:
+            Coroutine[None, None, BasicUserInfo]: 简略版用户信息 仅保证包含user_name/portrait/user_id
         """
 
         payload = {'_client_version': '12.22.1.0',
@@ -1283,13 +1327,12 @@ class Browser(object):
 
         return user
 
-    async def get_newmsg(self) -> dict[str, bool]:
+    async def get_newmsg(self) -> Coroutine[None, None, dict[str, bool]]:
         """
         获取消息通知
-        get_newmsg()
 
-        返回值:
-            msg: Dict[str,bool] msg字典，True表示有新内容
+        Returns:
+            Coroutine[None, None, dict[str, bool]]: msg字典 value=True则表示有新内容
             {'fans': 新粉丝,
              'replyme': 新回复,
              'atme': 新@,
@@ -1324,13 +1367,12 @@ class Browser(object):
 
         return msg
 
-    async def get_ats(self) -> list[At]:
+    async def get_ats(self) -> Coroutine[None, None, Ats]:
         """
         获取@信息
-        get_ats()
 
-        返回值:
-            Ats: at列表
+        Returns:
+            Coroutine[None, None, Ats]: at列表
         """
 
         payload = {'BDUSS': self.sessions.BDUSS,
@@ -1353,17 +1395,15 @@ class Browser(object):
 
         return ats
 
-    async def get_homepage(self, portrait: str) -> Tuple[UserInfo, list[Thread]]:
+    async def get_homepage(self, portrait: str) -> Coroutine[None, None, tuple[UserInfo, list[Thread]]]:
         """
-        获取用户主页
-        get_homepage(portrait)
+        _summary_
 
-        参数:
-            portrait: str 用户portrait
+        Args:
+            portrait (str): _description_
 
-        返回值:
-            user: UserInfo 用户信息
-            threads: List[Thread] 帖子列表
+        Returns:
+            Coroutine[None, None, tuple[UserInfo, list[Thread]]]: 用户信息/帖子列表
         """
 
         payload = {'_client_type': 2,  # 删除该字段会导致post_list为空
@@ -1403,11 +1443,11 @@ class Browser(object):
         user.priv_like = priv_dict.get('like', None)
         user.priv_reply = priv_dict.get('reply', None)
 
-        def _contents(content_dicts: list[dict]):
+        def _contents(content_dicts: list[dict]) -> Iterator[PbContent_pb2.PbContent]:
             for content_dict in content_dicts:
                 yield ParseDict(content_dict, PbContent_pb2.PbContent(), ignore_unknown_fields=True)
 
-        def _init_thread(thread_dict: dict):
+        def _init_thread(thread_dict: dict) -> Iterator[Thread]:
             thread = Thread()
             thread.contents = Fragments(
                 _contents(thread_dict.get('first_post_content', [])))
@@ -1430,57 +1470,28 @@ class Browser(object):
 
         return user, threads
 
-    async def get_self_forum_list(self) -> Tuple[str, int, int, int]:
+    async def get_self_forum_list(self) -> AsyncIterator[tuple[str, int, int, int]]:
         """
         获取本人关注贴吧列表
-        get_self_forum_list()
 
-        迭代返回值:
-            tieba_name: str 贴吧名
-            fid: int 贴吧id
-            level: int 等级
-            exp: int 经验值
+        Yields:
+            AsyncIterator[tuple[str, int, int, int]]: 贴吧名/贴吧id/等级/经验值
         """
 
         user = await self.get_self_info()
 
-        def _parse_forum_info(forum_dict: dict[str, str]) -> Tuple[str, int, int, int]:
-            """
-            解析关注贴吧的信息
-            _parse_forum_info(forum_dict)
-
-            参数:
-                forum_dict: dict 关注贴吧信息
-
-            返回值:
-                tieba_name: str 贴吧名
-                fid: int 贴吧id
-                level: int 等级
-                exp: int 经验值
-            """
-
-            tieba_name = forum_dict['name']
-            fid = int(forum_dict['id'])
-            level = int(forum_dict['level_id'])
-            exp = int(forum_dict['cur_score'])
-            return tieba_name, fid, level, exp
-
-        async def _get_pn_forum_list(pn: int):
+        async def _get_pn_forum_list(pn: int) -> AsyncIterator[tuple[str, int, int, int]]:
             """
             获取pn页的关注贴吧信息
-            _get_pn_forum_list(pn)
 
-            参数:
-                pn: int 页数
+            Args:
+                pn (int): 页数
 
-            闭包参数:
-                user
+            Closure Args:
+                user (BasicUserInfo): 本人信息
 
-            迭代返回值:
-                tieba_name: str 贴吧名
-                fid: int 贴吧id
-                level: int 等级
-                exp: int 经验值
+            Yields:
+                AsyncIterator[tuple[str, int, int, int]]: 贴吧名/贴吧id/等级/经验值
             """
 
             payload = {'BDUSS': self.sessions.BDUSS,
@@ -1509,6 +1520,23 @@ class Browser(object):
             nonofficial_forums = forum_list.get('non-gconforum', [])
             official_forums = forum_list.get('gconforum', [])
 
+            def _parse_forum_info(forum_dict: dict[str, str]) -> tuple[str, int, int, int]:
+                """
+                解析关注贴吧的信息
+
+                Args:
+                    forum_dict (dict[str, str]): 关注贴吧信息
+
+                Returns:
+                    tuple[str, int, int, int]: 贴吧名/贴吧id/等级/经验值
+                """
+
+                tieba_name = forum_dict['name']
+                fid = int(forum_dict['id'])
+                level = int(forum_dict['level_id'])
+                exp = int(forum_dict['cur_score'])
+                return tieba_name, fid, level, exp
+
             for forum_dict in nonofficial_forums:
                 yield _parse_forum_info(forum_dict)
             for forum_dict in official_forums:
@@ -1524,19 +1552,15 @@ class Browser(object):
             except RuntimeError:
                 return
 
-    async def get_forum_list(self, user_id: int) -> Tuple[str, int, int, int]:
+    async def get_forum_list(self, user_id: int) -> AsyncIterator[tuple[str, int, int, int]]:
         """
         获取用户关注贴吧列表
-        get_forum_list(user_id)
 
-        参数:
-            user_id: int 用户user_id
+        Args:
+            user_id (int): 用户user_id
 
-        迭代返回值:
-            tieba_name: str 贴吧名
-            fid: int 贴吧id
-            level: int 等级
-            exp: int 经验值
+        Yields:
+            AsyncIterator[tuple[str, int, int, int]]: 贴吧名/贴吧id/等级/经验值
         """
 
         payload = {'BDUSS': self.sessions.BDUSS,
@@ -1562,16 +1586,15 @@ class Browser(object):
             log.warning(f"Failed to get forumlist of {user_id}. reason:{err}")
             return
 
-    async def get_bawu_dict(self, tieba_name: str) -> dict[str, list[BasicUserInfo]]:
+    async def get_bawu_dict(self, tieba_name: str) -> Coroutine[None, None, dict[str, list[BasicUserInfo]]]:
         """
         获取吧务信息
-        get_bawu_dict(tieba_name)
 
-        参数:
-            tieba_name: str 贴吧名
+        Args:
+            tieba_name (str): 贴吧名
 
-        返回值:
-            bawu_dict: dict[str,list[BasicUserInfo]] {吧务类型:吧务信息列表}
+        Returns:
+            Coroutine[None, None, dict[str, list[BasicUserInfo]]]: {吧务类型:吧务信息列表}
         """
 
         common = CommonReq_pb2.CommonReq()
@@ -1613,16 +1636,15 @@ class Browser(object):
 
         return bawu_dict
 
-    async def get_tab_map(self, tieba_name: str) -> Dict[str, int]:
+    async def get_tab_map(self, tieba_name: str) -> Coroutine[None, None, dict[str, int]]:
         """
-        get_tab_map()
         获取分区名到分区id的映射字典
 
-        参数:
-            tieba_name: str 贴吧名
+        Args:
+            tieba_name (str): 贴吧名
 
-        返回值:
-            tab_map: Dict[str, int] 分区名:分区id
+        Returns:
+            Coroutine[None, None, dict[str, int]]: {分区名:分区id}
         """
 
         common = CommonReq_pb2.CommonReq()
@@ -1655,33 +1677,29 @@ class Browser(object):
 
         return tab_map
 
-    async def get_recom_list(self, tieba_name: str):
+    async def get_recom_list(self, tieba_name: str) -> AsyncIterator[tuple[Thread, int]]:
         """
         获取大吧主推荐帖列表
-        get_recom_list(tieba_name)
 
-        参数:
-            tieba_name: str 贴吧名
+        Args:
+            tieba_name (str): 贴吧名
 
-        迭代返回值:
-            thread: Thread 被推荐帖子信息
-            add_view: int 新增浏览量
+        Yields:
+            AsyncIterator[tuple[Thread, int]]: 被推荐帖子信息/新增浏览量
         """
 
-        async def _get_pn_recom_list(pn: int):
+        async def _get_pn_recom_list(pn: int) -> AsyncIterator[tuple[Thread, int]]:
             """
             获取pn页的大吧主推荐帖列表
-            _get_pn_recom_list(pn)
 
-            参数:
-                pn: int 页数
+            Args:
+                pn (int): 页码
 
-            闭包参数:
-                tieba_name
+            Closure Args:
+                tieba_name (str): 贴吧名
 
-            迭代返回值:
-                thread: Thread 被推荐帖子信息
-                add_view: int 新增浏览量
+            Yields:
+                AsyncIterator[tuple[Thread, int]]: 被推荐帖子信息/新增浏览量
             """
 
             payload = {'BDUSS': self.sessions.BDUSS,
@@ -1756,17 +1774,15 @@ class Browser(object):
             except RuntimeError:
                 return
 
-    async def get_recom_status(self, tieba_name: str):
+    async def get_recom_status(self, tieba_name: str) -> Coroutine[None, None, tuple[int, int]]:
         """
         获取大吧主推荐功能的月度配额状态
-        get_recom_status(tieba_name)
 
-        参数:
-            tieba_name: str 贴吧名
+        Args:
+            tieba_name (str): 贴吧名
 
-        返回值:
-            total_recom_num: int 本月总推荐配额
-            used_recom_num: int 本月已使用的推荐配额
+        Returns:
+            Coroutine[None, None, tuple[int, int]]: 本月总推荐配额/本月已使用的推荐配额
         """
 
         payload = {'BDUSS': self.sessions.BDUSS,
@@ -1795,38 +1811,30 @@ class Browser(object):
 
         return total_recom_num, used_recom_num
 
-    async def get_rank(self, tieba_name: str, level_thre: int = 4) -> Tuple[str, int, int, bool]:
+    async def get_rank(self, tieba_name: str, level_thre: int = 4) -> AsyncIterator[tuple[str, int, int, bool]]:
         """
         获取贴吧等级排行榜
-        get_rank(tieba_name,level_thre=4)
 
-        参数:
-            tieba_name: str 贴吧名
-            level_thre: int 等级下限阈值，等级大于等于该值的用户都会被采集
+        Args:
+            tieba_name (str): 贴吧名
+            level_thre (int, optional): 等级下限阈值 等级大于等于该值的用户都会被采集. Defaults to 4.
 
-        迭代返回值:
-            user_name: str 用户名
-            level: int 等级
-            exp: int 经验值
-            is_vip: bool 是否vip
+        Returns:
+            AsyncIterator[tuple[str, int, int, bool]]: 用户名/等级/经验值/是否vip
         """
 
-        async def _get_pn_rank(pn: int) -> Tuple[str, int, int, bool]:
+        async def _get_pn_rank(pn: int) -> AsyncIterator[tuple[str, int, int, bool]]:
             """
             获取pn页的排行
-            _get_pn_rank(pn)
 
-            参数:
-                pn: int 页数
+            Args:
+                pn (int): 页码
 
-            闭包参数:
-                tieba_name
+            Closure Args:
+                tieba_name (str): 贴吧名
 
-            返回值:
-                user_name: str 用户名
-                level: int 等级
-                exp: int 经验值
-                is_vip: bool 是否vip
+            Yields:
+                AsyncIterator[tuple[str, int, int, bool]]: 用户名/等级/经验值/是否vip
             """
 
             try:
@@ -1864,35 +1872,29 @@ class Browser(object):
             except RuntimeError:
                 return
 
-    async def get_member(self, tieba_name: str) -> Tuple[str, str, int]:
+    async def get_member(self, tieba_name: str) -> AsyncIterator[tuple[str, str, int]]:
         """
         获取贴吧最新关注用户列表
-        get_member(tieba_name)
 
-        参数:
-            tieba_name: str 贴吧名
+        Args:
+            tieba_name (str): 贴吧名
 
-        迭代返回值:
-            user_name: str 用户名
-            portrait: str
-            level: int 等级
+        Yields:
+            AsyncIterator[tuple[str, str, int]]: 用户名/portrait/等级
         """
 
-        async def _get_pn_member(pn: int) -> Tuple[str, str, int]:
+        async def _get_pn_member(pn: int) -> AsyncIterator[tuple[str, str, int]]:
             """
             获取pn页的最新关注用户列表
-            _get_pn_member(pn)
 
-            参数:
-                pn: int 页数
+            Args:
+                pn (int): 页数
 
-            闭包参数:
-                tieba_name
+            Closure Args:
+                tieba_name (str): 贴吧名
 
-            返回值:
-                user_name: str 用户名
-                portrait: str
-                level: int 等级
+            Yields:
+                AsyncIterator[tuple[str, str, int]]: 用户名/portrait/等级
             """
 
             try:
@@ -1924,16 +1926,15 @@ class Browser(object):
             except RuntimeError:
                 return
 
-    async def like_forum(self, tieba_name: str) -> bool:
+    async def like_forum(self, tieba_name: str) -> Coroutine[None, None, bool]:
         """
         关注吧
-        like_forum(tieba_name)
 
-        参数:
-            tieba_name :str 贴吧名
+        Args:
+            tieba_name (str): 贴吧名
 
-        返回值:
-            flag: bool 操作是否成功
+        Returns:
+            Coroutine[None, None, bool]: 操作是否成功
         """
 
         try:
@@ -1958,16 +1959,15 @@ class Browser(object):
         log.info(f"Successfully like forum {tieba_name}")
         return True
 
-    async def sign_forum(self, tieba_name: str) -> bool:
+    async def sign_forum(self, tieba_name: str) -> Coroutine[None, None, bool]:
         """
         签到吧
-        sign_forum(tieba_name)
 
-        参数:
-            tieba_name :str 贴吧名
+        Args:
+            tieba_name (str): 贴吧名
 
-        返回值:
-            flag: bool 签到是否成功，不考虑cash的问题
+        Returns:
+            Coroutine[None, None, bool]: 签到是否成功 不考虑cash的问题
         """
 
         try:
@@ -2009,22 +2009,21 @@ class Browser(object):
         log.info(f"Successfully sign forum {tieba_name}. cash:{cash}")
         return True
 
-    async def add_post(self, tieba_name: str, tid: int, content: str) -> bool:
+    async def add_post(self, tieba_name: str, tid: int, content: str) -> Coroutine[None, None, bool]:
         """
         回帖
-        add_post(tieba_name,tid,content)
 
-        注意：
-        本接口仍处于测试阶段，有一定永封风险！请谨慎使用！
-        已通过的测试：cookie白板号（无头像无关注吧无发帖记录，2元/个）通过异地阿里云ip出口以3分钟的发送间隔发15条回复不吞楼不封号
+        Args:
+            tieba_name (str): 要回复的主题帖所在吧名
+            tid (int): 要回复的主题帖的tid
+            content (str): 回复内容
 
-        参数:
-            tieba_name: str 要回复的主题帖所在吧名
-            tid: int 要回复的主题帖的tid
-            content: str 回复内容
+        Returns:
+            Coroutine[None, None, bool]: 回帖是否成功
 
-        返回值:
-            flag: bool 回帖是否成功
+        Notice:
+            本接口仍处于测试阶段，有一定永封风险！请谨慎使用！
+            已通过的测试: cookie白板号(无头像无关注吧无发帖记录 2元/个) 通过异地阿里云ip出口以3分钟的发送间隔发15条回复不吞楼不封号
         """
 
         try:
@@ -2092,17 +2091,16 @@ class Browser(object):
         log.info(f"Successfully add post in {tid}")
         return True
 
-    async def set_privacy(self, tid: int, hide: bool = True) -> bool:
+    async def set_privacy(self, tid: int, hide: bool = True) -> Coroutine[None, None, bool]:
         """
         隐藏主题帖
-        set_privacy(tid)
 
-        参数:
-            tid: int 主题帖tid
-            hide: bool 是否设为隐藏
+        Args:
+            tid (int): 主题帖tid
+            hide (bool, optional): True则设为隐藏 False则取消隐藏. Defaults to True.
 
-        返回值:
-            flag: bool 操作是否成功
+        Returns:
+            Coroutine[None, None, bool]: 操作是否成功
         """
 
         posts = self.get_posts(tid)

@@ -49,7 +49,7 @@ if __name__ == '__main__':
                 if args.delete:
                     await brow.del_user_id(args.id)
                 elif args.search:
-                    user = await brow.get_userinfo_weak(args.id)
+                    user = await brow.get_basic_user_info(args.id)
                     print(await brow.mysql.is_user_id_white(args.tieba_name, user.user_id))
                 else:
                     await brow.update_user_id(args.id, args.flag)

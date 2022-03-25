@@ -5,19 +5,19 @@ __all__ = ['MyLogger', 'log']
 import logging
 import logging.handlers
 import sys
-from typing import NoReturn
 
-from .config import SCRIPT_PATH
+from ._config import SCRIPT_PATH
 
 
 class MyLogger(logging.Logger):
     """
-    MyLogger(name=__name__)
-
     自定义的日志记录类
+
+    Args:
+        name (str): 日志文件名(不含扩展名)
     """
 
-    def __init__(self, name: str) -> NoReturn:
+    def __init__(self, name: str) -> None:
         super().__init__(name)
 
         log_dir = SCRIPT_PATH.parent / 'log'

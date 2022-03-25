@@ -6,10 +6,10 @@ import time
 import traceback
 from collections import OrderedDict
 from types import TracebackType
-from typing import NoReturn, Optional, Tuple, Type
+from typing import Optional, Type
 
 import tiebaBrowser as tb
-from tiebaBrowser.config import SCRIPT_PATH
+from tiebaBrowser._config import SCRIPT_PATH
 
 
 class Timer(object):
@@ -66,7 +66,7 @@ class Listener(object):
             self) if func_name.startswith("cmd")}
         self.timer = Timer(300, 30)
 
-    async def close(self) -> NoReturn:
+    async def close(self) -> None:
         coros = [tieba_dict['admin'].close()
                  for tieba_dict in self.tieba.values()]
         coros.append(self.listener.close())
@@ -85,7 +85,7 @@ class Listener(object):
     async def __aenter__(self) -> "Listener":
         return self
 
-    async def __aexit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[BaseException], exc_tb: Optional[TracebackType]) -> NoReturn:
+    async def __aexit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[BaseException], exc_tb: Optional[TracebackType]) -> None:
         await self.close()
 
     async def run(self):
@@ -97,12 +97,12 @@ class Listener(object):
                 await asyncio.sleep(5)
 
             except asyncio.CancelledError:
-                raise
+                break
             except Exception as err:
                 tb.log.critical(f"Unhandled error:{traceback.format_exc()}")
                 return
 
-    async def scan(self) -> NoReturn:
+    async def scan(self) -> None:
         ats = await self.listener.get_ats()
 
         if ats:
@@ -113,14 +113,14 @@ class Listener(object):
                     break
 
         coros = [self._handle_cmd(at) for at in ats]
-        asyncio.gather(*coros)
+        await asyncio.gather(*coros)
 
-    async def _handle_cmd(self, at) -> NoReturn:
+    async def _handle_cmd(self, at) -> None:
         cmd_type, arg = self._parse_cmd(at.text)
         func = self.func_map.get(cmd_type, self.cmd_default)
         await func(at, arg)
 
-    def _parse_cmd(self, text) -> Tuple[str, str]:
+    def _parse_cmd(self, text) -> tuple[str, str]:
         """
         解析指令
         """
@@ -271,7 +271,7 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        if await tieba_dict['admin'].del_thread(at.tieba_name, at.tid, is_hide=True):
+        if await tieba_dict['admin'].hide_thread(at.tieba_name, at.tid):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     async def cmd_unhide(self, at, arg):
@@ -288,7 +288,7 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        if await tieba_dict['admin'].recover(at.tieba_name, at.tid, is_hide=True):
+        if await tieba_dict['admin'].unhide_thread(at.tieba_name, at.tid):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     async def cmd_drop(self, at, arg):
@@ -385,7 +385,7 @@ class Listener(object):
             tb.log.warning("Failed to ping:{at.tieba_name}")
             return
 
-        if await tieba_dict['admin'].mysql.update_tid(at.tieba_name, at.tid, True) and await tieba_dict['admin'].del_thread(at.tieba_name, at.tid, is_hide=True):
+        if await tieba_dict['admin'].mysql.update_tid(at.tieba_name, at.tid, True) and await tieba_dict['admin'].hide_thread(at.tieba_name, at.tid):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     async def cmd_unwater(self, at, arg):
@@ -406,7 +406,7 @@ class Listener(object):
             tb.log.warning("Failed to ping:{at.tieba_name}")
             return
 
-        if await tieba_dict['admin'].mysql.del_tid(at.tieba_name, at.tid) and await tieba_dict['admin'].recover(at.tieba_name, at.tid, is_hide=True):
+        if await tieba_dict['admin'].mysql.del_tid(at.tieba_name, at.tid) and await tieba_dict['admin'].unhide_thread(at.tieba_name, at.tid):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     async def cmd_water_restrict(self, at, mode):
@@ -434,7 +434,7 @@ class Listener(object):
             if await tieba_dict['admin'].mysql.update_tid(at.tieba_name, 0, False):
                 await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
             async for tid in tieba_dict['admin'].mysql.get_tids(at.tieba_name):
-                if await tieba_dict['admin'].recover(at.tieba_name, tid, is_hide=True):
+                if await tieba_dict['admin'].unhide_thread(at.tieba_name, tid):
                     await tieba_dict['admin'].mysql.update_tid(at.tieba_name, tid, False)
 
     async def cmd_block(self, at, id):
@@ -453,7 +453,7 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
-        user = await self.listener.get_userinfo(id)
+        user = await self.listener.get_user_info(id)
 
         if await tieba_dict['admin'].block(at.tieba_name, user, day=10):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
@@ -474,7 +474,7 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
-        user = await self.listener.get_userinfo(id)
+        user = await self.listener.get_user_info(id)
 
         if await tieba_dict['admin'].block(at.tieba_name, user, day=3):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
@@ -495,7 +495,7 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
-        user = await self.listener.get_userinfo(id)
+        user = await self.listener.get_user_info(id)
 
         if await tieba_dict['admin'].unblock(at.tieba_name, user):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
@@ -516,7 +516,7 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
-        user = await self.listener.get_userinfo_weak(id)
+        user = await self.listener.get_basic_user_info(id)
 
         if await tieba_dict['admin'].blacklist_add(at.tieba_name, user):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
@@ -537,7 +537,7 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
-        user = await self.listener.get_userinfo_weak(id)
+        user = await self.listener.get_basic_user_info(id)
 
         if await tieba_dict['admin'].blacklist_cancel(at.tieba_name, user):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)

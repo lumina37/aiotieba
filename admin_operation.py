@@ -77,9 +77,9 @@ if __name__ == '__main__':
         async with tb.Browser(args.BDUSS_key) as brow:
             user = None
             if args.id:
-                user = await brow.get_userinfo(args.id)
+                user = await brow.get_user_info(args.id)
             if args.user_id:
-                user = await brow.get_userinfo_weak(args.user_id)
+                user = await brow.get_basic_user_info(args.user_id)
             if user and user.portrait:
                 print(user)
                 if args.block:
@@ -92,21 +92,24 @@ if __name__ == '__main__':
                     await brow.blacklist_cancel(tieba_name, user)
 
             tid = args.tid
-            pid = args.pid
-            if tid or pid:
+            if tid:
+                if args.delete:
+                    await brow.del_thread(tieba_name, tid)
                 if args.recover:
-                    await brow.recover(tieba_name, tid, pid)
-                if tid:
-                    if args.delete:
-                        await brow.del_thread(tieba_name, tid, is_hide=False)
-                    if args.hide:
-                        await brow.del_thread(tieba_name, tid, is_hide=True)
-                    if args.unhide:
-                        await brow.recover(tieba_name, tid, is_hide=True)
-                    if args.good is not None:
-                        await brow.good(tieba_name, tid, args.good)
-                    if args.ungood:
-                        await brow.ungood(tieba_name, tid)
+                    await brow.recover_thread(tieba_name, tid)
+                if args.hide:
+                    await brow.hide_thread(tieba_name, tid)
+                if args.unhide:
+                    await brow.unhide_thread(tieba_name, tid)
+                if args.good is not None:
+                    await brow.good(tieba_name, tid, args.good)
+                if args.ungood:
+                    await brow.ungood(tieba_name, tid)
+
+            pid = args.pid
+            if pid:
+                if args.recover:
+                    await brow.recover_post(tieba_name, pid)
 
             if args.refuse_appeals:
                 await brow.refuse_appeals(tieba_name)

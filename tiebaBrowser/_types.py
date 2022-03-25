@@ -6,28 +6,28 @@ __all__ = ['BasicUserInfo', 'UserInfo',
            ]
 
 import re
-from typing import (Any, Callable, Generic, Iterable, Iterator, Literal,
-                    NoReturn, Optional, TypeVar, Union, final)
+from collections.abc import Callable, Iterable, Iterator
+from typing import Generic, Literal, Optional, TypeVar, Union, final
 
 from google.protobuf.json_format import ParseDict
 
-from .logger import log
+from ._logger import log
 from .tieba_proto import *
 
 TContent = TypeVar('TContent')
 TContainer = TypeVar('TContainer')
 
 
-def _int_prop_check_ignore_none(default_val: int):
+def _int_prop_check_ignore_none(default_val: int) -> Callable:
     """
     装饰器实现对int类型属性的赋值前检查。忽略传入None的异常
 
-    参数:
-        default_val: 传入None时采用的默认值
+    Args:
+        default_val (int): 传入None时采用的默认值
     """
 
-    def wrapper(func) -> Callable[[Any, Any], NoReturn]:
-        def foo(self: Any, new_val: Any) -> NoReturn:
+    def wrapper(func) -> Callable:
+        def foo(self, new_val):
             if new_val:
                 try:
                     new_val = int(new_val)
@@ -44,23 +44,22 @@ def _int_prop_check_ignore_none(default_val: int):
 
 class BasicUserInfo(object):
     """
-    BasicUserInfo()
     基本用户属性
 
-    参数:
-        _id: 用于快速构造UserInfo的自适应参数 输入用户名或portrait或user_id
-        user_proto: User_pb2.User
+    Args:
+        _id (Union[str, int, None]): 用于快速构造UserInfo的自适应参数 输入用户名/portrait/user_id
+        user_proto (User_pb2.User)
 
-    字段:
-        user_name: 发帖用户名
-        nick_name: 发帖人昵称
-        portrait: 用户头像portrait值
-        user_id: 贴吧旧版uid
+    Fields:
+        user_name (str): 发帖用户名
+        nick_name (str): 发帖人昵称
+        portrait (str): 用户头像portrait值
+        user_id (int): 贴吧旧版uid
     """
 
     __slots__ = ['user_name', '_nick_name', '_portrait', '_user_id']
 
-    def __init__(self, _id: Union[str, int, None] = None, user_proto: Optional[User_pb2.User] = None) -> NoReturn:
+    def __init__(self, _id: Union[str, int, None] = None, user_proto: Optional[User_pb2.User] = None) -> None:
         self.user_name = ''
         self._nick_name = ''
         self._portrait = ''
@@ -94,7 +93,7 @@ class BasicUserInfo(object):
         return self._nick_name
 
     @nick_name.setter
-    def nick_name(self, new_nick_name: str) -> NoReturn:
+    def nick_name(self, new_nick_name: str) -> None:
         if self.user_name != new_nick_name:
             self._nick_name = new_nick_name
         else:
@@ -105,7 +104,7 @@ class BasicUserInfo(object):
         return self._portrait
 
     @portrait.setter
-    def portrait(self, new_portrait: str) -> NoReturn:
+    def portrait(self, new_portrait: str) -> None:
         if new_portrait and new_portrait.startswith('tb.'):
             try:
                 self._portrait = re.match('[\w\-_.]+', new_portrait).group(0)
@@ -120,7 +119,7 @@ class BasicUserInfo(object):
 
     @user_id.setter
     @_int_prop_check_ignore_none(0)
-    def user_id(self, new_user_id: int) -> NoReturn:
+    def user_id(self, new_user_id: int) -> None:
         self._user_id = int(new_user_id)
 
     @property
@@ -137,30 +136,30 @@ class BasicUserInfo(object):
 
 class UserInfo(BasicUserInfo):
     """
-    UserInfo()
     用户属性
 
-    参数:
-        _id: Union[str, int, None] 用于快速构造UserInfo的自适应参数 输入用户名或portrait或user_id
-        proto: Optional[User_pb2.User]
+    Args:
+        _id (Union[str, int, None]): 用于快速构造UserInfo的自适应参数 输入用户名或portrait或user_id
+        proto (Optional[User_pb2.User])
 
-    字段:
-        user_name: 发帖用户名
-        nick_name: 发帖人昵称
-        portrait: 用户头像portrait值
-        user_id: 贴吧旧版uid
-        level: 等级
-        gender: 性别（1男2女0未知）
-        is_vip: 是否vip
-        is_god: 是否大神
-        priv_like: 是否公开关注贴吧（1完全可见2好友可见3完全隐藏）
-        priv_reply: 帖子评论权限（1所有人5我的粉丝6我的关注）
+    Fields:
+        user_name (str): 发帖用户名
+        nick_name (str): 发帖人昵称
+        portrait (str): 用户头像portrait值
+        user_id (int): 贴吧旧版uid
+
+        level (int): 等级
+        gender (int): 性别 (1男2女0未知)
+        is_vip (bool): 是否vip
+        is_god (bool): 是否大神
+        priv_like (int): 是否公开关注贴吧 (1完全可见2好友可见3完全隐藏)
+        priv_reply (int): 帖子评论权限 (1所有人5我的粉丝6我的关注)
     """
 
     __slots__ = ['_level', '_gender', 'is_vip',
                  'is_god', '_priv_like', '_priv_reply']
 
-    def __init__(self, _id: Union[str, int, None] = None, user_proto: Optional[User_pb2.User] = None) -> NoReturn:
+    def __init__(self, _id: Union[str, int, None] = None, user_proto: Optional[User_pb2.User] = None) -> None:
         super().__init__(_id, user_proto)
 
         if user_proto:
@@ -186,7 +185,7 @@ class UserInfo(BasicUserInfo):
 
     @level.setter
     @_int_prop_check_ignore_none(0)
-    def level(self, new_level: int) -> NoReturn:
+    def level(self, new_level: int) -> None:
         self._level = int(new_level)
 
     @property
@@ -195,7 +194,7 @@ class UserInfo(BasicUserInfo):
 
     @gender.setter
     @_int_prop_check_ignore_none(0)
-    def gender(self, new_gender: Literal[0, 1, 2]) -> NoReturn:
+    def gender(self, new_gender: Literal[0, 1, 2]) -> None:
         self._gender = int(new_gender)
 
     @property
@@ -204,7 +203,7 @@ class UserInfo(BasicUserInfo):
 
     @priv_like.setter
     @_int_prop_check_ignore_none(3)
-    def priv_like(self, new_priv_like: Literal[1, 2, 3]) -> NoReturn:
+    def priv_like(self, new_priv_like: Literal[1, 2, 3]) -> None:
         self._priv_like = int(new_priv_like)
 
     @property
@@ -213,7 +212,7 @@ class UserInfo(BasicUserInfo):
 
     @priv_reply.setter
     @_int_prop_check_ignore_none(1)
-    def priv_reply(self, new_priv_reply: Literal[1, 5, 6]) -> NoReturn:
+    def priv_reply(self, new_priv_reply: Literal[1, 5, 6]) -> None:
         self._priv_reply = int(new_priv_reply)
 
 
@@ -221,13 +220,14 @@ class Forum(object):
     """
     吧信息
 
-    fid: 吧id
-    name: 吧名
+    Fields:
+        fid (int): 吧id
+        name (str): 吧名
     """
 
     __slots__ = ['fid', 'name']
 
-    def __init__(self, forum_proto) -> NoReturn:
+    def __init__(self, forum_proto) -> None:
         self.fid = forum_proto.id
         self.name = forum_proto.name
 
@@ -236,12 +236,13 @@ class _Fragment(Generic[TContent]):
     """
     内容碎片基类
 
-    _str: 文本内容
+    Fields:
+        _str (str): 文本内容
     """
 
     __slots__ = ['_str']
 
-    def __init__(self, content_proto: Optional[PbContent_pb2.PbContent] = None) -> NoReturn:
+    def __init__(self, content_proto: Optional[PbContent_pb2.PbContent] = None) -> None:
         self._str = ''
 
     def __str__(self) -> str:
@@ -255,69 +256,76 @@ class FragText(_Fragment):
     """
     纯文本碎片
 
-    _str: 文本内容
+    Fields:
+        _str (str): 文本内容
     """
 
     __slots__ = []
 
-    def __init__(self, content_proto: PbContent_pb2.PbContent) -> NoReturn:
+    def __init__(self, content_proto: PbContent_pb2.PbContent) -> None:
         self._str = content_proto.text
-
-
-class FragLink(_Fragment):
-    """
-    链接碎片
-
-    _str: 链接标题
-    link: 链接url
-    """
-
-    __slots__ = ['title', 'link']
-
-    def __init__(self, content_proto: PbContent_pb2.PbContent) -> NoReturn:
-        self._str = content_proto.text
-        self.link = content_proto.link
 
 
 class FragEmoji(_Fragment):
     """
     表情碎片
+
+    Fields:
+        _str (str): 表情注释
     """
 
     __slots__ = []
 
-    def __init__(self, content_proto: PbContent_pb2.PbContent) -> NoReturn:
+    def __init__(self, content_proto: PbContent_pb2.PbContent) -> None:
         self._str = content_proto.c
 
 
 class FragImage(_Fragment):
     """
-    音频碎片
+    图像碎片
 
-    src: 图像源url
-    cdn_src: cdn压缩图像url
-    big_cdn_src: cdn大图url
+    Fields:
+        src (str): 图像源url
+        cdn_src (str): cdn压缩图像url
+        big_cdn_src (str): cdn大图url
     """
 
     __slots__ = ['src', 'cdn_src', 'big_cdn_src']
 
-    def __init__(self, content_proto: PbContent_pb2.PbContent) -> NoReturn:
+    def __init__(self, content_proto: PbContent_pb2.PbContent) -> None:
         self._str = ''
         self.src = content_proto.src
         self.cdn_src = content_proto.cdn_src
         self.big_cdn_src = content_proto.big_cdn_src
 
 
+class FragLink(_Fragment):
+    """
+    链接碎片
+
+    Fields:
+        _str (str): 链接标题
+        link (str): 链接url
+    """
+
+    __slots__ = ['title', 'link']
+
+    def __init__(self, content_proto: PbContent_pb2.PbContent) -> None:
+        self._str = content_proto.text
+        self.link = content_proto.link
+
+
 class FragAt(_Fragment):
     """
     @碎片
 
-    user_id: 被@用户的user_id
+    Fields:
+        user_id (int): 被@用户的user_id
     """
 
     __slots__ = ['user_id']
 
-    def __init__(self, content_proto: PbContent_pb2.PbContent) -> NoReturn:
+    def __init__(self, content_proto: PbContent_pb2.PbContent) -> None:
         self._str = content_proto.text
         self.user_id = content_proto.uid
 
@@ -326,12 +334,13 @@ class FragVoice(_Fragment):
     """
     音频碎片
 
-    voice_md5: 声音md5
+    Fields:
+        voice_md5 (str): 声音md5
     """
 
     __slots__ = ['voice_md5']
 
-    def __init__(self, content_proto: PbContent_pb2.PbContent) -> NoReturn:
+    def __init__(self, content_proto: PbContent_pb2.PbContent) -> None:
         self._str = content_proto.voice_md5
         self.voice_md5 = content_proto.voice_md5
 
@@ -340,13 +349,14 @@ class FragTiebaPlus(_Fragment):
     """
     贴吧+碎片
 
-    _str: 描述文本
-    jump_url: 跳转链接
+    Fields:
+        _str (str): 描述文本
+        jump_url (str): 跳转链接
     """
 
     __slots__ = ['jump_url']
 
-    def __init__(self, content_proto: PbContent_pb2.PbContent) -> NoReturn:
+    def __init__(self, content_proto: PbContent_pb2.PbContent) -> None:
         tiebaplus_proto = content_proto.tiebaplus_info
         self._str = tiebaplus_proto.desc
         self.jump_url = tiebaplus_proto.jump_url
@@ -356,12 +366,13 @@ class FragItem(_Fragment):
     """
     item碎片
 
-    _str: item名称
+    Fields:
+        _str (str): item名称
     """
 
     __slots__ = []
 
-    def __init__(self, content_proto: PbContent_pb2.PbContent) -> NoReturn:
+    def __init__(self, content_proto: PbContent_pb2.PbContent) -> None:
         item_proto = content_proto.item
         self._str = item_proto.item_name
 
@@ -370,18 +381,20 @@ class Fragments(object):
     """
     内容碎片列表
 
-    texts: 纯文本碎片列表
-    imgs: 图像碎片列表
-    emojis: 表情碎片列表
-    ats: @碎片列表
-    voice: 音频碎片
-    tiebapluses: 贴吧+碎片列表
+    Fields:
+        _frags (list[_Fragment]): 所有碎片的混合列表
+        texts (list[FragText]): 纯文本碎片列表
+        emojis (list[FragEmoji]): 表情碎片列表
+        imgs (list[FragImage]): 图像碎片列表
+        ats (list[FragAt]): @碎片列表
+        voice (FragVoice): 音频碎片
+        tiebapluses (list[FragTiebaPlus]): 贴吧+碎片列表
     """
 
     __slots__ = ['_frags', '_text', 'texts', 'imgs',
                  'emojis', 'ats', 'voice', 'tiebapluses']
 
-    def __init__(self, content_protos: Optional[Iterable] = None) -> NoReturn:
+    def __init__(self, content_protos: Optional[Iterable] = None) -> None:
 
         def _init_by_type(content_proto) -> _Fragment:
             _type = content_proto.type
@@ -476,19 +489,20 @@ class _Container(object):
     """
     基本的内容信息
 
-    text: 文本内容
-    contents: 内容碎片列表
+    Fields:
+        text (str): 文本内容
+        contents (Fragments): 内容碎片列表
 
-    fid: 所在吧id
-    tid: 帖子编号
-    pid: 回复编号
-    user: UserInfo 发布者信息
-    author_id: int 发布者user_id
+        fid (int): 所在吧id
+        tid (int): 帖子编号
+        pid (int): 回复编号
+        user (UserInfo): 发布者信息
+        author_id (int): int 发布者user_id
     """
 
     __slots__ = ['_text', 'contents', 'fid', 'tid', 'pid', 'user', 'author_id']
 
-    def __init__(self) -> NoReturn:
+    def __init__(self) -> None:
         self._text = ''
 
     @property
@@ -501,15 +515,18 @@ class _Containers(Generic[TContainer]):
     Threads/Posts/Comments/Ats的泛型基类
     约定取内容的通用接口
 
-    current_pn: 当前页数
-    total_pn: 总页数
+    Fields:
+        _objs (list[TContainer])
 
-    has_next: 是否有下一页
+        current_pn (int): 当前页数
+        total_pn (int): 总页数
+
+        has_next (bool): 是否有下一页
     """
 
     __slots__ = ['current_pn', 'total_pn', '_objs']
 
-    def __init__(self) -> NoReturn:
+    def __init__(self) -> None:
         pass
 
     @final
@@ -545,25 +562,26 @@ class Thread(_Container):
     """
     主题帖信息
 
-    text: 文本内容
-    contents: 内容碎片列表
+    Fields:
+        text (str): 文本内容
+        contents (Fragments): 内容碎片列表
 
-    fid: 所在吧id
-    tid: 帖子编号
-    pid: 回复编号
-    user: UserInfo 发布者信息
-    author_id: int 发布者user_id
+        fid (int): 所在吧id
+        tid (int): 帖子编号
+        pid (int): 回复编号
+        user (UserInfo): 发布者信息
+        author_id (int): int 发布者user_id
 
-    tab_id: 分区编号
-    title: 标题内容
-    vote_info: 投票内容
-    share_origin: 转发来的原帖内容
-    view_num: 浏览量
-    reply_num: 回复数
-    agree: 点赞数
-    disagree: 点踩数
-    create_time: 10位时间戳 创建时间
-    last_time: 10位时间戳 最后回复时间
+        tab_id (int): 分区编号
+        title (str): 标题内容
+        vote_info (VoteInfo): 投票内容
+        share_origin (Union[Thread, None]): 转发来的原帖内容
+        view_num (int): 浏览量
+        reply_num (int): 回复数
+        agree (int): 点赞数
+        disagree (int): 点踩数
+        create_time (int): 10位时间戳 创建时间
+        last_time (int): 10位时间戳 最后回复时间
     """
 
     __slots__ = ['tab_id', 'title', 'view_num', 'reply_num',
@@ -578,7 +596,7 @@ class Thread(_Container):
 
             __slots__ = ['vote_num', 'text', 'image']
 
-            def __init__(self, option_proto: Optional[ThreadInfo_pb2.PollInfo.PollOption] = None) -> NoReturn:
+            def __init__(self, option_proto: Optional[ThreadInfo_pb2.PollInfo.PollOption] = None) -> None:
 
                 if option_proto:
                     self.vote_num = option_proto.num
@@ -590,7 +608,7 @@ class Thread(_Container):
                     self.text = ''
                     self.image = ''
 
-        def __init__(self, vote_proto: Optional[ThreadInfo_pb2.PollInfo] = None) -> NoReturn:
+        def __init__(self, vote_proto: Optional[ThreadInfo_pb2.PollInfo] = None) -> None:
 
             if vote_proto:
                 self.title = vote_proto.title
@@ -607,7 +625,7 @@ class Thread(_Container):
                 self.total_vote = 0
                 self.total_user = 0
 
-    def __init__(self, thread_proto: Optional[ThreadInfo_pb2.ThreadInfo] = None) -> NoReturn:
+    def __init__(self, thread_proto: Optional[ThreadInfo_pb2.ThreadInfo] = None) -> None:
         super().__init__()
 
         if thread_proto:
@@ -662,15 +680,18 @@ class Threads(_Containers[Thread]):
     """
     Thread列表
 
-    current_pn: 当前页数
-    total_pn: 总页数
+    Fields:
+        _objs (list[Thread])
 
-    has_next: 是否有下一页
+        current_pn (int): 当前页数
+        total_pn (int): 总页数
+
+        has_next (bool): 是否有下一页
     """
 
     __slots__ = ['forum', 'tab_map']
 
-    def __init__(self, threads_proto: Optional[FrsPageResIdl_pb2.FrsPageResIdl] = None) -> NoReturn:
+    def __init__(self, threads_proto: Optional[FrsPageResIdl_pb2.FrsPageResIdl] = None) -> None:
 
         if threads_proto:
 
@@ -714,29 +735,30 @@ class Post(_Container):
     """
     楼层信息
 
-    text: 文本内容
-    contents: 内容碎片列表
-    sign: 小尾巴
-    comments: 高赞楼中楼
+    Fields:
+        text (str): 文本内容
+        contents (Fragments): 内容碎片列表
+        sign (Fragments): 小尾巴
+        comments (list[Comment]): 高赞楼中楼
 
-    fid: 所在吧id
-    tid: 帖子编号
-    pid: 回复编号
-    user: UserInfo 发布者信息
-    author_id: int 发布者user_id
+        fid (int): 所在吧id
+        tid (int): 帖子编号
+        pid (int): 回复编号
+        user (UserInfo): 发布者信息
+        author_id (int): int 发布者user_id
 
-    floor: 楼层数
-    reply_num: 楼中楼回复数
-    agree: 点赞数
-    disagree: 点踩数
-    create_time: 10位时间戳，创建时间
-    is_thread_owner: 是否楼主
+        floor (int): 楼层数
+        reply_num (int): 楼中楼数
+        agree (int): 点赞数
+        disagree (int): 点踩数
+        create_time (int): 10位时间戳，创建时间
+        is_thread_owner (bool): 是否楼主
     """
 
     __slots__ = ['sign', 'comments', 'floor', 'reply_num',
                  'agree', 'disagree', 'create_time', 'is_thread_owner']
 
-    def __init__(self, post_proto: Optional[Post_pb2.Post] = None) -> NoReturn:
+    def __init__(self, post_proto: Optional[Post_pb2.Post] = None) -> None:
         super().__init__()
 
         if post_proto:
@@ -782,15 +804,18 @@ class Posts(_Containers[Post]):
     """
     Post列表
 
-    current_pn: 当前页数
-    total_pn: 总页数
+    Fields:
+        _objs (list[Post])
 
-    has_next: 是否有下一页
+        current_pn (int): 当前页数
+        total_pn (int): 总页数
+
+        has_next (bool): 是否有下一页
     """
 
     __slots__ = ['forum', 'thread']
 
-    def __init__(self, posts_proto: Optional[PbPageResIdl_pb2.PbPageResIdl] = None) -> NoReturn:
+    def __init__(self, posts_proto: Optional[PbPageResIdl_pb2.PbPageResIdl] = None) -> None:
 
         if posts_proto:
             data_proto = posts_proto.data
@@ -821,24 +846,24 @@ class Posts(_Containers[Post]):
 class Comment(_Container):
     """
     楼中楼信息
+    Fields:
+        text (str): 文本内容
+        contents (Fragments): 内容碎片列表
 
-    text: 文本内容
-    contents: 内容碎片列表
+        fid (int): 所在吧id
+        tid (int): 帖子编号
+        pid (int): 回复编号
+        user (UserInfo): 发布者信息
+        author_id (int): int 发布者user_id
 
-    fid: 所在吧id
-    tid: 帖子编号
-    pid: 回复编号
-    user: UserInfo 发布者信息
-    author_id: int 发布者user_id
-
-    agree: 点赞数
-    disagree: 点踩数
-    create_time: 10位时间戳，创建时间
+        agree (int): 点赞数
+        disagree (int): 点踩数
+        create_time (int): 10位时间戳，创建时间
     """
 
     __slots__ = ['agree', 'disagree', 'create_time']
 
-    def __init__(self, comment_proto: Optional[SubPostList_pb2.SubPostList] = None) -> NoReturn:
+    def __init__(self, comment_proto: Optional[SubPostList_pb2.SubPostList] = None) -> None:
         super().__init__()
 
         if comment_proto:
@@ -869,14 +894,18 @@ class Comments(_Containers[Comment]):
     """
     Comment列表
 
-    current_pn: 当前页数
-    total_pn: 总页数
-    has_next: 是否有下一页
+    Fields:
+        _objs (list[Comment])
+
+        current_pn (int): 当前页数
+        total_pn (int): 总页数
+
+        has_next (bool): 是否有下一页
     """
 
     __slots__ = ['forum', 'thread', 'post']
 
-    def __init__(self, comments_proto: Optional[PbFloorResIdl_pb2.PbFloorResIdl] = None) -> NoReturn:
+    def __init__(self, comments_proto: Optional[PbFloorResIdl_pb2.PbFloorResIdl] = None) -> None:
 
         if comments_proto:
             data_proto = comments_proto.data
@@ -906,19 +935,20 @@ class At(object):
     """
     @信息
 
-    text: 文本
+    Fields:
+        text (str): 文本
 
-    tieba_name: 所在贴吧名
-    tid: 帖子编号
-    pid: 回复编号
-    user: UserInfo 发布者信息
+        tieba_name (str): 所在贴吧名
+        tid (int): 帖子编号
+        pid (int): 回复编号
+        user (UserInfo): 发布者信息
 
-    create_time: 10位时间戳，创建时间
+        create_time (int): 10位时间戳，创建时间
     """
 
     __slots__ = ['tieba_name', 'tid', 'pid', 'user', 'text', 'create_time']
 
-    def __init__(self, tieba_name: str = '', tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), text: str = '', create_time: int = 0) -> NoReturn:
+    def __init__(self, tieba_name: str = '', tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), text: str = '', create_time: int = 0) -> None:
         self.text = text
 
         self.tieba_name = tieba_name
@@ -933,11 +963,12 @@ class Ats(_Containers[At]):
     """
     At列表
 
-    current_pn: 当前页数
-    has_next: 是否有下一页
+    Fields:
+        current_pn (int): 当前页数
+        has_next (bool): 是否有下一页
     """
 
-    def __init__(self, ats_dict: Optional[dict] = None) -> NoReturn:
+    def __init__(self, ats_dict: Optional[dict] = None) -> None:
 
         def _init_obj(at_dict: dict) -> At:
             try:
