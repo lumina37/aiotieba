@@ -72,7 +72,6 @@ async def stat_rank(tieba_name):
 
         rank_db_proto = StatDatabase_pb2.RankUserDatabase()
         async for row in brow.get_rank(tieba_name):
-            print(row)
             user = rank_db_proto.users.add()
             user.user_name = row[0]
             user.level = row[1]
@@ -172,7 +171,8 @@ async def collect_risk_user(tieba_name):
 
 
 async def main():
-    await stat_rank('asoul')
+    #await stat_rank('asoul')
+    await collect_risk_user('asoul')
 
 
 if __name__ == "__main__":

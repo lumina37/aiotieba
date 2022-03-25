@@ -42,7 +42,7 @@ class Sessions(object):
         self._timeout = aiohttp.ClientTimeout(
             connect=5, sock_connect=3, sock_read=10)
         self._connector = aiohttp.TCPConnector(
-            verify_ssl=False, keepalive_timeout=90, limit=None, family=socket.AF_INET)
+            verify_ssl=False, ttl_dns_cache=600, keepalive_timeout=90, limit=None, family=socket.AF_INET)
 
         # Init app client
         app_headers = {aiohttp.hdrs.USER_AGENT: 'bdtb for Android 12.22.1.0',
