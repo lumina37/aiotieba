@@ -1,6 +1,12 @@
 # Tieba-Manager
 
-[百度贴吧接口合集](https://github.com/Starry-OvO/Tieba-Manager/blob/main/tiebaBrowser/api.py) / [云审查工具](https://github.com/Starry-OvO/Tieba-Manager/blob/main/cloud_review_soulknight.py) / [指令管理器](https://github.com/Starry-OvO/Tieba-Manager/blob/main/admin_listen.py) / [爬虫工具](https://github.com/Starry-OvO/Tieba-Manager/blob/main/spider.py)
+[![license](https://badgen.net/github/license/Starry-OvO/Tieba-Manager?icon=github)](https://github.com/Starry-OvO/Tieba-Manager/blob/main/LICENSE)
+[![release](https://badgen.net/github/release/Starry-OvO/Tieba-Manager?icon=github)](https://github.com/Starry-OvO/Tieba-Manager/releases)
+
++ [百度贴吧接口合集](https://github.com/Starry-OvO/Tieba-Manager/blob/main/tiebaBrowser/api.py)
++ [云审查工具](https://github.com/Starry-OvO/Tieba-Manager/blob/main/cloud_review_soulknight.py)
++ [指令管理器](https://github.com/Starry-OvO/Tieba-Manager/blob/main/admin_listen.py)
++ [爬虫工具](https://github.com/Starry-OvO/Tieba-Manager/blob/main/spider.py)
 
 ## 功能概览
 
@@ -83,10 +89,10 @@ asyncio.run(main())
 
 ## 若要开启云审查功能
 
-+ 在`config/config.json`中配置`MySQL`连接。你需要一个数据库用来缓存通过检测的回复的pid以及记录黑、白名单用户
-+ 在`config/config.json`中配置`tieba_name_mapping`。你需要为每个贴吧设置对应的英文名以方便建立数据库
-+ 使用函数`my_cloud_review.mysql.init_database()`一键建库
-+ 自定义审查行为：请参照我给出的例子自己编程修改`cloud_review_soulknight.py`，这是被实际应用于`元气骑士吧`的云审查脚本，注释比较规范全面，请自行理解各api的功能
++ 在`config/config.json`中配置`MySQL`字段。你需要一个数据库用来缓存通过检测的回复的pid以及记录黑、白名单用户
++ 在`config/config.json`中配置`tieba_name_mapping`字段。你需要为每个贴吧设置对应的英文名以方便建立数据库
++ 使用函数[`MySQL.init_database()`](https://github.com/Starry-OvO/Tieba-Manager/blob/b887e670dba0323b54e6ca4955962778bd34c3a9/tiebaBrowser/mysql.py#L54)一键建库
++ 自定义审查行为：请参照我给出的例子自己编程修改[`cloud_review_soulknight.py`](https://github.com/Starry-OvO/Tieba-Manager/blob/main/cloud_review_soulknight.py)，这是被实际应用于[`元气骑士吧`](https://tieba.baidu.com/f?ie=utf-8&kw=%E5%85%83%E6%B0%94%E9%AA%91%E5%A3%AB)的云审查脚本，注释比较规范全面，请自行理解各api的功能
 
 ## 附加说明
 

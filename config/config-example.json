@@ -1,9 +1,9 @@
 {
     "BDUSS": {
-        "default": ""
+        "default": "PUT YOUR BDUSS HERE"
     },
     "STOKEN": {
-        "default": ""
+        "default": "OPTIONAL"
     },
     "MySQL": {
         "host": "",
