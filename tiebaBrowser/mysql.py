@@ -34,32 +34,32 @@ class MySQL(object):
         db_name (str, optional): 连接的数据库名. Defaults to 'tieba_cloud_review'.
     """
 
-    __slots__ = ['db_name', 'conn', 'cursor']
+    __slots__ = ['db_name', '_conn', '_cursor']
 
     def __init__(self, db_name: str = 'tieba_cloud_review') -> None:
 
         self.db_name = db_name
 
         try:
-            self.conn = pymysql.connect(**config['MySQL'], database=db_name)
-            self.cursor = self.conn.cursor()
+            self._conn = pymysql.connect(**config['MySQL'], database=db_name)
+            self._cursor = self._conn.cursor()
         except pymysql.Error:
             log.warning(f"Cannot link to the database {db_name}!")
             self.init_database()
 
     async def close(self) -> None:
-        self.conn.commit()
-        self.conn.close()
+        self._conn.commit()
+        self._conn.close()
 
     async def init_database(self) -> None:
         """
         初始化数据库
         """
 
-        self.conn = pymysql.connect(**config['MySQL'])
-        self.cursor = self.conn.cursor()
-        self.cursor.execute(f"CREATE DATABASE {self.db_name}")
-        self.cursor.execute(f"USE {self.db_name}")
+        self._conn = pymysql.connect(**config['MySQL'])
+        self._cursor = self._conn.cursor()
+        self._cursor.execute(f"CREATE DATABASE {self.db_name}")
+        self._cursor.execute(f"USE {self.db_name}")
 
         for tieba_name in config['tieba_name_mapping'].keys():
             await self.create_table_pid_whitelist(tieba_name)
@@ -76,7 +76,7 @@ class MySQL(object):
         """
 
         try:
-            self.conn.ping(reconnect=True)
+            self._conn.ping(reconnect=True)
         except pymysql.Error:
             return False
         else:
@@ -91,12 +91,12 @@ class MySQL(object):
             tieba_name (str): 贴吧名
         """
 
-        self.cursor.execute(
+        self._cursor.execute(
             f"SHOW TABLES LIKE 'pid_whitelist_{tieba_name_eng}'")
-        if not self.cursor.fetchone():
-            self.cursor.execute(
+        if not self._cursor.fetchone():
+            self._cursor.execute(
                 f"CREATE TABLE pid_whitelist_{tieba_name_eng} (pid BIGINT PRIMARY KEY, record_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)")
-            self.cursor.execute(f"""CREATE EVENT event_auto_del_pid_whitelist_{tieba_name_eng}
+            self._cursor.execute(f"""CREATE EVENT event_auto_del_pid_whitelist_{tieba_name_eng}
             ON SCHEDULE
             EVERY 1 DAY STARTS '2000-01-01 00:00:00'
             DO
@@ -116,13 +116,13 @@ class MySQL(object):
         """
 
         try:
-            self.cursor.execute(
+            self._cursor.execute(
                 f"REPLACE INTO pid_whitelist_{tieba_name_eng} VALUES ({pid},DEFAULT)")
         except pymysql.Error:
             log.warning(f"MySQL Error: Failed to insert {pid}!")
             return False
         else:
-            self.conn.commit()
+            self._conn.commit()
             return True
 
     @translate_tieba_name
@@ -139,13 +139,13 @@ class MySQL(object):
         """
 
         try:
-            self.cursor.execute(
+            self._cursor.execute(
                 f"SELECT NULL FROM pid_whitelist_{tieba_name_eng} WHERE pid={pid}")
         except pymysql.Error:
             log.warning(f"MySQL Error: Failed to select {pid}!")
             return False
         else:
-            return True if self.cursor.fetchone() else False
+            return True if self._cursor.fetchone() else False
 
     @translate_tieba_name
     async def del_pid(self, tieba_name_eng: str, pid: int) -> Coroutine[None, None, bool]:
@@ -161,7 +161,7 @@ class MySQL(object):
         """
 
         try:
-            self.cursor.execute(
+            self._cursor.execute(
                 f"DELETE FROM pid_whitelist_{tieba_name_eng} WHERE pid={pid}")
         except pymysql.Error:
             log.warning(f"MySQL Error: Failed to delete {pid}!")
@@ -169,7 +169,7 @@ class MySQL(object):
         else:
             log.info(
                 f"Successfully deleted {pid} from table of {tieba_name_eng}")
-            self.conn.commit()
+            self._conn.commit()
             return True
 
     @translate_tieba_name
@@ -186,14 +186,14 @@ class MySQL(object):
         """
 
         try:
-            self.cursor.execute(
+            self._cursor.execute(
                 f"DELETE FROM pid_whitelist_{tieba_name_eng} WHERE record_time>(CURRENT_TIMESTAMP() + INTERVAL -{hour} HOUR)")
         except pymysql.Error:
             log.warning(
                 f"MySQL Error: Failed to delete pid in pid_whitelist_{tieba_name_eng}")
             return False
         else:
-            self.conn.commit()
+            self._conn.commit()
             log.info(
                 f"Successfully deleted pid in pid_whitelist_{tieba_name_eng} within {hour} hour(s)")
             return True
@@ -207,12 +207,12 @@ class MySQL(object):
             tieba_name (str): 贴吧名
         """
 
-        self.cursor.execute(
+        self._cursor.execute(
             f"SHOW TABLES LIKE 'tid_water_{tieba_name_eng}'")
-        if not self.cursor.fetchone():
-            self.cursor.execute(
+        if not self._cursor.fetchone():
+            self._cursor.execute(
                 f"CREATE TABLE tid_water_{tieba_name_eng} (tid BIGINT PRIMARY KEY, is_hide BOOL NOT NULL DEFAULT TRUE, record_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)")
-            self.cursor.execute(f"""CREATE EVENT event_auto_del_tid_water_{tieba_name_eng}
+            self._cursor.execute(f"""CREATE EVENT event_auto_del_tid_water_{tieba_name_eng}
             ON SCHEDULE
             EVERY 1 DAY STARTS '2000-01-01 00:00:00'
             DO
@@ -232,7 +232,7 @@ class MySQL(object):
         """
 
         try:
-            self.cursor.execute(
+            self._cursor.execute(
                 f"REPLACE INTO tid_water_{tieba_name_eng} VALUES ({tid},{mode},DEFAULT)")
         except pymysql.Error:
             log.warning(f"MySQL Error: Failed to insert {tid}!")
@@ -240,7 +240,7 @@ class MySQL(object):
         else:
             log.info(
                 f"Successfully add {tid} to table of {tieba_name_eng}. mode:{mode}")
-            self.conn.commit()
+            self._conn.commit()
             return True
 
     @translate_tieba_name
@@ -257,13 +257,13 @@ class MySQL(object):
         """
 
         try:
-            self.cursor.execute(
+            self._cursor.execute(
                 f"SELECT is_hide FROM tid_water_{tieba_name_eng} WHERE tid={tid}")
         except pymysql.Error:
             log.warning(f"MySQL Error: Failed to select {tid}!")
             return None
         else:
-            res_tuple = self.cursor.fetchone()
+            res_tuple = self._cursor.fetchone()
             if res_tuple:
                 return True if res_tuple[0] else False
             else:
@@ -282,7 +282,7 @@ class MySQL(object):
         """
 
         try:
-            self.cursor.execute(
+            self._cursor.execute(
                 f"DELETE FROM tid_water_{tieba_name_eng} WHERE tid={tid}")
         except pymysql.Error:
             log.warning(f"MySQL Error: Failed to delete {tid}!")
@@ -290,7 +290,7 @@ class MySQL(object):
         else:
             log.info(
                 f"Successfully deleted {tid} from table of {tieba_name_eng}")
-            self.conn.commit()
+            self._conn.commit()
             return True
 
     @translate_tieba_name
@@ -309,14 +309,14 @@ class MySQL(object):
 
         for i in range(sys.maxsize):
             try:
-                self.cursor.execute(
+                self._cursor.execute(
                     f"SELECT tid FROM tid_water_{tieba_name_eng} WHERE is_hide=TRUE LIMIT {batch_size} OFFSET {i * batch_size}")
             except pymysql.Error:
                 log.warning(
                     f"MySQL Error: Failed to get tids in {tieba_name_eng}!")
                 return
             else:
-                tid_list = self.cursor.fetchall()
+                tid_list = self._cursor.fetchall()
                 for tid in tid_list:
                     yield tid[0]
                 if len(tid_list) != batch_size:
@@ -331,9 +331,9 @@ class MySQL(object):
             tieba_name (str): 贴吧名
         """
 
-        self.cursor.execute(f"SHOW TABLES LIKE 'user_id_{tieba_name_eng}'")
-        if not self.cursor.fetchone():
-            self.cursor.execute(
+        self._cursor.execute(f"SHOW TABLES LIKE 'user_id_{tieba_name_eng}'")
+        if not self._cursor.fetchone():
+            self._cursor.execute(
                 f"CREATE TABLE user_id_{tieba_name_eng} (user_id BIGINT PRIMARY KEY, is_white BOOL NOT NULL DEFAULT TRUE, record_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP)")
 
     @translate_tieba_name
@@ -348,7 +348,7 @@ class MySQL(object):
         """
 
         try:
-            self.cursor.execute(
+            self._cursor.execute(
                 f"REPLACE INTO user_id_{tieba_name_eng} VALUES ({user_id},{mode},DEFAULT)")
         except pymysql.Error:
             log.warning(f"MySQL Error: Failed to insert {user_id}!")
@@ -356,7 +356,7 @@ class MySQL(object):
         else:
             log.info(
                 f"Successfully updated {user_id} to table of {tieba_name_eng}. mode:{mode}")
-            self.conn.commit()
+            self._conn.commit()
             return True
 
     @translate_tieba_name
@@ -373,7 +373,7 @@ class MySQL(object):
         """
 
         try:
-            self.cursor.execute(
+            self._cursor.execute(
                 f"DELETE FROM user_id_{tieba_name_eng} WHERE user_id={user_id}")
         except pymysql.Error:
             log.warning(f"MySQL Error: Failed to delete {user_id}!")
@@ -381,7 +381,7 @@ class MySQL(object):
         else:
             log.info(
                 f"Successfully deleted {user_id} from table of {tieba_name_eng}")
-            self.conn.commit()
+            self._conn.commit()
             return True
 
     @translate_tieba_name
@@ -398,12 +398,12 @@ class MySQL(object):
         """
 
         try:
-            self.cursor.execute(
+            self._cursor.execute(
                 f"SELECT is_white FROM user_id_{tieba_name_eng} WHERE user_id={user_id}")
         except pymysql.Error:
             return None
         else:
-            res_tuple = self.cursor.fetchone()
+            res_tuple = self._cursor.fetchone()
             if res_tuple:
                 return True if res_tuple[0] else False
             else:
@@ -424,14 +424,14 @@ class MySQL(object):
 
         for i in range(sys.maxsize):
             try:
-                self.cursor.execute(
+                self._cursor.execute(
                     f"SELECT user_id FROM user_id_{tieba_name_eng} LIMIT {batch_size} OFFSET {i * batch_size}")
             except pymysql.Error:
                 log.warning(
                     f"MySQL Error: Failed to get user_ids in {tieba_name_eng}!")
                 return
             else:
-                user_ids = self.cursor.fetchall()
+                user_ids = self._cursor.fetchall()
                 for user_id in user_ids:
                     yield user_id[0]
                 if len(user_ids) != batch_size:
@@ -446,10 +446,10 @@ class MySQL(object):
             tieba_name (str): 贴吧名
         """
 
-        self.cursor.execute(
+        self._cursor.execute(
             f"SHOW TABLES LIKE 'img_blacklist_{tieba_name_eng}'")
-        if not self.cursor.fetchone():
-            self.cursor.execute(
+        if not self._cursor.fetchone():
+            self._cursor.execute(
                 f"CREATE TABLE img_blacklist_{tieba_name_eng} (img_hash CHAR(16) PRIMARY KEY, raw_hash CHAR(40) NOT NULL)")
 
     @translate_tieba_name
@@ -467,7 +467,7 @@ class MySQL(object):
         """
 
         try:
-            self.cursor.execute(
+            self._cursor.execute(
                 f"REPLACE INTO img_blacklist_{tieba_name_eng} VALUES ('{img_hash}','{raw_hash}')")
         except pymysql.Error:
             log.warning(f"MySQL Error: Failed to insert {img_hash}!")
@@ -475,7 +475,7 @@ class MySQL(object):
         else:
             log.info(
                 f"Successfully add {img_hash} to table of {tieba_name_eng}")
-            self.conn.commit()
+            self._conn.commit()
             return True
 
     @translate_tieba_name
@@ -492,13 +492,13 @@ class MySQL(object):
         """
 
         try:
-            self.cursor.execute(
+            self._cursor.execute(
                 f"SELECT NULL FROM img_blacklist_{tieba_name_eng} WHERE img_hash='{img_hash}'")
         except pymysql.Error:
             log.warning(f"MySQL Error: Failed to select {img_hash}!")
             return False
         else:
-            return True if self.cursor.fetchone() else False
+            return True if self._cursor.fetchone() else False
 
     @translate_tieba_name
     async def del_imghash(self, tieba_name_eng: str, img_hash: str) -> Coroutine[None, None, bool]:
@@ -514,7 +514,7 @@ class MySQL(object):
         """
 
         try:
-            self.cursor.execute(
+            self._cursor.execute(
                 f"DELETE FROM img_blacklist_{tieba_name_eng} WHERE img_hash='{img_hash}'")
         except pymysql.Error:
             log.warning(f"MySQL Error: Failed to delete {img_hash}!")
@@ -522,5 +522,5 @@ class MySQL(object):
         else:
             log.info(
                 f"Successfully deleted {img_hash} from table of {tieba_name_eng}")
-            self.conn.commit()
+            self._conn.commit()
             return True

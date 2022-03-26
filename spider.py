@@ -7,7 +7,7 @@ from pathlib import Path
 import StatDatabase_pb2
 import tiebaBrowser as tb
 
-debug = ''
+debug = 'debug'
 
 
 async def stat_word(tieba_name):
@@ -68,26 +68,47 @@ async def stat_rank(tieba_name):
     stat_rank 贴吧等级排行榜爬虫
     """
 
+    start_time = time.perf_counter()
+    tb.log.info(f"Spider start")
+
     async with tb.Browser("default") as brow:
 
         rank_db_proto = StatDatabase_pb2.RankUserDatabase()
-        level_thre = 14 if debug else 4
-        idx = 0
+        total_pn = 3700
+        worker_num = 4
+        task_per_worker = int(total_pn/worker_num)+1
 
-        async for user_name, level, exp, is_vip in brow.get_rank(tieba_name, level_thre):
-            print(f"{idx}. user_name:{user_name} level:{level}")
-            user = rank_db_proto.users.add()
-            user.user_name = user_name
-            user.level = level
-            user.exp = exp
-            user.is_vip = is_vip
-            idx += 1
+        async def _worker(i):
+            for pn in range(start := i*task_per_worker, start+task_per_worker):
+                tb.log.debug(f"Worker:{i}. Handling pn:{pn}")
+                res_list, has_next = await brow.get_rank_list(tieba_name, pn)
+                for user_name, level, exp, is_vip in res_list:
+                    user = rank_db_proto.users.add()
+                    user.user_name = user_name
+                    user.level = level
+                    user.exp = exp
+                    user.is_vip = is_vip
+                if not has_next:
+                    break
+            tb.log.debug(f"Worker:{i} quit")
 
-        with open(f'{tieba_name}_rank_stat{debug}.bin', 'wb') as proto_file:
-            proto_file.write(rank_db_proto.SerializeToString())
+        workers = [_worker(i) for i in range(worker_num)]
+        await asyncio.gather(*workers, return_exceptions=True)
+
+    tb.log.info(
+        f"Spider complete. Time cost:{time.perf_counter()-start_time}")
+
+    start_time = time.perf_counter()
+    tb.log.info(f"Serialize start")
+
+    with open(f'{tieba_name}_rank_stat{debug}.bin', 'wb') as proto_file:
+        proto_file.write(rank_db_proto.SerializeToString())
+
+    tb.log.info(
+        f"Serialize complete. Time cost:{time.perf_counter()-start_time}")
 
 
-async def collect_risk_user(tieba_name):
+async def stat_risk_user(tieba_name):
 
     async with tb.CloudReview("default", tieba_name) as brow:
 
@@ -100,7 +121,7 @@ async def collect_risk_user(tieba_name):
         task_queue = asyncio.Queue(maxsize=4)
         running_flag = True
 
-        async def _generate_task():
+        async def _producer():
             with open(f'{tieba_name}_rank_stat{debug}.bin', 'rb') as proto_file:
                 rank_db_proto = StatDatabase_pb2.RankUserDatabase()
                 rank_db_proto.ParseFromString(proto_file.read())
@@ -109,7 +130,7 @@ async def collect_risk_user(tieba_name):
             nonlocal running_flag
             running_flag = False
 
-        async def _handle_task(i):
+        async def _worker(i):
 
             await asyncio.sleep(i/2)
 
@@ -119,7 +140,7 @@ async def collect_risk_user(tieba_name):
                 except asyncio.TimeoutError:
                     nonlocal running_flag
                     if running_flag == False:
-                        tb.log.debug(f"Worker coroutine {i} exit")
+                        tb.log.debug(f"Worker:{i} quit")
                         return
 
                 user_name = rank_user_proto.user_name
@@ -162,8 +183,8 @@ async def collect_risk_user(tieba_name):
                         forum_proto.level = level
                         forum_proto.exp = exp
 
-        workers = [_handle_task(i) for i in range(4)]
-        await asyncio.gather(*workers, _generate_task(), return_exceptions=True)
+        workers = [_worker(i) for i in range(4)]
+        await asyncio.gather(*workers, _producer(), return_exceptions=True)
 
     tb.log.info(
         f"Spider complete. Time cost:{time.perf_counter()-start_time}")
@@ -187,13 +208,10 @@ async def collect_risk_user(tieba_name):
 
 
 async def main():
-    # await stat_rank('asoul')
-    await collect_risk_user('asoul')
+    await stat_rank('asoul')
+    # await stat_risk_user('asoul')
 
 
 if __name__ == "__main__":
 
-    try:
-        asyncio.run(main())
-    except:
-        pass
+    asyncio.run(main())
