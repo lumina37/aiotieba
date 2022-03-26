@@ -233,7 +233,7 @@ class _Fragment(object):
         return bool(self._str)
 
 
-_TFrag = TypeVar('_TFrag', bound=_Fragment, covariant=True)
+_TFrag = TypeVar('_TFrag', bound=_Fragment)
 
 
 class FragText(_Fragment):

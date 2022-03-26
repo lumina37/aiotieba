@@ -658,7 +658,7 @@ class Listener(object):
             return
 
         total_recom_num, used_recom_num = await tieba_dict['admin'].get_recom_status(at.tieba_name)
-        content = f"@{at.user.user_name} \n{used_recom_num}/{total_recom_num}={used_recom_num/total_recom_num*100:.2f}%"
+        content = f"@{at.user.user_name} \nUsed: {used_recom_num} / {total_recom_num} = {used_recom_num/total_recom_num*100:.2f}%"
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
