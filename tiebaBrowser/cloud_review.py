@@ -5,7 +5,6 @@ __all__ = ['CloudReview']
 import asyncio
 import binascii
 import re
-from collections.abc import Coroutine
 from typing import Optional, Union
 
 import cv2 as cv
@@ -98,7 +97,7 @@ class CloudReview(Browser):
     async def __aenter__(self) -> "CloudReview":
         return self
 
-    async def update_user_id(self, _id: Union[str, int], mode: bool = True) -> Coroutine[None, None, bool]:
+    async def update_user_id(self, _id: Union[str, int], mode: bool = True) -> bool:
         """
         向名单中插入user_id
 
@@ -107,7 +106,7 @@ class CloudReview(Browser):
             mode (bool, optional): True则加入白名单 False则加入黑名单. Defaults to True.
 
         Returns:
-            Coroutine[None, None, bool]: 操作是否成功
+            bool: 操作是否成功
         """
 
         if type(mode) is not bool:
@@ -120,7 +119,7 @@ class CloudReview(Browser):
 
         return await self.mysql.update_user_id(self.tieba_name, user.user_id, mode)
 
-    async def del_user_id(self, id: Union[str, int]) -> Coroutine[None, None, bool]:
+    async def del_user_id(self, id: Union[str, int]) -> bool:
         """
         从名单中删除user_id
 
@@ -128,7 +127,7 @@ class CloudReview(Browser):
             id (Union[str, int]): 用户id user_name/portrait/user_id
 
         Returns:
-            Coroutine[None, None, bool]: 操作是否成功
+            bool: 操作是否成功
         """
 
         user = await self.get_basic_user_info(id)
@@ -177,7 +176,7 @@ class CloudReview(Browser):
 
         return img_hash
 
-    async def has_imghash(self, image: np.ndarray) -> Coroutine[None, None, bool]:
+    async def has_imghash(self, image: np.ndarray) -> bool:
         """
         判断图像的phash是否在黑名单中
 
@@ -185,11 +184,10 @@ class CloudReview(Browser):
             image (np.ndarray): 图像
 
         Returns:
-            Coroutine[None, None, bool]: True则为黑名单图像
+            bool: True则为黑名单图像
         """
 
-        img_hash = self.get_imghash(image)
-        if img_hash and await self.mysql.has_imghash(self.tieba_name, img_hash):
+        if (img_hash := self.get_imghash(image)) and await self.mysql.has_imghash(self.tieba_name, img_hash):
             return True
         else:
             return False

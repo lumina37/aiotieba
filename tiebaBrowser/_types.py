@@ -6,16 +6,13 @@ __all__ = ['BasicUserInfo', 'UserInfo',
            ]
 
 import re
-from collections.abc import Callable, Iterable, Iterator
+from collections.abc import Callable, Iterable
 from typing import Generic, Literal, Optional, TypeVar, Union, final
 
 from google.protobuf.json_format import ParseDict
 
 from ._logger import log
 from .tieba_proto import *
-
-TContent = TypeVar('TContent')
-TContainer = TypeVar('TContainer')
 
 
 def _int_prop_check_ignore_none(default_val: int) -> Callable:
@@ -66,7 +63,7 @@ class BasicUserInfo(object):
         self._user_id = 0
 
         if _id:
-            if type(_id) == int:
+            if isinstance(_id, int):
                 self.user_id = _id
             else:
                 self.portrait = _id
@@ -216,23 +213,7 @@ class UserInfo(BasicUserInfo):
         self._priv_reply = int(new_priv_reply)
 
 
-class Forum(object):
-    """
-    吧信息
-
-    Fields:
-        fid (int): 吧id
-        name (str): 吧名
-    """
-
-    __slots__ = ['fid', 'name']
-
-    def __init__(self, forum_proto) -> None:
-        self.fid = forum_proto.id
-        self.name = forum_proto.name
-
-
-class _Fragment(Generic[TContent]):
+class _Fragment(object):
     """
     内容碎片基类
 
@@ -250,6 +231,9 @@ class _Fragment(Generic[TContent]):
 
     def __bool__(self) -> bool:
         return bool(self._str)
+
+
+_TFrag = TypeVar('_TFrag', bound=_Fragment, covariant=True)
 
 
 class FragText(_Fragment):
@@ -377,12 +361,13 @@ class FragItem(_Fragment):
         self._str = item_proto.item_name
 
 
-class Fragments(object):
+class Fragments(Generic[_TFrag]):
     """
     内容碎片列表
 
     Fields:
         _frags (list[_Fragment]): 所有碎片的混合列表
+
         texts (list[FragText]): 纯文本碎片列表
         emojis (list[FragEmoji]): 表情碎片列表
         imgs (list[FragImage]): 图像碎片列表
@@ -396,7 +381,7 @@ class Fragments(object):
 
     def __init__(self, content_protos: Optional[Iterable] = None) -> None:
 
-        def _init_by_type(content_proto) -> _Fragment:
+        def _init_by_type(content_proto) -> _TFrag:
             _type = content_proto.type
             # 0纯文本 9电话号 18话题 27百科词条
             if _type in [0, 9, 18, 27]:
@@ -461,19 +446,19 @@ class Fragments(object):
         return self._text
 
     @final
-    def __iter__(self) -> Iterator[TContent]:
+    def __iter__(self) -> Iterable[_TFrag]:
         return iter(self._frags)
 
     @final
-    def __getitem__(self, idx: int) -> TContent:
+    def __getitem__(self, idx: int) -> _TFrag:
         return self._frags[idx]
 
     @final
-    def __setitem__(self, idx, val):
+    def __setitem__(self, idx, val) -> None:
         raise NotImplementedError
 
     @final
-    def __delitem__(self, idx):
+    def __delitem__(self, idx) -> None:
         raise NotImplementedError
 
     @final
@@ -483,6 +468,76 @@ class Fragments(object):
     @final
     def __bool__(self) -> bool:
         return bool(self._frags)
+
+
+class Forum(object):
+    """
+    吧信息
+
+    Fields:
+        fid (int): 吧id
+        name (str): 吧名
+    """
+
+    __slots__ = ['fid', 'name']
+
+    def __init__(self, forum_proto: Union[SimpleForum_pb2.SimpleForum, FrsPageResIdl_pb2.FrsPageResIdl.DataRes.ForumInfo, None] = None) -> None:
+        if forum_proto:
+            self.fid = forum_proto.id
+            self.name = forum_proto.name
+
+        else:
+            self.fid = 0
+            self.name = ''
+
+
+class Page(object):
+    """
+    页信息
+
+    Fields:
+        page_size (int): 页大小
+        current_page (int): 当前页码
+        total_page (int): 总页码
+        total_count (int): 总计数
+
+        has_more (bool): 是否有后继页
+        has_prev (bool): 是否有前驱页
+    """
+
+    __slots__ = ['page_size', 'current_page', 'total_page',
+                 'total_count', '_has_more', '_has_prev']
+
+    def __init__(self, page_proto: Optional[Page_pb2.Page] = None) -> None:
+        if page_proto:
+            self.page_size = page_proto.page_size
+            self.current_page = page_proto.current_page
+            self.total_page = page_proto.total_page
+            self._has_more = bool(page_proto.has_more)
+            self._has_prev = bool(page_proto.has_prev)
+            self.total_count = page_proto.total_count
+
+        else:
+            self.page_size = 0
+            self.current_page = 0
+            self.total_page = 0
+            self._has_more = None
+            self._has_prev = None
+            self.total_count = 0
+
+    @property
+    def has_more(self):
+        if self._has_more is None:
+            return self.current_page < self.total_page
+        else:
+            return self._has_more
+
+    @property
+    def has_prev(self):
+        if self._has_prev is None:
+            return self.current_page > self.total_page
+        else:
+            return self._has_prev
 
 
 class _Container(object):
@@ -507,34 +562,35 @@ class _Container(object):
 
     @property
     def text(self) -> str:
-        return self.contents.text
+        raise NotImplementedError
 
 
-class _Containers(Generic[TContainer]):
+_TContainer = TypeVar('_TContainer')
+
+
+class _Containers(Generic[_TContainer]):
     """
     Threads/Posts/Comments/Ats的泛型基类
     约定取内容的通用接口
 
     Fields:
-        _objs (list[TContainer])
-
-        current_pn (int): 当前页数
-        total_pn (int): 总页数
-
-        has_next (bool): 是否有下一页
+        _objs (list[TContainer]): 内容列表
+        page (Page): 页码信息
+        has_more (bool): 是否有后继页
+        has_prev (bool): 是否有前驱页
     """
 
-    __slots__ = ['current_pn', 'total_pn', '_objs']
+    __slots__ = ['_objs', 'page']
 
     def __init__(self) -> None:
         pass
 
     @final
-    def __iter__(self) -> Iterator[TContainer]:
+    def __iter__(self) -> Iterable[_TContainer]:
         return iter(self._objs)
 
     @final
-    def __getitem__(self, idx: int) -> TContainer:
+    def __getitem__(self, idx: int) -> _TContainer:
         return self._objs[idx]
 
     @final
@@ -554,8 +610,12 @@ class _Containers(Generic[TContainer]):
         return bool(self._objs)
 
     @property
-    def has_next(self) -> bool:
-        return self.current_pn < self.total_pn
+    def has_more(self) -> bool:
+        return self.page.has_more
+
+    @property
+    def has_prev(self) -> bool:
+        return self.page.has_prev
 
 
 class Thread(_Container):
@@ -682,11 +742,12 @@ class Threads(_Containers[Thread]):
 
     Fields:
         _objs (list[Thread])
+        page (Page): 页码信息
+        has_more (bool): 是否有后继页
+        has_prev (bool): 是否有前驱页
 
-        current_pn (int): 当前页数
-        total_pn (int): 总页数
-
-        has_next (bool): 是否有下一页
+        forum (Forum): 所在吧信息
+        tab_map (dict[str, int]): {分区名:分区id}
     """
 
     __slots__ = ['forum', 'tab_map']
@@ -711,8 +772,7 @@ class Threads(_Containers[Thread]):
                 return thread
 
             data_proto = threads_proto.data
-            self.current_pn = data_proto.page.current_page
-            self.total_pn = data_proto.page.total_page
+            self.page = Page(data_proto.page)
             self.forum = Forum(data_proto.forum)
             self.tab_map = {
                 tab_proto.tab_name: tab_proto.tab_id for tab_proto in data_proto.nav_tab_info.tab}
@@ -726,8 +786,8 @@ class Threads(_Containers[Thread]):
 
         else:
             self._objs = []
-            self.current_pn = 0
-            self.total_pn = 0
+            self.page = Page()
+            self.forum = Forum()
             self.tab_map = {}
 
 
@@ -796,7 +856,10 @@ class Post(_Container):
     @property
     def text(self) -> str:
         if not self._text:
-            self._text = f'{self.contents.text}\n{self.sign}'
+            if self.sign:
+                self._text = f'{self.contents.text}\n{self.sign}'
+            else:
+                self._text = self.contents.text
         return self._text
 
 
@@ -806,11 +869,12 @@ class Posts(_Containers[Post]):
 
     Fields:
         _objs (list[Post])
+        page (Page): 页码信息
+        has_more (bool): 是否有后继页
+        has_prev (bool): 是否有前驱页
 
-        current_pn (int): 当前页数
-        total_pn (int): 总页数
-
-        has_next (bool): 是否有下一页
+        forum (Forum): 所在吧信息
+        thread (Thread): 所在主题帖信息
     """
 
     __slots__ = ['forum', 'thread']
@@ -819,8 +883,7 @@ class Posts(_Containers[Post]):
 
         if posts_proto:
             data_proto = posts_proto.data
-            self.current_pn = data_proto.page.current_page
-            self.total_pn = data_proto.page.total_page
+            self.page = Page(data_proto.page)
             self.forum = Forum(data_proto.forum)
             self.thread = Thread(data_proto.thread)
             thread_owner_id = self.thread.user
@@ -839,8 +902,9 @@ class Posts(_Containers[Post]):
 
         else:
             self._objs = []
-            self.current_pn = 0
-            self.total_pn = 0
+            self.page = Page()
+            self.forum = Forum()
+            self.thread = Thread()
 
 
 class Comment(_Container):
@@ -889,6 +953,10 @@ class Comment(_Container):
             self.disagree = 0
             self.create_time = 0
 
+    @property
+    def text(self) -> str:
+        return self.contents.text
+
 
 class Comments(_Containers[Comment]):
     """
@@ -896,11 +964,13 @@ class Comments(_Containers[Comment]):
 
     Fields:
         _objs (list[Comment])
+        page (Page): 页码信息
+        has_more (bool): 是否有后继页
+        has_prev (bool): 是否有前驱页
 
-        current_pn (int): 当前页数
-        total_pn (int): 总页数
-
-        has_next (bool): 是否有下一页
+        forum (Forum): 所在吧信息
+        thread (Thread): 所在主题帖信息
+        post (Post): 所在回复信息
     """
 
     __slots__ = ['forum', 'thread', 'post']
@@ -909,8 +979,7 @@ class Comments(_Containers[Comment]):
 
         if comments_proto:
             data_proto = comments_proto.data
-            self.current_pn = data_proto.page.current_page
-            self.total_pn = data_proto.page.total_page
+            self.page = Page(data_proto.page)
             self.forum = Forum(data_proto.forum)
             self.thread = Thread(data_proto.thread)
             self.post = Post(data_proto.post)
@@ -923,12 +992,10 @@ class Comments(_Containers[Comment]):
 
         else:
             self._objs = []
-            self.current_pn = 0
-            self.total_pn = 0
-
-    @property
-    def has_next(self) -> bool:
-        return self.current_pn < self.total_pn
+            self.page = Page()
+            self.forum = Forum()
+            self.thread = Thread()
+            self.post = Post()
 
 
 class At(object):
@@ -964,17 +1031,18 @@ class Ats(_Containers[At]):
     At列表
 
     Fields:
-        current_pn (int): 当前页数
-        has_next (bool): 是否有下一页
+        _objs (list[Comment])
+        page (Page): 页码信息
+        has_more (bool): 是否有后继页
+        has_prev (bool): 是否有前驱页
     """
 
     def __init__(self, ats_dict: Optional[dict] = None) -> None:
 
         def _init_obj(at_dict: dict) -> At:
             try:
-                user_dict = at_dict['replyer']
                 user_proto = ParseDict(
-                    user_dict, User_pb2.User(), ignore_unknown_fields=True)
+                    at_dict['replyer'], User_pb2.User(), ignore_unknown_fields=True)
                 user = UserInfo(user_proto=user_proto)
 
                 at = At(tieba_name=at_dict['fname'],
@@ -993,11 +1061,9 @@ class Ats(_Containers[At]):
 
         if ats_dict:
             try:
-                self.current_pn = int(ats_dict['page']['current_page'])
-                if int(ats_dict['page']['has_more']) == 1:
-                    self.total_pn = self.current_pn+1
-                else:
-                    self.total_pn = self.current_pn
+                page_proto = ParseDict(
+                    ats_dict['page'], Page_pb2.Page(), ignore_unknown_fields=True)
+                self.page = Page(page_proto)
             except Exception as err:
                 raise ValueError(f"line {err.__traceback__.tb_lineno}: {err}")
 
@@ -1006,5 +1072,4 @@ class Ats(_Containers[At]):
 
         else:
             self._objs = []
-            self.current_pn = 0
-            self.total_pn = 0
+            self.page = Page()

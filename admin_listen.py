@@ -103,9 +103,8 @@ class Listener(object):
                 return
 
     async def scan(self) -> None:
-        ats = await self.listener.get_ats()
 
-        if ats:
+        if (ats := await self.listener.get_ats()):
             for end_index, at in enumerate(ats):
                 if not self.timer.is_inrange(at.create_time):
                     self.timer.timerange = ats[0].create_time
@@ -172,8 +171,7 @@ class Listener(object):
         if not tieba_dict['access_user'].__contains__(at.user.user_name):
             return
 
-        threads = await self.listener.get_threads(at.tieba_name)
-        if not threads:
+        if not (threads := await self.listener.get_threads(at.tieba_name)):
             return
 
         from_tab_id = 0
@@ -303,8 +301,7 @@ class Listener(object):
         if not tieba_dict['access_user'].__contains__(at.user.user_name):
             return
 
-        posts = await self.listener.get_posts(at.tid)
-        if not posts:
+        if not (posts := await self.listener.get_posts(at.tid)):
             return
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
@@ -327,8 +324,7 @@ class Listener(object):
         if not tieba_dict['access_user'].__contains__(at.user.user_name):
             return
 
-        posts = await self.listener.get_posts(at.tid)
-        if not posts:
+        if not (posts := await self.listener.get_posts(at.tid)):
             return
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
@@ -359,8 +355,7 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        posts = await self.listener.get_posts(at.tid)
-        if posts:
+        if (posts := await self.listener.get_posts(at.tid)):
             tb.log.info(
                 f"Try to delete thread {posts[0].text} post by {posts[0].user.log_name}")
 
@@ -631,6 +626,23 @@ class Listener(object):
         if await self.speaker.add_post(at.tieba_name, at.tid, content):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
+    async def cmd_refuse_appeals(self, at, arg):
+        """
+        refuse_appeals指令
+        一键拒绝所有解封申诉
+        """
+
+        tieba_dict = self.tieba.get(at.tieba_name, None)
+        if not tieba_dict:
+            return
+        if not tieba_dict['access_user'].__contains__(at.user.user_name):
+            return
+
+        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+
+        if await tieba_dict['admin'].refuse_appeals(at.tieba_name):
+            await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+
     async def cmd_recom_status(self, at, arg):
         """
         recom_status指令
@@ -646,7 +658,7 @@ class Listener(object):
             return
 
         total_recom_num, used_recom_num = await tieba_dict['admin'].get_recom_status(at.tieba_name)
-        content = f"@{at.user.user_name} \n本月总推荐配额{total_recom_num}\n本月已使用的推荐配额{used_recom_num}\n本月已使用百分比{used_recom_num/total_recom_num*100:.2f}%"
+        content = f"@{at.user.user_name} \n{used_recom_num}/{total_recom_num}={used_recom_num/total_recom_num*100:.2f}%"
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 

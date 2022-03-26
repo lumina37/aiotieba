@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 """
-@Version 2.1.1_rc1
+@Version 2.1.1_rc2
 @Author: Starry
 @License: Unlicense
 @Homepage: https://github.com/Starry-OvO/Tieba-Cloud-Review

@@ -54,7 +54,7 @@ async def stat_word(tieba_name):
                 for post_pn in range(1, 9999):
                     posts = await brow.get_posts(thread.tid, post_pn, with_comments=True, comment_sort_by_agree=True, comment_rn=30)
                     word_counter.update(_yield_words_from_posts(posts))
-                    if not posts.has_next:
+                    if not posts.has_more:
                         break
 
         with open(f'{tieba_name}_word_freq_stat_{int(time.time())}.csv', 'w', encoding='utf-8-sig', newline='') as csv_write_file:
@@ -81,14 +81,14 @@ async def stat_rank(tieba_name):
         async def _worker(i):
             for pn in range(start := i*task_per_worker, start+task_per_worker):
                 tb.log.debug(f"Worker:{i}. Handling pn:{pn}")
-                res_list, has_next = await brow.get_rank_list(tieba_name, pn)
+                res_list, has_more = await brow.get_rank_list(tieba_name, pn)
                 for user_name, level, exp, is_vip in res_list:
                     user = rank_db_proto.users.add()
                     user.user_name = user_name
                     user.level = level
                     user.exp = exp
                     user.is_vip = is_vip
-                if not has_next:
+                if not has_more:
                     break
             tb.log.debug(f"Worker:{i} quit")
 
