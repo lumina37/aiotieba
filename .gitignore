@@ -6,6 +6,8 @@ __*/
 *.pyproj
 *.txt
 *.bin
+*.zip
+*.rar
 
 config/config.json
 

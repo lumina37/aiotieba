@@ -947,11 +947,11 @@ class Browser(object):
 
             except Exception as err:
                 log.warning(
-                    f"Failed to add {tid} to good:{cname} in {tieba_name}. reason:{err}")
+                    f"Failed to add {tid} to good_list:{cname} in {tieba_name}. reason:{err}")
                 return False
 
             log.info(
-                f"Successfully add {tid} to good:{cname} in {tieba_name}")
+                f"Successfully add {tid} to good_list:{cname} in {tieba_name}")
             return True
 
         return await _good(await _cname2cid())
@@ -985,10 +985,10 @@ class Browser(object):
 
         except Exception as err:
             log.warning(
-                f"Failed to remove {tid} from goodlist in {tieba_name}. reason:{err}")
+                f"Failed to remove {tid} from good_list in {tieba_name}. reason:{err}")
             return False
 
-        log.info(f"Successfully removed {tid} from goodlist in {tieba_name}")
+        log.info(f"Successfully removed {tid} from good_list in {tieba_name}")
         return True
 
     async def top(self, tieba_name: str, tid: int) -> Coroutine[None, None, bool]:
@@ -1021,10 +1021,10 @@ class Browser(object):
 
         except Exception as err:
             log.warning(
-                f"Failed to add {tid} to toplist in {tieba_name}. reason:{err}")
+                f"Failed to add {tid} to top_list in {tieba_name}. reason:{err}")
             return False
 
-        log.info(f"Successfully add {tid} to toplist in {tieba_name}")
+        log.info(f"Successfully add {tid} to top_list in {tieba_name}")
         return True
 
     async def untop(self, tieba_name: str, tid: int) -> Coroutine[None, None, bool]:
@@ -1056,13 +1056,63 @@ class Browser(object):
 
         except Exception as err:
             log.warning(
-                f"Failed to remove {tid} from toplist in {tieba_name}. reason:{err}")
+                f"Failed to remove {tid} from top_list in {tieba_name}. reason:{err}")
             return False
 
-        log.info(f"Successfully removed {tid} from toplist in {tieba_name}")
+        log.info(f"Successfully removed {tid} from top_list in {tieba_name}")
         return True
 
-    async def get_pn_blacklist(self, tieba_name: str, pn: int = 1) -> AsyncIterator[BasicUserInfo]:
+    async def get_recover_list(self, tieba_name: str, pn: int = 1, name: str = '') -> Coroutine[None, None, tuple[list[tuple[int, int, bool]], bool]]:
+        """
+        获取pn页的待恢复帖子列表
+
+        Args:
+            tieba_name (str): 贴吧名
+            pn (int, optional): 页码. Defaults to 1.
+            name (str, optional): 通过被删帖作者的用户名/昵称查询 默认为空即查询全部. Defaults to ''.
+
+        Returns:
+            Coroutine[None, None, tuple[list[tuple[int, int, bool]], bool]]: list[tid,pid,是否为屏蔽], 是否还有下一页
+        """
+
+        params = {'fn': tieba_name,
+                  'fid': await self.get_fid(tieba_name),
+                  'word': name,
+                  'is_ajax': 1,
+                  'pn': pn
+                  }
+
+        try:
+            res = await self.sessions.web.get("https://tieba.baidu.com/mo/q/bawurecover", params=params)
+
+            main_json = await res.json()
+            if int(main_json['no']):
+                raise ValueError("no != 0")
+
+            data = main_json['data']
+            soup = BeautifulSoup(data['content'], 'lxml')
+            items = soup.find_all('a', class_='recover_list_item_btn')
+
+        except Exception as err:
+            log.warning(
+                f"Failed to get recover_list of {tieba_name} pn:{pn}. reason:{err}")
+            res_list = []
+            has_next = False
+
+        else:
+            def _parse_item(item):
+                tid = int(item['attr-tid'])
+                pid = int(item['attr-pid'])
+                is_frs_mask = bool(int(item['attr-isfrsmask']))
+
+                return tid, pid, is_frs_mask
+
+            res_list = [_parse_item(item) for item in items]
+            has_next = data['page']['have_next']
+
+        return res_list, has_next
+
+    async def get_black_list(self, tieba_name: str, pn: int = 1) -> Coroutine[None, None, tuple[list[BasicUserInfo], bool]]:
         """
         获取pn页的黑名单
 
@@ -1070,8 +1120,8 @@ class Browser(object):
             tieba_name (str): 贴吧名
             pn (int, optional): 页码. Defaults to 1.
 
-        Yields:
-            AsyncIterator[BasicUserInfo]: 基本用户信息
+        Returns:
+            Coroutine[None, None, tuple[list[BasicUserInfo], bool]]: list[基本用户信息], 是否还有下一页
         """
 
         try:
@@ -1079,21 +1129,26 @@ class Browser(object):
 
             soup = BeautifulSoup(await res.text(), 'lxml')
             items = soup.find_all('td', class_='left_cell')
-            if not items:
-                return
 
-            for item in items:
+        except Exception as err:
+            log.warning(
+                f"Failed to get black_list of {tieba_name} pn:{pn}. reason:{err}")
+            res_list = []
+            has_next = False
+
+        else:
+            def _parse_item(item):
                 user_info_item = item.previous_sibling.input
                 user = BasicUserInfo()
                 user.user_name = user_info_item['data-user-name']
                 user.user_id = int(user_info_item['data-user-id'])
                 user.portrait = item.a.img['src'][43:]
-                yield user
+                return user
 
-        except Exception as err:
-            log.warning(
-                f"Failed to get blacklist of {tieba_name} pn:{pn}. reason:{err}")
-            return
+            res_list = [_parse_item(item) for item in items]
+            has_next = len(items) == 15
+
+        return res_list, has_next
 
     async def blacklist_add(self, tieba_name: str, user: BasicUserInfo) -> Coroutine[None, None, bool]:
         """
@@ -1129,39 +1184,6 @@ class Browser(object):
             f"Successfully added {user.log_name} to black_list in {tieba_name}")
         return True
 
-    async def blacklist_cancels(self, tieba_name: str, users: list[BasicUserInfo]) -> Coroutine[None, None, bool]:
-        """
-        批量解除黑名单
-
-        Args:
-            tieba_name (str): 贴吧名
-            users (list[BasicUserInfo]): 基本用户信息的列表
-
-        Returns:
-            Coroutine[None, None, bool]: 操作是否成功
-        """
-
-        payload = {'word': tieba_name,
-                   'tbs': await self.get_tbs(),
-                   'list[]': [user.user_id for user in users],
-                   'ie': 'utf-8'
-                   }
-
-        try:
-            res = await self.sessions.web.post("http://tieba.baidu.com/bawu2/platform/cancelBlack", data=payload)
-
-            main_json = await res.json()
-            if int(main_json['errno']):
-                raise ValueError(main_json['errmsg'])
-
-        except Exception as err:
-            log.warning(
-                f"Failed to remove users from black_list in {tieba_name}. reason:{err}")
-            return False
-
-        log.info(f"Successfully removed users from black_list in {tieba_name}")
-        return True
-
     async def blacklist_cancel(self, tieba_name: str, user: BasicUserInfo) -> Coroutine[None, None, bool]:
         """
         解除黑名单
@@ -1174,10 +1196,27 @@ class Browser(object):
             Coroutine[None, None, bool]: 操作是否成功
         """
 
-        if tieba_name and user.user_id:
-            return await self.blacklist_cancels(tieba_name, [user, ])
-        else:
+        payload = {'word': tieba_name,
+                   'tbs': await self.get_tbs(),
+                   'list[]': user.user_id,
+                   'ie': 'utf-8'
+                   }
+
+        try:
+            res = await self.sessions.web.post("http://tieba.baidu.com/bawu2/platform/cancelBlack", data=payload)
+
+            main_json = await res.json()
+            if int(main_json['errno']):
+                raise ValueError(main_json['errmsg'])
+
+        except Exception as err:
+            log.warning(
+                f"Failed to remove {user.log_name} from black_list in {tieba_name}. reason:{err}")
             return False
+
+        log.info(
+            f"Successfully removed {user.log_name} from black_list in {tieba_name}")
+        return True
 
     async def refuse_appeals(self, tieba_name: str) -> Coroutine[None, None, bool]:
         """
@@ -1677,56 +1716,45 @@ class Browser(object):
 
         return tab_map
 
-    async def get_recom_list(self, tieba_name: str) -> AsyncIterator[tuple[Thread, int]]:
+    async def get_recom_list(self, tieba_name: str, pn: int = 1) -> Coroutine[None, None, tuple[list[tuple[Thread, int]], bool]]:
         """
-        获取大吧主推荐帖列表
+        获取pn页的大吧主推荐帖列表
 
         Args:
             tieba_name (str): 贴吧名
+            pn (int, optional): 页码. Defaults to 1.
 
-        Yields:
-            AsyncIterator[tuple[Thread, int]]: 被推荐帖子信息/新增浏览量
+        Returns:
+            Coroutine[None, None, tuple[list[tuple[Thread, int]], bool]]: list[被推荐帖子信息,新增浏览量], 是否还有下一页
         """
 
-        async def _get_pn_recom_list(pn: int) -> AsyncIterator[tuple[Thread, int]]:
-            """
-            获取pn页的大吧主推荐帖列表
+        payload = {'BDUSS': self.sessions.BDUSS,
+                   '_client_version': '12.22.1.0',
+                   'forum_id': await self.get_fid(tieba_name),
+                   'pn': pn,
+                   'rn': 30,
+                   }
+        payload['sign'] = self._app_sign(payload)
 
-            Args:
-                pn (int): 页码
+        try:
+            res = await self.sessions.app.post("http://c.tieba.baidu.com/c/f/bawu/getRecomThreadHistory", data=payload)
 
-            Closure Args:
-                tieba_name (str): 贴吧名
+            main_json = await res.json(content_type='application/x-javascript')
+            if int(main_json['error_code']):
+                raise ValueError(main_json['error_msg'])
 
-            Yields:
-                AsyncIterator[tuple[Thread, int]]: 被推荐帖子信息/新增浏览量
-            """
+        except Exception as err:
+            log.warning(
+                f"Failed to get recom_list of {tieba_name}. reason:{err}")
+            res_list = []
+            has_next = False
 
-            payload = {'BDUSS': self.sessions.BDUSS,
-                       '_client_version': '12.22.1.0',
-                       'forum_id': await self.get_fid(tieba_name),
-                       'pn': pn,
-                       'rn': 30,
-                       }
-            payload['sign'] = self._app_sign(payload)
-
-            try:
-                res = await self.sessions.app.post("http://c.tieba.baidu.com/c/f/bawu/getRecomThreadHistory", data=payload)
-
-                main_json = await res.json(content_type='application/x-javascript')
-                if int(main_json['error_code']):
-                    raise ValueError(main_json['error_msg'])
-
-            except Exception as err:
-                log.warning(
-                    f"Failed to get recom_list of {tieba_name}. reason:{err}")
-                raise StopAsyncIteration
-
+        else:
             def _contents(content_dicts: list[dict]):
                 for content_dict in content_dicts:
                     yield ParseDict(content_dict, PbContent_pb2.PbContent(), ignore_unknown_fields=True)
 
-            for data_dict in main_json['recom_thread_list']:
+            def _parse_data_dict(data_dict):
 
                 thread_dict = data_dict['thread_list']
                 thread = Thread()
@@ -1762,17 +1790,13 @@ class Browser(object):
 
                 add_view = thread.view_num-int(data_dict['current_pv'])
 
-                yield thread, add_view
+                return thread, add_view
 
-            if int(main_json['is_has_more']) == 0:
-                raise StopAsyncIteration
+            res_list = [_parse_data_dict(data_dict)
+                     for data_dict in main_json['recom_thread_list']]
+            has_next = bool(int(main_json['is_has_more']))
 
-        for pn in range(1, sys.maxsize):
-            try:
-                async for _ in _get_pn_recom_list(pn):
-                    yield _
-            except RuntimeError:
-                return
+        return res_list, has_next
 
     async def get_recom_status(self, tieba_name: str) -> Coroutine[None, None, tuple[int, int]]:
         """
@@ -1811,120 +1835,85 @@ class Browser(object):
 
         return total_recom_num, used_recom_num
 
-    async def get_rank(self, tieba_name: str, level_thre: int = 4) -> AsyncIterator[tuple[str, int, int, bool]]:
+    async def get_rank_list(self, tieba_name: str, pn: int = 1) -> Coroutine[None, None, tuple[list[tuple[str, int, int, bool]], bool]]:
         """
-        获取贴吧等级排行榜
+        获取pn页的贴吧等级排行榜
 
         Args:
             tieba_name (str): 贴吧名
-            level_thre (int, optional): 等级下限阈值 等级大于等于该值的用户都会被采集. Defaults to 4.
+            pn (int, optional): 页码. Defaults to 1.
 
         Returns:
-            AsyncIterator[tuple[str, int, int, bool]]: 用户名/等级/经验值/是否vip
+            Coroutine[None, None, tuple[list[tuple[str, int, int, bool]], bool]]: list[用户名,等级,经验值,是否vip], 是否还有下一页
         """
 
-        async def _get_pn_rank(pn: int) -> AsyncIterator[tuple[str, int, int, bool]]:
-            """
-            获取pn页的排行
+        try:
+            res = await self.sessions.web.get("http://tieba.baidu.com/f/like/furank", params={'kw': tieba_name, 'pn': pn, 'ie': 'utf-8'})
 
-            Args:
-                pn (int): 页码
+            soup = BeautifulSoup(await res.text(), 'lxml')
+            items = soup.select('tr[class^=drl_list_item]')
 
-            Closure Args:
-                tieba_name (str): 贴吧名
+        except Exception as err:
+            log.warning(
+                f"Failed to get rank_list of {tieba_name} pn:{pn}. reason:{err}")
+            res_list = []
+            has_next = False
 
-            Yields:
-                AsyncIterator[tuple[str, int, int, bool]]: 用户名/等级/经验值/是否vip
-            """
+        else:
+            def _parse_item(item):
+                user_name_item = item.td.next_sibling
+                user_name = user_name_item.text
+                is_vip = 'drl_item_vip' in user_name_item.div['class']
+                level_item = user_name_item.next_sibling
+                # e.g. get level 16 from string "bg_lv16" by slicing [5:]
+                level = int(level_item.div['class'][0][5:])
+                exp_item = level_item.next_sibling
+                exp = int(exp_item.text)
 
-            try:
-                res = await self.sessions.web.get("http://tieba.baidu.com/f/like/furank", params={'kw': tieba_name, 'pn': pn, 'ie': 'utf-8'})
+                return user_name, level, exp, is_vip
 
-                soup = BeautifulSoup(await res.text(), 'lxml')
-                items = soup.select('tr[class^=drl_list_item]')
-                if not items:
-                    raise StopAsyncIteration
+            res_list = [_parse_item(item) for item in items]
+            has_next = len(items) == 20
 
-                for item in items:
-                    user_name_item = item.td.next_sibling
-                    user_name = user_name_item.text
-                    is_vip = 'drl_item_vip' in user_name_item.div['class']
-                    level_item = user_name_item.next_sibling
-                    # e.g. get level 16 from string "bg_lv16" by slicing [5:]
-                    level = int(level_item.div['class'][0][5:])
-                    if level < level_thre:
-                        raise StopAsyncIteration
-                    exp_item = level_item.next_sibling
-                    exp = int(exp_item.text)
+        return res_list, has_next
 
-                    yield user_name, level, exp, is_vip
-
-            except StopAsyncIteration:
-                raise
-            except Exception as err:
-                log.warning(
-                    f"Failed to get rank of {tieba_name} pn:{pn}. reason:{err}")
-
-        for pn in range(1, sys.maxsize):
-            try:
-                async for _ in _get_pn_rank(pn):
-                    yield _
-            except RuntimeError:
-                return
-
-    async def get_member(self, tieba_name: str) -> AsyncIterator[tuple[str, str, int]]:
+    async def get_member_list(self, tieba_name: str, pn: int = 1) -> Coroutine[None, None, tuple[list[tuple[str, str, int]], bool]]:
         """
-        获取贴吧最新关注用户列表
+        获取pn页的贴吧最新关注用户列表
 
         Args:
             tieba_name (str): 贴吧名
+            pn (int, optional): 页码. Defaults to 1.
 
-        Yields:
-            AsyncIterator[tuple[str, str, int]]: 用户名/portrait/等级
+        Returns:
+            Coroutine[None, None, tuple[list[tuple[str, str, int]], bool]]: list[用户名,portrait,等级], 是否还有下一页
         """
 
-        async def _get_pn_member(pn: int) -> AsyncIterator[tuple[str, str, int]]:
-            """
-            获取pn页的最新关注用户列表
+        try:
+            res = await self.sessions.web.get("http://tieba.baidu.com/bawu2/platform/listMemberInfo", params={'word': tieba_name, 'pn': pn, 'ie': 'utf-8'})
 
-            Args:
-                pn (int): 页数
+            soup = BeautifulSoup(await res.text(), 'lxml')
+            items = soup.find_all('div', class_='name_wrap')
 
-            Closure Args:
-                tieba_name (str): 贴吧名
+        except Exception as err:
+            log.warning(
+                f"Failed to get member_list of {tieba_name} pn:{pn}. reason:{err}")
+            res_list = []
+            has_next = False
 
-            Yields:
-                AsyncIterator[tuple[str, str, int]]: 用户名/portrait/等级
-            """
+        else:
+            def _parse_item(item):
+                user_item = item.a
+                user_name = user_item['title']
+                portrait = user_item['href'][14:]
+                level_item = item.span
+                level = int(level_item['class'][1][12:])
+                return user_name, portrait, level
 
-            try:
-                res = await self.sessions.web.get("http://tieba.baidu.com/bawu2/platform/listMemberInfo", params={'word': tieba_name, 'pn': pn, 'ie': 'utf-8'})
+            res_list = [_parse_item(item) for item in items]
+            has_next = len(items) == 24
 
-                soup = BeautifulSoup(await res.text(), 'lxml')
-                items = soup.find_all('div', class_='name_wrap')
-                if not items:
-                    raise StopAsyncIteration
-
-                for item in items:
-                    user_item = item.a
-                    user_name = user_item['title']
-                    portrait = user_item['href'][14:]
-                    level_item = item.span
-                    level = int(level_item['class'][1][12:])
-                    yield user_name, portrait, level
-
-            except StopAsyncIteration:
-                raise
-            except Exception as err:
-                log.warning(
-                    f"Failed to get member of {tieba_name} pn:{pn}. reason:{err}")
-
-        for pn in range(1, 459):
-            try:
-                async for _ in _get_pn_member(pn):
-                    yield _
-            except RuntimeError:
-                return
+        return res_list, has_next
 
     async def like_forum(self, tieba_name: str) -> Coroutine[None, None, bool]:
         """
@@ -2027,37 +2016,28 @@ class Browser(object):
         """
 
         try:
-            fid = await self.get_fid(tieba_name)
-            ts = time.time()
-            ts_ms = int(ts * 1000)
-            ts_struct = time.localtime(ts)
             payload = {'BDUSS': self.sessions.BDUSS,
-                       '_client_id': 'wappc_1643725546500_150',
+                       '_client_id': 'wappc_1641793173806_732',
                        '_client_type': 2,
                        '_client_version': '9.1.0.0',
                        '_phone_imei': '000000000000000',
-                       'android_id': '31760cd1d096538d',
                        'anonymous': 1,
-                       'authsid': 'null',
+                       'apid': 'sw',
                        'barrage_time': 0,
-                       'brand': 'HUAWEI',
-                       'c3_aid': 'A00-WGF47YI5OMGPRPDQI5HFKD4J56B6B5YX-AZRCBBHI',
                        'can_no_forum': 0,
-                       'cmode': 1,
                        'content': content,
-                       'cuid': '89EC02B413436B80CB1A8873CD56AFFF|V6JXX7UB7',
-                       'cuid_galaxy2': '89EC02B413436B80CB1A8873CD56AFFF|V6JXX7UB7',
+                       'cuid': 'baidutiebaapp75036bd3-8ae0-4b61-ac4e-c3192b6e6fa9',
+                       'cuid_galaxy2': '1782A7D2758F38EA4B4EAFE1AD4881CB|VLJONH23W',
                        'cuid_gid': '',
                        'entrance_type': 0,
-                       'event_day': f'{ts_struct.tm_year}{ts_struct.tm_mon}{ts_struct.tm_mday}',
-                       'fid': fid,
-                       'from': '1008621x',
-                       'from_fourm_id': fid,
+                       'fid': await self.get_fid(tieba_name),
+                       'from': '1021099l',
+                       'from_fourm_id': 'null',
                        'is_ad': 0,
                        'is_barrage': 0,
                        'is_feedback': 0,
                        'kw': tieba_name,
-                       'model': 'LIO-AN00',
+                       'model': 'M2012K11AC',
                        'name_show': '',
                        'net_type': 1,
                        'new_vcode': 1,
@@ -2068,11 +2048,11 @@ class Browser(object):
                        'takephoto_num': 0,
                        'tbs': await self.get_tbs(),
                        'tid': tid,
-                       'timestamp': ts_ms,
+                       'timestamp': int(time.time() * 1000),
                        'v_fid': '',
                        'v_fname': '',
                        'vcode_tag': 12,
-                       'z_id': ''
+                       'z_id': '9JaXHshXKDw1xkGLIi91_Qd4cduxNFKS_nguQ4kfe7zYZQfdOlA-7jU2pYbkMfw23NdB1awUpuWmTeoON13r-Uw'
                        }
             payload['sign'] = self._app_sign(payload)
 

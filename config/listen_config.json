@@ -1,6 +1,6 @@
 {
   "listener":"listener",
-  "speaker":"listener",
+  "speaker":"default",
   "tieba_list":{
     "asoul":{
       "admin":"noob",
