@@ -22,7 +22,7 @@ class SoulknightCloudReview(tb.CloudReview):
             try:
                 # 获取主题帖列表
                 threads = await self.get_threads(self.tieba_name)
-                # 创建异步任务列表，用idx/10规定每个任务的延迟时间，避免高并发下的网络阻塞
+                # 创建异步任务列表，用idx/3规定每个任务的延迟时间，避免高并发下的网络阻塞
                 tasks = [asyncio.create_task(self._handle_thread(
                     thread, idx/3)) for idx, thread in enumerate(threads)]
                 # 执行任务

@@ -1031,7 +1031,7 @@ class Ats(_Containers[At]):
     At列表
 
     Fields:
-        _objs (list[Comment])
+        _objs (list[At])
         page (Page): 页码信息
         has_more (bool): 是否有后继页
         has_prev (bool): 是否有前驱页
