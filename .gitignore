@@ -20,5 +20,6 @@ test*
 
 !/admin_listen.py
 !/cloud_review_soulknight.py
-!/spider.py
+!/data_spider.py
+!/data_analyzer.py
 !/StatDatabase_pb2.py

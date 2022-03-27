@@ -7,7 +7,7 @@ from pathlib import Path
 import StatDatabase_pb2
 import tiebaBrowser as tb
 
-debug = 'debug'
+debug = ''
 
 
 async def stat_word(tieba_name):
@@ -43,7 +43,7 @@ async def stat_word(tieba_name):
 
         from collections import Counter
         word_counter = Counter()
-        for thread_pn in range(2, 0, -1):
+        for thread_pn in range(333, 0, -1):
             tb.log.info(f"Thread pn: {thread_pn}")
             for thread in await brow.get_threads(tieba_name, thread_pn):
 
@@ -208,7 +208,7 @@ async def stat_risk_user(tieba_name):
 
 
 async def main():
-    await stat_rank('asoul')
+    await stat_word('v')
     # await stat_risk_user('asoul')
 
 

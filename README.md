@@ -6,10 +6,10 @@
 
 ## 工具链接
 
-+ [百度贴吧接口合集](https://github.com/Starry-OvO/Tieba-Manager/blob/main/tiebaBrowser/_api.py#L393)
++ [百度贴吧接口合集](https://github.com/Starry-OvO/Tieba-Manager/blob/main/tiebaBrowser/_api.py)
 + [云审查案例](https://github.com/Starry-OvO/Tieba-Manager/blob/main/cloud_review_soulknight.py)
 + [指令管理器](https://github.com/Starry-OvO/Tieba-Manager/blob/main/admin_listen.py)
-+ [爬虫案例](https://github.com/Starry-OvO/Tieba-Manager/blob/main/spider.py)
++ [爬虫案例](https://github.com/Starry-OvO/Tieba-Manager/blob/main/data_spider.py)
 + [另一个仍在活跃更新的贴吧管理器（有用户界面 仅限Windows平台）](https://github.com/dog194/TiebaManager)
 
 ## 功能概览
@@ -29,7 +29,7 @@
 
 ## 功能特点
 
-+ 优先使用最新版贴吧app（12.22.0.3）的接口实现功能
++ 优先使用最新版贴吧app（12.22.1.0）的接口实现功能
 + 优先使用最新版贴吧app使用的[`Google Protocol Buffer (Protobuf)`](https://developers.google.cn/protocol-buffers)协议序列化网络请求&响应数据
 + 使用[`aiohttp`](https://github.com/aio-libs/aiohttp)作为网络库，所有涉及网络IO的函数均支持异步
 + 得益于[`Python`](https://www.python.org/downloads)语言的强大扩展能力，云审查管理器支持二维码识别、图像phash等功能
@@ -95,7 +95,7 @@ asyncio.run(main())
 
 + 在`config/config.json`中配置`MySQL`字段。你需要一个数据库用来缓存通过检测的回复的pid以及记录黑、白名单用户
 + 在`config/config.json`中配置`tieba_name_mapping`字段。你需要为每个贴吧设置对应的英文名以方便建立数据库
-+ 使用函数[`MySQL.init_database()`](https://github.com/Starry-OvO/Tieba-Manager/blob/b887e670dba0323b54e6ca4955962778bd34c3a9/tiebaBrowser/mysql.py#L54)一键建库
++ 使用函数[`MySQL.init_database()`](https://github.com/Starry-OvO/Tieba-Manager/blob/b887e670dba0323b54e6ca4955962778bd34c3a9/tiebaBrowser/mysql.py)一键建库
 + 自定义审查行为：请参照我给出的例子自己编程修改[`cloud_review_soulknight.py`](https://github.com/Starry-OvO/Tieba-Manager/blob/main/cloud_review_soulknight.py)，这是被实际应用于[`元气骑士吧`](https://tieba.baidu.com/f?ie=utf-8&kw=%E5%85%83%E6%B0%94%E9%AA%91%E5%A3%AB)的云审查脚本，注释比较规范全面，请自行理解各api的功能
 
 ## 附加说明
