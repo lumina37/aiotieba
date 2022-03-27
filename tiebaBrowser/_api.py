@@ -1172,7 +1172,7 @@ class Browser(object):
         try:
             res = await self.sessions.web.post("http://tieba.baidu.com/bawu2/platform/addBlack", data=payload)
 
-            main_json = await res.json()
+            main_json = await res.json(content_type='text/html')
             if int(main_json['errno']):
                 raise ValueError(main_json['errmsg'])
 
@@ -1206,7 +1206,7 @@ class Browser(object):
         try:
             res = await self.sessions.web.post("http://tieba.baidu.com/bawu2/platform/cancelBlack", data=payload)
 
-            main_json = await res.json()
+            main_json = await res.json(content_type='text/html')
             if int(main_json['errno']):
                 raise ValueError(main_json['errmsg'])
 

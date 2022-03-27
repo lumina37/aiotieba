@@ -16,6 +16,7 @@ async def stat_word(tieba_name):
     """
 
     import csv
+
     import jieba
 
     async with tb.Browser("default") as brow:
