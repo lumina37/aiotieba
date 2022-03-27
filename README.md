@@ -1,5 +1,6 @@
 # Tieba-Manager
 
+[![gitee](https://badgen.net/badge/mirror/gitee/red)](https://gitee.com/Starry-OvO/Tieba-Manager)
 [![license](https://badgen.net/github/license/Starry-OvO/Tieba-Manager?icon=github)](https://github.com/Starry-OvO/Tieba-Manager/blob/main/LICENSE)
 [![release](https://badgen.net/github/release/Starry-OvO/Tieba-Manager?icon=github)](https://github.com/Starry-OvO/Tieba-Manager/releases)
 
