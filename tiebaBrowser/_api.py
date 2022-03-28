@@ -1839,7 +1839,7 @@ class Browser(object):
 
         return total_recom_num, used_recom_num
 
-    async def get_statistics(self, tieba_name: str):
+    async def get_statistics(self, tieba_name: str) -> dict[str, list[int]]:
         """
         获取吧务后台中最近29天的统计数据
 
