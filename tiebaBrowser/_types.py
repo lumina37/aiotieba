@@ -886,18 +886,18 @@ class Posts(_Containers[Post]):
             self.page = Page(data_proto.page)
             self.forum = Forum(data_proto.forum)
             self.thread = Thread(data_proto.thread)
-            thread_owner_id = self.thread.user
+            thread_owner_id = self.thread.user.user_id
 
             users = {user_proto.id: UserInfo(
                 user_proto=user_proto) for user_proto in data_proto.user_list}
             self._objs = [Post(post_proto)
                           for post_proto in data_proto.post_list]
-            for comment in self._objs:
-                comment.is_thread_owner = thread_owner_id == comment.author_id
-                comment.fid = self.forum.fid
-                comment.tid = self.thread.tid
-                comment.user = users.get(comment.author_id, UserInfo())
-                for comment in comment.comments:
+            for post in self._objs:
+                post.is_thread_owner = thread_owner_id == post.author_id
+                post.fid = self.forum.fid
+                post.tid = self.thread.tid
+                post.user = users.get(post.author_id, UserInfo())
+                for comment in post.comments:
                     comment.user = users.get(comment.author_id, UserInfo())
 
         else:

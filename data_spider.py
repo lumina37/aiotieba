@@ -177,7 +177,7 @@ async def stat_risk_user(tieba_name):
                 if 3 != user.priv_like:
                     tb.log.info(
                         f"{idx}. User:{user_name} / level:{rank_user_proto.level} / target:forumlist")
-                    async for fname, fid, level, exp in brow.get_forum_list(user.user_id):
+                    async for fname, fid, level, exp in brow.get_forums(user.user_id):
                         fid2fname[fid] = fname
                         forum_proto = user_proto.forums.add()
                         forum_proto.fid = fid

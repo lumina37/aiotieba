@@ -4,7 +4,6 @@ __all__ = ['Browser']
 import asyncio
 import hashlib
 import json
-import re
 import socket
 import sys
 import time
@@ -438,7 +437,7 @@ class Browser(object):
 
         return threads
 
-    async def get_posts(self, tid: int, pn: int = 1, reverse: bool = False, with_comments: bool = False, comment_sort_by_agree: bool = True, comment_rn: int = 4) -> Posts:
+    async def get_posts(self, tid: int, pn: int = 1, reverse: bool = False, with_comments: bool = False, comment_sort_by_agree: bool = True, comment_rn: int = 10) -> Posts:
         """
         获取主题帖内回复
 
@@ -448,7 +447,7 @@ class Browser(object):
             reverse (bool, optional): True则按时间倒序请求 Flase则按时间顺序请求. Defaults to False.
             with_comments (bool, optional): True则同时请求高赞楼中楼 False则返回的Posts.comments为空. Defaults to False.
             comment_sort_by_agree (bool, optional): True则楼中楼按点赞数顺序 False则楼中楼按时间顺序. Defaults to True.
-            comment_rn (int, optional): 请求的楼中楼数量. Defaults to 4.
+            comment_rn (int, optional): 请求的楼中楼数量. Defaults to 10.
 
         Returns:
             Posts: 回复列表
@@ -1515,7 +1514,7 @@ class Browser(object):
 
         return user, threads
 
-    async def get_self_forum_list(self) -> AsyncIterable[tuple[str, int, int, int]]:
+    async def get_self_forums(self) -> AsyncIterable[tuple[str, int, int, int]]:
         """
         获取本人关注贴吧列表
 
@@ -1597,7 +1596,7 @@ class Browser(object):
             except RuntimeError:
                 return
 
-    async def get_forum_list(self, user_id: int) -> AsyncIterable[tuple[str, int, int, int]]:
+    async def get_forums(self, user_id: int) -> AsyncIterable[tuple[str, int, int, int]]:
         """
         获取用户关注贴吧列表
 
@@ -1839,6 +1838,51 @@ class Browser(object):
             used_recom_num = 0
 
         return total_recom_num, used_recom_num
+
+    async def get_statistics(self, tieba_name: str):
+        """
+        获取吧务后台中最近29天的统计数据
+
+        Args:
+            tieba_name (str): 贴吧名
+
+        Returns:
+            dict[str, list[int]]: {字段名:按时间顺序排列的统计数据}
+            {'view': 浏览量,
+             'thread': 主题帖数,
+             'member': 关注数,
+             'post': 回复数,
+             'sign_ratio': 签到率,
+             'average_time': 人均浏览时长,
+             'average_times': 人均进吧次数,
+             'recommend': 首页推荐数}
+        """
+
+        payload = {'BDUSS': self.sessions.BDUSS,
+                   '_client_version': '12.22.1.0',
+                   'forum_id': await self.get_fid(tieba_name),
+                   }
+        payload['sign'] = self._app_sign(payload)
+
+        try:
+            res = await self.sessions.app.post("http://c.tieba.baidu.com/c/f/forum/getforumdata", data=payload)
+
+            main_json = await res.json(content_type='application/x-javascript')
+            if int(main_json['error_code']):
+                raise ValueError(main_json['error_msg'])
+
+            data = main_json['data']
+            field_names = ['view', 'thread', 'member', 'post',
+                           'sign_ratio', 'average_time', 'average_times', 'recommend']
+            stat = {field_name: [int(item['value']) for item in reversed(data_i['group'][1]['values'])]
+                    for field_name, data_i in zip(field_names, data)}
+
+        except Exception as err:
+            log.warning(
+                f"Failed to get recom_status of {tieba_name}. reason:{err}")
+            stat = {field_name: [] for field_name in field_names}
+
+        return stat
 
     async def get_rank_list(self, tieba_name: str, pn: int = 1) -> tuple[list[tuple[str, int, int, bool]], bool]:
         """

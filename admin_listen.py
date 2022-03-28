@@ -143,7 +143,7 @@ class Listener(object):
             cmd_type = cmds[0]
         else:
             cmd_type = cmds[0]
-            arg = cmds[1]
+            arg = cmds[1].lstrip()
 
         return cmd_type, arg
 
@@ -669,6 +669,64 @@ class Listener(object):
 
         if await self.speaker.add_post(at.tieba_name, at.tid, content):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+
+    async def cmd_vote_stat(self, at, limit):
+        """
+        vote_stat指令
+        统计投票结果
+        """
+
+        tieba_dict = self.tieba.get(at.tieba_name, None)
+        if not tieba_dict:
+            return
+        if not self.time_recorder.allow_execute():
+            return
+        if not tieba_dict['access_user'].__contains__(at.user.user_name):
+            return
+
+        async def _stat_post_pn(pn: int) -> None:
+            posts = await self.listener.get_posts(at.tid, pn, with_comments=True, comment_sort_by_agree=True, comment_rn=30)
+            for post in posts:
+                if (vote_num := await _parse_post(post)):
+                    results.append((post.floor, vote_num))
+
+        async def _parse_post(post: tb.Post) -> int:
+            vote_num = 0
+            for pn in range(1, 99999):
+                comments = await self.listener.get_comments(post.tid, post.pid, pn)
+                vote_num += _parse_comments(comments)
+                if not comments.has_more:
+                    break
+            return vote_num
+
+        def _parse_comments(comments: tb.Comments) -> int:
+            vote_num = 0
+            for comment in comments:
+                text = re.sub('^回复.*?:', '', comment.text)
+                if '支持' in text:
+                    vote_num += 1
+            return vote_num
+
+        results = []
+        posts = await self.listener.get_posts(at.tid, 1, with_comments=True, comment_sort_by_agree=False, comment_rn=30)
+        for post in posts[1:]:
+            if (vote_num := await _parse_post(post)):
+                results.append((post.floor, vote_num))
+
+        if (total_page := posts.page.total_page) > 1:
+            await asyncio.gather(*[_stat_post_pn(pn) for pn in range(2, total_page+1)], return_exceptions=True)
+
+        results.sort(key=lambda result: result[1], reverse=True)
+        contents = [f"@{at.user.user_name} "]
+        contents.extend(
+            [f"floor:{floor} num:{vote_num}" for floor, vote_num in results[:int(limit)]])
+        content = '\n'.join(contents)
+
+        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+
+        if await self.speaker.add_post(at.tieba_name, at.tid, content):
+            # await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+            pass
 
     async def cmd_register(self, at, arg):
         """

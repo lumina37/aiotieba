@@ -9,7 +9,9 @@ __*/
 *.zip
 *.rar
 
-config/config.json
+config/*
+!config/config-example.json
+!config/listen_config-example.json
 
 log/
 charles/
