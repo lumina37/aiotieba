@@ -676,6 +676,8 @@ class Listener(object):
         统计投票结果
         """
 
+        if not limit.isdigit():
+            return
         tieba_dict = self.tieba.get(at.tieba_name, None)
         if not tieba_dict:
             return
