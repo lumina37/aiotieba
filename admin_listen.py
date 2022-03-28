@@ -12,31 +12,35 @@ import tiebaBrowser as tb
 from tiebaBrowser._config import SCRIPT_PATH
 
 
-class Timer(object):
+class TimerRecorder(object):
     """
-    时间记录
-    Timer(shiftpair)
+    时间记录器
 
-    参数:
-        shiftpair: tuple (下界偏移,上界偏移) 用于根据当前时间计算容许范围
+    Args:
+        shift_sec: float 启动时允许解析shift_sec秒之前的at
+        post_interval: float 两次post_add之间需要的时间间隔
+
+    Fields:
+        last_parse_time: float 上次解析at信息的时间(以百度服务器为准)
+        last_post_time: float 上次发送回复的时间(以百度服务器为准)
+        post_interval: float 两次post_add之间需要的时间间隔
     """
 
-    __slots__ = ['timerange',
-                 'last_execute_time', 'execute_interval']
+    __slots__ = ['last_parse_time', 'last_post_time', 'post_interval']
 
-    def __init__(self, timerange_shift, execute_interval):
+    def __init__(self, shift_sec, post_interval):
 
-        self.last_execute_time = 0
-        self.execute_interval = execute_interval
-        self.timerange = time.time() - timerange_shift
+        self.last_post_time = 0
+        self.post_interval = post_interval
+        self.last_parse_time = time.time() - shift_sec
 
     def is_inrange(self, check_time):
-        return self.timerange < check_time
+        return self.last_parse_time < check_time
 
     def allow_execute(self):
         current_time = time.time()
-        if current_time-self.last_execute_time > self.execute_interval:
-            self.last_execute_time = current_time
+        if current_time-self.last_post_time > self.post_interval:
+            self.last_post_time = current_time
             return True
         else:
             return False
@@ -46,8 +50,7 @@ class Listener(object):
 
     def __init__(self):
 
-        self.config_path = SCRIPT_PATH.parent.joinpath(
-            'config/listen_config.json')
+        self.config_path = SCRIPT_PATH.parent / 'config/listen_config.json'
         with self.config_path.open('r', encoding='utf-8') as _file:
             self.config = json.load(_file)
 
@@ -64,14 +67,14 @@ class Listener(object):
 
         self.func_map = {func_name[4:]: getattr(self, func_name) for func_name in dir(
             self) if func_name.startswith("cmd")}
-        self.timer = Timer(300, 30)
+        self.time_recorder = TimerRecorder(600, 30)
 
     async def close(self) -> None:
         coros = [tieba_dict['admin'].close()
                  for tieba_dict in self.tieba.values()]
         coros.append(self.listener.close())
         coros.append(self.speaker.close())
-        await asyncio.gather(*coros, return_exceptions=False)
+        await asyncio.gather(*coros, return_exceptions=True)
 
         for tieba_dict in self.tieba.values():
             tieba_dict['admin'] = tieba_dict['admin'].BDUSS_key
@@ -80,7 +83,7 @@ class Listener(object):
 
         with self.config_path.open('w', encoding='utf-8') as _file:
             json.dump(self.config, _file, sort_keys=False,
-                      indent=2, separators=(',', ':'), ensure_ascii=False)
+                      indent=1, separators=(',', ':'), ensure_ascii=False)
 
     async def __aenter__(self) -> "Listener":
         return self
@@ -92,7 +95,7 @@ class Listener(object):
 
         while 1:
             try:
-                await self.scan()
+                asyncio.create_task(self.scan())
                 tb.log.debug('heartbeat')
                 await asyncio.sleep(5)
 
@@ -103,42 +106,44 @@ class Listener(object):
                 return
 
     async def scan(self) -> None:
+        ats = await self.listener.get_ats()
+        for end_idx, at in enumerate(ats):
+            if not self.time_recorder.is_inrange(at.create_time):
+                self.time_recorder.last_parse_time = ats[0].create_time
+                ats = ats[:end_idx]
+                break
 
-        if (ats := await self.listener.get_ats()):
-            for end_index, at in enumerate(ats):
-                if not self.timer.is_inrange(at.create_time):
-                    self.timer.timerange = ats[0].create_time
-                    ats = ats[:end_index]
-                    break
-
-        coros = [self._handle_cmd(at) for at in ats]
-        await asyncio.gather(*coros)
+        await asyncio.gather(*[asyncio.wait_for(self._handle_cmd(at), timeout=120) for at in ats], return_exceptions=True)
 
     async def _handle_cmd(self, at) -> None:
         cmd_type, arg = self._parse_cmd(at.text)
         func = self.func_map.get(cmd_type, self.cmd_default)
         await func(at, arg)
 
-    def _parse_cmd(self, text) -> tuple[str, str]:
+    @staticmethod
+    def _parse_cmd(text) -> tuple[str, str]:
         """
         解析指令
         """
 
-        if not text.startswith('@'):
-            return '', ''
+        cmd_type = ''
+        arg = ''
 
-        cmd = re.sub('^@.*? ', '', text).strip()
+        if not text.startswith('@'):
+            return cmd_type, arg
+
+        first_blank_idx = text.find(' ')
+        if (split_start_idx := first_blank_idx+1) == len(text):
+            return cmd_type, arg
+
+        cmd = text[split_start_idx:].strip()
         cmds = cmd.split(' ', 1)
 
         if len(cmds) == 1:
             cmd_type = cmds[0]
-            arg = ''
-        elif len(cmds) == 2:
+        else:
             cmd_type = cmds[0]
             arg = cmds[1]
-        else:
-            cmd_type = ''
-            arg = ''
 
         return cmd_type, arg
 
@@ -425,7 +430,7 @@ class Listener(object):
         if mode == "enter":
             if await tieba_dict['admin'].mysql.update_tid(at.tieba_name, 0, True):
                 await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
-        if mode == "exit":
+        elif mode == "exit":
             if await tieba_dict['admin'].mysql.update_tid(at.tieba_name, 0, False):
                 await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
             async for tid in tieba_dict['admin'].mysql.get_tids(at.tieba_name):
@@ -615,7 +620,7 @@ class Listener(object):
         tieba_dict = self.tieba.get(at.tieba_name, None)
         if not tieba_dict:
             return
-        if not self.timer.allow_execute():
+        if not self.time_recorder.allow_execute():
             return
 
         active_admin_list = list(tieba_dict['access_user'].keys())[:5]
@@ -652,7 +657,7 @@ class Listener(object):
         tieba_dict = self.tieba.get(at.tieba_name, None)
         if not tieba_dict:
             return
-        if not self.timer.allow_execute():
+        if not self.time_recorder.allow_execute():
             return
         if not tieba_dict['access_user'].__contains__(at.user.user_name):
             return
