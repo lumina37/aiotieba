@@ -48,7 +48,7 @@ class TimerRecorder(object):
             return False
 
 
-def _access_check(need_access: int = 0, need_arg_num: int = 0) -> Callable:
+def _check(need_access: int = 0, need_arg_num: int = 0) -> Callable:
     """
     装饰器实现鉴权
 
@@ -168,7 +168,7 @@ class Listener(object):
 
         return cmd_type, args
 
-    @_access_check(need_access=1, need_arg_num=0)
+    @_check(need_access=1, need_arg_num=0)
     async def cmd_recommend(self, at, *args) -> None:
         """
         recommend指令
@@ -182,7 +182,7 @@ class Listener(object):
         if await tieba_dict['admin'].recommend(at.tieba_name, at.tid):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    @_access_check(need_access=2, need_arg_num=1)
+    @_check(need_access=2, need_arg_num=1)
     async def cmd_move(self, at, *args) -> None:
         """
         move指令
@@ -205,7 +205,7 @@ class Listener(object):
         if await tieba_dict['admin'].move(at.tieba_name, at.tid, to_tab_id, from_tab_id):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    @_access_check(need_access=2, need_arg_num=0)
+    @_check(need_access=2, need_arg_num=0)
     async def cmd_good(self, at, *args) -> None:
         """
         good指令
@@ -222,7 +222,7 @@ class Listener(object):
         if await tieba_dict['admin'].good(at.tieba_name, at.tid, args[0]):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    @_access_check(need_access=2, need_arg_num=0)
+    @_check(need_access=2, need_arg_num=0)
     async def cmd_ungood(self, at, *args) -> None:
         """
         ungood指令
@@ -236,7 +236,7 @@ class Listener(object):
         if await tieba_dict['admin'].ungood(at.tieba_name, at.tid):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    @_access_check(need_access=3, need_arg_num=0)
+    @_check(need_access=3, need_arg_num=0)
     async def cmd_top(self, at, *args) -> None:
         """
         top指令
@@ -250,7 +250,7 @@ class Listener(object):
         if await tieba_dict['admin'].top(at.tieba_name, at.tid):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    @_access_check(need_access=3, need_arg_num=0)
+    @_check(need_access=3, need_arg_num=0)
     async def cmd_untop(self, at, *args) -> None:
         """
         untop指令
@@ -264,7 +264,7 @@ class Listener(object):
         if await tieba_dict['admin'].untop(at.tieba_name, at.tid):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    @_access_check(need_access=2, need_arg_num=0)
+    @_check(need_access=2, need_arg_num=0)
     async def cmd_hide(self, at, *args) -> None:
         """
         hide指令
@@ -278,7 +278,7 @@ class Listener(object):
         if await tieba_dict['admin'].hide_thread(at.tieba_name, at.tid):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    @_access_check(need_access=2, need_arg_num=0)
+    @_check(need_access=2, need_arg_num=0)
     async def cmd_unhide(self, at, *args) -> None:
         """
         unhide指令
@@ -292,7 +292,7 @@ class Listener(object):
         if await tieba_dict['admin'].unhide_thread(at.tieba_name, at.tid):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    @_access_check(need_access=2, need_arg_num=0)
+    @_check(need_access=2, need_arg_num=0)
     async def cmd_drop(self, at, *args) -> None:
         """
         drop指令
@@ -312,7 +312,7 @@ class Listener(object):
         await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
         await asyncio.gather(tieba_dict['admin'].block(at.tieba_name, posts[0].user, day=10), tieba_dict['admin'].del_thread(at.tieba_name, at.tid))
 
-    @_access_check(need_access=4, need_arg_num=0)
+    @_check(need_access=4, need_arg_num=0)
     async def cmd_exdrop(self, at, *args) -> None:
         """
         exdrop指令
@@ -338,7 +338,7 @@ class Listener(object):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
         await tieba_dict['admin'].del_thread(at.tieba_name, at.tid)
 
-    @_access_check(need_access=2, need_arg_num=0)
+    @_check(need_access=2, need_arg_num=0)
     async def cmd_delete(self, at, *args) -> None:
         """
         delete指令
@@ -356,7 +356,7 @@ class Listener(object):
         await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
         await tieba_dict['admin'].del_thread(at.tieba_name, at.tid)
 
-    @_access_check(need_access=2, need_arg_num=0)
+    @_check(need_access=2, need_arg_num=0)
     async def cmd_water(self, at, *args) -> None:
         """
         water指令
@@ -374,7 +374,7 @@ class Listener(object):
         if await tieba_dict['admin'].mysql.update_tid(at.tieba_name, at.tid, True) and await tieba_dict['admin'].hide_thread(at.tieba_name, at.tid):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    @_access_check(need_access=2, need_arg_num=0)
+    @_check(need_access=2, need_arg_num=0)
     async def cmd_unwater(self, at, *args) -> None:
         """
         unwater指令
@@ -392,7 +392,7 @@ class Listener(object):
         if await tieba_dict['admin'].mysql.del_tid(at.tieba_name, at.tid) and await tieba_dict['admin'].unhide_thread(at.tieba_name, at.tid):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    @_access_check(need_access=2, need_arg_num=1)
+    @_check(need_access=3, need_arg_num=1)
     async def cmd_water_restrict(self, at, *args) -> None:
         """
         water_restrict指令
@@ -417,7 +417,7 @@ class Listener(object):
                 if await tieba_dict['admin'].unhide_thread(at.tieba_name, tid):
                     await tieba_dict['admin'].mysql.update_tid(at.tieba_name, tid, False)
 
-    @_access_check(need_access=2, need_arg_num=1)
+    @_check(need_access=2, need_arg_num=1)
     async def cmd_block(self, at, *args) -> None:
         """
         block指令
@@ -433,7 +433,7 @@ class Listener(object):
         if await tieba_dict['admin'].block(at.tieba_name, user, day=10):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    @_access_check(need_access=2, need_arg_num=1)
+    @_check(need_access=2, need_arg_num=1)
     async def cmd_block3(self, at, *args) -> None:
         """
         block指令
@@ -449,7 +449,7 @@ class Listener(object):
         if await tieba_dict['admin'].block(at.tieba_name, user, day=3):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    @_access_check(need_access=2, need_arg_num=1)
+    @_check(need_access=2, need_arg_num=1)
     async def cmd_unblock(self, at, *args) -> None:
         """
         unblock指令
@@ -465,7 +465,7 @@ class Listener(object):
         if await tieba_dict['admin'].unblock(at.tieba_name, user):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    @_access_check(need_access=4, need_arg_num=1)
+    @_check(need_access=4, need_arg_num=1)
     async def cmd_blacklist_add(self, at, *args) -> None:
         """
         blacklist_add指令
@@ -481,7 +481,7 @@ class Listener(object):
         if await tieba_dict['admin'].blacklist_add(at.tieba_name, user):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    @_access_check(need_access=3, need_arg_num=1)
+    @_check(need_access=3, need_arg_num=1)
     async def cmd_blacklist_cancel(self, at, *args) -> None:
         """
         blacklist_cancel指令
@@ -497,7 +497,7 @@ class Listener(object):
         if await tieba_dict['admin'].blacklist_cancel(at.tieba_name, user):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    @_access_check(need_access=4, need_arg_num=1)
+    @_check(need_access=4, need_arg_num=1)
     async def cmd_mysql_white(self, at, *args) -> None:
         """
         mysql_white指令
@@ -515,7 +515,7 @@ class Listener(object):
         if await tieba_dict['admin'].update_user_id(id, True):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    @_access_check(need_access=4, need_arg_num=1)
+    @_check(need_access=4, need_arg_num=1)
     async def cmd_mysql_black(self, at, *args) -> None:
         """
         mysql_black指令
@@ -533,7 +533,7 @@ class Listener(object):
         if await tieba_dict['admin'].update_user_id(args[0], False):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    @_access_check(need_access=3, need_arg_num=1)
+    @_check(need_access=3, need_arg_num=1)
     async def cmd_mysql_reset(self, at, *args) -> None:
         """
         mysql_reset指令
@@ -551,7 +551,7 @@ class Listener(object):
         if await tieba_dict['admin'].del_user_id(args[0]):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    @_access_check(need_access=0, need_arg_num=0)
+    @_check(need_access=0, need_arg_num=0)
     async def cmd_holyshit(self, at, *args) -> None:
         """
         holyshit指令
@@ -573,7 +573,7 @@ class Listener(object):
         if await self.speaker.add_post(at.tieba_name, at.tid, content):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    @_access_check(need_access=2, need_arg_num=0)
+    @_check(need_access=2, need_arg_num=0)
     async def cmd_refuse_appeals(self, at, *args) -> None:
         """
         refuse_appeals指令
@@ -585,7 +585,7 @@ class Listener(object):
         if await tieba_dict['admin'].refuse_appeals(at.tieba_name):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    @_access_check(need_access=1, need_arg_num=0)
+    @_check(need_access=1, need_arg_num=0)
     async def cmd_recom_status(self, at, *args) -> None:
         """
         recom_status指令
@@ -605,7 +605,7 @@ class Listener(object):
         if await self.speaker.add_post(at.tieba_name, at.tid, content):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    @_access_check(need_access=1, need_arg_num=2)
+    @_check(need_access=1, need_arg_num=2)
     async def cmd_vote_stat(self, at, *args) -> None:
         """
         vote_stat指令
@@ -671,7 +671,7 @@ class Listener(object):
         if await self.speaker.add_post(at.tieba_name, at.tid, content):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    @_access_check(need_access=5, need_arg_num=2)
+    @_check(need_access=5, need_arg_num=2)
     async def cmd_set_access(self, at, *args) -> None:
         """
         set_access指令
@@ -700,7 +700,7 @@ class Listener(object):
 
         await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    @_access_check(need_access=2, need_arg_num=0)
+    @_check(need_access=2, need_arg_num=0)
     async def cmd_register(self, at, *args) -> None:
         """
         register指令
@@ -715,7 +715,7 @@ class Listener(object):
 
         await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    @_access_check(need_access=2, need_arg_num=0)
+    @_check(need_access=2, need_arg_num=0)
     async def cmd_ping(self, at, *args) -> None:
         """
         ping指令
