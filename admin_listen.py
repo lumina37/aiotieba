@@ -82,6 +82,7 @@ class Listener(object):
         self.config_path = SCRIPT_PATH.parent / 'config/listen_config.json'
         with self.config_path.open('r', encoding='utf-8') as _file:
             self.config = json.load(_file)
+        self.config_mtime = self.config_path.stat().st_mtime
 
         self.listener = tb.Browser(self.config['listener'])
         self.speaker = tb.Browser(self.config['speaker'])
@@ -102,6 +103,9 @@ class Listener(object):
         coros.append(self.listener.close())
         coros.append(self.speaker.close())
         await asyncio.gather(*coros, return_exceptions=True)
+
+        if self.config_mtime != self.config_path.stat().st_mtime:
+            return
 
         for tieba_dict in self.tiebas.values():
             tieba_dict['admin'] = tieba_dict['admin'].BDUSS_key
