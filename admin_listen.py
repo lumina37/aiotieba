@@ -216,14 +216,13 @@ class Listener(object):
         将指令所在主题帖加到以cname为名的精华分区。cname默认为''即不分区
         """
 
-        if not cname:
-            cname = ''
+        cname = args[0] if len(args) else ''
 
         tieba_dict = self.tiebas[at.tieba_name]
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        if await tieba_dict['admin'].good(at.tieba_name, at.tid, args[0]):
+        if await tieba_dict['admin'].good(at.tieba_name, at.tid, cname):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=2, need_arg_num=0)

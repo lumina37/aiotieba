@@ -1111,7 +1111,7 @@ class At(_Container):
 
         if at_dict:
             try:
-                self._text = at_dict['content'][1:]
+                self._text = at_dict['content'].lstrip()
 
                 self.tieba_name = at_dict['fname']
                 self.fid = 0
