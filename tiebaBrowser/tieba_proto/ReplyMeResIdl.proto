@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+import "Page.proto";
+import "User.proto";
+import "Error.proto";
+
+message ReplyMeResIdl {
+    message DataRes {
+        Page page = 1;
+        message ReplyList {
+            uint64 thread_id = 1;
+            uint64 post_id = 2;
+            uint32 time = 3;
+            string fname = 5;
+            string content = 6;
+            uint32 is_floor = 7;
+            string quote_content = 8;
+            User replyer = 9;
+            uint64 quote_pid = 14;
+            User quote_user = 15;
+            User thread_author_user = 25;
+        }
+        repeated ReplyList reply_list = 2;
+    }
+    Error error = 1;
+    DataRes data = 2;
+}

@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 __all__ = ['BasicUserInfo', 'UserInfo',
-           'Thread', 'Post', 'Comment', 'At',
-           'Threads', 'Posts', 'Comments', 'Ats',
+           'Thread', 'Post', 'Comment', 'At', 'Reply',
+           'Threads', 'Posts', 'Comments', 'Ats', 'Replys',
            'Fragments'
            ]
 
@@ -76,8 +76,8 @@ class BasicUserInfo(object):
             self.portrait = user_proto.portrait
             self.user_id = user_proto.id
 
-    def __str__(self) -> str:
-        return f"user_name:{self.user_name} / nick_name:{self._nick_name} / portrait:{self._portrait} / user_id:{self._user_id}"
+    def __repr__(self) -> str:
+        return f"{{user_name: {self.user_name}, nick_name: {self._nick_name}, portrait: {self._portrait}, user_id: {self._user_id}}}"
 
     def __hash__(self) -> int:
         return self._user_id.__hash__()
@@ -546,7 +546,6 @@ class _Container(object):
 
     Fields:
         text (str): 文本内容
-        contents (Fragments): 内容碎片列表
 
         fid (int): 所在吧id
         tid (int): 帖子编号
@@ -555,7 +554,7 @@ class _Container(object):
         author_id (int): int 发布者user_id
     """
 
-    __slots__ = ['_text', 'contents', 'fid', 'tid', 'pid', 'user', 'author_id']
+    __slots__ = ['_text', 'fid', 'tid', 'pid', 'user', 'author_id']
 
     def __init__(self) -> None:
         self._text = ''
@@ -644,7 +643,7 @@ class Thread(_Container):
         last_time (int): 10位时间戳 最后回复时间
     """
 
-    __slots__ = ['tab_id', 'title', 'view_num', 'reply_num',
+    __slots__ = ['contents', 'tab_id', 'title', 'view_num', 'reply_num',
                  'agree', 'disagree', 'create_time', 'last_time', 'vote_info', 'share_origin']
 
     class VoteInfo(object):
@@ -815,7 +814,7 @@ class Post(_Container):
         is_thread_owner (bool): 是否楼主
     """
 
-    __slots__ = ['sign', 'comments', 'floor', 'reply_num',
+    __slots__ = ['contents', 'sign', 'comments', 'floor', 'reply_num',
                  'agree', 'disagree', 'create_time', 'is_thread_owner']
 
     def __init__(self, post_proto: Optional[Post_pb2.Post] = None) -> None:
@@ -925,7 +924,7 @@ class Comment(_Container):
         create_time (int): 10位时间戳，创建时间
     """
 
-    __slots__ = ['agree', 'disagree', 'create_time']
+    __slots__ = ['contents', 'agree', 'disagree', 'create_time']
 
     def __init__(self, comment_proto: Optional[SubPostList_pb2.SubPostList] = None) -> None:
         super().__init__()
@@ -933,9 +932,11 @@ class Comment(_Container):
         if comment_proto:
             self.contents = Fragments(comment_proto.content)
 
+            self.fid = 0
+            self.tid = 0
             self.pid = comment_proto.id
             self.user = UserInfo(user_proto=comment_proto.author)
-            self.author_id = comment_proto.author_id
+            self.author_id = self.user.user_id
 
             self.agree = comment_proto.agree.agree_num
             self.disagree = comment_proto.agree.disagree_num
@@ -998,32 +999,149 @@ class Comments(_Containers[Comment]):
             self.post = Post()
 
 
-class At(object):
+class Reply(_Container):
     """
-    @信息
-
+    回复信息
     Fields:
-        text (str): 文本
+        text (str): 文本内容
 
         tieba_name (str): 所在贴吧名
         tid (int): 帖子编号
         pid (int): 回复编号
         user (UserInfo): 发布者信息
+        author_id (int): int 发布者user_id
+
+        post_pid (int): 楼层pid
+        post_user (BasicUserInfo): 楼层用户信息
+        thread_user (BasicUserInfo): 楼主用户信息
 
         create_time (int): 10位时间戳，创建时间
     """
 
-    __slots__ = ['tieba_name', 'tid', 'pid', 'user', 'text', 'create_time']
+    __slots__ = ['tieba_name', 'post_pid',
+                 'post_user', 'thread_user', 'create_time']
 
-    def __init__(self, tieba_name: str = '', tid: int = 0, pid: int = 0, user: UserInfo = UserInfo(), text: str = '', create_time: int = 0) -> None:
-        self.text = text
+    def __init__(self, reply_proto: Optional[ReplyMeResIdl_pb2.ReplyMeResIdl.DataRes.ReplyList] = None) -> None:
+        super().__init__()
 
-        self.tieba_name = tieba_name
-        self.tid = tid
-        self.pid = pid
-        self.user = user
+        if reply_proto:
+            self._text = reply_proto.content
 
-        self.create_time = create_time
+            self.tieba_name = reply_proto.fname
+            self.fid = 0
+            self.tid = reply_proto.thread_id
+            self.pid = reply_proto.post_id
+            self.user = UserInfo(user_proto=reply_proto.replyer)
+            self.author_id = self.user.user_id
+
+            self.post_pid = reply_proto.quote_pid
+            self.post_user = BasicUserInfo(user_proto=reply_proto.quote_user)
+            self.thread_user = BasicUserInfo(
+                user_proto=reply_proto.thread_author_user)
+
+            self.create_time = reply_proto.time
+
+        else:
+            self.text = ''
+
+            self.tieba_name = ''
+            self.fid = 0
+            self.tid = 0
+            self.pid = 0
+            self.user = UserInfo()
+
+            self.post_pid = 0
+            self.post_user = BasicUserInfo()
+            self.thread_user = BasicUserInfo()
+
+            self.create_time = reply_proto.time
+
+    @property
+    def text(self) -> str:
+        return self._text
+
+
+class Replys(_Containers[Reply]):
+    """
+    Reply列表
+
+    Fields:
+        _objs (list[Comment])
+        page (Page): 页码信息
+        has_more (bool): 是否有后继页
+        has_prev (bool): 是否有前驱页
+    """
+
+    __slots__ = []
+
+    def __init__(self, replys_proto: Optional[ReplyMeResIdl_pb2.ReplyMeResIdl] = None) -> None:
+
+        if replys_proto:
+            data_proto = replys_proto.data
+            self.page = Page(data_proto.page)
+
+            self._objs = [Reply(reply_proto)
+                          for reply_proto in data_proto.reply_list]
+
+        else:
+            self._objs = []
+            self.page = Page()
+
+
+class At(_Container):
+    """
+    @信息
+
+    Fields:
+        text (str): 文本内容
+
+        tieba_name (str): 所在贴吧名
+        tid (int): 帖子编号
+        pid (int): 回复编号
+        user (UserInfo): 发布者信息
+        author_id (int): int 发布者user_id
+
+        create_time (int): 10位时间戳，创建时间
+    """
+
+    __slots__ = ['tieba_name', 'create_time']
+
+    def __init__(self, at_dict: Optional[dict]) -> None:
+        super().__init__()
+
+        if at_dict:
+            try:
+                self._text = at_dict['content'][1:]
+
+                self.tieba_name = at_dict['fname']
+                self.fid = 0
+                self.tid = int(at_dict['thread_id'])
+                self.pid = int(at_dict['post_id'])
+                user_proto = ParseDict(
+                    at_dict['replyer'], User_pb2.User(), ignore_unknown_fields=True)
+                self.user = UserInfo(user_proto=user_proto)
+                self.author_id = self.user.user_id
+
+                self.create_time = int(at_dict['time'])
+
+            except Exception as err:
+                raise ValueError(f"line {err.__traceback__.tb_lineno}: {err}")
+
+        else:
+            self._text = ''
+
+            self.tieba_name = ''
+            self.fid = 0
+            self.tid = 0
+            self.pid = 0
+            self.user = UserInfo()
+            self.author_id = 0
+
+            self.create_time = 0
+
+    @property
+    def text(self) -> str:
+        return self._text
 
 
 class Ats(_Containers[At]):
@@ -1039,35 +1157,16 @@ class Ats(_Containers[At]):
 
     def __init__(self, ats_dict: Optional[dict] = None) -> None:
 
-        def _init_obj(at_dict: dict) -> At:
-            try:
-                user_proto = ParseDict(
-                    at_dict['replyer'], User_pb2.User(), ignore_unknown_fields=True)
-                user = UserInfo(user_proto=user_proto)
-
-                at = At(tieba_name=at_dict['fname'],
-                        tid=int(at_dict['thread_id']),
-                        pid=int(at_dict['post_id']),
-                        text=at_dict['content'].lstrip(),
-                        user=user,
-                        create_time=int(at_dict['time'])
-                        )
-                return at
-
-            except Exception as err:
-                log.warning(
-                    f"Failed to init At. reason:line {err.__traceback__.tb_lineno} {err}")
-                return At()
-
         if ats_dict:
             try:
                 page_proto = ParseDict(
                     ats_dict['page'], Page_pb2.Page(), ignore_unknown_fields=True)
                 self.page = Page(page_proto)
+
             except Exception as err:
                 raise ValueError(f"line {err.__traceback__.tb_lineno}: {err}")
 
-            self._objs = [_init_obj(at_dict)
+            self._objs = [At(at_dict=at_dict)
                           for at_dict in ats_dict['at_list']]
 
         else:

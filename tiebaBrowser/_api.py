@@ -39,6 +39,16 @@ class Sessions(object):
 
     def __init__(self, BDUSS_key: Optional[str] = None) -> None:
 
+        web_cookie_jar = aiohttp.CookieJar()
+        if BDUSS_key:
+            self.BDUSS = config['BDUSS'][BDUSS_key]
+            self.STOKEN = config['STOKEN'].get(BDUSS_key, '')
+            web_cookie_jar.update_cookies(
+                {'BDUSS': self.BDUSS, 'STOKEN': self.STOKEN}, yarl.URL("http://tieba.baidu.com"))
+        else:
+            self.BDUSS = ''
+            self.STOKEN = ''
+
         self._timeout = aiohttp.ClientTimeout(
             connect=5, sock_connect=3, sock_read=10)
         self._connector = aiohttp.TCPConnector(
@@ -71,15 +81,6 @@ class Sessions(object):
                        aiohttp.hdrs.CONNECTION: 'keep-alive',
                        }
 
-        web_cookie_jar = aiohttp.CookieJar()
-        if BDUSS_key:
-            self.BDUSS = config['BDUSS'][BDUSS_key]
-            self.STOKEN = config['STOKEN'].get(BDUSS_key, '')
-            web_cookie_jar.update_cookies(
-                {'BDUSS': self.BDUSS, 'STOKEN': self.STOKEN}, yarl.URL("http://tieba.baidu.com"))
-        else:
-            self.BDUSS = ''
-            self.STOKEN = ''
         self.web = aiohttp.ClientSession(connector=self._connector, headers=web_headers, version=aiohttp.HttpVersion11,
                                          cookie_jar=web_cookie_jar, connector_owner=False, raise_for_status=True, timeout=self._timeout, trust_env=_trust_env)
 
@@ -1412,6 +1413,42 @@ class Browser(object):
 
         return msg
 
+    async def get_replys(self) -> Replys:
+        """
+        获取回复信息
+
+        Returns:
+            Replys: 回复列表
+        """
+
+        common = CommonReq_pb2.CommonReq()
+        common.BDUSS = self.sessions.BDUSS
+        common._client_version = '12.22.1.0'
+        data = ReplyMeReqIdl_pb2.ReplyMeReqIdl.DataReq()
+        data.common.CopyFrom(common)
+        replyme_req = ReplyMeReqIdl_pb2.ReplyMeReqIdl()
+        replyme_req.data.CopyFrom(data)
+
+        multipart_writer = self.get_tieba_multipart_writer(
+            replyme_req.SerializeToString())
+
+        try:
+            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/u/feed/replyme", params={'cmd': 303007}, data=multipart_writer)
+
+            main_proto = ReplyMeResIdl_pb2.ReplyMeResIdl()
+            main_proto.ParseFromString(await res.content.read())
+            if int(main_proto.error.errorno):
+                raise ValueError(main_proto.error.errmsg)
+
+            replys = Replys(main_proto)
+
+        except Exception as err:
+            log.warning(
+                f"Failed to get replys reason:{err}")
+            replys = Replys()
+
+        return replys
+
     async def get_ats(self) -> Ats:
         """
         获取@信息
@@ -2005,7 +2042,7 @@ class Browser(object):
             tieba_name (str): 贴吧名
 
         Returns:
-            bool: 签到是否成功 不考虑cash的问题
+            bool: 签到是否成功
         """
 
         try:
