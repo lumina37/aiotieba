@@ -60,7 +60,7 @@ def _check(need_access: int = 0, need_arg_num: int = 0) -> Callable:
     def wrapper(func) -> Callable:
 
         @functools.wraps(func)
-        async def foo(self, at, *args):
+        async def foo(self, at: tb.At, *args):
             if len(args) < need_arg_num:
                 return
             tieba_dict = self.tiebas.get(at.tieba_name, None)
@@ -144,13 +144,13 @@ class Listener(object):
 
         await asyncio.gather(*[asyncio.wait_for(self._handle_cmd(at), timeout=120) for at in ats], return_exceptions=True)
 
-    async def _handle_cmd(self, at) -> None:
+    async def _handle_cmd(self, at: tb.At) -> None:
         cmd_type, args = self._parse_cmd(at.text)
         func = self.func_map.get(cmd_type, self.cmd_default)
         await func(at, *args)
 
     @staticmethod
-    def _parse_cmd(text) -> tuple[str, str]:
+    def _parse_cmd(text: str) -> tuple[str, str]:
         """
         解析指令
         """
@@ -171,7 +171,7 @@ class Listener(object):
         return cmd_type, args
 
     @_check(need_access=1, need_arg_num=0)
-    async def cmd_recommend(self, at, *args) -> None:
+    async def cmd_recommend(self, at: tb.At, *args) -> None:
         """
         recommend指令
         对指令所在主题帖执行“大吧主首页推荐”操作
@@ -185,7 +185,7 @@ class Listener(object):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=2, need_arg_num=1)
-    async def cmd_move(self, at, *args) -> None:
+    async def cmd_move(self, at: tb.At, *args) -> None:
         """
         move指令
         将指令所在主题帖移动至名为tab_name的分区
@@ -208,7 +208,7 @@ class Listener(object):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=2, need_arg_num=0)
-    async def cmd_good(self, at, *args) -> None:
+    async def cmd_good(self, at: tb.At, *args) -> None:
         """
         good指令
         将指令所在主题帖加到以cname为名的精华分区。cname默认为''即不分区
@@ -224,7 +224,7 @@ class Listener(object):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=2, need_arg_num=0)
-    async def cmd_ungood(self, at, *args) -> None:
+    async def cmd_ungood(self, at: tb.At, *args) -> None:
         """
         ungood指令
         撤销指令所在主题帖的精华
@@ -238,7 +238,7 @@ class Listener(object):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=3, need_arg_num=0)
-    async def cmd_top(self, at, *args) -> None:
+    async def cmd_top(self, at: tb.At, *args) -> None:
         """
         top指令
         置顶指令所在主题帖
@@ -252,7 +252,7 @@ class Listener(object):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=3, need_arg_num=0)
-    async def cmd_untop(self, at, *args) -> None:
+    async def cmd_untop(self, at: tb.At, *args) -> None:
         """
         untop指令
         撤销指令所在主题帖的置顶
@@ -266,7 +266,7 @@ class Listener(object):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=2, need_arg_num=0)
-    async def cmd_hide(self, at, *args) -> None:
+    async def cmd_hide(self, at: tb.At, *args) -> None:
         """
         hide指令
         屏蔽指令所在主题帖
@@ -280,7 +280,7 @@ class Listener(object):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=2, need_arg_num=0)
-    async def cmd_unhide(self, at, *args) -> None:
+    async def cmd_unhide(self, at: tb.At, *args) -> None:
         """
         unhide指令
         解除指令所在主题帖的屏蔽
@@ -294,30 +294,26 @@ class Listener(object):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=2, need_arg_num=0)
-    async def cmd_drop(self, at, *args) -> None:
+    async def cmd_drop(self, at: tb.At, *args) -> None:
         """
         drop指令
-        删除指令所在主题帖并封禁楼主十天
+        删除指令所在主题帖并封禁楼主10天
         """
 
-        tieba_dict = self.tiebas[at.tieba_name]
-
-        if not (posts := await self.listener.get_posts(at.tid)):
-            return
-
-        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
-
-        tb.log.info(
-            f"Try to delete thread {posts[0].text} post by {posts[0].user.log_name}")
-
-        await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
-        await asyncio.gather(tieba_dict['admin'].block(at.tieba_name, posts[0].user, day=10), tieba_dict['admin'].del_thread(at.tieba_name, at.tid))
+        await self._drop(at, 10)
 
     @_check(need_access=2, need_arg_num=0)
-    async def cmd_drop3(self, at, *args) -> None:
+    async def cmd_drop3(self, at: tb.At, *args) -> None:
         """
         drop3指令
-        删除指令所在主题帖并封禁楼主三天
+        删除指令所在主题帖并封禁楼主3天
+        """
+
+        await self._drop(at, 3)
+
+    async def _drop(self, at, block_days: int):
+        """
+        drop & drop3指令的实现
         """
 
         tieba_dict = self.tiebas[at.tieba_name]
@@ -331,10 +327,10 @@ class Listener(object):
             f"Try to delete thread {posts[0].text} post by {posts[0].user.log_name}")
 
         await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
-        await asyncio.gather(tieba_dict['admin'].block(at.tieba_name, posts[0].user, day=3), tieba_dict['admin'].del_thread(at.tieba_name, at.tid))
+        await asyncio.gather(tieba_dict['admin'].block(at.tieba_name, posts[0].user, day=block_days), tieba_dict['admin'].del_thread(at.tieba_name, at.tid))
 
     @_check(need_access=4, need_arg_num=0)
-    async def cmd_exdrop(self, at, *args) -> None:
+    async def cmd_exdrop(self, at: tb.At, *args) -> None:
         """
         exdrop指令
         删除指令所在主题帖并将楼主加入脚本黑名单+封禁十天
@@ -360,7 +356,7 @@ class Listener(object):
         await tieba_dict['admin'].del_thread(at.tieba_name, at.tid)
 
     @_check(need_access=2, need_arg_num=0)
-    async def cmd_delete(self, at, *args) -> None:
+    async def cmd_delete(self, at: tb.At, *args) -> None:
         """
         delete指令
         删除指令所在主题帖
@@ -378,7 +374,7 @@ class Listener(object):
         await tieba_dict['admin'].del_thread(at.tieba_name, at.tid)
 
     @_check(need_access=2, need_arg_num=0)
-    async def cmd_water(self, at, *args) -> None:
+    async def cmd_water(self, at: tb.At, *args) -> None:
         """
         water指令
         将指令所在主题帖标记为无关水，并临时屏蔽
@@ -396,7 +392,7 @@ class Listener(object):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=2, need_arg_num=0)
-    async def cmd_unwater(self, at, *args) -> None:
+    async def cmd_unwater(self, at: tb.At, *args) -> None:
         """
         unwater指令
         清除指令所在主题帖的无关水标记，并立刻解除屏蔽
@@ -414,7 +410,7 @@ class Listener(object):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=3, need_arg_num=1)
-    async def cmd_water_restrict(self, at, *args) -> None:
+    async def cmd_water_restrict(self, at: tb.At, *args) -> None:
         """
         water_restrict指令
         控制当前吧的云审查脚本的无关水管控状态
@@ -439,39 +435,39 @@ class Listener(object):
                     await tieba_dict['admin'].mysql.update_tid(at.tieba_name, tid, False)
 
     @_check(need_access=2, need_arg_num=1)
-    async def cmd_block(self, at, *args) -> None:
+    async def cmd_block(self, at: tb.At, *args) -> None:
         """
         block指令
-        通过id封禁对应用户十天
+        通过id封禁对应用户10天
+        """
+
+        await self._block(at, args[0], 10)
+
+    @_check(need_access=2, need_arg_num=1)
+    async def cmd_block3(self, at: tb.At, *args) -> None:
+        """
+        block3指令
+        通过id封禁对应用户3天
+        """
+
+        await self._block(at, args[0], 3)
+
+    async def _block(self, at: tb.At, _id: str, block_days: int) -> None:
+        """
+        block & block3指令的实现
         """
 
         tieba_dict = self.tiebas[at.tieba_name]
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
-        user = await self.listener.get_user_info(args[0])
+        user = await self.listener.get_user_info(_id)
 
-        if await tieba_dict['admin'].block(at.tieba_name, user, day=10):
+        if await tieba_dict['admin'].block(at.tieba_name, user, day=block_days):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=2, need_arg_num=1)
-    async def cmd_block3(self, at, *args) -> None:
-        """
-        block指令
-        通过id封禁对应用户三天
-        """
-
-        tieba_dict = self.tiebas[at.tieba_name]
-
-        tb.log.info(f"{at.user.user_name}: {at.text}")
-
-        user = await self.listener.get_user_info(args[0])
-
-        if await tieba_dict['admin'].block(at.tieba_name, user, day=3):
-            await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
-
-    @_check(need_access=2, need_arg_num=1)
-    async def cmd_unblock(self, at, *args) -> None:
+    async def cmd_unblock(self, at: tb.At, *args) -> None:
         """
         unblock指令
         通过id解封用户
@@ -487,7 +483,7 @@ class Listener(object):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=4, need_arg_num=1)
-    async def cmd_blacklist_add(self, at, *args) -> None:
+    async def cmd_blacklist_add(self, at: tb.At, *args) -> None:
         """
         blacklist_add指令
         将id加入贴吧黑名单
@@ -503,7 +499,7 @@ class Listener(object):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=3, need_arg_num=1)
-    async def cmd_blacklist_cancel(self, at, *args) -> None:
+    async def cmd_blacklist_cancel(self, at: tb.At, *args) -> None:
         """
         blacklist_cancel指令
         将id移出贴吧黑名单
@@ -519,7 +515,7 @@ class Listener(object):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=4, need_arg_num=1)
-    async def cmd_mysql_white(self, at, *args) -> None:
+    async def cmd_mysql_white(self, at: tb.At, *args) -> None:
         """
         mysql_white指令
         将id加入脚本白名单
@@ -537,7 +533,7 @@ class Listener(object):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=4, need_arg_num=1)
-    async def cmd_mysql_black(self, at, *args) -> None:
+    async def cmd_mysql_black(self, at: tb.At, *args) -> None:
         """
         mysql_black指令
         将id加入脚本黑名单
@@ -555,7 +551,7 @@ class Listener(object):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=3, need_arg_num=1)
-    async def cmd_mysql_reset(self, at, *args) -> None:
+    async def cmd_mysql_reset(self, at: tb.At, *args) -> None:
         """
         mysql_reset指令
         清除id的脚本黑/白名单状态
@@ -573,7 +569,7 @@ class Listener(object):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=0, need_arg_num=0)
-    async def cmd_holyshit(self, at, *args) -> None:
+    async def cmd_holyshit(self, at: tb.At, *args) -> None:
         """
         holyshit指令
         召唤五名活跃吧务，使用参数extra_info来附带额外的召唤需求
@@ -595,7 +591,7 @@ class Listener(object):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=2, need_arg_num=0)
-    async def cmd_refuse_appeals(self, at, *args) -> None:
+    async def cmd_refuse_appeals(self, at: tb.At, *args) -> None:
         """
         refuse_appeals指令
         一键拒绝所有解封申诉
@@ -609,7 +605,7 @@ class Listener(object):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=1, need_arg_num=0)
-    async def cmd_recom_status(self, at, *args) -> None:
+    async def cmd_recom_status(self, at: tb.At, *args) -> None:
         """
         recom_status指令
         获取大吧主推荐功能的月度配额状态
@@ -629,7 +625,7 @@ class Listener(object):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=1, need_arg_num=2)
-    async def cmd_vote_stat(self, at, *args) -> None:
+    async def cmd_vote_stat(self, at: tb.At, *args) -> None:
         """
         vote_stat指令
         统计投票结果
@@ -695,7 +691,7 @@ class Listener(object):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=5, need_arg_num=2)
-    async def cmd_set_access(self, at, *args) -> None:
+    async def cmd_set_access(self, at: tb.At, *args) -> None:
         """
         set_access指令
         设置用户的权限级别
@@ -724,7 +720,7 @@ class Listener(object):
         await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=2, need_arg_num=0)
-    async def cmd_register(self, at, *args) -> None:
+    async def cmd_register(self, at: tb.At, *args) -> None:
         """
         register指令
         将发起指令的吧务移动到活跃吧务队列的最前端，以响应holyshit指令
@@ -739,7 +735,7 @@ class Listener(object):
         await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=2, need_arg_num=0)
-    async def cmd_ping(self, at, *args) -> None:
+    async def cmd_ping(self, at: tb.At, *args) -> None:
         """
         ping指令
         用于测试bot可用性的空指令
@@ -751,7 +747,7 @@ class Listener(object):
 
         await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    async def cmd_default(self, at, *args) -> None:
+    async def cmd_default(self, at: tb.At, *args) -> None:
         """
         default指令
         """
