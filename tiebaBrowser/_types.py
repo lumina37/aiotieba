@@ -77,7 +77,7 @@ class BasicUserInfo(object):
             self.user_id = user_proto.id
 
     def __repr__(self) -> str:
-        return f"{{user_name: {self.user_name}, nick_name: {self._nick_name}, portrait: {self._portrait}, user_id: {self._user_id}}}"
+        return f"{{'user_name': '{self.user_name}', 'nick_name': '{self._nick_name}', 'portrait': '{self._portrait}', 'user_id': {self._user_id}}}"
 
     def __hash__(self) -> int:
         return self._user_id.__hash__()
@@ -128,7 +128,7 @@ class BasicUserInfo(object):
         if self.user_name:
             return self.user_name
         else:
-            return f'{self.nick_name}/{self.portrait}'
+            return f"{self.nick_name}/{self.portrait}"
 
 
 class UserInfo(BasicUserInfo):
@@ -369,6 +369,7 @@ class Fragments(Generic[_TFrag]):
         _frags (list[_Fragment]): 所有碎片的混合列表
 
         texts (list[FragText]): 纯文本碎片列表
+        links (list[FragLink]): 链接碎片列表
         emojis (list[FragEmoji]): 表情碎片列表
         imgs (list[FragImage]): 图像碎片列表
         ats (list[FragAt]): @碎片列表
@@ -376,7 +377,7 @@ class Fragments(Generic[_TFrag]):
         tiebapluses (list[FragTiebaPlus]): 贴吧+碎片列表
     """
 
-    __slots__ = ['_frags', '_text', 'texts', 'imgs',
+    __slots__ = ['_frags', '_text', 'texts', 'links', 'imgs',
                  'emojis', 'ats', 'voice', 'tiebapluses']
 
     def __init__(self, content_protos: Optional[Iterable] = None) -> None:
@@ -395,10 +396,11 @@ class Fragments(Generic[_TFrag]):
                 self.imgs.append(fragment)
             elif _type == 4:
                 fragment = FragAt(content_proto)
-                self.texts.append(fragment)
                 self.ats.append(fragment)
+                self.texts.append(fragment)
             elif _type == 1:
                 fragment = FragLink(content_proto)
+                self.links.append(fragment)
                 self.texts.append(fragment)
             elif _type == 5:
                 fragment = _Fragment()
@@ -427,6 +429,7 @@ class Fragments(Generic[_TFrag]):
 
         self._text = ''
         self.texts = []
+        self.links = []
         self.imgs = []
         self.emojis = []
         self.ats = []
@@ -548,8 +551,8 @@ class _Container(object):
         text (str): 文本内容
 
         fid (int): 所在吧id
-        tid (int): 帖子编号
-        pid (int): 回复编号
+        tid (int): 主题帖tid
+        pid (int): 回复pid
         user (UserInfo): 发布者信息
         author_id (int): int 发布者user_id
     """
@@ -626,8 +629,8 @@ class Thread(_Container):
         contents (Fragments): 内容碎片列表
 
         fid (int): 所在吧id
-        tid (int): 帖子编号
-        pid (int): 回复编号
+        tid (int): 主题帖tid
+        pid (int): 首楼的回复pid
         user (UserInfo): 发布者信息
         author_id (int): int 发布者user_id
 
@@ -801,8 +804,8 @@ class Post(_Container):
         comments (list[Comment]): 高赞楼中楼
 
         fid (int): 所在吧id
-        tid (int): 帖子编号
-        pid (int): 回复编号
+        tid (int): 所在主题帖tid
+        pid (int): 回复pid
         user (UserInfo): 发布者信息
         author_id (int): int 发布者user_id
 
@@ -811,11 +814,11 @@ class Post(_Container):
         agree (int): 点赞数
         disagree (int): 点踩数
         create_time (int): 10位时间戳，创建时间
-        is_thread_owner (bool): 是否楼主
+        is_thread_author (bool): 是否楼主
     """
 
     __slots__ = ['contents', 'sign', 'comments', 'floor', 'reply_num',
-                 'agree', 'disagree', 'create_time', 'is_thread_owner']
+                 'agree', 'disagree', 'create_time', 'is_thread_author']
 
     def __init__(self, post_proto: Optional[Post_pb2.Post] = None) -> None:
         super().__init__()
@@ -850,7 +853,7 @@ class Post(_Container):
             self.agree = 0
             self.disagree = 0
             self.create_time = 0
-            self.is_thread_owner = False
+            self.is_thread_author = False
 
     @property
     def text(self) -> str:
@@ -885,18 +888,20 @@ class Posts(_Containers[Post]):
             self.page = Page(data_proto.page)
             self.forum = Forum(data_proto.forum)
             self.thread = Thread(data_proto.thread)
-            thread_owner_id = self.thread.user.user_id
+            thread_author_id = self.thread.user.user_id
 
             users = {user_proto.id: UserInfo(
                 user_proto=user_proto) for user_proto in data_proto.user_list}
             self._objs = [Post(post_proto)
                           for post_proto in data_proto.post_list]
             for post in self._objs:
-                post.is_thread_owner = thread_owner_id == post.author_id
+                post.is_thread_author = thread_author_id == post.author_id
                 post.fid = self.forum.fid
                 post.tid = self.thread.tid
                 post.user = users.get(post.author_id, UserInfo())
                 for comment in post.comments:
+                    comment.fid = post.fid
+                    comment.tid = post.tid
                     comment.user = users.get(comment.author_id, UserInfo())
 
         else:
@@ -914,8 +919,8 @@ class Comment(_Container):
         contents (Fragments): 内容碎片列表
 
         fid (int): 所在吧id
-        tid (int): 帖子编号
-        pid (int): 回复编号
+        tid (int): 所在主题帖tid
+        pid (int): 回复pid
         user (UserInfo): 发布者信息
         author_id (int): int 发布者user_id
 
@@ -936,7 +941,8 @@ class Comment(_Container):
             self.tid = 0
             self.pid = comment_proto.id
             self.user = UserInfo(user_proto=comment_proto.author)
-            self.author_id = self.user.user_id
+            self.author_id = author_id if (
+                author_id := comment_proto.author_id) else self.user.user_id
 
             self.agree = comment_proto.agree.agree_num
             self.disagree = comment_proto.agree.disagree_num
@@ -1006,20 +1012,20 @@ class Reply(_Container):
         text (str): 文本内容
 
         tieba_name (str): 所在贴吧名
-        tid (int): 帖子编号
-        pid (int): 回复编号
+        tid (int): 所在主题帖tid
+        pid (int): 回复pid
         user (UserInfo): 发布者信息
         author_id (int): int 发布者user_id
-
         post_pid (int): 楼层pid
         post_user (BasicUserInfo): 楼层用户信息
         thread_user (BasicUserInfo): 楼主用户信息
 
+        is_floor (bool): 是否楼中楼
         create_time (int): 10位时间戳，创建时间
     """
 
-    __slots__ = ['tieba_name', 'post_pid',
-                 'post_user', 'thread_user', 'create_time']
+    __slots__ = ['tieba_name', 'post_pid', 'post_user',
+                 'thread_user', 'is_floor', 'create_time']
 
     def __init__(self, reply_proto: Optional[ReplyMeResIdl_pb2.ReplyMeResIdl.DataRes.ReplyList] = None) -> None:
         super().__init__()
@@ -1033,12 +1039,12 @@ class Reply(_Container):
             self.pid = reply_proto.post_id
             self.user = UserInfo(user_proto=reply_proto.replyer)
             self.author_id = self.user.user_id
-
             self.post_pid = reply_proto.quote_pid
             self.post_user = BasicUserInfo(user_proto=reply_proto.quote_user)
             self.thread_user = BasicUserInfo(
                 user_proto=reply_proto.thread_author_user)
 
+            self.is_floor = bool(reply_proto.is_floor)
             self.create_time = reply_proto.time
 
         else:
@@ -1049,11 +1055,11 @@ class Reply(_Container):
             self.tid = 0
             self.pid = 0
             self.user = UserInfo()
-
             self.post_pid = 0
             self.post_user = BasicUserInfo()
             self.thread_user = BasicUserInfo()
 
+            self.is_floor = False
             self.create_time = reply_proto.time
 
     @property
@@ -1096,15 +1102,18 @@ class At(_Container):
         text (str): 文本内容
 
         tieba_name (str): 所在贴吧名
-        tid (int): 帖子编号
-        pid (int): 回复编号
+        tid (int): 所在主题帖tid
+        pid (int): 回复pid
         user (UserInfo): 发布者信息
-        author_id (int): int 发布者user_id
+        author_id (int): 发布者user_id
+
+        is_floor (bool): 是否楼中楼
+        is_thread (bool): 是否主题帖
 
         create_time (int): 10位时间戳，创建时间
     """
 
-    __slots__ = ['tieba_name', 'create_time']
+    __slots__ = ['tieba_name', 'is_floor', 'is_thread', 'create_time']
 
     def __init__(self, at_dict: Optional[dict]) -> None:
         super().__init__()
@@ -1122,6 +1131,8 @@ class At(_Container):
                 self.user = UserInfo(user_proto=user_proto)
                 self.author_id = self.user.user_id
 
+                self.is_floor = bool(int(at_dict['is_floor']))
+                self.is_thread = bool(int(at_dict['is_first_post']))
                 self.create_time = int(at_dict['time'])
 
             except Exception as err:
@@ -1137,6 +1148,8 @@ class At(_Container):
             self.user = UserInfo()
             self.author_id = 0
 
+            self.is_floor = False
+            self.is_thread = False
             self.create_time = 0
 
     @property

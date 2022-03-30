@@ -19,7 +19,7 @@ async def stat_word(tieba_name):
 
     import jieba
 
-    async with tb.Browser("default") as brow:
+    async with tb.Browser("starry") as brow:
 
         def _stopword_iter(dir):
             for txt_filepath in Path(dir).glob("*.txt"):
@@ -72,7 +72,7 @@ async def stat_rank(tieba_name):
     start_time = time.perf_counter()
     tb.log.info(f"Spider start")
 
-    async with tb.Browser("default") as brow:
+    async with tb.Browser("starry") as brow:
 
         rank_db_proto = StatDatabase_pb2.RankUserDatabase()
         total_pn = 3700
@@ -111,7 +111,7 @@ async def stat_rank(tieba_name):
 
 async def stat_risk_user(tieba_name):
 
-    async with tb.CloudReview("default", tieba_name) as brow:
+    async with tb.CloudReview("starry", tieba_name) as brow:
 
         start_time = time.perf_counter()
         tb.log.info(f"Spider start")
@@ -209,7 +209,7 @@ async def stat_risk_user(tieba_name):
 
 
 async def main():
-    await stat_word('v')
+    await stat_word('嘉然')
     # await stat_risk_user('asoul')
 
 

@@ -95,7 +95,7 @@ class Listener(object):
 
         self.func_map = {func_name[4:]: getattr(self, func_name) for func_name in dir(
             self) if func_name.startswith("cmd")}
-        self.time_recorder = TimerRecorder(600, 30)
+        self.time_recorder = TimerRecorder(3600, 30)
 
     async def close(self) -> None:
         coros = [tieba_dict['admin'].close()
@@ -158,9 +158,7 @@ class Listener(object):
         cmd_type = ''
         args = []
 
-        if not text.startswith('@'):
-            return cmd_type, args
-
+        text = text[text.find('@'):]
         first_blank_idx = text.find(' ')
         if (split_start_idx := first_blank_idx+1) == len(text):
             return cmd_type, args
@@ -314,6 +312,26 @@ class Listener(object):
 
         await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
         await asyncio.gather(tieba_dict['admin'].block(at.tieba_name, posts[0].user, day=10), tieba_dict['admin'].del_thread(at.tieba_name, at.tid))
+
+    @_check(need_access=2, need_arg_num=0)
+    async def cmd_drop3(self, at, *args) -> None:
+        """
+        drop3指令
+        删除指令所在主题帖并封禁楼主三天
+        """
+
+        tieba_dict = self.tiebas[at.tieba_name]
+
+        if not (posts := await self.listener.get_posts(at.tid)):
+            return
+
+        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+
+        tb.log.info(
+            f"Try to delete thread {posts[0].text} post by {posts[0].user.log_name}")
+
+        await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+        await asyncio.gather(tieba_dict['admin'].block(at.tieba_name, posts[0].user, day=3), tieba_dict['admin'].del_thread(at.tieba_name, at.tid))
 
     @_check(need_access=4, need_arg_num=0)
     async def cmd_exdrop(self, at, *args) -> None:
@@ -583,6 +601,8 @@ class Listener(object):
         一键拒绝所有解封申诉
         """
 
+        tieba_dict = self.tiebas[at.tieba_name]
+
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
         if await tieba_dict['admin'].refuse_appeals(at.tieba_name):
@@ -630,7 +650,7 @@ class Listener(object):
                 pn (int): 页码
             """
 
-            posts = await self.listener.get_posts(at.tid, pn, with_comments=True, comment_sort_by_agree=True)
+            posts = await self.listener.get_posts(at.tid, pn, only_thread_author=True, with_comments=True, comment_sort_by_agree=True)
             await asyncio.gather(*[_stat_post(post) for post in posts])
 
         async def _stat_post(post: tb.Post) -> None:
@@ -748,4 +768,4 @@ if __name__ == '__main__':
     try:
         asyncio.run(main())
     except:
-        pass
+        raise

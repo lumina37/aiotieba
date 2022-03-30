@@ -6,6 +6,7 @@ message PbPageReqIdl {
     message DataReq {
         CommonReq common = 25;
         int64 kz = 4;
+        int32 lz = 5;
         int32 r = 6;
         int32 with_floor = 8;
         int32 floor_rn = 9;

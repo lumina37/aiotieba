@@ -53,7 +53,7 @@ class Sessions(object):
             connect=5, sock_connect=3, sock_read=10)
         self._connector = aiohttp.TCPConnector(
             verify_ssl=False, ttl_dns_cache=600, keepalive_timeout=90, limit=None, family=socket.AF_INET)
-        _trust_env = False
+        _trust_env = True
 
         # Init app client
         app_headers = {aiohttp.hdrs.USER_AGENT: 'bdtb for Android 12.22.1.0',
@@ -438,14 +438,16 @@ class Browser(object):
 
         return threads
 
-    async def get_posts(self, tid: int, pn: int = 1, reverse: bool = False, with_comments: bool = False, comment_sort_by_agree: bool = True, comment_rn: int = 10) -> Posts:
+    async def get_posts(self, tid: int, pn: int = 1, rn: int = 30, sort: int = 0, only_thread_author: bool = False, with_comments: bool = False, comment_sort_by_agree: bool = True, comment_rn: int = 10) -> Posts:
         """
         获取主题帖内回复
 
         Args:
-            tid (int): 主题帖tid
+            tid (int): 所在主题帖tid
             pn (int, optional): 页码. Defaults to 1.
-            reverse (bool, optional): True则按时间倒序请求 Flase则按时间顺序请求. Defaults to False.
+            rn (int, optional): 请求的条目数. Defaults to 30.
+            sort (int, optional): 0则按时间顺序请求 1则按时间倒序请求 2则按热门序请求. Defaults to 0.
+            only_thread_author (bool, optional): True则只看楼主 False则请求全部. Defaults to False.
             with_comments (bool, optional): True则同时请求高赞楼中楼 False则返回的Posts.comments为空. Defaults to False.
             comment_sort_by_agree (bool, optional): True则楼中楼按点赞数顺序 False则楼中楼按时间顺序. Defaults to True.
             comment_rn (int, optional): 请求的楼中楼数量. Defaults to 10.
@@ -460,9 +462,10 @@ class Browser(object):
         data.common.CopyFrom(common)
         data.kz = tid
         data.pn = pn
-        data.rn = 30
+        data.rn = rn
         data.q_type = 2
-        data.r = reverse
+        data.r = sort
+        data.lz = only_thread_author
         if with_comments:
             data.with_floor = with_comments
             data.floor_sort_type = comment_sort_by_agree
@@ -489,14 +492,15 @@ class Browser(object):
 
         return posts
 
-    async def get_comments(self, tid: int, pid: int, pn: int = 1) -> Comments:
+    async def get_comments(self, tid: int, pid: int, pn: int = 1, is_floor: bool = False) -> Comments:
         """
         获取楼中楼回复
 
         Args:
-            tid (int): 主题帖tid
-            pid (int): 回复pid
+            tid (int): 所在主题帖tid
+            pid (int): 所在回复pid或楼中楼pid
             pn (int, optional): 页码. Defaults to 1.
+            is_floor (bool, optional): pid是否指向楼中楼. Defaults to False.
 
         Returns:
             Comments: 楼中楼列表
@@ -507,7 +511,10 @@ class Browser(object):
         data = PbFloorReqIdl_pb2.PbFloorReqIdl.DataReq()
         data.common.CopyFrom(common)
         data.kz = tid
-        data.pid = pid
+        if is_floor:
+            data.spid = pid
+        else:
+            data.pid = pid
         data.pn = pn
         pbfloor_req = PbFloorReqIdl_pb2.PbFloorReqIdl()
         pbfloor_req.data.CopyFrom(data)
@@ -1235,7 +1242,7 @@ class Browser(object):
             拒绝或通过解封申诉
 
             Args:
-                appeal_id (int): 申诉请求的编号
+                appeal_id (int): 申诉请求的appeal_id
                 refuse (bool, optional): True则拒绝申诉 False则接受申诉. Defaults to True.
 
             Closure Args:
@@ -1270,13 +1277,13 @@ class Browser(object):
 
         async def _get_appeal_list() -> list[int]:
             """
-            获取申诉请求的编号(appeal_id)的列表
+            获取申诉请求的appeal_id的列表
 
             Closure Args:
                 tieba_name (str): 贴吧名
 
             Returns:
-                list[int]: 申诉请求的编号的列表
+                list[int]: 申诉请求的appeal_id的列表
             """
 
             params = {'fn': tieba_name,
