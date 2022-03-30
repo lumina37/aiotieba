@@ -114,6 +114,7 @@ class AsoulCloudReview(tb.CloudReview):
         if self.water_restrict_flag:
             # 当前吧处于高峰期限水状态
             if await self.mysql.is_tid_hide(self.tieba_name, thread.tid) == False:
+                await self.mysql.update_tid(self.tieba_name, thread.tid, True)
                 return 2, 0, sys._getframe().f_lineno
 
         # 该帖子里的内容没有发生任何变化 直接跳过所有后续检查
