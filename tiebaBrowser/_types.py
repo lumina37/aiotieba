@@ -80,7 +80,7 @@ class BasicUserInfo(object):
         return f"{{'user_name': '{self.user_name}', 'nick_name': '{self._nick_name}', 'portrait': '{self._portrait}', 'user_id': {self._user_id}}}"
 
     def __hash__(self) -> int:
-        return self._user_id.__hash__()
+        return self._user_id
 
     def __int__(self) -> int:
         return self._user_id
@@ -509,38 +509,28 @@ class Page(object):
     """
 
     __slots__ = ['page_size', 'current_page', 'total_page',
-                 'total_count', '_has_more', '_has_prev']
+                 'total_count', 'has_more', 'has_prev']
 
     def __init__(self, page_proto: Optional[Page_pb2.Page] = None) -> None:
         if page_proto:
             self.page_size = page_proto.page_size
             self.current_page = page_proto.current_page
             self.total_page = page_proto.total_page
-            self._has_more = bool(page_proto.has_more)
-            self._has_prev = bool(page_proto.has_prev)
+            if self.current_page and self.total_page:
+                self.has_more = self.current_page < self.total_page
+                self.has_prev = self.current_page > self.total_page
+            else:
+                self.has_more = bool(page_proto.has_more)
+                self.has_prev = bool(page_proto.has_prev)
             self.total_count = page_proto.total_count
 
         else:
             self.page_size = 0
             self.current_page = 0
             self.total_page = 0
-            self._has_more = None
-            self._has_prev = None
+            self.has_more = False
+            self.has_prev = False
             self.total_count = 0
-
-    @property
-    def has_more(self):
-        if self._has_more is None:
-            return self.current_page < self.total_page
-        else:
-            return self._has_more
-
-    @property
-    def has_prev(self):
-        if self._has_prev is None:
-            return self.current_page > self.total_page
-        else:
-            return self._has_prev
 
 
 class _Container(object):
@@ -640,13 +630,14 @@ class Thread(_Container):
         share_origin (Union[Thread, None]): 转发来的原帖内容
         view_num (int): 浏览量
         reply_num (int): 回复数
+        share_num (int): 分享数
         agree (int): 点赞数
         disagree (int): 点踩数
         create_time (int): 10位时间戳 创建时间
         last_time (int): 10位时间戳 最后回复时间
     """
 
-    __slots__ = ['contents', 'tab_id', 'title', 'view_num', 'reply_num',
+    __slots__ = ['contents', 'tab_id', 'title', 'view_num', 'reply_num', 'share_num',
                  'agree', 'disagree', 'create_time', 'last_time', 'vote_info', 'share_origin']
 
     class VoteInfo(object):
@@ -697,15 +688,17 @@ class Thread(_Container):
             self.tid = thread_proto.id
             self.pid = thread_proto.first_post_id
             self.user = UserInfo(
-                user_proto=thread_proto.author) if thread_proto.author.id else UserInfo()
-            self.author_id = thread_proto.author_id
+                user_proto=thread_proto.author) if (author_id := thread_proto.author.id) else UserInfo()
+            self.author_id = author_id if author_id else thread_proto.author_id
 
             self.tab_id = thread_proto.tab_id
             self.title = thread_proto.title
-            self.vote_info = self.VoteInfo(thread_proto.poll_info)
+            self.vote_info = self.VoteInfo(
+                thread_proto.poll_info) if thread_proto.poll_info.options else None
             self.share_origin = None
             self.view_num = thread_proto.view_num
             self.reply_num = thread_proto.reply_num
+            self.share_num = thread_proto.share_num
             self.agree = thread_proto.agree.agree_num
             self.disagree = thread_proto.agree.disagree_num
             self.create_time = thread_proto.create_time
@@ -722,10 +715,11 @@ class Thread(_Container):
 
             self.tab_id = 0
             self.title = ''
-            self.vote_info = self.VoteInfo()
+            self.vote_info = None
             self.share_origin = None
             self.view_num = 0
             self.reply_num = 0
+            self.share_num = 0
             self.agree = 0
             self.disagree = 0
             self.create_time = 0
@@ -830,7 +824,10 @@ class Post(_Container):
             self.comments = [Comment(comment_proto)
                              for comment_proto in post_proto.sub_post_list.sub_post_list]
 
+            self.fid = 0
+            self.tid = 0
             self.pid = post_proto.id
+            self.user = UserInfo()
             self.author_id = post_proto.author_id
 
             self.floor = post_proto.floor
@@ -838,6 +835,7 @@ class Post(_Container):
             self.agree = post_proto.agree.agree_num
             self.disagree = post_proto.agree.disagree_num
             self.create_time = post_proto.time
+            self.is_thread_author = False
 
         else:
             self.contents = Fragments()
@@ -848,6 +846,8 @@ class Post(_Container):
             self.tid = 0
             self.pid = 0
             self.user = UserInfo()
+            self.author_id = 0
+
             self.floor = 0
             self.reply_num = 0
             self.agree = 0
@@ -888,20 +888,25 @@ class Posts(_Containers[Post]):
             self.page = Page(data_proto.page)
             self.forum = Forum(data_proto.forum)
             self.thread = Thread(data_proto.thread)
-            thread_author_id = self.thread.user.user_id
+
+            fid = self.forum.fid
+            tid = self.thread.tid
+            thread_author_id = self.thread.author_id
 
             users = {user_proto.id: UserInfo(
                 user_proto=user_proto) for user_proto in data_proto.user_list}
             self._objs = [Post(post_proto)
                           for post_proto in data_proto.post_list]
+
+            self.thread.fid = fid
             for post in self._objs:
                 post.is_thread_author = thread_author_id == post.author_id
-                post.fid = self.forum.fid
-                post.tid = self.thread.tid
+                post.fid = fid
+                post.tid = tid
                 post.user = users.get(post.author_id, UserInfo())
                 for comment in post.comments:
-                    comment.fid = post.fid
-                    comment.tid = post.tid
+                    comment.fid = fid
+                    comment.tid = tid
                     comment.user = users.get(comment.author_id, UserInfo())
 
         else:
@@ -962,7 +967,9 @@ class Comment(_Container):
 
     @property
     def text(self) -> str:
-        return self.contents.text
+        if not self._text:
+            self._text = self.contents.text
+        return self._text
 
 
 class Comments(_Containers[Comment]):

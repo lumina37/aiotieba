@@ -53,7 +53,7 @@ class Sessions(object):
             connect=5, sock_connect=3, sock_read=10)
         self._connector = aiohttp.TCPConnector(
             verify_ssl=False, ttl_dns_cache=600, keepalive_timeout=90, limit=None, family=socket.AF_INET)
-        _trust_env = True
+        _trust_env = False
 
         # Init app client
         app_headers = {aiohttp.hdrs.USER_AGENT: 'bdtb for Android 12.22.1.0',
@@ -411,8 +411,7 @@ class Browser(object):
         data.common.CopyFrom(common)
         data.kw = tieba_name
         data.pn = pn
-        data.rn = 90
-        data.rn_need = 30
+        data.rn = 30
         data.is_good = is_good
         data.q_type = 2
         data.sort_type = sort
@@ -1526,8 +1525,7 @@ class Browser(object):
         user.gender = user_dict['sex']
         user.is_vip = int(user_dict['vipInfo']['v_status']) != 0
         user.is_god = bool(user_dict['new_god_data']['field_id'])
-        if not (priv_dict := user_dict['priv_sets']):
-            priv_dict = {}
+        priv_dict = priv_dict if (priv_dict := user_dict['priv_sets']) else {}
         user.priv_like = priv_dict.get('like', None)
         user.priv_reply = priv_dict.get('reply', None)
 
@@ -1548,6 +1546,8 @@ class Browser(object):
             thread.title = thread_dict['title']
             thread.view_num = int(thread_dict['freq_num'])
             thread.reply_num = int(thread_dict['reply_num'])
+            thread.share_num = int(share_num_str) if (
+                share_num_str := thread_dict['share_num']) else 0
             thread.agree = int(thread_dict['agree']['agree_num'])
             thread.disagree = int(thread_dict['agree']['disagree_num'])
             thread.create_time = int(thread_dict['create_time'])
@@ -1816,6 +1816,7 @@ class Browser(object):
                 thread.title = thread_dict['title']
                 thread.view_num = int(thread_dict['view_num'])
                 thread.reply_num = int(thread_dict['reply_num'])
+                thread.share_num = int(thread_dict['share_num'])
                 thread.agree = int(thread_dict['agree']['agree_num'])
                 thread.disagree = int(thread_dict['agree']['disagree_num'])
                 thread.create_time = int(thread_dict['create_time'])
@@ -1830,8 +1831,8 @@ class Browser(object):
                 user.gender = user_dict['sex']
                 user.is_vip = bool(user_dict['vipInfo'])
                 user.is_god = bool(user_dict['new_god_data']['field_id'])
-                if not (priv_dict := user_dict['priv_sets']):
-                    priv_dict = {}
+                priv_dict = priv_dict if (
+                    priv_dict := user_dict['priv_sets']) else {}
                 user.priv_like = priv_dict.get('like', None)
                 user.priv_reply = priv_dict.get('reply', None)
                 thread.user = user
