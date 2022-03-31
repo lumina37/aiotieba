@@ -2,6 +2,7 @@ syntax = "proto3";
 
 import "PbContent.proto";
 import "SubPostList.proto";
+import "User.proto";
 import "Agree.proto";
 import "SimpleForum.proto";
 
@@ -29,6 +30,7 @@ message Post {
         repeated SignatureContent content = 4;
     }
     SignatureData signature = 21;
+    User author = 23;
     Agree agree = 37;
     SimpleForum from_forum = 38;
     int64 tid = 46;

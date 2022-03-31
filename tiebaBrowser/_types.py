@@ -725,6 +725,28 @@ class Thread(_Container):
             self.create_time = 0
             self.last_time = 0
 
+    @staticmethod
+    def _init_thread(thread_proto: ThreadInfo_pb2.ThreadInfo) -> "Thread":
+        """
+        静态初始化方法解决递归构造问题
+        """
+
+        thread = Thread(thread_proto)
+
+        if thread_proto.is_share_thread:
+            share_proto = thread_proto.origin_thread_info
+            share_origin = Thread()
+            share_origin.fid = share_proto.fid
+            share_origin.tid = int(share_proto.tid)
+            share_origin.pid = share_proto.pid
+            share_origin.contents = Fragments(share_proto.content)
+            share_origin.title = share_proto.title
+            share_origin.vote_info = Thread.VoteInfo(
+                share_proto.poll_info) if share_proto.poll_info.options else None
+            thread.share_origin = share_origin
+
+        return thread
+
     @property
     def text(self) -> str:
         if not self._text:
@@ -752,21 +774,6 @@ class Threads(_Containers[Thread]):
 
         if threads_proto:
 
-            def _init_thread(thread_proto):
-                thread = Thread(thread_proto)
-                if thread_proto.is_share_thread:
-                    share_proto = thread_proto.origin_thread_info
-                    share_origin = Thread()
-                    share_origin.fid = share_proto.fid
-                    share_origin.tid = int(share_proto.tid)
-                    share_origin.pid = share_proto.pid
-                    share_origin.contents = Fragments(share_proto.content)
-                    share_origin.title = share_proto.title
-                    share_origin.vote_info = Thread.VoteInfo(
-                        share_proto.poll_info)
-                    thread.share_origin = share_origin
-                return thread
-
             data_proto = threads_proto.data
             self.page = Page(data_proto.page)
             self.forum = Forum(data_proto.forum)
@@ -775,7 +782,7 @@ class Threads(_Containers[Thread]):
 
             users = {user_proto.id: UserInfo(
                 user_proto=user_proto) for user_proto in data_proto.user_list}
-            self._objs = [_init_thread(thread_proto)
+            self._objs = [Thread._init_thread(thread_proto)
                           for thread_proto in data_proto.thread_list]
             for thread in self._objs:
                 thread.user = users.get(thread.author_id, UserInfo())
@@ -827,7 +834,8 @@ class Post(_Container):
             self.fid = 0
             self.tid = 0
             self.pid = post_proto.id
-            self.user = UserInfo()
+            self.user = UserInfo(user_proto=post_proto.author) if (
+                author_id := post_proto.author.id) else UserInfo()
             self.author_id = post_proto.author_id
 
             self.floor = post_proto.floor
@@ -887,7 +895,7 @@ class Posts(_Containers[Post]):
             data_proto = posts_proto.data
             self.page = Page(data_proto.page)
             self.forum = Forum(data_proto.forum)
-            self.thread = Thread(data_proto.thread)
+            self.thread = Thread._init_thread(data_proto.thread)
 
             fid = self.forum.fid
             tid = self.thread.tid
@@ -998,11 +1006,18 @@ class Comments(_Containers[Comment]):
             self.thread = Thread(data_proto.thread)
             self.post = Post(data_proto.post)
 
+            fid = self.forum.fid
+            tid = self.thread.tid
+
             self._objs = [Comment(comment_proto)
                           for comment_proto in data_proto.subpost_list]
+
+            self.post.fid = fid
+            self.post.tid = tid
+
             for comment in self._objs:
-                comment.fid = self.forum.fid
-                comment.tid = self.thread.tid
+                comment.fid = fid
+                comment.tid = tid
 
         else:
             self._objs = []

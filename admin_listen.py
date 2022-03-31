@@ -170,6 +170,15 @@ class Listener(object):
 
         return cmd_type, args
 
+    async def _arg2user_info(self, arg: str) -> tb.UserInfo:
+        if (res := re.search('#(\d+)#', arg)):
+            tieba_uid = int(res.group(1))
+            user = await self.listener.tieba_uid2user_info(tieba_uid)
+        else:
+            user = await self.listener.get_user_info(arg)
+
+        return user
+
     @_check(need_access=1, need_arg_num=0)
     async def cmd_recommend(self, at: tb.At, *args) -> None:
         """
@@ -297,81 +306,93 @@ class Listener(object):
     async def cmd_drop(self, at: tb.At, *args) -> None:
         """
         drop指令
-        删除指令所在主题帖并封禁楼主10天
+        删帖并封10天
         """
 
-        await self._drop(at, 10)
+        await self._del_ops(at, 10)
 
     @_check(need_access=2, need_arg_num=0)
     async def cmd_drop3(self, at: tb.At, *args) -> None:
         """
         drop3指令
-        删除指令所在主题帖并封禁楼主3天
+        删帖并封3天
         """
 
-        await self._drop(at, 3)
-
-    async def _drop(self, at, block_days: int):
-        """
-        drop & drop3指令的实现
-        """
-
-        tieba_dict = self.tiebas[at.tieba_name]
-
-        if not (posts := await self.listener.get_posts(at.tid)):
-            return
-
-        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
-
-        tb.log.info(
-            f"Try to delete thread {posts[0].text} post by {posts[0].user.log_name}")
-
-        await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
-        await asyncio.gather(tieba_dict['admin'].block(at.tieba_name, posts[0].user, day=block_days), tieba_dict['admin'].del_thread(at.tieba_name, at.tid))
-
-    @_check(need_access=4, need_arg_num=0)
-    async def cmd_exdrop(self, at: tb.At, *args) -> None:
-        """
-        exdrop指令
-        删除指令所在主题帖并将楼主加入脚本黑名单+封禁十天
-        """
-
-        tieba_dict = self.tiebas[at.tieba_name]
-
-        if not (posts := await self.listener.get_posts(at.tid)):
-            return
-
-        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
-
-        if not await tieba_dict['admin'].mysql.ping():
-            tb.log.warning("Failed to ping:{at.tieba_name}")
-            return
-
-        tb.log.info(
-            f"Try to delete thread {posts[0].text} post by {posts[0].user.log_name}")
-
-        results = await asyncio.gather(tieba_dict['admin'].block(at.tieba_name, posts[0].user, day=10), tieba_dict['admin'].mysql.update_user_id(at.tieba_name, posts[0].user.user_id, False))
-        if results[0] and results[1]:
-            await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
-        await tieba_dict['admin'].del_thread(at.tieba_name, at.tid)
+        await self._del_ops(at, 3)
 
     @_check(need_access=2, need_arg_num=0)
     async def cmd_delete(self, at: tb.At, *args) -> None:
         """
         delete指令
-        删除指令所在主题帖
+        删帖
+        """
+
+        await self._del_ops(at)
+
+    @_check(need_access=4, need_arg_num=0)
+    async def cmd_exdrop(self, at: tb.At, *args) -> None:
+        """
+        exdrop指令
+        删帖并将发帖人加入脚本黑名单+封禁十天
+        """
+
+        await self._del_ops(at, 10, blacklist=True)
+
+    async def _del_ops(self, at, block_days: int = 0, blacklist: bool = False):
+        """
+        各种处罚指令的实现
         """
 
         tieba_dict = self.tiebas[at.tieba_name]
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        if (posts := await self.listener.get_posts(at.tid)):
-            tb.log.info(
-                f"Try to delete thread {posts[0].text} post by {posts[0].user.log_name}")
+        coros = []
 
-        await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
-        await tieba_dict['admin'].del_thread(at.tieba_name, at.tid)
+        if at.is_floor:
+            if not (comments := await self.listener.get_comments(at.tid, at.pid, is_floor=True)):
+                return
+            target = comments.post
+            tb.log.info(
+                f"Try to delete post {target.text} post by {target.user.log_name}")
+            coros.append(tieba_dict['admin'].del_post(
+                at.tieba_name, target.tid, target.pid))
+
+        else:
+            if not (posts := await self.listener.get_posts(at.tid)):
+                return
+
+            if at.is_thread:
+                if posts.forum.fid != (target := posts.thread.share_origin).fid:
+                    return
+                target = posts.thread.share_origin
+                if not target.contents.ats:
+                    return
+                target.user = await self.listener.get_basic_user_info(target.contents.ats[0].user_id)
+                tb.log.info(
+                    f"Try to delete thread {target.text} post by {target.user.log_name}")
+                coros.append(tieba_dict['admin'].del_thread(
+                    at.tieba_name, target.tid))
+
+            else:
+                target = posts[0]
+                tb.log.info(
+                    f"Try to delete thread {target.text} post by {target.user.log_name}")
+                coros.append(tieba_dict['admin'].del_thread(
+                    at.tieba_name, target.tid))
+
+        if block_days:
+            coros.append(tieba_dict['admin'].block(
+                at.tieba_name, target.user, day=block_days))
+        if blacklist:
+            coros.append(tieba_dict['admin'].mysql.update_user_id(
+                at.tieba_name, target.user.user_id, False))
+
+        success = True
+        for flag in await asyncio.gather(*coros):
+            success = success and flag
+        if success:
+            await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=2, need_arg_num=0)
     async def cmd_water(self, at: tb.At, *args) -> None:
@@ -452,7 +473,7 @@ class Listener(object):
 
         await self._block(at, args[0], 3)
 
-    async def _block(self, at: tb.At, _id: str, block_days: int) -> None:
+    async def _block(self, at: tb.At, arg: str, block_days: int) -> None:
         """
         block & block3指令的实现
         """
@@ -461,7 +482,7 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
-        user = await self.listener.get_user_info(_id)
+        user = await self._arg2user_info(arg)
 
         if await tieba_dict['admin'].block(at.tieba_name, user, day=block_days):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
@@ -477,7 +498,7 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
-        user = await self.listener.get_user_info(args[0])
+        user = await self._arg2user_info(args[0])
 
         if await tieba_dict['admin'].unblock(at.tieba_name, user):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
@@ -493,7 +514,7 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
-        user = await self.listener.get_basic_user_info(args[0])
+        user = await self._arg2user_info(args[0])
 
         if await tieba_dict['admin'].blacklist_add(at.tieba_name, user):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
@@ -509,7 +530,7 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
-        user = await self.listener.get_basic_user_info(args[0])
+        user = await self._arg2user_info(args[0])
 
         if await tieba_dict['admin'].blacklist_cancel(at.tieba_name, user):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
@@ -529,7 +550,9 @@ class Listener(object):
             tb.log.warning("Failed to ping:{at.tieba_name}")
             return
 
-        if await tieba_dict['admin'].update_user_id(id, True):
+        user = await self._arg2user_info(args[0])
+
+        if await tieba_dict['admin'].mysql.update_user_id(at.tieba_name, user.user_id, True):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=4, need_arg_num=1)
@@ -547,7 +570,9 @@ class Listener(object):
             tb.log.warning("Failed to ping:{at.tieba_name}")
             return
 
-        if await tieba_dict['admin'].update_user_id(args[0], False):
+        user = await self._arg2user_info(args[0])
+
+        if await tieba_dict['admin'].mysql.update_user_id(at.tieba_name, user.user_id, False):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=3, need_arg_num=1)
@@ -565,7 +590,9 @@ class Listener(object):
             tb.log.warning("Failed to ping:{at.tieba_name}")
             return
 
-        if await tieba_dict['admin'].del_user_id(args[0]):
+        user = await self._arg2user_info(args[0])
+
+        if await tieba_dict['admin'].mysql.del_user_id(at.tieba_name, user.user_id):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=0, need_arg_num=0)
@@ -734,7 +761,7 @@ class Listener(object):
 
         await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
-    @_check(need_access=2, need_arg_num=0)
+    @_check(need_access=1, need_arg_num=0)
     async def cmd_ping(self, at: tb.At, *args) -> None:
         """
         ping指令

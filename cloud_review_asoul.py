@@ -60,7 +60,7 @@ class AsoulCloudReview(tb.CloudReview):
                 tb.log.debug(
                     f"Cycle time_cost: {time.perf_counter()-start_time:.4f}")
                 # 主动释放CPU 转而运行其他协程
-                await asyncio.sleep(5)
+                await asyncio.sleep(15)
 
             except Exception:
                 tb.log.critical(

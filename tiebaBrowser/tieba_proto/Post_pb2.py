@@ -14,11 +14,12 @@ _sym_db = _symbol_database.Default()
 
 from . import PbContent_pb2 as PbContent__pb2
 from . import SubPostList_pb2 as SubPostList__pb2
+from . import User_pb2 as User__pb2
 from . import Agree_pb2 as Agree__pb2
 from . import SimpleForum_pb2 as SimpleForum__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nPost.proto\x1a\x0fPbContent.proto\x1a\x11SubPostList.proto\x1a\x0b\x41gree.proto\x1a\x11SimpleForum.proto\"\x8f\x04\n\x04Post\x12\n\n\x02id\x18\x01 \x01(\x03\x12\r\n\x05title\x18\x02 \x01(\t\x12\r\n\x05\x66loor\x18\x03 \x01(\r\x12\x0c\n\x04time\x18\x04 \x01(\r\x12\x1b\n\x07\x63ontent\x18\x05 \x03(\x0b\x32\n.PbContent\x12\x17\n\x0fsub_post_number\x18\r \x01(\r\x12\x11\n\tauthor_id\x18\x13 \x01(\x03\x12$\n\rsub_post_list\x18\x0f \x01(\x0b\x32\r.Post.SubPost\x12&\n\tsignature\x18\x15 \x01(\x0b\x32\x13.Post.SignatureData\x12\x15\n\x05\x61gree\x18% \x01(\x0b\x32\x06.Agree\x12 \n\nfrom_forum\x18& \x01(\x0b\x32\x0c.SimpleForum\x12\x0b\n\x03tid\x18. \x01(\x03\x1a;\n\x07SubPost\x12\x0b\n\x03pid\x18\x01 \x01(\x04\x12#\n\rsub_post_list\x18\x02 \x03(\x0b\x32\x0c.SubPostList\x1a\xb4\x01\n\rSignatureData\x12\x14\n\x0csignature_id\x18\x01 \x01(\x05\x12\x13\n\x0b\x66ontKeyName\x18\x02 \x01(\t\x12\x11\n\tfontColor\x18\x03 \x01(\t\x12\x35\n\x07\x63ontent\x18\x04 \x03(\x0b\x32$.Post.SignatureData.SignatureContent\x1a.\n\x10SignatureContent\x12\x0c\n\x04type\x18\x01 \x01(\x05\x12\x0c\n\x04text\x18\x02 \x01(\tb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nPost.proto\x1a\x0fPbContent.proto\x1a\x11SubPostList.proto\x1a\nUser.proto\x1a\x0b\x41gree.proto\x1a\x11SimpleForum.proto\"\xa6\x04\n\x04Post\x12\n\n\x02id\x18\x01 \x01(\x03\x12\r\n\x05title\x18\x02 \x01(\t\x12\r\n\x05\x66loor\x18\x03 \x01(\r\x12\x0c\n\x04time\x18\x04 \x01(\r\x12\x1b\n\x07\x63ontent\x18\x05 \x03(\x0b\x32\n.PbContent\x12\x17\n\x0fsub_post_number\x18\r \x01(\r\x12\x11\n\tauthor_id\x18\x13 \x01(\x03\x12$\n\rsub_post_list\x18\x0f \x01(\x0b\x32\r.Post.SubPost\x12&\n\tsignature\x18\x15 \x01(\x0b\x32\x13.Post.SignatureData\x12\x15\n\x06\x61uthor\x18\x17 \x01(\x0b\x32\x05.User\x12\x15\n\x05\x61gree\x18% \x01(\x0b\x32\x06.Agree\x12 \n\nfrom_forum\x18& \x01(\x0b\x32\x0c.SimpleForum\x12\x0b\n\x03tid\x18. \x01(\x03\x1a;\n\x07SubPost\x12\x0b\n\x03pid\x18\x01 \x01(\x04\x12#\n\rsub_post_list\x18\x02 \x03(\x0b\x32\x0c.SubPostList\x1a\xb4\x01\n\rSignatureData\x12\x14\n\x0csignature_id\x18\x01 \x01(\x05\x12\x13\n\x0b\x66ontKeyName\x18\x02 \x01(\t\x12\x11\n\tfontColor\x18\x03 \x01(\t\x12\x35\n\x07\x63ontent\x18\x04 \x03(\x0b\x32$.Post.SignatureData.SignatureContent\x1a.\n\x10SignatureContent\x12\x0c\n\x04type\x18\x01 \x01(\x05\x12\x0c\n\x04text\x18\x02 \x01(\tb\x06proto3')
 
 
 
@@ -60,12 +61,12 @@ _sym_db.RegisterMessage(Post.SignatureData.SignatureContent)
 if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
-  _POST._serialized_start=83
-  _POST._serialized_end=610
-  _POST_SUBPOST._serialized_start=368
-  _POST_SUBPOST._serialized_end=427
-  _POST_SIGNATUREDATA._serialized_start=430
-  _POST_SIGNATUREDATA._serialized_end=610
-  _POST_SIGNATUREDATA_SIGNATURECONTENT._serialized_start=564
-  _POST_SIGNATUREDATA_SIGNATURECONTENT._serialized_end=610
+  _POST._serialized_start=95
+  _POST._serialized_end=645
+  _POST_SUBPOST._serialized_start=403
+  _POST_SUBPOST._serialized_end=462
+  _POST_SIGNATUREDATA._serialized_start=465
+  _POST_SIGNATUREDATA._serialized_end=645
+  _POST_SIGNATUREDATA_SIGNATURECONTENT._serialized_start=599
+  _POST_SIGNATUREDATA_SIGNATURECONTENT._serialized_end=645
 # @@protoc_insertion_point(module_scope)
