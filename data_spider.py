@@ -147,7 +147,7 @@ async def stat_risk_user(tieba_name):
                 user_name = rank_user_proto.user_name
                 if not user_name or re.search('[*.#]', user_name):
                     continue
-                user = await brow.get_user_info(user_name)
+                user = await brow.get_basic_user_info(user_name)
                 if user.user_id <= 0:
                     continue
 

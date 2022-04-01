@@ -15,14 +15,14 @@ from typing import Optional, Type, Union
 import aiohttp
 import cv2 as cv
 import numpy as np
-import yarl
 from bs4 import BeautifulSoup
 from google.protobuf.json_format import ParseDict
 from PIL import Image
 
 from ._config import config
 from ._logger import log
-from ._types import *
+from ._types import (Ats, BasicUserInfo, Comments, Posts, Replys, Thread,
+                     Threads, UserInfo, Fragments)
 from .tieba_proto import *
 
 
@@ -44,7 +44,7 @@ class Sessions(object):
             self.BDUSS = config['BDUSS'][BDUSS_key]
             self.STOKEN = config['STOKEN'].get(BDUSS_key, '')
             web_cookie_jar.update_cookies(
-                {'BDUSS': self.BDUSS, 'STOKEN': self.STOKEN}, yarl.URL("http://tieba.baidu.com"))
+                {'BDUSS': self.BDUSS, 'STOKEN': self.STOKEN})
         else:
             self.BDUSS = ''
             self.STOKEN = ''
@@ -52,7 +52,7 @@ class Sessions(object):
         self._timeout = aiohttp.ClientTimeout(
             connect=5, sock_connect=3, sock_read=10)
         self._connector = aiohttp.TCPConnector(
-            verify_ssl=False, ttl_dns_cache=600, keepalive_timeout=90, limit=None, family=socket.AF_INET)
+            ttl_dns_cache=600, keepalive_timeout=90, limit=None, family=socket.AF_INET, ssl=False)
         _trust_env = False
 
         # Init app client
@@ -102,12 +102,12 @@ class Browser(object):
         BDUSS_key (str, optional): 用于从config.json中提取BDUSS. Defaults to None.
     """
 
-    __slots__ = ['BDUSS_key', 'fid_dict',
-                 'sessions', '_tbs']
+    __slots__ = ['BDUSS_key', 'sessions', '_tbs']
+
+    fid_dict = {}
 
     def __init__(self, BDUSS_key: Optional[str] = None) -> None:
         self.BDUSS_key = BDUSS_key
-        self.fid_dict = {}
         self.sessions = Sessions(BDUSS_key)
         self._tbs = ''
 
@@ -193,23 +193,24 @@ class Browser(object):
             int: 该贴吧的forum_id
         """
 
-        fid = self.fid_dict.get(tieba_name, 0)
+        if (fid := self.fid_dict.get(tieba_name, 0)):
+            return fid
 
-        if not fid:
-            try:
-                res = await self.sessions.web.get("http://tieba.baidu.com/f/commit/share/fnameShareApi", params={'fname': tieba_name, 'ie': 'utf-8'})
+        try:
+            res = await self.sessions.web.get("http://tieba.baidu.com/f/commit/share/fnameShareApi", params={'fname': tieba_name, 'ie': 'utf-8'})
 
-                main_json = await res.json(content_type='text/html')
-                if int(main_json['no']):
-                    raise ValueError(main_json['error'])
+            main_json = await res.json(content_type='text/html')
+            if int(main_json['no']):
+                raise ValueError(main_json['error'])
 
-                fid = int(main_json['data']['fid'])
+            fid = int(main_json['data']['fid'])
 
-            except Exception as err:
-                log.warning(f"Failed to get fid of {tieba_name}. reason:{err}")
-                fid = 0
-            else:
-                self.fid_dict[tieba_name] = fid
+        except Exception as err:
+            log.warning(f"Failed to get fid of {tieba_name}. reason:{err}")
+            fid = 0
+
+        if fid:
+            self.fid_dict[tieba_name] = fid
 
         return fid
 
@@ -244,10 +245,8 @@ class Browser(object):
         user = BasicUserInfo(_id)
         if user.user_id:
             return await self._user_id2basic_user_info(user)
-        elif user.user_name:
-            return await self._user_name2basic_user_info(user)
         else:
-            return await self._name2user_info(user)
+            return await self._user_name2basic_user_info(user)
 
     async def _name2user_info(self, user: UserInfo) -> UserInfo:
         """
@@ -276,7 +275,6 @@ class Browser(object):
             else:
                 gender = 0
 
-            user = UserInfo()
             user.user_name = user_dict['name']
             user.nick_name = user_dict['show_nickname']
             user.portrait = user_dict['portrait']
@@ -538,13 +536,13 @@ class Browser(object):
 
         return comments
 
-    async def block(self, tieba_name: str, user: UserInfo, day: int, reason: str = '') -> bool:
+    async def block(self, tieba_name: str, user: BasicUserInfo, day: int, reason: str = '') -> bool:
         """
         封禁用户 支持小吧主/语音小编封3/10天
 
         Args:
             tieba_name (str): 贴吧名
-            user (UserInfo): 待封禁用户信息
+            user (BasicUserInfo): 待封禁用户信息
             day (int): 封禁天数
             reason (str, optional): 封禁理由. Defaults to ''.
 
@@ -562,7 +560,7 @@ class Browser(object):
                    'tbs': await self.get_tbs(),
                    'un': user.user_name,
                    'word': tieba_name,
-                   'z': '672328094',
+                   'z': 672328094,
                    }
         payload['sign'] = self._app_sign(payload)
 
@@ -576,11 +574,11 @@ class Browser(object):
         except Exception as err:
             log.warning(
                 f"Failed to block {user.log_name} in {tieba_name}. reason:{err}")
-            return False, user
+            return False
 
         log.info(
             f"Successfully blocked {user.log_name} in {tieba_name} for {payload['day']} days")
-        return True, user
+        return True
 
     async def unblock(self, tieba_name: str, user: BasicUserInfo) -> bool:
         """
@@ -1523,8 +1521,8 @@ class Browser(object):
         user.portrait = user_dict['portrait']
         user.user_id = user_dict['id']
         user.gender = user_dict['sex']
-        user.is_vip = int(user_dict['vipInfo']['v_status']) != 0
-        user.is_god = bool(user_dict['new_god_data']['field_id'])
+        user.is_vip = int(user_dict['vipInfo']['v_status'])
+        user.is_god = user_dict['new_god_data']['field_id']
         priv_dict = priv_dict if (priv_dict := user_dict['priv_sets']) else {}
         user.priv_like = priv_dict.get('like', None)
         user.priv_reply = priv_dict.get('reply', None)
@@ -1535,22 +1533,21 @@ class Browser(object):
 
         def _init_thread(thread_dict: dict) -> Iterable[Thread]:
             thread = Thread()
-            thread.contents = Fragments(
+            thread._contents = Fragments(
                 _contents(thread_dict.get('first_post_content', [])))
-            thread.fid = int(thread_dict['forum_id'])
-            thread.tid = int(thread_dict['thread_id'])
-            thread.pid = int(thread_dict['post_id'])
+            thread.fid = thread_dict['forum_id']
+            thread.tid = thread_dict['thread_id']
+            thread.pid = thread_dict['post_id']
             thread.user = user
-            thread.author_id = int(thread_dict['user_id'])
 
             thread.title = thread_dict['title']
-            thread.view_num = int(thread_dict['freq_num'])
-            thread.reply_num = int(thread_dict['reply_num'])
-            thread.share_num = int(share_num_str) if (
+            thread.view_num = thread_dict['freq_num']
+            thread.reply_num = thread_dict['reply_num']
+            thread.share_num = share_num_str if (
                 share_num_str := thread_dict['share_num']) else 0
-            thread.agree = int(thread_dict['agree']['agree_num'])
-            thread.disagree = int(thread_dict['agree']['disagree_num'])
-            thread.create_time = int(thread_dict['create_time'])
+            thread.agree = thread_dict['agree']['agree_num']
+            thread.disagree = thread_dict['agree']['disagree_num']
+            thread.create_time = thread_dict['create_time']
             return thread
 
         threads = [_init_thread(thread_dict)
@@ -1807,20 +1804,24 @@ class Browser(object):
 
                 thread_dict = data_dict['thread_list']
                 thread = Thread()
-                thread.contents = Fragments(
+                thread._contents = Fragments(
                     _contents(thread_dict.get('first_post_content', [])))
-                thread.fid = int(thread_dict['fid'])
-                thread.tid = int(thread_dict['id'])
-                thread.pid = int(thread_dict['first_post_id'])
-                thread.author_id = int(thread_dict['author_id'])
+                thread.fid = thread_dict['fid']
+                thread.tid = thread_dict['id']
+                thread.pid = thread_dict['first_post_id']
+                thread.author_id = thread_dict['author_id']
+
+                thread.is_good = int(thread_dict['is_good'])
+                thread.is_top = int(thread_dict['is_top'])
+
                 thread.title = thread_dict['title']
-                thread.view_num = int(thread_dict['view_num'])
-                thread.reply_num = int(thread_dict['reply_num'])
-                thread.share_num = int(thread_dict['share_num'])
-                thread.agree = int(thread_dict['agree']['agree_num'])
-                thread.disagree = int(thread_dict['agree']['disagree_num'])
-                thread.create_time = int(thread_dict['create_time'])
-                thread.last_time = int(thread_dict['last_time_int'])
+                thread.view_num = thread_dict['view_num']
+                thread.reply_num = thread_dict['reply_num']
+                thread.share_num = thread_dict['share_num']
+                thread.agree = thread_dict['agree']['agree_num']
+                thread.disagree = thread_dict['agree']['disagree_num']
+                thread.create_time = thread_dict['create_time']
+                thread.last_time = thread_dict['last_time_int']
 
                 user_dict = thread_dict['author']
                 user = UserInfo()
@@ -1829,8 +1830,8 @@ class Browser(object):
                 user.portrait = user_dict['portrait']
                 user.user_id = user_dict['id']
                 user.gender = user_dict['sex']
-                user.is_vip = bool(user_dict['vipInfo'])
-                user.is_god = bool(user_dict['new_god_data']['field_id'])
+                user.is_vip = user_dict['vipInfo']
+                user.is_god = user_dict['new_god_data']['field_id']
                 priv_dict = priv_dict if (
                     priv_dict := user_dict['priv_sets']) else {}
                 user.priv_like = priv_dict.get('like', None)
@@ -2054,23 +2055,9 @@ class Browser(object):
         """
 
         try:
-            # 这里列出的参数一条都不能少，少一条就不能拿cash
             payload = {'BDUSS': self.sessions.BDUSS,
-                       '_client_id': 'NULL',
-                       '_client_type': 2,
                        '_client_version': '12.22.1.0',
-                       '_phone_imei': '000000000000000',
-                       'c3_aid': 'NULL',
-                       'cmode': 1,
-                       'cuid': 'NULL',
-                       'cuid_galaxy2': 'NULL',
-                       'cuid_gid': '',
-                       'event_day': '000000',
-                       'fid': await self.get_fid(tieba_name),
-                       'first_install_time': 0,
                        'kw': tieba_name,
-                       'last_update_time': 0,
-                       'sign_from': 'frs',
                        'tbs': await self.get_tbs(),
                        }
             payload['sign'] = self._app_sign(payload)
@@ -2083,13 +2070,11 @@ class Browser(object):
             if int(main_json['user_info']['sign_bonus_point']) == 0:
                 raise ValueError("sign_bonus_point is 0")
 
-            cash = main_json['user_info'].__contains__('get_packet_cash')
-
         except Exception as err:
             log.warning(f"Failed to sign forum {tieba_name}. reason:{err}")
             return False
 
-        log.info(f"Successfully sign forum {tieba_name}. cash:{cash}")
+        log.info(f"Successfully sign forum {tieba_name}")
         return True
 
     async def add_post(self, tieba_name: str, tid: int, content: str) -> bool:

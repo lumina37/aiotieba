@@ -5,13 +5,14 @@ __all__ = ['CloudReview']
 import asyncio
 import binascii
 import re
-from typing import Optional, Union
+from typing import Union
 
 import cv2 as cv
 import numpy as np
 
 from ._api import Browser
 from ._logger import log
+from ._types import BasicUserInfo
 from .mysql import MySQL
 
 
@@ -96,6 +97,48 @@ class CloudReview(Browser):
 
     async def __aenter__(self) -> "CloudReview":
         return self
+
+    async def get_fid(self, tieba_name: str) -> int:
+        """
+        通过贴吧名获取forum_id
+
+        Args:
+            tieba_name (str): 贴吧名
+
+        Returns:
+            int: 该贴吧的forum_id
+        """
+
+        if (fid := self.fid_dict.get(tieba_name, 0)):
+            return fid
+
+        if (fid := await self.mysql.get_fid(tieba_name)):
+            self.fid_dict[tieba_name] = fid
+            return fid
+
+        if (fid := await super().get_fid(tieba_name)):
+            await self.mysql.add_forum(fid, tieba_name)
+
+        return fid
+
+    async def get_basic_user_info(self, _id: Union[str, int]) -> BasicUserInfo:
+        """
+        补全简略版用户信息
+
+        Args:
+            _id (Union[str, int]): 用户id user_name/portrait/user_id
+
+        Returns:
+            BasicUserInfo: 简略版用户信息 仅保证包含user_name/portrait/user_id
+        """
+
+        if (user := await self.mysql.get_basic_user_info(_id)):
+            return user
+
+        if (user := await super().get_basic_user_info(_id)):
+            await self.mysql.add_user(user)
+
+        return user
 
     async def update_user_id(self, _id: Union[str, int], mode: bool = True) -> bool:
         """

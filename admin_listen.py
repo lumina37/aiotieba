@@ -171,7 +171,7 @@ class Listener(object):
         return cmd_type, args
 
     async def _arg2user_info(self, arg: str) -> tb.UserInfo:
-        if (res := re.search('#(\d+)#', arg)):
+        if (res := re.search(r'#(\d+)#', arg)):
             tieba_uid = int(res.group(1))
             user = await self.listener.tieba_uid2user_info(tieba_uid)
         else:
@@ -388,11 +388,9 @@ class Listener(object):
             coros.append(tieba_dict['admin'].mysql.update_user_id(
                 at.tieba_name, target.user.user_id, False))
 
-        success = True
-        for flag in await asyncio.gather(*coros):
-            success = success and flag
-        if success:
-            await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+        await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
+        await asyncio.gather(*coros)
+            
 
     @_check(need_access=2, need_arg_num=0)
     async def cmd_water(self, at: tb.At, *args) -> None:

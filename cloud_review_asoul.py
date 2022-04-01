@@ -75,6 +75,10 @@ class AsoulCloudReview(tb.CloudReview):
             del_flag: bool True则帖已删除 False则无操作
         """
 
+        if thread.is_livepost:
+            # 置顶话题直接返回
+            return
+
         if delay:
             # 无延迟则不使用await 避免不必要的切换开销
             await asyncio.sleep(delay)
