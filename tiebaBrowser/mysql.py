@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 __all__ = ['MySQL']
 
+import asyncio
 import functools
 import sys
 from collections.abc import AsyncIterable
@@ -60,16 +61,14 @@ class MySQL(object):
 
         self._conn = pymysql.connect(**config['MySQL'])
         self._cursor = self._conn.cursor()
-        self._cursor.execute(f"CREATE DATABASE {self.db_name}")
-        self._cursor.execute(f"USE {self.db_name}")
+        self._cursor.execute(f"CREATE DATABASE `{self.db_name}`")
+        self._cursor.execute(f"USE `{self.db_name}`")
 
-        await self.create_table_forum()
-        await self.create_table_user()
+        coros = []
         for tieba_name in config['tieba_name_mapping'].keys():
-            await self.create_table_id(tieba_name)
-            await self.create_table_user_id(tieba_name)
-            await self.create_table_img_blacklist(tieba_name)
-            await self.create_table_tid_water(tieba_name)
+            coros.extend([self.create_table_id(tieba_name), self.create_table_user_id(
+                tieba_name), self.create_table_img_blacklist(tieba_name), self.create_table_tid_water(tieba_name)])
+        await asyncio.gather(*coros, self.create_table_forum(), self.create_table_user())
 
     async def ping(self) -> bool:
         """
@@ -82,6 +81,7 @@ class MySQL(object):
         try:
             self._conn.ping(reconnect=True)
         except pymysql.Error as err:
+            log.warning(f"Failed to ping sql. reason:{err}")
             return False
         else:
             return True
@@ -91,10 +91,8 @@ class MySQL(object):
         创建表forum
         """
 
-        self._cursor.execute(f"SHOW TABLES LIKE 'forum'")
-        if not self._cursor.fetchone():
-            self._cursor.execute(
-                f"CREATE TABLE forum (fid INT PRIMARY KEY, tieba_name VARCHAR(36) UNIQUE)")
+        self._cursor.execute(
+            "CREATE TABLE IF NOT EXISTS `forum` (`fid` INT PRIMARY KEY, `tieba_name` VARCHAR(36) UNIQUE)")
 
     async def get_fid(self, tieba_name: str) -> int:
         """
@@ -109,7 +107,7 @@ class MySQL(object):
 
         try:
             self._cursor.execute(
-                f"SELECT fid FROM forum WHERE tieba_name='{tieba_name}'")
+                "SELECT `fid` FROM `forum` WHERE `tieba_name`=%s", (tieba_name,))
         except pymysql.Error as err:
             log.warning(f"Failed to select {tieba_name}. reason:{err}")
             return 0
@@ -132,7 +130,7 @@ class MySQL(object):
 
         try:
             self._cursor.execute(
-                f"SELECT tieba_name FROM forum WHERE fid={fid}")
+                "SELECT `tieba_name` FROM `forum` WHERE `fid`=%s", (fid,))
         except pymysql.Error as err:
             log.warning(f"Failed to select {fid}. reason:{err}")
             return ''
@@ -156,7 +154,7 @@ class MySQL(object):
 
         try:
             self._cursor.execute(
-                f"INSERT IGNORE INTO forum VALUES ({fid},'{tieba_name}')")
+                "INSERT IGNORE INTO `forum` VALUES (%s,%s)", (fid, tieba_name))
         except pymysql.Error as err:
             log.warning(f"Failed to insert {fid}. reason:{err}")
             return False
@@ -169,10 +167,8 @@ class MySQL(object):
         创建表user
         """
 
-        self._cursor.execute(f"SHOW TABLES LIKE 'user'")
-        if not self._cursor.fetchone():
-            self._cursor.execute(
-                f"CREATE TABLE user (user_id BIGINT PRIMARY KEY, user_name VARCHAR(14), portrait VARCHAR(36) UNIQUE, INDEX index_user_name(user_name))")
+        self._cursor.execute(
+            "CREATE TABLE IF NOT EXISTS `user` (`user_id` BIGINT PRIMARY KEY, `user_name` VARCHAR(14), `portrait` VARCHAR(36) UNIQUE, INDEX `index_user_name`(user_name))")
 
     async def get_basic_user_info(self, _id: Union[str, int]) -> BasicUserInfo:
         """
@@ -190,13 +186,13 @@ class MySQL(object):
         try:
             if user.user_id:
                 self._cursor.execute(
-                    f"SELECT * FROM user WHERE user_id={user.user_id}")
+                    "SELECT * FROM `user` WHERE `user_id`=%s", (user.user_id,))
             elif user.portrait:
                 self._cursor.execute(
-                    f"SELECT * FROM user WHERE portrait='{user.portrait}'")
+                    "SELECT * FROM `user` WHERE `portrait`=%s", (user.portrait,))
             elif user.user_name:
                 self._cursor.execute(
-                    f"SELECT * FROM user WHERE user_name='{user.user_name}'")
+                    "SELECT * FROM `user` WHERE `user_name`=%s", (user.user_name,))
         except pymysql.Error as err:
             log.warning(f"Failed to select {user}. reason:{err}")
             return BasicUserInfo()
@@ -223,7 +219,7 @@ class MySQL(object):
 
         try:
             self._cursor.execute(
-                f"INSERT IGNORE INTO user VALUES ({user.user_id},'{user.user_name}','{user.portrait}')")
+                "INSERT IGNORE INTO `user` VALUES (%s,%s,%s)", (user.user_id, user.user_name, user.portrait))
         except pymysql.Error as err:
             log.warning(f"Failed to insert {user}. reason:{err}")
             return False
@@ -245,13 +241,13 @@ class MySQL(object):
         try:
             if user.user_id:
                 self._cursor.execute(
-                    f"DELETE FROM user WHERE user_id={user.user_id}")
+                    "DELETE FROM `user` WHERE `user_id`=%s", (user.user_id,))
             elif user.portrait:
                 self._cursor.execute(
-                    f"DELETE FROM user WHERE portrait='{user.portrait}'")
+                    "DELETE FROM `user` WHERE `portrait`=%s", (user.portrait,))
             elif user.user_name:
                 self._cursor.execute(
-                    f"DELETE FROM user WHERE user_name='{user.user_name}'")
+                    "DELETE FROM `user` WHERE `user_name`=%s", (user.user_name,))
         except pymysql.Error as err:
             log.warning(f"Failed to delete {user}. reason:{err}")
             return False
@@ -270,24 +266,21 @@ class MySQL(object):
         """
 
         self._cursor.execute(
-            f"SHOW TABLES LIKE 'id_{tieba_name_eng}'")
-        if not self._cursor.fetchone():
-            self._cursor.execute(
-                f"CREATE TABLE id_{tieba_name_eng} (id BIGINT PRIMARY KEY, id_last_edit INT NOT NULL, record_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)")
-            self._cursor.execute(f"""CREATE EVENT event_auto_del_id_{tieba_name_eng}
-            ON SCHEDULE
-            EVERY 1 DAY STARTS '2000-01-01 00:00:00'
-            DO
-            DELETE FROM id_{tieba_name_eng} WHERE record_time<(CURRENT_TIMESTAMP() + INTERVAL -15 DAY)""")
+            f"CREATE TABLE IF NOT EXISTS `id_{tieba_name_eng}` (`id` BIGINT PRIMARY KEY, `id_last_edit` INT NOT NULL, `record_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)")
+        self._cursor.execute(f"""CREATE EVENT IF NOT EXISTS `event_auto_del_id_{tieba_name_eng}`
+        ON SCHEDULE
+        EVERY 1 DAY STARTS '2000-01-01 00:00:00'
+        DO
+        DELETE FROM `id_{tieba_name_eng}` WHERE record_time<(CURRENT_TIMESTAMP() + INTERVAL -15 DAY)""")
 
     @translate_tieba_name
-    async def update_id(self, tieba_name_eng: str, id: int, id_last_edit: int = 0) -> bool:
+    async def update_id(self, tieba_name_eng: str, _id: int, id_last_edit: int = 0) -> bool:
         """
         向id_{tieba_name_eng}插入id
 
         Args:
             tieba_name (str): 贴吧名
-            id (int)
+            _id (int)
             id_last_edit (int): 用于识别id的子对象列表是否发生修改 若该id为tid则id_last_edit应为last_time 若该id为pid则id_last_edit应为reply_num
 
         Returns:
@@ -296,22 +289,22 @@ class MySQL(object):
 
         try:
             self._cursor.execute(
-                f"REPLACE INTO id_{tieba_name_eng} VALUES ({id},{id_last_edit},DEFAULT)")
+                f"REPLACE INTO `id_{tieba_name_eng}` VALUES (%s,%s,DEFAULT)", (_id, id_last_edit))
         except pymysql.Error as err:
-            log.warning(f"Failed to insert {id}. reason:{err}")
+            log.warning(f"Failed to insert {_id}. reason:{err}")
             return False
         else:
             self._conn.commit()
             return True
 
     @translate_tieba_name
-    async def get_id(self, tieba_name_eng: str, id: int) -> int:
+    async def get_id(self, tieba_name_eng: str, _id: int) -> int:
         """
         检索id_{tieba_name_eng}中是否已有id
 
         Args:
             tieba_name (str): 贴吧名
-            id (int)
+            _id (int)
 
         Returns:
             int: id_last_edit -1表示表中无id
@@ -319,9 +312,9 @@ class MySQL(object):
 
         try:
             self._cursor.execute(
-                f"SELECT id_last_edit FROM id_{tieba_name_eng} WHERE id={id}")
+                f"SELECT `id_last_edit` FROM `id_{tieba_name_eng}` WHERE `id`=%s", (_id,))
         except pymysql.Error as err:
-            log.warning(f"Failed to select {id}. reason:{err}")
+            log.warning(f"Failed to select {_id}. reason:{err}")
             return False
         else:
             if (res_tuple := self._cursor.fetchone()):
@@ -330,13 +323,13 @@ class MySQL(object):
                 return -1
 
     @translate_tieba_name
-    async def del_id(self, tieba_name_eng: str, id: int) -> bool:
+    async def del_id(self, tieba_name_eng: str, _id: int) -> bool:
         """
         从id_{tieba_name_eng}中删除id
 
         Args:
             tieba_name (str): 贴吧名
-            id (int)
+            _id (int)
 
         Returns:
             bool: 操作是否成功
@@ -344,13 +337,13 @@ class MySQL(object):
 
         try:
             self._cursor.execute(
-                f"DELETE FROM id_{tieba_name_eng} WHERE id={id}")
+                f"DELETE FROM `id_{tieba_name_eng}` WHERE `id`=%s", (_id,))
         except pymysql.Error as err:
-            log.warning(f"Failed to delete {id}. reason:{err}")
+            log.warning(f"Failed to delete {_id}. reason:{err}")
             return False
         else:
             log.info(
-                f"Successfully deleted {id} from table of {tieba_name_eng}")
+                f"Successfully deleted {_id} from table of {tieba_name_eng}")
             self._conn.commit()
             return True
 
@@ -369,10 +362,10 @@ class MySQL(object):
 
         try:
             self._cursor.execute(
-                f"DELETE FROM id_{tieba_name_eng} WHERE record_time>(CURRENT_TIMESTAMP() + INTERVAL -{hour} HOUR)")
+                f"DELETE FROM `id_{tieba_name_eng}` WHERE `record_time`>(CURRENT_TIMESTAMP() + INTERVAL -%s HOUR)", (hour,))
         except pymysql.Error as err:
             log.warning(
-                f"Failed to delete id in id_{tieba_name_eng}")
+                f"Failed to delete id in id_{tieba_name_eng}. reason:{err}")
             return False
         else:
             self._conn.commit()
@@ -390,15 +383,12 @@ class MySQL(object):
         """
 
         self._cursor.execute(
-            f"SHOW TABLES LIKE 'tid_water_{tieba_name_eng}'")
-        if not self._cursor.fetchone():
-            self._cursor.execute(
-                f"CREATE TABLE tid_water_{tieba_name_eng} (tid BIGINT PRIMARY KEY, is_hide BOOL NOT NULL DEFAULT TRUE, record_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)")
-            self._cursor.execute(f"""CREATE EVENT event_auto_del_tid_water_{tieba_name_eng}
-            ON SCHEDULE
-            EVERY 1 DAY STARTS '2000-01-01 00:00:00'
-            DO
-            DELETE FROM tid_water_{tieba_name_eng} WHERE record_time<(CURRENT_TIMESTAMP() + INTERVAL -15 DAY)""")
+            f"CREATE TABLE IF NOT EXISTS `tid_water_{tieba_name_eng}` (`tid` BIGINT PRIMARY KEY, `is_hide` BOOL NOT NULL DEFAULT TRUE, `record_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)")
+        self._cursor.execute(f"""CREATE EVENT IF NOT EXISTS `event_auto_del_tid_water_{tieba_name_eng}`
+        ON SCHEDULE
+        EVERY 1 DAY STARTS '2000-01-01 00:00:00'
+        DO
+        DELETE FROM `tid_water_{tieba_name_eng}` WHERE `record_time`<(CURRENT_TIMESTAMP() + INTERVAL -15 DAY)""")
 
     @translate_tieba_name
     async def update_tid(self, tieba_name_eng: str, tid: int, mode: bool) -> bool:
@@ -415,7 +405,7 @@ class MySQL(object):
 
         try:
             self._cursor.execute(
-                f"REPLACE INTO tid_water_{tieba_name_eng} VALUES ({tid},{mode},DEFAULT)")
+                f"REPLACE INTO `tid_water_{tieba_name_eng}` VALUES (%s,%s,DEFAULT)", (tid, mode))
         except pymysql.Error as err:
             log.warning(f"Failed to insert {tid}. reason:{err}")
             return False
@@ -440,7 +430,7 @@ class MySQL(object):
 
         try:
             self._cursor.execute(
-                f"SELECT is_hide FROM tid_water_{tieba_name_eng} WHERE tid={tid}")
+                f"SELECT `is_hide` FROM `tid_water_{tieba_name_eng}` WHERE `tid`=%s", (tid,))
         except pymysql.Error as err:
             log.warning(f"Failed to select {tid}. reason:{err}")
             return None
@@ -464,7 +454,7 @@ class MySQL(object):
 
         try:
             self._cursor.execute(
-                f"DELETE FROM tid_water_{tieba_name_eng} WHERE tid={tid}")
+                f"DELETE FROM `tid_water_{tieba_name_eng}` WHERE `tid`=%s", (tid,))
         except pymysql.Error as err:
             log.warning(f"Failed to delete {tid}. reason:{err}")
             return False
@@ -491,7 +481,7 @@ class MySQL(object):
         for i in range(sys.maxsize):
             try:
                 self._cursor.execute(
-                    f"SELECT tid FROM tid_water_{tieba_name_eng} WHERE is_hide=TRUE LIMIT {batch_size} OFFSET {i * batch_size}")
+                    f"SELECT `tid` FROM `tid_water_{tieba_name_eng}` WHERE `is_hide`=TRUE LIMIT %s OFFSET %s", (batch_size, i * batch_size))
             except pymysql.Error as err:
                 log.warning(
                     f"Failed to get tids in {tieba_name_eng}. reason:{err}")
@@ -512,10 +502,8 @@ class MySQL(object):
             tieba_name (str): 贴吧名
         """
 
-        self._cursor.execute(f"SHOW TABLES LIKE 'user_id_{tieba_name_eng}'")
-        if not self._cursor.fetchone():
-            self._cursor.execute(
-                f"CREATE TABLE user_id_{tieba_name_eng} (user_id BIGINT PRIMARY KEY, is_white BOOL NOT NULL DEFAULT TRUE, record_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP)")
+        self._cursor.execute(
+            f"CREATE TABLE IF NOT EXISTS `user_id_{tieba_name_eng}` (`user_id` BIGINT PRIMARY KEY, `is_white` BOOL NOT NULL DEFAULT TRUE, `record_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP)")
 
     @translate_tieba_name
     async def update_user_id(self, tieba_name_eng: str, user_id: int, mode: bool) -> bool:
@@ -530,7 +518,7 @@ class MySQL(object):
 
         try:
             self._cursor.execute(
-                f"REPLACE INTO user_id_{tieba_name_eng} VALUES ({user_id},{mode},DEFAULT)")
+                f"REPLACE INTO `user_id_{tieba_name_eng}` VALUES (%s,%s,DEFAULT)", (user_id, mode))
         except pymysql.Error as err:
             log.warning(f"Failed to insert {user_id}. reason:{err}")
             return False
@@ -555,7 +543,7 @@ class MySQL(object):
 
         try:
             self._cursor.execute(
-                f"DELETE FROM user_id_{tieba_name_eng} WHERE user_id={user_id}")
+                f"DELETE FROM `user_id_{tieba_name_eng}` WHERE `user_id`=%s", (user_id,))
         except pymysql.Error as err:
             log.warning(f"Failed to delete {user_id}. reason:{err}")
             return False
@@ -580,7 +568,7 @@ class MySQL(object):
 
         try:
             self._cursor.execute(
-                f"SELECT is_white FROM user_id_{tieba_name_eng} WHERE user_id={user_id}")
+                f"SELECT `is_white` FROM `user_id_{tieba_name_eng}` WHERE `user_id`=%s", (user_id,))
         except pymysql.Error as err:
             return None
         else:
@@ -605,7 +593,7 @@ class MySQL(object):
         for i in range(sys.maxsize):
             try:
                 self._cursor.execute(
-                    f"SELECT user_id FROM user_id_{tieba_name_eng} LIMIT {batch_size} OFFSET {i * batch_size}")
+                    f"SELECT `user_id` FROM `user_id_{tieba_name_eng}` LIMIT %s OFFSET %s", (batch_size, i * batch_size))
             except pymysql.Error as err:
                 log.warning(
                     f"Failed to get user_ids in {tieba_name_eng}. reason:{err}")
@@ -627,10 +615,7 @@ class MySQL(object):
         """
 
         self._cursor.execute(
-            f"SHOW TABLES LIKE 'img_blacklist_{tieba_name_eng}'")
-        if not self._cursor.fetchone():
-            self._cursor.execute(
-                f"CREATE TABLE img_blacklist_{tieba_name_eng} (img_hash CHAR(16) PRIMARY KEY, raw_hash CHAR(40) UNIQUE NOT NULL)")
+            f"CREATE TABLE IF NOT EXISTS `img_blacklist_{tieba_name_eng}` (`img_hash` CHAR(16) PRIMARY KEY, `raw_hash` CHAR(40) UNIQUE NOT NULL)")
 
     @translate_tieba_name
     async def add_imghash(self, tieba_name_eng: str, img_hash: str, raw_hash: str) -> bool:
@@ -648,7 +633,7 @@ class MySQL(object):
 
         try:
             self._cursor.execute(
-                f"REPLACE INTO img_blacklist_{tieba_name_eng} VALUES ('{img_hash}','{raw_hash}')")
+                f"REPLACE INTO `img_blacklist_{tieba_name_eng}` VALUES (%s,%s)", (img_hash, raw_hash))
         except pymysql.Error as err:
             log.warning(f"Failed to insert {img_hash}. reason:{err}")
             return False
@@ -673,7 +658,7 @@ class MySQL(object):
 
         try:
             self._cursor.execute(
-                f"SELECT NULL FROM img_blacklist_{tieba_name_eng} WHERE img_hash='{img_hash}'")
+                f"SELECT NULL FROM `img_blacklist_{tieba_name_eng}` WHERE `img_hash`=%s", (img_hash,))
         except pymysql.Error as err:
             log.warning(f"Failed to select {img_hash}. reason:{err}")
             return False
@@ -695,7 +680,7 @@ class MySQL(object):
 
         try:
             self._cursor.execute(
-                f"DELETE FROM img_blacklist_{tieba_name_eng} WHERE img_hash='{img_hash}'")
+                f"DELETE FROM `img_blacklist_{tieba_name_eng}` WHERE `img_hash`=%s", (img_hash,))
         except pymysql.Error as err:
             log.warning(f"Failed to delete {img_hash}. reason:{err}")
             return False

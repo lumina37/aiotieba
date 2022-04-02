@@ -29,10 +29,13 @@ class AsoulCloudReview(tb.CloudReview):
             try:
                 start_time = time.perf_counter()
 
+                # 获取限水标记
+                self.water_restrict_flag = await self.mysql.is_tid_hide(self.tieba_name, 0)
+
                 # 获取主题帖列表
                 threads = await self.get_threads(self.tieba_name)
                 # 创建异步任务列表 并规定每个任务的延迟时间 避免高并发下的网络阻塞
-                coros = [self._handle_thread(thread, idx/3)
+                coros = [self._handle_thread(thread, idx/5)
                          for idx, thread in enumerate(threads)]
                 # 并发运行协程
                 del_flags = await asyncio.gather(*coros)
@@ -60,7 +63,7 @@ class AsoulCloudReview(tb.CloudReview):
                 tb.log.debug(
                     f"Cycle time_cost: {time.perf_counter()-start_time:.4f}")
                 # 主动释放CPU 转而运行其他协程
-                await asyncio.sleep(15)
+                await asyncio.sleep(30)
 
             except Exception:
                 tb.log.critical(
@@ -261,7 +264,7 @@ class AsoulCloudReview(tb.CloudReview):
             return 1, day, line
         elif del_flag == 0:
             # 无异常 继续检查
-            if comment.user.level == 1 and comment.contents.links:
+            if isinstance(comment.contents[0], tb._types.FragLink):
                 # 楼中楼一级号发链接 删
                 return 1, 0, sys._getframe().f_lineno
 
