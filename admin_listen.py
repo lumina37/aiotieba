@@ -90,7 +90,7 @@ class Listener(object):
 
         for tieba_name, tieba_dict in self.tiebas.items():
             admin_key = tieba_dict['admin']
-            tieba_dict['admin'] = tb.CloudReview(admin_key, tieba_name)
+            tieba_dict['admin'] = tb.Reviewer(admin_key, tieba_name)
             tieba_dict['access_user'] = OrderedDict(tieba_dict['access_user'])
 
         self.func_map = {func_name[4:]: getattr(self, func_name) for func_name in dir(
@@ -385,7 +385,7 @@ class Listener(object):
             coros.append(tieba_dict['admin'].block(
                 at.tieba_name, target.user, day=block_days))
         if blacklist:
-            coros.append(tieba_dict['admin'].mysql.update_user_id(
+            coros.append(tieba_dict['admin'].database.update_user_id(
                 at.tieba_name, target.user.user_id, False))
 
         await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
@@ -403,11 +403,11 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        if not await tieba_dict['admin'].mysql.ping():
+        if not await tieba_dict['admin'].database.ping():
             tb.log.warning("Failed to ping:{at.tieba_name}")
             return
 
-        if await tieba_dict['admin'].mysql.update_tid(at.tieba_name, at.tid, True) and await tieba_dict['admin'].hide_thread(at.tieba_name, at.tid):
+        if await tieba_dict['admin'].database.update_tid(at.tieba_name, at.tid, True) and await tieba_dict['admin'].hide_thread(at.tieba_name, at.tid):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=2, need_arg_num=0)
@@ -421,11 +421,11 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        if not await tieba_dict['admin'].mysql.ping():
+        if not await tieba_dict['admin'].database.ping():
             tb.log.warning("Failed to ping:{at.tieba_name}")
             return
 
-        if await tieba_dict['admin'].mysql.del_tid(at.tieba_name, at.tid) and await tieba_dict['admin'].unhide_thread(at.tieba_name, at.tid):
+        if await tieba_dict['admin'].database.del_tid(at.tieba_name, at.tid) and await tieba_dict['admin'].unhide_thread(at.tieba_name, at.tid):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=3, need_arg_num=1)
@@ -439,19 +439,19 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        if not await tieba_dict['admin'].mysql.ping():
+        if not await tieba_dict['admin'].database.ping():
             tb.log.warning("Failed to ping:{at.tieba_name}")
             return
 
         if args[0] == "enter":
-            if await tieba_dict['admin'].mysql.update_tid(at.tieba_name, 0, True):
+            if await tieba_dict['admin'].database.update_tid(at.tieba_name, 0, True):
                 await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
         elif args[0] == "exit":
-            if await tieba_dict['admin'].mysql.update_tid(at.tieba_name, 0, False):
+            if await tieba_dict['admin'].database.update_tid(at.tieba_name, 0, False):
                 await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
-            async for tid in tieba_dict['admin'].mysql.get_tids(at.tieba_name):
+            async for tid in tieba_dict['admin'].database.get_tids(at.tieba_name):
                 if await tieba_dict['admin'].unhide_thread(at.tieba_name, tid):
-                    await tieba_dict['admin'].mysql.update_tid(at.tieba_name, tid, False)
+                    await tieba_dict['admin'].database.update_tid(at.tieba_name, tid, False)
 
     @_check(need_access=2, need_arg_num=1)
     async def cmd_block(self, at: tb.At, *args) -> None:
@@ -544,13 +544,13 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
-        if not await tieba_dict['admin'].mysql.ping():
+        if not await tieba_dict['admin'].database.ping():
             tb.log.warning("Failed to ping:{at.tieba_name}")
             return
 
         user = await self._arg2user_info(args[0])
 
-        if await tieba_dict['admin'].mysql.update_user_id(at.tieba_name, user.user_id, True):
+        if await tieba_dict['admin'].database.update_user_id(at.tieba_name, user.user_id, True):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=4, need_arg_num=1)
@@ -564,13 +564,13 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
-        if not await tieba_dict['admin'].mysql.ping():
+        if not await tieba_dict['admin'].database.ping():
             tb.log.warning("Failed to ping:{at.tieba_name}")
             return
 
         user = await self._arg2user_info(args[0])
 
-        if await tieba_dict['admin'].mysql.update_user_id(at.tieba_name, user.user_id, False):
+        if await tieba_dict['admin'].database.update_user_id(at.tieba_name, user.user_id, False):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=3, need_arg_num=1)
@@ -584,13 +584,13 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
-        if not await tieba_dict['admin'].mysql.ping():
+        if not await tieba_dict['admin'].database.ping():
             tb.log.warning("Failed to ping:{at.tieba_name}")
             return
 
         user = await self._arg2user_info(args[0])
 
-        if await tieba_dict['admin'].mysql.del_user_id(at.tieba_name, user.user_id):
+        if await tieba_dict['admin'].database.del_user_id(at.tieba_name, user.user_id):
             await tieba_dict['admin'].del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=0, need_arg_num=0)

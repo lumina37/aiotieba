@@ -1,5 +1,5 @@
 # -*- coding:utf-8 -*-
-__all__ = ['MySQL']
+__all__ = ['Database']
 
 import asyncio
 import functools
@@ -29,9 +29,9 @@ def translate_tieba_name(func):
     return wrapper
 
 
-class MySQL(object):
+class Database(object):
     """
-    MySQL连接基类
+    提供与MySQL交互的方法
 
     Args:
         db_name (str, optional): 连接的数据库名. Defaults to 'tieba_cloud_review'.
@@ -175,7 +175,7 @@ class MySQL(object):
         补全简略版用户信息
 
         Args:
-            _id (Union[str, int]): 用户id user_name/portrait/user_id
+            _id (Union[str, int]): 用户id user_id/user_name/portrait
 
         Returns:
             BasicUserInfo: 简略版用户信息 仅保证包含user_name/portrait/user_id

@@ -47,14 +47,14 @@ class BasicUserInfo(object):
         user_proto (User_pb2.User)
 
     Fields:
+        user_id (int): 贴吧旧版user_id
         user_name (str): 发帖用户名
-        nick_name (str): 发帖人昵称
         portrait (str): 用户头像portrait值
-        user_id (int): 贴吧旧版uid
+        nick_name (str): 发帖人昵称
     """
 
-    __slots__ = ['_raw_data', 'user_name',
-                 '_nick_name', '_portrait', '_user_id']
+    __slots__ = ['_raw_data', '_user_id',
+                 'user_name', '_portrait', '_nick_name']
 
     def __init__(self, _id: Union[str, int, None] = None, user_proto: Optional[User_pb2.User] = None) -> None:
 
@@ -80,10 +80,10 @@ class BasicUserInfo(object):
 
         self._raw_data = user_proto
 
-        self.user_name = user_proto.name
-        self.nick_name = user_proto.name_show
-        self.portrait = user_proto.portrait
         self._user_id = user_proto.id
+        self.user_name = user_proto.name
+        self.portrait = user_proto.portrait
+        self.nick_name = user_proto.name_show
 
     def _init_null(self) -> None:
 
@@ -95,7 +95,10 @@ class BasicUserInfo(object):
         self._user_id = 0
 
     def __repr__(self) -> str:
-        return f"{{'user_name': '{self.user_name}', 'nick_name': '{self._nick_name}', 'portrait': '{self._portrait}', 'user_id': {self._user_id}}}"
+        return f"{self.__class__.__name__} [user_id:{self._user_id} / user_name:{self.user_name} / portrait:{self._portrait} / nick_name:{self._nick_name}]"
+
+    def __eq__(self, obj) -> int:
+        return self._user_id == obj.user_id and self.user_name == obj.user_name and self._portrait == obj.portrait
 
     def __hash__(self) -> int:
         return self._user_id
@@ -106,17 +109,22 @@ class BasicUserInfo(object):
     def __bool__(self) -> bool:
         return bool(self._user_id)
 
+    @staticmethod
+    def is_portrait(portrait: str) -> bool:
+        return portrait.startswith('tb.')
+
+    @staticmethod
+    def is_user_id(user_id: int) -> bool:
+        return isinstance(user_id, int)
+
     @property
-    def nick_name(self) -> str:
-        return self._nick_name
+    def user_id(self) -> int:
+        return self._user_id
 
-    @nick_name.setter
-    def nick_name(self, new_nick_name: str) -> None:
-
-        if self.user_name != new_nick_name:
-            self._nick_name = new_nick_name
-        else:
-            self._nick_name = ''
+    @user_id.setter
+    @_int_prop_check_ignore_none(0)
+    def user_id(self, new_user_id: int) -> None:
+        self._user_id = int(new_user_id)
 
     @property
     def portrait(self) -> str:
@@ -125,7 +133,7 @@ class BasicUserInfo(object):
     @portrait.setter
     def portrait(self, new_portrait: str) -> None:
 
-        if new_portrait and new_portrait.startswith('tb.'):
+        if new_portrait and self.is_portrait(new_portrait):
 
             beg_start = 33
             q_index = new_portrait.find('?', beg_start)
@@ -142,13 +150,16 @@ class BasicUserInfo(object):
             self._portrait = ''
 
     @property
-    def user_id(self) -> int:
-        return self._user_id
+    def nick_name(self) -> str:
+        return self._nick_name
 
-    @user_id.setter
-    @_int_prop_check_ignore_none(0)
-    def user_id(self, new_user_id: int) -> None:
-        self._user_id = int(new_user_id)
+    @nick_name.setter
+    def nick_name(self, new_nick_name: str) -> None:
+
+        if self.user_name != new_nick_name:
+            self._nick_name = new_nick_name
+        else:
+            self._nick_name = ''
 
     @property
     def show_name(self) -> str:
@@ -159,7 +170,7 @@ class BasicUserInfo(object):
         if self.user_name:
             return self.user_name
         else:
-            return f"{self._nick_name}/{self._portrait}"
+            return f"{self._nick_name} / {self._portrait}"
 
 
 class UserInfo(BasicUserInfo):
@@ -171,10 +182,10 @@ class UserInfo(BasicUserInfo):
         proto (Optional[User_pb2.User])
 
     Fields:
+        user_id (int): 贴吧旧版user_id
         user_name (str): 发帖用户名
-        nick_name (str): 发帖人昵称
         portrait (str): 用户头像portrait值
-        user_id (int): 贴吧旧版uid
+        nick_name (str): 发帖人昵称
 
         level (int): 等级
         gender (int): 性别 (1男2女0未知)
@@ -192,7 +203,7 @@ class UserInfo(BasicUserInfo):
 
         self._level = user_proto.level_id
         self._gender = user_proto.gender
-        self.is_vip = user_proto.vipInfo.v_status
+        self.is_vip = True if user_proto.new_tshow_icon else user_proto.vipInfo.v_status
         self.is_god = user_proto.new_god_data.status
         priv_proto = user_proto.priv_sets
         self._priv_like = priv_proto.like
@@ -288,6 +299,9 @@ class FragText(_Fragment):
 
     __slots__ = []
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__} [text:{self.text}]"
+
     @property
     def text(self) -> str:
         return self._raw_data.text
@@ -303,6 +317,9 @@ class FragEmoji(_Fragment):
 
     __slots__ = []
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__} [desc:{self.desc}]"
+
     @property
     def desc(self):
         return self._raw_data.c
@@ -313,24 +330,27 @@ class FragImage(_Fragment):
     图像碎片
 
     Fields:
-        src (str): 图像源url
-        cdn_src (str): cdn压缩图像url
-        big_cdn_src (str): cdn大图url
+        src (str): 压缩图像cdn_url
+        big_src (str): 大图cdn_url
+        origin_src (str): 图像源url
     """
 
     __slots__ = []
 
-    @property
-    def src(self):
-        return self._raw_data.src
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__} [src:{self.src}]"
 
     @property
-    def cdn_src(self) -> str:
+    def src(self):
         return self._raw_data.cdn_src
 
     @property
-    def big_cdn_src(self) -> str:
+    def big_src(self) -> str:
         return self._raw_data.big_cdn_src
+
+    @property
+    def origin_src(self) -> str:
+        return self._raw_data.origin_src
 
 
 class FragAt(_Fragment):
@@ -343,6 +363,9 @@ class FragAt(_Fragment):
     """
 
     __slots__ = []
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__} [text:{self.text} / user_id:{self.user_id}]"
 
     @property
     def text(self) -> str:
@@ -369,6 +392,9 @@ class FragLink(_Fragment):
         super().__init__(content_proto)
         self._text = None
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__} [text:{self.text} / link:{self.link}]"
+
     @property
     def text(self) -> str:
         if self._text is None:
@@ -394,6 +420,9 @@ class FragVoice(_Fragment):
 
     __slots__ = []
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__} [voice_md5:{self.voice_md5}]"
+
     @property
     def voice_md5(self) -> str:
         return self._raw_data.voice_md5
@@ -410,12 +439,15 @@ class FragTiebaPlus(_Fragment):
 
     __slots__ = []
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__} [desc:{self.desc} / url:{self.url}]"
+
     @property
     def text(self) -> str:
         return self._raw_data.desc
 
     @property
-    def jump_url(self) -> str:
+    def url(self) -> str:
         return self._raw_data.jump_url
 
 
@@ -429,6 +461,9 @@ class FragItem(_Fragment):
     """
 
     __slots__ = []
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__} [item_name:{self.item_name}]"
 
     @property
     def text(self) -> str:
@@ -615,6 +650,9 @@ class Forum(object):
         self.fid = 0
         self.name = ''
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__} [fid:{self.fid} / name:{self.name}]"
+
 
 class Page(object):
     """
@@ -671,6 +709,9 @@ class Page(object):
 
         self.total_count = 0
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__} [current_page:{self.current_page} / total_page:{self.total_page} / has_more:{self.has_more} / has_prev:{self.has_prev}]"
+
 
 class _Container(object):
     """
@@ -692,6 +733,9 @@ class _Container(object):
     def __init__(self) -> None:
         self._raw_data = None
         self._text = None
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__} [tid:{self.tid} / pid:{self.pid} / user:{self.user.log_name} / text:{self.text}]"
 
     @property
     def text(self) -> str:

@@ -4,21 +4,13 @@ message PbContent {
     uint32 type = 1;
     string text = 2;
     string link = 3;
-    string src = 4;
     string bsize = 5;
-    string big_src = 6;
-    string big_size = 7;
     string cdn_src = 8;
     string big_cdn_src = 9;
-    string imgtype = 10;
     string c = 11;
     string voice_md5 = 12;
     int64 uid = 15;
-    uint32 width = 18;
-    uint32 height = 19;
-    string packet_name = 20;
     string phonetype = 21;
-    uint32 e_type = 24;
     string origin_src = 25;
     uint32 origin_size = 27;
     message TiebaPlusInfo {

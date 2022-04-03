@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 """
-@Version 2.3.1_rc1
+@Version 2.3.1
 @Author: Starry
 @License: Unlicense
 @Homepage: https://github.com/Starry-OvO/Tieba-Cloud-Review
@@ -13,7 +13,7 @@ import signal
 from ._api import Browser
 from ._logger import log
 from ._types import *
-from .cloud_review import CloudReview
+from .reviewer import Reviewer
 
 
 def terminate(signalNumber, frame):

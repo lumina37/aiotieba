@@ -38,6 +38,10 @@ message User {
         uint32 v_level = 5;
     }
     UserVipInfo vipInfo = 61;
+    message TshowInfo {
+        string name = 2;
+    }
+    repeated TshowInfo new_tshow_icon = 65;
     int32 is_fans = 91;
     message NewGodInfo {
         int32 status = 1;

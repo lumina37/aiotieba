@@ -9,7 +9,7 @@ from collections import Counter
 import tiebaBrowser as tb
 
 
-class AsoulCloudReview(tb.CloudReview):
+class AsoulCloudReview(tb.Reviewer):
 
     __slots__ = ['white_kw_exp', 'water_restrict_flag']
 
@@ -30,7 +30,7 @@ class AsoulCloudReview(tb.CloudReview):
                 start_time = time.perf_counter()
 
                 # 获取限水标记
-                self.water_restrict_flag = await self.mysql.is_tid_hide(self.tieba_name, 0)
+                self.water_restrict_flag = await self.database.is_tid_hide(self.tieba_name, 0)
 
                 # 获取主题帖列表
                 threads = await self.get_threads(self.tieba_name)
@@ -120,12 +120,12 @@ class AsoulCloudReview(tb.CloudReview):
 
         if self.water_restrict_flag:
             # 当前吧处于高峰期限水状态
-            if await self.mysql.is_tid_hide(self.tieba_name, thread.tid) == False:
-                await self.mysql.update_tid(self.tieba_name, thread.tid, True)
+            if await self.database.is_tid_hide(self.tieba_name, thread.tid) == False:
+                await self.database.update_tid(self.tieba_name, thread.tid, True)
                 return 2, 0, sys._getframe().f_lineno
 
         # 该帖子里的内容没有发生任何变化 直接跳过所有后续检查
-        if thread.last_time <= await self.mysql.get_id(self.tieba_name, thread.tid):
+        if thread.last_time <= await self.database.get_id(self.tieba_name, thread.tid):
             return 0, 0, 0
 
         # 回复数>50且点赞数>回复数的两倍则判断为热帖
@@ -162,7 +162,7 @@ class AsoulCloudReview(tb.CloudReview):
         await asyncio.gather(*coros)
 
         # 缓存该tid的子孙结点编辑状态
-        await self.mysql.update_id(self.tieba_name, thread.tid, thread.last_time)
+        await self.database.update_id(self.tieba_name, thread.tid, thread.last_time)
         return 0, 0, 0
 
     async def _handle_post(self, post: tb.Post) -> None:
@@ -193,11 +193,11 @@ class AsoulCloudReview(tb.CloudReview):
         """
 
         # 该回复下的楼中楼大概率没有发生任何变化 直接跳过所有后续检查
-        if post.reply_num == (id_last_edit := await self.mysql.get_id(self.tieba_name, post.pid)):
+        if post.reply_num == (id_last_edit := await self.database.get_id(self.tieba_name, post.pid)):
             return -1, 0, 0
         # 该回复下的楼中楼可能被抽 需要缓存抽楼后的reply_num
         elif post.reply_num < id_last_edit:
-            await self.mysql.update_id(self.tieba_name, post.pid, post.reply_num)
+            await self.database.update_id(self.tieba_name, post.pid, post.reply_num)
             return -1, 0, 0
 
         del_flag, block_days, line = await self._check_text(post)
@@ -209,7 +209,7 @@ class AsoulCloudReview(tb.CloudReview):
         elif del_flag == 0:
             # 无异常 继续检查
             for img_content in post.contents.imgs:
-                img = await self.url2image(img_content.cdn_src)
+                img = await self.url2image(img_content.src)
                 if img is None:
                     continue
                 if await self.has_imghash(img):
@@ -222,7 +222,7 @@ class AsoulCloudReview(tb.CloudReview):
             await asyncio.gather(*coros)
 
         # 缓存该pid的子结点编辑状态
-        await self.mysql.update_id(self.tieba_name, post.pid, post.reply_num)
+        await self.database.update_id(self.tieba_name, post.pid, post.reply_num)
         return 0, 0, 0
 
     async def _handle_comment(self, comment: tb.Comment) -> None:
@@ -252,7 +252,7 @@ class AsoulCloudReview(tb.CloudReview):
             line: int 处罚规则所在的行号
         """
 
-        if await self.mysql.get_id(self.tieba_name, comment.pid) != -1:
+        if await self.database.get_id(self.tieba_name, comment.pid) != -1:
             return -1, 0, 0
 
         del_flag, day, line = await self._check_text(comment)
@@ -269,7 +269,7 @@ class AsoulCloudReview(tb.CloudReview):
                 return 1, 0, sys._getframe().f_lineno
 
         # 缓存该pid
-        await self.mysql.update_id(self.tieba_name, comment.pid)
+        await self.database.update_id(self.tieba_name, comment.pid)
         return 0, 0, 0
 
     async def _check_text(self, obj):
@@ -282,7 +282,7 @@ class AsoulCloudReview(tb.CloudReview):
             line: int 处罚规则所在的行号
         """
 
-        is_white = await self.mysql.is_user_id_white(self.tieba_name, obj.user.user_id)
+        is_white = await self.database.is_user_id_white(self.tieba_name, obj.user.user_id)
         if is_white == True:
             # 白名单用户
             return -1, 0, 0
