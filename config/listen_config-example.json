@@ -1,10 +1,11 @@
 {
-    "listener": "在这里填用于监听at信息的账号的BDUSS_key",
-    "speaker": "在这里填用于发送回复的账号的BDUSS_key",
-    "tieba_list": {
-      "asoul": {
-        "admin": "在这里填用于行使吧务权限的账号的BDUSS_key",
-        "access_user": {
+    "listener_key": "在这里填用于监听at信息的账号的BDUSS_key",
+    "tieba_configs": [
+      {
+        "tieba_name":"在这里填贴吧名",
+        "admin_key": "在这里填用于在该吧行使吧务权限的账号的BDUSS_key",
+        "speaker_key": "在这里填用于在该吧发送回复的账号的BDUSS_key",
+        "access_users": {
           "在这里填用户名来赋予对应用户指令权限 0级是普通吧友对应的默认值 一般不需要特别给出": 0,
           "可以使用一些基本功能如recom_status": 1,
           "普通吧务 可以删 封 解封 加精 撤精 屏蔽 解屏蔽 拒绝申诉 使用ping检查状态": 2,
@@ -13,22 +14,17 @@
           "可以指定其他非5级用户的权限级别": 5
         }
       },
-      "元气骑士": {
-        "admin": "default",
-        "access_user": {
-          "413_王不": 4,
-          "孤身夜行者": 2,
-          "jjq1949445625": 2,
-          "kk不好玩": 4,
-          "路过的一只羊羔": 2,
-          "幸运E才怪": 2,
-          "徐昕2000": 3,
-          "煌穹": 2,
-          "fishZXH鱼": 2,
-          "氯化钠博睿": 2,
-          "彻飘q飞翼羽": 2,
-          "帖吧管家": 2
+      {
+        "tieba_name":"在这里填另一个贴吧名",
+        "admin_key": "在这里填用于在该吧行使吧务权限的账号的BDUSS_key",
+        "speaker_key": "在这里填用于在该吧发送回复的账号的BDUSS_key",
+        "access_users": {
+          "A": 5,
+          "B": 4,
+          "C": 1,
+          "D": 1,
+          "E": 1
         }
       }
-    }
+    ]
   }

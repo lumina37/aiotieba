@@ -119,13 +119,14 @@ class Listener(object):
         if self._config_mtime != config_path.stat().st_mtime:
             return
 
-        _dict = {'listener_key': self.listener.BDUSS_key,
-                 'tieba_configs': [handler.to_dict() for handler in self.handler_map.values()]
-                 }
-
         with config_path.open('w', encoding='utf-8') as _file:
-            json.dump(_dict, _file, sort_keys=False, indent=2,
+            json.dump(self.to_dict(), _file, sort_keys=False, indent=2,
                       separators=(',', ':'), ensure_ascii=False)
+
+    def to_dict(self):
+        return {'listener_key': self.listener.BDUSS_key,
+                'tieba_configs': [handler.to_dict() for handler in self.handler_map.values()]
+                }
 
     async def __aenter__(self) -> "Listener":
         return self

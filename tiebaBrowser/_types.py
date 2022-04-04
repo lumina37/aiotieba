@@ -373,7 +373,7 @@ class FragAt(_Fragment):
 
     @property
     def user_id(self) -> int:
-        return self._raw_data.user_id
+        return self._raw_data.uid
 
 
 class FragLink(_Fragment):
@@ -1001,6 +1001,7 @@ class Thread(_Container):
         self._tab_id = 0
         self._is_good = False
         self._is_top = False
+        self._is_share = False
         self._is_hide = False
         self._is_livepost = False
 
@@ -1107,7 +1108,6 @@ class Thread(_Container):
                 if self._raw_data.is_share_thread:
 
                     share_proto = self._raw_data.origin_thread_info
-                    self._share_origin._raw_data = share_proto
 
                     self._share_origin.fid = share_proto.fid
                     self._share_origin.tid = share_proto.tid
@@ -1116,6 +1116,8 @@ class Thread(_Container):
                     self._share_origin._contents = Fragments(
                         share_proto.content)
                     self._share_origin.title = share_proto.title
+                    self._share_origin._vote_info = self.VoteInfo(poll_info_proto) if (
+                        poll_info_proto := share_proto.poll_info).options else self.VoteInfo()
 
         return self._share_origin
 

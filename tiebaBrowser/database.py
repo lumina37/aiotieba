@@ -44,7 +44,7 @@ class Database(object):
         self.db_name = db_name
 
         try:
-            self._conn = pymysql.connect(**config['MySQL'], database=db_name)
+            self._conn = pymysql.connect(**config['database'], database=db_name)
             self._cursor = self._conn.cursor()
         except pymysql.Error as err:
             log.warning(f"Cannot link to the database {db_name}. reason:{err}")
@@ -59,7 +59,7 @@ class Database(object):
         初始化数据库
         """
 
-        self._conn = pymysql.connect(**config['MySQL'])
+        self._conn = pymysql.connect(**config['database'])
         self._cursor = self._conn.cursor()
         self._cursor.execute(f"CREATE DATABASE `{self.db_name}`")
         self._cursor.execute(f"USE `{self.db_name}`")

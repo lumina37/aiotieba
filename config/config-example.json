@@ -1,18 +1,20 @@
 {
     "BDUSS": {
-        "default": "PUT YOUR BDUSS HERE"
+        "BDUSS_key快捷调用BDUSS，这样你就不用每次都填一串很长的东西进去了": "把你的那一串长长的BDUSS放在这",
+        "default": "?????????????????????????"
     },
     "STOKEN": {
-        "default": "OPTIONAL"
+        "default": "可以不填"
     },
-    "MySQL": {
-        "host": "",
+    "database": {
+        "host": "127.0.0.1",
         "port": 4396,
-        "user": "",
-        "passwd": ""
+        "user": "填用户名",
+        "passwd": "填密码"
     },
     "tieba_name_mapping": {
-        "元气骑士": "soulknight",
-        "asoul": "asoul"
+        "贴吧中文名": "自定义的英文名",
+        "元气骑士": "soulknight"
+        
     }
 }
