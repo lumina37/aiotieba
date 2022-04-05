@@ -583,14 +583,14 @@ class Listener(object):
     async def cmd_holyshit(self, handler: Handler, at: tb.At, *args) -> None:
         """
         holyshit指令
-        召唤五名活跃吧务，使用参数extra_info来附带额外的召唤需求
+        召唤4名活跃吧务，使用参数extra_info来附带额外的召唤需求
         """
 
         if not self.time_recorder.allow_execute():
             return
 
         active_admin_list = [user_name for user_name,
-                             access_level in handler.access_users.items() if access_level >= 2][:5]
+                             access_level in handler.access_users.items() if access_level >= 2][:4]
         extra_info = args[0] if len(args) else ''
         content = f"{extra_info}@"+" @".join(active_admin_list)
 

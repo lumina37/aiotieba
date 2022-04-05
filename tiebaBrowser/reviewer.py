@@ -92,6 +92,9 @@ class Reviewer(Browser):
 
         self._database = None
         self._qrdetector = None
+        
+    async def __aenter__(self) -> "Reviewer":
+        return self
 
     async def close(self) -> None:
         await asyncio.gather(self.database.close(), super().close(), return_exceptions=True)

@@ -22,7 +22,7 @@ from PIL import Image
 from ._config import config
 from ._logger import log
 from ._types import (Ats, BasicUserInfo, Comments, Fragments, Posts, Replys,
-                     Thread, Threads, UserInfo)
+                     Searches, Thread, Threads, UserInfo)
 from .tieba_proto import *
 
 
@@ -1559,6 +1559,48 @@ class Browser(object):
                    for thread_dict in main_json['post_list']]
 
         return user, threads
+
+    async def search_post(self, tieba_name: str, query: str, pn: int = 1, rn: int = 30, query_type: int = 0, only_thread: bool = False) -> Searches:
+        """
+        贴吧搜索
+
+        Args:
+            tieba_name (str): 贴吧名
+            query (str): 查询文本
+            pn (int, optional): 页码. Defaults to 1.
+            rn (int, optional): 请求的条目数. Defaults to 30.
+            query_type (int, optional): 查询模式 0为全部搜索结果并且app似乎不提供这一模式 1为app时间倒序 2为app相关性排序. Defaults to 0.
+            only_thread (bool, optional): 是否仅查询主题帖. Defaults to False.
+
+        Returns:
+            Searches: 搜索结果列表
+        """
+
+        payload = {'_client_version': '12.23.0.1',
+                   'kw': tieba_name,
+                   'only_thread': int(only_thread),
+                   'pn': pn,
+                   'rn': rn,
+                   'sm': query_type,
+                   'word': query
+                   }
+        payload['sign'] = self._app_sign(payload)
+
+        try:
+            res = await self.sessions.app.post("http://c.tieba.baidu.com/c/s/searchpost", data=payload)
+
+            main_json = await res.json(content_type='application/x-javascript')
+            if int(main_json['error_code']):
+                raise ValueError(main_json['error_msg'])
+
+            searches = Searches(main_json)
+
+        except Exception as err:
+            log.warning(
+                f"Failed to search {query} in {tieba_name}. reason:{err}")
+            searches = Searches()
+
+        return searches
 
     async def get_self_forums(self) -> AsyncIterable[tuple[str, int, int, int]]:
         """

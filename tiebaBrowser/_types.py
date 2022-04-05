@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 __all__ = ['BasicUserInfo', 'UserInfo',
-           'Thread', 'Post', 'Comment', 'At', 'Reply',
-           'Threads', 'Posts', 'Comments', 'Ats', 'Replys',
+           'Thread', 'Post', 'Comment', 'At', 'Reply', 'Search',
+           'Threads', 'Posts', 'Comments', 'Ats', 'Replys', 'Searches',
            'Fragments'
            ]
 
@@ -731,7 +731,17 @@ class _Container(object):
                  '_tid', '_pid', '_user', '_author_id']
 
     def __init__(self) -> None:
+        self._init_null()
+
+    def _init_null(self) -> None:
         self._raw_data = None
+
+        self._fid = 0
+        self._tid = 0
+        self._pid = 0
+        self._user = None
+        self._author_id = None
+
         self._text = None
 
     def __repr__(self) -> str:
@@ -946,7 +956,6 @@ class Thread(_Container):
                 self.total_user = 0
 
     def __init__(self, thread_proto: Optional[ThreadInfo_pb2.ThreadInfo] = None) -> None:
-        super().__init__()
 
         if thread_proto:
             self._init_by_data(thread_proto)
@@ -1772,7 +1781,6 @@ class Reply(_Container):
                  '_thread_user', '_is_floor', '_create_time']
 
     def __init__(self, reply_proto: Optional[ReplyMeResIdl_pb2.ReplyMeResIdl.DataRes.ReplyList] = None) -> None:
-        super().__init__()
 
         if reply_proto:
             self._init_by_data(reply_proto)
@@ -2112,11 +2120,193 @@ class Ats(_Containers[At]):
                 try:
                     page_proto = ParseDict(
                         page_dict, Page_pb2.Page(), ignore_unknown_fields=True)
-                    self.page = Page(page_proto)
+                    self._page = Page(page_proto)
 
                 except Exception as err:
                     log.warning(
                         f"Failed to init Page of Ats. reason:line {err.__traceback__.tb_lineno}: {err}")
+                    self._page = Page()
+
+            else:
+                self._page = Page()
+
+        return self._page
+
+
+class Search(_Container):
+    """
+    搜索结果
+
+    Fields:
+        text (str): 文本内容
+        title (str): 标题
+
+        tieba_name (str): 所在贴吧名
+        tid (int): 所在主题帖tid
+        pid (int): 回复pid
+
+        is_floor (bool): 是否楼中楼
+
+        create_time (int): 10位时间戳，创建时间
+    """
+
+    __slots__ = ['tieba_name', 'title', '_is_floor', '_create_time']
+
+    def __init__(self, search_dict: Optional[dict]) -> None:
+
+        if search_dict:
+            self._init_by_data(search_dict)
+
+        else:
+            self._init_null()
+
+    def _init_by_data(self, search_dict: dict) -> None:
+        try:
+            self._raw_data = search_dict
+            self._text = search_dict['content']
+            self.title = search_dict['title']
+
+            self.tieba_name = search_dict['fname']
+            self.fid = 0
+            self.tid = search_dict['tid']
+            self.pid = search_dict['pid']
+            self._user = None
+            self._author_id = None
+
+            self.is_floor = int(search_dict['is_floor'])
+            self.create_time = search_dict['time']
+
+        except Exception as err:
+            log.warning(
+                f"Failed to init Search. reason:line {err.__traceback__.tb_lineno}: {err}")
+            self._init_null()
+
+    def _init_null(self) -> None:
+
+        self._raw_data = None
+        self._text = ''
+        self.title = ''
+
+        self.tieba_name = ''
+        self._fid = 0
+        self._tid = 0
+        self._pid = 0
+        self._user = None
+        self._author_id = 0
+
+        self._is_floor = False
+        self._create_time = 0
+
+    @property
+    def text(self) -> str:
+        return self._text
+
+    @property
+    def user(self) -> UserInfo:
+        if self._user is None:
+
+            if self._raw_data:
+                user_proto = ParseDict(
+                    self._raw_data['author'], User_pb2.User(), ignore_unknown_fields=True)
+                self._user = UserInfo(
+                    user_proto=user_proto) if user_proto.id else UserInfo()
+            else:
+                self._user = UserInfo()
+
+        return self._user
+
+    @property
+    def author_id(self) -> int:
+        if self._author_id is None:
+            self._author_id = self.user.user_id
+        return self._author_id
+
+    @property
+    def is_floor(self) -> bool:
+        return self._is_floor
+
+    @is_floor.setter
+    def is_floor(self, new_is_floor: bool) -> None:
+        self._is_floor = bool(new_is_floor)
+
+    @property
+    def create_time(self) -> int:
+        return self._create_time
+
+    @create_time.setter
+    @_int_prop_check_ignore_none(0)
+    def create_time(self, new_create_time: int) -> None:
+        self._create_time = int(new_create_time)
+
+
+class Searches(_Containers[Search]):
+    """
+    搜索结果列表
+
+    Fields:
+        _objs (list[At])
+        page (Page): 页码信息
+        has_more (bool): 是否有后继页
+        has_prev (bool): 是否有前驱页
+    """
+
+    __slots__ = ['_raw_data']
+
+    def __init__(self, searches_dict: Optional[dict] = None) -> None:
+
+        if searches_dict:
+            self._init_by_data(searches_dict)
+
+        else:
+            self._init_null()
+
+    def _init_by_data(self, data_dict: dict) -> None:
+
+        self._raw_data = data_dict
+
+        self._objs = None
+        self._page = None
+
+    def _init_null(self) -> None:
+
+        self._raw_data = None
+
+        self._objs = None
+        self._page = None
+
+    def __getitem__(self, idx: int) -> Search:
+        return self.objs[idx]
+
+    @property
+    def objs(self) -> list[Search]:
+
+        if self._objs is None:
+
+            if self._raw_data:
+                self._objs = [Search(search_dict=search_dict)
+                              for search_dict in self._raw_data['post_list']]
+            else:
+                self._objs = []
+
+        return self._objs
+
+    @property
+    def page(self) -> Page:
+        if self._page is None:
+
+            if self._raw_data:
+                page_dict = self._raw_data['page']
+                if not page_dict['has_more']:
+                    page_dict['has_more'] = 0
+
+                try:
+                    page_proto = ParseDict(
+                        page_dict, Page_pb2.Page(), ignore_unknown_fields=True)
+                    self._page = Page(page_proto)
+
+                except Exception as err:
+                    log.warning(
+                        f"Failed to init Page of Searches. reason:line {err.__traceback__.tb_lineno}: {err}")
                     self._page = Page()
 
             else:
