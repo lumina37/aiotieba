@@ -81,7 +81,7 @@ class Reviewer(Browser):
         BDUSS_key (str): 用于从config.json中提取BDUSS
     """
 
-    __slots__ = ['tieba_name','_database','_qrdetector']
+    __slots__ = ['tieba_name', '_database', '_qrdetector']
 
     expressions = RegularExp()
 
@@ -97,13 +97,13 @@ class Reviewer(Browser):
         await asyncio.gather(self.database.close(), super().close(), return_exceptions=True)
 
     @property
-    def qrdetector(self):
+    def qrdetector(self) -> cv.QRCodeDetector:
         if self._qrdetector is None:
             self._qrdetector = cv.QRCodeDetector()
         return self._qrdetector
 
     @property
-    def database(self):
+    def database(self) -> Database:
         if self._database is None:
             self._database = Database()
         return self._database

@@ -44,13 +44,16 @@ class Database(object):
         self.db_name = db_name
 
         try:
-            self._conn = pymysql.connect(**config['database'], database=db_name)
-            self._cursor = self._conn.cursor()
+            self._conn = pymysql.connect(**config['database'])
+            self._conn.select_db(self.db_name)
         except pymysql.Error as err:
             log.warning(f"Cannot link to the database {db_name}. reason:{err}")
             self.init_database()
+        else:
+            self._cursor = self._conn.cursor()
 
     async def close(self) -> None:
+        self._cursor.close()
         self._conn.commit()
         self._conn.close()
 
@@ -61,8 +64,8 @@ class Database(object):
 
         self._conn = pymysql.connect(**config['database'])
         self._cursor = self._conn.cursor()
-        self._cursor.execute(f"CREATE DATABASE `{self.db_name}`")
-        self._cursor.execute(f"USE `{self.db_name}`")
+        self._cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{self.db_name}`")
+        self._conn.select_db(self.db_name)
 
         coros = []
         for tieba_name in config['tieba_name_mapping'].keys():
@@ -157,6 +160,7 @@ class Database(object):
                 "INSERT IGNORE INTO `forum` VALUES (%s,%s)", (fid, tieba_name))
         except pymysql.Error as err:
             log.warning(f"Failed to insert {fid}. reason:{err}")
+            self._conn.rollback()
             return False
         else:
             self._conn.commit()
@@ -222,6 +226,7 @@ class Database(object):
                 "INSERT IGNORE INTO `user` VALUES (%s,%s,%s)", (user.user_id, user.user_name, user.portrait))
         except pymysql.Error as err:
             log.warning(f"Failed to insert {user}. reason:{err}")
+            self._conn.rollback()
             return False
         else:
             self._conn.commit()
@@ -250,6 +255,7 @@ class Database(object):
                     "DELETE FROM `user` WHERE `user_name`=%s", (user.user_name,))
         except pymysql.Error as err:
             log.warning(f"Failed to delete {user}. reason:{err}")
+            self._conn.rollback()
             return False
         else:
             log.info(f"Successfully deleted {user} from table user")
@@ -292,6 +298,7 @@ class Database(object):
                 f"REPLACE INTO `id_{tieba_name_eng}` VALUES (%s,%s,DEFAULT)", (_id, id_last_edit))
         except pymysql.Error as err:
             log.warning(f"Failed to insert {_id}. reason:{err}")
+            self._conn.rollback()
             return False
         else:
             self._conn.commit()
@@ -340,6 +347,7 @@ class Database(object):
                 f"DELETE FROM `id_{tieba_name_eng}` WHERE `id`=%s", (_id,))
         except pymysql.Error as err:
             log.warning(f"Failed to delete {_id}. reason:{err}")
+            self._conn.rollback()
             return False
         else:
             log.info(
@@ -366,6 +374,7 @@ class Database(object):
         except pymysql.Error as err:
             log.warning(
                 f"Failed to delete id in id_{tieba_name_eng}. reason:{err}")
+            self._conn.rollback()
             return False
         else:
             self._conn.commit()
@@ -408,6 +417,7 @@ class Database(object):
                 f"REPLACE INTO `tid_water_{tieba_name_eng}` VALUES (%s,%s,DEFAULT)", (tid, mode))
         except pymysql.Error as err:
             log.warning(f"Failed to insert {tid}. reason:{err}")
+            self._conn.rollback()
             return False
         else:
             log.info(
@@ -457,6 +467,7 @@ class Database(object):
                 f"DELETE FROM `tid_water_{tieba_name_eng}` WHERE `tid`=%s", (tid,))
         except pymysql.Error as err:
             log.warning(f"Failed to delete {tid}. reason:{err}")
+            self._conn.rollback()
             return False
         else:
             log.info(
@@ -521,6 +532,7 @@ class Database(object):
                 f"REPLACE INTO `user_id_{tieba_name_eng}` VALUES (%s,%s,DEFAULT)", (user_id, mode))
         except pymysql.Error as err:
             log.warning(f"Failed to insert {user_id}. reason:{err}")
+            self._conn.rollback()
             return False
         else:
             log.info(
@@ -546,6 +558,7 @@ class Database(object):
                 f"DELETE FROM `user_id_{tieba_name_eng}` WHERE `user_id`=%s", (user_id,))
         except pymysql.Error as err:
             log.warning(f"Failed to delete {user_id}. reason:{err}")
+            self._conn.rollback()
             return False
         else:
             log.info(
@@ -636,6 +649,7 @@ class Database(object):
                 f"REPLACE INTO `img_blacklist_{tieba_name_eng}` VALUES (%s,%s)", (img_hash, raw_hash))
         except pymysql.Error as err:
             log.warning(f"Failed to insert {img_hash}. reason:{err}")
+            self._conn.rollback()
             return False
         else:
             log.info(
@@ -683,6 +697,7 @@ class Database(object):
                 f"DELETE FROM `img_blacklist_{tieba_name_eng}` WHERE `img_hash`=%s", (img_hash,))
         except pymysql.Error as err:
             log.warning(f"Failed to delete {img_hash}. reason:{err}")
+            self._conn.rollback()
             return False
         else:
             log.info(

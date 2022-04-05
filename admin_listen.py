@@ -97,6 +97,9 @@ class Handler(object):
 
 class Listener(object):
 
+    __slots__ = ['_config_mtime', 'listener',
+                 'handler_map', '_cmd_map', 'time_recorder']
+
     def __init__(self) -> None:
 
         config_path = SCRIPT_PATH.parent / 'config/listen_config.json'
@@ -108,7 +111,7 @@ class Listener(object):
         self.handler_map = {(handler := Handler(
             tieba_config)).tieba_name: handler for tieba_config in config['tieba_configs']}
 
-        self.cmd_map = {func_name[4:]: getattr(self, func_name) for func_name in dir(
+        self._cmd_map = {func_name[4:]: getattr(self, func_name) for func_name in dir(
             self) if func_name.startswith("cmd")}
         self.time_recorder = TimerRecorder(3600, 30)
 
@@ -181,7 +184,7 @@ class Listener(object):
 
     async def _handle_cmd(self, at: tb.At) -> None:
         cmd_type, args = self._parse_cmd(at.text)
-        cmd_func = self.cmd_map.get(cmd_type, self.cmd_default)
+        cmd_func = self._cmd_map.get(cmd_type, self.cmd_default)
         await cmd_func(at, *args)
 
     async def _arg2user_info(self, arg: str) -> tb.UserInfo:
@@ -751,4 +754,4 @@ if __name__ == '__main__':
     try:
         asyncio.run(main())
     except:
-        pass
+        raise
