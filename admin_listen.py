@@ -693,27 +693,32 @@ class Listener(object):
         if await handler.speaker.add_post(at.tieba_name, at.tid, content):
             await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
 
-    @_check(need_access=5, need_arg_num=2)
+    @_check(need_access=5, need_arg_num=1)
     async def cmd_set_access(self, handler: Handler, at: tb.At, *args) -> None:
         """
         set_access指令
         设置用户的权限级别
         """
 
-        if not args[1].isdigit():
+        if len(args) == 1:
+            new_access = int(args[0])
+            posts = await self.listener.get_posts(at.tid, rn=2)
+            user_name = posts.thread.user.user_name
+        else:
+            new_access = int(args[1])
+            user_name = args[0]
+
+        if not user_name:
             return
 
-        old_access = handler.access_users.get(args[0], 0)
+        old_access = handler.access_users.get(user_name, 0)
         this_access = handler.access_users[at.user.user_name]
-        if old_access >= this_access:
-            return
-        new_access = int(args[1])
-        if new_access >= this_access:
+        if old_access >= this_access or new_access >= this_access:
             return
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        handler.set_access(at.user.user_name, new_access)
+        handler.set_access(user_name, new_access)
 
         await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
 
