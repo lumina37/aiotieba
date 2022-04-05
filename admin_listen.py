@@ -94,6 +94,14 @@ class Handler(object):
                 'access_users': self.access_users
                 }
 
+    def set_access(self, user_name: str, new_access: int) -> None:
+        tb.log.info(
+            f"Set access of {user_name} to {new_access} in {self.tieba_name}")
+        if new_access == 0:
+            self.access_users.pop(user_name, None)
+        else:
+            self.access_users[user_name] = new_access
+
 
 class Listener(object):
 
@@ -358,7 +366,7 @@ class Listener(object):
                 at.tieba_name, target.tid, target.pid))
 
         else:
-            if not (posts := await self.listener.get_posts(at.tid)):
+            if not (posts := await self.listener.get_posts(at.tid, rn=0)):
                 return
 
             if at.is_thread:
@@ -705,17 +713,29 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        if new_access == 0:
-            handler.access_users.pop(args[0])
-        else:
-            handler.access_users[args[0]] = new_access
+        handler.set_access(at.user.user_name, new_access)
 
         await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
 
-    @_check(need_access=2, need_arg_num=0)
+    @_check(need_access=0, need_arg_num=0)
     async def cmd_register(self, handler: Handler, at: tb.At, *args) -> None:
         """
         register指令
+        通过精品帖自助获取1级权限
+        """
+
+        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+
+        if not handler.access_users.__contains__(at.user.user_name):
+            for thread in await self.listener.get_threads(at.tieba_name, is_good=True):
+                if thread.user.user_id == at.user.user_id and thread.create_time > time.time()-30*24*3600:
+                    handler.set_access(at.user.user_name, 1)
+                    await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
+
+    @_check(need_access=2, need_arg_num=0)
+    async def cmd_active(self, handler: Handler, at: tb.At, *args) -> None:
+        """
+        active指令
         将发起指令的吧务移动到活跃吧务队列的最前端，以响应holyshit指令
         """
 
@@ -754,4 +774,4 @@ if __name__ == '__main__':
     try:
         asyncio.run(main())
     except:
-        raise
+        pass
