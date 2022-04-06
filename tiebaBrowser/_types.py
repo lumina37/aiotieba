@@ -206,8 +206,8 @@ class UserInfo(BasicUserInfo):
         self.is_vip = True if user_proto.new_tshow_icon else user_proto.vipInfo.v_status
         self.is_god = user_proto.new_god_data.status
         priv_proto = user_proto.priv_sets
-        self._priv_like = priv_proto.like
-        self._priv_reply = priv_proto.reply
+        self.priv_like = priv_proto.like
+        self.priv_reply = priv_proto.reply
 
     def _init_null(self) -> None:
         super()._init_null()
@@ -727,8 +727,7 @@ class _Container(object):
         author_id (int): int 发布者user_id
     """
 
-    __slots__ = ['_raw_data', '_text', '_fid',
-                 '_tid', '_pid', '_user', '_author_id']
+    __slots__ = ['_raw_data', '_text', '_tid', '_pid', '_user', '_author_id']
 
     def __init__(self) -> None:
         self._init_null()
@@ -736,7 +735,6 @@ class _Container(object):
     def _init_null(self) -> None:
         self._raw_data = None
 
-        self._fid = 0
         self._tid = 0
         self._pid = 0
         self._user = None
@@ -750,15 +748,6 @@ class _Container(object):
     @property
     def text(self) -> str:
         raise NotImplementedError
-
-    @property
-    def fid(self) -> int:
-        return self._fid
-
-    @fid.setter
-    @_int_prop_check_ignore_none(0)
-    def fid(self, new_fid: int) -> None:
-        self._fid = int(new_fid)
 
     @property
     def tid(self) -> int:
@@ -900,7 +889,7 @@ class Thread(_Container):
         is_top (bool): 是否置顶帖
         is_share (bool): 是否分享帖
         is_hide (bool): 是否被屏蔽
-        is_livepost (bool): 是否为置顶直播
+        is_livepost (bool): 是否为置顶话题
 
         title (str): 标题内容
         vote_info (VoteInfo): 投票内容
@@ -914,7 +903,7 @@ class Thread(_Container):
         last_time (int): 10位时间戳 最后回复时间
     """
 
-    __slots__ = ['_raw_data', '_contents', '_tab_id', '_is_good', '_is_top', '_is_share', '_is_hide', '_is_livepost', 'title',
+    __slots__ = ['_raw_data', '_contents', '_fid', '_tab_id', '_is_good', '_is_top', '_is_share', '_is_hide', '_is_livepost', 'title',
                  '_vote_info', '_share_origin', '_view_num', '_reply_num', '_share_num', '_agree', '_disagree', '_create_time', '_last_time']
 
     class VoteInfo(object):
@@ -1043,6 +1032,15 @@ class Thread(_Container):
                 self._contents = Fragments()
 
         return self._contents
+
+    @property
+    def fid(self) -> int:
+        return self._fid
+
+    @fid.setter
+    @_int_prop_check_ignore_none(0)
+    def fid(self, new_fid: int) -> None:
+        self._fid = int(new_fid)
 
     @property
     def is_good(self) -> bool:
@@ -1312,7 +1310,7 @@ class Post(_Container):
         is_thread_author (bool): 是否楼主
     """
 
-    __slots__ = ['_contents', '_sign', '_comments', '_floor', '_reply_num',
+    __slots__ = ['_fid', '_contents', '_sign', '_comments', '_floor', '_reply_num',
                  '_agree', '_disagree', '_create_time', 'is_thread_author']
 
     def __init__(self, post_proto: Optional[Post_pb2.Post] = None) -> None:
@@ -1414,6 +1412,15 @@ class Post(_Container):
                 self._comments = []
 
         return self._comments
+
+    @property
+    def fid(self) -> int:
+        return self._fid
+
+    @fid.setter
+    @_int_prop_check_ignore_none(0)
+    def fid(self, new_fid: int) -> None:
+        self._fid = int(new_fid)
 
     @property
     def floor(self) -> int:
@@ -1578,7 +1585,7 @@ class Comment(_Container):
         create_time (int): 10位时间戳，创建时间
     """
 
-    __slots__ = ['_contents', '_agree', '_disagree', '_create_time']
+    __slots__ = ['_fid', '_contents', '_agree', '_disagree', '_create_time']
 
     def __init__(self, comment_proto: Optional[SubPostList_pb2.SubPostList] = None) -> None:
 
@@ -1639,6 +1646,15 @@ class Comment(_Container):
                 self._contents = Fragments()
 
         return self._contents
+
+    @property
+    def fid(self) -> int:
+        return self._fid
+
+    @fid.setter
+    @_int_prop_check_ignore_none(0)
+    def fid(self, new_fid: int) -> None:
+        self._fid = int(new_fid)
 
     @property
     def create_time(self) -> int:
@@ -1793,7 +1809,6 @@ class Reply(_Container):
         self._raw_data = reply_proto
         self._text = reply_proto.content
 
-        self._fid = 0
         self._tid = reply_proto.thread_id
         self._pid = reply_proto.post_id
         self._user = None
@@ -1811,7 +1826,6 @@ class Reply(_Container):
         self._text = ''
 
         self.tieba_name = ''
-        self._fid = 0
         self._tid = 0
         self._pid = 0
         self._user = None
@@ -1976,7 +1990,6 @@ class At(_Container):
             self._text = at_dict['content']
 
             self.tieba_name = at_dict['fname']
-            self.fid = 0
             self.tid = at_dict['thread_id']
             self.pid = at_dict['post_id']
             self._user = None
@@ -1997,7 +2010,6 @@ class At(_Container):
         self._text = ''
 
         self.tieba_name = ''
-        self._fid = 0
         self._tid = 0
         self._pid = 0
         self._user = None
@@ -2167,7 +2179,6 @@ class Search(_Container):
             self.title = search_dict['title']
 
             self.tieba_name = search_dict['fname']
-            self.fid = 0
             self.tid = search_dict['tid']
             self.pid = search_dict['pid']
             self._user = None
@@ -2188,7 +2199,6 @@ class Search(_Container):
         self.title = ''
 
         self.tieba_name = ''
-        self._fid = 0
         self._tid = 0
         self._pid = 0
         self._user = None

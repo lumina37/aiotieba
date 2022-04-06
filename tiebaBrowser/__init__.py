@@ -8,7 +8,9 @@
 @Required Modules: asyncio aiohttp lxml bs4 pymysql pillow opencv-contrib-python protobuf
 """
 
+import asyncio
 import signal
+import sys
 
 from ._api import Browser
 from ._logger import log
@@ -21,3 +23,6 @@ def terminate(signalNumber, frame):
 
 
 signal.signal(signal.SIGTERM, terminate)
+
+if sys.platform == "win32" and sys.version_info.minor >= 8:
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())

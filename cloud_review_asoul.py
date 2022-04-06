@@ -151,7 +151,7 @@ class AsoulCloudReview(tb.Reviewer):
             return 1, block_days, line
         elif del_flag == 0:
             # 无异常 继续检查
-            if thread.user.priv_reply == 6:
+            if thread.user.priv_reply != 1:
                 # 楼主锁回复 直接删帖
                 return 1, 0, sys._getframe().f_lineno
 

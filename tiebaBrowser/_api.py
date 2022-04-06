@@ -229,7 +229,7 @@ class Browser(object):
         if user.user_id:
             return await self._user_id2user_info(user)
         else:
-            return await self._name2user_info(user)
+            return await self._id2user_info(user)
 
     async def get_basic_user_info(self, _id: Union[str, int]) -> BasicUserInfo:
         """
@@ -245,12 +245,14 @@ class Browser(object):
         user = BasicUserInfo(_id)
         if user.user_id:
             return await self._user_id2basic_user_info(user)
-        else:
+        elif user.user_name:
             return await self._user_name2basic_user_info(user)
+        else:
+            return await self._id2user_info(user)
 
-    async def _name2user_info(self, user: UserInfo) -> UserInfo:
+    async def _id2user_info(self, user: UserInfo) -> UserInfo:
         """
-        通过用户名或昵称补全完整版用户信息
+        通过用户名或昵称或portrait补全完整版用户信息
 
         Args:
             user (UserInfo): 待补全的用户信息
@@ -279,8 +281,10 @@ class Browser(object):
             user.nick_name = user_dict['show_nickname']
             user.portrait = user_dict['portrait']
             user.user_id = user_dict['id']
-            user.gender = gender
-            user.is_vip = bool(user_dict['vipInfo'])
+            if isinstance(user, UserInfo):
+                user.gender = gender
+                user.is_vip = int(vip_dict['v_status']) if (
+                    vip_dict := user_dict['vipInfo']) else False
 
         except Exception as err:
             log.warning(

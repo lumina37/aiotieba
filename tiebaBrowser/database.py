@@ -529,7 +529,7 @@ class Database(object):
 
         try:
             self._cursor.execute(
-                f"REPLACE INTO `user_id_{tieba_name_eng}` VALUES (%s,%s,DEFAULT)", (user_id, mode))
+                f"INSERT INTO `user_id_{tieba_name_eng}` (`user_id`,`is_white`) VALUES (%s,%s) ON DUPLICATE KEY UPDATE `is_white`=VALUES(`is_white`)", (user_id, mode))
         except pymysql.Error as err:
             log.warning(f"Failed to insert {user_id}. reason:{err}")
             self._conn.rollback()

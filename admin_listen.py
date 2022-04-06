@@ -200,7 +200,7 @@ class Listener(object):
             tieba_uid = int(res.group(1))
             user = await self.listener.tieba_uid2user_info(tieba_uid)
         else:
-            user = await self.listener.get_user_info(arg)
+            user = await self.listener.get_basic_user_info(arg)
 
         return user
 
@@ -392,6 +392,8 @@ class Listener(object):
             coros.append(handler.admin.block(
                 at.tieba_name, target.user, day=block_days))
         if blacklist:
+            tb.log.info(
+                f"Try to update {target.user.log_name} to {at.tieba_name}. mode:False")
             coros.append(handler.admin.database.update_user_id(
                 at.tieba_name, target.user.user_id, False))
 
@@ -460,7 +462,7 @@ class Listener(object):
         通过id封禁对应用户10天
         """
 
-        await self._block(at, args[0], 10)
+        await self._block(handler, at, args[0], 10)
 
     @_check(need_access=2, need_arg_num=1)
     async def cmd_block3(self, handler: Handler, at: tb.At, *args) -> None:
@@ -469,7 +471,7 @@ class Listener(object):
         通过id封禁对应用户3天
         """
 
-        await self._block(at, args[0], 3)
+        await self._block(handler, at, args[0], 3)
 
     async def _block(self, handler: Handler, at: tb.At, arg: str, block_days: int) -> None:
         """
@@ -540,6 +542,8 @@ class Listener(object):
 
         user = await self._arg2user_info(args[0])
 
+        tb.log.info(
+            f"Try to update {user.log_name} to {at.tieba_name}. mode:True")
         if await handler.admin.database.update_user_id(at.tieba_name, user.user_id, True):
             await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
 
@@ -558,6 +562,8 @@ class Listener(object):
 
         user = await self._arg2user_info(args[0])
 
+        tb.log.info(
+            f"Try to update {user.log_name} to {at.tieba_name}. mode:False")
         if await handler.admin.database.update_user_id(at.tieba_name, user.user_id, False):
             await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
 
@@ -576,6 +582,8 @@ class Listener(object):
 
         user = await self._arg2user_info(args[0])
 
+        tb.log.info(
+            f"Try to delete {user.log_name} from {at.tieba_name}")
         if await handler.admin.database.del_user_id(at.tieba_name, user.user_id):
             await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
 
