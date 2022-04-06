@@ -248,7 +248,7 @@ class Browser(object):
         elif user.user_name:
             return await self._user_name2basic_user_info(user)
         else:
-            return await self._id2user_info(user)
+            return await self._id2basic_user_info(user)
 
     async def _id2user_info(self, user: UserInfo) -> UserInfo:
         """
@@ -281,14 +281,44 @@ class Browser(object):
             user.nick_name = user_dict['show_nickname']
             user.portrait = user_dict['portrait']
             user.user_id = user_dict['id']
-            if isinstance(user, UserInfo):
-                user.gender = gender
-                user.is_vip = int(vip_dict['v_status']) if (
-                    vip_dict := user_dict['vipInfo']) else False
+            user.gender = gender
+            user.is_vip = int(vip_dict['v_status']) if (
+                vip_dict := user_dict['vipInfo']) else False
 
         except Exception as err:
             log.warning(
                 f"Failed to get UserInfo of {user.log_name}. reason:{err}")
+            user = UserInfo()
+
+        return user
+    
+    async def _id2basic_user_info(self, user: BasicUserInfo) -> BasicUserInfo:
+        """
+        通过用户名或昵称或portrait补全简略版用户信息
+
+        Args:
+            user (BasicUserInfo): 待补全的用户信息
+
+        Returns:
+            BasicUserInfo: 简略版用户信息 仅保证包含user_name/portrait/user_id
+        """
+
+        try:
+            res = await self.sessions.web.get("https://tieba.baidu.com/home/get/panel", params={'id': user.portrait, 'un': user.user_name or user.nick_name})
+
+            main_json = await res.json()
+            if int(main_json['no']):
+                raise ValueError(main_json['error'])
+
+            user_dict = main_json['data']
+            user.user_name = user_dict['name']
+            user.nick_name = user_dict['show_nickname']
+            user.portrait = user_dict['portrait']
+            user.user_id = user_dict['id']
+
+        except Exception as err:
+            log.warning(
+                f"Failed to get BasicUserInfo of {user.log_name}. reason:{err}")
             user = UserInfo()
 
         return user
@@ -320,7 +350,7 @@ class Browser(object):
 
         except Exception as err:
             log.warning(
-                f"Failed to get UserInfo of {user.user_name}. reason:{err}")
+                f"Failed to get BasicUserInfo of {user.user_name}. reason:{err}")
             user = BasicUserInfo()
 
         return user
@@ -388,7 +418,7 @@ class Browser(object):
 
         except Exception as err:
             log.warning(
-                f"Failed to get UserInfo of {user.user_id}. reason:{err}")
+                f"Failed to get BasicUserInfo of {user.user_id}. reason:{err}")
             user = BasicUserInfo()
 
         return user

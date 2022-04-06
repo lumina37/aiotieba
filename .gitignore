@@ -8,6 +8,7 @@ __*/
 *.bin
 *.zip
 *.rar
+*.md
 
 config/*
 !config/config-example.json
@@ -20,6 +21,7 @@ test*
 /*.py
 /*.proto
 
+!/README.md
 !/admin_listen.py
 !/cloud_review_asoul.py
 !/data_spider.py
