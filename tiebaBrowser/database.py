@@ -44,8 +44,7 @@ class Database(object):
         self.db_name = db_name
 
         try:
-            self._conn = pymysql.connect(**config['database'])
-            self._conn.select_db(self.db_name)
+            self._conn = pymysql.connect(**config['database'], database=self.db_name)
         except pymysql.Error as err:
             log.warning(f"Cannot link to the database {db_name}. reason:{err}")
             self.init_database()
@@ -65,7 +64,7 @@ class Database(object):
         self._conn = pymysql.connect(**config['database'])
         self._cursor = self._conn.cursor()
         self._cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{self.db_name}`")
-        self._conn.select_db(self.db_name)
+        self._cursor.execute(f"USE `{self.db_name}`")
 
         coros = []
         for tieba_name in config['tieba_name_mapping'].keys():

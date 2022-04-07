@@ -4,24 +4,17 @@ import re
 import sys
 import time
 import traceback
-from collections import Counter
 
 import tiebaBrowser as tb
 
 
-class AsoulCloudReview(tb.Reviewer):
+class HanimeCloudReview(tb.Reviewer):
 
-    __slots__ = ['white_kw_exp', 'water_restrict_flag']
+    __slots__ = ['white_kw_exp']
 
     def __init__(self, BDUSS_key, tieba_name) -> None:
         super().__init__(BDUSS_key, tieba_name)
-        white_kw_list = ['管人|(哪个|什么)v|bv|联动|歌回|杂谈|歌力|企划|切片|前世|毕业|sc|弹幕|同接|二次元|原批|牧场|周边|史书|饭圈|滑坡',
-                         '(a|b|睿|皇协|批|p)站|b博|海鲜|(v|a)(吧|8)|nga|404|ytb|论坛|字幕组|粉丝群|直播间|魂组|录播',
-                         'asoul|皮套|纸片人|套皮|嘉然|然然|向晚|晚晚|乃琳|奶琳|贝拉|拉姐|珈乐|羊驼|a(骚|s|手)|向晚|歌姬|乃贝|晚饭|大头',
-                         '开播|共振|取关|牧场|啊啊啊|麻麻|别急|可爱|sad|感叹|速速|我超|存牌|狠狠|切割|牛牛|一把子|幽默|GNK48|汴京|抱团|别融',
-                         '嘉心糖|顶碗人|贝极星|奶淇淋|n70|皇(珈|家)|黄嘉琪|泥哥|(a|b|豆|d|抖|快|8|吧)(u|友)|一个魂|粉丝|ylg|mmr|低能|易拉罐|脑弹|铝制品|纯良']
-        self.white_kw_exp = re.compile('|'.join(white_kw_list), re.I)
-        self.water_restrict_flag = False
+        self.white_kw_exp = re.compile('default默认', re.I)
 
     async def run(self) -> None:
 
@@ -29,36 +22,13 @@ class AsoulCloudReview(tb.Reviewer):
             try:
                 start_time = time.perf_counter()
 
-                # 获取限水标记
-                self.water_restrict_flag = await self.database.is_tid_hide(self.tieba_name, 0)
-
                 # 获取主题帖列表
                 threads = await self.get_threads(self.tieba_name)
                 # 创建异步任务列表 并规定每个任务的延迟时间 避免高并发下的网络阻塞
                 coros = [self._handle_thread(thread, idx/5)
                          for idx, thread in enumerate(threads)]
                 # 并发运行协程
-                del_flags = await asyncio.gather(*coros)
-
-                def _yield_user_id():
-                    for idx, thread in enumerate(threads):
-                        if not del_flags[idx] and (user_id := thread.author_id) != 0 and thread.reply_num < 15 and not self.white_kw_exp.search(thread.text):
-                            yield user_id
-                # 为每个user_id统计无关水帖数
-                water_stat = Counter(_yield_user_id())
-
-                water_user_ids = []
-                for user_id, count in water_stat.items():
-                    # 无关水数量大于等于5 则屏蔽该用户在版面上的所有无关水
-                    if count >= 5:
-                        tb.log.info(f"Clear Water {user_id}")
-                        water_user_ids.append(user_id)
-
-                if water_user_ids:
-                    # 因为治水功能很少被触发 所以采用int计数+二次遍历而不是列表计数的设计来提升性能
-                    coros = [self.hide_thread(self.tieba_name, thread.tid)
-                             for thread in threads if thread.author_id in water_user_ids]
-                    await asyncio.gather(*coros)
+                await asyncio.gather(*coros)
 
                 tb.log.debug(
                     f"Cycle time_cost: {time.perf_counter()-start_time:.4f}")
@@ -118,12 +88,6 @@ class AsoulCloudReview(tb.Reviewer):
             line: int 处罚规则所在的行号
         """
 
-        if self.water_restrict_flag:
-            # 当前吧处于高峰期限水状态
-            if await self.database.is_tid_hide(self.tieba_name, thread.tid) == False:
-                await self.database.update_tid(self.tieba_name, thread.tid, True)
-                return 2, 0, sys._getframe().f_lineno
-
         # 该帖子里的内容没有发生任何变化 直接跳过所有后续检查
         if thread.last_time <= await self.database.get_id(self.tieba_name, thread.tid):
             return 0, 0, 0
@@ -151,7 +115,7 @@ class AsoulCloudReview(tb.Reviewer):
             return 1, block_days, line
         elif del_flag == 0:
             # 无异常 继续检查
-            if thread.user.priv_reply != 1:
+            if thread.user.priv_reply == 6:
                 # 楼主锁回复 直接删帖
                 return 1, 0, sys._getframe().f_lineno
 
@@ -208,12 +172,7 @@ class AsoulCloudReview(tb.Reviewer):
             return 1, block_days, line
         elif del_flag == 0:
             # 无异常 继续检查
-            for img_content in post.contents.imgs:
-                img = await self.url2image(img_content.src)
-                if img is None:
-                    continue
-                if await self.has_imghash(img):
-                    return 1, 0, sys._getframe().f_lineno
+            pass
 
         if post.comments:
             # 并发检查楼中楼内容 因为是CPU密集任务所以不需要设计delay
@@ -264,9 +223,7 @@ class AsoulCloudReview(tb.Reviewer):
             return 1, day, line
         elif del_flag == 0:
             # 无异常 继续检查
-            if isinstance(comment.contents[0], tb._types.FragLink):
-                # 楼中楼一级号发链接 删
-                return 1, 0, sys._getframe().f_lineno
+            pass
 
         # 缓存该pid
         await self.database.update_id(self.tieba_name, comment.pid)
@@ -287,43 +244,8 @@ class AsoulCloudReview(tb.Reviewer):
             # 白名单用户
             return -1, 0, 0
         elif is_white == False:
-            # 黑名单用户 删回复并封十天
-            return 1, 10, sys._getframe().f_lineno
-
-        text = obj.text
-        if re.search("((?<![a-z])v|瞳|梓|罐|豆|鸟|鲨)(÷|/|／|➗|畜|处|除|初|醋)|椰子汁|🥥|东雪莲|莲宝|林忆宁|010", text, re.I):
-            return 1, 0, sys._getframe().f_lineno
-
-        level = obj.user.level
-        if level > 6:
-            # 用户等级大于6则跳过后续检查
-            return 0, 0, 0
-
-        # 内容中是否有白名单关键字
-        has_white_kw = True if self.white_kw_exp.search(text) else False
-        if has_white_kw:
-            return 0, 0, 0
-
-        # 内容中是否有罕见的联系方式
-        has_rare_contact = True if self.expressions.contact_rare_exp.search(
-            text) else False
-
-        if level < 7:
-            if self.expressions.job_nocheck_exp.search(text):
-                # 招兼职 十天删帖
-                return 1, 10, sys._getframe().f_lineno
-
-            if self.expressions.business_exp.search(text):
-                # 商业推广 十天删帖
-                return 1, 0, 0
-
-            has_job = True if self.expressions.job_exp.search(text) else False
-            if self.expressions.job_check_exp.search(text) and (has_job or has_rare_contact):
-                # 易误判的兼职关键词 二重检验
-                return 1, 0, 0
-            if self.expressions.course_exp.search(text) and self.expressions.course_check_exp.search(text):
-                # 易误判的课程推广关键词 二重检验
-                return 1, 0, 0
+            # 黑名单用户 删回复并封一天
+            return 1, 1, sys._getframe().f_lineno
 
         return 0, 0, 0
 
@@ -331,7 +253,7 @@ class AsoulCloudReview(tb.Reviewer):
 if __name__ == '__main__':
 
     async def main():
-        async with AsoulCloudReview('starry', 'asoul') as review:
+        async with HanimeCloudReview('starry', '宫漫') as review:
             await review.run()
 
     try:

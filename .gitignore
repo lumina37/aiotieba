@@ -24,4 +24,6 @@ test*
 !/README.md
 !/admin_listen.py
 !/cloud_review_asoul.py
+!/cloud_review_diana.py
+!/cloud_review_hanime.py
 !/data_spider.py
