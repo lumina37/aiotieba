@@ -155,7 +155,7 @@ class Listener(object):
 
             except asyncio.CancelledError:
                 break
-            except Exception as err:
+            except Exception:
                 tb.log.critical(f"Unhandled error", exc_info=True)
                 return
 

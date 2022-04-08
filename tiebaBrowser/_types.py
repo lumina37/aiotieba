@@ -493,7 +493,7 @@ class Fragments(Generic[_TFrag]):
     """
 
     __slots__ = ['_frags', '_text', '_texts', '_emojis',
-                 '_imgs', '_ats', '_links', 'voice', '_tiebapluses']
+                 '_imgs', '_ats', '_links', '_voice', '_tiebapluses']
 
     def __init__(self, content_protos: Optional[Iterable] = None) -> None:
 
@@ -502,27 +502,40 @@ class Fragments(Generic[_TFrag]):
             # 0纯文本 9电话号 18话题 27百科词条
             if _type in [0, 9, 18, 27]:
                 fragment = FragText(content_proto)
+                self._texts.append(fragment)
             elif _type == 2:
                 fragment = FragEmoji(content_proto)
+                self._emojis.append(fragment)
             elif _type == 3:
                 fragment = FragImage(content_proto)
+                self._imgs.append(fragment)
             elif _type == 4:
                 fragment = FragAt(content_proto)
+                self._ats.append(fragment)
+                self._texts.append(fragment)
             elif _type == 1:
                 fragment = FragLink(content_proto)
-            elif _type == 5:
+                self._links.append(fragment)
+                self._texts.append(fragment)
+            elif _type == 5:  # video
                 fragment = _Fragment(content_proto)
             elif _type == 10:
                 fragment = FragVoice(content_proto)
-                self.voice = fragment
+                self._voice = fragment
             elif _type == 20:  # e.g. tid=5470214675
                 fragment = FragImage(content_proto)
+                self._imgs.append(fragment)
             elif _type in [35, 36]:  # e.g. tid=7769728331
                 fragment = FragTiebaPlus(content_proto)
+                self._tiebapluses.append(fragment)
+                self._texts.append(fragment)
             elif _type == 37:  # e.g. tid=7760184147
                 fragment = FragTiebaPlus(content_proto)
+                self._tiebapluses.append(fragment)
+                self._texts.append(fragment)
             elif _type == 11:  # e.g. tid=5047676428
                 fragment = FragEmoji(content_proto)
+                self._emojis.append(fragment)
             else:
                 fragment = _Fragment(content_proto)
                 log.warning(f"Unknown fragment type:{_type}")
@@ -530,13 +543,13 @@ class Fragments(Generic[_TFrag]):
             return fragment
 
         self._text = None
-        self._texts = None
-        self._links = None
-        self._imgs = None
-        self._emojis = None
-        self._ats = None
-        self.voice = None
-        self._tiebapluses = None
+        self._texts = []
+        self._links = []
+        self._imgs = []
+        self._emojis = []
+        self._ats = []
+        self._voice = None
+        self._tiebapluses = []
 
         if content_protos:
             self._frags = [_init_by_type(content_proto)
@@ -552,44 +565,32 @@ class Fragments(Generic[_TFrag]):
 
     @property
     def texts(self) -> list[_TFrag]:
-        if self._texts is None:
-            self._texts = [
-                frag for frag in self._frags if hasattr(frag, 'text')]
         return self._texts
 
     @property
     def emojis(self) -> list[FragEmoji]:
-        if self._emojis is None:
-            self._emojis = [
-                frag for frag in self._frags if isinstance(frag, FragEmoji)]
         return self._emojis
 
     @property
     def imgs(self) -> list[FragImage]:
-        if self._imgs is None:
-            self._imgs = [
-                frag for frag in self._frags if isinstance(frag, FragImage)]
         return self._imgs
 
     @property
     def ats(self) -> list[FragAt]:
-        if self._ats is None:
-            self._ats = [
-                frag for frag in self._frags if isinstance(frag, FragAt)]
         return self._ats
 
     @property
+    def voice(self) -> FragVoice:
+        if self._voice is None:
+            self._voice = FragVoice()
+        return self._voice
+
+    @property
     def links(self) -> list[FragLink]:
-        if self._links is None:
-            self._links = [
-                frag for frag in self._frags if isinstance(frag, FragLink)]
         return self._links
 
     @property
     def tiebapluses(self) -> list[FragTiebaPlus]:
-        if self._tiebapluses is None:
-            self._tiebapluses = [
-                frag for frag in self._frags if isinstance(frag, FragTiebaPlus)]
         return self._tiebapluses
 
     @final

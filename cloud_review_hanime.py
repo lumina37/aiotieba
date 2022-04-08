@@ -33,7 +33,7 @@ class HanimeCloudReview(tb.Reviewer):
                 tb.log.debug(
                     f"Cycle time_cost: {time.perf_counter()-start_time:.4f}")
                 # 主动释放CPU 转而运行其他协程
-                await asyncio.sleep(30)
+                await asyncio.sleep(10)
 
             except Exception:
                 tb.log.critical(
@@ -244,8 +244,8 @@ class HanimeCloudReview(tb.Reviewer):
             # 白名单用户
             return -1, 0, 0
         elif is_white == False:
-            # 黑名单用户 删回复并封一天
-            return 1, 1, sys._getframe().f_lineno
+            # 黑名单用户 删回复并封十天
+            return 1, 10, sys._getframe().f_lineno
 
         return 0, 0, 0
 

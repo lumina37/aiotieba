@@ -9,8 +9,7 @@ import sys
 import time
 from collections.abc import AsyncIterable, Iterable
 from io import BytesIO
-from types import TracebackType
-from typing import Optional, Type, Union
+from typing import Optional, Union
 
 import aiohttp
 import cv2 as cv
@@ -56,7 +55,7 @@ class Sessions(object):
         _trust_env = False
 
         # Init app client
-        app_headers = {aiohttp.hdrs.USER_AGENT: 'bdtb for Android 12.23.0.1',
+        app_headers = {aiohttp.hdrs.USER_AGENT: 'bdtb for Android 12.23.1.0',
                        aiohttp.hdrs.CONNECTION: 'keep-alive',
                        aiohttp.hdrs.ACCEPT_ENCODING: 'gzip',
                        aiohttp.hdrs.HOST: 'c.tieba.baidu.com',
@@ -65,7 +64,7 @@ class Sessions(object):
         ), connector_owner=False, raise_for_status=True, timeout=self._timeout, trust_env=_trust_env)
 
         # Init app protobuf client
-        app_proto_headers = {aiohttp.hdrs.USER_AGENT: 'bdtb for Android 12.23.0.1',
+        app_proto_headers = {aiohttp.hdrs.USER_AGENT: 'bdtb for Android 12.23.1.0',
                              'x_bd_data_type': 'protobuf',
                              aiohttp.hdrs.CONNECTION: 'keep-alive',
                              aiohttp.hdrs.ACCEPT_ENCODING: 'gzip',
@@ -90,7 +89,7 @@ class Sessions(object):
     async def __aenter__(self) -> "Sessions":
         return self
 
-    async def __aexit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[BaseException], exc_tb: Optional[TracebackType]) -> None:
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.close()
 
 
@@ -117,7 +116,7 @@ class Browser(object):
     async def __aenter__(self) -> "Browser":
         return self
 
-    async def __aexit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[BaseException], exc_tb: Optional[TracebackType]) -> None:
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.close()
 
     @staticmethod
@@ -438,7 +437,7 @@ class Browser(object):
         """
 
         common = CommonReq_pb2.CommonReq()
-        common._client_version = '12.23.0.1'
+        common._client_version = '12.23.1.0'
         data = FrsPageReqIdl_pb2.FrsPageReqIdl.DataReq()
         data.common.CopyFrom(common)
         data.kw = tieba_name
@@ -488,7 +487,7 @@ class Browser(object):
         """
 
         common = CommonReq_pb2.CommonReq()
-        common._client_version = '12.23.0.1'
+        common._client_version = '12.23.1.0'
         data = PbPageReqIdl_pb2.PbPageReqIdl.DataReq()
         data.common.CopyFrom(common)
         data.kz = tid
@@ -538,7 +537,7 @@ class Browser(object):
         """
 
         common = CommonReq_pb2.CommonReq()
-        common._client_version = '12.23.0.1'
+        common._client_version = '12.23.1.0'
         data = PbFloorReqIdl_pb2.PbFloorReqIdl.DataReq()
         data.common.CopyFrom(common)
         data.kz = tid
@@ -845,7 +844,7 @@ class Browser(object):
         """
 
         payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_version': '12.23.0.1',
+                   '_client_version': '12.23.1.0',
                    'forum_id': await self.get_fid(tieba_name),
                    'tbs': await self.get_tbs(),
                    'threads': str([{'thread_id': tid, 'from_tab_id': from_tab_id, 'to_tab_id': to_tab_id}]).replace('\'', '"'),
@@ -1385,7 +1384,7 @@ class Browser(object):
             BasicUserInfo: 简略版用户信息 仅保证包含user_name/portrait/user_id
         """
 
-        payload = {'_client_version': '12.23.0.1',
+        payload = {'_client_version': '12.23.1.0',
                    'bdusstoken': self.sessions.BDUSS,
                    }
         payload['sign'] = self._app_sign(payload)
@@ -1461,7 +1460,7 @@ class Browser(object):
 
         common = CommonReq_pb2.CommonReq()
         common.BDUSS = self.sessions.BDUSS
-        common._client_version = '12.23.0.1'
+        common._client_version = '12.23.1.0'
         data = ReplyMeReqIdl_pb2.ReplyMeReqIdl.DataReq()
         data.common.CopyFrom(common)
         replyme_req = ReplyMeReqIdl_pb2.ReplyMeReqIdl()
@@ -1496,7 +1495,7 @@ class Browser(object):
         """
 
         payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_version': '12.23.0.1'
+                   '_client_version': '12.23.1.0'
                    }
         payload['sign'] = self._app_sign(payload)
 
@@ -1532,7 +1531,7 @@ class Browser(object):
             user = BasicUserInfo(_id)
 
         payload = {'_client_type': 2,  # 删除该字段会导致post_list为空
-                   '_client_version': '12.23.0.1',  # 删除该字段会导致post_list和dynamic_list为空
+                   '_client_version': '12.23.1.0',  # 删除该字段会导致post_list和dynamic_list为空
                    'friend_uid_portrait': user.portrait,
                    'need_post_count': 1,  # 删除该字段会导致无法获取发帖回帖数量
                    # 'uid':user_id  # 用该字段检查共同关注的吧
@@ -1610,7 +1609,7 @@ class Browser(object):
             Searches: 搜索结果列表
         """
 
-        payload = {'_client_version': '12.23.0.1',
+        payload = {'_client_version': '12.23.1.0',
                    'kw': tieba_name,
                    'only_thread': int(only_thread),
                    'pn': pn,
@@ -1661,7 +1660,7 @@ class Browser(object):
             """
 
             payload = {'BDUSS': self.sessions.BDUSS,
-                       '_client_version': '12.23.0.1',  # 删除该字段可直接获取前200个吧，但无法翻页
+                       '_client_version': '12.23.1.0',  # 删除该字段可直接获取前200个吧，但无法翻页
                        'friend_uid': user.user_id,
                        'page_no': pn  # 加入client_version后，使用该字段控制页数
                        }
@@ -1770,7 +1769,7 @@ class Browser(object):
         """
 
         common = CommonReq_pb2.CommonReq()
-        common._client_version = '12.23.0.1'
+        common._client_version = '12.23.1.0'
         data = GetBawuInfoReqIdl_pb2.GetBawuInfoReqIdl.DataReq()
         data.common.CopyFrom(common)
         data.forum_id = await self.get_fid(tieba_name)
@@ -1821,7 +1820,7 @@ class Browser(object):
 
         common = CommonReq_pb2.CommonReq()
         common.BDUSS = self.sessions.BDUSS
-        common._client_version = '12.23.0.1'
+        common._client_version = '12.23.1.0'
         data = SearchPostForumReqIdl_pb2.SearchPostForumReqIdl.DataReq()
         data.common.CopyFrom(common)
         data.word = tieba_name
@@ -1862,7 +1861,7 @@ class Browser(object):
         """
 
         payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_version': '12.23.0.1',
+                   '_client_version': '12.23.1.0',
                    'forum_id': await self.get_fid(tieba_name),
                    'pn': pn,
                    'rn': 30,
@@ -1948,7 +1947,7 @@ class Browser(object):
         """
 
         payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_version': '12.23.0.1',
+                   '_client_version': '12.23.1.0',
                    'forum_id': await self.get_fid(tieba_name),
                    'pn': 1,
                    'rn': 0,
@@ -1993,7 +1992,7 @@ class Browser(object):
         """
 
         payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_version': '12.23.0.1',
+                   '_client_version': '12.23.1.0',
                    'forum_id': await self.get_fid(tieba_name),
                    }
         payload['sign'] = self._app_sign(payload)
@@ -2144,7 +2143,7 @@ class Browser(object):
 
         try:
             payload = {'BDUSS': self.sessions.BDUSS,
-                       '_client_version': '12.23.0.1',
+                       '_client_version': '12.23.1.0',
                        'kw': tieba_name,
                        'tbs': await self.get_tbs(),
                        }

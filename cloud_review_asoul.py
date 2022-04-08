@@ -63,7 +63,7 @@ class AsoulCloudReview(tb.Reviewer):
                 tb.log.debug(
                     f"Cycle time_cost: {time.perf_counter()-start_time:.4f}")
                 # 主动释放CPU 转而运行其他协程
-                await asyncio.sleep(30)
+                await asyncio.sleep(20)
 
             except Exception:
                 tb.log.critical(
@@ -320,9 +320,6 @@ class AsoulCloudReview(tb.Reviewer):
             has_job = True if self.expressions.job_exp.search(text) else False
             if self.expressions.job_check_exp.search(text) and (has_job or has_rare_contact):
                 # 易误判的兼职关键词 二重检验
-                return 1, 0, 0
-            if self.expressions.course_exp.search(text) and self.expressions.course_check_exp.search(text):
-                # 易误判的课程推广关键词 二重检验
                 return 1, 0, 0
 
         return 0, 0, 0
