@@ -51,7 +51,7 @@ class Sessions(object):
         self._timeout = aiohttp.ClientTimeout(
             connect=5, sock_connect=3, sock_read=10)
         self._connector = aiohttp.TCPConnector(
-            ttl_dns_cache=600, keepalive_timeout=90, limit=None, family=socket.AF_INET, ssl=False)
+            ttl_dns_cache=600, keepalive_timeout=90, limit=0, family=socket.AF_INET, ssl=False)
         _trust_env = False
 
         # Init app client
@@ -60,8 +60,10 @@ class Sessions(object):
                        aiohttp.hdrs.ACCEPT_ENCODING: 'gzip',
                        aiohttp.hdrs.HOST: 'c.tieba.baidu.com',
                        }
-        self.app = aiohttp.ClientSession(connector=self._connector, headers=app_headers, version=aiohttp.HttpVersion11, cookie_jar=aiohttp.CookieJar(
-        ), connector_owner=False, raise_for_status=True, timeout=self._timeout, trust_env=_trust_env)
+        self.app = aiohttp.ClientSession(connector=self._connector, headers=app_headers, version=aiohttp.HttpVersion11,
+                                         cookie_jar=aiohttp.CookieJar(
+                                         ), connector_owner=False, raise_for_status=True, timeout=self._timeout,
+                                         trust_env=_trust_env)
 
         # Init app protobuf client
         app_proto_headers = {aiohttp.hdrs.USER_AGENT: 'bdtb for Android 12.23.1.0',
@@ -70,21 +72,25 @@ class Sessions(object):
                              aiohttp.hdrs.ACCEPT_ENCODING: 'gzip',
                              aiohttp.hdrs.HOST: 'c.tieba.baidu.com',
                              }
-        self.app_proto = aiohttp.ClientSession(connector=self._connector, headers=app_proto_headers, version=aiohttp.HttpVersion11, cookie_jar=aiohttp.CookieJar(
-        ), connector_owner=False, raise_for_status=True, timeout=self._timeout, trust_env=_trust_env)
+        self.app_proto = aiohttp.ClientSession(connector=self._connector, headers=app_proto_headers,
+                                               version=aiohttp.HttpVersion11, cookie_jar=aiohttp.CookieJar(
+                                               ), connector_owner=False, raise_for_status=True, timeout=self._timeout, trust_env=_trust_env)
 
         # Init web client
-        web_headers = {aiohttp.hdrs.USER_AGENT: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:99.0) Gecko/20100101 Firefox/99.0',
-                       aiohttp.hdrs.ACCEPT_ENCODING: 'gzip, deflate, br',
-                       aiohttp.hdrs.CACHE_CONTROL: 'no-cache',
-                       aiohttp.hdrs.CONNECTION: 'keep-alive',
-                       }
+        web_headers = {
+            aiohttp.hdrs.USER_AGENT: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:99.0) Gecko/20100101 Firefox/99.0',
+            aiohttp.hdrs.ACCEPT_ENCODING: 'gzip, deflate, br',
+            aiohttp.hdrs.CACHE_CONTROL: 'no-cache',
+            aiohttp.hdrs.CONNECTION: 'keep-alive',
+        }
 
         self.web = aiohttp.ClientSession(connector=self._connector, headers=web_headers, version=aiohttp.HttpVersion11,
-                                         cookie_jar=web_cookie_jar, connector_owner=False, raise_for_status=True, timeout=self._timeout, trust_env=_trust_env)
+                                         cookie_jar=web_cookie_jar, connector_owner=False, raise_for_status=True,
+                                         timeout=self._timeout, trust_env=_trust_env)
 
     async def close(self) -> None:
-        await asyncio.gather(self.app.close(), self.app_proto.close(), self.web.close(), self._connector.close(), return_exceptions=True)
+        await asyncio.gather(self.app.close(), self.app_proto.close(), self.web.close(), self._connector.close(),
+                             return_exceptions=True)
 
     async def __aenter__(self) -> "Sessions":
         return self
@@ -192,11 +198,12 @@ class Browser(object):
             int: 该贴吧的forum_id
         """
 
-        if (fid := self.fid_dict.get(tieba_name, 0)):
+        if fid := self.fid_dict.get(tieba_name, 0):
             return fid
 
         try:
-            res = await self.sessions.web.get("http://tieba.baidu.com/f/commit/share/fnameShareApi", params={'fname': tieba_name, 'ie': 'utf-8'})
+            res = await self.sessions.web.get("http://tieba.baidu.com/f/commit/share/fnameShareApi",
+                                              params={'fname': tieba_name, 'ie': 'utf-8'})
 
             main_json = await res.json(content_type='text/html')
             if int(main_json['no']):
@@ -261,7 +268,8 @@ class Browser(object):
         """
 
         try:
-            res = await self.sessions.web.get("https://tieba.baidu.com/home/get/panel", params={'id': user.portrait, 'un': user.user_name or user.nick_name})
+            res = await self.sessions.web.get("https://tieba.baidu.com/home/get/panel",
+                                              params={'id': user.portrait, 'un': user.user_name or user.nick_name})
 
             main_json = await res.json()
             if int(main_json['no']):
@@ -290,7 +298,7 @@ class Browser(object):
             user = UserInfo()
 
         return user
-    
+
     async def _id2basic_user_info(self, user: BasicUserInfo) -> BasicUserInfo:
         """
         通过用户名或昵称或portrait补全简略版用户信息
@@ -303,7 +311,8 @@ class Browser(object):
         """
 
         try:
-            res = await self.sessions.web.get("https://tieba.baidu.com/home/get/panel", params={'id': user.portrait, 'un': user.user_name or user.nick_name})
+            res = await self.sessions.web.get("https://tieba.baidu.com/home/get/panel",
+                                              params={'id': user.portrait, 'un': user.user_name or user.nick_name})
 
             main_json = await res.json()
             if int(main_json['no']):
@@ -376,7 +385,8 @@ class Browser(object):
             userinfo_req.SerializeToString())
 
         try:
-            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/u/user/getuserinfo", params={'cmd': 303024}, data=multipart_writer)
+            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/u/user/getuserinfo",
+                                                     params={'cmd': 303024}, data=multipart_writer)
 
             main_proto = GetUserInfoResIdl_pb2.GetUserInfoResIdl()
             main_proto.ParseFromString(await res.content.read())
@@ -405,7 +415,8 @@ class Browser(object):
         """
 
         try:
-            res = await self.sessions.web.get("http://tieba.baidu.com/im/pcmsg/query/getUserInfo", params={'chatUid': user.user_id})
+            res = await self.sessions.web.get("http://tieba.baidu.com/im/pcmsg/query/getUserInfo",
+                                              params={'chatUid': user.user_id})
 
             main_json = await res.json()
             if int(main_json['errno']):
@@ -454,7 +465,8 @@ class Browser(object):
             frspage_req.SerializeToString())
 
         try:
-            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/f/frs/page", params={'cmd': 301001}, data=multipart_writer)
+            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/f/frs/page", params={'cmd': 301001},
+                                                     data=multipart_writer)
 
             main_proto = FrsPageResIdl_pb2.FrsPageResIdl()
             main_proto.ParseFromString(await res.content.read())
@@ -469,7 +481,8 @@ class Browser(object):
 
         return threads
 
-    async def get_posts(self, tid: int, pn: int = 1, rn: int = 30, sort: int = 0, only_thread_author: bool = False, with_comments: bool = False, comment_sort_by_agree: bool = True, comment_rn: int = 10) -> Posts:
+    async def get_posts(self, tid: int, pn: int = 1, rn: int = 30, sort: int = 0, only_thread_author: bool = False,
+                        with_comments: bool = False, comment_sort_by_agree: bool = True, comment_rn: int = 10) -> Posts:
         """
         获取主题帖内回复
 
@@ -508,7 +521,8 @@ class Browser(object):
             pbpage_req.SerializeToString())
 
         try:
-            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/f/pb/page", params={'cmd': 302001}, data=multipart_writer)
+            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/f/pb/page", params={'cmd': 302001},
+                                                     data=multipart_writer)
 
             main_proto = PbPageResIdl_pb2.PbPageResIdl()
             main_proto.ParseFromString(await res.content.read())
@@ -554,7 +568,8 @@ class Browser(object):
             pbfloor_req.SerializeToString())
 
         try:
-            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/f/pb/floor", params={'cmd': 302002}, data=multipart_writer)
+            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/f/pb/floor", params={'cmd': 302002},
+                                                     data=multipart_writer)
 
             main_proto = PbFloorResIdl_pb2.PbFloorResIdl()
             main_proto.ParseFromString(await res.content.read())
@@ -784,7 +799,7 @@ class Browser(object):
 
         Args:
             tieba_name (_type_): 帖子所在的贴吧名
-            tid (int, optional): 待恢复的主题帖tid
+            pid (int, optional): 待恢复的回复pid
 
         Returns:
             bool: 操作是否成功
@@ -848,7 +863,8 @@ class Browser(object):
                    '_client_version': '12.23.1.0',
                    'forum_id': await self.get_fid(tieba_name),
                    'tbs': await self.get_tbs(),
-                   'threads': str([{'thread_id': tid, 'from_tab_id': from_tab_id, 'to_tab_id': to_tab_id}]).replace('\'', '"'),
+                   'threads': str([{'thread_id': tid, 'from_tab_id': from_tab_id, 'to_tab_id': to_tab_id}]).replace(
+                       '\'', '"'),
                    }
         payload['sign'] = self._app_sign(payload)
 
@@ -887,7 +903,8 @@ class Browser(object):
         payload['sign'] = self._app_sign(payload)
 
         try:
-            res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/bawu/pushRecomToPersonalized", data=payload)
+            res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/bawu/pushRecomToPersonalized",
+                                               data=payload)
 
             main_json = await res.json(content_type='application/x-javascript')
             if int(main_json['error_code']):
@@ -1101,7 +1118,8 @@ class Browser(object):
         log.info(f"Successfully removed {tid} from top_list in {tieba_name}")
         return True
 
-    async def get_recover_list(self, tieba_name: str, pn: int = 1, name: str = '') -> tuple[list[tuple[int, int, bool]], bool]:
+    async def get_recover_list(self, tieba_name: str, pn: int = 1, name: str = '') -> tuple[
+            list[tuple[int, int, bool]], bool]:
         """
         获取pn页的待恢复帖子列表
 
@@ -1164,7 +1182,8 @@ class Browser(object):
         """
 
         try:
-            res = await self.sessions.web.get("http://tieba.baidu.com/bawu2/platform/listBlackUser", params={'word': tieba_name, 'pn': pn})
+            res = await self.sessions.web.get("http://tieba.baidu.com/bawu2/platform/listBlackUser",
+                                              params={'word': tieba_name, 'pn': pn})
 
             soup = BeautifulSoup(await res.text(), 'lxml')
             items = soup.find_all('td', class_='left_cell')
@@ -1337,7 +1356,7 @@ class Browser(object):
                 def _parse_item(item):
                     search_str = 'aid='
                     start_idx = (href := item['href']).rindex(
-                        search_str)+len(search_str)
+                        search_str) + len(search_str)
                     aid = int(href[start_idx:])
                     return aid
 
@@ -1345,7 +1364,7 @@ class Browser(object):
 
             return res_list
 
-        while (appeal_ids := await _get_appeal_list()):
+        while appeal_ids := await _get_appeal_list():
             await asyncio.gather(*[_appeal_handle(appeal_id) for appeal_id in appeal_ids])
 
         return True
@@ -1471,7 +1490,8 @@ class Browser(object):
             replyme_req.SerializeToString())
 
         try:
-            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/u/feed/replyme", params={'cmd': 303007}, data=multipart_writer)
+            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/u/feed/replyme",
+                                                     params={'cmd': 303007}, data=multipart_writer)
 
             main_proto = ReplyMeResIdl_pb2.ReplyMeResIdl()
             main_proto.ParseFromString(await res.content.read())
@@ -1570,7 +1590,7 @@ class Browser(object):
             for content_dict in content_dicts:
                 yield ParseDict(content_dict, PbContent_pb2.PbContent(), ignore_unknown_fields=True)
 
-        def _init_thread(thread_dict: dict) -> Iterable[Thread]:
+        def _init_thread(thread_dict: dict) -> Thread:
             thread = Thread()
             thread._contents = Fragments(
                 _contents(thread_dict.get('first_post_content', [])))
@@ -1594,7 +1614,8 @@ class Browser(object):
 
         return user, threads
 
-    async def search_post(self, tieba_name: str, query: str, pn: int = 1, rn: int = 30, query_type: int = 0, only_thread: bool = False) -> Searches:
+    async def search_post(self, tieba_name: str, query: str, pn: int = 1, rn: int = 30, query_type: int = 0,
+                          only_thread: bool = False) -> Searches:
         """
         贴吧搜索
 
@@ -1646,12 +1667,12 @@ class Browser(object):
 
         user = await self.get_self_info()
 
-        async def _get_pn_forum_list(pn: int) -> AsyncIterable[tuple[str, int, int, int]]:
+        async def _get_pn_forum_list(_pn: int) -> AsyncIterable[tuple[str, int, int, int]]:
             """
             获取pn页的关注贴吧信息
 
             Args:
-                pn (int): 页数
+                _pn (int): 页数
 
             Closure Args:
                 user (BasicUserInfo): 本人信息
@@ -1663,7 +1684,7 @@ class Browser(object):
             payload = {'BDUSS': self.sessions.BDUSS,
                        '_client_version': '12.23.1.0',  # 删除该字段可直接获取前200个吧，但无法翻页
                        'friend_uid': user.user_id,
-                       'page_no': pn  # 加入client_version后，使用该字段控制页数
+                       'page_no': _pn  # 加入client_version后，使用该字段控制页数
                        }
             payload['sign'] = self._app_sign(payload)
 
@@ -1686,21 +1707,21 @@ class Browser(object):
             nonofficial_forums = forum_list.get('non-gconforum', [])
             official_forums = forum_list.get('gconforum', [])
 
-            def _parse_forum_dict(forum_dict: dict[str, str]) -> tuple[str, int, int, int]:
+            def _parse_forum_dict(_forum_dict: dict[str, str]) -> tuple[str, int, int, int]:
                 """
                 解析关注贴吧的信息
 
                 Args:
-                    forum_dict (dict[str, str]): 关注贴吧信息
+                    _forum_dict (dict[str, str]): 关注贴吧信息
 
                 Returns:
                     tuple[str, int, int, int]: 贴吧名/贴吧id/等级/经验值
                 """
 
-                tieba_name = forum_dict['name']
-                fid = int(forum_dict['id'])
-                level = int(forum_dict['level_id'])
-                exp = int(forum_dict['cur_score'])
+                tieba_name = _forum_dict['name']
+                fid = int(_forum_dict['id'])
+                level = int(_forum_dict['level_id'])
+                exp = int(_forum_dict['cur_score'])
                 return tieba_name, fid, level, exp
 
             for forum_dict in nonofficial_forums:
@@ -1708,7 +1729,7 @@ class Browser(object):
             for forum_dict in official_forums:
                 yield _parse_forum_dict(forum_dict)
 
-            if len(nonofficial_forums)+len(official_forums) != 50:
+            if len(nonofficial_forums) + len(official_forums) != 50:
                 raise StopAsyncIteration
 
         for pn in range(1, sys.maxsize):
@@ -1781,7 +1802,8 @@ class Browser(object):
             bawuinfo_req.SerializeToString())
 
         try:
-            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/f/forum/getBawuInfo", params={'cmd': 301007}, data=multipart_writer)
+            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/f/forum/getBawuInfo",
+                                                     params={'cmd': 301007}, data=multipart_writer)
 
             main_proto = GetBawuInfoResIdl_pb2.GetBawuInfoResIdl()
             main_proto.ParseFromString(await res.content.read())
@@ -1832,7 +1854,8 @@ class Browser(object):
             searchforum_req.SerializeToString())
 
         try:
-            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/f/forum/searchPostForum", params={'cmd': 309466}, data=multipart_writer)
+            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/f/forum/searchPostForum",
+                                                     params={'cmd': 309466}, data=multipart_writer)
 
             main_proto = SearchPostForumResIdl_pb2.SearchPostForumResIdl()
             main_proto.ParseFromString(await res.content.read())
@@ -1926,7 +1949,7 @@ class Browser(object):
                 user.priv_reply = priv_dict.get('reply', None)
                 thread.user = user
 
-                add_view = thread.view_num-int(data_dict['current_pv'])
+                add_view = thread.view_num - int(data_dict['current_pv'])
 
                 return thread, add_view
 
@@ -1998,6 +2021,8 @@ class Browser(object):
                    }
         payload['sign'] = self._app_sign(payload)
 
+        field_names = ['view', 'thread', 'member', 'post',
+                       'sign_ratio', 'average_time', 'average_times', 'recommend']
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/f/forum/getforumdata", data=payload)
 
@@ -2006,8 +2031,6 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
             data = main_json['data']
-            field_names = ['view', 'thread', 'member', 'post',
-                           'sign_ratio', 'average_time', 'average_times', 'recommend']
             stat = {field_name: [int(item['value']) for item in reversed(data_i['group'][1]['values'])]
                     for field_name, data_i in zip(field_names, data)}
 
@@ -2031,7 +2054,8 @@ class Browser(object):
         """
 
         try:
-            res = await self.sessions.web.get("http://tieba.baidu.com/f/like/furank", params={'kw': tieba_name, 'pn': pn, 'ie': 'utf-8'})
+            res = await self.sessions.web.get("http://tieba.baidu.com/f/like/furank",
+                                              params={'kw': tieba_name, 'pn': pn, 'ie': 'utf-8'})
 
             soup = BeautifulSoup(await res.text(), 'lxml')
             items = soup.select('tr[class^=drl_list_item]')
@@ -2073,7 +2097,8 @@ class Browser(object):
         """
 
         try:
-            res = await self.sessions.web.get("http://tieba.baidu.com/bawu2/platform/listMemberInfo", params={'word': tieba_name, 'pn': pn, 'ie': 'utf-8'})
+            res = await self.sessions.web.get("http://tieba.baidu.com/bawu2/platform/listMemberInfo",
+                                              params={'word': tieba_name, 'pn': pn, 'ie': 'utf-8'})
 
             soup = BeautifulSoup(await res.text(), 'lxml')
             items = soup.find_all('div', class_='name_wrap')
@@ -2298,7 +2323,8 @@ class Browser(object):
             userinfo_req.SerializeToString())
 
         try:
-            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/u/user/getUserByTiebaUid", params={'cmd': 309702}, data=multipart_writer)
+            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/u/user/getUserByTiebaUid",
+                                                     params={'cmd': 309702}, data=multipart_writer)
 
             main_proto = GetUserByTiebaUidResIdl_pb2.GetUserByTiebaUidResIdl()
             main_proto.ParseFromString(await res.content.read())

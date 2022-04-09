@@ -11,7 +11,7 @@ logging.logThreads = False
 logging.logProcesses = False
 logging.logMultiprocessing = False
 logging.raiseExceptions = False
-#logging.Formatter.default_msec_format = '%s.%03d'
+# logging.Formatter.default_msec_format = '%s.%03d'
 
 
 class _Logger(logging.Logger):
@@ -40,7 +40,6 @@ class _Logger(logging.Logger):
 
         formatter = logging.Formatter(
             "<{asctime}> [{levelname}] {message}", datefmt='%Y-%m-%d %H:%M:%S', style='{')
-        formatter.default_msec_format
         file_handler.setFormatter(formatter)
         stream_handler.setFormatter(formatter)
 

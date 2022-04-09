@@ -33,6 +33,7 @@ def _int_prop_check_ignore_none(default_val: int) -> Callable:
             else:
                 new_val = default_val
             return func(self, new_val)
+
         return foo
 
     return wrapper
@@ -279,7 +280,7 @@ class _Fragment(object):
 
     __slots__ = ['_raw_data']
 
-    def __init__(self, content_proto: PbContent_pb2.PbContent) -> None:
+    def __init__(self, content_proto: Optional[PbContent_pb2.PbContent] = None) -> None:
         self._raw_data = content_proto
 
     def __bool__(self) -> bool:
@@ -1114,7 +1115,6 @@ class Thread(_Container):
             self._share_origin = Thread()
             if self._raw_data:
                 if self._raw_data.is_share_thread:
-
                     share_proto = self._raw_data.origin_thread_info
 
                     self._share_origin.fid = share_proto.fid

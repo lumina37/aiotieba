@@ -18,7 +18,7 @@ from ._types import *
 from .reviewer import Reviewer
 
 
-def terminate(signalNumber, frame):
+def terminate(signal_number, frame):
     raise KeyboardInterrupt
 
 

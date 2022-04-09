@@ -8,7 +8,6 @@ from pathlib import Path
 SCRIPT_PATH = Path(sys.argv[0])
 MODULE_DIR = Path(__file__).parent
 
-config = None
 with (SCRIPT_PATH.parent / 'config/config.json').open('r', encoding='utf-8') as file:
     config = json.load(file)
 if not config.__contains__('BDUSS'):

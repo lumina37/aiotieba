@@ -92,7 +92,7 @@ class Reviewer(Browser):
 
         self._database = None
         self._qrdetector = None
-        
+
     async def __aenter__(self) -> "Reviewer":
         return self
 
@@ -122,14 +122,14 @@ class Reviewer(Browser):
             int: 该贴吧的forum_id
         """
 
-        if (fid := self.fid_dict.get(tieba_name, 0)):
+        if fid := self.fid_dict.get(tieba_name, 0):
             return fid
 
-        if (fid := await self.database.get_fid(tieba_name)):
+        if fid := await self.database.get_fid(tieba_name):
             self.fid_dict[tieba_name] = fid
             return fid
 
-        if (fid := await super().get_fid(tieba_name)):
+        if fid := await super().get_fid(tieba_name):
             await self.database.add_forum(fid, tieba_name)
 
         return fid
@@ -145,10 +145,10 @@ class Reviewer(Browser):
             BasicUserInfo: 简略版用户信息 仅保证包含user_name/portrait/user_id
         """
 
-        if (user := await self.database.get_basic_user_info(_id)):
+        if user := await self.database.get_basic_user_info(_id):
             return user
 
-        if (user := await super().get_basic_user_info(_id)):
+        if user := await super().get_basic_user_info(_id):
             await self.database.add_user(user)
 
         return user

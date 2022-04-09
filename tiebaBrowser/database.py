@@ -44,7 +44,8 @@ class Database(object):
         self.db_name = db_name
 
         try:
-            self._conn = pymysql.connect(**config['database'], database=self.db_name)
+            self._conn = pymysql.connect(
+                **config['database'], database=self.db_name)
         except pymysql.Error as err:
             log.warning(f"Cannot link to the database {db_name}. reason:{err}")
             self.init_database()
@@ -114,7 +115,7 @@ class Database(object):
             log.warning(f"Failed to select {tieba_name}. reason:{err}")
             return 0
         else:
-            if (res_tuple := self._cursor.fetchone()):
+            if res_tuple := self._cursor.fetchone():
                 return int(res_tuple[0])
             else:
                 return 0
@@ -137,7 +138,7 @@ class Database(object):
             log.warning(f"Failed to select {fid}. reason:{err}")
             return ''
         else:
-            if (res_tuple := self._cursor.fetchone()):
+            if res_tuple := self._cursor.fetchone():
                 return res_tuple[0]
             else:
                 return ''
@@ -200,7 +201,7 @@ class Database(object):
             log.warning(f"Failed to select {user}. reason:{err}")
             return BasicUserInfo()
         else:
-            if (res_tuple := self._cursor.fetchone()):
+            if res_tuple := self._cursor.fetchone():
                 user = BasicUserInfo()
                 user.user_id = res_tuple[0]
                 user.user_name = res_tuple[1]
@@ -584,7 +585,7 @@ class Database(object):
         except pymysql.Error as err:
             return None
         else:
-            if (res_tuple := self._cursor.fetchone()):
+            if res_tuple := self._cursor.fetchone():
                 return True if res_tuple[0] else False
             else:
                 return None
