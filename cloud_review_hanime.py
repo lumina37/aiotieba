@@ -246,7 +246,16 @@ class HanimeCloudReview(tb.Reviewer):
         elif is_white == False:
             # 黑名单用户 删回复并封十天
             return 1, 10, sys._getframe().f_lineno
-
+        
+        level = obj.user.level
+        if level > 6:
+            # 用户等级大于6则跳过后续检查
+            return 0, 0, 0
+        
+        text = obj.text
+        if re.search("魅.?魔.{0,6}】", text, re.I):
+            return 1, 1, sys._getframe().f_lineno
+        
         return 0, 0, 0
 
 

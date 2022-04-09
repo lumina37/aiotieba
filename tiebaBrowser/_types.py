@@ -440,15 +440,15 @@ class FragTiebaPlus(_Fragment):
     __slots__ = []
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__} [desc:{self.desc} / url:{self.url}]"
+        return f"{self.__class__.__name__} [text:{self.text} / url:{self.url}]"
 
     @property
     def text(self) -> str:
-        return self._raw_data.desc
+        return self._raw_data.tiebaplus_info.desc
 
     @property
     def url(self) -> str:
-        return self._raw_data.jump_url
+        return self._raw_data.tiebaplus_info.jump_url
 
 
 class FragItem(_Fragment):

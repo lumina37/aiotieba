@@ -291,7 +291,7 @@ class AsoulCloudReview(tb.Reviewer):
             return 1, 10, sys._getframe().f_lineno
 
         text = obj.text
-        if re.search("((?<![a-z])v|瞳|梓|罐|豆|鸟|鲨)(÷|/|／|➗|畜|处|除|初|醋)|椰子汁|🥥|东雪莲|莲宝|林忆宁|010", text, re.I):
+        if re.search("((?<![a-z])(v|t)|瞳|梓|罐|豆|鸟|鲨)(÷|/|／|➗|畜|处|除|初|醋|cg)|椰子汁|🥥|东雪莲|莲宝|林忆宁|010", text, re.I):
             return 1, 0, sys._getframe().f_lineno
 
         level = obj.user.level

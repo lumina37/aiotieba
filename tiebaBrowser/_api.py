@@ -74,7 +74,7 @@ class Sessions(object):
         ), connector_owner=False, raise_for_status=True, timeout=self._timeout, trust_env=_trust_env)
 
         # Init web client
-        web_headers = {aiohttp.hdrs.USER_AGENT: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:98.0) Gecko/20100101 Firefox/98.0',
+        web_headers = {aiohttp.hdrs.USER_AGENT: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:99.0) Gecko/20100101 Firefox/99.0',
                        aiohttp.hdrs.ACCEPT_ENCODING: 'gzip, deflate, br',
                        aiohttp.hdrs.CACHE_CONTROL: 'no-cache',
                        aiohttp.hdrs.CONNECTION: 'keep-alive',
@@ -442,7 +442,8 @@ class Browser(object):
         data.common.CopyFrom(common)
         data.kw = tieba_name
         data.pn = pn
-        data.rn = 30
+        data.rn = 90
+        data.rn_need = 30
         data.is_good = is_good
         data.q_type = 2
         data.sort_type = sort
