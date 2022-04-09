@@ -20,9 +20,12 @@ from PIL import Image
 
 from ._config import config
 from ._logger import log
-from ._types import (Ats, BasicUserInfo, Comments, Fragments, Posts, Replys,
-                     Searches, Thread, Threads, UserInfo)
-from .tieba_proto import *
+from ._types import (Ats, BasicUserInfo, Comments, Fragments, Posts, Replys, Searches, Thread, Threads, UserInfo)
+from .tieba_proto import (CommonReq_pb2, FrsPageReqIdl_pb2, FrsPageResIdl_pb2, GetBawuInfoReqIdl_pb2,
+                          GetBawuInfoResIdl_pb2, GetUserByTiebaUidReqIdl_pb2, GetUserByTiebaUidResIdl_pb2,
+                          GetUserInfoReqIdl_pb2, GetUserInfoResIdl_pb2, PbContent_pb2, PbFloorReqIdl_pb2,
+                          PbFloorResIdl_pb2, PbPageReqIdl_pb2, PbPageResIdl_pb2, ReplyMeReqIdl_pb2, ReplyMeResIdl_pb2,
+                          SearchPostForumReqIdl_pb2, SearchPostForumResIdl_pb2, User_pb2)
 
 
 class Sessions(object):
@@ -33,8 +36,7 @@ class Sessions(object):
         BDUSS_key (str, optional): 用于从config.json中提取BDUSS. Defaults to None.
     """
 
-    __slots__ = ['_timeout', '_connector', 'app',
-                 'app_proto', 'web', 'BDUSS', 'STOKEN']
+    __slots__ = ['_timeout', '_connector', 'app', 'app_proto', 'web', 'BDUSS', 'STOKEN']
 
     def __init__(self, BDUSS_key: Optional[str] = None) -> None:
 
@@ -42,39 +44,51 @@ class Sessions(object):
         if BDUSS_key:
             self.BDUSS = config['BDUSS'][BDUSS_key]
             self.STOKEN = config['STOKEN'].get(BDUSS_key, '')
-            web_cookie_jar.update_cookies(
-                {'BDUSS': self.BDUSS, 'STOKEN': self.STOKEN})
+            web_cookie_jar.update_cookies({'BDUSS': self.BDUSS, 'STOKEN': self.STOKEN})
         else:
             self.BDUSS = ''
             self.STOKEN = ''
 
-        self._timeout = aiohttp.ClientTimeout(
-            connect=5, sock_connect=3, sock_read=10)
-        self._connector = aiohttp.TCPConnector(
-            ttl_dns_cache=600, keepalive_timeout=90, limit=0, family=socket.AF_INET, ssl=False)
+        self._timeout = aiohttp.ClientTimeout(connect=5, sock_connect=3, sock_read=10)
+        self._connector = aiohttp.TCPConnector(ttl_dns_cache=600,
+                                               keepalive_timeout=90,
+                                               limit=0,
+                                               family=socket.AF_INET,
+                                               ssl=False)
         _trust_env = False
 
         # Init app client
-        app_headers = {aiohttp.hdrs.USER_AGENT: 'bdtb for Android 12.23.1.0',
-                       aiohttp.hdrs.CONNECTION: 'keep-alive',
-                       aiohttp.hdrs.ACCEPT_ENCODING: 'gzip',
-                       aiohttp.hdrs.HOST: 'c.tieba.baidu.com',
-                       }
-        self.app = aiohttp.ClientSession(connector=self._connector, headers=app_headers, version=aiohttp.HttpVersion11,
-                                         cookie_jar=aiohttp.CookieJar(
-                                         ), connector_owner=False, raise_for_status=True, timeout=self._timeout,
+        app_headers = {
+            aiohttp.hdrs.USER_AGENT: 'bdtb for Android 12.23.1.0',
+            aiohttp.hdrs.CONNECTION: 'keep-alive',
+            aiohttp.hdrs.ACCEPT_ENCODING: 'gzip',
+            aiohttp.hdrs.HOST: 'c.tieba.baidu.com',
+        }
+        self.app = aiohttp.ClientSession(connector=self._connector,
+                                         headers=app_headers,
+                                         version=aiohttp.HttpVersion11,
+                                         cookie_jar=aiohttp.CookieJar(),
+                                         connector_owner=False,
+                                         raise_for_status=True,
+                                         timeout=self._timeout,
                                          trust_env=_trust_env)
 
         # Init app protobuf client
-        app_proto_headers = {aiohttp.hdrs.USER_AGENT: 'bdtb for Android 12.23.1.0',
-                             'x_bd_data_type': 'protobuf',
-                             aiohttp.hdrs.CONNECTION: 'keep-alive',
-                             aiohttp.hdrs.ACCEPT_ENCODING: 'gzip',
-                             aiohttp.hdrs.HOST: 'c.tieba.baidu.com',
-                             }
-        self.app_proto = aiohttp.ClientSession(connector=self._connector, headers=app_proto_headers,
-                                               version=aiohttp.HttpVersion11, cookie_jar=aiohttp.CookieJar(
-                                               ), connector_owner=False, raise_for_status=True, timeout=self._timeout, trust_env=_trust_env)
+        app_proto_headers = {
+            aiohttp.hdrs.USER_AGENT: 'bdtb for Android 12.23.1.0',
+            'x_bd_data_type': 'protobuf',
+            aiohttp.hdrs.CONNECTION: 'keep-alive',
+            aiohttp.hdrs.ACCEPT_ENCODING: 'gzip',
+            aiohttp.hdrs.HOST: 'c.tieba.baidu.com',
+        }
+        self.app_proto = aiohttp.ClientSession(connector=self._connector,
+                                               headers=app_proto_headers,
+                                               version=aiohttp.HttpVersion11,
+                                               cookie_jar=aiohttp.CookieJar(),
+                                               connector_owner=False,
+                                               raise_for_status=True,
+                                               timeout=self._timeout,
+                                               trust_env=_trust_env)
 
         # Init web client
         web_headers = {
@@ -84,12 +98,20 @@ class Sessions(object):
             aiohttp.hdrs.CONNECTION: 'keep-alive',
         }
 
-        self.web = aiohttp.ClientSession(connector=self._connector, headers=web_headers, version=aiohttp.HttpVersion11,
-                                         cookie_jar=web_cookie_jar, connector_owner=False, raise_for_status=True,
-                                         timeout=self._timeout, trust_env=_trust_env)
+        self.web = aiohttp.ClientSession(connector=self._connector,
+                                         headers=web_headers,
+                                         version=aiohttp.HttpVersion11,
+                                         cookie_jar=web_cookie_jar,
+                                         connector_owner=False,
+                                         raise_for_status=True,
+                                         timeout=self._timeout,
+                                         trust_env=_trust_env)
 
     async def close(self) -> None:
-        await asyncio.gather(self.app.close(), self.app_proto.close(), self.web.close(), self._connector.close(),
+        await asyncio.gather(self.app.close(),
+                             self.app_proto.close(),
+                             self.web.close(),
+                             self._connector.close(),
                              return_exceptions=True)
 
     async def __aenter__(self) -> "Sessions":
@@ -137,8 +159,7 @@ class Browser(object):
             str: 贴吧客户端签名值sign
         """
 
-        raw_list = [f"{key}={value}" for key,
-                    value in payload.items() if key != 'sign']
+        raw_list = [f"{key}={value}" for key, value in payload.items() if key != 'sign']
         raw_list.append("tiebaclient!!!")
         raw_str = "".join(raw_list)
 
@@ -160,12 +181,12 @@ class Browser(object):
             aiohttp.MultipartWriter: 只可用于贴吧客户端
         """
 
-        writer = aiohttp.MultipartWriter(
-            'form-data', boundary="*--asoul-diana-bili-uid672328094")
-        payload_headers = {aiohttp.hdrs.CONTENT_DISPOSITION: aiohttp.helpers.content_disposition_header(
-            'form-data', name='data', filename='file')}
-        payload = aiohttp.BytesPayload(
-            proto_bytes, content_type='', headers=payload_headers)
+        writer = aiohttp.MultipartWriter('form-data', boundary="*--asoul-diana-bili-uid672328094")
+        payload_headers = {
+            aiohttp.hdrs.CONTENT_DISPOSITION:
+            aiohttp.helpers.content_disposition_header('form-data', name='data', filename='file')
+        }
+        payload = aiohttp.BytesPayload(proto_bytes, content_type='', headers=payload_headers)
         writer.append_payload(payload)
 
         # 删除无用参数
@@ -203,7 +224,10 @@ class Browser(object):
 
         try:
             res = await self.sessions.web.get("http://tieba.baidu.com/f/commit/share/fnameShareApi",
-                                              params={'fname': tieba_name, 'ie': 'utf-8'})
+                                              params={
+                                                  'fname': tieba_name,
+                                                  'ie': 'utf-8'
+                                              })
 
             main_json = await res.json(content_type='text/html')
             if int(main_json['no']):
@@ -269,7 +293,10 @@ class Browser(object):
 
         try:
             res = await self.sessions.web.get("https://tieba.baidu.com/home/get/panel",
-                                              params={'id': user.portrait, 'un': user.user_name or user.nick_name})
+                                              params={
+                                                  'id': user.portrait,
+                                                  'un': user.user_name or user.nick_name
+                                              })
 
             main_json = await res.json()
             if int(main_json['no']):
@@ -289,12 +316,10 @@ class Browser(object):
             user.portrait = user_dict['portrait']
             user.user_id = user_dict['id']
             user.gender = gender
-            user.is_vip = int(vip_dict['v_status']) if (
-                vip_dict := user_dict['vipInfo']) else False
+            user.is_vip = int(vip_dict['v_status']) if (vip_dict := user_dict['vipInfo']) else False
 
         except Exception as err:
-            log.warning(
-                f"Failed to get UserInfo of {user.log_name}. reason:{err}")
+            log.warning(f"Failed to get UserInfo of {user.log_name}. reason:{err}")
             user = UserInfo()
 
         return user
@@ -312,7 +337,10 @@ class Browser(object):
 
         try:
             res = await self.sessions.web.get("https://tieba.baidu.com/home/get/panel",
-                                              params={'id': user.portrait, 'un': user.user_name or user.nick_name})
+                                              params={
+                                                  'id': user.portrait,
+                                                  'un': user.user_name or user.nick_name
+                                              })
 
             main_json = await res.json()
             if int(main_json['no']):
@@ -325,8 +353,7 @@ class Browser(object):
             user.user_id = user_dict['id']
 
         except Exception as err:
-            log.warning(
-                f"Failed to get BasicUserInfo of {user.log_name}. reason:{err}")
+            log.warning(f"Failed to get BasicUserInfo of {user.log_name}. reason:{err}")
             user = UserInfo()
 
         return user
@@ -357,8 +384,7 @@ class Browser(object):
             user.portrait = user_dict['portrait']
 
         except Exception as err:
-            log.warning(
-                f"Failed to get BasicUserInfo of {user.user_name}. reason:{err}")
+            log.warning(f"Failed to get BasicUserInfo of {user.user_name}. reason:{err}")
             user = BasicUserInfo()
 
         return user
@@ -381,12 +407,12 @@ class Browser(object):
         userinfo_req = GetUserInfoReqIdl_pb2.GetUserInfoReqIdl()
         userinfo_req.data.CopyFrom(data)
 
-        multipart_writer = self.get_tieba_multipart_writer(
-            userinfo_req.SerializeToString())
+        multipart_writer = self.get_tieba_multipart_writer(userinfo_req.SerializeToString())
 
         try:
             res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/u/user/getuserinfo",
-                                                     params={'cmd': 303024}, data=multipart_writer)
+                                                     params={'cmd': 303024},
+                                                     data=multipart_writer)
 
             main_proto = GetUserInfoResIdl_pb2.GetUserInfoResIdl()
             main_proto.ParseFromString(await res.content.read())
@@ -397,8 +423,7 @@ class Browser(object):
             user = UserInfo(user_proto=user_proto)
 
         except Exception as err:
-            log.warning(
-                f"Failed to get UserInfo of {user.user_id}. reason:{err}")
+            log.warning(f"Failed to get UserInfo of {user.user_id}. reason:{err}")
             user = UserInfo()
 
         return user
@@ -427,8 +452,7 @@ class Browser(object):
             user.portrait = user_dict['portrait']
 
         except Exception as err:
-            log.warning(
-                f"Failed to get BasicUserInfo of {user.user_id}. reason:{err}")
+            log.warning(f"Failed to get BasicUserInfo of {user.user_id}. reason:{err}")
             user = BasicUserInfo()
 
         return user
@@ -440,7 +464,8 @@ class Browser(object):
         Args:
             tieba_name (str): 贴吧名
             pn (int, optional): 页码. Defaults to 1.
-            sort (int, optional): 排序方式 对于有热门分区的贴吧0是热门排序1是按发布时间2报错34都是热门排序>=5是按回复时间 对于无热门分区的贴吧0是按回复时间1是按发布时间2报错>=3是按回复时间. Defaults to 5.
+            sort (int, optional): 排序方式 对于有热门分区的贴吧0是热门排序1是按发布时间2报错34都是热门排序>=5是按回复时间
+                对于无热门分区的贴吧0是按回复时间1是按发布时间2报错>=3是按回复时间. Defaults to 5.
             is_good (bool, optional): True为获取精品区帖子 False为获取普通区帖子. Defaults to False.
 
         Returns:
@@ -461,11 +486,11 @@ class Browser(object):
         frspage_req = FrsPageReqIdl_pb2.FrsPageReqIdl()
         frspage_req.data.CopyFrom(data)
 
-        multipart_writer = self.get_tieba_multipart_writer(
-            frspage_req.SerializeToString())
+        multipart_writer = self.get_tieba_multipart_writer(frspage_req.SerializeToString())
 
         try:
-            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/f/frs/page", params={'cmd': 301001},
+            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/f/frs/page",
+                                                     params={'cmd': 301001},
                                                      data=multipart_writer)
 
             main_proto = FrsPageResIdl_pb2.FrsPageResIdl()
@@ -481,8 +506,15 @@ class Browser(object):
 
         return threads
 
-    async def get_posts(self, tid: int, pn: int = 1, rn: int = 30, sort: int = 0, only_thread_author: bool = False,
-                        with_comments: bool = False, comment_sort_by_agree: bool = True, comment_rn: int = 10) -> Posts:
+    async def get_posts(self,
+                        tid: int,
+                        pn: int = 1,
+                        rn: int = 30,
+                        sort: int = 0,
+                        only_thread_author: bool = False,
+                        with_comments: bool = False,
+                        comment_sort_by_agree: bool = True,
+                        comment_rn: int = 10) -> Posts:
         """
         获取主题帖内回复
 
@@ -517,11 +549,11 @@ class Browser(object):
         pbpage_req = PbPageReqIdl_pb2.PbPageReqIdl()
         pbpage_req.data.CopyFrom(data)
 
-        multipart_writer = self.get_tieba_multipart_writer(
-            pbpage_req.SerializeToString())
+        multipart_writer = self.get_tieba_multipart_writer(pbpage_req.SerializeToString())
 
         try:
-            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/f/pb/page", params={'cmd': 302001},
+            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/f/pb/page",
+                                                     params={'cmd': 302001},
                                                      data=multipart_writer)
 
             main_proto = PbPageResIdl_pb2.PbPageResIdl()
@@ -564,11 +596,11 @@ class Browser(object):
         pbfloor_req = PbFloorReqIdl_pb2.PbFloorReqIdl()
         pbfloor_req.data.CopyFrom(data)
 
-        multipart_writer = self.get_tieba_multipart_writer(
-            pbfloor_req.SerializeToString())
+        multipart_writer = self.get_tieba_multipart_writer(pbfloor_req.SerializeToString())
 
         try:
-            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/f/pb/floor", params={'cmd': 302002},
+            res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/f/pb/floor",
+                                                     params={'cmd': 302002},
                                                      data=multipart_writer)
 
             main_proto = PbFloorResIdl_pb2.PbFloorResIdl()
@@ -579,8 +611,7 @@ class Browser(object):
             comments = Comments(main_proto)
 
         except Exception as err:
-            log.warning(
-                f"Failed to get comments of {pid} in {tid}. reason:{err}")
+            log.warning(f"Failed to get comments of {pid} in {tid}. reason:{err}")
             comments = Comments()
 
         return comments
@@ -599,18 +630,19 @@ class Browser(object):
             bool: 操作是否成功
         """
 
-        payload = {'BDUSS': self.sessions.BDUSS,
-                   'day': day,
-                   'fid': await self.get_fid(tieba_name),
-                   'nick_name': user.show_name,
-                   'ntn': 'banid',
-                   'portrait': user.portrait,
-                   'reason': reason,
-                   'tbs': await self.get_tbs(),
-                   'un': user.user_name,
-                   'word': tieba_name,
-                   'z': 672328094,
-                   }
+        payload = {
+            'BDUSS': self.sessions.BDUSS,
+            'day': day,
+            'fid': await self.get_fid(tieba_name),
+            'nick_name': user.show_name,
+            'ntn': 'banid',
+            'portrait': user.portrait,
+            'reason': reason,
+            'tbs': await self.get_tbs(),
+            'un': user.user_name,
+            'word': tieba_name,
+            'z': 672328094,
+        }
         payload['sign'] = self._app_sign(payload)
 
         try:
@@ -621,12 +653,10 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            log.warning(
-                f"Failed to block {user.log_name} in {tieba_name}. reason:{err}")
+            log.warning(f"Failed to block {user.log_name} in {tieba_name}. reason:{err}")
             return False
 
-        log.info(
-            f"Successfully blocked {user.log_name} in {tieba_name} for {payload['day']} days")
+        log.info(f"Successfully blocked {user.log_name} in {tieba_name} for {payload['day']} days")
         return True
 
     async def unblock(self, tieba_name: str, user: BasicUserInfo) -> bool:
@@ -641,13 +671,14 @@ class Browser(object):
             bool: 操作是否成功
         """
 
-        payload = {'fn': tieba_name,
-                   'fid': await self.get_fid(tieba_name),
-                   'block_un': user.user_name,
-                   'block_uid': user.user_id,
-                   'block_nickname': user.nick_name,
-                   'tbs': await self.get_tbs()
-                   }
+        payload = {
+            'fn': tieba_name,
+            'fid': await self.get_fid(tieba_name),
+            'block_un': user.user_name,
+            'block_uid': user.user_id,
+            'block_nickname': user.nick_name,
+            'tbs': await self.get_tbs()
+        }
 
         try:
             res = await self.sessions.web.post("https://tieba.baidu.com/mo/q/bawublockclear", data=payload)
@@ -657,8 +688,7 @@ class Browser(object):
                 raise ValueError(main_json['error'])
 
         except Exception as err:
-            log.warning(
-                f"Failed to unblock {user.log_name} in {tieba_name}. reason:{err}")
+            log.warning(f"Failed to unblock {user.log_name} in {tieba_name}. reason:{err}")
             return False
 
         log.info(f"Successfully unblocked {user.log_name} in {tieba_name}")
@@ -705,12 +735,13 @@ class Browser(object):
             bool: 操作是否成功
         """
 
-        payload = {'BDUSS': self.sessions.BDUSS,
-                   'fid': await self.get_fid(tieba_name),
-                   'is_frs_mask': int(is_hide),
-                   'tbs': await self.get_tbs(),
-                   'z': tid
-                   }
+        payload = {
+            'BDUSS': self.sessions.BDUSS,
+            'fid': await self.get_fid(tieba_name),
+            'is_frs_mask': int(is_hide),
+            'tbs': await self.get_tbs(),
+            'z': tid
+        }
         payload['sign'] = self._app_sign(payload)
 
         try:
@@ -721,12 +752,10 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            log.warning(
-                f"Failed to delete thread {tid} in {tieba_name}. reason:{err}")
+            log.warning(f"Failed to delete thread {tid} in {tieba_name}. reason:{err}")
             return False
 
-        log.info(
-            f"Successfully deleted thread {tid} hide:{is_hide} in {tieba_name}")
+        log.info(f"Successfully deleted thread {tid} hide:{is_hide} in {tieba_name}")
         return True
 
     async def del_post(self, tieba_name: str, tid: int, pid: int) -> bool:
@@ -742,12 +771,13 @@ class Browser(object):
             bool: 操作是否成功
         """
 
-        payload = {'BDUSS': self.sessions.BDUSS,
-                   'fid': await self.get_fid(tieba_name),
-                   'pid': pid,
-                   'tbs': await self.get_tbs(),
-                   'z': tid
-                   }
+        payload = {
+            'BDUSS': self.sessions.BDUSS,
+            'fid': await self.get_fid(tieba_name),
+            'pid': pid,
+            'tbs': await self.get_tbs(),
+            'z': tid
+        }
         payload['sign'] = self._app_sign(payload)
 
         try:
@@ -758,8 +788,7 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            log.warning(
-                f"Failed to delete post {pid} in {tid} in {tieba_name}. reason:{err}")
+            log.warning(f"Failed to delete post {pid} in {tid} in {tieba_name}. reason:{err}")
             return False
 
         log.info(f"Successfully deleted post {pid} in {tid} in {tieba_name}")
@@ -821,13 +850,14 @@ class Browser(object):
             bool: 操作是否成功
         """
 
-        payload = {'fn': tieba_name,
-                   'fid': await self.get_fid(tieba_name),
-                   'tid_list[]': tid,
-                   'pid_list[]': pid,
-                   'type_list[]': 1 if pid else 0,
-                   'is_frs_mask_list[]': int(is_hide)
-                   }
+        payload = {
+            'fn': tieba_name,
+            'fid': await self.get_fid(tieba_name),
+            'tid_list[]': tid,
+            'pid_list[]': pid,
+            'type_list[]': 1 if pid else 0,
+            'is_frs_mask_list[]': int(is_hide)
+        }
 
         try:
             res = await self.sessions.web.post("https://tieba.baidu.com/mo/q/bawurecoverthread", data=payload)
@@ -837,12 +867,10 @@ class Browser(object):
                 raise ValueError(main_json['error'])
 
         except Exception as err:
-            log.warning(
-                f"Failed to recover tid:{tid} pid:{pid} in {tieba_name}. reason:{err}")
+            log.warning(f"Failed to recover tid:{tid} pid:{pid} in {tieba_name}. reason:{err}")
             return False
 
-        log.info(
-            f"Successfully recovered tid:{tid} pid:{pid} hide:{is_hide} in {tieba_name}")
+        log.info(f"Successfully recovered tid:{tid} pid:{pid} hide:{is_hide} in {tieba_name}")
         return True
 
     async def move(self, tieba_name: str, tid: int, to_tab_id: int, from_tab_id: int = 0) -> bool:
@@ -859,13 +887,17 @@ class Browser(object):
             bool: 操作是否成功
         """
 
-        payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_version': '12.23.1.0',
-                   'forum_id': await self.get_fid(tieba_name),
-                   'tbs': await self.get_tbs(),
-                   'threads': str([{'thread_id': tid, 'from_tab_id': from_tab_id, 'to_tab_id': to_tab_id}]).replace(
-                       '\'', '"'),
-                   }
+        payload = {
+            'BDUSS': self.sessions.BDUSS,
+            '_client_version': '12.23.1.0',
+            'forum_id': await self.get_fid(tieba_name),
+            'tbs': await self.get_tbs(),
+            'threads': str([{
+                'thread_id': tid,
+                'from_tab_id': from_tab_id,
+                'to_tab_id': to_tab_id
+            }]).replace('\'', '"'),
+        }
         payload['sign'] = self._app_sign(payload)
 
         try:
@@ -876,12 +908,10 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            log.warning(
-                f"Failed to add {tid} to tab:{to_tab_id} in {tieba_name}. reason:{err}")
+            log.warning(f"Failed to add {tid} to tab:{to_tab_id} in {tieba_name}. reason:{err}")
             return False
 
-        log.info(
-            f"Successfully add {tid} to tab:{to_tab_id} in {tieba_name}")
+        log.info(f"Successfully add {tid} to tab:{to_tab_id} in {tieba_name}")
         return True
 
     async def recommend(self, tieba_name: str, tid: int) -> bool:
@@ -896,10 +926,7 @@ class Browser(object):
             bool: 操作是否成功
         """
 
-        payload = {'BDUSS': self.sessions.BDUSS,
-                   'forum_id': await self.get_fid(tieba_name),
-                   'thread_id': tid
-                   }
+        payload = {'BDUSS': self.sessions.BDUSS, 'forum_id': await self.get_fid(tieba_name), 'thread_id': tid}
         payload['sign'] = self._app_sign(payload)
 
         try:
@@ -913,8 +940,7 @@ class Browser(object):
                 raise ValueError(main_json['data']['msg'])
 
         except Exception as err:
-            log.warning(
-                f"Failed to recommend {tid} in {tieba_name}. reason:{err}")
+            log.warning(f"Failed to recommend {tid} in {tieba_name}. reason:{err}")
             return False
 
         log.info(f"Successfully recommended {tid} in {tieba_name}")
@@ -945,9 +971,10 @@ class Browser(object):
                 int: cname对应的分区id
             """
 
-            payload = {'BDUSS': self.sessions.BDUSS,
-                       'word': tieba_name,
-                       }
+            payload = {
+                'BDUSS': self.sessions.BDUSS,
+                'word': tieba_name,
+            }
             payload['sign'] = self._app_sign(payload)
 
             try:
@@ -964,8 +991,7 @@ class Browser(object):
                         break
 
             except Exception as err:
-                log.warning(
-                    f"Failed to get cid of {cname} in {tieba_name}. reason:{err}")
+                log.warning(f"Failed to get cid of {cname} in {tieba_name}. reason:{err}")
                 return 0
 
             return cid
@@ -984,14 +1010,15 @@ class Browser(object):
                 bool: 操作是否成功
             """
 
-            payload = {'BDUSS': self.sessions.BDUSS,
-                       'cid': cid,
-                       'fid': await self.get_fid(tieba_name),
-                       'ntn': 'set',
-                       'tbs': await self.get_tbs(),
-                       'word': tieba_name,
-                       'z': tid
-                       }
+            payload = {
+                'BDUSS': self.sessions.BDUSS,
+                'cid': cid,
+                'fid': await self.get_fid(tieba_name),
+                'ntn': 'set',
+                'tbs': await self.get_tbs(),
+                'word': tieba_name,
+                'z': tid
+            }
             payload['sign'] = self._app_sign(payload)
 
             try:
@@ -1002,12 +1029,10 @@ class Browser(object):
                     raise ValueError(main_json['error_msg'])
 
             except Exception as err:
-                log.warning(
-                    f"Failed to add {tid} to good_list:{cname} in {tieba_name}. reason:{err}")
+                log.warning(f"Failed to add {tid} to good_list:{cname} in {tieba_name}. reason:{err}")
                 return False
 
-            log.info(
-                f"Successfully add {tid} to good_list:{cname} in {tieba_name}")
+            log.info(f"Successfully add {tid} to good_list:{cname} in {tieba_name}")
             return True
 
         return await _good(await _cname2cid())
@@ -1024,12 +1049,13 @@ class Browser(object):
             bool: 操作是否成功
         """
 
-        payload = {'BDUSS': self.sessions.BDUSS,
-                   'fid': await self.get_fid(tieba_name),
-                   'tbs': await self.get_tbs(),
-                   'word': tieba_name,
-                   'z': tid
-                   }
+        payload = {
+            'BDUSS': self.sessions.BDUSS,
+            'fid': await self.get_fid(tieba_name),
+            'tbs': await self.get_tbs(),
+            'word': tieba_name,
+            'z': tid
+        }
         payload['sign'] = self._app_sign(payload)
 
         try:
@@ -1040,8 +1066,7 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            log.warning(
-                f"Failed to remove {tid} from good_list in {tieba_name}. reason:{err}")
+            log.warning(f"Failed to remove {tid} from good_list in {tieba_name}. reason:{err}")
             return False
 
         log.info(f"Successfully removed {tid} from good_list in {tieba_name}")
@@ -1059,13 +1084,14 @@ class Browser(object):
             bool: 操作是否成功
         """
 
-        payload = {'BDUSS': self.sessions.BDUSS,
-                   'fid': await self.get_fid(tieba_name),
-                   'ntn': 'set',
-                   'tbs': await self.get_tbs(),
-                   'word': tieba_name,
-                   'z': tid
-                   }
+        payload = {
+            'BDUSS': self.sessions.BDUSS,
+            'fid': await self.get_fid(tieba_name),
+            'ntn': 'set',
+            'tbs': await self.get_tbs(),
+            'word': tieba_name,
+            'z': tid
+        }
         payload['sign'] = self._app_sign(payload)
 
         try:
@@ -1076,8 +1102,7 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            log.warning(
-                f"Failed to add {tid} to top_list in {tieba_name}. reason:{err}")
+            log.warning(f"Failed to add {tid} to top_list in {tieba_name}. reason:{err}")
             return False
 
         log.info(f"Successfully add {tid} to top_list in {tieba_name}")
@@ -1095,12 +1120,13 @@ class Browser(object):
             bool: 操作是否成功
         """
 
-        payload = {'BDUSS': self.sessions.BDUSS,
-                   'fid': await self.get_fid(tieba_name),
-                   'tbs': await self.get_tbs(),
-                   'word': tieba_name,
-                   'z': tid
-                   }
+        payload = {
+            'BDUSS': self.sessions.BDUSS,
+            'fid': await self.get_fid(tieba_name),
+            'tbs': await self.get_tbs(),
+            'word': tieba_name,
+            'z': tid
+        }
         payload['sign'] = self._app_sign(payload)
 
         try:
@@ -1111,15 +1137,16 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            log.warning(
-                f"Failed to remove {tid} from top_list in {tieba_name}. reason:{err}")
+            log.warning(f"Failed to remove {tid} from top_list in {tieba_name}. reason:{err}")
             return False
 
         log.info(f"Successfully removed {tid} from top_list in {tieba_name}")
         return True
 
-    async def get_recover_list(self, tieba_name: str, pn: int = 1, name: str = '') -> tuple[
-            list[tuple[int, int, bool]], bool]:
+    async def get_recover_list(self,
+                               tieba_name: str,
+                               pn: int = 1,
+                               name: str = '') -> tuple[list[tuple[int, int, bool]], bool]:
         """
         获取pn页的待恢复帖子列表
 
@@ -1132,12 +1159,7 @@ class Browser(object):
             tuple[list[tuple[int, int, bool]], bool]: list[tid,pid,是否为屏蔽], 是否还有下一页
         """
 
-        params = {'fn': tieba_name,
-                  'fid': await self.get_fid(tieba_name),
-                  'word': name,
-                  'is_ajax': 1,
-                  'pn': pn
-                  }
+        params = {'fn': tieba_name, 'fid': await self.get_fid(tieba_name), 'word': name, 'is_ajax': 1, 'pn': pn}
 
         try:
             res = await self.sessions.web.get("https://tieba.baidu.com/mo/q/bawurecover", params=params)
@@ -1151,12 +1173,12 @@ class Browser(object):
             items = soup.find_all('a', class_='recover_list_item_btn')
 
         except Exception as err:
-            log.warning(
-                f"Failed to get recover_list of {tieba_name} pn:{pn}. reason:{err}")
+            log.warning(f"Failed to get recover_list of {tieba_name} pn:{pn}. reason:{err}")
             res_list = []
             has_more = False
 
         else:
+
             def _parse_item(item):
                 tid = int(item['attr-tid'])
                 pid = int(item['attr-pid'])
@@ -1183,18 +1205,21 @@ class Browser(object):
 
         try:
             res = await self.sessions.web.get("http://tieba.baidu.com/bawu2/platform/listBlackUser",
-                                              params={'word': tieba_name, 'pn': pn})
+                                              params={
+                                                  'word': tieba_name,
+                                                  'pn': pn
+                                              })
 
             soup = BeautifulSoup(await res.text(), 'lxml')
             items = soup.find_all('td', class_='left_cell')
 
         except Exception as err:
-            log.warning(
-                f"Failed to get black_list of {tieba_name} pn:{pn}. reason:{err}")
+            log.warning(f"Failed to get black_list of {tieba_name} pn:{pn}. reason:{err}")
             res_list = []
             has_more = False
 
         else:
+
             def _parse_item(item):
                 user_info_item = item.previous_sibling.input
                 user = BasicUserInfo()
@@ -1220,11 +1245,7 @@ class Browser(object):
             bool: 操作是否成功
         """
 
-        payload = {'tbs': await self.get_tbs(),
-                   'user_id': user.user_id,
-                   'word': tieba_name,
-                   'ie': 'utf-8'
-                   }
+        payload = {'tbs': await self.get_tbs(), 'user_id': user.user_id, 'word': tieba_name, 'ie': 'utf-8'}
 
         try:
             res = await self.sessions.web.post("http://tieba.baidu.com/bawu2/platform/addBlack", data=payload)
@@ -1234,12 +1255,10 @@ class Browser(object):
                 raise ValueError(main_json['errmsg'])
 
         except Exception as err:
-            log.warning(
-                f"Failed to add {user.log_name} to black_list in {tieba_name}. reason:{err}")
+            log.warning(f"Failed to add {user.log_name} to black_list in {tieba_name}. reason:{err}")
             return False
 
-        log.info(
-            f"Successfully added {user.log_name} to black_list in {tieba_name}")
+        log.info(f"Successfully added {user.log_name} to black_list in {tieba_name}")
         return True
 
     async def blacklist_cancel(self, tieba_name: str, user: BasicUserInfo) -> bool:
@@ -1254,11 +1273,7 @@ class Browser(object):
             bool: 操作是否成功
         """
 
-        payload = {'word': tieba_name,
-                   'tbs': await self.get_tbs(),
-                   'list[]': user.user_id,
-                   'ie': 'utf-8'
-                   }
+        payload = {'word': tieba_name, 'tbs': await self.get_tbs(), 'list[]': user.user_id, 'ie': 'utf-8'}
 
         try:
             res = await self.sessions.web.post("http://tieba.baidu.com/bawu2/platform/cancelBlack", data=payload)
@@ -1268,12 +1283,10 @@ class Browser(object):
                 raise ValueError(main_json['errmsg'])
 
         except Exception as err:
-            log.warning(
-                f"Failed to remove {user.log_name} from black_list in {tieba_name}. reason:{err}")
+            log.warning(f"Failed to remove {user.log_name} from black_list in {tieba_name}. reason:{err}")
             return False
 
-        log.info(
-            f"Successfully removed {user.log_name} from black_list in {tieba_name}")
+        log.info(f"Successfully removed {user.log_name} from black_list in {tieba_name}")
         return True
 
     async def refuse_appeals(self, tieba_name: str) -> bool:
@@ -1302,12 +1315,13 @@ class Browser(object):
                 bool: 操作是否成功
             """
 
-            payload = {'fn': tieba_name,
-                       'fid': await self.get_fid(tieba_name),
-                       'status': 2 if refuse else 1,
-                       'refuse_reason': 'Auto Refuse',
-                       'appeal_id': appeal_id
-                       }
+            payload = {
+                'fn': tieba_name,
+                'fid': await self.get_fid(tieba_name),
+                'status': 2 if refuse else 1,
+                'refuse_reason': 'Auto Refuse',
+                'appeal_id': appeal_id
+            }
 
             try:
                 res = await self.sessions.web.post("https://tieba.baidu.com/mo/q/bawuappealhandle", data=payload)
@@ -1317,12 +1331,10 @@ class Browser(object):
                     raise ValueError(main_json['error'])
 
             except Exception as err:
-                log.warning(
-                    f"Failed to handle {appeal_id} in {tieba_name}. reason:{err}")
+                log.warning(f"Failed to handle {appeal_id} in {tieba_name}. reason:{err}")
                 return False
 
-            log.info(
-                f"Successfully handled {appeal_id} in {tieba_name}. refuse:{refuse}")
+            log.info(f"Successfully handled {appeal_id} in {tieba_name}. refuse:{refuse}")
             return True
 
         async def _get_appeal_list() -> list[int]:
@@ -1336,9 +1348,7 @@ class Browser(object):
                 list[int]: 申诉请求的appeal_id的列表
             """
 
-            params = {'fn': tieba_name,
-                      'fid': await self.get_fid(tieba_name)
-                      }
+            params = {'fn': tieba_name, 'fid': await self.get_fid(tieba_name)}
 
             try:
                 res = await self.sessions.web.get("https://tieba.baidu.com/mo/q/bawuappeal", params=params)
@@ -1348,15 +1358,14 @@ class Browser(object):
                 items = soup.find_all('a', class_='appeal_list_item_btn')
 
             except Exception as err:
-                log.warning(
-                    f"Failed to get appeal_list of {tieba_name}. reason:{err}")
+                log.warning(f"Failed to get appeal_list of {tieba_name}. reason:{err}")
                 res_list = []
 
             else:
+
                 def _parse_item(item):
                     search_str = 'aid='
-                    start_idx = (href := item['href']).rindex(
-                        search_str) + len(search_str)
+                    start_idx = (href := item['href']).rindex(search_str) + len(search_str)
                     aid = int(href[start_idx:])
                     return aid
 
@@ -1404,9 +1413,10 @@ class Browser(object):
             BasicUserInfo: 简略版用户信息 仅保证包含user_name/portrait/user_id
         """
 
-        payload = {'_client_version': '12.23.1.0',
-                   'bdusstoken': self.sessions.BDUSS,
-                   }
+        payload = {
+            '_client_version': '12.23.1.0',
+            'bdusstoken': self.sessions.BDUSS,
+        }
         payload['sign'] = self._app_sign(payload)
 
         try:
@@ -1417,8 +1427,7 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
             user_dict = main_json['user']
-            user_proto = ParseDict(
-                user_dict, User_pb2.User(), ignore_unknown_fields=True)
+            user_proto = ParseDict(user_dict, User_pb2.User(), ignore_unknown_fields=True)
             user = BasicUserInfo(user_proto=user_proto)
 
             self._tbs = main_json['anti']['tbs']
@@ -1455,18 +1464,19 @@ class Browser(object):
             if int(main_json['error_code']):
                 raise ValueError(main_json['error_msg'])
 
-            msg = {key: bool(int(value))
-                   for key, value in main_json['message'].items()}
+            msg = {key: bool(int(value)) for key, value in main_json['message'].items()}
 
         except Exception as err:
             log.warning(f"Failed to get msg reason:{err}")
-            msg = {'fans': False,
-                   'replyme': False,
-                   'atme': False,
-                   'agree': False,
-                   'pletter': False,
-                   'bookmark': False,
-                   'count': False}
+            msg = {
+                'fans': False,
+                'replyme': False,
+                'atme': False,
+                'agree': False,
+                'pletter': False,
+                'bookmark': False,
+                'count': False
+            }
 
         return msg
 
@@ -1486,12 +1496,12 @@ class Browser(object):
         replyme_req = ReplyMeReqIdl_pb2.ReplyMeReqIdl()
         replyme_req.data.CopyFrom(data)
 
-        multipart_writer = self.get_tieba_multipart_writer(
-            replyme_req.SerializeToString())
+        multipart_writer = self.get_tieba_multipart_writer(replyme_req.SerializeToString())
 
         try:
             res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/u/feed/replyme",
-                                                     params={'cmd': 303007}, data=multipart_writer)
+                                                     params={'cmd': 303007},
+                                                     data=multipart_writer)
 
             main_proto = ReplyMeResIdl_pb2.ReplyMeResIdl()
             main_proto.ParseFromString(await res.content.read())
@@ -1501,8 +1511,7 @@ class Browser(object):
             replys = Replys(main_proto)
 
         except Exception as err:
-            log.warning(
-                f"Failed to get replys reason:{err}")
+            log.warning(f"Failed to get replys reason:{err}")
             replys = Replys()
 
         return replys
@@ -1515,9 +1524,7 @@ class Browser(object):
             Ats: at列表
         """
 
-        payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_version': '12.23.1.0'
-                   }
+        payload = {'BDUSS': self.sessions.BDUSS, '_client_version': '12.23.1.0'}
         payload['sign'] = self._app_sign(payload)
 
         try:
@@ -1551,12 +1558,13 @@ class Browser(object):
         else:
             user = BasicUserInfo(_id)
 
-        payload = {'_client_type': 2,  # 删除该字段会导致post_list为空
-                   '_client_version': '12.23.1.0',  # 删除该字段会导致post_list和dynamic_list为空
-                   'friend_uid_portrait': user.portrait,
-                   'need_post_count': 1,  # 删除该字段会导致无法获取发帖回帖数量
-                   # 'uid':user_id  # 用该字段检查共同关注的吧
-                   }
+        payload = {
+            '_client_type': 2,  # 删除该字段会导致post_list为空
+            '_client_version': '12.23.1.0',  # 删除该字段会导致post_list和dynamic_list为空
+            'friend_uid_portrait': user.portrait,
+            'need_post_count': 1,  # 删除该字段会导致无法获取发帖回帖数量
+            # 'uid':user_id  # 用该字段检查共同关注的吧
+        }
         payload['sign'] = self._app_sign(payload)
 
         try:
@@ -1569,8 +1577,7 @@ class Browser(object):
                 raise ValueError("invalid params")
 
         except Exception as err:
-            log.warning(
-                f"Failed to get profile of {user.portrait}. reason:{err}")
+            log.warning(f"Failed to get profile of {user.portrait}. reason:{err}")
             return UserInfo(), []
 
         user_dict = main_json['user']
@@ -1592,8 +1599,7 @@ class Browser(object):
 
         def _init_thread(thread_dict: dict) -> Thread:
             thread = Thread()
-            thread._contents = Fragments(
-                _contents(thread_dict.get('first_post_content', [])))
+            thread._contents = Fragments(_contents(thread_dict.get('first_post_content', [])))
             thread.fid = thread_dict['forum_id']
             thread.tid = thread_dict['thread_id']
             thread.pid = thread_dict['post_id']
@@ -1602,19 +1608,22 @@ class Browser(object):
             thread.title = thread_dict['title']
             thread.view_num = thread_dict['freq_num']
             thread.reply_num = thread_dict['reply_num']
-            thread.share_num = share_num_str if (
-                share_num_str := thread_dict['share_num']) else 0
+            thread.share_num = share_num_str if (share_num_str := thread_dict['share_num']) else 0
             thread.agree = thread_dict['agree']['agree_num']
             thread.disagree = thread_dict['agree']['disagree_num']
             thread.create_time = thread_dict['create_time']
             return thread
 
-        threads = [_init_thread(thread_dict)
-                   for thread_dict in main_json['post_list']]
+        threads = [_init_thread(thread_dict) for thread_dict in main_json['post_list']]
 
         return user, threads
 
-    async def search_post(self, tieba_name: str, query: str, pn: int = 1, rn: int = 30, query_type: int = 0,
+    async def search_post(self,
+                          tieba_name: str,
+                          query: str,
+                          pn: int = 1,
+                          rn: int = 30,
+                          query_type: int = 0,
                           only_thread: bool = False) -> Searches:
         """
         贴吧搜索
@@ -1631,14 +1640,15 @@ class Browser(object):
             Searches: 搜索结果列表
         """
 
-        payload = {'_client_version': '12.23.1.0',
-                   'kw': tieba_name,
-                   'only_thread': int(only_thread),
-                   'pn': pn,
-                   'rn': rn,
-                   'sm': query_type,
-                   'word': query
-                   }
+        payload = {
+            '_client_version': '12.23.1.0',
+            'kw': tieba_name,
+            'only_thread': int(only_thread),
+            'pn': pn,
+            'rn': rn,
+            'sm': query_type,
+            'word': query
+        }
         payload['sign'] = self._app_sign(payload)
 
         try:
@@ -1651,8 +1661,7 @@ class Browser(object):
             searches = Searches(main_json)
 
         except Exception as err:
-            log.warning(
-                f"Failed to search {query} in {tieba_name}. reason:{err}")
+            log.warning(f"Failed to search {query} in {tieba_name}. reason:{err}")
             searches = Searches()
 
         return searches
@@ -1681,11 +1690,12 @@ class Browser(object):
                 AsyncIterable[tuple[str, int, int, int]]: 贴吧名/贴吧id/等级/经验值
             """
 
-            payload = {'BDUSS': self.sessions.BDUSS,
-                       '_client_version': '12.23.1.0',  # 删除该字段可直接获取前200个吧，但无法翻页
-                       'friend_uid': user.user_id,
-                       'page_no': _pn  # 加入client_version后，使用该字段控制页数
-                       }
+            payload = {
+                'BDUSS': self.sessions.BDUSS,
+                '_client_version': '12.23.1.0',  # 删除该字段可直接获取前200个吧，但无法翻页
+                'friend_uid': user.user_id,
+                'page_no': _pn  # 加入client_version后，使用该字段控制页数
+            }
             payload['sign'] = self._app_sign(payload)
 
             try:
@@ -1700,8 +1710,7 @@ class Browser(object):
                     return
 
             except Exception as err:
-                log.warning(
-                    f"Failed to get forumlist of {user.user_id}. reason:{err}")
+                log.warning(f"Failed to get forumlist of {user.user_id}. reason:{err}")
                 raise StopAsyncIteration
 
             nonofficial_forums = forum_list.get('non-gconforum', [])
@@ -1755,9 +1764,10 @@ class Browser(object):
         else:
             user = BasicUserInfo(_id)
 
-        payload = {'BDUSS': self.sessions.BDUSS,
-                   'friend_uid': user.user_id,
-                   }
+        payload = {
+            'BDUSS': self.sessions.BDUSS,
+            'friend_uid': user.user_id,
+        }
         payload['sign'] = self._app_sign(payload)
 
         try:
@@ -1775,8 +1785,7 @@ class Browser(object):
                 yield tieba_name, fid, level, exp
 
         except Exception as err:
-            log.warning(
-                f"Failed to get forumlist of {user.user_id}. reason:{err}")
+            log.warning(f"Failed to get forumlist of {user.user_id}. reason:{err}")
             return
 
     async def get_bawu_dict(self, tieba_name: str) -> dict[str, list[BasicUserInfo]]:
@@ -1798,12 +1807,12 @@ class Browser(object):
         bawuinfo_req = GetBawuInfoReqIdl_pb2.GetBawuInfoReqIdl()
         bawuinfo_req.data.CopyFrom(data)
 
-        multipart_writer = self.get_tieba_multipart_writer(
-            bawuinfo_req.SerializeToString())
+        multipart_writer = self.get_tieba_multipart_writer(bawuinfo_req.SerializeToString())
 
         try:
             res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/f/forum/getBawuInfo",
-                                                     params={'cmd': 301007}, data=multipart_writer)
+                                                     params={'cmd': 301007},
+                                                     data=multipart_writer)
 
             main_proto = GetBawuInfoResIdl_pb2.GetBawuInfoResIdl()
             main_proto.ParseFromString(await res.content.read())
@@ -1821,8 +1830,11 @@ class Browser(object):
                 return user
 
             roledes_protos = main_proto.data.bawu_team_info.bawu_team_list
-            bawu_dict = {roledes_proto.role_name: [_parse_roleinfo(
-                roleinfo_proto) for roleinfo_proto in roledes_proto.role_info] for roledes_proto in roledes_protos}
+            bawu_dict = {
+                roledes_proto.role_name:
+                [_parse_roleinfo(roleinfo_proto) for roleinfo_proto in roledes_proto.role_info]
+                for roledes_proto in roledes_protos
+            }
 
         except Exception as err:
             log.warning(f"Failed to get adminlist reason: {err}")
@@ -1850,24 +1862,22 @@ class Browser(object):
         searchforum_req = SearchPostForumReqIdl_pb2.SearchPostForumReqIdl()
         searchforum_req.data.CopyFrom(data)
 
-        multipart_writer = self.get_tieba_multipart_writer(
-            searchforum_req.SerializeToString())
+        multipart_writer = self.get_tieba_multipart_writer(searchforum_req.SerializeToString())
 
         try:
             res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/f/forum/searchPostForum",
-                                                     params={'cmd': 309466}, data=multipart_writer)
+                                                     params={'cmd': 309466},
+                                                     data=multipart_writer)
 
             main_proto = SearchPostForumResIdl_pb2.SearchPostForumResIdl()
             main_proto.ParseFromString(await res.content.read())
             if int(main_proto.error.errorno):
                 raise ValueError(main_proto.error.errmsg)
 
-            tab_map = {
-                tab_proto.tab_name: tab_proto.tab_id for tab_proto in main_proto.data.exact_match.tab_info}
+            tab_map = {tab_proto.tab_name: tab_proto.tab_id for tab_proto in main_proto.data.exact_match.tab_info}
 
         except Exception as err:
-            log.warning(
-                f"Failed to get tab_map of {tieba_name}. reason:{err}")
+            log.warning(f"Failed to get tab_map of {tieba_name}. reason:{err}")
             tab_map = {}
 
         return tab_map
@@ -1884,12 +1894,13 @@ class Browser(object):
             tuple[list[tuple[Thread, int]], bool]: list[被推荐帖子信息,新增浏览量], 是否还有下一页
         """
 
-        payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_version': '12.23.1.0',
-                   'forum_id': await self.get_fid(tieba_name),
-                   'pn': pn,
-                   'rn': 30,
-                   }
+        payload = {
+            'BDUSS': self.sessions.BDUSS,
+            '_client_version': '12.23.1.0',
+            'forum_id': await self.get_fid(tieba_name),
+            'pn': pn,
+            'rn': 30,
+        }
         payload['sign'] = self._app_sign(payload)
 
         try:
@@ -1900,12 +1911,12 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            log.warning(
-                f"Failed to get recom_list of {tieba_name}. reason:{err}")
+            log.warning(f"Failed to get recom_list of {tieba_name}. reason:{err}")
             res_list = []
             has_more = False
 
         else:
+
             def _contents(content_dicts: list[dict]):
                 for content_dict in content_dicts:
                     yield ParseDict(content_dict, PbContent_pb2.PbContent(), ignore_unknown_fields=True)
@@ -1914,8 +1925,7 @@ class Browser(object):
 
                 thread_dict = data_dict['thread_list']
                 thread = Thread()
-                thread._contents = Fragments(
-                    _contents(thread_dict.get('first_post_content', [])))
+                thread._contents = Fragments(_contents(thread_dict.get('first_post_content', [])))
                 thread.fid = thread_dict['fid']
                 thread.tid = thread_dict['id']
                 thread.pid = thread_dict['first_post_id']
@@ -1940,11 +1950,9 @@ class Browser(object):
                 user.portrait = user_dict['portrait']
                 user.user_id = user_dict['id']
                 user.gender = user_dict['sex']
-                user.is_vip = int(vip_dict['v_status']) if (
-                    vip_dict := user_dict['vipInfo']) else False
+                user.is_vip = int(vip_dict['v_status']) if (vip_dict := user_dict['vipInfo']) else False
                 user.is_god = user_dict['new_god_data']['field_id']
-                priv_dict = priv_dict if (
-                    priv_dict := user_dict['priv_sets']) else {}
+                priv_dict = priv_dict if (priv_dict := user_dict['priv_sets']) else {}
                 user.priv_like = priv_dict.get('like', None)
                 user.priv_reply = priv_dict.get('reply', None)
                 thread.user = user
@@ -1953,8 +1961,7 @@ class Browser(object):
 
                 return thread, add_view
 
-            res_list = [_parse_data_dict(data_dict)
-                        for data_dict in main_json['recom_thread_list']]
+            res_list = [_parse_data_dict(data_dict) for data_dict in main_json['recom_thread_list']]
             has_more = bool(int(main_json['is_has_more']))
 
         return res_list, has_more
@@ -1970,12 +1977,13 @@ class Browser(object):
             tuple[int, int]: 本月总推荐配额/本月已使用的推荐配额
         """
 
-        payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_version': '12.23.1.0',
-                   'forum_id': await self.get_fid(tieba_name),
-                   'pn': 1,
-                   'rn': 0,
-                   }
+        payload = {
+            'BDUSS': self.sessions.BDUSS,
+            '_client_version': '12.23.1.0',
+            'forum_id': await self.get_fid(tieba_name),
+            'pn': 1,
+            'rn': 0,
+        }
         payload['sign'] = self._app_sign(payload)
 
         try:
@@ -1989,8 +1997,7 @@ class Browser(object):
             used_recom_num = int(main_json['used_recommend_num'])
 
         except Exception as err:
-            log.warning(
-                f"Failed to get recom_status of {tieba_name}. reason:{err}")
+            log.warning(f"Failed to get recom_status of {tieba_name}. reason:{err}")
             total_recom_num = 0
             used_recom_num = 0
 
@@ -2015,14 +2022,14 @@ class Browser(object):
              'recommend': 首页推荐数}
         """
 
-        payload = {'BDUSS': self.sessions.BDUSS,
-                   '_client_version': '12.23.1.0',
-                   'forum_id': await self.get_fid(tieba_name),
-                   }
+        payload = {
+            'BDUSS': self.sessions.BDUSS,
+            '_client_version': '12.23.1.0',
+            'forum_id': await self.get_fid(tieba_name),
+        }
         payload['sign'] = self._app_sign(payload)
 
-        field_names = ['view', 'thread', 'member', 'post',
-                       'sign_ratio', 'average_time', 'average_times', 'recommend']
+        field_names = ['view', 'thread', 'member', 'post', 'sign_ratio', 'average_time', 'average_times', 'recommend']
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/f/forum/getforumdata", data=payload)
 
@@ -2031,12 +2038,13 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
             data = main_json['data']
-            stat = {field_name: [int(item['value']) for item in reversed(data_i['group'][1]['values'])]
-                    for field_name, data_i in zip(field_names, data)}
+            stat = {
+                field_name: [int(item['value']) for item in reversed(data_i['group'][1]['values'])]
+                for field_name, data_i in zip(field_names, data)
+            }
 
         except Exception as err:
-            log.warning(
-                f"Failed to get recom_status of {tieba_name}. reason:{err}")
+            log.warning(f"Failed to get recom_status of {tieba_name}. reason:{err}")
             stat = {field_name: [] for field_name in field_names}
 
         return stat
@@ -2055,18 +2063,22 @@ class Browser(object):
 
         try:
             res = await self.sessions.web.get("http://tieba.baidu.com/f/like/furank",
-                                              params={'kw': tieba_name, 'pn': pn, 'ie': 'utf-8'})
+                                              params={
+                                                  'kw': tieba_name,
+                                                  'pn': pn,
+                                                  'ie': 'utf-8'
+                                              })
 
             soup = BeautifulSoup(await res.text(), 'lxml')
             items = soup.select('tr[class^=drl_list_item]')
 
         except Exception as err:
-            log.warning(
-                f"Failed to get rank_list of {tieba_name} pn:{pn}. reason:{err}")
+            log.warning(f"Failed to get rank_list of {tieba_name} pn:{pn}. reason:{err}")
             res_list = []
             has_more = False
 
         else:
+
             def _parse_item(item):
                 user_name_item = item.td.next_sibling
                 user_name = user_name_item.text
@@ -2098,18 +2110,22 @@ class Browser(object):
 
         try:
             res = await self.sessions.web.get("http://tieba.baidu.com/bawu2/platform/listMemberInfo",
-                                              params={'word': tieba_name, 'pn': pn, 'ie': 'utf-8'})
+                                              params={
+                                                  'word': tieba_name,
+                                                  'pn': pn,
+                                                  'ie': 'utf-8'
+                                              })
 
             soup = BeautifulSoup(await res.text(), 'lxml')
             items = soup.find_all('div', class_='name_wrap')
 
         except Exception as err:
-            log.warning(
-                f"Failed to get member_list of {tieba_name} pn:{pn}. reason:{err}")
+            log.warning(f"Failed to get member_list of {tieba_name} pn:{pn}. reason:{err}")
             res_list = []
             has_more = False
 
         else:
+
             def _parse_item(item):
                 user_item = item.a
                 user_name = user_item['title']
@@ -2135,10 +2151,7 @@ class Browser(object):
         """
 
         try:
-            payload = {'BDUSS': self.sessions.BDUSS,
-                       'fid': await self.get_fid(tieba_name),
-                       'tbs': await self.get_tbs()
-                       }
+            payload = {'BDUSS': self.sessions.BDUSS, 'fid': await self.get_fid(tieba_name), 'tbs': await self.get_tbs()}
             payload['sign'] = self._app_sign(payload)
 
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/forum/like", data=payload)
@@ -2168,11 +2181,12 @@ class Browser(object):
         """
 
         try:
-            payload = {'BDUSS': self.sessions.BDUSS,
-                       '_client_version': '12.23.1.0',
-                       'kw': tieba_name,
-                       'tbs': await self.get_tbs(),
-                       }
+            payload = {
+                'BDUSS': self.sessions.BDUSS,
+                '_client_version': '12.23.1.0',
+                'kw': tieba_name,
+                'tbs': await self.get_tbs(),
+            }
             payload['sign'] = self._app_sign(payload)
 
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/forum/sign", data=payload)
@@ -2208,44 +2222,45 @@ class Browser(object):
         """
 
         try:
-            payload = {'BDUSS': self.sessions.BDUSS,
-                       '_client_id': 'wappc_1641793173806_732',
-                       '_client_type': 2,
-                       '_client_version': '9.1.0.0',
-                       '_phone_imei': '000000000000000',
-                       'anonymous': 1,
-                       'apid': 'sw',
-                       'barrage_time': 0,
-                       'can_no_forum': 0,
-                       'content': content,
-                       'cuid': 'baidutiebaapp75036bd3-8ae0-4b61-ac4e-c3192b6e6fa9',
-                       'cuid_galaxy2': '1782A7D2758F38EA4B4EAFE1AD4881CB|VLJONH23W',
-                       'cuid_gid': '',
-                       'entrance_type': 0,
-                       'fid': await self.get_fid(tieba_name),
-                       'from': '1021099l',
-                       'from_fourm_id': 'null',
-                       'is_ad': 0,
-                       'is_barrage': 0,
-                       'is_feedback': 0,
-                       'kw': tieba_name,
-                       'model': 'M2012K11AC',
-                       'name_show': '',
-                       'net_type': 1,
-                       'new_vcode': 1,
-                       'post_from': 3,
-                       'reply_uid': 'null',
-                       'stoken': self.sessions.STOKEN,
-                       'subapp_type': 'mini',
-                       'takephoto_num': 0,
-                       'tbs': await self.get_tbs(),
-                       'tid': tid,
-                       'timestamp': int(time.time() * 1000),
-                       'v_fid': '',
-                       'v_fname': '',
-                       'vcode_tag': 12,
-                       'z_id': '9JaXHshXKDw1xkGLIi91_Qd4cduxNFKS_nguQ4kfe7zYZQfdOlA-7jU2pYbkMfw23NdB1awUpuWmTeoON13r-Uw'
-                       }
+            payload = {
+                'BDUSS': self.sessions.BDUSS,
+                '_client_id': 'wappc_1641793173806_732',
+                '_client_type': 2,
+                '_client_version': '9.1.0.0',
+                '_phone_imei': '000000000000000',
+                'anonymous': 1,
+                'apid': 'sw',
+                'barrage_time': 0,
+                'can_no_forum': 0,
+                'content': content,
+                'cuid': 'baidutiebaapp75036bd3-8ae0-4b61-ac4e-c3192b6e6fa9',
+                'cuid_galaxy2': '1782A7D2758F38EA4B4EAFE1AD4881CB|VLJONH23W',
+                'cuid_gid': '',
+                'entrance_type': 0,
+                'fid': await self.get_fid(tieba_name),
+                'from': '1021099l',
+                'from_fourm_id': 'null',
+                'is_ad': 0,
+                'is_barrage': 0,
+                'is_feedback': 0,
+                'kw': tieba_name,
+                'model': 'M2012K11AC',
+                'name_show': '',
+                'net_type': 1,
+                'new_vcode': 1,
+                'post_from': 3,
+                'reply_uid': 'null',
+                'stoken': self.sessions.STOKEN,
+                'subapp_type': 'mini',
+                'takephoto_num': 0,
+                'tbs': await self.get_tbs(),
+                'tid': tid,
+                'timestamp': int(time.time() * 1000),
+                'v_fid': '',
+                'v_fname': '',
+                'vcode_tag': 12,
+                'z_id': '9JaXHshXKDw1xkGLIi91_Qd4cduxNFKS_nguQ4kfe7zYZQfdOlA-7jU2pYbkMfw23NdB1awUpuWmTeoON13r-Uw'
+            }
             payload['sign'] = self._app_sign(payload)
 
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/post/add", data=payload)
@@ -2254,7 +2269,7 @@ class Browser(object):
             if int(main_json['error_code']):
                 raise ValueError(main_json['error_msg'])
             if int(main_json['info']['need_vcode']):
-                raise ValueError(f"need verify code")
+                raise ValueError("need verify code")
 
         except Exception as err:
             log.warning(f"Failed to add post in {tid}. reason:{err}")
@@ -2280,12 +2295,13 @@ class Browser(object):
             return False
 
         try:
-            payload = {'BDUSS': self.sessions.BDUSS,
-                       'forum_id': posts[0].fid,
-                       'is_hide': int(hide),
-                       'post_id': posts[0].pid,
-                       'thread_id': tid
-                       }
+            payload = {
+                'BDUSS': self.sessions.BDUSS,
+                'forum_id': posts[0].fid,
+                'is_hide': int(hide),
+                'post_id': posts[0].pid,
+                'thread_id': tid
+            }
             payload['sign'] = self._app_sign(payload)
 
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/thread/setPrivacy", data=payload)
@@ -2319,12 +2335,12 @@ class Browser(object):
         userinfo_req = GetUserByTiebaUidReqIdl_pb2.GetUserByTiebaUidReqIdl()
         userinfo_req.data.CopyFrom(data)
 
-        multipart_writer = self.get_tieba_multipart_writer(
-            userinfo_req.SerializeToString())
+        multipart_writer = self.get_tieba_multipart_writer(userinfo_req.SerializeToString())
 
         try:
             res = await self.sessions.app_proto.post("http://c.tieba.baidu.com/c/u/user/getUserByTiebaUid",
-                                                     params={'cmd': 309702}, data=multipart_writer)
+                                                     params={'cmd': 309702},
+                                                     data=multipart_writer)
 
             main_proto = GetUserByTiebaUidResIdl_pb2.GetUserByTiebaUidResIdl()
             main_proto.ParseFromString(await res.content.read())
@@ -2335,8 +2351,7 @@ class Browser(object):
             user = UserInfo(user_proto=user_proto)
 
         except Exception as err:
-            log.warning(
-                f"Failed to get UserInfo of {tieba_uid}. reason:{err}")
+            log.warning(f"Failed to get UserInfo of {tieba_uid}. reason:{err}")
             user = UserInfo()
 
         return user

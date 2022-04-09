@@ -51,12 +51,17 @@ async def stat_word(tieba_name):
                 tb.log.debug(f"Thread tid: {thread.tid}")
 
                 for post_pn in range(1, 9999):
-                    posts = await brow.get_posts(thread.tid, post_pn, with_comments=True, comment_sort_by_agree=True, comment_rn=30)
+                    posts = await brow.get_posts(thread.tid,
+                                                 post_pn,
+                                                 with_comments=True,
+                                                 comment_sort_by_agree=True,
+                                                 comment_rn=30)
                     word_counter.update(_yield_words_from_posts(posts))
                     if not posts.has_more:
                         break
 
-        with open(f'{tieba_name}_word_freq_stat_{int(time.time())}.csv', 'w', encoding='utf-8-sig', newline='') as csv_write_file:
+        with open(f'{tieba_name}_word_freq_stat_{int(time.time())}.csv', 'w', encoding='utf-8-sig',
+                  newline='') as csv_write_file:
             csv_writer = csv.writer(csv_write_file)
             csv_writer.writerow(['word', 'freq'])
             csv_writer.writerows(word_counter.items())

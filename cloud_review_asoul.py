@@ -15,11 +15,13 @@ class AsoulCloudReview(tb.Reviewer):
 
     def __init__(self, BDUSS_key, tieba_name) -> None:
         super().__init__(BDUSS_key, tieba_name)
-        white_kw_list = ['管人|(哪个|什么)v|bv|联动|歌回|杂谈|歌力|企划|切片|前世|毕业|sc|弹幕|同接|二次元|原批|牧场|周边|史书|饭圈|滑坡',
-                         '(a|b|睿|皇协|批|p)站|b博|海鲜|(v|a)(吧|8)|nga|404|ytb|论坛|字幕组|粉丝群|直播间|魂组|录播',
-                         'asoul|皮套|纸片人|套皮|嘉然|然然|向晚|晚晚|乃琳|奶琳|贝拉|拉姐|珈乐|羊驼|a(骚|s|手)|向晚|歌姬|乃贝|晚饭|大头',
-                         '开播|共振|取关|牧场|啊啊啊|麻麻|别急|可爱|sad|感叹|速速|我超|存牌|狠狠|切割|牛牛|一把子|幽默|GNK48|汴京|抱团|别融',
-                         '嘉心糖|顶碗人|贝极星|奶淇淋|n70|皇(珈|家)|黄嘉琪|泥哥|(a|b|豆|d|抖|快|8|吧)(u|友)|一个魂|粉丝|ylg|mmr|低能|易拉罐|脑弹|铝制品|纯良']
+        white_kw_list = [
+            '管人|(哪个|什么)v|bv|联动|歌回|杂谈|歌力|企划|切片|前世|毕业|sc|弹幕|同接|二次元|原批|牧场|周边|史书|饭圈|滑坡',
+            '(a|b|睿|皇协|批|p)站|b博|海鲜|(v|a)(吧|8)|nga|404|ytb|论坛|字幕组|粉丝群|直播间|魂组|录播',
+            'asoul|皮套|纸片人|套皮|嘉然|然然|向晚|晚晚|乃琳|奶琳|贝拉|拉姐|珈乐|羊驼|a(骚|s|手)|向晚|歌姬|乃贝|晚饭|大头',
+            '开播|共振|取关|牧场|啊啊啊|麻麻|别急|可爱|sad|感叹|速速|我超|存牌|狠狠|切割|牛牛|一把子|幽默|GNK48|汴京|抱团|别融',
+            '嘉心糖|顶碗人|贝极星|奶淇淋|n70|皇(珈|家)|黄嘉琪|泥哥|(a|b|豆|d|抖|快|8|吧)(u|友)|一个魂|粉丝|ylg|mmr|低能|易拉罐|脑弹|铝制品|纯良'
+        ]
         self.white_kw_exp = re.compile('|'.join(white_kw_list), re.I)
         self.water_restrict_flag = False
 
@@ -35,15 +37,17 @@ class AsoulCloudReview(tb.Reviewer):
                 # 获取主题帖列表
                 threads = await self.get_threads(self.tieba_name)
                 # 创建异步任务列表 并规定每个任务的延迟时间 避免高并发下的网络阻塞
-                coros = [self._handle_thread(thread, idx/5)
-                         for idx, thread in enumerate(threads)]
+                coros = [self._handle_thread(thread, idx / 5) for idx, thread in enumerate(threads)]
                 # 并发运行协程
                 del_flags = await asyncio.gather(*coros)
 
                 def _yield_user_id():
                     for idx, thread in enumerate(threads):
-                        if not del_flags[idx] and (user_id := thread.author_id) != 0 and thread.reply_num < 15 and not self.white_kw_exp.search(thread.text):
+                        if not del_flags[idx] and (user_id := thread.author_id
+                                                   ) != 0 and thread.reply_num < 15 and not self.white_kw_exp.search(
+                                                       thread.text):
                             yield user_id
+
                 # 为每个user_id统计无关水帖数
                 water_stat = Counter(_yield_user_id())
 
@@ -56,18 +60,18 @@ class AsoulCloudReview(tb.Reviewer):
 
                 if water_user_ids:
                     # 因为治水功能很少被触发 所以采用int计数+二次遍历而不是列表计数的设计来提升性能
-                    coros = [self.hide_thread(self.tieba_name, thread.tid)
-                             for thread in threads if thread.author_id in water_user_ids]
+                    coros = [
+                        self.hide_thread(self.tieba_name, thread.tid) for thread in threads
+                        if thread.author_id in water_user_ids
+                    ]
                     await asyncio.gather(*coros)
 
-                tb.log.debug(
-                    f"Cycle time_cost: {time.perf_counter()-start_time:.4f}")
+                tb.log.debug(f"Cycle time_cost: {time.perf_counter()-start_time:.4f}")
                 # 主动释放CPU 转而运行其他协程
                 await asyncio.sleep(20)
 
             except Exception:
-                tb.log.critical(
-                    f"Unexcepted error:{traceback.format_exc()}")
+                tb.log.critical(f"Unexcepted error:{traceback.format_exc()}")
                 return
 
     async def _handle_thread(self, thread: tb.Thread, delay: float) -> None:
@@ -96,13 +100,15 @@ class AsoulCloudReview(tb.Reviewer):
         elif del_flag == 1:
             # 删帖
             tb.log.info(
-                f"Try to delete thread {thread.text} post by {thread.user.log_name}. level:{thread.user.level}. line:{line}")
+                f"Try to delete thread {thread.text} post by {thread.user.log_name}. level:{thread.user.level}. line:{line}"
+            )
             await self.del_thread(self.tieba_name, thread.tid)
             return True
         elif del_flag == 2:
             # 屏蔽帖
             tb.log.info(
-                f"Try to hide thread {thread.text} post by {thread.user.log_name}. level:{thread.user.level}. line:{line}")
+                f"Try to hide thread {thread.text} post by {thread.user.log_name}. level:{thread.user.level}. line:{line}"
+            )
             await self.hide_thread(self.tieba_name, thread.tid)
             return True
 
@@ -129,10 +135,11 @@ class AsoulCloudReview(tb.Reviewer):
             return 0, 0, 0
 
         # 回复数>50且点赞数>回复数的两倍则判断为热帖
-        is_hot_thread = thread.reply_num >= 50 and thread.agree > thread.reply_num*2
+        is_hot_thread = thread.reply_num >= 50 and thread.agree > thread.reply_num * 2
         if is_hot_thread:
             # 同时拉取热门序和时间倒序的回复列表
-            posts, reverse_posts = await asyncio.gather(self.get_posts(thread.tid, sort=2, with_comments=True), self.get_posts(thread.tid, sort=1, with_comments=True))
+            posts, reverse_posts = await asyncio.gather(self.get_posts(thread.tid, sort=2, with_comments=True),
+                                                        self.get_posts(thread.tid, sort=1, with_comments=True))
         else:
             # 仅拉取时间倒序的回复列表
             posts = await self.get_posts(thread.tid, sort=1, with_comments=True)
@@ -217,8 +224,7 @@ class AsoulCloudReview(tb.Reviewer):
 
         if post.comments:
             # 并发检查楼中楼内容 因为是CPU密集任务所以不需要设计delay
-            coros = [self._handle_comment(comment)
-                     for comment in post.comments]
+            coros = [self._handle_comment(comment) for comment in post.comments]
             await asyncio.gather(*coros)
 
         # 缓存该pid的子结点编辑状态
@@ -238,7 +244,8 @@ class AsoulCloudReview(tb.Reviewer):
         elif del_flag == 1:
             # 内容违规 删楼中楼
             tb.log.info(
-                f"Try to delete post {comment.text} post by {comment.user.log_name}. level:{comment.user.level}. line:{line}")
+                f"Try to delete post {comment.text} post by {comment.user.log_name}. level:{comment.user.level}. line:{line}"
+            )
             await self.del_post(self.tieba_name, comment.tid, comment.pid)
             return
 
@@ -305,8 +312,7 @@ class AsoulCloudReview(tb.Reviewer):
             return 0, 0, 0
 
         # 内容中是否有罕见的联系方式
-        has_rare_contact = True if self.expressions.contact_rare_exp.search(
-            text) else False
+        has_rare_contact = True if self.expressions.contact_rare_exp.search(text) else False
 
         if level < 7:
             if self.expressions.job_nocheck_exp.search(text):

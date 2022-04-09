@@ -25,19 +25,16 @@ class HanimeCloudReview(tb.Reviewer):
                 # 获取主题帖列表
                 threads = await self.get_threads(self.tieba_name)
                 # 创建异步任务列表 并规定每个任务的延迟时间 避免高并发下的网络阻塞
-                coros = [self._handle_thread(thread, idx/5)
-                         for idx, thread in enumerate(threads)]
+                coros = [self._handle_thread(thread, idx / 5) for idx, thread in enumerate(threads)]
                 # 并发运行协程
                 await asyncio.gather(*coros)
 
-                tb.log.debug(
-                    f"Cycle time_cost: {time.perf_counter()-start_time:.4f}")
+                tb.log.debug(f"Cycle time_cost: {time.perf_counter()-start_time:.4f}")
                 # 主动释放CPU 转而运行其他协程
                 await asyncio.sleep(10)
 
             except Exception:
-                tb.log.critical(
-                    f"Unexcepted error:{traceback.format_exc()}")
+                tb.log.critical(f"Unexcepted error:{traceback.format_exc()}")
                 return
 
     async def _handle_thread(self, thread: tb.Thread, delay: float) -> None:
@@ -66,13 +63,15 @@ class HanimeCloudReview(tb.Reviewer):
         elif del_flag == 1:
             # 删帖
             tb.log.info(
-                f"Try to delete thread {thread.text} post by {thread.user.log_name}. level:{thread.user.level}. line:{line}")
+                f"Try to delete thread {thread.text} post by {thread.user.log_name}. level:{thread.user.level}. line:{line}"
+            )
             await self.del_thread(self.tieba_name, thread.tid)
             return True
         elif del_flag == 2:
             # 屏蔽帖
             tb.log.info(
-                f"Try to hide thread {thread.text} post by {thread.user.log_name}. level:{thread.user.level}. line:{line}")
+                f"Try to hide thread {thread.text} post by {thread.user.log_name}. level:{thread.user.level}. line:{line}"
+            )
             await self.hide_thread(self.tieba_name, thread.tid)
             return True
 
@@ -93,10 +92,11 @@ class HanimeCloudReview(tb.Reviewer):
             return 0, 0, 0
 
         # 回复数>50且点赞数>回复数的两倍则判断为热帖
-        is_hot_thread = thread.reply_num >= 50 and thread.agree > thread.reply_num*2
+        is_hot_thread = thread.reply_num >= 50 and thread.agree > thread.reply_num * 2
         if is_hot_thread:
             # 同时拉取热门序和时间倒序的回复列表
-            posts, reverse_posts = await asyncio.gather(self.get_posts(thread.tid, sort=2, with_comments=True), self.get_posts(thread.tid, sort=1, with_comments=True))
+            posts, reverse_posts = await asyncio.gather(self.get_posts(thread.tid, sort=2, with_comments=True),
+                                                        self.get_posts(thread.tid, sort=1, with_comments=True))
         else:
             # 仅拉取时间倒序的回复列表
             posts = await self.get_posts(thread.tid, sort=1, with_comments=True)
@@ -176,8 +176,7 @@ class HanimeCloudReview(tb.Reviewer):
 
         if post.comments:
             # 并发检查楼中楼内容 因为是CPU密集任务所以不需要设计delay
-            coros = [self._handle_comment(comment)
-                     for comment in post.comments]
+            coros = [self._handle_comment(comment) for comment in post.comments]
             await asyncio.gather(*coros)
 
         # 缓存该pid的子结点编辑状态
@@ -197,7 +196,8 @@ class HanimeCloudReview(tb.Reviewer):
         elif del_flag == 1:
             # 内容违规 删楼中楼
             tb.log.info(
-                f"Try to delete post {comment.text} post by {comment.user.log_name}. level:{comment.user.level}. line:{line}")
+                f"Try to delete post {comment.text} post by {comment.user.log_name}. level:{comment.user.level}. line:{line}"
+            )
             await self.del_post(self.tieba_name, comment.tid, comment.pid)
             return
 
@@ -246,16 +246,16 @@ class HanimeCloudReview(tb.Reviewer):
         elif is_white == False:
             # 黑名单用户 删回复并封十天
             return 1, 10, sys._getframe().f_lineno
-        
+
         level = obj.user.level
         if level > 6:
             # 用户等级大于6则跳过后续检查
             return 0, 0, 0
-        
+
         text = obj.text
         if re.search("魅.?魔.{0,6}】", text, re.I):
             return 1, 1, sys._getframe().f_lineno
-        
+
         return 0, 0, 0
 
 

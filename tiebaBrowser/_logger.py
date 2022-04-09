@@ -29,8 +29,10 @@ class _Logger(logging.Logger):
         log_dir.mkdir(0o755, exist_ok=True)
 
         log_filepath = log_dir / f'{SCRIPT_PATH.stem}.log'
-        file_handler = logging.handlers.TimedRotatingFileHandler(
-            str(log_filepath), when='MIDNIGHT', backupCount=5, encoding='utf-8')
+        file_handler = logging.handlers.TimedRotatingFileHandler(str(log_filepath),
+                                                                 when='MIDNIGHT',
+                                                                 backupCount=5,
+                                                                 encoding='utf-8')
 
         import sys
         stream_handler = logging.StreamHandler(sys.stdout)
@@ -38,8 +40,7 @@ class _Logger(logging.Logger):
         file_handler.setLevel(logging.INFO)
         stream_handler.setLevel(logging.DEBUG)
 
-        formatter = logging.Formatter(
-            "<{asctime}> [{levelname}] {message}", datefmt='%Y-%m-%d %H:%M:%S', style='{')
+        formatter = logging.Formatter("<{asctime}> [{levelname}] {message}", datefmt='%Y-%m-%d %H:%M:%S', style='{')
         file_handler.setFormatter(formatter)
         stream_handler.setFormatter(formatter)
 

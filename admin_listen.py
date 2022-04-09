@@ -40,7 +40,7 @@ class TimerRecorder(object):
 
     def allow_execute(self) -> bool:
         current_time = time.time()
-        if current_time-self.last_post_time > self.post_interval:
+        if current_time - self.last_post_time > self.post_interval:
             self.last_post_time = current_time
             return True
         else:
@@ -88,15 +88,15 @@ class Handler(object):
         await asyncio.gather(self.admin.close(), self.speaker.close(), return_exceptions=True)
 
     def to_dict(self):
-        return {'tieba_name': self.tieba_name,
-                'admin_key': self.admin.BDUSS_key,
-                'speaker_key': self.speaker.BDUSS_key,
-                'access_users': self.access_users
-                }
+        return {
+            'tieba_name': self.tieba_name,
+            'admin_key': self.admin.BDUSS_key,
+            'speaker_key': self.speaker.BDUSS_key,
+            'access_users': self.access_users
+        }
 
     def set_access(self, user_name: str, new_access: int) -> None:
-        tb.log.info(
-            f"Set access of {user_name} to {new_access} in {self.tieba_name}")
+        tb.log.info(f"Set access of {user_name} to {new_access} in {self.tieba_name}")
         if new_access == 0:
             self.access_users.pop(user_name, None)
         else:
@@ -105,8 +105,7 @@ class Handler(object):
 
 class Listener(object):
 
-    __slots__ = ['_config_mtime', 'listener',
-                 'handler_map', '_cmd_map', 'time_recorder']
+    __slots__ = ['_config_mtime', 'listener', 'handler_map', '_cmd_map', 'time_recorder']
 
     def __init__(self) -> None:
 
@@ -116,33 +115,38 @@ class Listener(object):
         self._config_mtime = config_path.stat().st_mtime
 
         self.listener = tb.Browser(config['listener_key'])
-        self.handler_map = {(handler := Handler(
-            tieba_config)).tieba_name: handler for tieba_config in config['tieba_configs']}
+        self.handler_map = {(handler := Handler(tieba_config)).tieba_name: handler
+                            for tieba_config in config['tieba_configs']}
 
-        self._cmd_map = {func_name[4:]: getattr(self, func_name) for func_name in dir(
-            self) if func_name.startswith("cmd")}
+        self._cmd_map = {
+            func_name[4:]: getattr(self, func_name)
+            for func_name in dir(self) if func_name.startswith("cmd")
+        }
         self.time_recorder = TimerRecorder(3600, 30)
 
     async def close(self) -> None:
-        await asyncio.gather(*[handler.close() for handler in self.handler_map.values()], self.listener.close(), return_exceptions=True)
+        await asyncio.gather(*[handler.close() for handler in self.handler_map.values()],
+                             self.listener.close(),
+                             return_exceptions=True)
 
         config_path = SCRIPT_PATH.parent / 'config/listen_config.json'
         if self._config_mtime != config_path.stat().st_mtime:
             return
 
         with config_path.open('w', encoding='utf-8') as _file:
-            json.dump(self.to_dict(), _file, sort_keys=False, indent=2,
-                      separators=(',', ':'), ensure_ascii=False)
+            json.dump(self.to_dict(), _file, sort_keys=False, indent=2, separators=(',', ':'), ensure_ascii=False)
 
     def to_dict(self):
-        return {'listener_key': self.listener.BDUSS_key,
-                'tieba_configs': [handler.to_dict() for handler in self.handler_map.values()]
-                }
+        return {
+            'listener_key': self.listener.BDUSS_key,
+            'tieba_configs': [handler.to_dict() for handler in self.handler_map.values()]
+        }
 
     async def __aenter__(self) -> "Listener":
         return self
 
-    async def __aexit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[BaseException], exc_tb: Optional[TracebackType]) -> None:
+    async def __aexit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[BaseException],
+                        exc_tb: Optional[TracebackType]) -> None:
         await self.close()
 
     async def run(self) -> None:
@@ -167,7 +171,8 @@ class Listener(object):
                 ats = ats[:end_idx]
                 break
 
-        await asyncio.gather(*[asyncio.wait_for(self._handle_cmd(at), timeout=120) for at in ats], return_exceptions=True)
+        await asyncio.gather(*[asyncio.wait_for(self._handle_cmd(at), timeout=120) for at in ats],
+                             return_exceptions=True)
 
     @staticmethod
     def _parse_cmd(text: str) -> tuple[str, str]:
@@ -180,7 +185,7 @@ class Listener(object):
 
         text = text[text.find('@'):]
         first_blank_idx = text.find(' ')
-        if (split_start_idx := first_blank_idx+1) == len(text):
+        if (split_start_idx := first_blank_idx + 1) == len(text):
             return cmd_type, args
 
         cmd = text[split_start_idx:].strip()
@@ -360,10 +365,8 @@ class Listener(object):
             if not (comments := await self.listener.get_comments(at.tid, at.pid, is_floor=True)):
                 return
             target = comments.post
-            tb.log.info(
-                f"Try to delete post {target.text} post by {target.user.log_name}")
-            coros.append(handler.admin.del_post(
-                at.tieba_name, target.tid, target.pid))
+            tb.log.info(f"Try to delete post {target.text} post by {target.user.log_name}")
+            coros.append(handler.admin.del_post(at.tieba_name, target.tid, target.pid))
 
         else:
             if not (posts := await self.listener.get_posts(at.tid, rn=0)):
@@ -376,26 +379,19 @@ class Listener(object):
                 if not target.contents.ats:
                     return
                 target.user = await self.listener.get_basic_user_info(target.contents.ats[0].user_id)
-                tb.log.info(
-                    f"Try to delete thread {target.text} post by {target.user.log_name}")
-                coros.append(handler.admin.del_thread(
-                    at.tieba_name, target.tid))
+                tb.log.info(f"Try to delete thread {target.text} post by {target.user.log_name}")
+                coros.append(handler.admin.del_thread(at.tieba_name, target.tid))
 
             else:
                 target = posts[0]
-                tb.log.info(
-                    f"Try to delete thread {target.text} post by {target.user.log_name}")
-                coros.append(handler.admin.del_thread(
-                    at.tieba_name, target.tid))
+                tb.log.info(f"Try to delete thread {target.text} post by {target.user.log_name}")
+                coros.append(handler.admin.del_thread(at.tieba_name, target.tid))
 
         if block_days:
-            coros.append(handler.admin.block(
-                at.tieba_name, target.user, day=block_days))
+            coros.append(handler.admin.block(at.tieba_name, target.user, day=block_days))
         if blacklist:
-            tb.log.info(
-                f"Try to update {target.user.log_name} to {at.tieba_name}. mode:False")
-            coros.append(handler.admin.database.update_user_id(
-                at.tieba_name, target.user.user_id, False))
+            tb.log.info(f"Try to update {target.user.log_name} to {at.tieba_name}. mode:False")
+            coros.append(handler.admin.database.update_user_id(at.tieba_name, target.user.user_id, False))
 
         await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
         await asyncio.gather(*coros)
@@ -413,7 +409,8 @@ class Listener(object):
             tb.log.warning("Failed to ping:{at.tieba_name}")
             return
 
-        if await handler.admin.database.update_tid(at.tieba_name, at.tid, True) and await handler.admin.hide_thread(at.tieba_name, at.tid):
+        if await handler.admin.database.update_tid(at.tieba_name, at.tid, True) and await handler.admin.hide_thread(
+                at.tieba_name, at.tid):
             await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=2, need_arg_num=0)
@@ -429,7 +426,8 @@ class Listener(object):
             tb.log.warning("Failed to ping:{at.tieba_name}")
             return
 
-        if await handler.admin.database.del_tid(at.tieba_name, at.tid) and await handler.admin.unhide_thread(at.tieba_name, at.tid):
+        if await handler.admin.database.del_tid(at.tieba_name, at.tid) and await handler.admin.unhide_thread(
+                at.tieba_name, at.tid):
             await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=3, need_arg_num=1)
@@ -542,8 +540,7 @@ class Listener(object):
 
         user = await self._arg2user_info(args[0])
 
-        tb.log.info(
-            f"Try to update {user.log_name} to {at.tieba_name}. mode:True")
+        tb.log.info(f"Try to update {user.log_name} to {at.tieba_name}. mode:True")
         if await handler.admin.database.update_user_id(at.tieba_name, user.user_id, True):
             await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
 
@@ -562,8 +559,7 @@ class Listener(object):
 
         user = await self._arg2user_info(args[0])
 
-        tb.log.info(
-            f"Try to update {user.log_name} to {at.tieba_name}. mode:False")
+        tb.log.info(f"Try to update {user.log_name} to {at.tieba_name}. mode:False")
         if await handler.admin.database.update_user_id(at.tieba_name, user.user_id, False):
             await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
 
@@ -582,8 +578,7 @@ class Listener(object):
 
         user = await self._arg2user_info(args[0])
 
-        tb.log.info(
-            f"Try to delete {user.log_name} from {at.tieba_name}")
+        tb.log.info(f"Try to delete {user.log_name} from {at.tieba_name}")
         if await handler.admin.database.del_user_id(at.tieba_name, user.user_id):
             await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
 
@@ -597,10 +592,11 @@ class Listener(object):
         if not self.time_recorder.allow_execute():
             return
 
-        active_admin_list = [user_name for user_name,
-                             access_level in handler.access_users.items() if access_level >= 2][:4]
+        active_admin_list = [
+            user_name for user_name, access_level in handler.access_users.items() if access_level >= 2
+        ][:4]
         extra_info = args[0] if len(args) else ''
-        content = f"{extra_info}@"+" @".join(active_admin_list)
+        content = f"{extra_info}@" + " @".join(active_admin_list)
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
@@ -657,7 +653,11 @@ class Listener(object):
                 pn (int): 页码
             """
 
-            posts = await self.listener.get_posts(at.tid, pn, only_thread_author=True, with_comments=True, comment_sort_by_agree=True)
+            posts = await self.listener.get_posts(at.tid,
+                                                  pn,
+                                                  only_thread_author=True,
+                                                  with_comments=True,
+                                                  comment_sort_by_agree=True)
             await asyncio.gather(*[_stat_post(post) for post in posts])
 
         async def _stat_post(post: tb.Post) -> None:
@@ -688,12 +688,11 @@ class Listener(object):
         await asyncio.gather(*[_stat_post(post) for post in posts[1:]])
 
         if (total_page := posts.page.total_page) > 1:
-            await asyncio.gather(*[_stat_pn(pn) for pn in range(2, total_page+1)], return_exceptions=True)
+            await asyncio.gather(*[_stat_pn(pn) for pn in range(2, total_page + 1)], return_exceptions=True)
 
         results.sort(key=lambda result: result[1], reverse=True)
         contents = [f"@{at.user.user_name} "]
-        contents.extend(
-            [f"floor:{floor} num:{vote_num}" for floor, vote_num in results[:int(args[1])]])
+        contents.extend([f"floor:{floor} num:{vote_num}" for floor, vote_num in results[:int(args[1])]])
         content = '\n'.join(contents)
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
@@ -741,7 +740,7 @@ class Listener(object):
 
         if not handler.access_users.__contains__(at.user.user_name):
             for thread in await self.listener.get_threads(at.tieba_name, is_good=True):
-                if thread.user.user_id == at.user.user_id and thread.create_time > time.time()-30*24*3600:
+                if thread.user.user_id == at.user.user_id and thread.create_time > time.time() - 30 * 24 * 3600:
                     handler.set_access(at.user.user_name, 1)
                     await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
 

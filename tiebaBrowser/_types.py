@@ -1,9 +1,8 @@
 # -*- coding:utf-8 -*-
-__all__ = ['BasicUserInfo', 'UserInfo',
-           'Thread', 'Post', 'Comment', 'At', 'Reply', 'Search',
-           'Threads', 'Posts', 'Comments', 'Ats', 'Replys', 'Searches',
-           'Fragments'
-           ]
+__all__ = [
+    'BasicUserInfo', 'UserInfo', 'Thread', 'Post', 'Comment', 'At', 'Reply', 'Search', 'Threads', 'Posts', 'Comments',
+    'Ats', 'Replys', 'Searches', 'Fragments'
+]
 
 from collections.abc import Callable, Iterable
 from typing import Generic, Literal, Optional, TypeVar, Union, final
@@ -11,7 +10,8 @@ from typing import Generic, Literal, Optional, TypeVar, Union, final
 from google.protobuf.json_format import ParseDict
 
 from ._logger import log
-from .tieba_proto import *
+from .tieba_proto import (FrsPageResIdl_pb2, Page_pb2, PbContent_pb2, PbFloorResIdl_pb2, PbPageResIdl_pb2, Post_pb2,
+                          ReplyMeResIdl_pb2, SimpleForum_pb2, SubPostList_pb2, ThreadInfo_pb2, User_pb2)
 
 
 def _int_prop_check_ignore_none(default_val: int) -> Callable:
@@ -23,6 +23,7 @@ def _int_prop_check_ignore_none(default_val: int) -> Callable:
     """
 
     def wrapper(func) -> Callable:
+
         def foo(self, new_val):
             if new_val:
                 try:
@@ -54,8 +55,7 @@ class BasicUserInfo(object):
         nick_name (str): 发帖人昵称
     """
 
-    __slots__ = ['_raw_data', '_user_id',
-                 'user_name', '_portrait', '_nick_name']
+    __slots__ = ['_raw_data', '_user_id', 'user_name', '_portrait', '_nick_name']
 
     def __init__(self, _id: Union[str, int, None] = None, user_proto: Optional[User_pb2.User] = None) -> None:
 
@@ -196,8 +196,7 @@ class UserInfo(BasicUserInfo):
         priv_reply (int): 帖子评论权限 (1所有人5我的粉丝6我的关注)
     """
 
-    __slots__ = ['_level', '_gender', '_is_vip',
-                 '_is_god', '_priv_like', '_priv_reply']
+    __slots__ = ['_level', '_gender', '_is_vip', '_is_god', '_priv_like', '_priv_reply']
 
     def _init_by_data(self, user_proto: User_pb2.User) -> None:
         super()._init_by_data(user_proto)
@@ -493,8 +492,7 @@ class Fragments(Generic[_TFrag]):
         tiebapluses (list[FragTiebaPlus]): 贴吧+碎片列表
     """
 
-    __slots__ = ['_frags', '_text', '_texts', '_emojis',
-                 '_imgs', '_ats', '_links', '_voice', '_tiebapluses']
+    __slots__ = ['_frags', '_text', '_texts', '_emojis', '_imgs', '_ats', '_links', '_voice', '_tiebapluses']
 
     def __init__(self, content_protos: Optional[Iterable] = None) -> None:
 
@@ -553,8 +551,7 @@ class Fragments(Generic[_TFrag]):
         self._tiebapluses = []
 
         if content_protos:
-            self._frags = [_init_by_type(content_proto)
-                           for content_proto in content_protos]
+            self._frags = [_init_by_type(content_proto) for content_proto in content_protos]
         else:
             self._frags = []
 
@@ -630,7 +627,10 @@ class Forum(object):
 
     __slots__ = ['_raw_data', 'fid', 'name']
 
-    def __init__(self, forum_proto: Union[SimpleForum_pb2.SimpleForum, FrsPageResIdl_pb2.FrsPageResIdl.DataRes.ForumInfo, None] = None) -> None:
+    def __init__(
+        self,
+        forum_proto: Union[SimpleForum_pb2.SimpleForum, FrsPageResIdl_pb2.FrsPageResIdl.DataRes.ForumInfo, None] = None
+    ) -> None:
 
         if forum_proto:
             self._init_by_data(forum_proto)
@@ -638,7 +638,9 @@ class Forum(object):
         else:
             self._init_null()
 
-    def _init_by_data(self, forum_proto: Union[SimpleForum_pb2.SimpleForum, FrsPageResIdl_pb2.FrsPageResIdl.DataRes.ForumInfo]) -> None:
+    def _init_by_data(
+            self, forum_proto: Union[SimpleForum_pb2.SimpleForum,
+                                     FrsPageResIdl_pb2.FrsPageResIdl.DataRes.ForumInfo]) -> None:
 
         self._raw_data = forum_proto
 
@@ -670,8 +672,7 @@ class Page(object):
         has_prev (bool): 是否有前驱页
     """
 
-    __slots__ = ['_raw_data', 'page_size', 'current_page',
-                 'total_page', 'total_count', 'has_more', 'has_prev']
+    __slots__ = ['_raw_data', 'page_size', 'current_page', 'total_page', 'total_count', 'has_more', 'has_prev']
 
     def __init__(self, page_proto: Optional[Page_pb2.Page] = None) -> None:
 
@@ -775,8 +776,7 @@ class _Container(object):
         if self._user is None:
 
             if self._raw_data:
-                self._user = UserInfo(user_proto=user_proto) if (
-                    user_proto := self._raw_data.author).id else UserInfo()
+                self._user = UserInfo(user_proto=user_proto) if (user_proto := self._raw_data.author).id else UserInfo()
 
             else:
                 self._user = UserInfo()
@@ -793,8 +793,7 @@ class _Container(object):
         if self._author_id is None:
 
             if self._raw_data:
-                self._author_id = author_id if (
-                    author_id := self.user.user_id) else self._raw_data.author_id
+                self._author_id = author_id if (author_id := self.user.user_id) else self._raw_data.author_id
 
             else:
                 self._author_id = 0
@@ -905,13 +904,15 @@ class Thread(_Container):
         last_time (int): 10位时间戳 最后回复时间
     """
 
-    __slots__ = ['_raw_data', '_contents', '_fid', '_tab_id', '_is_good', '_is_top', '_is_share', '_is_hide', '_is_livepost', 'title',
-                 '_vote_info', '_share_origin', '_view_num', '_reply_num', '_share_num', '_agree', '_disagree', '_create_time', '_last_time']
+    __slots__ = [
+        '_raw_data', '_contents', '_fid', '_tab_id', '_is_good', '_is_top', '_is_share', '_is_hide', '_is_livepost',
+        'title', '_vote_info', '_share_origin', '_view_num', '_reply_num', '_share_num', '_agree', '_disagree',
+        '_create_time', '_last_time'
+    ]
 
     class VoteInfo(object):
 
-        __slots__ = ['title', 'options',
-                     'is_multi', 'total_vote', 'total_user']
+        __slots__ = ['title', 'options', 'is_multi', 'total_vote', 'total_user']
 
         class VoteOption(object):
 
@@ -933,8 +934,7 @@ class Thread(_Container):
 
             if vote_proto:
                 self.title = vote_proto.title
-                self.options = [self.VoteOption(
-                    option_proto) for option_proto in vote_proto.options]
+                self.options = [self.VoteOption(option_proto) for option_proto in vote_proto.options]
                 self.is_multi = bool(vote_proto.is_multi)
                 self.total_vote = vote_proto.total_poll
                 self.total_user = vote_proto.total_num
@@ -1121,8 +1121,7 @@ class Thread(_Container):
                     self._share_origin.tid = share_proto.tid
                     self._share_origin.pid = share_proto.pid
 
-                    self._share_origin._contents = Fragments(
-                        share_proto.content)
+                    self._share_origin._contents = Fragments(share_proto.content)
                     self._share_origin.title = share_proto.title
                     self._share_origin._vote_info = self.VoteInfo(poll_info_proto) if (
                         poll_info_proto := share_proto.poll_info).options else self.VoteInfo()
@@ -1250,10 +1249,11 @@ class Threads(_Containers[Thread]):
         if self._objs is None:
             if self._raw_data:
 
-                self._users = {user.user_id: user for user_proto in self._raw_data.user_list if (
-                    user := UserInfo(user_proto=user_proto)).user_id}
-                self._objs = [Thread(thread_proto)
-                              for thread_proto in self._raw_data.thread_list]
+                self._users = {
+                    user.user_id: user
+                    for user_proto in self._raw_data.user_list if (user := UserInfo(user_proto=user_proto)).user_id
+                }
+                self._objs = [Thread(thread_proto) for thread_proto in self._raw_data.thread_list]
             else:
                 self._users = {}
                 self._objs = []
@@ -1279,8 +1279,7 @@ class Threads(_Containers[Thread]):
         if self._tab_map is None:
 
             if self._raw_data:
-                self._tab_map = {
-                    tab_proto.tab_name: tab_proto.tab_id for tab_proto in self._raw_data.nav_tab_info.tab}
+                self._tab_map = {tab_proto.tab_name: tab_proto.tab_id for tab_proto in self._raw_data.nav_tab_info.tab}
             else:
                 self._tab_map = {}
 
@@ -1311,8 +1310,10 @@ class Post(_Container):
         is_thread_author (bool): 是否楼主
     """
 
-    __slots__ = ['_fid', '_contents', '_sign', '_comments', '_floor', '_reply_num',
-                 '_agree', '_disagree', '_create_time', 'is_thread_author']
+    __slots__ = [
+        '_fid', '_contents', '_sign', '_comments', '_floor', '_reply_num', '_agree', '_disagree', '_create_time',
+        'is_thread_author'
+    ]
 
     def __init__(self, post_proto: Optional[Post_pb2.Post] = None) -> None:
 
@@ -1395,8 +1396,7 @@ class Post(_Container):
         if self._sign is None:
 
             if self._raw_data:
-                self._sign = ''.join(
-                    [sign.text for sign in self._raw_data.signature.content if sign.type == 0])
+                self._sign = ''.join([sign.text for sign in self._raw_data.signature.content if sign.type == 0])
             else:
                 self._sign = ''
 
@@ -1407,8 +1407,9 @@ class Post(_Container):
         if self._comments is None:
 
             if self._raw_data:
-                self._comments = [Comment(
-                    comment_proto) for comment_proto in self._raw_data.sub_post_list.sub_post_list]
+                self._comments = [
+                    Comment(comment_proto) for comment_proto in self._raw_data.sub_post_list.sub_post_list
+                ]
             else:
                 self._comments = []
 
@@ -1532,10 +1533,11 @@ class Posts(_Containers[Post]):
         if self._objs is None:
 
             if self._raw_data:
-                self._users = {user.user_id: user for user_proto in self._raw_data.user_list if (
-                    user := UserInfo(user_proto=user_proto)).user_id}
-                self._objs = [Post(post_proto)
-                              for post_proto in self._raw_data.post_list]
+                self._users = {
+                    user.user_id: user
+                    for user_proto in self._raw_data.user_list if (user := UserInfo(user_proto=user_proto)).user_id
+                }
+                self._objs = [Post(post_proto) for post_proto in self._raw_data.post_list]
             else:
                 self._users = {}
                 self._objs = []
@@ -1728,8 +1730,7 @@ class Comments(_Containers[Comment]):
         if self._objs is None:
 
             if self._raw_data:
-                self._objs = [Comment(comment_proto)
-                              for comment_proto in self._raw_data.subpost_list]
+                self._objs = [Comment(comment_proto) for comment_proto in self._raw_data.subpost_list]
             else:
                 self._objs = []
 
@@ -1794,8 +1795,7 @@ class Reply(_Container):
         create_time (int): 10位时间戳，创建时间
     """
 
-    __slots__ = ['tieba_name', '_post_pid', '_post_user',
-                 '_thread_user', '_is_floor', '_create_time']
+    __slots__ = ['tieba_name', '_post_pid', '_post_user', '_thread_user', '_is_floor', '_create_time']
 
     def __init__(self, reply_proto: Optional[ReplyMeResIdl_pb2.ReplyMeResIdl.DataRes.ReplyList] = None) -> None:
 
@@ -1846,8 +1846,8 @@ class Reply(_Container):
         if self._user is None:
 
             if self._raw_data:
-                self._user = UserInfo(user_proto=user_proto) if (
-                    user_proto := self._raw_data.replyer).id else UserInfo()
+                self._user = UserInfo(
+                    user_proto=user_proto) if (user_proto := self._raw_data.replyer).id else UserInfo()
             else:
                 self._user = UserInfo()
 
@@ -1867,8 +1867,8 @@ class Reply(_Container):
         if self._post_user is None:
 
             if self._raw_data:
-                self._post_user = BasicUserInfo(user_proto=user_proto) if (
-                    user_proto := self._raw_data.quote_user).id else BasicUserInfo()
+                self._post_user = BasicUserInfo(
+                    user_proto=user_proto) if (user_proto := self._raw_data.quote_user).id else BasicUserInfo()
             else:
                 self._post_user = BasicUserInfo()
 
@@ -1879,8 +1879,8 @@ class Reply(_Container):
         if self._thread_user is None:
 
             if self._raw_data:
-                self._thread_user = BasicUserInfo(user_proto=user_proto) if (
-                    user_proto := self._raw_data.thread_author_user).id else BasicUserInfo()
+                self._thread_user = BasicUserInfo(
+                    user_proto=user_proto) if (user_proto := self._raw_data.thread_author_user).id else BasicUserInfo()
             else:
                 self._thread_user = BasicUserInfo()
 
@@ -1948,8 +1948,7 @@ class Replys(_Containers[Reply]):
         if self._objs is None:
 
             if self._raw_data:
-                self._objs = [Reply(reply_proto)
-                              for reply_proto in self._raw_data.reply_list]
+                self._objs = [Reply(reply_proto) for reply_proto in self._raw_data.reply_list]
             else:
                 self._objs = []
 
@@ -2001,8 +2000,7 @@ class At(_Container):
             self.create_time = at_dict['time']
 
         except Exception as err:
-            log.warning(
-                f"Failed to init At. reason:line {err.__traceback__.tb_lineno}: {err}")
+            log.warning(f"Failed to init At. reason:line {err.__traceback__.tb_lineno}: {err}")
             self._init_null()
 
     def _init_null(self) -> None:
@@ -2029,10 +2027,8 @@ class At(_Container):
         if self._user is None:
 
             if self._raw_data:
-                user_proto = ParseDict(
-                    self._raw_data['replyer'], User_pb2.User(), ignore_unknown_fields=True)
-                self._user = UserInfo(
-                    user_proto=user_proto) if user_proto.id else UserInfo()
+                user_proto = ParseDict(self._raw_data['replyer'], User_pb2.User(), ignore_unknown_fields=True)
+                self._user = UserInfo(user_proto=user_proto) if user_proto.id else UserInfo()
             else:
                 self._user = UserInfo()
 
@@ -2114,8 +2110,7 @@ class Ats(_Containers[At]):
         if self._objs is None:
 
             if self._raw_data:
-                self._objs = [At(at_dict=at_dict)
-                              for at_dict in self._raw_data['at_list']]
+                self._objs = [At(at_dict=at_dict) for at_dict in self._raw_data['at_list']]
             else:
                 self._objs = []
 
@@ -2131,13 +2126,11 @@ class Ats(_Containers[At]):
                     page_dict['has_more'] = 0
 
                 try:
-                    page_proto = ParseDict(
-                        page_dict, Page_pb2.Page(), ignore_unknown_fields=True)
+                    page_proto = ParseDict(page_dict, Page_pb2.Page(), ignore_unknown_fields=True)
                     self._page = Page(page_proto)
 
                 except Exception as err:
-                    log.warning(
-                        f"Failed to init Page of Ats. reason:line {err.__traceback__.tb_lineno}: {err}")
+                    log.warning(f"Failed to init Page of Ats. reason:line {err.__traceback__.tb_lineno}: {err}")
                     self._page = Page()
 
             else:
@@ -2189,8 +2182,7 @@ class Search(_Container):
             self.create_time = search_dict['time']
 
         except Exception as err:
-            log.warning(
-                f"Failed to init Search. reason:line {err.__traceback__.tb_lineno}: {err}")
+            log.warning(f"Failed to init Search. reason:line {err.__traceback__.tb_lineno}: {err}")
             self._init_null()
 
     def _init_null(self) -> None:
@@ -2217,10 +2209,8 @@ class Search(_Container):
         if self._user is None:
 
             if self._raw_data:
-                user_proto = ParseDict(
-                    self._raw_data['author'], User_pb2.User(), ignore_unknown_fields=True)
-                self._user = UserInfo(
-                    user_proto=user_proto) if user_proto.id else UserInfo()
+                user_proto = ParseDict(self._raw_data['author'], User_pb2.User(), ignore_unknown_fields=True)
+                self._user = UserInfo(user_proto=user_proto) if user_proto.id else UserInfo()
             else:
                 self._user = UserInfo()
 
@@ -2294,8 +2284,7 @@ class Searches(_Containers[Search]):
         if self._objs is None:
 
             if self._raw_data:
-                self._objs = [Search(search_dict=search_dict)
-                              for search_dict in self._raw_data['post_list']]
+                self._objs = [Search(search_dict=search_dict) for search_dict in self._raw_data['post_list']]
             else:
                 self._objs = []
 
@@ -2311,13 +2300,11 @@ class Searches(_Containers[Search]):
                     page_dict['has_more'] = 0
 
                 try:
-                    page_proto = ParseDict(
-                        page_dict, Page_pb2.Page(), ignore_unknown_fields=True)
+                    page_proto = ParseDict(page_dict, Page_pb2.Page(), ignore_unknown_fields=True)
                     self._page = Page(page_proto)
 
                 except Exception as err:
-                    log.warning(
-                        f"Failed to init Page of Searches. reason:line {err.__traceback__.tb_lineno}: {err}")
+                    log.warning(f"Failed to init Page of Searches. reason:line {err.__traceback__.tb_lineno}: {err}")
                     self._page = Page()
 
             else:
