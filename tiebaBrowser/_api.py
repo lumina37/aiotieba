@@ -56,7 +56,7 @@ class Sessions(object):
                                                family=socket.AF_INET,
                                                ssl=False)
         _read_bufsize = 1 << 17  # 128KiB
-        _trust_env = True
+        _trust_env = False
 
         # Init app client
         app_headers = {
@@ -1807,7 +1807,6 @@ class Browser(object):
         except Exception as err:
             log.warning(f"Failed to get adminlist reason: {err}")
             bawu_dict = {}
-            raise
 
         return bawu_dict
 
