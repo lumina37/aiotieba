@@ -43,9 +43,7 @@ class AsoulCloudReview(tb.Reviewer):
 
                 def _yield_user_id():
                     for idx, thread in enumerate(threads):
-                        if not del_flags[idx] and (user_id := thread.author_id
-                                                   ) != 0 and thread.reply_num < 15 and not self.white_kw_exp.search(
-                                                       thread.text):
+                        if not del_flags[idx] and (user_id := thread.author_id) != 0 and thread.reply_num < 15:
                             yield user_id
 
                 # 为每个user_id统计无关水帖数
@@ -127,7 +125,7 @@ class AsoulCloudReview(tb.Reviewer):
         if self.water_restrict_flag:
             # 当前吧处于高峰期限水状态
             if await self.database.is_tid_hide(self.tieba_name, thread.tid) == False:
-                await self.database.update_tid(self.tieba_name, thread.tid, True)
+                await self.database.add_tid(self.tieba_name, thread.tid, True)
                 return 2, 0, sys._getframe().f_lineno
 
         # 该帖子里的内容没有发生任何变化 直接跳过所有后续检查
@@ -271,7 +269,7 @@ class AsoulCloudReview(tb.Reviewer):
             return 1, day, line
         elif del_flag == 0:
             # 无异常 继续检查
-            if isinstance(comment.contents[0], tb._types.FragLink):
+            if comment.user.level <= 1 and isinstance(comment.contents[0], tb._types.FragLink):
                 # 楼中楼一级号发链接 删
                 return 1, 0, sys._getframe().f_lineno
 

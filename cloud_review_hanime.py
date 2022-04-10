@@ -253,7 +253,7 @@ class HanimeCloudReview(tb.Reviewer):
             return 0, 0, 0
 
         text = obj.text
-        if re.search("魅.?魔.{0,6}】", text, re.I):
+        if re.search("魅.?魔.{0,5}(】|斯黛拉)|足硿笨", text, re.I):
             return 1, 1, sys._getframe().f_lineno
 
         return 0, 0, 0

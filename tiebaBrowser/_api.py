@@ -18,13 +18,15 @@ from bs4 import BeautifulSoup
 from google.protobuf.json_format import ParseDict
 from PIL import Image
 
+from tiebaBrowser.tieba_proto import ThreadInfo_pb2
+
 from ._config import config
 from ._logger import log
-from ._types import (Ats, BasicUserInfo, Comments, Fragments, Posts, Replys, Searches, Thread, Threads, UserInfo)
+from ._types import (JSON_DECODER, Ats, BasicUserInfo, Comments, Posts, Replys, Searches, Thread, Threads, UserInfo)
 from .tieba_proto import (CommonReq_pb2, FrsPageReqIdl_pb2, FrsPageResIdl_pb2, GetBawuInfoReqIdl_pb2,
                           GetBawuInfoResIdl_pb2, GetUserByTiebaUidReqIdl_pb2, GetUserByTiebaUidResIdl_pb2,
-                          GetUserInfoReqIdl_pb2, GetUserInfoResIdl_pb2, PbContent_pb2, PbFloorReqIdl_pb2,
-                          PbFloorResIdl_pb2, PbPageReqIdl_pb2, PbPageResIdl_pb2, ReplyMeReqIdl_pb2, ReplyMeResIdl_pb2,
+                          GetUserInfoReqIdl_pb2, GetUserInfoResIdl_pb2, PbFloorReqIdl_pb2, PbFloorResIdl_pb2,
+                          PbPageReqIdl_pb2, PbPageResIdl_pb2, ReplyMeReqIdl_pb2, ReplyMeResIdl_pb2,
                           SearchPostForumReqIdl_pb2, SearchPostForumResIdl_pb2, User_pb2)
 
 
@@ -40,11 +42,9 @@ class Sessions(object):
 
     def __init__(self, BDUSS_key: Optional[str] = None) -> None:
 
-        web_cookie_jar = aiohttp.CookieJar()
         if BDUSS_key:
             self.BDUSS = config['BDUSS'][BDUSS_key]
             self.STOKEN = config['STOKEN'].get(BDUSS_key, '')
-            web_cookie_jar.update_cookies({'BDUSS': self.BDUSS, 'STOKEN': self.STOKEN})
         else:
             self.BDUSS = ''
             self.STOKEN = ''
@@ -55,7 +55,8 @@ class Sessions(object):
                                                limit=0,
                                                family=socket.AF_INET,
                                                ssl=False)
-        _trust_env = False
+        _read_bufsize = 1 << 17  # 128KiB
+        _trust_env = True
 
         # Init app client
         app_headers = {
@@ -71,6 +72,7 @@ class Sessions(object):
                                          connector_owner=False,
                                          raise_for_status=True,
                                          timeout=self._timeout,
+                                         read_bufsize=_read_bufsize,
                                          trust_env=_trust_env)
 
         # Init app protobuf client
@@ -88,6 +90,7 @@ class Sessions(object):
                                                connector_owner=False,
                                                raise_for_status=True,
                                                timeout=self._timeout,
+                                               read_bufsize=_read_bufsize,
                                                trust_env=_trust_env)
 
         # Init web client
@@ -97,7 +100,8 @@ class Sessions(object):
             aiohttp.hdrs.CACHE_CONTROL: 'no-cache',
             aiohttp.hdrs.CONNECTION: 'keep-alive',
         }
-
+        web_cookie_jar = aiohttp.CookieJar()
+        web_cookie_jar.update_cookies({'BDUSS': self.BDUSS, 'STOKEN': self.STOKEN})
         self.web = aiohttp.ClientSession(connector=self._connector,
                                          headers=web_headers,
                                          version=aiohttp.HttpVersion11,
@@ -105,6 +109,7 @@ class Sessions(object):
                                          connector_owner=False,
                                          raise_for_status=True,
                                          timeout=self._timeout,
+                                         read_bufsize=_read_bufsize,
                                          trust_env=_trust_env)
 
     async def close(self) -> None:
@@ -131,12 +136,12 @@ class Browser(object):
 
     __slots__ = ['BDUSS_key', 'sessions', '_tbs']
 
-    fid_dict = {}
+    fid_dict: dict[str, int] = {}
 
     def __init__(self, BDUSS_key: Optional[str] = None) -> None:
         self.BDUSS_key = BDUSS_key
         self.sessions = Sessions(BDUSS_key)
-        self._tbs = ''
+        self._tbs: str = ''
 
     async def close(self) -> None:
         await self.sessions.close()
@@ -229,7 +234,7 @@ class Browser(object):
                                                   'ie': 'utf-8'
                                               })
 
-            main_json = await res.json(content_type='text/html')
+            main_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(main_json['no']):
                 raise ValueError(main_json['error'])
 
@@ -298,15 +303,15 @@ class Browser(object):
                                                   'un': user.user_name or user.nick_name
                                               })
 
-            main_json = await res.json()
+            main_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(main_json['no']):
                 raise ValueError(main_json['error'])
 
-            user_dict = main_json['data']
-            sex = user_dict['sex']
-            if sex == 'male':
+            user_dict: dict = main_json['data']
+            sex: str = user_dict['sex']
+            if sex.startswith('m'):
                 gender = 1
-            elif sex == 'female':
+            elif sex.startswith('f'):
                 gender = 2
             else:
                 gender = 0
@@ -342,7 +347,7 @@ class Browser(object):
                                                   'un': user.user_name or user.nick_name
                                               })
 
-            main_json = await res.json()
+            main_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(main_json['no']):
                 raise ValueError(main_json['error'])
 
@@ -374,7 +379,7 @@ class Browser(object):
         try:
             res = await self.sessions.web.get("http://tieba.baidu.com/i/sys/user_json", params=params)
 
-            text = await res.text(errors='ignore')
+            text = await res.text(encoding='utf-8', errors='ignore')
             main_json = json.loads(text)
             if not main_json:
                 raise ValueError("empty response")
@@ -443,7 +448,7 @@ class Browser(object):
             res = await self.sessions.web.get("http://tieba.baidu.com/im/pcmsg/query/getUserInfo",
                                               params={'chatUid': user.user_id})
 
-            main_json = await res.json()
+            main_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(main_json['errno']):
                 raise ValueError(main_json['errmsg'])
 
@@ -648,7 +653,7 @@ class Browser(object):
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/bawu/commitprison", data=payload)
 
-            main_json = await res.json(content_type='application/x-javascript')
+            main_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(main_json['error_code']):
                 raise ValueError(main_json['error_msg'])
 
@@ -683,7 +688,7 @@ class Browser(object):
         try:
             res = await self.sessions.web.post("https://tieba.baidu.com/mo/q/bawublockclear", data=payload)
 
-            main_json = await res.json()
+            main_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(main_json['no']):
                 raise ValueError(main_json['error'])
 
@@ -747,7 +752,7 @@ class Browser(object):
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/bawu/delthread", data=payload)
 
-            main_json = await res.json(content_type='application/x-javascript')
+            main_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(main_json['error_code']):
                 raise ValueError(main_json['error_msg'])
 
@@ -783,7 +788,7 @@ class Browser(object):
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/bawu/delpost", data=payload)
 
-            main_json = await res.json(content_type='application/x-javascript')
+            main_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(main_json['error_code']):
                 raise ValueError(main_json['error_msg'])
 
@@ -862,7 +867,7 @@ class Browser(object):
         try:
             res = await self.sessions.web.post("https://tieba.baidu.com/mo/q/bawurecoverthread", data=payload)
 
-            main_json = await res.json()
+            main_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(main_json['no']):
                 raise ValueError(main_json['error'])
 
@@ -903,7 +908,7 @@ class Browser(object):
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/bawu/moveTabThread", data=payload)
 
-            main_json = await res.json(content_type='application/x-javascript')
+            main_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(main_json['error_code']):
                 raise ValueError(main_json['error_msg'])
 
@@ -933,7 +938,7 @@ class Browser(object):
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/bawu/pushRecomToPersonalized",
                                                data=payload)
 
-            main_json = await res.json(content_type='application/x-javascript')
+            main_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(main_json['error_code']):
                 raise ValueError(main_json['error_msg'])
             if int(main_json['data']['is_push_success']) != 1:
@@ -980,7 +985,7 @@ class Browser(object):
             try:
                 res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/bawu/goodlist", data=payload)
 
-                main_json = await res.json(content_type='application/x-javascript')
+                main_json: dict = await res.json(encoding='utf-8', content_type=None)
                 if int(main_json['error_code']):
                     raise ValueError(main_json['error_msg'])
 
@@ -1024,7 +1029,7 @@ class Browser(object):
             try:
                 res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/bawu/commitgood", data=payload)
 
-                main_json = await res.json(content_type='application/x-javascript')
+                main_json: dict = await res.json(encoding='utf-8', content_type=None)
                 if int(main_json['error_code']):
                     raise ValueError(main_json['error_msg'])
 
@@ -1061,7 +1066,7 @@ class Browser(object):
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/bawu/commitgood", data=payload)
 
-            main_json = await res.json(content_type='application/x-javascript')
+            main_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(main_json['error_code']):
                 raise ValueError(main_json['error_msg'])
 
@@ -1097,7 +1102,7 @@ class Browser(object):
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/bawu/committop", data=payload)
 
-            main_json = await res.json(content_type='application/x-javascript')
+            main_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(main_json['error_code']):
                 raise ValueError(main_json['error_msg'])
 
@@ -1132,7 +1137,7 @@ class Browser(object):
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/bawu/committop", data=payload)
 
-            main_json = await res.json(content_type='application/x-javascript')
+            main_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(main_json['error_code']):
                 raise ValueError(main_json['error_msg'])
 
@@ -1164,7 +1169,7 @@ class Browser(object):
         try:
             res = await self.sessions.web.get("https://tieba.baidu.com/mo/q/bawurecover", params=params)
 
-            main_json = await res.json()
+            main_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(main_json['no']):
                 raise ValueError(main_json['error'])
 
@@ -1250,7 +1255,7 @@ class Browser(object):
         try:
             res = await self.sessions.web.post("http://tieba.baidu.com/bawu2/platform/addBlack", data=payload)
 
-            main_json = await res.json(content_type='text/html')
+            main_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(main_json['errno']):
                 raise ValueError(main_json['errmsg'])
 
@@ -1278,7 +1283,7 @@ class Browser(object):
         try:
             res = await self.sessions.web.post("http://tieba.baidu.com/bawu2/platform/cancelBlack", data=payload)
 
-            main_json = await res.json(content_type='text/html')
+            main_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(main_json['errno']):
                 raise ValueError(main_json['errmsg'])
 
@@ -1326,7 +1331,7 @@ class Browser(object):
             try:
                 res = await self.sessions.web.post("https://tieba.baidu.com/mo/q/bawuappealhandle", data=payload)
 
-                main_json = await res.json()
+                main_json: dict = await res.json(encoding='utf-8', content_type=None)
                 if int(main_json['no']):
                     raise ValueError(main_json['error'])
 
@@ -1422,7 +1427,7 @@ class Browser(object):
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/s/login", data=payload)
 
-            main_json = await res.json(content_type='application/x-javascript')
+            main_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(main_json['error_code']):
                 raise ValueError(main_json['error_msg'])
 
@@ -1460,7 +1465,7 @@ class Browser(object):
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/s/msg", data=payload)
 
-            main_json = await res.json(content_type='application/x-javascript')
+            main_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(main_json['error_code']):
                 raise ValueError(main_json['error_msg'])
 
@@ -1530,7 +1535,7 @@ class Browser(object):
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/u/feed/atme", data=payload)
 
-            main_json = await res.json(content_type='application/x-javascript')
+            main_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(main_json['error_code']):
                 raise ValueError(main_json['error_msg'])
 
@@ -1553,7 +1558,7 @@ class Browser(object):
             tuple[UserInfo, list[Thread]]: 用户信息/帖子列表
         """
 
-        if not UserInfo.is_portrait(_id):
+        if not BasicUserInfo.is_portrait(_id):
             user = await self.get_basic_user_info(_id)
         else:
             user = BasicUserInfo(_id)
@@ -1570,7 +1575,7 @@ class Browser(object):
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/u/user/profile", data=payload)
 
-            main_json = await res.json(content_type='application/x-javascript')
+            main_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(main_json['error_code']):
                 raise ValueError(main_json['error_msg'])
             if not main_json.__contains__('user'):
@@ -1580,38 +1585,11 @@ class Browser(object):
             log.warning(f"Failed to get profile of {user.portrait}. reason:{err}")
             return UserInfo(), []
 
-        user_dict = main_json['user']
-        user = UserInfo()
-        user.user_name = user_dict['name']
-        user.nick_name = user_dict['name_show']
-        user.portrait = user_dict['portrait']
-        user.user_id = user_dict['id']
-        user.gender = user_dict['sex']
-        user.is_vip = user_dict['new_tshow_icon']
-        user.is_god = user_dict['new_god_data']['field_id']
-        priv_dict = priv_dict if (priv_dict := user_dict['priv_sets']) else {}
-        user.priv_like = priv_dict.get('like', None)
-        user.priv_reply = priv_dict.get('reply', None)
-
-        def _contents(content_dicts: list[dict]) -> Iterable[PbContent_pb2.PbContent]:
-            for content_dict in content_dicts:
-                yield ParseDict(content_dict, PbContent_pb2.PbContent(), ignore_unknown_fields=True)
+        user = UserInfo(user_proto=ParseDict(main_json['user'], User_pb2.User(), ignore_unknown_fields=True))
 
         def _init_thread(thread_dict: dict) -> Thread:
-            thread = Thread()
-            thread._contents = Fragments(_contents(thread_dict.get('first_post_content', [])))
-            thread.fid = thread_dict['forum_id']
-            thread.tid = thread_dict['thread_id']
-            thread.pid = thread_dict['post_id']
+            thread = Thread(ParseDict(thread_dict, ThreadInfo_pb2.ThreadInfo(), ignore_unknown_fields=True))
             thread.user = user
-
-            thread.title = thread_dict['title']
-            thread.view_num = thread_dict['freq_num']
-            thread.reply_num = thread_dict['reply_num']
-            thread.share_num = share_num_str if (share_num_str := thread_dict['share_num']) else 0
-            thread.agree = thread_dict['agree']['agree_num']
-            thread.disagree = thread_dict['agree']['disagree_num']
-            thread.create_time = thread_dict['create_time']
             return thread
 
         threads = [_init_thread(thread_dict) for thread_dict in main_json['post_list']]
@@ -1654,7 +1632,7 @@ class Browser(object):
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/s/searchpost", data=payload)
 
-            main_json = await res.json(content_type='application/x-javascript')
+            main_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(main_json['error_code']):
                 raise ValueError(main_json['error_msg'])
 
@@ -1701,7 +1679,7 @@ class Browser(object):
             try:
                 res = await self.sessions.app.post("http://c.tieba.baidu.com/c/f/forum/like", data=payload)
 
-                main_json = await res.json(content_type='application/x-javascript')
+                main_json: dict = await res.json(encoding='utf-8', content_type=None)
                 if int(main_json['error_code']):
                     raise ValueError(main_json['error_msg'])
 
@@ -1773,7 +1751,7 @@ class Browser(object):
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/f/forum/like", data=payload)
 
-            main_json = await res.json(content_type='application/x-javascript')
+            main_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(main_json['error_code']):
                 raise ValueError(main_json['error_msg'])
 
@@ -1819,26 +1797,17 @@ class Browser(object):
             if int(main_proto.error.errorno):
                 raise ValueError(main_proto.error.errmsg)
 
-            def _parse_roleinfo(roleinfo_proto):
-
-                user = BasicUserInfo()
-                user.user_name = roleinfo_proto.user_name
-                user.nick_name = roleinfo_proto.name_show
-                user.portrait = roleinfo_proto.portrait
-                user.user_id = roleinfo_proto.user_id
-
-                return user
-
             roledes_protos = main_proto.data.bawu_team_info.bawu_team_list
             bawu_dict = {
                 roledes_proto.role_name:
-                [_parse_roleinfo(roleinfo_proto) for roleinfo_proto in roledes_proto.role_info]
+                [BasicUserInfo(user_proto=roleinfo_proto) for roleinfo_proto in roledes_proto.role_info]
                 for roledes_proto in roledes_protos
             }
 
         except Exception as err:
             log.warning(f"Failed to get adminlist reason: {err}")
             bawu_dict = {}
+            raise
 
         return bawu_dict
 
@@ -1906,7 +1875,7 @@ class Browser(object):
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/f/bawu/getRecomThreadHistory", data=payload)
 
-            main_json = await res.json(content_type='application/x-javascript')
+            main_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(main_json['error_code']):
                 raise ValueError(main_json['error_msg'])
 
@@ -1917,48 +1886,10 @@ class Browser(object):
 
         else:
 
-            def _contents(content_dicts: list[dict]):
-                for content_dict in content_dicts:
-                    yield ParseDict(content_dict, PbContent_pb2.PbContent(), ignore_unknown_fields=True)
-
             def _parse_data_dict(data_dict):
-
-                thread_dict = data_dict['thread_list']
-                thread = Thread()
-                thread._contents = Fragments(_contents(thread_dict.get('first_post_content', [])))
-                thread.fid = thread_dict['fid']
-                thread.tid = thread_dict['id']
-                thread.pid = thread_dict['first_post_id']
-                thread.author_id = thread_dict['author_id']
-
-                thread.is_good = int(thread_dict['is_good'])
-                thread.is_top = int(thread_dict['is_top'])
-
-                thread.title = thread_dict['title']
-                thread.view_num = thread_dict['view_num']
-                thread.reply_num = thread_dict['reply_num']
-                thread.share_num = thread_dict['share_num']
-                thread.agree = thread_dict['agree']['agree_num']
-                thread.disagree = thread_dict['agree']['disagree_num']
-                thread.create_time = thread_dict['create_time']
-                thread.last_time = thread_dict['last_time_int']
-
-                user_dict = thread_dict['author']
-                user = UserInfo()
-                user.user_name = user_dict['name']
-                user.nick_name = user_dict['name_show']
-                user.portrait = user_dict['portrait']
-                user.user_id = user_dict['id']
-                user.gender = user_dict['sex']
-                user.is_vip = int(vip_dict['v_status']) if (vip_dict := user_dict['vipInfo']) else False
-                user.is_god = user_dict['new_god_data']['field_id']
-                priv_dict = priv_dict if (priv_dict := user_dict['priv_sets']) else {}
-                user.priv_like = priv_dict.get('like', None)
-                user.priv_reply = priv_dict.get('reply', None)
-                thread.user = user
-
+                thread = Thread(
+                    ParseDict(data_dict['thread_list'], ThreadInfo_pb2.ThreadInfo(), ignore_unknown_fields=True))
                 add_view = thread.view_num - int(data_dict['current_pv'])
-
                 return thread, add_view
 
             res_list = [_parse_data_dict(data_dict) for data_dict in main_json['recom_thread_list']]
@@ -1989,7 +1920,7 @@ class Browser(object):
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/f/bawu/getRecomThreadList", data=payload)
 
-            main_json = await res.json(content_type='application/x-javascript')
+            main_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(main_json['error_code']):
                 raise ValueError(main_json['error_msg'])
 
@@ -2033,7 +1964,7 @@ class Browser(object):
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/f/forum/getforumdata", data=payload)
 
-            main_json = await res.json(content_type='application/x-javascript')
+            main_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(main_json['error_code']):
                 raise ValueError(main_json['error_msg'])
 
@@ -2156,7 +2087,7 @@ class Browser(object):
 
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/forum/like", data=payload)
 
-            main_json = await res.json(content_type='application/x-javascript')
+            main_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(main_json['error_code']):
                 raise ValueError(main_json['error_msg'])
             if int(main_json['error']['errno']):
@@ -2191,7 +2122,7 @@ class Browser(object):
 
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/forum/sign", data=payload)
 
-            main_json = await res.json(content_type='application/x-javascript')
+            main_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(main_json['error_code']):
                 raise ValueError(main_json['error_msg'])
             if int(main_json['user_info']['sign_bonus_point']) == 0:
@@ -2265,7 +2196,7 @@ class Browser(object):
 
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/post/add", data=payload)
 
-            main_json = await res.json(content_type='application/x-javascript')
+            main_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(main_json['error_code']):
                 raise ValueError(main_json['error_msg'])
             if int(main_json['info']['need_vcode']):
@@ -2306,7 +2237,7 @@ class Browser(object):
 
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/thread/setPrivacy", data=payload)
 
-            main_json = await res.json(content_type='application/x-javascript')
+            main_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(main_json['error_code']):
                 raise ValueError(main_json['error_msg'])
 

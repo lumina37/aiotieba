@@ -318,7 +318,7 @@ class Database(object):
             log.warning(f"Failed to select {_id}. reason:{err}")
             return False
         else:
-            if (res_tuple := self._cursor.fetchone()):
+            if res_tuple := self._cursor.fetchone():
                 return res_tuple[0]
             else:
                 return -1
@@ -383,7 +383,7 @@ class Database(object):
         """
 
         self._cursor.execute(
-            f"CREATE TABLE IF NOT EXISTS `tid_water_{tieba_name_eng}` (`tid` BIGINT PRIMARY KEY, `is_hide` BOOL NOT NULL DEFAULT TRUE, `record_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)"
+            f"CREATE TABLE IF NOT EXISTS `tid_water_{tieba_name_eng}` (`tid` BIGINT PRIMARY KEY, `is_hide` TINYINT NOT NULL DEFAULT 1, `record_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)"
         )
         self._cursor.execute(f"""CREATE EVENT IF NOT EXISTS `event_auto_del_tid_water_{tieba_name_eng}`
         ON SCHEDULE
@@ -392,9 +392,9 @@ class Database(object):
         DELETE FROM `tid_water_{tieba_name_eng}` WHERE `record_time`<(CURRENT_TIMESTAMP() + INTERVAL -15 DAY)""")
 
     @translate_tieba_name
-    async def update_tid(self, tieba_name_eng: str, tid: int, mode: bool) -> bool:
+    async def add_tid(self, tieba_name_eng: str, tid: int, mode: bool) -> bool:
         """
-        在tid_water_{tieba_name_eng}中更新tid的待恢复状态
+        将tid和对应的待恢复状态添加到tid_water_{tieba_name_eng}
 
         Args:
             tieba_name (str): 贴吧名
@@ -501,13 +501,14 @@ class Database(object):
         """
 
         self._cursor.execute(
-            f"CREATE TABLE IF NOT EXISTS `user_id_{tieba_name_eng}` (`user_id` BIGINT PRIMARY KEY, `is_white` BOOL NOT NULL DEFAULT TRUE, `record_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP)"
+            f"CREATE TABLE IF NOT EXISTS `user_id_{tieba_name_eng}` (`user_id` BIGINT PRIMARY KEY, `is_white` TINYINT NOT NULL DEFAULT 1, `record_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP)"
         )
 
     @translate_tieba_name
-    async def update_user_id(self, tieba_name_eng: str, user_id: int, mode: bool) -> bool:
+    async def add_user_id(self, tieba_name_eng: str, user_id: int, mode: bool) -> bool:
         """
-        更新user_id在user_id_{tieba_name_eng}中的状态
+        将user_id和对应状态更新到user_id_{tieba_name_eng}
+        
         Args:
             tieba_name (str): 贴吧名
 
@@ -516,9 +517,7 @@ class Database(object):
         """
 
         try:
-            self._cursor.execute(
-                f"INSERT INTO `user_id_{tieba_name_eng}` (`user_id`,`is_white`) VALUES (%s,%s) ON DUPLICATE KEY UPDATE `is_white`=VALUES(`is_white`)",
-                (user_id, mode))
+            self._cursor.execute(f"REPLACE INTO `user_id_{tieba_name_eng}` VALUES (%s,%s,DEFAULT)", (user_id, mode))
         except pymysql.Error as err:
             log.warning(f"Failed to insert {user_id}. reason:{err}")
             self._conn.rollback()

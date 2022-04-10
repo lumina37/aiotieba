@@ -235,7 +235,7 @@ class DianaCloudReview(tb.Reviewer):
             return 1, day, line
         elif del_flag == 0:
             # 无异常 继续检查
-            if isinstance(comment.contents[0], tb._types.FragLink):
+            if comment.user.level <= 1 and isinstance(comment.contents[0], tb._types.FragLink):
                 # 楼中楼一级号发链接 删
                 return 1, 0, sys._getframe().f_lineno
 

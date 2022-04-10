@@ -6,8 +6,6 @@ import re
 import time
 from collections import OrderedDict
 from collections.abc import Callable
-from types import TracebackType
-from typing import Optional, Type
 
 import tiebaBrowser as tb
 from tiebaBrowser._config import SCRIPT_PATH
@@ -145,8 +143,7 @@ class Listener(object):
     async def __aenter__(self) -> "Listener":
         return self
 
-    async def __aexit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[BaseException],
-                        exc_tb: Optional[TracebackType]) -> None:
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.close()
 
     async def run(self) -> None:
@@ -391,7 +388,7 @@ class Listener(object):
             coros.append(handler.admin.block(at.tieba_name, target.user, day=block_days))
         if blacklist:
             tb.log.info(f"Try to update {target.user.log_name} to {at.tieba_name}. mode:False")
-            coros.append(handler.admin.database.update_user_id(at.tieba_name, target.user.user_id, False))
+            coros.append(handler.admin.database.add_user_id(at.tieba_name, target.user.user_id, False))
 
         await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
         await asyncio.gather(*coros)
@@ -409,7 +406,7 @@ class Listener(object):
             tb.log.warning("Failed to ping:{at.tieba_name}")
             return
 
-        if await handler.admin.database.update_tid(at.tieba_name, at.tid, True) and await handler.admin.hide_thread(
+        if await handler.admin.database.add_tid(at.tieba_name, at.tid, True) and await handler.admin.hide_thread(
                 at.tieba_name, at.tid):
             await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
 
@@ -444,14 +441,14 @@ class Listener(object):
             return
 
         if args[0] == "enter":
-            if await handler.admin.database.update_tid(at.tieba_name, 0, True):
+            if await handler.admin.database.add_tid(at.tieba_name, 0, True):
                 await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
         elif args[0] == "exit":
-            if await handler.admin.database.update_tid(at.tieba_name, 0, False):
+            if await handler.admin.database.add_tid(at.tieba_name, 0, False):
                 await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
             async for tid in handler.admin.database.get_tids(at.tieba_name):
                 if await handler.admin.unhide_thread(at.tieba_name, tid):
-                    await handler.admin.database.update_tid(at.tieba_name, tid, False)
+                    await handler.admin.database.add_tid(at.tieba_name, tid, False)
 
     @_check(need_access=2, need_arg_num=1)
     async def cmd_block(self, handler: Handler, at: tb.At, *args) -> None:
@@ -541,7 +538,7 @@ class Listener(object):
         user = await self._arg2user_info(args[0])
 
         tb.log.info(f"Try to update {user.log_name} to {at.tieba_name}. mode:True")
-        if await handler.admin.database.update_user_id(at.tieba_name, user.user_id, True):
+        if await handler.admin.database.add_user_id(at.tieba_name, user.user_id, True):
             await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=4, need_arg_num=1)
@@ -560,7 +557,7 @@ class Listener(object):
         user = await self._arg2user_info(args[0])
 
         tb.log.info(f"Try to update {user.log_name} to {at.tieba_name}. mode:False")
-        if await handler.admin.database.update_user_id(at.tieba_name, user.user_id, False):
+        if await handler.admin.database.add_user_id(at.tieba_name, user.user_id, False):
             await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=3, need_arg_num=1)

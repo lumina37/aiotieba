@@ -4,6 +4,7 @@ __all__ = [
     'Ats', 'Replys', 'Searches', 'Fragments'
 ]
 
+import json
 from collections.abc import Callable, Iterable
 from typing import Generic, Literal, Optional, TypeVar, Union, final
 
@@ -12,6 +13,16 @@ from google.protobuf.json_format import ParseDict
 from ._logger import log
 from .tieba_proto import (FrsPageResIdl_pb2, Page_pb2, PbContent_pb2, PbFloorResIdl_pb2, PbPageResIdl_pb2, Post_pb2,
                           ReplyMeResIdl_pb2, SimpleForum_pb2, SubPostList_pb2, ThreadInfo_pb2, User_pb2)
+
+
+def _json_decoder_hook(_dict):
+    for key, value in _dict.items():
+        if not value:
+            _dict[key] = None
+    return _dict
+
+
+JSON_DECODER = json.JSONDecoder(object_hook=_json_decoder_hook)
 
 
 def _int_prop_check_ignore_none(default_val: int) -> Callable:
@@ -202,7 +213,7 @@ class UserInfo(BasicUserInfo):
         super()._init_by_data(user_proto)
 
         self._level = user_proto.level_id
-        self._gender = user_proto.gender
+        self._gender = user_proto.gender or user_proto.sex
         self.is_vip = True if user_proto.new_tshow_icon else user_proto.vipInfo.v_status
         self.is_god = user_proto.new_god_data.status
         priv_proto = user_proto.priv_sets
@@ -342,11 +353,11 @@ class FragImage(_Fragment):
 
     @property
     def src(self):
-        return self._raw_data.cdn_src
+        return self._raw_data.cdn_src or self._raw_data.src
 
     @property
     def big_src(self) -> str:
-        return self._raw_data.big_cdn_src
+        return self._raw_data.big_cdn_src or self._raw_data.big_src
 
     @property
     def origin_src(self) -> str:
@@ -1985,23 +1996,18 @@ class At(_Container):
             self._init_null()
 
     def _init_by_data(self, at_dict: dict) -> None:
-        try:
-            self._raw_data = at_dict
-            self._text = at_dict['content']
+        self._raw_data = at_dict
+        self._text = at_dict['content']
 
-            self.tieba_name = at_dict['fname']
-            self.tid = at_dict['thread_id']
-            self.pid = at_dict['post_id']
-            self._user = None
-            self._author_id = None
+        self.tieba_name = at_dict['fname']
+        self.tid = at_dict['thread_id']
+        self.pid = at_dict['post_id']
+        self._user = None
+        self._author_id = None
 
-            self.is_floor = int(at_dict['is_floor'])
-            self.is_thread = int(at_dict['is_first_post'])
-            self.create_time = at_dict['time']
-
-        except Exception as err:
-            log.warning(f"Failed to init At. reason:line {err.__traceback__.tb_lineno}: {err}")
-            self._init_null()
+        self.is_floor = int(at_dict['is_floor'])
+        self.is_thread = int(at_dict['is_first_post'])
+        self.create_time = at_dict['time']
 
     def _init_null(self) -> None:
 
@@ -2121,12 +2127,9 @@ class Ats(_Containers[At]):
         if self._page is None:
 
             if self._raw_data:
-                page_dict = self._raw_data['page']
-                if not page_dict['has_more']:
-                    page_dict['has_more'] = 0
 
                 try:
-                    page_proto = ParseDict(page_dict, Page_pb2.Page(), ignore_unknown_fields=True)
+                    page_proto = ParseDict(self._raw_data['page'], Page_pb2.Page(), ignore_unknown_fields=True)
                     self._page = Page(page_proto)
 
                 except Exception as err:
@@ -2167,23 +2170,18 @@ class Search(_Container):
             self._init_null()
 
     def _init_by_data(self, search_dict: dict) -> None:
-        try:
-            self._raw_data = search_dict
-            self._text = search_dict['content']
-            self.title = search_dict['title']
+        self._raw_data = search_dict
+        self._text = search_dict['content']
+        self.title = search_dict['title']
 
-            self.tieba_name = search_dict['fname']
-            self.tid = search_dict['tid']
-            self.pid = search_dict['pid']
-            self._user = None
-            self._author_id = None
+        self.tieba_name = search_dict['fname']
+        self.tid = search_dict['tid']
+        self.pid = search_dict['pid']
+        self._user = None
+        self._author_id = None
 
-            self.is_floor = int(search_dict['is_floor'])
-            self.create_time = search_dict['time']
-
-        except Exception as err:
-            log.warning(f"Failed to init Search. reason:line {err.__traceback__.tb_lineno}: {err}")
-            self._init_null()
+        self.is_floor = int(search_dict['is_floor'])
+        self.create_time = search_dict['time']
 
     def _init_null(self) -> None:
 
@@ -2295,12 +2293,9 @@ class Searches(_Containers[Search]):
         if self._page is None:
 
             if self._raw_data:
-                page_dict = self._raw_data['page']
-                if not page_dict['has_more']:
-                    page_dict['has_more'] = 0
 
                 try:
-                    page_proto = ParseDict(page_dict, Page_pb2.Page(), ignore_unknown_fields=True)
+                    page_proto = ParseDict(self._raw_data['page'], Page_pb2.Page(), ignore_unknown_fields=True)
                     self._page = Page(page_proto)
 
                 except Exception as err:
