@@ -172,12 +172,12 @@ class Database(object):
         """
 
         self._cursor.execute(
-            "CREATE TABLE IF NOT EXISTS `user` (`user_id` BIGINT PRIMARY KEY, `user_name` VARCHAR(14), `portrait` VARCHAR(36) UNIQUE, INDEX `index_user_name`(user_name))"
+            "CREATE TABLE IF NOT EXISTS `user` (`user_id` BIGINT PRIMARY KEY, `user_name` VARCHAR(14), `portrait` VARCHAR(36) UNIQUE, INDEX `user_name`(user_name))"
         )
 
     async def get_basic_user_info(self, _id: Union[str, int]) -> BasicUserInfo:
         """
-        补全简略版用户信息
+        获取简略版用户信息
 
         Args:
             _id (Union[str, int]): 用户id user_id/user_name/portrait
@@ -232,7 +232,7 @@ class Database(object):
 
     async def del_user(self, user: BasicUserInfo) -> bool:
         """
-        从user中删除简略版用户信息
+        从表user中删除简略版用户信息
 
         Args:
             user (BasicUserInfo): 待删除的简略版用户信息
@@ -276,9 +276,9 @@ class Database(object):
         DELETE FROM `id_{tieba_name_eng}` WHERE record_time<(CURRENT_TIMESTAMP() + INTERVAL -15 DAY)""")
 
     @translate_tieba_name
-    async def update_id(self, tieba_name_eng: str, _id: int, id_last_edit: int = 0) -> bool:
+    async def add_id(self, tieba_name_eng: str, _id: int, id_last_edit: int = 0) -> bool:
         """
-        向id_{tieba_name_eng}插入id
+        将id添加到表id_{tieba_name_eng}
 
         Args:
             tieba_name (str): 贴吧名
@@ -302,7 +302,7 @@ class Database(object):
     @translate_tieba_name
     async def get_id(self, tieba_name_eng: str, _id: int) -> int:
         """
-        检索id_{tieba_name_eng}中是否已有id
+        获取表id_{tieba_name_eng}中id对应的id_last_edit值
 
         Args:
             tieba_name (str): 贴吧名
@@ -326,7 +326,7 @@ class Database(object):
     @translate_tieba_name
     async def del_id(self, tieba_name_eng: str, _id: int) -> bool:
         """
-        从id_{tieba_name_eng}中删除id
+        从表id_{tieba_name_eng}中删除id
 
         Args:
             tieba_name (str): 贴吧名
@@ -350,7 +350,7 @@ class Database(object):
     @translate_tieba_name
     async def del_ids(self, tieba_name_eng: str, hour: int) -> bool:
         """
-        删除最近hour个小时id_{tieba_name_eng}中记录的id
+        删除表id_{tieba_name_eng}中最近hour个小时记录的id
 
         Args:
             tieba_name (str): 贴吧名
@@ -383,7 +383,7 @@ class Database(object):
         """
 
         self._cursor.execute(
-            f"CREATE TABLE IF NOT EXISTS `tid_water_{tieba_name_eng}` (`tid` BIGINT PRIMARY KEY, `is_hide` TINYINT NOT NULL DEFAULT 1, `record_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)"
+            f"CREATE TABLE IF NOT EXISTS `tid_water_{tieba_name_eng}` (`tid` BIGINT PRIMARY KEY, `is_hide` TINYINT NOT NULL DEFAULT 1, `record_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, INDEX `is_hide`(is_hide))"
         )
         self._cursor.execute(f"""CREATE EVENT IF NOT EXISTS `event_auto_del_tid_water_{tieba_name_eng}`
         ON SCHEDULE
@@ -394,7 +394,7 @@ class Database(object):
     @translate_tieba_name
     async def add_tid(self, tieba_name_eng: str, tid: int, mode: bool) -> bool:
         """
-        将tid和对应的待恢复状态添加到tid_water_{tieba_name_eng}
+        将tid添加到表tid_water_{tieba_name_eng}
 
         Args:
             tieba_name (str): 贴吧名
@@ -418,7 +418,7 @@ class Database(object):
     @translate_tieba_name
     async def is_tid_hide(self, tieba_name_eng: str, tid: int) -> Optional[bool]:
         """
-        检索tid的待恢复状态
+        获取表tid_water_{tieba_name_eng}中tid的待恢复状态
 
         Args:
             tieba_name (str): 贴吧名
@@ -442,7 +442,7 @@ class Database(object):
     @translate_tieba_name
     async def del_tid(self, tieba_name_eng: str, tid: int) -> bool:
         """
-        从tid_water_{tieba_name_eng}中删除tid
+        从表tid_water_{tieba_name_eng}中删除tid
 
         Args:
             tieba_name (str): 贴吧名
@@ -465,8 +465,7 @@ class Database(object):
     @translate_tieba_name
     async def get_tids(self, tieba_name_eng: str, batch_size: int = 128) -> AsyncIterable[int]:
         """
-        获取tid_water_{tieba_name_eng}中所有待恢复的tid
-        get_tids(tieba_name,batch_size=128)
+        获取表tid_water_{tieba_name_eng}中所有待恢复的tid
 
         Args:
             tieba_name (str): 贴吧名
@@ -501,40 +500,47 @@ class Database(object):
         """
 
         self._cursor.execute(
-            f"CREATE TABLE IF NOT EXISTS `user_id_{tieba_name_eng}` (`user_id` BIGINT PRIMARY KEY, `is_white` TINYINT NOT NULL DEFAULT 1, `record_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP)"
+            f"CREATE TABLE IF NOT EXISTS `user_id_{tieba_name_eng}` (`user_id` BIGINT PRIMARY KEY, `permission` TINYINT NOT NULL DEFAULT 0, `note` VARCHAR(64) NOT NULL DEFAULT '', `record_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, INDEX `permission`(permission), INDEX `record_time`(record_time))"
         )
 
     @translate_tieba_name
-    async def add_user_id(self, tieba_name_eng: str, user_id: int, mode: bool) -> bool:
+    async def add_user_id(self, tieba_name_eng: str, user_id: int, permission: int = 0, note: str = '') -> bool:
         """
-        将user_id和对应状态更新到user_id_{tieba_name_eng}
+        将user_id添加到表user_id_{tieba_name_eng}
         
         Args:
             tieba_name (str): 贴吧名
+            user_id (int): 用户的user_id
+            permission (int, optional): 权限级别
+            note (str, optional): 备注
 
         Returns:
             bool: 操作是否成功
         """
 
+        if not user_id:
+            return
+
         try:
-            self._cursor.execute(f"REPLACE INTO `user_id_{tieba_name_eng}` VALUES (%s,%s,DEFAULT)", (user_id, mode))
+            self._cursor.execute(f"REPLACE INTO `user_id_{tieba_name_eng}` VALUES (%s,%s,%s,DEFAULT)",
+                                 (user_id, permission, note))
         except pymysql.Error as err:
             log.warning(f"Failed to insert {user_id}. reason:{err}")
             self._conn.rollback()
             return False
         else:
-            log.info(f"Successfully updated {user_id} to table of {tieba_name_eng}. mode:{mode}")
+            log.info(f"Successfully updated {user_id} to table of {tieba_name_eng}. permission:{permission}")
             self._conn.commit()
             return True
 
     @translate_tieba_name
     async def del_user_id(self, tieba_name_eng: str, user_id: int) -> bool:
         """
-        从黑/白名单中删除user_id
+        从表user_id_{tieba_name_eng}中删除user_id
 
         Args:
             tieba_name (str): 贴吧名
-            user_id (int)
+            user_id (int): 用户的user_id
 
         Returns:
             bool: 操作是否成功
@@ -552,54 +558,59 @@ class Database(object):
             return True
 
     @translate_tieba_name
-    async def is_user_id_white(self, tieba_name_eng: str, user_id: int) -> Optional[bool]:
+    async def get_user_id(self, tieba_name_eng: str, user_id: int) -> int:
         """
-        检索user_id的黑/白名单状态
+        获取表user_id_{tieba_name_eng}中user_id的权限级别
 
         Args:
             tieba_name (str): 贴吧名
-            user_id (int)
+            user_id (int): 用户的user_id
 
         Returns:
-            Optional[bool]: True表示user_id为白名单 False表示user_id为黑名单 None表示表中无记录
+            int: permission 权限级别
         """
 
         try:
-            self._cursor.execute(f"SELECT `is_white` FROM `user_id_{tieba_name_eng}` WHERE `user_id`=%s", (user_id, ))
+            self._cursor.execute(f"SELECT `permission` FROM `user_id_{tieba_name_eng}` WHERE `user_id`=%s", (user_id, ))
         except pymysql.Error as err:
             return None
         else:
             if res_tuple := self._cursor.fetchone():
-                return True if res_tuple[0] else False
+                return res_tuple[0]
             else:
-                return None
+                return 0
 
     @translate_tieba_name
-    async def get_user_ids(self, tieba_name_eng: str, batch_size: int = 128) -> AsyncIterable[int]:
+    async def get_user_id_list(self,
+                               tieba_name_eng: str,
+                               limit: int = 1,
+                               offset: int = 0,
+                               permission: int = 0) -> list[int]:
         """
-        获取user_id列表
+        获取表user_id_{tieba_name_eng}中user_id的列表
 
         Args:
             tieba_name (str): 贴吧名
-            batch_size (int): 分包大小
+            limit (int, optional): 返回数量限制
+            offset (int, optional): 偏移
+            permission (int, optional): 获取所有权限级别大于等于permission的user_id
 
-        Yields:
-            AsyncIterable[int]: user_id
+        Returns:
+            list[int]: user_id列表
         """
 
-        for i in range(sys.maxsize):
-            try:
-                self._cursor.execute(f"SELECT `user_id` FROM `user_id_{tieba_name_eng}` LIMIT %s OFFSET %s",
-                                     (batch_size, i * batch_size))
-            except pymysql.Error as err:
-                log.warning(f"Failed to get user_ids in {tieba_name_eng}. reason:{err}")
-                return
-            else:
-                user_ids = self._cursor.fetchall()
-                for user_id in user_ids:
-                    yield user_id[0]
-                if len(user_ids) != batch_size:
-                    return
+        try:
+            self._cursor.execute(
+                f"SELECT `user_id` FROM `user_id_{tieba_name_eng}` WHERE `permission`>=%s ORDER BY `record_time` DESC LIMIT %s OFFSET %s",
+                (permission, limit, offset))
+        except pymysql.Error as err:
+            log.warning(f"Failed to get user_ids in {tieba_name_eng}. reason:{err}")
+            res_list = []
+        else:
+            res_tuples = self._cursor.fetchall()
+            res_list = [res_tuple[0] for res_tuple in res_tuples]
+
+        return res_list
 
     @translate_tieba_name
     async def create_table_img_blacklist(self, tieba_name_eng: str) -> None:
@@ -621,7 +632,7 @@ class Database(object):
 
         Args:
             tieba_name (str): 贴吧名
-            img_hash (str)
+            img_hash (str): 图像的phash
             raw_hash (str): 贴吧图床hash
 
         Returns:
@@ -646,7 +657,7 @@ class Database(object):
 
         Args:
             tieba_name (str): 贴吧名
-            img_hash (str)
+            img_hash (str): 图像的phash
 
         Returns:
             bool: True表示表中已有img_hash False表示表中无img_hash或查询失败
@@ -667,7 +678,7 @@ class Database(object):
 
         Args:
             tieba_name (str): 贴吧名
-            img_hash (str)
+            img_hash (str): 图像的phash
 
         Returns:
             bool: 操作是否成功

@@ -804,7 +804,7 @@ class Browser(object):
         解除主题帖屏蔽
 
         Args:
-            tieba_name (_type_): 帖子所在的贴吧名
+            tieba_name (str): 帖子所在的贴吧名
             tid (int, optional): 待解除屏蔽的主题帖tid
 
         Returns:
@@ -818,7 +818,7 @@ class Browser(object):
         恢复主题帖
 
         Args:
-            tieba_name (_type_): 帖子所在的贴吧名
+            tieba_name (str): 帖子所在的贴吧名
             tid (int, optional): 待恢复的主题帖tid
 
         Returns:
@@ -832,7 +832,7 @@ class Browser(object):
         恢复主题帖
 
         Args:
-            tieba_name (_type_): 帖子所在的贴吧名
+            tieba_name (str): 帖子所在的贴吧名
             pid (int, optional): 待恢复的回复pid
 
         Returns:
@@ -846,7 +846,7 @@ class Browser(object):
         恢复帖子
 
         Args:
-            tieba_name (_type_): 帖子所在的贴吧名
+            tieba_name (str): 帖子所在的贴吧名
             tid (int, optional): 待恢复的主题帖tid. Defaults to 0.
             pid (int, optional): 待恢复的回复pid. Defaults to 0.
             is_hide (bool, optional): True则取消屏蔽主题帖 False则恢复删帖. Defaults to False.
@@ -1240,7 +1240,7 @@ class Browser(object):
 
     async def blacklist_add(self, tieba_name: str, user: BasicUserInfo) -> bool:
         """
-        添加用户至黑名单
+        添加贴吧黑名单
 
         Args:
             tieba_name (str): 贴吧名
@@ -1266,9 +1266,9 @@ class Browser(object):
         log.info(f"Successfully added {user.log_name} to black_list in {tieba_name}")
         return True
 
-    async def blacklist_cancel(self, tieba_name: str, user: BasicUserInfo) -> bool:
+    async def blacklist_del(self, tieba_name: str, user: BasicUserInfo) -> bool:
         """
-        解除黑名单
+        移出贴吧黑名单
 
         Args:
             tieba_name (str): 贴吧名

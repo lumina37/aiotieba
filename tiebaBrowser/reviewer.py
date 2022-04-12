@@ -141,7 +141,7 @@ class Reviewer(Browser):
 
     async def get_basic_user_info(self, _id: Union[str, int]) -> BasicUserInfo:
         """
-        补全简略版用户信息
+        获取简略版用户信息
 
         Args:
             _id (Union[str, int]): 用户id user_id/user_name/portrait
@@ -157,45 +157,6 @@ class Reviewer(Browser):
             await self.database.add_user(user)
 
         return user
-
-    async def add_user_id(self, _id: Union[str, int], mode: bool = True) -> bool:
-        """
-        向名单中插入user_id
-
-        Args:
-            _id (Union[str, int]): 用户id user_id/user_name/portrait
-            mode (bool, optional): True则加入白名单 False则加入黑名单. Defaults to True.
-
-        Returns:
-            bool: 操作是否成功
-        """
-
-        if type(mode) is not bool:
-            log.warning("Wrong mode in update_user_id!")
-            return False
-
-        user = await self.get_basic_user_info(_id)
-        if not user.user_id:
-            return False
-
-        return await self.database.add_user_id(self.tieba_name, user.user_id, mode)
-
-    async def del_user_id(self, id: Union[str, int]) -> bool:
-        """
-        从名单中删除user_id
-
-        Args:
-            id (Union[str, int]): 用户id user_id/user_name/portrait
-
-        Returns:
-            bool: 操作是否成功
-        """
-
-        user = await self.get_basic_user_info(id)
-        if not user.user_id:
-            return False
-
-        return await self.database.del_user_id(self.tieba_name, user.user_id)
 
     def scan_QRcode(self, image: np.ndarray) -> str:
         """

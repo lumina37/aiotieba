@@ -126,7 +126,7 @@ class HanimeCloudReview(tb.Reviewer):
         await asyncio.gather(*coros)
 
         # 缓存该tid的子孙结点编辑状态
-        await self.database.update_id(self.tieba_name, thread.tid, thread.last_time)
+        await self.database.add_id(self.tieba_name, thread.tid, thread.last_time)
         return 0, 0, 0
 
     async def _handle_post(self, post: tb.Post) -> None:
@@ -161,7 +161,7 @@ class HanimeCloudReview(tb.Reviewer):
             return -1, 0, 0
         # 该回复下的楼中楼可能被抽 需要缓存抽楼后的reply_num
         elif post.reply_num < id_last_edit:
-            await self.database.update_id(self.tieba_name, post.pid, post.reply_num)
+            await self.database.add_id(self.tieba_name, post.pid, post.reply_num)
             return -1, 0, 0
 
         del_flag, block_days, line = await self._check_text(post)
@@ -172,7 +172,12 @@ class HanimeCloudReview(tb.Reviewer):
             return 1, block_days, line
         elif del_flag == 0:
             # 无异常 继续检查
-            pass
+            for img_frag in post.contents.imgs:
+                img = await self.url2image(img_frag.src)
+                if img is None:
+                    continue
+                if await self.has_imghash(img):
+                    return 1, 0, sys._getframe().f_lineno
 
         if post.comments:
             # 并发检查楼中楼内容 因为是CPU密集任务所以不需要设计delay
@@ -180,7 +185,7 @@ class HanimeCloudReview(tb.Reviewer):
             await asyncio.gather(*coros)
 
         # 缓存该pid的子结点编辑状态
-        await self.database.update_id(self.tieba_name, post.pid, post.reply_num)
+        await self.database.add_id(self.tieba_name, post.pid, post.reply_num)
         return 0, 0, 0
 
     async def _handle_comment(self, comment: tb.Comment) -> None:
@@ -226,7 +231,7 @@ class HanimeCloudReview(tb.Reviewer):
             pass
 
         # 缓存该pid
-        await self.database.update_id(self.tieba_name, comment.pid)
+        await self.database.add_id(self.tieba_name, comment.pid)
         return 0, 0, 0
 
     async def _check_text(self, obj):
@@ -239,11 +244,11 @@ class HanimeCloudReview(tb.Reviewer):
             line: int 处罚规则所在的行号
         """
 
-        is_white = await self.database.is_user_id_white(self.tieba_name, obj.user.user_id)
-        if is_white == True:
+        permission = await self.database.get_user_id(self.tieba_name, obj.user.user_id)
+        if permission >= 1:
             # 白名单用户
             return -1, 0, 0
-        elif is_white == False:
+        elif permission <= -5:
             # 黑名单用户 删回复并封十天
             return 1, 10, sys._getframe().f_lineno
 

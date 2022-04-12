@@ -4,7 +4,6 @@ import functools
 import json
 import re
 import time
-from collections import OrderedDict
 from collections.abc import Callable
 
 import tiebaBrowser as tb
@@ -63,7 +62,7 @@ def _check(need_access: int = 0, need_arg_num: int = 0) -> Callable:
             handler = self.handler_map.get(at.tieba_name, None)
             if not handler:
                 return
-            if need_access and handler.access_users.get(at.user.user_name, 0) < need_access:
+            if need_access and await handler.admin.database.get_user_id(at.tieba_name, at.user.user_id) < need_access:
                 return
             return await func(self, handler, at, *args)
 
@@ -74,13 +73,12 @@ def _check(need_access: int = 0, need_arg_num: int = 0) -> Callable:
 
 class Handler(object):
 
-    __slots__ = ['tieba_name', 'admin', 'speaker', 'access_users']
+    __slots__ = ['tieba_name', 'admin', 'speaker']
 
     def __init__(self, tieba_config: dict) -> None:
         self.tieba_name = tieba_config['tieba_name']
         self.admin = tb.Reviewer(tieba_config['admin_key'], self.tieba_name)
         self.speaker = tb.Browser(tieba_config['speaker_key'])
-        self.access_users = OrderedDict(tieba_config['access_users'])
 
     async def close(self):
         await asyncio.gather(self.admin.close(), self.speaker.close(), return_exceptions=True)
@@ -90,15 +88,7 @@ class Handler(object):
             'tieba_name': self.tieba_name,
             'admin_key': self.admin.BDUSS_key,
             'speaker_key': self.speaker.BDUSS_key,
-            'access_users': self.access_users
         }
-
-    def set_access(self, user_name: str, new_access: int) -> None:
-        tb.log.info(f"Set access of {user_name} to {new_access} in {self.tieba_name}")
-        if new_access == 0:
-            self.access_users.pop(user_name, None)
-        else:
-            self.access_users[user_name] = new_access
 
 
 class Listener(object):
@@ -112,7 +102,7 @@ class Listener(object):
             config = json.load(_file)
         self._config_mtime = config_path.stat().st_mtime
 
-        self.listener = tb.Browser(config['listener_key'])
+        self.listener = tb.Reviewer(config['listener_key'], '')
         self.handler_map = {(handler := Handler(tieba_config)).tieba_name: handler
                             for tieba_config in config['tieba_configs']}
 
@@ -265,7 +255,7 @@ class Listener(object):
         if await handler.admin.ungood(at.tieba_name, at.tid):
             await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
 
-    @_check(need_access=3, need_arg_num=0)
+    @_check(need_access=4, need_arg_num=0)
     async def cmd_top(self, handler: Handler, at: tb.At, *args) -> None:
         """
         top指令
@@ -277,7 +267,7 @@ class Listener(object):
         if await handler.admin.top(at.tieba_name, at.tid):
             await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
 
-    @_check(need_access=3, need_arg_num=0)
+    @_check(need_access=4, need_arg_num=0)
     async def cmd_untop(self, handler: Handler, at: tb.At, *args) -> None:
         """
         untop指令
@@ -314,24 +304,6 @@ class Listener(object):
             await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=2, need_arg_num=0)
-    async def cmd_drop(self, handler: Handler, at: tb.At, *args) -> None:
-        """
-        drop指令
-        删帖并封10天
-        """
-
-        await self._del_ops(handler, at, 10)
-
-    @_check(need_access=2, need_arg_num=0)
-    async def cmd_drop3(self, handler: Handler, at: tb.At, *args) -> None:
-        """
-        drop3指令
-        删帖并封3天
-        """
-
-        await self._del_ops(handler, at, 3)
-
-    @_check(need_access=2, need_arg_num=0)
     async def cmd_delete(self, handler: Handler, at: tb.At, *args) -> None:
         """
         delete指令
@@ -340,6 +312,26 @@ class Listener(object):
 
         await self._del_ops(handler, at)
 
+    @_check(need_access=2, need_arg_num=0)
+    async def cmd_drop(self, handler: Handler, at: tb.At, *args) -> None:
+        """
+        drop指令
+        删帖并封10天
+        """
+
+        note = args[0] if args else ''
+        await self._del_ops(handler, at, 10, note)
+
+    @_check(need_access=2, need_arg_num=0)
+    async def cmd_drop3(self, handler: Handler, at: tb.At, *args) -> None:
+        """
+        drop3指令
+        删帖并封3天
+        """
+
+        note = args[0] if args else ''
+        await self._del_ops(handler, at, 3, note)
+
     @_check(need_access=4, need_arg_num=0)
     async def cmd_exdrop(self, handler: Handler, at: tb.At, *args) -> None:
         """
@@ -347,9 +339,10 @@ class Listener(object):
         删帖并将发帖人加入脚本黑名单+封禁十天
         """
 
-        await self._del_ops(handler, at, 10, blacklist=True)
+        note = args[0] if args else ''
+        await self._del_ops(handler, at, 10, note, blacklist=True)
 
-    async def _del_ops(self, handler: Handler, at, block_days: int = 0, blacklist: bool = False):
+    async def _del_ops(self, handler: Handler, at: tb.At, block_days: int = 0, note: str = '', blacklist: bool = False):
         """
         各种处罚指令的实现
         """
@@ -385,10 +378,13 @@ class Listener(object):
                 coros.append(handler.admin.del_thread(at.tieba_name, target.tid))
 
         if block_days:
-            coros.append(handler.admin.block(at.tieba_name, target.user, day=block_days))
+            coros.append(handler.admin.block(at.tieba_name, target.user, block_days, note))
         if blacklist:
-            tb.log.info(f"Try to update {target.user.log_name} to {at.tieba_name}. mode:False")
-            coros.append(handler.admin.database.add_user_id(at.tieba_name, target.user.user_id, False))
+            await handler.admin.database.ping()
+            tb.log.info(f"Try to sql_black {target.user.log_name} in {at.tieba_name}")
+            coros.append(
+                handler.admin.database.add_user_id(at.tieba_name, target.user.user_id, -5,
+                                                   f"cmd exdrop by {at.user.user_id}"))
 
         await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
         await asyncio.gather(*coros)
@@ -403,7 +399,6 @@ class Listener(object):
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
         if not await handler.admin.database.ping():
-            tb.log.warning("Failed to ping:{at.tieba_name}")
             return
 
         if await handler.admin.database.add_tid(at.tieba_name, at.tid, True) and await handler.admin.hide_thread(
@@ -420,7 +415,6 @@ class Listener(object):
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
         if not await handler.admin.database.ping():
-            tb.log.warning("Failed to ping:{at.tieba_name}")
             return
 
         if await handler.admin.database.del_tid(at.tieba_name, at.tid) and await handler.admin.unhide_thread(
@@ -437,7 +431,6 @@ class Listener(object):
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
         if not await handler.admin.database.ping():
-            tb.log.warning("Failed to ping:{at.tieba_name}")
             return
 
         if args[0] == "enter":
@@ -457,7 +450,7 @@ class Listener(object):
         通过id封禁对应用户10天
         """
 
-        await self._block(handler, at, args[0], 10)
+        await self._block(handler, at, args, 10)
 
     @_check(need_access=2, need_arg_num=1)
     async def cmd_block3(self, handler: Handler, at: tb.At, *args) -> None:
@@ -466,18 +459,19 @@ class Listener(object):
         通过id封禁对应用户3天
         """
 
-        await self._block(handler, at, args[0], 3)
+        await self._block(handler, at, args, 3)
 
-    async def _block(self, handler: Handler, at: tb.At, arg: str, block_days: int) -> None:
+    async def _block(self, handler: Handler, at: tb.At, args: list[str], block_days: int) -> None:
         """
         block & block3指令的实现
         """
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
-        user = await self._arg2user_info(arg)
+        user = await self._arg2user_info(args[0])
+        note = args[1] if len(args) >= 2 else ''
 
-        if await handler.admin.block(at.tieba_name, user, day=block_days):
+        if await handler.admin.block(at.tieba_name, user, block_days, note):
             await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=2, need_arg_num=1)
@@ -495,9 +489,9 @@ class Listener(object):
             await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=4, need_arg_num=1)
-    async def cmd_blacklist_add(self, handler: Handler, at: tb.At, *args) -> None:
+    async def cmd_tb_black(self, handler: Handler, at: tb.At, *args) -> None:
         """
-        blacklist_add指令
+        tb_black指令
         将id加入贴吧黑名单
         """
 
@@ -509,9 +503,9 @@ class Listener(object):
             await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=3, need_arg_num=1)
-    async def cmd_blacklist_cancel(self, handler: Handler, at: tb.At, *args) -> None:
+    async def cmd_tb_del(self, handler: Handler, at: tb.At, *args) -> None:
         """
-        blacklist_cancel指令
+        tb_del指令
         将id移出贴吧黑名单
         """
 
@@ -519,63 +513,62 @@ class Listener(object):
 
         user = await self._arg2user_info(args[0])
 
-        if await handler.admin.blacklist_cancel(at.tieba_name, user):
+        if await handler.admin.blacklist_del(at.tieba_name, user):
             await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
 
-    @_check(need_access=4, need_arg_num=1)
-    async def cmd_mysql_white(self, handler: Handler, at: tb.At, *args) -> None:
+    @_check(need_access=3, need_arg_num=1)
+    async def cmd_sql_white(self, handler: Handler, at: tb.At, *args) -> None:
         """
-        mysql_white指令
+        sql_white指令
         将id加入脚本白名单
         """
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
         if not await handler.admin.database.ping():
-            tb.log.warning("Failed to ping:{at.tieba_name}")
             return
 
         user = await self._arg2user_info(args[0])
 
-        tb.log.info(f"Try to update {user.log_name} to {at.tieba_name}. mode:True")
-        if await handler.admin.database.add_user_id(at.tieba_name, user.user_id, True):
+        tb.log.info(f"Try to sql_white {user.log_name} in {at.tieba_name}")
+        if await handler.admin.database.add_user_id(at.tieba_name, user.user_id, 1,
+                                                    f"cmd sql_white by {at.user.user_id}"):
             await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=4, need_arg_num=1)
-    async def cmd_mysql_black(self, handler: Handler, at: tb.At, *args) -> None:
+    async def cmd_sql_black(self, handler: Handler, at: tb.At, *args) -> None:
         """
-        mysql_black指令
+        sql_black指令
         将id加入脚本黑名单
         """
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
         if not await handler.admin.database.ping():
-            tb.log.warning("Failed to ping:{at.tieba_name}")
             return
 
         user = await self._arg2user_info(args[0])
 
-        tb.log.info(f"Try to update {user.log_name} to {at.tieba_name}. mode:False")
-        if await handler.admin.database.add_user_id(at.tieba_name, user.user_id, False):
+        tb.log.info(f"Try to sql_black {user.log_name} in {at.tieba_name}")
+        if await handler.admin.database.add_user_id(at.tieba_name, user.user_id, -5,
+                                                    f"cmd sql_black by {at.user.user_id}"):
             await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=3, need_arg_num=1)
-    async def cmd_mysql_reset(self, handler: Handler, at: tb.At, *args) -> None:
+    async def cmd_sql_del(self, handler: Handler, at: tb.At, *args) -> None:
         """
-        mysql_reset指令
-        清除id的脚本黑/白名单状态
+        sql_del指令
+        将id移出脚本名单
         """
 
         tb.log.info(f"{at.user.user_name}: {at.text}")
 
         if not await handler.admin.database.ping():
-            tb.log.warning("Failed to ping:{at.tieba_name}")
             return
 
         user = await self._arg2user_info(args[0])
 
-        tb.log.info(f"Try to delete {user.log_name} from {at.tieba_name}")
+        tb.log.info(f"Try to sql_del {user.log_name} in {at.tieba_name}")
         if await handler.admin.database.del_user_id(at.tieba_name, user.user_id):
             await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
 
@@ -590,8 +583,9 @@ class Listener(object):
             return
 
         active_admin_list = [
-            user_name for user_name, access_level in handler.access_users.items() if access_level >= 2
-        ][:4]
+            (await self.listener.get_basic_user_info(user_id)).user_name
+            for user_id in await handler.admin.database.get_user_id_list(at.tieba_name, limit=4, permission=2)
+        ]
         extra_info = args[0] if len(args) else ''
         content = f"{extra_info}@" + " @".join(active_admin_list)
 
@@ -698,33 +692,34 @@ class Listener(object):
             await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=5, need_arg_num=1)
-    async def cmd_set_access(self, handler: Handler, at: tb.At, *args) -> None:
+    async def cmd_set(self, handler: Handler, at: tb.At, *args) -> None:
         """
-        set_access指令
+        set指令
         设置用户的权限级别
         """
 
         if len(args) == 1:
             new_access = int(args[0])
             posts = await self.listener.get_posts(at.tid, rn=2)
-            user_name = posts.thread.user.user_name
+            user_id = posts.thread.user.user_id
         else:
             new_access = int(args[1])
-            user_name = args[0]
+            user = await self._arg2user_info(args[0])
+            user_id = user.user_id
 
-        if not user_name:
+        if not user_id:
             return
 
-        old_access = handler.access_users.get(user_name, 0)
-        this_access = handler.access_users[at.user.user_name]
+        old_access = await handler.admin.database.get_user_id(at.tieba_name, user_id)
+        this_access = await handler.admin.database.get_user_id(at.tieba_name, at.user.user_id)
         if old_access >= this_access or new_access >= this_access:
             return
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        handler.set_access(user_name, new_access)
-
-        await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
+        if await handler.admin.database.add_user_id(at.tieba_name, user_id, new_access,
+                                                    f"cmd set by {at.user.user_id}"):
+            await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=0, need_arg_num=0)
     async def cmd_register(self, handler: Handler, at: tb.At, *args) -> None:
@@ -737,9 +732,11 @@ class Listener(object):
 
         if not handler.access_users.__contains__(at.user.user_name):
             for thread in await self.listener.get_threads(at.tieba_name, is_good=True):
-                if thread.user.user_id == at.user.user_id and thread.create_time > time.time() - 30 * 24 * 3600:
-                    handler.set_access(at.user.user_name, 1)
-                    await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
+                user_id = at.user.user_id
+                if thread.user.user_id == user_id and thread.create_time > time.time(
+                ) - 30 * 24 * 3600 and handler.admin.database.get_user_id(at.tieba_name, user_id) == 0:
+                    if await handler.admin.database.add_user_id(at.tieba_name, user_id, 1, "cmd register"):
+                        await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=2, need_arg_num=0)
     async def cmd_active(self, handler: Handler, at: tb.At, *args) -> None:
@@ -750,9 +747,11 @@ class Listener(object):
 
         tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
 
-        handler.access_users.move_to_end(at.user.user_name, last=False)
+        user_id = at.user.user_id
+        permission = await handler.admin.database.get_user_id(at.tieba_name, user_id)
 
-        await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
+        if await handler.admin.database.add_user_id(at.tieba_name, user_id, permission, "cmd active"):
+            await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
 
     @_check(need_access=1, need_arg_num=0)
     async def cmd_ping(self, handler: Handler, at: tb.At, *args) -> None:
@@ -765,7 +764,7 @@ class Listener(object):
 
         await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
 
-    @_check(need_access=999, need_arg_num=999)
+    @_check(need_access=129, need_arg_num=65536)
     async def cmd_default(self, handler: Handler, at: tb.At, *args) -> None:
         """
         default指令
