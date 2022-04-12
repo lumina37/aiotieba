@@ -44,9 +44,45 @@ class TimerRecorder(object):
             return False
 
 
-def _check(need_access: int = 0, need_arg_num: int = 0) -> Callable:
+class Context(object):
+
+    __slots__ = ['handler', 'at', 'this_permission', 'args', 'note']
+
+    def __init__(self, handler: "Handler", at: tb.At, this_access: int, args: list[str], note: str = '') -> None:
+        self.handler = handler
+        self.at = at
+        self.this_permission = this_access
+        self.args = args
+        self.note = note
+
+    @property
+    def tieba_name(self):
+        return self.handler.tieba_name
+
+    @property
+    def tid(self):
+        return self.at.tid
+
+    @property
+    def pid(self):
+        return self.at.pid
+
+    @property
+    def text(self):
+        return self.at.text
+
+    @property
+    def user_id(self):
+        return self.at.user.user_id
+
+    @property
+    def log_name(self):
+        return self.at.user.log_name
+
+
+def check_permission(need_access: int = 0, need_arg_num: int = 0) -> Callable:
     """
-    装饰器实现鉴权
+    装饰器实现鉴权和上下文包装
 
     Args:
         need_access (int, optional): 需要的权限级别
@@ -62,9 +98,10 @@ def _check(need_access: int = 0, need_arg_num: int = 0) -> Callable:
             handler = self.handler_map.get(at.tieba_name, None)
             if not handler:
                 return
-            if need_access and await handler.admin.database.get_user_id(at.tieba_name, at.user.user_id) < need_access:
+            if need_access and (this_access := await handler.get_user_id(at.user.user_id)) < need_access:
                 return
-            return await func(self, handler, at, *args)
+            ctx = Context(handler, at, this_access, args)
+            return await func(self, ctx)
 
         return foo
 
@@ -89,6 +126,57 @@ class Handler(object):
             'admin_key': self.admin.BDUSS_key,
             'speaker_key': self.speaker.BDUSS_key,
         }
+
+    async def ping(self) -> bool:
+        """
+        检测连接状态 若断连则尝试重连
+
+        Returns:
+            bool: 是否连接成功
+        """
+
+        return await self.admin.database.ping()
+
+    async def add_user_id(self, user_id: int, permission: int, note: str) -> int:
+        """
+        添加user_id
+
+        Args:
+            user_id (int): 用户的user_id
+            permission (int): 权限级别
+            note (str): 备注
+
+        Returns:
+            int: permission 权限级别
+        """
+
+        return await self.admin.database.add_user_id(self.tieba_name, user_id, permission, note)
+
+    async def del_user_id(self, user_id: int) -> int:
+        """
+        删除user_id
+
+        Args:
+            user_id (int): 用户的user_id
+
+        Returns:
+            bool: 操作是否成功
+        """
+
+        return await self.admin.database.del_user_id(self.tieba_name, user_id)
+
+    async def get_user_id(self, user_id: int) -> int:
+        """
+        获取user_id的权限级别
+
+        Args:
+            user_id (int): 用户的user_id
+
+        Returns:
+            int: permission 权限级别
+        """
+
+        return await self.admin.database.get_user_id(self.tieba_name, user_id)
 
 
 class Listener(object):
@@ -196,173 +284,173 @@ class Listener(object):
 
         return user
 
-    @_check(need_access=1, need_arg_num=0)
-    async def cmd_recommend(self, handler: Handler, at: tb.At, *args) -> None:
+    @check_permission(need_access=1, need_arg_num=0)
+    async def cmd_recommend(self, ctx: Context) -> None:
         """
         recommend指令
         对指令所在主题帖执行“大吧主首页推荐”操作
         """
 
-        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
 
-        if await handler.admin.recommend(at.tieba_name, at.tid):
-            await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
+        if await ctx.handler.admin.recommend(ctx.tieba_name, ctx.tid):
+            await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @_check(need_access=2, need_arg_num=1)
-    async def cmd_move(self, handler: Handler, at: tb.At, *args) -> None:
+    @check_permission(need_access=2, need_arg_num=1)
+    async def cmd_move(self, ctx: Context) -> None:
         """
         move指令
         将指令所在主题帖移动至名为tab_name的分区
         """
 
-        if not (threads := await self.listener.get_threads(at.tieba_name)):
+        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
+
+        if not (threads := await self.listener.get_threads(ctx.tieba_name)):
             return
 
         from_tab_id = 0
         for thread in threads:
-            if thread.tid == at.tid:
+            if thread.tid == ctx.tid:
                 from_tab_id = thread.tab_id
-        to_tab_id = threads.tab_map.get(args[0], 0)
+        to_tab_id = threads.tab_map.get(ctx.args[0], 0)
 
-        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+        if await ctx.handler.admin.move(ctx.tieba_name, ctx.tid, to_tab_id, from_tab_id):
+            await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-        if await handler.admin.move(at.tieba_name, at.tid, to_tab_id, from_tab_id):
-            await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
-
-    @_check(need_access=2, need_arg_num=0)
-    async def cmd_good(self, handler: Handler, at: tb.At, *args) -> None:
+    @check_permission(need_access=2, need_arg_num=0)
+    async def cmd_good(self, ctx: Context) -> None:
         """
         good指令
         将指令所在主题帖加到以cname为名的精华分区。cname默认为''即不分区
         """
 
-        cname = args[0] if len(args) else ''
+        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
 
-        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+        cname = ctx.args[0] if len(ctx.args) else ''
 
-        if await handler.admin.good(at.tieba_name, at.tid, cname):
-            await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
+        if await ctx.handler.admin.good(ctx.tieba_name, ctx.tid, cname):
+            await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @_check(need_access=2, need_arg_num=0)
-    async def cmd_ungood(self, handler: Handler, at: tb.At, *args) -> None:
+    @check_permission(need_access=2, need_arg_num=0)
+    async def cmd_ungood(self, ctx: Context) -> None:
         """
         ungood指令
         撤销指令所在主题帖的精华
         """
 
-        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
 
-        if await handler.admin.ungood(at.tieba_name, at.tid):
-            await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
+        if await ctx.handler.admin.ungood(ctx.tieba_name, ctx.tid):
+            await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @_check(need_access=4, need_arg_num=0)
-    async def cmd_top(self, handler: Handler, at: tb.At, *args) -> None:
+    @check_permission(need_access=4, need_arg_num=0)
+    async def cmd_top(self, ctx: Context) -> None:
         """
         top指令
         置顶指令所在主题帖
         """
 
-        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
 
-        if await handler.admin.top(at.tieba_name, at.tid):
-            await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
+        if await ctx.handler.admin.top(ctx.tieba_name, ctx.tid):
+            await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @_check(need_access=4, need_arg_num=0)
-    async def cmd_untop(self, handler: Handler, at: tb.At, *args) -> None:
+    @check_permission(need_access=4, need_arg_num=0)
+    async def cmd_untop(self, ctx: Context) -> None:
         """
         untop指令
         撤销指令所在主题帖的置顶
         """
 
-        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
 
-        if await handler.admin.untop(at.tieba_name, at.tid):
-            await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
+        if await ctx.handler.admin.untop(ctx.tieba_name, ctx.tid):
+            await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @_check(need_access=2, need_arg_num=0)
-    async def cmd_hide(self, handler: Handler, at: tb.At, *args) -> None:
+    @check_permission(need_access=2, need_arg_num=0)
+    async def cmd_hide(self, ctx: Context) -> None:
         """
         hide指令
         屏蔽指令所在主题帖
         """
 
-        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
 
-        if await handler.admin.hide_thread(at.tieba_name, at.tid):
-            await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
+        if await ctx.handler.admin.hide_thread(ctx.tieba_name, ctx.tid):
+            await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @_check(need_access=2, need_arg_num=0)
-    async def cmd_unhide(self, handler: Handler, at: tb.At, *args) -> None:
+    @check_permission(need_access=2, need_arg_num=0)
+    async def cmd_unhide(self, ctx: Context) -> None:
         """
         unhide指令
         解除指令所在主题帖的屏蔽
         """
 
-        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
 
-        if await handler.admin.unhide_thread(at.tieba_name, at.tid):
-            await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
+        if await ctx.handler.admin.unhide_thread(ctx.tieba_name, ctx.tid):
+            await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @_check(need_access=2, need_arg_num=0)
-    async def cmd_delete(self, handler: Handler, at: tb.At, *args) -> None:
+    @check_permission(need_access=2, need_arg_num=0)
+    async def cmd_delete(self, ctx: Context) -> None:
         """
         delete指令
         删帖
         """
 
-        await self._del_ops(handler, at)
+        await self._del_ops(ctx)
 
-    @_check(need_access=2, need_arg_num=0)
-    async def cmd_drop(self, handler: Handler, at: tb.At, *args) -> None:
+    @check_permission(need_access=2, need_arg_num=0)
+    async def cmd_drop(self, ctx: Context) -> None:
         """
         drop指令
         删帖并封10天
         """
 
-        note = args[0] if args else ''
-        await self._del_ops(handler, at, 10, note)
+        ctx.note = ctx.args[0] if len(ctx.args) >= 1 else f"cmd drop by {ctx.user_id}"
+        await self._del_ops(ctx, 10)
 
-    @_check(need_access=2, need_arg_num=0)
-    async def cmd_drop3(self, handler: Handler, at: tb.At, *args) -> None:
+    @check_permission(need_access=2, need_arg_num=0)
+    async def cmd_drop3(self, ctx: Context) -> None:
         """
         drop3指令
         删帖并封3天
         """
 
-        note = args[0] if args else ''
-        await self._del_ops(handler, at, 3, note)
+        ctx.note = ctx.args[0] if len(ctx.args) >= 1 else f"cmd drop3 by {ctx.user_id}"
+        await self._del_ops(ctx, 3)
 
-    @_check(need_access=4, need_arg_num=0)
-    async def cmd_exdrop(self, handler: Handler, at: tb.At, *args) -> None:
+    @check_permission(need_access=4, need_arg_num=0)
+    async def cmd_exdrop(self, ctx: Context) -> None:
         """
         exdrop指令
         删帖并将发帖人加入脚本黑名单+封禁十天
         """
 
-        note = args[0] if args else ''
-        await self._del_ops(handler, at, 10, note, blacklist=True)
+        ctx.note = ctx.args[0] if len(ctx.args) >= 1 else f"cmd exdrop by {ctx.user_id}"
+        await self._del_ops(ctx, 10, blacklist=True)
 
-    async def _del_ops(self, handler: Handler, at: tb.At, block_days: int = 0, note: str = '', blacklist: bool = False):
+    async def _del_ops(self, ctx: Context, block_days: int = 0, blacklist: bool = False):
         """
         各种处罚指令的实现
         """
 
-        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
 
         coros = []
 
-        if at.is_floor:
-            if not (comments := await self.listener.get_comments(at.tid, at.pid, is_floor=True)):
+        if ctx.at.is_floor:
+            if not (comments := await self.listener.get_comments(ctx.tid, ctx.pid, is_floor=True)):
                 return
             target = comments.post
             tb.log.info(f"Try to delete post {target.text} post by {target.user.log_name}")
-            coros.append(handler.admin.del_post(at.tieba_name, target.tid, target.pid))
+            coros.append(ctx.handler.admin.del_post(ctx.tieba_name, target.tid, target.pid))
 
         else:
-            if not (posts := await self.listener.get_posts(at.tid, rn=0)):
+            if not (posts := await self.listener.get_posts(ctx.tid, rn=0)):
                 return
 
-            if at.is_thread:
+            if ctx.at.is_thread:
                 if posts.forum.fid != (target := posts.thread.share_origin).fid:
                     return
                 target = posts.thread.share_origin
@@ -370,268 +458,279 @@ class Listener(object):
                     return
                 target.user = await self.listener.get_basic_user_info(target.contents.ats[0].user_id)
                 tb.log.info(f"Try to delete thread {target.text} post by {target.user.log_name}")
-                coros.append(handler.admin.del_thread(at.tieba_name, target.tid))
+                coros.append(ctx.handler.admin.del_thread(ctx.tieba_name, target.tid))
 
             else:
                 target = posts[0]
                 tb.log.info(f"Try to delete thread {target.text} post by {target.user.log_name}")
-                coros.append(handler.admin.del_thread(at.tieba_name, target.tid))
+                coros.append(ctx.handler.admin.del_thread(ctx.tieba_name, target.tid))
 
         if block_days:
-            coros.append(handler.admin.block(at.tieba_name, target.user, block_days, note))
+            coros.append(ctx.handler.admin.block(ctx.tieba_name, target.user, block_days, ctx.note))
         if blacklist:
-            await handler.admin.database.ping()
-            tb.log.info(f"Try to sql_black {target.user.log_name} in {at.tieba_name}")
-            coros.append(
-                handler.admin.database.add_user_id(at.tieba_name, target.user.user_id, -5,
-                                                   f"cmd exdrop by {at.user.user_id}"))
+            await ctx.handler.ping()
+            if ctx.handler.get_user_id(target.user.user_id) < 2:
+                tb.log.info(f"Try to sql_black {target.user.log_name} in {ctx.tieba_name}")
+                coros.append(ctx.handler.add_user_id(target.user.user_id, -5, ctx.note))
 
-        await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
+        await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
         await asyncio.gather(*coros)
 
-    @_check(need_access=2, need_arg_num=0)
-    async def cmd_water(self, handler: Handler, at: tb.At, *args) -> None:
+    @check_permission(need_access=2, need_arg_num=0)
+    async def cmd_water(self, ctx: Context) -> None:
         """
         water指令
         将指令所在主题帖标记为无关水，并临时屏蔽
         """
 
-        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
 
-        if not await handler.admin.database.ping():
+        if not await ctx.handler.ping():
             return
 
-        if await handler.admin.database.add_tid(at.tieba_name, at.tid, True) and await handler.admin.hide_thread(
-                at.tieba_name, at.tid):
-            await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
+        if await ctx.handler.admin.database.add_tid(
+                ctx.tieba_name, ctx.tid, True) and await ctx.handler.admin.hide_thread(ctx.tieba_name, ctx.tid):
+            await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @_check(need_access=2, need_arg_num=0)
-    async def cmd_unwater(self, handler: Handler, at: tb.At, *args) -> None:
+    @check_permission(need_access=2, need_arg_num=0)
+    async def cmd_unwater(self, ctx: Context) -> None:
         """
         unwater指令
         清除指令所在主题帖的无关水标记，并立刻解除屏蔽
         """
 
-        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
 
-        if not await handler.admin.database.ping():
+        if not await ctx.handler.ping():
             return
 
-        if await handler.admin.database.del_tid(at.tieba_name, at.tid) and await handler.admin.unhide_thread(
-                at.tieba_name, at.tid):
-            await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
+        if await ctx.handler.admin.database.del_tid(ctx.tieba_name, ctx.tid) and await ctx.handler.admin.unhide_thread(
+                ctx.tieba_name, ctx.tid):
+            await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @_check(need_access=3, need_arg_num=1)
-    async def cmd_water_restrict(self, handler: Handler, at: tb.At, *args) -> None:
+    @check_permission(need_access=3, need_arg_num=1)
+    async def cmd_water_restrict(self, ctx: Context) -> None:
         """
         water_restrict指令
         控制当前吧的云审查脚本的无关水管控状态
         """
 
-        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
 
-        if not await handler.admin.database.ping():
+        if not await ctx.handler.ping():
             return
 
-        if args[0] == "enter":
-            if await handler.admin.database.add_tid(at.tieba_name, 0, True):
-                await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
-        elif args[0] == "exit":
-            if await handler.admin.database.add_tid(at.tieba_name, 0, False):
-                await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
-            async for tid in handler.admin.database.get_tids(at.tieba_name):
-                if await handler.admin.unhide_thread(at.tieba_name, tid):
-                    await handler.admin.database.add_tid(at.tieba_name, tid, False)
+        if ctx.args[0] == "enter":
+            if await ctx.handler.admin.database.add_tid(ctx.tieba_name, 0, True):
+                await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
+        elif ctx.args[0] == "exit":
+            if await ctx.handler.admin.database.add_tid(ctx.tieba_name, 0, False):
+                await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
+            async for tid in ctx.handler.admin.database.get_tids(ctx.tieba_name):
+                if await ctx.handler.admin.unhide_thread(ctx.tieba_name, tid):
+                    await ctx.handler.admin.database.add_tid(ctx.tieba_name, tid, False)
 
-    @_check(need_access=2, need_arg_num=1)
-    async def cmd_block(self, handler: Handler, at: tb.At, *args) -> None:
+    @check_permission(need_access=2, need_arg_num=1)
+    async def cmd_block(self, ctx: Context) -> None:
         """
         block指令
         通过id封禁对应用户10天
         """
 
-        await self._block(handler, at, args, 10)
+        ctx.note = ctx.args[1] if len(ctx.args) >= 2 else f"cmd block by {ctx.user_id}"
+        await self._block(ctx, 10)
 
-    @_check(need_access=2, need_arg_num=1)
-    async def cmd_block3(self, handler: Handler, at: tb.At, *args) -> None:
+    @check_permission(need_access=2, need_arg_num=1)
+    async def cmd_block3(self, ctx: Context) -> None:
         """
         block3指令
         通过id封禁对应用户3天
         """
 
-        await self._block(handler, at, args, 3)
+        ctx.note = ctx.args[1] if len(ctx.args) >= 2 else f"cmd block3 by {ctx.user_id}"
+        await self._block(ctx, 3)
 
-    async def _block(self, handler: Handler, at: tb.At, args: list[str], block_days: int) -> None:
+    async def _block(self, ctx: Context, block_days: int) -> None:
         """
         block & block3指令的实现
         """
 
-        tb.log.info(f"{at.user.user_name}: {at.text}")
+        tb.log.info(f"{ctx.log_name}: {ctx.text}")
 
-        user = await self._arg2user_info(args[0])
-        note = args[1] if len(args) >= 2 else ''
+        user = await self._arg2user_info(ctx.args[0])
 
-        if await handler.admin.block(at.tieba_name, user, block_days, note):
-            await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
+        if await ctx.handler.admin.block(ctx.tieba_name, user, block_days, ctx.note):
+            await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @_check(need_access=2, need_arg_num=1)
-    async def cmd_unblock(self, handler: Handler, at: tb.At, *args) -> None:
+    @check_permission(need_access=2, need_arg_num=1)
+    async def cmd_unblock(self, ctx: Context) -> None:
         """
         unblock指令
         通过id解封用户
         """
 
-        tb.log.info(f"{at.user.user_name}: {at.text}")
+        tb.log.info(f"{ctx.log_name}: {ctx.text}")
 
-        user = await self._arg2user_info(args[0])
+        user = await self._arg2user_info(ctx.args[0])
 
-        if await handler.admin.unblock(at.tieba_name, user):
-            await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
+        if await ctx.handler.admin.unblock(ctx.tieba_name, user):
+            await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @_check(need_access=4, need_arg_num=1)
-    async def cmd_tb_black(self, handler: Handler, at: tb.At, *args) -> None:
+    @check_permission(need_access=4, need_arg_num=1)
+    async def cmd_tb_black(self, ctx: Context) -> None:
         """
         tb_black指令
         将id加入贴吧黑名单
         """
 
-        tb.log.info(f"{at.user.user_name}: {at.text}")
+        tb.log.info(f"{ctx.log_name}: {ctx.text}")
 
-        user = await self._arg2user_info(args[0])
+        user = await self._arg2user_info(ctx.args[0])
 
-        if await handler.admin.blacklist_add(at.tieba_name, user):
-            await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
+        if await ctx.handler.admin.blacklist_add(ctx.tieba_name, user):
+            await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @_check(need_access=3, need_arg_num=1)
-    async def cmd_tb_del(self, handler: Handler, at: tb.At, *args) -> None:
+    @check_permission(need_access=3, need_arg_num=1)
+    async def cmd_tb_reset(self, ctx: Context) -> None:
         """
-        tb_del指令
+        tb_reset指令
         将id移出贴吧黑名单
         """
 
-        tb.log.info(f"{at.user.user_name}: {at.text}")
+        tb.log.info(f"{ctx.log_name}: {ctx.text}")
 
-        user = await self._arg2user_info(args[0])
+        user = await self._arg2user_info(ctx.args[0])
 
-        if await handler.admin.blacklist_del(at.tieba_name, user):
-            await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
+        if await ctx.handler.admin.blacklist_del(ctx.tieba_name, user):
+            await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @_check(need_access=3, need_arg_num=1)
-    async def cmd_sql_white(self, handler: Handler, at: tb.At, *args) -> None:
+    @check_permission(need_access=4, need_arg_num=1)
+    async def cmd_black(self, ctx: Context) -> None:
         """
-        sql_white指令
-        将id加入脚本白名单
-        """
-
-        tb.log.info(f"{at.user.user_name}: {at.text}")
-
-        if not await handler.admin.database.ping():
-            return
-
-        user = await self._arg2user_info(args[0])
-
-        tb.log.info(f"Try to sql_white {user.log_name} in {at.tieba_name}")
-        if await handler.admin.database.add_user_id(at.tieba_name, user.user_id, 1,
-                                                    f"cmd sql_white by {at.user.user_id}"):
-            await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
-
-    @_check(need_access=4, need_arg_num=1)
-    async def cmd_sql_black(self, handler: Handler, at: tb.At, *args) -> None:
-        """
-        sql_black指令
+        black指令
         将id加入脚本黑名单
         """
 
-        tb.log.info(f"{at.user.user_name}: {at.text}")
+        tb.log.info(f"{ctx.log_name}: {ctx.text}")
 
-        if not await handler.admin.database.ping():
+        if not await ctx.handler.ping():
             return
 
-        user = await self._arg2user_info(args[0])
+        user = await self._arg2user_info(ctx.args[0])
+        if await ctx.handler.get_user_id(user.user_id) >= 2:
+            return
+        ctx.note = ctx.args[1] if len(ctx.args) >= 2 else f"cmd black by {ctx.user_id}"
 
-        tb.log.info(f"Try to sql_black {user.log_name} in {at.tieba_name}")
-        if await handler.admin.database.add_user_id(at.tieba_name, user.user_id, -5,
-                                                    f"cmd sql_black by {at.user.user_id}"):
-            await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
+        tb.log.info(f"Try to black {user.log_name} in {ctx.tieba_name}")
 
-    @_check(need_access=3, need_arg_num=1)
-    async def cmd_sql_del(self, handler: Handler, at: tb.At, *args) -> None:
+        if await ctx.handler.add_user_id(user.user_id, -5, ctx.note):
+            await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
+
+    @check_permission(need_access=3, need_arg_num=1)
+    async def cmd_white(self, ctx: Context) -> None:
         """
-        sql_del指令
+        white指令
+        将id加入脚本白名单
+        """
+
+        tb.log.info(f"{ctx.log_name}: {ctx.text}")
+
+        if not await ctx.handler.ping():
+            return
+
+        user = await self._arg2user_info(ctx.args[0])
+        if await ctx.handler.get_user_id(user.user_id) >= 1:
+            return
+        ctx.note = ctx.args[1] if len(ctx.args) >= 2 else f"cmd white by {ctx.user_id}"
+
+        tb.log.info(f"Try to white {user.log_name} in {ctx.tieba_name}")
+
+        if await ctx.handler.add_user_id(user.user_id, 1, ctx.note):
+            await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
+
+    @check_permission(need_access=3, need_arg_num=1)
+    async def cmd_reset(self, ctx: Context) -> None:
+        """
+        reset指令
         将id移出脚本名单
         """
 
-        tb.log.info(f"{at.user.user_name}: {at.text}")
+        tb.log.info(f"{ctx.log_name}: {ctx.text}")
 
-        if not await handler.admin.database.ping():
+        if not await ctx.handler.ping():
             return
 
-        user = await self._arg2user_info(args[0])
+        user = await self._arg2user_info(ctx.args[0])
+        if await ctx.handler.get_user_id(user.user_id) >= 2:
+            return
 
-        tb.log.info(f"Try to sql_del {user.log_name} in {at.tieba_name}")
-        if await handler.admin.database.del_user_id(at.tieba_name, user.user_id):
-            await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
+        tb.log.info(f"Try to sql_del {user.log_name} in {ctx.tieba_name}")
 
-    @_check(need_access=0, need_arg_num=0)
-    async def cmd_holyshit(self, handler: Handler, at: tb.At, *args) -> None:
+        if await ctx.handler.del_user_id(user.user_id):
+            await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
+
+    @check_permission(need_access=0, need_arg_num=0)
+    async def cmd_holyshit(self, ctx: Context) -> None:
         """
         holyshit指令
         召唤4名活跃吧务，使用参数extra_info来附带额外的召唤需求
         """
+
+        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
 
         if not self.time_recorder.allow_execute():
             return
 
         active_admin_list = [
             (await self.listener.get_basic_user_info(user_id)).user_name
-            for user_id in await handler.admin.database.get_user_id_list(at.tieba_name, limit=4, permission=2)
+            for user_id in await ctx.handler.admin.database.get_user_id_list(ctx.tieba_name, limit=4, permission=2)
         ]
-        extra_info = args[0] if len(args) else ''
+        extra_info = ctx.args[0] if len(ctx.args) else ''
         content = f"{extra_info}@" + " @".join(active_admin_list)
 
-        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+        if await ctx.handler.speaker.add_post(ctx.tieba_name, ctx.tid, content):
+            await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-        if await handler.speaker.add_post(at.tieba_name, at.tid, content):
-            await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
-
-    @_check(need_access=2, need_arg_num=0)
-    async def cmd_refuse_appeals(self, handler: Handler, at: tb.At, *args) -> None:
+    @check_permission(need_access=2, need_arg_num=0)
+    async def cmd_refuse_appeals(self, ctx: Context) -> None:
         """
         refuse_appeals指令
         一键拒绝所有解封申诉
         """
 
-        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
 
-        if await handler.admin.refuse_appeals(at.tieba_name):
-            await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
+        if await ctx.handler.admin.refuse_appeals(ctx.tieba_name):
+            await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @_check(need_access=1, need_arg_num=0)
-    async def cmd_recom_status(self, handler: Handler, at: tb.At, *args) -> None:
+    @check_permission(need_access=1, need_arg_num=0)
+    async def cmd_recom_status(self, ctx: Context) -> None:
         """
         recom_status指令
         获取大吧主推荐功能的月度配额状态
         """
 
+        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
+
         if not self.time_recorder.allow_execute():
             return
 
-        total_recom_num, used_recom_num = await handler.admin.get_recom_status(at.tieba_name)
-        content = f"@{at.user.user_name} \nUsed: {used_recom_num} / {total_recom_num} = {used_recom_num/total_recom_num*100:.2f}%"
+        total_recom_num, used_recom_num = await ctx.handler.admin.get_recom_status(ctx.tieba_name)
+        content = f"@{ctx.log_name} \nUsed: {used_recom_num} / {total_recom_num} = {used_recom_num/total_recom_num*100:.2f}%"
 
-        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+        if await ctx.handler.speaker.add_post(ctx.tieba_name, ctx.tid, content):
+            await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-        if await handler.speaker.add_post(at.tieba_name, at.tid, content):
-            await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
-
-    @_check(need_access=1, need_arg_num=2)
-    async def cmd_vote_stat(self, handler: Handler, at: tb.At, *args) -> None:
+    @check_permission(need_access=1, need_arg_num=2)
+    async def cmd_vote_stat(self, ctx: Context) -> None:
         """
         vote_stat指令
         统计投票结果
         """
 
-        if not args[1].isdigit():
+        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
+
+        if not ctx.args[1].isdigit():
             return
         if not self.time_recorder.allow_execute():
             return
@@ -644,7 +743,7 @@ class Listener(object):
                 pn (int): 页码
             """
 
-            posts = await self.listener.get_posts(at.tid,
+            posts = await self.listener.get_posts(ctx.tid,
                                                   pn,
                                                   only_thread_author=True,
                                                   with_comments=True,
@@ -665,7 +764,7 @@ class Listener(object):
                 comments = await self.listener.get_comments(post.tid, post.pid, pn)
                 for comment in comments:
                     text = re.sub('^回复.*?:', '', comment.text)
-                    if args[0] in text:
+                    if ctx.args[0] in text:
                         vote_set.add(comment.user.user_id)
 
                 if not comments.has_more:
@@ -675,102 +774,90 @@ class Listener(object):
                 results.append((post.floor, vote_num))
 
         results = []
-        posts = await self.listener.get_posts(at.tid, 1, with_comments=True, comment_sort_by_agree=False)
+        posts = await self.listener.get_posts(ctx.tid, 1, with_comments=True, comment_sort_by_agree=False)
         await asyncio.gather(*[_stat_post(post) for post in posts[1:]])
 
         if (total_page := posts.page.total_page) > 1:
             await asyncio.gather(*[_stat_pn(pn) for pn in range(2, total_page + 1)], return_exceptions=True)
 
         results.sort(key=lambda result: result[1], reverse=True)
-        contents = [f"@{at.user.user_name} "]
-        contents.extend([f"floor:{floor} num:{vote_num}" for floor, vote_num in results[:int(args[1])]])
+        contents = [f"@{ctx.log_name} "]
+        contents.extend([f"floor:{floor} num:{vote_num}" for floor, vote_num in results[:int(ctx.args[1])]])
         content = '\n'.join(contents)
 
-        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+        if await ctx.handler.speaker.add_post(ctx.tieba_name, ctx.tid, content):
+            await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-        if await handler.speaker.add_post(at.tieba_name, at.tid, content):
-            await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
-
-    @_check(need_access=5, need_arg_num=1)
-    async def cmd_set(self, handler: Handler, at: tb.At, *args) -> None:
+    @check_permission(need_access=5, need_arg_num=2)
+    async def cmd_set(self, ctx: Context) -> None:
         """
         set指令
         设置用户的权限级别
         """
 
-        if len(args) == 1:
-            new_access = int(args[0])
-            posts = await self.listener.get_posts(at.tid, rn=2)
-            user_id = posts.thread.user.user_id
-        else:
-            new_access = int(args[1])
-            user = await self._arg2user_info(args[0])
-            user_id = user.user_id
+        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
 
-        if not user_id:
+        user = await self._arg2user_info(ctx.args[0])
+        if not user.user_id:
+            return
+        new_permission = int(ctx.args[1])
+        ctx.note = ctx.args[2] if len(ctx.args) >= 3 else f"cmd set by {ctx.user_id}"
+
+        old_permission = await ctx.handler.get_user_id(user.user_id)
+        if old_permission >= ctx.this_permission or new_permission >= ctx.this_permission:
             return
 
-        old_access = await handler.admin.database.get_user_id(at.tieba_name, user_id)
-        this_access = await handler.admin.database.get_user_id(at.tieba_name, at.user.user_id)
-        if old_access >= this_access or new_access >= this_access:
+        if not await ctx.handler.ping():
             return
 
-        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+        if await ctx.handler.add_user_id(user.user_id, new_permission, ctx.note):
+            await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-        if await handler.admin.database.add_user_id(at.tieba_name, user_id, new_access,
-                                                    f"cmd set by {at.user.user_id}"):
-            await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
-
-    @_check(need_access=0, need_arg_num=0)
-    async def cmd_register(self, handler: Handler, at: tb.At, *args) -> None:
+    @check_permission(need_access=0, need_arg_num=0)
+    async def cmd_register(self, ctx: Context) -> None:
         """
         register指令
         通过精品帖自助获取1级权限
         """
 
-        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
 
-        if not handler.access_users.__contains__(at.user.user_name):
-            for thread in await self.listener.get_threads(at.tieba_name, is_good=True):
-                user_id = at.user.user_id
-                if thread.user.user_id == user_id and thread.create_time > time.time(
-                ) - 30 * 24 * 3600 and handler.admin.database.get_user_id(at.tieba_name, user_id) == 0:
-                    if await handler.admin.database.add_user_id(at.tieba_name, user_id, 1, "cmd register"):
-                        await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
+        if ctx.this_permission == 0:
+            for thread in await self.listener.get_threads(ctx.tieba_name, is_good=True):
+                if thread.user.user_id == ctx.user_id and thread.create_time > time.time() - 30 * 24 * 3600:
+                    if await ctx.handler.add_user_id(ctx.user_id, 1, "cmd register"):
+                        await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @_check(need_access=2, need_arg_num=0)
-    async def cmd_active(self, handler: Handler, at: tb.At, *args) -> None:
+    @check_permission(need_access=2, need_arg_num=0)
+    async def cmd_active(self, ctx: Context) -> None:
         """
         active指令
         将发起指令的吧务移动到活跃吧务队列的最前端，以响应holyshit指令
         """
 
-        tb.log.info(f"{at.user.user_name}: {at.text} in tid:{at.tid}")
+        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
 
-        user_id = at.user.user_id
-        permission = await handler.admin.database.get_user_id(at.tieba_name, user_id)
+        if await ctx.handler.add_user_id(ctx.user_id, ctx.this_permission, "cmd active"):
+            await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-        if await handler.admin.database.add_user_id(at.tieba_name, user_id, permission, "cmd active"):
-            await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
-
-    @_check(need_access=1, need_arg_num=0)
-    async def cmd_ping(self, handler: Handler, at: tb.At, *args) -> None:
+    @check_permission(need_access=1, need_arg_num=0)
+    async def cmd_ping(self, ctx: Context) -> None:
         """
         ping指令
         用于测试bot可用性的空指令
         """
 
-        tb.log.info(f"{at.user.user_name}: {at.text}")
+        tb.log.info(f"{ctx.log_name}: {ctx.text}")
 
-        await handler.admin.del_post(at.tieba_name, at.tid, at.pid)
+        await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @_check(need_access=129, need_arg_num=65536)
-    async def cmd_default(self, handler: Handler, at: tb.At, *args) -> None:
+    @check_permission(need_access=129, need_arg_num=65536)
+    async def cmd_default(self, ctx: Context) -> None:
         """
         default指令
         """
 
-        await handler.speaker.add_post(at.tieba_name, at.tid, "关注嘉然顿顿解馋~")
+        await ctx.handler.speaker.add_post(ctx.tieba_name, ctx.tid, "关注嘉然顿顿解馋~")
 
 
 if __name__ == '__main__':

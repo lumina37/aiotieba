@@ -529,7 +529,7 @@ class Database(object):
             self._conn.rollback()
             return False
         else:
-            log.info(f"Successfully updated {user_id} to table of {tieba_name_eng}. permission:{permission}")
+            log.info(f"Successfully added {user_id} to table of {tieba_name_eng}. permission:{permission}")
             self._conn.commit()
             return True
 

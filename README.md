@@ -95,7 +95,7 @@ asyncio.run(main())
 
 + 在`config/config.json`中配置`MySQL`字段。你需要一个数据库用来缓存通过检测的回复的pid以及记录黑、白名单用户
 + 在`config/config.json`中配置`tieba_name_mapping`字段。你需要为每个贴吧设置对应的英文名以方便建立数据库
-+ 使用函数[`MySQL.init_database()`]一键建库
++ 使用函数`MySQL.init_database()`一键建库
 + 自定义审查行为：请参照我给出的例子自己编程修改[`cloud_review_asoul.py`](https://github.com/Starry-OvO/Tieba-Manager/blob/main/cloud_review_asoul.py)，这是被实际应用于[`asoul吧`](https://tieba.baidu.com/f?ie=utf-8&kw=asoul)的云审查工具。注释比较规范全面，请自行理解各api的功能
 
 ## 附加说明
