@@ -1,5 +1,6 @@
 # -*- coding:utf-8 -*-
 import asyncio
+import datetime
 import functools
 import json
 import re
@@ -48,10 +49,10 @@ class Context(object):
 
     __slots__ = ['handler', 'at', 'this_permission', 'args', 'note']
 
-    def __init__(self, handler: "Handler", at: tb.At, this_access: int, args: list[str], note: str = '') -> None:
+    def __init__(self, handler: "Handler", at: tb.At, this_permission: int, args: list[str], note: str = '') -> None:
         self.handler = handler
         self.at = at
-        self.this_permission = this_access
+        self.this_permission = this_permission
         self.args = args
         self.note = note
 
@@ -80,12 +81,12 @@ class Context(object):
         return self.at.user.log_name
 
 
-def check_permission(need_access: int = 0, need_arg_num: int = 0) -> Callable:
+def check_permission(need_permission: int = 0, need_arg_num: int = 0) -> Callable:
     """
     装饰器实现鉴权和上下文包装
 
     Args:
-        need_access (int, optional): 需要的权限级别
+        need_permission (int, optional): 需要的权限级别
         need_arg_num (bool, optional): 需要的参数数量
     """
 
@@ -98,9 +99,9 @@ def check_permission(need_access: int = 0, need_arg_num: int = 0) -> Callable:
             handler = self.handler_map.get(at.tieba_name, None)
             if not handler:
                 return
-            if need_access and (this_access := await handler.get_user_id(at.user.user_id)) < need_access:
+            if need_permission and (this_permission := await handler.get_user_id(at.user.user_id)) < need_permission:
                 return
-            ctx = Context(handler, at, this_access, args)
+            ctx = Context(handler, at, this_permission, args)
             return await func(self, ctx)
 
         return foo
@@ -137,7 +138,7 @@ class Handler(object):
 
         return await self.admin.database.ping()
 
-    async def add_user_id(self, user_id: int, permission: int, note: str) -> int:
+    async def add_user_id(self, user_id: int, permission: int, note: str) -> bool:
         """
         添加user_id
 
@@ -147,12 +148,12 @@ class Handler(object):
             note (str): 备注
 
         Returns:
-            int: permission 权限级别
+            bool: 操作是否成功
         """
 
         return await self.admin.database.add_user_id(self.tieba_name, user_id, permission, note)
 
-    async def del_user_id(self, user_id: int) -> int:
+    async def del_user_id(self, user_id: int) -> bool:
         """
         删除user_id
 
@@ -173,10 +174,25 @@ class Handler(object):
             user_id (int): 用户的user_id
 
         Returns:
-            int: permission 权限级别
+            int: 权限级别
         """
 
         return await self.admin.database.get_user_id(self.tieba_name, user_id)
+
+    async def get_user_id_full(self, user_id: int) -> tuple[int, str, datetime.datetime]:
+        """
+        获取user_id的完整信息
+
+        Args:
+            user_id (int): 用户的user_id
+
+        Returns:
+            int: 权限级别
+            str: 备注
+            datetime.datetime: 记录时间
+        """
+
+        return await self.admin.database.get_user_id_full(self.tieba_name, user_id)
 
 
 class Listener(object):
@@ -284,7 +300,7 @@ class Listener(object):
 
         return user
 
-    @check_permission(need_access=1, need_arg_num=0)
+    @check_permission(need_permission=1, need_arg_num=0)
     async def cmd_recommend(self, ctx: Context) -> None:
         """
         recommend指令
@@ -296,7 +312,7 @@ class Listener(object):
         if await ctx.handler.admin.recommend(ctx.tieba_name, ctx.tid):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @check_permission(need_access=2, need_arg_num=1)
+    @check_permission(need_permission=2, need_arg_num=1)
     async def cmd_move(self, ctx: Context) -> None:
         """
         move指令
@@ -317,7 +333,7 @@ class Listener(object):
         if await ctx.handler.admin.move(ctx.tieba_name, ctx.tid, to_tab_id, from_tab_id):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @check_permission(need_access=2, need_arg_num=0)
+    @check_permission(need_permission=2, need_arg_num=0)
     async def cmd_good(self, ctx: Context) -> None:
         """
         good指令
@@ -331,7 +347,7 @@ class Listener(object):
         if await ctx.handler.admin.good(ctx.tieba_name, ctx.tid, cname):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @check_permission(need_access=2, need_arg_num=0)
+    @check_permission(need_permission=2, need_arg_num=0)
     async def cmd_ungood(self, ctx: Context) -> None:
         """
         ungood指令
@@ -343,7 +359,7 @@ class Listener(object):
         if await ctx.handler.admin.ungood(ctx.tieba_name, ctx.tid):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @check_permission(need_access=4, need_arg_num=0)
+    @check_permission(need_permission=4, need_arg_num=0)
     async def cmd_top(self, ctx: Context) -> None:
         """
         top指令
@@ -355,7 +371,7 @@ class Listener(object):
         if await ctx.handler.admin.top(ctx.tieba_name, ctx.tid):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @check_permission(need_access=4, need_arg_num=0)
+    @check_permission(need_permission=4, need_arg_num=0)
     async def cmd_untop(self, ctx: Context) -> None:
         """
         untop指令
@@ -367,7 +383,7 @@ class Listener(object):
         if await ctx.handler.admin.untop(ctx.tieba_name, ctx.tid):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @check_permission(need_access=2, need_arg_num=0)
+    @check_permission(need_permission=2, need_arg_num=0)
     async def cmd_hide(self, ctx: Context) -> None:
         """
         hide指令
@@ -379,7 +395,7 @@ class Listener(object):
         if await ctx.handler.admin.hide_thread(ctx.tieba_name, ctx.tid):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @check_permission(need_access=2, need_arg_num=0)
+    @check_permission(need_permission=2, need_arg_num=0)
     async def cmd_unhide(self, ctx: Context) -> None:
         """
         unhide指令
@@ -391,7 +407,7 @@ class Listener(object):
         if await ctx.handler.admin.unhide_thread(ctx.tieba_name, ctx.tid):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @check_permission(need_access=2, need_arg_num=0)
+    @check_permission(need_permission=2, need_arg_num=0)
     async def cmd_delete(self, ctx: Context) -> None:
         """
         delete指令
@@ -400,7 +416,7 @@ class Listener(object):
 
         await self._del_ops(ctx)
 
-    @check_permission(need_access=2, need_arg_num=0)
+    @check_permission(need_permission=2, need_arg_num=0)
     async def cmd_drop(self, ctx: Context) -> None:
         """
         drop指令
@@ -410,7 +426,7 @@ class Listener(object):
         ctx.note = ctx.args[0] if len(ctx.args) >= 1 else f"cmd drop by {ctx.user_id}"
         await self._del_ops(ctx, 10)
 
-    @check_permission(need_access=2, need_arg_num=0)
+    @check_permission(need_permission=2, need_arg_num=0)
     async def cmd_drop3(self, ctx: Context) -> None:
         """
         drop3指令
@@ -420,7 +436,7 @@ class Listener(object):
         ctx.note = ctx.args[0] if len(ctx.args) >= 1 else f"cmd drop3 by {ctx.user_id}"
         await self._del_ops(ctx, 3)
 
-    @check_permission(need_access=4, need_arg_num=0)
+    @check_permission(need_permission=4, need_arg_num=0)
     async def cmd_exdrop(self, ctx: Context) -> None:
         """
         exdrop指令
@@ -476,7 +492,7 @@ class Listener(object):
         await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
         await asyncio.gather(*coros)
 
-    @check_permission(need_access=2, need_arg_num=0)
+    @check_permission(need_permission=2, need_arg_num=0)
     async def cmd_water(self, ctx: Context) -> None:
         """
         water指令
@@ -492,7 +508,7 @@ class Listener(object):
                 ctx.tieba_name, ctx.tid, True) and await ctx.handler.admin.hide_thread(ctx.tieba_name, ctx.tid):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @check_permission(need_access=2, need_arg_num=0)
+    @check_permission(need_permission=2, need_arg_num=0)
     async def cmd_unwater(self, ctx: Context) -> None:
         """
         unwater指令
@@ -508,7 +524,7 @@ class Listener(object):
                 ctx.tieba_name, ctx.tid):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @check_permission(need_access=3, need_arg_num=1)
+    @check_permission(need_permission=3, need_arg_num=1)
     async def cmd_water_restrict(self, ctx: Context) -> None:
         """
         water_restrict指令
@@ -530,7 +546,7 @@ class Listener(object):
                 if await ctx.handler.admin.unhide_thread(ctx.tieba_name, tid):
                     await ctx.handler.admin.database.add_tid(ctx.tieba_name, tid, False)
 
-    @check_permission(need_access=2, need_arg_num=1)
+    @check_permission(need_permission=2, need_arg_num=1)
     async def cmd_block(self, ctx: Context) -> None:
         """
         block指令
@@ -540,7 +556,7 @@ class Listener(object):
         ctx.note = ctx.args[1] if len(ctx.args) >= 2 else f"cmd block by {ctx.user_id}"
         await self._block(ctx, 10)
 
-    @check_permission(need_access=2, need_arg_num=1)
+    @check_permission(need_permission=2, need_arg_num=1)
     async def cmd_block3(self, ctx: Context) -> None:
         """
         block3指令
@@ -562,7 +578,7 @@ class Listener(object):
         if await ctx.handler.admin.block(ctx.tieba_name, user, block_days, ctx.note):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @check_permission(need_access=2, need_arg_num=1)
+    @check_permission(need_permission=2, need_arg_num=1)
     async def cmd_unblock(self, ctx: Context) -> None:
         """
         unblock指令
@@ -576,7 +592,7 @@ class Listener(object):
         if await ctx.handler.admin.unblock(ctx.tieba_name, user):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @check_permission(need_access=4, need_arg_num=1)
+    @check_permission(need_permission=4, need_arg_num=1)
     async def cmd_tb_black(self, ctx: Context) -> None:
         """
         tb_black指令
@@ -590,7 +606,7 @@ class Listener(object):
         if await ctx.handler.admin.blacklist_add(ctx.tieba_name, user):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @check_permission(need_access=3, need_arg_num=1)
+    @check_permission(need_permission=3, need_arg_num=1)
     async def cmd_tb_reset(self, ctx: Context) -> None:
         """
         tb_reset指令
@@ -604,7 +620,7 @@ class Listener(object):
         if await ctx.handler.admin.blacklist_del(ctx.tieba_name, user):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @check_permission(need_access=4, need_arg_num=1)
+    @check_permission(need_permission=4, need_arg_num=1)
     async def cmd_black(self, ctx: Context) -> None:
         """
         black指令
@@ -626,7 +642,7 @@ class Listener(object):
         if await ctx.handler.add_user_id(user.user_id, -5, ctx.note):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @check_permission(need_access=3, need_arg_num=1)
+    @check_permission(need_permission=3, need_arg_num=1)
     async def cmd_white(self, ctx: Context) -> None:
         """
         white指令
@@ -648,7 +664,7 @@ class Listener(object):
         if await ctx.handler.add_user_id(user.user_id, 1, ctx.note):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @check_permission(need_access=3, need_arg_num=1)
+    @check_permission(need_permission=3, need_arg_num=1)
     async def cmd_reset(self, ctx: Context) -> None:
         """
         reset指令
@@ -669,7 +685,7 @@ class Listener(object):
         if await ctx.handler.del_user_id(user.user_id):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @check_permission(need_access=0, need_arg_num=0)
+    @check_permission(need_permission=0, need_arg_num=0)
     async def cmd_holyshit(self, ctx: Context) -> None:
         """
         holyshit指令
@@ -691,7 +707,7 @@ class Listener(object):
         if await ctx.handler.speaker.add_post(ctx.tieba_name, ctx.tid, content):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @check_permission(need_access=2, need_arg_num=0)
+    @check_permission(need_permission=2, need_arg_num=0)
     async def cmd_refuse_appeals(self, ctx: Context) -> None:
         """
         refuse_appeals指令
@@ -703,7 +719,7 @@ class Listener(object):
         if await ctx.handler.admin.refuse_appeals(ctx.tieba_name):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @check_permission(need_access=1, need_arg_num=0)
+    @check_permission(need_permission=1, need_arg_num=0)
     async def cmd_recom_status(self, ctx: Context) -> None:
         """
         recom_status指令
@@ -716,12 +732,12 @@ class Listener(object):
             return
 
         total_recom_num, used_recom_num = await ctx.handler.admin.get_recom_status(ctx.tieba_name)
-        content = f"@{ctx.log_name} \nUsed: {used_recom_num} / {total_recom_num} = {used_recom_num/total_recom_num*100:.2f}%"
+        content = f"@{ctx.at.user.user_name} \nUsed: {used_recom_num} / {total_recom_num} = {used_recom_num/total_recom_num*100:.2f}%"
 
         if await ctx.handler.speaker.add_post(ctx.tieba_name, ctx.tid, content):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @check_permission(need_access=1, need_arg_num=2)
+    @check_permission(need_permission=1, need_arg_num=2)
     async def cmd_vote_stat(self, ctx: Context) -> None:
         """
         vote_stat指令
@@ -781,14 +797,14 @@ class Listener(object):
             await asyncio.gather(*[_stat_pn(pn) for pn in range(2, total_page + 1)], return_exceptions=True)
 
         results.sort(key=lambda result: result[1], reverse=True)
-        contents = [f"@{ctx.log_name} "]
+        contents = [f"@{ctx.at.user.user_name} "]
         contents.extend([f"floor:{floor} num:{vote_num}" for floor, vote_num in results[:int(ctx.args[1])]])
         content = '\n'.join(contents)
 
         if await ctx.handler.speaker.add_post(ctx.tieba_name, ctx.tid, content):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @check_permission(need_access=5, need_arg_num=2)
+    @check_permission(need_permission=5, need_arg_num=2)
     async def cmd_set(self, ctx: Context) -> None:
         """
         set指令
@@ -813,7 +829,29 @@ class Listener(object):
         if await ctx.handler.add_user_id(user.user_id, new_permission, ctx.note):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @check_permission(need_access=0, need_arg_num=0)
+    @check_permission(need_permission=1, need_arg_num=1)
+    async def cmd_get(self, ctx: Context) -> None:
+        """
+        get指令
+        获取用户的个人信息与标记信息
+        """
+
+        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
+
+        user = await self._arg2user_info(ctx.args[0])
+        if not user.user_id:
+            return
+
+        if not await ctx.handler.ping():
+            return
+
+        permission, note, record_time = await ctx.handler.get_user_id_full(user.user_id)
+        content = f"""@{ctx.at.user.user_name} \nuser_name: {user.user_name}\nuser_id: {user.user_id}\nportrait: {user.portrait}\npermission: {permission}\nnote: {note}\nrecord_time: {record_time.strftime("%Y-%m-%d %H:%M:%S")}"""
+
+        if await ctx.handler.speaker.add_post(ctx.tieba_name, ctx.tid, content):
+            await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
+
+    @check_permission(need_permission=0, need_arg_num=0)
     async def cmd_register(self, ctx: Context) -> None:
         """
         register指令
@@ -828,7 +866,7 @@ class Listener(object):
                     if await ctx.handler.add_user_id(ctx.user_id, 1, "cmd register"):
                         await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @check_permission(need_access=2, need_arg_num=0)
+    @check_permission(need_permission=2, need_arg_num=0)
     async def cmd_active(self, ctx: Context) -> None:
         """
         active指令
@@ -840,7 +878,7 @@ class Listener(object):
         if await ctx.handler.add_user_id(ctx.user_id, ctx.this_permission, "cmd active"):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @check_permission(need_access=1, need_arg_num=0)
+    @check_permission(need_permission=1, need_arg_num=0)
     async def cmd_ping(self, ctx: Context) -> None:
         """
         ping指令
@@ -851,7 +889,7 @@ class Listener(object):
 
         await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @check_permission(need_access=129, need_arg_num=65536)
+    @check_permission(need_permission=129, need_arg_num=65536)
     async def cmd_default(self, ctx: Context) -> None:
         """
         default指令

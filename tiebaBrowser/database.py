@@ -2,6 +2,7 @@
 __all__ = ['Database']
 
 import asyncio
+import datetime
 import functools
 import sys
 from collections.abc import AsyncIterable
@@ -567,7 +568,7 @@ class Database(object):
             user_id (int): 用户的user_id
 
         Returns:
-            int: permission 权限级别
+            int: 权限级别
         """
 
         try:
@@ -579,6 +580,33 @@ class Database(object):
                 return res_tuple[0]
             else:
                 return 0
+
+    @translate_tieba_name
+    async def get_user_id_full(self, tieba_name_eng: str, user_id: int) -> tuple[int, str, datetime.datetime]:
+        """
+        获取表user_id_{tieba_name_eng}中user_id的完整信息
+
+        Args:
+            tieba_name (str): 贴吧名
+            user_id (int): 用户的user_id
+
+        Returns:
+            int: 权限级别
+            str: 备注
+            datetime.datetime: 记录时间
+        """
+
+        try:
+            self._cursor.execute(
+                f"SELECT `permission`,`note`,`record_time` FROM `user_id_{tieba_name_eng}` WHERE `user_id`=%s",
+                (user_id, ))
+        except pymysql.Error as err:
+            return None
+        else:
+            if res_tuple := self._cursor.fetchone():
+                return res_tuple
+            else:
+                return 0, '', 0
 
     @translate_tieba_name
     async def get_user_id_list(self,
