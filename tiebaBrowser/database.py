@@ -606,7 +606,7 @@ class Database(object):
             if res_tuple := self._cursor.fetchone():
                 return res_tuple
             else:
-                return 0, '', 0
+                return 0, '', datetime.datetime(1970, 1, 1)
 
     @translate_tieba_name
     async def get_user_id_list(self,
