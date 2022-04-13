@@ -99,7 +99,7 @@ def check_permission(need_permission: int = 0, need_arg_num: int = 0) -> Callabl
             handler = self.handler_map.get(at.tieba_name, None)
             if not handler:
                 return
-            if need_permission and (this_permission := await handler.get_user_id(at.user.user_id)) < need_permission:
+            if (this_permission := await handler.get_user_id(at.user.user_id)) < need_permission:
                 return
             ctx = Context(handler, at, this_permission, args)
             return await func(self, ctx)
@@ -120,13 +120,6 @@ class Handler(object):
 
     async def close(self):
         await asyncio.gather(self.admin.close(), self.speaker.close(), return_exceptions=True)
-
-    def to_dict(self):
-        return {
-            'tieba_name': self.tieba_name,
-            'admin_key': self.admin.BDUSS_key,
-            'speaker_key': self.speaker.BDUSS_key,
-        }
 
     async def ping(self) -> bool:
         """
@@ -197,14 +190,13 @@ class Handler(object):
 
 class Listener(object):
 
-    __slots__ = ['_config_mtime', 'listener', 'handler_map', '_cmd_map', 'time_recorder']
+    __slots__ = ['listener', 'handler_map', '_cmd_map', 'time_recorder']
 
     def __init__(self) -> None:
 
         config_path = SCRIPT_PATH.parent / 'config/listen_config.json'
         with config_path.open('r', encoding='utf-8') as _file:
             config = json.load(_file)
-        self._config_mtime = config_path.stat().st_mtime
 
         self.listener = tb.Reviewer(config['listener_key'], '')
         self.handler_map = {(handler := Handler(tieba_config)).tieba_name: handler
@@ -220,19 +212,6 @@ class Listener(object):
         await asyncio.gather(*[handler.close() for handler in self.handler_map.values()],
                              self.listener.close(),
                              return_exceptions=True)
-
-        config_path = SCRIPT_PATH.parent / 'config/listen_config.json'
-        if self._config_mtime != config_path.stat().st_mtime:
-            return
-
-        with config_path.open('w', encoding='utf-8') as _file:
-            json.dump(self.to_dict(), _file, sort_keys=False, indent=2, separators=(',', ':'), ensure_ascii=False)
-
-    def to_dict(self):
-        return {
-            'listener_key': self.listener.BDUSS_key,
-            'tieba_configs': [handler.to_dict() for handler in self.handler_map.values()]
-        }
 
     async def __aenter__(self) -> "Listener":
         return self
@@ -263,7 +242,7 @@ class Listener(object):
                 break
 
         await asyncio.gather(*[asyncio.wait_for(self._handle_cmd(at), timeout=120) for at in ats],
-                             return_exceptions=True)
+                             return_exceptions=False)
 
     @staticmethod
     def _parse_cmd(text: str) -> tuple[str, str]:
@@ -316,8 +295,8 @@ class Listener(object):
             (await self.listener.get_basic_user_info(user_id)).user_name
             for user_id in await ctx.handler.admin.database.get_user_id_list(ctx.tieba_name, limit=4, permission=2)
         ]
-        extra_info = ctx.args[0] if len(ctx.args) else ''
-        content = f"{extra_info}@" + " @".join(active_admin_list)
+        extra_info = ctx.args[0] if len(ctx.args) else 'null'
+        content = f"该回复为吧务召唤指令@.v_guard holyshit的自动响应\n召唤人诉求：{extra_info}@" + " @".join(active_admin_list)
 
         if await ctx.handler.speaker.add_post(ctx.tieba_name, ctx.tid, content):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
@@ -564,7 +543,7 @@ class Listener(object):
         if await ctx.handler.get_user_id(user.user_id) >= 2:
             return
 
-        tb.log.info(f"Try to sql_del {user.log_name} in {ctx.tieba_name}")
+        tb.log.info(f"Try to reset {user.log_name} in {ctx.tieba_name}")
 
         if await ctx.handler.del_user_id(user.user_id):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
@@ -618,8 +597,8 @@ class Listener(object):
             coros.append(ctx.handler.admin.block(ctx.tieba_name, target.user, block_days, ctx.note))
         if blacklist:
             await ctx.handler.ping()
-            if ctx.handler.get_user_id(target.user.user_id) < 2:
-                tb.log.info(f"Try to sql_black {target.user.log_name} in {ctx.tieba_name}")
+            if await ctx.handler.get_user_id(target.user.user_id) < 2:
+                tb.log.info(f"Try to black {target.user.log_name} in {ctx.tieba_name}")
                 coros.append(ctx.handler.add_user_id(target.user.user_id, -5, ctx.note))
 
         await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)

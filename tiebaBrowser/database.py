@@ -412,7 +412,7 @@ class Database(object):
             self._conn.rollback()
             return False
         else:
-            log.info(f"Successfully add {tid} to table of {tieba_name_eng}. mode:{mode}")
+            log.info(f"Successfully add {tid} to table of {tieba_name_eng}. mode: {mode}")
             self._conn.commit()
             return True
 
@@ -435,7 +435,7 @@ class Database(object):
             log.warning(f"Failed to select {tid}. reason:{err}")
             return None
         else:
-            if (res_tuple := self._cursor.fetchone()):
+            if res_tuple := self._cursor.fetchone():
                 return True if res_tuple[0] else False
             else:
                 return None
@@ -530,7 +530,7 @@ class Database(object):
             self._conn.rollback()
             return False
         else:
-            log.info(f"Successfully added {user_id} to table of {tieba_name_eng}. permission:{permission}")
+            log.info(f"Successfully added {user_id} to table of {tieba_name_eng}. permission: {permission} note: {note}")
             self._conn.commit()
             return True
 
@@ -577,7 +577,7 @@ class Database(object):
             return None
         else:
             if res_tuple := self._cursor.fetchone():
-                return res_tuple[0]
+                return permission if (permission := res_tuple[0]) else 0
             else:
                 return 0
 
