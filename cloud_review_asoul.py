@@ -3,7 +3,6 @@ import asyncio
 import re
 import sys
 import time
-import traceback
 from collections import Counter
 
 import tiebaBrowser as tb
@@ -69,7 +68,7 @@ class AsoulCloudReview(tb.Reviewer):
                 await asyncio.sleep(20)
 
             except Exception:
-                tb.log.critical(f"Unexcepted error:{traceback.format_exc()}")
+                tb.log.critical("Unexcepted error", exc_info=True)
                 return
 
     async def _handle_thread(self, thread: tb.Thread, delay: float) -> None:
@@ -124,7 +123,7 @@ class AsoulCloudReview(tb.Reviewer):
 
         if self.water_restrict_flag:
             # 当前吧处于高峰期限水状态
-            if await self.database.is_tid_hide(self.tieba_name, thread.tid) == False:
+            if await self.database.is_tid_hide(self.tieba_name, thread.tid) is False:
                 await self.database.add_tid(self.tieba_name, thread.tid, True)
                 return 2, 0, sys._getframe().f_lineno
 
@@ -337,5 +336,5 @@ if __name__ == '__main__':
 
     try:
         asyncio.run(main())
-    except:
+    except BaseException:
         pass

@@ -3,7 +3,6 @@ import asyncio
 import re
 import sys
 import time
-import traceback
 
 import tiebaBrowser as tb
 
@@ -41,7 +40,7 @@ class DianaCloudReview(tb.Reviewer):
                 await asyncio.sleep(40)
 
             except Exception:
-                tb.log.critical(f"Unexcepted error:{traceback.format_exc()}")
+                tb.log.critical("Unexcepted error", exc_info=True)
                 return
 
     async def _handle_thread(self, thread: tb.Thread, delay: float) -> None:
@@ -306,5 +305,5 @@ if __name__ == '__main__':
 
     try:
         asyncio.run(main())
-    except:
+    except BaseException:
         pass

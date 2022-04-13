@@ -230,7 +230,7 @@ class Listener(object):
             except asyncio.CancelledError:
                 break
             except Exception:
-                tb.log.critical(f"Unhandled error", exc_info=True)
+                tb.log.critical("Unhandled error", exc_info=True)
                 return
 
     async def scan(self) -> None:
@@ -885,5 +885,5 @@ if __name__ == '__main__':
 
     try:
         asyncio.run(main())
-    except:
+    except BaseException:
         pass

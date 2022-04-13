@@ -508,7 +508,7 @@ class Database(object):
     async def add_user_id(self, tieba_name_eng: str, user_id: int, permission: int = 0, note: str = '') -> bool:
         """
         将user_id添加到表user_id_{tieba_name_eng}
-        
+
         Args:
             tieba_name (str): 贴吧名
             user_id (int): 用户的user_id
@@ -530,7 +530,8 @@ class Database(object):
             self._conn.rollback()
             return False
         else:
-            log.info(f"Successfully added {user_id} to table of {tieba_name_eng}. permission: {permission} note: {note}")
+            log.info(
+                f"Successfully added {user_id} to table of {tieba_name_eng}. permission: {permission} note: {note}")
             self._conn.commit()
             return True
 
@@ -574,10 +575,11 @@ class Database(object):
         try:
             self._cursor.execute(f"SELECT `permission` FROM `user_id_{tieba_name_eng}` WHERE `user_id`=%s", (user_id, ))
         except pymysql.Error as err:
-            return None
+            log.warning(f"Failed to get {user_id}. reason:{err}")
+            return 0
         else:
             if res_tuple := self._cursor.fetchone():
-                return permission if (permission := res_tuple[0]) else 0
+                return res_tuple[0]
             else:
                 return 0
 
@@ -601,7 +603,8 @@ class Database(object):
                 f"SELECT `permission`,`note`,`record_time` FROM `user_id_{tieba_name_eng}` WHERE `user_id`=%s",
                 (user_id, ))
         except pymysql.Error as err:
-            return None
+            log.warning(f"Failed to get full {user_id}. reason:{err}")
+            return 0, '', datetime.datetime(1970, 1, 1)
         else:
             if res_tuple := self._cursor.fetchone():
                 return res_tuple

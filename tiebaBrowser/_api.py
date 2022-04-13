@@ -7,7 +7,7 @@ import json
 import socket
 import sys
 import time
-from collections.abc import AsyncIterable, Iterable
+from collections.abc import AsyncIterable
 from io import BytesIO
 from typing import Optional, Union
 
