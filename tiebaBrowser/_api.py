@@ -469,7 +469,7 @@ class Browser(object):
         Args:
             tieba_name (str): 贴吧名
             pn (int, optional): 页码. Defaults to 1.
-            sort (int, optional): 排序方式 对于有热门分区的贴吧0是热门排序1是按发布时间2报错34都是热门排序>=5是按回复时间
+            sort (int, optional): 排序方式 对于有热门分区的贴吧0是热门排序1是按发布时间2报错34都是热门排序>=5是按回复时间 \
                 对于无热门分区的贴吧0是按回复时间1是按发布时间2报错>=3是按回复时间. Defaults to 5.
             is_good (bool, optional): True为获取精品区帖子 False为获取普通区帖子. Defaults to False.
 
@@ -483,8 +483,7 @@ class Browser(object):
         data.common.CopyFrom(common)
         data.kw = tieba_name
         data.pn = pn
-        data.rn = 90
-        data.rn_need = 30
+        data.rn = 30
         data.is_good = is_good
         data.q_type = 2
         data.sort_type = sort
@@ -519,7 +518,8 @@ class Browser(object):
                         only_thread_author: bool = False,
                         with_comments: bool = False,
                         comment_sort_by_agree: bool = True,
-                        comment_rn: int = 10) -> Posts:
+                        comment_rn: int = 10,
+                        is_fold: bool = False) -> Posts:
         """
         获取主题帖内回复
 
@@ -532,6 +532,7 @@ class Browser(object):
             with_comments (bool, optional): True则同时请求高赞楼中楼 False则返回的Posts.comments为空. Defaults to False.
             comment_sort_by_agree (bool, optional): True则楼中楼按点赞数顺序 False则楼中楼按时间顺序. Defaults to True.
             comment_rn (int, optional): 请求的楼中楼数量. Defaults to 10.
+            is_fold (bool, optional): 是否请求被折叠的回复. Defaults to False.
 
         Returns:
             Posts: 回复列表
@@ -547,6 +548,7 @@ class Browser(object):
         data.q_type = 2
         data.r = sort
         data.lz = only_thread_author
+        data.is_fold_comment_req = is_fold
         if with_comments:
             data.with_floor = with_comments
             data.floor_sort_type = comment_sort_by_agree

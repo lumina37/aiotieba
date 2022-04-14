@@ -15,6 +15,7 @@ message PbPageReqIdl {
         int32 q_type = 17;
         int32 pn = 18;
         int32 floor_sort_type = 74;
+        int32 is_fold_comment_req = 78;
     }
     DataReq data = 1;
 }

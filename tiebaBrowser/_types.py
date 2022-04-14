@@ -363,6 +363,10 @@ class FragImage(_Fragment):
     def origin_src(self) -> str:
         return self._raw_data.origin_src
 
+    @property
+    def origin_size(self) -> int:
+        return self._raw_data.origin_size
+
 
 class FragAt(_Fragment):
     """
@@ -1493,9 +1497,11 @@ class Posts(_Containers[Post]):
 
         forum (Forum): 所在吧信息
         thread (Thread): 所在主题帖信息
+
+        has_fold (bool): 是否存在折叠楼层
     """
 
-    __slots__ = ['_raw_data', '_users', '_forum', '_thread']
+    __slots__ = ['_raw_data', '_users', '_forum', '_thread', 'has_fold']
 
     def __init__(self, posts_proto: Optional[PbPageResIdl_pb2.PbPageResIdl] = None) -> None:
 
@@ -1513,6 +1519,8 @@ class Posts(_Containers[Post]):
         self._forum = None
         self._thread = None
 
+        self.has_fold = bool(self._raw_data.has_fold_comment)
+
     def _init_null(self) -> None:
         self._raw_data = None
 
@@ -1520,6 +1528,8 @@ class Posts(_Containers[Post]):
         self._page = None
         self._forum = None
         self._thread = None
+
+        self.has_fold = False
 
     def __getitem__(self, idx: int) -> Post:
 
