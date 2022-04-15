@@ -6,6 +6,7 @@ import json
 import re
 import time
 from collections.abc import Callable
+from typing import Union
 
 import tiebaBrowser as tb
 from tiebaBrowser._config import SCRIPT_PATH
@@ -16,24 +17,24 @@ class TimerRecorder(object):
     时间记录器
 
     Args:
-        shift_sec: float 启动时允许解析shift_sec秒之前的at
-        post_interval: float 两次post_add之间需要的时间间隔
+        shift_sec: int 启动时允许解析shift_sec秒之前的at
+        post_interval: int 两次post_add之间需要的时间间隔
 
     Fields:
-        last_parse_time: float 上次解析at信息的时间(以百度服务器为准)
-        last_post_time: float 上次发送回复的时间(以百度服务器为准)
-        post_interval: float 两次post_add之间需要的时间间隔
+        last_parse_time: int 上次解析at信息的时间(以百度服务器为准)
+        last_post_time: int 上次发送回复的时间(以百度服务器为准)
+        post_interval: int 两次post_add之间需要的时间间隔
     """
 
     __slots__ = ['last_parse_time', 'last_post_time', 'post_interval']
 
-    def __init__(self, shift_sec, post_interval) -> None:
+    def __init__(self, shift_sec: int, post_interval: int) -> None:
 
-        self.last_post_time = 0
-        self.post_interval = post_interval
-        self.last_parse_time = time.time() - shift_sec
+        self.last_post_time: int = 0
+        self.post_interval: int = post_interval
+        self.last_parse_time: int = int(time.time()) - shift_sec
 
-    def is_inrange(self, check_time) -> bool:
+    def is_inrange(self, check_time: int) -> bool:
         return self.last_parse_time < check_time
 
     def allow_execute(self) -> bool:
@@ -47,18 +48,89 @@ class TimerRecorder(object):
 
 class Context(object):
 
-    __slots__ = ['handler', 'at', 'this_permission', 'args', 'note']
+    __slots__ = ['at', 'handler', '_args', '_cmd_type', '__second_blank_idx', 'this_permission', 'parent', 'note']
 
-    def __init__(self, handler: "Handler", at: tb.At, this_permission: int, args: list[str], note: str = '') -> None:
-        self.handler = handler
-        self.at = at
-        self.this_permission = this_permission
-        self.args = args
-        self.note = note
+    def __init__(self, at: tb.At) -> None:
+        self.at: tb.At = at
+        self.handler: "Handler" = None
+        self._args = None
+        self._cmd_type = None
+        self.__second_blank_idx = None
+        self.this_permission: int = 0
+        self.parent: Union[tb.Thread, tb.Post] = None
+        self.note: str = ''
+
+    async def _init(self) -> bool:
+        handler = self.handler
+        if not handler:
+            return False
+
+        if not await handler.admin.database.ping():
+            return False
+        self.this_permission = await handler.get_user_id(self.user_id)
+
+        if len(self.at.text) >= 80:
+            await self._init_full()
+
+        return True
+
+    async def _init_full(self) -> bool:
+        if self.at.is_floor:
+            comments = await self.handler.admin.get_comments(self.tid, self.pid, is_floor=True)
+            self.parent = comments.post
+            for comment in comments:
+                if comment.pid == self.pid:
+                    self.at._text = comment.text
+
+        else:
+            if self.at.is_thread:
+                await asyncio.sleep(3)
+                posts = await self.handler.admin.get_posts(self.tid, pn=-1, rn=2, sort=1)
+                self.parent = posts.thread.share_origin
+                self.at._text = posts.thread.text
+
+            else:
+                posts = await self.handler.admin.get_posts(self.tid, pn=-1, rn=2, sort=1)
+                self.parent = posts.thread
+                self.at._text = posts[0].text
+
+    @property
+    def cmd_type(self) -> str:
+        if self._cmd_type is None:
+            text = self.at.text
+            at_idx = text.find('@')
+            if (first_blank_idx := text.find(' ', at_idx + 1)) + 1 == len(text):
+                self._cmd_type = ''
+                self._args = []
+                return self._cmd_type
+
+            self.__second_blank_idx = text.find(' ', first_blank_idx + 1)
+            if self.__second_blank_idx == -1:
+                self.__second_blank_idx = len(text)
+                self._args = []
+
+            self._cmd_type = text[first_blank_idx:self.__second_blank_idx].lstrip()
+
+        return self._cmd_type
+
+    @property
+    def _second_blank_idx(self) -> int:
+        if self.__second_blank_idx is None:
+            text = self.at.text
+            self.__second_blank_idx = text.find(' ', text.index(' ') + 1)
+
+        return self.__second_blank_idx
+
+    @property
+    def args(self) -> list[str]:
+        if self._args is None:
+            self._args = [arg.lstrip() for arg in self.at.text[self._second_blank_idx:].split(' ') if arg]
+
+        return self._args
 
     @property
     def tieba_name(self):
-        return self.handler.tieba_name
+        return self.at.tieba_name
 
     @property
     def tid(self):
@@ -93,17 +165,16 @@ def check_permission(need_permission: int = 0, need_arg_num: int = 0) -> Callabl
     def wrapper(func) -> Callable:
 
         @functools.wraps(func)
-        async def foo(self: "Listener", at: tb.At, *args):
-            if len(args) < need_arg_num:
+        async def foo(self: "Listener", ctx: Context):
+            if len(ctx.args) < need_arg_num:
                 return
-            handler = self.handler_map.get(at.tieba_name, None)
-            if not handler:
+            ctx.handler = self.handlers.get(ctx.tieba_name, None)
+            if not ctx.handler:
                 return
-            if not await handler.admin.database.ping():
+            if not await ctx._init():
                 return
-            if (this_permission := await handler.get_user_id(at.user.user_id)) < need_permission:
+            if ctx.this_permission < need_permission:
                 return
-            ctx = Context(handler, at, this_permission, args)
             return await func(self, ctx)
 
         return foo
@@ -115,10 +186,10 @@ class Handler(object):
 
     __slots__ = ['tieba_name', 'admin', 'speaker']
 
-    def __init__(self, tieba_config: dict) -> None:
-        self.tieba_name = tieba_config['tieba_name']
-        self.admin = tb.Reviewer(tieba_config['admin_key'], self.tieba_name)
-        self.speaker = tb.Browser(tieba_config['speaker_key'])
+    def __init__(self, tieba_name: str, admin_key: str, speaker_key: str) -> None:
+        self.tieba_name = tieba_name
+        self.admin = tb.Reviewer(admin_key, self.tieba_name)
+        self.speaker = tb.Browser(speaker_key)
 
     async def close(self):
         await asyncio.gather(self.admin.close(), self.speaker.close(), return_exceptions=True)
@@ -182,17 +253,17 @@ class Handler(object):
 
 class Listener(object):
 
-    __slots__ = ['listener', 'handler_map', '_cmd_map', 'time_recorder']
+    __slots__ = ['listener', 'handlers', '_cmd_map', 'time_recorder']
 
     def __init__(self) -> None:
 
         config_path = SCRIPT_PATH.parent / 'config/listen_config.json'
         with config_path.open('r', encoding='utf-8') as _file:
             config = json.load(_file)
+            self.handlers = {(handler := Handler(**tieba_config)).tieba_name: handler
+                             for tieba_config in config['tieba_configs']}
 
         self.listener = tb.Reviewer(config['listener_key'], '')
-        self.handler_map = {(handler := Handler(tieba_config)).tieba_name: handler
-                            for tieba_config in config['tieba_configs']}
 
         self._cmd_map = {
             func_name[4:]: getattr(self, func_name)
@@ -236,31 +307,10 @@ class Listener(object):
         await asyncio.gather(*[asyncio.wait_for(self._handle_cmd(at), timeout=120) for at in ats],
                              return_exceptions=False)
 
-    @staticmethod
-    def _parse_cmd(text: str) -> tuple[str, str]:
-        """
-        解析指令
-        """
-
-        cmd_type = ''
-        args = []
-
-        text = text[text.find('@'):]
-        first_blank_idx = text.find(' ')
-        if (split_start_idx := first_blank_idx + 1) == len(text):
-            return cmd_type, args
-
-        cmd = text[split_start_idx:].strip()
-        cmds = [arg.lstrip() for arg in cmd.split(' ') if arg]
-        cmd_type = cmds[0]
-        args = cmds[1:]
-
-        return cmd_type, args
-
     async def _handle_cmd(self, at: tb.At) -> None:
-        cmd_type, args = self._parse_cmd(at.text)
-        cmd_func = self._cmd_map.get(cmd_type, self.cmd_default)
-        await cmd_func(at, *args)
+        ctx = Context(at)
+        cmd_func = self._cmd_map.get(ctx.cmd_type, self.cmd_default)
+        await cmd_func(ctx)
 
     async def _arg2user_info(self, arg: str) -> tb.UserInfo:
 
@@ -428,7 +478,6 @@ class Listener(object):
         通过id封禁对应用户10天
         """
 
-        ctx.note = ctx.args[1] if len(ctx.args) >= 2 else f"cmd block by {ctx.user_id}"
         await self._block(ctx, 10)
 
     @check_permission(need_permission=2, need_arg_num=1)
@@ -438,7 +487,6 @@ class Listener(object):
         通过id封禁对应用户3天
         """
 
-        ctx.note = ctx.args[1] if len(ctx.args) >= 2 else f"cmd block3 by {ctx.user_id}"
         await self._block(ctx, 3)
 
     @check_permission(need_permission=2, need_arg_num=1)
@@ -448,7 +496,6 @@ class Listener(object):
         通过id封禁对应用户1天
         """
 
-        ctx.note = ctx.args[1] if len(ctx.args) >= 2 else f"cmd block1 by {ctx.user_id}"
         await self._block(ctx, 1)
 
     async def _block(self, ctx: Context, block_days: int) -> None:
@@ -457,6 +504,7 @@ class Listener(object):
         """
 
         tb.log.info(f"{ctx.log_name}: {ctx.text}")
+        ctx.note = ctx.args[1] if len(ctx.args) >= 2 else f"cmd {ctx.cmd_type} by {ctx.user_id}"
 
         user = await self._arg2user_info(ctx.args[0])
 
@@ -484,7 +532,6 @@ class Listener(object):
         删帖并封10天
         """
 
-        ctx.note = ctx.args[0] if len(ctx.args) >= 1 else f"cmd drop by {ctx.user_id}"
         await self._delete(ctx, 10)
 
     @check_permission(need_permission=2, need_arg_num=0)
@@ -494,7 +541,6 @@ class Listener(object):
         删帖并封3天
         """
 
-        ctx.note = ctx.args[0] if len(ctx.args) >= 1 else f"cmd drop3 by {ctx.user_id}"
         await self._delete(ctx, 3)
 
     @check_permission(need_permission=4, need_arg_num=1)
@@ -560,7 +606,6 @@ class Listener(object):
         删帖并将发帖人加入脚本黑名单+封禁十天
         """
 
-        ctx.note = ctx.args[0] if len(ctx.args) >= 1 else f"cmd exdrop by {ctx.user_id}"
         await self._delete(ctx, 10, blacklist=True)
 
     async def _delete(self, ctx: Context, block_days: int = 0, blacklist: bool = False):
@@ -569,41 +614,35 @@ class Listener(object):
         """
 
         tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
+        ctx.note = ctx.args[0] if len(ctx.args) >= 1 else f"cmd {ctx.cmd_type} by {ctx.user_id}"
 
         coros = []
+        await ctx._init_full()
 
         if ctx.at.is_floor:
-            if not (comments := await self.listener.get_comments(ctx.tid, ctx.pid, is_floor=True)):
-                return
-            target = comments.post
-            tb.log.info(f"Try to delete post {target.text} post by {target.user.log_name}")
-            coros.append(ctx.handler.admin.del_post(ctx.tieba_name, target.tid, target.pid))
+            tb.log.info(f"Try to delete post {ctx.parent.text} post by {ctx.parent.user.log_name}")
+            coros.append(ctx.handler.admin.del_post(ctx.tieba_name, ctx.parent.tid, ctx.parent.pid))
 
         else:
-            if not (posts := await self.listener.get_posts(ctx.tid, rn=0)):
-                return
-
             if ctx.at.is_thread:
-                if posts.forum.fid != (target := posts.thread.share_origin).fid:
+                if (await self.listener.get_fid(ctx.tieba_name)) != ctx.parent.fid:
                     return
-                target = posts.thread.share_origin
-                if not target.contents.ats:
+                if not ctx.parent.contents.ats:
                     return
-                target.user = await self.listener.get_basic_user_info(target.contents.ats[0].user_id)
-                tb.log.info(f"Try to delete thread {target.text} post by {target.user.log_name}")
-                coros.append(ctx.handler.admin.del_thread(ctx.tieba_name, target.tid))
+                ctx.parent.user = await self.listener.get_basic_user_info(ctx.parent.contents.ats[0].user_id)
+                tb.log.info(f"Try to delete thread {ctx.parent.text} post by {ctx.parent.user.log_name}")
+                coros.append(ctx.handler.admin.del_thread(ctx.tieba_name, ctx.parent.tid))
 
             else:
-                target = posts[0]
-                tb.log.info(f"Try to delete thread {target.text} post by {target.user.log_name}")
-                coros.append(ctx.handler.admin.del_thread(ctx.tieba_name, target.tid))
+                tb.log.info(f"Try to delete thread {ctx.parent.text} post by {ctx.parent.user.log_name}")
+                coros.append(ctx.handler.admin.del_thread(ctx.tieba_name, ctx.parent.tid))
 
         if block_days:
-            coros.append(ctx.handler.admin.block(ctx.tieba_name, target.user, block_days, ctx.note))
+            coros.append(ctx.handler.admin.block(ctx.tieba_name, ctx.parent.user, block_days, ctx.note))
         if blacklist:
-            if await ctx.handler.get_user_id(target.user.user_id) < ctx.this_permission:
-                tb.log.info(f"Try to black {target.user.log_name} in {ctx.tieba_name}")
-                coros.append(ctx.handler.add_user_id(target.user.user_id, -5, ctx.note))
+            if await ctx.handler.get_user_id(ctx.parent.user.user_id) < ctx.this_permission:
+                tb.log.info(f"Try to black {ctx.parent.user.log_name} in {ctx.tieba_name}")
+                coros.append(ctx.handler.add_user_id(ctx.parent.user.user_id, -5, ctx.note))
 
         await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
         await asyncio.gather(*coros)
