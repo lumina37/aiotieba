@@ -642,7 +642,7 @@ class Listener(object):
         if await ctx.handler.add_user_id(user.user_id, new_permission, ctx.note):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
-    @check_permission(need_permission=1, need_arg_num=1)
+    @check_permission(need_permission=0, need_arg_num=1)
     async def cmd_get(self, ctx: Context) -> None:
         """
         get指令

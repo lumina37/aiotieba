@@ -1501,7 +1501,7 @@ class Posts(_Containers[Post]):
         has_fold (bool): 是否存在折叠楼层
     """
 
-    __slots__ = ['_raw_data', '_users', '_forum', '_thread', 'has_fold']
+    __slots__ = ['_raw_data', '_users', '_forum', '_thread', '_has_fold']
 
     def __init__(self, posts_proto: Optional[PbPageResIdl_pb2.PbPageResIdl] = None) -> None:
 
@@ -1519,7 +1519,7 @@ class Posts(_Containers[Post]):
         self._forum = None
         self._thread = None
 
-        self.has_fold = bool(self._raw_data.has_fold_comment)
+        self._has_fold = bool(self._raw_data.has_fold_comment)
 
     def _init_null(self) -> None:
         self._raw_data = None
@@ -1529,7 +1529,7 @@ class Posts(_Containers[Post]):
         self._forum = None
         self._thread = None
 
-        self.has_fold = False
+        self._has_fold = False
 
     def __getitem__(self, idx: int) -> Post:
 
@@ -1589,6 +1589,14 @@ class Posts(_Containers[Post]):
                 self._thread = Thread()
 
         return self._thread
+
+    @property
+    def has_fold(self) -> bool:
+        return self._has_fold
+
+    @has_fold.setter
+    def has_fold(self, new_has_fold: bool) -> bool:
+        self._has_fold = bool(new_has_fold)
 
 
 class Comment(_Container):
