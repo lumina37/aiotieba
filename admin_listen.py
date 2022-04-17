@@ -81,11 +81,11 @@ class Context(object):
         else:
             if self.at.is_thread:
                 await asyncio.sleep(3)
-                posts = await self.handler.admin.get_posts(self.tid, pn=-1, rn=2, sort=1)
+                posts = await self.handler.admin.get_posts(self.tid, pn=-1, rn=0, sort=1)
                 self.parent = posts.thread.share_origin
                 self.at._text = posts.thread.text
             else:
-                posts = await self.handler.admin.get_posts(self.tid, pn=-1, rn=2, sort=1)
+                posts = await self.handler.admin.get_posts(self.tid, pn=-1, rn=0, sort=1)
                 self.parent = posts.thread
                 self.at._text = posts[0].text
 

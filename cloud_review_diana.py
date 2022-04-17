@@ -98,7 +98,7 @@ class CloudReview(tb.Reviewer):
         """
 
         # 该帖子里的内容没有发生任何变化 直接跳过所有后续检查
-        if thread.last_time <= await self.database.get_id(self.tieba_name, thread.tid):
+        if thread.last_time <= await self.get_id(thread.tid):
             return 0, 0, 0
 
         # 回复数>50且点赞数>回复数的两倍则判断为热帖
@@ -136,7 +136,7 @@ class CloudReview(tb.Reviewer):
         await asyncio.gather(*coros)
 
         # 缓存该tid的子孙结点编辑状态
-        await self.database.add_id(self.tieba_name, thread.tid, thread.last_time)
+        await self.add_id(thread.tid, thread.last_time)
         return 0, 0, 0
 
     async def _handle_post(self, post: tb.Post) -> None:
@@ -167,11 +167,11 @@ class CloudReview(tb.Reviewer):
         """
 
         # 该回复下的楼中楼大概率没有发生任何变化 直接跳过所有后续检查
-        if post.reply_num == (id_last_edit := await self.database.get_id(self.tieba_name, post.pid)):
+        if post.reply_num == (id_last_edit := await self.get_id(post.pid)):
             return -1, 0, 0
         # 该回复下的楼中楼可能被抽 需要缓存抽楼后的reply_num
         elif post.reply_num < id_last_edit:
-            await self.database.add_id(self.tieba_name, post.pid, post.reply_num)
+            await self.add_id(post.pid, post.reply_num)
             return -1, 0, 0
 
         del_flag, block_days, line = await self._check_text(post)
@@ -195,7 +195,7 @@ class CloudReview(tb.Reviewer):
             await asyncio.gather(*coros)
 
         # 缓存该pid的子结点编辑状态
-        await self.database.add_id(self.tieba_name, post.pid, post.reply_num)
+        await self.add_id(post.pid, post.reply_num)
         return 0, 0, 0
 
     async def _handle_comment(self, comment: tb.Comment) -> None:
@@ -226,7 +226,7 @@ class CloudReview(tb.Reviewer):
             line: int 处罚规则所在的行号
         """
 
-        if await self.database.get_id(self.tieba_name, comment.pid) != -1:
+        if await self.get_id(comment.pid) != -1:
             return -1, 0, 0
 
         del_flag, day, line = await self._check_text(comment)
@@ -243,7 +243,7 @@ class CloudReview(tb.Reviewer):
                 return 1, 0, sys._getframe().f_lineno
 
         # 缓存该pid
-        await self.database.add_id(self.tieba_name, comment.pid)
+        await self.add_id(comment.pid)
         return 0, 0, 0
 
     async def _check_text(self, obj):
@@ -256,7 +256,7 @@ class CloudReview(tb.Reviewer):
             line: int 处罚规则所在的行号
         """
 
-        permission = await self.database.get_user_id(self.tieba_name, obj.user.user_id)
+        permission = await self.get_user_id(obj.user.user_id)
         if permission >= 1:
             # 白名单用户
             return -1, 0, 0
