@@ -7,13 +7,17 @@ import time
 import tiebaBrowser as tb
 
 
-class HanimeCloudReview(tb.Reviewer):
+class CloudReview(tb.Reviewer):
 
     __slots__ = ['white_kw_exp']
 
     def __init__(self, BDUSS_key, tieba_name) -> None:
         super().__init__(BDUSS_key, tieba_name)
         self.white_kw_exp = re.compile('default默认', re.I)
+
+    async def __aenter__(self) -> "CloudReview":
+        await self._init()
+        return self
 
     async def run(self) -> None:
 
@@ -30,7 +34,7 @@ class HanimeCloudReview(tb.Reviewer):
 
                 tb.log.debug(f"Cycle time_cost: {time.perf_counter()-start_time:.4f}")
                 # 主动释放CPU 转而运行其他协程
-                await asyncio.sleep(20)
+                await asyncio.sleep(40)
 
             except Exception:
                 tb.log.critical("Unexcepted error", exc_info=True)
@@ -266,7 +270,7 @@ class HanimeCloudReview(tb.Reviewer):
 if __name__ == '__main__':
 
     async def main():
-        async with HanimeCloudReview('starry', '宫漫') as review:
+        async with CloudReview('starry', '宫漫') as review:
             await review.run()
 
     try:

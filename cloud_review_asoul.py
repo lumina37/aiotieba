@@ -8,7 +8,7 @@ from collections import Counter
 import tiebaBrowser as tb
 
 
-class AsoulCloudReview(tb.Reviewer):
+class CloudReview(tb.Reviewer):
 
     __slots__ = ['white_kw_exp', 'water_restrict_flag']
 
@@ -23,6 +23,10 @@ class AsoulCloudReview(tb.Reviewer):
         ]
         self.white_kw_exp = re.compile('|'.join(white_kw_list), re.I)
         self.water_restrict_flag = False
+
+    async def __aenter__(self) -> "CloudReview":
+        await self._init()
+        return self
 
     async def run(self) -> None:
 
@@ -318,12 +322,12 @@ class AsoulCloudReview(tb.Reviewer):
 
             if self.expressions.business_exp.search(text):
                 # 商业推广 十天删帖
-                return 1, 0, 0
+                return 1, 0, sys._getframe().f_lineno
 
             has_job = True if self.expressions.job_exp.search(text) else False
             if self.expressions.job_check_exp.search(text) and (has_job or has_rare_contact):
                 # 易误判的兼职关键词 二重检验
-                return 1, 0, 0
+                return 1, 0, sys._getframe().f_lineno
 
         return 0, 0, 0
 
@@ -331,7 +335,7 @@ class AsoulCloudReview(tb.Reviewer):
 if __name__ == '__main__':
 
     async def main():
-        async with AsoulCloudReview('starry', 'asoul') as review:
+        async with CloudReview('starry', 'asoul') as review:
             await review.run()
 
     try:

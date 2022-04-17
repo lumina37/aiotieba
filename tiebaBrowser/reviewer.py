@@ -1,18 +1,20 @@
 # -*- coding:utf-8 -*-
 __all__ = ['Reviewer']
 
-import asyncio
 import binascii
+import datetime
 import re
-from typing import Union
+from typing import AsyncIterable, Optional, Union
 
 import cv2 as cv
 import numpy as np
 
 from ._api import Browser
-from ._logger import log
+from ._logger import get_logger
 from ._types import BasicUserInfo
-from .database import Database
+from .database import Database, get_database
+
+LOG = get_logger()
 
 
 class RegularExp(object):
@@ -99,10 +101,8 @@ class Reviewer(Browser):
         self._qrdetector = None
 
     async def __aenter__(self) -> "Reviewer":
+        await self._init()
         return self
-
-    async def close(self) -> None:
-        await asyncio.gather(self.database.close(), super().close(), return_exceptions=True)
 
     @property
     def qrdetector(self) -> cv.QRCodeDetector:
@@ -113,7 +113,7 @@ class Reviewer(Browser):
     @property
     def database(self) -> Database:
         if self._database is None:
-            self._database = Database()
+            self._database = get_database()
         return self._database
 
     async def get_fid(self, tieba_name: str) -> int:
@@ -158,6 +158,183 @@ class Reviewer(Browser):
 
         return user
 
+    async def add_id(self, _id: int, id_last_edit: int = 0) -> bool:
+        """
+        将id添加到表id_{tieba_name}
+
+        Args:
+            _id (int): tid或pid
+            id_last_edit (int): 用于识别id的子对象列表是否发生修改 若该id为tid则id_last_edit应为last_time 若该id为pid则id_last_edit应为reply_num
+
+        Returns:
+            bool: 操作是否成功
+        """
+
+        return await self.database.add_id(self.tieba_name, _id, id_last_edit)
+
+    async def get_id(self, _id: int) -> int:
+        """
+        获取表id_{tieba_name}中id对应的id_last_edit值
+
+        Args:
+            _id (int): tid或pid
+
+        Returns:
+            int: id_last_edit -1表示表中无id
+        """
+
+        return await self.database.get_id(self.tieba_name, _id)
+
+    async def del_id(self, _id: int) -> bool:
+        """
+        从表id_{tieba_name}中删除id
+
+        Args:
+            _id (int): tid或pid
+
+        Returns:
+            bool: 操作是否成功
+        """
+
+        return await self.database.del_id(self.tieba_name, _id)
+
+    async def del_ids(self, hour: int) -> bool:
+        """
+        删除表id_{tieba_name}中最近hour个小时记录的id
+
+        Args:
+            hour (int): 小时数
+
+        Returns:
+            bool: 操作是否成功
+        """
+
+        return await self.database.del_ids(self.tieba_name, hour)
+
+    async def add_tid(self, tid: int, mode: bool) -> bool:
+        """
+        将tid添加到表tid_water_{tieba_name}
+
+        Args:
+            tid (int): 主题帖tid
+            mode (bool): 待恢复状态 True对应待恢复 False对应已恢复
+
+        Returns:
+            bool: 操作是否成功
+        """
+
+        return await self.database.add_tid(self.tieba_name, tid, mode)
+
+    async def is_tid_hide(self, tid: int) -> Optional[bool]:
+        """
+        获取表tid_water_{tieba_name}中tid的待恢复状态
+
+        Args:
+            tid (int): 主题帖tid
+
+        Returns:
+            Optional[bool]: True表示tid待恢复 False表示tid已恢复 None表示表中无记录
+        """
+
+        return await self.database.is_tid_hide(self.tieba_name, tid)
+
+    async def del_tid(self, tid: int) -> bool:
+        """
+        从表tid_water_{tieba_name}中删除tid
+
+        Args:
+            tid (int): 主题帖tid
+
+        Returns:
+            bool: 操作是否成功
+        """
+
+        return await self.database.del_tid(self.tieba_name, tid)
+
+    async def get_tids(self, batch_size: int = 128) -> AsyncIterable[int]:
+        """
+        获取表tid_water_{tieba_name}中所有待恢复的tid
+
+        Args:
+            batch_size (int): 分包大小
+
+        Yields:
+            AsyncIterable[int]: tid
+        """
+
+        return self.database.get_tids(self.tieba_name, batch_size)
+
+    async def add_user_id(self, user_id: int, permission: int = 0, note: str = '') -> bool:
+        """
+        将user_id添加到表user_id_{tieba_name}
+
+        Args:
+            user_id (int): 用户的user_id
+            permission (int, optional): 权限级别
+            note (str, optional): 备注
+
+        Returns:
+            bool: 操作是否成功
+        """
+
+        return await self.database.add_user_id(self.tieba_name, user_id, permission, note)
+
+    async def del_user_id(self, user_id: int) -> bool:
+        """
+        从表user_id_{tieba_name}中删除user_id
+
+        Args:
+            user_id (int): 用户的user_id
+
+        Returns:
+            bool: 操作是否成功
+        """
+
+        return await self.database.del_user_id(self.tieba_name, user_id)
+
+    async def get_user_id(self, user_id: int) -> int:
+        """
+        获取表user_id_{tieba_name}中user_id的权限级别
+
+        Args:
+            user_id (int): 用户的user_id
+
+        Returns:
+            int: 权限级别
+        """
+
+        return await self.database.get_user_id(self.tieba_name, user_id)
+
+    async def get_user_id_full(self, user_id: int) -> tuple[int, str, datetime.datetime]:
+        """
+        获取表user_id_{tieba_name}中user_id的完整信息
+
+        Args:
+            user_id (int): 用户的user_id
+
+        Returns:
+            int: 权限级别
+            str: 备注
+            datetime.datetime: 记录时间
+        """
+
+        return await self.database.get_user_id_full(self.tieba_name, user_id)
+
+    async def get_user_id_list(self, limit: int = 1, offset: int = 0, permission: int = 0) -> list[int]:
+        """
+        获取表user_id_{tieba_name}中user_id的列表
+
+        Args:
+            limit (int, optional): 返回数量限制
+            offset (int, optional): 偏移
+            permission (int, optional): 获取所有权限级别大于等于permission的user_id
+
+        Returns:
+            list[int]: user_id列表
+        """
+
+        return await self.database.get_user_id_list(self.tieba_name, limit, offset, permission)
+
     def scan_QRcode(self, image: np.ndarray) -> str:
         """
         扫描图像中的二维码
@@ -172,7 +349,7 @@ class Reviewer(Browser):
         try:
             data = self.qrdetector.detectAndDecode(image)[0]
         except Exception as err:
-            log.warning(f"Failed to decode image. reason:{err}")
+            LOG.warning(f"Failed to decode image. reason:{err}")
             data = ''
 
         return data
@@ -192,7 +369,7 @@ class Reviewer(Browser):
             img_hash_array = cv.img_hash.pHash(image)
             img_hash = binascii.b2a_hex(img_hash_array.tobytes()).decode()
         except Exception as err:
-            log.warning(f"Failed to get imagehash. reason:{err}")
+            LOG.warning(f"Failed to get imagehash. reason:{err}")
             img_hash = ''
 
         return img_hash

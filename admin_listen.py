@@ -1,6 +1,5 @@
 # -*- coding:utf-8 -*-
 import asyncio
-import datetime
 import functools
 import json
 import re
@@ -65,11 +64,9 @@ class Context(object):
         if not handler:
             return False
 
-        if not await handler.admin.database.ping():
-            return False
-        self.this_permission = await handler.get_user_id(self.user_id)
+        self.this_permission = await handler.admin.get_user_id(self.user_id)
 
-        if len(self.at.text) >= 80:
+        if len(self.at.text) >= 30:
             await self._init_full()
 
         return True
@@ -81,14 +78,12 @@ class Context(object):
             for comment in comments:
                 if comment.pid == self.pid:
                     self.at._text = comment.text
-
         else:
             if self.at.is_thread:
                 await asyncio.sleep(3)
                 posts = await self.handler.admin.get_posts(self.tid, pn=-1, rn=2, sort=1)
                 self.parent = posts.thread.share_origin
                 self.at._text = posts.thread.text
-
             else:
                 posts = await self.handler.admin.get_posts(self.tid, pn=-1, rn=2, sort=1)
                 self.parent = posts.thread
@@ -191,64 +186,11 @@ class Handler(object):
         self.admin = tb.Reviewer(admin_key, self.tieba_name)
         self.speaker = tb.Browser(speaker_key)
 
+    async def _init(self) -> None:
+        await asyncio.gather(self.admin._init(), self.speaker._init())
+
     async def close(self):
         await asyncio.gather(self.admin.close(), self.speaker.close(), return_exceptions=True)
-
-    async def add_user_id(self, user_id: int, permission: int, note: str) -> bool:
-        """
-        添加user_id
-
-        Args:
-            user_id (int): 用户的user_id
-            permission (int): 权限级别
-            note (str): 备注
-
-        Returns:
-            bool: 操作是否成功
-        """
-
-        return await self.admin.database.add_user_id(self.tieba_name, user_id, permission, note)
-
-    async def del_user_id(self, user_id: int) -> bool:
-        """
-        删除user_id
-
-        Args:
-            user_id (int): 用户的user_id
-
-        Returns:
-            bool: 操作是否成功
-        """
-
-        return await self.admin.database.del_user_id(self.tieba_name, user_id)
-
-    async def get_user_id(self, user_id: int) -> int:
-        """
-        获取user_id的权限级别
-
-        Args:
-            user_id (int): 用户的user_id
-
-        Returns:
-            int: 权限级别
-        """
-
-        return await self.admin.database.get_user_id(self.tieba_name, user_id)
-
-    async def get_user_id_full(self, user_id: int) -> tuple[int, str, datetime.datetime]:
-        """
-        获取user_id的完整信息
-
-        Args:
-            user_id (int): 用户的user_id
-
-        Returns:
-            int: 权限级别
-            str: 备注
-            datetime.datetime: 记录时间
-        """
-
-        return await self.admin.database.get_user_id_full(self.tieba_name, user_id)
 
 
 class Listener(object):
@@ -277,6 +219,8 @@ class Listener(object):
                              return_exceptions=True)
 
     async def __aenter__(self) -> "Listener":
+        coros = [handler._init() for handler in self.handlers.values()]
+        await asyncio.gather(*coros, self.listener._init())
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
@@ -286,7 +230,7 @@ class Listener(object):
 
         while 1:
             try:
-                asyncio.create_task(self.scan())
+                asyncio.create_task(self._fetch_and_execute_cmds())
                 tb.log.debug('heartbeat')
                 await asyncio.sleep(5)
 
@@ -296,7 +240,7 @@ class Listener(object):
                 tb.log.critical("Unhandled error", exc_info=True)
                 return
 
-    async def scan(self) -> None:
+    async def _fetch_and_execute_cmds(self) -> None:
         ats = await self.listener.get_ats()
         for end_idx, at in enumerate(ats):
             if not self.time_recorder.is_inrange(at.create_time):
@@ -304,17 +248,17 @@ class Listener(object):
                 ats = ats[:end_idx]
                 break
 
-        await asyncio.gather(*[asyncio.wait_for(self._handle_cmd(at), timeout=120) for at in ats],
-                             return_exceptions=False)
+        if ats and (await self.listener.database.ping()):
+            await asyncio.gather(*[asyncio.wait_for(self._execute_cmd(at), timeout=120) for at in ats])
 
-    async def _handle_cmd(self, at: tb.At) -> None:
+    async def _execute_cmd(self, at: tb.At) -> None:
         ctx = Context(at)
         cmd_func = self._cmd_map.get(ctx.cmd_type, self.cmd_default)
         await cmd_func(ctx)
 
     async def _arg2user_info(self, arg: str) -> tb.UserInfo:
 
-        def _get_number(_str: str, _sign: str) -> int:
+        def _get_num_between_two_signs(_str: str, _sign: str) -> int:
             if (first_sign := _str.find(_sign)) == -1:
                 return 0
             if (last_sign := _str.rfind(_sign)) == -1:
@@ -324,9 +268,9 @@ class Listener(object):
                 return 0
             return int(sub_str)
 
-        if tieba_uid := _get_number(arg, '#'):
+        if tieba_uid := _get_num_between_two_signs(arg, '#'):
             user = await self.listener.tieba_uid2user_info(tieba_uid)
-        elif user_id := _get_number(arg, '/'):
+        elif user_id := _get_num_between_two_signs(arg, '/'):
             user = await self.listener.get_basic_user_info(user_id)
         else:
             user = await self.listener.get_basic_user_info(arg)
@@ -345,10 +289,8 @@ class Listener(object):
         if not self.time_recorder.allow_execute():
             return
 
-        active_admin_list = [
-            (await self.listener.get_basic_user_info(user_id)).user_name
-            for user_id in await ctx.handler.admin.database.get_user_id_list(ctx.tieba_name, limit=4, permission=2)
-        ]
+        active_admin_list = [(await self.listener.get_basic_user_info(user_id)).user_name
+                             for user_id in await ctx.handler.admin.get_user_id_list(limit=4, permission=2)]
         extra_info = ctx.args[0] if len(ctx.args) else '无'
         content = f"该回复为吧务召唤指令@.v_guard holyshit的自动响应\n召唤人诉求：{extra_info}@" + " @".join(active_admin_list)
 
@@ -553,13 +495,13 @@ class Listener(object):
         tb.log.info(f"{ctx.log_name}: {ctx.text}")
 
         user = await self._arg2user_info(ctx.args[0])
-        if await ctx.handler.get_user_id(user.user_id) >= ctx.this_permission:
+        if await ctx.handler.admin.get_user_id(user.user_id) >= ctx.this_permission:
             return
         ctx.note = ctx.args[1] if len(ctx.args) >= 2 else f"cmd black by {ctx.user_id}"
 
         tb.log.info(f"Try to black {user.log_name} in {ctx.tieba_name}")
 
-        if await ctx.handler.add_user_id(user.user_id, -5, ctx.note):
+        if await ctx.handler.admin.add_user_id(user.user_id, -5, ctx.note):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=3, need_arg_num=1)
@@ -572,13 +514,13 @@ class Listener(object):
         tb.log.info(f"{ctx.log_name}: {ctx.text}")
 
         user = await self._arg2user_info(ctx.args[0])
-        if await ctx.handler.get_user_id(user.user_id) >= ctx.this_permission:
+        if await ctx.handler.admin.get_user_id(user.user_id) >= ctx.this_permission:
             return
         ctx.note = ctx.args[1] if len(ctx.args) >= 2 else f"cmd white by {ctx.user_id}"
 
         tb.log.info(f"Try to white {user.log_name} in {ctx.tieba_name}")
 
-        if await ctx.handler.add_user_id(user.user_id, 1, ctx.note):
+        if await ctx.handler.admin.add_user_id(user.user_id, 1, ctx.note):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=3, need_arg_num=1)
@@ -591,12 +533,12 @@ class Listener(object):
         tb.log.info(f"{ctx.log_name}: {ctx.text}")
 
         user = await self._arg2user_info(ctx.args[0])
-        if await ctx.handler.get_user_id(user.user_id) >= ctx.this_permission:
+        if await ctx.handler.admin.get_user_id(user.user_id) >= ctx.this_permission:
             return
 
         tb.log.info(f"Try to reset {user.log_name} in {ctx.tieba_name}")
 
-        if await ctx.handler.del_user_id(user.user_id):
+        if await ctx.handler.admin.del_user_id(user.user_id):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=4, need_arg_num=0)
@@ -640,9 +582,9 @@ class Listener(object):
         if block_days:
             coros.append(ctx.handler.admin.block(ctx.tieba_name, ctx.parent.user, block_days, ctx.note))
         if blacklist:
-            if await ctx.handler.get_user_id(ctx.parent.user.user_id) < ctx.this_permission:
+            if await ctx.handler.admin.get_user_id(ctx.parent.user.user_id) < ctx.this_permission:
                 tb.log.info(f"Try to black {ctx.parent.user.log_name} in {ctx.tieba_name}")
-                coros.append(ctx.handler.add_user_id(ctx.parent.user.user_id, -5, ctx.note))
+                coros.append(ctx.handler.admin.add_user_id(ctx.parent.user.user_id, -5, ctx.note))
 
         await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
         await asyncio.gather(*coros)
@@ -674,11 +616,11 @@ class Listener(object):
         new_permission = int(ctx.args[1])
         ctx.note = ctx.args[2] if len(ctx.args) >= 3 else f"cmd set by {ctx.user_id}"
 
-        old_permission = await ctx.handler.get_user_id(user.user_id)
+        old_permission = await ctx.handler.admin.get_user_id(user.user_id)
         if old_permission >= ctx.this_permission or new_permission >= ctx.this_permission:
             return
 
-        if await ctx.handler.add_user_id(user.user_id, new_permission, ctx.note):
+        if await ctx.handler.admin.add_user_id(user.user_id, new_permission, ctx.note):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=0, need_arg_num=1)
@@ -694,7 +636,7 @@ class Listener(object):
         if not user.user_id:
             return
 
-        permission, note, record_time = await ctx.handler.get_user_id_full(user.user_id)
+        permission, note, record_time = await ctx.handler.admin.get_user_id_full(user.user_id)
         content = f"""@{ctx.at.user.user_name} \nuser_name: {user.user_name}\nuser_id: {user.user_id}\nportrait: {user.portrait}\npermission: {permission}\nnote: {note}\nrecord_time: {record_time.strftime("%Y-%m-%d %H:%M:%S")}"""
 
         if await ctx.handler.speaker.add_post(ctx.tieba_name, ctx.tid, content):
@@ -712,7 +654,7 @@ class Listener(object):
         if ctx.this_permission == 0:
             for thread in await self.listener.get_threads(ctx.tieba_name, is_good=True):
                 if thread.user.user_id == ctx.user_id and thread.create_time > time.time() - 30 * 24 * 3600:
-                    if await ctx.handler.add_user_id(ctx.user_id, 1, "cmd register"):
+                    if await ctx.handler.admin.add_user_id(ctx.user_id, 1, "cmd register"):
                         await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=1, need_arg_num=0)
@@ -837,8 +779,8 @@ class Listener(object):
 
         tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
 
-        if await ctx.handler.admin.database.add_tid(
-                ctx.tieba_name, ctx.tid, True) and await ctx.handler.admin.hide_thread(ctx.tieba_name, ctx.tid):
+        if await ctx.handler.admin.add_tid(ctx.tid, True) and await ctx.handler.admin.hide_thread(
+                ctx.tieba_name, ctx.tid):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=2, need_arg_num=0)
@@ -850,8 +792,7 @@ class Listener(object):
 
         tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
 
-        if await ctx.handler.admin.database.del_tid(ctx.tieba_name, ctx.tid) and await ctx.handler.admin.unhide_thread(
-                ctx.tieba_name, ctx.tid):
+        if await ctx.handler.admin.del_tid(ctx.tid) and await ctx.handler.admin.unhide_thread(ctx.tieba_name, ctx.tid):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=3, need_arg_num=1)
@@ -864,14 +805,14 @@ class Listener(object):
         tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
 
         if ctx.args[0] == "enter":
-            if await ctx.handler.admin.database.add_tid(ctx.tieba_name, 0, True):
+            if await ctx.handler.admin.add_tid(0, True):
                 await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
         elif ctx.args[0] == "exit":
-            if await ctx.handler.admin.database.add_tid(ctx.tieba_name, 0, False):
+            if await ctx.handler.admin.add_tid(0, False):
                 await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
-            async for tid in ctx.handler.admin.database.get_tids(ctx.tieba_name):
+            async for tid in ctx.handler.admin.get_tids():
                 if await ctx.handler.admin.unhide_thread(ctx.tieba_name, tid):
-                    await ctx.handler.admin.database.add_tid(ctx.tieba_name, tid, False)
+                    await ctx.handler.admin.add_tid(tid, False)
 
     @check_permission(need_permission=2, need_arg_num=0)
     async def cmd_active(self, ctx: Context) -> None:
@@ -882,7 +823,7 @@ class Listener(object):
 
         tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
 
-        if await ctx.handler.add_user_id(ctx.user_id, ctx.this_permission, "cmd active"):
+        if await ctx.handler.admin.add_user_id(ctx.user_id, ctx.this_permission, "cmd active"):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=1, need_arg_num=0)
@@ -893,8 +834,8 @@ class Listener(object):
         """
 
         tb.log.info(f"{ctx.log_name}: {ctx.text}")
-
-        await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
+        if await ctx.handler.admin.database.ping():
+            await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=129, need_arg_num=65536)
     async def cmd_default(self, ctx: Context) -> None:

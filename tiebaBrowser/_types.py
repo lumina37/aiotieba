@@ -10,9 +10,11 @@ from typing import Generic, Literal, Optional, TypeVar, Union, final
 
 from google.protobuf.json_format import ParseDict
 
-from ._logger import log
+from ._logger import get_logger
 from .tieba_proto import (FrsPageResIdl_pb2, Page_pb2, PbContent_pb2, PbFloorResIdl_pb2, PbPageResIdl_pb2, Post_pb2,
                           ReplyMeResIdl_pb2, SimpleForum_pb2, SubPostList_pb2, ThreadInfo_pb2, User_pb2)
+
+LOG = get_logger()
 
 
 def _json_decoder_hook(_dict):
@@ -40,7 +42,7 @@ def _int_prop_check_ignore_none(default_val: int) -> Callable:
                 try:
                     new_val = int(new_val)
                 except ValueError as err:
-                    log.warning(f"{err} happens in {func.__name__}")
+                    LOG.warning(f"{err} happens in {func.__name__}")
                     new_val = default_val
             else:
                 new_val = default_val
@@ -552,7 +554,7 @@ class Fragments(Generic[_TFrag]):
                 self._emojis.append(fragment)
             else:
                 fragment = _Fragment(content_proto)
-                log.warning(f"Unknown fragment type:{_type}")
+                LOG.warning(f"Unknown fragment type:{_type}")
 
             return fragment
 
@@ -2151,7 +2153,7 @@ class Ats(_Containers[At]):
                     self._page = Page(page_proto)
 
                 except Exception as err:
-                    log.warning(f"Failed to init Page of Ats. reason:line {err.__traceback__.tb_lineno}: {err}")
+                    LOG.warning(f"Failed to init Page of Ats. reason:line {err.__traceback__.tb_lineno}: {err}")
                     self._page = Page()
 
             else:
@@ -2317,7 +2319,7 @@ class Searches(_Containers[Search]):
                     self._page = Page(page_proto)
 
                 except Exception as err:
-                    log.warning(f"Failed to init Page of Searches. reason:line {err.__traceback__.tb_lineno}: {err}")
+                    LOG.warning(f"Failed to init Page of Searches. reason:line {err.__traceback__.tb_lineno}: {err}")
                     self._page = Page()
 
             else:

@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 """
-@Version 2.3.5_rc2
+@Version 2.4.0
 @Author: Starry
 @License: Unlicense
 @Homepage: https://github.com/Starry-OvO/Tieba-Cloud-Review
@@ -13,9 +13,11 @@ import signal
 import sys
 
 from ._api import Browser
-from ._logger import log
+from ._logger import get_logger
 from ._types import *
 from .reviewer import Reviewer
+
+log = get_logger()
 
 
 def terminate(signal_number, frame):

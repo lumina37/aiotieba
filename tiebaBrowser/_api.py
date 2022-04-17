@@ -20,14 +20,16 @@ from PIL import Image
 
 from tiebaBrowser.tieba_proto import ThreadInfo_pb2
 
-from ._config import config
-from ._logger import log
+from ._config import CONFIG
+from ._logger import get_logger
 from ._types import (JSON_DECODER, Ats, BasicUserInfo, Comments, Posts, Replys, Searches, Thread, Threads, UserInfo)
 from .tieba_proto import (CommonReq_pb2, FrsPageReqIdl_pb2, FrsPageResIdl_pb2, GetBawuInfoReqIdl_pb2,
                           GetBawuInfoResIdl_pb2, GetUserByTiebaUidReqIdl_pb2, GetUserByTiebaUidResIdl_pb2,
                           GetUserInfoReqIdl_pb2, GetUserInfoResIdl_pb2, PbFloorReqIdl_pb2, PbFloorResIdl_pb2,
                           PbPageReqIdl_pb2, PbPageResIdl_pb2, ReplyMeReqIdl_pb2, ReplyMeResIdl_pb2,
                           SearchPostForumReqIdl_pb2, SearchPostForumResIdl_pb2, User_pb2)
+
+LOG = get_logger()
 
 
 class Sessions(object):
@@ -43,12 +45,13 @@ class Sessions(object):
     def __init__(self, BDUSS_key: Optional[str] = None) -> None:
 
         if BDUSS_key:
-            self.BDUSS = config['BDUSS'][BDUSS_key]
-            self.STOKEN = config['STOKEN'].get(BDUSS_key, '')
+            self.BDUSS = CONFIG['BDUSS'][BDUSS_key]
+            self.STOKEN = CONFIG['STOKEN'].get(BDUSS_key, '')
         else:
             self.BDUSS = ''
             self.STOKEN = ''
 
+    async def _init(self) -> None:
         self._timeout = aiohttp.ClientTimeout(connect=5, sock_connect=3, sock_read=10)
         self._connector = aiohttp.TCPConnector(ttl_dns_cache=600,
                                                keepalive_timeout=90,
@@ -112,15 +115,16 @@ class Sessions(object):
                                          read_bufsize=_read_bufsize,
                                          trust_env=_trust_env)
 
+    async def __aenter__(self) -> "Sessions":
+        await self._init()
+        return self
+
     async def close(self) -> None:
         await asyncio.gather(self.app.close(),
                              self.app_proto.close(),
                              self.web.close(),
                              self._connector.close(),
                              return_exceptions=True)
-
-    async def __aenter__(self) -> "Sessions":
-        return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.close()
@@ -143,11 +147,15 @@ class Browser(object):
         self.sessions = Sessions(BDUSS_key)
         self._tbs: str = ''
 
-    async def close(self) -> None:
-        await self.sessions.close()
+    async def _init(self) -> None:
+        await self.sessions._init()
 
     async def __aenter__(self) -> "Browser":
+        await self._init()
         return self
+
+    async def close(self) -> None:
+        await self.sessions.close()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.close()
@@ -241,7 +249,7 @@ class Browser(object):
             fid = int(main_json['data']['fid'])
 
         except Exception as err:
-            log.warning(f"Failed to get fid of {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to get fid of {tieba_name}. reason:{err}")
             fid = 0
 
         if fid:
@@ -324,7 +332,7 @@ class Browser(object):
             user.is_vip = int(vip_dict['v_status']) if (vip_dict := user_dict['vipInfo']) else False
 
         except Exception as err:
-            log.warning(f"Failed to get UserInfo of {user.log_name}. reason:{err}")
+            LOG.warning(f"Failed to get UserInfo of {user.log_name}. reason:{err}")
             user = UserInfo()
 
         return user
@@ -358,7 +366,7 @@ class Browser(object):
             user.user_id = user_dict['id']
 
         except Exception as err:
-            log.warning(f"Failed to get BasicUserInfo of {user.log_name}. reason:{err}")
+            LOG.warning(f"Failed to get BasicUserInfo of {user.log_name}. reason:{err}")
             user = UserInfo()
 
         return user
@@ -389,7 +397,7 @@ class Browser(object):
             user.portrait = user_dict['portrait']
 
         except Exception as err:
-            log.warning(f"Failed to get BasicUserInfo of {user.user_name}. reason:{err}")
+            LOG.warning(f"Failed to get BasicUserInfo of {user.user_name}. reason:{err}")
             user = BasicUserInfo()
 
         return user
@@ -428,7 +436,7 @@ class Browser(object):
             user = UserInfo(user_proto=user_proto)
 
         except Exception as err:
-            log.warning(f"Failed to get UserInfo of {user.user_id}. reason:{err}")
+            LOG.warning(f"Failed to get UserInfo of {user.user_id}. reason:{err}")
             user = UserInfo()
 
         return user
@@ -457,7 +465,7 @@ class Browser(object):
             user.portrait = user_dict['portrait']
 
         except Exception as err:
-            log.warning(f"Failed to get BasicUserInfo of {user.user_id}. reason:{err}")
+            LOG.warning(f"Failed to get BasicUserInfo of {user.user_id}. reason:{err}")
             user = BasicUserInfo()
 
         return user
@@ -505,7 +513,7 @@ class Browser(object):
             threads = Threads(main_proto)
 
         except Exception as err:
-            log.warning(f"Failed to get threads of {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to get threads of {tieba_name}. reason:{err}")
             threads = Threads()
 
         return threads
@@ -544,7 +552,7 @@ class Browser(object):
         data.common.CopyFrom(common)
         data.kz = tid
         data.pn = pn
-        data.rn = rn
+        data.rn = rn if rn > 1 else 2
         data.q_type = 2
         data.r = sort
         data.lz = only_thread_author
@@ -571,7 +579,7 @@ class Browser(object):
             posts = Posts(main_proto)
 
         except Exception as err:
-            log.warning(f"Failed to get posts of {tid}. reason:{err}")
+            LOG.warning(f"Failed to get posts of {tid}. reason:{err}")
             posts = Posts()
 
         return posts
@@ -618,7 +626,7 @@ class Browser(object):
             comments = Comments(main_proto)
 
         except Exception as err:
-            log.warning(f"Failed to get comments of {pid} in {tid}. reason:{err}")
+            LOG.warning(f"Failed to get comments of {pid} in {tid}. reason:{err}")
             comments = Comments()
 
         return comments
@@ -660,10 +668,10 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            log.warning(f"Failed to block {user.log_name} in {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to block {user.log_name} in {tieba_name}. reason:{err}")
             return False
 
-        log.info(f"Successfully blocked {user.log_name} in {tieba_name} for {payload['day']} days")
+        LOG.info(f"Successfully blocked {user.log_name} in {tieba_name} for {payload['day']} days")
         return True
 
     async def unblock(self, tieba_name: str, user: BasicUserInfo) -> bool:
@@ -695,10 +703,10 @@ class Browser(object):
                 raise ValueError(main_json['error'])
 
         except Exception as err:
-            log.warning(f"Failed to unblock {user.log_name} in {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to unblock {user.log_name} in {tieba_name}. reason:{err}")
             return False
 
-        log.info(f"Successfully unblocked {user.log_name} in {tieba_name}")
+        LOG.info(f"Successfully unblocked {user.log_name} in {tieba_name}")
         return True
 
     async def hide_thread(self, tieba_name: str, tid: int) -> bool:
@@ -759,10 +767,10 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            log.warning(f"Failed to delete thread {tid} in {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to delete thread {tid} in {tieba_name}. reason:{err}")
             return False
 
-        log.info(f"Successfully deleted thread {tid} hide:{is_hide} in {tieba_name}")
+        LOG.info(f"Successfully deleted thread {tid} hide:{is_hide} in {tieba_name}")
         return True
 
     async def del_post(self, tieba_name: str, tid: int, pid: int) -> bool:
@@ -795,10 +803,10 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            log.warning(f"Failed to delete post {pid} in {tid} in {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to delete post {pid} in {tid} in {tieba_name}. reason:{err}")
             return False
 
-        log.info(f"Successfully deleted post {pid} in {tid} in {tieba_name}")
+        LOG.info(f"Successfully deleted post {pid} in {tid} in {tieba_name}")
         return True
 
     async def unhide_thread(self, tieba_name, tid: int) -> bool:
@@ -874,10 +882,10 @@ class Browser(object):
                 raise ValueError(main_json['error'])
 
         except Exception as err:
-            log.warning(f"Failed to recover tid:{tid} pid:{pid} in {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to recover tid:{tid} pid:{pid} in {tieba_name}. reason:{err}")
             return False
 
-        log.info(f"Successfully recovered tid:{tid} pid:{pid} hide:{is_hide} in {tieba_name}")
+        LOG.info(f"Successfully recovered tid:{tid} pid:{pid} hide:{is_hide} in {tieba_name}")
         return True
 
     async def move(self, tieba_name: str, tid: int, to_tab_id: int, from_tab_id: int = 0) -> bool:
@@ -915,10 +923,10 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            log.warning(f"Failed to add {tid} to tab:{to_tab_id} in {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to add {tid} to tab:{to_tab_id} in {tieba_name}. reason:{err}")
             return False
 
-        log.info(f"Successfully add {tid} to tab:{to_tab_id} in {tieba_name}")
+        LOG.info(f"Successfully add {tid} to tab:{to_tab_id} in {tieba_name}")
         return True
 
     async def recommend(self, tieba_name: str, tid: int) -> bool:
@@ -947,10 +955,10 @@ class Browser(object):
                 raise ValueError(main_json['data']['msg'])
 
         except Exception as err:
-            log.warning(f"Failed to recommend {tid} in {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to recommend {tid} in {tieba_name}. reason:{err}")
             return False
 
-        log.info(f"Successfully recommended {tid} in {tieba_name}")
+        LOG.info(f"Successfully recommended {tid} in {tieba_name}")
         return True
 
     async def good(self, tieba_name: str, tid: int, cname: str = '') -> bool:
@@ -998,7 +1006,7 @@ class Browser(object):
                         break
 
             except Exception as err:
-                log.warning(f"Failed to get cid of {cname} in {tieba_name}. reason:{err}")
+                LOG.warning(f"Failed to get cid of {cname} in {tieba_name}. reason:{err}")
                 return 0
 
             return cid
@@ -1036,10 +1044,10 @@ class Browser(object):
                     raise ValueError(main_json['error_msg'])
 
             except Exception as err:
-                log.warning(f"Failed to add {tid} to good_list:{cname} in {tieba_name}. reason:{err}")
+                LOG.warning(f"Failed to add {tid} to good_list:{cname} in {tieba_name}. reason:{err}")
                 return False
 
-            log.info(f"Successfully add {tid} to good_list:{cname} in {tieba_name}")
+            LOG.info(f"Successfully add {tid} to good_list:{cname} in {tieba_name}")
             return True
 
         return await _good(await _cname2cid())
@@ -1073,10 +1081,10 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            log.warning(f"Failed to remove {tid} from good_list in {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to remove {tid} from good_list in {tieba_name}. reason:{err}")
             return False
 
-        log.info(f"Successfully removed {tid} from good_list in {tieba_name}")
+        LOG.info(f"Successfully removed {tid} from good_list in {tieba_name}")
         return True
 
     async def top(self, tieba_name: str, tid: int) -> bool:
@@ -1109,10 +1117,10 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            log.warning(f"Failed to add {tid} to top_list in {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to add {tid} to top_list in {tieba_name}. reason:{err}")
             return False
 
-        log.info(f"Successfully add {tid} to top_list in {tieba_name}")
+        LOG.info(f"Successfully add {tid} to top_list in {tieba_name}")
         return True
 
     async def untop(self, tieba_name: str, tid: int) -> bool:
@@ -1144,10 +1152,10 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            log.warning(f"Failed to remove {tid} from top_list in {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to remove {tid} from top_list in {tieba_name}. reason:{err}")
             return False
 
-        log.info(f"Successfully removed {tid} from top_list in {tieba_name}")
+        LOG.info(f"Successfully removed {tid} from top_list in {tieba_name}")
         return True
 
     async def get_recover_list(self,
@@ -1180,7 +1188,7 @@ class Browser(object):
             items = soup.find_all('a', class_='recover_list_item_btn')
 
         except Exception as err:
-            log.warning(f"Failed to get recover_list of {tieba_name} pn:{pn}. reason:{err}")
+            LOG.warning(f"Failed to get recover_list of {tieba_name} pn:{pn}. reason:{err}")
             res_list = []
             has_more = False
 
@@ -1221,7 +1229,7 @@ class Browser(object):
             items = soup.find_all('td', class_='left_cell')
 
         except Exception as err:
-            log.warning(f"Failed to get black_list of {tieba_name} pn:{pn}. reason:{err}")
+            LOG.warning(f"Failed to get black_list of {tieba_name} pn:{pn}. reason:{err}")
             res_list = []
             has_more = False
 
@@ -1262,10 +1270,10 @@ class Browser(object):
                 raise ValueError(main_json['errmsg'])
 
         except Exception as err:
-            log.warning(f"Failed to add {user.log_name} to black_list in {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to add {user.log_name} to black_list in {tieba_name}. reason:{err}")
             return False
 
-        log.info(f"Successfully added {user.log_name} to black_list in {tieba_name}")
+        LOG.info(f"Successfully added {user.log_name} to black_list in {tieba_name}")
         return True
 
     async def blacklist_del(self, tieba_name: str, user: BasicUserInfo) -> bool:
@@ -1290,10 +1298,10 @@ class Browser(object):
                 raise ValueError(main_json['errmsg'])
 
         except Exception as err:
-            log.warning(f"Failed to remove {user.log_name} from black_list in {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to remove {user.log_name} from black_list in {tieba_name}. reason:{err}")
             return False
 
-        log.info(f"Successfully removed {user.log_name} from black_list in {tieba_name}")
+        LOG.info(f"Successfully removed {user.log_name} from black_list in {tieba_name}")
         return True
 
     async def refuse_appeals(self, tieba_name: str) -> bool:
@@ -1338,10 +1346,10 @@ class Browser(object):
                     raise ValueError(main_json['error'])
 
             except Exception as err:
-                log.warning(f"Failed to handle {appeal_id} in {tieba_name}. reason:{err}")
+                LOG.warning(f"Failed to handle {appeal_id} in {tieba_name}. reason:{err}")
                 return False
 
-            log.info(f"Successfully handled {appeal_id} in {tieba_name}. refuse:{refuse}")
+            LOG.info(f"Successfully handled {appeal_id} in {tieba_name}. refuse:{refuse}")
             return True
 
         async def _get_appeal_list() -> list[int]:
@@ -1365,7 +1373,7 @@ class Browser(object):
                 items = soup.find_all('a', class_='appeal_list_item_btn')
 
             except Exception as err:
-                log.warning(f"Failed to get appeal_list of {tieba_name}. reason:{err}")
+                LOG.warning(f"Failed to get appeal_list of {tieba_name}. reason:{err}")
                 res_list = []
 
             else:
@@ -1407,7 +1415,7 @@ class Browser(object):
             image = cv.cvtColor(np.asarray(pil_image), cv.COLOR_RGB2BGR)
 
         except Exception as err:
-            log.warning(f"Failed to get image {img_url}. reason:{err}")
+            LOG.warning(f"Failed to get image {img_url}. reason:{err}")
             image = None
 
         return image
@@ -1440,7 +1448,7 @@ class Browser(object):
             self._tbs = main_json['anti']['tbs']
 
         except Exception as err:
-            log.warning(f"Failed to get UserInfo. reason:{err}")
+            LOG.warning(f"Failed to get UserInfo. reason:{err}")
             user = BasicUserInfo()
             self._tbs = ''
 
@@ -1474,7 +1482,7 @@ class Browser(object):
             msg = {key: bool(int(value)) for key, value in main_json['message'].items()}
 
         except Exception as err:
-            log.warning(f"Failed to get msg reason:{err}")
+            LOG.warning(f"Failed to get msg reason:{err}")
             msg = {
                 'fans': False,
                 'replyme': False,
@@ -1518,7 +1526,7 @@ class Browser(object):
             replys = Replys(main_proto)
 
         except Exception as err:
-            log.warning(f"Failed to get replys reason:{err}")
+            LOG.warning(f"Failed to get replys reason:{err}")
             replys = Replys()
 
         return replys
@@ -1544,7 +1552,7 @@ class Browser(object):
             ats = Ats(main_json)
 
         except Exception as err:
-            log.warning(f"Failed to get ats reason:{err}")
+            LOG.warning(f"Failed to get ats reason:{err}")
             ats = Ats()
 
         return ats
@@ -1584,7 +1592,7 @@ class Browser(object):
                 raise ValueError("invalid params")
 
         except Exception as err:
-            log.warning(f"Failed to get profile of {user.portrait}. reason:{err}")
+            LOG.warning(f"Failed to get profile of {user.portrait}. reason:{err}")
             return UserInfo(), []
 
         user = UserInfo(user_proto=ParseDict(main_json['user'], User_pb2.User(), ignore_unknown_fields=True))
@@ -1641,7 +1649,7 @@ class Browser(object):
             searches = Searches(main_json)
 
         except Exception as err:
-            log.warning(f"Failed to search {query} in {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to search {query} in {tieba_name}. reason:{err}")
             searches = Searches()
 
         return searches
@@ -1690,7 +1698,7 @@ class Browser(object):
                     return
 
             except Exception as err:
-                log.warning(f"Failed to get forumlist of {user.user_id}. reason:{err}")
+                LOG.warning(f"Failed to get forumlist of {user.user_id}. reason:{err}")
                 raise StopAsyncIteration
 
             nonofficial_forums = forum_list.get('non-gconforum', [])
@@ -1765,7 +1773,7 @@ class Browser(object):
                 yield tieba_name, fid, level, exp
 
         except Exception as err:
-            log.warning(f"Failed to get forumlist of {user.user_id}. reason:{err}")
+            LOG.warning(f"Failed to get forumlist of {user.user_id}. reason:{err}")
             return
 
     async def get_bawu_dict(self, tieba_name: str) -> dict[str, list[BasicUserInfo]]:
@@ -1807,7 +1815,7 @@ class Browser(object):
             }
 
         except Exception as err:
-            log.warning(f"Failed to get adminlist reason: {err}")
+            LOG.warning(f"Failed to get adminlist reason: {err}")
             bawu_dict = {}
 
         return bawu_dict
@@ -1847,7 +1855,7 @@ class Browser(object):
             tab_map = {tab_proto.tab_name: tab_proto.tab_id for tab_proto in main_proto.data.exact_match.tab_info}
 
         except Exception as err:
-            log.warning(f"Failed to get tab_map of {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to get tab_map of {tieba_name}. reason:{err}")
             tab_map = {}
 
         return tab_map
@@ -1881,7 +1889,7 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            log.warning(f"Failed to get recom_list of {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to get recom_list of {tieba_name}. reason:{err}")
             res_list = []
             has_more = False
 
@@ -1929,7 +1937,7 @@ class Browser(object):
             used_recom_num = int(main_json['used_recommend_num'])
 
         except Exception as err:
-            log.warning(f"Failed to get recom_status of {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to get recom_status of {tieba_name}. reason:{err}")
             total_recom_num = 0
             used_recom_num = 0
 
@@ -1976,7 +1984,7 @@ class Browser(object):
             }
 
         except Exception as err:
-            log.warning(f"Failed to get recom_status of {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to get recom_status of {tieba_name}. reason:{err}")
             stat = {field_name: [] for field_name in field_names}
 
         return stat
@@ -2005,7 +2013,7 @@ class Browser(object):
             items = soup.select('tr[class^=drl_list_item]')
 
         except Exception as err:
-            log.warning(f"Failed to get rank_list of {tieba_name} pn:{pn}. reason:{err}")
+            LOG.warning(f"Failed to get rank_list of {tieba_name} pn:{pn}. reason:{err}")
             res_list = []
             has_more = False
 
@@ -2052,7 +2060,7 @@ class Browser(object):
             items = soup.find_all('div', class_='name_wrap')
 
         except Exception as err:
-            log.warning(f"Failed to get member_list of {tieba_name} pn:{pn}. reason:{err}")
+            LOG.warning(f"Failed to get member_list of {tieba_name} pn:{pn}. reason:{err}")
             res_list = []
             has_more = False
 
@@ -2095,10 +2103,10 @@ class Browser(object):
                 raise ValueError(main_json['error']['errmsg'])
 
         except Exception as err:
-            log.warning(f"Failed to like forum {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to like forum {tieba_name}. reason:{err}")
             return False
 
-        log.info(f"Successfully like forum {tieba_name}")
+        LOG.info(f"Successfully like forum {tieba_name}")
         return True
 
     async def sign_forum(self, tieba_name: str) -> bool:
@@ -2130,10 +2138,10 @@ class Browser(object):
                 raise ValueError("sign_bonus_point is 0")
 
         except Exception as err:
-            log.warning(f"Failed to sign forum {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to sign forum {tieba_name}. reason:{err}")
             return False
 
-        log.info(f"Successfully sign forum {tieba_name}")
+        LOG.info(f"Successfully sign forum {tieba_name}")
         return True
 
     async def add_post(self, tieba_name: str, tid: int, content: str) -> bool:
@@ -2204,10 +2212,10 @@ class Browser(object):
                 raise ValueError("need verify code")
 
         except Exception as err:
-            log.warning(f"Failed to add post in {tid}. reason:{err}")
+            LOG.warning(f"Failed to add post in {tid}. reason:{err}")
             return False
 
-        log.info(f"Successfully add post in {tid}")
+        LOG.info(f"Successfully add post in {tid}")
         return True
 
     async def set_privacy(self, tid: int, hide: bool = True) -> bool:
@@ -2223,7 +2231,7 @@ class Browser(object):
         """
 
         if not (posts := await self.get_posts(tid)):
-            log.warning(f"Failed to set privacy to {tid}")
+            LOG.warning(f"Failed to set privacy to {tid}")
             return False
 
         try:
@@ -2243,10 +2251,10 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            log.warning(f"Failed to set privacy to {tid}. reason:{err}")
+            LOG.warning(f"Failed to set privacy to {tid}. reason:{err}")
             return False
 
-        log.info(f"Successfully set privacy to {tid}. is_hide:{hide}")
+        LOG.info(f"Successfully set privacy to {tid}. is_hide:{hide}")
         return True
 
     async def tieba_uid2user_info(self, tieba_uid: int) -> UserInfo:
@@ -2283,7 +2291,7 @@ class Browser(object):
             user = UserInfo(user_proto=user_proto)
 
         except Exception as err:
-            log.warning(f"Failed to get UserInfo of {tieba_uid}. reason:{err}")
+            LOG.warning(f"Failed to get UserInfo of {tieba_uid}. reason:{err}")
             user = UserInfo()
 
         return user

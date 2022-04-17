@@ -7,7 +7,7 @@ import time
 import tiebaBrowser as tb
 
 
-class DianaCloudReview(tb.Reviewer):
+class CloudReview(tb.Reviewer):
 
     __slots__ = ['white_kw_exp']
 
@@ -21,6 +21,10 @@ class DianaCloudReview(tb.Reviewer):
             '嘉心糖|顶碗人|贝极星|奶淇淋|n70|皇(珈|家)|黄嘉琪|泥哥|(a|b|豆|d|抖|快|8|吧)(u|友)|一个魂|粉丝|ylg|mmr|低能|易拉罐|脑弹|铝制品|纯良'
         ]
         self.white_kw_exp = re.compile('|'.join(white_kw_list), re.I)
+
+    async def __aenter__(self) -> "CloudReview":
+        await self._init()
+        return self
 
     async def run(self) -> None:
 
@@ -284,15 +288,15 @@ class DianaCloudReview(tb.Reviewer):
 
             if self.expressions.business_exp.search(text):
                 # 商业推广 十天删帖
-                return 1, 0, 0
+                return 1, 0, sys._getframe().f_lineno
 
             has_job = True if self.expressions.job_exp.search(text) else False
             if self.expressions.job_check_exp.search(text) and (has_job or has_rare_contact):
                 # 易误判的兼职关键词 二重检验
-                return 1, 0, 0
+                return 1, 0, sys._getframe().f_lineno
             if self.expressions.course_exp.search(text) and self.expressions.course_check_exp.search(text):
                 # 易误判的课程推广关键词 二重检验
-                return 1, 0, 0
+                return 1, 0, sys._getframe().f_lineno
 
         return 0, 0, 0
 
@@ -300,7 +304,7 @@ class DianaCloudReview(tb.Reviewer):
 if __name__ == '__main__':
 
     async def main():
-        async with DianaCloudReview('xh', '嘉然') as review:
+        async with CloudReview('xh', '嘉然') as review:
             await review.run()
 
     try:
