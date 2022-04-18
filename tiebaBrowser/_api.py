@@ -546,7 +546,7 @@ class Browser(object):
         """
 
         common = CommonReq_pb2.CommonReq()
-        common._client_version = '12.23.1.0'
+        common._client_version = '12.12.1.0'
         data = PbPageReqIdl_pb2.PbPageReqIdl.DataReq()
         data.common.CopyFrom(common)
         data.kz = tid
