@@ -4,7 +4,7 @@ __all__ = ['Reviewer']
 import binascii
 import datetime
 import re
-from typing import AsyncIterable, Optional, Union
+from typing import AsyncIterable
 
 import cv2 as cv
 import numpy as np
@@ -139,12 +139,12 @@ class Reviewer(Browser):
 
         return fid
 
-    async def get_basic_user_info(self, _id: Union[str, int]) -> BasicUserInfo:
+    async def get_basic_user_info(self, _id: str | int) -> BasicUserInfo:
         """
         获取简略版用户信息
 
         Args:
-            _id (Union[str, int]): 用户id user_id/user_name/portrait
+            _id (str | int): 用户id user_id/user_name/portrait
 
         Returns:
             BasicUserInfo: 简略版用户信息 仅保证包含user_name/portrait/user_id
@@ -225,7 +225,7 @@ class Reviewer(Browser):
 
         return await self.database.add_tid(self.tieba_name, tid, mode)
 
-    async def is_tid_hide(self, tid: int) -> Optional[bool]:
+    async def is_tid_hide(self, tid: int) -> bool | None:
         """
         获取表tid_water_{tieba_name}中tid的待恢复状态
 
@@ -233,7 +233,7 @@ class Reviewer(Browser):
             tid (int): 主题帖tid
 
         Returns:
-            Optional[bool]: True表示tid待恢复 False表示tid已恢复 None表示表中无记录
+            bool | None: True表示tid待恢复 False表示tid已恢复 None表示表中无记录
         """
 
         return await self.database.is_tid_hide(self.tieba_name, tid)
@@ -262,7 +262,8 @@ class Reviewer(Browser):
             AsyncIterable[int]: tid
         """
 
-        return self.database.get_tids(self.tieba_name, batch_size)
+        async for tid in self.database.get_tids(self.tieba_name, batch_size):
+            yield tid
 
     async def add_user_id(self, user_id: int, permission: int = 0, note: str = '') -> bool:
         """

@@ -6,7 +6,6 @@ import datetime
 import functools
 import sys
 from collections.abc import AsyncIterable
-from typing import Optional, Union
 
 import pymysql
 
@@ -179,12 +178,12 @@ class Database(object):
             "CREATE TABLE IF NOT EXISTS `user` (`user_id` BIGINT PRIMARY KEY, `user_name` VARCHAR(14), `portrait` VARCHAR(36) UNIQUE, INDEX `user_name`(user_name))"
         )
 
-    async def get_basic_user_info(self, _id: Union[str, int]) -> BasicUserInfo:
+    async def get_basic_user_info(self, _id: str | int) -> BasicUserInfo:
         """
         获取简略版用户信息
 
         Args:
-            _id (Union[str, int]): 用户id user_id/user_name/portrait
+            _id (str | int): 用户id user_id/user_name/portrait
 
         Returns:
             BasicUserInfo: 简略版用户信息 仅保证包含user_name/portrait/user_id
@@ -421,7 +420,7 @@ class Database(object):
             return True
 
     @translate_tieba_name
-    async def is_tid_hide(self, tieba_name: str, tid: int) -> Optional[bool]:
+    async def is_tid_hide(self, tieba_name: str, tid: int) -> bool | None:
         """
         获取表tid_water_{tieba_name}中tid的待恢复状态
 
@@ -430,7 +429,7 @@ class Database(object):
             tid (int): 主题帖tid
 
         Returns:
-            Optional[bool]: True表示tid待恢复 False表示tid已恢复 None表示表中无记录
+            bool | None: True表示tid待恢复 False表示tid已恢复 None表示表中无记录
         """
 
         try:

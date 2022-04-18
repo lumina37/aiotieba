@@ -6,7 +6,7 @@ __all__ = [
 
 import json
 from collections.abc import Callable, Iterable
-from typing import Generic, Literal, Optional, TypeVar, Union, final
+from typing import Generic, Literal, TypeVar, final
 
 from google.protobuf.json_format import ParseDict
 
@@ -58,7 +58,7 @@ class BasicUserInfo(object):
     基本用户属性
 
     Args:
-        _id (Union[str, int, None]): 用于快速构造UserInfo的自适应参数 输入用户名/portrait/user_id
+        _id (str | int | None): 用于快速构造UserInfo的自适应参数 输入用户名/portrait/user_id
         user_proto (User_pb2.User)
 
     Fields:
@@ -70,7 +70,7 @@ class BasicUserInfo(object):
 
     __slots__ = ['_raw_data', '_user_id', 'user_name', '_portrait', '_nick_name']
 
-    def __init__(self, _id: Union[str, int, None] = None, user_proto: Optional[User_pb2.User] = None) -> None:
+    def __init__(self, _id: str | int | None = None, user_proto: User_pb2.User | None = None) -> None:
 
         self._init_null()
 
@@ -80,7 +80,7 @@ class BasicUserInfo(object):
         elif user_proto:
             self._init_by_data(user_proto)
 
-    def _init_by_id(self, _id: Union[str, int]) -> None:
+    def _init_by_id(self, _id: str | int) -> None:
 
         if isinstance(_id, int):
             self.user_id = _id
@@ -193,7 +193,7 @@ class UserInfo(BasicUserInfo):
 
     Args:
         _id (Union[str, int, None]): 用于快速构造UserInfo的自适应参数 输入用户名或portrait或user_id
-        proto (Optional[User_pb2.User])
+        proto (User_pb2.User])
 
     Fields:
         user_id (int): 贴吧旧版user_id
@@ -292,7 +292,7 @@ class _Fragment(object):
 
     __slots__ = ['_raw_data']
 
-    def __init__(self, content_proto: Optional[PbContent_pb2.PbContent] = None) -> None:
+    def __init__(self, content_proto: PbContent_pb2.PbContent | None = None) -> None:
         self._raw_data = content_proto
 
     def __bool__(self) -> bool:
@@ -511,50 +511,43 @@ class Fragments(Generic[_TFrag]):
 
     __slots__ = ['_frags', '_text', '_texts', '_emojis', '_imgs', '_ats', '_links', '_voice', '_tiebapluses']
 
-    def __init__(self, content_protos: Optional[Iterable] = None) -> None:
+    def __init__(self, content_protos: Iterable | None = None) -> None:
 
         def _init_by_type(content_proto) -> _TFrag:
-            _type = content_proto.type
-            # 0纯文本 9电话号 18话题 27百科词条
-            if _type in [0, 9, 18, 27]:
-                fragment = FragText(content_proto)
-                self._texts.append(fragment)
-            elif _type == 2:
-                fragment = FragEmoji(content_proto)
-                self._emojis.append(fragment)
-            elif _type == 3:
-                fragment = FragImage(content_proto)
-                self._imgs.append(fragment)
-            elif _type == 4:
-                fragment = FragAt(content_proto)
-                self._ats.append(fragment)
-                self._texts.append(fragment)
-            elif _type == 1:
-                fragment = FragLink(content_proto)
-                self._links.append(fragment)
-                self._texts.append(fragment)
-            elif _type == 5:  # video
-                fragment = _Fragment(content_proto)
-            elif _type == 10:
-                fragment = FragVoice(content_proto)
-                self._voice = fragment
-            elif _type == 20:  # e.g. tid=5470214675
-                fragment = FragImage(content_proto)
-                self._imgs.append(fragment)
-            elif _type in [35, 36]:  # e.g. tid=7769728331
-                fragment = FragTiebaPlus(content_proto)
-                self._tiebapluses.append(fragment)
-                self._texts.append(fragment)
-            elif _type == 37:  # e.g. tid=7760184147
-                fragment = FragTiebaPlus(content_proto)
-                self._tiebapluses.append(fragment)
-                self._texts.append(fragment)
-            elif _type == 11:  # e.g. tid=5047676428
-                fragment = FragEmoji(content_proto)
-                self._emojis.append(fragment)
-            else:
-                fragment = _Fragment(content_proto)
-                LOG.warning(f"Unknown fragment type:{_type}")
+            match content_proto.type:
+                # 0纯文本 9电话号 18话题 27百科词条
+                case 0 | 9 | 18 | 27:
+                    fragment = FragText(content_proto)
+                    self._texts.append(fragment)
+                # 11:tid=5047676428
+                case 2 | 11:
+                    fragment = FragEmoji(content_proto)
+                    self._emojis.append(fragment)
+                # 20:tid=5470214675
+                case 3 | 20:
+                    fragment = FragImage(content_proto)
+                    self._imgs.append(fragment)
+                case 4:
+                    fragment = FragAt(content_proto)
+                    self._ats.append(fragment)
+                    self._texts.append(fragment)
+                case 1:
+                    fragment = FragLink(content_proto)
+                    self._links.append(fragment)
+                    self._texts.append(fragment)
+                case 5:  # video
+                    fragment = _Fragment(content_proto)
+                case 10:
+                    fragment = FragVoice(content_proto)
+                    self._voice = fragment
+                # 35|36:tid=7769728331 / 37:tid=7760184147
+                case 35 | 36 | 37:
+                    fragment = FragTiebaPlus(content_proto)
+                    self._tiebapluses.append(fragment)
+                    self._texts.append(fragment)
+                case _:
+                    fragment = _Fragment(content_proto)
+                    LOG.warning(f"Unknown fragment type:{content_proto.type}")
 
             return fragment
 
@@ -646,7 +639,7 @@ class Forum(object):
 
     def __init__(
         self,
-        forum_proto: Union[SimpleForum_pb2.SimpleForum, FrsPageResIdl_pb2.FrsPageResIdl.DataRes.ForumInfo, None] = None
+        forum_proto: SimpleForum_pb2.SimpleForum | FrsPageResIdl_pb2.FrsPageResIdl.DataRes.ForumInfo | None = None
     ) -> None:
 
         if forum_proto:
@@ -656,8 +649,7 @@ class Forum(object):
             self._init_null()
 
     def _init_by_data(
-            self, forum_proto: Union[SimpleForum_pb2.SimpleForum,
-                                     FrsPageResIdl_pb2.FrsPageResIdl.DataRes.ForumInfo]) -> None:
+            self, forum_proto: SimpleForum_pb2.SimpleForum | FrsPageResIdl_pb2.FrsPageResIdl.DataRes.ForumInfo) -> None:
 
         self._raw_data = forum_proto
 
@@ -691,7 +683,7 @@ class Page(object):
 
     __slots__ = ['_raw_data', 'page_size', 'current_page', 'total_page', 'total_count', 'has_more', 'has_prev']
 
-    def __init__(self, page_proto: Optional[Page_pb2.Page] = None) -> None:
+    def __init__(self, page_proto: Page_pb2.Page | None = None) -> None:
 
         if page_proto:
             self._init_by_data(page_proto)
@@ -935,7 +927,7 @@ class Thread(_Container):
 
             __slots__ = ['vote_num', 'text', 'image']
 
-            def __init__(self, option_proto: Optional[ThreadInfo_pb2.PollInfo.PollOption] = None) -> None:
+            def __init__(self, option_proto: ThreadInfo_pb2.PollInfo.PollOption | None = None) -> None:
 
                 if option_proto:
                     self.vote_num = option_proto.num
@@ -947,7 +939,7 @@ class Thread(_Container):
                     self.text = ''
                     self.image = ''
 
-        def __init__(self, vote_proto: Optional[ThreadInfo_pb2.PollInfo] = None) -> None:
+        def __init__(self, vote_proto: ThreadInfo_pb2.PollInfo | None = None) -> None:
 
             if vote_proto:
                 self.title = vote_proto.title
@@ -963,7 +955,7 @@ class Thread(_Container):
                 self.total_vote = 0
                 self.total_user = 0
 
-    def __init__(self, thread_proto: Optional[ThreadInfo_pb2.ThreadInfo] = None) -> None:
+    def __init__(self, thread_proto: ThreadInfo_pb2.ThreadInfo | None = None) -> None:
 
         if thread_proto:
             self._init_by_data(thread_proto)
@@ -1225,7 +1217,7 @@ class Threads(_Containers[Thread]):
 
     __slots__ = ['_raw_data', '_users', '_forum', '_tab_map']
 
-    def __init__(self, threads_proto: Optional[FrsPageResIdl_pb2.FrsPageResIdl] = None) -> None:
+    def __init__(self, threads_proto: FrsPageResIdl_pb2.FrsPageResIdl | None = None) -> None:
 
         if threads_proto:
             self._init_by_data(threads_proto.data)
@@ -1332,7 +1324,7 @@ class Post(_Container):
         'is_thread_author'
     ]
 
-    def __init__(self, post_proto: Optional[Post_pb2.Post] = None) -> None:
+    def __init__(self, post_proto: Post_pb2.Post | None = None) -> None:
 
         if post_proto:
             self._init_by_data(post_proto)
@@ -1505,7 +1497,7 @@ class Posts(_Containers[Post]):
 
     __slots__ = ['_raw_data', '_users', '_forum', '_thread', '_has_fold']
 
-    def __init__(self, posts_proto: Optional[PbPageResIdl_pb2.PbPageResIdl] = None) -> None:
+    def __init__(self, posts_proto: PbPageResIdl_pb2.PbPageResIdl | None = None) -> None:
 
         if posts_proto:
             self._init_by_data(posts_proto.data)
@@ -1621,7 +1613,7 @@ class Comment(_Container):
 
     __slots__ = ['_fid', '_contents', '_agree', '_disagree', '_create_time']
 
-    def __init__(self, comment_proto: Optional[SubPostList_pb2.SubPostList] = None) -> None:
+    def __init__(self, comment_proto: SubPostList_pb2.SubPostList | None = None) -> None:
 
         if comment_proto:
             self._init_by_data(comment_proto)
@@ -1717,7 +1709,7 @@ class Comments(_Containers[Comment]):
 
     __slots__ = ['_raw_data', '_forum', '_thread', '_post']
 
-    def __init__(self, comments_proto: Optional[PbFloorResIdl_pb2.PbFloorResIdl] = None) -> None:
+    def __init__(self, comments_proto: PbFloorResIdl_pb2.PbFloorResIdl | None = None) -> None:
 
         if comments_proto:
             self._init_by_data(comments_proto.data)
@@ -1828,7 +1820,7 @@ class Reply(_Container):
 
     __slots__ = ['tieba_name', '_post_pid', '_post_user', '_thread_user', '_is_floor', '_create_time']
 
-    def __init__(self, reply_proto: Optional[ReplyMeResIdl_pb2.ReplyMeResIdl.DataRes.ReplyList] = None) -> None:
+    def __init__(self, reply_proto: ReplyMeResIdl_pb2.ReplyMeResIdl.DataRes.ReplyList | None = None) -> None:
 
         if reply_proto:
             self._init_by_data(reply_proto)
@@ -1948,7 +1940,7 @@ class Replys(_Containers[Reply]):
 
     __slots__ = ['_raw_data']
 
-    def __init__(self, replys_proto: Optional[ReplyMeResIdl_pb2.ReplyMeResIdl] = None) -> None:
+    def __init__(self, replys_proto: ReplyMeResIdl_pb2.ReplyMeResIdl | None = None) -> None:
 
         if replys_proto:
             self._init_by_data(replys_proto.data)
@@ -2007,7 +1999,7 @@ class At(_Container):
 
     __slots__ = ['tieba_name', '_is_floor', '_is_thread', '_create_time']
 
-    def __init__(self, at_dict: Optional[dict]) -> None:
+    def __init__(self, at_dict: dict | None = None) -> None:
 
         if at_dict:
             self._init_by_data(at_dict)
@@ -2105,7 +2097,7 @@ class Ats(_Containers[At]):
 
     __slots__ = ['_raw_data']
 
-    def __init__(self, ats_dict: Optional[dict] = None) -> None:
+    def __init__(self, ats_dict: dict | None = None) -> None:
 
         if ats_dict:
             self._init_by_data(ats_dict)
@@ -2181,7 +2173,7 @@ class Search(_Container):
 
     __slots__ = ['tieba_name', 'title', '_is_floor', '_create_time']
 
-    def __init__(self, search_dict: Optional[dict]) -> None:
+    def __init__(self, search_dict: dict | None = None) -> None:
 
         if search_dict:
             self._init_by_data(search_dict)
@@ -2271,7 +2263,7 @@ class Searches(_Containers[Search]):
 
     __slots__ = ['_raw_data']
 
-    def __init__(self, searches_dict: Optional[dict] = None) -> None:
+    def __init__(self, searches_dict: dict | None = None) -> None:
 
         if searches_dict:
             self._init_by_data(searches_dict)

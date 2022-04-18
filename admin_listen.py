@@ -5,7 +5,6 @@ import json
 import re
 import time
 from collections.abc import Callable
-from typing import Union
 
 import tiebaBrowser as tb
 from tiebaBrowser._config import SCRIPT_PATH
@@ -56,7 +55,7 @@ class Context(object):
         self._cmd_type = None
         self.__second_blank_idx = None
         self.this_permission: int = 0
-        self.parent: Union[tb.Thread, tb.Post] = None
+        self.parent: tb.Thread | tb.Post = None
         self.note: str = ''
 
     async def _init(self) -> bool:

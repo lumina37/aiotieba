@@ -39,7 +39,7 @@
 
 ## 基本环境部署
 
-+ 确保你的[`Python`](https://www.python.org/downloads/)版本为3.9+，因为脚本中包含了较新的类型检查功能
++ 确保你的[`Python`](https://www.python.org/downloads/)版本为3.10+，因为脚本中包含了最新的类型检查和模式匹配方法
 
 + 拉取代码
 
