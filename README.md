@@ -39,7 +39,7 @@
 
 ## 基本环境部署
 
-+ 确保你的[`Python`](https://www.python.org/downloads/)版本为3.10+，因为脚本中包含了最新的类型检查和模式匹配方法
++ 确保你的[`Python`](https://www.python.org/downloads/)版本为`3.10+`，因为脚本中包含了最新的类型检查和模式匹配方法
 
 + 拉取代码
 
@@ -52,14 +52,7 @@ git clone https://github.com/Starry-OvO/Tieba-Manager.git
 + `pip`安装必需的`Python`库
 
 ```bash
-pip install asyncio
-pip install aiohttp[speedups]
-pip install lxml
-pip install bs4
-pip install pymysql
-pip install pillow
-pip install opencv-contrib-python
-pip install protobuf
+pip install asyncio aiohttp[speedups] lxml beautifulsoup4 pymysql opencv-contrib-python protobuf
 ```
 
 ## 尝试一下
@@ -81,14 +74,15 @@ async def main():
         user, threads = await asyncio.gather(brow.get_self_info(), brow.get_threads('asoul'))
 
         # 同步输出
-        print(f"当前用户信息:{user}")
+        print(f"当前用户信息: {user}")
         for thread in threads:
-            print(
-                f"tid:{thread.tid} 最后回复时间戳:{thread.last_time} 标题:{thread.title}")
+            print(f"tid: {thread.tid} 最后回复时间戳: {thread.last_time} 标题: {thread.title}")
+
 
 # 执行协程main
 # 参考https://docs.python.org/zh-cn/3/library/asyncio-task.html#asyncio.run
 asyncio.run(main())
+
 ```
 
 ## 若要开启云审查功能
@@ -111,10 +105,9 @@ asyncio.run(main())
   + **asyncio** 支持`Python`协程相关功能
   + **aiohttp** 支持网络IO（异步）
   + **lxml** 支持HTML格式解析
-  + **bs4** 解析HTML
+  + **beautifulsoup4** 解析HTML
   + **pymysql** 连接MySQL
-  + **pillow** 提供解码gif图像的方法
-  + **opencv-contrib-python** 提供图像哈希、定位解析二维码的方法
+  + **opencv-contrib-python** 提供图像解码、图像哈希、定位解析二维码的方法
   + **protobuf** 支持以proto格式序列化网络请求和反序列化响应
 
 ## 编写用于一键重启的bash脚本
@@ -130,8 +123,8 @@ fi
 
 TIEBA_MANAGER_PATH="$HOME/Scripts/Tieba-Manager"
 nohup python $TIEBA_MANAGER_PATH/admin_listen.py >/dev/null 2>&1 &
-nohup python $TIEBA_MANAGER_PATH/cloud_review_soulknight.py >/dev/null 2>&1 &
 nohup python $TIEBA_MANAGER_PATH/cloud_review_asoul.py >/dev/null 2>&1 &
+nohup python $TIEBA_MANAGER_PATH/cloud_review_diana.py >/dev/null 2>&1 &
 ```
 
 ## 结束

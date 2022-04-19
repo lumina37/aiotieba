@@ -263,7 +263,7 @@ class Listener(object):
             if (last_sign := _str.rfind(_sign)) == -1:
                 return 0
             sub_str = _str[first_sign + 1 : last_sign]
-            if not sub_str.isdigit():
+            if not sub_str.isdecimal():
                 return 0
             return int(sub_str)
 
@@ -685,7 +685,7 @@ class Listener(object):
 
         tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
 
-        if not ctx.args[1].isdigit():
+        if not ctx.args[1].isdecimal():
             return
         if not self.time_recorder.allow_execute():
             return

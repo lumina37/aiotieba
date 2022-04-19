@@ -8,14 +8,12 @@ import socket
 import sys
 import time
 from collections.abc import AsyncIterable
-from io import BytesIO
 
 import aiohttp
 import cv2 as cv
 import numpy as np
 from bs4 import BeautifulSoup
 from google.protobuf.json_format import ParseDict
-from PIL import Image
 
 from tiebaBrowser.tieba_proto import ThreadInfo_pb2
 
@@ -1405,24 +1403,25 @@ class Browser(object):
 
     async def url2image(self, img_url: str) -> np.ndarray | None:
         """
-        从链接获取静态图像 若为gif则仅读取第一帧即透明通道帧
+        从链接获取jpeg图像
 
         Args:
             img_url (str): 图像链接
 
         Returns:
-            np.ndarray | None: 图像或None
+            np.ndarray | None: jpeg图像或None
         """
 
         try:
             res = await self.sessions.web.get(img_url)
 
             content = await res.content.read()
-            if not content:
-                raise ValueError("empty response")
+            if res.content_type != 'image/jpeg':
+                raise ValueError(f"Content-Type should be image/jpeg rather than {res.content_type}")
+            if not content.startswith(b'\xff\xd8'):
+                raise ValueError("not jpeg format")
 
-            pil_image = Image.open(BytesIO(content))
-            image = cv.cvtColor(np.asarray(pil_image), cv.COLOR_RGB2BGR)
+            image = cv.imdecode(np.frombuffer(content, np.uint8), cv.IMREAD_COLOR)
 
         except Exception as err:
             LOG.warning(f"Failed to get image {img_url}. reason:{err}")
