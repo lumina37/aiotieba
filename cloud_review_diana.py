@@ -18,7 +18,7 @@ class CloudReview(tb.Reviewer):
             '(a|b|睿|皇协|批|p)站|b博|海鲜|(v|a)(吧|8)|nga|404|ytb|论坛|字幕组|粉丝群|直播间|魂组|录播',
             'asoul|皮套|纸片人|套皮|嘉然|然然|向晚|晚晚|乃琳|奶琳|贝拉|拉姐|珈乐|羊驼|a(骚|s|手)|向晚|歌姬|乃贝|晚饭|大头',
             '开播|共振|取关|牧场|啊啊啊|麻麻|别急|可爱|sad|感叹|速速|我超|存牌|狠狠|切割|牛牛|一把子|幽默|GNK48|汴京|抱团|别融',
-            '嘉心糖|顶碗人|贝极星|奶淇淋|n70|皇(珈|家)|黄嘉琪|泥哥|(a|b|豆|d|抖|快|8|吧)(u|友)|一个魂|粉丝|ylg|mmr|低能|易拉罐|脑弹|铝制品|纯良'
+            '嘉心糖|顶碗人|贝极星|奶淇淋|n70|皇(珈|家)|黄嘉琪|泥哥|(a|b|豆|d|抖|快|8|吧)(u|友)|一个魂|粉丝|ylg|mmr|低能|易拉罐|脑弹|铝制品|纯良',
         ]
         self.white_kw_exp = re.compile('|'.join(white_kw_list), re.I)
 
@@ -105,8 +105,10 @@ class CloudReview(tb.Reviewer):
         is_hot_thread = thread.reply_num >= 50 and thread.agree > thread.reply_num * 2
         if is_hot_thread:
             # 同时拉取热门序和最后一页的回复列表
-            posts, reverse_posts = await asyncio.gather(self.get_posts(thread.tid, sort=2, with_comments=True),
-                                                        self.get_posts(thread.tid, pn=99999, with_comments=True))
+            posts, reverse_posts = await asyncio.gather(
+                self.get_posts(thread.tid, sort=2, with_comments=True),
+                self.get_posts(thread.tid, pn=99999, with_comments=True),
+            )
         else:
             # 仅拉取最后一页的回复列表
             posts = await self.get_posts(thread.tid, pn=99999, with_comments=True)
@@ -152,7 +154,8 @@ class CloudReview(tb.Reviewer):
         elif del_flag == 1:
             # 内容违规 删回复
             tb.log.info(
-                f"Try to delete post {post.text} post by {post.user.log_name}. level:{post.user.level}. line:{line}")
+                f"Try to delete post {post.text} post by {post.user.log_name}. level:{post.user.level}. line:{line}"
+            )
             await self.del_post(self.tieba_name, post.tid, post.pid)
             return
 

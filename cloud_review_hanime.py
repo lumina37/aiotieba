@@ -98,8 +98,10 @@ class CloudReview(tb.Reviewer):
         is_hot_thread = thread.reply_num >= 50 and thread.agree > thread.reply_num * 2
         if is_hot_thread:
             # 同时拉取热门序和最后一页的回复列表
-            posts, reverse_posts = await asyncio.gather(self.get_posts(thread.tid, sort=2, with_comments=True),
-                                                        self.get_posts(thread.tid, pn=99999, with_comments=True))
+            posts, reverse_posts = await asyncio.gather(
+                self.get_posts(thread.tid, sort=2, with_comments=True),
+                self.get_posts(thread.tid, pn=99999, with_comments=True),
+            )
         else:
             # 仅拉取最后一页的回复列表
             posts = await self.get_posts(thread.tid, pn=99999, with_comments=True)
@@ -145,7 +147,8 @@ class CloudReview(tb.Reviewer):
         elif del_flag == 1:
             # 内容违规 删回复
             tb.log.info(
-                f"Try to delete post {post.text} post by {post.user.log_name}. level:{post.user.level}. line:{line}")
+                f"Try to delete post {post.text} post by {post.user.log_name}. level:{post.user.level}. line:{line}"
+            )
             await self.del_post(self.tieba_name, post.tid, post.pid)
             return
 

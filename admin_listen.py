@@ -103,7 +103,7 @@ class Context(object):
                 self.__second_blank_idx = len(text)
                 self._args = []
 
-            self._cmd_type = text[first_blank_idx:self.__second_blank_idx].lstrip()
+            self._cmd_type = text[first_blank_idx : self.__second_blank_idx].lstrip()
 
         return self._cmd_type
 
@@ -118,7 +118,7 @@ class Context(object):
     @property
     def args(self) -> list[str]:
         if self._args is None:
-            self._args = [arg.lstrip() for arg in self.at.text[self._second_blank_idx:].split(' ') if arg]
+            self._args = [arg.lstrip() for arg in self.at.text[self._second_blank_idx :].split(' ') if arg]
 
         return self._args
 
@@ -157,7 +157,6 @@ def check_permission(need_permission: int = 0, need_arg_num: int = 0) -> Callabl
     """
 
     def wrapper(func) -> Callable:
-
         @functools.wraps(func)
         async def foo(self: "Listener", ctx: Context):
             if len(ctx.args) < need_arg_num:
@@ -201,21 +200,23 @@ class Listener(object):
         config_path = SCRIPT_PATH.parent / 'config/listen_config.json'
         with config_path.open('r', encoding='utf-8') as _file:
             config = json.load(_file)
-            self.handlers = {(handler := Handler(**tieba_config)).tieba_name: handler
-                             for tieba_config in config['tieba_configs']}
+            self.handlers = {
+                (handler := Handler(**tieba_config)).tieba_name: handler for tieba_config in config['tieba_configs']
+            }
 
         self.listener = tb.Reviewer(config['listener_key'], '')
 
         self._cmd_map = {
-            func_name[4:]: getattr(self, func_name)
-            for func_name in dir(self) if func_name.startswith("cmd")
+            func_name.removeprefix('cmd_'): getattr(self, func_name)
+            for func_name in dir(self)
+            if func_name.startswith('cmd_')
         }
         self.time_recorder = TimerRecorder(3600, 30)
 
     async def close(self) -> None:
-        await asyncio.gather(*[handler.close() for handler in self.handler_map.values()],
-                             self.listener.close(),
-                             return_exceptions=True)
+        await asyncio.gather(
+            *[handler.close() for handler in self.handlers.values()], self.listener.close(), return_exceptions=True
+        )
 
     async def __aenter__(self) -> "Listener":
         coros = [handler._init() for handler in self.handlers.values()]
@@ -256,13 +257,12 @@ class Listener(object):
         await cmd_func(ctx)
 
     async def _arg2user_info(self, arg: str) -> tb.UserInfo:
-
         def _get_num_between_two_signs(_str: str, _sign: str) -> int:
             if (first_sign := _str.find(_sign)) == -1:
                 return 0
             if (last_sign := _str.rfind(_sign)) == -1:
                 return 0
-            sub_str = _str[first_sign + 1:last_sign]
+            sub_str = _str[first_sign + 1 : last_sign]
             if not sub_str.isdigit():
                 return 0
             return int(sub_str)
@@ -288,8 +288,10 @@ class Listener(object):
         if not self.time_recorder.allow_execute():
             return
 
-        active_admin_list = [(await self.listener.get_basic_user_info(user_id)).user_name
-                             for user_id in await ctx.handler.admin.get_user_id_list(limit=4, permission=2)]
+        active_admin_list = [
+            (await self.listener.get_basic_user_info(user_id)).user_name
+            for user_id in await ctx.handler.admin.get_user_id_list(limit=4, permission=2)
+        ]
         extra_info = ctx.args[0] if len(ctx.args) else '无'
         content = f"该回复为吧务召唤指令@.v_guard holyshit的自动响应\n召唤人诉求：{extra_info}@" + " @".join(active_admin_list)
 
@@ -696,11 +698,9 @@ class Listener(object):
                 pn (int): 页码
             """
 
-            posts = await self.listener.get_posts(ctx.tid,
-                                                  pn,
-                                                  only_thread_author=True,
-                                                  with_comments=True,
-                                                  comment_sort_by_agree=True)
+            posts = await self.listener.get_posts(
+                ctx.tid, pn, only_thread_author=True, with_comments=True, comment_sort_by_agree=True
+            )
             await asyncio.gather(*[_stat_post(post) for post in posts])
 
         async def _stat_post(post: tb.Post) -> None:
@@ -723,7 +723,7 @@ class Listener(object):
                 if not comments.has_more:
                     break
 
-            if (vote_num := len(vote_set)):
+            if vote_num := len(vote_set):
                 results.append((post.floor, vote_num))
 
         results = []
@@ -735,7 +735,7 @@ class Listener(object):
 
         results.sort(key=lambda result: result[1], reverse=True)
         contents = [f"@{ctx.at.user.user_name} "]
-        contents.extend([f"floor:{floor} num:{vote_num}" for floor, vote_num in results[:int(ctx.args[1])]])
+        contents.extend([f"floor:{floor} num:{vote_num}" for floor, vote_num in results[: int(ctx.args[1])]])
         content = '\n'.join(contents)
 
         if await ctx.handler.speaker.add_post(ctx.tieba_name, ctx.tid, content):
@@ -779,7 +779,8 @@ class Listener(object):
         tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
 
         if await ctx.handler.admin.add_tid(ctx.tid, True) and await ctx.handler.admin.hide_thread(
-                ctx.tieba_name, ctx.tid):
+            ctx.tieba_name, ctx.tid
+        ):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=2, need_arg_num=0)

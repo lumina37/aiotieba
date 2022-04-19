@@ -1,9 +1,23 @@
 # -*- coding:utf-8 -*-
 __all__ = [
-    'BasicUserInfo', 'UserInfo', 'Thread', 'Post', 'Comment', 'At', 'Reply', 'Search', 'Threads', 'Posts', 'Comments',
-    'Ats', 'Replys', 'Searches', 'Fragments'
+    'BasicUserInfo',
+    'UserInfo',
+    'Thread',
+    'Post',
+    'Comment',
+    'At',
+    'Reply',
+    'Search',
+    'Threads',
+    'Posts',
+    'Comments',
+    'Ats',
+    'Replys',
+    'Searches',
+    'Fragments',
 ]
 
+import abc
 import json
 from collections.abc import Callable, Iterable
 from typing import Generic, Literal, TypeVar, final
@@ -11,8 +25,19 @@ from typing import Generic, Literal, TypeVar, final
 from google.protobuf.json_format import ParseDict
 
 from ._logger import get_logger
-from .tieba_proto import (FrsPageResIdl_pb2, Page_pb2, PbContent_pb2, PbFloorResIdl_pb2, PbPageResIdl_pb2, Post_pb2,
-                          ReplyMeResIdl_pb2, SimpleForum_pb2, SubPostList_pb2, ThreadInfo_pb2, User_pb2)
+from .tieba_proto import (
+    FrsPageResIdl_pb2,
+    Page_pb2,
+    PbContent_pb2,
+    PbFloorResIdl_pb2,
+    PbPageResIdl_pb2,
+    Post_pb2,
+    ReplyMeResIdl_pb2,
+    SimpleForum_pb2,
+    SubPostList_pb2,
+    ThreadInfo_pb2,
+    User_pb2,
+)
 
 LOG = get_logger()
 
@@ -36,7 +61,6 @@ def _int_prop_check_ignore_none(default_val: int) -> Callable:
     """
 
     def wrapper(func) -> Callable:
-
         def foo(self, new_val):
             if new_val:
                 try:
@@ -302,11 +326,19 @@ class _Fragment(object):
 _TFrag = TypeVar('_TFrag', bound=_Fragment)
 
 
+class FragmentUnknown(_Fragment):
+    """
+    未知碎片
+    """
+
+    __slots__ = []
+
+
 class FragText(_Fragment):
     """
     纯文本碎片
 
-    Methods:
+    Fields:
         text (str): 文本内容
     """
 
@@ -512,7 +544,6 @@ class Fragments(Generic[_TFrag]):
     __slots__ = ['_frags', '_text', '_texts', '_emojis', '_imgs', '_ats', '_links', '_voice', '_tiebapluses']
 
     def __init__(self, content_protos: Iterable | None = None) -> None:
-
         def _init_by_type(content_proto) -> _TFrag:
             match content_proto.type:
                 # 0纯文本 9电话号 18话题 27百科词条
@@ -536,7 +567,7 @@ class Fragments(Generic[_TFrag]):
                     self._links.append(fragment)
                     self._texts.append(fragment)
                 case 5:  # video
-                    fragment = _Fragment(content_proto)
+                    fragment = FragmentUnknown(content_proto)
                 case 10:
                     fragment = FragVoice(content_proto)
                     self._voice = fragment
@@ -546,7 +577,7 @@ class Fragments(Generic[_TFrag]):
                     self._tiebapluses.append(fragment)
                     self._texts.append(fragment)
                 case _:
-                    fragment = _Fragment(content_proto)
+                    fragment = FragmentUnknown(content_proto)
                     LOG.warning(f"Unknown fragment type:{content_proto.type}")
 
             return fragment
@@ -638,8 +669,7 @@ class Forum(object):
     __slots__ = ['_raw_data', 'fid', 'name']
 
     def __init__(
-        self,
-        forum_proto: SimpleForum_pb2.SimpleForum | FrsPageResIdl_pb2.FrsPageResIdl.DataRes.ForumInfo | None = None
+        self, forum_proto: SimpleForum_pb2.SimpleForum | FrsPageResIdl_pb2.FrsPageResIdl.DataRes.ForumInfo | None = None
     ) -> None:
 
         if forum_proto:
@@ -649,7 +679,8 @@ class Forum(object):
             self._init_null()
 
     def _init_by_data(
-            self, forum_proto: SimpleForum_pb2.SimpleForum | FrsPageResIdl_pb2.FrsPageResIdl.DataRes.ForumInfo) -> None:
+        self, forum_proto: SimpleForum_pb2.SimpleForum | FrsPageResIdl_pb2.FrsPageResIdl.DataRes.ForumInfo
+    ) -> None:
 
         self._raw_data = forum_proto
 
@@ -758,6 +789,7 @@ class _Container(object):
         return f"{self.__class__.__name__} [tid:{self.tid} / pid:{self.pid} / user:{self.user.log_name} / text:{self.text}]"
 
     @property
+    @abc.abstractmethod
     def text(self) -> str:
         raise NotImplementedError
 
@@ -836,6 +868,7 @@ class _Containers(Generic[_TContainer]):
         raise NotImplementedError
 
     @property
+    @abc.abstractmethod
     def objs(self) -> list[_TContainer]:
         raise NotImplementedError
 
@@ -914,9 +947,25 @@ class Thread(_Container):
     """
 
     __slots__ = [
-        '_raw_data', '_contents', '_fid', '_tab_id', '_is_good', '_is_top', '_is_share', '_is_hide', '_is_livepost',
-        'title', '_vote_info', '_share_origin', '_view_num', '_reply_num', '_share_num', '_agree', '_disagree',
-        '_create_time', '_last_time'
+        '_raw_data',
+        '_contents',
+        '_fid',
+        '_tab_id',
+        '_is_good',
+        '_is_top',
+        '_is_share',
+        '_is_hide',
+        '_is_livepost',
+        'title',
+        '_vote_info',
+        '_share_origin',
+        '_view_num',
+        '_reply_num',
+        '_share_num',
+        '_agree',
+        '_disagree',
+        '_create_time',
+        '_last_time',
     ]
 
     class VoteInfo(object):
@@ -1108,8 +1157,11 @@ class Thread(_Container):
         if self._vote_info is None:
 
             if self._raw_data:
-                self._vote_info = self.VoteInfo(poll_info_proto) if (
-                    poll_info_proto := self._raw_data.poll_info).options else self.VoteInfo()
+                self._vote_info = (
+                    self.VoteInfo(poll_info_proto)
+                    if (poll_info_proto := self._raw_data.poll_info).options
+                    else self.VoteInfo()
+                )
 
             else:
                 self._vote_info = self.VoteInfo()
@@ -1132,8 +1184,11 @@ class Thread(_Container):
 
                     self._share_origin._contents = Fragments(share_proto.content)
                     self._share_origin.title = share_proto.title
-                    self._share_origin._vote_info = self.VoteInfo(poll_info_proto) if (
-                        poll_info_proto := share_proto.poll_info).options else self.VoteInfo()
+                    self._share_origin._vote_info = (
+                        self.VoteInfo(poll_info_proto)
+                        if (poll_info_proto := share_proto.poll_info).options
+                        else self.VoteInfo()
+                    )
 
         return self._share_origin
 
@@ -1260,7 +1315,8 @@ class Threads(_Containers[Thread]):
 
                 self._users = {
                     user.user_id: user
-                    for user_proto in self._raw_data.user_list if (user := UserInfo(user_proto=user_proto)).user_id
+                    for user_proto in self._raw_data.user_list
+                    if (user := UserInfo(user_proto=user_proto)).user_id
                 }
                 self._objs = [Thread(thread_proto) for thread_proto in self._raw_data.thread_list]
             else:
@@ -1320,8 +1376,16 @@ class Post(_Container):
     """
 
     __slots__ = [
-        '_fid', '_contents', '_sign', '_comments', '_floor', '_reply_num', '_agree', '_disagree', '_create_time',
-        'is_thread_author'
+        '_fid',
+        '_contents',
+        '_sign',
+        '_comments',
+        '_floor',
+        '_reply_num',
+        '_agree',
+        '_disagree',
+        '_create_time',
+        'is_thread_author',
     ]
 
     def __init__(self, post_proto: Post_pb2.Post | None = None) -> None:
@@ -1550,7 +1614,8 @@ class Posts(_Containers[Post]):
             if self._raw_data:
                 self._users = {
                     user.user_id: user
-                    for user_proto in self._raw_data.user_list if (user := UserInfo(user_proto=user_proto)).user_id
+                    for user_proto in self._raw_data.user_list
+                    if (user := UserInfo(user_proto=user_proto)).user_id
                 }
                 self._objs = [Post(post_proto) for post_proto in self._raw_data.post_list]
             else:
@@ -1869,8 +1934,9 @@ class Reply(_Container):
         if self._user is None:
 
             if self._raw_data:
-                self._user = UserInfo(
-                    user_proto=user_proto) if (user_proto := self._raw_data.replyer).id else UserInfo()
+                self._user = (
+                    UserInfo(user_proto=user_proto) if (user_proto := self._raw_data.replyer).id else UserInfo()
+                )
             else:
                 self._user = UserInfo()
 
@@ -1890,8 +1956,11 @@ class Reply(_Container):
         if self._post_user is None:
 
             if self._raw_data:
-                self._post_user = BasicUserInfo(
-                    user_proto=user_proto) if (user_proto := self._raw_data.quote_user).id else BasicUserInfo()
+                self._post_user = (
+                    BasicUserInfo(user_proto=user_proto)
+                    if (user_proto := self._raw_data.quote_user).id
+                    else BasicUserInfo()
+                )
             else:
                 self._post_user = BasicUserInfo()
 
@@ -1902,8 +1971,11 @@ class Reply(_Container):
         if self._thread_user is None:
 
             if self._raw_data:
-                self._thread_user = BasicUserInfo(
-                    user_proto=user_proto) if (user_proto := self._raw_data.thread_author_user).id else BasicUserInfo()
+                self._thread_user = (
+                    BasicUserInfo(user_proto=user_proto)
+                    if (user_proto := self._raw_data.thread_author_user).id
+                    else BasicUserInfo()
+                )
             else:
                 self._thread_user = BasicUserInfo()
 
