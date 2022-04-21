@@ -40,7 +40,7 @@ class CloudReview(tb.Reviewer):
                 # 获取主题帖列表
                 threads = await self.get_threads(self.tieba_name)
                 # 创建异步任务列表 并规定每个任务的延迟时间 避免高并发下的网络阻塞
-                coros = [self._handle_thread(thread, idx / 5) for idx, thread in enumerate(threads)]
+                coros = [self._handle_thread(thread, idx / 10) for idx, thread in enumerate(threads)]
                 # 并发运行协程
                 del_flags = await asyncio.gather(*coros)
 
@@ -140,7 +140,7 @@ class CloudReview(tb.Reviewer):
         is_hot_thread = thread.reply_num >= 50 and thread.agree > thread.reply_num * 2
         if is_hot_thread:
             # 同时拉取热门序和最后一页的回复列表
-            posts, reverse_posts = await asyncio.gather(
+            hot_posts, posts = await asyncio.gather(
                 self.get_posts(thread.tid, sort=2, with_comments=True),
                 self.get_posts(thread.tid, pn=99999, with_comments=True),
             )
@@ -162,14 +162,14 @@ class CloudReview(tb.Reviewer):
             return 1, block_days, line
         elif del_flag == 0:
             # 无异常 继续检查
-            if thread.user.priv_reply != 1:
+            if thread.user.priv_reply == 6:
                 # 楼主锁回复 直接删帖
                 return 1, 0, sys._getframe().f_lineno
 
         # 并发检查回复内容 因为是CPU密集任务所以不需要设计delay
         coros = [self._handle_post(post) for post in posts]
         if is_hot_thread:
-            coros.extend([self._handle_post(post) for post in reverse_posts])
+            coros.extend([self._handle_post(post) for post in hot_posts])
         await asyncio.gather(*coros)
 
         # 缓存该tid的子孙结点编辑状态
@@ -303,7 +303,7 @@ class CloudReview(tb.Reviewer):
             return 1, 10, sys._getframe().f_lineno
 
         text = obj.text
-        if re.search("((?<![a-z])(v|t)|瞳|梓|罐|豆|鸟|鲨)(÷|/|／|➗|畜|处|除|初|醋|cg)|椰子汁|🥥|东雪莲|莲宝|林忆宁|010", text, re.I):
+        if re.search("((?<![a-z])(v|t)|瞳|梓|罐|豆|鸟|鲨)(÷|/|／|➗|畜|处|除|初|醋|cg)|椰子汁|🥥|东雪莲|莲宝|林忆宁|杨沐|赵若", text, re.I):
             return 1, 0, sys._getframe().f_lineno
 
         level = obj.user.level

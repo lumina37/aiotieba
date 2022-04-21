@@ -9,6 +9,8 @@ __*/
 *.zip
 *.rar
 *.md
+*.jpg
+*.code-workspace
 
 config/*
 !config/config-example.json

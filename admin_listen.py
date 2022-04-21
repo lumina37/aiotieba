@@ -88,6 +88,8 @@ class Context(object):
                 self.parent = posts.thread
                 self.at._text = posts[0].text
 
+        self._args = None
+
     @property
     def cmd_type(self) -> str:
         if self._cmd_type is None:
@@ -159,12 +161,12 @@ def check_permission(need_permission: int = 0, need_arg_num: int = 0) -> Callabl
     def wrapper(func) -> Callable:
         @functools.wraps(func)
         async def foo(self: "Listener", ctx: Context):
-            if len(ctx.args) < need_arg_num:
-                return
             ctx.handler = self.handlers.get(ctx.tieba_name, None)
             if not ctx.handler:
                 return
             if not await ctx._init():
+                return
+            if len(ctx.args) < need_arg_num:
                 return
             if ctx.this_permission < need_permission:
                 return

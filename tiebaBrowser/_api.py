@@ -328,13 +328,13 @@ class Browser(object):
                 raise ValueError(main_json['error'])
 
             user_dict: dict = main_json['data']
-            sex: str = user_dict['sex']
-            if sex.startswith('m'):
-                gender = 1
-            elif sex.startswith('f'):
-                gender = 2
-            else:
-                gender = 0
+            match user_dict['sex']:
+                case 'male':
+                    gender = 1
+                case 'female':
+                    gender = 2
+                case _:
+                    gender = 0
 
             user.user_name = user_dict['name']
             user.nick_name = user_dict['show_nickname']
@@ -1403,23 +1403,22 @@ class Browser(object):
 
     async def url2image(self, img_url: str) -> np.ndarray | None:
         """
-        从链接获取jpeg图像
+        从链接获取jpg/png图像
 
         Args:
             img_url (str): 图像链接
 
         Returns:
-            np.ndarray | None: jpeg图像或None
+            np.ndarray | None: 图像或None
         """
 
         try:
             res = await self.sessions.web.get(img_url)
 
             content = await res.content.read()
-            if res.content_type != 'image/jpeg':
-                raise ValueError(f"Content-Type should be image/jpeg rather than {res.content_type}")
-            if not content.startswith(b'\xff\xd8'):
-                raise ValueError("not jpeg format")
+            img_type = res.content_type.removeprefix('image/')
+            if img_type not in ['jpeg', 'png']:
+                raise ValueError(f"Content-Type should be image/jpeg or image/png rather than {res.content_type}")
 
             image = cv.imdecode(np.frombuffer(content, np.uint8), cv.IMREAD_COLOR)
 
