@@ -9,6 +9,9 @@ from collections.abc import Callable
 import tiebaBrowser as tb
 from tiebaBrowser._config import SCRIPT_PATH
 
+with (SCRIPT_PATH.parent / 'config/listen_config.json').open('r', encoding='utf-8') as _file:
+    LISTEN_CONFIG = json.load(_file)
+
 
 class TimerRecorder(object):
     """
@@ -46,14 +49,13 @@ class TimerRecorder(object):
 
 class Context(object):
 
-    __slots__ = ['at', 'handler', '_args', '_cmd_type', '__second_blank_idx', 'this_permission', 'parent', 'note']
+    __slots__ = ['at', 'handler', '_args', '_cmd_type', 'this_permission', 'parent', 'note']
 
     def __init__(self, at: tb.At) -> None:
         self.at: tb.At = at
         self.handler: "Handler" = None
         self._args = None
         self._cmd_type = None
-        self.__second_blank_idx = None
         self.this_permission: int = 0
         self.parent: tb.Thread | tb.Post = None
         self.note: str = ''
@@ -64,15 +66,17 @@ class Context(object):
             return False
 
         self.this_permission = await handler.admin.get_user_id(self.user_id)
-
-        if len(self.at.text) >= 30:
+        if len(self.at.text.encode('utf-8')) >= 76:
             await self._init_full()
 
+        self._init_args()
         return True
 
     async def _init_full(self) -> bool:
         if self.at.is_floor:
             comments = await self.handler.admin.get_comments(self.tid, self.pid, is_floor=True)
+            if not comments:
+                return False
             self.parent = comments.post
             for comment in comments:
                 if comment.pid == self.pid:
@@ -81,47 +85,45 @@ class Context(object):
             if self.at.is_thread:
                 await asyncio.sleep(3)
                 posts = await self.handler.admin.get_posts(self.tid, pn=-1, rn=0, sort=1)
+                if not posts:
+                    return False
                 self.parent = posts.thread.share_origin
                 self.at._text = posts.thread.text
             else:
-                posts = await self.handler.admin.get_posts(self.tid, pn=-1, rn=0, sort=1)
+                posts = await self.handler.admin.get_posts(self.tid, pn=-1, rn=10, sort=1)
+                if not posts:
+                    return False
                 self.parent = posts.thread
-                self.at._text = posts[0].text
+                for post in posts:
+                    if post.pid == self.pid:
+                        self.at._text = post.text
 
-        self._args = None
+        return True
+
+    def _init_args(self):
+        text = self.at.text
+        self._args = []
+        self._cmd_type = ''
+
+        if (first_blank_idx := text.find(' ', text.find('@') + 1)) == -1:
+            return
+
+        text = text[first_blank_idx + 1 :]
+        self._args = [arg.lstrip(' ') for arg in text.split(' ') if arg]
+        if self._args:
+            self._cmd_type = self._args[0]
+            self._args = self._args[1:]
 
     @property
     def cmd_type(self) -> str:
         if self._cmd_type is None:
-            text = self.at.text
-            at_idx = text.find('@')
-            if (first_blank_idx := text.find(' ', at_idx + 1)) + 1 == len(text):
-                self._cmd_type = ''
-                self._args = []
-                return self._cmd_type
-
-            self.__second_blank_idx = text.find(' ', first_blank_idx + 1)
-            if self.__second_blank_idx == -1:
-                self.__second_blank_idx = len(text)
-                self._args = []
-
-            self._cmd_type = text[first_blank_idx : self.__second_blank_idx].lstrip()
-
+            self._init_args()
         return self._cmd_type
-
-    @property
-    def _second_blank_idx(self) -> int:
-        if self.__second_blank_idx is None:
-            text = self.at.text
-            self.__second_blank_idx = text.find(' ', text.index(' ') + 1)
-
-        return self.__second_blank_idx
 
     @property
     def args(self) -> list[str]:
         if self._args is None:
-            self._args = [arg.lstrip() for arg in self.at.text[self._second_blank_idx :].split(' ') if arg]
-
+            self._init_args()
         return self._args
 
     @property
@@ -151,7 +153,7 @@ class Context(object):
 
 def check_permission(need_permission: int = 0, need_arg_num: int = 0) -> Callable:
     """
-    装饰器实现鉴权和上下文包装
+    装饰器实现鉴权和参数数量检查
 
     Args:
         need_permission (int, optional): 需要的权限级别
@@ -161,11 +163,6 @@ def check_permission(need_permission: int = 0, need_arg_num: int = 0) -> Callabl
     def wrapper(func) -> Callable:
         @functools.wraps(func)
         async def foo(self: "Listener", ctx: Context):
-            ctx.handler = self.handlers.get(ctx.tieba_name, None)
-            if not ctx.handler:
-                return
-            if not await ctx._init():
-                return
             if len(ctx.args) < need_arg_num:
                 return
             if ctx.this_permission < need_permission:
@@ -195,24 +192,16 @@ class Handler(object):
 
 class Listener(object):
 
-    __slots__ = ['listener', 'handlers', '_cmd_map', 'time_recorder']
+    __slots__ = ['listener', 'handlers', 'time_recorder']
 
     def __init__(self) -> None:
 
-        config_path = SCRIPT_PATH.parent / 'config/listen_config.json'
-        with config_path.open('r', encoding='utf-8') as _file:
-            config = json.load(_file)
-            self.handlers = {
-                (handler := Handler(**tieba_config)).tieba_name: handler for tieba_config in config['tieba_configs']
-            }
-
-        self.listener = tb.Reviewer(config['listener_key'], '')
-
-        self._cmd_map = {
-            func_name.removeprefix('cmd_'): getattr(self, func_name)
-            for func_name in dir(self)
-            if func_name.startswith('cmd_')
+        self.handlers = {
+            (handler := Handler(**tieba_config)).tieba_name: handler for tieba_config in LISTEN_CONFIG['tieba_configs']
         }
+
+        self.listener = tb.Reviewer(LISTEN_CONFIG['listener_key'], '')
+
         self.time_recorder = TimerRecorder(3600, 30)
 
     async def close(self) -> None:
@@ -255,7 +244,15 @@ class Listener(object):
 
     async def _execute_cmd(self, at: tb.At) -> None:
         ctx = Context(at)
-        cmd_func = self._cmd_map.get(ctx.cmd_type, self.cmd_default)
+
+        ctx.handler = self.handlers.get(ctx.tieba_name, None)
+        if not ctx.handler:
+            return
+
+        if not await ctx._init():
+            return
+
+        cmd_func = getattr(self, f'cmd_{ctx.cmd_type}', self.cmd_default)
         await cmd_func(ctx)
 
     async def _arg2user_info(self, arg: str) -> tb.UserInfo:

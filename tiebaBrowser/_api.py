@@ -933,10 +933,10 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to add {tid} to tab:{to_tab_id} in {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to move {tid} to tab:{to_tab_id} in {tieba_name}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully add {tid} to tab:{to_tab_id} in {tieba_name}")
+        LOG.info(f"Successfully moved {tid} to tab:{to_tab_id} in {tieba_name}")
         return True
 
     async def recommend(self, tieba_name: str, tid: int) -> bool:
@@ -1058,7 +1058,7 @@ class Browser(object):
                 LOG.warning(f"Failed to add {tid} to good_list:{cname} in {tieba_name}. reason:{err}")
                 return False
 
-            LOG.info(f"Successfully add {tid} to good_list:{cname} in {tieba_name}")
+            LOG.info(f"Successfully added {tid} to good_list:{cname} in {tieba_name}")
             return True
 
         return await _good(await _cname2cid())
@@ -1131,7 +1131,7 @@ class Browser(object):
             LOG.warning(f"Failed to add {tid} to top_list in {tieba_name}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully add {tid} to top_list in {tieba_name}")
+        LOG.info(f"Successfully added {tid} to top_list in {tieba_name}")
         return True
 
     async def untop(self, tieba_name: str, tid: int) -> bool:
@@ -1456,7 +1456,7 @@ class Browser(object):
             self._tbs = main_json['anti']['tbs']
 
         except Exception as err:
-            LOG.warning(f"Failed to get UserInfo. reason:{err}")
+            LOG.warning(f"Failed to get UserInfo of current account. reason:{err}")
             user = BasicUserInfo()
             self._tbs = ''
 
@@ -1490,7 +1490,7 @@ class Browser(object):
             msg = {key: bool(int(value)) for key, value in main_json['message'].items()}
 
         except Exception as err:
-            LOG.warning(f"Failed to get msg reason:{err}")
+            LOG.warning(f"Failed to get new_msg reason:{err}")
             msg = {
                 'fans': False,
                 'replyme': False,
@@ -1990,7 +1990,7 @@ class Browser(object):
             }
 
         except Exception as err:
-            LOG.warning(f"Failed to get recom_status of {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to get statistics of {tieba_name}. reason:{err}")
             stat = {field_name: [] for field_name in field_names}
 
         return stat
@@ -2107,7 +2107,7 @@ class Browser(object):
             LOG.warning(f"Failed to like forum {tieba_name}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully like forum {tieba_name}")
+        LOG.info(f"Successfully liked forum {tieba_name}")
         return True
 
     async def sign_forum(self, tieba_name: str) -> bool:
@@ -2142,7 +2142,7 @@ class Browser(object):
             LOG.warning(f"Failed to sign forum {tieba_name}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully sign forum {tieba_name}")
+        LOG.info(f"Successfully signed forum {tieba_name}")
         return True
 
     async def add_post(self, tieba_name: str, tid: int, content: str) -> bool:

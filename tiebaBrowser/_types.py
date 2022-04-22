@@ -135,7 +135,7 @@ class BasicUserInfo(object):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} [user_id:{self._user_id} / user_name:{self.user_name} / portrait:{self._portrait} / nick_name:{self._nick_name}]"
 
-    def __eq__(self, obj) -> int:
+    def __eq__(self, obj) -> bool:
         return self._user_id == obj.user_id and self.user_name == obj.user_name and self._portrait == obj.portrait
 
     def __hash__(self) -> int:
@@ -411,14 +411,20 @@ class FragAt(FragText):
         user_id (int): 被@用户的user_id
     """
 
-    __slots__ = []
+    __slots__ = ['_text']
+
+    def __init__(self, content_proto: PbContent_pb2.PbContent) -> None:
+        super().__init__(content_proto)
+        self._text = None
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} [text:{self.text} / user_id:{self.user_id}]"
 
     @property
     def text(self) -> str:
-        return self._raw_data.text
+        if self._text is None:
+            self._text = f"{self._raw_data.text} "
+        return self._text
 
     @property
     def user_id(self) -> int:
@@ -433,30 +439,40 @@ class FragLink(FragText):
         text (str): 链接标题+链接url
         title (str): 链接标题
         link (str): 链接url
+        is_external (bool): 是否外部链接
     """
 
-    __slots__ = ['_text']
+    __slots__ = ['_text', '_is_external']
+
+    external_perfix = "http://tieba.baidu.com/mo/q/checkurl"
 
     def __init__(self, content_proto: PbContent_pb2.PbContent) -> None:
         super().__init__(content_proto)
         self._text = None
+        self._is_external = None
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__} [text:{self.text} / link:{self.link}]"
+        return f"{self.__class__.__name__} [title:{self.title} / link:{self.link}]"
 
     @property
     def text(self) -> str:
         if self._text is None:
-            self._text = f"{self._raw_data.text} {self._raw_data.link}"
+            self._text = f"{self.title} {self.link} "
         return self._text
 
     @property
-    def title(self) -> int:
+    def title(self) -> str:
         return self._raw_data.text
 
     @property
-    def link(self) -> int:
+    def link(self) -> str:
         return self._raw_data.link
+
+    @property
+    def is_external(self) -> bool:
+        if self._is_external is None:
+            self._is_external = self._raw_data.link.startswith(self.external_perfix)
+        return self._is_external
 
 
 class FragVoice(_Fragment):
@@ -1357,7 +1373,7 @@ class Post(_Container):
     Fields:
         text (str): 文本内容
         contents (Fragments): 内容碎片列表
-        sign (Fragments): 小尾巴
+        sign (str): 小尾巴文本内容
         comments (list[Comment]): 高赞楼中楼
 
         fid (int): 所在吧id
@@ -1475,7 +1491,7 @@ class Post(_Container):
         return self._sign
 
     @property
-    def comments(self) -> Fragments:
+    def comments(self) -> list["Comment"]:
         if self._comments is None:
 
             if self._raw_data:
@@ -1897,6 +1913,7 @@ class Reply(_Container):
         self._raw_data = reply_proto
         self._text = reply_proto.content
 
+        self.tieba_name = reply_proto.fname
         self._tid = reply_proto.thread_id
         self._pid = reply_proto.post_id
         self._user = None
@@ -2198,8 +2215,8 @@ class Ats(_Containers[At]):
 
         if self._objs is None:
 
-            if self._raw_data:
-                self._objs = [At(at_dict=at_dict) for at_dict in self._raw_data['at_list']]
+            if self._raw_data and (at_dicts := self._raw_data['at_list']):
+                self._objs = [At(at_dict=at_dict) for at_dict in at_dicts]
             else:
                 self._objs = []
 
@@ -2364,8 +2381,8 @@ class Searches(_Containers[Search]):
 
         if self._objs is None:
 
-            if self._raw_data:
-                self._objs = [Search(search_dict=search_dict) for search_dict in self._raw_data['post_list']]
+            if self._raw_data and (search_dicts := self._raw_data['post_list']):
+                self._objs = [Search(search_dict=search_dict) for search_dict in search_dicts]
             else:
                 self._objs = []
 
