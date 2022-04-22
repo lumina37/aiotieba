@@ -402,7 +402,7 @@ class FragImage(_Fragment):
         return self._raw_data.origin_size
 
 
-class FragAt(_Fragment):
+class FragAt(FragText):
     """
     @碎片
 
@@ -425,7 +425,7 @@ class FragAt(_Fragment):
         return self._raw_data.uid
 
 
-class FragLink(_Fragment):
+class FragLink(FragText):
     """
     链接碎片
 
@@ -477,7 +477,7 @@ class FragVoice(_Fragment):
         return self._raw_data.voice_md5
 
 
-class FragTiebaPlus(_Fragment):
+class FragTiebaPlus(FragText):
     """
     贴吧+碎片
 
@@ -500,7 +500,7 @@ class FragTiebaPlus(_Fragment):
         return self._raw_data.tiebaplus_info.jump_url
 
 
-class FragItem(_Fragment):
+class FragItem(FragText):
     """
     item碎片
 
@@ -549,7 +549,6 @@ class Fragments(Generic[_TFrag]):
                 # 0纯文本 9电话号 18话题 27百科词条
                 case 0 | 9 | 18 | 27:
                     fragment = FragText(content_proto)
-                    self._texts.append(fragment)
                 # 11:tid=5047676428
                 case 2 | 11:
                     fragment = FragEmoji(content_proto)
@@ -561,11 +560,9 @@ class Fragments(Generic[_TFrag]):
                 case 4:
                     fragment = FragAt(content_proto)
                     self._ats.append(fragment)
-                    self._texts.append(fragment)
                 case 1:
                     fragment = FragLink(content_proto)
                     self._links.append(fragment)
-                    self._texts.append(fragment)
                 case 5:  # video
                     fragment = FragmentUnknown(content_proto)
                 case 10:
@@ -575,7 +572,6 @@ class Fragments(Generic[_TFrag]):
                 case 35 | 36 | 37:
                     fragment = FragTiebaPlus(content_proto)
                     self._tiebapluses.append(fragment)
-                    self._texts.append(fragment)
                 case _:
                     fragment = FragmentUnknown(content_proto)
                     LOG.warning(f"Unknown fragment type:{content_proto.type}")
@@ -583,7 +579,7 @@ class Fragments(Generic[_TFrag]):
             return fragment
 
         self._text = None
-        self._texts = []
+        self._texts = None
         self._links = []
         self._imgs = []
         self._emojis = []
@@ -603,7 +599,10 @@ class Fragments(Generic[_TFrag]):
         return self._text
 
     @property
-    def texts(self) -> list[_TFrag]:
+    def texts(self) -> list[FragText]:
+        if self._texts is None:
+            self._texts = [frag for frag in self._frags if isinstance(frag, FragText)]
+
         return self._texts
 
     @property
