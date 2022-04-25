@@ -1,5 +1,6 @@
 # -*- coding:utf-8 -*-
 import asyncio
+import random
 import re
 import sys
 import time
@@ -47,6 +48,8 @@ class CloudReview(tb.Reviewer):
 
     async def run(self) -> None:
 
+        await asyncio.sleep(random.random() * 15)
+
         while 1:
             try:
                 start_time = time.perf_counter()
@@ -87,7 +90,7 @@ class CloudReview(tb.Reviewer):
 
                 tb.log.debug(f"Cycle time_cost: {time.perf_counter()-start_time:.4f}")
                 # 主动释放CPU 转而运行其他协程
-                await asyncio.sleep(20)
+                await asyncio.sleep(30)
 
             except Exception:
                 tb.log.critical("Unexcepted error", exc_info=True)
@@ -295,7 +298,7 @@ class CloudReview(tb.Reviewer):
         await self.add_id(comment.pid)
         return self.Punish()
 
-    async def _check_text(self, obj) -> Punish:
+    async def _check_text(self, obj: tb.Thread | tb.Post | tb.Comment) -> Punish:
         """
         检查文本内容
 
@@ -312,7 +315,9 @@ class CloudReview(tb.Reviewer):
             return self.Punish(1, 10)
 
         text = obj.text
-        if re.search("((?<![a-z])(v|t)|瞳|痛|梓|罐|豆|鸟|鲨)(÷|/|／|➗|畜|处|除|楚|初|醋|cg)|椰子汁|🥥|东雪莲|莲宝|林忆宁|杨沐|赵若", text, re.I):
+        if re.search(
+            "((?<![a-z])(v|t)|瞳|梓|罐|豆|鸟|鲨)(÷|/|／|➗|畜|处|除|楚|初|醋|cg)|痛(楚|初|醋)|椰子汁|🥥|东雪莲|莲宝|林忆宁|杨沐|赵若", text, re.I
+        ):
             return self.Punish(1)
 
         level = obj.user.level

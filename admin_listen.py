@@ -66,7 +66,7 @@ class Context(object):
             return False
 
         self.this_permission = await handler.admin.get_user_id(self.user_id)
-        if len(self.at.text.encode('utf-8')) >= 76:
+        if len(self.at.text.encode('utf-8')) >= 74:
             await self._init_full()
 
         self._init_args()
