@@ -63,7 +63,7 @@ class Sessions(object):
             self.BDUSS = ''
             self.STOKEN = ''
 
-    async def _init(self) -> None:
+    async def _init(self) -> "Sessions":
         self._timeout = aiohttp.ClientTimeout(connect=5, sock_connect=3, sock_read=10)
         self._connector = aiohttp.TCPConnector(
             ttl_dns_cache=600, keepalive_timeout=90, limit=0, family=socket.AF_INET, ssl=False
@@ -130,10 +130,11 @@ class Sessions(object):
             read_bufsize=_read_bufsize,
             trust_env=_trust_env,
         )
+        
+        return self
 
     async def __aenter__(self) -> "Sessions":
-        await self._init()
-        return self
+        return await self._init()
 
     async def close(self) -> None:
         await asyncio.gather(
@@ -161,12 +162,12 @@ class Browser(object):
         self.sessions = Sessions(BDUSS_key)
         self._tbs: str = ''
 
-    async def _init(self) -> None:
+    async def _init(self) -> "Browser":
         await self.sessions._init()
+        return self
 
     async def __aenter__(self) -> "Browser":
-        await self._init()
-        return self
+        return await self._init()
 
     async def close(self) -> None:
         await self.sessions.close()

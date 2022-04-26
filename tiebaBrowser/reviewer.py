@@ -109,8 +109,7 @@ class Reviewer(Browser):
         self._qrdetector = None
 
     async def __aenter__(self) -> "Reviewer":
-        await self._init()
-        return self
+        return await self._init()
 
     @property
     def qrdetector(self) -> cv.QRCodeDetector:
