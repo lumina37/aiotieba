@@ -183,8 +183,8 @@ class Handler(object):
         self.admin = tb.Reviewer(admin_key, self.tieba_name)
         self.speaker = tb.Browser(speaker_key)
 
-    async def _init(self) -> None:
-        await asyncio.gather(self.admin._init(), self.speaker._init())
+    async def enter(self) -> None:
+        await asyncio.gather(self.admin.enter(), self.speaker.enter())
 
     async def close(self):
         await asyncio.gather(self.admin.close(), self.speaker.close(), return_exceptions=True)
@@ -210,8 +210,8 @@ class Listener(object):
         )
 
     async def __aenter__(self) -> "Listener":
-        coros = [handler._init() for handler in self.handlers.values()]
-        await asyncio.gather(*coros, self.listener._init())
+        coros = [handler.enter() for handler in self.handlers.values()]
+        await asyncio.gather(*coros, self.listener.enter())
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
@@ -239,7 +239,7 @@ class Listener(object):
                 ats = ats[:end_idx]
                 break
 
-        if ats and (await self.listener.database.ping()):
+        if ats:
             await asyncio.gather(*[asyncio.wait_for(self._execute_cmd(at), timeout=120) for at in ats])
 
     async def _execute_cmd(self, at: tb.At) -> None:
@@ -809,9 +809,11 @@ class Listener(object):
         elif ctx.args[0] == "exit":
             if await ctx.handler.admin.add_tid(0, False):
                 await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
-            async for tid in ctx.handler.admin.get_tids():
-                if await ctx.handler.admin.unhide_thread(ctx.tieba_name, tid):
-                    await ctx.handler.admin.add_tid(tid, False)
+            limit = 128
+            while len(tids := await ctx.handler.admin.get_tid_list(limit=limit)) == limit:
+                for tid in tids:
+                    if await ctx.handler.admin.unhide_thread(ctx.tieba_name, tid):
+                        await ctx.handler.admin.add_tid(tid, False)
 
     @check_permission(need_permission=2, need_arg_num=0)
     async def cmd_active(self, ctx: Context) -> None:
@@ -833,8 +835,7 @@ class Listener(object):
         """
 
         tb.log.info(f"{ctx.log_name}: {ctx.text}")
-        if await ctx.handler.admin.database.ping():
-            await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
+        await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=129, need_arg_num=65536)
     async def cmd_default(self, ctx: Context) -> None:

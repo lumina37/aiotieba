@@ -4,12 +4,13 @@
 [![license](https://badgen.net/github/license/Starry-OvO/Tieba-Manager?icon=github)](https://github.com/Starry-OvO/Tieba-Manager/blob/main/LICENSE)
 [![release](https://badgen.net/github/release/Starry-OvO/Tieba-Manager?icon=github)](https://github.com/Starry-OvO/Tieba-Manager/releases)
 
-## 工具链接
+## 友情链接
 
 + [百度贴吧接口合集](https://github.com/Starry-OvO/Tieba-Manager/blob/main/tiebaBrowser/_api.py)
 + [云审查案例](https://github.com/Starry-OvO/Tieba-Manager/blob/main/cloud_review_asoul.py)
 + [指令管理器](https://github.com/Starry-OvO/Tieba-Manager/wiki/%E6%8C%87%E4%BB%A4%E7%AE%A1%E7%90%86%E5%99%A8%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E%E4%B9%A6)
 + [另一个仍在活跃更新的贴吧管理器（有用户界面 仅限Windows平台）](https://github.com/dog194/TiebaManager)
++ [客户反馈（我的个人吧）](https://tieba.baidu.com/f?ie=utf-8&kw=starry)
 
 ## 功能概览
 
@@ -39,7 +40,7 @@ git clone https://github.com/Starry-OvO/Tieba-Manager.git
 + `pip`安装依赖
 
 ```bash
-pip install aiohttp[speedups] lxml beautifulsoup4 pymysql opencv-contrib-python protobuf
+pip install aiohttp[speedups] lxml beautifulsoup4 aiomysql opencv-contrib-python protobuf
 ```
 
 + 修改`config/config-example.json`，填入你的`BDUSS`，将文件名修改为`config.json`
@@ -102,7 +103,7 @@ asyncio.run(main())
   + **aiohttp** 支持网络IO（异步）
   + **lxml** 支持HTML格式解析
   + **beautifulsoup4** 解析HTML
-  + **pymysql** 连接MySQL
+  + **aiomysql** 连接MySQL（异步）
   + **opencv-contrib-python** 提供图像解码、图像哈希、定位解析二维码的方法
   + **protobuf** 支持以proto格式序列化网络请求和反序列化响应
 

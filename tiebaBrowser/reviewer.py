@@ -1,10 +1,10 @@
 # -*- coding:utf-8 -*-
 __all__ = ['Reviewer']
 
+import asyncio
 import binascii
 import datetime
 import re
-from typing import AsyncIterable
 
 import cv2 as cv
 import numpy as np
@@ -12,7 +12,7 @@ import numpy as np
 from ._api import Browser
 from ._logger import get_logger
 from ._types import BasicUserInfo
-from .database import Database, get_database
+from .database import Database
 
 LOG = get_logger()
 
@@ -21,6 +21,8 @@ class RegularExp(object):
     """
     贴吧常用的审查正则表达式
     """
+
+    __slots__ = []
 
     contact_exp = re.compile(r'(\+|加|联系|私|找).{0,2}我|(d|滴)我|(私|s)(信|我|聊)|滴滴|di?di?', re.I)
     contact_rare_exp = re.compile(
@@ -96,32 +98,36 @@ class Reviewer(Browser):
         BDUSS_key (str): 用于从config.json中提取BDUSS
     """
 
-    __slots__ = ['tieba_name', '_database', '_qrdetector']
+    __slots__ = ['tieba_name', 'database', '_qrdetector']
 
     expressions = RegularExp()
 
     def __init__(self, BDUSS_key: str, tieba_name: str):
         super().__init__(BDUSS_key)
 
-        self.tieba_name = tieba_name
+        self.tieba_name: str = tieba_name
 
-        self._database = None
-        self._qrdetector = None
+        self.database: Database = Database()
+        self._qrdetector: cv.QRCodeDetector = None
+
+    async def enter(self) -> "Reviewer":
+        await asyncio.gather(super().enter(), self.database.enter())
+        return self
 
     async def __aenter__(self) -> "Reviewer":
-        return await self._init()
+        return await self.enter()
+
+    async def close(self) -> None:
+        await asyncio.gather(super().close(), self.database.close(), return_exceptions=True)
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        await self.close()
 
     @property
     def qrdetector(self) -> cv.QRCodeDetector:
         if self._qrdetector is None:
             self._qrdetector = cv.QRCodeDetector()
         return self._qrdetector
-
-    @property
-    def database(self) -> Database:
-        if self._database is None:
-            self._database = get_database()
-        return self._database
 
     async def get_fid(self, tieba_name: str) -> int:
         """
@@ -258,19 +264,19 @@ class Reviewer(Browser):
 
         return await self.database.del_tid(self.tieba_name, tid)
 
-    async def get_tids(self, batch_size: int = 128) -> AsyncIterable[int]:
+    async def get_tid_list(self, limit: int = 128, offset: int = 0) -> list[int]:
         """
-        获取表tid_water_{tieba_name}中所有待恢复的tid
+        获取表tid_water_{tieba_name}中待恢复的tid的列表
 
         Args:
-            batch_size (int): 分包大小
+            limit (int, optional): 返回数量限制
+            offset (int, optional): 偏移
 
-        Yields:
-            AsyncIterable[int]: tid
+        Returns:
+            list[int]: tid列表
         """
 
-        async for tid in self.database.get_tids(self.tieba_name, batch_size):
-            yield tid
+        return await self.database.get_tid_list(self.tieba_name, limit, offset)
 
     async def add_user_id(self, user_id: int, permission: int = 0, note: str = '') -> bool:
         """

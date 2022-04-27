@@ -10,10 +10,13 @@
         "host": "127.0.0.1",
         "port": 3306,
         "user": "填用户名",
-        "passwd": "填密码"
+        "password": "填密码",
+        "db": "使用的数据库名，不填则默认为tieba_cloud_review",
+        "unix_socket": "用于优化linux系统的本机连接速度，看不懂就不用填",
+        "pool_recycle": "填连接超时的秒数，需要与服务端保持一致，不填则默认为28800秒"
     },
     "tieba_name_mapping": {
         "贴吧中文名": "自定义的英文名",
-        "元气骑士": "soulknight"
+        "lol半价": "halfprice"
     }
 }

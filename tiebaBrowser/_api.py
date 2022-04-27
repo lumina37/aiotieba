@@ -57,13 +57,13 @@ class Sessions(object):
     def __init__(self, BDUSS_key: str | None = None) -> None:
 
         if BDUSS_key:
-            self.BDUSS = CONFIG['BDUSS'][BDUSS_key]
-            self.STOKEN = CONFIG['STOKEN'].get(BDUSS_key, '')
+            self.BDUSS: str = CONFIG['BDUSS'].get(BDUSS_key, '')
+            self.STOKEN: str = CONFIG['STOKEN'].get(BDUSS_key, '')
         else:
-            self.BDUSS = ''
-            self.STOKEN = ''
+            self.BDUSS: str = ''
+            self.STOKEN: str = ''
 
-    async def _init(self) -> "Sessions":
+    async def enter(self) -> "Sessions":
         self._timeout = aiohttp.ClientTimeout(connect=5, sock_connect=3, sock_read=10)
         self._connector = aiohttp.TCPConnector(
             ttl_dns_cache=600, keepalive_timeout=90, limit=0, family=socket.AF_INET, ssl=False
@@ -130,11 +130,11 @@ class Sessions(object):
             read_bufsize=_read_bufsize,
             trust_env=_trust_env,
         )
-        
+
         return self
 
     async def __aenter__(self) -> "Sessions":
-        return await self._init()
+        return await self.enter()
 
     async def close(self) -> None:
         await asyncio.gather(
@@ -162,12 +162,12 @@ class Browser(object):
         self.sessions = Sessions(BDUSS_key)
         self._tbs: str = ''
 
-    async def _init(self) -> "Browser":
-        await self.sessions._init()
+    async def enter(self) -> "Browser":
+        await self.sessions.enter()
         return self
 
     async def __aenter__(self) -> "Browser":
-        return await self._init()
+        return await self.enter()
 
     async def close(self) -> None:
         await self.sessions.close()
@@ -1961,7 +1961,7 @@ class Browser(object):
             dict[str, list[int]]: {字段名:按时间顺序排列的统计数据}
             {'view': 浏览量,
              'thread': 主题帖数,
-             'member': 关注数,
+             'new_member': 新增关注数,
              'post': 回复数,
              'sign_ratio': 签到率,
              'average_time': 人均浏览时长,
@@ -1976,7 +1976,16 @@ class Browser(object):
         }
         payload['sign'] = self._app_sign(payload)
 
-        field_names = ['view', 'thread', 'member', 'post', 'sign_ratio', 'average_time', 'average_times', 'recommend']
+        field_names = [
+            'view',
+            'thread',
+            'new_member',
+            'post',
+            'sign_ratio',
+            'average_time',
+            'average_times',
+            'recommend',
+        ]
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/f/forum/getforumdata", data=payload)
 

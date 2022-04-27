@@ -43,12 +43,9 @@ class CloudReview(tb.Reviewer):
         self.water_restrict_flag = False
 
     async def __aenter__(self) -> "CloudReview":
-        await self._init()
-        return self
+        return await self.enter()
 
     async def run(self) -> None:
-
-        await asyncio.sleep(random.random() * 15)
 
         while 1:
             try:
