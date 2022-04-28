@@ -73,7 +73,9 @@ class Context(object):
         return True
 
     async def _init_full(self) -> bool:
+
         if self.at.is_floor:
+            await asyncio.sleep(1)
             comments = await self.handler.admin.get_comments(self.tid, self.pid, is_floor=True)
             if not comments:
                 return False
@@ -81,6 +83,7 @@ class Context(object):
             for comment in comments:
                 if comment.pid == self.pid:
                     self.at._text = comment.text
+
         else:
             if self.at.is_thread:
                 await asyncio.sleep(3)
@@ -89,6 +92,7 @@ class Context(object):
                     return False
                 self.parent = posts.thread.share_origin
                 self.at._text = posts.thread.text
+
             else:
                 posts = await self.handler.admin.get_posts(self.tid, pn=-1, rn=10, sort=1)
                 if not posts:
@@ -202,7 +206,7 @@ class Listener(object):
 
         self.listener = tb.Reviewer(LISTEN_CONFIG['listener_key'], '')
 
-        self.time_recorder = TimerRecorder(3600, 30)
+        self.time_recorder = TimerRecorder(3600, 10)
 
     async def close(self) -> None:
         await asyncio.gather(
@@ -632,6 +636,8 @@ class Listener(object):
 
         tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
 
+        if not self.time_recorder.allow_execute():
+            return
         user = await self._arg2user_info(ctx.args[0])
         if not user.user_id:
             return
@@ -686,6 +692,9 @@ class Listener(object):
 
         if not ctx.args[1].isdecimal():
             return
+        keyword = ctx.args[0]
+        limit = int(ctx.args[1])
+        min_level = int(ctx.args[2]) if len(ctx.args) > 2 and ctx.args[2].isdecimal() else 0
         if not self.time_recorder.allow_execute():
             return
 
@@ -716,7 +725,7 @@ class Listener(object):
                 comments = await self.listener.get_comments(post.tid, post.pid, pn)
                 for comment in comments:
                     text = re.sub('^回复.*?:', '', comment.text)
-                    if ctx.args[0] in text:
+                    if comment.user.level >= min_level and keyword in text:
                         vote_set.add(comment.user.user_id)
 
                 if not comments.has_more:
@@ -733,8 +742,8 @@ class Listener(object):
             await asyncio.gather(*[_stat_pn(pn) for pn in range(2, total_page + 1)], return_exceptions=True)
 
         results.sort(key=lambda result: result[1], reverse=True)
-        contents = [f"@{ctx.at.user.user_name} "]
-        contents.extend([f"floor:{floor} num:{vote_num}" for floor, vote_num in results[: int(ctx.args[1])]])
+        contents = [f"@{ctx.at.user.user_name} ", f"keyword:{keyword}", f"min_level:{min_level}"]
+        contents.extend([f"floor:{floor} num:{vote_num}" for floor, vote_num in results[:limit]])
         content = '\n'.join(contents)
 
         if await ctx.handler.speaker.add_post(ctx.tieba_name, ctx.tid, content):
@@ -842,6 +851,9 @@ class Listener(object):
         """
         default指令
         """
+
+        if not self.time_recorder.allow_execute():
+            return
 
         await ctx.handler.speaker.add_post(ctx.tieba_name, ctx.tid, "关注嘉然顿顿解馋~")
 

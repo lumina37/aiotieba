@@ -4,14 +4,6 @@
 [![license](https://badgen.net/github/license/Starry-OvO/Tieba-Manager?icon=github)](https://github.com/Starry-OvO/Tieba-Manager/blob/main/LICENSE)
 [![release](https://badgen.net/github/release/Starry-OvO/Tieba-Manager?icon=github)](https://github.com/Starry-OvO/Tieba-Manager/releases)
 
-## 友情链接
-
-+ [百度贴吧接口合集](https://github.com/Starry-OvO/Tieba-Manager/blob/main/tiebaBrowser/_api.py)
-+ [云审查案例](https://github.com/Starry-OvO/Tieba-Manager/blob/main/cloud_review_asoul.py)
-+ [指令管理器](https://github.com/Starry-OvO/Tieba-Manager/wiki/%E6%8C%87%E4%BB%A4%E7%AE%A1%E7%90%86%E5%99%A8%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E%E4%B9%A6)
-+ [另一个仍在活跃更新的贴吧管理器（有用户界面 仅限Windows平台）](https://github.com/dog194/TiebaManager)
-+ [客户反馈（我的个人吧）](https://tieba.baidu.com/f?ie=utf-8&kw=starry)
-
 ## 功能概览
 
 + 按回复时间/发布时间/热门序获取贴吧主题帖/精华帖列表。支持获取带转发/投票/转发嵌套投票/各种卡片的主题帖信息
@@ -27,7 +19,7 @@
 + 获取贴吧最新关注用户列表、等级排行榜
 + 使用`BDUSS`关注吧、签到吧、水帖
 
-## 基本环境部署
+## 准备使用
 
 + 确保你的[`Python`](https://www.python.org/downloads/)版本为`3.10+`
 
@@ -40,7 +32,7 @@ git clone https://github.com/Starry-OvO/Tieba-Manager.git
 + `pip`安装依赖
 
 ```bash
-pip install aiohttp[speedups] lxml beautifulsoup4 aiomysql opencv-contrib-python protobuf
+pip install aiohttp[speedups] protobuf aiomysql lxml beautifulsoup4 opencv-contrib-python
 ```
 
 + 修改`config/config-example.json`，填入你的`BDUSS`，将文件名修改为`config.json`
@@ -89,27 +81,7 @@ asyncio.run(main())
 + 在`config/config.json`中配置`tieba_name_mapping`字段。你需要为每个贴吧设置对应的英文名以方便建立数据库
 + 使用函数`MySQL.init_database()`一键建库
 + 自定义审查行为：请参照我给出的例子自己编程修改[`cloud_review_asoul.py`](https://github.com/Starry-OvO/Tieba-Manager/blob/main/cloud_review_asoul.py)，这是被实际应用于[`asoul吧`](https://tieba.baidu.com/f?ie=utf-8&kw=asoul)的云审查工具
-
-## 附加说明
-
-+ config/config.json字段含义
-
-  + `BDUSS_key`（用于快捷调出`BDUSS`）->`value`（你的`BDUSS`的实际值）
-  + `MySQL` 配置用于连接到数据库的`ip` `port` `user_name` `password`等信息
-  + `tieba_name_mapping` `tieba_name`（贴吧中文名）->`tieba_name_eng`（自定义的贴吧英文名，建库时用得到）
-
-+ 各第三方库的用途说明
-
-  + **aiohttp** 支持网络IO（异步）
-  + **lxml** 支持HTML格式解析
-  + **beautifulsoup4** 解析HTML
-  + **aiomysql** 连接MySQL（异步）
-  + **opencv-contrib-python** 提供图像解码、图像哈希、定位解析二维码的方法
-  + **protobuf** 支持以proto格式序列化网络请求和反序列化响应
-
-## 编写用于一键重启的bash脚本
-
-给出我的脚本`restart.sh`作为示例。需要重启时就`bash restart.sh`就行了
++ 编写用于一键重启的bash脚本。下面是我用的`restart.sh`，需要重启时就`bash restart.sh`就行了
 
 ```bash
 #! /bin/bash
@@ -124,8 +96,27 @@ nohup python $TIEBA_MANAGER_PATH/cloud_review_asoul.py >/dev/null 2>&1 &
 nohup python $TIEBA_MANAGER_PATH/cloud_review_diana.py >/dev/null 2>&1 &
 ```
 
-## 结束
+## 友情链接
 
-至此，所有的配置工作已经完成
++ [百度贴吧接口合集](https://github.com/Starry-OvO/Tieba-Manager/blob/main/tiebaBrowser/_api.py)
++ [云审查案例](https://github.com/Starry-OvO/Tieba-Manager/blob/main/cloud_review_asoul.py)
++ [指令管理器](https://github.com/Starry-OvO/Tieba-Manager/wiki/%E6%8C%87%E4%BB%A4%E7%AE%A1%E7%90%86%E5%99%A8%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E%E4%B9%A6)
++ [另一个仍在活跃更新的贴吧管理器（有用户界面 仅限Windows平台）](https://github.com/dog194/TiebaManager)
++ [客户反馈（我的个人吧）](https://tieba.baidu.com/f?ie=utf-8&kw=starry)
 
-Enjoy :)
+## 用户名单
+
+云审查工具&指令管理器已在以下贴吧应用（2022.04.27更新，按启用时间先后排序）
+
+| 吧名 | 关注用户数 | 最近29天日均访问量 | 日均主题帖数 | 日均回复数 |
+| :---: | :---: | :---: | :---: | :---: |
+| asoul | 146,543 | 132,141 | 1,600 | 16,804 |
+| vtuber自由讨论 | 15,906 | 3,335 | 4 | 78 |
+| 嘉然 | 49,984 | 15,227 | 161 | 2,401 |
+| 宫漫 | 1,207,688 | 83,576 | 448 | 7,338 |
+| lol半价 | 1,920,225 | 169,292 | 474 | 9,361 |
+| 孙笑川 | 1,712,112 | 533,065 | 4,876 | 132,372 |
+| 向晚 | 24,157 | 8,232 | 111 | 1,130 |
+| 贝拉 | 19,465 | 10,101 | 59 | 1,255 |
+| 王力口乐 | 3,363 | 12,979 | 225 | 3,213 |
+| 乃琳 | 14,743 | 5,001 | 44 | 756 |
