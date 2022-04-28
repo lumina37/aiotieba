@@ -77,9 +77,9 @@ asyncio.run(main())
 
 ## 若要开启云审查功能
 
-+ 在`config/config.json`中配置`MySQL`字段。你需要一个`MySQL`数据库用来缓存通过检测的回复的pid以及记录黑、白名单用户
++ 在`config/config.json`中配置`database`字段。你需要一个`MySQL`数据库用来缓存通过检测的回复的pid以及记录黑、白名单用户
 + 在`config/config.json`中配置`tieba_name_mapping`字段。你需要为每个贴吧设置对应的英文名以方便建立数据库
-+ 使用函数`MySQL.init_database()`一键建库
++ 使用函数`Database.init_database()`一键建库
 + 自定义审查行为：请参照我给出的例子自己编程修改[`cloud_review_asoul.py`](https://github.com/Starry-OvO/Tieba-Manager/blob/main/cloud_review_asoul.py)，这是被实际应用于[`asoul吧`](https://tieba.baidu.com/f?ie=utf-8&kw=asoul)的云审查工具
 + 编写用于一键重启的bash脚本。下面是我用的`restart.sh`，需要重启时就`bash restart.sh`就行了
 
