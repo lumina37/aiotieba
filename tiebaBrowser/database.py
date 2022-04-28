@@ -41,7 +41,7 @@ class Database(object):
         try:
             self._pool: aiomysql.Pool = await aiomysql.create_pool(
                 minsize=0,
-                maxsize=30,
+                maxsize=8,
                 pool_recycle=self._pool_recycle,
                 db=self._db_name,
                 autocommit=True,
