@@ -442,26 +442,19 @@ class FragLink(FragText):
         is_external (bool): 是否外部链接
     """
 
-    __slots__ = ['_text', '_is_external']
+    __slots__ = ['_is_external']
 
     external_perfix = "http://tieba.baidu.com/mo/q/checkurl"
 
     def __init__(self, content_proto: PbContent_pb2.PbContent) -> None:
         super().__init__(content_proto)
-        self._text = None
         self._is_external = None
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__} [title:{self.title} / link:{self.link}]"
+        return f"{self.__class__.__name__} [text:{self.text} / link:{self.link}]"
 
     @property
     def text(self) -> str:
-        if self._text is None:
-            self._text = f"{self.title} {self.link} "
-        return self._text
-
-    @property
-    def title(self) -> str:
         return self._raw_data.text
 
     @property

@@ -819,10 +819,13 @@ class Listener(object):
             if await ctx.handler.admin.add_tid(0, False):
                 await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
             limit = 128
-            while len(tids := await ctx.handler.admin.get_tid_list(limit=limit)) == limit:
+            tids = await ctx.handler.admin.get_tid_list(limit=limit)
+            while 1:
                 for tid in tids:
                     if await ctx.handler.admin.unhide_thread(ctx.tieba_name, tid):
                         await ctx.handler.admin.add_tid(tid, False)
+                if len(tids) != limit:
+                    break
 
     @check_permission(need_permission=2, need_arg_num=0)
     async def cmd_active(self, ctx: Context) -> None:

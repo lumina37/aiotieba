@@ -68,7 +68,6 @@ class Sessions(object):
         self._connector = aiohttp.TCPConnector(
             ttl_dns_cache=600, keepalive_timeout=90, limit=0, family=socket.AF_INET, ssl=False
         )
-        _read_bufsize = 1 << 17  # 128KiB
         _trust_env = False
 
         # Init app client
@@ -86,7 +85,7 @@ class Sessions(object):
             connector_owner=False,
             raise_for_status=True,
             timeout=self._timeout,
-            read_bufsize=_read_bufsize,
+            read_bufsize=1 << 18,  # 256KiB
             trust_env=_trust_env,
         )
 
@@ -106,7 +105,7 @@ class Sessions(object):
             connector_owner=False,
             raise_for_status=True,
             timeout=self._timeout,
-            read_bufsize=_read_bufsize,
+            read_bufsize=1 << 18,  # 256KiB
             trust_env=_trust_env,
         )
 
@@ -127,7 +126,7 @@ class Sessions(object):
             connector_owner=False,
             raise_for_status=True,
             timeout=self._timeout,
-            read_bufsize=_read_bufsize,
+            read_bufsize=1 << 21,  # 2MiB
             trust_env=_trust_env,
         )
 
@@ -480,6 +479,45 @@ class Browser(object):
         except Exception as err:
             LOG.warning(f"Failed to get BasicUserInfo of {user.user_id}. reason:{err}")
             user = BasicUserInfo()
+
+        return user
+
+    async def tieba_uid2user_info(self, tieba_uid: int) -> UserInfo:
+        """
+        通过tieba_uid补全用户信息
+
+        Args:
+            tieba_uid (int): 新版tieba_uid 请注意与旧版user_id的区别
+
+        Returns:
+            UserInfo: 完整版用户信息
+        """
+
+        common = CommonReq_pb2.CommonReq()
+        data = GetUserByTiebaUidReqIdl_pb2.GetUserByTiebaUidReqIdl.DataReq()
+        data.common.CopyFrom(common)
+        data.tieba_uid = str(tieba_uid)
+        userinfo_req = GetUserByTiebaUidReqIdl_pb2.GetUserByTiebaUidReqIdl()
+        userinfo_req.data.CopyFrom(data)
+
+        multipart_writer = self._get_tieba_multipart_writer(userinfo_req.SerializeToString())
+
+        try:
+            res = await self.sessions.app_proto.post(
+                "http://c.tieba.baidu.com/c/u/user/getUserByTiebaUid", params={'cmd': 309702}, data=multipart_writer
+            )
+
+            main_proto = GetUserByTiebaUidResIdl_pb2.GetUserByTiebaUidResIdl()
+            main_proto.ParseFromString(await res.content.read())
+            if int(main_proto.error.errorno):
+                raise ValueError(main_proto.error.errmsg)
+
+            user_proto = main_proto.data.user
+            user = UserInfo(user_proto=user_proto)
+
+        except Exception as err:
+            LOG.warning(f"Failed to get UserInfo of {tieba_uid}. reason:{err}")
+            user = UserInfo()
 
         return user
 
@@ -2268,41 +2306,24 @@ class Browser(object):
         LOG.info(f"Successfully set privacy to {tid}. is_hide:{hide}")
         return True
 
-    async def tieba_uid2user_info(self, tieba_uid: int) -> UserInfo:
+    async def ip(self) -> bool:
         """
-        通过tieba_uid补全用户信息
-
-        Args:
-            tieba_uid (int): 新版tieba_uid 请注意与旧版user_id的区别
+        获取出口ip
 
         Returns:
-            UserInfo: 完整版用户信息
+            str: ip地址
         """
 
-        common = CommonReq_pb2.CommonReq()
-        data = GetUserByTiebaUidReqIdl_pb2.GetUserByTiebaUidReqIdl.DataReq()
-        data.common.CopyFrom(common)
-        data.tieba_uid = str(tieba_uid)
-        userinfo_req = GetUserByTiebaUidReqIdl_pb2.GetUserByTiebaUidReqIdl()
-        userinfo_req.data.CopyFrom(data)
-
-        multipart_writer = self._get_tieba_multipart_writer(userinfo_req.SerializeToString())
-
         try:
-            res = await self.sessions.app_proto.post(
-                "http://c.tieba.baidu.com/c/u/user/getUserByTiebaUid", params={'cmd': 309702}, data=multipart_writer
-            )
+            res = await self.sessions.app.post("http://c.tieba.baidu.com/c/s/sync")
 
-            main_proto = GetUserByTiebaUidResIdl_pb2.GetUserByTiebaUidResIdl()
-            main_proto.ParseFromString(await res.content.read())
-            if int(main_proto.error.errorno):
-                raise ValueError(main_proto.error.errmsg)
-
-            user_proto = main_proto.data.user
-            user = UserInfo(user_proto=user_proto)
+            main_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(main_json['error_code']):
+                raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to get UserInfo of {tieba_uid}. reason:{err}")
-            user = UserInfo()
+            LOG.warning(f"Failed to sync. reason:{err}")
+            ip = ''
 
-        return user
+        ip = main_json['client_ip']
+        return ip

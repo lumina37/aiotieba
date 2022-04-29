@@ -1,6 +1,5 @@
 # -*- coding:utf-8 -*-
 import asyncio
-import random
 import re
 import sys
 import time
@@ -287,9 +286,7 @@ class CloudReview(tb.Reviewer):
             return punish
         elif punish.del_flag == 0:
             # 无异常 继续检查
-            if comment.user.level <= 1 and (links := comment.contents.links) and links[0].is_external:
-                # 楼中楼一级号发链接 删
-                return self.Punish(1)
+            pass
 
         # 缓存该pid
         await self.add_id(comment.pid)
