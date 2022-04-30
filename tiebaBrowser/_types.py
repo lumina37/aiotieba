@@ -1454,7 +1454,6 @@ class Post(_Container):
 
             if self.sign:
                 self._text = f'{self.contents.text}\n{self.sign}'
-
             else:
                 self._text = self.contents.text
 

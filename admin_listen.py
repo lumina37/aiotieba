@@ -237,13 +237,14 @@ class Listener(object):
 
     async def _fetch_and_execute_cmds(self) -> None:
         ats = await self.listener.get_ats()
+
         for end_idx, at in enumerate(ats):
             if not self.time_recorder.is_inrange(at.create_time):
-                self.time_recorder.last_parse_time = ats[0].create_time
                 ats = ats[:end_idx]
                 break
 
         if ats:
+            self.time_recorder.last_parse_time = ats[0].create_time
             await asyncio.gather(*[asyncio.wait_for(self._execute_cmd(at), timeout=120) for at in ats])
 
     async def _execute_cmd(self, at: tb.At) -> None:
