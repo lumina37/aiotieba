@@ -1440,7 +1440,7 @@ class Browser(object):
 
         return True
 
-    async def url2image(self, img_url: str) -> np.ndarray | None:
+    async def get_image(self, img_url: str) -> np.ndarray | None:
         """
         从链接获取jpg/png图像
 

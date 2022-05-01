@@ -86,7 +86,7 @@ class Database(object):
             await asyncio.gather(
                 self._create_table_id(tieba_name),
                 self._create_table_user_id(tieba_name),
-                self._create_table_img_blacklist(tieba_name),
+                self._create_table_imghash(tieba_name),
                 self._create_table_tid_water(tieba_name),
             )
         await asyncio.gather(self._create_table_forum(), self._create_table_user())
@@ -431,7 +431,7 @@ class Database(object):
             LOG.warning(f"Failed to insert {tid}. reason:{err}")
             return False
         else:
-            LOG.info(f"Successfully add {tid} to table of {tieba_name}. mode: {mode}")
+            LOG.info(f"Successfully added {tid} to table of {tieba_name}. mode: {mode}")
             return True
 
     @translate_tieba_name
@@ -537,8 +537,8 @@ class Database(object):
         Args:
             tieba_name (str): 贴吧名
             user_id (int): 用户的user_id
-            permission (int, optional): 权限级别
-            note (str, optional): 备注
+            permission (int, optional): 权限级别. Defaults to 0.
+            note (str, optional): 备注. Defaults to ''.
 
         Returns:
             bool: 操作是否成功
@@ -677,9 +677,9 @@ class Database(object):
         return res_list
 
     @translate_tieba_name
-    async def _create_table_img_blacklist(self, tieba_name: str) -> None:
+    async def _create_table_imghash(self, tieba_name: str) -> None:
         """
-        创建表img_blacklist_{tieba_name}
+        创建表imghash_{tieba_name}
 
         Args:
             tieba_name (str): 贴吧名
@@ -688,18 +688,22 @@ class Database(object):
         async with self._pool.acquire() as conn:
             async with conn.cursor() as cursor:
                 await cursor.execute(
-                    f"CREATE TABLE IF NOT EXISTS `img_blacklist_{tieba_name}` (`img_hash` CHAR(16) PRIMARY KEY, `raw_hash` CHAR(40) UNIQUE NOT NULL)"
+                    f"CREATE TABLE IF NOT EXISTS `imghash_{tieba_name}` (`img_hash` CHAR(16) PRIMARY KEY, `raw_hash` CHAR(40) UNIQUE NOT NULL, `permission` TINYINT NOT NULL DEFAULT 0, `note` VARCHAR(64) NOT NULL DEFAULT '', INDEX `permission`(permission))"
                 )
 
     @translate_tieba_name
-    async def add_imghash(self, tieba_name: str, img_hash: str, raw_hash: str) -> bool:
+    async def add_imghash(
+        self, tieba_name: str, img_hash: str, raw_hash: str, permission: int = 0, note: str = ''
+    ) -> bool:
         """
-        向img_blacklist_{tieba_name}插入img_hash
+        将img_hash添加到表imghash_{tieba_name}
 
         Args:
             tieba_name (str): 贴吧名
             img_hash (str): 图像的phash
             raw_hash (str): 贴吧图床hash
+            permission (int, optional): 封锁级别. Defaults to 0.
+            note (str, optional): 备注. Defaults to ''.
 
         Returns:
             bool: 操作是否成功
@@ -709,44 +713,20 @@ class Database(object):
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     await cursor.execute(
-                        f"REPLACE INTO `img_blacklist_{tieba_name}` VALUES (%s,%s)", (img_hash, raw_hash)
+                        f"REPLACE INTO `imghash_{tieba_name}` VALUES (%s,%s,%s,%s)",
+                        (img_hash, raw_hash, permission, note),
                     )
         except aiomysql.Error as err:
             LOG.warning(f"Failed to insert {img_hash}. reason:{err}")
             return False
         else:
-            LOG.info(f"Successfully add {img_hash} to table of {tieba_name}")
+            LOG.info(f"Successfully added {img_hash} to table of {tieba_name}. permission: {permission} note: {note}")
             return True
-
-    @translate_tieba_name
-    async def has_imghash(self, tieba_name: str, img_hash: str) -> bool:
-        """
-        检索img_blacklist_{tieba_name}中是否已有img_hash
-
-        Args:
-            tieba_name (str): 贴吧名
-            img_hash (str): 图像的phash
-
-        Returns:
-            bool: True表示表中已有img_hash False表示表中无img_hash或查询失败
-        """
-
-        try:
-            async with self._pool.acquire() as conn:
-                async with conn.cursor() as cursor:
-                    await cursor.execute(
-                        f"SELECT NULL FROM `img_blacklist_{tieba_name}` WHERE `img_hash`=%s", (img_hash,)
-                    )
-        except aiomysql.Error as err:
-            LOG.warning(f"Failed to select {img_hash}. reason:{err}")
-            return False
-        else:
-            return True if await cursor.fetchone() else False
 
     @translate_tieba_name
     async def del_imghash(self, tieba_name: str, img_hash: str) -> bool:
         """
-        从img_blacklist_{tieba_name}中删除img_hash
+        从imghash_{tieba_name}中删除img_hash
 
         Args:
             tieba_name (str): 贴吧名
@@ -759,10 +739,67 @@ class Database(object):
         try:
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
-                    await cursor.execute(f"DELETE FROM `img_blacklist_{tieba_name}` WHERE `img_hash`=%s", (img_hash,))
+                    await cursor.execute(f"DELETE FROM `imghash_{tieba_name}` WHERE `img_hash`=%s", (img_hash,))
         except aiomysql.Error as err:
             LOG.warning(f"Failed to delete {img_hash}. reason:{err}")
             return False
         else:
             LOG.info(f"Successfully deleted {img_hash} from table of {tieba_name}")
             return True
+
+    @translate_tieba_name
+    async def get_imghash(self, tieba_name: str, img_hash: str) -> int:
+        """
+        获取表imghash_{tieba_name}中img_hash的封锁级别
+
+        Args:
+            tieba_name (str): 贴吧名
+            img_hash (str): 图像的phash
+
+        Returns:
+            int: 封锁级别
+        """
+
+        try:
+            async with self._pool.acquire() as conn:
+                async with conn.cursor() as cursor:
+                    await cursor.execute(
+                        f"SELECT `permission` FROM `imghash_{tieba_name}` WHERE `img_hash`=%s", (img_hash,)
+                    )
+        except aiomysql.Error as err:
+            LOG.warning(f"Failed to select {img_hash}. reason:{err}")
+            return False
+        else:
+            if res_tuple := await cursor.fetchone():
+                return res_tuple[0]
+            else:
+                return 0
+
+    @translate_tieba_name
+    async def get_imghash_full(self, tieba_name: str, img_hash: str) -> tuple[int, str]:
+        """
+        获取表imghash_{tieba_name}中img_hash的完整信息
+
+        Args:
+            tieba_name (str): 贴吧名
+            img_hash (str): 图像的phash
+
+        Returns:
+            int: 封锁级别
+            str: 备注
+        """
+
+        try:
+            async with self._pool.acquire() as conn:
+                async with conn.cursor() as cursor:
+                    await cursor.execute(
+                        f"SELECT `permission`,`note` FROM `imghash_{tieba_name}` WHERE `img_hash`=%s", (img_hash,)
+                    )
+        except aiomysql.Error as err:
+            LOG.warning(f"Failed to select {img_hash}. reason:{err}")
+            return 0, ''
+        else:
+            if res_tuple := await cursor.fetchone():
+                return res_tuple
+            else:
+                return 0, ''

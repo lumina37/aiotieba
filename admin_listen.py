@@ -49,11 +49,12 @@ class TimerRecorder(object):
 
 class Context(object):
 
-    __slots__ = ['at', 'handler', '_args', '_cmd_type', 'this_permission', 'parent', 'note']
+    __slots__ = ['at', 'handler', '_full_init', '_args', '_cmd_type', 'this_permission', 'parent', 'note']
 
     def __init__(self, at: tb.At) -> None:
         self.at: tb.At = at
         self.handler: "Handler" = None
+        self._full_init: bool = False
         self._args = None
         self._cmd_type = None
         self.this_permission: int = 0
@@ -66,7 +67,7 @@ class Context(object):
             return False
 
         self.this_permission = await handler.admin.get_user_id(self.user_id)
-        if len(self.at.text.encode('utf-8')) >= 74:
+        if len(self.at.text.encode('utf-8')) >= 70:
             await self._init_full()
 
         self._init_args()
@@ -74,8 +75,11 @@ class Context(object):
 
     async def _init_full(self) -> bool:
 
+        if self._full_init:
+            return True
+
         if self.at.is_floor:
-            await asyncio.sleep(1)
+            await asyncio.sleep(1.5)
             comments = await self.handler.admin.get_comments(self.tid, self.pid, is_floor=True)
             if not comments:
                 return False
@@ -97,11 +101,16 @@ class Context(object):
                 posts = await self.handler.admin.get_posts(self.tid, pn=-1, rn=10, sort=1)
                 if not posts:
                     return False
-                self.parent = posts.thread
                 for post in posts:
                     if post.pid == self.pid:
                         self.at._text = post.text
+                        break
+                posts = await self.handler.admin.get_posts(self.tid, rn=0)
+                if not posts:
+                    return False
+                self.parent = posts[0]
 
+        self._full_init = True
         return True
 
     def _init_args(self):
@@ -647,6 +656,66 @@ class Listener(object):
         content = f"""@{ctx.at.user.user_name} \nuser_name: {user.user_name}\nuser_id: {user.user_id}\nportrait: {user.portrait}\npermission: {permission}\nnote: {note}\nrecord_time: {record_time.strftime("%Y-%m-%d %H:%M:%S")}"""
 
         if await ctx.handler.speaker.add_post(ctx.tieba_name, ctx.tid, content):
+            await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
+
+    @check_permission(need_permission=4, need_arg_num=2)
+    async def cmd_img_set(self, ctx: Context) -> None:
+        """
+        img_set指令
+        设置图片的封锁级别
+        """
+
+        tb.log.info(f"{ctx.log_name}: {ctx.text}")
+
+        if len(ctx.args) > 2:
+            index = int(ctx.args[0]) - 1
+            permission = int(ctx.args[1])
+            note = ctx.args[2]
+        else:
+            index = 0
+            permission = int(ctx.args[0])
+            note = ctx.args[1]
+
+        await ctx._init_full()
+        if not (imgs := ctx.parent.contents.imgs):
+            return
+
+        if index > len(imgs) - 1:
+            return
+        image = await self.listener.get_image(imgs[index].src)
+        if image is None:
+            return
+        img_hash = self.listener.compute_imghash(image)
+
+        if await ctx.handler.admin.database.add_imghash(ctx.tieba_name, img_hash, imgs[index].hash, permission, note):
+            await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
+
+    @check_permission(need_permission=3, need_arg_num=0)
+    async def cmd_img_reset(self, ctx: Context) -> None:
+        """
+        img_reset指令
+        重置图片的封锁级别
+        """
+
+        tb.log.info(f"{ctx.log_name}: {ctx.text}")
+
+        if ctx.args:
+            index = int(ctx.args[0]) - 1
+        else:
+            index = 0
+
+        await ctx._init_full()
+        if not (imgs := ctx.parent.contents.imgs):
+            return
+
+        if index > len(imgs) - 1:
+            return
+        image = await self.listener.get_image(imgs[index].src)
+        if image is None:
+            return
+        img_hash = self.listener.compute_imghash(image)
+
+        if await ctx.handler.admin.database.del_imghash(ctx.tieba_name, img_hash):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=0, need_arg_num=0)

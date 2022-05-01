@@ -380,7 +380,11 @@ class FragImage(_Fragment):
         origin_src (str): 图像源url
     """
 
-    __slots__ = []
+    __slots__ = ['_hash']
+
+    def __init__(self, content_proto: PbContent_pb2.PbContent) -> None:
+        super().__init__(content_proto)
+        self._hash = None
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} [src:{self.src}]"
@@ -396,6 +400,14 @@ class FragImage(_Fragment):
     @property
     def origin_src(self) -> str:
         return self._raw_data.origin_src
+
+    @property
+    def hash(self) -> str:
+        if self._hash is None:
+            end_idx = self.origin_src.rfind('.')
+            start_idx = self.origin_src.rfind('/', 0, end_idx)
+            self._hash = self.origin_src[start_idx + 1 : end_idx]
+        return self._hash
 
     @property
     def origin_size(self) -> int:
@@ -1029,7 +1041,7 @@ class Thread(_Container):
 
         self._fid = thread_proto.fid
         self._tid = thread_proto.id
-        self._pid = thread_proto.first_post_id
+        self._pid = pid if (pid := thread_proto.first_post_id) else thread_proto.post_id
         self._user = None
         self._author_id = None
 
@@ -1183,12 +1195,13 @@ class Thread(_Container):
 
             self._share_origin = Thread()
             if self._raw_data:
-                if self._raw_data.is_share_thread:
-                    share_proto = self._raw_data.origin_thread_info
 
-                    self._share_origin.fid = share_proto.fid
-                    self._share_origin.tid = share_proto.tid
-                    self._share_origin.pid = share_proto.pid
+                share_proto = self._raw_data.origin_thread_info
+                if share_proto.tid:
+
+                    self._share_origin._fid = share_proto.fid
+                    self._share_origin._tid = share_proto.tid
+                    self._share_origin._pid = share_proto.pid
 
                     self._share_origin._contents = Fragments(share_proto.content)
                     self._share_origin.title = share_proto.title
@@ -1454,6 +1467,7 @@ class Post(_Container):
 
             if self.sign:
                 self._text = f'{self.contents.text}\n{self.sign}'
+
             else:
                 self._text = self.contents.text
 

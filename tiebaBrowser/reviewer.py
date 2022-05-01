@@ -368,9 +368,9 @@ class Reviewer(Browser):
 
         return data
 
-    def get_imghash(self, image: np.ndarray) -> str:
+    def compute_imghash(self, image: np.ndarray) -> str:
         """
-        获取图像的phash
+        计算图像的phash
 
         Args:
             image (np.ndarray): 图像
@@ -388,18 +388,35 @@ class Reviewer(Browser):
 
         return img_hash
 
-    async def has_imghash(self, image: np.ndarray) -> bool:
+    async def get_imghash(self, image: np.ndarray) -> int:
         """
-        判断图像的phash是否在黑名单中
+        获取图像的封锁级别
 
         Args:
             image (np.ndarray): 图像
 
         Returns:
-            bool: True则为黑名单图像
+            int: 封锁级别
         """
 
-        if (img_hash := self.get_imghash(image)) and await self.database.has_imghash(self.tieba_name, img_hash):
-            return True
+        if img_hash := self.compute_imghash(image):
+            return await self.database.get_imghash(self.tieba_name, img_hash)
         else:
-            return False
+            return 0
+
+    async def get_imghash_full(self, image: np.ndarray) -> tuple[int, str]:
+        """
+        获取图像的完整信息
+
+        Args:
+            image (np.ndarray): 图像
+
+        Returns:
+            int: 封锁级别
+            str: 备注
+        """
+
+        if img_hash := self.compute_imghash(image):
+            return await self.database.get_imghash_full(self.tieba_name, img_hash)
+        else:
+            return 0, ''

@@ -232,11 +232,14 @@ class CloudReview(tb.Reviewer):
             return punish
         elif punish.del_flag == 0:
             # 无异常 继续检查
-            for img_frag in post.contents.imgs:
-                img = await self.url2image(img_frag.src)
+            for img_content in post.contents.imgs:
+                img = await self.get_image(img_content.src)
                 if img is None:
                     continue
-                if await self.has_imghash(img):
+                permission = await self.get_imghash(img)
+                if permission <= -5:
+                    return self.Punish(1, 10)
+                elif permission == -2:
                     return self.Punish(1)
 
         if post.comments:

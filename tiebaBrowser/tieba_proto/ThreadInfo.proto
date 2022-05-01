@@ -31,6 +31,7 @@ message ThreadInfo {
     int32 is_livepost = 30;
     int64 first_post_id = 40;
     int32 create_time = 45;
+    int64 post_id = 52;
     int64 author_id = 56;
     uint32 is_ad = 59;
     PollInfo poll_info = 74;
