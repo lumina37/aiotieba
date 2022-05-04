@@ -90,6 +90,16 @@ class Database(object):
                 self._create_table_tid_water(tieba_name),
             )
         await asyncio.gather(self._create_table_forum(), self._create_table_user())
+        await conn.ensure_closed()
+
+        self._pool: aiomysql.Pool = await aiomysql.create_pool(
+            minsize=0,
+            maxsize=8,
+            pool_recycle=self._pool_recycle,
+            db=self._db_name,
+            autocommit=True,
+            **CONFIG['database'],
+        )
 
     async def _create_table_forum(self) -> None:
         """
