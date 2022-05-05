@@ -49,12 +49,12 @@ class TimerRecorder(object):
 
 class Context(object):
 
-    __slots__ = ['at', 'handler', '_full_init', '_args', '_cmd_type', 'this_permission', 'parent', 'note']
+    __slots__ = ['at', 'handler', '_init_full_success', '_args', '_cmd_type', 'this_permission', 'parent', 'note']
 
     def __init__(self, at: tb.At) -> None:
         self.at: tb.At = at
         self.handler: "Handler" = None
-        self._full_init: bool = False
+        self._init_full_success: bool = False
         self._args = None
         self._cmd_type = None
         self.this_permission: int = 0
@@ -67,7 +67,7 @@ class Context(object):
             return False
 
         self.this_permission = await handler.admin.get_user_id(self.user_id)
-        if len(self.at.text.encode('utf-8')) >= 76:
+        if len(self.at.text.encode('utf-8')) >= 78:
             await self._init_full()
 
         self._init_args()
@@ -75,7 +75,7 @@ class Context(object):
 
     async def _init_full(self) -> bool:
 
-        if self._full_init:
+        if self._init_full_success:
             return True
 
         if self.at.is_floor:
@@ -110,7 +110,7 @@ class Context(object):
                     return False
                 self.parent = posts[0]
 
-        self._full_init = True
+        self._init_full_success = True
         return True
 
     def _init_args(self):

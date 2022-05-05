@@ -1,10 +1,11 @@
 # -*- coding:utf-8 -*-
-__all__ = ['Reviewer']
+__all__ = ['Reviewer', 'Punish', 'CheckExps']
 
 import asyncio
 import binascii
 import datetime
 import re
+import sys
 
 import cv2 as cv
 import numpy as np
@@ -17,7 +18,7 @@ from .database import Database
 LOG = get_logger()
 
 
-class RegularExp(object):
+class CheckExps(object):
     """
     贴吧常用的审查正则表达式
     """
@@ -89,6 +90,28 @@ class RegularExp(object):
     kill_thread_exp = re.compile('地祉|特价版', re.I)
 
 
+class Punish(object):
+    """
+    处罚操作
+
+    Fields:
+        del_flag (int, optional): -1白名单 0普通 1删帖 2屏蔽帖
+        block_days (int, optional): 封禁天数
+        note (str, optional): 处罚理由
+    """
+
+    __slots__ = ['del_flag', 'block_days', 'note']
+
+    def __init__(self, del_flag: int = 0, block_days: int = 0, note: str = ""):
+        self.del_flag: int = del_flag
+        self.block_days: int = block_days
+        if del_flag > 0:
+            line = sys._getframe(1).f_lineno
+            self.note = f"line:{line} {note}" if note else f"line:{line}"
+        else:
+            self.note = note
+
+
 class Reviewer(Browser):
     """
     提供贴吧审查功能
@@ -99,8 +122,6 @@ class Reviewer(Browser):
     """
 
     __slots__ = ['tieba_name', 'database', '_qrdetector']
-
-    expressions = RegularExp()
 
     def __init__(self, BDUSS_key: str, tieba_name: str):
         super().__init__(BDUSS_key)
