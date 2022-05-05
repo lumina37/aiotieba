@@ -317,33 +317,6 @@ class CloudReview(tb.Reviewer):
         ):
             return self.Punish(1)
 
-        level = obj.user.level
-        if level > 6:
-            # 用户等级大于6则跳过后续检查
-            return self.Punish()
-
-        # 内容中是否有白名单关键字
-        has_white_kw = True if self.white_kw_exp.search(text) else False
-        if has_white_kw:
-            return self.Punish()
-
-        # 内容中是否有罕见的联系方式
-        has_rare_contact = True if self.expressions.contact_rare_exp.search(text) else False
-
-        if level < 7:
-            if self.expressions.job_nocheck_exp.search(text):
-                # 招兼职 十天删帖
-                return self.Punish(1, 10)
-
-            if self.expressions.business_exp.search(text):
-                # 商业推广 十天删帖
-                return self.Punish(1)
-
-            has_job = True if self.expressions.job_exp.search(text) else False
-            if self.expressions.job_check_exp.search(text) and (has_job or has_rare_contact):
-                # 易误判的兼职关键词 二重检验
-                return self.Punish(1)
-
         return self.Punish()
 
 
