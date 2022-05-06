@@ -111,7 +111,7 @@ class Sessions(object):
 
         # Init web client
         web_headers = {
-            aiohttp.hdrs.USER_AGENT: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:99.0) Gecko/20100101 Firefox/99.0',
+            aiohttp.hdrs.USER_AGENT: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:100.0) Gecko/20100101 Firefox/100.0',
             aiohttp.hdrs.ACCEPT_ENCODING: 'gzip, deflate, br',
             aiohttp.hdrs.CACHE_CONTROL: 'no-cache',
             aiohttp.hdrs.CONNECTION: 'keep-alive',
@@ -208,7 +208,7 @@ class Browser(object):
             aiohttp.MultipartWriter: 只可用于贴吧客户端
         """
 
-        writer = aiohttp.MultipartWriter('form-data', boundary="*--asoul-diana-bili-uid672328094")
+        writer = aiohttp.MultipartWriter('form-data', boundary="*--asoul-diana-bili")
         payload_headers = {
             aiohttp.hdrs.CONTENT_DISPOSITION: aiohttp.helpers.content_disposition_header(
                 'form-data', name='data', filename='file'

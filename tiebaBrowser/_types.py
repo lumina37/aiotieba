@@ -403,17 +403,17 @@ class FragImage(_Fragment):
 
     @property
     def hash(self) -> str:
-        
+
         if self._hash is None:
             first_qmark_idx = self.src.find('?')
             end_idx = self.src.rfind('.', 0, first_qmark_idx)
-            
+
             if end_idx == -1:
                 self._hash = ''
             else:
                 start_idx = self.src.rfind('/', 0, end_idx)
                 self._hash = self.src[start_idx + 1 : end_idx]
-                
+
         return self._hash
 
     @property
