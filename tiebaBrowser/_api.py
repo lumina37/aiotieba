@@ -5,9 +5,7 @@ import asyncio
 import hashlib
 import json
 import socket
-import sys
 import time
-from collections.abc import AsyncIterable
 
 import aiohttp
 import cv2 as cv
@@ -1696,97 +1694,62 @@ class Browser(object):
 
         return searches
 
-    async def get_self_forums(self) -> AsyncIterable[tuple[str, int, int, int]]:
+    async def get_self_forum_list(self, pn: int = 1) -> tuple[list[tuple[str, int, int, int]], bool]:
         """
-        获取本人关注贴吧列表
+        获取第pn页的本人关注贴吧列表
 
-        Yields:
-            AsyncIterable[tuple[str, int, int, int]]: 贴吧名/贴吧id/等级/经验值
+        Args:
+            pn (int, optional): 页码. Defaults to 1.
+
+        Returns:
+            tuple[list[tuple[str, int, int, int]], bool]: list[贴吧名, 贴吧id, 等级, 经验值], 是否还有下一页
         """
 
         user = await self.get_self_info()
 
-        async def _get_pn_forum_list(_pn: int) -> AsyncIterable[tuple[str, int, int, int]]:
-            """
-            获取pn页的关注贴吧信息
+        payload = {
+            'BDUSS': self.sessions.BDUSS,
+            '_client_version': '12.12.1.0',  # 删除该字段可直接获取前200个吧，但无法翻页
+            'friend_uid': user.user_id,
+            'page_no': pn,  # 加入client_version后，使用该字段控制页数
+        }
+        payload['sign'] = self._app_sign(payload)
 
-            Args:
-                _pn (int): 页数
+        try:
+            res = await self.sessions.app.post("http://c.tieba.baidu.com/c/f/forum/like", data=payload)
 
-            Closure Args:
-                user (BasicUserInfo): 本人信息
+            main_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(main_json['error_code']):
+                raise ValueError(main_json['error_msg'])
 
-            Yields:
-                AsyncIterable[tuple[str, int, int, int]]: 贴吧名/贴吧id/等级/经验值
-            """
-
-            payload = {
-                'BDUSS': self.sessions.BDUSS,
-                '_client_version': '12.12.1.0',  # 删除该字段可直接获取前200个吧，但无法翻页
-                'friend_uid': user.user_id,
-                'page_no': _pn,  # 加入client_version后，使用该字段控制页数
-            }
-            payload['sign'] = self._app_sign(payload)
-
-            try:
-                res = await self.sessions.app.post("http://c.tieba.baidu.com/c/f/forum/like", data=payload)
-
-                main_json: dict = await res.json(encoding='utf-8', content_type=None)
-                if int(main_json['error_code']):
-                    raise ValueError(main_json['error_msg'])
-
-                forum_list = main_json.get('forum_list', None)
-                if not forum_list:
-                    return
-
-            except Exception as err:
-                LOG.warning(f"Failed to get forumlist of {user.user_id}. reason:{err}")
-                raise StopAsyncIteration
-
-            nonofficial_forums = forum_list.get('non-gconforum', [])
-            official_forums = forum_list.get('gconforum', [])
-
-            def _parse_forum_dict(_forum_dict: dict[str, str]) -> tuple[str, int, int, int]:
-                """
-                解析关注贴吧的信息
-
-                Args:
-                    _forum_dict (dict[str, str]): 关注贴吧信息
-
-                Returns:
-                    tuple[str, int, int, int]: 贴吧名, 贴吧id, 等级, 经验值
-                """
-
-                tieba_name = _forum_dict['name']
-                fid = int(_forum_dict['id'])
-                level = int(_forum_dict['level_id'])
-                exp = int(_forum_dict['cur_score'])
-                return tieba_name, fid, level, exp
-
-            for forum_dict in nonofficial_forums:
-                yield _parse_forum_dict(forum_dict)
-            for forum_dict in official_forums:
-                yield _parse_forum_dict(forum_dict)
-
-            if len(nonofficial_forums) + len(official_forums) != 50:
-                raise StopAsyncIteration
-
-        for pn in range(1, sys.maxsize):
-            try:
-                async for _ in _get_pn_forum_list(pn):
-                    yield _
-            except RuntimeError:
+            forum_dict: dict = main_json.get('forum_list', None)
+            if not forum_dict:
                 return
 
-    async def get_forums(self, _id: str | int) -> AsyncIterable[tuple[str, int, int, int]]:
+            forums: list[dict] = forum_dict.get('non-gconforum', [])
+            forums += forum_dict.get('gconforum', [])
+
+            res_list = [
+                (forum['name'], int(forum['id']), int(forum['level_id']), int(forum['cur_score'])) for forum in forums
+            ]
+            has_more = len(forums) == 50
+
+        except Exception as err:
+            LOG.warning(f"Failed to get forum_list of {user.user_id}. reason:{err}")
+            res_list = []
+            has_more = False
+
+        return res_list, has_more
+
+    async def get_forum_list(self, _id: str | int) -> list[tuple[str, int, int, int]]:
         """
         获取用户关注贴吧列表
 
         Args:
             _id (str | int): 用户id user_id/user_name/portrait
 
-        Yields:
-            AsyncIterable[tuple[str, int, int, int]]: 贴吧名/贴吧id/等级/经验值
+        Returns:
+            list[tuple[str, int, int, int]]: list[贴吧名, 贴吧id, 等级, 经验值]
         """
 
         if not UserInfo.is_user_id(_id):
@@ -1807,16 +1770,17 @@ class Browser(object):
             if int(main_json['error_code']):
                 raise ValueError(main_json['error_msg'])
 
-            for forum in main_json.get('forum_list', []):
-                fid = int(forum['id'])
-                tieba_name = forum['name']
-                level = int(forum['level_id'])
-                exp = int(forum['cur_score'])
-                yield tieba_name, fid, level, exp
+            forums: list[dict] = main_json.get('forum_list', [])
+
+            res_list = [
+                (forum['name'], int(forum['id']), int(forum['level_id']), int(forum['cur_score'])) for forum in forums
+            ]
 
         except Exception as err:
-            LOG.warning(f"Failed to get forumlist of {user.user_id}. reason:{err}")
-            return
+            LOG.warning(f"Failed to get forum_list of {user.user_id}. reason:{err}")
+            res_list = []
+
+        return res_list
 
     async def get_forum_detail(self, tieba_name: str = '', fid: int = 0) -> tuple[str, int, int]:
         """
