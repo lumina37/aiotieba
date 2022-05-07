@@ -259,14 +259,12 @@ class Browser(object):
             if int(main_json['no']):
                 raise ValueError(main_json['error'])
 
-            fid = int(main_json['data']['fid'])
+            if fid := int(main_json['data']['fid']):
+                self.fid_dict[tieba_name] = fid
 
         except Exception as err:
             LOG.warning(f"Failed to get fid of {tieba_name}. reason:{err}")
             fid = 0
-
-        if fid:
-            self.fid_dict[tieba_name] = fid
 
         return fid
 
@@ -820,10 +818,10 @@ class Browser(object):
                 raise ValueError(main_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to delete thread {tid} in {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to delete thread tid:{tid} is_hide:{is_hide} in {tieba_name}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully deleted thread {tid} hide:{is_hide} in {tieba_name}")
+        LOG.info(f"Successfully deleted thread tid:{tid} is_hide:{is_hide} in {tieba_name}")
         return True
 
     async def del_post(self, tieba_name: str, tid: int, pid: int) -> bool:
@@ -935,7 +933,7 @@ class Browser(object):
                 raise ValueError(main_json['error'])
 
         except Exception as err:
-            LOG.warning(f"Failed to recover tid:{tid} pid:{pid} in {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to recover tid:{tid} pid:{pid} hide:{is_hide} in {tieba_name}. reason:{err}")
             return False
 
         LOG.info(f"Successfully recovered tid:{tid} pid:{pid} hide:{is_hide} in {tieba_name}")
