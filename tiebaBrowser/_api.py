@@ -1497,7 +1497,6 @@ class Browser(object):
         except Exception as err:
             LOG.warning(f"Failed to get UserInfo of current account. reason:{err}")
             user = BasicUserInfo()
-            self._tbs = ''
 
         return user
 
@@ -1612,7 +1611,7 @@ class Browser(object):
             _id (str | int): 用户id user_id/user_name/portrait
 
         Returns:
-            tuple[UserInfo, list[Thread]]: 用户信息/帖子列表
+            tuple[UserInfo, list[Thread]]: 用户信息, list[帖子信息]
         """
 
         if not BasicUserInfo.is_portrait(_id):
@@ -1644,12 +1643,14 @@ class Browser(object):
 
         user = UserInfo(user_proto=ParseDict(main_json['user'], User_pb2.User(), ignore_unknown_fields=True))
 
-        def _init_thread(thread_dict: dict) -> Thread:
+        def _parse_thread_dict(thread_dict: dict) -> Thread:
+            thread_dict['fid'] = thread_dict.pop('forum_id', 0)
+            thread_dict['id'] = thread_dict.pop('thread_id', 0)
             thread = Thread(ParseDict(thread_dict, ThreadInfo_pb2.ThreadInfo(), ignore_unknown_fields=True))
             thread.user = user
             return thread
 
-        threads = [_init_thread(thread_dict) for thread_dict in main_json['post_list']]
+        threads = [_parse_thread_dict(thread_dict) for thread_dict in main_json['post_list']]
 
         return user, threads
 
@@ -1755,7 +1756,7 @@ class Browser(object):
                     _forum_dict (dict[str, str]): 关注贴吧信息
 
                 Returns:
-                    tuple[str, int, int, int]: 贴吧名/贴吧id/等级/经验值
+                    tuple[str, int, int, int]: 贴吧名, 贴吧id, 等级, 经验值
                 """
 
                 tieba_name = _forum_dict['name']
@@ -1819,6 +1820,46 @@ class Browser(object):
             LOG.warning(f"Failed to get forumlist of {user.user_id}. reason:{err}")
             return
 
+    async def get_forum_detail(self, tieba_name: str = '', fid: int = 0) -> tuple[str, int, int]:
+        """
+        通过forum_id获取贴吧信息
+
+        Args:
+            tieba_name (str, optional): 贴吧名. Defaults to ''.
+            fid (int, optional): forum_id. Defaults to 0.
+
+        Returns:
+            tuple[str, int, int]: 该贴吧的贴吧名, 关注人数, 主题帖数
+        """
+
+        if not fid:
+            fid = await self.get_fid(tieba_name)
+
+        payload = {
+            '_client_version': '12.12.1.0',
+            'forum_id': fid,
+        }
+        payload['sign'] = self._app_sign(payload)
+
+        try:
+            res = await self.sessions.app.post("http://c.tieba.baidu.com/c/f/forum/getforumdetail", data=payload)
+
+            main_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(main_json['error_code']):
+                raise ValueError(main_json['error_msg'])
+
+            tieba_name = main_json['forum_info']['forum_name']
+            member_num = int(main_json['forum_info']['member_count'])
+            thread_num = int(main_json['forum_info']['thread_count'])
+
+        except Exception as err:
+            LOG.warning(f"Failed to get forum_detail of {fid}. reason:{err}")
+            tieba_name = ''
+            member_num = 0
+            thread_num = 0
+
+        return tieba_name, member_num, thread_num
+
     async def get_bawu_dict(self, tieba_name: str) -> dict[str, list[BasicUserInfo]]:
         """
         获取吧务信息
@@ -1827,7 +1868,7 @@ class Browser(object):
             tieba_name (str): 贴吧名
 
         Returns:
-            dict[str, list[BasicUserInfo]]: {吧务类型:吧务信息列表}
+            dict[str, list[BasicUserInfo]]: {吧务类型: list[吧务基本用户信息]}
         """
 
         common = CommonReq_pb2.CommonReq()
@@ -1940,9 +1981,8 @@ class Browser(object):
         else:
 
             def _parse_data_dict(data_dict):
-                thread = Thread(
-                    ParseDict(data_dict['thread_list'], ThreadInfo_pb2.ThreadInfo(), ignore_unknown_fields=True)
-                )
+                thread_dict = data_dict['thread_list']
+                thread = Thread(ParseDict(thread_dict, ThreadInfo_pb2.ThreadInfo(), ignore_unknown_fields=True))
                 add_view = thread.view_num - int(data_dict['current_pv'])
                 return thread, add_view
 
@@ -1959,7 +1999,7 @@ class Browser(object):
             tieba_name (str): 贴吧名
 
         Returns:
-            tuple[int, int]: 本月总推荐配额/本月已使用的推荐配额
+            tuple[int, int]: 本月总推荐配额, 本月已使用的推荐配额
         """
 
         payload = {

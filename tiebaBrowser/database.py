@@ -296,7 +296,8 @@ class Database(object):
         Args:
             tieba_name (str): 贴吧名
             _id (int): tid或pid
-            id_last_edit (int): 用于识别id的子对象列表是否发生修改 若该id为tid则id_last_edit应为last_time 若该id为pid则id_last_edit应为reply_num
+            id_last_edit (int): 用于识别id的子对象列表是否发生修改 \
+                若该id为tid则id_last_edit应为last_time 若该id为pid则id_last_edit应为reply_num. Defaults to 0.
 
         Returns:
             bool: 操作是否成功
@@ -491,8 +492,8 @@ class Database(object):
 
         Args:
             tieba_name (str): 贴吧名
-            limit (int, optional): 返回数量限制
-            offset (int, optional): 偏移
+            limit (int, optional): 返回数量限制. Defaults to 128.
+            offset (int, optional): 偏移. Defaults to 0.
 
         Returns:
             list[int]: tid列表
@@ -622,9 +623,7 @@ class Database(object):
             user_id (int): 用户的user_id
 
         Returns:
-            int: 权限级别
-            str: 备注
-            datetime.datetime: 记录时间
+            tuple[int, str, datetime.datetime]: 权限级别, 备注, 记录时间
         """
 
         try:
@@ -652,9 +651,9 @@ class Database(object):
 
         Args:
             tieba_name (str): 贴吧名
-            limit (int, optional): 返回数量限制
-            offset (int, optional): 偏移
-            permission (int, optional): 获取所有权限级别大于等于permission的user_id
+            limit (int, optional): 返回数量限制. Defaults to 1.
+            offset (int, optional): 偏移. Defaults to 0.
+            permission (int, optional): 获取所有权限级别大于等于permission的user_id. Defaults to 0.
 
         Returns:
             list[int]: user_id列表
@@ -785,8 +784,7 @@ class Database(object):
             img_hash (str): 图像的phash
 
         Returns:
-            int: 封锁级别
-            str: 备注
+            tuple[int, str]: 封锁级别, 备注
         """
 
         try:

@@ -95,14 +95,14 @@ class Punish(object):
     处罚操作
 
     Fields:
-        del_flag (int, optional): -1白名单 0普通 1删帖 2屏蔽帖
-        block_days (int, optional): 封禁天数
-        note (str, optional): 处罚理由
+        del_flag (int, optional): -1白名单 0普通 1删帖 2屏蔽帖. Defaults to 0.
+        block_days (int, optional): 封禁天数. Defaults to 0.
+        note (str, optional): 处罚理由. Defaults to ''.
     """
 
     __slots__ = ['del_flag', 'block_days', 'note']
 
-    def __init__(self, del_flag: int = 0, block_days: int = 0, note: str = ""):
+    def __init__(self, del_flag: int = 0, block_days: int = 0, note: str = ''):
         self.del_flag: int = del_flag
         self.block_days: int = block_days
         if del_flag > 0:
@@ -173,6 +173,25 @@ class Reviewer(Browser):
 
         return fid
 
+    async def get_tieba_name(self, fid: int) -> str:
+        """
+        通过forum_id获取贴吧名
+
+        Args:
+            fid (int): forum_id
+
+        Returns:
+            str: 该贴吧的贴吧名
+        """
+
+        if tieba_name := await self.database.get_tieba_name(fid):
+            return tieba_name
+
+        if tieba_name := (await super().get_forum_detail(fid=fid))[0]:
+            await self.database.add_forum(fid, tieba_name)
+
+        return tieba_name
+
     async def get_basic_user_info(self, _id: str | int) -> BasicUserInfo:
         """
         获取简略版用户信息
@@ -198,7 +217,8 @@ class Reviewer(Browser):
 
         Args:
             _id (int): tid或pid
-            id_last_edit (int): 用于识别id的子对象列表是否发生修改 若该id为tid则id_last_edit应为last_time 若该id为pid则id_last_edit应为reply_num
+            id_last_edit (int): 用于识别id的子对象列表是否发生修改 \
+                若该id为tid则id_last_edit应为last_time 若该id为pid则id_last_edit应为reply_num. Defaults to 0.
 
         Returns:
             bool: 操作是否成功
@@ -290,8 +310,8 @@ class Reviewer(Browser):
         获取表tid_water_{tieba_name}中待恢复的tid的列表
 
         Args:
-            limit (int, optional): 返回数量限制
-            offset (int, optional): 偏移
+            limit (int, optional): 返回数量限制. Defaults to 128.
+            offset (int, optional): 偏移. Defaults to 0.
 
         Returns:
             list[int]: tid列表
@@ -305,8 +325,8 @@ class Reviewer(Browser):
 
         Args:
             user_id (int): 用户的user_id
-            permission (int, optional): 权限级别
-            note (str, optional): 备注
+            permission (int, optional): 权限级别. Defaults to 0.
+            note (str, optional): 备注. Defaults to ''.
 
         Returns:
             bool: 操作是否成功
@@ -348,9 +368,7 @@ class Reviewer(Browser):
             user_id (int): 用户的user_id
 
         Returns:
-            int: 权限级别
-            str: 备注
-            datetime.datetime: 记录时间
+            tuple[int, str, datetime.datetime]: 权限级别, 备注, 记录时间
         """
 
         return await self.database.get_user_id_full(self.tieba_name, user_id)
@@ -360,9 +378,9 @@ class Reviewer(Browser):
         获取表user_id_{tieba_name}中user_id的列表
 
         Args:
-            limit (int, optional): 返回数量限制
-            offset (int, optional): 偏移
-            permission (int, optional): 获取所有权限级别大于等于permission的user_id
+            limit (int, optional): 返回数量限制. Defaults to 1.
+            offset (int, optional): 偏移. Defaults to 0.
+            permission (int, optional): 获取所有权限级别大于等于permission的user_id. Defaults to 0.
 
         Returns:
             list[int]: user_id列表
@@ -433,8 +451,7 @@ class Reviewer(Browser):
             image (np.ndarray): 图像
 
         Returns:
-            int: 封锁级别
-            str: 备注
+            tuple[int, str]: 封锁级别, 备注
         """
 
         if img_hash := self.compute_imghash(image):
