@@ -296,7 +296,7 @@ class Listener(object):
         召唤4名活跃吧务，使用参数extra_info来附带额外的召唤需求
         """
 
-        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
+        tb.log.info(f"{ctx.log_name}:{ctx.text} in tid:{ctx.tid}")
 
         if not self.time_recorder.allow_execute():
             return
@@ -306,7 +306,7 @@ class Listener(object):
             for user_id in await ctx.handler.admin.get_user_id_list(limit=4, permission=2)
         ]
         extra_info = ctx.args[0] if len(ctx.args) else '无'
-        content = f"该回复为吧务召唤指令@.v_guard holyshit的自动响应\n召唤人诉求：{extra_info}@" + " @".join(active_admin_list)
+        content = f"该回复为吧务召唤指令@.v_guard holyshit的自动响应\n召唤人诉求: {extra_info}@" + " @".join(active_admin_list)
 
         if await ctx.handler.speaker.add_post(ctx.tieba_name, ctx.tid, content):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
@@ -318,7 +318,7 @@ class Listener(object):
         对指令所在主题帖执行“大吧主首页推荐”操作
         """
 
-        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
+        tb.log.info(f"{ctx.log_name}:{ctx.text} in tid:{ctx.tid}")
 
         if await ctx.handler.admin.recommend(ctx.tieba_name, ctx.tid):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
@@ -330,7 +330,7 @@ class Listener(object):
         将指令所在主题帖移动至名为tab_name的分区
         """
 
-        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
+        tb.log.info(f"{ctx.log_name}:{ctx.text} in tid:{ctx.tid}")
 
         if not (threads := await self.listener.get_threads(ctx.tieba_name)):
             return
@@ -351,7 +351,7 @@ class Listener(object):
         将指令所在主题帖加到以cname为名的精华分区。cname默认为''即不分区
         """
 
-        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
+        tb.log.info(f"{ctx.log_name}:{ctx.text} in tid:{ctx.tid}")
 
         cname = ctx.args[0] if len(ctx.args) else ''
 
@@ -365,7 +365,7 @@ class Listener(object):
         撤销指令所在主题帖的精华
         """
 
-        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
+        tb.log.info(f"{ctx.log_name}:{ctx.text} in tid:{ctx.tid}")
 
         if await ctx.handler.admin.ungood(ctx.tieba_name, ctx.tid):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
@@ -377,7 +377,7 @@ class Listener(object):
         置顶指令所在主题帖
         """
 
-        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
+        tb.log.info(f"{ctx.log_name}:{ctx.text} in tid:{ctx.tid}")
 
         if await ctx.handler.admin.top(ctx.tieba_name, ctx.tid):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
@@ -389,7 +389,7 @@ class Listener(object):
         撤销指令所在主题帖的置顶
         """
 
-        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
+        tb.log.info(f"{ctx.log_name}:{ctx.text} in tid:{ctx.tid}")
 
         if await ctx.handler.admin.untop(ctx.tieba_name, ctx.tid):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
@@ -401,7 +401,7 @@ class Listener(object):
         屏蔽指令所在主题帖
         """
 
-        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
+        tb.log.info(f"{ctx.log_name}:{ctx.text} in tid:{ctx.tid}")
 
         if await ctx.handler.admin.hide_thread(ctx.tieba_name, ctx.tid):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
@@ -413,7 +413,7 @@ class Listener(object):
         解除指令所在主题帖的屏蔽
         """
 
-        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
+        tb.log.info(f"{ctx.log_name}:{ctx.text} in tid:{ctx.tid}")
 
         if await ctx.handler.admin.unhide_thread(ctx.tieba_name, ctx.tid):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
@@ -459,7 +459,7 @@ class Listener(object):
         block & block3指令的实现
         """
 
-        tb.log.info(f"{ctx.log_name}: {ctx.text}")
+        tb.log.info(f"{ctx.log_name}:{ctx.text}")
         ctx.note = ctx.args[1] if len(ctx.args) >= 2 else f"cmd {ctx.cmd_type} by {ctx.user_id}"
 
         user = await self._arg2user_info(ctx.args[0])
@@ -474,7 +474,7 @@ class Listener(object):
         通过id解封用户
         """
 
-        tb.log.info(f"{ctx.log_name}: {ctx.text}")
+        tb.log.info(f"{ctx.log_name}:{ctx.text}")
 
         user = await self._arg2user_info(ctx.args[0])
 
@@ -506,14 +506,15 @@ class Listener(object):
         将id加入脚本黑名单
         """
 
-        tb.log.info(f"{ctx.log_name}: {ctx.text}")
+        tb.log.info(f"{ctx.log_name}:{ctx.text}")
 
         user = await self._arg2user_info(ctx.args[0])
-        if await ctx.handler.admin.get_user_id(user.user_id) >= ctx.this_permission:
+        old_permission, old_note, _ = await ctx.handler.admin.get_user_id_full(user.user_id)
+        if old_permission >= ctx.this_permission:
             return
         ctx.note = ctx.args[1] if len(ctx.args) >= 2 else f"cmd black by {ctx.user_id}"
 
-        tb.log.info(f"Try to black {user.log_name} in {ctx.tieba_name}")
+        tb.log.info(f"Try to black {user.log_name} in {ctx.tieba_name}. old_note:{old_note}")
 
         if await ctx.handler.admin.add_user_id(user.user_id, -5, ctx.note):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
@@ -525,14 +526,15 @@ class Listener(object):
         将id加入脚本白名单
         """
 
-        tb.log.info(f"{ctx.log_name}: {ctx.text}")
+        tb.log.info(f"{ctx.log_name}:{ctx.text}")
 
         user = await self._arg2user_info(ctx.args[0])
-        if await ctx.handler.admin.get_user_id(user.user_id) >= ctx.this_permission:
+        old_permission, old_note, _ = await ctx.handler.admin.get_user_id_full(user.user_id)
+        if old_permission >= ctx.this_permission:
             return
         ctx.note = ctx.args[1] if len(ctx.args) >= 2 else f"cmd white by {ctx.user_id}"
 
-        tb.log.info(f"Try to white {user.log_name} in {ctx.tieba_name}")
+        tb.log.info(f"Try to white {user.log_name} in {ctx.tieba_name}. old_note:{old_note}")
 
         if await ctx.handler.admin.add_user_id(user.user_id, 1, ctx.note):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
@@ -544,13 +546,14 @@ class Listener(object):
         将id移出脚本名单
         """
 
-        tb.log.info(f"{ctx.log_name}: {ctx.text}")
+        tb.log.info(f"{ctx.log_name}:{ctx.text}")
 
         user = await self._arg2user_info(ctx.args[0])
-        if await ctx.handler.admin.get_user_id(user.user_id) >= ctx.this_permission:
+        old_permission, old_note, _ = await ctx.handler.admin.get_user_id_full(user.user_id)
+        if old_permission >= ctx.this_permission:
             return
 
-        tb.log.info(f"Try to reset {user.log_name} in {ctx.tieba_name}")
+        tb.log.info(f"Try to reset {user.log_name} in {ctx.tieba_name}. old_note:{old_note}")
 
         if await ctx.handler.admin.del_user_id(user.user_id):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
@@ -569,7 +572,7 @@ class Listener(object):
         各种处罚指令的实现
         """
 
-        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
+        tb.log.info(f"{ctx.log_name}:{ctx.text} in tid:{ctx.tid}")
         ctx.note = ctx.args[0] if len(ctx.args) >= 1 else f"cmd {ctx.cmd_type} by {ctx.user_id}"
 
         coros = []
@@ -596,8 +599,9 @@ class Listener(object):
         if block_days:
             coros.append(ctx.handler.admin.block(ctx.tieba_name, ctx.parent.user, block_days, ctx.note))
         if blacklist:
-            if await ctx.handler.admin.get_user_id(ctx.parent.user.user_id) < ctx.this_permission:
-                tb.log.info(f"Try to black {ctx.parent.user.log_name} in {ctx.tieba_name}")
+            old_permission, old_note, _ = await ctx.handler.admin.get_user_id_full(ctx.parent.user.user_id)
+            if old_permission < ctx.this_permission:
+                tb.log.info(f"Try to black {ctx.parent.user.log_name} in {ctx.tieba_name}. old_note:{old_note}")
                 coros.append(ctx.handler.admin.add_user_id(ctx.parent.user.user_id, -5, ctx.note))
 
         await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
@@ -610,7 +614,7 @@ class Listener(object):
         一键拒绝所有解封申诉
         """
 
-        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
+        tb.log.info(f"{ctx.log_name}:{ctx.text} in tid:{ctx.tid}")
 
         if await ctx.handler.admin.refuse_appeals(ctx.tieba_name):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
@@ -622,7 +626,7 @@ class Listener(object):
         设置用户的权限级别
         """
 
-        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
+        tb.log.info(f"{ctx.log_name}:{ctx.text} in tid:{ctx.tid}")
 
         user = await self._arg2user_info(ctx.args[0])
         if not user.user_id:
@@ -630,9 +634,11 @@ class Listener(object):
         new_permission = int(ctx.args[1])
         ctx.note = ctx.args[2] if len(ctx.args) >= 3 else f"cmd set by {ctx.user_id}"
 
-        old_permission = await ctx.handler.admin.get_user_id(user.user_id)
-        if old_permission >= ctx.this_permission or new_permission >= ctx.this_permission:
+        old_permission, old_note, _ = await ctx.handler.admin.get_user_id_full(user.user_id)
+        if old_permission >= ctx.this_permission:
             return
+
+        tb.log.info(f"Try to set {user.log_name} in {ctx.tieba_name}. old_note:{old_note}")
 
         if await ctx.handler.admin.add_user_id(user.user_id, new_permission, ctx.note):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
@@ -644,7 +650,7 @@ class Listener(object):
         获取用户的个人信息与标记信息
         """
 
-        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
+        tb.log.info(f"{ctx.log_name}:{ctx.text} in tid:{ctx.tid}")
 
         if not self.time_recorder.allow_execute():
             return
@@ -665,7 +671,7 @@ class Listener(object):
         设置图片的封锁级别
         """
 
-        tb.log.info(f"{ctx.log_name}: {ctx.text}")
+        tb.log.info(f"{ctx.log_name}:{ctx.text}")
 
         if len(ctx.args) > 2:
             index = int(ctx.args[0]) - 1
@@ -697,7 +703,7 @@ class Listener(object):
         重置图片的封锁级别
         """
 
-        tb.log.info(f"{ctx.log_name}: {ctx.text}")
+        tb.log.info(f"{ctx.log_name}:{ctx.text}")
 
         if ctx.args:
             index = int(ctx.args[0]) - 1
@@ -725,7 +731,7 @@ class Listener(object):
         通过精品帖自助获取1级权限
         """
 
-        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
+        tb.log.info(f"{ctx.log_name}:{ctx.text} in tid:{ctx.tid}")
 
         if ctx.this_permission == 0:
             for thread in await self.listener.get_threads(ctx.tieba_name, is_good=True):
@@ -740,7 +746,7 @@ class Listener(object):
         获取大吧主推荐功能的月度配额状态
         """
 
-        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
+        tb.log.info(f"{ctx.log_name}:{ctx.text} in tid:{ctx.tid}")
 
         if not self.time_recorder.allow_execute():
             return
@@ -758,7 +764,7 @@ class Listener(object):
         统计投票结果
         """
 
-        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
+        tb.log.info(f"{ctx.log_name}:{ctx.text} in tid:{ctx.tid}")
 
         if not ctx.args[1].isdecimal():
             return
@@ -826,7 +832,7 @@ class Listener(object):
         将id加入贴吧黑名单
         """
 
-        tb.log.info(f"{ctx.log_name}: {ctx.text}")
+        tb.log.info(f"{ctx.log_name}:{ctx.text}")
 
         user = await self._arg2user_info(ctx.args[0])
 
@@ -840,7 +846,7 @@ class Listener(object):
         将id移出贴吧黑名单
         """
 
-        tb.log.info(f"{ctx.log_name}: {ctx.text}")
+        tb.log.info(f"{ctx.log_name}:{ctx.text}")
 
         user = await self._arg2user_info(ctx.args[0])
 
@@ -854,7 +860,7 @@ class Listener(object):
         将指令所在主题帖标记为无关水，并临时屏蔽
         """
 
-        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
+        tb.log.info(f"{ctx.log_name}:{ctx.text} in tid:{ctx.tid}")
 
         if await ctx.handler.admin.add_tid(ctx.tid, True) and await ctx.handler.admin.hide_thread(
             ctx.tieba_name, ctx.tid
@@ -868,7 +874,7 @@ class Listener(object):
         清除指令所在主题帖的无关水标记，并立刻解除屏蔽
         """
 
-        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
+        tb.log.info(f"{ctx.log_name}:{ctx.text} in tid:{ctx.tid}")
 
         if await ctx.handler.admin.del_tid(ctx.tid) and await ctx.handler.admin.unhide_thread(ctx.tieba_name, ctx.tid):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
@@ -880,7 +886,7 @@ class Listener(object):
         控制当前吧的云审查脚本的无关水管控状态
         """
 
-        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
+        tb.log.info(f"{ctx.log_name}:{ctx.text} in tid:{ctx.tid}")
 
         if ctx.args[0] == "enter":
             if await ctx.handler.admin.add_tid(0, True):
@@ -904,7 +910,7 @@ class Listener(object):
         将发起指令的吧务移动到活跃吧务队列的最前端，以响应holyshit指令
         """
 
-        tb.log.info(f"{ctx.log_name}: {ctx.text} in tid:{ctx.tid}")
+        tb.log.info(f"{ctx.log_name}:{ctx.text} in tid:{ctx.tid}")
 
         if await ctx.handler.admin.add_user_id(ctx.user_id, ctx.this_permission, "cmd active"):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
@@ -916,7 +922,7 @@ class Listener(object):
         用于测试bot可用性的空指令
         """
 
-        tb.log.info(f"{ctx.log_name}: {ctx.text}")
+        tb.log.info(f"{ctx.log_name}:{ctx.text}")
         await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=129, need_arg_num=65536)

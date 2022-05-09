@@ -55,7 +55,7 @@ import tiebaBrowser as tb
 
 
 async def main():
-    # 创建客户端，使用的BDUSS对应到键名"default"
+    # 使用键名"default"对应的BDUSS创建客户端
     async with tb.Browser("default") as brow:
         # 同时请求用户个人信息和asoul吧首页前30帖
         # asyncio.gather会为两个协程brow.get_self_info和brow.get_threads自动创建任务然后“合并”为一个协程
@@ -63,10 +63,10 @@ async def main():
         # 参考https://docs.python.org/zh-cn/3/library/asyncio-task.html#asyncio.gather
         user, threads = await asyncio.gather(brow.get_self_info(), brow.get_threads('asoul'))
 
-        # 同步输出
-        print(f"当前用户信息: {user}")
-        for thread in threads:
-            print(f"tid: {thread.tid} 最后回复时间戳: {thread.last_time} 标题: {thread.title}")
+    # 将获取的信息打印到日志
+    tb.log.info(f"当前用户信息: {user}")
+    for thread in threads:
+        tb.log.info(f"tid: {thread.tid} 最后回复时间戳: {thread.last_time} 标题: {thread.title}")
 
 
 # 执行协程main
@@ -101,22 +101,22 @@ nohup python $TIEBA_MANAGER_PATH/cloud_review_diana.py >/dev/null 2>&1 &
 + [百度贴吧接口合集](https://github.com/Starry-OvO/Tieba-Manager/blob/main/tiebaBrowser/_api.py)
 + [云审查案例](https://github.com/Starry-OvO/Tieba-Manager/blob/main/cloud_review_asoul.py)
 + [指令管理器](https://github.com/Starry-OvO/Tieba-Manager/wiki/%E6%8C%87%E4%BB%A4%E7%AE%A1%E7%90%86%E5%99%A8%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E%E4%B9%A6)
-+ [另一个仍在活跃更新的贴吧管理器（有用户界面 仅限Windows平台）](https://github.com/dog194/TiebaManager)
++ [另一个仍在活跃更新的贴吧管理器（有用户界面）](https://github.com/dog194/TiebaManager)
 + [客户反馈（我的个人吧）](https://tieba.baidu.com/f?ie=utf-8&kw=starry)
 
 ## 用户名单
 
 云审查工具&指令管理器已在以下贴吧应用（2022.05.07更新，按启用时间先后排序）
 
-| 吧名 | 关注用户数 | 最近29天日均访问量 | 日均主题帖数 | 日均回复数 |
-| :---: | :---: | :---: | :---: | :---: |
-| asoul | 149,058 | 142,490 | 1,643 | 16,851 |
-| vtuber自由讨论 | 16,085 | 3,462 | 3 | 87 |
-| 嘉然 | 50,681 | 14,492 | 170 | 2,250 |
-| 宫漫 | 1,217,363 | 72,137 | 415 | 6,084 |
-| lol半价 | 1,923,641 | 174,370 | 512 | 10,506 |
-| 孙笑川 | 1,753,430 | 513,858 | 5,185 | 139,001 |
-| 向晚 | 24,521 | 8,403 | 117 | 1,159 |
-| 贝拉 | 19,734 | 11,318 | 67 | 1,333 |
-| 王力口乐 | 4,052 | 18,151 | 306 | 4,311 |
-| 乃琳 | 15,137 | 5,996 | 48 | 814 |
+|      吧名      | 关注用户数 | 最近29天日均访问量 | 日均主题帖数 | 日均回复数 |
+| :------------: | :--------: | :----------------: | :----------: | :--------: |
+|     asoul      |  149,058   |      142,490       |    1,643     |   16,851   |
+| vtuber自由讨论 |   16,085   |       3,462        |      3       |     87     |
+|      嘉然      |   50,681   |       14,492       |     170      |   2,250    |
+|      宫漫      | 1,217,363  |       72,137       |     415      |   6,084    |
+|    lol半价     | 1,923,641  |      174,370       |     512      |   10,506   |
+|     孙笑川     | 1,753,430  |      513,858       |    5,185     |  139,001   |
+|      向晚      |   24,521   |       8,403        |     117      |   1,159    |
+|      贝拉      |   19,734   |       11,318       |      67      |   1,333    |
+|    王力口乐    |   4,052    |       18,151       |     306      |   4,311    |
+|      乃琳      |   15,137   |       5,996        |      48      |    814     |
