@@ -644,16 +644,16 @@ class Database(object):
 
     @translate_tieba_name
     async def get_user_id_list(
-        self, tieba_name: str, limit: int = 1, offset: int = 0, permission: int = 0
+        self, tieba_name: str, permission: int = 0, limit: int = 1, offset: int = 0
     ) -> list[int]:
         """
         获取表user_id_{tieba_name}中user_id的列表
 
         Args:
             tieba_name (str): 贴吧名
+            permission (int, optional): 获取所有权限级别大于等于permission的user_id. Defaults to 0.
             limit (int, optional): 返回数量限制. Defaults to 1.
             offset (int, optional): 偏移. Defaults to 0.
-            permission (int, optional): 获取所有权限级别大于等于permission的user_id. Defaults to 0.
 
         Returns:
             list[int]: user_id列表
