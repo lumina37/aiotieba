@@ -1347,94 +1347,79 @@ class Browser(object):
         LOG.info(f"Successfully removed {user.log_name} from black_list in {tieba_name}")
         return True
 
-    async def refuse_appeals(self, tieba_name: str) -> bool:
+    async def handle_unblock_appeal(self, tieba_name: str, appeal_id: int, refuse: bool = True) -> bool:
         """
-        拒绝吧内所有解封申诉
+        拒绝或通过解封申诉
 
         Args:
+            tieba_name (str): 贴吧名
+            appeal_id (int): 申诉请求的appeal_id
+            refuse (bool, optional): True则拒绝申诉 False则接受申诉. Defaults to True.
+
+        Closure Args:
             tieba_name (str): 贴吧名
 
         Returns:
             bool: 操作是否成功
         """
 
-        async def _appeal_handle(appeal_id: int, refuse: bool = True) -> bool:
-            """
-            拒绝或通过解封申诉
+        payload = {
+            'fn': tieba_name,
+            'fid': await self.get_fid(tieba_name),
+            'status': 2 if refuse else 1,
+            'refuse_reason': 'Auto Refuse',
+            'appeal_id': appeal_id,
+        }
 
-            Args:
-                appeal_id (int): 申诉请求的appeal_id
-                refuse (bool, optional): True则拒绝申诉 False则接受申诉. Defaults to True.
+        try:
+            res = await self.sessions.web.post("https://tieba.baidu.com/mo/q/bawuappealhandle", data=payload)
 
-            Closure Args:
-                tieba_name (str): 贴吧名
+            main_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(main_json['no']):
+                raise ValueError(main_json['error'])
 
-            Returns:
-                bool: 操作是否成功
-            """
+        except Exception as err:
+            LOG.warning(f"Failed to handle {appeal_id} in {tieba_name}. reason:{err}")
+            return False
 
-            payload = {
-                'fn': tieba_name,
-                'fid': await self.get_fid(tieba_name),
-                'status': 2 if refuse else 1,
-                'refuse_reason': 'Auto Refuse',
-                'appeal_id': appeal_id,
-            }
-
-            try:
-                res = await self.sessions.web.post("https://tieba.baidu.com/mo/q/bawuappealhandle", data=payload)
-
-                main_json: dict = await res.json(encoding='utf-8', content_type=None)
-                if int(main_json['no']):
-                    raise ValueError(main_json['error'])
-
-            except Exception as err:
-                LOG.warning(f"Failed to handle {appeal_id} in {tieba_name}. reason:{err}")
-                return False
-
-            LOG.info(f"Successfully handled {appeal_id} in {tieba_name}. refuse:{refuse}")
-            return True
-
-        async def _get_appeal_list() -> list[int]:
-            """
-            获取申诉请求的appeal_id的列表
-
-            Closure Args:
-                tieba_name (str): 贴吧名
-
-            Returns:
-                list[int]: 申诉请求的appeal_id的列表
-            """
-
-            params = {'fn': tieba_name, 'fid': await self.get_fid(tieba_name)}
-
-            try:
-                res = await self.sessions.web.get("https://tieba.baidu.com/mo/q/bawuappeal", params=params)
-
-                soup = BeautifulSoup(await res.text(), 'lxml')
-
-                items = soup.find_all('a', class_='appeal_list_item_btn')
-
-            except Exception as err:
-                LOG.warning(f"Failed to get appeal_list of {tieba_name}. reason:{err}")
-                res_list = []
-
-            else:
-
-                def _parse_item(item):
-                    search_str = 'aid='
-                    start_idx = (href := item['href']).rindex(search_str) + len(search_str)
-                    aid = int(href[start_idx:])
-                    return aid
-
-                res_list = [_parse_item(item) for item in items]
-
-            return res_list
-
-        while appeal_ids := await _get_appeal_list():
-            await asyncio.gather(*[_appeal_handle(appeal_id) for appeal_id in appeal_ids])
-
+        LOG.info(f"Successfully handled {appeal_id} in {tieba_name}. refuse:{refuse}")
         return True
+
+    async def get_unblock_appeal_list(self, tieba_name: str) -> list[int]:
+        """
+        获取申诉请求的appeal_id的列表
+
+        Args:
+            tieba_name (str): 贴吧名
+
+        Returns:
+            list[int]: 申诉请求的appeal_id的列表
+        """
+
+        params = {'fn': tieba_name, 'fid': await self.get_fid(tieba_name)}
+
+        try:
+            res = await self.sessions.web.get("https://tieba.baidu.com/mo/q/bawuappeal", params=params)
+
+            soup = BeautifulSoup(await res.text(), 'lxml')
+
+            items = soup.find_all('a', class_='appeal_list_item_btn')
+
+        except Exception as err:
+            LOG.warning(f"Failed to get appeal_list of {tieba_name}. reason:{err}")
+            res_list = []
+
+        else:
+
+            def _parse_item(item):
+                search_str = 'aid='
+                start_idx = (href := item['href']).rindex(search_str) + len(search_str)
+                aid = int(href[start_idx:])
+                return aid
+
+            res_list = [_parse_item(item) for item in items]
+
+        return res_list
 
     async def get_image(self, img_url: str) -> np.ndarray | None:
         """

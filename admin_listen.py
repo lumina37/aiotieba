@@ -576,7 +576,8 @@ class Listener(object):
         ctx.note = ctx.args[0] if len(ctx.args) >= 1 else f"cmd {ctx.cmd_type} by {ctx.user_id}"
 
         coros = []
-        await ctx._init_full()
+        if not await ctx._init_full():
+            return
 
         if ctx.at.is_floor:
             tb.log.info(f"Try to delete post {ctx.parent.text} post by {ctx.parent.user.log_name}")
@@ -616,7 +617,7 @@ class Listener(object):
 
         tb.log.info(f"{ctx.log_name}:{ctx.text} in tid:{ctx.tid}")
 
-        if await ctx.handler.admin.refuse_appeals(ctx.tieba_name):
+        if await ctx.handler.admin.refuse_unblock_appeals(ctx.tieba_name):
             await ctx.handler.admin.del_post(ctx.tieba_name, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=4, need_arg_num=2)
@@ -635,7 +636,7 @@ class Listener(object):
         ctx.note = ctx.args[2] if len(ctx.args) >= 3 else f"cmd set by {ctx.user_id}"
 
         old_permission, old_note, _ = await ctx.handler.admin.get_user_id_full(user.user_id)
-        if old_permission >= ctx.this_permission:
+        if old_permission >= ctx.this_permission or new_permission >= ctx.this_permission:
             return
 
         tb.log.info(f"Try to set {user.log_name} in {ctx.tieba_name}. old_note:{old_note}")
@@ -682,7 +683,8 @@ class Listener(object):
             permission = int(ctx.args[0])
             note = ctx.args[1]
 
-        await ctx._init_full()
+        if not await ctx._init_full():
+            return
         if not (imgs := ctx.parent.contents.imgs):
             return
 

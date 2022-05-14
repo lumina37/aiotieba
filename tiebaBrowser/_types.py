@@ -380,11 +380,13 @@ class FragImage(_Fragment):
         origin_src (str): 图像源url
     """
 
-    __slots__ = ['_hash']
+    __slots__ = ['_hash', '_show_width', '_show_height']
 
     def __init__(self, content_proto: PbContent_pb2.PbContent) -> None:
         super().__init__(content_proto)
         self._hash = None
+        self._show_width = None
+        self._show_height = None
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} [src:{self.src}]"
@@ -419,6 +421,27 @@ class FragImage(_Fragment):
     @property
     def origin_size(self) -> int:
         return self._raw_data.origin_size
+
+    def _init_wh(self) -> None:
+        show_width, _, show_height = self._raw_data.bsize.partition(',')
+        if show_width and show_height:
+            self._show_width = int(show_width)
+            self._show_height = int(show_height)
+        else:
+            self._show_width = 0
+            self._show_height = 0
+
+    @property
+    def show_width(self) -> int:
+        if self._show_width is None:
+            self._init_wh()
+        return self._show_width
+
+    @property
+    def show_height(self) -> int:
+        if self._show_height is None:
+            self._init_wh()
+        return self._show_height
 
 
 class FragAt(FragText):
