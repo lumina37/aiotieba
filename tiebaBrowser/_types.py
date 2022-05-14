@@ -135,7 +135,7 @@ class BasicUserInfo(object):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} [user_id:{self._user_id} / user_name:{self.user_name} / portrait:{self._portrait} / nick_name:{self._nick_name}]"
 
-    def __eq__(self, obj) -> bool:
+    def __eq__(self, obj: "BasicUserInfo") -> bool:
         return self._user_id == obj.user_id and self.user_name == obj.user_name and self._portrait == obj.portrait
 
     def __hash__(self) -> int:
@@ -255,6 +255,9 @@ class UserInfo(BasicUserInfo):
         self._is_god = False
         self._priv_like = 3
         self._priv_reply = 1
+
+    def __eq__(self, obj: "UserInfo") -> bool:
+        return super().__eq__(obj)
 
     @property
     def level(self) -> int:
@@ -823,17 +826,15 @@ class _Container(object):
     __slots__ = ['_raw_data', '_text', '_tid', '_pid', '_user', '_author_id']
 
     def __init__(self) -> None:
-        self._init_null()
+        pass
 
+    @abc.abstractmethod
+    def _init_by_data(self, _data) -> None:
+        pass
+
+    @abc.abstractmethod
     def _init_null(self) -> None:
-        self._raw_data = None
-
-        self._tid = 0
-        self._pid = 0
-        self._user = None
-        self._author_id = None
-
-        self._text = None
+        pass
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} [tid:{self.tid} / pid:{self.pid} / user:{self.user.log_name} / text:{self.text}]"
