@@ -1,8 +1,9 @@
 # Tieba-Manager
 
-[![gitee](https://badgen.net/badge/mirror/gitee/red)](https://gitee.com/Starry-OvO/Tieba-Manager)
-[![license](https://badgen.net/github/license/Starry-OvO/Tieba-Manager?icon=github)](https://github.com/Starry-OvO/Tieba-Manager/blob/main/LICENSE)
-[![release](https://badgen.net/github/release/Starry-OvO/Tieba-Manager?icon=github)](https://github.com/Starry-OvO/Tieba-Manager/releases)
+[![gitee](https://img.shields.io/badge/mirror-gitee-red)](https://gitee.com/Starry-OvO/Tieba-Manager)
+[![release](https://img.shields.io/github/release/Starry-OvO/Tieba-Manager?color=blue&logo=github)](https://github.com/Starry-OvO/Tieba-Manager/releases)
+[![license](https://img.shields.io/github/license/Starry-OvO/Tieba-Manager?color=blue&logo=github)](https://github.com/Starry-OvO/Tieba-Manager/blob/main/LICENSE)
+![LGTM Grade](https://img.shields.io/lgtm/grade/python/github/Starry-OvO/Tieba-Manager?logo=LGTM)
 
 ## 功能概览
 
