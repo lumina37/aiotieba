@@ -74,7 +74,7 @@ async def stat_active_user(tieba_name):
 
 
 async def main():
-    await stat_active_user('抗压背锅')
+    await stat_active_user('asoul')
 
 
 if __name__ == "__main__":

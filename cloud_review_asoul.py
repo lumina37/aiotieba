@@ -298,7 +298,7 @@ class CloudReview(tb.Reviewer):
         text = obj.text
         if re.search("((?<![a-z])(v|t|a)|瞳|梓|罐|豆|鸟|鲨|阿)(÷|/|／|➗|畜|处|除|楚|初|醋|cg)|痛(楚|初|醋)", text, re.I):
             return tb.Punish(1)
-        if re.search("椰子汁|🥥|东雪莲|莲宝|林忆宁|杨沐|赵若|李奕", text):
+        if re.search("椰子汁|🥥|东雪莲|莲宝|林忆宁|杨沐|张依|赵若|李奕|伍敏慧|谭杉杉|王楠", text):
             return tb.Punish(1)
 
         return tb.Punish()

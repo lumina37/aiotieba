@@ -206,7 +206,7 @@ class Browser(object):
             aiohttp.MultipartWriter: 只可用于贴吧客户端
         """
 
-        writer = aiohttp.MultipartWriter('form-data', boundary="*--asoul-diana-bili")
+        writer = aiohttp.MultipartWriter('form-data', boundary="*-6723-28094-46917")
         payload_headers = {
             aiohttp.hdrs.CONTENT_DISPOSITION: aiohttp.helpers.content_disposition_header(
                 'form-data', name='data', filename='file'

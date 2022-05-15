@@ -933,10 +933,7 @@ class Listener(object):
         default指令
         """
 
-        if not self.time_recorder.allow_execute():
-            return
-
-        await ctx.handler.speaker.add_post(ctx.tieba_name, ctx.tid, "关注嘉然顿顿解馋~")
+        pass
 
 
 if __name__ == '__main__':
