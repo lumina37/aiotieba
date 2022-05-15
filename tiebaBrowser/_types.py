@@ -235,6 +235,9 @@ class UserInfo(BasicUserInfo):
 
     __slots__ = ['_level', '_gender', '_is_vip', '_is_god', '_priv_like', '_priv_reply']
 
+    def __init__(self, _id: str | int | None = None, user_proto: User_pb2.User | None = None) -> None:
+        super().__init__(_id, user_proto)
+
     def _init_by_data(self, user_proto: User_pb2.User) -> None:
         super()._init_by_data(user_proto)
 
