@@ -96,13 +96,15 @@ class BasicUserInfo(object):
 
     def __init__(self, _id: str | int | None = None, user_proto: User_pb2.User | None = None) -> None:
 
-        self._init_null()
+        if user_proto:
+            self._init_by_data(user_proto)
 
-        if _id:
+        elif _id:
+            self._init_null()
             self._init_by_id(_id)
 
-        elif user_proto:
-            self._init_by_data(user_proto)
+        else:
+            self._init_null()
 
     def _init_by_id(self, _id: str | int) -> None:
 
@@ -236,7 +238,16 @@ class UserInfo(BasicUserInfo):
     __slots__ = ['_level', '_gender', '_is_vip', '_is_god', '_priv_like', '_priv_reply']
 
     def __init__(self, _id: str | int | None = None, user_proto: User_pb2.User | None = None) -> None:
-        super().__init__(_id, user_proto)
+
+        if user_proto:
+            self._init_by_data(user_proto)
+
+        elif _id:
+            self._init_null()
+            self._init_by_id(_id)
+
+        else:
+            self._init_null()
 
     def _init_by_data(self, user_proto: User_pb2.User) -> None:
         super()._init_by_data(user_proto)
