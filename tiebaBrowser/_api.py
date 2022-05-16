@@ -173,18 +173,18 @@ class Browser(object):
         await self.close()
 
     @staticmethod
-    def _app_sign(payload: dict) -> str:
+    def _app_sign(payload: list[tuple[str, str]]) -> str:
         """
-        计算form参数字典的贴吧客户端签名值sign
+        计算form参数元组列表的贴吧客户端签名值sign
 
         Args:
-            payload (dict): form参数字典
+            payload (list[tuple[str, str]]): form参数元组列表
 
         Returns:
             str: 贴吧客户端签名值sign
         """
 
-        raw_list = [f"{key}={value}" for key, value in payload.items() if key != 'sign']
+        raw_list = [f"{key}={value}" for key, value in payload]
         raw_list.append("tiebaclient!!!")
         raw_str = "".join(raw_list)
 
@@ -694,20 +694,20 @@ class Browser(object):
             bool: 操作是否成功
         """
 
-        payload = {
-            'BDUSS': self.sessions.BDUSS,
-            'day': day,
-            'fid': await self.get_fid(tieba_name),
-            'nick_name': user.show_name,
-            'ntn': 'banid',
-            'portrait': user.portrait,
-            'reason': reason,
-            'tbs': await self.get_tbs(),
-            'un': user.user_name,
-            'word': tieba_name,
-            'z': 672328094,
-        }
-        payload['sign'] = self._app_sign(payload)
+        payload = [
+            ('BDUSS', self.sessions.BDUSS),
+            ('day', day),
+            ('fid', await self.get_fid(tieba_name)),
+            ('nick_name', user.show_name),
+            ('ntn', 'banid'),
+            ('portrait', user.portrait),
+            ('reason', reason),
+            ('tbs', await self.get_tbs()),
+            ('un', user.user_name),
+            ('word', tieba_name),
+            ('z', 672328094),
+        ]
+        payload.append(('sign', self._app_sign(payload)))
 
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/bawu/commitprison", data=payload)
@@ -799,14 +799,14 @@ class Browser(object):
             bool: 操作是否成功
         """
 
-        payload = {
-            'BDUSS': self.sessions.BDUSS,
-            'fid': await self.get_fid(tieba_name),
-            'is_frs_mask': int(is_hide),
-            'tbs': await self.get_tbs(),
-            'z': tid,
-        }
-        payload['sign'] = self._app_sign(payload)
+        payload = [
+            ('BDUSS', self.sessions.BDUSS),
+            ('fid', await self.get_fid(tieba_name)),
+            ('is_frs_mask', int(is_hide)),
+            ('tbs', await self.get_tbs()),
+            ('z', tid),
+        ]
+        payload.append(('sign', self._app_sign(payload)))
 
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/bawu/delthread", data=payload)
@@ -835,14 +835,14 @@ class Browser(object):
             bool: 操作是否成功
         """
 
-        payload = {
-            'BDUSS': self.sessions.BDUSS,
-            'fid': await self.get_fid(tieba_name),
-            'pid': pid,
-            'tbs': await self.get_tbs(),
-            'z': tid,
-        }
-        payload['sign'] = self._app_sign(payload)
+        payload = [
+            ('BDUSS', self.sessions.BDUSS),
+            ('fid', await self.get_fid(tieba_name)),
+            ('pid', pid),
+            ('tbs', await self.get_tbs()),
+            ('z', tid),
+        ]
+        payload.append(('sign', self._app_sign(payload)))
 
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/bawu/delpost", data=payload)
@@ -951,14 +951,17 @@ class Browser(object):
             bool: 操作是否成功
         """
 
-        payload = {
-            'BDUSS': self.sessions.BDUSS,
-            '_client_version': '12.12.1.0',
-            'forum_id': await self.get_fid(tieba_name),
-            'tbs': await self.get_tbs(),
-            'threads': str([{'thread_id': tid, 'from_tab_id': from_tab_id, 'to_tab_id': to_tab_id}]).replace('\'', '"'),
-        }
-        payload['sign'] = self._app_sign(payload)
+        payload = [
+            ('BDUSS', self.sessions.BDUSS),
+            ('_client_version', '12.12.1.0'),
+            ('forum_id', await self.get_fid(tieba_name)),
+            ('tbs', await self.get_tbs()),
+            (
+                'threads',
+                str([{'thread_id', tid, 'from_tab_id', from_tab_id, 'to_tab_id', to_tab_id}]).replace('\'', '"'),
+            ),
+        ]
+        payload.append(('sign', self._app_sign(payload)))
 
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/bawu/moveTabThread", data=payload)
@@ -986,8 +989,12 @@ class Browser(object):
             bool: 操作是否成功
         """
 
-        payload = {'BDUSS': self.sessions.BDUSS, 'forum_id': await self.get_fid(tieba_name), 'thread_id': tid}
-        payload['sign'] = self._app_sign(payload)
+        payload = [
+            ('BDUSS', self.sessions.BDUSS),
+            ('forum_id', await self.get_fid(tieba_name)),
+            ('thread_id', tid),
+        ]
+        payload.append(('sign', self._app_sign(payload)))
 
         try:
             res = await self.sessions.app.post(
@@ -1032,11 +1039,11 @@ class Browser(object):
                 int: cname对应的分区id
             """
 
-            payload = {
-                'BDUSS': self.sessions.BDUSS,
-                'word': tieba_name,
-            }
-            payload['sign'] = self._app_sign(payload)
+            payload = [
+                ('BDUSS', self.sessions.BDUSS),
+                ('word', tieba_name),
+            ]
+            payload.append(('sign', self._app_sign(payload)))
 
             try:
                 res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/bawu/goodlist", data=payload)
@@ -1071,16 +1078,16 @@ class Browser(object):
                 bool: 操作是否成功
             """
 
-            payload = {
-                'BDUSS': self.sessions.BDUSS,
-                'cid': cid,
-                'fid': await self.get_fid(tieba_name),
-                'ntn': 'set',
-                'tbs': await self.get_tbs(),
-                'word': tieba_name,
-                'z': tid,
-            }
-            payload['sign'] = self._app_sign(payload)
+            payload = [
+                ('BDUSS', self.sessions.BDUSS),
+                ('cid', cid),
+                ('fid', await self.get_fid(tieba_name)),
+                ('ntn', 'set'),
+                ('tbs', await self.get_tbs()),
+                ('word', tieba_name),
+                ('z', tid),
+            ]
+            payload.append(('sign', self._app_sign(payload)))
 
             try:
                 res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/bawu/commitgood", data=payload)
@@ -1110,14 +1117,14 @@ class Browser(object):
             bool: 操作是否成功
         """
 
-        payload = {
-            'BDUSS': self.sessions.BDUSS,
-            'fid': await self.get_fid(tieba_name),
-            'tbs': await self.get_tbs(),
-            'word': tieba_name,
-            'z': tid,
-        }
-        payload['sign'] = self._app_sign(payload)
+        payload = [
+            ('BDUSS', self.sessions.BDUSS),
+            ('fid', await self.get_fid(tieba_name)),
+            ('tbs', await self.get_tbs()),
+            ('word', tieba_name),
+            ('z', tid),
+        ]
+        payload.append(('sign', self._app_sign(payload)))
 
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/bawu/commitgood", data=payload)
@@ -1145,15 +1152,15 @@ class Browser(object):
             bool: 操作是否成功
         """
 
-        payload = {
-            'BDUSS': self.sessions.BDUSS,
-            'fid': await self.get_fid(tieba_name),
-            'ntn': 'set',
-            'tbs': await self.get_tbs(),
-            'word': tieba_name,
-            'z': tid,
-        }
-        payload['sign'] = self._app_sign(payload)
+        payload = [
+            ('BDUSS', self.sessions.BDUSS),
+            ('fid', await self.get_fid(tieba_name)),
+            ('ntn', 'set'),
+            ('tbs', await self.get_tbs()),
+            ('word', tieba_name),
+            ('z', tid),
+        ]
+        payload.append(('sign', self._app_sign(payload)))
 
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/bawu/committop", data=payload)
@@ -1181,14 +1188,14 @@ class Browser(object):
             bool: 操作是否成功
         """
 
-        payload = {
-            'BDUSS': self.sessions.BDUSS,
-            'fid': await self.get_fid(tieba_name),
-            'tbs': await self.get_tbs(),
-            'word': tieba_name,
-            'z': tid,
-        }
-        payload['sign'] = self._app_sign(payload)
+        payload = [
+            ('BDUSS', self.sessions.BDUSS),
+            ('fid', await self.get_fid(tieba_name)),
+            ('tbs', await self.get_tbs()),
+            ('word', tieba_name),
+            ('z', tid),
+        ]
+        payload.append(('sign', self._app_sign(payload)))
 
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/bawu/committop", data=payload)
@@ -1456,11 +1463,11 @@ class Browser(object):
             BasicUserInfo: 简略版用户信息 仅保证包含user_name/portrait/user_id
         """
 
-        payload = {
-            '_client_version': '12.12.1.0',
-            'bdusstoken': self.sessions.BDUSS,
-        }
-        payload['sign'] = self._app_sign(payload)
+        payload = [
+            ('_client_version', '12.12.1.0'),
+            ('bdusstoken', self.sessions.BDUSS),
+        ]
+        payload.append(('sign', self._app_sign(payload)))
 
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/s/login", data=payload)
@@ -1496,8 +1503,10 @@ class Browser(object):
              'count': 新通知}
         """
 
-        payload = {'BDUSS': self.sessions.BDUSS}
-        payload['sign'] = self._app_sign(payload)
+        payload = [
+            ('BDUSS', self.sessions.BDUSS),
+        ]
+        payload.append(('sign', self._app_sign(payload)))
 
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/s/msg", data=payload)
@@ -1566,8 +1575,11 @@ class Browser(object):
             Ats: at列表
         """
 
-        payload = {'BDUSS': self.sessions.BDUSS, '_client_version': '12.12.1.0'}
-        payload['sign'] = self._app_sign(payload)
+        payload = [
+            ('BDUSS', self.sessions.BDUSS),
+            ('_client_version', '12.12.1.0'),
+        ]
+        payload.append(('sign', self._app_sign(payload)))
 
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/u/feed/atme", data=payload)
@@ -1600,14 +1612,14 @@ class Browser(object):
         else:
             user = BasicUserInfo(_id)
 
-        payload = {
-            '_client_type': 2,  # 删除该字段会导致post_list为空
-            '_client_version': '12.12.1.0',  # 删除该字段会导致post_list和dynamic_list为空
-            'friend_uid_portrait': user.portrait,
-            'need_post_count': 1,  # 删除该字段会导致无法获取发帖回帖数量
-            # 'uid':user_id  # 用该字段检查共同关注的吧
-        }
-        payload['sign'] = self._app_sign(payload)
+        payload = [
+            ('_client_type', 2),  # 删除该字段会导致post_list为空
+            ('_client_version', '12.12.1.0'),  # 删除该字段会导致post_list和dynamic_list为空
+            ('friend_uid_portrait', user.portrait),
+            ('need_post_count', 1),  # 删除该字段会导致无法获取发帖回帖数量
+            # ('uid', user_id),  # 用该字段检查共同关注的吧
+        ]
+        payload.append(('sign', self._app_sign(payload)))
 
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/u/user/profile", data=payload)
@@ -1653,16 +1665,16 @@ class Browser(object):
             Searches: 搜索结果列表
         """
 
-        payload = {
-            '_client_version': '12.12.1.0',
-            'kw': tieba_name,
-            'only_thread': int(only_thread),
-            'pn': pn,
-            'rn': rn,
-            'sm': query_type,
-            'word': query,
-        }
-        payload['sign'] = self._app_sign(payload)
+        payload = [
+            ('_client_version', '12.12.1.0'),
+            ('kw', tieba_name),
+            ('only_thread', int(only_thread)),
+            ('pn', pn),
+            ('rn', rn),
+            ('sm', query_type),
+            ('word', query),
+        ]
+        payload.append(('sign', self._app_sign(payload)))
 
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/s/searchpost", data=payload)
@@ -1692,13 +1704,13 @@ class Browser(object):
 
         user = await self.get_self_info()
 
-        payload = {
-            'BDUSS': self.sessions.BDUSS,
-            '_client_version': '12.12.1.0',  # 删除该字段可直接获取前200个吧，但无法翻页
-            'friend_uid': user.user_id,
-            'page_no': pn,  # 加入client_version后，使用该字段控制页数
-        }
-        payload['sign'] = self._app_sign(payload)
+        payload = [
+            ('BDUSS', self.sessions.BDUSS),
+            ('_client_version', '12.12.1.0'),  # 删除该字段可直接获取前200个吧，但无法翻页
+            ('friend_uid', user.user_id),
+            ('page_no', pn),  # 加入client_version后，使用该字段控制页数
+        ]
+        payload.append(('sign', self._app_sign(payload)))
 
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/f/forum/like", data=payload)
@@ -1742,11 +1754,11 @@ class Browser(object):
         else:
             user = BasicUserInfo(_id)
 
-        payload = {
-            'BDUSS': self.sessions.BDUSS,
-            'friend_uid': user.user_id,
-        }
-        payload['sign'] = self._app_sign(payload)
+        payload = [
+            ('BDUSS', self.sessions.BDUSS),
+            ('friend_uid', user.user_id),
+        ]
+        payload.append(('sign', self._app_sign(payload)))
 
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/f/forum/like", data=payload)
@@ -1783,10 +1795,10 @@ class Browser(object):
             fid = await self.get_fid(tieba_name)
 
         payload = {
-            '_client_version': '12.12.1.0',
-            'forum_id': fid,
+            ('_client_version', '12.12.1.0'),
+            ('forum_id', fid),
         }
-        payload['sign'] = self._app_sign(payload)
+        payload.append(('sign', self._app_sign(payload)))
 
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/f/forum/getforumdetail", data=payload)
@@ -1904,14 +1916,14 @@ class Browser(object):
             tuple[list[tuple[Thread, int]], bool]: list[被推荐帖子信息,新增浏览量], 是否还有下一页
         """
 
-        payload = {
-            'BDUSS': self.sessions.BDUSS,
-            '_client_version': '12.12.1.0',
-            'forum_id': await self.get_fid(tieba_name),
-            'pn': pn,
-            'rn': 30,
-        }
-        payload['sign'] = self._app_sign(payload)
+        payload = [
+            ('BDUSS', self.sessions.BDUSS),
+            ('_client_version', '12.12.1.0'),
+            ('forum_id', await self.get_fid(tieba_name)),
+            ('pn', pn),
+            ('rn', 30),
+        ]
+        payload.append(('sign', self._app_sign(payload)))
 
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/f/bawu/getRecomThreadHistory", data=payload)
@@ -1949,14 +1961,14 @@ class Browser(object):
             tuple[int, int]: 本月总推荐配额, 本月已使用的推荐配额
         """
 
-        payload = {
-            'BDUSS': self.sessions.BDUSS,
-            '_client_version': '12.12.1.0',
-            'forum_id': await self.get_fid(tieba_name),
-            'pn': 1,
-            'rn': 0,
-        }
-        payload['sign'] = self._app_sign(payload)
+        payload = [
+            ('BDUSS', self.sessions.BDUSS),
+            ('_client_version', '12.12.1.0'),
+            ('forum_id', await self.get_fid(tieba_name)),
+            ('pn', 1),
+            ('rn', 0),
+        ]
+        payload.append(('sign', self._app_sign(payload)))
 
         try:
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/f/bawu/getRecomThreadList", data=payload)
@@ -1994,12 +2006,12 @@ class Browser(object):
              'recommend': 首页推荐数}
         """
 
-        payload = {
-            'BDUSS': self.sessions.BDUSS,
-            '_client_version': '12.12.1.0',
-            'forum_id': await self.get_fid(tieba_name),
-        }
-        payload['sign'] = self._app_sign(payload)
+        payload = [
+            ('BDUSS', self.sessions.BDUSS),
+            ('_client_version', '12.12.1.0'),
+            ('forum_id', await self.get_fid(tieba_name)),
+        ]
+        payload.append(('sign', self._app_sign(payload)))
 
         field_names = [
             'view',
@@ -2127,8 +2139,12 @@ class Browser(object):
         """
 
         try:
-            payload = {'BDUSS': self.sessions.BDUSS, 'fid': await self.get_fid(tieba_name), 'tbs': await self.get_tbs()}
-            payload['sign'] = self._app_sign(payload)
+            payload = [
+                ('BDUSS', self.sessions.BDUSS),
+                ('fid', await self.get_fid(tieba_name)),
+                ('tbs', await self.get_tbs()),
+            ]
+            payload.append(('sign', self._app_sign(payload)))
 
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/forum/like", data=payload)
 
@@ -2157,13 +2173,13 @@ class Browser(object):
         """
 
         try:
-            payload = {
-                'BDUSS': self.sessions.BDUSS,
-                '_client_version': '12.12.1.0',
-                'kw': tieba_name,
-                'tbs': await self.get_tbs(),
-            }
-            payload['sign'] = self._app_sign(payload)
+            payload = [
+                ('BDUSS', self.sessions.BDUSS),
+                ('_client_version', '12.12.1.0'),
+                ('kw', tieba_name),
+                ('tbs', await self.get_tbs()),
+            ]
+            payload.append(('sign', self._app_sign(payload)))
 
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/forum/sign", data=payload)
 
@@ -2198,46 +2214,46 @@ class Browser(object):
         """
 
         try:
-            payload = {
-                'BDUSS': self.sessions.BDUSS,
-                '_client_id': 'wappc_1641793173806_732',
-                '_client_type': 2,
-                '_client_version': '9.1.0.0',
-                '_phone_imei': '000000000000000',
-                'anonymous': 1,
-                'apid': 'sw',
-                'barrage_time': 0,
-                'can_no_forum': 0,
-                'content': content,
-                'cuid': 'baidutiebaapp75036bd3-8ae0-4b61-ac4e-c3192b6e6fa9',
-                'cuid_galaxy2': '1782A7D2758F38EA4B4EAFE1AD4881CB|VLJONH23W',
-                'cuid_gid': '',
-                'entrance_type': 0,
-                'fid': await self.get_fid(tieba_name),
-                'from': '1021099l',
-                'from_fourm_id': 'null',
-                'is_ad': 0,
-                'is_barrage': 0,
-                'is_feedback': 0,
-                'kw': tieba_name,
-                'model': 'M2012K11AC',
-                'name_show': '',
-                'net_type': 1,
-                'new_vcode': 1,
-                'post_from': 3,
-                'reply_uid': 'null',
-                'stoken': self.sessions.STOKEN,
-                'subapp_type': 'mini',
-                'takephoto_num': 0,
-                'tbs': await self.get_tbs(),
-                'tid': tid,
-                'timestamp': int(time.time() * 1000),
-                'v_fid': '',
-                'v_fname': '',
-                'vcode_tag': 12,
-                'z_id': '9JaXHshXKDw1xkGLIi91_Qd4cduxNFKS_nguQ4kfe7zYZQfdOlA-7jU2pYbkMfw23NdB1awUpuWmTeoON13r-Uw',
-            }
-            payload['sign'] = self._app_sign(payload)
+            payload = [
+                ('BDUSS', self.sessions.BDUSS),
+                ('_client_id', 'wappc_1641793173806_732'),
+                ('_client_type', 2),
+                ('_client_version', '9.1.0.0'),
+                ('_phone_imei', '000000000000000'),
+                ('anonymous', 1),
+                ('apid', 'sw'),
+                ('barrage_time', 0),
+                ('can_no_forum', 0),
+                ('content', content),
+                ('cuid', 'baidutiebaapp75036bd3-8ae0-4b61-ac4e-c3192b6e6fa9'),
+                ('cuid_galaxy2', '1782A7D2758F38EA4B4EAFE1AD4881CB|VLJONH23W'),
+                ('cuid_gid', ''),
+                ('entrance_type', 0),
+                ('fid', await self.get_fid(tieba_name)),
+                ('from', '1021099l'),
+                ('from_fourm_id', 'null'),
+                ('is_ad', 0),
+                ('is_barrage', 0),
+                ('is_feedback', 0),
+                ('kw', tieba_name),
+                ('model', 'M2012K11AC'),
+                ('name_show', ''),
+                ('net_type', 1),
+                ('new_vcode', 1),
+                ('post_from', 3),
+                ('reply_uid', 'null'),
+                ('stoken', self.sessions.STOKEN),
+                ('subapp_type', 'mini'),
+                ('takephoto_num', 0),
+                ('tbs', await self.get_tbs()),
+                ('tid', tid),
+                ('timestamp', int(time.time() * 1000)),
+                ('v_fid', ''),
+                ('v_fname', ''),
+                ('vcode_tag', 12),
+                ('z_id', '9JaXHshXKDw1xkGLIi91_Qd4cduxNFKS_nguQ4kfe7zYZQfdOlA-7jU2pYbkMfw23NdB1awUpuWmTeoON13r-Uw'),
+            ]
+            payload.append(('sign', self._app_sign(payload)))
 
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/post/add", data=payload)
 
@@ -2266,19 +2282,19 @@ class Browser(object):
             bool: 操作是否成功
         """
 
-        if not (posts := await self.get_posts(tid)):
+        if not (posts := await self.get_posts(tid, rn=0)):
             LOG.warning(f"Failed to set privacy to {tid}")
             return False
 
         try:
-            payload = {
-                'BDUSS': self.sessions.BDUSS,
-                'forum_id': posts[0].fid,
-                'is_hide': int(hide),
-                'post_id': posts[0].pid,
-                'thread_id': tid,
-            }
-            payload['sign'] = self._app_sign(payload)
+            payload = [
+                ('BDUSS', self.sessions.BDUSS),
+                ('forum_id', posts.thread.fid),
+                ('is_hide', int(hide)),
+                ('post_id', posts.thread.pid),
+                ('thread_id', tid),
+            ]
+            payload.append(('sign', self._app_sign(payload)))
 
             res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/thread/setPrivacy", data=payload)
 
