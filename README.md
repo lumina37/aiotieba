@@ -3,7 +3,7 @@
 [![gitee](https://img.shields.io/badge/mirror-gitee-red)](https://gitee.com/Starry-OvO/Tieba-Manager)
 [![release](https://img.shields.io/github/release/Starry-OvO/Tieba-Manager?color=blue&logo=github)](https://github.com/Starry-OvO/Tieba-Manager/releases)
 [![license](https://img.shields.io/github/license/Starry-OvO/Tieba-Manager?color=blue&logo=github)](https://github.com/Starry-OvO/Tieba-Manager/blob/main/LICENSE)
-![LGTM Grade](https://img.shields.io/lgtm/grade/python/github/Starry-OvO/Tieba-Manager?logo=LGTM)
+[![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/Starry-OvO/Tieba-Manager.svg?logo=lgtm)](https://lgtm.com/projects/g/Starry-OvO/Tieba-Manager/context:python)
 
 ## 功能概览
 
@@ -111,13 +111,13 @@ nohup python $TIEBA_MANAGER_PATH/cloud_review_diana.py >/dev/null 2>&1 &
 
 |      吧名      | 关注用户数 | 最近29天日均访问量 | 日均主题帖数 | 日均回复数 |
 | :------------: | :--------: | :----------------: | :----------: | :--------: |
-|     asoul      |  158,488   |      217,206       |    2,219     |   21,158   |
-| vtuber自由讨论 |   16,180   |       3,702        |      4       |    107     |
-|      嘉然      |   51,617   |       19,215       |     221      |   2,732    |
-|      宫漫      | 1,221,944  |       63,064       |     371      |   4,948    |
-|    lol半价     | 1,925,712  |      175,435       |     499      |   10,590   |
-|     孙笑川     | 1,798,618  |      526,787       |    5,557     |  146,327   |
-|      向晚      |   25,296   |       12,693       |     168      |   1,656    |
-|      贝拉      |   20,300   |       15,599       |     118      |   1,985    |
-|    王力口乐    |   8,112    |       28,625       |     457      |   5,795    |
-|      乃琳      |   15,528   |       8,020        |      65      |   1,085    |
+|     asoul      |  159,181   |      233,462       |    2,338     |   22,975   |
+| vtuber自由讨论 |   16,194   |       3,757        |      4       |    112     |
+|      嘉然      |   51,996   |       20,402       |     231      |   2,937    |
+|      宫漫      | 1,222,853  |       60,900       |     365      |   4,724    |
+|    lol半价     | 1,926,522  |      174,846       |     501      |   10,542   |
+|     孙笑川     | 1,804,568  |      515,051       |    5,407     |  145,152   |
+|      向晚      |   25,716   |       14,042       |     182      |   1,847    |
+|      贝拉      |   20,537   |       16,944       |     132      |   2,258    |
+|    王力口乐    |   8,958    |       30,662       |     486      |   6,041    |
+|      乃琳      |   15,739   |       8,726        |      70      |   1,197    |
