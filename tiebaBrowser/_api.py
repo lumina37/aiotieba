@@ -720,7 +720,7 @@ class Browser(object):
             LOG.warning(f"Failed to block {user.log_name} in {tieba_name}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully blocked {user.log_name} in {tieba_name} for {payload['day']} days")
+        LOG.info(f"Successfully blocked {user.log_name} in {tieba_name} for {day} days")
         return True
 
     async def unblock(self, tieba_name: str, user: BasicUserInfo) -> bool:

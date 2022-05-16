@@ -22,7 +22,7 @@
 
 ## 准备使用
 
-+ 确保你的[`Python`](https://www.python.org/downloads/)版本为`3.10+`
++ 确保你的[`Python`](https://www.python.org/downloads/)版本在`3.10`以上
 
 + 拉取代码
 
