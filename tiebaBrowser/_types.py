@@ -95,16 +95,13 @@ class BasicUserInfo(object):
     __slots__ = ['_raw_data', '_user_id', 'user_name', '_portrait', '_nick_name']
 
     def __init__(self, _id: str | int | None = None, user_proto: User_pb2.User | None = None) -> None:
+        self._init_null()
 
         if user_proto:
             self._init_by_data(user_proto)
 
         elif _id:
-            self._init_null()
             self._init_by_id(_id)
-
-        else:
-            self._init_null()
 
     def _init_by_id(self, _id: str | int) -> None:
 
@@ -238,16 +235,7 @@ class UserInfo(BasicUserInfo):
     __slots__ = ['_level', '_gender', '_is_vip', '_is_god', '_priv_like', '_priv_reply']
 
     def __init__(self, _id: str | int | None = None, user_proto: User_pb2.User | None = None) -> None:
-
-        if user_proto:
-            self._init_by_data(user_proto)
-
-        elif _id:
-            self._init_null()
-            self._init_by_id(_id)
-
-        else:
-            self._init_null()
+        super().__init__(_id, user_proto)
 
     def _init_by_data(self, user_proto: User_pb2.User) -> None:
         super()._init_by_data(user_proto)
@@ -613,7 +601,8 @@ class Fragments(Generic[_TFrag]):
 
     def __init__(self, content_protos: Iterable | None = None) -> None:
         def _init_by_type(content_proto) -> _TFrag:
-            match content_proto.type:
+            frag_type: int = content_proto.type
+            match frag_type:
                 # 0纯文本 9电话号 18话题 27百科词条
                 case 0 | 9 | 18 | 27:
                     fragment = FragText(content_proto)
