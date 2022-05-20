@@ -51,11 +51,13 @@ class CloudReview(tb.Reviewer):
                 water_stat = Counter(_yield_user_id())
 
                 water_user_ids = []
-                for user_id, count in water_stat.items():
+                for user_id, count in water_stat.most_common():
                     # 无关水数量大于等于5 则屏蔽该用户在版面上的所有无关水
                     if count >= 5:
                         tb.log.info(f"Clear Water {user_id}")
                         water_user_ids.append(user_id)
+                    else:
+                        break
 
                 if water_user_ids:
                     # 因为治水功能很少被触发 所以采用int计数+二次遍历而不是列表计数的设计来提升性能
@@ -68,7 +70,7 @@ class CloudReview(tb.Reviewer):
 
                 tb.log.debug(f"Cycle time_cost: {time.perf_counter()-start_time:.4f}")
                 # 主动释放CPU 转而运行其他协程
-                await asyncio.sleep(10)
+                await asyncio.sleep(30)
 
             except Exception:
                 tb.log.critical("Unexcepted error", exc_info=True)
@@ -202,7 +204,7 @@ class CloudReview(tb.Reviewer):
         if post.reply_num == (id_last_edit := await self.get_id(post.pid)):
             return tb.Punish(-1)
         # 该回复下的楼中楼可能被抽 需要缓存抽楼后的reply_num
-        elif post.reply_num < id_last_edit:
+        if post.reply_num < id_last_edit:
             await self.add_id(post.pid, post.reply_num)
             return tb.Punish(-1)
 
@@ -223,7 +225,7 @@ class CloudReview(tb.Reviewer):
                 permission = await self.get_imghash(img)
                 if permission <= -5:
                     return tb.Punish(1, 10)
-                elif permission == -2:
+                if permission == -2:
                     return tb.Punish(1)
 
         if post.comments:
@@ -268,12 +270,9 @@ class CloudReview(tb.Reviewer):
         if punish.del_flag == -1:
             # 白名单 跳过后续检查
             return punish
-        elif punish.del_flag == 1:
+        if punish.del_flag == 1:
             # 向上层函数传递封禁请求
             return punish
-        elif punish.del_flag == 0:
-            # 无异常 继续检查
-            pass
 
         # 缓存该pid
         await self.add_id(comment.pid)
@@ -291,12 +290,16 @@ class CloudReview(tb.Reviewer):
         if permission >= 1:
             # 白名单用户
             return tb.Punish(-1)
-        elif permission <= -5:
+        if permission <= -5:
             # 黑名单用户 删回复并封十天
             return tb.Punish(1, 10, note="黑名单")
 
         text = obj.text
         if re.search("((?<![a-z])(v|t|a)|瞳|梓|罐|豆|鸟|鲨|阿)(÷|/|／|➗|畜|处|除|楚|初|醋|cg)|痛(楚|初|醋)", text, re.I):
+            # 牧场
+            return tb.Punish(1)
+        if re.search("(巢|三|挞)(÷|/|／|➗|畜|处|除|楚|初|醋|cg|u|友|跌|批|p)|(三|3)圣", text, re.I):
+            # a吧特色
             return tb.Punish(1)
         if re.search("椰子汁|🥥|东雪莲|莲宝|林忆宁|杨沐|张依|赵若|李奕|伍敏慧|谭杉杉|王楠", text):
             return tb.Punish(1)

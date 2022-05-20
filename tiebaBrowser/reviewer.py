@@ -448,8 +448,7 @@ class Reviewer(Browser):
 
         if img_hash := self.compute_imghash(image):
             return await self.database.get_imghash(self.tieba_name, img_hash)
-        else:
-            return 0
+        return 0
 
     async def get_imghash_full(self, image: np.ndarray) -> tuple[int, str]:
         """
@@ -464,5 +463,4 @@ class Reviewer(Browser):
 
         if img_hash := self.compute_imghash(image):
             return await self.database.get_imghash_full(self.tieba_name, img_hash)
-        else:
-            return 0, ''
+        return 0, ''

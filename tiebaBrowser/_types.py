@@ -371,7 +371,7 @@ class FragEmoji(_Fragment):
         return f"{self.__class__.__name__} [desc:{self.desc}]"
 
     @property
-    def desc(self):
+    def desc(self) -> str:
         return self._raw_data.c
 
 
@@ -397,7 +397,7 @@ class FragImage(_Fragment):
         return f"{self.__class__.__name__} [src:{self.src}]"
 
     @property
-    def src(self):
+    def src(self) -> str:
         return self._raw_data.cdn_src or self._raw_data.src
 
     @property
@@ -778,7 +778,7 @@ class Page(object):
         else:
             self._init_null()
 
-    def _init_by_data(self, page_proto: Page_pb2.Page):
+    def _init_by_data(self, page_proto: Page_pb2.Page) -> None:
 
         self._raw_data = page_proto
 
@@ -795,7 +795,7 @@ class Page(object):
 
         self.total_count = page_proto.total_count
 
-    def _init_null(self):
+    def _init_null(self) -> None:
 
         self._raw_data = None
 
@@ -1801,6 +1801,24 @@ class Comment(_Container):
     @_int_prop_check_ignore_none(0)
     def fid(self, new_fid: int) -> None:
         self._fid = int(new_fid)
+
+    @property
+    def agree(self) -> int:
+        return self._agree
+
+    @agree.setter
+    @_int_prop_check_ignore_none(0)
+    def agree(self, new_agree: int) -> None:
+        self._agree = int(new_agree)
+
+    @property
+    def disagree(self) -> int:
+        return self._disagree
+
+    @disagree.setter
+    @_int_prop_check_ignore_none(0)
+    def disagree(self, new_disagree: int) -> None:
+        self._disagree = int(new_disagree)
 
     @property
     def create_time(self) -> int:

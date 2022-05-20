@@ -40,11 +40,12 @@ class TimerRecorder(object):
 
     def allow_execute(self) -> bool:
         current_time = time.time()
+
         if current_time - self.last_post_time > self.post_interval:
             self.last_post_time = current_time
             return True
-        else:
-            return False
+
+        return False
 
 
 class Context(object):
@@ -932,8 +933,6 @@ class Listener(object):
         """
         default指令
         """
-
-        pass
 
 
 if __name__ == '__main__':

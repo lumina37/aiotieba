@@ -123,8 +123,7 @@ class Database(object):
         else:
             if res_tuple := await cursor.fetchone():
                 return int(res_tuple[0])
-            else:
-                return 0
+            return 0
 
     async def get_tieba_name(self, fid: int) -> str:
         """
@@ -147,8 +146,7 @@ class Database(object):
         else:
             if res_tuple := await cursor.fetchone():
                 return res_tuple[0]
-            else:
-                return ''
+            return ''
 
     async def add_forum(self, fid: int, tieba_name: str) -> bool:
         """
@@ -169,8 +167,7 @@ class Database(object):
         except aiomysql.Error as err:
             LOG.warning(f"Failed to insert {fid}. reason:{err}")
             return False
-        else:
-            return True
+        return True
 
     async def _create_table_user(self) -> None:
         """
@@ -215,8 +212,7 @@ class Database(object):
                 user.user_name = res_tuple[1]
                 user.portrait = res_tuple[2]
                 return user
-            else:
-                return BasicUserInfo()
+            return BasicUserInfo()
 
     async def add_user(self, user: BasicUserInfo) -> bool:
         """
@@ -238,8 +234,7 @@ class Database(object):
         except aiomysql.Error as err:
             LOG.warning(f"Failed to insert {user}. reason:{err}")
             return False
-        else:
-            return True
+        return True
 
     async def del_user(self, user: BasicUserInfo) -> bool:
         """
@@ -264,9 +259,9 @@ class Database(object):
         except aiomysql.Error as err:
             LOG.warning(f"Failed to delete {user}. reason:{err}")
             return False
-        else:
-            LOG.info(f"Successfully deleted {user} from table user")
-            return True
+
+        LOG.info(f"Successfully deleted {user} from table user")
+        return True
 
     @translate_tieba_name
     async def _create_table_id(self, tieba_name: str) -> None:
@@ -310,8 +305,7 @@ class Database(object):
         except aiomysql.Error as err:
             LOG.warning(f"Failed to insert {_id}. reason:{err}")
             return False
-        else:
-            return True
+        return True
 
     @translate_tieba_name
     async def get_id(self, tieba_name: str, _id: int) -> int:
@@ -336,8 +330,7 @@ class Database(object):
         else:
             if res_tuple := await cursor.fetchone():
                 return res_tuple[0]
-            else:
-                return -1
+            return -1
 
     @translate_tieba_name
     async def del_id(self, tieba_name: str, _id: int) -> bool:
@@ -359,9 +352,9 @@ class Database(object):
         except aiomysql.Error as err:
             LOG.warning(f"Failed to delete {_id}. reason:{err}")
             return False
-        else:
-            LOG.info(f"Successfully deleted {_id} from table of {tieba_name}")
-            return True
+
+        LOG.info(f"Successfully deleted {_id} from table of {tieba_name}")
+        return True
 
     @translate_tieba_name
     async def del_ids(self, tieba_name: str, hour: int) -> bool:
@@ -386,9 +379,9 @@ class Database(object):
         except aiomysql.Error as err:
             LOG.warning(f"Failed to delete id in id_{tieba_name}. reason:{err}")
             return False
-        else:
-            LOG.info(f"Successfully deleted id in id_{tieba_name} within {hour} hour(s)")
-            return True
+
+        LOG.info(f"Successfully deleted id in id_{tieba_name} within {hour} hour(s)")
+        return True
 
     @translate_tieba_name
     async def _create_table_tid_water(self, tieba_name: str) -> None:
@@ -431,9 +424,9 @@ class Database(object):
         except aiomysql.Error as err:
             LOG.warning(f"Failed to insert {tid}. reason:{err}")
             return False
-        else:
-            LOG.info(f"Successfully added {tid} to table of {tieba_name}. mode: {mode}")
-            return True
+
+        LOG.info(f"Successfully added {tid} to table of {tieba_name}. mode: {mode}")
+        return True
 
     @translate_tieba_name
     async def is_tid_hide(self, tieba_name: str, tid: int) -> bool | None:
@@ -458,8 +451,7 @@ class Database(object):
         else:
             if res_tuple := await cursor.fetchone():
                 return True if res_tuple[0] else False
-            else:
-                return None
+            return None
 
     @translate_tieba_name
     async def del_tid(self, tieba_name: str, tid: int) -> bool:
@@ -481,9 +473,8 @@ class Database(object):
         except aiomysql.Error as err:
             LOG.warning(f"Failed to delete {tid}. reason:{err}")
             return False
-        else:
-            LOG.info(f"Successfully deleted {tid} from table of {tieba_name}")
-            return True
+        LOG.info(f"Successfully deleted {tid} from table of {tieba_name}")
+        return True
 
     @translate_tieba_name
     async def get_tid_list(self, tieba_name: str, limit: int = 128, offset: int = 0) -> list[int]:
@@ -557,9 +548,8 @@ class Database(object):
         except aiomysql.Error as err:
             LOG.warning(f"Failed to insert {user_id}. reason:{err}")
             return False
-        else:
-            LOG.info(f"Successfully added {user_id} to table of {tieba_name}. permission: {permission} note: {note}")
-            return True
+        LOG.info(f"Successfully added {user_id} to table of {tieba_name}. permission: {permission} note: {note}")
+        return True
 
     @translate_tieba_name
     async def del_user_id(self, tieba_name: str, user_id: int) -> bool:
@@ -581,9 +571,8 @@ class Database(object):
         except aiomysql.Error as err:
             LOG.warning(f"Failed to delete {user_id}. reason:{err}")
             return False
-        else:
-            LOG.info(f"Successfully deleted {user_id} from table of {tieba_name}")
-            return True
+        LOG.info(f"Successfully deleted {user_id} from table of {tieba_name}")
+        return True
 
     @translate_tieba_name
     async def get_user_id(self, tieba_name: str, user_id: int) -> int:
@@ -610,8 +599,7 @@ class Database(object):
         else:
             if res_tuple := await cursor.fetchone():
                 return res_tuple[0]
-            else:
-                return 0
+            return 0
 
     @translate_tieba_name
     async def get_user_id_full(self, tieba_name: str, user_id: int) -> tuple[int, str, datetime.datetime]:
@@ -639,8 +627,7 @@ class Database(object):
         else:
             if res_tuple := await cursor.fetchone():
                 return res_tuple
-            else:
-                return 0, '', datetime.datetime(1970, 1, 1)
+            return 0, '', datetime.datetime(1970, 1, 1)
 
     @translate_tieba_name
     async def get_user_id_list(
@@ -718,9 +705,9 @@ class Database(object):
         except aiomysql.Error as err:
             LOG.warning(f"Failed to insert {img_hash}. reason:{err}")
             return False
-        else:
-            LOG.info(f"Successfully added {img_hash} to table of {tieba_name}. permission: {permission} note: {note}")
-            return True
+
+        LOG.info(f"Successfully added {img_hash} to table of {tieba_name}. permission: {permission} note: {note}")
+        return True
 
     @translate_tieba_name
     async def del_imghash(self, tieba_name: str, img_hash: str) -> bool:
@@ -742,9 +729,9 @@ class Database(object):
         except aiomysql.Error as err:
             LOG.warning(f"Failed to delete {img_hash}. reason:{err}")
             return False
-        else:
-            LOG.info(f"Successfully deleted {img_hash} from table of {tieba_name}")
-            return True
+
+        LOG.info(f"Successfully deleted {img_hash} from table of {tieba_name}")
+        return True
 
     @translate_tieba_name
     async def get_imghash(self, tieba_name: str, img_hash: str) -> int:
@@ -771,8 +758,7 @@ class Database(object):
         else:
             if res_tuple := await cursor.fetchone():
                 return res_tuple[0]
-            else:
-                return 0
+            return 0
 
     @translate_tieba_name
     async def get_imghash_full(self, tieba_name: str, img_hash: str) -> tuple[int, str]:
@@ -799,5 +785,4 @@ class Database(object):
         else:
             if res_tuple := await cursor.fetchone():
                 return res_tuple
-            else:
-                return 0, ''
+            return 0, ''
