@@ -11,8 +11,8 @@ class CloudReview(tb.Reviewer):
 
     __slots__ = ['white_kw_exp', 'water_restrict_flag']
 
-    def __init__(self, BDUSS_key, tieba_name) -> None:
-        super().__init__(BDUSS_key, tieba_name)
+    def __init__(self, BDUSS_key, fname) -> None:
+        super().__init__(BDUSS_key, fname)
         white_kw_list = [
             '管人|(哪个|什么)v|bv|联动|歌回|杂谈|歌力|企划|切片|前世|毕业|sc|弹幕|同接|二次元|原批|牧场|周边|史书|饭圈|滑坡',
             '(a|b|睿|皇协|批|p)站|b博|海鲜|(v|a)(吧|8)|nga|404|ytb|论坛|字幕组|粉丝群|直播间|魂组|录播',
@@ -36,7 +36,7 @@ class CloudReview(tb.Reviewer):
                 self.water_restrict_flag = await self.is_tid_hide(0)
 
                 # 获取主题帖列表
-                threads = await self.get_threads(self.tieba_name)
+                threads = await self.get_threads(self.fname)
                 # 创建异步任务列表 并规定每个任务的延迟时间 避免高并发下的网络阻塞
                 coros = [self._handle_thread(thread, idx / 10) for idx, thread in enumerate(threads)]
                 # 并发运行协程
@@ -62,7 +62,7 @@ class CloudReview(tb.Reviewer):
                 if water_user_ids:
                     # 因为治水功能很少被触发 所以采用int计数+二次遍历而不是列表计数的设计来提升性能
                     coros = [
-                        self.hide_thread(self.tieba_name, thread.tid)
+                        self.hide_thread(self.fname, thread.tid)
                         for thread in threads
                         if thread.author_id in water_user_ids
                     ]
@@ -96,7 +96,7 @@ class CloudReview(tb.Reviewer):
         punish = await self._check_thread(thread)
         if punish.block_days:
             # 封禁
-            await self.block(self.tieba_name, thread.user, day=punish.block_days, reason=punish.note)
+            await self.block(self.fname, thread.user, day=punish.block_days, reason=punish.note)
         if punish.del_flag == 0:
             pass
         elif punish.del_flag == 1:
@@ -104,14 +104,14 @@ class CloudReview(tb.Reviewer):
             tb.log.info(
                 f"Try to delete thread {thread.text} post by {thread.user.log_name}. level:{thread.user.level}. {punish.note}"
             )
-            await self.del_thread(self.tieba_name, thread.tid)
+            await self.del_thread(self.fname, thread.tid)
             return True
         elif punish.del_flag == 2:
             # 屏蔽帖
             tb.log.info(
                 f"Try to hide thread {thread.text} post by {thread.user.log_name}. level:{thread.user.level}. {punish.note}"
             )
-            await self.hide_thread(self.tieba_name, thread.tid)
+            await self.hide_thread(self.fname, thread.tid)
             return True
 
         return False
@@ -181,7 +181,7 @@ class CloudReview(tb.Reviewer):
 
         punish = await self._check_post(post)
         if punish.block_days:
-            await self.block(self.tieba_name, post.user, day=punish.block_days, reason=punish.note)
+            await self.block(self.fname, post.user, day=punish.block_days, reason=punish.note)
         if punish.del_flag <= 0:
             pass
         elif punish.del_flag == 1:
@@ -189,7 +189,7 @@ class CloudReview(tb.Reviewer):
             tb.log.info(
                 f"Try to delete post {post.text} post by {post.user.log_name}. level:{post.user.level}. {punish.note}"
             )
-            await self.del_post(self.tieba_name, post.tid, post.pid)
+            await self.del_post(self.fname, post.tid, post.pid)
             return
 
     async def _check_post(self, post: tb.Post) -> tb.Punish:
@@ -244,7 +244,7 @@ class CloudReview(tb.Reviewer):
 
         punish = await self._check_comment(comment)
         if punish.block_days:
-            await self.block(self.tieba_name, comment.user, day=punish.block_days, reason=punish.note)
+            await self.block(self.fname, comment.user, day=punish.block_days, reason=punish.note)
         if punish.del_flag <= 0:
             pass
         elif punish.del_flag == 1:
@@ -252,7 +252,7 @@ class CloudReview(tb.Reviewer):
             tb.log.info(
                 f"Try to delete post {comment.text} post by {comment.user.log_name}. level:{comment.user.level}. {punish.note}"
             )
-            await self.del_post(self.tieba_name, comment.tid, comment.pid)
+            await self.del_post(self.fname, comment.tid, comment.pid)
             return
 
     async def _check_comment(self, comment: tb.Comment) -> tb.Punish:
@@ -310,7 +310,7 @@ class CloudReview(tb.Reviewer):
 if __name__ == '__main__':
 
     async def main():
-        async with CloudReview('diana_xh', 'asoul') as review:
+        async with CloudReview('asoul_cola', 'asoul') as review:
             await review.run()
 
     try:

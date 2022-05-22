@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+message CommitPersonalMsgReqIdl {
+    message DataReq {
+        int64 groupId = 1;
+        int64 toUid = 2;
+        int32 msgType = 3;
+        string content = 4;
+        int32 duration = 5;
+        int64 recordId = 6;
+        int32 toUserType = 7;
+        string st_type = 8;
+    }
+    DataReq data = 1;
+}

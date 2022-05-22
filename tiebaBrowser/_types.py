@@ -95,10 +95,10 @@ class BasicUserInfo(object):
     __slots__ = ['_raw_data', '_user_id', 'user_name', '_portrait', '_nick_name']
 
     def __init__(self, _id: str | int | None = None, user_proto: User_pb2.User | None = None) -> None:
-        self._init_null()
+        self.__init_null()
 
         if user_proto:
-            self._init_by_data(user_proto)
+            self.__init_by_data(user_proto)
 
         elif _id:
             self._init_by_id(_id)
@@ -113,7 +113,7 @@ class BasicUserInfo(object):
             if not self.portrait:
                 self.user_name = _id
 
-    def _init_by_data(self, user_proto: User_pb2.User) -> None:
+    def __init_by_data(self, user_proto: User_pb2.User) -> None:
 
         self._raw_data = user_proto
 
@@ -122,7 +122,7 @@ class BasicUserInfo(object):
         self.portrait = user_proto.portrait
         self.nick_name = user_proto.name_show
 
-    def _init_null(self) -> None:
+    def __init_null(self) -> None:
 
         self._raw_data = None
 
@@ -236,10 +236,12 @@ class UserInfo(BasicUserInfo):
 
     def __init__(self, _id: str | int | None = None, user_proto: User_pb2.User | None = None) -> None:
         super().__init__(_id, user_proto)
+        self.__init_null()
 
-    def _init_by_data(self, user_proto: User_pb2.User) -> None:
-        super()._init_by_data(user_proto)
+        if user_proto:
+            self.__init_by_data(user_proto)
 
+    def __init_by_data(self, user_proto: User_pb2.User) -> None:
         self._level = user_proto.level_id
         self._gender = user_proto.gender or user_proto.sex
         self.is_vip = True if user_proto.new_tshow_icon else user_proto.vipInfo.v_status
@@ -248,9 +250,7 @@ class UserInfo(BasicUserInfo):
         self.priv_like = priv_proto.like
         self.priv_reply = priv_proto.reply
 
-    def _init_null(self) -> None:
-        super()._init_null()
-
+    def __init_null(self) -> None:
         self._level = 0
         self._gender = 0
         self._is_vip = False
@@ -1943,7 +1943,7 @@ class Reply(_Container):
     Fields:
         text (str): 文本内容
 
-        tieba_name (str): 所在贴吧名
+        fname (str): 所在贴吧名
         tid (int): 所在主题帖tid
         pid (int): 回复pid
         user (UserInfo): 发布者信息
@@ -1956,7 +1956,7 @@ class Reply(_Container):
         create_time (int): 10位时间戳，创建时间
     """
 
-    __slots__ = ['tieba_name', '_post_pid', '_post_user', '_thread_user', '_is_floor', '_create_time']
+    __slots__ = ['fname', '_post_pid', '_post_user', '_thread_user', '_is_floor', '_create_time']
 
     def __init__(self, reply_proto: ReplyMeResIdl_pb2.ReplyMeResIdl.DataRes.ReplyList | None = None) -> None:
 
@@ -1971,7 +1971,7 @@ class Reply(_Container):
         self._raw_data = reply_proto
         self._text = reply_proto.content
 
-        self.tieba_name = reply_proto.fname
+        self.fname = reply_proto.fname
         self._tid = reply_proto.thread_id
         self._pid = reply_proto.post_id
         self._user = None
@@ -1988,7 +1988,7 @@ class Reply(_Container):
         self._raw_data = None
         self._text = ''
 
-        self.tieba_name = ''
+        self.fname = ''
         self._tid = 0
         self._pid = 0
         self._user = None
@@ -2131,7 +2131,7 @@ class At(_Container):
     Fields:
         text (str): 文本内容
 
-        tieba_name (str): 所在贴吧名
+        fname (str): 所在贴吧名
         tid (int): 所在主题帖tid
         pid (int): 回复pid
         user (UserInfo): 发布者信息
@@ -2143,7 +2143,7 @@ class At(_Container):
         create_time (int): 10位时间戳，创建时间
     """
 
-    __slots__ = ['tieba_name', '_is_floor', '_is_thread', '_create_time']
+    __slots__ = ['fname', '_is_floor', '_is_thread', '_create_time']
 
     def __init__(self, at_dict: dict | None = None) -> None:
 
@@ -2157,7 +2157,7 @@ class At(_Container):
         self._raw_data = at_dict
         self._text = at_dict['content']
 
-        self.tieba_name = at_dict['fname']
+        self.fname = at_dict['fname']
         self.tid = at_dict['thread_id']
         self.pid = at_dict['post_id']
         self._user = None
@@ -2172,7 +2172,7 @@ class At(_Container):
         self._raw_data = None
         self._text = ''
 
-        self.tieba_name = ''
+        self.fname = ''
         self._tid = 0
         self._pid = 0
         self._user = None
@@ -2308,7 +2308,7 @@ class Search(_Container):
         text (str): 文本内容
         title (str): 标题
 
-        tieba_name (str): 所在贴吧名
+        fname (str): 所在贴吧名
         tid (int): 所在主题帖tid
         pid (int): 回复pid
 
@@ -2317,7 +2317,7 @@ class Search(_Container):
         create_time (int): 10位时间戳，创建时间
     """
 
-    __slots__ = ['tieba_name', 'title', '_is_floor', '_create_time']
+    __slots__ = ['fname', 'title', '_is_floor', '_create_time']
 
     def __init__(self, search_dict: dict | None = None) -> None:
 
@@ -2332,7 +2332,7 @@ class Search(_Container):
         self._text = search_dict['content']
         self.title = search_dict['title']
 
-        self.tieba_name = search_dict['fname']
+        self.fname = search_dict['fname']
         self.tid = search_dict['tid']
         self.pid = search_dict['pid']
         self._user = None
@@ -2347,7 +2347,7 @@ class Search(_Container):
         self._text = ''
         self.title = ''
 
-        self.tieba_name = ''
+        self.fname = ''
         self._tid = 0
         self._pid = 0
         self._user = None

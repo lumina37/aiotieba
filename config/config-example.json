@@ -15,7 +15,7 @@
         "unix_socket": "用于优化linux系统的本机连接速度，看不懂就不用填",
         "pool_recycle": "填连接超时的秒数，需要与服务端保持一致，不填则默认为28800秒"
     },
-    "tieba_name_mapping": {
+    "fname_mapping": {
         "贴吧中文名": "自定义的英文名",
         "lol半价": "halfprice"
     }

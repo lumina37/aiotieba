@@ -18,7 +18,7 @@ if not CONFIG.__contains__('MySQL'):
     CONFIG['MySQL'] = {}
 if not isinstance(CONFIG['MySQL'], dict):
     CONFIG['MySQL'] = {}
-if not CONFIG.__contains__('tieba_name_mapping'):
-    CONFIG['tieba_name_mapping'] = {}
-if not isinstance(CONFIG['tieba_name_mapping'], dict):
-    CONFIG['tieba_name_mapping'] = {}
+if not CONFIG.__contains__('fname_mapping'):
+    CONFIG['fname_mapping'] = {}
+if not isinstance(CONFIG['fname_mapping'], dict):
+    CONFIG['fname_mapping'] = {}

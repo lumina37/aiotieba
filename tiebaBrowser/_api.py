@@ -2,8 +2,12 @@
 __all__ = ['Browser']
 
 import asyncio
+import base64
+import gzip
 import hashlib
 import json
+import random
+import re
 import socket
 import time
 
@@ -11,14 +15,16 @@ import aiohttp
 import cv2 as cv
 import numpy as np
 from bs4 import BeautifulSoup
+from Crypto.Cipher import AES, PKCS1_v1_5
+from Crypto.PublicKey import RSA
 from google.protobuf.json_format import ParseDict
-
-from tiebaBrowser.tieba_proto import ThreadInfo_pb2
 
 from ._config import CONFIG
 from ._logger import get_logger
 from ._types import JSON_DECODER, Ats, BasicUserInfo, Comments, Posts, Replys, Searches, Thread, Threads, UserInfo
 from .tieba_proto import (
+    CommitPersonalMsgReqIdl_pb2,
+    CommitPersonalMsgResIdl_pb2,
     CommonReq_pb2,
     FrsPageReqIdl_pb2,
     FrsPageResIdl_pb2,
@@ -36,6 +42,9 @@ from .tieba_proto import (
     ReplyMeResIdl_pb2,
     SearchPostForumReqIdl_pb2,
     SearchPostForumResIdl_pb2,
+    ThreadInfo_pb2,
+    UpdateClientInfoReqIdl_pb2,
+    UpdateClientInfoResIdl_pb2,
     User_pb2,
 )
 
@@ -50,7 +59,19 @@ class Sessions(object):
         BDUSS_key (str | None): 用于从config.json中提取BDUSS. Defaults to None.
     """
 
-    __slots__ = ['_timeout', '_connector', 'app', 'app_proto', 'web', 'BDUSS', 'STOKEN']
+    __slots__ = [
+        '_timeout',
+        '_connector',
+        'app',
+        'app_proto',
+        'web',
+        '_app_websocket',
+        'websocket',
+        '_ws_password',
+        '_ws_aes_chiper',
+        'BDUSS',
+        'STOKEN',
+    ]
 
     def __init__(self, BDUSS_key: str | None = None) -> None:
 
@@ -60,6 +81,14 @@ class Sessions(object):
         else:
             self.BDUSS: str = ''
             self.STOKEN: str = ''
+
+        self.app: aiohttp.ClientSession = None
+        self.app_proto: aiohttp.ClientSession = None
+        self._app_websocket: aiohttp.ClientSession = None
+        self.web: aiohttp.ClientSession = None
+        self.websocket: aiohttp.ClientWebSocketResponse = None
+        self._ws_password: bytes = None
+        self._ws_aes_chiper = None
 
     async def enter(self) -> "Sessions":
         self._timeout = aiohttp.ClientTimeout(connect=5, sock_connect=3, sock_read=10)
@@ -78,8 +107,6 @@ class Sessions(object):
         self.app = aiohttp.ClientSession(
             connector=self._connector,
             headers=app_headers,
-            version=aiohttp.HttpVersion11,
-            cookie_jar=aiohttp.CookieJar(),
             connector_owner=False,
             raise_for_status=True,
             timeout=self._timeout,
@@ -98,8 +125,6 @@ class Sessions(object):
         self.app_proto = aiohttp.ClientSession(
             connector=self._connector,
             headers=app_proto_headers,
-            version=aiohttp.HttpVersion11,
-            cookie_jar=aiohttp.CookieJar(),
             connector_owner=False,
             raise_for_status=True,
             timeout=self._timeout,
@@ -119,12 +144,26 @@ class Sessions(object):
         self.web = aiohttp.ClientSession(
             connector=self._connector,
             headers=web_headers,
-            version=aiohttp.HttpVersion11,
             cookie_jar=web_cookie_jar,
             connector_owner=False,
             raise_for_status=True,
             timeout=self._timeout,
-            read_bufsize=1 << 21,  # 2MiB
+            read_bufsize=1 << 20,  # 1MiB
+            trust_env=_trust_env,
+        )
+
+        # Init app websocket client
+        app_websocket_headers = {
+            aiohttp.hdrs.HOST: 'im.tieba.baidu.com:8000',
+            aiohttp.hdrs.SEC_WEBSOCKET_EXTENSIONS: 'im_version=2.3',
+        }
+        self._app_websocket = aiohttp.ClientSession(
+            connector=self._connector,
+            headers=app_websocket_headers,
+            connector_owner=False,
+            raise_for_status=True,
+            timeout=self._timeout,
+            read_bufsize=1 << 18,  # 256KiB
             trust_env=_trust_env,
         )
 
@@ -134,12 +173,156 @@ class Sessions(object):
         return await self.enter()
 
     async def close(self) -> None:
-        await asyncio.gather(
-            self.app.close(), self.app_proto.close(), self.web.close(), self._connector.close(), return_exceptions=True
-        )
+        close_coros = [self.app.close(), self.app_proto.close(), self.web.close()]
+        if self.websocket and not self.websocket.closed:
+            close_coros.append(self.websocket.close())
+
+        await asyncio.gather(*close_coros, return_exceptions=True)
+        await self._connector.close()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.close()
+
+    @staticmethod
+    def _wrap_form(forms: list[tuple[str, str]]) -> list[tuple[str, str]]:
+        """
+        为form参数元组列表添加贴吧客户端签名
+
+        Args:
+            payload (list[tuple[str, str]]): form参数元组列表
+
+        Returns:
+            list[tuple[str, str]]: 签名后的form参数元组列表
+        """
+
+        raw_list = [f"{k}={v}" for k, v in forms]
+        raw_list.append("tiebaclient!!!")
+        raw_str = "".join(raw_list)
+
+        md5 = hashlib.md5()
+        md5.update(raw_str.encode('utf-8'))
+        forms.append(('sign', md5.hexdigest()))
+
+        return forms
+
+    @staticmethod
+    def _wrap_proto_bytes(req_bytes: bytes) -> aiohttp.MultipartWriter:
+        """
+        将req_bytes封装为贴吧客户端专用的aiohttp.MultipartWriter
+
+        Args:
+            req_bytes (bytes): protobuf序列化后的二进制数据
+
+        Returns:
+            aiohttp.MultipartWriter: 只可用于贴吧客户端
+        """
+
+        writer = aiohttp.MultipartWriter('form-data', boundary=f"*-6723-28094-46917-{random.randint(0,9)}")
+        payload_headers = {
+            aiohttp.hdrs.CONTENT_DISPOSITION: aiohttp.helpers.content_disposition_header(
+                'form-data', name='data', filename='file'
+            )
+        }
+        payload = aiohttp.BytesPayload(req_bytes, content_type='', headers=payload_headers)
+        writer.append_payload(payload)
+
+        # 删除无用参数
+        writer._parts[0][0]._headers.popone(aiohttp.hdrs.CONTENT_TYPE)
+        writer._parts[0][0]._headers.popone(aiohttp.hdrs.CONTENT_LENGTH)
+
+        return writer
+
+    @property
+    def ws_password(self) -> bytes:
+        if self._ws_password is None:
+            self._ws_password = random.randbytes(36)
+
+        return self._ws_password
+
+    @property
+    def ws_aes_chiper(self):
+        if self._ws_aes_chiper is None:
+            salt = b'\xa4\x0b\xc8\x34\xd6\x95\xf3\x13'
+            ws_secret_key = hashlib.pbkdf2_hmac('sha1', self.ws_password, salt, 5, 32)
+            self._ws_aes_chiper = AES.new(ws_secret_key, AES.MODE_ECB)
+
+        return self._ws_aes_chiper
+
+    def _wrap_ws_bytes(self, ws_bytes: bytes, cmd: int = 0, need_gzip: bool = True, need_encrypt: bool = True) -> bytes:
+        """
+        对ws_bytes进行封装
+
+        Args:
+            ws_bytes (bytes): 待发送的websocket数据
+            cmd (int, optional): cmd代号. Defaults to 0.
+            need_gzip (bool, optional): 是否需要gzip压缩. Defaults to False.
+            need_encrypt (bool, optional): 是否需要aes加密. Defaults to False.
+
+        Returns:
+            bytes: 封装后的websocket数据
+        """
+
+        if need_gzip:
+            ws_bytes = gzip.compress(ws_bytes, 5)
+
+        if need_encrypt:
+            pad_num = AES.block_size - (len(ws_bytes) % AES.block_size)
+            ws_bytes += pad_num.to_bytes(1, 'little') * pad_num
+            ws_bytes = self.ws_aes_chiper.encrypt(ws_bytes)
+
+        flag = 0x08 | (need_gzip << 7) | (need_encrypt << 6)
+        ws_bytes = b''.join(
+            [
+                flag.to_bytes(1, 'big'),
+                cmd.to_bytes(4, 'big'),
+                random.randbytes(4),
+                ws_bytes,
+            ]
+        )
+
+        return ws_bytes
+
+    def _unwrap_ws_bytes(self, ws_bytes: bytes) -> bytes:
+        """
+        对ws_bytes进行解封装
+
+        Args:
+            ws_bytes (bytes): 接收到的websocket数据
+
+        Returns:
+            bytes: 解封装后的websocket数据
+        """
+
+        flag = ws_bytes[0]
+        ws_bytes = ws_bytes[9:]
+
+        if flag & 0b10000000:
+            ws_bytes = self.ws_aes_chiper.decrypt(ws_bytes)
+            ws_bytes = ws_bytes.rstrip(ws_bytes[-2:-1])
+        if flag & 0b01000000:
+            ws_bytes = gzip.decompress(ws_bytes)
+
+        return ws_bytes
+
+    async def create_websocket(self) -> bool:
+        """
+        建立weboscket连接
+
+        Returns:
+            bool: 连接是否成功
+        """
+
+        if self._app_websocket is None:
+            await self.enter()
+
+        try:
+            self.websocket = await self._app_websocket._ws_connect("ws://im.tieba.baidu.com:8000")
+
+        except Exception as err:
+            LOG.warning(f"Failed to create websocket. reason:{err}")
+            return False
+
+        return True
 
 
 class Browser(object):
@@ -172,54 +355,53 @@ class Browser(object):
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.close()
 
-    @staticmethod
-    def _app_sign(payload: list[tuple[str, str]]) -> str:
+    async def get_websocket(self) -> aiohttp.ClientWebSocketResponse:
         """
-        计算form参数元组列表的贴吧客户端签名值sign
-
-        Args:
-            payload (list[tuple[str, str]]): form参数元组列表
+        获取weboscket连接对象并发送初始化信息
 
         Returns:
-            str: 贴吧客户端签名值sign
+            aiohttp.ClientWebSocketResponse: websocket连接对象
         """
 
-        raw_list = [f"{key}={value}" for key, value in payload]
-        raw_list.append("tiebaclient!!!")
-        raw_str = "".join(raw_list)
-
-        md5 = hashlib.md5()
-        md5.update(raw_str.encode('utf-8'))
-        sign = md5.hexdigest()
-
-        return sign
-
-    @staticmethod
-    def _get_tieba_multipart_writer(proto_bytes: bytes) -> aiohttp.MultipartWriter:
-        """
-        将proto_bytes封装为贴吧客户端专用的aiohttp.MultipartWriter
-
-        Args:
-            proto_bytes (bytes): protobuf序列化后的二进制数据
-
-        Returns:
-            aiohttp.MultipartWriter: 只可用于贴吧客户端
-        """
-
-        writer = aiohttp.MultipartWriter('form-data', boundary="*-6723-28094-46917")
-        payload_headers = {
-            aiohttp.hdrs.CONTENT_DISPOSITION: aiohttp.helpers.content_disposition_header(
-                'form-data', name='data', filename='file'
+        pub_key_bytes = base64.b64decode(
+            "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwQpwBZxXJV/JVRF/uNfyMSdu7YWwRNLM8+2xbniGp2iIQHOikPpTYQjlQgMi1uvq1kZpJ32rHo3hkwjy2l0lFwr3u4Hk2Wk7vnsqYQjAlYlK0TCzjpmiI+OiPOUNVtbWHQiLiVqFtzvpvi4AU7C1iKGvc/4IS45WjHxeScHhnZZ7njS4S1UgNP/GflRIbzgbBhyZ9kEW5/OO5YfG1fy6r4KSlDJw4o/mw5XhftyIpL+5ZBVBC6E1EIiP/dd9AbK62VV1PByfPMHMixpxI3GM2qwcmFsXcCcgvUXJBa9k6zP8dDQ3csCM2QNT+CQAOxthjtp/TFWaD7MzOdsIYb3THwIDAQAB".encode(
+                'ascii'
             )
-        }
-        payload = aiohttp.BytesPayload(proto_bytes, content_type='', headers=payload_headers)
-        writer.append_payload(payload)
+        )
+        pub_key = RSA.import_key(pub_key_bytes)
+        rsa_chiper = PKCS1_v1_5.new(pub_key)
 
-        # 删除无用参数
-        writer._parts[0][0]._headers.popone(aiohttp.hdrs.CONTENT_TYPE)
-        writer._parts[0][0]._headers.popone(aiohttp.hdrs.CONTENT_LENGTH)
+        data = UpdateClientInfoReqIdl_pb2.UpdateClientInfoReqIdl.DataReq()
+        data.bduss = self.sessions.BDUSS
+        data.device = """{"subapp_type":"mini","_client_version":"9.1.0.0","pversion":"1.0.3","_phone_imei":"000000000000000","from":"1021099l","cuid_galaxy2":"132D741FDA2C7D06A1BF9D63F213B453|0","model":"LIO-AN00","_client_type":"2"}"""
+        data.secretKey = rsa_chiper.encrypt(self.sessions.ws_password)
+        update_cfg_req = UpdateClientInfoReqIdl_pb2.UpdateClientInfoReqIdl()
+        update_cfg_req.data.CopyFrom(data)
+        update_cfg_req.cuid = 'baidutiebaapp4b825a46-779d-4004-a264-006433001684|com.baidu.tieba_mini9.1.0.0'
 
-        return writer
+        websocket = self.sessions.websocket
+
+        try:
+            if websocket is None or websocket.closed:
+                await self.sessions.create_websocket()
+                websocket = self.sessions.websocket
+
+            await websocket.send_bytes(
+                self.sessions._wrap_ws_bytes(
+                    update_cfg_req.SerializeToString(), cmd=1001, need_gzip=False, need_encrypt=False
+                )
+            )
+
+            res_proto = UpdateClientInfoResIdl_pb2.UpdateClientInfoResIdl()
+            res_bytes = (await websocket.receive(timeout=5)).data
+            res_proto.ParseFromString(self.sessions._unwrap_ws_bytes(res_bytes))
+            if int(res_proto.error.errorno):
+                raise ValueError(res_proto.error.errmsg)
+
+        except Exception as err:
+            LOG.warning(f"Failed to create tieba-websocket. reason{err}")
+
+        return websocket
 
     async def get_tbs(self) -> str:
         """
@@ -234,34 +416,38 @@ class Browser(object):
 
         return self._tbs
 
-    async def get_fid(self, tieba_name: str) -> int:
+    async def get_fid(self, fname: str) -> int:
         """
         通过贴吧名获取forum_id
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
 
         Returns:
             int: 该贴吧的forum_id
         """
 
-        if fid := self.fid_dict.get(tieba_name, 0):
+        if fid := self.fid_dict.get(fname, 0):
             return fid
 
         try:
             res = await self.sessions.web.get(
-                "http://tieba.baidu.com/f/commit/share/fnameShareApi", params={'fname': tieba_name, 'ie': 'utf-8'}
+                "http://tieba.baidu.com/f/commit/share/fnameShareApi",
+                params={
+                    'fname': fname,
+                    'ie': 'utf-8',
+                },
             )
 
-            main_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(main_json['no']):
-                raise ValueError(main_json['error'])
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['no']):
+                raise ValueError(res_json['error'])
 
-            if fid := int(main_json['data']['fid']):
-                self.fid_dict[tieba_name] = fid
+            if fid := int(res_json['data']['fid']):
+                self.fid_dict[fname] = fid
 
         except Exception as err:
-            LOG.warning(f"Failed to get fid of {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to get fid of {fname}. reason:{err}")
             fid = 0
 
         return fid
@@ -316,14 +502,17 @@ class Browser(object):
         try:
             res = await self.sessions.web.get(
                 "https://tieba.baidu.com/home/get/panel",
-                params={'id': user.portrait, 'un': user.user_name or user.nick_name},
+                params={
+                    'id': user.portrait,
+                    'un': user.user_name or user.nick_name,
+                },
             )
 
-            main_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(main_json['no']):
-                raise ValueError(main_json['error'])
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['no']):
+                raise ValueError(res_json['error'])
 
-            user_dict: dict = main_json['data']
+            user_dict: dict = res_json['data']
             match user_dict['sex']:
                 case 'male':
                     gender = 1
@@ -359,14 +548,17 @@ class Browser(object):
         try:
             res = await self.sessions.web.get(
                 "https://tieba.baidu.com/home/get/panel",
-                params={'id': user.portrait, 'un': user.user_name or user.nick_name},
+                params={
+                    'id': user.portrait,
+                    'un': user.user_name or user.nick_name,
+                },
             )
 
-            main_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(main_json['no']):
-                raise ValueError(main_json['error'])
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['no']):
+                raise ValueError(res_json['error'])
 
-            user_dict = main_json['data']
+            user_dict = res_json['data']
             user.user_name = user_dict['name']
             user.nick_name = user_dict['show_nickname']
             user.portrait = user_dict['portrait']
@@ -389,17 +581,20 @@ class Browser(object):
             BasicUserInfo: 简略版用户信息 仅保证包含user_name/portrait/user_id
         """
 
-        params = {'un': user.user_name, 'ie': 'utf-8'}
+        params = {
+            'un': user.user_name,
+            'ie': 'utf-8',
+        }
 
         try:
             res = await self.sessions.web.get("http://tieba.baidu.com/i/sys/user_json", params=params)
 
             text = await res.text(encoding='utf-8', errors='ignore')
-            main_json = json.loads(text)
-            if not main_json:
+            res_json = json.loads(text)
+            if not res_json:
                 raise ValueError("empty response")
 
-            user_dict = main_json['creator']
+            user_dict = res_json['creator']
             user.user_id = user_dict['id']
             user.portrait = user_dict['portrait']
 
@@ -420,26 +615,25 @@ class Browser(object):
             UserInfo: 完整版用户信息
         """
 
-        common = CommonReq_pb2.CommonReq()
-        data = GetUserInfoReqIdl_pb2.GetUserInfoReqIdl.DataReq()
-        data.common.CopyFrom(common)
-        data.uid = user.user_id
-        userinfo_req = GetUserInfoReqIdl_pb2.GetUserInfoReqIdl()
-        userinfo_req.data.CopyFrom(data)
-
-        multipart_writer = self._get_tieba_multipart_writer(userinfo_req.SerializeToString())
+        common_proto = CommonReq_pb2.CommonReq()
+        data_proto = GetUserInfoReqIdl_pb2.GetUserInfoReqIdl.DataReq()
+        data_proto.common.CopyFrom(common_proto)
+        data_proto.uid = user.user_id
+        req_proto = GetUserInfoReqIdl_pb2.GetUserInfoReqIdl()
+        req_proto.data.CopyFrom(data_proto)
 
         try:
             res = await self.sessions.app_proto.post(
-                "http://c.tieba.baidu.com/c/u/user/getuserinfo", params={'cmd': 303024}, data=multipart_writer
+                "http://c.tieba.baidu.com/c/u/user/getuserinfo?cmd=303024",
+                data=self.sessions._wrap_proto_bytes(req_proto.SerializeToString()),
             )
 
-            main_proto = GetUserInfoResIdl_pb2.GetUserInfoResIdl()
-            main_proto.ParseFromString(await res.content.read())
-            if int(main_proto.error.errorno):
-                raise ValueError(main_proto.error.errmsg)
+            res_proto = GetUserInfoResIdl_pb2.GetUserInfoResIdl()
+            res_proto.ParseFromString(await res.content.read())
+            if int(res_proto.error.errorno):
+                raise ValueError(res_proto.error.errmsg)
 
-            user_proto = main_proto.data.user
+            user_proto = res_proto.data.user
             user = UserInfo(user_proto=user_proto)
 
         except Exception as err:
@@ -464,11 +658,11 @@ class Browser(object):
                 "http://tieba.baidu.com/im/pcmsg/query/getUserInfo", params={'chatUid': user.user_id}
             )
 
-            main_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(main_json['errno']):
-                raise ValueError(main_json['errmsg'])
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['errno']):
+                raise ValueError(res_json['errmsg'])
 
-            user_dict = main_json['chatUser']
+            user_dict = res_json['chatUser']
             user.user_name = user_dict['uname']
             user.portrait = user_dict['portrait']
 
@@ -489,26 +683,25 @@ class Browser(object):
             UserInfo: 完整版用户信息
         """
 
-        common = CommonReq_pb2.CommonReq()
-        data = GetUserByTiebaUidReqIdl_pb2.GetUserByTiebaUidReqIdl.DataReq()
-        data.common.CopyFrom(common)
-        data.tieba_uid = str(tieba_uid)
-        userinfo_req = GetUserByTiebaUidReqIdl_pb2.GetUserByTiebaUidReqIdl()
-        userinfo_req.data.CopyFrom(data)
-
-        multipart_writer = self._get_tieba_multipart_writer(userinfo_req.SerializeToString())
+        common_proto = CommonReq_pb2.CommonReq()
+        data_proto = GetUserByTiebaUidReqIdl_pb2.GetUserByTiebaUidReqIdl.DataReq()
+        data_proto.common.CopyFrom(common_proto)
+        data_proto.tieba_uid = str(tieba_uid)
+        req_proto = GetUserByTiebaUidReqIdl_pb2.GetUserByTiebaUidReqIdl()
+        req_proto.data.CopyFrom(data_proto)
 
         try:
             res = await self.sessions.app_proto.post(
-                "http://c.tieba.baidu.com/c/u/user/getUserByTiebaUid", params={'cmd': 309702}, data=multipart_writer
+                "http://c.tieba.baidu.com/c/u/user/getUserByTiebaUid?cmd=309702",
+                data=self.sessions._wrap_proto_bytes(req_proto.SerializeToString()),
             )
 
-            main_proto = GetUserByTiebaUidResIdl_pb2.GetUserByTiebaUidResIdl()
-            main_proto.ParseFromString(await res.content.read())
-            if int(main_proto.error.errorno):
-                raise ValueError(main_proto.error.errmsg)
+            res_proto = GetUserByTiebaUidResIdl_pb2.GetUserByTiebaUidResIdl()
+            res_proto.ParseFromString(await res.content.read())
+            if int(res_proto.error.errorno):
+                raise ValueError(res_proto.error.errmsg)
 
-            user_proto = main_proto.data.user
+            user_proto = res_proto.data.user
             user = UserInfo(user_proto=user_proto)
 
         except Exception as err:
@@ -517,12 +710,12 @@ class Browser(object):
 
         return user
 
-    async def get_threads(self, tieba_name: str, pn: int = 1, sort: int = 5, is_good: bool = False) -> Threads:
+    async def get_threads(self, fname: str, pn: int = 1, sort: int = 5, is_good: bool = False) -> Threads:
         """
         获取首页帖子
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
             pn (int, optional): 页码. Defaults to 1.
             sort (int, optional): 排序方式 对于有热门分区的贴吧0是热门排序1是按发布时间2报错34都是热门排序>=5是按回复时间 \
                 对于无热门分区的贴吧0是按回复时间1是按发布时间2报错>=3是按回复时间. Defaults to 5.
@@ -532,35 +725,34 @@ class Browser(object):
             Threads: 帖子列表
         """
 
-        common = CommonReq_pb2.CommonReq()
-        common._client_version = '12.12.1.0'
-        data = FrsPageReqIdl_pb2.FrsPageReqIdl.DataReq()
-        data.common.CopyFrom(common)
-        data.kw = tieba_name
-        data.pn = pn
-        data.rn = 30
-        data.is_good = is_good
-        data.q_type = 2
-        data.sort_type = sort
-        frspage_req = FrsPageReqIdl_pb2.FrsPageReqIdl()
-        frspage_req.data.CopyFrom(data)
-
-        multipart_writer = self._get_tieba_multipart_writer(frspage_req.SerializeToString())
+        common_proto = CommonReq_pb2.CommonReq()
+        common_proto._client_version = '12.12.1.0'
+        data_proto = FrsPageReqIdl_pb2.FrsPageReqIdl.DataReq()
+        data_proto.common.CopyFrom(common_proto)
+        data_proto.kw = fname
+        data_proto.pn = pn
+        data_proto.rn = 30
+        data_proto.is_good = is_good
+        data_proto.q_type = 2
+        data_proto.sort_type = sort
+        req_proto = FrsPageReqIdl_pb2.FrsPageReqIdl()
+        req_proto.data.CopyFrom(data_proto)
 
         try:
             res = await self.sessions.app_proto.post(
-                "http://c.tieba.baidu.com/c/f/frs/page", params={'cmd': 301001}, data=multipart_writer
+                "http://c.tieba.baidu.com/c/f/frs/page?cmd=301001",
+                data=self.sessions._wrap_proto_bytes(req_proto.SerializeToString()),
             )
 
-            main_proto = FrsPageResIdl_pb2.FrsPageResIdl()
-            main_proto.ParseFromString(await res.content.read())
-            if int(main_proto.error.errorno):
-                raise ValueError(main_proto.error.errmsg)
+            res_proto = FrsPageResIdl_pb2.FrsPageResIdl()
+            res_proto.ParseFromString(await res.content.read())
+            if int(res_proto.error.errorno):
+                raise ValueError(res_proto.error.errmsg)
 
-            threads = Threads(main_proto)
+            threads = Threads(res_proto)
 
         except Exception as err:
-            LOG.warning(f"Failed to get threads of {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to get threads of {fname}. reason:{err}")
             threads = Threads()
 
         return threads
@@ -595,37 +787,36 @@ class Browser(object):
             Posts: 回复列表
         """
 
-        common = CommonReq_pb2.CommonReq()
-        common._client_version = '12.12.1.0'
-        data = PbPageReqIdl_pb2.PbPageReqIdl.DataReq()
-        data.common.CopyFrom(common)
-        data.kz = tid
-        data.pn = pn
-        data.rn = rn if rn > 1 else 2
-        data.q_type = 2
-        data.r = sort
-        data.lz = only_thread_author
-        data.is_fold_comment_req = is_fold
+        common_proto = CommonReq_pb2.CommonReq()
+        common_proto._client_version = '12.12.1.0'
+        data_proto = PbPageReqIdl_pb2.PbPageReqIdl.DataReq()
+        data_proto.common.CopyFrom(common_proto)
+        data_proto.kz = tid
+        data_proto.pn = pn
+        data_proto.rn = rn if rn > 1 else 2
+        data_proto.q_type = 2
+        data_proto.r = sort
+        data_proto.lz = only_thread_author
+        data_proto.is_fold_comment_req = is_fold
         if with_comments:
-            data.with_floor = with_comments
-            data.floor_sort_type = comment_sort_by_agree
-            data.floor_rn = comment_rn
-        pbpage_req = PbPageReqIdl_pb2.PbPageReqIdl()
-        pbpage_req.data.CopyFrom(data)
-
-        multipart_writer = self._get_tieba_multipart_writer(pbpage_req.SerializeToString())
+            data_proto.with_floor = with_comments
+            data_proto.floor_sort_type = comment_sort_by_agree
+            data_proto.floor_rn = comment_rn
+        req_proto = PbPageReqIdl_pb2.PbPageReqIdl()
+        req_proto.data.CopyFrom(data_proto)
 
         try:
             res = await self.sessions.app_proto.post(
-                "http://c.tieba.baidu.com/c/f/pb/page", params={'cmd': 302001}, data=multipart_writer
+                "http://c.tieba.baidu.com/c/f/pb/page?cmd=302001",
+                data=self.sessions._wrap_proto_bytes(req_proto.SerializeToString()),
             )
 
-            main_proto = PbPageResIdl_pb2.PbPageResIdl()
-            main_proto.ParseFromString(await res.content.read())
-            if int(main_proto.error.errorno):
-                raise ValueError(main_proto.error.errmsg)
+            res_proto = PbPageResIdl_pb2.PbPageResIdl()
+            res_proto.ParseFromString(await res.content.read())
+            if int(res_proto.error.errorno):
+                raise ValueError(res_proto.error.errmsg)
 
-            posts = Posts(main_proto)
+            posts = Posts(res_proto)
 
         except Exception as err:
             LOG.warning(f"Failed to get posts of {tid}. reason:{err}")
@@ -647,32 +838,31 @@ class Browser(object):
             Comments: 楼中楼列表
         """
 
-        common = CommonReq_pb2.CommonReq()
-        common._client_version = '12.12.1.0'
-        data = PbFloorReqIdl_pb2.PbFloorReqIdl.DataReq()
-        data.common.CopyFrom(common)
-        data.kz = tid
+        common_proto = CommonReq_pb2.CommonReq()
+        common_proto._client_version = '12.12.1.0'
+        data_proto = PbFloorReqIdl_pb2.PbFloorReqIdl.DataReq()
+        data_proto.common.CopyFrom(common_proto)
+        data_proto.kz = tid
         if is_floor:
-            data.spid = pid
+            data_proto.spid = pid
         else:
-            data.pid = pid
-        data.pn = pn
-        pbfloor_req = PbFloorReqIdl_pb2.PbFloorReqIdl()
-        pbfloor_req.data.CopyFrom(data)
-
-        multipart_writer = self._get_tieba_multipart_writer(pbfloor_req.SerializeToString())
+            data_proto.pid = pid
+        data_proto.pn = pn
+        req_proto = PbFloorReqIdl_pb2.PbFloorReqIdl()
+        req_proto.data.CopyFrom(data_proto)
 
         try:
             res = await self.sessions.app_proto.post(
-                "http://c.tieba.baidu.com/c/f/pb/floor", params={'cmd': 302002}, data=multipart_writer
+                "http://c.tieba.baidu.com/c/f/pb/floor?cmd=302002",
+                data=self.sessions._wrap_proto_bytes(req_proto.SerializeToString()),
             )
 
-            main_proto = PbFloorResIdl_pb2.PbFloorResIdl()
-            main_proto.ParseFromString(await res.content.read())
-            if int(main_proto.error.errorno):
-                raise ValueError(main_proto.error.errmsg)
+            res_proto = PbFloorResIdl_pb2.PbFloorResIdl()
+            res_proto.ParseFromString(await res.content.read())
+            if int(res_proto.error.errorno):
+                raise ValueError(res_proto.error.errmsg)
 
-            comments = Comments(main_proto)
+            comments = Comments(res_proto)
 
         except Exception as err:
             LOG.warning(f"Failed to get comments of {pid} in {tid}. reason:{err}")
@@ -680,12 +870,12 @@ class Browser(object):
 
         return comments
 
-    async def block(self, tieba_name: str, user: BasicUserInfo, day: int, reason: str = '') -> bool:
+    async def block(self, fname: str, user: BasicUserInfo, day: int, reason: str = '') -> bool:
         """
         封禁用户 支持小吧主/语音小编封3/10天
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
             user (BasicUserInfo): 待封禁用户信息
             day (int): 封禁天数
             reason (str, optional): 封禁理由. Defaults to ''.
@@ -697,101 +887,102 @@ class Browser(object):
         payload = [
             ('BDUSS', self.sessions.BDUSS),
             ('day', day),
-            ('fid', await self.get_fid(tieba_name)),
+            ('fid', await self.get_fid(fname)),
             ('nick_name', user.show_name),
             ('ntn', 'banid'),
             ('portrait', user.portrait),
             ('reason', reason),
             ('tbs', await self.get_tbs()),
             ('un', user.user_name),
-            ('word', tieba_name),
+            ('word', fname),
             ('z', 672328094),
         ]
-        payload.append(('sign', self._app_sign(payload)))
 
         try:
-            res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/bawu/commitprison", data=payload)
+            res = await self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/c/bawu/commitprison", data=self.sessions._wrap_form(payload)
+            )
 
-            main_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to block {user.log_name} in {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to block {user.log_name} in {fname}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully blocked {user.log_name} in {tieba_name} for {day} days")
+        LOG.info(f"Successfully blocked {user.log_name} in {fname} for {day} days")
         return True
 
-    async def unblock(self, tieba_name: str, user: BasicUserInfo) -> bool:
+    async def unblock(self, fname: str, user: BasicUserInfo) -> bool:
         """
         解封用户
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
             user (BasicUserInfo): 基本用户信息
 
         Returns:
             bool: 操作是否成功
         """
 
-        payload = {
-            'fn': tieba_name,
-            'fid': await self.get_fid(tieba_name),
-            'block_un': user.user_name,
-            'block_uid': user.user_id,
-            'block_nickname': user.nick_name,
-            'tbs': await self.get_tbs(),
-        }
+        payload = [
+            ('fn', fname),
+            ('fid', await self.get_fid(fname)),
+            ('block_un', user.user_name),
+            ('block_uid', user.user_id),
+            ('block_nickname', user.nick_name),
+            ('tbs', await self.get_tbs()),
+        ]
 
         try:
             res = await self.sessions.web.post("https://tieba.baidu.com/mo/q/bawublockclear", data=payload)
 
-            main_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(main_json['no']):
-                raise ValueError(main_json['error'])
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['no']):
+                raise ValueError(res_json['error'])
 
         except Exception as err:
-            LOG.warning(f"Failed to unblock {user.log_name} in {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to unblock {user.log_name} in {fname}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully unblocked {user.log_name} in {tieba_name}")
+        LOG.info(f"Successfully unblocked {user.log_name} in {fname}")
         return True
 
-    async def hide_thread(self, tieba_name: str, tid: int) -> bool:
+    async def hide_thread(self, fname: str, tid: int) -> bool:
         """
         屏蔽主题帖
 
         Args:
-            tieba_name (str): 帖子所在的贴吧名
+            fname (str): 帖子所在的贴吧名
             tid (int): 待屏蔽的主题帖tid
 
         Returns:
             bool: 操作是否成功
         """
 
-        return await self._del_thread(tieba_name, tid, is_hide=True)
+        return await self._del_thread(fname, tid, is_hide=True)
 
-    async def del_thread(self, tieba_name: str, tid: int) -> bool:
+    async def del_thread(self, fname: str, tid: int) -> bool:
         """
         删除主题帖
 
         Args:
-            tieba_name (str): 帖子所在的贴吧名
+            fname (str): 帖子所在的贴吧名
             tid (int): 待删除的主题帖tid
 
         Returns:
             bool: 操作是否成功
         """
 
-        return await self._del_thread(tieba_name, tid, is_hide=False)
+        return await self._del_thread(fname, tid, is_hide=False)
 
-    async def _del_thread(self, tieba_name: str, tid: int, is_hide: bool = False) -> bool:
+    async def _del_thread(self, fname: str, tid: int, is_hide: bool = False) -> bool:
         """
         删除/屏蔽主题帖
 
         Args:
-            tieba_name (str): 帖子所在的贴吧名
+            fname (str): 帖子所在的贴吧名
             tid (int): 待删除/屏蔽的主题帖tid
             is_hide (bool, optional): True则屏蔽帖 False则删除帖. Defaults to False.
 
@@ -801,33 +992,34 @@ class Browser(object):
 
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('fid', await self.get_fid(tieba_name)),
+            ('fid', await self.get_fid(fname)),
             ('is_frs_mask', int(is_hide)),
             ('tbs', await self.get_tbs()),
             ('z', tid),
         ]
-        payload.append(('sign', self._app_sign(payload)))
 
         try:
-            res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/bawu/delthread", data=payload)
+            res = await self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/c/bawu/delthread", data=self.sessions._wrap_form(payload)
+            )
 
-            main_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to delete thread tid:{tid} is_hide:{is_hide} in {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to delete thread tid:{tid} is_hide:{is_hide} in {fname}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully deleted thread tid:{tid} is_hide:{is_hide} in {tieba_name}")
+        LOG.info(f"Successfully deleted thread tid:{tid} is_hide:{is_hide} in {fname}")
         return True
 
-    async def del_post(self, tieba_name: str, tid: int, pid: int) -> bool:
+    async def del_post(self, fname: str, tid: int, pid: int) -> bool:
         """
         删除回复
 
         Args:
-            tieba_name (str): 帖子所在的贴吧名
+            fname (str): 帖子所在的贴吧名
             tid (int): 回复所在的主题帖tid
             pid (int): 待删除的回复pid
 
@@ -837,75 +1029,76 @@ class Browser(object):
 
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('fid', await self.get_fid(tieba_name)),
+            ('fid', await self.get_fid(fname)),
             ('pid', pid),
             ('tbs', await self.get_tbs()),
             ('z', tid),
         ]
-        payload.append(('sign', self._app_sign(payload)))
 
         try:
-            res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/bawu/delpost", data=payload)
+            res = await self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/c/bawu/delpost", data=self.sessions._wrap_form(payload)
+            )
 
-            main_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to delete post {pid} in {tid} in {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to delete post {pid} in {tid} in {fname}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully deleted post {pid} in {tid} in {tieba_name}")
+        LOG.info(f"Successfully deleted post {pid} in {tid} in {fname}")
         return True
 
-    async def unhide_thread(self, tieba_name, tid: int) -> bool:
+    async def unhide_thread(self, fname, tid: int) -> bool:
         """
         解除主题帖屏蔽
 
         Args:
-            tieba_name (str): 帖子所在的贴吧名
+            fname (str): 帖子所在的贴吧名
             tid (int, optional): 待解除屏蔽的主题帖tid
 
         Returns:
             bool: 操作是否成功
         """
 
-        return await self._recover(tieba_name, tid=tid, is_hide=True)
+        return await self._recover(fname, tid=tid, is_hide=True)
 
-    async def recover_thread(self, tieba_name, tid: int) -> bool:
+    async def recover_thread(self, fname, tid: int) -> bool:
         """
         恢复主题帖
 
         Args:
-            tieba_name (str): 帖子所在的贴吧名
+            fname (str): 帖子所在的贴吧名
             tid (int, optional): 待恢复的主题帖tid
 
         Returns:
             bool: 操作是否成功
         """
 
-        return await self._recover(tieba_name, tid=tid, is_hide=False)
+        return await self._recover(fname, tid=tid, is_hide=False)
 
-    async def recover_post(self, tieba_name, pid: int) -> bool:
+    async def recover_post(self, fname, pid: int) -> bool:
         """
         恢复主题帖
 
         Args:
-            tieba_name (str): 帖子所在的贴吧名
+            fname (str): 帖子所在的贴吧名
             pid (int, optional): 待恢复的回复pid
 
         Returns:
             bool: 操作是否成功
         """
 
-        return await self._recover(tieba_name, pid=pid, is_hide=False)
+        return await self._recover(fname, pid=pid, is_hide=False)
 
-    async def _recover(self, tieba_name, tid: int = 0, pid: int = 0, is_hide: bool = False) -> bool:
+    async def _recover(self, fname, tid: int = 0, pid: int = 0, is_hide: bool = False) -> bool:
         """
         恢复帖子
 
         Args:
-            tieba_name (str): 帖子所在的贴吧名
+            fname (str): 帖子所在的贴吧名
             tid (int, optional): 待恢复的主题帖tid. Defaults to 0.
             pid (int, optional): 待恢复的回复pid. Defaults to 0.
             is_hide (bool, optional): True则取消屏蔽主题帖 False则恢复删帖. Defaults to False.
@@ -914,35 +1107,35 @@ class Browser(object):
             bool: 操作是否成功
         """
 
-        payload = {
-            'fn': tieba_name,
-            'fid': await self.get_fid(tieba_name),
-            'tid_list[]': tid,
-            'pid_list[]': pid,
-            'type_list[]': 1 if pid else 0,
-            'is_frs_mask_list[]': int(is_hide),
-        }
+        payload = [
+            ('fn', fname),
+            ('fid', await self.get_fid(fname)),
+            ('tid_list[]', tid),
+            ('pid_list[]', pid),
+            ('type_list[]', 1 if pid else 0),
+            ('is_frs_mask_list[]', int(is_hide)),
+        ]
 
         try:
             res = await self.sessions.web.post("https://tieba.baidu.com/mo/q/bawurecoverthread", data=payload)
 
-            main_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(main_json['no']):
-                raise ValueError(main_json['error'])
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['no']):
+                raise ValueError(res_json['error'])
 
         except Exception as err:
-            LOG.warning(f"Failed to recover tid:{tid} pid:{pid} hide:{is_hide} in {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to recover tid:{tid} pid:{pid} hide:{is_hide} in {fname}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully recovered tid:{tid} pid:{pid} hide:{is_hide} in {tieba_name}")
+        LOG.info(f"Successfully recovered tid:{tid} pid:{pid} hide:{is_hide} in {fname}")
         return True
 
-    async def move(self, tieba_name: str, tid: int, to_tab_id: int, from_tab_id: int = 0) -> bool:
+    async def move(self, fname: str, tid: int, to_tab_id: int, from_tab_id: int = 0) -> bool:
         """
         将主题帖移动至另一分区
 
         Args:
-            tieba_name (str): 帖子所在贴吧名
+            fname (str): 帖子所在贴吧名
             tid (int): 待移动的主题帖tid
             to_tab_id (int): 目标分区id
             from_tab_id (int, optional): 来源分区id 默认为0即无分区. Defaults to 0.
@@ -954,35 +1147,36 @@ class Browser(object):
         payload = [
             ('BDUSS', self.sessions.BDUSS),
             ('_client_version', '12.12.1.0'),
-            ('forum_id', await self.get_fid(tieba_name)),
+            ('forum_id', await self.get_fid(fname)),
             ('tbs', await self.get_tbs()),
             (
                 'threads',
                 str([{'thread_id', tid, 'from_tab_id', from_tab_id, 'to_tab_id', to_tab_id}]).replace('\'', '"'),
             ),
         ]
-        payload.append(('sign', self._app_sign(payload)))
 
         try:
-            res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/bawu/moveTabThread", data=payload)
+            res = await self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/c/bawu/moveTabThread", data=self.sessions._wrap_form(payload)
+            )
 
-            main_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to move {tid} to tab:{to_tab_id} in {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to move {tid} to tab:{to_tab_id} in {fname}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully moved {tid} to tab:{to_tab_id} in {tieba_name}")
+        LOG.info(f"Successfully moved {tid} to tab:{to_tab_id} in {fname}")
         return True
 
-    async def recommend(self, tieba_name: str, tid: int) -> bool:
+    async def recommend(self, fname: str, tid: int) -> bool:
         """
         大吧主首页推荐
 
         Args:
-            tieba_name (str): 帖子所在贴吧名
+            fname (str): 帖子所在贴吧名
             tid (int): 待推荐的主题帖tid
 
         Returns:
@@ -991,35 +1185,34 @@ class Browser(object):
 
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('forum_id', await self.get_fid(tieba_name)),
+            ('forum_id', await self.get_fid(fname)),
             ('thread_id', tid),
         ]
-        payload.append(('sign', self._app_sign(payload)))
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/bawu/pushRecomToPersonalized", data=payload
+                "http://c.tieba.baidu.com/c/c/bawu/pushRecomToPersonalized", data=self.sessions._wrap_form(payload)
             )
 
-            main_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
-            if int(main_json['data']['is_push_success']) != 1:
-                raise ValueError(main_json['data']['msg'])
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
+            if int(res_json['data']['is_push_success']) != 1:
+                raise ValueError(res_json['data']['msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to recommend {tid} in {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to recommend {tid} in {fname}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully recommended {tid} in {tieba_name}")
+        LOG.info(f"Successfully recommended {tid} in {fname}")
         return True
 
-    async def good(self, tieba_name: str, tid: int, cname: str = '') -> bool:
+    async def good(self, fname: str, tid: int, cname: str = '') -> bool:
         """
         加精主题帖
 
         Args:
-            tieba_name (str): 帖子所在贴吧名
+            fname (str): 帖子所在贴吧名
             tid (int): 待加精的主题帖tid
             cname (str, optional): 待添加的精华分区名称 默认为''即不分区. Defaults to ''.
 
@@ -1032,7 +1225,7 @@ class Browser(object):
             由加精分区名cname获取cid
 
             Closure Args:
-                tieba_name (str): 帖子所在贴吧名
+                fname (str): 帖子所在贴吧名
                 cname (str, optional): 待添加的精华分区名称 默认为''即不分区. Defaults to ''.
 
             Returns:
@@ -1041,25 +1234,26 @@ class Browser(object):
 
             payload = [
                 ('BDUSS', self.sessions.BDUSS),
-                ('word', tieba_name),
+                ('word', fname),
             ]
-            payload.append(('sign', self._app_sign(payload)))
 
             try:
-                res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/bawu/goodlist", data=payload)
+                res = await self.sessions.app.post(
+                    "http://c.tieba.baidu.com/c/c/bawu/goodlist", data=self.sessions._wrap_form(payload)
+                )
 
-                main_json: dict = await res.json(encoding='utf-8', content_type=None)
-                if int(main_json['error_code']):
-                    raise ValueError(main_json['error_msg'])
+                res_json: dict = await res.json(encoding='utf-8', content_type=None)
+                if int(res_json['error_code']):
+                    raise ValueError(res_json['error_msg'])
 
                 cid = 0
-                for item in main_json['cates']:
+                for item in res_json['cates']:
                     if cname == item['class_name']:
                         cid = int(item['class_id'])
                         break
 
             except Exception as err:
-                LOG.warning(f"Failed to get cid of {cname} in {tieba_name}. reason:{err}")
+                LOG.warning(f"Failed to get cid of {cname} in {fname}. reason:{err}")
                 return 0
 
             return cid
@@ -1072,7 +1266,7 @@ class Browser(object):
                 cid (int, optional): 将主题帖加到cid对应的精华分区 cid默认为0即不分区. Defaults to 0.
 
             Closure Args:
-                tieba_name (str): 帖子所在贴吧名
+                fname (str): 帖子所在贴吧名
 
             Returns:
                 bool: 操作是否成功
@@ -1081,36 +1275,37 @@ class Browser(object):
             payload = [
                 ('BDUSS', self.sessions.BDUSS),
                 ('cid', cid),
-                ('fid', await self.get_fid(tieba_name)),
+                ('fid', await self.get_fid(fname)),
                 ('ntn', 'set'),
                 ('tbs', await self.get_tbs()),
-                ('word', tieba_name),
+                ('word', fname),
                 ('z', tid),
             ]
-            payload.append(('sign', self._app_sign(payload)))
 
             try:
-                res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/bawu/commitgood", data=payload)
+                res = await self.sessions.app.post(
+                    "http://c.tieba.baidu.com/c/c/bawu/commitgood", data=self.sessions._wrap_form(payload)
+                )
 
-                main_json: dict = await res.json(encoding='utf-8', content_type=None)
-                if int(main_json['error_code']):
-                    raise ValueError(main_json['error_msg'])
+                res_json: dict = await res.json(encoding='utf-8', content_type=None)
+                if int(res_json['error_code']):
+                    raise ValueError(res_json['error_msg'])
 
             except Exception as err:
-                LOG.warning(f"Failed to add {tid} to good_list:{cname} in {tieba_name}. reason:{err}")
+                LOG.warning(f"Failed to add {tid} to good_list:{cname} in {fname}. reason:{err}")
                 return False
 
-            LOG.info(f"Successfully added {tid} to good_list:{cname} in {tieba_name}")
+            LOG.info(f"Successfully added {tid} to good_list:{cname} in {fname}")
             return True
 
         return await _good(await _cname2cid())
 
-    async def ungood(self, tieba_name: str, tid: int) -> bool:
+    async def ungood(self, fname: str, tid: int) -> bool:
         """
         撤精主题帖
 
         Args:
-            tieba_name (str): 帖子所在贴吧名
+            fname (str): 帖子所在贴吧名
             tid (int): 待撤精的主题帖tid
 
         Returns:
@@ -1119,33 +1314,34 @@ class Browser(object):
 
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('fid', await self.get_fid(tieba_name)),
+            ('fid', await self.get_fid(fname)),
             ('tbs', await self.get_tbs()),
-            ('word', tieba_name),
+            ('word', fname),
             ('z', tid),
         ]
-        payload.append(('sign', self._app_sign(payload)))
 
         try:
-            res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/bawu/commitgood", data=payload)
+            res = await self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/c/bawu/commitgood", data=self.sessions._wrap_form(payload)
+            )
 
-            main_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to remove {tid} from good_list in {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to remove {tid} from good_list in {fname}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully removed {tid} from good_list in {tieba_name}")
+        LOG.info(f"Successfully removed {tid} from good_list in {fname}")
         return True
 
-    async def top(self, tieba_name: str, tid: int) -> bool:
+    async def top(self, fname: str, tid: int) -> bool:
         """
         置顶主题帖
 
         Args:
-            tieba_name (str): 帖子所在贴吧名
+            fname (str): 帖子所在贴吧名
             tid (int): 待置顶的主题帖tid
 
         Returns:
@@ -1154,34 +1350,35 @@ class Browser(object):
 
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('fid', await self.get_fid(tieba_name)),
+            ('fid', await self.get_fid(fname)),
             ('ntn', 'set'),
             ('tbs', await self.get_tbs()),
-            ('word', tieba_name),
+            ('word', fname),
             ('z', tid),
         ]
-        payload.append(('sign', self._app_sign(payload)))
 
         try:
-            res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/bawu/committop", data=payload)
+            res = await self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/c/bawu/committop", data=self.sessions._wrap_form(payload)
+            )
 
-            main_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to add {tid} to top_list in {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to add {tid} to top_list in {fname}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully added {tid} to top_list in {tieba_name}")
+        LOG.info(f"Successfully added {tid} to top_list in {fname}")
         return True
 
-    async def untop(self, tieba_name: str, tid: int) -> bool:
+    async def untop(self, fname: str, tid: int) -> bool:
         """
         撤销置顶主题帖
 
         Args:
-            tieba_name (str): 帖子所在贴吧名
+            fname (str): 帖子所在贴吧名
             tid (int): 待撤销置顶的主题帖tid
 
         Returns:
@@ -1190,35 +1387,36 @@ class Browser(object):
 
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('fid', await self.get_fid(tieba_name)),
+            ('fid', await self.get_fid(fname)),
             ('tbs', await self.get_tbs()),
-            ('word', tieba_name),
+            ('word', fname),
             ('z', tid),
         ]
-        payload.append(('sign', self._app_sign(payload)))
 
         try:
-            res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/bawu/committop", data=payload)
+            res = await self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/c/bawu/committop", data=self.sessions._wrap_form(payload)
+            )
 
-            main_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to remove {tid} from top_list in {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to remove {tid} from top_list in {fname}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully removed {tid} from top_list in {tieba_name}")
+        LOG.info(f"Successfully removed {tid} from top_list in {fname}")
         return True
 
     async def get_recover_list(
-        self, tieba_name: str, pn: int = 1, name: str = ''
+        self, fname: str, pn: int = 1, name: str = ''
     ) -> tuple[list[tuple[int, int, bool]], bool]:
         """
         获取pn页的待恢复帖子列表
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
             pn (int, optional): 页码. Defaults to 1.
             name (str, optional): 通过被删帖作者的用户名/昵称查询 默认为空即查询全部. Defaults to ''.
 
@@ -1226,21 +1424,27 @@ class Browser(object):
             tuple[list[tuple[int, int, bool]], bool]: list[tid,pid,是否为屏蔽], 是否还有下一页
         """
 
-        params = {'fn': tieba_name, 'fid': await self.get_fid(tieba_name), 'word': name, 'is_ajax': 1, 'pn': pn}
+        params = {
+            'fn': fname,
+            'fid': await self.get_fid(fname),
+            'word': name,
+            'is_ajax': 1,
+            'pn': pn,
+        }
 
         try:
             res = await self.sessions.web.get("https://tieba.baidu.com/mo/q/bawurecover", params=params)
 
-            main_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(main_json['no']):
-                raise ValueError(main_json['error'])
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['no']):
+                raise ValueError(res_json['error'])
 
-            data = main_json['data']
+            data = res_json['data']
             soup = BeautifulSoup(data['content'], 'lxml')
             items = soup.find_all('a', class_='recover_list_item_btn')
 
         except Exception as err:
-            LOG.warning(f"Failed to get recover_list of {tieba_name} pn:{pn}. reason:{err}")
+            LOG.warning(f"Failed to get recover_list of {fname} pn:{pn}. reason:{err}")
             res_list = []
             has_more = False
 
@@ -1258,12 +1462,12 @@ class Browser(object):
 
         return res_list, has_more
 
-    async def get_black_list(self, tieba_name: str, pn: int = 1) -> tuple[list[BasicUserInfo], bool]:
+    async def get_black_list(self, fname: str, pn: int = 1) -> tuple[list[BasicUserInfo], bool]:
         """
         获取pn页的黑名单
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
@@ -1272,14 +1476,18 @@ class Browser(object):
 
         try:
             res = await self.sessions.web.get(
-                "http://tieba.baidu.com/bawu2/platform/listBlackUser", params={'word': tieba_name, 'pn': pn}
+                "http://tieba.baidu.com/bawu2/platform/listBlackUser",
+                params={
+                    'word': fname,
+                    'pn': pn,
+                },
             )
 
             soup = BeautifulSoup(await res.text(), 'lxml')
             items = soup.find_all('td', class_='left_cell')
 
         except Exception as err:
-            LOG.warning(f"Failed to get black_list of {tieba_name} pn:{pn}. reason:{err}")
+            LOG.warning(f"Failed to get black_list of {fname} pn:{pn}. reason:{err}")
             res_list = []
             has_more = False
 
@@ -1298,133 +1506,138 @@ class Browser(object):
 
         return res_list, has_more
 
-    async def blacklist_add(self, tieba_name: str, user: BasicUserInfo) -> bool:
+    async def blacklist_add(self, fname: str, user: BasicUserInfo) -> bool:
         """
         添加贴吧黑名单
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
             user (BasicUserInfo): 基本用户信息
 
         Returns:
             bool: 操作是否成功
         """
 
-        payload = {'tbs': await self.get_tbs(), 'user_id': user.user_id, 'word': tieba_name, 'ie': 'utf-8'}
+        payload = [
+            ('tbs', await self.get_tbs()),
+            ('user_id', user.user_id),
+            ('word', fname),
+            ('ie', 'utf-8'),
+        ]
 
         try:
             res = await self.sessions.web.post("http://tieba.baidu.com/bawu2/platform/addBlack", data=payload)
 
-            main_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(main_json['errno']):
-                raise ValueError(main_json['errmsg'])
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['errno']):
+                raise ValueError(res_json['errmsg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to add {user.log_name} to black_list in {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to add {user.log_name} to black_list in {fname}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully added {user.log_name} to black_list in {tieba_name}")
+        LOG.info(f"Successfully added {user.log_name} to black_list in {fname}")
         return True
 
-    async def blacklist_del(self, tieba_name: str, user: BasicUserInfo) -> bool:
+    async def blacklist_del(self, fname: str, user: BasicUserInfo) -> bool:
         """
         移出贴吧黑名单
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
             user (BasicUserInfo): 基本用户信息
 
         Returns:
             bool: 操作是否成功
         """
 
-        payload = {'word': tieba_name, 'tbs': await self.get_tbs(), 'list[]': user.user_id, 'ie': 'utf-8'}
+        payload = [
+            ('word', fname),
+            ('tbs', await self.get_tbs()),
+            ('list[]', user.user_id),
+            ('ie', 'utf-8'),
+        ]
 
         try:
             res = await self.sessions.web.post("http://tieba.baidu.com/bawu2/platform/cancelBlack", data=payload)
 
-            main_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(main_json['errno']):
-                raise ValueError(main_json['errmsg'])
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['errno']):
+                raise ValueError(res_json['errmsg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to remove {user.log_name} from black_list in {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to remove {user.log_name} from black_list in {fname}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully removed {user.log_name} from black_list in {tieba_name}")
+        LOG.info(f"Successfully removed {user.log_name} from black_list in {fname}")
         return True
 
-    async def handle_unblock_appeal(self, tieba_name: str, appeal_id: int, refuse: bool = True) -> bool:
+    async def handle_unblock_appeal(self, fname: str, appeal_id: int, refuse: bool = True) -> bool:
         """
         拒绝或通过解封申诉
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
             appeal_id (int): 申诉请求的appeal_id
             refuse (bool, optional): True则拒绝申诉 False则接受申诉. Defaults to True.
 
         Closure Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
 
         Returns:
             bool: 操作是否成功
         """
 
-        payload = {
-            'fn': tieba_name,
-            'fid': await self.get_fid(tieba_name),
-            'status': 2 if refuse else 1,
-            'refuse_reason': 'Auto Refuse',
-            'appeal_id': appeal_id,
-        }
+        payload = [
+            ('fn', fname),
+            ('fid', await self.get_fid(fname)),
+            ('status', 2 if refuse else 1),
+            ('refuse_reason', 'auto refuse'),
+            ('appeal_id', appeal_id),
+        ]
 
         try:
             res = await self.sessions.web.post("https://tieba.baidu.com/mo/q/bawuappealhandle", data=payload)
 
-            main_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(main_json['no']):
-                raise ValueError(main_json['error'])
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['no']):
+                raise ValueError(res_json['error'])
 
         except Exception as err:
-            LOG.warning(f"Failed to handle {appeal_id} in {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to handle {appeal_id} in {fname}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully handled {appeal_id} in {tieba_name}. refuse:{refuse}")
+        LOG.info(f"Successfully handled {appeal_id} in {fname}. refuse:{refuse}")
         return True
 
-    async def get_unblock_appeal_list(self, tieba_name: str) -> list[int]:
+    async def get_unblock_appeal_list(self, fname: str) -> list[int]:
         """
-        获取申诉请求的appeal_id的列表
+        获取第1页的申诉请求列表
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
 
         Returns:
             list[int]: 申诉请求的appeal_id的列表
         """
 
-        params = {'fn': tieba_name, 'fid': await self.get_fid(tieba_name)}
+        params = {
+            'fn': fname,
+            'fid': await self.get_fid(fname),
+            'is_ajax': 1,
+            'pn': 1,
+        }
 
         try:
             res = await self.sessions.web.get("https://tieba.baidu.com/mo/q/bawuappeal", params=params)
 
-            soup = BeautifulSoup(await res.text(), 'lxml')
+            text = await res.text(encoding='utf-8')
 
-            items = soup.find_all('a', class_='appeal_list_item_btn')
+            res_list = [int(item.group(1)) for item in re.finditer('aid=(\d+)', text)]
 
         except Exception as err:
-            LOG.warning(f"Failed to get appeal_list of {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to get appeal_list of {fname}. reason:{err}")
             res_list = []
-
-        else:
-
-            def _parse_item(item):
-                search_str = 'aid='
-                start_idx = (href := item['href']).rindex(search_str) + len(search_str)
-                aid = int(href[start_idx:])
-                return aid
-
-            res_list = [_parse_item(item) for item in items]
 
         return res_list
 
@@ -1467,20 +1680,21 @@ class Browser(object):
             ('_client_version', '12.12.1.0'),
             ('bdusstoken', self.sessions.BDUSS),
         ]
-        payload.append(('sign', self._app_sign(payload)))
 
         try:
-            res = await self.sessions.app.post("http://c.tieba.baidu.com/c/s/login", data=payload)
+            res = await self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/s/login", data=self.sessions._wrap_form(payload)
+            )
 
-            main_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
 
-            user_dict = main_json['user']
+            user_dict = res_json['user']
             user_proto = ParseDict(user_dict, User_pb2.User(), ignore_unknown_fields=True)
             user = BasicUserInfo(user_proto=user_proto)
 
-            self._tbs = main_json['anti']['tbs']
+            self._tbs = res_json['anti']['tbs']
 
         except Exception as err:
             LOG.warning(f"Failed to get UserInfo of current account. reason:{err}")
@@ -1506,16 +1720,17 @@ class Browser(object):
         payload = [
             ('BDUSS', self.sessions.BDUSS),
         ]
-        payload.append(('sign', self._app_sign(payload)))
 
         try:
-            res = await self.sessions.app.post("http://c.tieba.baidu.com/c/s/msg", data=payload)
+            res = await self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/s/msg", data=self.sessions._wrap_form(payload)
+            )
 
-            main_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
 
-            msg = {key: bool(int(value)) for key, value in main_json['message'].items()}
+            msg = {key: bool(int(value)) for key, value in res_json['message'].items()}
 
         except Exception as err:
             LOG.warning(f"Failed to get new_msg reason:{err}")
@@ -1539,27 +1754,26 @@ class Browser(object):
             Replys: 回复列表
         """
 
-        common = CommonReq_pb2.CommonReq()
-        common.BDUSS = self.sessions.BDUSS
-        common._client_version = '12.12.1.0'
-        data = ReplyMeReqIdl_pb2.ReplyMeReqIdl.DataReq()
-        data.common.CopyFrom(common)
-        replyme_req = ReplyMeReqIdl_pb2.ReplyMeReqIdl()
-        replyme_req.data.CopyFrom(data)
-
-        multipart_writer = self._get_tieba_multipart_writer(replyme_req.SerializeToString())
+        common_proto = CommonReq_pb2.CommonReq()
+        common_proto.BDUSS = self.sessions.BDUSS
+        common_proto._client_version = '12.12.1.0'
+        data_proto = ReplyMeReqIdl_pb2.ReplyMeReqIdl.DataReq()
+        data_proto.common.CopyFrom(common_proto)
+        req_proto = ReplyMeReqIdl_pb2.ReplyMeReqIdl()
+        req_proto.data.CopyFrom(data_proto)
 
         try:
             res = await self.sessions.app_proto.post(
-                "http://c.tieba.baidu.com/c/u/feed/replyme", params={'cmd': 303007}, data=multipart_writer
+                "http://c.tieba.baidu.com/c/u/feed/replyme?cmd=303007",
+                data=self.sessions._wrap_proto_bytes(req_proto.SerializeToString()),
             )
 
-            main_proto = ReplyMeResIdl_pb2.ReplyMeResIdl()
-            main_proto.ParseFromString(await res.content.read())
-            if int(main_proto.error.errorno):
-                raise ValueError(main_proto.error.errmsg)
+            res_proto = ReplyMeResIdl_pb2.ReplyMeResIdl()
+            res_proto.ParseFromString(await res.content.read())
+            if int(res_proto.error.errorno):
+                raise ValueError(res_proto.error.errmsg)
 
-            replys = Replys(main_proto)
+            replys = Replys(res_proto)
 
         except Exception as err:
             LOG.warning(f"Failed to get replys reason:{err}")
@@ -1579,16 +1793,17 @@ class Browser(object):
             ('BDUSS', self.sessions.BDUSS),
             ('_client_version', '12.12.1.0'),
         ]
-        payload.append(('sign', self._app_sign(payload)))
 
         try:
-            res = await self.sessions.app.post("http://c.tieba.baidu.com/c/u/feed/atme", data=payload)
+            res = await self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/u/feed/atme", data=self.sessions._wrap_form(payload)
+            )
 
-            main_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
+            res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
 
-            ats = Ats(main_json)
+            ats = Ats(res_json)
 
         except Exception as err:
             LOG.warning(f"Failed to get ats reason:{err}")
@@ -1619,22 +1834,23 @@ class Browser(object):
             ('need_post_count', 1),  # 删除该字段会导致无法获取发帖回帖数量
             # ('uid', user_id),  # 用该字段检查共同关注的吧
         ]
-        payload.append(('sign', self._app_sign(payload)))
 
         try:
-            res = await self.sessions.app.post("http://c.tieba.baidu.com/c/u/user/profile", data=payload)
+            res = await self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/u/user/profile", data=self.sessions._wrap_form(payload)
+            )
 
-            main_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
-            if not main_json.__contains__('user'):
+            res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
+            if not res_json.__contains__('user'):
                 raise ValueError("invalid params")
 
         except Exception as err:
             LOG.warning(f"Failed to get profile of {user.portrait}. reason:{err}")
             return UserInfo(), []
 
-        user = UserInfo(user_proto=ParseDict(main_json['user'], User_pb2.User(), ignore_unknown_fields=True))
+        user = UserInfo(user_proto=ParseDict(res_json['user'], User_pb2.User(), ignore_unknown_fields=True))
 
         def _parse_thread_dict(thread_dict: dict) -> Thread:
             thread_dict['fid'] = thread_dict.pop('forum_id', 0)
@@ -1643,18 +1859,18 @@ class Browser(object):
             thread.user = user
             return thread
 
-        threads = [_parse_thread_dict(thread_dict) for thread_dict in main_json['post_list']]
+        threads = [_parse_thread_dict(thread_dict) for thread_dict in res_json['post_list']]
 
         return user, threads
 
     async def search_post(
-        self, tieba_name: str, query: str, pn: int = 1, rn: int = 30, query_type: int = 0, only_thread: bool = False
+        self, fname: str, query: str, pn: int = 1, rn: int = 30, query_type: int = 0, only_thread: bool = False
     ) -> Searches:
         """
         贴吧搜索
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
             query (str): 查询文本
             pn (int, optional): 页码. Defaults to 1.
             rn (int, optional): 请求的条目数. Defaults to 30.
@@ -1667,26 +1883,27 @@ class Browser(object):
 
         payload = [
             ('_client_version', '12.12.1.0'),
-            ('kw', tieba_name),
+            ('kw', fname),
             ('only_thread', int(only_thread)),
             ('pn', pn),
             ('rn', rn),
             ('sm', query_type),
             ('word', query),
         ]
-        payload.append(('sign', self._app_sign(payload)))
 
         try:
-            res = await self.sessions.app.post("http://c.tieba.baidu.com/c/s/searchpost", data=payload)
+            res = await self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/s/searchpost", data=self.sessions._wrap_form(payload)
+            )
 
-            main_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
+            res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
 
-            searches = Searches(main_json)
+            searches = Searches(res_json)
 
         except Exception as err:
-            LOG.warning(f"Failed to search {query} in {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to search {query} in {fname}. reason:{err}")
             searches = Searches()
 
         return searches
@@ -1699,40 +1916,22 @@ class Browser(object):
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
-            tuple[list[tuple[str, int, int, int]], bool]: list[贴吧名, 贴吧id, 等级, 经验值], 是否还有下一页
+            tuple[list[tuple[str, int]], bool]: list[贴吧名, 贴吧id], 是否还有下一页
         """
 
-        user = await self.get_self_info()
-
-        payload = [
-            ('BDUSS', self.sessions.BDUSS),
-            ('_client_version', '12.12.1.0'),  # 删除该字段可直接获取前200个吧，但无法翻页
-            ('friend_uid', user.user_id),
-            ('page_no', pn),  # 加入client_version后，使用该字段控制页数
-        ]
-        payload.append(('sign', self._app_sign(payload)))
-
         try:
-            res = await self.sessions.app.post("http://c.tieba.baidu.com/c/f/forum/like", data=payload)
+            res = await self.sessions.web.get("https://tieba.baidu.com/mg/o/getForumHome", params={'pn': pn, 'rn': 200})
 
-            main_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['errno']):
+                raise ValueError(res_json['errmsg'])
 
-            forum_dict: dict = main_json.get('forum_list', None)
-            if not forum_dict:
-                return
-
-            forums: list[dict] = forum_dict.get('non-gconforum', [])
-            forums += forum_dict.get('gconforum', [])
-
-            res_list = [
-                (forum['name'], int(forum['id']), int(forum['level_id']), int(forum['cur_score'])) for forum in forums
-            ]
-            has_more = len(forums) == 50
+            forums: list[dict] = res_json['data']['like_forum']['list']
+            res_list = [(forum['forum_name'], int(forum['forum_id'])) for forum in forums]
+            has_more = len(forums) == 200
 
         except Exception as err:
-            LOG.warning(f"Failed to get forum_list of {user.user_id}. reason:{err}")
+            LOG.warning(f"Failed to get self_forum_list. reason:{err}")
             res_list = []
             has_more = False
 
@@ -1758,16 +1957,17 @@ class Browser(object):
             ('BDUSS', self.sessions.BDUSS),
             ('friend_uid', user.user_id),
         ]
-        payload.append(('sign', self._app_sign(payload)))
 
         try:
-            res = await self.sessions.app.post("http://c.tieba.baidu.com/c/f/forum/like", data=payload)
+            res = await self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/f/forum/like", data=self.sessions._wrap_form(payload)
+            )
 
-            main_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
 
-            forums: list[dict] = main_json.get('forum_list', [])
+            forums: list[dict] = res_json.get('forum_list', [])
 
             res_list = [
                 (forum['name'], int(forum['id']), int(forum['level_id']), int(forum['cur_score'])) for forum in forums
@@ -1779,12 +1979,12 @@ class Browser(object):
 
         return res_list
 
-    async def get_forum_detail(self, tieba_name: str = '', fid: int = 0) -> tuple[str, int, int]:
+    async def get_forum_detail(self, fname: str = '', fid: int = 0) -> tuple[str, int, int]:
         """
         通过forum_id获取贴吧信息
 
         Args:
-            tieba_name (str, optional): 贴吧名. Defaults to ''.
+            fname (str, optional): 贴吧名. Defaults to ''.
             fid (int, optional): forum_id. Defaults to 0.
 
         Returns:
@@ -1792,65 +1992,65 @@ class Browser(object):
         """
 
         if not fid:
-            fid = await self.get_fid(tieba_name)
+            fid = await self.get_fid(fname)
 
-        payload = {
+        payload = [
             ('_client_version', '12.12.1.0'),
             ('forum_id', fid),
-        }
-        payload.append(('sign', self._app_sign(payload)))
+        ]
 
         try:
-            res = await self.sessions.app.post("http://c.tieba.baidu.com/c/f/forum/getforumdetail", data=payload)
+            res = await self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/f/forum/getforumdetail", data=self.sessions._wrap_form(payload)
+            )
 
-            main_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
 
-            tieba_name = main_json['forum_info']['forum_name']
-            member_num = int(main_json['forum_info']['member_count'])
-            thread_num = int(main_json['forum_info']['thread_count'])
+            fname = res_json['forum_info']['forum_name']
+            member_num = int(res_json['forum_info']['member_count'])
+            thread_num = int(res_json['forum_info']['thread_count'])
 
         except Exception as err:
             LOG.warning(f"Failed to get forum_detail of {fid}. reason:{err}")
-            tieba_name = ''
+            fname = ''
             member_num = 0
             thread_num = 0
 
-        return tieba_name, member_num, thread_num
+        return fname, member_num, thread_num
 
-    async def get_bawu_dict(self, tieba_name: str) -> dict[str, list[BasicUserInfo]]:
+    async def get_bawu_dict(self, fname: str) -> dict[str, list[BasicUserInfo]]:
         """
         获取吧务信息
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
 
         Returns:
             dict[str, list[BasicUserInfo]]: {吧务类型: list[吧务基本用户信息]}
         """
 
-        common = CommonReq_pb2.CommonReq()
-        common._client_version = '12.12.1.0'
-        data = GetBawuInfoReqIdl_pb2.GetBawuInfoReqIdl.DataReq()
-        data.common.CopyFrom(common)
-        data.forum_id = await self.get_fid(tieba_name)
-        bawuinfo_req = GetBawuInfoReqIdl_pb2.GetBawuInfoReqIdl()
-        bawuinfo_req.data.CopyFrom(data)
-
-        multipart_writer = self._get_tieba_multipart_writer(bawuinfo_req.SerializeToString())
+        common_proto = CommonReq_pb2.CommonReq()
+        common_proto._client_version = '12.12.1.0'
+        data_proto = GetBawuInfoReqIdl_pb2.GetBawuInfoReqIdl.DataReq()
+        data_proto.common.CopyFrom(common_proto)
+        data_proto.forum_id = await self.get_fid(fname)
+        req_proto = GetBawuInfoReqIdl_pb2.GetBawuInfoReqIdl()
+        req_proto.data.CopyFrom(data_proto)
 
         try:
             res = await self.sessions.app_proto.post(
-                "http://c.tieba.baidu.com/c/f/forum/getBawuInfo", params={'cmd': 301007}, data=multipart_writer
+                "http://c.tieba.baidu.com/c/f/forum/getBawuInfo?cmd=301007",
+                data=self.sessions._wrap_proto_bytes(req_proto.SerializeToString()),
             )
 
-            main_proto = GetBawuInfoResIdl_pb2.GetBawuInfoResIdl()
-            main_proto.ParseFromString(await res.content.read())
-            if int(main_proto.error.errorno):
-                raise ValueError(main_proto.error.errmsg)
+            res_proto = GetBawuInfoResIdl_pb2.GetBawuInfoResIdl()
+            res_proto.ParseFromString(await res.content.read())
+            if int(res_proto.error.errorno):
+                raise ValueError(res_proto.error.errmsg)
 
-            roledes_protos = main_proto.data.bawu_team_info.bawu_team_list
+            roledes_protos = res_proto.data.bawu_team_info.bawu_team_list
             bawu_dict = {
                 roledes_proto.role_name: [
                     BasicUserInfo(user_proto=roleinfo_proto) for roleinfo_proto in roledes_proto.role_info
@@ -1864,52 +2064,51 @@ class Browser(object):
 
         return bawu_dict
 
-    async def get_tab_map(self, tieba_name: str) -> dict[str, int]:
+    async def get_tab_map(self, fname: str) -> dict[str, int]:
         """
         获取分区名到分区id的映射字典
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
 
         Returns:
             dict[str, int]: {分区名:分区id}
         """
 
-        common = CommonReq_pb2.CommonReq()
-        common.BDUSS = self.sessions.BDUSS
-        common._client_version = '12.12.1.0'
-        data = SearchPostForumReqIdl_pb2.SearchPostForumReqIdl.DataReq()
-        data.common.CopyFrom(common)
-        data.word = tieba_name
-        searchforum_req = SearchPostForumReqIdl_pb2.SearchPostForumReqIdl()
-        searchforum_req.data.CopyFrom(data)
-
-        multipart_writer = self._get_tieba_multipart_writer(searchforum_req.SerializeToString())
+        common_proto = CommonReq_pb2.CommonReq()
+        common_proto.BDUSS = self.sessions.BDUSS
+        common_proto._client_version = '12.12.1.0'
+        data_proto = SearchPostForumReqIdl_pb2.SearchPostForumReqIdl.DataReq()
+        data_proto.common.CopyFrom(common_proto)
+        data_proto.word = fname
+        req_proto = SearchPostForumReqIdl_pb2.SearchPostForumReqIdl()
+        req_proto.data.CopyFrom(data_proto)
 
         try:
             res = await self.sessions.app_proto.post(
-                "http://c.tieba.baidu.com/c/f/forum/searchPostForum", params={'cmd': 309466}, data=multipart_writer
+                "http://c.tieba.baidu.com/c/f/forum/searchPostForum?cmd=309466",
+                data=self.sessions._wrap_proto_bytes(req_proto.SerializeToString()),
             )
 
-            main_proto = SearchPostForumResIdl_pb2.SearchPostForumResIdl()
-            main_proto.ParseFromString(await res.content.read())
-            if int(main_proto.error.errorno):
-                raise ValueError(main_proto.error.errmsg)
+            res_proto = SearchPostForumResIdl_pb2.SearchPostForumResIdl()
+            res_proto.ParseFromString(await res.content.read())
+            if int(res_proto.error.errorno):
+                raise ValueError(res_proto.error.errmsg)
 
-            tab_map = {tab_proto.tab_name: tab_proto.tab_id for tab_proto in main_proto.data.exact_match.tab_info}
+            tab_map = {tab_proto.tab_name: tab_proto.tab_id for tab_proto in res_proto.data.exact_match.tab_info}
 
         except Exception as err:
-            LOG.warning(f"Failed to get tab_map of {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to get tab_map of {fname}. reason:{err}")
             tab_map = {}
 
         return tab_map
 
-    async def get_recom_list(self, tieba_name: str, pn: int = 1) -> tuple[list[tuple[Thread, int]], bool]:
+    async def get_recom_list(self, fname: str, pn: int = 1) -> tuple[list[tuple[Thread, int]], bool]:
         """
         获取pn页的大吧主推荐帖列表
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
@@ -1919,21 +2118,22 @@ class Browser(object):
         payload = [
             ('BDUSS', self.sessions.BDUSS),
             ('_client_version', '12.12.1.0'),
-            ('forum_id', await self.get_fid(tieba_name)),
+            ('forum_id', await self.get_fid(fname)),
             ('pn', pn),
             ('rn', 30),
         ]
-        payload.append(('sign', self._app_sign(payload)))
 
         try:
-            res = await self.sessions.app.post("http://c.tieba.baidu.com/c/f/bawu/getRecomThreadHistory", data=payload)
+            res = await self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/f/bawu/getRecomThreadHistory", data=self.sessions._wrap_form(payload)
+            )
 
-            main_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
+            res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to get recom_list of {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to get recom_list of {fname}. reason:{err}")
             res_list = []
             has_more = False
 
@@ -1945,17 +2145,17 @@ class Browser(object):
                 add_view = thread.view_num - int(data_dict['current_pv'])
                 return thread, add_view
 
-            res_list = [_parse_data_dict(data_dict) for data_dict in main_json['recom_thread_list']]
-            has_more = bool(int(main_json['is_has_more']))
+            res_list = [_parse_data_dict(data_dict) for data_dict in res_json['recom_thread_list']]
+            has_more = bool(int(res_json['is_has_more']))
 
         return res_list, has_more
 
-    async def get_recom_status(self, tieba_name: str) -> tuple[int, int]:
+    async def get_recom_status(self, fname: str) -> tuple[int, int]:
         """
         获取大吧主推荐功能的月度配额状态
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
 
         Returns:
             tuple[int, int]: 本月总推荐配额, 本月已使用的推荐配额
@@ -1964,35 +2164,36 @@ class Browser(object):
         payload = [
             ('BDUSS', self.sessions.BDUSS),
             ('_client_version', '12.12.1.0'),
-            ('forum_id', await self.get_fid(tieba_name)),
+            ('forum_id', await self.get_fid(fname)),
             ('pn', 1),
             ('rn', 0),
         ]
-        payload.append(('sign', self._app_sign(payload)))
 
         try:
-            res = await self.sessions.app.post("http://c.tieba.baidu.com/c/f/bawu/getRecomThreadList", data=payload)
+            res = await self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/f/bawu/getRecomThreadList", data=self.sessions._wrap_form(payload)
+            )
 
-            main_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
 
-            total_recom_num = int(main_json['total_recommend_num'])
-            used_recom_num = int(main_json['used_recommend_num'])
+            total_recom_num = int(res_json['total_recommend_num'])
+            used_recom_num = int(res_json['used_recommend_num'])
 
         except Exception as err:
-            LOG.warning(f"Failed to get recom_status of {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to get recom_status of {fname}. reason:{err}")
             total_recom_num = 0
             used_recom_num = 0
 
         return total_recom_num, used_recom_num
 
-    async def get_statistics(self, tieba_name: str) -> dict[str, list[int]]:
+    async def get_statistics(self, fname: str) -> dict[str, list[int]]:
         """
         获取吧务后台中最近29天的统计数据
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
 
         Returns:
             dict[str, list[int]]: {字段名:按时间顺序排列的统计数据}
@@ -2009,9 +2210,8 @@ class Browser(object):
         payload = [
             ('BDUSS', self.sessions.BDUSS),
             ('_client_version', '12.12.1.0'),
-            ('forum_id', await self.get_fid(tieba_name)),
+            ('forum_id', await self.get_fid(fname)),
         ]
-        payload.append(('sign', self._app_sign(payload)))
 
         field_names = [
             'view',
@@ -2024,30 +2224,32 @@ class Browser(object):
             'recommend',
         ]
         try:
-            res = await self.sessions.app.post("http://c.tieba.baidu.com/c/f/forum/getforumdata", data=payload)
+            res = await self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/f/forum/getforumdata", data=self.sessions._wrap_form(payload)
+            )
 
-            main_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
 
-            data = main_json['data']
+            data = res_json['data']
             stat = {
                 field_name: [int(item['value']) for item in reversed(data_i['group'][1]['values'])]
                 for field_name, data_i in zip(field_names, data)
             }
 
         except Exception as err:
-            LOG.warning(f"Failed to get statistics of {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to get statistics of {fname}. reason:{err}")
             stat = {field_name: [] for field_name in field_names}
 
         return stat
 
-    async def get_rank_list(self, tieba_name: str, pn: int = 1) -> tuple[list[tuple[str, int, int, bool]], bool]:
+    async def get_rank_list(self, fname: str, pn: int = 1) -> tuple[list[tuple[str, int, int, bool]], bool]:
         """
         获取pn页的贴吧等级排行榜
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
@@ -2056,14 +2258,19 @@ class Browser(object):
 
         try:
             res = await self.sessions.web.get(
-                "http://tieba.baidu.com/f/like/furank", params={'kw': tieba_name, 'pn': pn, 'ie': 'utf-8'}
+                "http://tieba.baidu.com/f/like/furank",
+                params={
+                    'kw': fname,
+                    'pn': pn,
+                    'ie': 'utf-8',
+                },
             )
 
             soup = BeautifulSoup(await res.text(), 'lxml')
             items = soup.select('tr[class^=drl_list_item]')
 
         except Exception as err:
-            LOG.warning(f"Failed to get rank_list of {tieba_name} pn:{pn}. reason:{err}")
+            LOG.warning(f"Failed to get rank_list of {fname} pn:{pn}. reason:{err}")
             res_list = []
             has_more = False
 
@@ -2086,12 +2293,12 @@ class Browser(object):
 
         return res_list, has_more
 
-    async def get_member_list(self, tieba_name: str, pn: int = 1) -> tuple[list[tuple[str, str, int]], bool]:
+    async def get_member_list(self, fname: str, pn: int = 1) -> tuple[list[tuple[str, str, int]], bool]:
         """
         获取pn页的贴吧最新关注用户列表
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
@@ -2101,14 +2308,18 @@ class Browser(object):
         try:
             res = await self.sessions.web.get(
                 "http://tieba.baidu.com/bawu2/platform/listMemberInfo",
-                params={'word': tieba_name, 'pn': pn, 'ie': 'utf-8'},
+                params={
+                    'word': fname,
+                    'pn': pn,
+                    'ie': 'utf-8',
+                },
             )
 
             soup = BeautifulSoup(await res.text(), 'lxml')
             items = soup.find_all('div', class_='name_wrap')
 
         except Exception as err:
-            LOG.warning(f"Failed to get member_list of {tieba_name} pn:{pn}. reason:{err}")
+            LOG.warning(f"Failed to get member_list of {fname} pn:{pn}. reason:{err}")
             res_list = []
             has_more = False
 
@@ -2127,12 +2338,12 @@ class Browser(object):
 
         return res_list, has_more
 
-    async def like_forum(self, tieba_name: str) -> bool:
+    async def like_forum(self, fname: str) -> bool:
         """
         关注吧
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
 
         Returns:
             bool: 操作是否成功
@@ -2141,32 +2352,33 @@ class Browser(object):
         try:
             payload = [
                 ('BDUSS', self.sessions.BDUSS),
-                ('fid', await self.get_fid(tieba_name)),
+                ('fid', await self.get_fid(fname)),
                 ('tbs', await self.get_tbs()),
             ]
-            payload.append(('sign', self._app_sign(payload)))
 
-            res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/forum/like", data=payload)
+            res = await self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/c/forum/like", data=self.sessions._wrap_form(payload)
+            )
 
-            main_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
-            if int(main_json['error']['errno']):
-                raise ValueError(main_json['error']['errmsg'])
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
+            if int(res_json['error']['errno']):
+                raise ValueError(res_json['error']['errmsg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to like forum {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to like forum {fname}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully liked forum {tieba_name}")
+        LOG.info(f"Successfully liked forum {fname}")
         return True
 
-    async def sign_forum(self, tieba_name: str) -> bool:
+    async def sign_forum(self, fname: str) -> bool:
         """
         签到吧
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
 
         Returns:
             bool: 签到是否成功
@@ -2176,32 +2388,33 @@ class Browser(object):
             payload = [
                 ('BDUSS', self.sessions.BDUSS),
                 ('_client_version', '12.12.1.0'),
-                ('kw', tieba_name),
+                ('kw', fname),
                 ('tbs', await self.get_tbs()),
             ]
-            payload.append(('sign', self._app_sign(payload)))
 
-            res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/forum/sign", data=payload)
+            res = await self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/c/forum/sign", data=self.sessions._wrap_form(payload)
+            )
 
-            main_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
-            if int(main_json['user_info']['sign_bonus_point']) == 0:
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
+            if int(res_json['user_info']['sign_bonus_point']) == 0:
                 raise ValueError("sign_bonus_point is 0")
 
         except Exception as err:
-            LOG.warning(f"Failed to sign forum {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to sign forum {fname}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully signed forum {tieba_name}")
+        LOG.info(f"Successfully signed forum {fname}")
         return True
 
-    async def add_post(self, tieba_name: str, tid: int, content: str) -> bool:
+    async def add_post(self, fname: str, tid: int, content: str) -> bool:
         """
         回帖
 
         Args:
-            tieba_name (str): 要回复的主题帖所在吧名
+            fname (str): 要回复的主题帖所在吧名
             tid (int): 要回复的主题帖的tid
             content (str): 回复内容
 
@@ -2229,13 +2442,13 @@ class Browser(object):
                 ('cuid_galaxy2', '1782A7D2758F38EA4B4EAFE1AD4881CB|VLJONH23W'),
                 ('cuid_gid', ''),
                 ('entrance_type', 0),
-                ('fid', await self.get_fid(tieba_name)),
+                ('fid', await self.get_fid(fname)),
                 ('from', '1021099l'),
                 ('from_fourm_id', 'null'),
                 ('is_ad', 0),
                 ('is_barrage', 0),
                 ('is_feedback', 0),
-                ('kw', tieba_name),
+                ('kw', fname),
                 ('model', 'M2012K11AC'),
                 ('name_show', ''),
                 ('net_type', 1),
@@ -2253,14 +2466,15 @@ class Browser(object):
                 ('vcode_tag', 12),
                 ('z_id', '9JaXHshXKDw1xkGLIi91_Qd4cduxNFKS_nguQ4kfe7zYZQfdOlA-7jU2pYbkMfw23NdB1awUpuWmTeoON13r-Uw'),
             ]
-            payload.append(('sign', self._app_sign(payload)))
 
-            res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/post/add", data=payload)
+            res = await self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/c/post/add", data=self.sessions._wrap_form(payload)
+            )
 
-            main_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
-            if int(main_json['info']['need_vcode']):
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
+            if int(res_json['info']['need_vcode']):
                 raise ValueError("need verify code")
 
         except Exception as err:
@@ -2270,37 +2484,71 @@ class Browser(object):
         LOG.info(f"Successfully add post in {tid}")
         return True
 
-    async def set_privacy(self, tid: int, hide: bool = True) -> bool:
+    async def send_msg(self, user_id: int, content: str) -> bool:
+        """
+        发送私信
+
+        Args:
+            user_id (int): 私信对象的user_id
+            content (str): 发送内容
+
+        Returns:
+            bool: 操作是否成功
+        """
+
+        data_proto = CommitPersonalMsgReqIdl_pb2.CommitPersonalMsgReqIdl.DataReq()
+        data_proto.toUid = user_id
+        data_proto.content = content
+        data_proto.msgType = 1
+        req_proto = CommitPersonalMsgReqIdl_pb2.CommitPersonalMsgReqIdl()
+        req_proto.data.CopyFrom(data_proto)
+
+        try:
+            websocket = await self.get_websocket()
+            await websocket.send_bytes(self.sessions._wrap_ws_bytes(req_proto.SerializeToString(), cmd=205001))
+
+            res_proto = CommitPersonalMsgResIdl_pb2.CommitPersonalMsgResIdl()
+            res_bytes = (await websocket.receive(timeout=5)).data
+            res_proto.ParseFromString(self.sessions._unwrap_ws_bytes(res_bytes))
+            if int(res_proto.data.blockInfo.blockErrno):
+                raise ValueError(res_proto.data.blockInfo.blockErrmsg)
+
+        except Exception as err:
+            LOG.warning(f"Failed to send msg. reason:{err}")
+            return False
+
+        return True
+
+    async def set_privacy(self, fid: int, tid: int, pid: int, hide: bool = True) -> bool:
         """
         隐藏主题帖
 
         Args:
+            fid (int): 主题帖所在吧的fid
             tid (int): 主题帖tid
+            tid (int): 主题帖pid
             hide (bool, optional): True则设为隐藏 False则取消隐藏. Defaults to True.
 
         Returns:
             bool: 操作是否成功
         """
 
-        if not (posts := await self.get_posts(tid, rn=0)):
-            LOG.warning(f"Failed to set privacy to {tid}")
-            return False
-
         try:
             payload = [
                 ('BDUSS', self.sessions.BDUSS),
-                ('forum_id', posts.thread.fid),
+                ('forum_id', fid),
                 ('is_hide', int(hide)),
-                ('post_id', posts.thread.pid),
+                ('post_id', pid),
                 ('thread_id', tid),
             ]
-            payload.append(('sign', self._app_sign(payload)))
 
-            res = await self.sessions.app.post("http://c.tieba.baidu.com/c/c/thread/setPrivacy", data=payload)
+            res = await self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/c/thread/setPrivacy", data=self.sessions._wrap_form(payload)
+            )
 
-            main_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
 
         except Exception as err:
             LOG.warning(f"Failed to set privacy to {tid}. reason:{err}")
@@ -2308,25 +2556,3 @@ class Browser(object):
 
         LOG.info(f"Successfully set privacy to {tid}. is_hide:{hide}")
         return True
-
-    async def ip(self) -> bool:
-        """
-        获取出口ip
-
-        Returns:
-            str: ip地址
-        """
-
-        try:
-            res = await self.sessions.app.post("http://c.tieba.baidu.com/c/s/sync")
-
-            main_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(main_json['error_code']):
-                raise ValueError(main_json['error_msg'])
-
-        except Exception as err:
-            LOG.warning(f"Failed to sync. reason:{err}")
-            ip = ''
-
-        ip = main_json['client_ip']
-        return ip

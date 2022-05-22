@@ -1,11 +1,11 @@
 # -*- coding:utf-8 -*-
 """
-@Version 2.5.3_beta
-@Author: Starry
+@Version 2.6.0_beta
+@Author: starry.qvq@gmail.com
 @License: Unlicense
 @Homepage: https://github.com/Starry-OvO/Tieba-Cloud-Review
 @Require Python 3.10+
-@Required Modules: aiohttp[speedups] protobuf aiomysql lxml beautifulsoup4 opencv-contrib-python
+@Required Modules: aiohttp[speedups] protobuf pycrytodome aiomysql lxml beautifulsoup4 opencv-contrib-python
 """
 
 import asyncio

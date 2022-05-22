@@ -14,13 +14,13 @@ from ._types import BasicUserInfo
 LOG = get_logger()
 
 
-def translate_tieba_name(func):
+def translate_fname(func):
     @functools.wraps(func)
-    def wrapper(self, tieba_name, *args, **kwargs):
-        if not (tieba_name_eng := CONFIG['tieba_name_mapping'].get(tieba_name, None)):
-            LOG.error(f"Can not find key:{tieba_name} in name mapping")
+    def wrapper(self, fname, *args, **kwargs):
+        if not (fname_eng := CONFIG['fname_mapping'].get(fname, None)):
+            LOG.error(f"Can not find key:{fname} in name mapping")
             return
-        return func(self, tieba_name_eng, *args, **kwargs)
+        return func(self, fname_eng, *args, **kwargs)
 
     return wrapper
 
@@ -81,12 +81,12 @@ class Database(object):
             **CONFIG['database'],
         )
 
-        for tieba_name in CONFIG['tieba_name_mapping'].keys():
+        for fname in CONFIG['fname_mapping'].keys():
             await asyncio.gather(
-                self._create_table_id(tieba_name),
-                self._create_table_user_id(tieba_name),
-                self._create_table_imghash(tieba_name),
-                self._create_table_tid_water(tieba_name),
+                self._create_table_id(fname),
+                self._create_table_user_id(fname),
+                self._create_table_imghash(fname),
+                self._create_table_tid_water(fname),
             )
         await asyncio.gather(self._create_table_forum(), self._create_table_user())
         await conn.ensure_closed()
@@ -99,38 +99,38 @@ class Database(object):
         async with self._pool.acquire() as conn:
             async with conn.cursor() as cursor:
                 await cursor.execute(
-                    "CREATE TABLE IF NOT EXISTS `forum` (`fid` INT PRIMARY KEY, `tieba_name` VARCHAR(36) UNIQUE)"
+                    "CREATE TABLE IF NOT EXISTS `forum` (`fid` INT PRIMARY KEY, `fname` VARCHAR(36) UNIQUE NOT NULL)"
                 )
 
-    async def get_fid(self, tieba_name: str) -> int:
+    async def get_fid(self, fname: str) -> int:
         """
-        通过贴吧名获取forum_id
+        通过贴吧名获取fid
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
 
         Returns:
-            int: 该贴吧的forum_id
+            int: 该贴吧的fid
         """
 
         try:
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
-                    await cursor.execute("SELECT `fid` FROM `forum` WHERE `tieba_name`=%s", (tieba_name,))
+                    await cursor.execute("SELECT `fid` FROM `forum` WHERE `fname`=%s", (fname,))
         except aiomysql.Error as err:
-            LOG.warning(f"Failed to select {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to select {fname}. reason:{err}")
             return 0
         else:
             if res_tuple := await cursor.fetchone():
                 return int(res_tuple[0])
             return 0
 
-    async def get_tieba_name(self, fid: int) -> str:
+    async def get_fname(self, fid: int) -> str:
         """
-        通过forum_id获取贴吧名
+        通过fid获取贴吧名
 
         Args:
-            fid (int): forum_id
+            fid (int): fid
 
         Returns:
             str: 该贴吧的贴吧名
@@ -139,7 +139,7 @@ class Database(object):
         try:
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
-                    await cursor.execute("SELECT `tieba_name` FROM `forum` WHERE `fid`=%s", (fid,))
+                    await cursor.execute("SELECT `fname` FROM `forum` WHERE `fid`=%s", (fid,))
         except aiomysql.Error as err:
             LOG.warning(f"Failed to select {fid}. reason:{err}")
             return ''
@@ -148,13 +148,13 @@ class Database(object):
                 return res_tuple[0]
             return ''
 
-    async def add_forum(self, fid: int, tieba_name: str) -> bool:
+    async def add_forum(self, fid: int, fname: str) -> bool:
         """
-        向表forum添加forum_id和贴吧名的映射关系
+        向表forum添加fid和贴吧名的映射关系
 
         Args:
-            fid (int): forum_id
-            tieba_name (str): 贴吧名
+            fid (int): fid
+            fname (str): 贴吧名
 
         Returns:
             bool: 操作是否成功
@@ -163,7 +163,7 @@ class Database(object):
         try:
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
-                    await cursor.execute("INSERT IGNORE INTO `forum` VALUES (%s,%s)", (fid, tieba_name))
+                    await cursor.execute("INSERT IGNORE INTO `forum` VALUES (%s,%s)", (fid, fname))
         except aiomysql.Error as err:
             LOG.warning(f"Failed to insert {fid}. reason:{err}")
             return False
@@ -177,7 +177,7 @@ class Database(object):
         async with self._pool.acquire() as conn:
             async with conn.cursor() as cursor:
                 await cursor.execute(
-                    "CREATE TABLE IF NOT EXISTS `user` (`user_id` BIGINT PRIMARY KEY, `user_name` VARCHAR(14), `portrait` VARCHAR(36) UNIQUE, INDEX `user_name`(user_name))"
+                    "CREATE TABLE IF NOT EXISTS `user` (`user_id` BIGINT PRIMARY KEY, `user_name` VARCHAR(14) NOT NULL DEFAULT '', `portrait` VARCHAR(36) UNIQUE NOT NULL, INDEX `user_name`(user_name))"
                 )
 
     async def get_basic_user_info(self, _id: str | int) -> BasicUserInfo:
@@ -263,33 +263,33 @@ class Database(object):
         LOG.info(f"Successfully deleted {user} from table user")
         return True
 
-    @translate_tieba_name
-    async def _create_table_id(self, tieba_name: str) -> None:
+    @translate_fname
+    async def _create_table_id(self, fname: str) -> None:
         """
-        创建表id_{tieba_name}
+        创建表id_{fname}
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
         """
 
         async with self._pool.acquire() as conn:
             async with conn.cursor() as cursor:
                 await cursor.execute(
-                    f"CREATE TABLE IF NOT EXISTS `id_{tieba_name}` (`id` BIGINT PRIMARY KEY, `id_last_edit` INT NOT NULL, `record_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)"
+                    f"CREATE TABLE IF NOT EXISTS `id_{fname}` (`id` BIGINT PRIMARY KEY, `id_last_edit` INT NOT NULL, `record_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)"
                 )
                 await cursor.execute(
-                    f"""CREATE EVENT IF NOT EXISTS `event_auto_del_id_{tieba_name}` \
+                    f"""CREATE EVENT IF NOT EXISTS `event_auto_del_id_{fname}` \
                     ON SCHEDULE EVERY 1 DAY STARTS '2000-01-01 00:00:00' \
-                    DO DELETE FROM `id_{tieba_name}` WHERE record_time<(CURRENT_TIMESTAMP() + INTERVAL -15 DAY)"""
+                    DO DELETE FROM `id_{fname}` WHERE record_time<(CURRENT_TIMESTAMP() + INTERVAL -15 DAY)"""
                 )
 
-    @translate_tieba_name
-    async def add_id(self, tieba_name: str, _id: int, id_last_edit: int = 0) -> bool:
+    @translate_fname
+    async def add_id(self, fname: str, _id: int, id_last_edit: int = 0) -> bool:
         """
-        将id添加到表id_{tieba_name}
+        将id添加到表id_{fname}
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
             _id (int): tid或pid
             id_last_edit (int): 用于识别id的子对象列表是否发生修改 \
                 若该id为tid则id_last_edit应为last_time 若该id为pid则id_last_edit应为reply_num. Defaults to 0.
@@ -301,19 +301,19 @@ class Database(object):
         try:
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
-                    await cursor.execute(f"REPLACE INTO `id_{tieba_name}` VALUES (%s,%s,DEFAULT)", (_id, id_last_edit))
+                    await cursor.execute(f"REPLACE INTO `id_{fname}` VALUES (%s,%s,DEFAULT)", (_id, id_last_edit))
         except aiomysql.Error as err:
             LOG.warning(f"Failed to insert {_id}. reason:{err}")
             return False
         return True
 
-    @translate_tieba_name
-    async def get_id(self, tieba_name: str, _id: int) -> int:
+    @translate_fname
+    async def get_id(self, fname: str, _id: int) -> int:
         """
-        获取表id_{tieba_name}中id对应的id_last_edit值
+        获取表id_{fname}中id对应的id_last_edit值
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
             _id (int): tid或pid
 
         Returns:
@@ -323,7 +323,7 @@ class Database(object):
         try:
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
-                    await cursor.execute(f"SELECT `id_last_edit` FROM `id_{tieba_name}` WHERE `id`=%s", (_id,))
+                    await cursor.execute(f"SELECT `id_last_edit` FROM `id_{fname}` WHERE `id`=%s", (_id,))
         except aiomysql.Error as err:
             LOG.warning(f"Failed to select {_id}. reason:{err}")
             return False
@@ -332,13 +332,13 @@ class Database(object):
                 return res_tuple[0]
             return -1
 
-    @translate_tieba_name
-    async def del_id(self, tieba_name: str, _id: int) -> bool:
+    @translate_fname
+    async def del_id(self, fname: str, _id: int) -> bool:
         """
-        从表id_{tieba_name}中删除id
+        从表id_{fname}中删除id
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
             _id (int): tid或pid
 
         Returns:
@@ -348,21 +348,21 @@ class Database(object):
         try:
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
-                    await cursor.execute(f"DELETE FROM `id_{tieba_name}` WHERE `id`=%s", (_id,))
+                    await cursor.execute(f"DELETE FROM `id_{fname}` WHERE `id`=%s", (_id,))
         except aiomysql.Error as err:
             LOG.warning(f"Failed to delete {_id}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully deleted {_id} from table of {tieba_name}")
+        LOG.info(f"Successfully deleted {_id} from table of {fname}")
         return True
 
-    @translate_tieba_name
-    async def del_ids(self, tieba_name: str, hour: int) -> bool:
+    @translate_fname
+    async def del_ids(self, fname: str, hour: int) -> bool:
         """
-        删除表id_{tieba_name}中最近hour个小时记录的id
+        删除表id_{fname}中最近hour个小时记录的id
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
             hour (int): 小时数
 
         Returns:
@@ -373,43 +373,43 @@ class Database(object):
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     await cursor.execute(
-                        f"DELETE FROM `id_{tieba_name}` WHERE `record_time`>(CURRENT_TIMESTAMP() + INTERVAL -%s HOUR)",
+                        f"DELETE FROM `id_{fname}` WHERE `record_time`>(CURRENT_TIMESTAMP() + INTERVAL -%s HOUR)",
                         (hour,),
                     )
         except aiomysql.Error as err:
-            LOG.warning(f"Failed to delete id in id_{tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to delete id in id_{fname}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully deleted id in id_{tieba_name} within {hour} hour(s)")
+        LOG.info(f"Successfully deleted id in id_{fname} within {hour} hour(s)")
         return True
 
-    @translate_tieba_name
-    async def _create_table_tid_water(self, tieba_name: str) -> None:
+    @translate_fname
+    async def _create_table_tid_water(self, fname: str) -> None:
         """
-        创建表tid_water_{tieba_name}
+        创建表tid_water_{fname}
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
         """
 
         async with self._pool.acquire() as conn:
             async with conn.cursor() as cursor:
                 await cursor.execute(
-                    f"CREATE TABLE IF NOT EXISTS `tid_water_{tieba_name}` (`tid` BIGINT PRIMARY KEY, `is_hide` TINYINT NOT NULL DEFAULT 1, `record_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, INDEX `is_hide`(is_hide))"
+                    f"CREATE TABLE IF NOT EXISTS `tid_water_{fname}` (`tid` BIGINT PRIMARY KEY, `is_hide` TINYINT NOT NULL DEFAULT 1, `record_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, INDEX `is_hide`(is_hide))"
                 )
                 await cursor.execute(
-                    f"""CREATE EVENT IF NOT EXISTS `event_auto_del_tid_water_{tieba_name}` \
+                    f"""CREATE EVENT IF NOT EXISTS `event_auto_del_tid_water_{fname}` \
                 ON SCHEDULE EVERY 1 DAY STARTS '2000-01-01 00:00:00' \
-                DO DELETE FROM `tid_water_{tieba_name}` WHERE `record_time`<(CURRENT_TIMESTAMP() + INTERVAL -15 DAY)"""
+                DO DELETE FROM `tid_water_{fname}` WHERE `record_time`<(CURRENT_TIMESTAMP() + INTERVAL -15 DAY)"""
                 )
 
-    @translate_tieba_name
-    async def add_tid(self, tieba_name: str, tid: int, mode: bool) -> bool:
+    @translate_fname
+    async def add_tid(self, fname: str, tid: int, mode: bool) -> bool:
         """
-        将tid添加到表tid_water_{tieba_name}
+        将tid添加到表tid_water_{fname}
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
             tid (int): 主题帖tid
             mode (bool): 待恢复状态 True对应待恢复 False对应已恢复
 
@@ -420,21 +420,21 @@ class Database(object):
         try:
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
-                    await cursor.execute(f"REPLACE INTO `tid_water_{tieba_name}` VALUES (%s,%s,DEFAULT)", (tid, mode))
+                    await cursor.execute(f"REPLACE INTO `tid_water_{fname}` VALUES (%s,%s,DEFAULT)", (tid, mode))
         except aiomysql.Error as err:
             LOG.warning(f"Failed to insert {tid}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully added {tid} to table of {tieba_name}. mode: {mode}")
+        LOG.info(f"Successfully added {tid} to table of {fname}. mode: {mode}")
         return True
 
-    @translate_tieba_name
-    async def is_tid_hide(self, tieba_name: str, tid: int) -> bool | None:
+    @translate_fname
+    async def is_tid_hide(self, fname: str, tid: int) -> bool | None:
         """
-        获取表tid_water_{tieba_name}中tid的待恢复状态
+        获取表tid_water_{fname}中tid的待恢复状态
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
             tid (int): 主题帖tid
 
         Returns:
@@ -444,7 +444,7 @@ class Database(object):
         try:
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
-                    await cursor.execute(f"SELECT `is_hide` FROM `tid_water_{tieba_name}` WHERE `tid`=%s", (tid,))
+                    await cursor.execute(f"SELECT `is_hide` FROM `tid_water_{fname}` WHERE `tid`=%s", (tid,))
         except aiomysql.Error as err:
             LOG.warning(f"Failed to select {tid}. reason:{err}")
             return None
@@ -453,13 +453,13 @@ class Database(object):
                 return True if res_tuple[0] else False
             return None
 
-    @translate_tieba_name
-    async def del_tid(self, tieba_name: str, tid: int) -> bool:
+    @translate_fname
+    async def del_tid(self, fname: str, tid: int) -> bool:
         """
-        从表tid_water_{tieba_name}中删除tid
+        从表tid_water_{fname}中删除tid
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
             tid (int): 主题帖tid
 
         Returns:
@@ -469,20 +469,20 @@ class Database(object):
         try:
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
-                    await cursor.execute(f"DELETE FROM `tid_water_{tieba_name}` WHERE `tid`=%s", (tid,))
+                    await cursor.execute(f"DELETE FROM `tid_water_{fname}` WHERE `tid`=%s", (tid,))
         except aiomysql.Error as err:
             LOG.warning(f"Failed to delete {tid}. reason:{err}")
             return False
-        LOG.info(f"Successfully deleted {tid} from table of {tieba_name}")
+        LOG.info(f"Successfully deleted {tid} from table of {fname}")
         return True
 
-    @translate_tieba_name
-    async def get_tid_list(self, tieba_name: str, limit: int = 128, offset: int = 0) -> list[int]:
+    @translate_fname
+    async def get_tid_list(self, fname: str, limit: int = 128, offset: int = 0) -> list[int]:
         """
-        获取表tid_water_{tieba_name}中待恢复的tid的列表
+        获取表tid_water_{fname}中待恢复的tid的列表
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
             limit (int, optional): 返回数量限制. Defaults to 128.
             offset (int, optional): 偏移. Defaults to 0.
 
@@ -494,11 +494,11 @@ class Database(object):
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     await cursor.execute(
-                        f"SELECT `tid` FROM `tid_water_{tieba_name}` WHERE `is_hide`=1 LIMIT %s OFFSET %s",
+                        f"SELECT `tid` FROM `tid_water_{fname}` WHERE `is_hide`=1 LIMIT %s OFFSET %s",
                         (limit, offset),
                     )
         except aiomysql.Error as err:
-            LOG.warning(f"Failed to get tids in {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to get tids in {fname}. reason:{err}")
             res_list = []
         else:
             res_tuples = await cursor.fetchall()
@@ -506,28 +506,28 @@ class Database(object):
 
         return res_list
 
-    @translate_tieba_name
-    async def _create_table_user_id(self, tieba_name: str) -> None:
+    @translate_fname
+    async def _create_table_user_id(self, fname: str) -> None:
         """
-        创建表user_id_{tieba_name}
+        创建表user_id_{fname}
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
         """
 
         async with self._pool.acquire() as conn:
             async with conn.cursor() as cursor:
                 await cursor.execute(
-                    f"CREATE TABLE IF NOT EXISTS `user_id_{tieba_name}` (`user_id` BIGINT PRIMARY KEY, `permission` TINYINT NOT NULL DEFAULT 0, `note` VARCHAR(64) NOT NULL DEFAULT '', `record_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, INDEX `permission`(permission), INDEX `record_time`(record_time))"
+                    f"CREATE TABLE IF NOT EXISTS `user_id_{fname}` (`user_id` BIGINT PRIMARY KEY, `permission` TINYINT NOT NULL DEFAULT 0, `note` VARCHAR(64) NOT NULL DEFAULT '', `record_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, INDEX `permission`(permission), INDEX `record_time`(record_time))"
                 )
 
-    @translate_tieba_name
-    async def add_user_id(self, tieba_name: str, user_id: int, permission: int = 0, note: str = '') -> bool:
+    @translate_fname
+    async def add_user_id(self, fname: str, user_id: int, permission: int = 0, note: str = '') -> bool:
         """
-        将user_id添加到表user_id_{tieba_name}
+        将user_id添加到表user_id_{fname}
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
             user_id (int): 用户的user_id
             permission (int, optional): 权限级别. Defaults to 0.
             note (str, optional): 备注. Defaults to ''.
@@ -543,21 +543,21 @@ class Database(object):
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     await cursor.execute(
-                        f"REPLACE INTO `user_id_{tieba_name}` VALUES (%s,%s,%s,DEFAULT)", (user_id, permission, note)
+                        f"REPLACE INTO `user_id_{fname}` VALUES (%s,%s,%s,DEFAULT)", (user_id, permission, note)
                     )
         except aiomysql.Error as err:
             LOG.warning(f"Failed to insert {user_id}. reason:{err}")
             return False
-        LOG.info(f"Successfully added {user_id} to table of {tieba_name}. permission: {permission} note: {note}")
+        LOG.info(f"Successfully added {user_id} to table of {fname}. permission: {permission} note: {note}")
         return True
 
-    @translate_tieba_name
-    async def del_user_id(self, tieba_name: str, user_id: int) -> bool:
+    @translate_fname
+    async def del_user_id(self, fname: str, user_id: int) -> bool:
         """
-        从表user_id_{tieba_name}中删除user_id
+        从表user_id_{fname}中删除user_id
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
             user_id (int): 用户的user_id
 
         Returns:
@@ -567,20 +567,20 @@ class Database(object):
         try:
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
-                    await cursor.execute(f"DELETE FROM `user_id_{tieba_name}` WHERE `user_id`=%s", (user_id,))
+                    await cursor.execute(f"DELETE FROM `user_id_{fname}` WHERE `user_id`=%s", (user_id,))
         except aiomysql.Error as err:
             LOG.warning(f"Failed to delete {user_id}. reason:{err}")
             return False
-        LOG.info(f"Successfully deleted {user_id} from table of {tieba_name}")
+        LOG.info(f"Successfully deleted {user_id} from table of {fname}")
         return True
 
-    @translate_tieba_name
-    async def get_user_id(self, tieba_name: str, user_id: int) -> int:
+    @translate_fname
+    async def get_user_id(self, fname: str, user_id: int) -> int:
         """
-        获取表user_id_{tieba_name}中user_id的权限级别
+        获取表user_id_{fname}中user_id的权限级别
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
             user_id (int): 用户的user_id
 
         Returns:
@@ -591,7 +591,7 @@ class Database(object):
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     await cursor.execute(
-                        f"SELECT `permission` FROM `user_id_{tieba_name}` WHERE `user_id`=%s", (user_id,)
+                        f"SELECT `permission` FROM `user_id_{fname}` WHERE `user_id`=%s", (user_id,)
                     )
         except aiomysql.Error as err:
             LOG.warning(f"Failed to get {user_id}. reason:{err}")
@@ -601,13 +601,13 @@ class Database(object):
                 return res_tuple[0]
             return 0
 
-    @translate_tieba_name
-    async def get_user_id_full(self, tieba_name: str, user_id: int) -> tuple[int, str, datetime.datetime]:
+    @translate_fname
+    async def get_user_id_full(self, fname: str, user_id: int) -> tuple[int, str, datetime.datetime]:
         """
-        获取表user_id_{tieba_name}中user_id的完整信息
+        获取表user_id_{fname}中user_id的完整信息
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
             user_id (int): 用户的user_id
 
         Returns:
@@ -618,7 +618,7 @@ class Database(object):
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     await cursor.execute(
-                        f"SELECT `permission`,`note`,`record_time` FROM `user_id_{tieba_name}` WHERE `user_id`=%s",
+                        f"SELECT `permission`,`note`,`record_time` FROM `user_id_{fname}` WHERE `user_id`=%s",
                         (user_id,),
                     )
         except aiomysql.Error as err:
@@ -629,15 +629,15 @@ class Database(object):
                 return res_tuple
             return 0, '', datetime.datetime(1970, 1, 1)
 
-    @translate_tieba_name
+    @translate_fname
     async def get_user_id_list(
-        self, tieba_name: str, permission: int = 0, limit: int = 1, offset: int = 0
+        self, fname: str, permission: int = 0, limit: int = 1, offset: int = 0
     ) -> list[int]:
         """
-        获取表user_id_{tieba_name}中user_id的列表
+        获取表user_id_{fname}中user_id的列表
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
             permission (int, optional): 获取所有权限级别大于等于permission的user_id. Defaults to 0.
             limit (int, optional): 返回数量限制. Defaults to 1.
             offset (int, optional): 偏移. Defaults to 0.
@@ -650,11 +650,11 @@ class Database(object):
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     await cursor.execute(
-                        f"SELECT `user_id` FROM `user_id_{tieba_name}` WHERE `permission`>=%s ORDER BY `record_time` DESC LIMIT %s OFFSET %s",
+                        f"SELECT `user_id` FROM `user_id_{fname}` WHERE `permission`>=%s ORDER BY `record_time` DESC LIMIT %s OFFSET %s",
                         (permission, limit, offset),
                     )
         except aiomysql.Error as err:
-            LOG.warning(f"Failed to get user_ids in {tieba_name}. reason:{err}")
+            LOG.warning(f"Failed to get user_ids in {fname}. reason:{err}")
             res_list = []
         else:
             res_tuples = await cursor.fetchall()
@@ -662,30 +662,30 @@ class Database(object):
 
         return res_list
 
-    @translate_tieba_name
-    async def _create_table_imghash(self, tieba_name: str) -> None:
+    @translate_fname
+    async def _create_table_imghash(self, fname: str) -> None:
         """
-        创建表imghash_{tieba_name}
+        创建表imghash_{fname}
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
         """
 
         async with self._pool.acquire() as conn:
             async with conn.cursor() as cursor:
                 await cursor.execute(
-                    f"CREATE TABLE IF NOT EXISTS `imghash_{tieba_name}` (`img_hash` CHAR(16) PRIMARY KEY, `raw_hash` CHAR(40) UNIQUE NOT NULL, `permission` TINYINT NOT NULL DEFAULT 0, `note` VARCHAR(64) NOT NULL DEFAULT '', INDEX `permission`(permission))"
+                    f"CREATE TABLE IF NOT EXISTS `imghash_{fname}` (`img_hash` CHAR(16) PRIMARY KEY, `raw_hash` CHAR(40) UNIQUE NOT NULL, `permission` TINYINT NOT NULL DEFAULT 0, `note` VARCHAR(64) NOT NULL DEFAULT '', INDEX `permission`(permission))"
                 )
 
-    @translate_tieba_name
+    @translate_fname
     async def add_imghash(
-        self, tieba_name: str, img_hash: str, raw_hash: str, permission: int = 0, note: str = ''
+        self, fname: str, img_hash: str, raw_hash: str, permission: int = 0, note: str = ''
     ) -> bool:
         """
-        将img_hash添加到表imghash_{tieba_name}
+        将img_hash添加到表imghash_{fname}
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
             img_hash (str): 图像的phash
             raw_hash (str): 贴吧图床hash
             permission (int, optional): 封锁级别. Defaults to 0.
@@ -699,23 +699,23 @@ class Database(object):
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     await cursor.execute(
-                        f"REPLACE INTO `imghash_{tieba_name}` VALUES (%s,%s,%s,%s)",
+                        f"REPLACE INTO `imghash_{fname}` VALUES (%s,%s,%s,%s)",
                         (img_hash, raw_hash, permission, note),
                     )
         except aiomysql.Error as err:
             LOG.warning(f"Failed to insert {img_hash}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully added {img_hash} to table of {tieba_name}. permission: {permission} note: {note}")
+        LOG.info(f"Successfully added {img_hash} to table of {fname}. permission: {permission} note: {note}")
         return True
 
-    @translate_tieba_name
-    async def del_imghash(self, tieba_name: str, img_hash: str) -> bool:
+    @translate_fname
+    async def del_imghash(self, fname: str, img_hash: str) -> bool:
         """
-        从imghash_{tieba_name}中删除img_hash
+        从imghash_{fname}中删除img_hash
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
             img_hash (str): 图像的phash
 
         Returns:
@@ -725,21 +725,21 @@ class Database(object):
         try:
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
-                    await cursor.execute(f"DELETE FROM `imghash_{tieba_name}` WHERE `img_hash`=%s", (img_hash,))
+                    await cursor.execute(f"DELETE FROM `imghash_{fname}` WHERE `img_hash`=%s", (img_hash,))
         except aiomysql.Error as err:
             LOG.warning(f"Failed to delete {img_hash}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully deleted {img_hash} from table of {tieba_name}")
+        LOG.info(f"Successfully deleted {img_hash} from table of {fname}")
         return True
 
-    @translate_tieba_name
-    async def get_imghash(self, tieba_name: str, img_hash: str) -> int:
+    @translate_fname
+    async def get_imghash(self, fname: str, img_hash: str) -> int:
         """
-        获取表imghash_{tieba_name}中img_hash的封锁级别
+        获取表imghash_{fname}中img_hash的封锁级别
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
             img_hash (str): 图像的phash
 
         Returns:
@@ -750,7 +750,7 @@ class Database(object):
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     await cursor.execute(
-                        f"SELECT `permission` FROM `imghash_{tieba_name}` WHERE `img_hash`=%s", (img_hash,)
+                        f"SELECT `permission` FROM `imghash_{fname}` WHERE `img_hash`=%s", (img_hash,)
                     )
         except aiomysql.Error as err:
             LOG.warning(f"Failed to select {img_hash}. reason:{err}")
@@ -760,13 +760,13 @@ class Database(object):
                 return res_tuple[0]
             return 0
 
-    @translate_tieba_name
-    async def get_imghash_full(self, tieba_name: str, img_hash: str) -> tuple[int, str]:
+    @translate_fname
+    async def get_imghash_full(self, fname: str, img_hash: str) -> tuple[int, str]:
         """
-        获取表imghash_{tieba_name}中img_hash的完整信息
+        获取表imghash_{fname}中img_hash的完整信息
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
             img_hash (str): 图像的phash
 
         Returns:
@@ -777,7 +777,7 @@ class Database(object):
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     await cursor.execute(
-                        f"SELECT `permission`,`note` FROM `imghash_{tieba_name}` WHERE `img_hash`=%s", (img_hash,)
+                        f"SELECT `permission`,`note` FROM `imghash_{fname}` WHERE `img_hash`=%s", (img_hash,)
                     )
         except aiomysql.Error as err:
             LOG.warning(f"Failed to select {img_hash}. reason:{err}")

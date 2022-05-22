@@ -117,16 +117,16 @@ class Reviewer(Browser):
     提供贴吧审查功能
 
     Args:
-        tieba_name (str): 贴吧名
+        fname (str): 贴吧名
         BDUSS_key (str): 用于从config.json中提取BDUSS
     """
 
-    __slots__ = ['tieba_name', 'database', '_qrdetector']
+    __slots__ = ['fname', 'database', '_qrdetector']
 
-    def __init__(self, BDUSS_key: str, tieba_name: str):
+    def __init__(self, BDUSS_key: str, fname: str):
         super().__init__(BDUSS_key)
 
-        self.tieba_name: str = tieba_name
+        self.fname: str = fname
 
         self.database: Database = Database()
         self._qrdetector: cv.QRCodeDetector = None
@@ -150,47 +150,47 @@ class Reviewer(Browser):
             self._qrdetector = cv.QRCodeDetector()
         return self._qrdetector
 
-    async def get_fid(self, tieba_name: str) -> int:
+    async def get_fid(self, fname: str) -> int:
         """
-        通过贴吧名获取forum_id
+        通过贴吧名获取fid
 
         Args:
-            tieba_name (str): 贴吧名
+            fname (str): 贴吧名
 
         Returns:
-            int: 该贴吧的forum_id
+            int: 该贴吧的fid
         """
 
-        if fid := self.fid_dict.get(tieba_name, 0):
+        if fid := self.fid_dict.get(fname, 0):
             return fid
 
-        if fid := await self.database.get_fid(tieba_name):
-            self.fid_dict[tieba_name] = fid
+        if fid := await self.database.get_fid(fname):
+            self.fid_dict[fname] = fid
             return fid
 
-        if fid := await super().get_fid(tieba_name):
-            await self.database.add_forum(fid, tieba_name)
+        if fid := await super().get_fid(fname):
+            await self.database.add_forum(fid, fname)
 
         return fid
 
-    async def get_tieba_name(self, fid: int) -> str:
+    async def get_fname(self, fid: int) -> str:
         """
-        通过forum_id获取贴吧名
+        通过fid获取贴吧名
 
         Args:
-            fid (int): forum_id
+            fid (int): fid
 
         Returns:
             str: 该贴吧的贴吧名
         """
 
-        if tieba_name := await self.database.get_tieba_name(fid):
-            return tieba_name
+        if fname := await self.database.get_fname(fid):
+            return fname
 
-        if tieba_name := (await super().get_forum_detail(fid=fid))[0]:
-            await self.database.add_forum(fid, tieba_name)
+        if fname := (await super().get_forum_detail(fid=fid))[0]:
+            await self.database.add_forum(fid, fname)
 
-        return tieba_name
+        return fname
 
     async def get_basic_user_info(self, _id: str | int) -> BasicUserInfo:
         """
@@ -216,12 +216,12 @@ class Reviewer(Browser):
         拒绝本吧所有解封申诉
         """
 
-        while appeal_ids := await self.get_unblock_appeal_list(self.tieba_name):
-            await asyncio.gather(*[self.handle_unblock_appeal(self.tieba_name, appeal_id) for appeal_id in appeal_ids])
+        while appeal_ids := await self.get_unblock_appeal_list(self.fname):
+            await asyncio.gather(*[self.handle_unblock_appeal(self.fname, appeal_id) for appeal_id in appeal_ids])
 
     async def add_id(self, _id: int, id_last_edit: int = 0) -> bool:
         """
-        将id添加到表id_{tieba_name}
+        将id添加到表id_{fname}
 
         Args:
             _id (int): tid或pid
@@ -232,11 +232,11 @@ class Reviewer(Browser):
             bool: 操作是否成功
         """
 
-        return await self.database.add_id(self.tieba_name, _id, id_last_edit)
+        return await self.database.add_id(self.fname, _id, id_last_edit)
 
     async def get_id(self, _id: int) -> int:
         """
-        获取表id_{tieba_name}中id对应的id_last_edit值
+        获取表id_{fname}中id对应的id_last_edit值
 
         Args:
             _id (int): tid或pid
@@ -245,11 +245,11 @@ class Reviewer(Browser):
             int: id_last_edit -1表示表中无id
         """
 
-        return await self.database.get_id(self.tieba_name, _id)
+        return await self.database.get_id(self.fname, _id)
 
     async def del_id(self, _id: int) -> bool:
         """
-        从表id_{tieba_name}中删除id
+        从表id_{fname}中删除id
 
         Args:
             _id (int): tid或pid
@@ -258,11 +258,11 @@ class Reviewer(Browser):
             bool: 操作是否成功
         """
 
-        return await self.database.del_id(self.tieba_name, _id)
+        return await self.database.del_id(self.fname, _id)
 
     async def del_ids(self, hour: int) -> bool:
         """
-        删除表id_{tieba_name}中最近hour个小时记录的id
+        删除表id_{fname}中最近hour个小时记录的id
 
         Args:
             hour (int): 小时数
@@ -271,11 +271,11 @@ class Reviewer(Browser):
             bool: 操作是否成功
         """
 
-        return await self.database.del_ids(self.tieba_name, hour)
+        return await self.database.del_ids(self.fname, hour)
 
     async def add_tid(self, tid: int, mode: bool) -> bool:
         """
-        将tid添加到表tid_water_{tieba_name}
+        将tid添加到表tid_water_{fname}
 
         Args:
             tid (int): 主题帖tid
@@ -285,11 +285,11 @@ class Reviewer(Browser):
             bool: 操作是否成功
         """
 
-        return await self.database.add_tid(self.tieba_name, tid, mode)
+        return await self.database.add_tid(self.fname, tid, mode)
 
     async def is_tid_hide(self, tid: int) -> bool | None:
         """
-        获取表tid_water_{tieba_name}中tid的待恢复状态
+        获取表tid_water_{fname}中tid的待恢复状态
 
         Args:
             tid (int): 主题帖tid
@@ -298,11 +298,11 @@ class Reviewer(Browser):
             bool | None: True表示tid待恢复 False表示tid已恢复 None表示表中无记录
         """
 
-        return await self.database.is_tid_hide(self.tieba_name, tid)
+        return await self.database.is_tid_hide(self.fname, tid)
 
     async def del_tid(self, tid: int) -> bool:
         """
-        从表tid_water_{tieba_name}中删除tid
+        从表tid_water_{fname}中删除tid
 
         Args:
             tid (int): 主题帖tid
@@ -311,11 +311,11 @@ class Reviewer(Browser):
             bool: 操作是否成功
         """
 
-        return await self.database.del_tid(self.tieba_name, tid)
+        return await self.database.del_tid(self.fname, tid)
 
     async def get_tid_list(self, limit: int = 128, offset: int = 0) -> list[int]:
         """
-        获取表tid_water_{tieba_name}中待恢复的tid的列表
+        获取表tid_water_{fname}中待恢复的tid的列表
 
         Args:
             limit (int, optional): 返回数量限制. Defaults to 128.
@@ -325,11 +325,11 @@ class Reviewer(Browser):
             list[int]: tid列表
         """
 
-        return await self.database.get_tid_list(self.tieba_name, limit, offset)
+        return await self.database.get_tid_list(self.fname, limit, offset)
 
     async def add_user_id(self, user_id: int, permission: int = 0, note: str = '') -> bool:
         """
-        将user_id添加到表user_id_{tieba_name}
+        将user_id添加到表user_id_{fname}
 
         Args:
             user_id (int): 用户的user_id
@@ -340,11 +340,11 @@ class Reviewer(Browser):
             bool: 操作是否成功
         """
 
-        return await self.database.add_user_id(self.tieba_name, user_id, permission, note)
+        return await self.database.add_user_id(self.fname, user_id, permission, note)
 
     async def del_user_id(self, user_id: int) -> bool:
         """
-        从表user_id_{tieba_name}中删除user_id
+        从表user_id_{fname}中删除user_id
 
         Args:
             user_id (int): 用户的user_id
@@ -353,11 +353,11 @@ class Reviewer(Browser):
             bool: 操作是否成功
         """
 
-        return await self.database.del_user_id(self.tieba_name, user_id)
+        return await self.database.del_user_id(self.fname, user_id)
 
     async def get_user_id(self, user_id: int) -> int:
         """
-        获取表user_id_{tieba_name}中user_id的权限级别
+        获取表user_id_{fname}中user_id的权限级别
 
         Args:
             user_id (int): 用户的user_id
@@ -366,11 +366,11 @@ class Reviewer(Browser):
             int: 权限级别
         """
 
-        return await self.database.get_user_id(self.tieba_name, user_id)
+        return await self.database.get_user_id(self.fname, user_id)
 
     async def get_user_id_full(self, user_id: int) -> tuple[int, str, datetime.datetime]:
         """
-        获取表user_id_{tieba_name}中user_id的完整信息
+        获取表user_id_{fname}中user_id的完整信息
 
         Args:
             user_id (int): 用户的user_id
@@ -379,11 +379,11 @@ class Reviewer(Browser):
             tuple[int, str, datetime.datetime]: 权限级别, 备注, 记录时间
         """
 
-        return await self.database.get_user_id_full(self.tieba_name, user_id)
+        return await self.database.get_user_id_full(self.fname, user_id)
 
     async def get_user_id_list(self, permission: int = 0, limit: int = 1, offset: int = 0) -> list[int]:
         """
-        获取表user_id_{tieba_name}中user_id的列表
+        获取表user_id_{fname}中user_id的列表
 
         Args:
             permission (int, optional): 获取所有权限级别大于等于permission的user_id. Defaults to 0.
@@ -394,7 +394,7 @@ class Reviewer(Browser):
             list[int]: user_id列表
         """
 
-        return await self.database.get_user_id_list(self.tieba_name, permission, limit, offset)
+        return await self.database.get_user_id_list(self.fname, permission, limit, offset)
 
     def scan_QRcode(self, image: np.ndarray) -> str:
         """
@@ -447,7 +447,7 @@ class Reviewer(Browser):
         """
 
         if img_hash := self.compute_imghash(image):
-            return await self.database.get_imghash(self.tieba_name, img_hash)
+            return await self.database.get_imghash(self.fname, img_hash)
         return 0
 
     async def get_imghash_full(self, image: np.ndarray) -> tuple[int, str]:
@@ -462,5 +462,5 @@ class Reviewer(Browser):
         """
 
         if img_hash := self.compute_imghash(image):
-            return await self.database.get_imghash_full(self.tieba_name, img_hash)
+            return await self.database.get_imghash_full(self.fname, img_hash)
         return 0, ''
