@@ -1,9 +1,13 @@
+<div align='center'>
+
 # Tieba-Manager
 
 [![gitee](https://img.shields.io/badge/mirror-gitee-red)](https://gitee.com/Starry-OvO/Tieba-Manager)
 [![release](https://img.shields.io/github/release/Starry-OvO/Tieba-Manager?color=blue&logo=github)](https://github.com/Starry-OvO/Tieba-Manager/releases)
 [![license](https://img.shields.io/github/license/Starry-OvO/Tieba-Manager?color=blue&logo=github)](https://github.com/Starry-OvO/Tieba-Manager/blob/main/LICENSE)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/Starry-OvO/Tieba-Manager?logo=lgtm)](https://lgtm.com/projects/g/Starry-OvO/Tieba-Manager/context:python)
+
+</div>
 
 ## 功能概览
 
@@ -18,7 +22,7 @@
 + 使用大吧主`BDUSS`推荐帖子到首页、移动帖子到指定分区、加精、撤精、置顶、撤置顶、添加黑名单、查看黑名单、取消黑名单
 + 获取用户主页信息、关注贴吧列表
 + 获取贴吧最新关注用户列表、等级排行榜
-+ 使用`BDUSS`关注吧、签到吧、水帖
++ 使用`BDUSS`关注吧、签到吧、水帖、发送私信
 
 ## 准备使用
 

@@ -371,13 +371,13 @@ class Browser(object):
         pub_key = RSA.import_key(pub_key_bytes)
         rsa_chiper = PKCS1_v1_5.new(pub_key)
 
-        data = UpdateClientInfoReqIdl_pb2.UpdateClientInfoReqIdl.DataReq()
-        data.bduss = self.sessions.BDUSS
-        data.device = """{"subapp_type":"mini","_client_version":"9.1.0.0","pversion":"1.0.3","_phone_imei":"000000000000000","from":"1021099l","cuid_galaxy2":"132D741FDA2C7D06A1BF9D63F213B453|0","model":"LIO-AN00","_client_type":"2"}"""
-        data.secretKey = rsa_chiper.encrypt(self.sessions.ws_password)
-        update_cfg_req = UpdateClientInfoReqIdl_pb2.UpdateClientInfoReqIdl()
-        update_cfg_req.data.CopyFrom(data)
-        update_cfg_req.cuid = 'baidutiebaapp4b825a46-779d-4004-a264-006433001684|com.baidu.tieba_mini9.1.0.0'
+        data_proto = UpdateClientInfoReqIdl_pb2.UpdateClientInfoReqIdl.DataReq()
+        data_proto.bduss = self.sessions.BDUSS
+        data_proto.device = """{"subapp_type":"mini","_client_version":"9.1.0.0","pversion":"1.0.3","_phone_imei":"000000000000000","from":"1021099l","cuid_galaxy2":"132D741FDA2C7D06A1BF9D63F213B453|0","model":"LIO-AN00","_client_type":"2"}"""
+        data_proto.secretKey = rsa_chiper.encrypt(self.sessions.ws_password)
+        req_proto = UpdateClientInfoReqIdl_pb2.UpdateClientInfoReqIdl()
+        req_proto.data.CopyFrom(data_proto)
+        req_proto.cuid = 'baidutiebaapp4b825a46-779d-4004-a264-006433001684|com.baidu.tieba_mini9.1.0.0'
 
         websocket = self.sessions.websocket
 
@@ -388,7 +388,7 @@ class Browser(object):
 
             await websocket.send_bytes(
                 self.sessions._wrap_ws_bytes(
-                    update_cfg_req.SerializeToString(), cmd=1001, need_gzip=False, need_encrypt=False
+                    req_proto.SerializeToString(), cmd=1001, need_gzip=False, need_encrypt=False
                 )
             )
 
