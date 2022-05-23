@@ -37,7 +37,7 @@ git clone https://github.com/Starry-OvO/Tieba-Manager.git
 + `pip`安装依赖
 
 ```bash
-pip install aiohttp[speedups] protobuf pycrytodome aiomysql lxml beautifulsoup4 opencv-contrib-python
+pip install aiohttp[speedups] protobuf pycrytodome aiomysql pyyaml lxml beautifulsoup4 opencv-contrib-python
 ```
 
 + 修改`config/config-example.json`，填入你的`BDUSS`，将文件名修改为`config.json`

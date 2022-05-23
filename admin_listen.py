@@ -1,16 +1,17 @@
 # -*- coding:utf-8 -*-
 import asyncio
 import functools
-import json
 import re
 import time
 from collections.abc import Callable
 
+import yaml
+
 import tiebaBrowser as tb
 from tiebaBrowser._config import SCRIPT_PATH
 
-with (SCRIPT_PATH.parent / 'config/listen_config.json').open('r', encoding='utf-8') as _file:
-    LISTEN_CONFIG = json.load(_file)
+with (SCRIPT_PATH.parent / 'config/listen_config.json').open('r', encoding='utf-8') as file:
+    LISTEN_CONFIG = yaml.load(file, Loader=yaml.FullLoader)
 
 
 class TimerRecorder(object):
@@ -210,9 +211,7 @@ class Listener(object):
 
     def __init__(self) -> None:
 
-        self.handlers = {
-            (handler := Handler(**_config)).fname: handler for _config in LISTEN_CONFIG['configs']
-        }
+        self.handlers = {(handler := Handler(**_config)).fname: handler for _config in LISTEN_CONFIG['configs']}
 
         self.listener = tb.Reviewer(LISTEN_CONFIG['listener_key'], '')
 
@@ -755,9 +754,9 @@ class Listener(object):
             return
 
         total_recom_num, used_recom_num = await ctx.handler.admin.get_recom_status(ctx.fname)
-        content = f"@{ctx.at.user.user_name} \nUsed: {used_recom_num} / {total_recom_num} = {used_recom_num/total_recom_num*100:.2f}%"
+        content = f"Used: {used_recom_num} / {total_recom_num} = {used_recom_num/total_recom_num*100:.2f}%"
 
-        if await ctx.handler.speaker.add_post(ctx.fname, ctx.tid, content):
+        if await ctx.handler.speaker.send_msg(ctx.user_id, content):
             await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=1, need_arg_num=2)
@@ -865,9 +864,7 @@ class Listener(object):
 
         tb.log.info(f"{ctx.log_name}:{ctx.text} in tid:{ctx.tid}")
 
-        if await ctx.handler.admin.add_tid(ctx.tid, True) and await ctx.handler.admin.hide_thread(
-            ctx.fname, ctx.tid
-        ):
+        if await ctx.handler.admin.add_tid(ctx.tid, True) and await ctx.handler.admin.hide_thread(ctx.fname, ctx.tid):
             await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=2, need_arg_num=0)

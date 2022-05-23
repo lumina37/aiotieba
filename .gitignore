@@ -13,8 +13,8 @@ __*/
 *.code-workspace
 
 config/*
-!config/config-example.json
-!config/listen_config-example.json
+!config/config-example.yaml
+!config/listen_config-example.yaml
 
 log/
 charles/

@@ -1,15 +1,16 @@
 # -*- coding:utf-8 -*-
 __all__ = ['SCRIPT_PATH', 'MODULE_DIR', 'CONFIG']
 
-import json
 import sys
 from pathlib import Path
+
+import yaml
 
 SCRIPT_PATH = Path(sys.argv[0])
 MODULE_DIR = Path(__file__).parent
 
-with (SCRIPT_PATH.parent / 'config/config.json').open('r', encoding='utf-8') as file:
-    CONFIG: dict = json.load(file)
+with (SCRIPT_PATH.parent / 'config/config.yaml').open('r', encoding='utf-8') as file:
+    CONFIG: dict[str, str] = yaml.load(file, Loader=yaml.FullLoader)
 if not CONFIG.__contains__('BDUSS'):
     CONFIG['BDUSS'] = {}
 if not isinstance(CONFIG['BDUSS'], dict):
