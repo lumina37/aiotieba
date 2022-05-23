@@ -378,11 +378,11 @@ class Browser(object):
 
         data_proto = UpdateClientInfoReqIdl_pb2.UpdateClientInfoReqIdl.DataReq()
         data_proto.bduss = self.sessions.BDUSS
-        data_proto.device = """{"subapp_type":"mini","_client_version":"9.1.0.0","pversion":"1.0.3","_phone_imei":"000000000000000","from":"1021099l","cuid_galaxy2":"132D741FDA2C7D06A1BF9D63F213B453|0","model":"LIO-AN00","_client_type":"2"}"""
+        data_proto.device = """{"subapp_type":"mini","_client_version":"9.1.0.0","pversion":"1.0.3","_msg_status":"1","_phone_imei":"000000000000000","from":"1021099l","cuid_galaxy2":"132D741FDA2C7D06A1BF9D63F213B453|0","model":"LIO-AN00","_client_type":"2"}"""
         data_proto.secretKey = rsa_chiper.encrypt(self.sessions.ws_password)
         req_proto = UpdateClientInfoReqIdl_pb2.UpdateClientInfoReqIdl()
         req_proto.data.CopyFrom(data_proto)
-        req_proto.cuid = 'baidutiebaapp4b825a46-779d-4004-a264-006433001684|com.baidu.tieba_mini9.1.0.0'
+        req_proto.cuid = "baidutiebaapp4b825a46-779d-4004-a264-006433001684|com.baidu.tieba_mini9.1.0.0"
 
         websocket = self.sessions.websocket
 
