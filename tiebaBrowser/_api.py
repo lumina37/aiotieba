@@ -304,9 +304,12 @@ class Sessions(object):
 
         return ws_bytes
 
-    async def create_websocket(self) -> bool:
+    async def create_websocket(self, heartbeat: float | None = None) -> bool:
         """
         建立weboscket连接
+
+        Args:
+            heartbeat (float | None, optional): 是否定时ping. Defaults to None.
 
         Returns:
             bool: 连接是否成功
@@ -316,7 +319,9 @@ class Sessions(object):
             await self.enter()
 
         try:
-            self.websocket = await self._app_websocket._ws_connect("ws://im.tieba.baidu.com:8000")
+            self.websocket = await self._app_websocket._ws_connect(
+                "ws://im.tieba.baidu.com:8000", heartbeat=heartbeat, ssl=False
+            )
 
         except Exception as err:
             LOG.warning(f"Failed to create websocket. reason:{err}")
@@ -457,7 +462,7 @@ class Browser(object):
         补全完整版用户信息
 
         Args:
-            _id (str | int): 用户id user_name或portrait或user_id
+            _id (str | int): 用户id user_id/user_name/portrait
 
         Returns:
             UserInfo: 完整版用户信息
@@ -2484,20 +2489,25 @@ class Browser(object):
         LOG.info(f"Successfully add post in {tid}")
         return True
 
-    async def send_msg(self, user_id: int, content: str) -> bool:
+    async def send_msg(self, _id: str | int, content: str) -> bool:
         """
         发送私信
 
         Args:
-            user_id (int): 私信对象的user_id
+            _id (str | int): 用户id user_id/user_name/portrait
             content (str): 发送内容
 
         Returns:
             bool: 操作是否成功
         """
 
+        if not UserInfo.is_user_id(_id):
+            user = await self.get_basic_user_info(_id)
+        else:
+            user = BasicUserInfo(_id)
+
         data_proto = CommitPersonalMsgReqIdl_pb2.CommitPersonalMsgReqIdl.DataReq()
-        data_proto.toUid = user_id
+        data_proto.toUid = user.user_id
         data_proto.content = content
         data_proto.msgType = 1
         req_proto = CommitPersonalMsgReqIdl_pb2.CommitPersonalMsgReqIdl()
