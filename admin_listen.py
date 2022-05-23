@@ -11,7 +11,7 @@ import tiebaBrowser as tb
 from tiebaBrowser._config import SCRIPT_PATH
 
 with (SCRIPT_PATH.parent / 'config/listen_config.json').open('r', encoding='utf-8') as file:
-    LISTEN_CONFIG = yaml.load(file, Loader=yaml.FullLoader)
+    LISTEN_CONFIG = yaml.load(file, Loader=yaml.SafeLoader)
 
 
 class TimerRecorder(object):
