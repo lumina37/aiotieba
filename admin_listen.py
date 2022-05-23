@@ -10,7 +10,7 @@ import yaml
 import tiebaBrowser as tb
 from tiebaBrowser._config import SCRIPT_PATH
 
-with (SCRIPT_PATH.parent / 'config/listen_config.json').open('r', encoding='utf-8') as file:
+with (SCRIPT_PATH.parent / 'config/listen_config.yaml').open('r', encoding='utf-8') as file:
     LISTEN_CONFIG = yaml.load(file, Loader=yaml.SafeLoader)
 
 
@@ -660,9 +660,14 @@ class Listener(object):
             return
 
         permission, note, record_time = await ctx.handler.admin.get_user_id_full(user.user_id)
-        content = f"""@{ctx.at.user.user_name} \nuser_name: {user.user_name}\nuser_id: {user.user_id}\nportrait: {user.portrait}\npermission: {permission}\nnote: {note}\nrecord_time: {record_time.strftime("%Y-%m-%d %H:%M:%S")}"""
+        msg_content = f"""user_name: {user.user_name}\nuser_id: {user.user_id}\nportrait: {user.portrait}\npermission: {permission}\nnote: {note}\nrecord_time: {record_time.strftime("%Y-%m-%d %H:%M:%S")}"""
+        post_content = f"""@{ctx.at.user.user_name} \n{msg_content}"""
 
-        if await ctx.handler.speaker.add_post(ctx.fname, ctx.tid, content):
+        msg_success, post_success = await asyncio.gather(
+            ctx.handler.speaker.add_post(ctx.fname, ctx.tid, post_content),
+            ctx.handler.speaker.send_msg(ctx.user_id, msg_content),
+        )
+        if msg_success and post_success:
             await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=4, need_arg_num=2)

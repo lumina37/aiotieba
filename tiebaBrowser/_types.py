@@ -95,10 +95,18 @@ class BasicUserInfo(object):
     __slots__ = ['_raw_data', '_user_id', 'user_name', '_portrait', '_nick_name']
 
     def __init__(self, _id: str | int | None = None, user_proto: User_pb2.User | None = None) -> None:
-        self.__init_null()
+        self._raw_data = None
+        self.user_name = ''
+        self._nick_name = ''
+        self._portrait = ''
+        self._user_id = 0
 
         if user_proto:
-            self.__init_by_data(user_proto)
+            self._raw_data = user_proto
+            self._user_id = user_proto.id
+            self.user_name = user_proto.name
+            self.portrait = user_proto.portrait
+            self.nick_name = user_proto.name_show
 
         elif _id:
             self._init_by_id(_id)
@@ -112,24 +120,6 @@ class BasicUserInfo(object):
             self.portrait = _id
             if not self.portrait:
                 self.user_name = _id
-
-    def __init_by_data(self, user_proto: User_pb2.User) -> None:
-
-        self._raw_data = user_proto
-
-        self._user_id = user_proto.id
-        self.user_name = user_proto.name
-        self.portrait = user_proto.portrait
-        self.nick_name = user_proto.name_show
-
-    def __init_null(self) -> None:
-
-        self._raw_data = None
-
-        self.user_name = ''
-        self._nick_name = ''
-        self._portrait = ''
-        self._user_id = 0
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} [user_id:{self._user_id} / user_name:{self.user_name} / portrait:{self._portrait} / nick_name:{self._nick_name}]"
@@ -236,27 +226,22 @@ class UserInfo(BasicUserInfo):
 
     def __init__(self, _id: str | int | None = None, user_proto: User_pb2.User | None = None) -> None:
         super().__init__(_id, user_proto)
-        self.__init_null()
 
-        if user_proto:
-            self.__init_by_data(user_proto)
-
-    def __init_by_data(self, user_proto: User_pb2.User) -> None:
-        self._level = user_proto.level_id
-        self._gender = user_proto.gender or user_proto.sex
-        self.is_vip = True if user_proto.new_tshow_icon else user_proto.vipInfo.v_status
-        self.is_god = user_proto.new_god_data.status
-        priv_proto = user_proto.priv_sets
-        self.priv_like = priv_proto.like
-        self.priv_reply = priv_proto.reply
-
-    def __init_null(self) -> None:
         self._level = 0
         self._gender = 0
         self._is_vip = False
         self._is_god = False
         self._priv_like = 3
         self._priv_reply = 1
+
+        if user_proto:
+            self._level = user_proto.level_id
+            self._gender = user_proto.gender or user_proto.sex
+            self.is_vip = True if user_proto.new_tshow_icon else user_proto.vipInfo.v_status
+            self.is_god = user_proto.new_god_data.status
+            priv_proto = user_proto.priv_sets
+            self.priv_like = priv_proto.like
+            self.priv_reply = priv_proto.reply
 
     def __eq__(self, obj: "UserInfo") -> bool:
         return super().__eq__(obj)

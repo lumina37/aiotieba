@@ -224,7 +224,7 @@ class CloudReview(tb.Reviewer):
                     continue
                 permission = await self.get_imghash(img)
                 if permission <= -5:
-                    return tb.Punish(1, 10)
+                    return tb.Punish(1, 10, '误封请及时申诉')
                 if permission == -2:
                     return tb.Punish(1)
 
@@ -295,10 +295,10 @@ class CloudReview(tb.Reviewer):
             return tb.Punish(1, 10, note="黑名单")
 
         text = obj.text
-        if re.search("((?<![a-z])(v|t|a)|瞳|梓|罐|豆|鸟|鲨|阿)(÷|/|／|➗|畜|处|除|楚|初|醋|cg)|痛(楚|初|醋)", text, re.I):
+        if re.search("((?<![a-z])(v|t|a|3)|瞳|梓|罐|豆|鸟|鲨|阿|三)(÷|/|／|➗|畜|处|除|楚|初|醋|cg)|痛(楚|初|醋)", text, re.I):
             # 牧场
             return tb.Punish(1)
-        if re.search("(巢|三|挞)(÷|/|／|➗|畜|处|除|楚|初|醋|cg|u|友|跌|批|p)|(三|3)圣", text, re.I):
+        if re.search("(巢|三|挞)(÷|/|／|➗|畜|处|除|楚|初|醋|cg|u|友|跌|批|p)|(三|3)(圣|友)", text, re.I):
             # a吧特色
             return tb.Punish(1)
         if re.search("椰子汁|🥥|东雪莲|莲宝|林忆宁|杨沐|张依|赵若|李奕|伍敏慧|谭杉杉|王楠", text):

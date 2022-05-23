@@ -2524,9 +2524,10 @@ class Browser(object):
                 raise ValueError(res_proto.data.blockInfo.blockErrmsg)
 
         except Exception as err:
-            LOG.warning(f"Failed to send msg. reason:{err}")
+            LOG.warning(f"Failed to send msg to {user.user_id}. reason:{err}")
             return False
 
+        LOG.info(f"Successfully sending msg to {user.user_id}. content:{content}")
         return True
 
     async def set_privacy(self, fid: int, tid: int, pid: int, hide: bool = True) -> bool:
