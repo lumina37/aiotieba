@@ -23,6 +23,7 @@ test*
 /*.py
 /*.proto
 
+!.github/
 !/README.md
 !/admin_listen.py
 !/cloud_review_asoul.py

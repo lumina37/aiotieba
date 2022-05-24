@@ -381,12 +381,16 @@ class Reviewer(Browser):
 
         return await self.database.get_user_id_full(self.fname, user_id)
 
-    async def get_user_id_list(self, permission: int = 0, limit: int = 1, offset: int = 0) -> list[int]:
+    async def get_user_id_list(
+        self, lower_permission: int = 0, upper_permission: int = 5, limit: int = 1, offset: int = 0
+    ) -> list[int]:
         """
         获取表user_id_{fname}中user_id的列表
 
         Args:
-            permission (int, optional): 获取所有权限级别大于等于permission的user_id. Defaults to 0.
+            fname (str): 贴吧名
+            lower_permission (int, optional): 获取所有权限级别大于等于lower_permission的user_id. Defaults to 0.
+            upper_permission (int, optional): 获取所有权限级别小于等于upper_permission的user_id. Defaults to 5.
             limit (int, optional): 返回数量限制. Defaults to 1.
             offset (int, optional): 偏移. Defaults to 0.
 
@@ -394,7 +398,7 @@ class Reviewer(Browser):
             list[int]: user_id列表
         """
 
-        return await self.database.get_user_id_list(self.fname, permission, limit, offset)
+        return await self.database.get_user_id_list(self.fname, lower_permission, upper_permission, limit, offset)
 
     def scan_QRcode(self, image: np.ndarray) -> str:
         """

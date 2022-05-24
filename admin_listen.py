@@ -303,7 +303,7 @@ class Listener(object):
 
         active_admin_list = [
             (await self.listener.get_basic_user_info(user_id)).user_name
-            for user_id in await ctx.handler.admin.get_user_id_list(permission=2, limit=4)
+            for user_id in await ctx.handler.admin.get_user_id_list(lower_permission=2, limit=4)
         ]
         extra_info = ctx.args[0] if len(ctx.args) else '无'
         content = f"该回复为吧务召唤指令@.v_guard holyshit的自动响应\n召唤人诉求: {extra_info}@" + " @".join(active_admin_list)

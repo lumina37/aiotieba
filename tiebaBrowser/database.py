@@ -590,9 +590,7 @@ class Database(object):
         try:
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
-                    await cursor.execute(
-                        f"SELECT `permission` FROM `user_id_{fname}` WHERE `user_id`=%s", (user_id,)
-                    )
+                    await cursor.execute(f"SELECT `permission` FROM `user_id_{fname}` WHERE `user_id`=%s", (user_id,))
         except aiomysql.Error as err:
             LOG.warning(f"Failed to get {user_id}. reason:{err}")
             return 0
@@ -631,14 +629,15 @@ class Database(object):
 
     @translate_fname
     async def get_user_id_list(
-        self, fname: str, permission: int = 0, limit: int = 1, offset: int = 0
+        self, fname: str, lower_permission: int = 0, upper_permission: int = 5, limit: int = 1, offset: int = 0
     ) -> list[int]:
         """
         获取表user_id_{fname}中user_id的列表
 
         Args:
             fname (str): 贴吧名
-            permission (int, optional): 获取所有权限级别大于等于permission的user_id. Defaults to 0.
+            lower_permission (int, optional): 获取所有权限级别大于等于lower_permission的user_id. Defaults to 0.
+            upper_permission (int, optional): 获取所有权限级别小于等于upper_permission的user_id. Defaults to 5.
             limit (int, optional): 返回数量限制. Defaults to 1.
             offset (int, optional): 偏移. Defaults to 0.
 
@@ -650,8 +649,8 @@ class Database(object):
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     await cursor.execute(
-                        f"SELECT `user_id` FROM `user_id_{fname}` WHERE `permission`>=%s ORDER BY `record_time` DESC LIMIT %s OFFSET %s",
-                        (permission, limit, offset),
+                        f"SELECT `user_id` FROM `user_id_{fname}` WHERE `permission`>=%s AND `permission`<=%s ORDER BY `record_time` DESC LIMIT %s OFFSET %s",
+                        (lower_permission, upper_permission, limit, offset),
                     )
         except aiomysql.Error as err:
             LOG.warning(f"Failed to get user_ids in {fname}. reason:{err}")
@@ -678,9 +677,7 @@ class Database(object):
                 )
 
     @translate_fname
-    async def add_imghash(
-        self, fname: str, img_hash: str, raw_hash: str, permission: int = 0, note: str = ''
-    ) -> bool:
+    async def add_imghash(self, fname: str, img_hash: str, raw_hash: str, permission: int = 0, note: str = '') -> bool:
         """
         将img_hash添加到表imghash_{fname}
 
@@ -749,9 +746,7 @@ class Database(object):
         try:
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
-                    await cursor.execute(
-                        f"SELECT `permission` FROM `imghash_{fname}` WHERE `img_hash`=%s", (img_hash,)
-                    )
+                    await cursor.execute(f"SELECT `permission` FROM `imghash_{fname}` WHERE `img_hash`=%s", (img_hash,))
         except aiomysql.Error as err:
             LOG.warning(f"Failed to select {img_hash}. reason:{err}")
             return False

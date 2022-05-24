@@ -10,6 +10,7 @@ import random
 import re
 import socket
 import time
+from typing import Literal
 
 import aiohttp
 import cv2 as cv
@@ -292,6 +293,9 @@ class Sessions(object):
         Returns:
             bytes: 解封装后的websocket数据
         """
+
+        if len(ws_bytes) <= 9:
+            return ws_bytes
 
         flag = ws_bytes[0]
         ws_bytes = ws_bytes[9:]
@@ -875,14 +879,14 @@ class Browser(object):
 
         return comments
 
-    async def block(self, fname: str, user: BasicUserInfo, day: int, reason: str = '') -> bool:
+    async def block(self, fname: str, user: BasicUserInfo, day: Literal[1, 3, 10], reason: str = '') -> bool:
         """
-        封禁用户 支持小吧主/语音小编封3/10天
+        封禁用户
 
         Args:
             fname (str): 贴吧名
             user (BasicUserInfo): 待封禁用户信息
-            day (int): 封禁天数
+            day (Literal[1, 3, 10]): 封禁天数
             reason (str, optional): 封禁理由. Defaults to ''.
 
         Returns:
