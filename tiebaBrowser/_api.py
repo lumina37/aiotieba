@@ -309,7 +309,7 @@ class Sessions(object):
         建立weboscket连接
 
         Args:
-            heartbeat (float | None, optional): 是否定时ping. Defaults to None.
+            heartbeat (float, optional): 是否定时ping. Defaults to None.
 
         Returns:
             bool: 连接是否成功
@@ -404,7 +404,7 @@ class Browser(object):
                 raise ValueError(res_proto.error.errmsg)
 
         except Exception as err:
-            LOG.warning(f"Failed to create tieba-websocket. reason{err}")
+            LOG.warning(f"Failed to create tieba-websocket. reason:{err}")
 
         return websocket
 

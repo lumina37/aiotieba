@@ -663,11 +663,11 @@ class Listener(object):
         msg_content = f"""user_name: {user.user_name}\nuser_id: {user.user_id}\nportrait: {user.portrait}\npermission: {permission}\nnote: {note}\nrecord_time: {record_time.strftime("%Y-%m-%d %H:%M:%S")}"""
         post_content = f"""@{ctx.at.user.user_name} \n{msg_content}"""
 
-        msg_success, post_success = await asyncio.gather(
+        success, _ = await asyncio.gather(
             ctx.handler.speaker.add_post(ctx.fname, ctx.tid, post_content),
             ctx.handler.speaker.send_msg(ctx.user_id, msg_content),
         )
-        if msg_success and post_success:
+        if success:
             await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=4, need_arg_num=2)
