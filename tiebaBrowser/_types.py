@@ -718,7 +718,7 @@ class _BasicContainer(_DataWrapper):
         return self._user
 
     @property
-    def author_id(self) -> UserInfo:
+    def author_id(self) -> int:
         if self._author_id is None:
             self._author_id = self.user.user_id
         return self._author_id
@@ -1357,7 +1357,6 @@ class Comment(_BasicContainer):
         if _raw_data:
             self.pid: int = _raw_data.id
             self._user = UserInfo(_raw_data=_raw_data.author)
-            self._author_id = _raw_data.author_id
 
             self.agree: int = _raw_data.agree.agree_num
             self.disagree: int = _raw_data.agree.disagree_num

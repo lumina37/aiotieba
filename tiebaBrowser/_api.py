@@ -1549,13 +1549,6 @@ class Browser(object):
             soup = BeautifulSoup(data['content'], 'lxml')
             items = soup.find_all('a', class_='recover_list_item_btn')
 
-        except Exception as err:
-            LOG.warning(f"Failed to get recover_list of {fname} pn:{pn}. reason:{err}")
-            res_list = []
-            has_more = False
-
-        else:
-
             def _parse_item(item):
                 tid = int(item['attr-tid'])
                 pid = int(item['attr-pid'])
@@ -1565,6 +1558,11 @@ class Browser(object):
 
             res_list = [_parse_item(item) for item in items]
             has_more = data['page']['have_next']
+
+        except Exception as err:
+            LOG.warning(f"Failed to get recover_list of {fname} pn:{pn}. reason:{err}")
+            res_list = []
+            has_more = False
 
         return res_list, has_more
 
@@ -1594,13 +1592,6 @@ class Browser(object):
             soup = BeautifulSoup(await res.text(), 'lxml')
             items = soup.find_all('td', class_='left_cell')
 
-        except Exception as err:
-            LOG.warning(f"Failed to get black_list of {fname} pn:{pn}. reason:{err}")
-            res_list = []
-            has_more = False
-
-        else:
-
             def _parse_item(item):
                 user_info_item = item.previous_sibling.input
                 user = BasicUserInfo()
@@ -1611,6 +1602,11 @@ class Browser(object):
 
             res_list = [_parse_item(item) for item in items]
             has_more = len(items) == 15
+
+        except Exception as err:
+            LOG.warning(f"Failed to get black_list of {fname} pn:{pn}. reason:{err}")
+            res_list = []
+            has_more = False
 
         return res_list, has_more
 
@@ -2357,13 +2353,6 @@ class Browser(object):
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
-        except Exception as err:
-            LOG.warning(f"Failed to get recom_list of {fname_or_fid}. reason:{err}")
-            res_list = []
-            has_more = False
-
-        else:
-
             def _pack_data_dict(data_dict):
                 thread_dict = data_dict['thread_list']
                 thread = Thread(ParseDict(thread_dict, ThreadInfo_pb2.ThreadInfo(), ignore_unknown_fields=True))
@@ -2372,6 +2361,11 @@ class Browser(object):
 
             res_list = [_pack_data_dict(data_dict) for data_dict in res_json['recom_thread_list']]
             has_more = bool(int(res_json['is_has_more']))
+
+        except Exception as err:
+            LOG.warning(f"Failed to get recom_list of {fname_or_fid}. reason:{err}")
+            res_list = []
+            has_more = False
 
         return res_list, has_more
 
@@ -2502,13 +2496,6 @@ class Browser(object):
             soup = BeautifulSoup(await res.text(), 'lxml')
             items = soup.select('tr[class^=drl_list_item]')
 
-        except Exception as err:
-            LOG.warning(f"Failed to get rank_list of {fname} pn:{pn}. reason:{err}")
-            res_list = []
-            has_more = False
-
-        else:
-
             def _parse_item(item):
                 user_name_item = item.td.next_sibling
                 user_name = user_name_item.text
@@ -2523,6 +2510,11 @@ class Browser(object):
 
             res_list = [_parse_item(item) for item in items]
             has_more = len(items) == 20
+
+        except Exception as err:
+            LOG.warning(f"Failed to get rank_list of {fname} pn:{pn}. reason:{err}")
+            res_list = []
+            has_more = False
 
         return res_list, has_more
 
@@ -2553,13 +2545,6 @@ class Browser(object):
             soup = BeautifulSoup(await res.text(), 'lxml')
             items = soup.find_all('div', class_='name_wrap')
 
-        except Exception as err:
-            LOG.warning(f"Failed to get member_list of {fname} pn:{pn}. reason:{err}")
-            res_list = []
-            has_more = False
-
-        else:
-
             def _parse_item(item):
                 user_item = item.a
                 user_name = user_item['title']
@@ -2570,6 +2555,11 @@ class Browser(object):
 
             res_list = [_parse_item(item) for item in items]
             has_more = len(items) == 24
+
+        except Exception as err:
+            LOG.warning(f"Failed to get member_list of {fname} pn:{pn}. reason:{err}")
+            res_list = []
+            has_more = False
 
         return res_list, has_more
 
