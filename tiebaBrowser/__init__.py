@@ -5,7 +5,7 @@
 @License: Unlicense
 @Homepage: https://github.com/Starry-OvO/Tieba-Cloud-Review
 @Require Python 3.10+
-@Required Modules: aiohttp[speedups] protobuf pycrytodome aiomysql pyyaml lxml beautifulsoup4 opencv-contrib-python
+@Required Modules: pyyaml aiohttp[speedups] protobuf lxml beautifulsoup4 pycrytodome aiomysql opencv-contrib-python
 """
 
 import asyncio

@@ -1,0 +1,8 @@
+pyyaml
+aiohttp[speedups]
+protobuf
+lxml
+beautifulsoup4
+pycrytodome
+aiomysql
+opencv-contrib-python
