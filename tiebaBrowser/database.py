@@ -4,6 +4,7 @@ __all__ = ['Database']
 import asyncio
 import datetime
 import functools
+from typing import List, Optional, Tuple, Union
 
 import aiomysql
 
@@ -180,7 +181,7 @@ class Database(object):
                     "CREATE TABLE IF NOT EXISTS `user` (`user_id` BIGINT PRIMARY KEY, `user_name` VARCHAR(14) NOT NULL DEFAULT '', `portrait` VARCHAR(36) UNIQUE NOT NULL, INDEX `user_name`(user_name))"
                 )
 
-    async def get_basic_user_info(self, _id: str | int) -> BasicUserInfo:
+    async def get_basic_user_info(self, _id: Union[str, int]) -> BasicUserInfo:
         """
         获取简略版用户信息
 
@@ -429,7 +430,7 @@ class Database(object):
         return True
 
     @translate_fname
-    async def is_tid_hide(self, fname: str, tid: int) -> bool | None:
+    async def is_tid_hide(self, fname: str, tid: int) -> Optional[bool]:
         """
         获取表tid_water_{fname}中tid的待恢复状态
 
@@ -477,7 +478,7 @@ class Database(object):
         return True
 
     @translate_fname
-    async def get_tid_list(self, fname: str, limit: int = 128, offset: int = 0) -> list[int]:
+    async def get_tid_list(self, fname: str, limit: int = 128, offset: int = 0) -> List[int]:
         """
         获取表tid_water_{fname}中待恢复的tid的列表
 
@@ -600,7 +601,7 @@ class Database(object):
             return 0
 
     @translate_fname
-    async def get_user_id_full(self, fname: str, user_id: int) -> tuple[int, str, datetime.datetime]:
+    async def get_user_id_full(self, fname: str, user_id: int) -> Tuple[int, str, datetime.datetime]:
         """
         获取表user_id_{fname}中user_id的完整信息
 
@@ -630,7 +631,7 @@ class Database(object):
     @translate_fname
     async def get_user_id_list(
         self, fname: str, lower_permission: int = 0, upper_permission: int = 5, limit: int = 1, offset: int = 0
-    ) -> list[int]:
+    ) -> List[int]:
         """
         获取表user_id_{fname}中user_id的列表
 
@@ -756,7 +757,7 @@ class Database(object):
             return 0
 
     @translate_fname
-    async def get_imghash_full(self, fname: str, img_hash: str) -> tuple[int, str]:
+    async def get_imghash_full(self, fname: str, img_hash: str) -> Tuple[int, str]:
         """
         获取表imghash_{fname}中img_hash的完整信息
 

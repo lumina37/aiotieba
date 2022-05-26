@@ -1,13 +1,9 @@
-<div align='center'>
-
 # Tieba-Manager
 
 [![gitee](https://img.shields.io/badge/mirror-gitee-red)](https://gitee.com/Starry-OvO/Tieba-Manager)
 [![release](https://img.shields.io/github/release/Starry-OvO/Tieba-Manager?color=blue&logo=github)](https://github.com/Starry-OvO/Tieba-Manager/releases)
 [![license](https://img.shields.io/github/license/Starry-OvO/Tieba-Manager?color=blue&logo=github)](https://github.com/Starry-OvO/Tieba-Manager/blob/main/LICENSE)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/Starry-OvO/Tieba-Manager?logo=lgtm)](https://lgtm.com/projects/g/Starry-OvO/Tieba-Manager/context:python)
-
-</div>
 
 ## 功能概览
 
@@ -26,7 +22,7 @@
 
 ## 准备使用
 
-+ 确保你的[`Python`](https://www.python.org/downloads/)版本在`3.10`以上
++ 确保你的[`Python`](https://www.python.org/downloads/)版本在`3.8`及以上
 
 + 拉取代码并安装依赖
 
@@ -104,18 +100,18 @@ nohup python $TIEBA_MANAGER_PATH/cloud_review_diana.py >/dev/null 2>&1 &
 
 ## 用户名单
 
-云审查工具&指令管理器已在以下贴吧应用（2022.05.24更新，按启用时间先后排序）
+云审查工具&指令管理器已在以下贴吧应用（2022.05.27更新，按启用时间先后排序）
 
 |      吧名      | 关注用户数 | 最近29天日均访问量 | 日均主题帖数 | 日均回复数 |
 | :------------: | :--------: | :----------------: | :----------: | :--------: |
-| vtuber自由讨论 |   16,231   |       3,843        |      4       |    124     |
-|     asoul      |  160,189   |      274,463       |    2,501     |   29,390   |
-|      嘉然      |   52,414   |       25,161       |     266      |   3,556    |
-|      宫漫      | 1,227,409  |       54,908       |     332      |   4,261    |
-|    lol半价     | 1,928,789  |      161,338       |     522      |   10,078   |
-|     孙笑川     | 1,834,603  |      497,027       |    5,405     |  146,583   |
-|      向晚      |   26,383   |       21,751       |     261      |   3,143    |
-|      贝拉      |   20,845   |       21,721       |     161      |   2,881    |
-|    王力口乐    |   10,435   |       39,565       |     526      |   6,577    |
-|      乃琳      |   16,111   |       11,127       |      80      |   1,404    |
-| asoul一个魂儿  |   15,105   |       4,602        |      76      |   1,239    |
+| vtuber自由讨论 |   16,230   |       3,842        |      4       |    125     |
+|     asoul      |  160,200   |      278,228       |    2,547     |   30,344   |
+|      嘉然      |   52,884   |       26,603       |     278      |   3,738    |
+|      宫漫      | 1,228,526  |       54,140       |     331      |   4,191    |
+|    lol半价     | 1,929,451  |      157,847       |     522      |   9,940    |
+|     孙笑川     | 1,843,333  |      499,688       |    5,452     |  147,333   |
+|      向晚      |   26,599   |       23,235       |     276      |   3,366    |
+|      贝拉      |   20,944   |       22,203       |     162      |   2,913    |
+|    王力口乐    |   10,808   |       40,972       |     534      |   6,570    |
+|      乃琳      |   16,212   |       11,534       |      82      |   1,420    |
+| asoul一个魂儿  |   15,154   |       4,797        |      79      |   1,293    |

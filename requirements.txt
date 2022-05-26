@@ -3,6 +3,6 @@ aiohttp[speedups]
 protobuf
 lxml
 beautifulsoup4
-pycrytodome
+pycryptodome
 aiomysql
 opencv-contrib-python

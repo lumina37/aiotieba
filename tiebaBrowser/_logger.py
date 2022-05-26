@@ -51,7 +51,7 @@ class _Logger(logging.Logger):
 LOG = None
 
 
-def get_logger():
+def get_logger() -> _Logger:
     global LOG
     if LOG is None:
         LOG = _Logger(__name__)

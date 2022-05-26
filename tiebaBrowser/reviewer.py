@@ -6,6 +6,7 @@ import binascii
 import datetime
 import re
 import sys
+from typing import List, Optional, Tuple, Union
 
 import cv2 as cv
 import numpy as np
@@ -192,7 +193,7 @@ class Reviewer(Browser):
 
         return fname
 
-    async def get_basic_user_info(self, _id: str | int) -> BasicUserInfo:
+    async def get_basic_user_info(self, _id: Union[str, int]) -> BasicUserInfo:
         """
         获取简略版用户信息
 
@@ -287,7 +288,7 @@ class Reviewer(Browser):
 
         return await self.database.add_tid(self.fname, tid, mode)
 
-    async def is_tid_hide(self, tid: int) -> bool | None:
+    async def is_tid_hide(self, tid: int) -> Optional[bool]:
         """
         获取表tid_water_{fname}中tid的待恢复状态
 
@@ -313,7 +314,7 @@ class Reviewer(Browser):
 
         return await self.database.del_tid(self.fname, tid)
 
-    async def get_tid_list(self, limit: int = 128, offset: int = 0) -> list[int]:
+    async def get_tid_list(self, limit: int = 128, offset: int = 0) -> List[int]:
         """
         获取表tid_water_{fname}中待恢复的tid的列表
 
@@ -368,7 +369,7 @@ class Reviewer(Browser):
 
         return await self.database.get_user_id(self.fname, user_id)
 
-    async def get_user_id_full(self, user_id: int) -> tuple[int, str, datetime.datetime]:
+    async def get_user_id_full(self, user_id: int) -> Tuple[int, str, datetime.datetime]:
         """
         获取表user_id_{fname}中user_id的完整信息
 
@@ -383,7 +384,7 @@ class Reviewer(Browser):
 
     async def get_user_id_list(
         self, lower_permission: int = 0, upper_permission: int = 5, limit: int = 1, offset: int = 0
-    ) -> list[int]:
+    ) -> List[int]:
         """
         获取表user_id_{fname}中user_id的列表
 
@@ -454,7 +455,7 @@ class Reviewer(Browser):
             return await self.database.get_imghash(self.fname, img_hash)
         return 0
 
-    async def get_imghash_full(self, image: np.ndarray) -> tuple[int, str]:
+    async def get_imghash_full(self, image: np.ndarray) -> Tuple[int, str]:
         """
         获取图像的完整信息
 

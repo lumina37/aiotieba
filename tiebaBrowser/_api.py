@@ -10,7 +10,7 @@ import random
 import re
 import socket
 import time
-from typing import Literal
+from typing import ClassVar, Dict, List, Literal, Optional, Tuple, Union
 
 import aiohttp
 import cv2 as cv
@@ -90,7 +90,7 @@ class Sessions(object):
         'STOKEN',
     ]
 
-    def __init__(self, BDUSS_key: str | None = None) -> None:
+    def __init__(self, BDUSS_key: Optional[str] = None) -> None:
 
         if BDUSS_key:
             self.BDUSS: str = CONFIG['BDUSS'].get(BDUSS_key, '')
@@ -201,7 +201,7 @@ class Sessions(object):
         await self.close()
 
     @staticmethod
-    def _pack_form(forms: list[tuple[str, str]]) -> list[tuple[str, str]]:
+    def _pack_form(forms: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
         """
         打包form参数元组列表 为其添加贴吧客户端签名
 
@@ -324,7 +324,7 @@ class Sessions(object):
 
         return ws_bytes
 
-    async def create_websocket(self, heartbeat: float | None = None) -> bool:
+    async def create_websocket(self, heartbeat: Optional[float] = None) -> bool:
         """
         建立weboscket连接
 
@@ -360,9 +360,9 @@ class Browser(object):
 
     __slots__ = ['BDUSS_key', 'sessions', '_tbs']
 
-    fid_dict: dict[str, int] = {}
+    fid_dict: ClassVar[Dict[str, int]] = {}
 
-    def __init__(self, BDUSS_key: str | None = None) -> None:
+    def __init__(self, BDUSS_key: Optional[str] = None) -> None:
         self.BDUSS_key = BDUSS_key
         self.sessions = Sessions(BDUSS_key)
         self._tbs: str = ''
@@ -492,7 +492,7 @@ class Browser(object):
 
         return fname
 
-    async def get_user_info(self, _id: str | int) -> UserInfo:
+    async def get_user_info(self, _id: Union[str, int]) -> UserInfo:
         """
         补全完整版用户信息
 
@@ -509,7 +509,7 @@ class Browser(object):
         else:
             return await self._id2user_info(user)
 
-    async def get_basic_user_info(self, _id: str | int) -> BasicUserInfo:
+    async def get_basic_user_info(self, _id: Union[str, int]) -> BasicUserInfo:
         """
         补全简略版用户信息
 
@@ -553,13 +553,14 @@ class Browser(object):
                 raise ValueError(res_json['error'])
 
             user_dict: dict = res_json['data']
-            match user_dict['sex']:
-                case 'male':
-                    gender = 1
-                case 'female':
-                    gender = 2
-                case _:
-                    gender = 0
+
+            _sex = user_dict['sex']
+            if _sex == 'male':
+                gender = 1
+            elif _sex == 'female':
+                gender = 2
+            else:
+                gender = 0
 
             user.user_name = user_dict['name']
             user.nick_name = user_dict['show_nickname']
@@ -750,7 +751,9 @@ class Browser(object):
 
         return user
 
-    async def get_threads(self, fname_or_fid: str | int, pn: int = 1, sort: int = 5, is_good: bool = False) -> Threads:
+    async def get_threads(
+        self, fname_or_fid: Union[str, int], pn: int = 1, sort: int = 5, is_good: bool = False
+    ) -> Threads:
         """
         获取首页帖子
 
@@ -911,7 +914,7 @@ class Browser(object):
         return comments
 
     async def block(
-        self, fname_or_fid: str | int, user: BasicUserInfo, day: Literal[1, 3, 10], reason: str = ''
+        self, fname_or_fid: Union[str, int], user: BasicUserInfo, day: Literal[1, 3, 10], reason: str = ''
     ) -> bool:
         """
         封禁用户
@@ -963,7 +966,7 @@ class Browser(object):
         LOG.info(f"Successfully blocked {user.log_name} in {fname} for {day} days")
         return True
 
-    async def unblock(self, fname_or_fid: str | int, user: BasicUserInfo) -> bool:
+    async def unblock(self, fname_or_fid: Union[str, int], user: BasicUserInfo) -> bool:
         """
         解封用户
 
@@ -1005,7 +1008,7 @@ class Browser(object):
         LOG.info(f"Successfully unblocked {user.log_name} in {fname}")
         return True
 
-    async def hide_thread(self, fname_or_fid: str | int, tid: int) -> bool:
+    async def hide_thread(self, fname_or_fid: Union[str, int], tid: int) -> bool:
         """
         屏蔽主题帖
 
@@ -1019,7 +1022,7 @@ class Browser(object):
 
         return await self._del_thread(fname_or_fid, tid, is_hide=True)
 
-    async def del_thread(self, fname_or_fid: str | int, tid: int) -> bool:
+    async def del_thread(self, fname_or_fid: Union[str, int], tid: int) -> bool:
         """
         删除主题帖
 
@@ -1033,7 +1036,7 @@ class Browser(object):
 
         return await self._del_thread(fname_or_fid, tid, is_hide=False)
 
-    async def _del_thread(self, fname_or_fid: str | int, tid: int, is_hide: bool = False) -> bool:
+    async def _del_thread(self, fname_or_fid: Union[str, int], tid: int, is_hide: bool = False) -> bool:
         """
         删除/屏蔽主题帖
 
@@ -1072,7 +1075,7 @@ class Browser(object):
         LOG.info(f"Successfully deleted thread tid:{tid} is_hide:{is_hide} in {fname_or_fid}")
         return True
 
-    async def del_post(self, fname_or_fid: str | int, tid: int, pid: int) -> bool:
+    async def del_post(self, fname_or_fid: Union[str, int], tid: int, pid: int) -> bool:
         """
         删除回复
 
@@ -1111,7 +1114,7 @@ class Browser(object):
         LOG.info(f"Successfully deleted post {pid} in {tid} in {fname_or_fid}")
         return True
 
-    async def unhide_thread(self, fname_or_fid: str | int, tid: int) -> bool:
+    async def unhide_thread(self, fname_or_fid: Union[str, int], tid: int) -> bool:
         """
         解除主题帖屏蔽
 
@@ -1125,7 +1128,7 @@ class Browser(object):
 
         return await self._recover(fname_or_fid, tid=tid, is_hide=True)
 
-    async def recover_thread(self, fname_or_fid: str | int, tid: int) -> bool:
+    async def recover_thread(self, fname_or_fid: Union[str, int], tid: int) -> bool:
         """
         恢复主题帖
 
@@ -1139,7 +1142,7 @@ class Browser(object):
 
         return await self._recover(fname_or_fid, tid=tid, is_hide=False)
 
-    async def recover_post(self, fname_or_fid: str | int, pid: int) -> bool:
+    async def recover_post(self, fname_or_fid: Union[str, int], pid: int) -> bool:
         """
         恢复主题帖
 
@@ -1153,7 +1156,7 @@ class Browser(object):
 
         return await self._recover(fname_or_fid, pid=pid, is_hide=False)
 
-    async def _recover(self, fname_or_fid: str | int, tid: int = 0, pid: int = 0, is_hide: bool = False) -> bool:
+    async def _recover(self, fname_or_fid: Union[str, int], tid: int = 0, pid: int = 0, is_hide: bool = False) -> bool:
         """
         恢复帖子
 
@@ -1197,7 +1200,7 @@ class Browser(object):
         LOG.info(f"Successfully recovered tid:{tid} pid:{pid} hide:{is_hide} in {fname}")
         return True
 
-    async def move(self, fname_or_fid: str | int, tid: int, to_tab_id: int, from_tab_id: int = 0) -> bool:
+    async def move(self, fname_or_fid: Union[str, int], tid: int, to_tab_id: int, from_tab_id: int = 0) -> bool:
         """
         将主题帖移动至另一分区
 
@@ -1240,7 +1243,7 @@ class Browser(object):
         LOG.info(f"Successfully moved {tid} to tab:{to_tab_id} in {fname_or_fid}")
         return True
 
-    async def recommend(self, fname_or_fid: str | int, tid: int) -> bool:
+    async def recommend(self, fname_or_fid: Union[str, int], tid: int) -> bool:
         """
         大吧主首页推荐
 
@@ -1278,7 +1281,7 @@ class Browser(object):
         LOG.info(f"Successfully recommended {tid} in {fname_or_fid}")
         return True
 
-    async def good(self, fname_or_fid: str | int, tid: int, cname: str = '') -> bool:
+    async def good(self, fname_or_fid: Union[str, int], tid: int, cname: str = '') -> bool:
         """
         加精主题帖
 
@@ -1378,7 +1381,7 @@ class Browser(object):
 
         return await _good(await _cname2cid())
 
-    async def ungood(self, fname_or_fid: str | int, tid: int) -> bool:
+    async def ungood(self, fname_or_fid: Union[str, int], tid: int) -> bool:
         """
         撤精主题帖
 
@@ -1421,7 +1424,7 @@ class Browser(object):
         LOG.info(f"Successfully removed {tid} from good_list in {fname}")
         return True
 
-    async def top(self, fname_or_fid: str | int, tid: int) -> bool:
+    async def top(self, fname_or_fid: Union[str, int], tid: int) -> bool:
         """
         置顶主题帖
 
@@ -1465,7 +1468,7 @@ class Browser(object):
         LOG.info(f"Successfully added {tid} to top_list in {fname}")
         return True
 
-    async def untop(self, fname_or_fid: str | int, tid: int) -> bool:
+    async def untop(self, fname_or_fid: Union[str, int], tid: int) -> bool:
         """
         撤销置顶主题帖
 
@@ -1509,8 +1512,8 @@ class Browser(object):
         return True
 
     async def get_recover_list(
-        self, fname_or_fid: str | int, pn: int = 1, name: str = ''
-    ) -> tuple[list[tuple[int, int, bool]], bool]:
+        self, fname_or_fid: Union[str, int], pn: int = 1, name: str = ''
+    ) -> Tuple[List[Tuple[int, int, bool]], bool]:
         """
         获取pn页的待恢复帖子列表
 
@@ -1566,7 +1569,7 @@ class Browser(object):
 
         return res_list, has_more
 
-    async def get_black_list(self, fname_or_fid: str | int, pn: int = 1) -> tuple[list[BasicUserInfo], bool]:
+    async def get_black_list(self, fname_or_fid: Union[str, int], pn: int = 1) -> Tuple[List[BasicUserInfo], bool]:
         """
         获取pn页的黑名单
 
@@ -1610,7 +1613,7 @@ class Browser(object):
 
         return res_list, has_more
 
-    async def blacklist_add(self, fname_or_fid: str | int, user: BasicUserInfo) -> bool:
+    async def blacklist_add(self, fname_or_fid: Union[str, int], user: BasicUserInfo) -> bool:
         """
         添加贴吧黑名单
 
@@ -1645,7 +1648,7 @@ class Browser(object):
         LOG.info(f"Successfully added {user.log_name} to black_list in {fname}")
         return True
 
-    async def blacklist_del(self, fname_or_fid: str | int, user: BasicUserInfo) -> bool:
+    async def blacklist_del(self, fname_or_fid: Union[str, int], user: BasicUserInfo) -> bool:
         """
         移出贴吧黑名单
 
@@ -1680,7 +1683,7 @@ class Browser(object):
         LOG.info(f"Successfully removed {user.log_name} from black_list in {fname}")
         return True
 
-    async def handle_unblock_appeal(self, fname_or_fid: str | int, appeal_id: int, refuse: bool = True) -> bool:
+    async def handle_unblock_appeal(self, fname_or_fid: Union[str, int], appeal_id: int, refuse: bool = True) -> bool:
         """
         拒绝或通过解封申诉
 
@@ -1725,7 +1728,7 @@ class Browser(object):
         LOG.info(f"Successfully handled {appeal_id} in {fname}. refuse:{refuse}")
         return True
 
-    async def get_unblock_appeal_list(self, fname_or_fid: str | int) -> list[int]:
+    async def get_unblock_appeal_list(self, fname_or_fid: Union[str, int]) -> List[int]:
         """
         获取第1页的申诉请求列表
 
@@ -1763,7 +1766,7 @@ class Browser(object):
 
         return res_list
 
-    async def get_image(self, img_url: str) -> np.ndarray | None:
+    async def get_image(self, img_url: str) -> Optional[np.ndarray]:
         """
         从链接获取jpg/png图像
 
@@ -1824,7 +1827,7 @@ class Browser(object):
 
         return user
 
-    async def get_newmsg(self) -> dict[str, bool]:
+    async def get_newmsg(self) -> Dict[str, bool]:
         """
         获取消息通知
 
@@ -1941,7 +1944,7 @@ class Browser(object):
 
         return ats
 
-    async def get_self_threads(self, pn: int = 1) -> list[NewThread]:
+    async def get_self_threads(self, pn: int = 1) -> List[NewThread]:
         """
         获取本人发布的主题帖列表
 
@@ -1954,7 +1957,7 @@ class Browser(object):
 
         return await self._get_self_contents(pn, is_thread=True)
 
-    async def get_self_posts(self, pn: int = 1) -> list[UserPosts]:
+    async def get_self_posts(self, pn: int = 1) -> List[UserPosts]:
         """
         获取本人发布的回复列表
 
@@ -1967,7 +1970,7 @@ class Browser(object):
 
         return await self._get_self_contents(pn, is_thread=False)
 
-    async def _get_self_contents(self, pn: int = 1, is_thread: bool = True) -> list[NewThread] | list[UserPosts]:
+    async def _get_self_contents(self, pn: int = 1, is_thread: bool = True) -> Union[List[NewThread], List[UserPosts]]:
         """
         获取本人发布的主题帖/回复列表
 
@@ -2022,7 +2025,7 @@ class Browser(object):
 
         return res_list
 
-    async def get_homepage(self, _id: str | int) -> tuple[UserInfo, list[Thread]]:
+    async def get_homepage(self, _id: Union[str, int]) -> Tuple[UserInfo, List[Thread]]:
         """
         获取用户个人页信息
 
@@ -2074,7 +2077,7 @@ class Browser(object):
 
     async def search_post(
         self,
-        fname_or_fid: str | int,
+        fname_or_fid: Union[str, int],
         query: str,
         pn: int = 1,
         rn: int = 30,
@@ -2125,7 +2128,7 @@ class Browser(object):
 
         return searches
 
-    async def get_self_forum_list(self, pn: int = 1) -> tuple[list[tuple[str, int, int, int]], bool]:
+    async def get_self_forum_list(self, pn: int = 1) -> Tuple[List[Tuple[str, int, int, int]], bool]:
         """
         获取第pn页的本人关注贴吧列表
 
@@ -2154,7 +2157,7 @@ class Browser(object):
 
         return res_list, has_more
 
-    async def get_forum_list(self, _id: str | int) -> list[tuple[str, int, int, int]]:
+    async def get_forum_list(self, _id: Union[str, int]) -> List[Tuple[str, int, int, int]]:
         """
         获取用户关注贴吧列表
 
@@ -2196,7 +2199,7 @@ class Browser(object):
 
         return res_list
 
-    async def get_forum_detail(self, fname_or_fid: str | int) -> tuple[str, int, int]:
+    async def get_forum_detail(self, fname_or_fid: Union[str, int]) -> Tuple[str, int, int]:
         """
         通过forum_id获取贴吧信息
 
@@ -2235,7 +2238,7 @@ class Browser(object):
 
         return fname, member_num, thread_num
 
-    async def get_bawu_dict(self, fname_or_fid: str | int) -> dict[str, list[BasicUserInfo]]:
+    async def get_bawu_dict(self, fname_or_fid: Union[str, int]) -> Dict[str, List[BasicUserInfo]]:
         """
         获取吧务信息
 
@@ -2281,7 +2284,7 @@ class Browser(object):
 
         return bawu_dict
 
-    async def get_tab_map(self, fname_or_fid: str | int) -> dict[str, int]:
+    async def get_tab_map(self, fname_or_fid: Union[str, int]) -> Dict[str, int]:
         """
         获取分区名到分区id的映射字典
 
@@ -2322,7 +2325,7 @@ class Browser(object):
 
         return tab_map
 
-    async def get_recom_list(self, fname_or_fid: str | int, pn: int = 1) -> tuple[list[tuple[Thread, int]], bool]:
+    async def get_recom_list(self, fname_or_fid: Union[str, int], pn: int = 1) -> Tuple[List[Tuple[Thread, int]], bool]:
         """
         获取pn页的大吧主推荐帖列表
 
@@ -2369,7 +2372,7 @@ class Browser(object):
 
         return res_list, has_more
 
-    async def get_recom_status(self, fname_or_fid: str | int) -> tuple[int, int]:
+    async def get_recom_status(self, fname_or_fid: Union[str, int]) -> Tuple[int, int]:
         """
         获取大吧主推荐功能的月度配额状态
 
@@ -2409,7 +2412,7 @@ class Browser(object):
 
         return total_recom_num, used_recom_num
 
-    async def get_statistics(self, fname_or_fid: str | int) -> dict[str, list[int]]:
+    async def get_statistics(self, fname_or_fid: Union[str, int]) -> Dict[str, List[int]]:
         """
         获取吧务后台中最近29天的统计数据
 
@@ -2468,8 +2471,8 @@ class Browser(object):
         return stat
 
     async def get_rank_list(
-        self, fname_or_fid: str | int, pn: int = 1
-    ) -> tuple[list[tuple[str, int, int, bool]], bool]:
+        self, fname_or_fid: Union[str, int], pn: int = 1
+    ) -> Tuple[List[Tuple[str, int, int, bool]], bool]:
         """
         获取pn页的贴吧等级排行榜
 
@@ -2518,7 +2521,9 @@ class Browser(object):
 
         return res_list, has_more
 
-    async def get_member_list(self, fname_or_fid: str | int, pn: int = 1) -> tuple[list[tuple[str, str, int]], bool]:
+    async def get_member_list(
+        self, fname_or_fid: Union[str, int], pn: int = 1
+    ) -> Tuple[List[Tuple[str, str, int]], bool]:
         """
         获取pn页的贴吧最新关注用户列表
 
@@ -2563,7 +2568,7 @@ class Browser(object):
 
         return res_list, has_more
 
-    async def like_forum(self, fname_or_fid: str | int) -> bool:
+    async def like_forum(self, fname_or_fid: Union[str, int]) -> bool:
         """
         关注吧
 
@@ -2600,7 +2605,7 @@ class Browser(object):
         LOG.info(f"Successfully liked forum {fname_or_fid}")
         return True
 
-    async def sign_forum(self, fname_or_fid: str | int) -> bool:
+    async def sign_forum(self, fname_or_fid: Union[str, int]) -> bool:
         """
         签到吧
 
@@ -2638,7 +2643,7 @@ class Browser(object):
         LOG.info(f"Successfully signed forum {fname}")
         return True
 
-    async def add_post(self, fname_or_fid: str | int, tid: int, content: str) -> bool:
+    async def add_post(self, fname_or_fid: Union[str, int], tid: int, content: str) -> bool:
         """
         回帖
 
@@ -2720,7 +2725,7 @@ class Browser(object):
         LOG.info(f"Successfully add post in {tid}")
         return True
 
-    async def send_msg(self, _id: str | int, content: str) -> bool:
+    async def send_msg(self, _id: Union[str, int], content: str) -> bool:
         """
         发送私信
 
@@ -2761,7 +2766,7 @@ class Browser(object):
         LOG.info(f"Successfully sending msg to {user.user_id}. content:{content}")
         return True
 
-    async def set_privacy(self, fname_or_fid: str | int, tid: int, pid: int, hide: bool = True) -> bool:
+    async def set_privacy(self, fname_or_fid: Union[str, int], tid: int, pid: int, hide: bool = True) -> bool:
         """
         隐藏主题帖
 

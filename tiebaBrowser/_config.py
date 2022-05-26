@@ -3,6 +3,7 @@ __all__ = ['SCRIPT_PATH', 'MODULE_DIR', 'CONFIG']
 
 import sys
 from pathlib import Path
+from typing import Dict
 
 import yaml
 
@@ -10,7 +11,7 @@ SCRIPT_PATH = Path(sys.argv[0])
 MODULE_DIR = Path(__file__).parent
 
 with (SCRIPT_PATH.parent / 'config/config.yaml').open('r', encoding='utf-8') as file:
-    CONFIG: dict[str, dict[str, str]] = yaml.load(file, Loader=yaml.SafeLoader)
+    CONFIG: Dict[str, Dict[str, str]] = yaml.load(file, Loader=yaml.SafeLoader)
 if not CONFIG.__contains__('BDUSS'):
     CONFIG['BDUSS'] = {}
 if not isinstance(CONFIG['BDUSS'], dict):

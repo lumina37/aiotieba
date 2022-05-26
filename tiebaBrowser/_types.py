@@ -21,8 +21,7 @@ __all__ = [
 ]
 
 import json
-from collections.abc import Iterable
-from typing import Generic, Iterator, TypeVar, final
+from typing import Dict, Generic, Iterable, Iterator, List, Optional, TypeVar, Union
 
 from google.protobuf.json_format import ParseDict
 
@@ -88,7 +87,7 @@ class BasicUserInfo(_DataWrapper):
 
     __slots__ = ['user_id', 'user_name', '_portrait', '_nick_name']
 
-    def __init__(self, _id: str | int | None = None, _raw_data: User_pb2.User | None = None) -> None:
+    def __init__(self, _id: Union[str, int, None] = None, _raw_data: Optional[User_pb2.User] = None) -> None:
         super(BasicUserInfo, self).__init__(_raw_data)
 
         if _raw_data:
@@ -205,7 +204,7 @@ class UserInfo(BasicUserInfo):
 
     __slots__ = ['level', 'gender', 'is_vip', 'is_god', 'priv_like', 'priv_reply']
 
-    def __init__(self, _id: str | int | None = None, _raw_data: User_pb2.User | None = None) -> None:
+    def __init__(self, _id: Union[str, int, None] = None, _raw_data: Optional[User_pb2.User] = None) -> None:
         super(UserInfo, self).__init__(_id, _raw_data)
 
         if _raw_data:
@@ -236,7 +235,7 @@ class _Fragment(_DataWrapper):
 
     __slots__ = []
 
-    def __init__(self, _raw_data: PbContent_pb2.PbContent | None = None) -> None:
+    def __init__(self, _raw_data: Optional[PbContent_pb2.PbContent] = None) -> None:
         super(_Fragment, self).__init__(_raw_data)
 
     def __bool__(self) -> bool:
@@ -417,7 +416,7 @@ class FragVoice(_Fragment):
 
     __slots__ = ['voice_md5']
 
-    def __init__(self, _raw_data: PbContent_pb2.PbContent | None = None) -> None:
+    def __init__(self, _raw_data: Optional[PbContent_pb2.PbContent] = None) -> None:
         super(FragVoice, self).__init__(_raw_data)
         self.voice_md5: str = self._raw_data.voice_md5 if _raw_data else ''
 
@@ -487,53 +486,52 @@ class Fragments(object):
 
     __slots__ = ['_frags', '_text', '_texts', '_emojis', '_imgs', '_ats', '_links', '_voice', '_tiebapluses']
 
-    def __init__(self, _raw_datas: Iterable | None = None) -> None:
+    def __init__(self, _raw_datas: Optional[Iterable[PbContent_pb2.PbContent]] = None) -> None:
         def _init_by_type(_raw_data) -> _Fragment:
             frag_type: int = _raw_data.type
-            match frag_type:
-                # 0纯文本 9电话号 18话题 27百科词条
-                case 0 | 9 | 18 | 27:
-                    fragment = FragText(_raw_data)
-                # 11:tid=5047676428
-                case 2 | 11:
-                    fragment = FragEmoji(_raw_data)
-                    self._emojis.append(fragment)
-                # 20:tid=5470214675
-                case 3 | 20:
-                    fragment = FragImage(_raw_data)
-                    self._imgs.append(fragment)
-                case 4:
-                    fragment = FragAt(_raw_data)
-                    self._ats.append(fragment)
-                case 1:
-                    fragment = FragLink(_raw_data)
-                    self._links.append(fragment)
-                case 5:  # video
-                    fragment = FragmentUnknown(_raw_data)
-                case 10:
-                    fragment = FragVoice(_raw_data)
-                    self._voice = fragment
-                # 35|36:tid=7769728331 / 37:tid=7760184147
-                case 35 | 36 | 37:
-                    fragment = FragTiebaPlus(_raw_data)
-                    self._tiebapluses.append(fragment)
-                case _:
-                    fragment = FragmentUnknown(_raw_data)
-                    LOG.warning(f"Unknown fragment type:{_raw_data.type}")
+            # 0纯文本 9电话号 18话题 27百科词条
+            if frag_type in [0, 9, 18, 27]:
+                fragment = FragText(_raw_data)
+            # 11:tid=5047676428
+            elif frag_type in [2, 11]:
+                fragment = FragEmoji(_raw_data)
+                self._emojis.append(fragment)
+            # 20:tid=5470214675
+            elif frag_type in [3, 20]:
+                fragment = FragImage(_raw_data)
+                self._imgs.append(fragment)
+            elif frag_type == 4:
+                fragment = FragAt(_raw_data)
+                self._ats.append(fragment)
+            elif frag_type == 1:
+                fragment = FragLink(_raw_data)
+                self._links.append(fragment)
+            elif frag_type == 5:  # video
+                fragment = FragmentUnknown(_raw_data)
+            elif frag_type == 10:
+                fragment = FragVoice(_raw_data)
+                self._voice = fragment
+            # 35|36:tid=7769728331 / 37:tid=7760184147
+            elif frag_type in [35, 36, 37]:
+                fragment = FragTiebaPlus(_raw_data)
+                self._tiebapluses.append(fragment)
+            else:
+                fragment = FragmentUnknown(_raw_data)
+                LOG.warning(f"Unknown fragment type:{_raw_data.type}")
 
             return fragment
 
         self._text: str = None
-        self._texts: list[FragText] = None
-        self._links: list[FragLink] = []
-        self._imgs: list[FragImage] = []
-        self._emojis: list[FragEmoji] = []
-        self._ats: list[FragAt] = []
+        self._texts: List[FragText] = None
+        self._links: List[FragLink] = []
+        self._imgs: List[FragImage] = []
+        self._emojis: List[FragEmoji] = []
+        self._ats: List[FragAt] = []
         self._voice: FragVoice = None
-        self._tiebapluses: list[FragTiebaPlus] = []
+        self._tiebapluses: List[FragTiebaPlus] = []
 
         if _raw_datas:
-            self._frags: list[_Fragment] = [_init_by_type(frag_proto) for frag_proto in _raw_datas]
+            self._frags: List[_Fragment] = [_init_by_type(frag_proto) for frag_proto in _raw_datas]
         else:
             self._frags = []
 
@@ -544,22 +542,22 @@ class Fragments(object):
         return self._text
 
     @property
-    def texts(self) -> list[FragText]:
+    def texts(self) -> List[FragText]:
         if self._texts is None:
             self._texts = [frag for frag in self._frags if isinstance(frag, FragText)]
 
         return self._texts
 
     @property
-    def emojis(self) -> list[FragEmoji]:
+    def emojis(self) -> List[FragEmoji]:
         return self._emojis
 
     @property
-    def imgs(self) -> list[FragImage]:
+    def imgs(self) -> List[FragImage]:
         return self._imgs
 
     @property
-    def ats(self) -> list[FragAt]:
+    def ats(self) -> List[FragAt]:
         return self._ats
 
     @property
@@ -569,34 +567,28 @@ class Fragments(object):
         return self._voice
 
     @property
-    def links(self) -> list[FragLink]:
+    def links(self) -> List[FragLink]:
         return self._links
 
     @property
-    def tiebapluses(self) -> list[FragTiebaPlus]:
+    def tiebapluses(self) -> List[FragTiebaPlus]:
         return self._tiebapluses
 
-    @final
     def __iter__(self) -> Iterator[_Fragment]:
         return iter(self._frags)
 
-    @final
-    def __getitem__(self, idx: int) -> _Fragment | list[_Fragment]:
+    def __getitem__(self, idx: int) -> Union[_Fragment, List[_Fragment]]:
         return self._frags[idx]
 
-    @final
     def __setitem__(self, idx, val) -> None:
         raise NotImplementedError
 
-    @final
     def __delitem__(self, idx) -> None:
         raise NotImplementedError
 
-    @final
     def __len__(self) -> int:
         return len(self._frags)
 
-    @final
     def __bool__(self) -> bool:
         return bool(self._frags)
 
@@ -613,7 +605,8 @@ class Forum(_DataWrapper):
     __slots__ = ['_raw_data', 'fid', 'name']
 
     def __init__(
-        self, _raw_data: SimpleForum_pb2.SimpleForum | FrsPageResIdl_pb2.FrsPageResIdl.DataRes.ForumInfo | None = None
+        self,
+        _raw_data: Union[SimpleForum_pb2.SimpleForum, FrsPageResIdl_pb2.FrsPageResIdl.DataRes.ForumInfo, None] = None,
     ) -> None:
         super(Forum, self).__init__(_raw_data)
 
@@ -645,7 +638,7 @@ class Page(_DataWrapper):
 
     __slots__ = ['_raw_data', 'page_size', 'current_page', 'total_page', 'total_count', 'has_more', 'has_prev']
 
-    def __init__(self, _raw_data: Page_pb2.Page | None = None) -> None:
+    def __init__(self, _raw_data: Optional[Page_pb2.Page] = None) -> None:
         super(Page, self).__init__(_raw_data)
 
         if _raw_data:
@@ -742,32 +735,28 @@ class _Containers(_DataWrapper, Generic[_TContainer]):
     def __init__(self, _raw_data) -> None:
         _DataWrapper.__init__(self, _raw_data)
 
-        self._objs: list[_TContainer] = None
+        self._objs: List[_TContainer] = None
         self._page: Page = None
 
     @property
-    def objs(self) -> list[_TContainer]:
+    def objs(self) -> List[_TContainer]:
         raise NotImplementedError
 
     def __iter__(self) -> Iterator[_TContainer]:
         return iter(self.objs)
 
-    def __getitem__(self, idx) -> _TContainer | list[_TContainer]:
+    def __getitem__(self, idx) -> Union[_TContainer, List[_TContainer]]:
         return self.objs[idx]
 
-    @final
     def __setitem__(self, idx, val):
         raise NotImplementedError
 
-    @final
     def __delitem__(self, idx):
         raise NotImplementedError
 
-    @final
     def __len__(self) -> int:
         return len(self.objs)
 
-    @final
     def __bool__(self) -> bool:
         return bool(self.objs)
 
@@ -816,12 +805,12 @@ class VoteInfo(_DataWrapper):
             self.text: str = _raw_data.text
             self.image: str = _raw_data.image
 
-    def __init__(self, _raw_data: PollInfo_pb2.PollInfo | None = None) -> None:
+    def __init__(self, _raw_data: Optional[PollInfo_pb2.PollInfo] = None) -> None:
         super(VoteInfo, self).__init__(_raw_data)
 
         if _raw_data:
             self.title: str = _raw_data.title
-            self._options: list[self.VoteOption] = None
+            self._options: List[self.VoteOption] = None
             self.is_multi = bool(_raw_data.is_multi)
             self.total_vote: int = _raw_data.total_poll
             self.total_user: int = _raw_data.total_num
@@ -858,7 +847,7 @@ class ShareThread(_BasicContainer):
 
     __slots__ = ['_contents', 'title', '_vote_info']
 
-    def __init__(self, _raw_data: ThreadInfo_pb2.ThreadInfo.OriginThreadInfo | None = None) -> None:
+    def __init__(self, _raw_data: Optional[ThreadInfo_pb2.ThreadInfo.OriginThreadInfo] = None) -> None:
         super(ShareThread, self).__init__(_raw_data)
 
         self._contents: Fragments = None
@@ -958,7 +947,7 @@ class Thread(_BasicContainer):
         'last_time',
     ]
 
-    def __init__(self, _raw_data: ThreadInfo_pb2.ThreadInfo | None = None) -> None:
+    def __init__(self, _raw_data: Optional[ThreadInfo_pb2.ThreadInfo] = None) -> None:
         super(Thread, self).__init__(_raw_data)
 
         self._contents: Fragments = None
@@ -1073,7 +1062,7 @@ class Threads(_Containers[Thread]):
 
     __slots__ = ['_forum', '_tab_map']
 
-    def __init__(self, _raw_data: FrsPageResIdl_pb2.FrsPageResIdl.DataRes | None = None) -> None:
+    def __init__(self, _raw_data: Optional[FrsPageResIdl_pb2.FrsPageResIdl.DataRes] = None) -> None:
         super(Threads, self).__init__(_raw_data)
 
         self._forum: Forum = None
@@ -1086,7 +1075,7 @@ class Threads(_Containers[Thread]):
             self._raw_data = None
 
     @property
-    def objs(self) -> list[Thread]:
+    def objs(self) -> List[Thread]:
 
         if self._objs is None:
 
@@ -1168,12 +1157,12 @@ class Post(_BasicContainer):
         'is_thread_author',
     ]
 
-    def __init__(self, _raw_data: Post_pb2.Post | None = None) -> None:
+    def __init__(self, _raw_data: Optional[Post_pb2.Post] = None) -> None:
         super(Post, self).__init__(_raw_data)
 
         self._contents: Fragments = None
         self._sign: str = None
-        self._comments: list[Comment] = None
+        self._comments: List[Comment] = None
         self.is_thread_author = False
 
         if _raw_data:
@@ -1228,7 +1217,7 @@ class Post(_BasicContainer):
         return self._sign
 
     @property
-    def comments(self) -> list["Comment"]:
+    def comments(self) -> List["Comment"]:
         if self._comments is None:
 
             if self._raw_data:
@@ -1257,7 +1246,7 @@ class Posts(_Containers[Post]):
 
     __slots__ = ['_forum', '_thread', 'has_fold']
 
-    def __init__(self, _raw_data: PbPageResIdl_pb2.PbPageResIdl.DataRes | None = None) -> None:
+    def __init__(self, _raw_data: Optional[PbPageResIdl_pb2.PbPageResIdl.DataRes] = None) -> None:
         super(Posts, self).__init__(_raw_data)
 
         if _raw_data:
@@ -1273,7 +1262,7 @@ class Posts(_Containers[Post]):
             self.has_fold = False
 
     @property
-    def objs(self) -> list[Post]:
+    def objs(self) -> List[Post]:
 
         if self._objs is None:
 
@@ -1349,7 +1338,7 @@ class Comment(_BasicContainer):
 
     __slots__ = ['_contents', 'agree', 'disagree', 'create_time']
 
-    def __init__(self, _raw_data: SubPostList_pb2.SubPostList | None = None) -> None:
+    def __init__(self, _raw_data: Optional[SubPostList_pb2.SubPostList] = None) -> None:
         super(Comment, self).__init__(_raw_data)
 
         self._contents: Fragments = None
@@ -1402,7 +1391,7 @@ class Comments(_Containers[Comment]):
 
     __slots__ = ['_forum', '_thread', '_post']
 
-    def __init__(self, _raw_data: PbFloorResIdl_pb2.PbFloorResIdl.DataRes | None = None) -> None:
+    def __init__(self, _raw_data: Optional[PbFloorResIdl_pb2.PbFloorResIdl.DataRes] = None) -> None:
         super(Comments, self).__init__(_raw_data)
 
         self._forum: Forum = None
@@ -1410,7 +1399,7 @@ class Comments(_Containers[Comment]):
         self._post: Post = None
 
     @property
-    def objs(self) -> list[Comment]:
+    def objs(self) -> List[Comment]:
 
         if self._objs is None:
 
@@ -1486,7 +1475,7 @@ class Reply(_BasicContainer):
 
     __slots__ = ['fname', 'post_pid', '_post_user', '_thread_user', 'is_floor', 'create_time']
 
-    def __init__(self, _raw_data: ReplyMeResIdl_pb2.ReplyMeResIdl.DataRes.ReplyList | None = None) -> None:
+    def __init__(self, _raw_data: Optional[ReplyMeResIdl_pb2.ReplyMeResIdl.DataRes.ReplyList] = None) -> None:
         super(Reply, self).__init__(_raw_data)
 
         self._post_user: UserInfo = None
@@ -1566,11 +1555,11 @@ class Replys(_Containers[Reply]):
 
     __slots__ = []
 
-    def __init__(self, _raw_data: ReplyMeResIdl_pb2.ReplyMeResIdl | None = None) -> None:
+    def __init__(self, _raw_data: Optional[ReplyMeResIdl_pb2.ReplyMeResIdl] = None) -> None:
         super(Replys, self).__init__(_raw_data)
 
     @property
-    def objs(self) -> list[Reply]:
+    def objs(self) -> List[Reply]:
 
         if self._objs is None:
 
@@ -1603,7 +1592,7 @@ class At(_BasicContainer):
 
     __slots__ = ['fname', 'is_floor', 'is_thread', 'create_time']
 
-    def __init__(self, _raw_data: dict | None = None) -> None:
+    def __init__(self, _raw_data: Optional[Dict] = None) -> None:
         super(At, self).__init__(_raw_data)
 
         if _raw_data:
@@ -1652,11 +1641,11 @@ class Ats(_Containers[At]):
 
     __slots__ = []
 
-    def __init__(self, _raw_data: dict | None = None) -> None:
+    def __init__(self, _raw_data: Optional[Dict] = None) -> None:
         super(Ats, self).__init__(_raw_data)
 
     @property
-    def objs(self) -> list[At]:
+    def objs(self) -> List[At]:
 
         if self._objs is None:
 
@@ -1700,7 +1689,7 @@ class Search(_BasicContainer):
 
     __slots__ = ['fname', 'title', 'is_floor', 'create_time']
 
-    def __init__(self, _raw_data: dict | None = None) -> None:
+    def __init__(self, _raw_data: Optional[Dict] = None) -> None:
         super(Search, self).__init__(_raw_data)
 
         if _raw_data:
@@ -1750,11 +1739,11 @@ class Searches(_Containers[Search]):
 
     __slots__ = []
 
-    def __init__(self, _raw_data: dict | None = None) -> None:
+    def __init__(self, _raw_data: Optional[Dict] = None) -> None:
         super(Searches, self).__init__(_raw_data)
 
     @property
-    def objs(self) -> list[Search]:
+    def objs(self) -> List[Search]:
 
         if self._objs is None:
 
@@ -1816,7 +1805,7 @@ class NewThread(_BasicContainer):
         'create_time',
     ]
 
-    def __init__(self, _raw_data: NewThreadInfo_pb2.NewThreadInfo | None = None) -> None:
+    def __init__(self, _raw_data: Optional[NewThreadInfo_pb2.NewThreadInfo] = None) -> None:
         super(NewThread, self).__init__(_raw_data)
 
         self._contents: Fragments = None
@@ -1907,7 +1896,7 @@ class UserPost(_BasicContainer):
     __slots__ = ['_contents', 'create_time']
 
     def __init__(
-        self, _raw_data: UserPostResIdl_pb2.UserPostResIdl.DataRes.PostInfoList.PostInfoContent | None = None
+        self, _raw_data: Optional[UserPostResIdl_pb2.UserPostResIdl.DataRes.PostInfoList.PostInfoContent] = None
     ) -> None:
         super(UserPost, self).__init__(_raw_data)
 
@@ -1949,14 +1938,14 @@ class UserPosts(_Containers[UserPost]):
 
     __slots__ = ['fid', 'tid']
 
-    def __init__(self, _raw_data: UserPostResIdl_pb2.UserPostResIdl.DataRes.PostInfoList | None = None) -> None:
+    def __init__(self, _raw_data: Optional[UserPostResIdl_pb2.UserPostResIdl.DataRes.PostInfoList] = None) -> None:
         super(UserPosts, self).__init__(_raw_data)
 
         self.fid: int = self._raw_data.forum_id
         self.tid: int = self._raw_data.thread_id
 
     @property
-    def objs(self) -> list[UserPost]:
+    def objs(self) -> List[UserPost]:
 
         if self._objs is None:
 
