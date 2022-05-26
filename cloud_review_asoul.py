@@ -62,7 +62,7 @@ class CloudReview(tb.Reviewer):
                 if water_user_ids:
                     # 因为治水功能很少被触发 所以采用int计数+二次遍历而不是列表计数的设计来提升性能
                     coros = [
-                        self.hide_thread(self.fname, thread.tid)
+                        self.hide_thread(thread.fid, thread.tid)
                         for thread in threads
                         if thread.author_id in water_user_ids
                     ]
@@ -104,14 +104,14 @@ class CloudReview(tb.Reviewer):
             tb.log.info(
                 f"Try to delete thread {thread.text} post by {thread.user.log_name}. level:{thread.user.level}. {punish.note}"
             )
-            await self.del_thread(self.fname, thread.tid)
+            await self.del_thread(thread.fid, thread.tid)
             return True
         elif punish.del_flag == 2:
             # 屏蔽帖
             tb.log.info(
                 f"Try to hide thread {thread.text} post by {thread.user.log_name}. level:{thread.user.level}. {punish.note}"
             )
-            await self.hide_thread(self.fname, thread.tid)
+            await self.hide_thread(thread.fid, thread.tid)
             return True
 
         return False
@@ -189,7 +189,7 @@ class CloudReview(tb.Reviewer):
             tb.log.info(
                 f"Try to delete post {post.text} post by {post.user.log_name}. level:{post.user.level}. {punish.note}"
             )
-            await self.del_post(self.fname, post.tid, post.pid)
+            await self.del_post(post.fid, post.tid, post.pid)
             return
 
     async def _check_post(self, post: tb.Post) -> tb.Punish:
@@ -252,7 +252,7 @@ class CloudReview(tb.Reviewer):
             tb.log.info(
                 f"Try to delete post {comment.text} post by {comment.user.log_name}. level:{comment.user.level}. {punish.note}"
             )
-            await self.del_post(self.fname, comment.tid, comment.pid)
+            await self.del_post(comment.fid, comment.tid, comment.pid)
             return
 
     async def _check_comment(self, comment: tb.Comment) -> tb.Punish:

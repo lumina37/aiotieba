@@ -443,7 +443,7 @@ class Browser(object):
 
     async def get_fid(self, fname: str) -> int:
         """
-        通过贴吧名获取forum_id
+        通过贴吧名获取fid
 
         Args:
             fname (str): 贴吧名
@@ -476,6 +476,21 @@ class Browser(object):
             fid = 0
 
         return fid
+
+    async def get_fname(self, fid: int) -> str:
+        """
+        通过fid获取贴吧名
+
+        Args:
+            fid (int): forum_id
+
+        Returns:
+            str: 该贴吧的贴吧名
+        """
+
+        fname = (await self.get_forum_detail(fid))[0]
+
+        return fname
 
     async def get_user_info(self, _id: str | int) -> UserInfo:
         """
@@ -735,12 +750,12 @@ class Browser(object):
 
         return user
 
-    async def get_threads(self, fname: str, pn: int = 1, sort: int = 5, is_good: bool = False) -> Threads:
+    async def get_threads(self, fname_or_fid: str | int, pn: int = 1, sort: int = 5, is_good: bool = False) -> Threads:
         """
         获取首页帖子
 
         Args:
-            fname (str): 贴吧名
+            fname_or_fid (str | int): 贴吧的贴吧名或fid 优先贴吧名
             pn (int, optional): 页码. Defaults to 1.
             sort (int, optional): 排序方式 对于有热门分区的贴吧0是热门排序1是按发布时间2报错34都是热门排序>=5是按回复时间 \
                 对于无热门分区的贴吧0是按回复时间1是按发布时间2报错>=3是按回复时间. Defaults to 5.
@@ -749,6 +764,8 @@ class Browser(object):
         Returns:
             Threads: 帖子列表
         """
+
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         common_proto = CommonReq_pb2.CommonReq()
         common_proto._client_version = '12.12.1.0'
@@ -893,12 +910,14 @@ class Browser(object):
 
         return comments
 
-    async def block(self, fname: str, user: BasicUserInfo, day: Literal[1, 3, 10], reason: str = '') -> bool:
+    async def block(
+        self, fname_or_fid: str | int, user: BasicUserInfo, day: Literal[1, 3, 10], reason: str = ''
+    ) -> bool:
         """
         封禁用户
 
         Args:
-            fname (str): 贴吧名
+            fname_or_fid (str | int): 所在贴吧的贴吧名或fid
             user (BasicUserInfo): 待封禁用户信息
             day (Literal[1, 3, 10]): 封禁天数
             reason (str, optional): 封禁理由. Defaults to ''.
@@ -907,10 +926,17 @@ class Browser(object):
             bool: 操作是否成功
         """
 
+        if isinstance(fname_or_fid, str):
+            fname = fname_or_fid
+            fid = await self.get_fid(fname)
+        else:
+            fid = fname_or_fid
+            fname = await self.get_fname(fid)
+
         payload = [
             ('BDUSS', self.sessions.BDUSS),
             ('day', day),
-            ('fid', await self.get_fid(fname)),
+            ('fid', fid),
             ('nick_name', user.show_name),
             ('ntn', 'banid'),
             ('portrait', user.portrait),
@@ -937,21 +963,28 @@ class Browser(object):
         LOG.info(f"Successfully blocked {user.log_name} in {fname} for {day} days")
         return True
 
-    async def unblock(self, fname: str, user: BasicUserInfo) -> bool:
+    async def unblock(self, fname_or_fid: str | int, user: BasicUserInfo) -> bool:
         """
         解封用户
 
         Args:
-            fname (str): 贴吧名
+            fname_or_fid (str | int): 所在贴吧的贴吧名或fid
             user (BasicUserInfo): 基本用户信息
 
         Returns:
             bool: 操作是否成功
         """
 
+        if isinstance(fname_or_fid, str):
+            fname = fname_or_fid
+            fid = await self.get_fid(fname)
+        else:
+            fid = fname_or_fid
+            fname = await self.get_fname(fid)
+
         payload = [
             ('fn', fname),
-            ('fid', await self.get_fid(fname)),
+            ('fid', fid),
             ('block_un', user.user_name),
             ('block_uid', user.user_id),
             ('block_nickname', user.nick_name),
@@ -972,40 +1005,40 @@ class Browser(object):
         LOG.info(f"Successfully unblocked {user.log_name} in {fname}")
         return True
 
-    async def hide_thread(self, fname: str, tid: int) -> bool:
+    async def hide_thread(self, fname_or_fid: str | int, tid: int) -> bool:
         """
         屏蔽主题帖
 
         Args:
-            fname (str): 帖子所在的贴吧名
+            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid 优先fid
             tid (int): 待屏蔽的主题帖tid
 
         Returns:
             bool: 操作是否成功
         """
 
-        return await self._del_thread(fname, tid, is_hide=True)
+        return await self._del_thread(fname_or_fid, tid, is_hide=True)
 
-    async def del_thread(self, fname: str, tid: int) -> bool:
+    async def del_thread(self, fname_or_fid: str | int, tid: int) -> bool:
         """
         删除主题帖
 
         Args:
-            fname (str): 帖子所在的贴吧名
+            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid 优先fid
             tid (int): 待删除的主题帖tid
 
         Returns:
             bool: 操作是否成功
         """
 
-        return await self._del_thread(fname, tid, is_hide=False)
+        return await self._del_thread(fname_or_fid, tid, is_hide=False)
 
-    async def _del_thread(self, fname: str, tid: int, is_hide: bool = False) -> bool:
+    async def _del_thread(self, fname_or_fid: str | int, tid: int, is_hide: bool = False) -> bool:
         """
         删除/屏蔽主题帖
 
         Args:
-            fname (str): 帖子所在的贴吧名
+            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid 优先fid
             tid (int): 待删除/屏蔽的主题帖tid
             is_hide (bool, optional): True则屏蔽帖 False则删除帖. Defaults to False.
 
@@ -1013,9 +1046,11 @@ class Browser(object):
             bool: 操作是否成功
         """
 
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('fid', await self.get_fid(fname)),
+            ('fid', fid),
             ('is_frs_mask', int(is_hide)),
             ('tbs', await self.get_tbs()),
             ('z', tid),
@@ -1031,18 +1066,18 @@ class Browser(object):
                 raise ValueError(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to delete thread tid:{tid} is_hide:{is_hide} in {fname}. reason:{err}")
+            LOG.warning(f"Failed to delete thread tid:{tid} is_hide:{is_hide} in {fname_or_fid}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully deleted thread tid:{tid} is_hide:{is_hide} in {fname}")
+        LOG.info(f"Successfully deleted thread tid:{tid} is_hide:{is_hide} in {fname_or_fid}")
         return True
 
-    async def del_post(self, fname: str, tid: int, pid: int) -> bool:
+    async def del_post(self, fname_or_fid: str | int, tid: int, pid: int) -> bool:
         """
         删除回复
 
         Args:
-            fname (str): 帖子所在的贴吧名
+            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid 优先fid
             tid (int): 回复所在的主题帖tid
             pid (int): 待删除的回复pid
 
@@ -1050,9 +1085,11 @@ class Browser(object):
             bool: 操作是否成功
         """
 
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('fid', await self.get_fid(fname)),
+            ('fid', fid),
             ('pid', pid),
             ('tbs', await self.get_tbs()),
             ('z', tid),
@@ -1068,60 +1105,60 @@ class Browser(object):
                 raise ValueError(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to delete post {pid} in {tid} in {fname}. reason:{err}")
+            LOG.warning(f"Failed to delete post {pid} in {tid} in {fname_or_fid}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully deleted post {pid} in {tid} in {fname}")
+        LOG.info(f"Successfully deleted post {pid} in {tid} in {fname_or_fid}")
         return True
 
-    async def unhide_thread(self, fname, tid: int) -> bool:
+    async def unhide_thread(self, fname_or_fid: str | int, tid: int) -> bool:
         """
         解除主题帖屏蔽
 
         Args:
-            fname (str): 帖子所在的贴吧名
+            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
             tid (int, optional): 待解除屏蔽的主题帖tid
 
         Returns:
             bool: 操作是否成功
         """
 
-        return await self._recover(fname, tid=tid, is_hide=True)
+        return await self._recover(fname_or_fid, tid=tid, is_hide=True)
 
-    async def recover_thread(self, fname, tid: int) -> bool:
+    async def recover_thread(self, fname_or_fid: str | int, tid: int) -> bool:
         """
         恢复主题帖
 
         Args:
-            fname (str): 帖子所在的贴吧名
+            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
             tid (int, optional): 待恢复的主题帖tid
 
         Returns:
             bool: 操作是否成功
         """
 
-        return await self._recover(fname, tid=tid, is_hide=False)
+        return await self._recover(fname_or_fid, tid=tid, is_hide=False)
 
-    async def recover_post(self, fname, pid: int) -> bool:
+    async def recover_post(self, fname_or_fid: str | int, pid: int) -> bool:
         """
         恢复主题帖
 
         Args:
-            fname (str): 帖子所在的贴吧名
+            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
             pid (int, optional): 待恢复的回复pid
 
         Returns:
             bool: 操作是否成功
         """
 
-        return await self._recover(fname, pid=pid, is_hide=False)
+        return await self._recover(fname_or_fid, pid=pid, is_hide=False)
 
-    async def _recover(self, fname, tid: int = 0, pid: int = 0, is_hide: bool = False) -> bool:
+    async def _recover(self, fname_or_fid: str | int, tid: int = 0, pid: int = 0, is_hide: bool = False) -> bool:
         """
         恢复帖子
 
         Args:
-            fname (str): 帖子所在的贴吧名
+            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
             tid (int, optional): 待恢复的主题帖tid. Defaults to 0.
             pid (int, optional): 待恢复的回复pid. Defaults to 0.
             is_hide (bool, optional): True则取消屏蔽主题帖 False则恢复删帖. Defaults to False.
@@ -1129,6 +1166,13 @@ class Browser(object):
         Returns:
             bool: 操作是否成功
         """
+
+        if isinstance(fname_or_fid, str):
+            fname = fname_or_fid
+            fid = await self.get_fid(fname)
+        else:
+            fid = fname_or_fid
+            fname = await self.get_fname(fid)
 
         payload = [
             ('fn', fname),
@@ -1153,12 +1197,12 @@ class Browser(object):
         LOG.info(f"Successfully recovered tid:{tid} pid:{pid} hide:{is_hide} in {fname}")
         return True
 
-    async def move(self, fname: str, tid: int, to_tab_id: int, from_tab_id: int = 0) -> bool:
+    async def move(self, fname_or_fid: str | int, tid: int, to_tab_id: int, from_tab_id: int = 0) -> bool:
         """
         将主题帖移动至另一分区
 
         Args:
-            fname (str): 帖子所在贴吧名
+            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid 优先fid
             tid (int): 待移动的主题帖tid
             to_tab_id (int): 目标分区id
             from_tab_id (int, optional): 来源分区id 默认为0即无分区. Defaults to 0.
@@ -1167,10 +1211,12 @@ class Browser(object):
             bool: 操作是否成功
         """
 
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+
         payload = [
             ('BDUSS', self.sessions.BDUSS),
             ('_client_version', '12.12.1.0'),
-            ('forum_id', await self.get_fid(fname)),
+            ('forum_id', fid),
             ('tbs', await self.get_tbs()),
             (
                 'threads',
@@ -1188,27 +1234,29 @@ class Browser(object):
                 raise ValueError(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to move {tid} to tab:{to_tab_id} in {fname}. reason:{err}")
+            LOG.warning(f"Failed to move {tid} to tab:{to_tab_id} in {fname_or_fid}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully moved {tid} to tab:{to_tab_id} in {fname}")
+        LOG.info(f"Successfully moved {tid} to tab:{to_tab_id} in {fname_or_fid}")
         return True
 
-    async def recommend(self, fname: str, tid: int) -> bool:
+    async def recommend(self, fname_or_fid: str | int, tid: int) -> bool:
         """
         大吧主首页推荐
 
         Args:
-            fname (str): 帖子所在贴吧名
+            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid 优先fid
             tid (int): 待推荐的主题帖tid
 
         Returns:
             bool: 操作是否成功
         """
 
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('forum_id', await self.get_fid(fname)),
+            ('forum_id', fid),
             ('thread_id', tid),
         ]
 
@@ -1224,18 +1272,18 @@ class Browser(object):
                 raise ValueError(res_json['data']['msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to recommend {tid} in {fname}. reason:{err}")
+            LOG.warning(f"Failed to recommend {tid} in {fname_or_fid}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully recommended {tid} in {fname}")
+        LOG.info(f"Successfully recommended {tid} in {fname_or_fid}")
         return True
 
-    async def good(self, fname: str, tid: int, cname: str = '') -> bool:
+    async def good(self, fname_or_fid: str | int, tid: int, cname: str = '') -> bool:
         """
         加精主题帖
 
         Args:
-            fname (str): 帖子所在贴吧名
+            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
             tid (int): 待加精的主题帖tid
             cname (str, optional): 待添加的精华分区名称 默认为''即不分区. Defaults to ''.
 
@@ -1243,12 +1291,19 @@ class Browser(object):
             bool: 操作是否成功
         """
 
+        if isinstance(fname_or_fid, str):
+            fname = fname_or_fid
+            fid = await self.get_fid(fname)
+        else:
+            fid = fname_or_fid
+            fname = await self.get_fname(fid)
+
         async def _cname2cid() -> int:
             """
             由加精分区名cname获取cid
 
             Closure Args:
-                fname (str): 帖子所在贴吧名
+                fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
                 cname (str, optional): 待添加的精华分区名称 默认为''即不分区. Defaults to ''.
 
             Returns:
@@ -1298,7 +1353,7 @@ class Browser(object):
             payload = [
                 ('BDUSS', self.sessions.BDUSS),
                 ('cid', cid),
-                ('fid', await self.get_fid(fname)),
+                ('fid', fid),
                 ('ntn', 'set'),
                 ('tbs', await self.get_tbs()),
                 ('word', fname),
@@ -1323,21 +1378,28 @@ class Browser(object):
 
         return await _good(await _cname2cid())
 
-    async def ungood(self, fname: str, tid: int) -> bool:
+    async def ungood(self, fname_or_fid: str | int, tid: int) -> bool:
         """
         撤精主题帖
 
         Args:
-            fname (str): 帖子所在贴吧名
+            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
             tid (int): 待撤精的主题帖tid
 
         Returns:
             bool: 操作是否成功
         """
 
+        if isinstance(fname_or_fid, str):
+            fname = fname_or_fid
+            fid = await self.get_fid(fname)
+        else:
+            fid = fname_or_fid
+            fname = await self.get_fname(fid)
+
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('fid', await self.get_fid(fname)),
+            ('fid', fid),
             ('tbs', await self.get_tbs()),
             ('word', fname),
             ('z', tid),
@@ -1359,21 +1421,28 @@ class Browser(object):
         LOG.info(f"Successfully removed {tid} from good_list in {fname}")
         return True
 
-    async def top(self, fname: str, tid: int) -> bool:
+    async def top(self, fname_or_fid: str | int, tid: int) -> bool:
         """
         置顶主题帖
 
         Args:
-            fname (str): 帖子所在贴吧名
+            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
             tid (int): 待置顶的主题帖tid
 
         Returns:
             bool: 操作是否成功
         """
 
+        if isinstance(fname_or_fid, str):
+            fname = fname_or_fid
+            fid = await self.get_fid(fname)
+        else:
+            fid = fname_or_fid
+            fname = await self.get_fname(fid)
+
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('fid', await self.get_fid(fname)),
+            ('fid', fid),
             ('ntn', 'set'),
             ('tbs', await self.get_tbs()),
             ('word', fname),
@@ -1396,21 +1465,28 @@ class Browser(object):
         LOG.info(f"Successfully added {tid} to top_list in {fname}")
         return True
 
-    async def untop(self, fname: str, tid: int) -> bool:
+    async def untop(self, fname_or_fid: str | int, tid: int) -> bool:
         """
         撤销置顶主题帖
 
         Args:
-            fname (str): 帖子所在贴吧名
+            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
             tid (int): 待撤销置顶的主题帖tid
 
         Returns:
             bool: 操作是否成功
         """
 
+        if isinstance(fname_or_fid, str):
+            fname = fname_or_fid
+            fid = await self.get_fid(fname)
+        else:
+            fid = fname_or_fid
+            fname = await self.get_fname(fid)
+
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('fid', await self.get_fid(fname)),
+            ('fid', fid),
             ('tbs', await self.get_tbs()),
             ('word', fname),
             ('z', tid),
@@ -1433,13 +1509,13 @@ class Browser(object):
         return True
 
     async def get_recover_list(
-        self, fname: str, pn: int = 1, name: str = ''
+        self, fname_or_fid: str | int, pn: int = 1, name: str = ''
     ) -> tuple[list[tuple[int, int, bool]], bool]:
         """
         获取pn页的待恢复帖子列表
 
         Args:
-            fname (str): 贴吧名
+            fname_or_fid (str | int): 目标贴吧的贴吧名或fid
             pn (int, optional): 页码. Defaults to 1.
             name (str, optional): 通过被删帖作者的用户名/昵称查询 默认为空即查询全部. Defaults to ''.
 
@@ -1447,9 +1523,16 @@ class Browser(object):
             tuple[list[tuple[int, int, bool]], bool]: list[tid,pid,是否为屏蔽], 是否还有下一页
         """
 
+        if isinstance(fname_or_fid, str):
+            fname = fname_or_fid
+            fid = await self.get_fid(fname)
+        else:
+            fid = fname_or_fid
+            fname = await self.get_fname(fid)
+
         params = {
             'fn': fname,
-            'fid': await self.get_fid(fname),
+            'fid': fid,
             'word': name,
             'is_ajax': 1,
             'pn': pn,
@@ -1485,17 +1568,19 @@ class Browser(object):
 
         return res_list, has_more
 
-    async def get_black_list(self, fname: str, pn: int = 1) -> tuple[list[BasicUserInfo], bool]:
+    async def get_black_list(self, fname_or_fid: str | int, pn: int = 1) -> tuple[list[BasicUserInfo], bool]:
         """
         获取pn页的黑名单
 
         Args:
-            fname (str): 贴吧名
+            fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先贴吧名
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
             tuple[list[BasicUserInfo], bool]: list[基本用户信息], 是否还有下一页
         """
+
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         try:
             res = await self.sessions.web.get(
@@ -1529,17 +1614,19 @@ class Browser(object):
 
         return res_list, has_more
 
-    async def blacklist_add(self, fname: str, user: BasicUserInfo) -> bool:
+    async def blacklist_add(self, fname_or_fid: str | int, user: BasicUserInfo) -> bool:
         """
         添加贴吧黑名单
 
         Args:
-            fname (str): 贴吧名
+            fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先贴吧名
             user (BasicUserInfo): 基本用户信息
 
         Returns:
             bool: 操作是否成功
         """
+
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         payload = [
             ('tbs', await self.get_tbs()),
@@ -1562,17 +1649,19 @@ class Browser(object):
         LOG.info(f"Successfully added {user.log_name} to black_list in {fname}")
         return True
 
-    async def blacklist_del(self, fname: str, user: BasicUserInfo) -> bool:
+    async def blacklist_del(self, fname_or_fid: str | int, user: BasicUserInfo) -> bool:
         """
         移出贴吧黑名单
 
         Args:
-            fname (str): 贴吧名
+            fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先贴吧名
             user (BasicUserInfo): 基本用户信息
 
         Returns:
             bool: 操作是否成功
         """
+
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         payload = [
             ('word', fname),
@@ -1595,12 +1684,12 @@ class Browser(object):
         LOG.info(f"Successfully removed {user.log_name} from black_list in {fname}")
         return True
 
-    async def handle_unblock_appeal(self, fname: str, appeal_id: int, refuse: bool = True) -> bool:
+    async def handle_unblock_appeal(self, fname_or_fid: str | int, appeal_id: int, refuse: bool = True) -> bool:
         """
         拒绝或通过解封申诉
 
         Args:
-            fname (str): 贴吧名
+            fname_or_fid (str | int): 申诉所在贴吧的贴吧名或fid
             appeal_id (int): 申诉请求的appeal_id
             refuse (bool, optional): True则拒绝申诉 False则接受申诉. Defaults to True.
 
@@ -1611,9 +1700,16 @@ class Browser(object):
             bool: 操作是否成功
         """
 
+        if isinstance(fname_or_fid, str):
+            fname = fname_or_fid
+            fid = await self.get_fid(fname)
+        else:
+            fid = fname_or_fid
+            fname = await self.get_fname(fid)
+
         payload = [
             ('fn', fname),
-            ('fid', await self.get_fid(fname)),
+            ('fid', fid),
             ('status', 2 if refuse else 1),
             ('refuse_reason', 'auto refuse'),
             ('appeal_id', appeal_id),
@@ -1633,20 +1729,27 @@ class Browser(object):
         LOG.info(f"Successfully handled {appeal_id} in {fname}. refuse:{refuse}")
         return True
 
-    async def get_unblock_appeal_list(self, fname: str) -> list[int]:
+    async def get_unblock_appeal_list(self, fname_or_fid: str | int) -> list[int]:
         """
         获取第1页的申诉请求列表
 
         Args:
-            fname (str): 贴吧名
+            fname_or_fid (str | int): 目标贴吧的贴吧名或fid
 
         Returns:
             list[int]: 申诉请求的appeal_id的列表
         """
 
+        if isinstance(fname_or_fid, str):
+            fname = fname_or_fid
+            fid = await self.get_fid(fname)
+        else:
+            fid = fname_or_fid
+            fname = await self.get_fname(fid)
+
         params = {
             'fn': fname,
-            'fid': await self.get_fid(fname),
+            'fid': fid,
             'is_ajax': 1,
             'pn': 1,
         }
@@ -1974,13 +2077,19 @@ class Browser(object):
         return user, threads
 
     async def search_post(
-        self, fname: str, query: str, pn: int = 1, rn: int = 30, query_type: int = 0, only_thread: bool = False
+        self,
+        fname_or_fid: str | int,
+        query: str,
+        pn: int = 1,
+        rn: int = 30,
+        query_type: int = 0,
+        only_thread: bool = False,
     ) -> Searches:
         """
         贴吧搜索
 
         Args:
-            fname (str): 贴吧名
+            fname_or_fid (str | int): 查询的贴吧名或fid 优先贴吧名
             query (str): 查询文本
             pn (int, optional): 页码. Defaults to 1.
             rn (int, optional): 请求的条目数. Defaults to 30.
@@ -1990,6 +2099,8 @@ class Browser(object):
         Returns:
             Searches: 搜索结果列表
         """
+
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         payload = [
             ('_client_version', '12.12.1.0'),
@@ -2089,20 +2200,18 @@ class Browser(object):
 
         return res_list
 
-    async def get_forum_detail(self, fname: str = '', fid: int = 0) -> tuple[str, int, int]:
+    async def get_forum_detail(self, fname_or_fid: str | int) -> tuple[str, int, int]:
         """
         通过forum_id获取贴吧信息
 
         Args:
-            fname (str, optional): 贴吧名. Defaults to ''.
-            fid (int, optional): forum_id. Defaults to 0.
+            fname_or_fid (str | int): 目标贴吧名或fid 优先fid
 
         Returns:
             tuple[str, int, int]: 该贴吧的贴吧名, 关注人数, 主题帖数
         """
 
-        if not fid:
-            fid = await self.get_fid(fname)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         payload = [
             ('_client_version', '12.12.1.0'),
@@ -2123,29 +2232,31 @@ class Browser(object):
             thread_num = int(res_json['forum_info']['thread_count'])
 
         except Exception as err:
-            LOG.warning(f"Failed to get forum_detail of {fid}. reason:{err}")
+            LOG.warning(f"Failed to get forum_detail of {fname_or_fid}. reason:{err}")
             fname = ''
             member_num = 0
             thread_num = 0
 
         return fname, member_num, thread_num
 
-    async def get_bawu_dict(self, fname: str) -> dict[str, list[BasicUserInfo]]:
+    async def get_bawu_dict(self, fname_or_fid: str | int) -> dict[str, list[BasicUserInfo]]:
         """
         获取吧务信息
 
         Args:
-            fname (str): 贴吧名
+            fname_or_fid (str | int): 目标贴吧名或fid 优先fid
 
         Returns:
             dict[str, list[BasicUserInfo]]: {吧务类型: list[吧务基本用户信息]}
         """
 
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+
         common_proto = CommonReq_pb2.CommonReq()
         common_proto._client_version = '12.12.1.0'
         data_proto = GetBawuInfoReqIdl_pb2.GetBawuInfoReqIdl.DataReq()
         data_proto.common.CopyFrom(common_proto)
-        data_proto.forum_id = await self.get_fid(fname)
+        data_proto.forum_id = fid
         req_proto = GetBawuInfoReqIdl_pb2.GetBawuInfoReqIdl()
         req_proto.data.CopyFrom(data_proto)
 
@@ -2174,16 +2285,18 @@ class Browser(object):
 
         return bawu_dict
 
-    async def get_tab_map(self, fname: str) -> dict[str, int]:
+    async def get_tab_map(self, fname_or_fid: str | int) -> dict[str, int]:
         """
         获取分区名到分区id的映射字典
 
         Args:
-            fname (str): 贴吧名
+            fname_or_fid (str | int): 目标贴吧名或fid 优先贴吧名
 
         Returns:
             dict[str, int]: {分区名:分区id}
         """
+
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         common_proto = CommonReq_pb2.CommonReq()
         common_proto.BDUSS = self.sessions.BDUSS
@@ -2213,22 +2326,24 @@ class Browser(object):
 
         return tab_map
 
-    async def get_recom_list(self, fname: str, pn: int = 1) -> tuple[list[tuple[Thread, int]], bool]:
+    async def get_recom_list(self, fname_or_fid: str | int, pn: int = 1) -> tuple[list[tuple[Thread, int]], bool]:
         """
         获取pn页的大吧主推荐帖列表
 
         Args:
-            fname (str): 贴吧名
+            fname_or_fid (str | int): 目标贴吧名或fid 优先fid
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
             tuple[list[tuple[Thread, int]], bool]: list[被推荐帖子信息,新增浏览量], 是否还有下一页
         """
 
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+
         payload = [
             ('BDUSS', self.sessions.BDUSS),
             ('_client_version', '12.12.1.0'),
-            ('forum_id', await self.get_fid(fname)),
+            ('forum_id', fid),
             ('pn', pn),
             ('rn', 30),
         ]
@@ -2243,7 +2358,7 @@ class Browser(object):
                 raise ValueError(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to get recom_list of {fname}. reason:{err}")
+            LOG.warning(f"Failed to get recom_list of {fname_or_fid}. reason:{err}")
             res_list = []
             has_more = False
 
@@ -2260,21 +2375,23 @@ class Browser(object):
 
         return res_list, has_more
 
-    async def get_recom_status(self, fname: str) -> tuple[int, int]:
+    async def get_recom_status(self, fname_or_fid: str | int) -> tuple[int, int]:
         """
         获取大吧主推荐功能的月度配额状态
 
         Args:
-            fname (str): 贴吧名
+            fname_or_fid (str | int): 目标贴吧名或fid 优先fid
 
         Returns:
             tuple[int, int]: 本月总推荐配额, 本月已使用的推荐配额
         """
 
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+
         payload = [
             ('BDUSS', self.sessions.BDUSS),
             ('_client_version', '12.12.1.0'),
-            ('forum_id', await self.get_fid(fname)),
+            ('forum_id', fid),
             ('pn', 1),
             ('rn', 0),
         ]
@@ -2292,18 +2409,18 @@ class Browser(object):
             used_recom_num = int(res_json['used_recommend_num'])
 
         except Exception as err:
-            LOG.warning(f"Failed to get recom_status of {fname}. reason:{err}")
+            LOG.warning(f"Failed to get recom_status of {fname_or_fid}. reason:{err}")
             total_recom_num = 0
             used_recom_num = 0
 
         return total_recom_num, used_recom_num
 
-    async def get_statistics(self, fname: str) -> dict[str, list[int]]:
+    async def get_statistics(self, fname_or_fid: str | int) -> dict[str, list[int]]:
         """
         获取吧务后台中最近29天的统计数据
 
         Args:
-            fname (str): 贴吧名
+            fname_or_fid (str | int): 目标贴吧名或fid 优先fid
 
         Returns:
             dict[str, list[int]]: {字段名:按时间顺序排列的统计数据}
@@ -2317,10 +2434,12 @@ class Browser(object):
              'recommend': 首页推荐数}
         """
 
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+
         payload = [
             ('BDUSS', self.sessions.BDUSS),
             ('_client_version', '12.12.1.0'),
-            ('forum_id', await self.get_fid(fname)),
+            ('forum_id', fid),
         ]
 
         field_names = [
@@ -2349,22 +2468,26 @@ class Browser(object):
             }
 
         except Exception as err:
-            LOG.warning(f"Failed to get statistics of {fname}. reason:{err}")
+            LOG.warning(f"Failed to get statistics of {fname_or_fid}. reason:{err}")
             stat = {field_name: [] for field_name in field_names}
 
         return stat
 
-    async def get_rank_list(self, fname: str, pn: int = 1) -> tuple[list[tuple[str, int, int, bool]], bool]:
+    async def get_rank_list(
+        self, fname_or_fid: str | int, pn: int = 1
+    ) -> tuple[list[tuple[str, int, int, bool]], bool]:
         """
         获取pn页的贴吧等级排行榜
 
         Args:
-            fname (str): 贴吧名
+            fname_or_fid (str | int): 目标贴吧名或fid 优先贴吧名
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
             tuple[list[tuple[str, int, int, bool]], bool]: list[用户名,等级,经验值,是否vip], 是否还有下一页
         """
+
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         try:
             res = await self.sessions.web.get(
@@ -2403,17 +2526,19 @@ class Browser(object):
 
         return res_list, has_more
 
-    async def get_member_list(self, fname: str, pn: int = 1) -> tuple[list[tuple[str, str, int]], bool]:
+    async def get_member_list(self, fname_or_fid: str | int, pn: int = 1) -> tuple[list[tuple[str, str, int]], bool]:
         """
         获取pn页的贴吧最新关注用户列表
 
         Args:
-            fname (str): 贴吧名
+            fname_or_fid (str | int): 目标贴吧名或fid 优先贴吧名
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
             tuple[list[tuple[str, str, int]], bool]: list[用户名,portrait,等级], 是否还有下一页
         """
+
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         try:
             res = await self.sessions.web.get(
@@ -2448,21 +2573,23 @@ class Browser(object):
 
         return res_list, has_more
 
-    async def like_forum(self, fname: str) -> bool:
+    async def like_forum(self, fname_or_fid: str | int) -> bool:
         """
         关注吧
 
         Args:
-            fname (str): 贴吧名
+            fname_or_fid (str | int): 要关注贴吧的贴吧名或fid 优先fid
 
         Returns:
             bool: 操作是否成功
         """
 
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+
         try:
             payload = [
                 ('BDUSS', self.sessions.BDUSS),
-                ('fid', await self.get_fid(fname)),
+                ('fid', fid),
                 ('tbs', await self.get_tbs()),
             ]
 
@@ -2477,22 +2604,24 @@ class Browser(object):
                 raise ValueError(res_json['error']['errmsg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to like forum {fname}. reason:{err}")
+            LOG.warning(f"Failed to like forum {fname_or_fid}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully liked forum {fname}")
+        LOG.info(f"Successfully liked forum {fname_or_fid}")
         return True
 
-    async def sign_forum(self, fname: str) -> bool:
+    async def sign_forum(self, fname_or_fid: str | int) -> bool:
         """
         签到吧
 
         Args:
-            fname (str): 贴吧名
+            fname_or_fid (str | int): 要签到贴吧的贴吧名或fid 优先贴吧名
 
         Returns:
             bool: 签到是否成功
         """
+
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         try:
             payload = [
@@ -2519,12 +2648,12 @@ class Browser(object):
         LOG.info(f"Successfully signed forum {fname}")
         return True
 
-    async def add_post(self, fname: str, tid: int, content: str) -> bool:
+    async def add_post(self, fname_or_fid: str | int, tid: int, content: str) -> bool:
         """
         回帖
 
         Args:
-            fname (str): 要回复的主题帖所在吧名
+            fname_or_fid (str | int): 要回复的主题帖所在贴吧的贴吧名或fid
             tid (int): 要回复的主题帖的tid
             content (str): 回复内容
 
@@ -2535,6 +2664,13 @@ class Browser(object):
             本接口仍处于测试阶段，有一定永封风险！请谨慎使用！
             已通过的测试: cookie白板号(无头像无关注吧无发帖记录 2元/个) 通过异地阿里云ip出口以3分钟的发送间隔发15条回复不吞楼不封号
         """
+
+        if isinstance(fname_or_fid, str):
+            fname = fname_or_fid
+            fid = await self.get_fid(fname)
+        else:
+            fid = fname_or_fid
+            fname = await self.get_fname(fid)
 
         try:
             payload = [
@@ -2552,7 +2688,7 @@ class Browser(object):
                 ('cuid_galaxy2', '1782A7D2758F38EA4B4EAFE1AD4881CB|VLJONH23W'),
                 ('cuid_gid', ''),
                 ('entrance_type', 0),
-                ('fid', await self.get_fid(fname)),
+                ('fid', fid),
                 ('from', '1021099l'),
                 ('from_fourm_id', 'null'),
                 ('is_ad', 0),
@@ -2635,12 +2771,12 @@ class Browser(object):
         LOG.info(f"Successfully sending msg to {user.user_id}. content:{content}")
         return True
 
-    async def set_privacy(self, fid: int, tid: int, pid: int, hide: bool = True) -> bool:
+    async def set_privacy(self, fname_or_fid: str | int, tid: int, pid: int, hide: bool = True) -> bool:
         """
         隐藏主题帖
 
         Args:
-            fid (int): 主题帖所在吧的fid
+            fname_or_fid (str | int): 主题帖所在贴吧的贴吧名或fid 优先fid
             tid (int): 主题帖tid
             tid (int): 主题帖pid
             hide (bool, optional): True则设为隐藏 False则取消隐藏. Defaults to True.
@@ -2648,6 +2784,8 @@ class Browser(object):
         Returns:
             bool: 操作是否成功
         """
+
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         try:
             payload = [

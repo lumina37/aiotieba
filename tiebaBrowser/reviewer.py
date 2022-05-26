@@ -178,7 +178,7 @@ class Reviewer(Browser):
         通过fid获取贴吧名
 
         Args:
-            fid (int): fid
+            fid (int): forum_id
 
         Returns:
             str: 该贴吧的贴吧名
@@ -187,7 +187,7 @@ class Reviewer(Browser):
         if fname := await self.database.get_fname(fid):
             return fname
 
-        if fname := (await super().get_forum_detail(fid=fid))[0]:
+        if fname := await super().get_fname(fid):
             await self.database.add_forum(fid, fname)
 
         return fname
