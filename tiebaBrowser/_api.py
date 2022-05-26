@@ -2017,7 +2017,7 @@ class Browser(object):
                         userpost._user = user
 
         except Exception as err:
-            LOG.warning(f"Failed to get self_contents reason:{err}", exc_info=True)
+            LOG.warning(f"Failed to get self_contents reason:{err}")
             res_list = []
 
         return res_list

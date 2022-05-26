@@ -1270,7 +1270,7 @@ class Posts(_Containers[Post]):
             self._forum = None
             self._thread = None
 
-            self._has_fold = False
+            self.has_fold = False
 
     @property
     def objs(self) -> list[Post]:
