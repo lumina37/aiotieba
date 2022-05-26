@@ -206,7 +206,7 @@ class UserInfo(BasicUserInfo):
     __slots__ = ['level', 'gender', 'is_vip', 'is_god', 'priv_like', 'priv_reply']
 
     def __init__(self, _id: str | int | None = None, _raw_data: User_pb2.User | None = None) -> None:
-        super().__init__(_id, _raw_data)
+        super(UserInfo, self).__init__(_id, _raw_data)
 
         if _raw_data:
             self.level: int = _raw_data.level_id
@@ -226,7 +226,7 @@ class UserInfo(BasicUserInfo):
             self.priv_reply = 1
 
     def __eq__(self, obj: "UserInfo") -> bool:
-        return super().__eq__(obj)
+        return super(UserInfo, self).__eq__(obj)
 
 
 class _Fragment(_DataWrapper):
@@ -646,7 +646,7 @@ class Page(_DataWrapper):
     __slots__ = ['_raw_data', 'page_size', 'current_page', 'total_page', 'total_count', 'has_more', 'has_prev']
 
     def __init__(self, _raw_data: Page_pb2.Page | None = None) -> None:
-        super(Forum, self).__init__(_raw_data)
+        super(Page, self).__init__(_raw_data)
 
         if _raw_data:
             self.page_size: int = _raw_data.page_size
