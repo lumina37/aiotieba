@@ -15,28 +15,33 @@ __all__ = [
     'Replys',
     'Searches',
     'Fragments',
+    'NewThread',
+    'UserPost',
+    'UserPosts',
 ]
 
-import abc
 import json
-from collections.abc import Callable, Iterable
-from typing import Generic, Literal, TypeVar, final
+from collections.abc import Iterable
+from typing import Generic, Iterator, TypeVar, final
 
 from google.protobuf.json_format import ParseDict
 
 from ._logger import get_logger
 from .tieba_proto import (
     FrsPageResIdl_pb2,
+    NewThreadInfo_pb2,
     Page_pb2,
     PbContent_pb2,
     PbFloorResIdl_pb2,
     PbPageResIdl_pb2,
+    PollInfo_pb2,
     Post_pb2,
     ReplyMeResIdl_pb2,
     SimpleForum_pb2,
     SubPostList_pb2,
     ThreadInfo_pb2,
     User_pb2,
+    UserPostResIdl_pb2,
 )
 
 LOG = get_logger()
@@ -52,38 +57,27 @@ def _json_decoder_hook(_dict):
 JSON_DECODER = json.JSONDecoder(object_hook=_json_decoder_hook)
 
 
-def _int_prop_check_ignore_none(default_val: int) -> Callable:
+class _DataWrapper(object):
     """
-    装饰器实现对int类型属性的赋值前检查。忽略传入None的异常
+    raw_data包装器
 
-    Args:
-        default_val (int): 传入None时采用的默认值
+    Fields:
+        _raw_data (Any): 原始raw_data数据
     """
 
-    def wrapper(func) -> Callable:
-        def foo(self, new_val):
-            if new_val:
-                try:
-                    new_val = int(new_val)
-                except ValueError as err:
-                    LOG.warning(f"{err} happens in {func.__name__}")
-                    new_val = default_val
-            else:
-                new_val = default_val
-            return func(self, new_val)
+    __slots__ = ['_raw_data']
 
-        return foo
-
-    return wrapper
+    def __init__(self, _raw_data) -> None:
+        self._raw_data = _raw_data
 
 
-class BasicUserInfo(object):
+class BasicUserInfo(_DataWrapper):
     """
     基本用户属性
 
     Args:
         _id (str | int | None): 用于快速构造UserInfo的自适应参数 输入用户名/portrait/user_id
-        user_proto (User_pb2.User)
+        _raw_data (User_pb2.User)
 
     Fields:
         user_id (int): 贴吧旧版user_id
@@ -92,49 +86,45 @@ class BasicUserInfo(object):
         nick_name (str): 发帖人昵称
     """
 
-    __slots__ = ['_raw_data', '_user_id', 'user_name', '_portrait', '_nick_name']
+    __slots__ = ['user_id', 'user_name', '_portrait', '_nick_name']
 
-    def __init__(self, _id: str | int | None = None, user_proto: User_pb2.User | None = None) -> None:
-        self._raw_data = None
-        self.user_name = ''
-        self._nick_name = ''
-        self._portrait = ''
-        self._user_id = 0
+    def __init__(self, _id: str | int | None = None, _raw_data: User_pb2.User | None = None) -> None:
+        super(BasicUserInfo, self).__init__(_raw_data)
 
-        if user_proto:
-            self._raw_data = user_proto
-            self._user_id = user_proto.id
-            self.user_name = user_proto.name
-            self.portrait = user_proto.portrait
-            self.nick_name = user_proto.name_show
-
-        elif _id:
-            self._init_by_id(_id)
-
-    def _init_by_id(self, _id: str | int) -> None:
-
-        if isinstance(_id, int):
-            self.user_id = _id
+        if _raw_data:
+            self.user_id: int = _raw_data.id
+            self.user_name: str = _raw_data.name
+            self.portrait = _raw_data.portrait
+            self.nick_name = _raw_data.name_show
 
         else:
-            self.portrait = _id
-            if not self.portrait:
-                self.user_name = _id
+            self.user_id = 0
+            self.user_name = ''
+            self._portrait = ''
+            self._nick_name = ''
+
+            if _id:
+                if self.is_user_id(_id):
+                    self.user_id = _id
+                else:
+                    self.portrait = _id
+                    if not self.portrait:
+                        self.user_name = _id
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} [user_id:{self._user_id} / user_name:{self.user_name} / portrait:{self._portrait} / nick_name:{self._nick_name}]"
 
     def __eq__(self, obj: "BasicUserInfo") -> bool:
-        return self._user_id == obj.user_id and self.user_name == obj.user_name and self._portrait == obj.portrait
+        return self.user_id == obj.user_id and self.user_name == obj.user_name and self._portrait == obj.portrait
 
     def __hash__(self) -> int:
-        return self._user_id
+        return self.user_id
 
     def __int__(self) -> int:
-        return self._user_id
+        return self.user_id
 
     def __bool__(self) -> bool:
-        return bool(self._user_id)
+        return bool(self.user_id)
 
     @staticmethod
     def is_portrait(portrait: str) -> bool:
@@ -143,15 +133,6 @@ class BasicUserInfo(object):
     @staticmethod
     def is_user_id(user_id: int) -> bool:
         return isinstance(user_id, int)
-
-    @property
-    def user_id(self) -> int:
-        return self._user_id
-
-    @user_id.setter
-    @_int_prop_check_ignore_none(0)
-    def user_id(self, new_user_id: int) -> None:
-        self._user_id = int(new_user_id)
 
     @property
     def portrait(self) -> str:
@@ -206,7 +187,7 @@ class UserInfo(BasicUserInfo):
 
     Args:
         _id (Union[str, int, None]): 用于快速构造UserInfo的自适应参数 输入用户名或portrait或user_id
-        proto (User_pb2.User])
+        _raw_data (User_pb2.User)
 
     Fields:
         user_id (int): 贴吧旧版user_id
@@ -222,98 +203,44 @@ class UserInfo(BasicUserInfo):
         priv_reply (int): 帖子评论权限 (1所有人5我的粉丝6我的关注)
     """
 
-    __slots__ = ['_level', '_gender', '_is_vip', '_is_god', '_priv_like', '_priv_reply']
+    __slots__ = ['level', 'gender', 'is_vip', 'is_god', 'priv_like', 'priv_reply']
 
-    def __init__(self, _id: str | int | None = None, user_proto: User_pb2.User | None = None) -> None:
-        super().__init__(_id, user_proto)
+    def __init__(self, _id: str | int | None = None, _raw_data: User_pb2.User | None = None) -> None:
+        super().__init__(_id, _raw_data)
 
-        self._level = 0
-        self._gender = 0
-        self._is_vip = False
-        self._is_god = False
-        self._priv_like = 3
-        self._priv_reply = 1
+        if _raw_data:
+            self.level: int = _raw_data.level_id
+            self.gender: int = _raw_data.gender or _raw_data.sex
+            self.is_vip: bool = True if _raw_data.new_tshow_icon else bool(_raw_data.vipInfo.v_status)
+            self.is_god: bool = bool(_raw_data.new_god_data.status)
+            priv_raw_data = _raw_data.priv_sets
+            self.priv_like: int = priv_raw_data.like
+            self.priv_reply: int = priv_raw_data.reply
 
-        if user_proto:
-            self._level = user_proto.level_id
-            self._gender = user_proto.gender or user_proto.sex
-            self.is_vip = True if user_proto.new_tshow_icon else user_proto.vipInfo.v_status
-            self.is_god = user_proto.new_god_data.status
-            priv_proto = user_proto.priv_sets
-            self.priv_like = priv_proto.like
-            self.priv_reply = priv_proto.reply
+        else:
+            self.level = 0
+            self.gender = 0
+            self.is_vip = False
+            self.is_god = False
+            self.priv_like = 3
+            self.priv_reply = 1
 
     def __eq__(self, obj: "UserInfo") -> bool:
         return super().__eq__(obj)
 
-    @property
-    def level(self) -> int:
-        return self._level
 
-    @level.setter
-    @_int_prop_check_ignore_none(0)
-    def level(self, new_level: int) -> None:
-        self._level = int(new_level)
-
-    @property
-    def gender(self) -> int:
-        return self._gender
-
-    @gender.setter
-    @_int_prop_check_ignore_none(0)
-    def gender(self, new_gender: Literal[0, 1, 2]) -> None:
-        self._gender = int(new_gender)
-
-    @property
-    def is_vip(self) -> bool:
-        return self._is_vip
-
-    @is_vip.setter
-    def is_vip(self, new_is_vip: bool) -> None:
-        self._is_vip = bool(new_is_vip)
-
-    @property
-    def is_god(self) -> bool:
-        return self._is_god
-
-    @is_god.setter
-    def is_god(self, new_is_god: bool) -> None:
-        self._is_god = bool(new_is_god)
-
-    @property
-    def priv_like(self) -> int:
-        return self._priv_like
-
-    @priv_like.setter
-    @_int_prop_check_ignore_none(3)
-    def priv_like(self, new_priv_like: Literal[1, 2, 3]) -> None:
-        self._priv_like = int(new_priv_like)
-
-    @property
-    def priv_reply(self) -> int:
-        return self._priv_reply
-
-    @priv_reply.setter
-    @_int_prop_check_ignore_none(1)
-    def priv_reply(self, new_priv_reply: Literal[1, 5, 6]) -> None:
-        self._priv_reply = int(new_priv_reply)
-
-
-class _Fragment(object):
+class _Fragment(_DataWrapper):
     """
     内容碎片基类
     """
 
-    __slots__ = ['_raw_data']
+    __slots__ = []
 
-    def __init__(self, content_proto: PbContent_pb2.PbContent | None = None) -> None:
-        self._raw_data = content_proto
+    def __init__(self, _raw_data: PbContent_pb2.PbContent | None = None) -> None:
+        super(_Fragment, self).__init__(_raw_data)
 
     def __bool__(self) -> bool:
         return bool(self._raw_data)
-
-
-_TFrag = TypeVar('_TFrag', bound=_Fragment)
 
 
 class FragmentUnknown(_Fragment):
@@ -332,14 +259,15 @@ class FragText(_Fragment):
         text (str): 文本内容
     """
 
-    __slots__ = []
+    __slots__ = ['text']
+
+    def __init__(self, _raw_data: PbContent_pb2.PbContent) -> None:
+        super(FragText, self).__init__(_raw_data)
+
+        self.text: str = self._raw_data.text
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} [text:{self.text}]"
-
-    @property
-    def text(self) -> str:
-        return self._raw_data.text
 
 
 class FragEmoji(_Fragment):
@@ -350,14 +278,15 @@ class FragEmoji(_Fragment):
         desc (str): 表情描述
     """
 
-    __slots__ = []
+    __slots__ = ['desc']
+
+    def __init__(self, _raw_data: PbContent_pb2.PbContent) -> None:
+        super(FragEmoji, self).__init__(_raw_data)
+
+        self.desc: str = self._raw_data.c
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} [desc:{self.desc}]"
-
-    @property
-    def desc(self) -> str:
-        return self._raw_data.c
 
 
 class FragImage(_Fragment):
@@ -370,28 +299,21 @@ class FragImage(_Fragment):
         origin_src (str): 图像源url
     """
 
-    __slots__ = ['_hash', '_show_width', '_show_height']
+    __slots__ = ['src', 'big_src', 'origin_src', 'origin_size', '_hash', '_show_width', '_show_height']
 
-    def __init__(self, content_proto: PbContent_pb2.PbContent) -> None:
-        super().__init__(content_proto)
-        self._hash = None
-        self._show_width = None
-        self._show_height = None
+    def __init__(self, _raw_data: PbContent_pb2.PbContent) -> None:
+        super(FragImage, self).__init__(_raw_data)
+
+        self.src: str = self._raw_data.cdn_src or self._raw_data.src
+        self.big_src: str = self._raw_data.big_cdn_src or self._raw_data.big_src
+        self.origin_src: str = self._raw_data.origin_src
+        self.origin_size: int = self._raw_data.origin_size
+        self._hash: str = None
+        self._show_width: int = None
+        self._show_height: int = None
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} [src:{self.src}]"
-
-    @property
-    def src(self) -> str:
-        return self._raw_data.cdn_src or self._raw_data.src
-
-    @property
-    def big_src(self) -> str:
-        return self._raw_data.big_cdn_src or self._raw_data.big_src
-
-    @property
-    def origin_src(self) -> str:
-        return self._raw_data.origin_src
 
     @property
     def hash(self) -> str:
@@ -408,15 +330,14 @@ class FragImage(_Fragment):
 
         return self._hash
 
-    @property
-    def origin_size(self) -> int:
-        return self._raw_data.origin_size
-
     def _init_wh(self) -> None:
+
         show_width, _, show_height = self._raw_data.bsize.partition(',')
+
         if show_width and show_height:
             self._show_width = int(show_width)
             self._show_height = int(show_height)
+
         else:
             self._show_width = 0
             self._show_height = 0
@@ -443,24 +364,16 @@ class FragAt(FragText):
         user_id (int): 被@用户的user_id
     """
 
-    __slots__ = ['_text']
+    __slots__ = ['text', 'user_id']
 
-    def __init__(self, content_proto: PbContent_pb2.PbContent) -> None:
-        super().__init__(content_proto)
-        self._text = None
+    def __init__(self, _raw_data: PbContent_pb2.PbContent) -> None:
+        super(FragAt, self).__init__(_raw_data)
+
+        self.text: str = self._raw_data.text + " "
+        self.user_id: int = self._raw_data.uid
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} [text:{self.text} / user_id:{self.user_id}]"
-
-    @property
-    def text(self) -> str:
-        if self._text is None:
-            self._text = f"{self._raw_data.text} "
-        return self._text
-
-    @property
-    def user_id(self) -> int:
-        return self._raw_data.uid
 
 
 class FragLink(FragText):
@@ -468,30 +381,24 @@ class FragLink(FragText):
     链接碎片
 
     Fields:
-        text (str): 链接标题+链接url
-        title (str): 链接标题
+        text (str): 链接标题
         link (str): 链接url
         is_external (bool): 是否外部链接
     """
 
-    __slots__ = ['_is_external']
+    __slots__ = ['text', 'link', '_is_external']
 
     external_perfix = "http://tieba.baidu.com/mo/q/checkurl"
 
-    def __init__(self, content_proto: PbContent_pb2.PbContent) -> None:
-        super().__init__(content_proto)
+    def __init__(self, _raw_data: PbContent_pb2.PbContent) -> None:
+        super(FragLink, self).__init__(_raw_data)
+
+        self.text: str = self._raw_data.text
+        self.link: str = self._raw_data.link
         self._is_external = None
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} [text:{self.text} / link:{self.link}]"
-
-    @property
-    def text(self) -> str:
-        return self._raw_data.text
-
-    @property
-    def link(self) -> str:
-        return self._raw_data.link
 
     @property
     def is_external(self) -> bool:
@@ -508,14 +415,14 @@ class FragVoice(_Fragment):
         voice_md5 (str): 声音md5
     """
 
-    __slots__ = []
+    __slots__ = ['voice_md5']
+
+    def __init__(self, _raw_data: PbContent_pb2.PbContent | None = None) -> None:
+        super(FragVoice, self).__init__(_raw_data)
+        self.voice_md5: str = self._raw_data.voice_md5 if _raw_data else ''
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} [voice_md5:{self.voice_md5}]"
-
-    @property
-    def voice_md5(self) -> str:
-        return self._raw_data.voice_md5
 
 
 class FragTiebaPlus(FragText):
@@ -524,21 +431,19 @@ class FragTiebaPlus(FragText):
 
     Fields:
         text (str): 描述
-        jump_url (str): 跳转链接
+        url (str): 跳转链接
     """
 
-    __slots__ = []
+    __slots__ = ['text', 'url']
+
+    def __init__(self, _raw_data: PbContent_pb2.PbContent) -> None:
+        super(FragTiebaPlus, self).__init__(_raw_data)
+
+        self.text: str = self._raw_data.tiebaplus_info.desc
+        self.url: str = self._raw_data.tiebaplus_info.jump_url
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} [text:{self.text} / url:{self.url}]"
-
-    @property
-    def text(self) -> str:
-        return self._raw_data.tiebaplus_info.desc
-
-    @property
-    def url(self) -> str:
-        return self._raw_data.tiebaplus_info.jump_url
 
 
 class FragItem(FragText):
@@ -550,21 +455,19 @@ class FragItem(FragText):
         item_name (str): item名称
     """
 
-    __slots__ = []
+    __slots__ = ['text', 'item_name']
+
+    def __init__(self, _raw_data: PbContent_pb2.PbContent) -> None:
+        super(FragItem, self).__init__(_raw_data)
+
+        self.text: str = self._raw_data.item.item_name
+        self.item_name: str = self._raw_data.item.item_name
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} [item_name:{self.item_name}]"
 
-    @property
-    def text(self) -> str:
-        return self._raw_data.item.item_name
 
-    @property
-    def item_name(self) -> str:
-        return self._raw_data.item.item_name
-
-
-class Fragments(Generic[_TFrag]):
+class Fragments(object):
     """
     内容碎片列表
 
@@ -584,53 +487,53 @@ class Fragments(Generic[_TFrag]):
 
     __slots__ = ['_frags', '_text', '_texts', '_emojis', '_imgs', '_ats', '_links', '_voice', '_tiebapluses']
 
-    def __init__(self, content_protos: Iterable | None = None) -> None:
-        def _init_by_type(content_proto) -> _TFrag:
-            frag_type: int = content_proto.type
+    def __init__(self, _raw_datas: Iterable | None = None) -> None:
+        def _init_by_type(_raw_data) -> _Fragment:
+            frag_type: int = _raw_data.type
             match frag_type:
                 # 0纯文本 9电话号 18话题 27百科词条
                 case 0 | 9 | 18 | 27:
-                    fragment = FragText(content_proto)
+                    fragment = FragText(_raw_data)
                 # 11:tid=5047676428
                 case 2 | 11:
-                    fragment = FragEmoji(content_proto)
+                    fragment = FragEmoji(_raw_data)
                     self._emojis.append(fragment)
                 # 20:tid=5470214675
                 case 3 | 20:
-                    fragment = FragImage(content_proto)
+                    fragment = FragImage(_raw_data)
                     self._imgs.append(fragment)
                 case 4:
-                    fragment = FragAt(content_proto)
+                    fragment = FragAt(_raw_data)
                     self._ats.append(fragment)
                 case 1:
-                    fragment = FragLink(content_proto)
+                    fragment = FragLink(_raw_data)
                     self._links.append(fragment)
                 case 5:  # video
-                    fragment = FragmentUnknown(content_proto)
+                    fragment = FragmentUnknown(_raw_data)
                 case 10:
-                    fragment = FragVoice(content_proto)
+                    fragment = FragVoice(_raw_data)
                     self._voice = fragment
                 # 35|36:tid=7769728331 / 37:tid=7760184147
                 case 35 | 36 | 37:
-                    fragment = FragTiebaPlus(content_proto)
+                    fragment = FragTiebaPlus(_raw_data)
                     self._tiebapluses.append(fragment)
                 case _:
-                    fragment = FragmentUnknown(content_proto)
-                    LOG.warning(f"Unknown fragment type:{content_proto.type}")
+                    fragment = FragmentUnknown(_raw_data)
+                    LOG.warning(f"Unknown fragment type:{_raw_data.type}")
 
             return fragment
 
-        self._text = None
-        self._texts = None
-        self._links = []
-        self._imgs = []
-        self._emojis = []
-        self._ats = []
-        self._voice = None
-        self._tiebapluses = []
+        self._text: str = None
+        self._texts: list[FragText] = None
+        self._links: list[FragLink] = []
+        self._imgs: list[FragImage] = []
+        self._emojis: list[FragEmoji] = []
+        self._ats: list[FragAt] = []
+        self._voice: FragVoice = None
+        self._tiebapluses: list[FragTiebaPlus] = []
 
-        if content_protos:
-            self._frags = [_init_by_type(content_proto) for content_proto in content_protos]
+        if _raw_datas:
+            self._frags: list[_Fragment] = [_init_by_type(frag_proto) for frag_proto in _raw_datas]
         else:
             self._frags = []
 
@@ -674,11 +577,11 @@ class Fragments(Generic[_TFrag]):
         return self._tiebapluses
 
     @final
-    def __iter__(self) -> Iterable[_TFrag]:
+    def __iter__(self) -> Iterator[_Fragment]:
         return iter(self._frags)
 
     @final
-    def __getitem__(self, idx: int) -> _TFrag:
+    def __getitem__(self, idx: int) -> _Fragment | list[_Fragment]:
         return self._frags[idx]
 
     @final
@@ -698,7 +601,7 @@ class Fragments(Generic[_TFrag]):
         return bool(self._frags)
 
 
-class Forum(object):
+class Forum(_DataWrapper):
     """
     吧信息
 
@@ -710,36 +613,23 @@ class Forum(object):
     __slots__ = ['_raw_data', 'fid', 'name']
 
     def __init__(
-        self, forum_proto: SimpleForum_pb2.SimpleForum | FrsPageResIdl_pb2.FrsPageResIdl.DataRes.ForumInfo | None = None
+        self, _raw_data: SimpleForum_pb2.SimpleForum | FrsPageResIdl_pb2.FrsPageResIdl.DataRes.ForumInfo | None = None
     ) -> None:
+        super(Forum, self).__init__(_raw_data)
 
-        if forum_proto:
-            self._init_by_data(forum_proto)
+        if _raw_data:
+            self.fid: int = _raw_data.id
+            self.name: str = _raw_data.name
 
         else:
-            self._init_null()
-
-    def _init_by_data(
-        self, forum_proto: SimpleForum_pb2.SimpleForum | FrsPageResIdl_pb2.FrsPageResIdl.DataRes.ForumInfo
-    ) -> None:
-
-        self._raw_data = forum_proto
-
-        self.fid = forum_proto.id
-        self.name = forum_proto.name
-
-    def _init_null(self) -> None:
-
-        self._raw_data = None
-
-        self.fid = 0
-        self.name = ''
+            self.fid = 0
+            self.name = ''
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} [fid:{self.fid} / name:{self.name}]"
 
 
-class Page(object):
+class Page(_DataWrapper):
     """
     页信息
 
@@ -755,51 +645,40 @@ class Page(object):
 
     __slots__ = ['_raw_data', 'page_size', 'current_page', 'total_page', 'total_count', 'has_more', 'has_prev']
 
-    def __init__(self, page_proto: Page_pb2.Page | None = None) -> None:
+    def __init__(self, _raw_data: Page_pb2.Page | None = None) -> None:
+        super(Forum, self).__init__(_raw_data)
 
-        if page_proto:
-            self._init_by_data(page_proto)
+        if _raw_data:
+            self.page_size: int = _raw_data.page_size
+            self.current_page: int = _raw_data.current_page
+            self.total_page: int = _raw_data.total_page
+
+            if self.current_page and self.total_page:
+                self.has_more = self.current_page < self.total_page
+                self.has_prev = self.current_page > self.total_page
+            else:
+                self.has_more = bool(_raw_data.has_more)
+                self.has_prev = bool(_raw_data.has_prev)
+
+            self.total_count: int = _raw_data.total_count
 
         else:
-            self._init_null()
+            self.page_size = 0
+            self.current_page = 0
+            self.total_page = 0
 
-    def _init_by_data(self, page_proto: Page_pb2.Page) -> None:
+            self.has_more = False
+            self.has_prev = False
 
-        self._raw_data = page_proto
-
-        self.page_size = page_proto.page_size
-        self.current_page = page_proto.current_page
-        self.total_page = page_proto.total_page
-
-        if self.current_page and self.total_page:
-            self.has_more = self.current_page < self.total_page
-            self.has_prev = self.current_page > self.total_page
-        else:
-            self.has_more = bool(page_proto.has_more)
-            self.has_prev = bool(page_proto.has_prev)
-
-        self.total_count = page_proto.total_count
-
-    def _init_null(self) -> None:
-
-        self._raw_data = None
-
-        self.page_size = 0
-        self.current_page = 0
-        self.total_page = 0
-
-        self.has_more = False
-        self.has_prev = False
-
-        self.total_count = 0
+            self.total_count = 0
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} [current_page:{self.current_page} / total_page:{self.total_page} / has_more:{self.has_more} / has_prev:{self.has_prev}]"
 
 
-class _Container(object):
+class _BasicContainer(_DataWrapper):
     """
-    基本的内容信息
+    基本的内容容器
 
     Fields:
         text (str): 文本内容
@@ -808,110 +687,72 @@ class _Container(object):
         tid (int): 主题帖tid
         pid (int): 回复pid
         user (UserInfo): 发布者信息
-        author_id (int): int 发布者user_id
+        author_id (int): 发布者user_id
     """
 
-    __slots__ = ['_raw_data', '_text', '_tid', '_pid', '_user', '_author_id']
+    __slots__ = ['_text', 'fid', 'tid', 'pid', '_user', '_author_id']
 
-    def __init__(self) -> None:
-        pass
+    def __init__(self, _raw_data) -> None:
+        super(_BasicContainer, self).__init__(_raw_data)
 
-    @abc.abstractmethod
-    def _init_by_data(self, _data) -> None:
-        pass
-
-    @abc.abstractmethod
-    def _init_null(self) -> None:
-        pass
+        self._text: str = None
+        self.fid: int = 0
+        self.tid: int = 0
+        self.pid: int = 0
+        self._user: UserInfo = None
+        self._author_id: int = None
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} [tid:{self.tid} / pid:{self.pid} / user:{self.user.log_name} / text:{self.text}]"
 
     @property
-    @abc.abstractmethod
     def text(self) -> str:
-        raise NotImplementedError
-
-    @property
-    def tid(self) -> int:
-        return self._tid
-
-    @tid.setter
-    @_int_prop_check_ignore_none(0)
-    def tid(self, new_tid: int) -> None:
-        self._tid = int(new_tid)
-
-    @property
-    def pid(self) -> int:
-        return self._pid
-
-    @pid.setter
-    @_int_prop_check_ignore_none(0)
-    def pid(self, new_pid: int) -> None:
-        self._pid = int(new_pid)
+        if self._text is None:
+            raise NotImplementedError
+        return self._text
 
     @property
     def user(self) -> UserInfo:
-
         if self._user is None:
-
-            if self._raw_data:
-                self._user = UserInfo(user_proto=user_proto) if (user_proto := self._raw_data.author).id else UserInfo()
-
-            else:
-                self._user = UserInfo()
-
+            self._user = UserInfo()
         return self._user
 
-    @user.setter
-    def user(self, new_user: UserInfo) -> None:
-        self._user = new_user
-
     @property
-    def author_id(self) -> int:
-
+    def author_id(self) -> UserInfo:
         if self._author_id is None:
-
-            if self._raw_data:
-                self._author_id = author_id if (author_id := self.user.user_id) else self._raw_data.author_id
-
-            else:
-                self._author_id = 0
-
+            self._author_id = self.user.user_id
         return self._author_id
 
-    @author_id.setter
-    @_int_prop_check_ignore_none(0)
-    def author_id(self, new_author_id: int) -> None:
-        self._author_id = int(new_author_id)
+
+_TContainer = TypeVar('_TContainer', bound=_BasicContainer)
 
 
-_TContainer = TypeVar('_TContainer', bound=_Container)
-
-
-class _Containers(Generic[_TContainer]):
+class _Containers(_DataWrapper, Generic[_TContainer]):
     """
-    Threads/Posts/Comments/Ats的泛型基类
+    内容列表的泛型基类
     约定取内容的通用接口
 
     Fields:
         _objs (list[TContainer]): 内容列表
         page (Page): 页码信息
-        has_more (bool): 是否有后继页
-        has_prev (bool): 是否有前驱页
     """
 
     __slots__ = ['_objs', '_page']
 
-    def __init__(self) -> None:
-        raise NotImplementedError
+    def __init__(self, _raw_data) -> None:
+        _DataWrapper.__init__(self, _raw_data)
+
+        self._objs: list[_TContainer] = None
+        self._page: Page = None
 
     @property
-    @abc.abstractmethod
     def objs(self) -> list[_TContainer]:
         raise NotImplementedError
 
-    def __getitem__(self, idx: int) -> _TContainer:
+    def __iter__(self) -> Iterator[_TContainer]:
+        return iter(self.objs)
+
+    def __getitem__(self, idx) -> _TContainer | list[_TContainer]:
         return self.objs[idx]
 
     @final
@@ -937,24 +778,136 @@ class _Containers(Generic[_TContainer]):
 
             if self._raw_data:
                 self._page = Page(self._raw_data.page)
-
             else:
                 self._page = Page()
 
         return self._page
 
-    @property
-    def has_more(self) -> bool:
-        return self.page.has_more
+
+class VoteInfo(_DataWrapper):
+    """
+    投票信息
+
+    Fields:
+        title (str): 得票数
+        options (list[VoteOption]): 选项列表
+        is_multi (bool): 是否多选
+        total_vote (int): 总投票数
+        total_user (int): 总投票人数
+    """
+
+    __slots__ = ['title', '_options', 'is_multi', 'total_vote', 'total_user']
+
+    class VoteOption(object):
+        """
+        投票选项信息
+
+        Fields:
+            vote_num (int): 得票数
+            text (str): 选项描述文字
+            image (str): 选项描述图像链接
+        """
+
+        __slots__ = ['vote_num', 'text', 'image']
+
+        def __init__(self, _raw_data: PollInfo_pb2.PollInfo.PollOption) -> None:
+
+            self.vote_num: int = _raw_data.num
+            self.text: str = _raw_data.text
+            self.image: str = _raw_data.image
+
+    def __init__(self, _raw_data: PollInfo_pb2.PollInfo | None = None) -> None:
+        super(VoteInfo, self).__init__(_raw_data)
+
+        if _raw_data:
+            self.title: str = _raw_data.title
+            self._options: list[self.VoteOption] = None
+            self.is_multi = bool(_raw_data.is_multi)
+            self.total_vote: int = _raw_data.total_poll
+            self.total_user: int = _raw_data.total_num
+
+        else:
+            self.title = ''
+            self.options = []
+            self.is_multi = False
+            self.total_vote = 0
+            self.total_user = 0
 
     @property
-    def has_prev(self) -> bool:
-        return self.page.has_prev
+    def options(self):
+        if self._options is None:
+            self._options = [self.VoteOption(option_proto) for option_proto in self._raw_data.options]
+        return self._options
 
 
-class Thread(_Container):
+class ShareThread(_BasicContainer):
+    """
+    被分享的主题帖信息
+
+    Fields:
+        text (str): 文本内容
+        contents (Fragments): 内容碎片列表
+
+        fid (int): 所在吧id
+        tid (int): 主题帖tid
+        pid (int): 首楼的回复pid
+
+        title (str): 标题内容
+        vote_info (VoteInfo): 投票内容
+    """
+
+    __slots__ = ['_contents', 'title', '_vote_info']
+
+    def __init__(self, _raw_data: ThreadInfo_pb2.ThreadInfo.OriginThreadInfo | None = None) -> None:
+        super(ShareThread, self).__init__(_raw_data)
+
+        self._contents: Fragments = None
+        self._vote_info: VoteInfo = None
+
+        if _raw_data:
+            self.fid: int = _raw_data.fid
+            self.tid: int = _raw_data.tid
+            self.pid: int = _raw_data.pid
+
+            self.title: str = _raw_data.title
+
+        else:
+            self.title = ''
+
+    @property
+    def contents(self) -> Fragments:
+
+        if self._contents is None:
+
+            if self._raw_data:
+                self._contents = Fragments(self._raw_data.first_post_content)
+            else:
+                self._contents = Fragments()
+
+        return self._contents
+
+    @property
+    def vote_info(self) -> VoteInfo:
+
+        if self._vote_info is None:
+
+            if self._raw_data:
+                self._vote_info = (
+                    VoteInfo(poll_info_raw_data)
+                    if (poll_info_raw_data := self._raw_data.poll_info).options
+                    else VoteInfo()
+                )
+
+            else:
+                self._vote_info = VoteInfo()
+
+        return self._vote_info
+
+
+class Thread(_BasicContainer):
     """
     主题帖信息
+    用于c/f/frs/page接口
 
     Fields:
         text (str): 文本内容
@@ -975,7 +928,7 @@ class Thread(_Container):
 
         title (str): 标题内容
         vote_info (VoteInfo): 投票内容
-        share_origin (Union[Thread, None]): 转发来的原帖内容
+        share_origin (Thread | None): 转发来的原帖内容
         view_num (int): 浏览量
         reply_num (int): 回复数
         share_num (int): 分享数
@@ -986,137 +939,81 @@ class Thread(_Container):
     """
 
     __slots__ = [
-        '_raw_data',
         '_contents',
-        '_fid',
-        '_tab_id',
-        '_is_good',
-        '_is_top',
-        '_is_share',
-        '_is_hide',
-        '_is_livepost',
+        'tab_id',
+        'is_good',
+        'is_top',
+        'is_share',
+        'is_hide',
+        'is_livepost',
         'title',
         '_vote_info',
         '_share_origin',
-        '_view_num',
-        '_reply_num',
-        '_share_num',
-        '_agree',
-        '_disagree',
-        '_create_time',
-        '_last_time',
+        'view_num',
+        'reply_num',
+        'share_num',
+        'agree',
+        'disagree',
+        'create_time',
+        'last_time',
     ]
 
-    class VoteInfo(object):
+    def __init__(self, _raw_data: ThreadInfo_pb2.ThreadInfo | None = None) -> None:
+        super(Thread, self).__init__(_raw_data)
 
-        __slots__ = ['title', 'options', 'is_multi', 'total_vote', 'total_user']
+        self._contents: Fragments = None
+        self._vote_info: VoteInfo = None
+        self._share_origin: ShareThread = None
 
-        class VoteOption(object):
+        if _raw_data:
+            self.fid: int = _raw_data.fid
+            self.tid: int = _raw_data.id
+            self.pid: int = _raw_data.first_post_id
+            self._author_id: int = _raw_data.author_id
 
-            __slots__ = ['vote_num', 'text', 'image']
+            self.tab_id: int = _raw_data.tab_id
+            self.is_good = bool(_raw_data.is_good)
+            self.is_top = bool(_raw_data.is_top)
+            self.is_share = bool(_raw_data.is_share_thread)
+            self.is_hide = bool(_raw_data.is_frs_mask)
+            self.is_livepost = bool(_raw_data.is_livepost)
 
-            def __init__(self, option_proto: ThreadInfo_pb2.PollInfo.PollOption | None = None) -> None:
-
-                if option_proto:
-                    self.vote_num = option_proto.num
-                    self.text = option_proto.text
-                    self.image = option_proto.image
-
-                else:
-                    self.vote_num = 0
-                    self.text = ''
-                    self.image = ''
-
-        def __init__(self, vote_proto: ThreadInfo_pb2.PollInfo | None = None) -> None:
-
-            if vote_proto:
-                self.title = vote_proto.title
-                self.options = [self.VoteOption(option_proto) for option_proto in vote_proto.options]
-                self.is_multi = bool(vote_proto.is_multi)
-                self.total_vote = vote_proto.total_poll
-                self.total_user = vote_proto.total_num
-
-            else:
-                self.title = ''
-                self.options = []
-                self.is_multi = False
-                self.total_vote = 0
-                self.total_user = 0
-
-    def __init__(self, thread_proto: ThreadInfo_pb2.ThreadInfo | None = None) -> None:
-
-        if thread_proto:
-            self._init_by_data(thread_proto)
+            self.title: str = _raw_data.title
+            self.view_num: int = _raw_data.view_num
+            self.reply_num: int = _raw_data.reply_num
+            self.share_num: int = _raw_data.share_num
+            self.agree: int = _raw_data.agree.agree_num
+            self.disagree: int = _raw_data.agree.disagree_num
+            self.create_time: int = _raw_data.create_time
+            self.last_time: int = _raw_data.last_time_int
 
         else:
-            self._init_null()
+            self.tab_id = 0
+            self.is_good = False
+            self.is_top = False
+            self.is_share = False
+            self.is_hide = False
+            self.is_livepost = False
 
-    def _init_by_data(self, thread_proto: ThreadInfo_pb2.ThreadInfo) -> None:
-
-        self._raw_data = thread_proto
-        self._text = None
-
-        self._contents = None
-
-        self._fid = thread_proto.fid
-        self._tid = thread_proto.id
-        self._pid = pid if (pid := thread_proto.first_post_id) else thread_proto.post_id
-        self._user = None
-        self._author_id = None
-
-        self._tab_id = thread_proto.tab_id
-        self.is_good = thread_proto.is_good
-        self.is_top = thread_proto.is_top
-        self.is_share = thread_proto.is_share_thread
-        self.is_hide = thread_proto.is_frs_mask
-        self.is_livepost = thread_proto.is_livepost
-
-        self.title = thread_proto.title
-        self._vote_info = None
-        self._share_origin = None
-        self._view_num = thread_proto.view_num
-        self._reply_num = thread_proto.reply_num
-        self._share_num = thread_proto.share_num
-        self._agree = thread_proto.agree.agree_num
-        self._disagree = thread_proto.agree.disagree_num
-        self._create_time = thread_proto.create_time
-        self._last_time = thread_proto.last_time_int
-
-    def _init_null(self) -> None:
-
-        self._raw_data = None
-        self._text = None
-
-        self._contents = None
-
-        self._fid = 0
-        self._tid = 0
-        self._pid = 0
-        self._user = None
-        self._author_id = 0
-
-        self._tab_id = 0
-        self._is_good = False
-        self._is_top = False
-        self._is_share = False
-        self._is_hide = False
-        self._is_livepost = False
-
-        self.title = ''
-        self._vote_info = None
-        self._share_origin = None
-        self._view_num = 0
-        self._reply_num = 0
-        self._share_num = 0
-        self._agree = 0
-        self._disagree = 0
-        self._create_time = 0
-        self._last_time = 0
+            self.title = ''
+            self.view_num = 0
+            self.reply_num = 0
+            self.share_num = 0
+            self.agree = 0
+            self.disagree = 0
+            self.create_time = 0
+            self.last_time = 0
 
     @property
     def text(self) -> str:
+
         if self._text is None:
-            self._text = f"{self.title}\n{self.contents.text}"
+
+            if self.title:
+                self._text = f"{self.title}\n{self.contents.text}"
+            else:
+                self._text = self.contents.text
+
         return self._text
 
     @property
@@ -1126,174 +1023,39 @@ class Thread(_Container):
 
             if self._raw_data:
                 self._contents = Fragments(self._raw_data.first_post_content)
-
             else:
                 self._contents = Fragments()
 
         return self._contents
 
     @property
-    def fid(self) -> int:
-        return self._fid
-
-    @fid.setter
-    @_int_prop_check_ignore_none(0)
-    def fid(self, new_fid: int) -> None:
-        self._fid = int(new_fid)
-
-    @property
-    def is_good(self) -> bool:
-        return self._is_good
-
-    @is_good.setter
-    def is_good(self, new_is_good: bool) -> None:
-        self._is_good = bool(new_is_good)
-
-    @property
-    def is_top(self) -> bool:
-        return self._is_top
-
-    @is_top.setter
-    def is_top(self, new_is_top: bool) -> None:
-        self._is_top = bool(new_is_top)
-
-    @property
-    def is_share(self) -> bool:
-        return self._is_share
-
-    @is_share.setter
-    def is_share(self, new_is_share: bool) -> None:
-        self._is_share = bool(new_is_share)
-
-    @property
-    def is_hide(self) -> bool:
-        return self._is_hide
-
-    @is_hide.setter
-    def is_hide(self, new_is_hide: bool) -> None:
-        self._is_hide = bool(new_is_hide)
-
-    @property
-    def is_livepost(self) -> bool:
-        return self._is_livepost
-
-    @is_livepost.setter
-    def is_livepost(self, new_is_livepost: bool) -> None:
-        self._is_livepost = bool(new_is_livepost)
-
-    @property
-    def tab_id(self) -> int:
-        return self._tab_id
-
-    @tab_id.setter
-    @_int_prop_check_ignore_none(0)
-    def tab_id(self, new_tab_id: int) -> None:
-        self._tab_id = int(new_tab_id)
-
-    @property
-    def vote_info(self) -> "Thread.VoteInfo":
+    def vote_info(self) -> VoteInfo:
 
         if self._vote_info is None:
 
             if self._raw_data:
                 self._vote_info = (
-                    self.VoteInfo(poll_info_proto)
-                    if (poll_info_proto := self._raw_data.poll_info).options
-                    else self.VoteInfo()
+                    VoteInfo(poll_info_raw_data)
+                    if (poll_info_raw_data := self._raw_data.poll_info).options
+                    else VoteInfo()
                 )
 
             else:
-                self._vote_info = self.VoteInfo()
+                self._vote_info = VoteInfo()
 
         return self._vote_info
 
     @property
-    def share_origin(self) -> "Thread":
+    def share_origin(self) -> ShareThread:
 
         if self._share_origin is None:
 
-            self._share_origin = Thread()
-            if self._raw_data:
-
-                share_proto = self._raw_data.origin_thread_info
-                if share_proto.tid:
-
-                    self._share_origin._fid = share_proto.fid
-                    self._share_origin._tid = share_proto.tid
-                    self._share_origin._pid = share_proto.pid
-
-                    self._share_origin._contents = Fragments(share_proto.content)
-                    self._share_origin.title = share_proto.title
-                    self._share_origin._vote_info = (
-                        self.VoteInfo(poll_info_proto)
-                        if (poll_info_proto := share_proto.poll_info).options
-                        else self.VoteInfo()
-                    )
+            if self._raw_data.origin_thread_info.tid:
+                self._share_origin = ShareThread(self._raw_data.origin_thread_info)
+            else:
+                self._share_origin = ShareThread()
 
         return self._share_origin
-
-    @property
-    def view_num(self) -> int:
-        return self._view_num
-
-    @view_num.setter
-    @_int_prop_check_ignore_none(0)
-    def view_num(self, new_view_num: int) -> None:
-        self._view_num = int(new_view_num)
-
-    @property
-    def reply_num(self) -> int:
-        return self._reply_num
-
-    @reply_num.setter
-    @_int_prop_check_ignore_none(0)
-    def reply_num(self, new_reply_num: int) -> None:
-        self._reply_num = int(new_reply_num)
-
-    @property
-    def share_num(self) -> int:
-        return self._share_num
-
-    @share_num.setter
-    @_int_prop_check_ignore_none(0)
-    def share_num(self, new_share_num: int) -> None:
-        self._share_num = int(new_share_num)
-
-    @property
-    def agree(self) -> int:
-        return self._agree
-
-    @agree.setter
-    @_int_prop_check_ignore_none(0)
-    def agree(self, new_agree: int) -> None:
-        self._agree = int(new_agree)
-
-    @property
-    def disagree(self) -> int:
-        return self._disagree
-
-    @disagree.setter
-    @_int_prop_check_ignore_none(0)
-    def disagree(self, new_disagree: int) -> None:
-        self._disagree = int(new_disagree)
-
-    @property
-    def create_time(self) -> int:
-        return self._create_time
-
-    @create_time.setter
-    @_int_prop_check_ignore_none(0)
-    def create_time(self, new_create_time: int) -> None:
-        self._create_time = int(new_create_time)
-
-    @property
-    def last_time(self) -> int:
-        return self._last_time
-
-    @last_time.setter
-    @_int_prop_check_ignore_none(0)
-    def last_time(self, new_last_time: int) -> None:
-        self._last_time = int(new_last_time)
 
 
 class Threads(_Containers[Thread]):
@@ -1303,64 +1065,43 @@ class Threads(_Containers[Thread]):
     Fields:
         _objs (list[Thread])
         page (Page): 页码信息
-        has_more (bool): 是否有后继页
-        has_prev (bool): 是否有前驱页
 
         forum (Forum): 所在吧信息
         tab_map (dict[str, int]): {分区名:分区id}
     """
 
-    __slots__ = ['_raw_data', '_users', '_forum', '_tab_map']
+    __slots__ = ['_forum', '_tab_map']
 
-    def __init__(self, threads_proto: FrsPageResIdl_pb2.FrsPageResIdl | None = None) -> None:
+    def __init__(self, _raw_data: FrsPageResIdl_pb2.FrsPageResIdl.DataRes | None = None) -> None:
+        super(Threads, self).__init__(_raw_data)
 
-        if threads_proto:
-            self._init_by_data(threads_proto.data)
+        self._forum: Forum = None
+        self._tab_map: dict[str, int] = None
+
+        if _raw_data:
+            self._raw_data = _raw_data
 
         else:
-            self._init_null()
-
-    def _init_by_data(self, data_proto: FrsPageResIdl_pb2.FrsPageResIdl.DataRes) -> None:
-
-        self._raw_data = data_proto
-
-        self._objs = None
-        self._page = None
-        self._forum = None
-        self._tab_map = None
-
-    def _init_null(self) -> None:
-
-        self._raw_data = None
-
-        self._objs = None
-        self._page = None
-        self._forum = None
-        self._tab_map = None
-
-    def __getitem__(self, idx: int) -> Thread:
-
-        thread = self.objs[idx]
-
-        if thread._user is None:
-            thread._user = self._users.get(thread.author_id, None)
-
-        return thread
+            self._raw_data = None
 
     @property
     def objs(self) -> list[Thread]:
 
         if self._objs is None:
+
             if self._raw_data:
 
-                self._users = {
+                users = {
                     user.user_id: user
-                    for user_proto in self._raw_data.user_list
-                    if (user := UserInfo(user_proto=user_proto)).user_id
+                    for user_raw_data in self._raw_data.user_list
+                    if (user := UserInfo(_raw_data=user_raw_data)).user_id
                 }
                 self._objs = [Thread(thread_proto) for thread_proto in self._raw_data.thread_list]
+
+                for thread in self._objs:
+                    thread._user = users[thread.author_id]
+
             else:
-                self._users = {}
                 self._objs = []
 
         return self._objs
@@ -1372,7 +1113,6 @@ class Threads(_Containers[Thread]):
 
             if self._raw_data:
                 self._forum = Forum(self._raw_data.forum)
-
             else:
                 self._forum = Forum()
 
@@ -1391,7 +1131,7 @@ class Threads(_Containers[Thread]):
         return self._tab_map
 
 
-class Post(_Container):
+class Post(_BasicContainer):
     """
     楼层信息
 
@@ -1416,69 +1156,41 @@ class Post(_Container):
     """
 
     __slots__ = [
-        '_fid',
         '_contents',
         '_sign',
         '_comments',
-        '_floor',
-        '_reply_num',
-        '_agree',
-        '_disagree',
-        '_create_time',
+        'floor',
+        'reply_num',
+        'agree',
+        'disagree',
+        'create_time',
         'is_thread_author',
     ]
 
-    def __init__(self, post_proto: Post_pb2.Post | None = None) -> None:
+    def __init__(self, _raw_data: Post_pb2.Post | None = None) -> None:
+        super(Post, self).__init__(_raw_data)
 
-        if post_proto:
-            self._init_by_data(post_proto)
+        self._contents: Fragments = None
+        self._sign: str = None
+        self._comments: list[Comment] = None
+        self.is_thread_author = False
+
+        if _raw_data:
+            self.pid: int = _raw_data.id
+            self._author_id: int = _raw_data.author_id
+
+            self.floor: int = _raw_data.floor
+            self.reply_num: int = _raw_data.sub_post_number
+            self.agree: int = _raw_data.agree.agree_num
+            self.disagree: int = _raw_data.agree.disagree_num
+            self.create_time: int = _raw_data.time
 
         else:
-            self._init_null()
-
-    def _init_by_data(self, post_proto: Post_pb2.Post) -> None:
-
-        self._raw_data = post_proto
-        self._text = None
-
-        self._contents = None
-        self._sign = None
-        self._comments = None
-
-        self._fid = 0
-        self._tid = 0
-        self._pid = post_proto.id
-        self._user = None
-        self._author_id = None
-
-        self._floor = post_proto.floor
-        self._reply_num = post_proto.sub_post_number
-        self._agree = post_proto.agree.agree_num
-        self._disagree = post_proto.agree.disagree_num
-        self._create_time = post_proto.time
-        self.is_thread_author = False
-
-    def _init_null(self) -> None:
-
-        self._raw_data = None
-        self._text = None
-
-        self._contents = None
-        self._sign = None
-        self._comments = None
-
-        self._fid = 0
-        self._tid = 0
-        self._pid = 0
-        self._user = None
-        self._author_id = 0
-
-        self._floor = 0
-        self._reply_num = 0
-        self._agree = 0
-        self._disagree = 0
-        self._create_time = 0
-        self.is_thread_author = False
+            self._floor = 0
+            self._reply_num = 0
+            self._agree = 0
+            self._disagree = 0
+            self._create_time = 0
 
     @property
     def text(self) -> str:
@@ -1486,7 +1198,6 @@ class Post(_Container):
 
             if self.sign:
                 self._text = f'{self.contents.text}\n{self.sign}'
-
             else:
                 self._text = self.contents.text
 
@@ -1498,7 +1209,6 @@ class Post(_Container):
 
             if self._raw_data:
                 self._contents = Fragments(self._raw_data.content)
-
             else:
                 self._contents = Fragments()
 
@@ -1528,60 +1238,6 @@ class Post(_Container):
 
         return self._comments
 
-    @property
-    def fid(self) -> int:
-        return self._fid
-
-    @fid.setter
-    @_int_prop_check_ignore_none(0)
-    def fid(self, new_fid: int) -> None:
-        self._fid = int(new_fid)
-
-    @property
-    def floor(self) -> int:
-        return self._floor
-
-    @floor.setter
-    @_int_prop_check_ignore_none(0)
-    def floor(self, new_floor: int) -> None:
-        self._floor = int(new_floor)
-
-    @property
-    def reply_num(self) -> int:
-        return self._reply_num
-
-    @reply_num.setter
-    @_int_prop_check_ignore_none(0)
-    def reply_num(self, new_reply_num: int) -> None:
-        self._reply_num = int(new_reply_num)
-
-    @property
-    def agree(self) -> int:
-        return self._agree
-
-    @agree.setter
-    @_int_prop_check_ignore_none(0)
-    def agree(self, new_agree: int) -> None:
-        self._agree = int(new_agree)
-
-    @property
-    def disagree(self) -> int:
-        return self._disagree
-
-    @disagree.setter
-    @_int_prop_check_ignore_none(0)
-    def disagree(self, new_disagree: int) -> None:
-        self._disagree = int(new_disagree)
-
-    @property
-    def create_time(self) -> int:
-        return self._create_time
-
-    @create_time.setter
-    @_int_prop_check_ignore_none(0)
-    def create_time(self, new_create_time: int) -> None:
-        self._create_time = int(new_create_time)
-
 
 class Posts(_Containers[Post]):
     """
@@ -1590,8 +1246,6 @@ class Posts(_Containers[Post]):
     Fields:
         _objs (list[Post])
         page (Page): 页码信息
-        has_more (bool): 是否有后继页
-        has_prev (bool): 是否有前驱页
 
         forum (Forum): 所在吧信息
         thread (Thread): 所在主题帖信息
@@ -1599,52 +1253,22 @@ class Posts(_Containers[Post]):
         has_fold (bool): 是否存在折叠楼层
     """
 
-    __slots__ = ['_raw_data', '_users', '_forum', '_thread', '_has_fold']
+    __slots__ = ['_forum', '_thread', 'has_fold']
 
-    def __init__(self, posts_proto: PbPageResIdl_pb2.PbPageResIdl | None = None) -> None:
+    def __init__(self, _raw_data: PbPageResIdl_pb2.PbPageResIdl.DataRes | None = None) -> None:
+        super(Posts, self).__init__(_raw_data)
 
-        if posts_proto:
-            self._init_by_data(posts_proto.data)
+        if _raw_data:
+            self._forum: Forum = None
+            self._thread: Thread = None
+
+            self.has_fold = bool(self._raw_data.has_fold_comment)
 
         else:
-            self._init_null()
+            self._forum = None
+            self._thread = None
 
-    def _init_by_data(self, data_proto: PbPageResIdl_pb2.PbPageResIdl.DataRes) -> None:
-        self._raw_data = data_proto
-
-        self._objs = None
-        self._page = None
-        self._forum = None
-        self._thread = None
-
-        self._has_fold = bool(self._raw_data.has_fold_comment)
-
-    def _init_null(self) -> None:
-        self._raw_data = None
-
-        self._objs = None
-        self._page = None
-        self._forum = None
-        self._thread = None
-
-        self._has_fold = False
-
-    def __getitem__(self, idx: int) -> Post:
-
-        post = self.objs[idx]
-
-        if post._user is None:
-            post._fid = self.forum.fid
-            post._tid = self.thread.tid
-            post._user = self._users.get(post.author_id, None)
-            post.is_thread_author = self.thread.author_id == post.author_id
-
-            for comment in post.comments:
-                comment._fid = post.fid
-                comment._tid = post.tid
-                comment._user = self._users.get(comment.author_id, None)
-
-        return post
+            self._has_fold = False
 
     @property
     def objs(self) -> list[Post]:
@@ -1652,14 +1276,27 @@ class Posts(_Containers[Post]):
         if self._objs is None:
 
             if self._raw_data:
-                self._users = {
+                users = {
                     user.user_id: user
-                    for user_proto in self._raw_data.user_list
-                    if (user := UserInfo(user_proto=user_proto)).user_id
+                    for user_raw_data in self._raw_data.user_list
+                    if (user := UserInfo(_raw_data=user_raw_data)).user_id
                 }
+
                 self._objs = [Post(post_proto) for post_proto in self._raw_data.post_list]
+
+                for post in self._objs:
+
+                    post.fid = self.forum.fid
+                    post.tid = self.thread.tid
+                    post._user = users.get(post.author_id, None)
+                    post.is_thread_author = self.thread.author_id == post.author_id
+
+                    for comment in post.comments:
+                        comment.fid = post.fid
+                        comment.tid = post.tid
+                        comment._user = users.get(comment.author_id, None)
+
             else:
-                self._users = {}
                 self._objs = []
 
         return self._objs
@@ -1670,7 +1307,6 @@ class Posts(_Containers[Post]):
 
             if self._raw_data:
                 self._forum = Forum(self._raw_data.forum)
-
             else:
                 self._forum = Forum()
 
@@ -1682,25 +1318,18 @@ class Posts(_Containers[Post]):
 
             if self._raw_data:
                 self._thread = Thread(self._raw_data.thread)
-                self._thread._fid = self.forum.fid
+                self._thread.fid = self.forum.fid
 
             else:
                 self._thread = Thread()
 
         return self._thread
 
-    @property
-    def has_fold(self) -> bool:
-        return self._has_fold
 
-    @has_fold.setter
-    def has_fold(self, new_has_fold: bool) -> bool:
-        self._has_fold = bool(new_has_fold)
-
-
-class Comment(_Container):
+class Comment(_BasicContainer):
     """
     楼中楼信息
+
     Fields:
         text (str): 文本内容
         contents (Fragments): 内容碎片列表
@@ -1716,49 +1345,26 @@ class Comment(_Container):
         create_time (int): 10位时间戳，创建时间
     """
 
-    __slots__ = ['_fid', '_contents', '_agree', '_disagree', '_create_time']
+    __slots__ = ['_contents', 'agree', 'disagree', 'create_time']
 
-    def __init__(self, comment_proto: SubPostList_pb2.SubPostList | None = None) -> None:
+    def __init__(self, _raw_data: SubPostList_pb2.SubPostList | None = None) -> None:
+        super(Comment, self).__init__(_raw_data)
 
-        if comment_proto:
-            self._init_by_data(comment_proto)
+        self._contents: Fragments = None
+
+        if _raw_data:
+            self.pid: int = _raw_data.id
+            self._user = UserInfo(_raw_data=_raw_data.author)
+            self._author_id = _raw_data.author_id
+
+            self.agree: int = _raw_data.agree.agree_num
+            self.disagree: int = _raw_data.agree.disagree_num
+            self.create_time: int = _raw_data.time
 
         else:
-            self._init_null()
-
-    def _init_by_data(self, comment_proto: SubPostList_pb2.SubPostList) -> None:
-
-        self._raw_data = comment_proto
-        self._text = None
-
-        self._contents = None
-
-        self._fid = 0
-        self._tid = 0
-        self._pid = comment_proto.id
-        self._user = None
-        self._author_id = None
-
-        self._agree = comment_proto.agree.agree_num
-        self._disagree = comment_proto.agree.disagree_num
-        self._create_time = comment_proto.time
-
-    def _init_null(self) -> None:
-
-        self._raw_data = None
-        self._text = None
-
-        self._contents = None
-
-        self._fid = 0
-        self._tid = 0
-        self._pid = 0
-        self._user = None
-        self._author_id = 0
-
-        self._agree = 0
-        self._disagree = 0
-        self._create_time = 0
+            self.agree = 0
+            self.disagree = 0
+            self.create_time = 0
 
     @property
     def text(self) -> str:
@@ -1778,42 +1384,6 @@ class Comment(_Container):
 
         return self._contents
 
-    @property
-    def fid(self) -> int:
-        return self._fid
-
-    @fid.setter
-    @_int_prop_check_ignore_none(0)
-    def fid(self, new_fid: int) -> None:
-        self._fid = int(new_fid)
-
-    @property
-    def agree(self) -> int:
-        return self._agree
-
-    @agree.setter
-    @_int_prop_check_ignore_none(0)
-    def agree(self, new_agree: int) -> None:
-        self._agree = int(new_agree)
-
-    @property
-    def disagree(self) -> int:
-        return self._disagree
-
-    @disagree.setter
-    @_int_prop_check_ignore_none(0)
-    def disagree(self, new_disagree: int) -> None:
-        self._disagree = int(new_disagree)
-
-    @property
-    def create_time(self) -> int:
-        return self._create_time
-
-    @create_time.setter
-    @_int_prop_check_ignore_none(0)
-    def create_time(self, new_create_time: int) -> None:
-        self._create_time = int(new_create_time)
-
 
 class Comments(_Containers[Comment]):
     """
@@ -1822,53 +1392,20 @@ class Comments(_Containers[Comment]):
     Fields:
         _objs (list[Comment])
         page (Page): 页码信息
-        has_more (bool): 是否有后继页
-        has_prev (bool): 是否有前驱页
 
         forum (Forum): 所在吧信息
         thread (Thread): 所在主题帖信息
         post (Post): 所在回复信息
     """
 
-    __slots__ = ['_raw_data', '_forum', '_thread', '_post']
+    __slots__ = ['_forum', '_thread', '_post']
 
-    def __init__(self, comments_proto: PbFloorResIdl_pb2.PbFloorResIdl | None = None) -> None:
+    def __init__(self, _raw_data: PbFloorResIdl_pb2.PbFloorResIdl.DataRes | None = None) -> None:
+        super(Comments, self).__init__(_raw_data)
 
-        if comments_proto:
-            self._init_by_data(comments_proto.data)
-
-        else:
-            self._init_null()
-
-    def _init_by_data(self, data_proto: PbFloorResIdl_pb2.PbFloorResIdl.DataRes) -> None:
-
-        self._raw_data = data_proto
-
-        self._objs = None
-        self._page = None
-        self._forum = None
-        self._thread = None
-        self._post = None
-
-    def _init_null(self) -> None:
-
-        self._raw_data = None
-
-        self._objs = None
-        self._page = None
-        self._forum = None
-        self._thread = None
-        self._post = None
-
-    def __getitem__(self, idx: int) -> Comment:
-
-        comment = self.objs[idx]
-
-        if comment._fid == 0:
-            comment._fid = self.forum.fid
-            comment._tid = self.thread.tid
-
-        return comment
+        self._forum: Forum = None
+        self._thread: Thread = None
+        self._post: Post = None
 
     @property
     def objs(self) -> list[Comment]:
@@ -1877,6 +1414,11 @@ class Comments(_Containers[Comment]):
 
             if self._raw_data:
                 self._objs = [Comment(comment_proto) for comment_proto in self._raw_data.subpost_list]
+
+                for comment in self._objs:
+                    comment.fid = self.forum.fid
+                    comment.tid = self.thread.tid
+
             else:
                 self._objs = []
 
@@ -1888,7 +1430,6 @@ class Comments(_Containers[Comment]):
 
             if self._raw_data:
                 self._forum = Forum(self._raw_data.forum)
-
             else:
                 self._forum = Forum()
 
@@ -1900,7 +1441,7 @@ class Comments(_Containers[Comment]):
 
             if self._raw_data:
                 self._thread = Thread(self._raw_data.thread)
-                self._thread._fid = self.forum.fid
+                self._thread.fid = self.forum.fid
 
             else:
                 self._thread = Thread()
@@ -1913,8 +1454,8 @@ class Comments(_Containers[Comment]):
 
             if self._raw_data:
                 self._post = Post(self._raw_data.post)
-                self._post._fid = self.forum.fid
-                self._post._tid = self.thread.tid
+                self._post.fid = self.forum.fid
+                self._post.tid = self.thread.tid
 
             else:
                 self._post = Post()
@@ -1922,7 +1463,7 @@ class Comments(_Containers[Comment]):
         return self._post
 
 
-class Reply(_Container):
+class Reply(_BasicContainer):
     """
     回复信息
     Fields:
@@ -1941,48 +1482,28 @@ class Reply(_Container):
         create_time (int): 10位时间戳，创建时间
     """
 
-    __slots__ = ['fname', '_post_pid', '_post_user', '_thread_user', '_is_floor', '_create_time']
+    __slots__ = ['fname', 'post_pid', '_post_user', '_thread_user', 'is_floor', 'create_time']
 
-    def __init__(self, reply_proto: ReplyMeResIdl_pb2.ReplyMeResIdl.DataRes.ReplyList | None = None) -> None:
+    def __init__(self, _raw_data: ReplyMeResIdl_pb2.ReplyMeResIdl.DataRes.ReplyList | None = None) -> None:
+        super(Reply, self).__init__(_raw_data)
 
-        if reply_proto:
-            self._init_by_data(reply_proto)
+        self._post_user: UserInfo = None
+        self._thread_user: UserInfo = None
+
+        if _raw_data:
+            self._text: str = _raw_data.content
+
+            self.fname: str = _raw_data.fname
+            self.tid: int = _raw_data.thread_id
+            self.pid: int = _raw_data.post_id
+            self.post_pid: int = _raw_data.quote_pid
+
+            self.is_floor = bool(_raw_data.is_floor)
+            self.create_time = _raw_data.time
 
         else:
-            self._init_null()
-
-    def _init_by_data(self, reply_proto: ReplyMeResIdl_pb2.ReplyMeResIdl.DataRes.ReplyList) -> None:
-
-        self._raw_data = reply_proto
-        self._text = reply_proto.content
-
-        self.fname = reply_proto.fname
-        self._tid = reply_proto.thread_id
-        self._pid = reply_proto.post_id
-        self._user = None
-        self._author_id = None
-        self._post_pid = reply_proto.quote_pid
-        self._post_user = None
-        self._thread_user = None
-
-        self.is_floor = reply_proto.is_floor
-        self._create_time = reply_proto.time
-
-    def _init_null(self) -> None:
-
-        self._raw_data = None
-        self._text = ''
-
-        self.fname = ''
-        self._tid = 0
-        self._pid = 0
-        self._user = None
-        self._post_pid = 0
-        self._post_user = None
-        self._thread_user = None
-
-        self._is_floor = False
-        self._create_time = 0
+            self.is_floor: bool = False
+            self.create_time: int = 0
 
     @property
     def text(self) -> str:
@@ -1994,7 +1515,7 @@ class Reply(_Container):
 
             if self._raw_data:
                 self._user = (
-                    UserInfo(user_proto=user_proto) if (user_proto := self._raw_data.replyer).id else UserInfo()
+                    UserInfo(_raw_data=user_raw_data) if (user_raw_data := self._raw_data.replyer).id else UserInfo()
                 )
             else:
                 self._user = UserInfo()
@@ -2002,22 +1523,13 @@ class Reply(_Container):
         return self._user
 
     @property
-    def post_pid(self) -> int:
-        return self._post_pid
-
-    @post_pid.setter
-    @_int_prop_check_ignore_none(0)
-    def post_pid(self, new_post_pid: int) -> None:
-        self._post_pid = int(new_post_pid)
-
-    @property
     def post_user(self) -> BasicUserInfo:
         if self._post_user is None:
 
             if self._raw_data:
                 self._post_user = (
-                    BasicUserInfo(user_proto=user_proto)
-                    if (user_proto := self._raw_data.quote_user).id
+                    BasicUserInfo(_raw_data=user_raw_data)
+                    if (user_raw_data := self._raw_data.quote_user).id
                     else BasicUserInfo()
                 )
             else:
@@ -2031,8 +1543,8 @@ class Reply(_Container):
 
             if self._raw_data:
                 self._thread_user = (
-                    BasicUserInfo(user_proto=user_proto)
-                    if (user_proto := self._raw_data.thread_author_user).id
+                    BasicUserInfo(_raw_data=user_raw_data)
+                    if (user_raw_data := self._raw_data.thread_author_user).id
                     else BasicUserInfo()
                 )
             else:
@@ -2040,61 +1552,20 @@ class Reply(_Container):
 
         return self._thread_user
 
-    @property
-    def is_floor(self) -> bool:
-        return self._is_floor
-
-    @is_floor.setter
-    def is_floor(self, new_is_floor: bool) -> None:
-        self._is_floor = bool(new_is_floor)
-
-    @property
-    def create_time(self) -> int:
-        return self._create_time
-
-    @create_time.setter
-    @_int_prop_check_ignore_none(0)
-    def create_time(self, new_create_time: int) -> None:
-        self._create_time = int(new_create_time)
-
 
 class Replys(_Containers[Reply]):
     """
     Reply列表
 
     Fields:
-        _objs (list[Comment])
+        _objs (list[Reply])
         page (Page): 页码信息
-        has_more (bool): 是否有后继页
-        has_prev (bool): 是否有前驱页
     """
 
-    __slots__ = ['_raw_data']
+    __slots__ = []
 
-    def __init__(self, replys_proto: ReplyMeResIdl_pb2.ReplyMeResIdl | None = None) -> None:
-
-        if replys_proto:
-            self._init_by_data(replys_proto.data)
-
-        else:
-            self._init_null()
-
-    def _init_by_data(self, data_proto: ReplyMeResIdl_pb2.ReplyMeResIdl.DataRes) -> None:
-
-        self._raw_data = data_proto
-
-        self._objs = None
-        self._page = None
-
-    def _init_null(self) -> None:
-
-        self._raw_data = None
-
-        self._objs = None
-        self._page = None
-
-    def __getitem__(self, idx: int) -> Reply:
-        return self.objs[idx]
+    def __init__(self, _raw_data: ReplyMeResIdl_pb2.ReplyMeResIdl | None = None) -> None:
+        super(Replys, self).__init__(_raw_data)
 
     @property
     def objs(self) -> list[Reply]:
@@ -2109,7 +1580,7 @@ class Replys(_Containers[Reply]):
         return self._objs
 
 
-class At(_Container):
+class At(_BasicContainer):
     """
     @信息
 
@@ -2128,48 +1599,32 @@ class At(_Container):
         create_time (int): 10位时间戳，创建时间
     """
 
-    __slots__ = ['fname', '_is_floor', '_is_thread', '_create_time']
+    __slots__ = ['fname', 'is_floor', 'is_thread', 'create_time']
 
-    def __init__(self, at_dict: dict | None = None) -> None:
+    def __init__(self, _raw_data: dict | None = None) -> None:
+        super(At, self).__init__(_raw_data)
 
-        if at_dict:
-            self._init_by_data(at_dict)
+        if _raw_data:
+            self._text: str = _raw_data['content']
+
+            self.fname: str = _raw_data['fname']
+            self.tid = int(_raw_data['thread_id'])
+            self.pid = int(_raw_data['post_id'])
+
+            self.is_floor = bool(int(_raw_data['is_floor']))
+            self.is_thread = bool(int(_raw_data['is_first_post']))
+            self.create_time = int(_raw_data['time'])
 
         else:
-            self._init_null()
+            self._text = ''
 
-    def _init_by_data(self, at_dict: dict) -> None:
-        self._raw_data = at_dict
-        self._text = at_dict['content']
+            self.fname = ''
+            self.tid = 0
+            self.pid = 0
 
-        self.fname = at_dict['fname']
-        self.tid = at_dict['thread_id']
-        self.pid = at_dict['post_id']
-        self._user = None
-        self._author_id = None
-
-        self.is_floor = int(at_dict['is_floor'])
-        self.is_thread = int(at_dict['is_first_post'])
-        self.create_time = at_dict['time']
-
-    def _init_null(self) -> None:
-
-        self._raw_data = None
-        self._text = ''
-
-        self.fname = ''
-        self._tid = 0
-        self._pid = 0
-        self._user = None
-        self._author_id = 0
-
-        self._is_floor = False
-        self._is_thread = False
-        self._create_time = 0
-
-    @property
-    def text(self) -> str:
-        return self._text
+            self.is_floor = False
+            self.is_thread = False
+            self.create_time = 0
 
     @property
     def user(self) -> UserInfo:
@@ -2177,42 +1632,11 @@ class At(_Container):
 
             if self._raw_data:
                 user_proto = ParseDict(self._raw_data['replyer'], User_pb2.User(), ignore_unknown_fields=True)
-                self._user = UserInfo(user_proto=user_proto) if user_proto.id else UserInfo()
+                self._user = UserInfo(_raw_data=user_proto) if user_proto.id else UserInfo()
             else:
                 self._user = UserInfo()
 
         return self._user
-
-    @property
-    def author_id(self) -> int:
-        if self._author_id is None:
-            self._author_id = self.user.user_id
-        return self._author_id
-
-    @property
-    def is_floor(self) -> bool:
-        return self._is_floor
-
-    @is_floor.setter
-    def is_floor(self, new_is_floor: bool) -> None:
-        self._is_floor = bool(new_is_floor)
-
-    @property
-    def is_thread(self) -> bool:
-        return self._is_thread
-
-    @is_thread.setter
-    def is_thread(self, new_is_thread: bool) -> None:
-        self._is_thread = bool(new_is_thread)
-
-    @property
-    def create_time(self) -> int:
-        return self._create_time
-
-    @create_time.setter
-    @_int_prop_check_ignore_none(0)
-    def create_time(self, new_create_time: int) -> None:
-        self._create_time = int(new_create_time)
 
 
 class Ats(_Containers[At]):
@@ -2222,36 +1646,12 @@ class Ats(_Containers[At]):
     Fields:
         _objs (list[At])
         page (Page): 页码信息
-        has_more (bool): 是否有后继页
-        has_prev (bool): 是否有前驱页
     """
 
-    __slots__ = ['_raw_data']
+    __slots__ = []
 
-    def __init__(self, ats_dict: dict | None = None) -> None:
-
-        if ats_dict:
-            self._init_by_data(ats_dict)
-
-        else:
-            self._init_null()
-
-    def _init_by_data(self, data_dict: dict) -> None:
-
-        self._raw_data = data_dict
-
-        self._objs = None
-        self._page = None
-
-    def _init_null(self) -> None:
-
-        self._raw_data = None
-
-        self._objs = None
-        self._page = None
-
-    def __getitem__(self, idx: int) -> At:
-        return self.objs[idx]
+    def __init__(self, _raw_data: dict | None = None) -> None:
+        super(Ats, self).__init__(_raw_data)
 
     @property
     def objs(self) -> list[At]:
@@ -2259,7 +1659,7 @@ class Ats(_Containers[At]):
         if self._objs is None:
 
             if self._raw_data and (at_dicts := self._raw_data['at_list']):
-                self._objs = [At(at_dict=at_dict) for at_dict in at_dicts]
+                self._objs = [At(_raw_data=at_dict) for at_dict in at_dicts]
             else:
                 self._objs = []
 
@@ -2270,14 +1670,8 @@ class Ats(_Containers[At]):
         if self._page is None:
 
             if self._raw_data:
-
-                try:
-                    page_proto = ParseDict(self._raw_data['page'], Page_pb2.Page(), ignore_unknown_fields=True)
-                    self._page = Page(page_proto)
-
-                except Exception as err:
-                    LOG.warning(f"Failed to init Page of Ats. reason:line {err.__traceback__.tb_lineno}: {err}")
-                    self._page = Page()
+                page_proto = ParseDict(self._raw_data['page'], Page_pb2.Page(), ignore_unknown_fields=True)
+                self._page = Page(page_proto)
 
             else:
                 self._page = Page()
@@ -2285,7 +1679,7 @@ class Ats(_Containers[At]):
         return self._page
 
 
-class Search(_Container):
+class Search(_BasicContainer):
     """
     搜索结果
 
@@ -2302,48 +1696,32 @@ class Search(_Container):
         create_time (int): 10位时间戳，创建时间
     """
 
-    __slots__ = ['fname', 'title', '_is_floor', '_create_time']
+    __slots__ = ['fname', 'title', 'is_floor', 'create_time']
 
-    def __init__(self, search_dict: dict | None = None) -> None:
+    def __init__(self, _raw_data: dict | None = None) -> None:
+        super(Search, self).__init__(_raw_data)
 
-        if search_dict:
-            self._init_by_data(search_dict)
+        if _raw_data:
+            self._text = _raw_data['content']
+            self.title = _raw_data['title']
+
+            self.fname = _raw_data['fname']
+            self.tid = int(_raw_data['tid'])
+            self.pid = int(_raw_data['pid'])
+
+            self.is_floor = bool(int(_raw_data['is_floor']))
+            self.create_time = int(_raw_data['time'])
 
         else:
-            self._init_null()
+            self._text = ''
+            self.title = ''
 
-    def _init_by_data(self, search_dict: dict) -> None:
-        self._raw_data = search_dict
-        self._text = search_dict['content']
-        self.title = search_dict['title']
+            self.fname = ''
+            self._tid = 0
+            self._pid = 0
 
-        self.fname = search_dict['fname']
-        self.tid = search_dict['tid']
-        self.pid = search_dict['pid']
-        self._user = None
-        self._author_id = None
-
-        self.is_floor = int(search_dict['is_floor'])
-        self.create_time = search_dict['time']
-
-    def _init_null(self) -> None:
-
-        self._raw_data = None
-        self._text = ''
-        self.title = ''
-
-        self.fname = ''
-        self._tid = 0
-        self._pid = 0
-        self._user = None
-        self._author_id = 0
-
-        self._is_floor = False
-        self._create_time = 0
-
-    @property
-    def text(self) -> str:
-        return self._text
+            self._is_floor = False
+            self._create_time = 0
 
     @property
     def user(self) -> UserInfo:
@@ -2351,34 +1729,12 @@ class Search(_Container):
 
             if self._raw_data:
                 user_proto = ParseDict(self._raw_data['author'], User_pb2.User(), ignore_unknown_fields=True)
-                self._user = UserInfo(user_proto=user_proto) if user_proto.id else UserInfo()
+                self._user = UserInfo(_raw_data=user_proto) if user_proto.id else UserInfo()
+
             else:
                 self._user = UserInfo()
 
         return self._user
-
-    @property
-    def author_id(self) -> int:
-        if self._author_id is None:
-            self._author_id = self.user.user_id
-        return self._author_id
-
-    @property
-    def is_floor(self) -> bool:
-        return self._is_floor
-
-    @is_floor.setter
-    def is_floor(self, new_is_floor: bool) -> None:
-        self._is_floor = bool(new_is_floor)
-
-    @property
-    def create_time(self) -> int:
-        return self._create_time
-
-    @create_time.setter
-    @_int_prop_check_ignore_none(0)
-    def create_time(self, new_create_time: int) -> None:
-        self._create_time = int(new_create_time)
 
 
 class Searches(_Containers[Search]):
@@ -2386,38 +1742,14 @@ class Searches(_Containers[Search]):
     搜索结果列表
 
     Fields:
-        _objs (list[At])
+        _objs (list[Search])
         page (Page): 页码信息
-        has_more (bool): 是否有后继页
-        has_prev (bool): 是否有前驱页
     """
 
-    __slots__ = ['_raw_data']
+    __slots__ = []
 
-    def __init__(self, searches_dict: dict | None = None) -> None:
-
-        if searches_dict:
-            self._init_by_data(searches_dict)
-
-        else:
-            self._init_null()
-
-    def _init_by_data(self, data_dict: dict) -> None:
-
-        self._raw_data = data_dict
-
-        self._objs = None
-        self._page = None
-
-    def _init_null(self) -> None:
-
-        self._raw_data = None
-
-        self._objs = None
-        self._page = None
-
-    def __getitem__(self, idx: int) -> Search:
-        return self.objs[idx]
+    def __init__(self, _raw_data: dict | None = None) -> None:
+        super(Searches, self).__init__(_raw_data)
 
     @property
     def objs(self) -> list[Search]:
@@ -2425,7 +1757,7 @@ class Searches(_Containers[Search]):
         if self._objs is None:
 
             if self._raw_data and (search_dicts := self._raw_data['post_list']):
-                self._objs = [Search(search_dict=search_dict) for search_dict in search_dicts]
+                self._objs = [Search(_raw_data=search_dict) for search_dict in search_dicts]
             else:
                 self._objs = []
 
@@ -2436,16 +1768,205 @@ class Searches(_Containers[Search]):
         if self._page is None:
 
             if self._raw_data:
-
-                try:
-                    page_proto = ParseDict(self._raw_data['page'], Page_pb2.Page(), ignore_unknown_fields=True)
-                    self._page = Page(page_proto)
-
-                except Exception as err:
-                    LOG.warning(f"Failed to init Page of Searches. reason:line {err.__traceback__.tb_lineno}: {err}")
-                    self._page = Page()
+                page_proto = ParseDict(self._raw_data['page'], Page_pb2.Page(), ignore_unknown_fields=True)
+                self._page = Page(page_proto)
 
             else:
                 self._page = Page()
 
         return self._page
+
+
+class NewThread(_BasicContainer):
+    """
+    新版主题帖信息
+    删除无用字段并适配新版字段名
+
+    Fields:
+        text (str): 文本内容
+        contents (Fragments): 内容碎片列表
+
+        fid (int): 所在吧id
+        tid (int): 主题帖tid
+        pid (int): 首楼的回复pid
+        user (UserInfo): 发布者信息
+        author_id (int): int 发布者user_id
+
+        title (str): 标题内容
+        vote_info (VoteInfo): 投票内容
+        view_num (int): 浏览量
+        reply_num (int): 回复数
+        share_num (int): 分享数
+        agree (int): 点赞数
+        disagree (int): 点踩数
+        create_time (int): 10位时间戳 创建时间
+    """
+
+    __slots__ = [
+        '_contents',
+        'title',
+        '_vote_info',
+        'view_num',
+        'reply_num',
+        'share_num',
+        'agree',
+        'disagree',
+        'create_time',
+    ]
+
+    def __init__(self, _raw_data: NewThreadInfo_pb2.NewThreadInfo | None = None) -> None:
+        super(NewThread, self).__init__(_raw_data)
+
+        self._contents: Fragments = None
+        self._vote_info: VoteInfo = None
+
+        if _raw_data:
+            self.fid: int = _raw_data.forum_id
+            self.tid: int = _raw_data.thread_id
+            self.pid: int = _raw_data.post_id
+            self._author_id: int = _raw_data.user_id
+
+            self.title: str = _raw_data.title
+            self.view_num: int = _raw_data.freq_num
+            self.reply_num: int = _raw_data.reply_num
+            self.share_num: int = _raw_data.share_num
+            self.agree: int = _raw_data.agree.agree_num
+            self.disagree: int = _raw_data.agree.disagree_num
+            self.create_time: int = _raw_data.create_time
+
+        else:
+            self.title = ''
+            self.view_num = 0
+            self.reply_num = 0
+            self.share_num = 0
+            self.agree = 0
+            self.disagree = 0
+            self.create_time = 0
+
+    @property
+    def text(self) -> str:
+
+        if self._text is None:
+
+            if self.title:
+                self._text = f"{self.title}\n{self.contents.text}"
+            else:
+                self._text = self.contents.text
+
+        return self._text
+
+    @property
+    def contents(self) -> Fragments:
+
+        if self._contents is None:
+
+            if self._raw_data:
+                self._contents = Fragments(self._raw_data.first_post_content)
+            else:
+                self._contents = Fragments()
+
+        return self._contents
+
+    @property
+    def vote_info(self) -> VoteInfo:
+
+        if self._vote_info is None:
+
+            if self._raw_data:
+                self._vote_info = (
+                    VoteInfo(poll_info_raw_data)
+                    if (poll_info_raw_data := self._raw_data.poll_info).options
+                    else VoteInfo()
+                )
+
+            else:
+                self._vote_info = VoteInfo()
+
+        return self._vote_info
+
+
+class UserPost(_BasicContainer):
+    """
+    用户历史回复信息
+
+    Fields:
+        text (str): 文本内容
+        contents (Fragments): 内容碎片列表
+
+        fid (int): 所在吧id
+        tid (int): 所在主题帖tid
+        pid (int): 回复pid
+        user (UserInfo): 发布者信息
+        author_id (int): int 发布者user_id
+
+        create_time (int): 10位时间戳，创建时间
+    """
+
+    __slots__ = ['_contents', 'create_time']
+
+    def __init__(
+        self, _raw_data: UserPostResIdl_pb2.UserPostResIdl.DataRes.PostInfoList.PostInfoContent | None = None
+    ) -> None:
+        super(UserPost, self).__init__(_raw_data)
+
+        self._contents: Fragments = None
+
+        if _raw_data:
+            self.pid: int = _raw_data.post_id
+
+            self.create_time: int = _raw_data.create_time
+
+        else:
+            self._create_time = 0
+
+    @property
+    def text(self) -> str:
+        if self._text is None:
+            self._text = self.contents.text
+        return self._text
+
+    @property
+    def contents(self) -> Fragments:
+        if self._contents is None:
+
+            if self._raw_data:
+                self._contents = Fragments(self._raw_data.post_content)
+            else:
+                self._contents = Fragments()
+
+        return self._contents
+
+
+class UserPosts(_Containers[UserPost]):
+    """
+    UserPost列表
+
+    Fields:
+        _objs (list[UserPost])
+    """
+
+    __slots__ = ['fid', 'tid']
+
+    def __init__(self, _raw_data: UserPostResIdl_pb2.UserPostResIdl.DataRes.PostInfoList | None = None) -> None:
+        super(UserPosts, self).__init__(_raw_data)
+
+        self.fid: int = self._raw_data.forum_id
+        self.tid: int = self._raw_data.thread_id
+
+    @property
+    def objs(self) -> list[UserPost]:
+
+        if self._objs is None:
+
+            if self._raw_data:
+                self._objs = [UserPost(userpost_proto) for userpost_proto in self._raw_data.content]
+
+                for post in self._objs:
+
+                    post.fid = self.fid
+                    post.tid = self.tid
+
+            else:
+                self._objs = []
+
+        return self._objs

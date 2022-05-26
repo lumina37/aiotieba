@@ -150,7 +150,7 @@ class CloudReview(tb.Reviewer):
             return tb.Punish()
 
         # 没有该步骤则thread.user不包含等级 影响判断
-        thread.user = posts.thread.user
+        thread._user = posts.thread.user
 
         punish = await self._check_text(thread)
         if punish.del_flag == -1:

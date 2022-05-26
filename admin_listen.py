@@ -811,7 +811,7 @@ class Listener(object):
                     if comment.user.level >= min_level and keyword in text:
                         vote_set.add(comment.user.user_id)
 
-                if not comments.has_more:
+                if not comments.page.has_more:
                     break
 
             if vote_num := len(vote_set):

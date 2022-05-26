@@ -22,7 +22,20 @@ from google.protobuf.json_format import ParseDict
 
 from ._config import CONFIG
 from ._logger import get_logger
-from ._types import JSON_DECODER, Ats, BasicUserInfo, Comments, Posts, Replys, Searches, Thread, Threads, UserInfo
+from ._types import (
+    JSON_DECODER,
+    Ats,
+    BasicUserInfo,
+    Comments,
+    NewThread,
+    Posts,
+    Replys,
+    Searches,
+    Thread,
+    Threads,
+    UserInfo,
+    UserPosts,
+)
 from .tieba_proto import (
     CommitPersonalMsgReqIdl_pb2,
     CommitPersonalMsgResIdl_pb2,
@@ -35,6 +48,7 @@ from .tieba_proto import (
     GetUserByTiebaUidResIdl_pb2,
     GetUserInfoReqIdl_pb2,
     GetUserInfoResIdl_pb2,
+    NewThreadInfo_pb2,
     PbFloorReqIdl_pb2,
     PbFloorResIdl_pb2,
     PbPageReqIdl_pb2,
@@ -47,6 +61,8 @@ from .tieba_proto import (
     UpdateClientInfoReqIdl_pb2,
     UpdateClientInfoResIdl_pb2,
     User_pb2,
+    UserPostReqIdl_pb2,
+    UserPostResIdl_pb2,
 )
 
 LOG = get_logger()
@@ -185,9 +201,9 @@ class Sessions(object):
         await self.close()
 
     @staticmethod
-    def _wrap_form(forms: list[tuple[str, str]]) -> list[tuple[str, str]]:
+    def _pack_form(forms: list[tuple[str, str]]) -> list[tuple[str, str]]:
         """
-        为form参数元组列表添加贴吧客户端签名
+        打包form参数元组列表 为其添加贴吧客户端签名
 
         Args:
             payload (list[tuple[str, str]]): form参数元组列表
@@ -207,9 +223,9 @@ class Sessions(object):
         return forms
 
     @staticmethod
-    def _wrap_proto_bytes(req_bytes: bytes) -> aiohttp.MultipartWriter:
+    def _pack_proto_bytes(req_bytes: bytes) -> aiohttp.MultipartWriter:
         """
-        将req_bytes封装为贴吧客户端专用的aiohttp.MultipartWriter
+        将req_bytes打包为贴吧客户端专用的aiohttp.MultipartWriter
 
         Args:
             req_bytes (bytes): protobuf序列化后的二进制数据
@@ -249,9 +265,9 @@ class Sessions(object):
 
         return self._ws_aes_chiper
 
-    def _wrap_ws_bytes(self, ws_bytes: bytes, cmd: int = 0, need_gzip: bool = True, need_encrypt: bool = True) -> bytes:
+    def _pack_ws_bytes(self, ws_bytes: bytes, cmd: int = 0, need_gzip: bool = True, need_encrypt: bool = True) -> bytes:
         """
-        对ws_bytes进行封装
+        对ws_bytes进行打包 压缩加密并添加9字节头部
 
         Args:
             ws_bytes (bytes): 待发送的websocket数据
@@ -283,9 +299,9 @@ class Sessions(object):
 
         return ws_bytes
 
-    def _unwrap_ws_bytes(self, ws_bytes: bytes) -> bytes:
+    def _unpack_ws_bytes(self, ws_bytes: bytes) -> bytes:
         """
-        对ws_bytes进行解封装
+        对ws_bytes进行解包
 
         Args:
             ws_bytes (bytes): 接收到的websocket数据
@@ -396,14 +412,14 @@ class Browser(object):
                 websocket = self.sessions.websocket
 
             await websocket.send_bytes(
-                self.sessions._wrap_ws_bytes(
+                self.sessions._pack_ws_bytes(
                     req_proto.SerializeToString(), cmd=1001, need_gzip=False, need_encrypt=False
                 )
             )
 
             res_proto = UpdateClientInfoResIdl_pb2.UpdateClientInfoResIdl()
             res_bytes = (await websocket.receive(timeout=5)).data
-            res_proto.ParseFromString(self.sessions._unwrap_ws_bytes(res_bytes))
+            res_proto.ParseFromString(self.sessions._unpack_ws_bytes(res_bytes))
             if int(res_proto.error.errorno):
                 raise ValueError(res_proto.error.errmsg)
 
@@ -634,7 +650,7 @@ class Browser(object):
         try:
             res = await self.sessions.app_proto.post(
                 "http://c.tieba.baidu.com/c/u/user/getuserinfo?cmd=303024",
-                data=self.sessions._wrap_proto_bytes(req_proto.SerializeToString()),
+                data=self.sessions._pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = GetUserInfoResIdl_pb2.GetUserInfoResIdl()
@@ -643,7 +659,7 @@ class Browser(object):
                 raise ValueError(res_proto.error.errmsg)
 
             user_proto = res_proto.data.user
-            user = UserInfo(user_proto=user_proto)
+            user = UserInfo(_raw_data=user_proto)
 
         except Exception as err:
             LOG.warning(f"Failed to get UserInfo of {user.user_id}. reason:{err}")
@@ -702,7 +718,7 @@ class Browser(object):
         try:
             res = await self.sessions.app_proto.post(
                 "http://c.tieba.baidu.com/c/u/user/getUserByTiebaUid?cmd=309702",
-                data=self.sessions._wrap_proto_bytes(req_proto.SerializeToString()),
+                data=self.sessions._pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = GetUserByTiebaUidResIdl_pb2.GetUserByTiebaUidResIdl()
@@ -711,7 +727,7 @@ class Browser(object):
                 raise ValueError(res_proto.error.errmsg)
 
             user_proto = res_proto.data.user
-            user = UserInfo(user_proto=user_proto)
+            user = UserInfo(_raw_data=user_proto)
 
         except Exception as err:
             LOG.warning(f"Failed to get UserInfo of {tieba_uid}. reason:{err}")
@@ -750,7 +766,7 @@ class Browser(object):
         try:
             res = await self.sessions.app_proto.post(
                 "http://c.tieba.baidu.com/c/f/frs/page?cmd=301001",
-                data=self.sessions._wrap_proto_bytes(req_proto.SerializeToString()),
+                data=self.sessions._pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = FrsPageResIdl_pb2.FrsPageResIdl()
@@ -758,7 +774,7 @@ class Browser(object):
             if int(res_proto.error.errorno):
                 raise ValueError(res_proto.error.errmsg)
 
-            threads = Threads(res_proto)
+            threads = Threads(res_proto.data)
 
         except Exception as err:
             LOG.warning(f"Failed to get threads of {fname}. reason:{err}")
@@ -817,7 +833,7 @@ class Browser(object):
         try:
             res = await self.sessions.app_proto.post(
                 "http://c.tieba.baidu.com/c/f/pb/page?cmd=302001",
-                data=self.sessions._wrap_proto_bytes(req_proto.SerializeToString()),
+                data=self.sessions._pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = PbPageResIdl_pb2.PbPageResIdl()
@@ -825,7 +841,7 @@ class Browser(object):
             if int(res_proto.error.errorno):
                 raise ValueError(res_proto.error.errmsg)
 
-            posts = Posts(res_proto)
+            posts = Posts(res_proto.data)
 
         except Exception as err:
             LOG.warning(f"Failed to get posts of {tid}. reason:{err}")
@@ -863,7 +879,7 @@ class Browser(object):
         try:
             res = await self.sessions.app_proto.post(
                 "http://c.tieba.baidu.com/c/f/pb/floor?cmd=302002",
-                data=self.sessions._wrap_proto_bytes(req_proto.SerializeToString()),
+                data=self.sessions._pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = PbFloorResIdl_pb2.PbFloorResIdl()
@@ -871,7 +887,7 @@ class Browser(object):
             if int(res_proto.error.errorno):
                 raise ValueError(res_proto.error.errmsg)
 
-            comments = Comments(res_proto)
+            comments = Comments(res_proto.data)
 
         except Exception as err:
             LOG.warning(f"Failed to get comments of {pid} in {tid}. reason:{err}")
@@ -909,7 +925,7 @@ class Browser(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/bawu/commitprison", data=self.sessions._wrap_form(payload)
+                "http://c.tieba.baidu.com/c/c/bawu/commitprison", data=self.sessions._pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -1009,7 +1025,7 @@ class Browser(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/bawu/delthread", data=self.sessions._wrap_form(payload)
+                "http://c.tieba.baidu.com/c/c/bawu/delthread", data=self.sessions._pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -1046,7 +1062,7 @@ class Browser(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/bawu/delpost", data=self.sessions._wrap_form(payload)
+                "http://c.tieba.baidu.com/c/c/bawu/delpost", data=self.sessions._pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -1166,7 +1182,7 @@ class Browser(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/bawu/moveTabThread", data=self.sessions._wrap_form(payload)
+                "http://c.tieba.baidu.com/c/c/bawu/moveTabThread", data=self.sessions._pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -1200,7 +1216,7 @@ class Browser(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/bawu/pushRecomToPersonalized", data=self.sessions._wrap_form(payload)
+                "http://c.tieba.baidu.com/c/c/bawu/pushRecomToPersonalized", data=self.sessions._pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -1248,7 +1264,7 @@ class Browser(object):
 
             try:
                 res = await self.sessions.app.post(
-                    "http://c.tieba.baidu.com/c/c/bawu/goodlist", data=self.sessions._wrap_form(payload)
+                    "http://c.tieba.baidu.com/c/c/bawu/goodlist", data=self.sessions._pack_form(payload)
                 )
 
                 res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -1293,7 +1309,7 @@ class Browser(object):
 
             try:
                 res = await self.sessions.app.post(
-                    "http://c.tieba.baidu.com/c/c/bawu/commitgood", data=self.sessions._wrap_form(payload)
+                    "http://c.tieba.baidu.com/c/c/bawu/commitgood", data=self.sessions._pack_form(payload)
                 )
 
                 res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -1331,7 +1347,7 @@ class Browser(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/bawu/commitgood", data=self.sessions._wrap_form(payload)
+                "http://c.tieba.baidu.com/c/c/bawu/commitgood", data=self.sessions._pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -1368,7 +1384,7 @@ class Browser(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/bawu/committop", data=self.sessions._wrap_form(payload)
+                "http://c.tieba.baidu.com/c/c/bawu/committop", data=self.sessions._pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -1404,7 +1420,7 @@ class Browser(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/bawu/committop", data=self.sessions._wrap_form(payload)
+                "http://c.tieba.baidu.com/c/c/bawu/committop", data=self.sessions._pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -1692,7 +1708,7 @@ class Browser(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/s/login", data=self.sessions._wrap_form(payload)
+                "http://c.tieba.baidu.com/c/s/login", data=self.sessions._pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -1701,7 +1717,7 @@ class Browser(object):
 
             user_dict = res_json['user']
             user_proto = ParseDict(user_dict, User_pb2.User(), ignore_unknown_fields=True)
-            user = BasicUserInfo(user_proto=user_proto)
+            user = BasicUserInfo(_raw_data=user_proto)
 
             self._tbs = res_json['anti']['tbs']
 
@@ -1732,7 +1748,7 @@ class Browser(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/s/msg", data=self.sessions._wrap_form(payload)
+                "http://c.tieba.baidu.com/c/s/msg", data=self.sessions._pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -1755,9 +1771,12 @@ class Browser(object):
 
         return msg
 
-    async def get_replys(self) -> Replys:
+    async def get_replys(self, pn: int = 1) -> Replys:
         """
         获取回复信息
+
+        Args:
+            pn (int, optional): 页码. Defaults to 1.
 
         Returns:
             Replys: 回复列表
@@ -1767,6 +1786,7 @@ class Browser(object):
         common_proto.BDUSS = self.sessions.BDUSS
         common_proto._client_version = '12.12.1.0'
         data_proto = ReplyMeReqIdl_pb2.ReplyMeReqIdl.DataReq()
+        data_proto.pn = str(pn)
         data_proto.common.CopyFrom(common_proto)
         req_proto = ReplyMeReqIdl_pb2.ReplyMeReqIdl()
         req_proto.data.CopyFrom(data_proto)
@@ -1774,7 +1794,7 @@ class Browser(object):
         try:
             res = await self.sessions.app_proto.post(
                 "http://c.tieba.baidu.com/c/u/feed/replyme?cmd=303007",
-                data=self.sessions._wrap_proto_bytes(req_proto.SerializeToString()),
+                data=self.sessions._pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = ReplyMeResIdl_pb2.ReplyMeResIdl()
@@ -1782,7 +1802,7 @@ class Browser(object):
             if int(res_proto.error.errorno):
                 raise ValueError(res_proto.error.errmsg)
 
-            replys = Replys(res_proto)
+            replys = Replys(res_proto.data)
 
         except Exception as err:
             LOG.warning(f"Failed to get replys reason:{err}")
@@ -1790,9 +1810,12 @@ class Browser(object):
 
         return replys
 
-    async def get_ats(self) -> Ats:
+    async def get_ats(self, pn: int = 1) -> Ats:
         """
         获取@信息
+
+        Args:
+            pn (int, optional): 页码. Defaults to 1.
 
         Returns:
             Ats: at列表
@@ -1801,11 +1824,12 @@ class Browser(object):
         payload = [
             ('BDUSS', self.sessions.BDUSS),
             ('_client_version', '12.12.1.0'),
+            ('pn', pn),
         ]
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/u/feed/atme", data=self.sessions._wrap_form(payload)
+                "http://c.tieba.baidu.com/c/u/feed/atme", data=self.sessions._pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
@@ -1819,6 +1843,87 @@ class Browser(object):
             ats = Ats()
 
         return ats
+
+    async def get_self_threads(self, pn: int = 1) -> list[NewThread]:
+        """
+        获取本人发布的主题帖列表
+
+        Args:
+            pn (int, optional): 页码. Defaults to 1.
+
+        Returns:
+            list[NewThread]: 主题帖列表
+        """
+
+        return await self._get_self_contents(pn, is_thread=True)
+
+    async def get_self_posts(self, pn: int = 1) -> list[UserPosts]:
+        """
+        获取本人发布的回复列表
+
+        Args:
+            pn (int, optional): 页码. Defaults to 1.
+
+        Returns:
+            list[UserPosts]: 回复列表
+        """
+
+        return await self._get_self_contents(pn, is_thread=False)
+
+    async def _get_self_contents(self, pn: int = 1, is_thread: bool = True) -> list[NewThread] | list[UserPosts]:
+        """
+        获取本人发布的主题帖/回复列表
+
+        Args:
+            is_thread (bool, optional): 是否请求主题帖. Defaults to True.
+            pn (int, optional): 页码. Defaults to 1.
+
+        Returns:
+            list[NewThread] | list[UserPosts]: 主题帖/回复列表
+        """
+
+        user = await self.get_self_info()
+
+        common_proto = CommonReq_pb2.CommonReq()
+        common_proto.BDUSS = self.sessions.BDUSS
+        common_proto._client_version = '12.12.1.0'
+        data_proto = UserPostReqIdl_pb2.UserPostReqIdl.DataReq()
+        data_proto.user_id = user.user_id
+        data_proto.is_thread = is_thread
+        data_proto.need_content = 1
+        data_proto.pn = pn
+        data_proto.is_view_card = 1  # 若is_view_card=2则仅获取公开的主题帖
+        data_proto.common.CopyFrom(common_proto)
+        req_proto = UserPostReqIdl_pb2.UserPostReqIdl()
+        req_proto.data.CopyFrom(data_proto)
+
+        try:
+            res = await self.sessions.app_proto.post(
+                "http://c.tieba.baidu.com/c/u/feed/userpost?cmd=303002",
+                data=self.sessions._pack_proto_bytes(req_proto.SerializeToString()),
+            )
+
+            res_proto = UserPostResIdl_pb2.UserPostResIdl()
+            res_proto.ParseFromString(await res.content.read())
+            if int(res_proto.error.errorno):
+                raise ValueError(res_proto.error.errmsg)
+
+            res_data_proto = res_proto.data
+            if is_thread:
+                res_list = [NewThread(thread_proto) for thread_proto in res_data_proto.post_list]
+                for thread in res_list:
+                    thread._user = user
+            else:
+                res_list = [UserPosts(posts_proto) for posts_proto in res_data_proto.post_list]
+                for userposts in res_list:
+                    for userpost in userposts:
+                        userpost._user = user
+
+        except Exception as err:
+            LOG.warning(f"Failed to get self_contents reason:{err}", exc_info=True)
+            res_list = []
+
+        return res_list
 
     async def get_homepage(self, _id: str | int) -> tuple[UserInfo, list[Thread]]:
         """
@@ -1846,7 +1951,7 @@ class Browser(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/u/user/profile", data=self.sessions._wrap_form(payload)
+                "http://c.tieba.baidu.com/c/u/user/profile", data=self.sessions._pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
@@ -1859,16 +1964,14 @@ class Browser(object):
             LOG.warning(f"Failed to get profile of {user.portrait}. reason:{err}")
             return UserInfo(), []
 
-        user = UserInfo(user_proto=ParseDict(res_json['user'], User_pb2.User(), ignore_unknown_fields=True))
+        user = UserInfo(_raw_data=ParseDict(res_json['user'], User_pb2.User(), ignore_unknown_fields=True))
 
-        def _parse_thread_dict(thread_dict: dict) -> Thread:
-            thread_dict['fid'] = thread_dict.pop('forum_id', 0)
-            thread_dict['id'] = thread_dict.pop('thread_id', 0)
-            thread = Thread(ParseDict(thread_dict, ThreadInfo_pb2.ThreadInfo(), ignore_unknown_fields=True))
-            thread.user = user
+        def _pack_thread_dict(thread_dict: dict) -> NewThread:
+            thread = NewThread(ParseDict(thread_dict, NewThreadInfo_pb2.NewThreadInfo(), ignore_unknown_fields=True))
+            thread._user = user
             return thread
 
-        threads = [_parse_thread_dict(thread_dict) for thread_dict in res_json['post_list']]
+        threads = [_pack_thread_dict(thread_dict) for thread_dict in res_json['post_list']]
 
         return user, threads
 
@@ -1902,7 +2005,7 @@ class Browser(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/s/searchpost", data=self.sessions._wrap_form(payload)
+                "http://c.tieba.baidu.com/c/s/searchpost", data=self.sessions._pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
@@ -1957,7 +2060,7 @@ class Browser(object):
             list[tuple[str, int, int, int]]: list[贴吧名, 贴吧id, 等级, 经验值]
         """
 
-        if not UserInfo.is_user_id(_id):
+        if not BasicUserInfo.is_user_id(_id):
             user = await self.get_basic_user_info(_id)
         else:
             user = BasicUserInfo(_id)
@@ -1969,7 +2072,7 @@ class Browser(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/f/forum/like", data=self.sessions._wrap_form(payload)
+                "http://c.tieba.baidu.com/c/f/forum/like", data=self.sessions._pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -2010,7 +2113,7 @@ class Browser(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/f/forum/getforumdetail", data=self.sessions._wrap_form(payload)
+                "http://c.tieba.baidu.com/c/f/forum/getforumdetail", data=self.sessions._pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -2051,7 +2154,7 @@ class Browser(object):
         try:
             res = await self.sessions.app_proto.post(
                 "http://c.tieba.baidu.com/c/f/forum/getBawuInfo?cmd=301007",
-                data=self.sessions._wrap_proto_bytes(req_proto.SerializeToString()),
+                data=self.sessions._pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = GetBawuInfoResIdl_pb2.GetBawuInfoResIdl()
@@ -2062,7 +2165,7 @@ class Browser(object):
             roledes_protos = res_proto.data.bawu_team_info.bawu_team_list
             bawu_dict = {
                 roledes_proto.role_name: [
-                    BasicUserInfo(user_proto=roleinfo_proto) for roleinfo_proto in roledes_proto.role_info
+                    BasicUserInfo(_raw_data=roleinfo_proto) for roleinfo_proto in roledes_proto.role_info
                 ]
                 for roledes_proto in roledes_protos
             }
@@ -2096,7 +2199,7 @@ class Browser(object):
         try:
             res = await self.sessions.app_proto.post(
                 "http://c.tieba.baidu.com/c/f/forum/searchPostForum?cmd=309466",
-                data=self.sessions._wrap_proto_bytes(req_proto.SerializeToString()),
+                data=self.sessions._pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = SearchPostForumResIdl_pb2.SearchPostForumResIdl()
@@ -2134,7 +2237,7 @@ class Browser(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/f/bawu/getRecomThreadHistory", data=self.sessions._wrap_form(payload)
+                "http://c.tieba.baidu.com/c/f/bawu/getRecomThreadHistory", data=self.sessions._pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
@@ -2148,13 +2251,13 @@ class Browser(object):
 
         else:
 
-            def _parse_data_dict(data_dict):
+            def _pack_data_dict(data_dict):
                 thread_dict = data_dict['thread_list']
                 thread = Thread(ParseDict(thread_dict, ThreadInfo_pb2.ThreadInfo(), ignore_unknown_fields=True))
                 add_view = thread.view_num - int(data_dict['current_pv'])
                 return thread, add_view
 
-            res_list = [_parse_data_dict(data_dict) for data_dict in res_json['recom_thread_list']]
+            res_list = [_pack_data_dict(data_dict) for data_dict in res_json['recom_thread_list']]
             has_more = bool(int(res_json['is_has_more']))
 
         return res_list, has_more
@@ -2180,7 +2283,7 @@ class Browser(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/f/bawu/getRecomThreadList", data=self.sessions._wrap_form(payload)
+                "http://c.tieba.baidu.com/c/f/bawu/getRecomThreadList", data=self.sessions._pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -2234,7 +2337,7 @@ class Browser(object):
         ]
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/f/forum/getforumdata", data=self.sessions._wrap_form(payload)
+                "http://c.tieba.baidu.com/c/f/forum/getforumdata", data=self.sessions._pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -2366,7 +2469,7 @@ class Browser(object):
             ]
 
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/forum/like", data=self.sessions._wrap_form(payload)
+                "http://c.tieba.baidu.com/c/c/forum/like", data=self.sessions._pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -2402,7 +2505,7 @@ class Browser(object):
             ]
 
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/forum/sign", data=self.sessions._wrap_form(payload)
+                "http://c.tieba.baidu.com/c/c/forum/sign", data=self.sessions._pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -2477,7 +2580,7 @@ class Browser(object):
             ]
 
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/post/add", data=self.sessions._wrap_form(payload)
+                "http://c.tieba.baidu.com/c/c/post/add", data=self.sessions._pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -2505,7 +2608,7 @@ class Browser(object):
             bool: 操作是否成功
         """
 
-        if not UserInfo.is_user_id(_id):
+        if not BasicUserInfo.is_user_id(_id):
             user = await self.get_basic_user_info(_id)
         else:
             user = BasicUserInfo(_id)
@@ -2519,11 +2622,11 @@ class Browser(object):
 
         try:
             websocket = await self.get_websocket()
-            await websocket.send_bytes(self.sessions._wrap_ws_bytes(req_proto.SerializeToString(), cmd=205001))
+            await websocket.send_bytes(self.sessions._pack_ws_bytes(req_proto.SerializeToString(), cmd=205001))
 
             res_proto = CommitPersonalMsgResIdl_pb2.CommitPersonalMsgResIdl()
             res_bytes = (await websocket.receive(timeout=5)).data
-            res_proto.ParseFromString(self.sessions._unwrap_ws_bytes(res_bytes))
+            res_proto.ParseFromString(self.sessions._unpack_ws_bytes(res_bytes))
             if int(res_proto.data.blockInfo.blockErrno):
                 raise ValueError(res_proto.data.blockInfo.blockErrmsg)
 
@@ -2558,7 +2661,7 @@ class Browser(object):
             ]
 
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/thread/setPrivacy", data=self.sessions._wrap_form(payload)
+                "http://c.tieba.baidu.com/c/c/thread/setPrivacy", data=self.sessions._pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
