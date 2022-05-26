@@ -969,6 +969,7 @@ class Thread(_BasicContainer):
             self.fid: int = _raw_data.fid
             self.tid: int = _raw_data.id
             self.pid: int = _raw_data.first_post_id
+            self._user = UserInfo(_raw_data=_raw_data.author) if _raw_data.author.id else None
             self._author_id: int = _raw_data.author_id
 
             self.tab_id: int = _raw_data.tab_id
@@ -1177,6 +1178,7 @@ class Post(_BasicContainer):
 
         if _raw_data:
             self.pid: int = _raw_data.id
+            self._user = UserInfo(_raw_data=_raw_data.author) if _raw_data.author.id else None
             self._author_id: int = _raw_data.author_id
 
             self.floor: int = _raw_data.floor

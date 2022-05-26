@@ -1176,7 +1176,7 @@ class Browser(object):
 
         payload = [
             ('fn', fname),
-            ('fid', await self.get_fid(fname)),
+            ('fid', fid),
             ('tid_list[]', tid),
             ('pid_list[]', pid),
             ('type_list[]', 1 if pid else 0),
