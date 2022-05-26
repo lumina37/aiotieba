@@ -11,7 +11,6 @@ message FrsPageReqIdl {
         int32 is_good = 4;
         int32 cid = 5;
         int32 with_group = 8;
-        int32 q_type = 14;
         int32 pn = 15;
         int32 sort_type = 47;
     }

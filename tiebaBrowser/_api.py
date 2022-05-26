@@ -758,7 +758,6 @@ class Browser(object):
         data_proto.pn = pn
         data_proto.rn = 30
         data_proto.is_good = is_good
-        data_proto.q_type = 2
         data_proto.sort_type = sort
         req_proto = FrsPageReqIdl_pb2.FrsPageReqIdl()
         req_proto.data.CopyFrom(data_proto)
@@ -819,7 +818,6 @@ class Browser(object):
         data_proto.kz = tid
         data_proto.pn = pn
         data_proto.rn = rn if rn > 1 else 2
-        data_proto.q_type = 2
         data_proto.r = sort
         data_proto.lz = only_thread_author
         data_proto.is_fold_comment_req = is_fold

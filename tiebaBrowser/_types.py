@@ -112,7 +112,7 @@ class BasicUserInfo(_DataWrapper):
                         self.user_name = _id
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__} [user_id:{self._user_id} / user_name:{self.user_name} / portrait:{self._portrait} / nick_name:{self._nick_name}]"
+        return f"{self.__class__.__name__} [user_id:{self.user_id} / user_name:{self.user_name} / portrait:{self._portrait} / nick_name:{self._nick_name}]"
 
     def __eq__(self, obj: "BasicUserInfo") -> bool:
         return self.user_id == obj.user_id and self.user_name == obj.user_name and self._portrait == obj.portrait
@@ -403,7 +403,7 @@ class FragLink(FragText):
     @property
     def is_external(self) -> bool:
         if self._is_external is None:
-            self._is_external = self._raw_data.link.startswith(self.external_perfix)
+            self._is_external = self.link.startswith(self.external_perfix)
         return self._is_external
 
 
