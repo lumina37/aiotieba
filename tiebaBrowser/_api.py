@@ -1758,7 +1758,7 @@ class Browser(object):
 
             text = await res.text(encoding='utf-8')
 
-            res_list = [int(item.group(1)) for item in re.finditer('aid=(\d+)', text)]
+            res_list = [int(item.group(1)) for item in re.finditer('aid=(\\d+)', text)]
 
         except Exception as err:
             LOG.warning(f"Failed to get appeal_list of {fname}. reason:{err}")
