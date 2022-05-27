@@ -112,7 +112,7 @@ class Sessions(object):
         self._connector = aiohttp.TCPConnector(
             ttl_dns_cache=600, keepalive_timeout=90, limit=0, family=socket.AF_INET, ssl=False
         )
-        _trust_env = False
+        _trust_env = True
 
         # Init app client
         app_headers = {
@@ -497,7 +497,7 @@ class Browser(object):
         补全完整版用户信息
 
         Args:
-            _id (str | int): 用户id user_id/user_name/portrait
+            _id (str | int): 待补全用户的id user_id/user_name/portrait
 
         Returns:
             UserInfo: 完整版用户信息
@@ -514,7 +514,7 @@ class Browser(object):
         补全简略版用户信息
 
         Args:
-            _id (str | int): 用户id user_id/user_name/portrait
+            _id (str | int): 待补全用户的id user_id/user_name/portrait
 
         Returns:
             BasicUserInfo: 简略版用户信息 仅保证包含user_name/portrait/user_id
@@ -1858,7 +1858,7 @@ class Browser(object):
             msg = {key: bool(int(value)) for key, value in res_json['message'].items()}
 
         except Exception as err:
-            LOG.warning(f"Failed to get new_msg reason:{err}")
+            LOG.warning(f"Failed to get new_msg. reason:{err}")
             msg = {
                 'fans': False,
                 'replyme': False,
@@ -1905,7 +1905,7 @@ class Browser(object):
             replys = Replys(res_proto.data)
 
         except Exception as err:
-            LOG.warning(f"Failed to get replys reason:{err}")
+            LOG.warning(f"Failed to get replys. reason:{err}")
             replys = Replys()
 
         return replys
@@ -1939,7 +1939,7 @@ class Browser(object):
             ats = Ats(res_json)
 
         except Exception as err:
-            LOG.warning(f"Failed to get ats reason:{err}")
+            LOG.warning(f"Failed to get ats. reason:{err}")
             ats = Ats()
 
         return ats
@@ -2020,17 +2020,313 @@ class Browser(object):
                         userpost._user = user
 
         except Exception as err:
-            LOG.warning(f"Failed to get self_contents reason:{err}")
+            LOG.warning(f"Failed to get self_contents. reason:{err}")
             res_list = []
 
         return res_list
+
+    async def get_self_fan_list(self, pn: int = 1) -> Tuple[List[UserInfo], bool]:
+        """
+        获取第pn页的本人粉丝列表
+
+        Args:
+            pn (int, optional): 页码. Defaults to 1.
+
+        Returns:
+            tuple[list[UserInfo], bool]: list[粉丝用户信息], 是否还有下一页
+        """
+
+        payload = [
+            ('BDUSS', self.sessions.BDUSS),
+            ('_client_version', '12.12.1.0'),
+            ('pn', pn),
+        ]
+
+        try:
+            res = await self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/u/fans/page", data=self.sessions._pack_form(payload)
+            )
+
+            res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
+
+            res_list = [
+                UserInfo(_raw_data=ParseDict(user_dict, User_pb2.User(), ignore_unknown_fields=True))
+                for user_dict in res_json['user_list']
+            ]
+            has_more = bool(int(res_json['page']['has_more']))
+
+        except Exception as err:
+            LOG.warning(f"Failed to get self_fan_list. reason:{err}")
+            res_list = []
+            has_more = False
+
+        return res_list, has_more
+
+    async def remove_fan(self, _id: Union[str, int]):
+        """
+        移除粉丝
+
+        Args:
+            _id (str | int): 待移除粉丝的id user_id/user_name/portrait 优先user_id
+
+        Returns:
+            bool: 操作是否成功
+        """
+
+        if not BasicUserInfo.is_user_id(_id):
+            user = await self.get_basic_user_info(_id)
+        else:
+            user = BasicUserInfo(_id)
+
+        payload = [
+            ('BDUSS', self.sessions.BDUSS),
+            ('fans_uid', user.user_id),
+            ('tbs', await self.get_tbs()),
+        ]
+
+        try:
+            res = await self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/c/user/removeFans", data=self.sessions._pack_form(payload)
+            )
+
+            res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
+
+        except Exception as err:
+            LOG.warning(f"Failed to remove fan {user.log_name}. reason:{err}")
+            return False
+
+        LOG.info(f"Successfully removed fan {user.log_name}")
+        return True
+
+    async def get_self_follow_list(self, pn: int = 1) -> Tuple[List[UserInfo], bool]:
+        """
+        获取第pn页的本人关注列表
+
+        Args:
+            pn (int, optional): 页码. Defaults to 1.
+
+        Returns:
+            tuple[list[UserInfo], bool]: list[关注用户信息], 是否还有下一页
+        """
+
+        payload = [
+            ('BDUSS', self.sessions.BDUSS),
+            ('_client_version', '12.12.1.0'),
+            ('pn', pn),
+        ]
+
+        try:
+            res = await self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/u/follow/followList", data=self.sessions._pack_form(payload)
+            )
+
+            res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
+
+            res_list = [
+                UserInfo(_raw_data=ParseDict(user_dict, User_pb2.User(), ignore_unknown_fields=True))
+                for user_dict in res_json['follow_list']
+            ]
+            has_more = bool(int(res_json['has_more']))
+
+        except Exception as err:
+            LOG.warning(f"Failed to get self_follow_list. reason:{err}")
+            res_list = []
+            has_more = False
+
+        return res_list, has_more
+
+    async def follow(self, _id: Union[str, int]):
+        """
+        关注用户
+
+        Args:
+            _id (str | int): 待关注用户的id user_id/user_name/portrait 优先portrait
+
+        Returns:
+            bool: 操作是否成功
+        """
+
+        if not BasicUserInfo.is_portrait(_id):
+            user = await self.get_basic_user_info(_id)
+        else:
+            user = BasicUserInfo(_id)
+
+        payload = [
+            ('BDUSS', self.sessions.BDUSS),
+            ('portrait', user.portrait),
+            ('tbs', await self.get_tbs()),
+        ]
+
+        try:
+            res = await self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/c/user/follow", data=self.sessions._pack_form(payload)
+            )
+
+            res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
+
+        except Exception as err:
+            LOG.warning(f"Failed to follow user {user.log_name}. reason:{err}")
+            return False
+
+        LOG.info(f"Successfully followed user {user.log_name}")
+        return True
+
+    async def unfollow(self, _id: Union[str, int]):
+        """
+        取关用户
+
+        Args:
+            _id (str | int): 待取关用户的id user_id/user_name/portrait 优先portrait
+
+        Returns:
+            bool: 操作是否成功
+        """
+
+        if not BasicUserInfo.is_portrait(_id):
+            user = await self.get_basic_user_info(_id)
+        else:
+            user = BasicUserInfo(_id)
+
+        payload = [
+            ('BDUSS', self.sessions.BDUSS),
+            ('portrait', user.portrait),
+            ('tbs', await self.get_tbs()),
+        ]
+
+        try:
+            res = await self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/c/user/unfollow", data=self.sessions._pack_form(payload)
+            )
+
+            res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
+
+        except Exception as err:
+            LOG.warning(f"Failed to unfollow user {user.log_name}. reason:{err}")
+            return False
+
+        LOG.info(f"Successfully unfollowed user {user.log_name}")
+        return True
+
+    async def get_self_forum_list(self, pn: int = 1) -> Tuple[List[Tuple[str, int]], bool]:
+        """
+        获取第pn页的本人关注贴吧列表
+
+        Args:
+            pn (int, optional): 页码. Defaults to 1.
+
+        Returns:
+            tuple[list[tuple[str, int]], bool]: list[贴吧名, 贴吧id], 是否还有下一页
+        """
+
+        try:
+            res = await self.sessions.web.get("https://tieba.baidu.com/mg/o/getForumHome", params={'pn': pn, 'rn': 200})
+
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['errno']):
+                raise ValueError(res_json['errmsg'])
+
+            forums: list[dict] = res_json['data']['like_forum']['list']
+            res_list = [(forum['forum_name'], int(forum['forum_id'])) for forum in forums]
+            has_more = len(forums) == 200
+
+        except Exception as err:
+            LOG.warning(f"Failed to get self_forum_list. reason:{err}")
+            res_list = []
+            has_more = False
+
+        return res_list, has_more
+
+    async def like_forum(self, fname_or_fid: Union[str, int]) -> bool:
+        """
+        关注吧
+
+        Args:
+            fname_or_fid (str | int): 要关注贴吧的贴吧名或fid 优先fid
+
+        Returns:
+            bool: 操作是否成功
+        """
+
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+
+        try:
+            payload = [
+                ('BDUSS', self.sessions.BDUSS),
+                ('fid', fid),
+                ('tbs', await self.get_tbs()),
+            ]
+
+            res = await self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/c/forum/like", data=self.sessions._pack_form(payload)
+            )
+
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
+            if int(res_json['error']['errno']):
+                raise ValueError(res_json['error']['errmsg'])
+
+        except Exception as err:
+            LOG.warning(f"Failed to like forum {fname_or_fid}. reason:{err}")
+            return False
+
+        LOG.info(f"Successfully liked forum {fname_or_fid}")
+        return True
+
+    async def sign_forum(self, fname_or_fid: Union[str, int]) -> bool:
+        """
+        签到吧
+
+        Args:
+            fname_or_fid (str | int): 要签到贴吧的贴吧名或fid 优先贴吧名
+
+        Returns:
+            bool: 签到是否成功
+        """
+
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
+
+        try:
+            payload = [
+                ('BDUSS', self.sessions.BDUSS),
+                ('_client_version', '12.12.1.0'),
+                ('kw', fname),
+                ('tbs', await self.get_tbs()),
+            ]
+
+            res = await self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/c/forum/sign", data=self.sessions._pack_form(payload)
+            )
+
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
+            if int(res_json['user_info']['sign_bonus_point']) == 0:
+                raise ValueError("sign_bonus_point is 0")
+
+        except Exception as err:
+            LOG.warning(f"Failed to sign forum {fname}. reason:{err}")
+            return False
+
+        LOG.info(f"Successfully signed forum {fname}")
+        return True
 
     async def get_homepage(self, _id: Union[str, int]) -> Tuple[UserInfo, List[Thread]]:
         """
         获取用户个人页信息
 
         Args:
-            _id (str | int): 用户id user_id/user_name/portrait
+            _id (str | int): 待获取用户的id user_id/user_name/portrait 优先portrait
 
         Returns:
             tuple[UserInfo, list[Thread]]: 用户信息, list[帖子信息]
@@ -2128,41 +2424,12 @@ class Browser(object):
 
         return searches
 
-    async def get_self_forum_list(self, pn: int = 1) -> Tuple[List[Tuple[str, int, int, int]], bool]:
-        """
-        获取第pn页的本人关注贴吧列表
-
-        Args:
-            pn (int, optional): 页码. Defaults to 1.
-
-        Returns:
-            tuple[list[tuple[str, int]], bool]: list[贴吧名, 贴吧id], 是否还有下一页
-        """
-
-        try:
-            res = await self.sessions.web.get("https://tieba.baidu.com/mg/o/getForumHome", params={'pn': pn, 'rn': 200})
-
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(res_json['errno']):
-                raise ValueError(res_json['errmsg'])
-
-            forums: list[dict] = res_json['data']['like_forum']['list']
-            res_list = [(forum['forum_name'], int(forum['forum_id'])) for forum in forums]
-            has_more = len(forums) == 200
-
-        except Exception as err:
-            LOG.warning(f"Failed to get self_forum_list. reason:{err}")
-            res_list = []
-            has_more = False
-
-        return res_list, has_more
-
     async def get_forum_list(self, _id: Union[str, int]) -> List[Tuple[str, int, int, int]]:
         """
         获取用户关注贴吧列表
 
         Args:
-            _id (str | int): 用户id user_id/user_name/portrait
+            _id (str | int): 待获取用户的id user_id/user_name/portrait 优先user_id
 
         Returns:
             list[tuple[str, int, int, int]]: list[贴吧名, 贴吧id, 等级, 经验值]
@@ -2279,7 +2546,7 @@ class Browser(object):
             }
 
         except Exception as err:
-            LOG.warning(f"Failed to get adminlist reason: {err}")
+            LOG.warning(f"Failed to get bawu_dict. reason: {err}")
             bawu_dict = {}
 
         return bawu_dict
@@ -2568,81 +2835,6 @@ class Browser(object):
 
         return res_list, has_more
 
-    async def like_forum(self, fname_or_fid: Union[str, int]) -> bool:
-        """
-        关注吧
-
-        Args:
-            fname_or_fid (str | int): 要关注贴吧的贴吧名或fid 优先fid
-
-        Returns:
-            bool: 操作是否成功
-        """
-
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
-
-        try:
-            payload = [
-                ('BDUSS', self.sessions.BDUSS),
-                ('fid', fid),
-                ('tbs', await self.get_tbs()),
-            ]
-
-            res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/forum/like", data=self.sessions._pack_form(payload)
-            )
-
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
-            if int(res_json['error']['errno']):
-                raise ValueError(res_json['error']['errmsg'])
-
-        except Exception as err:
-            LOG.warning(f"Failed to like forum {fname_or_fid}. reason:{err}")
-            return False
-
-        LOG.info(f"Successfully liked forum {fname_or_fid}")
-        return True
-
-    async def sign_forum(self, fname_or_fid: Union[str, int]) -> bool:
-        """
-        签到吧
-
-        Args:
-            fname_or_fid (str | int): 要签到贴吧的贴吧名或fid 优先贴吧名
-
-        Returns:
-            bool: 签到是否成功
-        """
-
-        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
-
-        try:
-            payload = [
-                ('BDUSS', self.sessions.BDUSS),
-                ('_client_version', '12.12.1.0'),
-                ('kw', fname),
-                ('tbs', await self.get_tbs()),
-            ]
-
-            res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/forum/sign", data=self.sessions._pack_form(payload)
-            )
-
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
-            if int(res_json['user_info']['sign_bonus_point']) == 0:
-                raise ValueError("sign_bonus_point is 0")
-
-        except Exception as err:
-            LOG.warning(f"Failed to sign forum {fname}. reason:{err}")
-            return False
-
-        LOG.info(f"Successfully signed forum {fname}")
-        return True
-
     async def add_post(self, fname_or_fid: Union[str, int], tid: int, content: str) -> bool:
         """
         回帖
@@ -2730,7 +2922,7 @@ class Browser(object):
         发送私信
 
         Args:
-            _id (str | int): 用户id user_id/user_name/portrait
+            _id (str | int): 待私信用户的id user_id/user_name/portrait 优先user_id
             content (str): 发送内容
 
         Returns:
