@@ -3,6 +3,7 @@ __all__ = ['Browser']
 
 import asyncio
 import base64
+import binascii
 import gzip
 import hashlib
 import json
@@ -10,6 +11,7 @@ import random
 import re
 import socket
 import time
+import uuid
 from typing import ClassVar, Dict, List, Literal, Optional, Tuple, Union
 
 import aiohttp
@@ -90,6 +92,10 @@ class Sessions(object):
         'STOKEN',
     ]
 
+    latest_version: ClassVar[str] = "12.24.4.0"  # 这是目前的最新版本
+    main_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
+    post_version: ClassVar[str] = "9.1.0.0"  # 发帖使用极速版
+
     def __init__(self, BDUSS_key: Optional[str] = None) -> None:
 
         if BDUSS_key:
@@ -112,11 +118,11 @@ class Sessions(object):
         self._connector = aiohttp.TCPConnector(
             ttl_dns_cache=600, keepalive_timeout=90, limit=0, family=socket.AF_INET, ssl=False
         )
-        _trust_env = True
+        _trust_env = False
 
         # Init app client
         app_headers = {
-            aiohttp.hdrs.USER_AGENT: 'bdtb for Android 12.12.1.0',
+            aiohttp.hdrs.USER_AGENT: f'bdtb for Android {self.main_version}',
             aiohttp.hdrs.CONNECTION: 'keep-alive',
             aiohttp.hdrs.ACCEPT_ENCODING: 'gzip',
             aiohttp.hdrs.HOST: 'c.tieba.baidu.com',
@@ -133,7 +139,7 @@ class Sessions(object):
 
         # Init app protobuf client
         app_proto_headers = {
-            aiohttp.hdrs.USER_AGENT: 'bdtb for Android 12.12.1.0',
+            aiohttp.hdrs.USER_AGENT: f'bdtb for Android {self.main_version}',
             'x_bd_data_type': 'protobuf',
             aiohttp.hdrs.CONNECTION: 'keep-alive',
             aiohttp.hdrs.ACCEPT_ENCODING: 'gzip',
@@ -251,6 +257,14 @@ class Sessions(object):
 
     @property
     def ws_password(self) -> bytes:
+        """
+        返回一个供贴吧websocket使用的随机密码
+        在初次生成后该属性便不会再发生变化
+
+        Returns:
+            bytes: 长度为36字节的随机密码
+        """
+
         if self._ws_password is None:
             self._ws_password = random.randbytes(36)
 
@@ -258,6 +272,13 @@ class Sessions(object):
 
     @property
     def ws_aes_chiper(self):
+        """
+        获取供贴吧websocket使用的AES加密器
+
+        Returns:
+            Any: AES chiper
+        """
+
         if self._ws_aes_chiper is None:
             salt = b'\xa4\x0b\xc8\x34\xd6\x95\xf3\x13'
             ws_secret_key = hashlib.pbkdf2_hmac('sha1', self.ws_password, salt, 5, 32)
@@ -358,7 +379,14 @@ class Browser(object):
         BDUSS_key (str | None): 用于从config.json中提取BDUSS. Defaults to None.
     """
 
-    __slots__ = ['BDUSS_key', 'sessions', '_tbs']
+    __slots__ = [
+        'BDUSS_key',
+        'sessions',
+        '_tbs',
+        '_client_id',
+        '_cuid',
+        '_cuid_galaxy2',
+    ]
 
     fid_dict: ClassVar[Dict[str, int]] = {}
 
@@ -366,6 +394,9 @@ class Browser(object):
         self.BDUSS_key = BDUSS_key
         self.sessions = Sessions(BDUSS_key)
         self._tbs: str = ''
+        self._client_id: str = None
+        self._cuid: str = None
+        self._cuid_galaxy2: str = None
 
     async def enter(self) -> "Browser":
         await self.sessions.enter()
@@ -398,11 +429,11 @@ class Browser(object):
 
         data_proto = UpdateClientInfoReqIdl_pb2.UpdateClientInfoReqIdl.DataReq()
         data_proto.bduss = self.sessions.BDUSS
-        data_proto.device = """{"subapp_type":"mini","_client_version":"9.1.0.0","pversion":"1.0.3","_msg_status":"1","_phone_imei":"000000000000000","from":"1021099l","cuid_galaxy2":"132D741FDA2C7D06A1BF9D63F213B453|0","model":"LIO-AN00","_client_type":"2"}"""
+        data_proto.device = f"""{{"subapp_type":"mini","_client_version":"{self.sessions.post_version}","pversion":"1.0.3","_msg_status":"1","_phone_imei":"000000000000000","from":"1021099l","cuid_galaxy2":"{self.cuid_galaxy2}","model":"LIO-AN00","_client_type":"2"}}"""
         data_proto.secretKey = rsa_chiper.encrypt(self.sessions.ws_password)
         req_proto = UpdateClientInfoReqIdl_pb2.UpdateClientInfoReqIdl()
         req_proto.data.CopyFrom(data_proto)
-        req_proto.cuid = "baidutiebaapp4b825a46-779d-4004-a264-006433001684|com.baidu.tieba_mini9.1.0.0"
+        req_proto.cuid = f"{self.cuid}|com.baidu.tieba_mini{self.sessions.post_version}"
 
         websocket = self.sessions.websocket
 
@@ -427,6 +458,61 @@ class Browser(object):
             LOG.warning(f"Failed to create tieba-websocket. reason:{err}")
 
         return websocket
+
+    @property
+    def timestamp_ms(self) -> int:
+        """
+        返回13位毫秒级整数时间戳
+
+        Returns:
+            int: 毫秒级整数时间戳
+        """
+
+        return int(time.time() * 1000)
+
+    @property
+    def client_id(self) -> str:
+        """
+        返回一个供贴吧客户端使用的client_id
+        在初次生成后该属性便不会再发生变化
+
+        Returns:
+            str: 举例 wappc_1653660000000_123
+        """
+
+        if self._client_id is None:
+            self._client_id = f"wappc_{self.timestamp_ms}_{random.randint(0,999):03d}"
+        return self._client_id
+
+    @property
+    def cuid(self) -> str:
+        """
+        返回一个供贴吧客户端使用的cuid
+        在初次生成后该属性便不会再发生变化
+
+        Returns:
+            str: 举例 baidutiebaappe4200716-58a8-4170-af15-ea7edeb8e513
+        """
+
+        if self._cuid is None:
+            self._cuid = "baidutiebaapp" + str(uuid.uuid4())
+        return self._cuid
+
+    @property
+    def cuid_galaxy2(self) -> str:
+        """
+        返回一个供贴吧客户端使用的cuid_galaxy2
+        在初次生成后该属性便不会再发生变化
+
+        Returns:
+            str: 举例 159AB36E0E5C55E4AAE340CA046F1303|0
+        """
+
+        if self._cuid_galaxy2 is None:
+            rand_str = binascii.hexlify(random.randbytes(16)).decode('ascii').upper()
+            self._cuid_galaxy2 = rand_str + "|0"
+
+        return self._cuid_galaxy2
 
     async def get_tbs(self) -> str:
         """
@@ -771,7 +857,7 @@ class Browser(object):
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         common_proto = CommonReq_pb2.CommonReq()
-        common_proto._client_version = '12.12.1.0'
+        common_proto._client_version = self.sessions.main_version
         data_proto = FrsPageReqIdl_pb2.FrsPageReqIdl.DataReq()
         data_proto.common.CopyFrom(common_proto)
         data_proto.kw = fname
@@ -832,7 +918,7 @@ class Browser(object):
         """
 
         common_proto = CommonReq_pb2.CommonReq()
-        common_proto._client_version = '12.12.1.0'
+        common_proto._client_version = self.sessions.main_version
         data_proto = PbPageReqIdl_pb2.PbPageReqIdl.DataReq()
         data_proto.common.CopyFrom(common_proto)
         data_proto.kz = tid
@@ -882,7 +968,7 @@ class Browser(object):
         """
 
         common_proto = CommonReq_pb2.CommonReq()
-        common_proto._client_version = '12.12.1.0'
+        common_proto._client_version = self.sessions.main_version
         data_proto = PbFloorReqIdl_pb2.PbFloorReqIdl.DataReq()
         data_proto.common.CopyFrom(common_proto)
         data_proto.kz = tid
@@ -1218,7 +1304,7 @@ class Browser(object):
 
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('_client_version', '12.12.1.0'),
+            ('_client_version', self.sessions.main_version),
             ('forum_id', fid),
             ('tbs', await self.get_tbs()),
             (
@@ -1802,7 +1888,7 @@ class Browser(object):
         """
 
         payload = [
-            ('_client_version', '12.12.1.0'),
+            ('_client_version', self.sessions.main_version),
             ('bdusstoken', self.sessions.BDUSS),
         ]
 
@@ -1884,7 +1970,7 @@ class Browser(object):
 
         common_proto = CommonReq_pb2.CommonReq()
         common_proto.BDUSS = self.sessions.BDUSS
-        common_proto._client_version = '12.12.1.0'
+        common_proto._client_version = self.sessions.main_version
         data_proto = ReplyMeReqIdl_pb2.ReplyMeReqIdl.DataReq()
         data_proto.pn = str(pn)
         data_proto.common.CopyFrom(common_proto)
@@ -1923,7 +2009,7 @@ class Browser(object):
 
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('_client_version', '12.12.1.0'),
+            ('_client_version', self.sessions.main_version),
             ('pn', pn),
         ]
 
@@ -1986,7 +2072,7 @@ class Browser(object):
 
         common_proto = CommonReq_pb2.CommonReq()
         common_proto.BDUSS = self.sessions.BDUSS
-        common_proto._client_version = '12.12.1.0'
+        common_proto._client_version = self.sessions.main_version
         data_proto = UserPostReqIdl_pb2.UserPostReqIdl.DataReq()
         data_proto.user_id = user.user_id
         data_proto.is_thread = is_thread
@@ -2038,7 +2124,7 @@ class Browser(object):
 
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('_client_version', '12.12.1.0'),
+            ('_client_version', self.sessions.main_version),
             ('pn', pn),
         ]
 
@@ -2115,7 +2201,7 @@ class Browser(object):
 
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('_client_version', '12.12.1.0'),
+            ('_client_version', self.sessions.main_version),
             ('pn', pn),
         ]
 
@@ -2299,7 +2385,7 @@ class Browser(object):
         try:
             payload = [
                 ('BDUSS', self.sessions.BDUSS),
-                ('_client_version', '12.12.1.0'),
+                ('_client_version', self.sessions.main_version),
                 ('kw', fname),
                 ('tbs', await self.get_tbs()),
             ]
@@ -2339,7 +2425,7 @@ class Browser(object):
 
         payload = [
             ('_client_type', 2),  # 删除该字段会导致post_list为空
-            ('_client_version', '12.12.1.0'),  # 删除该字段会导致post_list和dynamic_list为空
+            ('_client_version', self.sessions.main_version),  # 删除该字段会导致post_list和dynamic_list为空
             ('friend_uid_portrait', user.portrait),
             ('need_post_count', 1),  # 删除该字段会导致无法获取发帖回帖数量
             # ('uid', user_id),  # 用该字段检查共同关注的吧
@@ -2398,7 +2484,7 @@ class Browser(object):
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         payload = [
-            ('_client_version', '12.12.1.0'),
+            ('_client_version', self.sessions.main_version),
             ('kw', fname),
             ('only_thread', int(only_thread)),
             ('pn', pn),
@@ -2480,7 +2566,7 @@ class Browser(object):
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         payload = [
-            ('_client_version', '12.12.1.0'),
+            ('_client_version', self.sessions.main_version),
             ('forum_id', fid),
         ]
 
@@ -2519,7 +2605,7 @@ class Browser(object):
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         common_proto = CommonReq_pb2.CommonReq()
-        common_proto._client_version = '12.12.1.0'
+        common_proto._client_version = self.sessions.main_version
         data_proto = GetBawuInfoReqIdl_pb2.GetBawuInfoReqIdl.DataReq()
         data_proto.common.CopyFrom(common_proto)
         data_proto.forum_id = fid
@@ -2566,7 +2652,7 @@ class Browser(object):
 
         common_proto = CommonReq_pb2.CommonReq()
         common_proto.BDUSS = self.sessions.BDUSS
-        common_proto._client_version = '12.12.1.0'
+        common_proto._client_version = self.sessions.main_version
         data_proto = SearchPostForumReqIdl_pb2.SearchPostForumReqIdl.DataReq()
         data_proto.common.CopyFrom(common_proto)
         data_proto.word = fname
@@ -2608,7 +2694,7 @@ class Browser(object):
 
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('_client_version', '12.12.1.0'),
+            ('_client_version', self.sessions.main_version),
             ('forum_id', fid),
             ('pn', pn),
             ('rn', 30),
@@ -2654,7 +2740,7 @@ class Browser(object):
 
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('_client_version', '12.12.1.0'),
+            ('_client_version', self.sessions.main_version),
             ('forum_id', fid),
             ('pn', 1),
             ('rn', 0),
@@ -2702,7 +2788,7 @@ class Browser(object):
 
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('_client_version', '12.12.1.0'),
+            ('_client_version', self.sessions.main_version),
             ('forum_id', fid),
         ]
 
@@ -2862,19 +2948,18 @@ class Browser(object):
         try:
             payload = [
                 ('BDUSS', self.sessions.BDUSS),
-                ('_client_id', 'wappc_1641793173806_732'),
+                ('_client_id', self.client_id),
                 ('_client_type', 2),
-                ('_client_version', '9.1.0.0'),
+                ('_client_version', self.sessions.post_version),
                 ('_phone_imei', '000000000000000'),
                 ('anonymous', 1),
                 ('apid', 'sw'),
                 ('barrage_time', 0),
                 ('can_no_forum', 0),
                 ('content', content),
-                ('cuid', 'baidutiebaapp75036bd3-8ae0-4b61-ac4e-c3192b6e6fa9'),
-                ('cuid_galaxy2', '1782A7D2758F38EA4B4EAFE1AD4881CB|VLJONH23W'),
+                ('cuid', self.cuid),
+                ('cuid_galaxy2', self.cuid_galaxy2),
                 ('cuid_gid', ''),
-                ('entrance_type', 0),
                 ('fid', fid),
                 ('from', '1021099l'),
                 ('from_fourm_id', 'null'),
@@ -2883,7 +2968,6 @@ class Browser(object):
                 ('is_feedback', 0),
                 ('kw', fname),
                 ('model', 'M2012K11AC'),
-                ('name_show', ''),
                 ('net_type', 1),
                 ('new_vcode', 1),
                 ('post_from', 3),
@@ -2893,11 +2977,11 @@ class Browser(object):
                 ('takephoto_num', 0),
                 ('tbs', await self.get_tbs()),
                 ('tid', tid),
-                ('timestamp', int(time.time() * 1000)),
+                ('timestamp', self.timestamp_ms),
                 ('v_fid', ''),
                 ('v_fname', ''),
                 ('vcode_tag', 12),
-                ('z_id', '9JaXHshXKDw1xkGLIi91_Qd4cduxNFKS_nguQ4kfe7zYZQfdOlA-7jU2pYbkMfw23NdB1awUpuWmTeoON13r-Uw'),
+                ('z_id', '74FFB5E615AA72E0B057EE43E3D5A23A8BA34AAC1672FC9B56A7106C57BA03'),
             ]
 
             res = await self.sessions.app.post(

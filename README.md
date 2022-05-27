@@ -33,16 +33,13 @@ pip install -r requirements.txt
 + 修改`config/config-example.yaml`，填入你的`BDUSS`，将文件名修改为`config.yaml`
 
 ```yaml
-
 BDUSS:
   default: ABCDEFGai2LdUd5TTVHblhFeXoxdGyOVURGUE1OYzNqVXVRaWF-HnpGckRCNFJnRVFBQUFBJCQAAAAAAAAAAAEAAADiglQb0f3Osqmv0rbJ2QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMN6XGDDelxgc
-
 ```
 
 ## 尝试一下
 
 ```python
-# -*- coding:utf-8 -*-
 import asyncio
 
 import tiebaBrowser as tb
@@ -66,33 +63,55 @@ async def main():
 # 执行协程main
 # 参考https://docs.python.org/zh-cn/3/library/asyncio-task.html#asyncio.run
 asyncio.run(main())
-
 ```
 
 ## 若要开启云审查功能
 
-+ 在`config/config.yaml`中配置`database`字段。你需要一个`MySQL`数据库用来缓存通过检测的回复的pid以及记录黑、白名单用户
-+ 在`config/config.yaml`中配置`fname_mapping`字段。你需要为每个贴吧设置对应的英文名以方便建立数据库
-+ 使用函数`Database.init_database()`一键建库
-+ 自定义审查行为：请参照我给出的例子自己编程修改[`cloud_review_asoul.py`](https://github.com/Starry-OvO/Tieba-Manager/blob/main/cloud_review_asoul.py)，这是被实际应用于[`asoul吧`](https://tieba.baidu.com/f?ie=utf-8&kw=asoul)的云审查工具
-+ 编写用于一键重启的bash脚本。下面是我用的`restart.sh`，需要重启时就`bash restart.sh`就行了
++ 在`config/config.yaml`中：配置`database`字段，你需要一个`MySQL`数据库用来缓存通过检测的内容id以及记录用户权限级别（黑、白名单）；配置`fname_zh2en`字段，你需要为每个贴吧设置对应的英文名以方便建立数据库
++ 对于[宫漫吧](https://tieba.baidu.com/f?ie=utf-8&kw=%E5%AE%AB%E6%BC%AB)，配置完成的`config/config.yaml`如下所示
+
+```yaml
+BDUSS:
+  starry: ABCDEFGai2LdUd5TTVHblhFeXoxdGyOVURGUE1OYzNqVXVRaWF-HnpGckRCNFJnRVFBQUFBJCQAAAAAAAAAAAEAAADiglQb0f3Osqmv0rbJ2QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMN6XGDDelxgc
+
+database:
+  host: 127.0.0.1
+  port: 3306
+  user: root
+  password: 123456
+
+fname_zh2en:
+  宫漫: hanime
+```
+
++ 使用函数`Database.init_database()`一键建库，如下例所示
+
+```python
+import asyncio
+
+import tiebaBrowser as tb
+
+
+async def main():
+    # 使用空字符串构造审查器
+    async with tb.Reviewer('', '') as brow:
+        # 使用函数Database.init_database()一键建库
+        await brow.database.init_database()
+
+asyncio.run(main())
+```
+
++ 自定义审查行为：请参照我给出的例子自己编程修改[`cloud_review_hanime.py`](https://github.com/Starry-OvO/Tieba-Manager/blob/main/cloud_review_hanime.py)，这是被实际应用于[宫漫吧](https://tieba.baidu.com/f?ie=utf-8&kw=%E5%AE%AB%E6%BC%AB)的云审查工具
++ 运行`cloud_review_yours.py`。对`Windows`平台，建议使用`pythonw.exe`无窗口运行，对`Linux`平台，建议使用如下的`nohup`指令在后台运行
 
 ```bash
-#! /bin/bash
-pids=`ps -ef | grep "\.py" | grep -v grep | awk '{print $2}'`
-if [ -n "$pids" ]; then
-    kill $pids
-fi
-
-TIEBA_MANAGER_PATH="$HOME/Scripts/Tieba-Manager"
-nohup python $TIEBA_MANAGER_PATH/admin_listen.py >/dev/null 2>&1 &
-nohup python $TIEBA_MANAGER_PATH/cloud_review_asoul.py >/dev/null 2>&1 &
+nohup python cloud_review_yours.py >/dev/null 2>&1 &
 ```
 
 ## 友情链接
 
 + [百度贴吧接口合集](https://github.com/Starry-OvO/Tieba-Manager/blob/main/tiebaBrowser/_api.py)
-+ [云审查案例](https://github.com/Starry-OvO/Tieba-Manager/blob/main/cloud_review_asoul.py)
++ [云审查案例](https://github.com/Starry-OvO/Tieba-Manager/blob/main/cloud_review_hanime.py)
 + [指令管理器](https://github.com/Starry-OvO/Tieba-Manager/wiki/%E6%8C%87%E4%BB%A4%E7%AE%A1%E7%90%86%E5%99%A8%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E%E4%B9%A6)
 + [另一个仍在活跃更新的贴吧管理器（有用户界面）](https://github.com/dog194/TiebaManager)
 + [用户反馈（我的个人吧）](https://tieba.baidu.com/f?ie=utf-8&kw=starry)

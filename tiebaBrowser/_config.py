@@ -16,5 +16,5 @@ if not (CONFIG.__contains__('BDUSS') and isinstance(CONFIG['BDUSS'], dict)):
     CONFIG['BDUSS'] = {}
 if not (CONFIG.__contains__('MySQL') and isinstance(CONFIG['MySQL'], dict)):
     CONFIG['MySQL'] = {}
-if not (CONFIG.__contains__('fname_mapping') and isinstance(CONFIG['fname_mapping'], dict)):
-    CONFIG['fname_mapping'] = {}
+if not (CONFIG.__contains__('fname_zh2en') and isinstance(CONFIG['fname_zh2en'], dict)):
+    CONFIG['fname_zh2en'] = {}
