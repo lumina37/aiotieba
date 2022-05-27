@@ -186,7 +186,7 @@ class Database(object):
         获取简略版用户信息
 
         Args:
-            _id (str | int): 用户id user_id/user_name/portrait
+            _id (str | int): 待补全用户的id user_id/user_name/portrait
 
         Returns:
             BasicUserInfo: 简略版用户信息 仅保证包含user_name/portrait/user_id

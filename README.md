@@ -8,17 +8,15 @@
 ## 功能概览
 
 + 按回复时间/发布时间/热门序获取贴吧主题帖/精华帖列表。支持获取带转发/投票/转发嵌套投票/各种卡片的主题帖信息
-+ 获取带图片链接、小尾巴内容、点赞情况、用户信息（`用户名` `user_id` `portrait` `等级` `性别` `是否锁回复`）、每条回复的前排楼中楼（支持按`点赞数`排序）的回复列表
++ 获取带图片链接/小尾巴内容/点赞情况/用户信息（用户名/user_id/portrait/等级/性别/是否锁回复）/每条回复的前排楼中楼（支持按或不按点赞数排序）的回复列表
 + 获取带所有前述用户信息的楼中楼列表
 + 根据`用户名` `昵称` `portrait` `user_id`中的任一项反查其他用户信息
-+ 使用小吧主、语音小编的`BDUSS`封禁用户3/10天，不论有没有`用户名`
-+ 使用已被大吧主分配解封/恢复帖权限的吧务`BDUSS`解封/恢复帖
-+ 使用吧务`BDUSS`拒绝所有申诉
-+ 使用小吧主、语音小编的`BDUSS`删帖或屏蔽
-+ 使用大吧主`BDUSS`推荐帖子到首页、移动帖子到指定分区、加精、撤精、置顶、撤置顶、添加黑名单、查看黑名单、取消黑名单
-+ 获取用户主页信息、关注贴吧列表
-+ 获取贴吧最新关注用户列表、等级排行榜
-+ 使用`BDUSS`关注吧、签到吧、水帖、发送私信
++ 使用小吧主、语音小编的`BDUSS`删帖/屏蔽/封禁任意用户3天或10天
++ 使用已被大吧主分配解封/恢复/处理申诉权限的吧务`BDUSS`解封/恢复/处理申诉。支持一键拒绝所有解封申诉
++ 使用大吧主`BDUSS`推荐帖子到首页/移动帖子到指定分区/加精/撤精/置顶/撤置顶/添加黑名单/查看黑名单/取消黑名单
++ 获取用户主页信息/关注贴吧列表/关注用户列表/粉丝列表/发帖历史/回复历史
++ 获取贴吧最新关注用户列表/等级排行榜/吧务列表/吧详情
++ 使用`BDUSS`关注吧/关注用户/取关用户/移除粉丝/签到/水帖/发送私信
 
 ## 准备使用
 
@@ -27,7 +25,9 @@
 + 拉取代码并安装依赖
 
 ```bash
-git clone https://github.com/Starry-OvO/Tieba-Manager.git && cd ./Tieba-Manager && sudo pip install -r requirements.txt
+git clone https://github.com/Starry-OvO/Tieba-Manager.git
+cd ./Tieba-Manager
+pip install -r requirements.txt
 ```
 
 + 修改`config/config-example.yaml`，填入你的`BDUSS`，将文件名修改为`config.yaml`
@@ -87,7 +87,6 @@ fi
 TIEBA_MANAGER_PATH="$HOME/Scripts/Tieba-Manager"
 nohup python $TIEBA_MANAGER_PATH/admin_listen.py >/dev/null 2>&1 &
 nohup python $TIEBA_MANAGER_PATH/cloud_review_asoul.py >/dev/null 2>&1 &
-nohup python $TIEBA_MANAGER_PATH/cloud_review_diana.py >/dev/null 2>&1 &
 ```
 
 ## 友情链接
@@ -96,7 +95,7 @@ nohup python $TIEBA_MANAGER_PATH/cloud_review_diana.py >/dev/null 2>&1 &
 + [云审查案例](https://github.com/Starry-OvO/Tieba-Manager/blob/main/cloud_review_asoul.py)
 + [指令管理器](https://github.com/Starry-OvO/Tieba-Manager/wiki/%E6%8C%87%E4%BB%A4%E7%AE%A1%E7%90%86%E5%99%A8%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E%E4%B9%A6)
 + [另一个仍在活跃更新的贴吧管理器（有用户界面）](https://github.com/dog194/TiebaManager)
-+ [客户反馈（我的个人吧）](https://tieba.baidu.com/f?ie=utf-8&kw=starry)
++ [用户反馈（我的个人吧）](https://tieba.baidu.com/f?ie=utf-8&kw=starry)
 
 ## 用户名单
 

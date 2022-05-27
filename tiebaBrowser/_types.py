@@ -14,10 +14,12 @@ __all__ = [
     'Ats',
     'Replys',
     'Searches',
-    'Fragments',
     'NewThread',
     'UserPost',
     'UserPosts',
+    'Fragments',
+    'Forum',
+    'Page',
 ]
 
 import json
