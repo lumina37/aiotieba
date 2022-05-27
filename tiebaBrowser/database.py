@@ -15,13 +15,14 @@ from ._types import BasicUserInfo
 LOG = get_logger()
 
 
-def translate_fname(func):
+def fname_zh2en(func):
     @functools.wraps(func)
-    def wrapper(self, fname, *args, **kwargs):
-        if not (fname_eng := CONFIG['fname_mapping'].get(fname, None)):
-            LOG.error(f"Can not find key:{fname} in name mapping")
+    def wrapper(self, fname_zh, *args, **kwargs):
+        cfg_key = 'fname_zh2en'
+        if not (fname_en := CONFIG[cfg_key].get(fname_zh, None)):
+            LOG.error(f"Can not find key:{fname_zh} in {cfg_key}")
             return
-        return func(self, fname_eng, *args, **kwargs)
+        return func(self, fname_en, *args, **kwargs)
 
     return wrapper
 
@@ -75,14 +76,14 @@ class Database(object):
 
         self._pool: aiomysql.Pool = await aiomysql.create_pool(
             minsize=0,
-            maxsize=30,
+            maxsize=32,
             pool_recycle=self._pool_recycle,
             db=self._db_name,
             autocommit=True,
             **CONFIG['database'],
         )
 
-        for fname in CONFIG['fname_mapping'].keys():
+        for fname in CONFIG['fname_zh2en'].keys():
             await asyncio.gather(
                 self._create_table_id(fname),
                 self._create_table_user_id(fname),
@@ -264,7 +265,7 @@ class Database(object):
         LOG.info(f"Successfully deleted {user} from table user")
         return True
 
-    @translate_fname
+    @fname_zh2en
     async def _create_table_id(self, fname: str) -> None:
         """
         创建表id_{fname}
@@ -284,7 +285,7 @@ class Database(object):
                     DO DELETE FROM `id_{fname}` WHERE record_time<(CURRENT_TIMESTAMP() + INTERVAL -15 DAY)"""
                 )
 
-    @translate_fname
+    @fname_zh2en
     async def add_id(self, fname: str, _id: int, id_last_edit: int = 0) -> bool:
         """
         将id添加到表id_{fname}
@@ -308,7 +309,7 @@ class Database(object):
             return False
         return True
 
-    @translate_fname
+    @fname_zh2en
     async def get_id(self, fname: str, _id: int) -> int:
         """
         获取表id_{fname}中id对应的id_last_edit值
@@ -333,7 +334,7 @@ class Database(object):
                 return res_tuple[0]
             return -1
 
-    @translate_fname
+    @fname_zh2en
     async def del_id(self, fname: str, _id: int) -> bool:
         """
         从表id_{fname}中删除id
@@ -357,7 +358,7 @@ class Database(object):
         LOG.info(f"Successfully deleted {_id} from table of {fname}")
         return True
 
-    @translate_fname
+    @fname_zh2en
     async def del_ids(self, fname: str, hour: int) -> bool:
         """
         删除表id_{fname}中最近hour个小时记录的id
@@ -384,7 +385,7 @@ class Database(object):
         LOG.info(f"Successfully deleted id in id_{fname} within {hour} hour(s)")
         return True
 
-    @translate_fname
+    @fname_zh2en
     async def _create_table_tid_water(self, fname: str) -> None:
         """
         创建表tid_water_{fname}
@@ -404,7 +405,7 @@ class Database(object):
                 DO DELETE FROM `tid_water_{fname}` WHERE `record_time`<(CURRENT_TIMESTAMP() + INTERVAL -15 DAY)"""
                 )
 
-    @translate_fname
+    @fname_zh2en
     async def add_tid(self, fname: str, tid: int, mode: bool) -> bool:
         """
         将tid添加到表tid_water_{fname}
@@ -429,7 +430,7 @@ class Database(object):
         LOG.info(f"Successfully added {tid} to table of {fname}. mode: {mode}")
         return True
 
-    @translate_fname
+    @fname_zh2en
     async def is_tid_hide(self, fname: str, tid: int) -> Optional[bool]:
         """
         获取表tid_water_{fname}中tid的待恢复状态
@@ -454,7 +455,7 @@ class Database(object):
                 return True if res_tuple[0] else False
             return None
 
-    @translate_fname
+    @fname_zh2en
     async def del_tid(self, fname: str, tid: int) -> bool:
         """
         从表tid_water_{fname}中删除tid
@@ -477,7 +478,7 @@ class Database(object):
         LOG.info(f"Successfully deleted {tid} from table of {fname}")
         return True
 
-    @translate_fname
+    @fname_zh2en
     async def get_tid_list(self, fname: str, limit: int = 128, offset: int = 0) -> List[int]:
         """
         获取表tid_water_{fname}中待恢复的tid的列表
@@ -507,7 +508,7 @@ class Database(object):
 
         return res_list
 
-    @translate_fname
+    @fname_zh2en
     async def _create_table_user_id(self, fname: str) -> None:
         """
         创建表user_id_{fname}
@@ -522,7 +523,7 @@ class Database(object):
                     f"CREATE TABLE IF NOT EXISTS `user_id_{fname}` (`user_id` BIGINT PRIMARY KEY, `permission` TINYINT NOT NULL DEFAULT 0, `note` VARCHAR(64) NOT NULL DEFAULT '', `record_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, INDEX `permission`(permission), INDEX `record_time`(record_time))"
                 )
 
-    @translate_fname
+    @fname_zh2en
     async def add_user_id(self, fname: str, user_id: int, permission: int = 0, note: str = '') -> bool:
         """
         将user_id添加到表user_id_{fname}
@@ -552,7 +553,7 @@ class Database(object):
         LOG.info(f"Successfully added {user_id} to table of {fname}. permission: {permission} note: {note}")
         return True
 
-    @translate_fname
+    @fname_zh2en
     async def del_user_id(self, fname: str, user_id: int) -> bool:
         """
         从表user_id_{fname}中删除user_id
@@ -575,7 +576,7 @@ class Database(object):
         LOG.info(f"Successfully deleted {user_id} from table of {fname}")
         return True
 
-    @translate_fname
+    @fname_zh2en
     async def get_user_id(self, fname: str, user_id: int) -> int:
         """
         获取表user_id_{fname}中user_id的权限级别
@@ -600,7 +601,7 @@ class Database(object):
                 return res_tuple[0]
             return 0
 
-    @translate_fname
+    @fname_zh2en
     async def get_user_id_full(self, fname: str, user_id: int) -> Tuple[int, str, datetime.datetime]:
         """
         获取表user_id_{fname}中user_id的完整信息
@@ -628,7 +629,7 @@ class Database(object):
                 return res_tuple
             return 0, '', datetime.datetime(1970, 1, 1)
 
-    @translate_fname
+    @fname_zh2en
     async def get_user_id_list(
         self, fname: str, lower_permission: int = 0, upper_permission: int = 5, limit: int = 1, offset: int = 0
     ) -> List[int]:
@@ -662,7 +663,7 @@ class Database(object):
 
         return res_list
 
-    @translate_fname
+    @fname_zh2en
     async def _create_table_imghash(self, fname: str) -> None:
         """
         创建表imghash_{fname}
@@ -677,7 +678,7 @@ class Database(object):
                     f"CREATE TABLE IF NOT EXISTS `imghash_{fname}` (`img_hash` CHAR(16) PRIMARY KEY, `raw_hash` CHAR(40) UNIQUE NOT NULL, `permission` TINYINT NOT NULL DEFAULT 0, `note` VARCHAR(64) NOT NULL DEFAULT '', INDEX `permission`(permission))"
                 )
 
-    @translate_fname
+    @fname_zh2en
     async def add_imghash(self, fname: str, img_hash: str, raw_hash: str, permission: int = 0, note: str = '') -> bool:
         """
         将img_hash添加到表imghash_{fname}
@@ -707,7 +708,7 @@ class Database(object):
         LOG.info(f"Successfully added {img_hash} to table of {fname}. permission: {permission} note: {note}")
         return True
 
-    @translate_fname
+    @fname_zh2en
     async def del_imghash(self, fname: str, img_hash: str) -> bool:
         """
         从imghash_{fname}中删除img_hash
@@ -731,7 +732,7 @@ class Database(object):
         LOG.info(f"Successfully deleted {img_hash} from table of {fname}")
         return True
 
-    @translate_fname
+    @fname_zh2en
     async def get_imghash(self, fname: str, img_hash: str) -> int:
         """
         获取表imghash_{fname}中img_hash的封锁级别
@@ -756,7 +757,7 @@ class Database(object):
                 return res_tuple[0]
             return 0
 
-    @translate_fname
+    @fname_zh2en
     async def get_imghash_full(self, fname: str, img_hash: str) -> Tuple[int, str]:
         """
         获取表imghash_{fname}中img_hash的完整信息

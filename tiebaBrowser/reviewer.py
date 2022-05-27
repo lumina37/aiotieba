@@ -433,7 +433,7 @@ class Reviewer(Browser):
 
         try:
             img_hash_array = cv.img_hash.pHash(image)
-            img_hash = binascii.b2a_hex(img_hash_array.tobytes()).decode()
+            img_hash = binascii.hexlify(img_hash_array.tobytes()).decode('ascii')
         except Exception as err:
             LOG.warning(f"Failed to get imagehash. reason:{err}")
             img_hash = ''
