@@ -7,8 +7,8 @@ from collections.abc import Callable
 
 import yaml
 
-import tiebaBrowser as tb
-from tiebaBrowser._config import SCRIPT_PATH
+import aiotieba as tb
+from aiotieba._config import SCRIPT_PATH
 
 with (SCRIPT_PATH.parent / 'config/listen_config.yaml').open('r', encoding='utf-8') as file:
     LISTEN_CONFIG = yaml.load(file, Loader=yaml.SafeLoader)
@@ -196,7 +196,7 @@ class Handler(object):
     def __init__(self, fname: str, admin_key: str, speaker_key: str) -> None:
         self.fname = fname
         self.admin = tb.Reviewer(admin_key, self.fname)
-        self.speaker = tb.Browser(speaker_key)
+        self.speaker = tb.Client(speaker_key)
 
     async def enter(self) -> None:
         await asyncio.gather(self.admin.enter(), self.speaker.enter())

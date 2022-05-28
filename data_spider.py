@@ -3,7 +3,7 @@ import asyncio
 import time
 from collections import Counter
 
-import tiebaBrowser as tb
+import aiotieba as tb
 
 
 async def stat_active_user(tieba_name):
@@ -14,7 +14,7 @@ async def stat_active_user(tieba_name):
 
     user_counter = Counter()
 
-    async with tb.Browser("starry") as brow:
+    async with tb.Client("starry") as brow:
 
         ts_thre = int(time.time()) - 3 * 24 * 3600
         task_queue = asyncio.Queue(maxsize=4)

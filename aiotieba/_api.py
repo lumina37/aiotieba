@@ -1,5 +1,5 @@
 # -*- coding:utf-8 -*-
-__all__ = ['Browser']
+__all__ = ['Client']
 
 import asyncio
 import base64
@@ -371,9 +371,9 @@ class Sessions(object):
         return True
 
 
-class Browser(object):
+class Client(object):
     """
-    贴吧浏览、参数获取等API的封装
+    贴吧客户端
 
     Args:
         BDUSS_key (str | None): 用于从config.json中提取BDUSS. Defaults to None.
@@ -398,11 +398,11 @@ class Browser(object):
         self._cuid: str = None
         self._cuid_galaxy2: str = None
 
-    async def enter(self) -> "Browser":
+    async def enter(self) -> "Client":
         await self.sessions.enter()
         return self
 
-    async def __aenter__(self) -> "Browser":
+    async def __aenter__(self) -> "Client":
         return await self.enter()
 
     async def close(self) -> None:

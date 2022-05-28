@@ -10,6 +10,7 @@ __*/
 *.rar
 *.md
 *.jpg
+*.proto
 *.code-workspace
 
 config/*
