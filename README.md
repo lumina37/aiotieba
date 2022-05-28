@@ -89,7 +89,7 @@ fname_zh2en:
 ```python
 import asyncio
 
-import tiebaBrowser as tb
+import aiotieba as tb
 
 
 async def main():
