@@ -93,7 +93,7 @@ class Sessions(object):
     ]
 
     latest_version: ClassVar[str] = "12.24.4.0"  # 这是目前的最新版本
-    main_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
+    no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
     post_version: ClassVar[str] = "9.1.0.0"  # 发帖使用极速版
 
     def __init__(self, BDUSS_key: Optional[str] = None) -> None:
@@ -122,7 +122,7 @@ class Sessions(object):
 
         # Init app client
         app_headers = {
-            aiohttp.hdrs.USER_AGENT: f'bdtb for Android {self.main_version}',
+            aiohttp.hdrs.USER_AGENT: f'bdtb for Android {self.latest_version}',
             aiohttp.hdrs.CONNECTION: 'keep-alive',
             aiohttp.hdrs.ACCEPT_ENCODING: 'gzip',
             aiohttp.hdrs.HOST: 'c.tieba.baidu.com',
@@ -139,7 +139,7 @@ class Sessions(object):
 
         # Init app protobuf client
         app_proto_headers = {
-            aiohttp.hdrs.USER_AGENT: f'bdtb for Android {self.main_version}',
+            aiohttp.hdrs.USER_AGENT: f'bdtb for Android {self.latest_version}',
             'x_bd_data_type': 'protobuf',
             aiohttp.hdrs.CONNECTION: 'keep-alive',
             aiohttp.hdrs.ACCEPT_ENCODING: 'gzip',
@@ -857,7 +857,7 @@ class Client(object):
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         common_proto = CommonReq_pb2.CommonReq()
-        common_proto._client_version = self.sessions.main_version
+        common_proto._client_version = self.sessions.latest_version
         data_proto = FrsPageReqIdl_pb2.FrsPageReqIdl.DataReq()
         data_proto.common.CopyFrom(common_proto)
         data_proto.kw = fname
@@ -918,7 +918,7 @@ class Client(object):
         """
 
         common_proto = CommonReq_pb2.CommonReq()
-        common_proto._client_version = self.sessions.main_version
+        common_proto._client_version = self.sessions.latest_version
         data_proto = PbPageReqIdl_pb2.PbPageReqIdl.DataReq()
         data_proto.common.CopyFrom(common_proto)
         data_proto.kz = tid
@@ -968,7 +968,7 @@ class Client(object):
         """
 
         common_proto = CommonReq_pb2.CommonReq()
-        common_proto._client_version = self.sessions.main_version
+        common_proto._client_version = self.sessions.latest_version
         data_proto = PbFloorReqIdl_pb2.PbFloorReqIdl.DataReq()
         data_proto.common.CopyFrom(common_proto)
         data_proto.kz = tid
@@ -1304,7 +1304,7 @@ class Client(object):
 
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('_client_version', self.sessions.main_version),
+            ('_client_version', self.sessions.latest_version),
             ('forum_id', fid),
             ('tbs', await self.get_tbs()),
             (
@@ -1888,7 +1888,7 @@ class Client(object):
         """
 
         payload = [
-            ('_client_version', self.sessions.main_version),
+            ('_client_version', self.sessions.latest_version),
             ('bdusstoken', self.sessions.BDUSS),
         ]
 
@@ -1970,7 +1970,7 @@ class Client(object):
 
         common_proto = CommonReq_pb2.CommonReq()
         common_proto.BDUSS = self.sessions.BDUSS
-        common_proto._client_version = self.sessions.main_version
+        common_proto._client_version = self.sessions.latest_version
         data_proto = ReplyMeReqIdl_pb2.ReplyMeReqIdl.DataReq()
         data_proto.pn = str(pn)
         data_proto.common.CopyFrom(common_proto)
@@ -2009,7 +2009,7 @@ class Client(object):
 
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('_client_version', self.sessions.main_version),
+            ('_client_version', self.sessions.latest_version),
             ('pn', pn),
         ]
 
@@ -2072,7 +2072,7 @@ class Client(object):
 
         common_proto = CommonReq_pb2.CommonReq()
         common_proto.BDUSS = self.sessions.BDUSS
-        common_proto._client_version = self.sessions.main_version
+        common_proto._client_version = self.sessions.latest_version
         data_proto = UserPostReqIdl_pb2.UserPostReqIdl.DataReq()
         data_proto.user_id = user.user_id
         data_proto.is_thread = is_thread
@@ -2124,7 +2124,7 @@ class Client(object):
 
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('_client_version', self.sessions.main_version),
+            ('_client_version', self.sessions.latest_version),
             ('pn', pn),
         ]
 
@@ -2201,7 +2201,7 @@ class Client(object):
 
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('_client_version', self.sessions.main_version),
+            ('_client_version', self.sessions.latest_version),
             ('pn', pn),
         ]
 
@@ -2385,7 +2385,7 @@ class Client(object):
         try:
             payload = [
                 ('BDUSS', self.sessions.BDUSS),
-                ('_client_version', self.sessions.main_version),
+                ('_client_version', self.sessions.latest_version),
                 ('kw', fname),
                 ('tbs', await self.get_tbs()),
             ]
@@ -2425,7 +2425,7 @@ class Client(object):
 
         payload = [
             ('_client_type', 2),  # 删除该字段会导致post_list为空
-            ('_client_version', self.sessions.main_version),  # 删除该字段会导致post_list和dynamic_list为空
+            ('_client_version', self.sessions.latest_version),  # 删除该字段会导致post_list和dynamic_list为空
             ('friend_uid_portrait', user.portrait),
             ('need_post_count', 1),  # 删除该字段会导致无法获取发帖回帖数量
             # ('uid', user_id),  # 用该字段检查共同关注的吧
@@ -2484,7 +2484,7 @@ class Client(object):
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         payload = [
-            ('_client_version', self.sessions.main_version),
+            ('_client_version', self.sessions.latest_version),
             ('kw', fname),
             ('only_thread', int(only_thread)),
             ('pn', pn),
@@ -2566,7 +2566,7 @@ class Client(object):
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         payload = [
-            ('_client_version', self.sessions.main_version),
+            ('_client_version', self.sessions.latest_version),
             ('forum_id', fid),
         ]
 
@@ -2605,7 +2605,7 @@ class Client(object):
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         common_proto = CommonReq_pb2.CommonReq()
-        common_proto._client_version = self.sessions.main_version
+        common_proto._client_version = self.sessions.latest_version
         data_proto = GetBawuInfoReqIdl_pb2.GetBawuInfoReqIdl.DataReq()
         data_proto.common.CopyFrom(common_proto)
         data_proto.forum_id = fid
@@ -2652,7 +2652,7 @@ class Client(object):
 
         common_proto = CommonReq_pb2.CommonReq()
         common_proto.BDUSS = self.sessions.BDUSS
-        common_proto._client_version = self.sessions.main_version
+        common_proto._client_version = self.sessions.latest_version
         data_proto = SearchPostForumReqIdl_pb2.SearchPostForumReqIdl.DataReq()
         data_proto.common.CopyFrom(common_proto)
         data_proto.word = fname
@@ -2694,7 +2694,7 @@ class Client(object):
 
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('_client_version', self.sessions.main_version),
+            ('_client_version', self.sessions.latest_version),
             ('forum_id', fid),
             ('pn', pn),
             ('rn', 30),
@@ -2740,7 +2740,7 @@ class Client(object):
 
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('_client_version', self.sessions.main_version),
+            ('_client_version', self.sessions.latest_version),
             ('forum_id', fid),
             ('pn', 1),
             ('rn', 0),
@@ -2788,7 +2788,7 @@ class Client(object):
 
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('_client_version', self.sessions.main_version),
+            ('_client_version', self.sessions.latest_version),
             ('forum_id', fid),
         ]
 

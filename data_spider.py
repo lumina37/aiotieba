@@ -17,7 +17,7 @@ async def stat_active_user(tieba_name):
     async with tb.Client("starry") as brow:
 
         ts_thre = int(time.time()) - 3 * 24 * 3600
-        task_queue = asyncio.Queue(maxsize=4)
+        task_queue = asyncio.Queue(maxsize=8)
         running_flag = True
 
         async def _producer():
@@ -58,23 +58,24 @@ async def stat_active_user(tieba_name):
                     except StopIteration:
                         pass
 
-        workers = [_worker(i) for i in range(6)]
-        await asyncio.gather(*workers, _producer(), return_exceptions=True)
+        workers = [_worker(i) for i in range(8)]
+        await asyncio.gather(*workers, _producer())
 
     tb.log.info(f"Spider complete. Time cost:{time.perf_counter()-start_time}")
 
     def _user_iter():
         for user, post_num in user_counter.most_common():
-            yield user.user_id, user.log_name, post_num
+            yield user.user_id, post_num, user.ip
 
-    with open(f'{tieba_name}_post_user_stat_{ts_thre}.csv', 'w', encoding='utf-8-sig', newline='') as csv_write_file:
+    file_name = f'{tieba_name}_post_user_stat_{ts_thre}.csv'
+    with open(file_name, 'w', encoding='utf-8-sig', newline='') as csv_write_file:
         csv_writer = csv.writer(csv_write_file)
-        csv_writer.writerow(['user_id', 'log_name', 'post_num'])
+        csv_writer.writerow(['user_id', 'post_num', 'ip'])
         csv_writer.writerows(_user_iter())
 
 
 async def main():
-    await stat_active_user('asoul')
+    await stat_active_user('抗压背锅')
 
 
 if __name__ == "__main__":
