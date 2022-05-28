@@ -2,7 +2,7 @@
 
 [![gitee](https://img.shields.io/badge/mirror-gitee-red)](https://gitee.com/Starry-OvO/Tieba-Manager)
 [![release](https://img.shields.io/github/release/Starry-OvO/Tieba-Manager?color=blue&logo=github)](https://github.com/Starry-OvO/Tieba-Manager/releases)
-[![license](https://img.shields.io/github/license/Starry-OvO/Tieba-Manager?color=blue&logo=github)](https://github.com/Starry-OvO/Tieba-Manager/blob/main/LICENSE)
+[![license](https://img.shields.io/github/license/Starry-OvO/Tieba-Manager?color=blue&logo=github)](https://github.com/Starry-OvO/Tieba-Manager/blob/master/LICENSE)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/Starry-OvO/Tieba-Manager?logo=lgtm)](https://lgtm.com/projects/g/Starry-OvO/Tieba-Manager/context:python)
 
 ## 功能概览
@@ -89,7 +89,7 @@ fname_zh2en:
 ```python
 import asyncio
 
-import tiebaBrowser as tb
+import aiotieba as tb
 
 
 async def main():
@@ -101,7 +101,7 @@ async def main():
 asyncio.run(main())
 ```
 
-+ 自定义审查行为：请参照我给出的例子自己编程修改[`cloud_review_hanime.py`](https://github.com/Starry-OvO/Tieba-Manager/blob/main/cloud_review_hanime.py)，这是被实际应用于[宫漫吧](https://tieba.baidu.com/f?ie=utf-8&kw=%E5%AE%AB%E6%BC%AB)的云审查工具
++ 自定义审查行为：请参照我给出的例子自己编程修改[`cloud_review_hanime.py`](https://github.com/Starry-OvO/Tieba-Manager/blob/master/cloud_review_hanime.py)，这是被实际应用于[宫漫吧](https://tieba.baidu.com/f?ie=utf-8&kw=%E5%AE%AB%E6%BC%AB)的云审查工具
 + 运行`cloud_review_yours.py`。对`Windows`平台，建议使用`pythonw.exe`无窗口运行，对`Linux`平台，建议使用如下的`nohup`指令在后台运行
 
 ```bash
@@ -110,8 +110,8 @@ nohup python cloud_review_yours.py >/dev/null 2>&1 &
 
 ## 友情链接
 
-+ [百度贴吧接口合集](https://github.com/Starry-OvO/Tieba-Manager/blob/main/tiebaBrowser/_api.py)
-+ [云审查案例](https://github.com/Starry-OvO/Tieba-Manager/blob/main/cloud_review_hanime.py)
++ [百度贴吧接口合集](https://github.com/Starry-OvO/Tieba-Manager/blob/master/aiotieba/_api.py)
++ [云审查案例](https://github.com/Starry-OvO/Tieba-Manager/blob/master/cloud_review_hanime.py)
 + [指令管理器](https://github.com/Starry-OvO/Tieba-Manager/wiki/%E6%8C%87%E4%BB%A4%E7%AE%A1%E7%90%86%E5%99%A8%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E%E4%B9%A6)
 + [另一个仍在活跃更新的贴吧管理器（有用户界面）](https://github.com/dog194/TiebaManager)
 + [用户反馈（我的个人吧）](https://tieba.baidu.com/f?ie=utf-8&kw=starry)
