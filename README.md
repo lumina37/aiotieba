@@ -42,12 +42,12 @@ BDUSS:
 ```python
 import asyncio
 
-import tiebaBrowser as tb
+import aiotieba as tb
 
 
 async def main():
     # 使用键名"default"对应的BDUSS创建客户端
-    async with tb.Browser("default") as brow:
+    async with tb.Client("default") as brow:
         # 同时请求用户个人信息和asoul吧首页前30帖
         # asyncio.gather会为两个协程brow.get_self_info和brow.get_threads自动创建任务然后“合并”为一个协程
         # await释放当前协程持有的CPU资源并等待协程asyncio.gather执行完毕

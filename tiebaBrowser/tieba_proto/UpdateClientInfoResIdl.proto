@@ -1,7 +1,0 @@
-syntax = "proto3";
-
-import "Error.proto";
-
-message UpdateClientInfoResIdl {
-    Error error = 1;
-}

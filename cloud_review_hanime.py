@@ -4,7 +4,7 @@ import re
 import time
 from typing import Union
 
-import tiebaBrowser as tb
+import aiotieba as tb
 
 
 class CloudReview(tb.Reviewer):
