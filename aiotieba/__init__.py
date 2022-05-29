@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 """
-@Version 2.7.1_beta
+@Version 2.7.1
 @Author: starry.qvq@gmail.com
 @License: Unlicense
 @Homepage: https://github.com/Starry-OvO/Tieba-Manager

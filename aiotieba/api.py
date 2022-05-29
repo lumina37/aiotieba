@@ -117,10 +117,10 @@ class Sessions(object):
 
         # Init app client
         app_headers = {
-            aiohttp.hdrs.USER_AGENT: f'bdtb for Android {self.latest_version}',
-            aiohttp.hdrs.CONNECTION: 'keep-alive',
-            aiohttp.hdrs.ACCEPT_ENCODING: 'gzip',
-            aiohttp.hdrs.HOST: 'c.tieba.baidu.com',
+            aiohttp.hdrs.USER_AGENT: f"bdtb for Android {self.latest_version}",
+            aiohttp.hdrs.CONNECTION: "keep-alive",
+            aiohttp.hdrs.ACCEPT_ENCODING: "gzip",
+            aiohttp.hdrs.HOST: "c.tieba.baidu.com",
         }
         self.app = aiohttp.ClientSession(
             connector=self._connector,
@@ -134,11 +134,11 @@ class Sessions(object):
 
         # Init app protobuf client
         app_proto_headers = {
-            aiohttp.hdrs.USER_AGENT: f'bdtb for Android {self.latest_version}',
-            'x_bd_data_type': 'protobuf',
-            aiohttp.hdrs.CONNECTION: 'keep-alive',
-            aiohttp.hdrs.ACCEPT_ENCODING: 'gzip',
-            aiohttp.hdrs.HOST: 'c.tieba.baidu.com',
+            aiohttp.hdrs.USER_AGENT: f"bdtb for Android {self.latest_version}",
+            "x_bd_data_type": "protobuf",
+            aiohttp.hdrs.CONNECTION: "keep-alive",
+            aiohttp.hdrs.ACCEPT_ENCODING: "gzip",
+            aiohttp.hdrs.HOST: "c.tieba.baidu.com",
         }
         self.app_proto = aiohttp.ClientSession(
             connector=self._connector,
@@ -152,10 +152,10 @@ class Sessions(object):
 
         # Init web client
         web_headers = {
-            aiohttp.hdrs.USER_AGENT: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:100.0) Gecko/20100101 Firefox/100.0',
-            aiohttp.hdrs.ACCEPT_ENCODING: 'gzip, deflate, br',
-            aiohttp.hdrs.CACHE_CONTROL: 'no-cache',
-            aiohttp.hdrs.CONNECTION: 'keep-alive',
+            aiohttp.hdrs.USER_AGENT: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:100.0) Gecko/20100101 Firefox/100.0",
+            aiohttp.hdrs.ACCEPT_ENCODING: "gzip, deflate, br",
+            aiohttp.hdrs.CACHE_CONTROL: "no-cache",
+            aiohttp.hdrs.CONNECTION: "keep-alive",
         }
         web_cookie_jar = aiohttp.CookieJar()
         web_cookie_jar.update_cookies({'BDUSS': self.BDUSS, 'STOKEN': self.STOKEN})
@@ -172,8 +172,8 @@ class Sessions(object):
 
         # Init app websocket client
         app_websocket_headers = {
-            aiohttp.hdrs.HOST: 'im.tieba.baidu.com:8000',
-            aiohttp.hdrs.SEC_WEBSOCKET_EXTENSIONS: 'im_version=2.3',
+            aiohttp.hdrs.HOST: "im.tieba.baidu.com:8000",
+            aiohttp.hdrs.SEC_WEBSOCKET_EXTENSIONS: "im_version=2.3",
         }
         self._app_websocket = aiohttp.ClientSession(
             connector=self._connector,
@@ -2327,7 +2327,7 @@ class Client(object):
 
     async def like_forum(self, fname_or_fid: Union[str, int]) -> bool:
         """
-        关注吧
+        关注贴吧
 
         Args:
             fname_or_fid (str | int): 要关注贴吧的贴吧名或fid 优先fid
@@ -2362,6 +2362,41 @@ class Client(object):
         LOG.info(f"Successfully liked forum {fname_or_fid}")
         return True
 
+    async def unlike_forum(self, fname_or_fid: Union[str, int]) -> bool:
+        """
+        取关贴吧
+
+        Args:
+            fname_or_fid (str | int): 要取关贴吧的贴吧名或fid 优先fid
+
+        Returns:
+            bool: 操作是否成功
+        """
+
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+
+        try:
+            payload = [
+                ('BDUSS', self.sessions.BDUSS),
+                ('fid', fid),
+                ('tbs', await self.get_tbs()),
+            ]
+
+            res = await self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/c/forum/unfavolike", data=self.sessions._pack_form(payload)
+            )
+
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
+
+        except Exception as err:
+            LOG.warning(f"Failed to unlike forum {fname_or_fid}. reason:{err}")
+            return False
+
+        LOG.info(f"Successfully unliked forum {fname_or_fid}")
+        return True
+
     async def sign_forum(self, fname_or_fid: Union[str, int]) -> bool:
         """
         签到吧
@@ -2370,7 +2405,7 @@ class Client(object):
             fname_or_fid (str | int): 要签到贴吧的贴吧名或fid 优先贴吧名
 
         Returns:
-            bool: 签到是否成功
+            bool: True表示不需要再尝试签到 False表示由于各种原因失败需要重签
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
@@ -2388,13 +2423,17 @@ class Client(object):
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(res_json['error_code']):
+            error_code = int(res_json['error_code'])
+            if error_code:
                 raise ValueError(res_json['error_msg'])
             if int(res_json['user_info']['sign_bonus_point']) == 0:
                 raise ValueError("sign_bonus_point is 0")
 
         except Exception as err:
             LOG.warning(f"Failed to sign forum {fname}. reason:{err}")
+            if error_code in [160002, 340006]:
+                # 已经签过或吧被屏蔽
+                return True
             return False
 
         LOG.info(f"Successfully signed forum {fname}")
