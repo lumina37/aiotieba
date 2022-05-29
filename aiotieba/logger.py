@@ -4,7 +4,7 @@ __all__ = ['get_logger']
 import logging
 import logging.handlers
 
-from ._config import SCRIPT_PATH
+from .config import SCRIPT_PATH
 
 logging._srcfile = None
 logging.logThreads = False

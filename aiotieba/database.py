@@ -8,9 +8,9 @@ from typing import List, Optional, Tuple, Union
 
 import aiomysql
 
-from ._config import CONFIG
-from ._logger import get_logger
-from ._types import BasicUserInfo
+from .config import CONFIG
+from .logger import get_logger
+from .types import BasicUserInfo
 
 LOG = get_logger()
 
@@ -19,9 +19,8 @@ def fname_zh2en(func):
     @functools.wraps(func)
     def wrapper(self, fname_zh, *args, **kwargs):
         cfg_key = 'fname_zh2en'
-        if not (fname_en := CONFIG[cfg_key].get(fname_zh, None)):
-            LOG.error(f"Can not find key:{fname_zh} in {cfg_key}")
-            return
+        if not (fname_en := CONFIG[cfg_key].get(fname_zh, '')):
+            LOG.warning(f"Can not find key:{fname_zh} in {cfg_key}")
         return func(self, fname_en, *args, **kwargs)
 
     return wrapper

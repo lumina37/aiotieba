@@ -1,8 +1,8 @@
 # -*- coding:utf-8 -*-
 """
-@Author: Starry
+@Author: starry.qvq@gmail.com
 @License: Unlicense
-@Homepage: https://github.com/Starry-OvO/Tieba-Cloud-Review
+@Homepage: https://github.com/Starry-OvO/Tieba-Manager
 """
 
 from . import (

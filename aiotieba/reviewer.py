@@ -10,10 +10,10 @@ from typing import List, Optional, Tuple, Union
 import cv2 as cv
 import numpy as np
 
-from ._api import Client
-from ._logger import get_logger
-from ._types import BasicUserInfo
+from .api import Client
 from .database import Database
+from .logger import get_logger
+from .types import BasicUserInfo
 
 LOG = get_logger()
 
@@ -45,13 +45,13 @@ class Reviewer(Client):
     提供贴吧审查功能
 
     Args:
-        fname (str): 贴吧名
-        BDUSS_key (str): 用于从config.json中提取BDUSS
+        BDUSS_key (str, optional): 用于从CONFIG中提取BDUSS. Defaults to ''.
+        fname (str, optional): 贴吧名. Defaults to ''.
     """
 
     __slots__ = ['fname', 'database', '_qrdetector']
 
-    def __init__(self, BDUSS_key: str, fname: str):
+    def __init__(self, BDUSS_key: str = '', fname: str = ''):
         super().__init__(BDUSS_key)
 
         self.fname: str = fname

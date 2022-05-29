@@ -27,8 +27,8 @@ from typing import Dict, Generic, Iterable, Iterator, List, Optional, TypeVar, U
 
 from google.protobuf.json_format import ParseDict
 
-from ._logger import get_logger
-from .tieba_proto import (
+from .logger import get_logger
+from .tieba_protobuf import (
     FrsPageResIdl_pb2,
     NewThreadInfo_pb2,
     Page_pb2,
@@ -198,13 +198,15 @@ class UserInfo(BasicUserInfo):
 
         level (int): 等级
         gender (int): 性别 (1男2女0未知)
+        is_bawu (bool): 是否吧务
         is_vip (bool): 是否vip
         is_god (bool): 是否大神
         priv_like (int): 是否公开关注贴吧 (1完全可见2好友可见3完全隐藏)
         priv_reply (int): 帖子评论权限 (1所有人5我的粉丝6我的关注)
+        ip (str): ip归属地
     """
 
-    __slots__ = ['level', 'gender', 'is_vip', 'is_god', 'priv_like', 'priv_reply']
+    __slots__ = ['level', 'gender', 'is_bawu', 'is_vip', 'is_god', 'priv_like', 'priv_reply', 'ip']
 
     def __init__(self, _id: Union[str, int, None] = None, _raw_data: Optional[User_pb2.User] = None) -> None:
         super(UserInfo, self).__init__(_id, _raw_data)
@@ -212,22 +214,29 @@ class UserInfo(BasicUserInfo):
         if _raw_data:
             self.level: int = _raw_data.level_id
             self.gender: int = _raw_data.gender or _raw_data.sex
+            self.is_bawu: bool = bool(_raw_data.is_bawu)
             self.is_vip: bool = True if _raw_data.new_tshow_icon else bool(_raw_data.vipInfo.v_status)
             self.is_god: bool = bool(_raw_data.new_god_data.status)
             priv_raw_data = _raw_data.priv_sets
             self.priv_like: int = priv_raw_data.like
             self.priv_reply: int = priv_raw_data.reply
+            self.ip = _raw_data.ip_address
 
         else:
             self.level = 0
             self.gender = 0
+            self.is_bawu = False
             self.is_vip = False
             self.is_god = False
             self.priv_like = 3
             self.priv_reply = 1
+            self.ip = ''
 
     def __eq__(self, obj: "UserInfo") -> bool:
         return super(UserInfo, self).__eq__(obj)
+
+    def __hash__(self) -> int:
+        return super(UserInfo, self).__hash__()
 
 
 class _Fragment(_DataWrapper):
@@ -728,7 +737,7 @@ class _Containers(_DataWrapper, Generic[_TContainer]):
     约定取内容的通用接口
 
     Fields:
-        _objs (list[TContainer]): 内容列表
+        _objs (list[_TContainer]): 内容列表
         page (Page): 页码信息
     """
 

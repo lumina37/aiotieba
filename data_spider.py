@@ -1,13 +1,16 @@
 # -*- coding:utf-8 -*-
 import asyncio
+import csv
 import time
 from collections import Counter
 
 import aiotieba as tb
 
 
-async def stat_active_user(tieba_name):
-    import csv
+async def statistic(fname: str):
+    """
+    统计发帖信息
+    """
 
     start_time = time.perf_counter()
     tb.log.info("Spider start")
@@ -17,7 +20,7 @@ async def stat_active_user(tieba_name):
     async with tb.Client("starry") as brow:
 
         ts_thre = int(time.time()) - 3 * 24 * 3600
-        task_queue = asyncio.Queue(maxsize=4)
+        task_queue = asyncio.Queue(maxsize=8)
         running_flag = True
 
         async def _producer():
@@ -42,7 +45,7 @@ async def stat_active_user(tieba_name):
                         tb.log.debug(f"Worker:{i} quit")
                         return
 
-                for thread in await brow.get_threads(tieba_name, pn):
+                for thread in await brow.get_threads(fname, pn):
                     if thread.last_time < ts_thre:
                         continue
                     tb.log.debug(f"Worker:{i} handling pn:{pn} tid:{thread.tid}")
@@ -58,23 +61,52 @@ async def stat_active_user(tieba_name):
                     except StopIteration:
                         pass
 
-        workers = [_worker(i) for i in range(6)]
-        await asyncio.gather(*workers, _producer(), return_exceptions=True)
+        workers = [_worker(i) for i in range(8)]
+        await asyncio.gather(*workers, _producer())
 
     tb.log.info(f"Spider complete. Time cost:{time.perf_counter()-start_time}")
 
-    def _user_iter():
+    def _row_iter():
         for user, post_num in user_counter.most_common():
-            yield user.user_id, user.log_name, post_num
+            yield user.user_id, post_num, user.ip
 
-    with open(f'{tieba_name}_post_user_stat_{ts_thre}.csv', 'w', encoding='utf-8-sig', newline='') as csv_write_file:
+    file_name = f'{fname}_post_stat.csv'
+    with open(file_name, 'w', encoding='utf-8-sig', newline='') as csv_write_file:
         csv_writer = csv.writer(csv_write_file)
-        csv_writer.writerow(['user_id', 'log_name', 'post_num'])
-        csv_writer.writerows(_user_iter())
+        csv_writer.writerows(_row_iter())
+
+
+def analyze(fname: str):
+    """
+    数据分析
+    """
+
+    rfile_name = f'{fname}_post_stat.csv'
+    with open(rfile_name, 'r', encoding='utf-8-sig', newline='') as csv_read_file:
+        csv_reader = csv.reader(csv_read_file)
+
+        user_counter = Counter()  # 统计ip属地的8u人数
+        post_counter = Counter()  # 统计ip属地的发帖量
+        for _, post_num, ip in csv_reader:
+            post_num = int(post_num)
+            user_counter[ip] += 1
+            post_counter[ip] += post_num
+
+    def _row_iter():
+        for ip, user_num in user_counter.most_common():
+            yield ip, user_num, post_counter[ip]
+
+    wfile_name = f'{fname}_post_analyze.csv'
+    with open(wfile_name, 'w', encoding='utf-8-sig', newline='') as csv_write_file:
+        csv_writer = csv.writer(csv_write_file)
+        csv_writer.writerow(['ip归属地', '8u人数', '发帖量'])
+        csv_writer.writerows(_row_iter())
 
 
 async def main():
-    await stat_active_user('asoul')
+    fname = '孙笑川'
+    # await statistic(fname)
+    analyze(fname)
 
 
 if __name__ == "__main__":

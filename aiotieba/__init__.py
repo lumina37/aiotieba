@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 """
-@Version 2.7.0
+@Version 2.7.1
 @Author: starry.qvq@gmail.com
 @License: Unlicense
 @Homepage: https://github.com/Starry-OvO/Tieba-Manager
@@ -12,10 +12,10 @@ import asyncio
 import signal
 import sys
 
-from ._api import *
-from ._logger import *
-from ._types import *
+from .api import *
+from .logger import *
 from .reviewer import *
+from .types import *
 
 log = get_logger()
 

@@ -22,9 +22,9 @@ from Crypto.Cipher import AES, PKCS1_v1_5
 from Crypto.PublicKey import RSA
 from google.protobuf.json_format import ParseDict
 
-from ._config import CONFIG
-from ._logger import get_logger
-from ._types import (
+from .config import CONFIG
+from .logger import get_logger
+from .types import (
     JSON_DECODER,
     Ats,
     BasicUserInfo,
@@ -38,7 +38,7 @@ from ._types import (
     UserInfo,
     UserPosts,
 )
-from .tieba_proto import (
+from .tieba_protobuf import (
     CommitPersonalMsgReqIdl_pb2,
     CommitPersonalMsgResIdl_pb2,
     CommonReq_pb2,
@@ -75,11 +75,12 @@ class Sessions(object):
     保持会话
 
     Args:
-        BDUSS_key (str | None): 用于从config.json中提取BDUSS. Defaults to None.
+        BDUSS_key (str, optional): 用于从CONFIG中提取BDUSS. Defaults to ''.
     """
 
     __slots__ = [
-        '_timeout',
+        'BDUSS',
+        'STOKEN',
         '_connector',
         'app',
         'app_proto',
@@ -88,79 +89,73 @@ class Sessions(object):
         'websocket',
         '_ws_password',
         '_ws_aes_chiper',
-        'BDUSS',
-        'STOKEN',
     ]
 
     latest_version: ClassVar[str] = "12.24.4.0"  # 这是目前的最新版本
-    main_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
+    no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
     post_version: ClassVar[str] = "9.1.0.0"  # 发帖使用极速版
 
-    def __init__(self, BDUSS_key: Optional[str] = None) -> None:
+    def __init__(self, BDUSS_key: str = '') -> None:
 
-        if BDUSS_key:
-            self.BDUSS: str = CONFIG['BDUSS'].get(BDUSS_key, '')
-            self.STOKEN: str = CONFIG['STOKEN'].get(BDUSS_key, '')
-        else:
-            self.BDUSS: str = ''
-            self.STOKEN: str = ''
+        self.BDUSS: str = CONFIG['BDUSS'].get(BDUSS_key, '')
+        self.STOKEN: str = CONFIG['STOKEN'].get(BDUSS_key, '')
 
         self.app: aiohttp.ClientSession = None
         self.app_proto: aiohttp.ClientSession = None
-        self._app_websocket: aiohttp.ClientSession = None
         self.web: aiohttp.ClientSession = None
+        self._app_websocket: aiohttp.ClientSession = None
         self.websocket: aiohttp.ClientWebSocketResponse = None
         self._ws_password: bytes = None
         self._ws_aes_chiper = None
 
     async def enter(self) -> "Sessions":
-        self._timeout = aiohttp.ClientTimeout(connect=5, sock_connect=3, sock_read=10)
+        _trust_env = False
+        _timeout = aiohttp.ClientTimeout(connect=5, sock_connect=3, sock_read=10)
         self._connector = aiohttp.TCPConnector(
             ttl_dns_cache=600, keepalive_timeout=90, limit=0, family=socket.AF_INET, ssl=False
         )
-        _trust_env = False
 
         # Init app client
         app_headers = {
-            aiohttp.hdrs.USER_AGENT: f'bdtb for Android {self.main_version}',
-            aiohttp.hdrs.CONNECTION: 'keep-alive',
-            aiohttp.hdrs.ACCEPT_ENCODING: 'gzip',
-            aiohttp.hdrs.HOST: 'c.tieba.baidu.com',
+            aiohttp.hdrs.USER_AGENT: f"bdtb for Android {self.latest_version}",
+            aiohttp.hdrs.CONNECTION: "keep-alive",
+            aiohttp.hdrs.ACCEPT_ENCODING: "gzip",
+            aiohttp.hdrs.HOST: "c.tieba.baidu.com",
         }
         self.app = aiohttp.ClientSession(
             connector=self._connector,
             headers=app_headers,
             connector_owner=False,
             raise_for_status=True,
-            timeout=self._timeout,
+            timeout=_timeout,
             read_bufsize=1 << 18,  # 256KiB
             trust_env=_trust_env,
         )
 
         # Init app protobuf client
         app_proto_headers = {
-            aiohttp.hdrs.USER_AGENT: f'bdtb for Android {self.main_version}',
-            'x_bd_data_type': 'protobuf',
-            aiohttp.hdrs.CONNECTION: 'keep-alive',
-            aiohttp.hdrs.ACCEPT_ENCODING: 'gzip',
-            aiohttp.hdrs.HOST: 'c.tieba.baidu.com',
+            aiohttp.hdrs.USER_AGENT: f"bdtb for Android {self.latest_version}",
+            "x_bd_data_type": "protobuf",
+            aiohttp.hdrs.CONNECTION: "keep-alive",
+            aiohttp.hdrs.ACCEPT_ENCODING: "gzip",
+            aiohttp.hdrs.HOST: "c.tieba.baidu.com",
         }
         self.app_proto = aiohttp.ClientSession(
             connector=self._connector,
             headers=app_proto_headers,
             connector_owner=False,
             raise_for_status=True,
-            timeout=self._timeout,
+            timeout=_timeout,
             read_bufsize=1 << 18,  # 256KiB
             trust_env=_trust_env,
         )
 
         # Init web client
         web_headers = {
-            aiohttp.hdrs.USER_AGENT: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:100.0) Gecko/20100101 Firefox/100.0',
-            aiohttp.hdrs.ACCEPT_ENCODING: 'gzip, deflate, br',
-            aiohttp.hdrs.CACHE_CONTROL: 'no-cache',
-            aiohttp.hdrs.CONNECTION: 'keep-alive',
+            aiohttp.hdrs.USER_AGENT: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:100.0) Gecko/20100101 Firefox/100.0",
+            aiohttp.hdrs.ACCEPT_ENCODING: "gzip, deflate, br",
+            aiohttp.hdrs.CACHE_CONTROL: "no-cache",
+            aiohttp.hdrs.CONNECTION: "keep-alive",
         }
         web_cookie_jar = aiohttp.CookieJar()
         web_cookie_jar.update_cookies({'BDUSS': self.BDUSS, 'STOKEN': self.STOKEN})
@@ -170,22 +165,22 @@ class Sessions(object):
             cookie_jar=web_cookie_jar,
             connector_owner=False,
             raise_for_status=True,
-            timeout=self._timeout,
+            timeout=_timeout,
             read_bufsize=1 << 20,  # 1MiB
             trust_env=_trust_env,
         )
 
         # Init app websocket client
         app_websocket_headers = {
-            aiohttp.hdrs.HOST: 'im.tieba.baidu.com:8000',
-            aiohttp.hdrs.SEC_WEBSOCKET_EXTENSIONS: 'im_version=2.3',
+            aiohttp.hdrs.HOST: "im.tieba.baidu.com:8000",
+            aiohttp.hdrs.SEC_WEBSOCKET_EXTENSIONS: "im_version=2.3",
         }
         self._app_websocket = aiohttp.ClientSession(
             connector=self._connector,
             headers=app_websocket_headers,
             connector_owner=False,
             raise_for_status=True,
-            timeout=self._timeout,
+            timeout=_timeout,
             read_bufsize=1 << 18,  # 256KiB
             trust_env=_trust_env,
         )
@@ -199,9 +194,8 @@ class Sessions(object):
         close_coros = [self.app.close(), self.app_proto.close(), self.web.close()]
         if self.websocket and not self.websocket.closed:
             close_coros.append(self.websocket.close())
-
-        await asyncio.gather(*close_coros, return_exceptions=True)
-        await self._connector.close()
+        await asyncio.gather(*close_coros)
+        await asyncio.gather(self._app_websocket.close(), self._connector.close())
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.close()
@@ -267,7 +261,6 @@ class Sessions(object):
 
         if self._ws_password is None:
             self._ws_password = random.randbytes(36)
-
         return self._ws_password
 
     @property
@@ -301,7 +294,7 @@ class Sessions(object):
         """
 
         if need_gzip:
-            ws_bytes = gzip.compress(ws_bytes, 5)
+            ws_bytes = gzip.compress(ws_bytes, 3)
 
         if need_encrypt:
             pad_num = AES.block_size - (len(ws_bytes) % AES.block_size)
@@ -328,7 +321,7 @@ class Sessions(object):
             ws_bytes (bytes): 接收到的websocket数据
 
         Returns:
-            bytes: 解封装后的websocket数据
+            bytes: 解包后的websocket数据
         """
 
         if len(ws_bytes) <= 9:
@@ -376,7 +369,7 @@ class Client(object):
     贴吧客户端
 
     Args:
-        BDUSS_key (str | None): 用于从config.json中提取BDUSS. Defaults to None.
+        BDUSS_key (str, optional): 用于从CONFIG中提取BDUSS. Defaults to ''.
     """
 
     __slots__ = [
@@ -390,7 +383,7 @@ class Client(object):
 
     fid_dict: ClassVar[Dict[str, int]] = {}
 
-    def __init__(self, BDUSS_key: Optional[str] = None) -> None:
+    def __init__(self, BDUSS_key: str = '') -> None:
         self.BDUSS_key = BDUSS_key
         self.sessions = Sessions(BDUSS_key)
         self._tbs: str = ''
@@ -857,7 +850,7 @@ class Client(object):
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         common_proto = CommonReq_pb2.CommonReq()
-        common_proto._client_version = self.sessions.main_version
+        common_proto._client_version = self.sessions.latest_version
         data_proto = FrsPageReqIdl_pb2.FrsPageReqIdl.DataReq()
         data_proto.common.CopyFrom(common_proto)
         data_proto.kw = fname
@@ -918,7 +911,7 @@ class Client(object):
         """
 
         common_proto = CommonReq_pb2.CommonReq()
-        common_proto._client_version = self.sessions.main_version
+        common_proto._client_version = self.sessions.latest_version
         data_proto = PbPageReqIdl_pb2.PbPageReqIdl.DataReq()
         data_proto.common.CopyFrom(common_proto)
         data_proto.kz = tid
@@ -968,7 +961,7 @@ class Client(object):
         """
 
         common_proto = CommonReq_pb2.CommonReq()
-        common_proto._client_version = self.sessions.main_version
+        common_proto._client_version = self.sessions.latest_version
         data_proto = PbFloorReqIdl_pb2.PbFloorReqIdl.DataReq()
         data_proto.common.CopyFrom(common_proto)
         data_proto.kz = tid
@@ -1304,7 +1297,7 @@ class Client(object):
 
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('_client_version', self.sessions.main_version),
+            ('_client_version', self.sessions.latest_version),
             ('forum_id', fid),
             ('tbs', await self.get_tbs()),
             (
@@ -1852,7 +1845,7 @@ class Client(object):
 
         return res_list
 
-    async def get_image(self, img_url: str) -> Optional[np.ndarray]:
+    async def get_image(self, img_url: str) -> np.ndarray:
         """
         从链接获取jpg/png图像
 
@@ -1860,7 +1853,7 @@ class Client(object):
             img_url (str): 图像链接
 
         Returns:
-            np.ndarray | None: 图像或None
+            np.ndarray: 图像
         """
 
         try:
@@ -1875,7 +1868,7 @@ class Client(object):
 
         except Exception as err:
             LOG.warning(f"Failed to get image {img_url}. reason:{err}")
-            image = None
+            image = np.empty(0, dtype=np.uint8)
 
         return image
 
@@ -1888,7 +1881,7 @@ class Client(object):
         """
 
         payload = [
-            ('_client_version', self.sessions.main_version),
+            ('_client_version', self.sessions.latest_version),
             ('bdusstoken', self.sessions.BDUSS),
         ]
 
@@ -1970,7 +1963,7 @@ class Client(object):
 
         common_proto = CommonReq_pb2.CommonReq()
         common_proto.BDUSS = self.sessions.BDUSS
-        common_proto._client_version = self.sessions.main_version
+        common_proto._client_version = self.sessions.latest_version
         data_proto = ReplyMeReqIdl_pb2.ReplyMeReqIdl.DataReq()
         data_proto.pn = str(pn)
         data_proto.common.CopyFrom(common_proto)
@@ -2009,7 +2002,7 @@ class Client(object):
 
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('_client_version', self.sessions.main_version),
+            ('_client_version', self.sessions.latest_version),
             ('pn', pn),
         ]
 
@@ -2072,7 +2065,7 @@ class Client(object):
 
         common_proto = CommonReq_pb2.CommonReq()
         common_proto.BDUSS = self.sessions.BDUSS
-        common_proto._client_version = self.sessions.main_version
+        common_proto._client_version = self.sessions.latest_version
         data_proto = UserPostReqIdl_pb2.UserPostReqIdl.DataReq()
         data_proto.user_id = user.user_id
         data_proto.is_thread = is_thread
@@ -2124,7 +2117,7 @@ class Client(object):
 
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('_client_version', self.sessions.main_version),
+            ('_client_version', self.sessions.latest_version),
             ('pn', pn),
         ]
 
@@ -2201,7 +2194,7 @@ class Client(object):
 
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('_client_version', self.sessions.main_version),
+            ('_client_version', self.sessions.latest_version),
             ('pn', pn),
         ]
 
@@ -2334,7 +2327,7 @@ class Client(object):
 
     async def like_forum(self, fname_or_fid: Union[str, int]) -> bool:
         """
-        关注吧
+        关注贴吧
 
         Args:
             fname_or_fid (str | int): 要关注贴吧的贴吧名或fid 优先fid
@@ -2369,6 +2362,41 @@ class Client(object):
         LOG.info(f"Successfully liked forum {fname_or_fid}")
         return True
 
+    async def unlike_forum(self, fname_or_fid: Union[str, int]) -> bool:
+        """
+        取关贴吧
+
+        Args:
+            fname_or_fid (str | int): 要取关贴吧的贴吧名或fid 优先fid
+
+        Returns:
+            bool: 操作是否成功
+        """
+
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+
+        try:
+            payload = [
+                ('BDUSS', self.sessions.BDUSS),
+                ('fid', fid),
+                ('tbs', await self.get_tbs()),
+            ]
+
+            res = await self.sessions.app.post(
+                "http://c.tieba.baidu.com/c/c/forum/unfavolike", data=self.sessions._pack_form(payload)
+            )
+
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
+
+        except Exception as err:
+            LOG.warning(f"Failed to unlike forum {fname_or_fid}. reason:{err}")
+            return False
+
+        LOG.info(f"Successfully unliked forum {fname_or_fid}")
+        return True
+
     async def sign_forum(self, fname_or_fid: Union[str, int]) -> bool:
         """
         签到吧
@@ -2377,7 +2405,7 @@ class Client(object):
             fname_or_fid (str | int): 要签到贴吧的贴吧名或fid 优先贴吧名
 
         Returns:
-            bool: 签到是否成功
+            bool: True表示不需要再尝试签到 False表示由于各种原因失败需要重签
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
@@ -2385,7 +2413,7 @@ class Client(object):
         try:
             payload = [
                 ('BDUSS', self.sessions.BDUSS),
-                ('_client_version', self.sessions.main_version),
+                ('_client_version', self.sessions.latest_version),
                 ('kw', fname),
                 ('tbs', await self.get_tbs()),
             ]
@@ -2395,13 +2423,17 @@ class Client(object):
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(res_json['error_code']):
+            error_code = int(res_json['error_code'])
+            if error_code:
                 raise ValueError(res_json['error_msg'])
             if int(res_json['user_info']['sign_bonus_point']) == 0:
                 raise ValueError("sign_bonus_point is 0")
 
         except Exception as err:
             LOG.warning(f"Failed to sign forum {fname}. reason:{err}")
+            if error_code in [160002, 340006]:
+                # 已经签过或吧被屏蔽
+                return True
             return False
 
         LOG.info(f"Successfully signed forum {fname}")
@@ -2425,7 +2457,7 @@ class Client(object):
 
         payload = [
             ('_client_type', 2),  # 删除该字段会导致post_list为空
-            ('_client_version', self.sessions.main_version),  # 删除该字段会导致post_list和dynamic_list为空
+            ('_client_version', self.sessions.latest_version),  # 删除该字段会导致post_list和dynamic_list为空
             ('friend_uid_portrait', user.portrait),
             ('need_post_count', 1),  # 删除该字段会导致无法获取发帖回帖数量
             # ('uid', user_id),  # 用该字段检查共同关注的吧
@@ -2484,7 +2516,7 @@ class Client(object):
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         payload = [
-            ('_client_version', self.sessions.main_version),
+            ('_client_version', self.sessions.latest_version),
             ('kw', fname),
             ('only_thread', int(only_thread)),
             ('pn', pn),
@@ -2566,7 +2598,7 @@ class Client(object):
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         payload = [
-            ('_client_version', self.sessions.main_version),
+            ('_client_version', self.sessions.latest_version),
             ('forum_id', fid),
         ]
 
@@ -2605,7 +2637,7 @@ class Client(object):
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         common_proto = CommonReq_pb2.CommonReq()
-        common_proto._client_version = self.sessions.main_version
+        common_proto._client_version = self.sessions.latest_version
         data_proto = GetBawuInfoReqIdl_pb2.GetBawuInfoReqIdl.DataReq()
         data_proto.common.CopyFrom(common_proto)
         data_proto.forum_id = fid
@@ -2652,7 +2684,7 @@ class Client(object):
 
         common_proto = CommonReq_pb2.CommonReq()
         common_proto.BDUSS = self.sessions.BDUSS
-        common_proto._client_version = self.sessions.main_version
+        common_proto._client_version = self.sessions.latest_version
         data_proto = SearchPostForumReqIdl_pb2.SearchPostForumReqIdl.DataReq()
         data_proto.common.CopyFrom(common_proto)
         data_proto.word = fname
@@ -2694,7 +2726,7 @@ class Client(object):
 
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('_client_version', self.sessions.main_version),
+            ('_client_version', self.sessions.latest_version),
             ('forum_id', fid),
             ('pn', pn),
             ('rn', 30),
@@ -2740,7 +2772,7 @@ class Client(object):
 
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('_client_version', self.sessions.main_version),
+            ('_client_version', self.sessions.latest_version),
             ('forum_id', fid),
             ('pn', 1),
             ('rn', 0),
@@ -2788,7 +2820,7 @@ class Client(object):
 
         payload = [
             ('BDUSS', self.sessions.BDUSS),
-            ('_client_version', self.sessions.main_version),
+            ('_client_version', self.sessions.latest_version),
             ('forum_id', fid),
         ]
 
