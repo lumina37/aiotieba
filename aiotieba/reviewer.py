@@ -10,7 +10,7 @@ from typing import List, Optional, Tuple, Union
 import cv2 as cv
 import numpy as np
 
-from .api import Client
+from .client import Client
 from .database import Database
 from .logger import get_logger
 from .types import BasicUserInfo

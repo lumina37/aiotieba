@@ -10,7 +10,7 @@
 
 import signal
 
-from .api import *
+from .client import *
 from .logger import *
 from .reviewer import *
 from .types import *
