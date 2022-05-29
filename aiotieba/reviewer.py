@@ -45,8 +45,8 @@ class Reviewer(Client):
     提供贴吧审查功能
 
     Args:
-        fname (str, optional): 贴吧名. Defaults to ''.
         BDUSS_key (str, optional): 用于从CONFIG中提取BDUSS. Defaults to ''.
+        fname (str, optional): 贴吧名. Defaults to ''.
     """
 
     __slots__ = ['fname', 'database', '_qrdetector']

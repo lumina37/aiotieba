@@ -369,7 +369,7 @@ class Client(object):
     贴吧客户端
 
     Args:
-        BDUSS_key (str | None): 用于从config.json中提取BDUSS. Defaults to None.
+        BDUSS_key (str, optional): 用于从CONFIG中提取BDUSS. Defaults to ''.
     """
 
     __slots__ = [
@@ -383,7 +383,7 @@ class Client(object):
 
     fid_dict: ClassVar[Dict[str, int]] = {}
 
-    def __init__(self, BDUSS_key: Optional[str] = None) -> None:
+    def __init__(self, BDUSS_key: str = '') -> None:
         self.BDUSS_key = BDUSS_key
         self.sessions = Sessions(BDUSS_key)
         self._tbs: str = ''

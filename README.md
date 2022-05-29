@@ -93,8 +93,8 @@ import aiotieba as tb
 
 
 async def main():
-    # 使用空字符串构造审查器
-    async with tb.Reviewer('', '') as brow:
+    # 构造空审查器
+    async with tb.Reviewer() as brow:
         # 使用函数Database.init_database()一键建库
         await brow.database.init_database()
 
