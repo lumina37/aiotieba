@@ -22,9 +22,9 @@ from Crypto.Cipher import AES, PKCS1_v1_5
 from Crypto.PublicKey import RSA
 from google.protobuf.json_format import ParseDict
 
-from ._config import CONFIG
-from ._logger import get_logger
-from ._types import (
+from .config import CONFIG
+from .logger import get_logger
+from .types import (
     JSON_DECODER,
     Ats,
     BasicUserInfo,
@@ -38,7 +38,7 @@ from ._types import (
     UserInfo,
     UserPosts,
 )
-from .tieba_proto import (
+from .tieba_protobuf import (
     CommitPersonalMsgReqIdl_pb2,
     CommitPersonalMsgResIdl_pb2,
     CommonReq_pb2,
@@ -75,11 +75,12 @@ class Sessions(object):
     保持会话
 
     Args:
-        BDUSS_key (str | None): 用于从config.json中提取BDUSS. Defaults to None.
+        BDUSS_key (str, optional): 用于从CONFIG中提取BDUSS. Defaults to ''.
     """
 
     __slots__ = [
-        '_timeout',
+        'BDUSS',
+        'STOKEN',
         '_connector',
         'app',
         'app_proto',
@@ -88,37 +89,31 @@ class Sessions(object):
         'websocket',
         '_ws_password',
         '_ws_aes_chiper',
-        'BDUSS',
-        'STOKEN',
     ]
 
     latest_version: ClassVar[str] = "12.24.4.0"  # 这是目前的最新版本
     no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
     post_version: ClassVar[str] = "9.1.0.0"  # 发帖使用极速版
 
-    def __init__(self, BDUSS_key: Optional[str] = None) -> None:
+    def __init__(self, BDUSS_key: str = '') -> None:
 
-        if BDUSS_key:
-            self.BDUSS: str = CONFIG['BDUSS'].get(BDUSS_key, '')
-            self.STOKEN: str = CONFIG['STOKEN'].get(BDUSS_key, '')
-        else:
-            self.BDUSS: str = ''
-            self.STOKEN: str = ''
+        self.BDUSS: str = CONFIG['BDUSS'].get(BDUSS_key, '')
+        self.STOKEN: str = CONFIG['STOKEN'].get(BDUSS_key, '')
 
         self.app: aiohttp.ClientSession = None
         self.app_proto: aiohttp.ClientSession = None
-        self._app_websocket: aiohttp.ClientSession = None
         self.web: aiohttp.ClientSession = None
+        self._app_websocket: aiohttp.ClientSession = None
         self.websocket: aiohttp.ClientWebSocketResponse = None
         self._ws_password: bytes = None
         self._ws_aes_chiper = None
 
     async def enter(self) -> "Sessions":
-        self._timeout = aiohttp.ClientTimeout(connect=5, sock_connect=3, sock_read=10)
+        _trust_env = False
+        _timeout = aiohttp.ClientTimeout(connect=5, sock_connect=3, sock_read=10)
         self._connector = aiohttp.TCPConnector(
             ttl_dns_cache=600, keepalive_timeout=90, limit=0, family=socket.AF_INET, ssl=False
         )
-        _trust_env = False
 
         # Init app client
         app_headers = {
@@ -132,7 +127,7 @@ class Sessions(object):
             headers=app_headers,
             connector_owner=False,
             raise_for_status=True,
-            timeout=self._timeout,
+            timeout=_timeout,
             read_bufsize=1 << 18,  # 256KiB
             trust_env=_trust_env,
         )
@@ -150,7 +145,7 @@ class Sessions(object):
             headers=app_proto_headers,
             connector_owner=False,
             raise_for_status=True,
-            timeout=self._timeout,
+            timeout=_timeout,
             read_bufsize=1 << 18,  # 256KiB
             trust_env=_trust_env,
         )
@@ -170,7 +165,7 @@ class Sessions(object):
             cookie_jar=web_cookie_jar,
             connector_owner=False,
             raise_for_status=True,
-            timeout=self._timeout,
+            timeout=_timeout,
             read_bufsize=1 << 20,  # 1MiB
             trust_env=_trust_env,
         )
@@ -185,7 +180,7 @@ class Sessions(object):
             headers=app_websocket_headers,
             connector_owner=False,
             raise_for_status=True,
-            timeout=self._timeout,
+            timeout=_timeout,
             read_bufsize=1 << 18,  # 256KiB
             trust_env=_trust_env,
         )
@@ -199,9 +194,8 @@ class Sessions(object):
         close_coros = [self.app.close(), self.app_proto.close(), self.web.close()]
         if self.websocket and not self.websocket.closed:
             close_coros.append(self.websocket.close())
-
-        await asyncio.gather(*close_coros, return_exceptions=True)
-        await self._connector.close()
+        await asyncio.gather(*close_coros)
+        await asyncio.gather(self._app_websocket.close(), self._connector.close())
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.close()
@@ -267,7 +261,6 @@ class Sessions(object):
 
         if self._ws_password is None:
             self._ws_password = random.randbytes(36)
-
         return self._ws_password
 
     @property
@@ -301,7 +294,7 @@ class Sessions(object):
         """
 
         if need_gzip:
-            ws_bytes = gzip.compress(ws_bytes, 5)
+            ws_bytes = gzip.compress(ws_bytes, 3)
 
         if need_encrypt:
             pad_num = AES.block_size - (len(ws_bytes) % AES.block_size)
@@ -328,7 +321,7 @@ class Sessions(object):
             ws_bytes (bytes): 接收到的websocket数据
 
         Returns:
-            bytes: 解封装后的websocket数据
+            bytes: 解包后的websocket数据
         """
 
         if len(ws_bytes) <= 9:
@@ -1852,7 +1845,7 @@ class Client(object):
 
         return res_list
 
-    async def get_image(self, img_url: str) -> Optional[np.ndarray]:
+    async def get_image(self, img_url: str) -> np.ndarray:
         """
         从链接获取jpg/png图像
 
@@ -1860,7 +1853,7 @@ class Client(object):
             img_url (str): 图像链接
 
         Returns:
-            np.ndarray | None: 图像或None
+            np.ndarray: 图像
         """
 
         try:
@@ -1875,7 +1868,7 @@ class Client(object):
 
         except Exception as err:
             LOG.warning(f"Failed to get image {img_url}. reason:{err}")
-            image = None
+            image = np.empty(0, dtype=np.uint8)
 
         return image
 

@@ -27,8 +27,8 @@ from typing import Dict, Generic, Iterable, Iterator, List, Optional, TypeVar, U
 
 from google.protobuf.json_format import ParseDict
 
-from ._logger import get_logger
-from .tieba_proto import (
+from .logger import get_logger
+from .tieba_protobuf import (
     FrsPageResIdl_pb2,
     NewThreadInfo_pb2,
     Page_pb2,
@@ -737,7 +737,7 @@ class _Containers(_DataWrapper, Generic[_TContainer]):
     约定取内容的通用接口
 
     Fields:
-        _objs (list[TContainer]): 内容列表
+        _objs (list[_TContainer]): 内容列表
         page (Page): 页码信息
     """
 

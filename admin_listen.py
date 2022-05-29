@@ -8,7 +8,7 @@ from collections.abc import Callable
 import yaml
 
 import aiotieba as tb
-from aiotieba._config import SCRIPT_PATH
+from aiotieba.config import SCRIPT_PATH
 
 with (SCRIPT_PATH.parent / 'config/listen_config.yaml').open('r', encoding='utf-8') as file:
     LISTEN_CONFIG = yaml.load(file, Loader=yaml.SafeLoader)
