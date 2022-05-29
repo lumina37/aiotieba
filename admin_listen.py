@@ -764,7 +764,7 @@ class Listener(object):
         if await ctx.handler.speaker.send_msg(ctx.user_id, content):
             await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
 
-    @check_permission(need_permission=1, need_arg_num=2)
+    @check_permission(need_permission=1, need_arg_num=3)
     async def cmd_vote_stat(self, ctx: Context) -> None:
         """
         vote_stat指令
@@ -773,13 +773,14 @@ class Listener(object):
 
         tb.log.info(f"{ctx.log_name}:{ctx.text} in tid:{ctx.tid}")
 
-        if not ctx.args[1].isdecimal():
+        if not self.time_recorder.allow_execute():
+            return
+
+        if not (ctx.args[1].isdecimal() and ctx.args[2].isdecimal()):
             return
         keyword = ctx.args[0]
         limit = int(ctx.args[1])
-        min_level = int(ctx.args[2]) if len(ctx.args) > 2 and ctx.args[2].isdecimal() else 0
-        if not self.time_recorder.allow_execute():
-            return
+        min_level = int(ctx.args[2])
 
         async def _stat_pn(pn: int) -> None:
             """
@@ -789,9 +790,7 @@ class Listener(object):
                 pn (int): 页码
             """
 
-            posts = await self.listener.get_posts(
-                ctx.tid, pn, only_thread_author=True, with_comments=True, comment_sort_by_agree=True
-            )
+            posts = await self.listener.get_posts(ctx.tid, pn, only_thread_author=True)
             await asyncio.gather(*[_stat_post(post) for post in posts])
 
         async def _stat_post(post: tb.Post) -> None:
@@ -818,11 +817,11 @@ class Listener(object):
                 results.append((post.floor, vote_num))
 
         results = []
-        posts = await self.listener.get_posts(ctx.tid, 1, with_comments=True, comment_sort_by_agree=False)
+        posts = await self.listener.get_posts(ctx.tid, 1)
         await asyncio.gather(*[_stat_post(post) for post in posts[1:]])
 
         if (total_page := posts.page.total_page) > 1:
-            await asyncio.gather(*[_stat_pn(pn) for pn in range(2, total_page + 1)], return_exceptions=True)
+            await asyncio.gather(*[_stat_pn(pn) for pn in range(2, total_page + 1)])
 
         results.sort(key=lambda result: result[1], reverse=True)
         contents = [f"@{ctx.at.user.user_name} ", f"keyword:{keyword}", f"min_level:{min_level}"]
