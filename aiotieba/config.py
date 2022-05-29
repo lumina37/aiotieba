@@ -14,7 +14,9 @@ with (SCRIPT_PATH.parent / 'config/config.yaml').open('r', encoding='utf-8') as 
     CONFIG: Dict[str, Dict[str, str]] = yaml.load(file, Loader=yaml.SafeLoader)
 if not (CONFIG.__contains__('BDUSS') and isinstance(CONFIG['BDUSS'], dict)):
     CONFIG['BDUSS'] = {}
-if not (CONFIG.__contains__('MySQL') and isinstance(CONFIG['MySQL'], dict)):
-    CONFIG['MySQL'] = {}
+if not (CONFIG.__contains__('STOKEN') and isinstance(CONFIG['STOKEN'], dict)):
+    CONFIG['STOKEN'] = {}
+if not (CONFIG.__contains__('database') and isinstance(CONFIG['database'], dict)):
+    CONFIG['database'] = {}
 if not (CONFIG.__contains__('fname_zh2en') and isinstance(CONFIG['fname_zh2en'], dict)):
     CONFIG['fname_zh2en'] = {}
