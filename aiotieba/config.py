@@ -1,22 +1,35 @@
 # -*- coding:utf-8 -*-
-__all__ = ['SCRIPT_PATH', 'MODULE_DIR', 'CONFIG']
+__all__ = ['SCRIPT_PATH', 'SCRIPT_DIR', 'MODULE_DIR', 'CONFIG']
 
 import sys
 from pathlib import Path
 from typing import Dict
 
-import yaml
-
 SCRIPT_PATH = Path(sys.argv[0])
+SCRIPT_DIR = SCRIPT_PATH.parent
 MODULE_DIR = Path(__file__).parent
 
-with (SCRIPT_PATH.parent / 'config/config.yaml').open('r', encoding='utf-8') as file:
-    CONFIG: Dict[str, Dict[str, str]] = yaml.load(file, Loader=yaml.SafeLoader)
-if not (CONFIG.__contains__('BDUSS') and isinstance(CONFIG['BDUSS'], dict)):
-    CONFIG['BDUSS'] = {}
-if not (CONFIG.__contains__('STOKEN') and isinstance(CONFIG['STOKEN'], dict)):
-    CONFIG['STOKEN'] = {}
-if not (CONFIG.__contains__('database') and isinstance(CONFIG['database'], dict)):
-    CONFIG['database'] = {}
-if not (CONFIG.__contains__('fname_zh2en') and isinstance(CONFIG['fname_zh2en'], dict)):
-    CONFIG['fname_zh2en'] = {}
+
+try:
+    with (SCRIPT_DIR / "config/config.yaml").open('r', encoding='utf-8') as file:
+
+        import yaml
+
+        CONFIG: Dict[str, Dict[str, str]] = yaml.load(file, Loader=yaml.SafeLoader)
+
+except FileNotFoundError:
+
+    import shutil
+
+    config_dir = SCRIPT_DIR / "config"
+    config_dir.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(str(MODULE_DIR / "config_example/minimal.yaml"), str(config_dir / "config.yaml"))
+    shutil.copyfile(str(MODULE_DIR / "config_example/full.yaml"), str(config_dir / "config_full_example.yaml"))
+
+    CONFIG = {}
+
+
+required_keys = ['BDUSS', 'STOKEN', 'database', 'fname_zh2en']
+for required_key in required_keys:
+    if not (CONFIG.__contains__(required_key) and isinstance(CONFIG[required_key], dict)):
+        CONFIG[required_key] = {}

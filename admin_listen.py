@@ -1,4 +1,20 @@
 # -*- coding:utf-8 -*-
+"""
+指令管理器
+使用前请在当前目录的config文件夹中新建listen_config.yaml配置文件，并参考下列案例填写你自己的配置
+
+listener_key: listener # 在这里填用于监听at信息的账号的BDUSS_key
+configs:
+  -
+    fname: lol半价 # 在这里填贴吧名
+    admin_key: default # 在这里填用于在该吧行使吧务权限的账号的BDUSS_key
+    speaker_key: default # 在这里填用于在该吧发送回复的账号的BDUSS_key
+  -
+    fname: asoul # 在这里填另一个贴吧名
+    admin_key: default # 在这里填用于在该吧行使吧务权限的账号的BDUSS_key
+    speaker_key: default # 在这里填用于在该吧发送回复的账号的BDUSS_key
+"""
+
 import asyncio
 import functools
 import re
@@ -617,8 +633,8 @@ class Listener(object):
 
         tb.log.info(f"{ctx.log_name}:{ctx.text} in tid:{ctx.tid}")
 
-        if await ctx.handler.admin.refuse_unblock_appeals(ctx.fname):
-            await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
+        await ctx.handler.admin.refuse_unblock_appeals(ctx.fname)
+        await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=4, need_arg_num=2)
     async def cmd_set(self, ctx: Context) -> None:

@@ -4,7 +4,7 @@ __all__ = ['get_logger']
 import logging
 import logging.handlers
 
-from .config import SCRIPT_PATH
+from .config import SCRIPT_PATH, SCRIPT_DIR
 
 logging._srcfile = None
 logging.logThreads = False
@@ -25,7 +25,7 @@ class _Logger(logging.Logger):
     def __init__(self, name: str) -> None:
         super().__init__(name)
 
-        log_dir = SCRIPT_PATH.parent / 'log'
+        log_dir = SCRIPT_DIR / 'log'
         log_dir.mkdir(0o755, exist_ok=True)
 
         log_filepath = log_dir / f'{SCRIPT_PATH.stem}.log'
