@@ -77,7 +77,7 @@ nohup python cloud_review_yours.py >/dev/null 2>&1 &
 
 ## 友情链接
 
-+ [百度贴吧接口合集](https://github.com/Starry-OvO/Tieba-Manager/blob/master/aiotieba/_api.py)
++ [百度贴吧接口合集](https://github.com/Starry-OvO/Tieba-Manager/blob/master/aiotieba/client.py)
 + [云审查案例](https://github.com/Starry-OvO/Tieba-Manager/blob/master/cloud_review_hanime.py)
 + [指令管理器](https://github.com/Starry-OvO/Tieba-Manager/wiki/%E6%8C%87%E4%BB%A4%E7%AE%A1%E7%90%86%E5%99%A8%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E%E4%B9%A6)
 + [另一个仍在活跃更新的贴吧管理器（有用户界面）](https://github.com/dog194/TiebaManager)
