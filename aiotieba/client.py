@@ -69,6 +69,58 @@ from .tieba_protobuf import (
 
 LOG = get_logger()
 
+WEBSOCKET_REQUEST_ID: int = None
+
+
+class WebsocketResponse(object):
+    """
+    websocket响应
+
+    Fields:
+        _timestamp (int): 请求时间戳
+        _req_id (int): 唯一的请求id
+        _event (asyncio.Event): 当该事件被set时意味着data已经可读
+        _data (bytes): 来自websocket的数据
+    """
+
+    __slots__ = ['_timestamp', '_req_id', '_event', '_data']
+
+    def __init__(self) -> None:
+        self._timestamp: int = int(time.time())
+
+        global WEBSOCKET_REQUEST_ID
+        if WEBSOCKET_REQUEST_ID is None:
+            WEBSOCKET_REQUEST_ID = self._timestamp - 1
+        WEBSOCKET_REQUEST_ID += 1
+        self._req_id = WEBSOCKET_REQUEST_ID
+
+        self._event: asyncio.Event = asyncio.Event()
+        self._data: bytes = None
+
+    def __int__(self) -> int:
+        return self._req_id
+
+    def __hash__(self) -> int:
+        return self._req_id
+
+    def __eq__(self, obj: "WebsocketResponse"):
+        return self._event is obj._event and self._req_id == obj._req_id
+
+    @property
+    def timestamp(self) -> int:
+        return self._timestamp
+
+    async def read(self, timeout: Optional[float] = None) -> bytes:
+        if timeout:
+            try:
+                await asyncio.wait_for(self._event.wait(), timeout)
+            except asyncio.TimeoutError:
+                raise asyncio.TimeoutError("Timeout to read")
+        else:
+            await self._event.wait()
+
+        return self._data
+
 
 class Sessions(object):
     """
@@ -89,9 +141,11 @@ class Sessions(object):
         'websocket',
         '_ws_password',
         '_ws_aes_chiper',
+        '_ws_responses',
+        '_ws_dispatcher',
     ]
 
-    latest_version: ClassVar[str] = "12.24.4.0"  # 这是目前的最新版本
+    latest_version: ClassVar[str] = "12.25.0.2"  # 这是目前的最新版本
     no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
     post_version: ClassVar[str] = "9.1.0.0"  # 发帖使用极速版
 
@@ -107,6 +161,8 @@ class Sessions(object):
         self.websocket: aiohttp.ClientWebSocketResponse = None
         self._ws_password: bytes = None
         self._ws_aes_chiper = None
+        self._ws_responses: List[WebsocketResponse] = []
+        self._ws_dispatcher: asyncio.Task = None
 
     async def enter(self) -> "Sessions":
         _trust_env = False
@@ -191,17 +247,21 @@ class Sessions(object):
         return await self.enter()
 
     async def close(self) -> None:
+        if self._ws_dispatcher is not None:
+            self._ws_dispatcher.cancel()
+
         close_coros = [self.app.close(), self.app_proto.close(), self.web.close()]
         if self.websocket and not self.websocket.closed:
             close_coros.append(self.websocket.close())
         await asyncio.gather(*close_coros)
+
         await asyncio.gather(self._app_websocket.close(), self._connector.close())
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.close()
 
     @staticmethod
-    def _pack_form(forms: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
+    def pack_form(forms: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
         """
         打包form参数元组列表 为其添加贴吧客户端签名
 
@@ -223,7 +283,7 @@ class Sessions(object):
         return forms
 
     @staticmethod
-    def _pack_proto_bytes(req_bytes: bytes) -> aiohttp.MultipartWriter:
+    def pack_proto_bytes(req_bytes: bytes) -> aiohttp.MultipartWriter:
         """
         将req_bytes打包为贴吧客户端专用的aiohttp.MultipartWriter
 
@@ -279,65 +339,6 @@ class Sessions(object):
 
         return self._ws_aes_chiper
 
-    def _pack_ws_bytes(self, ws_bytes: bytes, cmd: int = 0, need_gzip: bool = True, need_encrypt: bool = True) -> bytes:
-        """
-        对ws_bytes进行打包 压缩加密并添加9字节头部
-
-        Args:
-            ws_bytes (bytes): 待发送的websocket数据
-            cmd (int, optional): cmd代号. Defaults to 0.
-            need_gzip (bool, optional): 是否需要gzip压缩. Defaults to False.
-            need_encrypt (bool, optional): 是否需要aes加密. Defaults to False.
-
-        Returns:
-            bytes: 封装后的websocket数据
-        """
-
-        if need_gzip:
-            ws_bytes = gzip.compress(ws_bytes, 3)
-
-        if need_encrypt:
-            pad_num = AES.block_size - (len(ws_bytes) % AES.block_size)
-            ws_bytes += pad_num.to_bytes(1, 'little') * pad_num
-            ws_bytes = self.ws_aes_chiper.encrypt(ws_bytes)
-
-        flag = 0x08 | (need_gzip << 7) | (need_encrypt << 6)
-        ws_bytes = b''.join(
-            [
-                flag.to_bytes(1, 'big'),
-                cmd.to_bytes(4, 'big'),
-                random.randbytes(4),
-                ws_bytes,
-            ]
-        )
-
-        return ws_bytes
-
-    def _unpack_ws_bytes(self, ws_bytes: bytes) -> bytes:
-        """
-        对ws_bytes进行解包
-
-        Args:
-            ws_bytes (bytes): 接收到的websocket数据
-
-        Returns:
-            bytes: 解包后的websocket数据
-        """
-
-        if len(ws_bytes) <= 9:
-            return ws_bytes
-
-        flag = ws_bytes[0]
-        ws_bytes = ws_bytes[9:]
-
-        if flag & 0b10000000:
-            ws_bytes = self.ws_aes_chiper.decrypt(ws_bytes)
-            ws_bytes = ws_bytes.rstrip(ws_bytes[-2:-1])
-        if flag & 0b01000000:
-            ws_bytes = gzip.decompress(ws_bytes)
-
-        return ws_bytes
-
     async def create_websocket(self, heartbeat: Optional[float] = None) -> bool:
         """
         建立weboscket连接
@@ -352,16 +353,140 @@ class Sessions(object):
         if self._app_websocket is None:
             await self.enter()
 
+        if self._ws_dispatcher is not None and not self._ws_dispatcher.cancelled():
+            self._ws_dispatcher.cancel()
+
         try:
             self.websocket = await self._app_websocket._ws_connect(
                 "ws://im.tieba.baidu.com:8000", heartbeat=heartbeat, ssl=False
             )
+            self._ws_dispatcher = asyncio.create_task(self._ws_dispatch(), name="ws_dispatcher")
 
         except Exception as err:
             LOG.warning(f"Failed to create websocket. reason:{err}")
             return False
 
         return True
+
+    def _pack_ws_bytes(
+        self, ws_bytes: bytes, cmd: int, req_id: int, need_gzip: bool = True, need_encrypt: bool = True
+    ) -> bytes:
+        """
+        对ws_bytes进行打包 压缩加密并添加9字节头部
+
+        Args:
+            ws_bytes (bytes): 待发送的websocket数据
+            cmd (int, optional): 请求的cmd类型
+            req_id (int, optional): 请求的id
+            need_gzip (bool, optional): 是否需要gzip压缩. Defaults to False.
+            need_encrypt (bool, optional): 是否需要aes加密. Defaults to False.
+
+        Returns:
+            bytes: 封装后的websocket数据
+        """
+
+        if need_gzip:
+            ws_bytes = gzip.compress(ws_bytes, 3)
+
+        if need_encrypt:
+            pad_num = AES.block_size - (len(ws_bytes) % AES.block_size)
+            ws_bytes += pad_num.to_bytes(1, 'big') * pad_num
+            ws_bytes = self.ws_aes_chiper.encrypt(ws_bytes)
+
+        flag = 0x08 | (need_gzip << 7) | (need_encrypt << 6)
+        ws_bytes = b''.join(
+            [
+                flag.to_bytes(1, 'big'),
+                cmd.to_bytes(4, 'big'),
+                req_id.to_bytes(4, 'big'),
+                ws_bytes,
+            ]
+        )
+
+        return ws_bytes
+
+    def _unpack_ws_bytes(self, ws_bytes: bytes) -> Tuple[bytes, int, int]:
+        """
+        对ws_bytes进行解包
+
+        Args:
+            ws_bytes (bytes): 接收到的websocket数据
+
+        Returns:
+            bytes: 解包后的websocket数据
+            int: 对应请求的cmd类型
+            int: 对应请求的id
+        """
+
+        if len(ws_bytes) < 9:
+            return ws_bytes, 0, 0
+
+        flag = ws_bytes[0]
+        cmd = int.from_bytes(ws_bytes[1:5], 'big')
+        req_id = int.from_bytes(ws_bytes[5:9], 'big')
+
+        ws_bytes = ws_bytes[9:]
+        if flag & 0b10000000:
+            ws_bytes = self.ws_aes_chiper.decrypt(ws_bytes)
+            ws_bytes = ws_bytes.rstrip(ws_bytes[-2:-1])
+        if flag & 0b01000000:
+            ws_bytes = gzip.decompress(ws_bytes)
+
+        return ws_bytes, cmd, req_id
+
+    async def send_ws_bytes(
+        self, ws_bytes: bytes, cmd: int, need_gzip: bool = True, need_encrypt: bool = True
+    ) -> WebsocketResponse:
+        """
+        将ws_bytes通过贴吧websocket发送
+
+        Args:
+            ws_bytes (bytes): 待发送的websocket数据
+            cmd (int, optional): 请求的cmd类型
+            need_gzip (bool, optional): 是否需要gzip压缩. Defaults to False.
+            need_encrypt (bool, optional): 是否需要aes加密. Defaults to False.
+
+        Returns:
+            bytes: 封装后的websocket数据
+        """
+
+        # 丢弃超时response
+        ws_timeout: float = 10.0
+        timeout_threshold: float = time.time() - ws_timeout
+        timeout_idx: int = 0
+        for idx, ws_res in enumerate(self._ws_responses):
+            if ws_res.timestamp < timeout_threshold:
+                timeout_idx = idx
+                break
+        self._ws_responses = self._ws_responses[timeout_idx:]
+
+        ws_res = WebsocketResponse()
+        ws_bytes = self._pack_ws_bytes(ws_bytes, cmd, int(ws_res), need_gzip, need_encrypt)
+
+        self._ws_responses.append(ws_res)
+        await self.websocket.send_bytes(ws_bytes)
+
+        return ws_res
+
+    async def _ws_dispatch(self) -> None:
+        """
+        分发从贴吧websocket接收到的数据
+        """
+
+        try:
+            while 1:
+                res_bytes: bytes = (await self.websocket.receive()).data
+
+                res_bytes, _, req_id = self._unpack_ws_bytes(res_bytes)
+
+                for ws_res in self._ws_responses:
+                    if int(ws_res) == req_id:
+                        ws_res._data = res_bytes
+                        ws_res._event.set()
+                        break
+
+        except asyncio.CancelledError:
+            return
 
 
 class Client(object):
@@ -404,53 +529,49 @@ class Client(object):
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.close()
 
-    async def get_websocket(self) -> aiohttp.ClientWebSocketResponse:
+    async def create_websocket(self) -> bool:
         """
-        获取weboscket连接对象并发送初始化信息
+        初始化weboscket连接对象并发送初始化信息
 
         Returns:
-            aiohttp.ClientWebSocketResponse: websocket连接对象
+            bool: 操作是否成功
         """
 
-        pub_key_bytes = base64.b64decode(
-            "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwQpwBZxXJV/JVRF/uNfyMSdu7YWwRNLM8+2xbniGp2iIQHOikPpTYQjlQgMi1uvq1kZpJ32rHo3hkwjy2l0lFwr3u4Hk2Wk7vnsqYQjAlYlK0TCzjpmiI+OiPOUNVtbWHQiLiVqFtzvpvi4AU7C1iKGvc/4IS45WjHxeScHhnZZ7njS4S1UgNP/GflRIbzgbBhyZ9kEW5/OO5YfG1fy6r4KSlDJw4o/mw5XhftyIpL+5ZBVBC6E1EIiP/dd9AbK62VV1PByfPMHMixpxI3GM2qwcmFsXcCcgvUXJBa9k6zP8dDQ3csCM2QNT+CQAOxthjtp/TFWaD7MzOdsIYb3THwIDAQAB".encode(
-                'ascii'
-            )
-        )
-        pub_key = RSA.import_key(pub_key_bytes)
-        rsa_chiper = PKCS1_v1_5.new(pub_key)
+        if self.sessions.websocket is None or self.sessions.websocket.closed:
+            try:
+                if not await self.sessions.create_websocket():
+                    return False
 
-        data_proto = UpdateClientInfoReqIdl_pb2.UpdateClientInfoReqIdl.DataReq()
-        data_proto.bduss = self.sessions.BDUSS
-        data_proto.device = f"""{{"subapp_type":"mini","_client_version":"{self.sessions.post_version}","pversion":"1.0.3","_msg_status":"1","_phone_imei":"000000000000000","from":"1021099l","cuid_galaxy2":"{self.cuid_galaxy2}","model":"LIO-AN00","_client_type":"2"}}"""
-        data_proto.secretKey = rsa_chiper.encrypt(self.sessions.ws_password)
-        req_proto = UpdateClientInfoReqIdl_pb2.UpdateClientInfoReqIdl()
-        req_proto.data.CopyFrom(data_proto)
-        req_proto.cuid = f"{self.cuid}|com.baidu.tieba_mini{self.sessions.post_version}"
+                pub_key_bytes = base64.b64decode(
+                    "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwQpwBZxXJV/JVRF/uNfyMSdu7YWwRNLM8+2xbniGp2iIQHOikPpTYQjlQgMi1uvq1kZpJ32rHo3hkwjy2l0lFwr3u4Hk2Wk7vnsqYQjAlYlK0TCzjpmiI+OiPOUNVtbWHQiLiVqFtzvpvi4AU7C1iKGvc/4IS45WjHxeScHhnZZ7njS4S1UgNP/GflRIbzgbBhyZ9kEW5/OO5YfG1fy6r4KSlDJw4o/mw5XhftyIpL+5ZBVBC6E1EIiP/dd9AbK62VV1PByfPMHMixpxI3GM2qwcmFsXcCcgvUXJBa9k6zP8dDQ3csCM2QNT+CQAOxthjtp/TFWaD7MzOdsIYb3THwIDAQAB".encode(
+                        'ascii'
+                    )
+                )
+                pub_key = RSA.import_key(pub_key_bytes)
+                rsa_chiper = PKCS1_v1_5.new(pub_key)
 
-        websocket = self.sessions.websocket
+                data_proto = UpdateClientInfoReqIdl_pb2.UpdateClientInfoReqIdl.DataReq()
+                data_proto.bduss = self.sessions.BDUSS
+                data_proto.device = f"""{{"subapp_type":"mini","_client_version":"{self.sessions.post_version}","pversion":"1.0.3","_msg_status":"1","_phone_imei":"000000000000000","from":"1021099l","cuid_galaxy2":"{self.cuid_galaxy2}","model":"LIO-AN00","_client_type":"2"}}"""
+                data_proto.secretKey = rsa_chiper.encrypt(self.sessions.ws_password)
+                req_proto = UpdateClientInfoReqIdl_pb2.UpdateClientInfoReqIdl()
+                req_proto.data.CopyFrom(data_proto)
+                req_proto.cuid = f"{self.cuid}|com.baidu.tieba_mini{self.sessions.post_version}"
 
-        try:
-            if websocket is None or websocket.closed:
-                await self.sessions.create_websocket()
-                websocket = self.sessions.websocket
-
-            await websocket.send_bytes(
-                self.sessions._pack_ws_bytes(
+                res = await self.sessions.send_ws_bytes(
                     req_proto.SerializeToString(), cmd=1001, need_gzip=False, need_encrypt=False
                 )
-            )
 
-            res_proto = UpdateClientInfoResIdl_pb2.UpdateClientInfoResIdl()
-            res_bytes = (await websocket.receive(timeout=5)).data
-            res_proto.ParseFromString(self.sessions._unpack_ws_bytes(res_bytes))
-            if int(res_proto.error.errorno):
-                raise ValueError(res_proto.error.errmsg)
+                res_proto = UpdateClientInfoResIdl_pb2.UpdateClientInfoResIdl()
+                res_proto.ParseFromString(await res.read(timeout=5))
+                if int(res_proto.error.errorno):
+                    raise ValueError(res_proto.error.errmsg)
 
-        except Exception as err:
-            LOG.warning(f"Failed to create tieba-websocket. reason:{err}")
+            except Exception as err:
+                LOG.warning(f"Failed to create tieba-websocket. reason:{err}")
+                return False
 
-        return websocket
+        return True
 
     @property
     def timestamp_ms(self) -> int:
@@ -745,7 +866,7 @@ class Client(object):
         try:
             res = await self.sessions.app_proto.post(
                 "http://c.tieba.baidu.com/c/u/user/getuserinfo?cmd=303024",
-                data=self.sessions._pack_proto_bytes(req_proto.SerializeToString()),
+                data=self.sessions.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = GetUserInfoResIdl_pb2.GetUserInfoResIdl()
@@ -813,7 +934,7 @@ class Client(object):
         try:
             res = await self.sessions.app_proto.post(
                 "http://c.tieba.baidu.com/c/u/user/getUserByTiebaUid?cmd=309702",
-                data=self.sessions._pack_proto_bytes(req_proto.SerializeToString()),
+                data=self.sessions.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = GetUserByTiebaUidResIdl_pb2.GetUserByTiebaUidResIdl()
@@ -864,7 +985,7 @@ class Client(object):
         try:
             res = await self.sessions.app_proto.post(
                 "http://c.tieba.baidu.com/c/f/frs/page?cmd=301001",
-                data=self.sessions._pack_proto_bytes(req_proto.SerializeToString()),
+                data=self.sessions.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = FrsPageResIdl_pb2.FrsPageResIdl()
@@ -930,7 +1051,7 @@ class Client(object):
         try:
             res = await self.sessions.app_proto.post(
                 "http://c.tieba.baidu.com/c/f/pb/page?cmd=302001",
-                data=self.sessions._pack_proto_bytes(req_proto.SerializeToString()),
+                data=self.sessions.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = PbPageResIdl_pb2.PbPageResIdl()
@@ -976,7 +1097,7 @@ class Client(object):
         try:
             res = await self.sessions.app_proto.post(
                 "http://c.tieba.baidu.com/c/f/pb/floor?cmd=302002",
-                data=self.sessions._pack_proto_bytes(req_proto.SerializeToString()),
+                data=self.sessions.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = PbFloorResIdl_pb2.PbFloorResIdl()
@@ -1031,7 +1152,7 @@ class Client(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/bawu/commitprison", data=self.sessions._pack_form(payload)
+                "http://c.tieba.baidu.com/c/c/bawu/commitprison", data=self.sessions.pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -1140,7 +1261,7 @@ class Client(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/bawu/delthread", data=self.sessions._pack_form(payload)
+                "http://c.tieba.baidu.com/c/c/bawu/delthread", data=self.sessions.pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -1179,7 +1300,7 @@ class Client(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/bawu/delpost", data=self.sessions._pack_form(payload)
+                "http://c.tieba.baidu.com/c/c/bawu/delpost", data=self.sessions.pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -1308,7 +1429,7 @@ class Client(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/bawu/moveTabThread", data=self.sessions._pack_form(payload)
+                "http://c.tieba.baidu.com/c/c/bawu/moveTabThread", data=self.sessions.pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -1344,7 +1465,7 @@ class Client(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/bawu/pushRecomToPersonalized", data=self.sessions._pack_form(payload)
+                "http://c.tieba.baidu.com/c/c/bawu/pushRecomToPersonalized", data=self.sessions.pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -1399,7 +1520,7 @@ class Client(object):
 
             try:
                 res = await self.sessions.app.post(
-                    "http://c.tieba.baidu.com/c/c/bawu/goodlist", data=self.sessions._pack_form(payload)
+                    "http://c.tieba.baidu.com/c/c/bawu/goodlist", data=self.sessions.pack_form(payload)
                 )
 
                 res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -1444,7 +1565,7 @@ class Client(object):
 
             try:
                 res = await self.sessions.app.post(
-                    "http://c.tieba.baidu.com/c/c/bawu/commitgood", data=self.sessions._pack_form(payload)
+                    "http://c.tieba.baidu.com/c/c/bawu/commitgood", data=self.sessions.pack_form(payload)
                 )
 
                 res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -1489,7 +1610,7 @@ class Client(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/bawu/commitgood", data=self.sessions._pack_form(payload)
+                "http://c.tieba.baidu.com/c/c/bawu/commitgood", data=self.sessions.pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -1533,7 +1654,7 @@ class Client(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/bawu/committop", data=self.sessions._pack_form(payload)
+                "http://c.tieba.baidu.com/c/c/bawu/committop", data=self.sessions.pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -1576,7 +1697,7 @@ class Client(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/bawu/committop", data=self.sessions._pack_form(payload)
+                "http://c.tieba.baidu.com/c/c/bawu/committop", data=self.sessions.pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -1887,7 +2008,7 @@ class Client(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/s/login", data=self.sessions._pack_form(payload)
+                "http://c.tieba.baidu.com/c/s/login", data=self.sessions.pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -1927,7 +2048,7 @@ class Client(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/s/msg", data=self.sessions._pack_form(payload)
+                "http://c.tieba.baidu.com/c/s/msg", data=self.sessions.pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -1973,7 +2094,7 @@ class Client(object):
         try:
             res = await self.sessions.app_proto.post(
                 "http://c.tieba.baidu.com/c/u/feed/replyme?cmd=303007",
-                data=self.sessions._pack_proto_bytes(req_proto.SerializeToString()),
+                data=self.sessions.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = ReplyMeResIdl_pb2.ReplyMeResIdl()
@@ -2008,7 +2129,7 @@ class Client(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/u/feed/atme", data=self.sessions._pack_form(payload)
+                "http://c.tieba.baidu.com/c/u/feed/atme", data=self.sessions.pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
@@ -2079,7 +2200,7 @@ class Client(object):
         try:
             res = await self.sessions.app_proto.post(
                 "http://c.tieba.baidu.com/c/u/feed/userpost?cmd=303002",
-                data=self.sessions._pack_proto_bytes(req_proto.SerializeToString()),
+                data=self.sessions.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = UserPostResIdl_pb2.UserPostResIdl()
@@ -2123,7 +2244,7 @@ class Client(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/u/fans/page", data=self.sessions._pack_form(payload)
+                "http://c.tieba.baidu.com/c/u/fans/page", data=self.sessions.pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
@@ -2167,7 +2288,7 @@ class Client(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/user/removeFans", data=self.sessions._pack_form(payload)
+                "http://c.tieba.baidu.com/c/c/user/removeFans", data=self.sessions.pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
@@ -2200,7 +2321,7 @@ class Client(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/u/follow/followList", data=self.sessions._pack_form(payload)
+                "http://c.tieba.baidu.com/c/u/follow/followList", data=self.sessions.pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
@@ -2244,7 +2365,7 @@ class Client(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/user/follow", data=self.sessions._pack_form(payload)
+                "http://c.tieba.baidu.com/c/c/user/follow", data=self.sessions.pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
@@ -2282,7 +2403,7 @@ class Client(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/user/unfollow", data=self.sessions._pack_form(payload)
+                "http://c.tieba.baidu.com/c/c/user/unfollow", data=self.sessions.pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
@@ -2346,7 +2467,7 @@ class Client(object):
             ]
 
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/forum/like", data=self.sessions._pack_form(payload)
+                "http://c.tieba.baidu.com/c/c/forum/like", data=self.sessions.pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -2383,7 +2504,7 @@ class Client(object):
             ]
 
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/forum/unfavolike", data=self.sessions._pack_form(payload)
+                "http://c.tieba.baidu.com/c/c/forum/unfavolike", data=self.sessions.pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -2419,7 +2540,7 @@ class Client(object):
             ]
 
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/forum/sign", data=self.sessions._pack_form(payload)
+                "http://c.tieba.baidu.com/c/c/forum/sign", data=self.sessions.pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -2465,7 +2586,7 @@ class Client(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/u/user/profile", data=self.sessions._pack_form(payload)
+                "http://c.tieba.baidu.com/c/u/user/profile", data=self.sessions.pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
@@ -2527,7 +2648,7 @@ class Client(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/s/searchpost", data=self.sessions._pack_form(payload)
+                "http://c.tieba.baidu.com/c/s/searchpost", data=self.sessions.pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
@@ -2565,7 +2686,7 @@ class Client(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/f/forum/like", data=self.sessions._pack_form(payload)
+                "http://c.tieba.baidu.com/c/f/forum/like", data=self.sessions.pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -2604,7 +2725,7 @@ class Client(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/f/forum/getforumdetail", data=self.sessions._pack_form(payload)
+                "http://c.tieba.baidu.com/c/f/forum/getforumdetail", data=self.sessions.pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -2647,7 +2768,7 @@ class Client(object):
         try:
             res = await self.sessions.app_proto.post(
                 "http://c.tieba.baidu.com/c/f/forum/getBawuInfo?cmd=301007",
-                data=self.sessions._pack_proto_bytes(req_proto.SerializeToString()),
+                data=self.sessions.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = GetBawuInfoResIdl_pb2.GetBawuInfoResIdl()
@@ -2694,7 +2815,7 @@ class Client(object):
         try:
             res = await self.sessions.app_proto.post(
                 "http://c.tieba.baidu.com/c/f/forum/searchPostForum?cmd=309466",
-                data=self.sessions._pack_proto_bytes(req_proto.SerializeToString()),
+                data=self.sessions.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = SearchPostForumResIdl_pb2.SearchPostForumResIdl()
@@ -2734,7 +2855,7 @@ class Client(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/f/bawu/getRecomThreadHistory", data=self.sessions._pack_form(payload)
+                "http://c.tieba.baidu.com/c/f/bawu/getRecomThreadHistory", data=self.sessions.pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
@@ -2780,7 +2901,7 @@ class Client(object):
 
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/f/bawu/getRecomThreadList", data=self.sessions._pack_form(payload)
+                "http://c.tieba.baidu.com/c/f/bawu/getRecomThreadList", data=self.sessions.pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -2836,7 +2957,7 @@ class Client(object):
         ]
         try:
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/f/forum/getforumdata", data=self.sessions._pack_form(payload)
+                "http://c.tieba.baidu.com/c/f/forum/getforumdata", data=self.sessions.pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -3017,7 +3138,7 @@ class Client(object):
             ]
 
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/post/add", data=self.sessions._pack_form(payload)
+                "http://c.tieba.baidu.com/c/c/post/add", data=self.sessions.pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -3058,12 +3179,15 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            websocket = await self.get_websocket()
-            await websocket.send_bytes(self.sessions._pack_ws_bytes(req_proto.SerializeToString(), cmd=205001))
+            if not await self.create_websocket():
+                return False
+
+            res = await self.sessions.send_ws_bytes(req_proto.SerializeToString(), cmd=205001)
 
             res_proto = CommitPersonalMsgResIdl_pb2.CommitPersonalMsgResIdl()
-            res_bytes = (await websocket.receive(timeout=5)).data
-            res_proto.ParseFromString(self.sessions._unpack_ws_bytes(res_bytes))
+            res_proto.ParseFromString(await res.read(timeout=5))
+            if int(res_proto.error.errorno):
+                raise ValueError(res_proto.error.errmsg)
             if int(res_proto.data.blockInfo.blockErrno):
                 raise ValueError(res_proto.data.blockInfo.blockErrmsg)
 
@@ -3100,7 +3224,7 @@ class Client(object):
             ]
 
             res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/thread/setPrivacy", data=self.sessions._pack_form(payload)
+                "http://c.tieba.baidu.com/c/c/thread/setPrivacy", data=self.sessions.pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
