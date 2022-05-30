@@ -23,7 +23,7 @@ async def crawler(fname: str):
 
     thread_list: List[tb.Thread] = []
 
-    async with tb.Client("starry") as brow:
+    async with tb.Client("default") as brow:
 
         task_queue = asyncio.Queue(maxsize=8)
         is_running = True
