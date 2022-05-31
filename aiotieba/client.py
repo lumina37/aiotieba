@@ -24,20 +24,6 @@ from google.protobuf.json_format import ParseDict
 
 from .config import CONFIG
 from .logger import get_logger
-from .types import (
-    JSON_DECODER,
-    Ats,
-    BasicUserInfo,
-    Comments,
-    NewThread,
-    Posts,
-    Replys,
-    Searches,
-    Thread,
-    Threads,
-    UserInfo,
-    UserPosts,
-)
 from .tieba_protobuf import (
     CommitPersonalMsgReqIdl_pb2,
     CommitPersonalMsgResIdl_pb2,
@@ -65,6 +51,20 @@ from .tieba_protobuf import (
     User_pb2,
     UserPostReqIdl_pb2,
     UserPostResIdl_pb2,
+)
+from .types import (
+    JSON_DECODER,
+    Ats,
+    BasicUserInfo,
+    Comments,
+    NewThread,
+    Posts,
+    Replys,
+    Searches,
+    Thread,
+    Threads,
+    UserInfo,
+    UserPosts,
 )
 
 LOG = get_logger()
@@ -1986,6 +1986,8 @@ class Client(object):
                 raise ValueError(f"Content-Type should be image/jpeg or image/png rather than {res.content_type}")
 
             image = cv.imdecode(np.frombuffer(content, np.uint8), cv.IMREAD_COLOR)
+            if image is None:
+                raise ValueError("error in opencv.imdecode")
 
         except Exception as err:
             LOG.warning(f"Failed to get image {img_url}. reason:{err}")
