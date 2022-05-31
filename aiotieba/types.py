@@ -23,8 +23,10 @@ __all__ = [
 ]
 
 import json
+import urllib.parse
 from typing import Dict, Generic, Iterable, Iterator, List, Optional, TypeVar, Union
 
+import yarl
 from google.protobuf.json_format import ParseDict
 
 from .logger import get_logger
@@ -342,7 +344,8 @@ class FragImage(_Fragment):
 
     def _init_wh(self) -> None:
 
-        show_width, _, show_height = self._raw_data.bsize.partition(',')
+        bsize: str = self._raw_data.bsize
+        show_width, _, show_height = bsize.partition(',')
 
         if show_width and show_height:
             self._show_width = int(show_width)
@@ -392,29 +395,37 @@ class FragLink(FragText):
 
     Fields:
         text (str): 链接标题
-        link (str): 链接url
+        link (yarl.URL): 使用yarl解析后的链接 外链会在去除前缀后解析
+        raw_link (str): 原始链接
         is_external (bool): 是否外部链接
     """
 
-    __slots__ = ['text', 'link', '_is_external']
+    __slots__ = ['text', '_link', 'raw_link', 'is_external']
 
     external_perfix = "http://tieba.baidu.com/mo/q/checkurl"
 
     def __init__(self, _raw_data: PbContent_pb2.PbContent) -> None:
         super(FragLink, self).__init__(_raw_data)
-
         self.text: str = self._raw_data.text
-        self.link: str = self._raw_data.link
-        self._is_external = None
+        self._link: yarl.URL = None
+        self.raw_link: str = self._raw_data.link
+        self.is_external = self.raw_link.startswith(self.external_perfix)
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__} [text:{self.text} / link:{self.link}]"
+        return f"{self.__class__.__name__} [text:{self.text} / raw_link:{self.raw_link}]"
 
     @property
-    def is_external(self) -> bool:
-        if self._is_external is None:
-            self._is_external = self.link.startswith(self.external_perfix)
-        return self._is_external
+    def link(self) -> yarl.URL:
+        if self._link is None:
+
+            if self.is_external:
+                external_url = urllib.parse.unquote(self.raw_link.removeprefix(self.external_perfix + "?url="))
+                self._link = yarl.URL(external_url)
+
+            else:
+                self._link = yarl.URL(self.raw_link)
+
+        return self._link
 
 
 class FragVoice(_Fragment):

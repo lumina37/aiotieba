@@ -52,7 +52,7 @@ class Reviewer(Client):
     __slots__ = ['fname', 'database', '_qrdetector']
 
     def __init__(self, BDUSS_key: str = '', fname: str = ''):
-        super().__init__(BDUSS_key)
+        super(Reviewer, self).__init__(BDUSS_key)
 
         self.fname: str = fname
 
