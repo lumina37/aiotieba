@@ -2157,7 +2157,9 @@ class Client(object):
             list[NewThread]: 主题帖列表
         """
 
-        return await self._get_self_contents(pn, is_thread=True)
+        user = await self.get_self_info()
+
+        return await self._get_user_contents(user, pn, is_thread=True)
 
     async def get_self_posts(self, pn: int = 1) -> List[UserPosts]:
         """
@@ -2170,21 +2172,43 @@ class Client(object):
             list[UserPosts]: 回复列表
         """
 
-        return await self._get_self_contents(pn, is_thread=False)
+        user = await self.get_self_info()
 
-    async def _get_self_contents(self, pn: int = 1, is_thread: bool = True) -> Union[List[NewThread], List[UserPosts]]:
+        return await self._get_user_contents(user, pn, is_thread=False)
+
+    async def get_user_threads(self, _id: Union[str, int], pn: int = 1) -> List[NewThread]:
         """
-        获取本人发布的主题帖/回复列表
+        获取用户发布的主题帖列表
 
         Args:
+            _id (str | int): 待获取用户的id user_id/user_name/portrait 优先user_id
+            pn (int, optional): 页码. Defaults to 1.
+
+        Returns:
+            list[NewThread]: 主题帖列表
+        """
+
+        if not BasicUserInfo.is_user_id(_id):
+            user = await self.get_basic_user_info(_id)
+        else:
+            user = BasicUserInfo(_id)
+
+        return await self._get_user_contents(user, pn)
+
+    async def _get_user_contents(
+        self, user: BasicUserInfo, pn: int = 1, is_thread: bool = True
+    ) -> Union[List[NewThread], List[UserPosts]]:
+        """
+        获取用户发布的主题帖/回复列表
+
+        Args:
+            user (BasicUserInfo): 待获取用户的基本用户信息
             is_thread (bool, optional): 是否请求主题帖. Defaults to True.
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
             list[NewThread] | list[UserPosts]: 主题帖/回复列表
         """
-
-        user = await self.get_self_info()
 
         common_proto = CommonReq_pb2.CommonReq()
         common_proto.BDUSS = self.sessions.BDUSS
@@ -2222,7 +2246,7 @@ class Client(object):
                         userpost._user = user
 
         except Exception as err:
-            LOG.warning(f"Failed to get self_contents. reason:{err}")
+            LOG.warning(f"Failed to get user_contents of {user.user_id}. reason:{err}")
             res_list = []
 
         return res_list
