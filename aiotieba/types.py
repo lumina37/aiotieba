@@ -23,8 +23,10 @@ __all__ = [
 ]
 
 import json
+import urllib.parse
 from typing import Dict, Generic, Iterable, Iterator, List, Optional, TypeVar, Union
 
+import yarl
 from google.protobuf.json_format import ParseDict
 
 from .logger import get_logger
@@ -342,7 +344,8 @@ class FragImage(_Fragment):
 
     def _init_wh(self) -> None:
 
-        show_width, _, show_height = self._raw_data.bsize.partition(',')
+        bsize: str = self._raw_data.bsize
+        show_width, _, show_height = bsize.partition(',')
 
         if show_width and show_height:
             self._show_width = int(show_width)
@@ -392,29 +395,37 @@ class FragLink(FragText):
 
     Fields:
         text (str): 链接标题
-        link (str): 链接url
+        url (yarl.URL): 使用yarl解析后的链接 外链会在去除前缀后解析
+        raw_url (str): 原始链接
         is_external (bool): 是否外部链接
     """
 
-    __slots__ = ['text', 'link', '_is_external']
+    __slots__ = ['text', '_url', 'raw_url', 'is_external']
 
     external_perfix = "http://tieba.baidu.com/mo/q/checkurl"
 
     def __init__(self, _raw_data: PbContent_pb2.PbContent) -> None:
         super(FragLink, self).__init__(_raw_data)
-
         self.text: str = self._raw_data.text
-        self.link: str = self._raw_data.link
-        self._is_external = None
+        self._url: yarl.URL = None
+        self.raw_url: str = self._raw_data.link
+        self.is_external = self.raw_url.startswith(self.external_perfix)
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__} [text:{self.text} / link:{self.link}]"
+        return f"{self.__class__.__name__} [text:{self.text} / raw_url:{self.raw_url}]"
 
     @property
-    def is_external(self) -> bool:
-        if self._is_external is None:
-            self._is_external = self.link.startswith(self.external_perfix)
-        return self._is_external
+    def url(self) -> yarl.URL:
+        if self._url is None:
+
+            if self.is_external:
+                external_url = urllib.parse.unquote(self.raw_url.removeprefix(self.external_perfix + "?url="))
+                self._url = yarl.URL(external_url)
+
+            else:
+                self._url = yarl.URL(self.raw_url)
+
+        return self._url
 
 
 class FragVoice(_Fragment):
@@ -688,19 +699,21 @@ class _BasicContainer(_DataWrapper):
         text (str): 文本内容
 
         fid (int): 所在吧id
+        fname (str): 所在贴吧名
         tid (int): 主题帖tid
         pid (int): 回复pid
         user (UserInfo): 发布者信息
         author_id (int): 发布者user_id
     """
 
-    __slots__ = ['_text', 'fid', 'tid', 'pid', '_user', '_author_id']
+    __slots__ = ['_text', 'fname', 'fid', 'tid', 'pid', '_user', '_author_id']
 
     def __init__(self, _raw_data) -> None:
         super(_BasicContainer, self).__init__(_raw_data)
 
         self._text: str = None
         self.fid: int = 0
+        self.fname: str = ''
         self.tid: int = 0
         self.pid: int = 0
         self._user: UserInfo = None
@@ -849,6 +862,7 @@ class ShareThread(_BasicContainer):
         contents (Fragments): 内容碎片列表
 
         fid (int): 所在吧id
+        fname (str): 所在贴吧名
         tid (int): 主题帖tid
         pid (int): 首楼的回复pid
 
@@ -866,7 +880,8 @@ class ShareThread(_BasicContainer):
 
         if _raw_data:
             self.fid: int = _raw_data.fid
-            self.tid: int = _raw_data.tid
+            self.fname: str = _raw_data.fname
+            self.tid: int = int(_raw_data.tid)
             self.pid: int = _raw_data.pid
 
             self.title: str = _raw_data.title
@@ -914,6 +929,7 @@ class Thread(_BasicContainer):
         contents (Fragments): 内容碎片列表
 
         fid (int): 所在吧id
+        fname (str): 所在贴吧名
         tid (int): 主题帖tid
         pid (int): 首楼的回复pid
         user (UserInfo): 发布者信息
@@ -967,6 +983,7 @@ class Thread(_BasicContainer):
 
         if _raw_data:
             self.fid: int = _raw_data.fid
+            self.fname: str = _raw_data.fname
             self.tid: int = _raw_data.id
             self.pid: int = _raw_data.first_post_id
             self._user = UserInfo(_raw_data=_raw_data.author) if _raw_data.author.id else None
@@ -1484,7 +1501,7 @@ class Reply(_BasicContainer):
         create_time (int): 10位时间戳，创建时间
     """
 
-    __slots__ = ['fname', 'post_pid', '_post_user', '_thread_user', 'is_floor', 'create_time']
+    __slots__ = ['post_pid', '_post_user', '_thread_user', 'is_floor', 'create_time']
 
     def __init__(self, _raw_data: Optional[ReplyMeResIdl_pb2.ReplyMeResIdl.DataRes.ReplyList] = None) -> None:
         super(Reply, self).__init__(_raw_data)
@@ -1504,6 +1521,10 @@ class Reply(_BasicContainer):
             self.create_time = _raw_data.time
 
         else:
+            self._text: str = ''
+
+            self.post_pid: int = 0
+
             self.is_floor: bool = False
             self.create_time: int = 0
 
@@ -1601,7 +1622,7 @@ class At(_BasicContainer):
         create_time (int): 10位时间戳，创建时间
     """
 
-    __slots__ = ['fname', 'is_floor', 'is_thread', 'create_time']
+    __slots__ = ['is_floor', 'is_thread', 'create_time']
 
     def __init__(self, _raw_data: Optional[Dict] = None) -> None:
         super(At, self).__init__(_raw_data)
@@ -1619,10 +1640,6 @@ class At(_BasicContainer):
 
         else:
             self._text = ''
-
-            self.fname = ''
-            self.tid = 0
-            self.pid = 0
 
             self.is_floor = False
             self.is_thread = False
@@ -1698,7 +1715,7 @@ class Search(_BasicContainer):
         create_time (int): 10位时间戳，创建时间
     """
 
-    __slots__ = ['fname', 'title', 'is_floor', 'create_time']
+    __slots__ = ['title', 'is_floor', 'create_time']
 
     def __init__(self, _raw_data: Optional[Dict] = None) -> None:
         super(Search, self).__init__(_raw_data)
@@ -1717,10 +1734,6 @@ class Search(_BasicContainer):
         else:
             self._text = ''
             self.title = ''
-
-            self.fname = ''
-            self._tid = 0
-            self._pid = 0
 
             self._is_floor = False
             self._create_time = 0
@@ -1789,6 +1802,7 @@ class NewThread(_BasicContainer):
         contents (Fragments): 内容碎片列表
 
         fid (int): 所在吧id
+        fname (str): 所在吧名
         tid (int): 主题帖tid
         pid (int): 首楼的回复pid
         user (UserInfo): 发布者信息
@@ -1824,6 +1838,7 @@ class NewThread(_BasicContainer):
 
         if _raw_data:
             self.fid: int = _raw_data.forum_id
+            self.fname: str = _raw_data.forum_name
             self.tid: int = _raw_data.thread_id
             self.pid: int = _raw_data.post_id
             self._author_id: int = _raw_data.user_id

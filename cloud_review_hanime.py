@@ -245,7 +245,7 @@ class CloudReview(tb.Reviewer):
             return tb.Punish()
 
         text = obj.text
-        if re.search("魅.?魔.{0,5}(】|斯黛拉)|足硿笨", text, re.I):
+        if re.search("\u05af|足硿笨", text, re.I):
             return tb.Punish(1, 1)
 
         return tb.Punish()
