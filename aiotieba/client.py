@@ -161,7 +161,7 @@ class Sessions(object):
         self.websocket: aiohttp.ClientWebSocketResponse = None
         self._ws_password: bytes = None
         self._ws_aes_chiper = None
-        self._ws_responses: List[WebsocketResponse] = []
+        self._ws_responses: Dict[int, WebsocketResponse] = {}
         self._ws_dispatcher: asyncio.Task = None
 
     async def enter(self) -> "Sessions":
@@ -368,6 +368,17 @@ class Sessions(object):
 
         return True
 
+    @property
+    def is_ws_aviliable(self) -> bool:
+        """
+        websocket是否可用
+
+        Returns:
+            bool: True则websocket可用 反之不可用
+        """
+
+        return not (self.websocket is None or self.websocket.closed or self.websocket._writer.transport.is_closing())
+
     def _pack_ws_bytes(
         self, ws_bytes: bytes, cmd: int, req_id: int, need_gzip: bool = True, need_encrypt: bool = True
     ) -> bytes:
@@ -450,20 +461,10 @@ class Sessions(object):
             bytes: 封装后的websocket数据
         """
 
-        # 丢弃超时response
-        ws_timeout: float = 10.0
-        timeout_threshold: float = time.time() - ws_timeout
-        timeout_idx: int = 0
-        for idx, ws_res in enumerate(self._ws_responses):
-            if ws_res.timestamp < timeout_threshold:
-                timeout_idx = idx
-                break
-        self._ws_responses = self._ws_responses[timeout_idx:]
-
         ws_res = WebsocketResponse()
         ws_bytes = self._pack_ws_bytes(ws_bytes, cmd, int(ws_res), need_gzip, need_encrypt)
 
-        self._ws_responses.append(ws_res)
+        self._ws_responses[int(ws_res)] = ws_res
         await self.websocket.send_bytes(ws_bytes)
 
         return ws_res
@@ -475,15 +476,25 @@ class Sessions(object):
 
         try:
             while 1:
+                # 丢弃超时response
+                ws_timeout: float = 10.0
+                timeout_threshold: float = time.time() - ws_timeout
+                timeout_req_ids: List[int] = []
+                for req_id, ws_res in self._ws_responses.items():
+                    if ws_res.timestamp >= timeout_threshold:
+                        break
+                    timeout_req_ids.append(req_id)
+                for timeout_req_id in timeout_req_ids:
+                    del self._ws_responses[timeout_req_id]
+
                 res_bytes: bytes = (await self.websocket.receive()).data
 
                 res_bytes, _, req_id = self._unpack_ws_bytes(res_bytes)
 
-                for ws_res in self._ws_responses:
-                    if int(ws_res) == req_id:
-                        ws_res._data = res_bytes
-                        ws_res._event.set()
-                        break
+                ws_res = self._ws_responses[req_id]
+                ws_res._data = res_bytes
+                ws_res._event.set()
+                del self._ws_responses[req_id]
 
         except asyncio.CancelledError:
             return
@@ -537,7 +548,7 @@ class Client(object):
             bool: 操作是否成功
         """
 
-        if self.sessions.websocket is None or self.sessions.websocket.closed:
+        if not self.sessions.is_ws_aviliable:
             try:
                 if not await self.sessions.create_websocket():
                     return False
