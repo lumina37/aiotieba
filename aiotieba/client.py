@@ -473,7 +473,7 @@ class Client(object):
 
         return ws_bytes, cmd, req_id
 
-    async def create_websocket(self, heartbeat: Optional[float] = None) -> bool:
+    async def _create_websocket(self, heartbeat: Optional[float] = None) -> bool:
         """
         建立weboscket连接
 
@@ -567,7 +567,7 @@ class Client(object):
         except asyncio.CancelledError:
             return
 
-    async def init_websocket(self) -> bool:
+    async def get_websocket(self) -> bool:
         """
         初始化weboscket连接对象并发送初始化信息
 
@@ -577,7 +577,7 @@ class Client(object):
 
         if not self.is_ws_aviliable:
             try:
-                if not await self.create_websocket():
+                if not await self._create_websocket():
                     return False
 
                 pub_key_bytes = base64.b64decode(
@@ -3136,7 +3136,7 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            if not await self.init_websocket():
+            if not await self.get_websocket():
                 return False
 
             res = await self.send_ws_bytes(req_proto.SerializeToString(), cmd=205001)
