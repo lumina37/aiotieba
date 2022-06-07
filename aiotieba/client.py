@@ -122,15 +122,16 @@ class WebsocketResponse(object):
         return self._data
 
 
-class Sessions(object):
+class Client(object):
     """
-    保持会话
+    贴吧客户端
 
     Args:
         BDUSS_key (str, optional): 用于从CONFIG中提取BDUSS. Defaults to ''.
     """
 
     __slots__ = [
+        'BDUSS_key',
         'BDUSS',
         'STOKEN',
         '_connector',
@@ -143,13 +144,20 @@ class Sessions(object):
         '_ws_aes_chiper',
         '_ws_responses',
         '_ws_dispatcher',
+        '_tbs',
+        '_client_id',
+        '_cuid',
+        '_cuid_galaxy2',
     ]
 
     latest_version: ClassVar[str] = "12.25.0.2"  # 这是目前的最新版本
     no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
     post_version: ClassVar[str] = "9.1.0.0"  # 发帖使用极速版
 
+    fid_dict: ClassVar[Dict[str, int]] = {}
+
     def __init__(self, BDUSS_key: str = '') -> None:
+        self.BDUSS_key = BDUSS_key
 
         self.BDUSS: str = CONFIG['BDUSS'].get(BDUSS_key, '')
         self.STOKEN: str = CONFIG['STOKEN'].get(BDUSS_key, '')
@@ -164,7 +172,12 @@ class Sessions(object):
         self._ws_responses: Dict[int, WebsocketResponse] = {}
         self._ws_dispatcher: asyncio.Task = None
 
-    async def enter(self) -> "Sessions":
+        self._tbs: str = ''
+        self._client_id: str = None
+        self._cuid: str = None
+        self._cuid_galaxy2: str = None
+
+    async def enter(self) -> "Client":
         _trust_env = False
         _timeout = aiohttp.ClientTimeout(connect=5, sock_connect=3, sock_read=10)
         self._connector = aiohttp.TCPConnector(
@@ -243,7 +256,7 @@ class Sessions(object):
 
         return self
 
-    async def __aenter__(self) -> "Sessions":
+    async def __aenter__(self) -> "Client":
         return await self.enter()
 
     async def close(self) -> None:
@@ -259,6 +272,61 @@ class Sessions(object):
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.close()
+
+    @property
+    def timestamp_ms(self) -> int:
+        """
+        返回13位毫秒级整数时间戳
+
+        Returns:
+            int: 毫秒级整数时间戳
+        """
+
+        return int(time.time() * 1000)
+
+    @property
+    def client_id(self) -> str:
+        """
+        返回一个供贴吧客户端使用的client_id
+        在初次生成后该属性便不会再发生变化
+
+        Returns:
+            str: 举例 wappc_1653660000000_123
+        """
+
+        if self._client_id is None:
+            self._client_id = f"wappc_{self.timestamp_ms}_{random.randint(0,999):03d}"
+        return self._client_id
+
+    @property
+    def cuid(self) -> str:
+        """
+        返回一个供贴吧客户端使用的cuid
+        在初次生成后该属性便不会再发生变化
+
+        Returns:
+            str: 举例 baidutiebaappe4200716-58a8-4170-af15-ea7edeb8e513
+        """
+
+        if self._cuid is None:
+            self._cuid = "baidutiebaapp" + str(uuid.uuid4())
+        return self._cuid
+
+    @property
+    def cuid_galaxy2(self) -> str:
+        """
+        返回一个供贴吧客户端使用的cuid_galaxy2
+        在初次生成后该属性便不会再发生变化
+
+        Returns:
+            str: 举例 159AB36E0E5C55E4AAE340CA046F1303|0
+        """
+
+        if self._cuid_galaxy2 is None:
+            rand_str = binascii.hexlify(random.randbytes(16)).decode('ascii').upper()
+            self._cuid_galaxy2 = rand_str + "|0"
+
+        return self._cuid_galaxy2
 
     @staticmethod
     def pack_form(forms: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
@@ -339,46 +407,6 @@ class Sessions(object):
 
         return self._ws_aes_chiper
 
-    async def create_websocket(self, heartbeat: Optional[float] = None) -> bool:
-        """
-        建立weboscket连接
-
-        Args:
-            heartbeat (float, optional): 是否定时ping. Defaults to None.
-
-        Returns:
-            bool: 连接是否成功
-        """
-
-        if self._app_websocket is None:
-            await self.enter()
-
-        if self._ws_dispatcher is not None and not self._ws_dispatcher.cancelled():
-            self._ws_dispatcher.cancel()
-
-        try:
-            self.websocket = await self._app_websocket._ws_connect(
-                "ws://im.tieba.baidu.com:8000", heartbeat=heartbeat, ssl=False
-            )
-            self._ws_dispatcher = asyncio.create_task(self._ws_dispatch(), name="ws_dispatcher")
-
-        except Exception as err:
-            LOG.warning(f"Failed to create websocket. reason:{err}")
-            return False
-
-        return True
-
-    @property
-    def is_ws_aviliable(self) -> bool:
-        """
-        websocket是否可用
-
-        Returns:
-            bool: True则websocket可用 反之不可用
-        """
-
-        return not (self.websocket is None or self.websocket.closed or self.websocket._writer.transport.is_closing())
-
     def _pack_ws_bytes(
         self, ws_bytes: bytes, cmd: int, req_id: int, need_gzip: bool = True, need_encrypt: bool = True
     ) -> bytes:
@@ -445,6 +473,46 @@ class Sessions(object):
 
         return ws_bytes, cmd, req_id
 
+    async def create_websocket(self, heartbeat: Optional[float] = None) -> bool:
+        """
+        建立weboscket连接
+
+        Args:
+            heartbeat (float, optional): 是否定时ping. Defaults to None.
+
+        Returns:
+            bool: 连接是否成功
+        """
+
+        if self._app_websocket is None:
+            await self.enter()
+
+        if self._ws_dispatcher is not None and not self._ws_dispatcher.cancelled():
+            self._ws_dispatcher.cancel()
+
+        try:
+            self.websocket = await self._app_websocket._ws_connect(
+                "ws://im.tieba.baidu.com:8000", heartbeat=heartbeat, ssl=False
+            )
+            self._ws_dispatcher = asyncio.create_task(self._ws_dispatch(), name="ws_dispatcher")
+
+        except Exception as err:
+            LOG.warning(f"Failed to create websocket. reason:{err}")
+            return False
+
+        return True
+
+    @property
+    def is_ws_aviliable(self) -> bool:
+        """
+        websocket是否可用
+
+        Returns:
+            bool: True则websocket可用 反之不可用
+        """
+
+        return not (self.websocket is None or self.websocket.closed or self.websocket._writer.transport.is_closing())
+
     async def send_ws_bytes(
         self, ws_bytes: bytes, cmd: int, need_gzip: bool = True, need_encrypt: bool = True
     ) -> WebsocketResponse:
@@ -499,48 +567,7 @@ class Sessions(object):
         except asyncio.CancelledError:
             return
 
-
-class Client(object):
-    """
-    贴吧客户端
-
-    Args:
-        BDUSS_key (str, optional): 用于从CONFIG中提取BDUSS. Defaults to ''.
-    """
-
-    __slots__ = [
-        'BDUSS_key',
-        'sessions',
-        '_tbs',
-        '_client_id',
-        '_cuid',
-        '_cuid_galaxy2',
-    ]
-
-    fid_dict: ClassVar[Dict[str, int]] = {}
-
-    def __init__(self, BDUSS_key: str = '') -> None:
-        self.BDUSS_key = BDUSS_key
-        self.sessions = Sessions(BDUSS_key)
-        self._tbs: str = ''
-        self._client_id: str = None
-        self._cuid: str = None
-        self._cuid_galaxy2: str = None
-
-    async def enter(self) -> "Client":
-        await self.sessions.enter()
-        return self
-
-    async def __aenter__(self) -> "Client":
-        return await self.enter()
-
-    async def close(self) -> None:
-        await self.sessions.close()
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
-        await self.close()
-
-    async def create_websocket(self) -> bool:
+    async def init_websocket(self) -> bool:
         """
         初始化weboscket连接对象并发送初始化信息
 
@@ -548,9 +575,9 @@ class Client(object):
             bool: 操作是否成功
         """
 
-        if not self.sessions.is_ws_aviliable:
+        if not self.is_ws_aviliable:
             try:
-                if not await self.sessions.create_websocket():
+                if not await self.create_websocket():
                     return False
 
                 pub_key_bytes = base64.b64decode(
@@ -562,14 +589,14 @@ class Client(object):
                 rsa_chiper = PKCS1_v1_5.new(pub_key)
 
                 data_proto = UpdateClientInfoReqIdl_pb2.UpdateClientInfoReqIdl.DataReq()
-                data_proto.bduss = self.sessions.BDUSS
-                data_proto.device = f"""{{"subapp_type":"mini","_client_version":"{self.sessions.post_version}","pversion":"1.0.3","_msg_status":"1","_phone_imei":"000000000000000","from":"1021099l","cuid_galaxy2":"{self.cuid_galaxy2}","model":"LIO-AN00","_client_type":"2"}}"""
-                data_proto.secretKey = rsa_chiper.encrypt(self.sessions.ws_password)
+                data_proto.bduss = self.BDUSS
+                data_proto.device = f"""{{"subapp_type":"mini","_client_version":"{self.post_version}","pversion":"1.0.3","_msg_status":"1","_phone_imei":"000000000000000","from":"1021099l","cuid_galaxy2":"{self.cuid_galaxy2}","model":"LIO-AN00","_client_type":"2"}}"""
+                data_proto.secretKey = rsa_chiper.encrypt(self.ws_password)
                 req_proto = UpdateClientInfoReqIdl_pb2.UpdateClientInfoReqIdl()
                 req_proto.data.CopyFrom(data_proto)
-                req_proto.cuid = f"{self.cuid}|com.baidu.tieba_mini{self.sessions.post_version}"
+                req_proto.cuid = f"{self.cuid}|com.baidu.tieba_mini{self.post_version}"
 
-                res = await self.sessions.send_ws_bytes(
+                res = await self.send_ws_bytes(
                     req_proto.SerializeToString(), cmd=1001, need_gzip=False, need_encrypt=False
                 )
 
@@ -583,61 +610,6 @@ class Client(object):
                 return False
 
         return True
-
-    @property
-    def timestamp_ms(self) -> int:
-        """
-        返回13位毫秒级整数时间戳
-
-        Returns:
-            int: 毫秒级整数时间戳
-        """
-
-        return int(time.time() * 1000)
-
-    @property
-    def client_id(self) -> str:
-        """
-        返回一个供贴吧客户端使用的client_id
-        在初次生成后该属性便不会再发生变化
-
-        Returns:
-            str: 举例 wappc_1653660000000_123
-        """
-
-        if self._client_id is None:
-            self._client_id = f"wappc_{self.timestamp_ms}_{random.randint(0,999):03d}"
-        return self._client_id
-
-    @property
-    def cuid(self) -> str:
-        """
-        返回一个供贴吧客户端使用的cuid
-        在初次生成后该属性便不会再发生变化
-
-        Returns:
-            str: 举例 baidutiebaappe4200716-58a8-4170-af15-ea7edeb8e513
-        """
-
-        if self._cuid is None:
-            self._cuid = "baidutiebaapp" + str(uuid.uuid4())
-        return self._cuid
-
-    @property
-    def cuid_galaxy2(self) -> str:
-        """
-        返回一个供贴吧客户端使用的cuid_galaxy2
-        在初次生成后该属性便不会再发生变化
-
-        Returns:
-            str: 举例 159AB36E0E5C55E4AAE340CA046F1303|0
-        """
-
-        if self._cuid_galaxy2 is None:
-            rand_str = binascii.hexlify(random.randbytes(16)).decode('ascii').upper()
-            self._cuid_galaxy2 = rand_str + "|0"
-
-        return self._cuid_galaxy2
 
     async def get_tbs(self) -> str:
         """
@@ -667,7 +639,7 @@ class Client(object):
             return fid
 
         try:
-            res = await self.sessions.web.get(
+            res = await self.web.get(
                 "http://tieba.baidu.com/f/commit/share/fnameShareApi",
                 params={
                     'fname': fname,
@@ -751,7 +723,7 @@ class Client(object):
         """
 
         try:
-            res = await self.sessions.web.get(
+            res = await self.web.get(
                 "https://tieba.baidu.com/home/get/panel",
                 params={
                     'id': user.portrait,
@@ -798,7 +770,7 @@ class Client(object):
         """
 
         try:
-            res = await self.sessions.web.get(
+            res = await self.web.get(
                 "https://tieba.baidu.com/home/get/panel",
                 params={
                     'id': user.portrait,
@@ -839,7 +811,7 @@ class Client(object):
         }
 
         try:
-            res = await self.sessions.web.get("http://tieba.baidu.com/i/sys/user_json", params=params)
+            res = await self.web.get("http://tieba.baidu.com/i/sys/user_json", params=params)
 
             text = await res.text(encoding='utf-8', errors='ignore')
             res_json = json.loads(text)
@@ -875,9 +847,9 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            res = await self.sessions.app_proto.post(
+            res = await self.app_proto.post(
                 "http://c.tieba.baidu.com/c/u/user/getuserinfo?cmd=303024",
-                data=self.sessions.pack_proto_bytes(req_proto.SerializeToString()),
+                data=self.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = GetUserInfoResIdl_pb2.GetUserInfoResIdl()
@@ -906,7 +878,7 @@ class Client(object):
         """
 
         try:
-            res = await self.sessions.web.get(
+            res = await self.web.get(
                 "http://tieba.baidu.com/im/pcmsg/query/getUserInfo", params={'chatUid': user.user_id}
             )
 
@@ -943,9 +915,9 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            res = await self.sessions.app_proto.post(
+            res = await self.app_proto.post(
                 "http://c.tieba.baidu.com/c/u/user/getUserByTiebaUid?cmd=309702",
-                data=self.sessions.pack_proto_bytes(req_proto.SerializeToString()),
+                data=self.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = GetUserByTiebaUidResIdl_pb2.GetUserByTiebaUidResIdl()
@@ -982,7 +954,7 @@ class Client(object):
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         common_proto = CommonReq_pb2.CommonReq()
-        common_proto._client_version = self.sessions.latest_version
+        common_proto._client_version = self.latest_version
         data_proto = FrsPageReqIdl_pb2.FrsPageReqIdl.DataReq()
         data_proto.common.CopyFrom(common_proto)
         data_proto.kw = fname
@@ -994,9 +966,9 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            res = await self.sessions.app_proto.post(
+            res = await self.app_proto.post(
                 "http://c.tieba.baidu.com/c/f/frs/page?cmd=301001",
-                data=self.sessions.pack_proto_bytes(req_proto.SerializeToString()),
+                data=self.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = FrsPageResIdl_pb2.FrsPageResIdl()
@@ -1043,7 +1015,7 @@ class Client(object):
         """
 
         common_proto = CommonReq_pb2.CommonReq()
-        common_proto._client_version = self.sessions.latest_version
+        common_proto._client_version = self.latest_version
         data_proto = PbPageReqIdl_pb2.PbPageReqIdl.DataReq()
         data_proto.common.CopyFrom(common_proto)
         data_proto.kz = tid
@@ -1060,9 +1032,9 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            res = await self.sessions.app_proto.post(
+            res = await self.app_proto.post(
                 "http://c.tieba.baidu.com/c/f/pb/page?cmd=302001",
-                data=self.sessions.pack_proto_bytes(req_proto.SerializeToString()),
+                data=self.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = PbPageResIdl_pb2.PbPageResIdl()
@@ -1093,7 +1065,7 @@ class Client(object):
         """
 
         common_proto = CommonReq_pb2.CommonReq()
-        common_proto._client_version = self.sessions.latest_version
+        common_proto._client_version = self.latest_version
         data_proto = PbFloorReqIdl_pb2.PbFloorReqIdl.DataReq()
         data_proto.common.CopyFrom(common_proto)
         data_proto.kz = tid
@@ -1106,9 +1078,9 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            res = await self.sessions.app_proto.post(
+            res = await self.app_proto.post(
                 "http://c.tieba.baidu.com/c/f/pb/floor?cmd=302002",
-                data=self.sessions.pack_proto_bytes(req_proto.SerializeToString()),
+                data=self.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = PbFloorResIdl_pb2.PbFloorResIdl()
@@ -1148,7 +1120,7 @@ class Client(object):
             fname = await self.get_fname(fid)
 
         payload = [
-            ('BDUSS', self.sessions.BDUSS),
+            ('BDUSS', self.BDUSS),
             ('day', day),
             ('fid', fid),
             ('nick_name', user.show_name),
@@ -1162,9 +1134,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/bawu/commitprison", data=self.sessions.pack_form(payload)
-            )
+            res = await self.app.post("http://c.tieba.baidu.com/c/c/bawu/commitprison", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
@@ -1206,7 +1176,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.sessions.web.post("https://tieba.baidu.com/mo/q/bawublockclear", data=payload)
+            res = await self.web.post("https://tieba.baidu.com/mo/q/bawublockclear", data=payload)
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['no']):
@@ -1263,7 +1233,7 @@ class Client(object):
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         payload = [
-            ('BDUSS', self.sessions.BDUSS),
+            ('BDUSS', self.BDUSS),
             ('fid', fid),
             ('is_frs_mask', int(is_hide)),
             ('tbs', await self.get_tbs()),
@@ -1271,9 +1241,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/bawu/delthread", data=self.sessions.pack_form(payload)
-            )
+            res = await self.app.post("http://c.tieba.baidu.com/c/c/bawu/delthread", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
@@ -1302,7 +1270,7 @@ class Client(object):
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         payload = [
-            ('BDUSS', self.sessions.BDUSS),
+            ('BDUSS', self.BDUSS),
             ('fid', fid),
             ('pid', pid),
             ('tbs', await self.get_tbs()),
@@ -1310,9 +1278,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/bawu/delpost", data=self.sessions.pack_form(payload)
-            )
+            res = await self.app.post("http://c.tieba.baidu.com/c/c/bawu/delpost", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
@@ -1398,7 +1364,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.sessions.web.post("https://tieba.baidu.com/mo/q/bawurecoverthread", data=payload)
+            res = await self.web.post("https://tieba.baidu.com/mo/q/bawurecoverthread", data=payload)
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['no']):
@@ -1428,8 +1394,8 @@ class Client(object):
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         payload = [
-            ('BDUSS', self.sessions.BDUSS),
-            ('_client_version', self.sessions.latest_version),
+            ('BDUSS', self.BDUSS),
+            ('_client_version', self.latest_version),
             ('forum_id', fid),
             ('tbs', await self.get_tbs()),
             (
@@ -1439,9 +1405,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/bawu/moveTabThread", data=self.sessions.pack_form(payload)
-            )
+            res = await self.app.post("http://c.tieba.baidu.com/c/c/bawu/moveTabThread", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
@@ -1469,14 +1433,14 @@ class Client(object):
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         payload = [
-            ('BDUSS', self.sessions.BDUSS),
+            ('BDUSS', self.BDUSS),
             ('forum_id', fid),
             ('thread_id', tid),
         ]
 
         try:
-            res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/bawu/pushRecomToPersonalized", data=self.sessions.pack_form(payload)
+            res = await self.app.post(
+                "http://c.tieba.baidu.com/c/c/bawu/pushRecomToPersonalized", data=self.pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -1525,14 +1489,12 @@ class Client(object):
             """
 
             payload = [
-                ('BDUSS', self.sessions.BDUSS),
+                ('BDUSS', self.BDUSS),
                 ('word', fname),
             ]
 
             try:
-                res = await self.sessions.app.post(
-                    "http://c.tieba.baidu.com/c/c/bawu/goodlist", data=self.sessions.pack_form(payload)
-                )
+                res = await self.app.post("http://c.tieba.baidu.com/c/c/bawu/goodlist", data=self.pack_form(payload))
 
                 res_json: dict = await res.json(encoding='utf-8', content_type=None)
                 if int(res_json['error_code']):
@@ -1565,7 +1527,7 @@ class Client(object):
             """
 
             payload = [
-                ('BDUSS', self.sessions.BDUSS),
+                ('BDUSS', self.BDUSS),
                 ('cid', cid),
                 ('fid', fid),
                 ('ntn', 'set'),
@@ -1575,9 +1537,7 @@ class Client(object):
             ]
 
             try:
-                res = await self.sessions.app.post(
-                    "http://c.tieba.baidu.com/c/c/bawu/commitgood", data=self.sessions.pack_form(payload)
-                )
+                res = await self.app.post("http://c.tieba.baidu.com/c/c/bawu/commitgood", data=self.pack_form(payload))
 
                 res_json: dict = await res.json(encoding='utf-8', content_type=None)
                 if int(res_json['error_code']):
@@ -1612,7 +1572,7 @@ class Client(object):
             fname = await self.get_fname(fid)
 
         payload = [
-            ('BDUSS', self.sessions.BDUSS),
+            ('BDUSS', self.BDUSS),
             ('fid', fid),
             ('tbs', await self.get_tbs()),
             ('word', fname),
@@ -1620,9 +1580,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/bawu/commitgood", data=self.sessions.pack_form(payload)
-            )
+            res = await self.app.post("http://c.tieba.baidu.com/c/c/bawu/commitgood", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
@@ -1655,7 +1613,7 @@ class Client(object):
             fname = await self.get_fname(fid)
 
         payload = [
-            ('BDUSS', self.sessions.BDUSS),
+            ('BDUSS', self.BDUSS),
             ('fid', fid),
             ('ntn', 'set'),
             ('tbs', await self.get_tbs()),
@@ -1664,9 +1622,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/bawu/committop", data=self.sessions.pack_form(payload)
-            )
+            res = await self.app.post("http://c.tieba.baidu.com/c/c/bawu/committop", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
@@ -1699,7 +1655,7 @@ class Client(object):
             fname = await self.get_fname(fid)
 
         payload = [
-            ('BDUSS', self.sessions.BDUSS),
+            ('BDUSS', self.BDUSS),
             ('fid', fid),
             ('tbs', await self.get_tbs()),
             ('word', fname),
@@ -1707,9 +1663,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/bawu/committop", data=self.sessions.pack_form(payload)
-            )
+            res = await self.app.post("http://c.tieba.baidu.com/c/c/bawu/committop", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
@@ -1753,7 +1707,7 @@ class Client(object):
         }
 
         try:
-            res = await self.sessions.web.get("https://tieba.baidu.com/mo/q/bawurecover", params=params)
+            res = await self.web.get("https://tieba.baidu.com/mo/q/bawurecover", params=params)
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['no']):
@@ -1795,7 +1749,7 @@ class Client(object):
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         try:
-            res = await self.sessions.web.get(
+            res = await self.web.get(
                 "http://tieba.baidu.com/bawu2/platform/listBlackUser",
                 params={
                     'word': fname,
@@ -1846,7 +1800,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.sessions.web.post("http://tieba.baidu.com/bawu2/platform/addBlack", data=payload)
+            res = await self.web.post("http://tieba.baidu.com/bawu2/platform/addBlack", data=payload)
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['errno']):
@@ -1881,7 +1835,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.sessions.web.post("http://tieba.baidu.com/bawu2/platform/cancelBlack", data=payload)
+            res = await self.web.post("http://tieba.baidu.com/bawu2/platform/cancelBlack", data=payload)
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['errno']):
@@ -1926,7 +1880,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.sessions.web.post("https://tieba.baidu.com/mo/q/bawuappealhandle", data=payload)
+            res = await self.web.post("https://tieba.baidu.com/mo/q/bawuappealhandle", data=payload)
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['no']):
@@ -1965,7 +1919,7 @@ class Client(object):
         }
 
         try:
-            res = await self.sessions.web.get("https://tieba.baidu.com/mo/q/bawuappeal", params=params)
+            res = await self.web.get("https://tieba.baidu.com/mo/q/bawuappeal", params=params)
 
             text = await res.text(encoding='utf-8')
 
@@ -1989,7 +1943,7 @@ class Client(object):
         """
 
         try:
-            res = await self.sessions.web.get(img_url)
+            res = await self.web.get(img_url)
 
             content = await res.content.read()
             img_type = res.content_type.removeprefix('image/')
@@ -2015,14 +1969,12 @@ class Client(object):
         """
 
         payload = [
-            ('_client_version', self.sessions.latest_version),
-            ('bdusstoken', self.sessions.BDUSS),
+            ('_client_version', self.latest_version),
+            ('bdusstoken', self.BDUSS),
         ]
 
         try:
-            res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/s/login", data=self.sessions.pack_form(payload)
-            )
+            res = await self.app.post("http://c.tieba.baidu.com/c/s/login", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
@@ -2056,13 +2008,11 @@ class Client(object):
         """
 
         payload = [
-            ('BDUSS', self.sessions.BDUSS),
+            ('BDUSS', self.BDUSS),
         ]
 
         try:
-            res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/s/msg", data=self.sessions.pack_form(payload)
-            )
+            res = await self.app.post("http://c.tieba.baidu.com/c/s/msg", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
@@ -2096,8 +2046,8 @@ class Client(object):
         """
 
         common_proto = CommonReq_pb2.CommonReq()
-        common_proto.BDUSS = self.sessions.BDUSS
-        common_proto._client_version = self.sessions.latest_version
+        common_proto.BDUSS = self.BDUSS
+        common_proto._client_version = self.latest_version
         data_proto = ReplyMeReqIdl_pb2.ReplyMeReqIdl.DataReq()
         data_proto.pn = str(pn)
         data_proto.common.CopyFrom(common_proto)
@@ -2105,9 +2055,9 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            res = await self.sessions.app_proto.post(
+            res = await self.app_proto.post(
                 "http://c.tieba.baidu.com/c/u/feed/replyme?cmd=303007",
-                data=self.sessions.pack_proto_bytes(req_proto.SerializeToString()),
+                data=self.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = ReplyMeResIdl_pb2.ReplyMeResIdl()
@@ -2135,15 +2085,13 @@ class Client(object):
         """
 
         payload = [
-            ('BDUSS', self.sessions.BDUSS),
-            ('_client_version', self.sessions.latest_version),
+            ('BDUSS', self.BDUSS),
+            ('_client_version', self.latest_version),
             ('pn', pn),
         ]
 
         try:
-            res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/u/feed/atme", data=self.sessions.pack_form(payload)
-            )
+            res = await self.app.post("http://c.tieba.baidu.com/c/u/feed/atme", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
@@ -2222,8 +2170,8 @@ class Client(object):
         """
 
         common_proto = CommonReq_pb2.CommonReq()
-        common_proto.BDUSS = self.sessions.BDUSS
-        common_proto._client_version = self.sessions.latest_version
+        common_proto.BDUSS = self.BDUSS
+        common_proto._client_version = self.latest_version
         data_proto = UserPostReqIdl_pb2.UserPostReqIdl.DataReq()
         data_proto.user_id = user.user_id
         data_proto.is_thread = is_thread
@@ -2235,9 +2183,9 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            res = await self.sessions.app_proto.post(
+            res = await self.app_proto.post(
                 "http://c.tieba.baidu.com/c/u/feed/userpost?cmd=303002",
-                data=self.sessions.pack_proto_bytes(req_proto.SerializeToString()),
+                data=self.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = UserPostResIdl_pb2.UserPostResIdl()
@@ -2274,15 +2222,13 @@ class Client(object):
         """
 
         payload = [
-            ('BDUSS', self.sessions.BDUSS),
-            ('_client_version', self.sessions.latest_version),
+            ('BDUSS', self.BDUSS),
+            ('_client_version', self.latest_version),
             ('pn', pn),
         ]
 
         try:
-            res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/u/fans/page", data=self.sessions.pack_form(payload)
-            )
+            res = await self.app.post("http://c.tieba.baidu.com/c/u/fans/page", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
@@ -2318,15 +2264,13 @@ class Client(object):
             user = BasicUserInfo(_id)
 
         payload = [
-            ('BDUSS', self.sessions.BDUSS),
+            ('BDUSS', self.BDUSS),
             ('fans_uid', user.user_id),
             ('tbs', await self.get_tbs()),
         ]
 
         try:
-            res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/user/removeFans", data=self.sessions.pack_form(payload)
-            )
+            res = await self.app.post("http://c.tieba.baidu.com/c/c/user/removeFans", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
@@ -2351,15 +2295,13 @@ class Client(object):
         """
 
         payload = [
-            ('BDUSS', self.sessions.BDUSS),
-            ('_client_version', self.sessions.latest_version),
+            ('BDUSS', self.BDUSS),
+            ('_client_version', self.latest_version),
             ('pn', pn),
         ]
 
         try:
-            res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/u/follow/followList", data=self.sessions.pack_form(payload)
-            )
+            res = await self.app.post("http://c.tieba.baidu.com/c/u/follow/followList", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
@@ -2395,15 +2337,13 @@ class Client(object):
             user = BasicUserInfo(_id)
 
         payload = [
-            ('BDUSS', self.sessions.BDUSS),
+            ('BDUSS', self.BDUSS),
             ('portrait', user.portrait),
             ('tbs', await self.get_tbs()),
         ]
 
         try:
-            res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/user/follow", data=self.sessions.pack_form(payload)
-            )
+            res = await self.app.post("http://c.tieba.baidu.com/c/c/user/follow", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
@@ -2433,15 +2373,13 @@ class Client(object):
             user = BasicUserInfo(_id)
 
         payload = [
-            ('BDUSS', self.sessions.BDUSS),
+            ('BDUSS', self.BDUSS),
             ('portrait', user.portrait),
             ('tbs', await self.get_tbs()),
         ]
 
         try:
-            res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/user/unfollow", data=self.sessions.pack_form(payload)
-            )
+            res = await self.app.post("http://c.tieba.baidu.com/c/c/user/unfollow", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
@@ -2466,7 +2404,7 @@ class Client(object):
         """
 
         try:
-            res = await self.sessions.web.get("https://tieba.baidu.com/mg/o/getForumHome", params={'pn': pn, 'rn': 200})
+            res = await self.web.get("https://tieba.baidu.com/mg/o/getForumHome", params={'pn': pn, 'rn': 200})
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['errno']):
@@ -2498,14 +2436,12 @@ class Client(object):
 
         try:
             payload = [
-                ('BDUSS', self.sessions.BDUSS),
+                ('BDUSS', self.BDUSS),
                 ('fid', fid),
                 ('tbs', await self.get_tbs()),
             ]
 
-            res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/forum/like", data=self.sessions.pack_form(payload)
-            )
+            res = await self.app.post("http://c.tieba.baidu.com/c/c/forum/like", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
@@ -2535,14 +2471,12 @@ class Client(object):
 
         try:
             payload = [
-                ('BDUSS', self.sessions.BDUSS),
+                ('BDUSS', self.BDUSS),
                 ('fid', fid),
                 ('tbs', await self.get_tbs()),
             ]
 
-            res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/forum/unfavolike", data=self.sessions.pack_form(payload)
-            )
+            res = await self.app.post("http://c.tieba.baidu.com/c/c/forum/unfavolike", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
@@ -2570,15 +2504,13 @@ class Client(object):
 
         try:
             payload = [
-                ('BDUSS', self.sessions.BDUSS),
-                ('_client_version', self.sessions.latest_version),
+                ('BDUSS', self.BDUSS),
+                ('_client_version', self.latest_version),
                 ('kw', fname),
                 ('tbs', await self.get_tbs()),
             ]
 
-            res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/forum/sign", data=self.sessions.pack_form(payload)
-            )
+            res = await self.app.post("http://c.tieba.baidu.com/c/c/forum/sign", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             error_code = int(res_json['error_code'])
@@ -2615,16 +2547,14 @@ class Client(object):
 
         payload = [
             ('_client_type', 2),  # 删除该字段会导致post_list为空
-            ('_client_version', self.sessions.latest_version),  # 删除该字段会导致post_list和dynamic_list为空
+            ('_client_version', self.latest_version),  # 删除该字段会导致post_list和dynamic_list为空
             ('friend_uid_portrait', user.portrait),
             ('need_post_count', 1),  # 删除该字段会导致无法获取发帖回帖数量
             # ('uid', user_id),  # 用该字段检查共同关注的吧
         ]
 
         try:
-            res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/u/user/profile", data=self.sessions.pack_form(payload)
-            )
+            res = await self.app.post("http://c.tieba.baidu.com/c/u/user/profile", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
@@ -2674,7 +2604,7 @@ class Client(object):
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         payload = [
-            ('_client_version', self.sessions.latest_version),
+            ('_client_version', self.latest_version),
             ('kw', fname),
             ('only_thread', int(only_thread)),
             ('pn', pn),
@@ -2684,9 +2614,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/s/searchpost", data=self.sessions.pack_form(payload)
-            )
+            res = await self.app.post("http://c.tieba.baidu.com/c/s/searchpost", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
@@ -2717,14 +2645,12 @@ class Client(object):
             user = BasicUserInfo(_id)
 
         payload = [
-            ('BDUSS', self.sessions.BDUSS),
+            ('BDUSS', self.BDUSS),
             ('friend_uid', user.user_id),
         ]
 
         try:
-            res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/f/forum/like", data=self.sessions.pack_form(payload)
-            )
+            res = await self.app.post("http://c.tieba.baidu.com/c/f/forum/like", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
@@ -2756,14 +2682,12 @@ class Client(object):
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         payload = [
-            ('_client_version', self.sessions.latest_version),
+            ('_client_version', self.latest_version),
             ('forum_id', fid),
         ]
 
         try:
-            res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/f/forum/getforumdetail", data=self.sessions.pack_form(payload)
-            )
+            res = await self.app.post("http://c.tieba.baidu.com/c/f/forum/getforumdetail", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
@@ -2795,7 +2719,7 @@ class Client(object):
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         common_proto = CommonReq_pb2.CommonReq()
-        common_proto._client_version = self.sessions.latest_version
+        common_proto._client_version = self.latest_version
         data_proto = GetBawuInfoReqIdl_pb2.GetBawuInfoReqIdl.DataReq()
         data_proto.common.CopyFrom(common_proto)
         data_proto.forum_id = fid
@@ -2803,9 +2727,9 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            res = await self.sessions.app_proto.post(
+            res = await self.app_proto.post(
                 "http://c.tieba.baidu.com/c/f/forum/getBawuInfo?cmd=301007",
-                data=self.sessions.pack_proto_bytes(req_proto.SerializeToString()),
+                data=self.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = GetBawuInfoResIdl_pb2.GetBawuInfoResIdl()
@@ -2841,8 +2765,8 @@ class Client(object):
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         common_proto = CommonReq_pb2.CommonReq()
-        common_proto.BDUSS = self.sessions.BDUSS
-        common_proto._client_version = self.sessions.latest_version
+        common_proto.BDUSS = self.BDUSS
+        common_proto._client_version = self.latest_version
         data_proto = SearchPostForumReqIdl_pb2.SearchPostForumReqIdl.DataReq()
         data_proto.common.CopyFrom(common_proto)
         data_proto.word = fname
@@ -2850,9 +2774,9 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            res = await self.sessions.app_proto.post(
+            res = await self.app_proto.post(
                 "http://c.tieba.baidu.com/c/f/forum/searchPostForum?cmd=309466",
-                data=self.sessions.pack_proto_bytes(req_proto.SerializeToString()),
+                data=self.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = SearchPostForumResIdl_pb2.SearchPostForumResIdl()
@@ -2883,16 +2807,16 @@ class Client(object):
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         payload = [
-            ('BDUSS', self.sessions.BDUSS),
-            ('_client_version', self.sessions.latest_version),
+            ('BDUSS', self.BDUSS),
+            ('_client_version', self.latest_version),
             ('forum_id', fid),
             ('pn', pn),
             ('rn', 30),
         ]
 
         try:
-            res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/f/bawu/getRecomThreadHistory", data=self.sessions.pack_form(payload)
+            res = await self.app.post(
+                "http://c.tieba.baidu.com/c/f/bawu/getRecomThreadHistory", data=self.pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
@@ -2929,16 +2853,16 @@ class Client(object):
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         payload = [
-            ('BDUSS', self.sessions.BDUSS),
-            ('_client_version', self.sessions.latest_version),
+            ('BDUSS', self.BDUSS),
+            ('_client_version', self.latest_version),
             ('forum_id', fid),
             ('pn', 1),
             ('rn', 0),
         ]
 
         try:
-            res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/f/bawu/getRecomThreadList", data=self.sessions.pack_form(payload)
+            res = await self.app.post(
+                "http://c.tieba.baidu.com/c/f/bawu/getRecomThreadList", data=self.pack_form(payload)
             )
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
@@ -2977,8 +2901,8 @@ class Client(object):
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         payload = [
-            ('BDUSS', self.sessions.BDUSS),
-            ('_client_version', self.sessions.latest_version),
+            ('BDUSS', self.BDUSS),
+            ('_client_version', self.latest_version),
             ('forum_id', fid),
         ]
 
@@ -2993,9 +2917,7 @@ class Client(object):
             'recommend',
         ]
         try:
-            res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/f/forum/getforumdata", data=self.sessions.pack_form(payload)
-            )
+            res = await self.app.post("http://c.tieba.baidu.com/c/f/forum/getforumdata", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
@@ -3030,7 +2952,7 @@ class Client(object):
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         try:
-            res = await self.sessions.web.get(
+            res = await self.web.get(
                 "http://tieba.baidu.com/f/like/furank",
                 params={
                     'kw': fname,
@@ -3081,7 +3003,7 @@ class Client(object):
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         try:
-            res = await self.sessions.web.get(
+            res = await self.web.get(
                 "http://tieba.baidu.com/bawu2/platform/listMemberInfo",
                 params={
                     'word': fname,
@@ -3137,10 +3059,10 @@ class Client(object):
 
         try:
             payload = [
-                ('BDUSS', self.sessions.BDUSS),
+                ('BDUSS', self.BDUSS),
                 ('_client_id', self.client_id),
                 ('_client_type', 2),
-                ('_client_version', self.sessions.post_version),
+                ('_client_version', self.post_version),
                 ('_phone_imei', '000000000000000'),
                 ('anonymous', 1),
                 ('apid', 'sw'),
@@ -3162,7 +3084,7 @@ class Client(object):
                 ('new_vcode', 1),
                 ('post_from', 3),
                 ('reply_uid', 'null'),
-                ('stoken', self.sessions.STOKEN),
+                ('stoken', self.STOKEN),
                 ('subapp_type', 'mini'),
                 ('takephoto_num', 0),
                 ('tbs', await self.get_tbs()),
@@ -3174,9 +3096,7 @@ class Client(object):
                 ('z_id', '74FFB5E615AA72E0B057EE43E3D5A23A8BA34AAC1672FC9B56A7106C57BA03'),
             ]
 
-            res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/post/add", data=self.sessions.pack_form(payload)
-            )
+            res = await self.app.post("http://c.tieba.baidu.com/c/c/post/add", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
@@ -3216,10 +3136,10 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            if not await self.create_websocket():
+            if not await self.init_websocket():
                 return False
 
-            res = await self.sessions.send_ws_bytes(req_proto.SerializeToString(), cmd=205001)
+            res = await self.send_ws_bytes(req_proto.SerializeToString(), cmd=205001)
 
             res_proto = CommitPersonalMsgResIdl_pb2.CommitPersonalMsgResIdl()
             res_proto.ParseFromString(await res.read(timeout=5))
@@ -3253,16 +3173,14 @@ class Client(object):
 
         try:
             payload = [
-                ('BDUSS', self.sessions.BDUSS),
+                ('BDUSS', self.BDUSS),
                 ('forum_id', fid),
                 ('is_hide', int(hide)),
                 ('post_id', pid),
                 ('thread_id', tid),
             ]
 
-            res = await self.sessions.app.post(
-                "http://c.tieba.baidu.com/c/c/thread/setPrivacy", data=self.sessions.pack_form(payload)
-            )
+            res = await self.app.post("http://c.tieba.baidu.com/c/c/thread/setPrivacy", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
