@@ -3188,7 +3188,7 @@ class Client(object):
             LOG.warning(f"Failed to add post in {tid}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully add post in {tid}")
+        LOG.info(f"Successfully added post in {tid}")
         return True
 
     async def send_msg(self, _id: Union[str, int], content: str) -> bool:
@@ -3232,7 +3232,7 @@ class Client(object):
             LOG.warning(f"Failed to send msg to {user.user_id}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully sending msg to {user.user_id}. content:{content}")
+        LOG.info(f"Successfully sent msg to {user.user_id}")
         return True
 
     async def set_privacy(self, fname_or_fid: Union[str, int], tid: int, pid: int, hide: bool = True) -> bool:
