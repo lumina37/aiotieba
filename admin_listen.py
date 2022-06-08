@@ -99,9 +99,9 @@ class Context(object):
         if self.at.is_floor:
             await asyncio.sleep(1.5)
             comments = await self.handler.admin.get_comments(self.tid, self.pid, is_floor=True)
+            self.parent = comments.post
             if not comments:
                 return False
-            self.parent = comments.post
             for comment in comments:
                 if comment.pid == self.pid:
                     self.at._text = comment.text
@@ -592,8 +592,7 @@ class Listener(object):
         ctx.note = ctx.args[0] if len(ctx.args) >= 1 else f"cmd {ctx.cmd_type} by {ctx.user_id}"
 
         coros = []
-        if not await ctx._init_full():
-            return
+        await ctx._init_full()
 
         if ctx.at.is_floor:
             tb.log.info(f"Try to delete post {ctx.parent.text} post by {ctx.parent.user.log_name}")
