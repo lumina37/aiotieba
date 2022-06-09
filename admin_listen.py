@@ -703,8 +703,7 @@ class Listener(object):
             permission = int(ctx.args[0])
             note = ctx.args[1]
 
-        if not await ctx._init_full():
-            return
+        await ctx._init_full()
         if not (imgs := ctx.parent.contents.imgs):
             return
 

@@ -8,7 +8,7 @@
 @Required Modules: pyyaml aiohttp protobuf lxml beautifulsoup4 pycryptodome aiomysql opencv-contrib-python
 """
 
-import signal
+import os
 
 from .client import *
 from .logger import *
@@ -18,8 +18,10 @@ from .types import *
 log = get_logger()
 
 
-def terminate(signal_number, frame):
-    raise KeyboardInterrupt
+if os.name == 'posix':
+    import signal
 
+    def terminate(signal_number, frame):
+        raise KeyboardInterrupt
 
-signal.signal(signal.SIGTERM, terminate)
+    signal.signal(signal.SIGTERM, terminate)
