@@ -1130,7 +1130,7 @@ class Client(object):
             ('tbs', await self.get_tbs()),
             ('un', user.user_name),
             ('word', fname),
-            ('z', 672328094),
+            ('z', '42'),
         ]
 
         try:
@@ -1359,7 +1359,7 @@ class Client(object):
             ('fid', fid),
             ('tid_list[]', tid),
             ('pid_list[]', pid),
-            ('type_list[]', 1 if pid else 0),
+            ('type_list[]', '1' if pid else '0'),
             ('is_frs_mask_list[]', int(is_hide)),
         ]
 
@@ -1702,7 +1702,7 @@ class Client(object):
             'fn': fname,
             'fid': fid,
             'word': name,
-            'is_ajax': 1,
+            'is_ajax': '1',
             'pn': pn,
         }
 
@@ -1874,7 +1874,7 @@ class Client(object):
         payload = [
             ('fn', fname),
             ('fid', fid),
-            ('status', 2 if refuse else 1),
+            ('status', '2' if refuse else '1'),
             ('refuse_reason', 'auto refuse'),
             ('appeal_id', appeal_id),
         ]
@@ -1914,8 +1914,8 @@ class Client(object):
         params = {
             'fn': fname,
             'fid': fid,
-            'is_ajax': 1,
-            'pn': 1,
+            'is_ajax': '1',
+            'pn': '1',
         }
 
         try:
@@ -2546,10 +2546,10 @@ class Client(object):
             user = BasicUserInfo(_id)
 
         payload = [
-            ('_client_type', 2),  # 删除该字段会导致post_list为空
+            ('_client_type', '2'),  # 删除该字段会导致post_list为空
             ('_client_version', self.latest_version),  # 删除该字段会导致post_list和dynamic_list为空
             ('friend_uid_portrait', user.portrait),
-            ('need_post_count', 1),  # 删除该字段会导致无法获取发帖回帖数量
+            ('need_post_count', '1'),  # 删除该字段会导致无法获取发帖回帖数量
             # ('uid', user_id),  # 用该字段检查共同关注的吧
         ]
 
@@ -2811,7 +2811,7 @@ class Client(object):
             ('_client_version', self.latest_version),
             ('forum_id', fid),
             ('pn', pn),
-            ('rn', 30),
+            ('rn', '30'),
         ]
 
         try:
@@ -2856,8 +2856,8 @@ class Client(object):
             ('BDUSS', self.BDUSS),
             ('_client_version', self.latest_version),
             ('forum_id', fid),
-            ('pn', 1),
-            ('rn', 0),
+            ('pn', '1'),
+            ('rn', '0'),
         ]
 
         try:
@@ -3061,13 +3061,13 @@ class Client(object):
             payload = [
                 ('BDUSS', self.BDUSS),
                 ('_client_id', self.client_id),
-                ('_client_type', 2),
+                ('_client_type', '2'),
                 ('_client_version', self.post_version),
                 ('_phone_imei', '000000000000000'),
-                ('anonymous', 1),
+                ('anonymous', '1'),
                 ('apid', 'sw'),
-                ('barrage_time', 0),
-                ('can_no_forum', 0),
+                ('barrage_time', '0'),
+                ('can_no_forum', '0'),
                 ('content', content),
                 ('cuid', self.cuid),
                 ('cuid_galaxy2', self.cuid_galaxy2),
@@ -3075,24 +3075,24 @@ class Client(object):
                 ('fid', fid),
                 ('from', '1021099l'),
                 ('from_fourm_id', 'null'),
-                ('is_ad', 0),
-                ('is_barrage', 0),
-                ('is_feedback', 0),
+                ('is_ad', '0'),
+                ('is_barrage', '0'),
+                ('is_feedback', '0'),
                 ('kw', fname),
                 ('model', 'M2012K11AC'),
-                ('net_type', 1),
-                ('new_vcode', 1),
-                ('post_from', 3),
+                ('net_type', '1'),
+                ('new_vcode', '1'),
+                ('post_from', '3'),
                 ('reply_uid', 'null'),
                 ('stoken', self.STOKEN),
                 ('subapp_type', 'mini'),
-                ('takephoto_num', 0),
+                ('takephoto_num', '0'),
                 ('tbs', await self.get_tbs()),
                 ('tid', tid),
                 ('timestamp', self.timestamp_ms),
                 ('v_fid', ''),
                 ('v_fname', ''),
-                ('vcode_tag', 12),
+                ('vcode_tag', '12'),
                 ('z_id', '74FFB5E615AA72E0B057EE43E3D5A23A8BA34AAC1672FC9B56A7106C57BA03'),
             ]
 
