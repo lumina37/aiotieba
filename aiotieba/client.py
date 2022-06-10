@@ -12,6 +12,7 @@ import re
 import socket
 import time
 import uuid
+import weakref
 from typing import ClassVar, Dict, List, Literal, Optional, Tuple, Union
 
 import aiohttp
@@ -79,11 +80,13 @@ class WebsocketResponse(object):
     Fields:
         _timestamp (int): 请求时间戳
         _req_id (int): 唯一的请求id
-        _event (asyncio.Event): 当该事件被set时意味着data已经可读
+        _readable_event (asyncio.Event): 当该事件被set时意味着data已经可读
         _data (bytes): 来自websocket的数据
     """
 
-    __slots__ = ['_timestamp', '_req_id', '_event', '_data']
+    __slots__ = ['__weakref__', '_timestamp', '_req_id', '_event', '_data']
+
+    ws_res_wait_dict: weakref.WeakValueDictionary[int, "WebsocketResponse"] = weakref.WeakValueDictionary()
 
     def __init__(self) -> None:
         self._timestamp: int = int(time.time())
@@ -94,8 +97,9 @@ class WebsocketResponse(object):
         WEBSOCKET_REQUEST_ID += 1
         self._req_id = WEBSOCKET_REQUEST_ID
 
-        self._event: asyncio.Event = asyncio.Event()
+        self._readable_event: asyncio.Event = asyncio.Event()
         self._data: bytes = None
+        self.ws_res_wait_dict[self._req_id] = self
 
     def __int__(self) -> int:
         return self._req_id
@@ -104,21 +108,33 @@ class WebsocketResponse(object):
         return self._req_id
 
     def __eq__(self, obj: "WebsocketResponse"):
-        return self._event is obj._event and self._req_id == obj._req_id
+        return self._readable_event is obj._readable_event and self._req_id == obj._req_id
 
     @property
     def timestamp(self) -> int:
         return self._timestamp
 
-    async def read(self, timeout: Optional[float] = None) -> bytes:
-        if timeout:
-            try:
-                await asyncio.wait_for(self._event.wait(), timeout)
-            except asyncio.TimeoutError:
-                raise asyncio.TimeoutError("Timeout to read")
-        else:
-            await self._event.wait()
+    async def read(self, timeout: float) -> bytes:
+        """
+        _summary_
 
+        Args:
+            timeout (float): 设置超时秒数
+
+        Raises:
+            asyncio.TimeoutError: 超时后抛出该异常
+
+        Returns:
+            bytes: 从websocket接收到的数据
+        """
+
+        try:
+            await asyncio.wait_for(self._readable_event.wait(), timeout)
+        except asyncio.TimeoutError:
+            del self.ws_res_wait_dict[self._req_id]
+            raise asyncio.TimeoutError("Timeout to read")
+
+        del self.ws_res_wait_dict[self._req_id]
         return self._data
 
 
@@ -221,7 +237,7 @@ class Client(object):
 
         # Init web client
         web_headers = {
-            aiohttp.hdrs.USER_AGENT: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:100.0) Gecko/20100101 Firefox/100.0",
+            aiohttp.hdrs.USER_AGENT: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:101.0) Gecko/20100101 Firefox/101.0",
             aiohttp.hdrs.ACCEPT_ENCODING: "gzip, deflate, br",
             aiohttp.hdrs.CACHE_CONTROL: "no-cache",
             aiohttp.hdrs.CONNECTION: "keep-alive",
@@ -415,8 +431,8 @@ class Client(object):
 
         Args:
             ws_bytes (bytes): 待发送的websocket数据
-            cmd (int, optional): 请求的cmd类型
-            req_id (int, optional): 请求的id
+            cmd (int): 请求的cmd类型
+            req_id (int): 请求的id
             need_gzip (bool, optional): 是否需要gzip压缩. Defaults to False.
             need_encrypt (bool, optional): 是否需要aes加密. Defaults to False.
 
@@ -559,10 +575,10 @@ class Client(object):
 
                 res_bytes, _, req_id = self._unpack_ws_bytes(res_bytes)
 
-                ws_res = self._ws_responses[req_id]
-                ws_res._data = res_bytes
-                ws_res._event.set()
-                del self._ws_responses[req_id]
+                ws_res = WebsocketResponse.ws_res_wait_dict.get(req_id, None)
+                if ws_res:
+                    ws_res._data = res_bytes
+                    ws_res._readable_event.set()
 
         except asyncio.CancelledError:
             return
@@ -1933,7 +1949,7 @@ class Client(object):
 
     async def get_image(self, img_url: str) -> np.ndarray:
         """
-        从链接获取jpg/png图像
+        从链接获取静态图像
 
         Args:
             img_url (str): 图像链接
@@ -1947,8 +1963,8 @@ class Client(object):
 
             content = await res.content.read()
             img_type = res.content_type.removeprefix('image/')
-            if img_type not in ['jpeg', 'png']:
-                raise ValueError(f"Content-Type should be image/jpeg or image/png rather than {res.content_type}")
+            if img_type not in ['jpeg', 'png', 'bmp']:
+                raise ValueError(f"Content-Type should be jpeg, png or bmp rather than {res.content_type}")
 
             image = cv.imdecode(np.frombuffer(content, np.uint8), cv.IMREAD_COLOR)
             if image is None:
