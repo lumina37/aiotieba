@@ -309,6 +309,9 @@ class FragImage(_Fragment):
         src (str): 压缩图像cdn_url
         big_src (str): 大图cdn_url
         origin_src (str): 图像源url
+        hash (str): 百度图库hash
+        show_width (int): 显示宽度
+        show_height (int): 显示高度
     """
 
     __slots__ = ['src', 'big_src', 'origin_src', 'origin_size', '_hash', '_show_width', '_show_height']
@@ -621,10 +624,10 @@ class Forum(_DataWrapper):
 
     Fields:
         fid (int): 吧id
-        name (str): 吧名
+        fname (str): 吧名
     """
 
-    __slots__ = ['_raw_data', 'fid', 'name']
+    __slots__ = ['_raw_data', 'fid', 'fname']
 
     def __init__(
         self,
@@ -634,14 +637,14 @@ class Forum(_DataWrapper):
 
         if _raw_data:
             self.fid: int = _raw_data.id
-            self.name: str = _raw_data.name
+            self.fname: str = _raw_data.name
 
         else:
             self.fid = 0
-            self.name = ''
+            self.fname = ''
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__} [fid:{self.fid} / name:{self.name}]"
+        return f"{self.__class__.__name__} [fid:{self.fid} / fname:{self.fname}]"
 
 
 class Page(_DataWrapper):
@@ -802,7 +805,7 @@ class VoteInfo(_DataWrapper):
     投票信息
 
     Fields:
-        title (str): 得票数
+        title (str): 投票标题
         options (list[VoteOption]): 选项列表
         is_multi (bool): 是否多选
         total_vote (int): 总投票数
@@ -890,12 +893,24 @@ class ShareThread(_BasicContainer):
             self.title = ''
 
     @property
+    def text(self) -> str:
+
+        if self._text is None:
+
+            if self.title:
+                self._text = f"{self.title}\n{self.contents.text}"
+            else:
+                self._text = self.contents.text
+
+        return self._text
+
+    @property
     def contents(self) -> Fragments:
 
         if self._contents is None:
 
             if self._raw_data:
-                self._contents = Fragments(self._raw_data.first_post_content)
+                self._contents = Fragments(self._raw_data.content)
             else:
                 self._contents = Fragments()
 
@@ -1117,6 +1132,7 @@ class Threads(_Containers[Thread]):
                 self._objs = [Thread(thread_proto) for thread_proto in self._raw_data.thread_list]
 
                 for thread in self._objs:
+                    thread.fname = self.forum.fname
                     thread._user = users[thread.author_id]
 
             else:
@@ -1306,12 +1322,14 @@ class Posts(_Containers[Post]):
                 for post in self._objs:
 
                     post.fid = self.forum.fid
+                    post.fname = self.forum.fname
                     post.tid = self.thread.tid
                     post._user = users.get(post.author_id, None)
                     post.is_thread_author = self.thread.author_id == post.author_id
 
                     for comment in post.comments:
                         comment.fid = post.fid
+                        comment.fname = post.fname
                         comment.tid = post.tid
                         comment._user = users.get(comment.author_id, None)
 
@@ -1436,6 +1454,7 @@ class Comments(_Containers[Comment]):
 
                 for comment in self._objs:
                     comment.fid = self.forum.fid
+                    comment.fname = self.forum.fname
                     comment.tid = self.thread.tid
 
             else:

@@ -12,6 +12,7 @@ import re
 import socket
 import time
 import uuid
+import weakref
 from typing import ClassVar, Dict, List, Literal, Optional, Tuple, Union
 
 import aiohttp
@@ -69,8 +70,6 @@ from .types import (
 
 LOG = get_logger()
 
-WEBSOCKET_REQUEST_ID: int = None
-
 
 class WebsocketResponse(object):
     """
@@ -79,46 +78,62 @@ class WebsocketResponse(object):
     Fields:
         _timestamp (int): 请求时间戳
         _req_id (int): 唯一的请求id
-        _event (asyncio.Event): 当该事件被set时意味着data已经可读
+        _readable_event (asyncio.Event): 当该事件被set时意味着data已经可读
         _data (bytes): 来自websocket的数据
     """
 
-    __slots__ = ['_timestamp', '_req_id', '_event', '_data']
+    __slots__ = ['__weakref__', '__dict__', '_timestamp', '_req_id', '_readable_event', '_data']
+
+    ws_res_wait_dict: weakref.WeakValueDictionary[int, "WebsocketResponse"] = weakref.WeakValueDictionary()
+    _websocket_request_id: int = None
 
     def __init__(self) -> None:
         self._timestamp: int = int(time.time())
 
-        global WEBSOCKET_REQUEST_ID
-        if WEBSOCKET_REQUEST_ID is None:
-            WEBSOCKET_REQUEST_ID = self._timestamp - 1
-        WEBSOCKET_REQUEST_ID += 1
-        self._req_id = WEBSOCKET_REQUEST_ID
+        if self._websocket_request_id is None:
+            self._websocket_request_id = self._timestamp - 1
+        self._websocket_request_id += 1
+        self._req_id = self._websocket_request_id
 
-        self._event: asyncio.Event = asyncio.Event()
+        self._readable_event: asyncio.Event = asyncio.Event()
         self._data: bytes = None
-
-    def __int__(self) -> int:
-        return self._req_id
+        self.ws_res_wait_dict[self._req_id] = self
 
     def __hash__(self) -> int:
         return self._req_id
 
     def __eq__(self, obj: "WebsocketResponse"):
-        return self._event is obj._event and self._req_id == obj._req_id
+        return self._readable_event is obj._readable_event and self._req_id == obj._req_id
+
+    @property
+    def req_id(self) -> int:
+        return self._req_id
 
     @property
     def timestamp(self) -> int:
         return self._timestamp
 
-    async def read(self, timeout: Optional[float] = None) -> bytes:
-        if timeout:
-            try:
-                await asyncio.wait_for(self._event.wait(), timeout)
-            except asyncio.TimeoutError:
-                raise asyncio.TimeoutError("Timeout to read")
-        else:
-            await self._event.wait()
+    async def read(self, timeout: float) -> bytes:
+        """
+        读取websocket返回数据
 
+        Args:
+            timeout (float): 设置超时秒数
+
+        Raises:
+            asyncio.TimeoutError: 超时后抛出该异常
+
+        Returns:
+            bytes: 从websocket接收到的数据
+        """
+
+        try:
+            await asyncio.wait_for(self._readable_event.wait(), timeout)
+        except asyncio.TimeoutError:
+            del self.ws_res_wait_dict[self.req_id]
+            raise asyncio.TimeoutError("Timeout to read")
+
+        del self.ws_res_wait_dict[self.req_id]
         return self._data
 
 
@@ -142,7 +157,6 @@ class Client(object):
         'websocket',
         '_ws_password',
         '_ws_aes_chiper',
-        '_ws_responses',
         '_ws_dispatcher',
         '_tbs',
         '_client_id',
@@ -150,7 +164,7 @@ class Client(object):
         '_cuid_galaxy2',
     ]
 
-    latest_version: ClassVar[str] = "12.25.0.2"  # 这是目前的最新版本
+    latest_version: ClassVar[str] = "12.25.1.0"  # 这是目前的最新版本
     no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
     post_version: ClassVar[str] = "9.1.0.0"  # 发帖使用极速版
 
@@ -169,7 +183,6 @@ class Client(object):
         self.websocket: aiohttp.ClientWebSocketResponse = None
         self._ws_password: bytes = None
         self._ws_aes_chiper = None
-        self._ws_responses: Dict[int, WebsocketResponse] = {}
         self._ws_dispatcher: asyncio.Task = None
 
         self._tbs: str = ''
@@ -221,7 +234,7 @@ class Client(object):
 
         # Init web client
         web_headers = {
-            aiohttp.hdrs.USER_AGENT: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:100.0) Gecko/20100101 Firefox/100.0",
+            aiohttp.hdrs.USER_AGENT: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:101.0) Gecko/20100101 Firefox/101.0",
             aiohttp.hdrs.ACCEPT_ENCODING: "gzip, deflate, br",
             aiohttp.hdrs.CACHE_CONTROL: "no-cache",
             aiohttp.hdrs.CONNECTION: "keep-alive",
@@ -415,13 +428,13 @@ class Client(object):
 
         Args:
             ws_bytes (bytes): 待发送的websocket数据
-            cmd (int, optional): 请求的cmd类型
-            req_id (int, optional): 请求的id
+            cmd (int): 请求的cmd类型
+            req_id (int): 请求的id
             need_gzip (bool, optional): 是否需要gzip压缩. Defaults to False.
             need_encrypt (bool, optional): 是否需要aes加密. Defaults to False.
 
         Returns:
-            bytes: 封装后的websocket数据
+            bytes: 打包后的websocket数据
         """
 
         if need_gzip:
@@ -530,9 +543,9 @@ class Client(object):
         """
 
         ws_res = WebsocketResponse()
-        ws_bytes = self._pack_ws_bytes(ws_bytes, cmd, int(ws_res), need_gzip, need_encrypt)
+        ws_bytes = self._pack_ws_bytes(ws_bytes, cmd, ws_res.req_id, need_gzip, need_encrypt)
 
-        self._ws_responses[int(ws_res)] = ws_res
+        WebsocketResponse.ws_res_wait_dict[ws_res.req_id] = ws_res
         await self.websocket.send_bytes(ws_bytes)
 
         return ws_res
@@ -544,30 +557,18 @@ class Client(object):
 
         try:
             while 1:
-                # 丢弃超时response
-                ws_timeout: float = 10.0
-                timeout_threshold: float = time.time() - ws_timeout
-                timeout_req_ids: List[int] = []
-                for req_id, ws_res in self._ws_responses.items():
-                    if ws_res.timestamp >= timeout_threshold:
-                        break
-                    timeout_req_ids.append(req_id)
-                for timeout_req_id in timeout_req_ids:
-                    del self._ws_responses[timeout_req_id]
-
                 res_bytes: bytes = (await self.websocket.receive()).data
-
                 res_bytes, _, req_id = self._unpack_ws_bytes(res_bytes)
 
-                ws_res = self._ws_responses[req_id]
-                ws_res._data = res_bytes
-                ws_res._event.set()
-                del self._ws_responses[req_id]
+                ws_res = WebsocketResponse.ws_res_wait_dict.get(req_id, None)
+                if ws_res:
+                    ws_res._data = res_bytes
+                    ws_res._readable_event.set()
 
         except asyncio.CancelledError:
             return
 
-    async def get_websocket(self) -> bool:
+    async def init_websocket(self) -> bool:
         """
         初始化weboscket连接对象并发送初始化信息
 
@@ -1130,7 +1131,7 @@ class Client(object):
             ('tbs', await self.get_tbs()),
             ('un', user.user_name),
             ('word', fname),
-            ('z', 672328094),
+            ('z', '42'),
         ]
 
         try:
@@ -1359,7 +1360,7 @@ class Client(object):
             ('fid', fid),
             ('tid_list[]', tid),
             ('pid_list[]', pid),
-            ('type_list[]', 1 if pid else 0),
+            ('type_list[]', '1' if pid else '0'),
             ('is_frs_mask_list[]', int(is_hide)),
         ]
 
@@ -1702,7 +1703,7 @@ class Client(object):
             'fn': fname,
             'fid': fid,
             'word': name,
-            'is_ajax': 1,
+            'is_ajax': '1',
             'pn': pn,
         }
 
@@ -1874,7 +1875,7 @@ class Client(object):
         payload = [
             ('fn', fname),
             ('fid', fid),
-            ('status', 2 if refuse else 1),
+            ('status', '2' if refuse else '1'),
             ('refuse_reason', 'auto refuse'),
             ('appeal_id', appeal_id),
         ]
@@ -1914,8 +1915,8 @@ class Client(object):
         params = {
             'fn': fname,
             'fid': fid,
-            'is_ajax': 1,
-            'pn': 1,
+            'is_ajax': '1',
+            'pn': '1',
         }
 
         try:
@@ -1933,7 +1934,7 @@ class Client(object):
 
     async def get_image(self, img_url: str) -> np.ndarray:
         """
-        从链接获取jpg/png图像
+        从链接获取静态图像
 
         Args:
             img_url (str): 图像链接
@@ -1947,8 +1948,8 @@ class Client(object):
 
             content = await res.content.read()
             img_type = res.content_type.removeprefix('image/')
-            if img_type not in ['jpeg', 'png']:
-                raise ValueError(f"Content-Type should be image/jpeg or image/png rather than {res.content_type}")
+            if img_type not in ['jpeg', 'png', 'bmp']:
+                raise ValueError(f"Content-Type should be jpeg, png or bmp rather than {res.content_type}")
 
             image = cv.imdecode(np.frombuffer(content, np.uint8), cv.IMREAD_COLOR)
             if image is None:
@@ -2546,10 +2547,10 @@ class Client(object):
             user = BasicUserInfo(_id)
 
         payload = [
-            ('_client_type', 2),  # 删除该字段会导致post_list为空
+            ('_client_type', '2'),  # 删除该字段会导致post_list为空
             ('_client_version', self.latest_version),  # 删除该字段会导致post_list和dynamic_list为空
             ('friend_uid_portrait', user.portrait),
-            ('need_post_count', 1),  # 删除该字段会导致无法获取发帖回帖数量
+            ('need_post_count', '1'),  # 删除该字段会导致无法获取发帖回帖数量
             # ('uid', user_id),  # 用该字段检查共同关注的吧
         ]
 
@@ -2811,7 +2812,7 @@ class Client(object):
             ('_client_version', self.latest_version),
             ('forum_id', fid),
             ('pn', pn),
-            ('rn', 30),
+            ('rn', '30'),
         ]
 
         try:
@@ -2856,8 +2857,8 @@ class Client(object):
             ('BDUSS', self.BDUSS),
             ('_client_version', self.latest_version),
             ('forum_id', fid),
-            ('pn', 1),
-            ('rn', 0),
+            ('pn', '1'),
+            ('rn', '0'),
         ]
 
         try:
@@ -3061,13 +3062,13 @@ class Client(object):
             payload = [
                 ('BDUSS', self.BDUSS),
                 ('_client_id', self.client_id),
-                ('_client_type', 2),
+                ('_client_type', '2'),
                 ('_client_version', self.post_version),
                 ('_phone_imei', '000000000000000'),
-                ('anonymous', 1),
+                ('anonymous', '1'),
                 ('apid', 'sw'),
-                ('barrage_time', 0),
-                ('can_no_forum', 0),
+                ('barrage_time', '0'),
+                ('can_no_forum', '0'),
                 ('content', content),
                 ('cuid', self.cuid),
                 ('cuid_galaxy2', self.cuid_galaxy2),
@@ -3075,24 +3076,24 @@ class Client(object):
                 ('fid', fid),
                 ('from', '1021099l'),
                 ('from_fourm_id', 'null'),
-                ('is_ad', 0),
-                ('is_barrage', 0),
-                ('is_feedback', 0),
+                ('is_ad', '0'),
+                ('is_barrage', '0'),
+                ('is_feedback', '0'),
                 ('kw', fname),
                 ('model', 'M2012K11AC'),
-                ('net_type', 1),
-                ('new_vcode', 1),
-                ('post_from', 3),
+                ('net_type', '1'),
+                ('new_vcode', '1'),
+                ('post_from', '3'),
                 ('reply_uid', 'null'),
                 ('stoken', self.STOKEN),
                 ('subapp_type', 'mini'),
-                ('takephoto_num', 0),
+                ('takephoto_num', '0'),
                 ('tbs', await self.get_tbs()),
                 ('tid', tid),
                 ('timestamp', self.timestamp_ms),
                 ('v_fid', ''),
                 ('v_fname', ''),
-                ('vcode_tag', 12),
+                ('vcode_tag', '12'),
                 ('z_id', '74FFB5E615AA72E0B057EE43E3D5A23A8BA34AAC1672FC9B56A7106C57BA03'),
             ]
 
@@ -3136,7 +3137,7 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            if not await self.get_websocket():
+            if not await self.init_websocket():
                 return False
 
             res = await self.send_ws_bytes(req_proto.SerializeToString(), cmd=205001)
