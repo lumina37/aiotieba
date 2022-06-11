@@ -100,7 +100,8 @@ class Database(object):
         async with self._pool.acquire() as conn:
             async with conn.cursor() as cursor:
                 await cursor.execute(
-                    "CREATE TABLE IF NOT EXISTS `forum` (`fid` INT PRIMARY KEY, `fname` VARCHAR(36) UNIQUE NOT NULL)"
+                    "CREATE TABLE IF NOT EXISTS `forum` \
+                    (`fid` INT PRIMARY KEY, `fname` VARCHAR(36) UNIQUE NOT NULL)"
                 )
 
     async def get_fid(self, fname: str) -> int:
@@ -178,7 +179,9 @@ class Database(object):
         async with self._pool.acquire() as conn:
             async with conn.cursor() as cursor:
                 await cursor.execute(
-                    "CREATE TABLE IF NOT EXISTS `user` (`user_id` BIGINT PRIMARY KEY, `user_name` VARCHAR(14) NOT NULL DEFAULT '', `portrait` VARCHAR(36) UNIQUE NOT NULL, INDEX `user_name`(user_name))"
+                    "CREATE TABLE IF NOT EXISTS `user` \
+                    (`user_id` BIGINT PRIMARY KEY, `user_name` VARCHAR(14) NOT NULL DEFAULT '', `portrait` VARCHAR(36) UNIQUE NOT NULL, \
+                    INDEX `user_name`(user_name))"
                 )
 
     async def get_basic_user_info(self, _id: Union[str, int]) -> BasicUserInfo:
@@ -276,7 +279,8 @@ class Database(object):
         async with self._pool.acquire() as conn:
             async with conn.cursor() as cursor:
                 await cursor.execute(
-                    f"CREATE TABLE IF NOT EXISTS `id_{fname}` (`id` BIGINT PRIMARY KEY, `id_last_edit` INT NOT NULL, `record_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)"
+                    f"CREATE TABLE IF NOT EXISTS `id_{fname}` \
+                    (`id` BIGINT PRIMARY KEY, `id_last_edit` INT NOT NULL, `record_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)"
                 )
                 await cursor.execute(
                     f"""CREATE EVENT IF NOT EXISTS `event_auto_del_id_{fname}` \
@@ -396,7 +400,9 @@ class Database(object):
         async with self._pool.acquire() as conn:
             async with conn.cursor() as cursor:
                 await cursor.execute(
-                    f"CREATE TABLE IF NOT EXISTS `tid_water_{fname}` (`tid` BIGINT PRIMARY KEY, `is_hide` TINYINT NOT NULL DEFAULT 1, `record_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, INDEX `is_hide`(is_hide))"
+                    f"CREATE TABLE IF NOT EXISTS `tid_water_{fname}` \
+                    (`tid` BIGINT PRIMARY KEY, `is_hide` TINYINT NOT NULL DEFAULT 1, `record_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, \
+                    INDEX `is_hide`(is_hide))"
                 )
                 await cursor.execute(
                     f"""CREATE EVENT IF NOT EXISTS `event_auto_del_tid_water_{fname}` \
@@ -519,7 +525,9 @@ class Database(object):
         async with self._pool.acquire() as conn:
             async with conn.cursor() as cursor:
                 await cursor.execute(
-                    f"CREATE TABLE IF NOT EXISTS `user_id_{fname}` (`user_id` BIGINT PRIMARY KEY, `permission` TINYINT NOT NULL DEFAULT 0, `note` VARCHAR(64) NOT NULL DEFAULT '', `record_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, INDEX `permission`(permission), INDEX `record_time`(record_time))"
+                    f"CREATE TABLE IF NOT EXISTS `user_id_{fname}` \
+                    (`user_id` BIGINT PRIMARY KEY, `permission` TINYINT NOT NULL DEFAULT 0, `note` VARCHAR(64) NOT NULL DEFAULT '', `record_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, \
+                    INDEX `permission`(permission), INDEX `record_time`(record_time))"
                 )
 
     @fname_zh2en
@@ -674,7 +682,9 @@ class Database(object):
         async with self._pool.acquire() as conn:
             async with conn.cursor() as cursor:
                 await cursor.execute(
-                    f"CREATE TABLE IF NOT EXISTS `imghash_{fname}` (`img_hash` CHAR(16) PRIMARY KEY, `raw_hash` CHAR(40) UNIQUE NOT NULL, `permission` TINYINT NOT NULL DEFAULT 0, `note` VARCHAR(64) NOT NULL DEFAULT '', INDEX `permission`(permission))"
+                    f"CREATE TABLE IF NOT EXISTS `imghash_{fname}` \
+                    (`img_hash` CHAR(16) PRIMARY KEY, `raw_hash` CHAR(40) UNIQUE NOT NULL, `permission` TINYINT NOT NULL DEFAULT 0, `note` VARCHAR(64) NOT NULL DEFAULT '', \
+                    INDEX `permission`(permission))"
                 )
 
     @fname_zh2en
