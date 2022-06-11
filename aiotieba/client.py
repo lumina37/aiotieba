@@ -70,8 +70,6 @@ from .types import (
 
 LOG = get_logger()
 
-WEBSOCKET_REQUEST_ID: int = None
-
 
 class WebsocketResponse(object):
     """
@@ -84,25 +82,22 @@ class WebsocketResponse(object):
         _data (bytes): 来自websocket的数据
     """
 
-    __slots__ = ['__weakref__', '_timestamp', '_req_id', '_event', '_data']
+    __slots__ = ['__weakref__', '__dict__', '_timestamp', '_req_id', '_readable_event', '_data']
 
     ws_res_wait_dict: weakref.WeakValueDictionary[int, "WebsocketResponse"] = weakref.WeakValueDictionary()
+    _websocket_request_id: int = None
 
     def __init__(self) -> None:
         self._timestamp: int = int(time.time())
 
-        global WEBSOCKET_REQUEST_ID
-        if WEBSOCKET_REQUEST_ID is None:
-            WEBSOCKET_REQUEST_ID = self._timestamp - 1
-        WEBSOCKET_REQUEST_ID += 1
-        self._req_id = WEBSOCKET_REQUEST_ID
+        if self._websocket_request_id is None:
+            self._websocket_request_id = self._timestamp - 1
+        self._websocket_request_id += 1
+        self._req_id = self._websocket_request_id
 
         self._readable_event: asyncio.Event = asyncio.Event()
         self._data: bytes = None
         self.ws_res_wait_dict[self._req_id] = self
-
-    def __int__(self) -> int:
-        return self._req_id
 
     def __hash__(self) -> int:
         return self._req_id
@@ -111,12 +106,16 @@ class WebsocketResponse(object):
         return self._readable_event is obj._readable_event and self._req_id == obj._req_id
 
     @property
+    def req_id(self) -> int:
+        return self._req_id
+
+    @property
     def timestamp(self) -> int:
         return self._timestamp
 
     async def read(self, timeout: float) -> bytes:
         """
-        _summary_
+        读取websocket返回数据
 
         Args:
             timeout (float): 设置超时秒数
@@ -131,10 +130,10 @@ class WebsocketResponse(object):
         try:
             await asyncio.wait_for(self._readable_event.wait(), timeout)
         except asyncio.TimeoutError:
-            del self.ws_res_wait_dict[self._req_id]
+            del self.ws_res_wait_dict[self.req_id]
             raise asyncio.TimeoutError("Timeout to read")
 
-        del self.ws_res_wait_dict[self._req_id]
+        del self.ws_res_wait_dict[self.req_id]
         return self._data
 
 
@@ -158,7 +157,6 @@ class Client(object):
         'websocket',
         '_ws_password',
         '_ws_aes_chiper',
-        '_ws_responses',
         '_ws_dispatcher',
         '_tbs',
         '_client_id',
@@ -185,7 +183,6 @@ class Client(object):
         self.websocket: aiohttp.ClientWebSocketResponse = None
         self._ws_password: bytes = None
         self._ws_aes_chiper = None
-        self._ws_responses: Dict[int, WebsocketResponse] = {}
         self._ws_dispatcher: asyncio.Task = None
 
         self._tbs: str = ''
@@ -437,7 +434,7 @@ class Client(object):
             need_encrypt (bool, optional): 是否需要aes加密. Defaults to False.
 
         Returns:
-            bytes: 封装后的websocket数据
+            bytes: 打包后的websocket数据
         """
 
         if need_gzip:
@@ -546,9 +543,9 @@ class Client(object):
         """
 
         ws_res = WebsocketResponse()
-        ws_bytes = self._pack_ws_bytes(ws_bytes, cmd, int(ws_res), need_gzip, need_encrypt)
+        ws_bytes = self._pack_ws_bytes(ws_bytes, cmd, ws_res.req_id, need_gzip, need_encrypt)
 
-        self._ws_responses[int(ws_res)] = ws_res
+        WebsocketResponse.ws_res_wait_dict[ws_res.req_id] = ws_res
         await self.websocket.send_bytes(ws_bytes)
 
         return ws_res
@@ -560,19 +557,7 @@ class Client(object):
 
         try:
             while 1:
-                # 丢弃超时response
-                ws_timeout: float = 10.0
-                timeout_threshold: float = time.time() - ws_timeout
-                timeout_req_ids: List[int] = []
-                for req_id, ws_res in self._ws_responses.items():
-                    if ws_res.timestamp >= timeout_threshold:
-                        break
-                    timeout_req_ids.append(req_id)
-                for timeout_req_id in timeout_req_ids:
-                    del self._ws_responses[timeout_req_id]
-
                 res_bytes: bytes = (await self.websocket.receive()).data
-
                 res_bytes, _, req_id = self._unpack_ws_bytes(res_bytes)
 
                 ws_res = WebsocketResponse.ws_res_wait_dict.get(req_id, None)
@@ -583,7 +568,7 @@ class Client(object):
         except asyncio.CancelledError:
             return
 
-    async def get_websocket(self) -> bool:
+    async def init_websocket(self) -> bool:
         """
         初始化weboscket连接对象并发送初始化信息
 
@@ -3152,7 +3137,7 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            if not await self.get_websocket():
+            if not await self.init_websocket():
                 return False
 
             res = await self.send_ws_bytes(req_proto.SerializeToString(), cmd=205001)
