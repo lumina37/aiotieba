@@ -176,6 +176,7 @@ class Client(object):
         self.BDUSS: str = CONFIG['BDUSS'].get(BDUSS_key, '')
         self.STOKEN: str = CONFIG['STOKEN'].get(BDUSS_key, '')
 
+        self._connector: aiohttp.TCPConnector = None
         self.app: aiohttp.ClientSession = None
         self.app_proto: aiohttp.ClientSession = None
         self.web: aiohttp.ClientSession = None
@@ -276,12 +277,17 @@ class Client(object):
         if self._ws_dispatcher is not None:
             self._ws_dispatcher.cancel()
 
-        close_coros = [self.app.close(), self.app_proto.close(), self.web.close()]
-        if self.websocket and not self.websocket.closed:
+        close_coros = [
+            self.app.close(),
+            self.app_proto.close(),
+            self.web.close(),
+            self._app_websocket.close(),
+        ]
+        if self.websocket is not None and not self.websocket.closed:
             close_coros.append(self.websocket.close())
         await asyncio.gather(*close_coros)
 
-        await asyncio.gather(self._app_websocket.close(), self._connector.close())
+        await self._connector.close()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.close()
@@ -568,7 +574,7 @@ class Client(object):
         except asyncio.CancelledError:
             return
 
-    async def init_websocket(self) -> bool:
+    async def _init_websocket(self) -> bool:
         """
         初始化weboscket连接对象并发送初始化信息
 
@@ -3137,7 +3143,7 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            if not await self.init_websocket():
+            if not await self._init_websocket():
                 return False
 
             res = await self.send_ws_bytes(req_proto.SerializeToString(), cmd=205001)
