@@ -18,6 +18,7 @@ from typing import ClassVar, Dict, List, Literal, Optional, Tuple, Union
 import aiohttp
 import cv2 as cv
 import numpy as np
+import yarl
 from bs4 import BeautifulSoup
 from Crypto.Cipher import AES, PKCS1_v1_5
 from Crypto.PublicKey import RSA
@@ -164,7 +165,7 @@ class Client(object):
         '_cuid_galaxy2',
     ]
 
-    latest_version: ClassVar[str] = "12.25.1.0"  # 这是目前的最新版本
+    latest_version: ClassVar[str] = "12.25.4.3"  # 这是目前的最新版本
     no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
     post_version: ClassVar[str] = "9.1.0.0"  # 发帖使用极速版
 
@@ -193,11 +194,12 @@ class Client(object):
 
     async def enter(self) -> "Client":
         _trust_env = False
-        _timeout = aiohttp.ClientTimeout(connect=5, sock_connect=3, sock_read=10)
+        _timeout = aiohttp.ClientTimeout(connect=8, sock_connect=3, sock_read=12)
         self._connector = aiohttp.TCPConnector(
-            ttl_dns_cache=600, keepalive_timeout=90, limit=0, family=socket.AF_INET, ssl=False
+            ttl_dns_cache=600, keepalive_timeout=60, limit=0, family=socket.AF_INET, ssl=False
         )
 
+        _app_base_url = yarl.URL.build(scheme="http", host="c.tieba.baidu.com")
         # Init app client
         app_headers = {
             aiohttp.hdrs.USER_AGENT: f"bdtb for Android {self.latest_version}",
@@ -206,6 +208,7 @@ class Client(object):
             aiohttp.hdrs.HOST: "c.tieba.baidu.com",
         }
         self.app = aiohttp.ClientSession(
+            base_url=_app_base_url,
             connector=self._connector,
             headers=app_headers,
             connector_owner=False,
@@ -224,6 +227,7 @@ class Client(object):
             aiohttp.hdrs.HOST: "c.tieba.baidu.com",
         }
         self.app_proto = aiohttp.ClientSession(
+            base_url=_app_base_url,
             connector=self._connector,
             headers=app_proto_headers,
             connector_owner=False,
@@ -444,7 +448,7 @@ class Client(object):
         """
 
         if need_gzip:
-            ws_bytes = gzip.compress(ws_bytes, 3)
+            ws_bytes = gzip.compress(ws_bytes, 5)
 
         if need_encrypt:
             pad_num = AES.block_size - (len(ws_bytes) % AES.block_size)
@@ -855,7 +859,7 @@ class Client(object):
 
         try:
             res = await self.app_proto.post(
-                "http://c.tieba.baidu.com/c/u/user/getuserinfo?cmd=303024",
+                "/c/u/user/getuserinfo?cmd=303024",
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
@@ -923,7 +927,7 @@ class Client(object):
 
         try:
             res = await self.app_proto.post(
-                "http://c.tieba.baidu.com/c/u/user/getUserByTiebaUid?cmd=309702",
+                "/c/u/user/getUserByTiebaUid?cmd=309702",
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
@@ -974,7 +978,7 @@ class Client(object):
 
         try:
             res = await self.app_proto.post(
-                "http://c.tieba.baidu.com/c/f/frs/page?cmd=301001",
+                "/c/f/frs/page?cmd=301001",
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
@@ -1040,8 +1044,8 @@ class Client(object):
 
         try:
             res = await self.app_proto.post(
-                "http://c.tieba.baidu.com/c/f/pb/page?cmd=302001",
-                data=self.pack_proto_bytes(req_proto.SerializeToString()),
+                "/c/f/pb/page?cmd=302001",
+                data=self.pack_proto_bytes(req_proto.SerializeToString())
             )
 
             res_proto = PbPageResIdl_pb2.PbPageResIdl()
@@ -1086,7 +1090,7 @@ class Client(object):
 
         try:
             res = await self.app_proto.post(
-                "http://c.tieba.baidu.com/c/f/pb/floor?cmd=302002",
+                "/c/f/pb/floor?cmd=302002",
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
@@ -1141,7 +1145,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post("http://c.tieba.baidu.com/c/c/bawu/commitprison", data=self.pack_form(payload))
+            res = await self.app.post("/c/c/bawu/commitprison", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
@@ -1248,7 +1252,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post("http://c.tieba.baidu.com/c/c/bawu/delthread", data=self.pack_form(payload))
+            res = await self.app.post("/c/c/bawu/delthread", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
@@ -1285,7 +1289,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post("http://c.tieba.baidu.com/c/c/bawu/delpost", data=self.pack_form(payload))
+            res = await self.app.post("/c/c/bawu/delpost", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
@@ -1412,7 +1416,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post("http://c.tieba.baidu.com/c/c/bawu/moveTabThread", data=self.pack_form(payload))
+            res = await self.app.post("/c/c/bawu/moveTabThread", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
@@ -1446,9 +1450,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post(
-                "http://c.tieba.baidu.com/c/c/bawu/pushRecomToPersonalized", data=self.pack_form(payload)
-            )
+            res = await self.app.post("/c/c/bawu/pushRecomToPersonalized", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
@@ -1501,7 +1503,7 @@ class Client(object):
             ]
 
             try:
-                res = await self.app.post("http://c.tieba.baidu.com/c/c/bawu/goodlist", data=self.pack_form(payload))
+                res = await self.app.post("/c/c/bawu/goodlist", data=self.pack_form(payload))
 
                 res_json: dict = await res.json(encoding='utf-8', content_type=None)
                 if int(res_json['error_code']):
@@ -1544,7 +1546,7 @@ class Client(object):
             ]
 
             try:
-                res = await self.app.post("http://c.tieba.baidu.com/c/c/bawu/commitgood", data=self.pack_form(payload))
+                res = await self.app.post("/c/c/bawu/commitgood", data=self.pack_form(payload))
 
                 res_json: dict = await res.json(encoding='utf-8', content_type=None)
                 if int(res_json['error_code']):
@@ -1587,7 +1589,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post("http://c.tieba.baidu.com/c/c/bawu/commitgood", data=self.pack_form(payload))
+            res = await self.app.post("/c/c/bawu/commitgood", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
@@ -1629,7 +1631,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post("http://c.tieba.baidu.com/c/c/bawu/committop", data=self.pack_form(payload))
+            res = await self.app.post("/c/c/bawu/committop", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
@@ -1670,7 +1672,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post("http://c.tieba.baidu.com/c/c/bawu/committop", data=self.pack_form(payload))
+            res = await self.app.post("/c/c/bawu/committop", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
@@ -1981,7 +1983,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post("http://c.tieba.baidu.com/c/s/login", data=self.pack_form(payload))
+            res = await self.app.post("/c/s/login", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
@@ -2019,7 +2021,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post("http://c.tieba.baidu.com/c/s/msg", data=self.pack_form(payload))
+            res = await self.app.post("/c/s/msg", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
@@ -2063,7 +2065,7 @@ class Client(object):
 
         try:
             res = await self.app_proto.post(
-                "http://c.tieba.baidu.com/c/u/feed/replyme?cmd=303007",
+                "/c/u/feed/replyme?cmd=303007",
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
@@ -2098,7 +2100,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post("http://c.tieba.baidu.com/c/u/feed/atme", data=self.pack_form(payload))
+            res = await self.app.post("/c/u/feed/atme", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
@@ -2191,7 +2193,7 @@ class Client(object):
 
         try:
             res = await self.app_proto.post(
-                "http://c.tieba.baidu.com/c/u/feed/userpost?cmd=303002",
+                "/c/u/feed/userpost?cmd=303002",
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
@@ -2235,7 +2237,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post("http://c.tieba.baidu.com/c/u/fans/page", data=self.pack_form(payload))
+            res = await self.app.post("/c/u/fans/page", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
@@ -2277,7 +2279,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post("http://c.tieba.baidu.com/c/c/user/removeFans", data=self.pack_form(payload))
+            res = await self.app.post("/c/c/user/removeFans", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
@@ -2308,7 +2310,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post("http://c.tieba.baidu.com/c/u/follow/followList", data=self.pack_form(payload))
+            res = await self.app.post("/c/u/follow/followList", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
@@ -2350,7 +2352,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post("http://c.tieba.baidu.com/c/c/user/follow", data=self.pack_form(payload))
+            res = await self.app.post("/c/c/user/follow", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
@@ -2386,7 +2388,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post("http://c.tieba.baidu.com/c/c/user/unfollow", data=self.pack_form(payload))
+            res = await self.app.post("/c/c/user/unfollow", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
@@ -2448,7 +2450,7 @@ class Client(object):
                 ('tbs', await self.get_tbs()),
             ]
 
-            res = await self.app.post("http://c.tieba.baidu.com/c/c/forum/like", data=self.pack_form(payload))
+            res = await self.app.post("/c/c/forum/like", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
@@ -2483,7 +2485,7 @@ class Client(object):
                 ('tbs', await self.get_tbs()),
             ]
 
-            res = await self.app.post("http://c.tieba.baidu.com/c/c/forum/unfavolike", data=self.pack_form(payload))
+            res = await self.app.post("/c/c/forum/unfavolike", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
@@ -2517,7 +2519,7 @@ class Client(object):
                 ('tbs', await self.get_tbs()),
             ]
 
-            res = await self.app.post("http://c.tieba.baidu.com/c/c/forum/sign", data=self.pack_form(payload))
+            res = await self.app.post("/c/c/forum/sign", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             error_code = int(res_json['error_code'])
@@ -2561,7 +2563,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post("http://c.tieba.baidu.com/c/u/user/profile", data=self.pack_form(payload))
+            res = await self.app.post("/c/u/user/profile", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
@@ -2621,7 +2623,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post("http://c.tieba.baidu.com/c/s/searchpost", data=self.pack_form(payload))
+            res = await self.app.post("/c/s/searchpost", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
@@ -2657,7 +2659,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post("http://c.tieba.baidu.com/c/f/forum/like", data=self.pack_form(payload))
+            res = await self.app.post("/c/f/forum/like", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
@@ -2694,7 +2696,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post("http://c.tieba.baidu.com/c/f/forum/getforumdetail", data=self.pack_form(payload))
+            res = await self.app.post("/c/f/forum/getforumdetail", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
@@ -2735,7 +2737,7 @@ class Client(object):
 
         try:
             res = await self.app_proto.post(
-                "http://c.tieba.baidu.com/c/f/forum/getBawuInfo?cmd=301007",
+                "/c/f/forum/getBawuInfo?cmd=301007",
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
@@ -2782,7 +2784,7 @@ class Client(object):
 
         try:
             res = await self.app_proto.post(
-                "http://c.tieba.baidu.com/c/f/forum/searchPostForum?cmd=309466",
+                "/c/f/forum/searchPostForum?cmd=309466",
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
@@ -2822,9 +2824,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post(
-                "http://c.tieba.baidu.com/c/f/bawu/getRecomThreadHistory", data=self.pack_form(payload)
-            )
+            res = await self.app.post("/c/f/bawu/getRecomThreadHistory", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
@@ -2868,9 +2868,7 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post(
-                "http://c.tieba.baidu.com/c/f/bawu/getRecomThreadList", data=self.pack_form(payload)
-            )
+            res = await self.app.post("/c/f/bawu/getRecomThreadList", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
@@ -2924,7 +2922,7 @@ class Client(object):
             'recommend',
         ]
         try:
-            res = await self.app.post("http://c.tieba.baidu.com/c/f/forum/getforumdata", data=self.pack_form(payload))
+            res = await self.app.post("/c/f/forum/getforumdata", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
@@ -3103,7 +3101,7 @@ class Client(object):
                 ('z_id', '74FFB5E615AA72E0B057EE43E3D5A23A8BA34AAC1672FC9B56A7106C57BA03'),
             ]
 
-            res = await self.app.post("http://c.tieba.baidu.com/c/c/post/add", data=self.pack_form(payload))
+            res = await self.app.post("/c/c/post/add", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
@@ -3187,7 +3185,7 @@ class Client(object):
                 ('thread_id', tid),
             ]
 
-            res = await self.app.post("http://c.tieba.baidu.com/c/c/thread/setPrivacy", data=self.pack_form(payload))
+            res = await self.app.post("/c/c/thread/setPrivacy", data=self.pack_form(payload))
 
             res_json: dict = await res.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
