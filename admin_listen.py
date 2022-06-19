@@ -20,6 +20,7 @@ import functools
 import re
 import time
 from collections.abc import Callable
+from typing import List
 
 import yaml
 
@@ -694,28 +695,27 @@ class Listener(object):
 
         tb.log.info(f"{ctx.log_name}:{ctx.text}")
 
+        await ctx._init_full()
+        imgs = ctx.parent.contents.imgs
+
         if len(ctx.args) > 2:
-            index = int(ctx.args[0]) - 1
+            index = int(ctx.args[0])
+            imgs: List[tb.types.FragImage] = imgs[index - 1, index]
             permission = int(ctx.args[1])
             note = ctx.args[2]
         else:
-            index = 0
             permission = int(ctx.args[0])
             note = ctx.args[1]
 
-        await ctx._init_full()
-        if not (imgs := ctx.parent.contents.imgs):
-            return
+        for img in imgs:
+            image = await self.listener.get_image(img.src)
+            if image is None:
+                return
+            img_hash = self.listener.compute_imghash(image)
 
-        if index > len(imgs) - 1:
-            return
-        image = await self.listener.get_image(imgs[index].src)
-        if image is None:
-            return
-        img_hash = self.listener.compute_imghash(image)
+            await ctx.handler.admin.database.add_imghash(ctx.fname, img_hash, img.hash, permission, note)
 
-        if await ctx.handler.admin.database.add_imghash(ctx.fname, img_hash, imgs[index].hash, permission, note):
-            await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
+        await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=3, need_arg_num=0)
     async def cmd_img_reset(self, ctx: Context) -> None:
@@ -726,39 +726,22 @@ class Listener(object):
 
         tb.log.info(f"{ctx.log_name}:{ctx.text}")
 
-        if ctx.args:
-            index = int(ctx.args[0]) - 1
-        else:
-            index = 0
-
         await ctx._init_full()
-        if not (imgs := ctx.parent.contents.imgs):
-            return
+        imgs = ctx.parent.contents.imgs
 
-        if index > len(imgs) - 1:
-            return
-        image = await self.listener.get_image(imgs[index].src)
-        if image is None:
-            return
-        img_hash = self.listener.compute_imghash(image)
+        if ctx.args:
+            index = int(ctx.args[0])
+            imgs: List[tb.types.FragImage] = imgs[index - 1, index]
 
-        if await ctx.handler.admin.database.del_imghash(ctx.fname, img_hash):
-            await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
+        for img in imgs:
+            image = await self.listener.get_image(img.src)
+            if image is None:
+                return
+            img_hash = self.listener.compute_imghash(image)
 
-    @check_permission(need_permission=0, need_arg_num=0)
-    async def cmd_register(self, ctx: Context) -> None:
-        """
-        register指令
-        通过精品帖自助获取1级权限
-        """
+            await ctx.handler.admin.database.del_imghash(ctx.fname, img_hash)
 
-        tb.log.info(f"{ctx.log_name}:{ctx.text} in tid:{ctx.tid}")
-
-        if ctx.this_permission == 0:
-            for thread in await self.listener.get_threads(ctx.fname, is_good=True):
-                if thread.user.user_id == ctx.user_id and thread.create_time > time.time() - 30 * 24 * 3600:
-                    if await ctx.handler.admin.add_user_id(ctx.user_id, 1, "cmd register"):
-                        await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
+        await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=1, need_arg_num=0)
     async def cmd_recom_status(self, ctx: Context) -> None:
