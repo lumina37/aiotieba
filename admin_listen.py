@@ -516,6 +516,15 @@ class Listener(object):
 
         await self._delete(ctx, 3)
 
+    @check_permission(need_permission=2, need_arg_num=0)
+    async def cmd_drop1(self, ctx: Context) -> None:
+        """
+        drop1指令
+        删帖并封1天
+        """
+
+        await self._delete(ctx, 1)
+
     @check_permission(need_permission=4, need_arg_num=1)
     async def cmd_black(self, ctx: Context) -> None:
         """
@@ -700,7 +709,7 @@ class Listener(object):
 
         if len(ctx.args) > 2:
             index = int(ctx.args[0])
-            imgs: List[tb.types.FragImage] = imgs[index - 1, index]
+            imgs: List[tb.types.FragImage] = imgs[index - 1 : index]
             permission = int(ctx.args[1])
             note = ctx.args[2]
         else:
@@ -731,7 +740,7 @@ class Listener(object):
 
         if ctx.args:
             index = int(ctx.args[0])
-            imgs: List[tb.types.FragImage] = imgs[index - 1, index]
+            imgs: List[tb.types.FragImage] = imgs[index - 1 : index]
 
         for img in imgs:
             image = await self.listener.get_image(img.src)
