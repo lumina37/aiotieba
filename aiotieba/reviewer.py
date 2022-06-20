@@ -1,10 +1,9 @@
 # -*- coding:utf-8 -*-
-__all__ = ['Reviewer', 'Punish']
+__all__ = ['Reviewer']
 
 import asyncio
 import binascii
 import datetime
-import sys
 from typing import List, Optional, Tuple, Union
 
 import cv2 as cv
@@ -14,28 +13,6 @@ from .client import Client
 from .database import Database
 from .logger import LOG
 from .types import BasicUserInfo
-
-
-class Punish(object):
-    """
-    处罚操作
-
-    Fields:
-        del_flag (int, optional): -1白名单 0普通 1删帖 2屏蔽帖. Defaults to 0.
-        block_days (int, optional): 封禁天数. Defaults to 0.
-        note (str, optional): 处罚理由. Defaults to ''.
-    """
-
-    __slots__ = ['del_flag', 'block_days', 'note']
-
-    def __init__(self, del_flag: int = 0, block_days: int = 0, note: str = ''):
-        self.del_flag: int = del_flag
-        self.block_days: int = block_days
-        if del_flag > 0:
-            line = sys._getframe(1).f_lineno
-            self.note = f"line:{line} {note}" if note else f"line:{line}"
-        else:
-            self.note = note
 
 
 class Reviewer(Client):
