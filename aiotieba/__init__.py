@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 """
-@Version: 2.7.4
+@Version: 2.7.5_beta
 @Author: starry.qvq@gmail.com
 @License: Unlicense
 @Homepage: https://github.com/Starry-OvO/Tieba-Manager
@@ -14,8 +14,6 @@ from .client import *
 from .logger import *
 from .reviewer import *
 from .types import *
-
-log = get_logger()
 
 
 if os.name == 'posix':

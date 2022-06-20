@@ -19,9 +19,9 @@ async def main():
         user, threads = await asyncio.gather(brow.get_self_info(), brow.get_threads('图拉丁'))
 
     # 将获取的信息打印到日志
-    tb.log.info(f"当前用户信息: {user}")
+    tb.LOG.info(f"当前用户信息: {user}")
     for thread in threads:
-        tb.log.info(f"tid: {thread.tid} 最后回复时间戳: {thread.last_time} 标题: {thread.title}")
+        tb.LOG.info(f"tid: {thread.tid} 最后回复时间戳: {thread.last_time} 标题: {thread.title}")
 
 
 # 执行协程main

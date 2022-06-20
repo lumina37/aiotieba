@@ -30,12 +30,12 @@ class CloudReview(tb.Reviewer):
                 # 并发运行协程
                 await asyncio.gather(*coros)
 
-                tb.log.debug(f"Cycle time_cost: {time.perf_counter()-start_time:.4f}")
+                tb.LOG.debug(f"Cycle time_cost: {time.perf_counter()-start_time:.4f}")
                 # 主动释放CPU 转而运行其他协程
                 await asyncio.sleep(60)
 
             except Exception:
-                tb.log.critical("Unexcepted error", exc_info=True)
+                tb.LOG.critical("Unexcepted error", exc_info=True)
                 return
 
     async def _handle_thread(self, thread: tb.Thread, delay: float) -> None:
@@ -60,14 +60,14 @@ class CloudReview(tb.Reviewer):
             pass
         elif punish.del_flag == 1:
             # 删帖
-            tb.log.info(
+            tb.LOG.info(
                 f"Try to delete thread {thread.text} post by {thread.user.log_name}. level:{thread.user.level}. {punish.note}"
             )
             await self.del_thread(thread.fid, thread.tid)
             return
         elif punish.del_flag == 2:
             # 屏蔽帖
-            tb.log.info(
+            tb.LOG.info(
                 f"Try to hide thread {thread.text} post by {thread.user.log_name}. level:{thread.user.level}. {punish.note}"
             )
             await self.hide_thread(thread.fid, thread.tid)
@@ -137,7 +137,7 @@ class CloudReview(tb.Reviewer):
             pass
         elif punish.del_flag == 1:
             # 内容违规 删回复
-            tb.log.info(
+            tb.LOG.info(
                 f"Try to delete post {post.text} post by {post.user.log_name}. level:{post.user.level}. {punish.note}"
             )
             await self.del_post(post.fid, post.tid, post.pid)
@@ -190,7 +190,7 @@ class CloudReview(tb.Reviewer):
             pass
         elif punish.del_flag == 1:
             # 内容违规 删楼中楼
-            tb.log.info(
+            tb.LOG.info(
                 f"Try to delete post {comment.text} post by {comment.user.log_name}. level:{comment.user.level}. {punish.note}"
             )
             await self.del_post(comment.fid, comment.tid, comment.pid)

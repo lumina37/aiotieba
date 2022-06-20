@@ -29,7 +29,7 @@ from typing import Dict, Generic, Iterable, Iterator, List, Optional, TypeVar, U
 import yarl
 from google.protobuf.json_format import ParseDict
 
-from .logger import get_logger
+from .logger import LOG
 from .tieba_protobuf import (
     FrsPageResIdl_pb2,
     NewThreadInfo_pb2,
@@ -46,8 +46,6 @@ from .tieba_protobuf import (
     User_pb2,
     UserPostResIdl_pb2,
 )
-
-LOG = get_logger()
 
 
 def _json_decoder_hook(_dict):

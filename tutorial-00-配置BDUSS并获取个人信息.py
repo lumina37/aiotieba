@@ -25,7 +25,7 @@ async def main():
         user = await brow.get_self_info()
 
     # 将获取的信息打印到日志
-    tb.log.info(f"当前用户信息: {user}")
+    tb.LOG.info(f"当前用户信息: {user}")
 
 
 # 执行协程main

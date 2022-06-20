@@ -12,10 +12,8 @@ import numpy as np
 
 from .client import Client
 from .database import Database
-from .logger import get_logger
+from .logger import LOG
 from .types import BasicUserInfo
-
-LOG = get_logger()
 
 
 class Punish(object):
@@ -173,7 +171,10 @@ class Reviewer(Client):
             int: id_last_edit -1表示表中无id
         """
 
-        return await self.database.get_id(self.fname, _id)
+        res = await self.database.get_id(self.fname, _id)
+        if res is None:
+            res = -1
+        return res
 
     async def del_id(self, _id: int) -> bool:
         """
@@ -213,7 +214,7 @@ class Reviewer(Client):
             bool: 操作是否成功
         """
 
-        return await self.database.add_tid(self.fname, tid, mode)
+        return await self.database.add_tid(self.fname, tid, int(mode))
 
     async def is_tid_hide(self, tid: int) -> Optional[bool]:
         """
@@ -226,7 +227,13 @@ class Reviewer(Client):
             bool | None: True表示tid待恢复 False表示tid已恢复 None表示表中无记录
         """
 
-        return await self.database.is_tid_hide(self.fname, tid)
+        res = await self.database.get_tid(self.fname, tid)
+        if res == 1:
+            return True
+        elif res == 0:
+            return False
+        else:
+            return None
 
     async def del_tid(self, tid: int) -> bool:
         """
@@ -241,9 +248,9 @@ class Reviewer(Client):
 
         return await self.database.del_tid(self.fname, tid)
 
-    async def get_tid_list(self, limit: int = 128, offset: int = 0) -> List[int]:
+    async def get_tid_hide_list(self, limit: int = 128, offset: int = 0) -> List[int]:
         """
-        获取表tid_water_{fname}中待恢复的tid的列表
+        获取表tid_{fname}中待恢复的tid的列表
 
         Args:
             limit (int, optional): 返回数量限制. Defaults to 128.
@@ -253,7 +260,7 @@ class Reviewer(Client):
             list[int]: tid列表
         """
 
-        return await self.database.get_tid_list(self.fname, limit, offset)
+        return await self.database.get_tid_list(self.fname, tag=1, limit=limit, offset=offset)
 
     async def add_user_id(self, user_id: int, permission: int = 0, note: str = '') -> bool:
         """

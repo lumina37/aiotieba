@@ -19,7 +19,7 @@ async def crawler(fname: str):
     """
 
     start_time = time.perf_counter()
-    tb.log.info("Spider start")
+    tb.LOG.info("Spider start")
 
     thread_list: List[tb.Thread] = []
 
@@ -54,12 +54,12 @@ async def crawler(fname: str):
                     # 消费者不断地从task_queue中拉取由生产者协程提供的页码pn作为任务
                     # 如果超过1秒未获取到新的页码pn，asyncio.wait_for将抛出asyncio.TimeoutError
                     pn = await asyncio.wait_for(task_queue.get(), timeout=1)
-                    tb.log.debug(f"Worker#{i} handling pn:{pn}")
+                    tb.LOG.debug(f"Worker#{i} handling pn:{pn}")
                 except asyncio.TimeoutError:
                     # 捕获asyncio.TimeoutError以退出协程
                     nonlocal is_running
                     if is_running is False:
-                        tb.log.debug(f"Worker#{i} quit")
+                        tb.LOG.debug(f"Worker#{i} quit")
                         return
                 else:
                     # 执行被分派的任务，即爬取pn页的帖子列表
@@ -72,13 +72,13 @@ async def crawler(fname: str):
         # 使用asyncio.gather并发执行
         await asyncio.gather(*workers, producer())
 
-    tb.log.info(f"Spider complete. Time cost:{time.perf_counter()-start_time}")
+    tb.LOG.info(f"Spider complete. Time cost:{time.perf_counter()-start_time}")
 
     # 按主题帖浏览量降序排序
     thread_list.sort(key=lambda thread: thread.view_num, reverse=True)
     # 将浏览量最高的10个主题帖的信息打印到日志
     for i, thread in enumerate(thread_list[0:10], 1):
-        tb.log.info(f"Rank#{i} view_num:{thread.view_num} title:{thread.title}")
+        tb.LOG.info(f"Rank#{i} view_num:{thread.view_num} title:{thread.title}")
 
 
 # 执行协程crawler

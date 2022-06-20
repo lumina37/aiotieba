@@ -3,27 +3,13 @@ __all__ = ['Database']
 
 import asyncio
 import datetime
-import functools
 from typing import List, Optional, Tuple, Union
 
 import aiomysql
 
 from .config import CONFIG
-from .logger import get_logger
+from .logger import LOG
 from .types import BasicUserInfo
-
-LOG = get_logger()
-
-
-def fname_zh2en(func):
-    @functools.wraps(func)
-    def wrapper(self, fname_zh, *args, **kwargs):
-        cfg_key = 'fname_zh2en'
-        if not (fname_en := CONFIG[cfg_key].get(fname_zh, '')):
-            LOG.warning(f"Can not find key:{fname_zh} in {cfg_key}")
-        return func(self, fname_en, *args, **kwargs)
-
-    return wrapper
 
 
 class Database(object):
@@ -63,9 +49,12 @@ class Database(object):
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.close()
 
-    async def _init_database(self) -> None:
+    async def init_database(self, fnames: List[str]) -> None:
         """
-        初始化数据库
+        初始化各个fname对应贴吧的数据库
+
+        Args:
+            fnames (list[str]): 贴吧名列表
         """
 
         conn: aiomysql.Connection = await aiomysql.connect(autocommit=True, **CONFIG['database'])
@@ -82,12 +71,12 @@ class Database(object):
             **CONFIG['database'],
         )
 
-        for fname in CONFIG['fname_zh2en'].keys():
+        for fname in fnames:
             await asyncio.gather(
                 self._create_table_id(fname),
                 self._create_table_user_id(fname),
                 self._create_table_imghash(fname),
-                self._create_table_tid_water(fname),
+                self._create_table_tid(fname),
             )
         await asyncio.gather(self._create_table_forum(), self._create_table_user())
         await conn.ensure_closed()
@@ -267,7 +256,6 @@ class Database(object):
         LOG.info(f"Successfully deleted {user} from table user")
         return True
 
-    @fname_zh2en
     async def _create_table_id(self, fname: str) -> None:
         """
         创建表id_{fname}
@@ -280,7 +268,7 @@ class Database(object):
             async with conn.cursor() as cursor:
                 await cursor.execute(
                     f"CREATE TABLE IF NOT EXISTS `id_{fname}` \
-                    (`id` BIGINT PRIMARY KEY, `id_last_edit` INT NOT NULL, `record_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)"
+                    (`id` BIGINT PRIMARY KEY, `tag` INT NOT NULL, `record_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)"
                 )
                 await cursor.execute(
                     f"""CREATE EVENT IF NOT EXISTS `event_auto_del_id_{fname}` \
@@ -288,16 +276,14 @@ class Database(object):
                     DO DELETE FROM `id_{fname}` WHERE record_time<(CURRENT_TIMESTAMP() + INTERVAL -15 DAY)"""
                 )
 
-    @fname_zh2en
-    async def add_id(self, fname: str, _id: int, id_last_edit: int = 0) -> bool:
+    async def add_id(self, fname: str, _id: int, tag: int = 0) -> bool:
         """
         将id添加到表id_{fname}
 
         Args:
             fname (str): 贴吧名
             _id (int): tid或pid
-            id_last_edit (int): 用于识别id的子对象列表是否发生修改 \
-                若该id为tid则id_last_edit应为last_time 若该id为pid则id_last_edit应为reply_num. Defaults to 0.
+            tag (int, optional): 自定义标签. Defaults to 0.
 
         Returns:
             bool: 操作是否成功
@@ -306,38 +292,36 @@ class Database(object):
         try:
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
-                    await cursor.execute(f"REPLACE INTO `id_{fname}` VALUES (%s,%s,DEFAULT)", (_id, id_last_edit))
+                    await cursor.execute(f"REPLACE INTO `id_{fname}` VALUES (%s,%s,DEFAULT)", (_id, tag))
         except aiomysql.Error as err:
             LOG.warning(f"Failed to insert {_id}. reason:{err}")
             return False
         return True
 
-    @fname_zh2en
-    async def get_id(self, fname: str, _id: int) -> int:
+    async def get_id(self, fname: str, _id: int) -> Optional[int]:
         """
-        获取表id_{fname}中id对应的id_last_edit值
+        获取表id_{fname}中id对应的tag值
 
         Args:
             fname (str): 贴吧名
             _id (int): tid或pid
 
         Returns:
-            int: id_last_edit -1表示表中无id
+            int | None: 自定义标签 None表示表中无id
         """
 
         try:
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
-                    await cursor.execute(f"SELECT `id_last_edit` FROM `id_{fname}` WHERE `id`=%s", (_id,))
+                    await cursor.execute(f"SELECT `tag` FROM `id_{fname}` WHERE `id`=%s", (_id,))
         except aiomysql.Error as err:
             LOG.warning(f"Failed to select {_id}. reason:{err}")
             return False
         else:
             if res_tuple := await cursor.fetchone():
                 return res_tuple[0]
-            return -1
+            return None
 
-    @fname_zh2en
     async def del_id(self, fname: str, _id: int) -> bool:
         """
         从表id_{fname}中删除id
@@ -361,7 +345,6 @@ class Database(object):
         LOG.info(f"Successfully deleted {_id} from table of {fname}")
         return True
 
-    @fname_zh2en
     async def del_ids(self, fname: str, hour: int) -> bool:
         """
         删除表id_{fname}中最近hour个小时记录的id
@@ -388,10 +371,9 @@ class Database(object):
         LOG.info(f"Successfully deleted id in id_{fname} within {hour} hour(s)")
         return True
 
-    @fname_zh2en
-    async def _create_table_tid_water(self, fname: str) -> None:
+    async def _create_table_tid(self, fname: str) -> None:
         """
-        创建表tid_water_{fname}
+        创建表tid_{fname}
 
         Args:
             fname (str): 贴吧名
@@ -400,25 +382,24 @@ class Database(object):
         async with self._pool.acquire() as conn:
             async with conn.cursor() as cursor:
                 await cursor.execute(
-                    f"CREATE TABLE IF NOT EXISTS `tid_water_{fname}` \
-                    (`tid` BIGINT PRIMARY KEY, `is_hide` TINYINT NOT NULL DEFAULT 1, `record_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, \
-                    INDEX `is_hide`(is_hide))"
+                    f"CREATE TABLE IF NOT EXISTS `tid_{fname}` \
+                    (`tid` BIGINT PRIMARY KEY, `tag` TINYINT NOT NULL DEFAULT 1, `record_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, \
+                    INDEX `tag`(tag))"
                 )
                 await cursor.execute(
-                    f"""CREATE EVENT IF NOT EXISTS `event_auto_del_tid_water_{fname}` \
-                ON SCHEDULE EVERY 1 DAY STARTS '2000-01-01 00:00:00' \
-                DO DELETE FROM `tid_water_{fname}` WHERE `record_time`<(CURRENT_TIMESTAMP() + INTERVAL -15 DAY)"""
+                    f"""CREATE EVENT IF NOT EXISTS `event_auto_del_tid_{fname}` \
+                    ON SCHEDULE EVERY 1 DAY STARTS '2000-01-01 00:00:00' \
+                    DO DELETE FROM `tid_{fname}` WHERE `record_time`<(CURRENT_TIMESTAMP() + INTERVAL -15 DAY)"""
                 )
 
-    @fname_zh2en
-    async def add_tid(self, fname: str, tid: int, mode: bool) -> bool:
+    async def add_tid(self, fname: str, tid: int, tag: int = 0) -> bool:
         """
-        将tid添加到表tid_water_{fname}
+        将tid添加到表tid_{fname}
 
         Args:
             fname (str): 贴吧名
             tid (int): 主题帖tid
-            mode (bool): 待恢复状态 True对应待恢复 False对应已恢复
+            tag (int, optional): 自定义标签. Defaults to 0.
 
         Returns:
             bool: 操作是否成功
@@ -427,43 +408,41 @@ class Database(object):
         try:
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
-                    await cursor.execute(f"REPLACE INTO `tid_water_{fname}` VALUES (%s,%s,DEFAULT)", (tid, mode))
+                    await cursor.execute(f"REPLACE INTO `tid_{fname}` VALUES (%s,%s,DEFAULT)", (tid, tag))
         except aiomysql.Error as err:
             LOG.warning(f"Failed to insert {tid}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully added {tid} to table of {fname}. mode: {mode}")
+        LOG.info(f"Successfully added {tid} to table of {fname}. mode: {tag}")
         return True
 
-    @fname_zh2en
-    async def is_tid_hide(self, fname: str, tid: int) -> Optional[bool]:
+    async def get_tid(self, fname: str, tid: int) -> Optional[int]:
         """
-        获取表tid_water_{fname}中tid的待恢复状态
+        获取表tid_{fname}中tid对应的tag值
 
         Args:
             fname (str): 贴吧名
             tid (int): 主题帖tid
 
         Returns:
-            bool | None: True表示tid待恢复 False表示tid已恢复 None表示表中无记录
+            int | None: 自定义标签 None表示表中无记录
         """
 
         try:
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
-                    await cursor.execute(f"SELECT `is_hide` FROM `tid_water_{fname}` WHERE `tid`=%s", (tid,))
+                    await cursor.execute(f"SELECT `tag` FROM `tid_{fname}` WHERE `tid`=%s", (tid,))
         except aiomysql.Error as err:
             LOG.warning(f"Failed to select {tid}. reason:{err}")
             return None
         else:
             if res_tuple := await cursor.fetchone():
-                return True if res_tuple[0] else False
+                return res_tuple[0]
             return None
 
-    @fname_zh2en
     async def del_tid(self, fname: str, tid: int) -> bool:
         """
-        从表tid_water_{fname}中删除tid
+        从表tid_{fname}中删除tid
 
         Args:
             fname (str): 贴吧名
@@ -476,20 +455,20 @@ class Database(object):
         try:
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
-                    await cursor.execute(f"DELETE FROM `tid_water_{fname}` WHERE `tid`=%s", (tid,))
+                    await cursor.execute(f"DELETE FROM `tid_{fname}` WHERE `tid`=%s", (tid,))
         except aiomysql.Error as err:
             LOG.warning(f"Failed to delete {tid}. reason:{err}")
             return False
         LOG.info(f"Successfully deleted {tid} from table of {fname}")
         return True
 
-    @fname_zh2en
-    async def get_tid_list(self, fname: str, limit: int = 128, offset: int = 0) -> List[int]:
+    async def get_tid_list(self, fname: str, tag: int = 0, limit: int = 128, offset: int = 0) -> List[int]:
         """
-        获取表tid_water_{fname}中待恢复的tid的列表
+        获取表tid_{fname}中对应tag的tid列表
 
         Args:
             fname (str): 贴吧名
+            tag (int, optional): 待匹配的tag值. Defaults to 0.
             limit (int, optional): 返回数量限制. Defaults to 128.
             offset (int, optional): 偏移. Defaults to 0.
 
@@ -501,8 +480,8 @@ class Database(object):
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     await cursor.execute(
-                        f"SELECT `tid` FROM `tid_water_{fname}` WHERE `is_hide`=1 LIMIT %s OFFSET %s",
-                        (limit, offset),
+                        f"SELECT `tid` FROM `tid_{fname}` WHERE `tag`=%s LIMIT %s OFFSET %s",
+                        (tag, limit, offset),
                     )
         except aiomysql.Error as err:
             LOG.warning(f"Failed to get tids in {fname}. reason:{err}")
@@ -513,7 +492,6 @@ class Database(object):
 
         return res_list
 
-    @fname_zh2en
     async def _create_table_user_id(self, fname: str) -> None:
         """
         创建表user_id_{fname}
@@ -530,7 +508,6 @@ class Database(object):
                     INDEX `permission`(permission), INDEX `record_time`(record_time))"
                 )
 
-    @fname_zh2en
     async def add_user_id(self, fname: str, user_id: int, permission: int = 0, note: str = '') -> bool:
         """
         将user_id添加到表user_id_{fname}
@@ -560,7 +537,6 @@ class Database(object):
         LOG.info(f"Successfully added {user_id} to table of {fname}. permission: {permission} note: {note}")
         return True
 
-    @fname_zh2en
     async def del_user_id(self, fname: str, user_id: int) -> bool:
         """
         从表user_id_{fname}中删除user_id
@@ -583,7 +559,6 @@ class Database(object):
         LOG.info(f"Successfully deleted {user_id} from table of {fname}")
         return True
 
-    @fname_zh2en
     async def get_user_id(self, fname: str, user_id: int) -> int:
         """
         获取表user_id_{fname}中user_id的权限级别
@@ -608,7 +583,6 @@ class Database(object):
                 return res_tuple[0]
             return 0
 
-    @fname_zh2en
     async def get_user_id_full(self, fname: str, user_id: int) -> Tuple[int, str, datetime.datetime]:
         """
         获取表user_id_{fname}中user_id的完整信息
@@ -636,7 +610,6 @@ class Database(object):
                 return res_tuple
             return 0, '', datetime.datetime(1970, 1, 1)
 
-    @fname_zh2en
     async def get_user_id_list(
         self, fname: str, lower_permission: int = 0, upper_permission: int = 5, limit: int = 1, offset: int = 0
     ) -> List[int]:
@@ -670,7 +643,6 @@ class Database(object):
 
         return res_list
 
-    @fname_zh2en
     async def _create_table_imghash(self, fname: str) -> None:
         """
         创建表imghash_{fname}
@@ -687,7 +659,6 @@ class Database(object):
                     INDEX `permission`(permission))"
                 )
 
-    @fname_zh2en
     async def add_imghash(self, fname: str, img_hash: str, raw_hash: str, permission: int = 0, note: str = '') -> bool:
         """
         将img_hash添加到表imghash_{fname}
@@ -717,7 +688,6 @@ class Database(object):
         LOG.info(f"Successfully added {img_hash} to table of {fname}. permission: {permission} note: {note}")
         return True
 
-    @fname_zh2en
     async def del_imghash(self, fname: str, img_hash: str) -> bool:
         """
         从imghash_{fname}中删除img_hash
@@ -741,7 +711,6 @@ class Database(object):
         LOG.info(f"Successfully deleted {img_hash} from table of {fname}")
         return True
 
-    @fname_zh2en
     async def get_imghash(self, fname: str, img_hash: str) -> int:
         """
         获取表imghash_{fname}中img_hash的封锁级别
@@ -766,7 +735,6 @@ class Database(object):
                 return res_tuple[0]
             return 0
 
-    @fname_zh2en
     async def get_imghash_full(self, fname: str, img_hash: str) -> Tuple[int, str]:
         """
         获取表imghash_{fname}中img_hash的完整信息
