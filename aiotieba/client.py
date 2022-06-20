@@ -25,7 +25,7 @@ from Crypto.PublicKey import RSA
 from google.protobuf.json_format import ParseDict
 
 from .config import CONFIG
-from .logger import get_logger
+from .logger import LOG
 from .tieba_protobuf import (
     CommitPersonalMsgReqIdl_pb2,
     CommitPersonalMsgResIdl_pb2,
@@ -68,8 +68,6 @@ from .types import (
     UserInfo,
     UserPosts,
 )
-
-LOG = get_logger()
 
 
 class WebsocketResponse(object):

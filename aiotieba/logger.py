@@ -1,5 +1,5 @@
 # -*- coding:utf-8 -*-
-__all__ = ['get_logger']
+__all__ = ['LOG']
 
 import logging
 import logging.handlers
@@ -48,11 +48,4 @@ class _Logger(logging.Logger):
         self.addHandler(stream_handler)
 
 
-LOG = None
-
-
-def get_logger() -> _Logger:
-    global LOG
-    if LOG is None:
-        LOG = _Logger(__name__)
-    return LOG
+LOG = _Logger(__name__)

@@ -1,10 +1,33 @@
 # -*- coding:utf-8 -*-
 import asyncio
 import re
+import sys
 import time
 from typing import Union
 
 import aiotieba as tb
+
+
+class Punish(object):
+    """
+    处罚操作
+
+    Fields:
+        del_flag (int, optional): -1白名单 0普通 1删帖 2屏蔽帖. Defaults to 0.
+        block_days (int, optional): 封禁天数. Defaults to 0.
+        note (str, optional): 处罚理由. Defaults to ''.
+    """
+
+    __slots__ = ['del_flag', 'block_days', 'note']
+
+    def __init__(self, del_flag: int = 0, block_days: int = 0, note: str = ''):
+        self.del_flag: int = del_flag
+        self.block_days: int = block_days
+        if del_flag > 0:
+            line = sys._getframe(1).f_lineno
+            self.note = f"line:{line} {note}" if note else f"line:{line}"
+        else:
+            self.note = note
 
 
 class CloudReview(tb.Reviewer):
@@ -30,12 +53,12 @@ class CloudReview(tb.Reviewer):
                 # 并发运行协程
                 await asyncio.gather(*coros)
 
-                tb.log.debug(f"Cycle time_cost: {time.perf_counter()-start_time:.4f}")
+                tb.LOG.debug(f"Cycle time_cost: {time.perf_counter()-start_time:.4f}")
                 # 主动释放CPU 转而运行其他协程
                 await asyncio.sleep(60)
 
             except Exception:
-                tb.log.critical("Unexcepted error", exc_info=True)
+                tb.LOG.critical("Unexcepted error", exc_info=True)
                 return
 
     async def _handle_thread(self, thread: tb.Thread, delay: float) -> None:
@@ -60,14 +83,14 @@ class CloudReview(tb.Reviewer):
             pass
         elif punish.del_flag == 1:
             # 删帖
-            tb.log.info(
+            tb.LOG.info(
                 f"Try to delete thread {thread.text} post by {thread.user.log_name}. level:{thread.user.level}. {punish.note}"
             )
             await self.del_thread(thread.fid, thread.tid)
             return
         elif punish.del_flag == 2:
             # 屏蔽帖
-            tb.log.info(
+            tb.LOG.info(
                 f"Try to hide thread {thread.text} post by {thread.user.log_name}. level:{thread.user.level}. {punish.note}"
             )
             await self.hide_thread(thread.fid, thread.tid)
@@ -75,7 +98,7 @@ class CloudReview(tb.Reviewer):
 
         return
 
-    async def _check_thread(self, thread: tb.Thread) -> tb.Punish:
+    async def _check_thread(self, thread: tb.Thread) -> Punish:
         """
         检查主题帖内容
 
@@ -85,7 +108,7 @@ class CloudReview(tb.Reviewer):
 
         # 该帖子里的内容没有发生任何变化 直接跳过所有后续检查
         if thread.last_time <= await self.get_id(thread.tid):
-            return tb.Punish()
+            return Punish()
 
         # 回复数>50且点赞数>回复数的两倍则判断为热帖
         is_hot_thread = thread.reply_num >= 50 and thread.agree > thread.reply_num * 2
@@ -100,7 +123,7 @@ class CloudReview(tb.Reviewer):
             posts = await self.get_posts(thread.tid, pn=99999, with_comments=True)
 
         if len(posts) == 0:
-            return tb.Punish()
+            return Punish()
 
         # 没有该步骤则thread.user不包含等级 影响判断
         thread._user = posts.thread.user
@@ -123,7 +146,7 @@ class CloudReview(tb.Reviewer):
 
         # 缓存该tid的子孙结点编辑状态
         await self.add_id(thread.tid, thread.last_time)
-        return tb.Punish()
+        return Punish()
 
     async def _handle_post(self, post: tb.Post) -> None:
         """
@@ -137,13 +160,13 @@ class CloudReview(tb.Reviewer):
             pass
         elif punish.del_flag == 1:
             # 内容违规 删回复
-            tb.log.info(
+            tb.LOG.info(
                 f"Try to delete post {post.text} post by {post.user.log_name}. level:{post.user.level}. {punish.note}"
             )
             await self.del_post(post.fid, post.tid, post.pid)
             return
 
-    async def _check_post(self, post: tb.Post) -> tb.Punish:
+    async def _check_post(self, post: tb.Post) -> Punish:
         """
         检查回复内容
 
@@ -153,11 +176,11 @@ class CloudReview(tb.Reviewer):
 
         # 该回复下的楼中楼大概率没有发生任何变化 直接跳过所有后续检查
         if post.reply_num == (id_last_edit := await self.get_id(post.pid)):
-            return tb.Punish(-1)
+            return Punish(-1)
         # 该回复下的楼中楼可能被抽 需要缓存抽楼后的reply_num
         elif post.reply_num < id_last_edit:
             await self.add_id(post.pid, post.reply_num)
-            return tb.Punish(-1)
+            return Punish(-1)
 
         punish = await self._check_text(post)
         if punish.del_flag == -1:
@@ -176,7 +199,7 @@ class CloudReview(tb.Reviewer):
 
         # 缓存该pid的子结点编辑状态
         await self.add_id(post.pid, post.reply_num)
-        return tb.Punish()
+        return Punish()
 
     async def _handle_comment(self, comment: tb.Comment) -> None:
         """
@@ -190,13 +213,13 @@ class CloudReview(tb.Reviewer):
             pass
         elif punish.del_flag == 1:
             # 内容违规 删楼中楼
-            tb.log.info(
+            tb.LOG.info(
                 f"Try to delete post {comment.text} post by {comment.user.log_name}. level:{comment.user.level}. {punish.note}"
             )
             await self.del_post(comment.fid, comment.tid, comment.pid)
             return
 
-    async def _check_comment(self, comment: tb.Comment) -> tb.Punish:
+    async def _check_comment(self, comment: tb.Comment) -> Punish:
         """
         检查楼中楼内容
 
@@ -205,7 +228,7 @@ class CloudReview(tb.Reviewer):
         """
 
         if await self.get_id(comment.pid) != -1:
-            return tb.Punish(-1)
+            return Punish(-1)
 
         punish = await self._check_text(comment)
         if punish.del_flag == -1:
@@ -220,7 +243,7 @@ class CloudReview(tb.Reviewer):
 
         # 缓存该pid
         await self.add_id(comment.pid)
-        return tb.Punish()
+        return Punish()
 
     async def _check_text(self, obj: Union[tb.Thread, tb.Post, tb.Comment]):
         """
@@ -234,21 +257,21 @@ class CloudReview(tb.Reviewer):
         permission = await self.get_user_id(obj.user.user_id)
         if permission >= 1:
             # 白名单用户
-            return tb.Punish(-1)
+            return Punish(-1)
         elif permission <= -5:
             # 黑名单用户 删回复并封十天
-            return tb.Punish(1, 10, note="黑名单")
+            return Punish(1, 10, note="黑名单")
 
         level = obj.user.level
         if level > 6:
             # 用户等级大于6则跳过后续检查
-            return tb.Punish()
+            return Punish()
 
         text = obj.text
         if re.search("\u05af|足硿笨|𝒂𝒋|𝒗：", text, re.I):
-            return tb.Punish(1, 1)
+            return Punish(1, 1)
 
-        return tb.Punish()
+        return Punish()
 
 
 if __name__ == '__main__':

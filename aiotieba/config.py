@@ -29,7 +29,7 @@ except FileNotFoundError:
     CONFIG = {}
 
 
-required_keys = ['BDUSS', 'STOKEN', 'database', 'fname_zh2en']
+required_keys = ['BDUSS', 'STOKEN', 'database']
 for required_key in required_keys:
     if not (CONFIG.__contains__(required_key) and isinstance(CONFIG[required_key], dict)):
         CONFIG[required_key] = {}
