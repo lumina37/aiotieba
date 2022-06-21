@@ -34,11 +34,12 @@ jobs:
         pip install flake8
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    - name: Decrypt config
+    - name: Prepare config
       shell: bash
-      run: .github/test/prepare.sh
-      env:
-        PASSPHRASE: ${{ secrets.PASSPHRASE }}
+      run: |
+        mv .github/test/test_all.py .
+        mkdir config
+        gpg --quiet --batch --yes --decrypt --passphrase=${{ secrets.PASSPHRASE }} --output config/config.yaml .github/test/config.yaml.gpg
 
     - name: Run test
       run: python test_all.py
