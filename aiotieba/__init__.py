@@ -4,7 +4,7 @@
 @Author: starry.qvq@gmail.com
 @License: Unlicense
 @Homepage: https://github.com/Starry-OvO/Tieba-Manager
-@Required Python Version: 3.8+
+@Required Python Version: 3.9+
 @Required Modules: pyyaml aiohttp protobuf lxml beautifulsoup4 pycryptodome aiomysql opencv-contrib-python
 """
 
@@ -14,7 +14,6 @@ from .client import *
 from .logger import *
 from .reviewer import *
 from .types import *
-
 
 if os.name == 'posix':
     import signal

@@ -20,7 +20,7 @@
 
 ## 入门使用
 
-+ 确保你的[`Python`](https://www.python.org/downloads/)版本在`3.8`及以上
++ 确保你的[`Python`](https://www.python.org/downloads/)版本在`3.9`及以上
 
 + 拉取代码并安装依赖
 
