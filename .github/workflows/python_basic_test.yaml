@@ -36,11 +36,9 @@ jobs:
 
     - name: Decrypt config
       shell: bash
-      run: |
-        .github/test/prepare.sh
+      run: .github/test/prepare.sh
       env:
         PASSPHRASE: ${{ secrets.PASSPHRASE }}
 
     - name: Run test
-      run: |
-        python test_all.py
+      run: python test_all.py
