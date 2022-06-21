@@ -857,8 +857,7 @@ class Client(object):
 
         try:
             res = await self.app_proto.post(
-                "/c/u/user/getuserinfo?cmd=303024",
-                data=self.pack_proto_bytes(req_proto.SerializeToString()),
+                "/c/u/user/getuserinfo?cmd=303024", data=self.pack_proto_bytes(req_proto.SerializeToString())
             )
 
             res_proto = GetUserInfoResIdl_pb2.GetUserInfoResIdl()
@@ -925,8 +924,7 @@ class Client(object):
 
         try:
             res = await self.app_proto.post(
-                "/c/u/user/getUserByTiebaUid?cmd=309702",
-                data=self.pack_proto_bytes(req_proto.SerializeToString()),
+                "/c/u/user/getUserByTiebaUid?cmd=309702", data=self.pack_proto_bytes(req_proto.SerializeToString())
             )
 
             res_proto = GetUserByTiebaUidResIdl_pb2.GetUserByTiebaUidResIdl()
@@ -976,8 +974,7 @@ class Client(object):
 
         try:
             res = await self.app_proto.post(
-                "/c/f/frs/page?cmd=301001",
-                data=self.pack_proto_bytes(req_proto.SerializeToString()),
+                "/c/f/frs/page?cmd=301001", data=self.pack_proto_bytes(req_proto.SerializeToString())
             )
 
             res_proto = FrsPageResIdl_pb2.FrsPageResIdl()
@@ -1042,8 +1039,7 @@ class Client(object):
 
         try:
             res = await self.app_proto.post(
-                "/c/f/pb/page?cmd=302001",
-                data=self.pack_proto_bytes(req_proto.SerializeToString())
+                "/c/f/pb/page?cmd=302001", data=self.pack_proto_bytes(req_proto.SerializeToString())
             )
 
             res_proto = PbPageResIdl_pb2.PbPageResIdl()
@@ -1088,8 +1084,7 @@ class Client(object):
 
         try:
             res = await self.app_proto.post(
-                "/c/f/pb/floor?cmd=302002",
-                data=self.pack_proto_bytes(req_proto.SerializeToString()),
+                "/c/f/pb/floor?cmd=302002", data=self.pack_proto_bytes(req_proto.SerializeToString())
             )
 
             res_proto = PbFloorResIdl_pb2.PbFloorResIdl()
@@ -2063,8 +2058,7 @@ class Client(object):
 
         try:
             res = await self.app_proto.post(
-                "/c/u/feed/replyme?cmd=303007",
-                data=self.pack_proto_bytes(req_proto.SerializeToString()),
+                "/c/u/feed/replyme?cmd=303007", data=self.pack_proto_bytes(req_proto.SerializeToString())
             )
 
             res_proto = ReplyMeResIdl_pb2.ReplyMeResIdl()
@@ -2111,6 +2105,21 @@ class Client(object):
             ats = Ats()
 
         return ats
+
+    async def get_self_public_threads(self, pn: int = 1) -> List[NewThread]:
+        """
+        获取本人发布的公开状态的主题帖列表
+
+        Args:
+            pn (int, optional): 页码. Defaults to 1.
+
+        Returns:
+            list[NewThread]: 主题帖列表
+        """
+
+        user = await self.get_self_info()
+
+        return await self._get_user_contents(user, pn, is_thread=True, public_only=True)
 
     async def get_self_threads(self, pn: int = 1) -> List[NewThread]:
         """
@@ -2162,15 +2171,16 @@ class Client(object):
         return await self._get_user_contents(user, pn)
 
     async def _get_user_contents(
-        self, user: BasicUserInfo, pn: int = 1, is_thread: bool = True
+        self, user: BasicUserInfo, pn: int = 1, is_thread: bool = True, public_only: bool = False
     ) -> Union[List[NewThread], List[UserPosts]]:
         """
         获取用户发布的主题帖/回复列表
 
         Args:
             user (BasicUserInfo): 待获取用户的基本用户信息
-            is_thread (bool, optional): 是否请求主题帖. Defaults to True.
             pn (int, optional): 页码. Defaults to 1.
+            is_thread (bool, optional): 是否请求主题帖. Defaults to True.
+            public_only (bool, optional): 是否仅获取公开帖. Defaults to False.
 
         Returns:
             list[NewThread] | list[UserPosts]: 主题帖/回复列表
@@ -2184,15 +2194,14 @@ class Client(object):
         data_proto.is_thread = is_thread
         data_proto.need_content = 1
         data_proto.pn = pn
-        data_proto.is_view_card = 1  # 若is_view_card=2则仅获取公开的主题帖
+        data_proto.is_view_card = 2 if public_only else 1
         data_proto.common.CopyFrom(common_proto)
         req_proto = UserPostReqIdl_pb2.UserPostReqIdl()
         req_proto.data.CopyFrom(data_proto)
 
         try:
             res = await self.app_proto.post(
-                "/c/u/feed/userpost?cmd=303002",
-                data=self.pack_proto_bytes(req_proto.SerializeToString()),
+                "/c/u/feed/userpost?cmd=303002", data=self.pack_proto_bytes(req_proto.SerializeToString())
             )
 
             res_proto = UserPostResIdl_pb2.UserPostResIdl()
@@ -2735,8 +2744,7 @@ class Client(object):
 
         try:
             res = await self.app_proto.post(
-                "/c/f/forum/getBawuInfo?cmd=301007",
-                data=self.pack_proto_bytes(req_proto.SerializeToString()),
+                "/c/f/forum/getBawuInfo?cmd=301007", data=self.pack_proto_bytes(req_proto.SerializeToString())
             )
 
             res_proto = GetBawuInfoResIdl_pb2.GetBawuInfoResIdl()
@@ -2782,8 +2790,7 @@ class Client(object):
 
         try:
             res = await self.app_proto.post(
-                "/c/f/forum/searchPostForum?cmd=309466",
-                data=self.pack_proto_bytes(req_proto.SerializeToString()),
+                "/c/f/forum/searchPostForum?cmd=309466", data=self.pack_proto_bytes(req_proto.SerializeToString())
             )
 
             res_proto = SearchPostForumResIdl_pb2.SearchPostForumResIdl()

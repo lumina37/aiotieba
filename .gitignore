@@ -18,10 +18,12 @@ log/
 charles/
 
 test*
-/*.py
-/*.proto
+*.py
+*.proto
 
-!.github/
+!.github
+!.github/**
+
 !README.md
 !requirements.txt
 !admin_listen.py
