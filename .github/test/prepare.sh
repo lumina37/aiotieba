@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # prepare test script
 mv $HOME/.github/test/test_all.py $HOME
