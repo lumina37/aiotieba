@@ -343,7 +343,7 @@ class Reviewer(Client):
         """
 
         try:
-            img_hash_array = cv.img_hash.pHash(image)
+            img_hash_array = cv.img_hash.averageHash(image)
             img_hash = binascii.hexlify(img_hash_array.tobytes()).decode('ascii')
         except Exception as err:
             LOG.warning(f"Failed to get imagehash. reason:{err}")

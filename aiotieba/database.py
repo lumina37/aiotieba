@@ -655,8 +655,8 @@ class Database(object):
             async with conn.cursor() as cursor:
                 await cursor.execute(
                     f"CREATE TABLE IF NOT EXISTS `imghash_{fname}` \
-                    (`img_hash` CHAR(16) PRIMARY KEY, `raw_hash` CHAR(40) UNIQUE NOT NULL, `permission` TINYINT NOT NULL DEFAULT 0, `note` VARCHAR(64) NOT NULL DEFAULT '', \
-                    INDEX `permission`(permission))"
+                    (`img_hash` CHAR(16) PRIMARY KEY, `raw_hash` CHAR(40) UNIQUE NOT NULL, `permission` TINYINT NOT NULL DEFAULT 0, `note` VARCHAR(64) NOT NULL DEFAULT '', `record_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, \
+                    INDEX `permission`(permission), INDEX `record_time`(record_time))"
                 )
 
     async def add_imghash(self, fname: str, img_hash: str, raw_hash: str, permission: int = 0, note: str = '') -> bool:
@@ -678,7 +678,7 @@ class Database(object):
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     await cursor.execute(
-                        f"REPLACE INTO `imghash_{fname}` VALUES (%s,%s,%s,%s)",
+                        f"REPLACE INTO `imghash_{fname}` VALUES (%s,%s,%s,%s,DEFAULT)",
                         (img_hash, raw_hash, permission, note),
                     )
         except aiomysql.Error as err:
