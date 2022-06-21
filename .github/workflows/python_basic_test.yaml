@@ -35,9 +35,9 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
     - name: Decrypt config
-        run: ./.github/test/prepare.sh
-        env:
-          PASSPHRASE: ${{ secrets.PASSPHRASE }}
+      run: ./.github/test/prepare.sh
+      env:
+        PASSPHRASE: ${{ secrets.PASSPHRASE }}
 
     - name: Run test
       run: |
