@@ -5,6 +5,7 @@ __*/
 *.xlsx
 *.pyproj
 *.txt
+*.log
 *.bin
 *.zip
 *.rar
