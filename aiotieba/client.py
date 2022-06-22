@@ -148,6 +148,7 @@ class Client(object):
         'BDUSS_key',
         'BDUSS',
         'STOKEN',
+        '_user',
         '_connector',
         'app',
         'app_proto',
@@ -171,9 +172,9 @@ class Client(object):
 
     def __init__(self, BDUSS_key: str = '') -> None:
         self.BDUSS_key = BDUSS_key
-
         self.BDUSS: str = CONFIG['BDUSS'].get(BDUSS_key, '')
         self.STOKEN: str = CONFIG['STOKEN'].get(BDUSS_key, '')
+        self._user: BasicUserInfo = None
 
         self._connector: aiohttp.TCPConnector = None
         self.app: aiohttp.ClientSession = None
@@ -629,9 +630,22 @@ class Client(object):
         """
 
         if not self._tbs:
-            await self.get_self_info()
+            await self.login()
 
         return self._tbs
+
+    async def get_self_info(self) -> BasicUserInfo:
+        """
+        获取本账号信息
+
+        Returns:
+            BasicUserInfo: 简略版用户信息 仅保证包含user_name/portrait/user_id
+        """
+
+        if self._user is None:
+            await self.login()
+
+        return self._user
 
     async def get_fid(self, fname: str) -> int:
         """
@@ -1962,12 +1976,12 @@ class Client(object):
 
         return image
 
-    async def get_self_info(self) -> BasicUserInfo:
+    async def login(self) -> bool:
         """
-        获取本账号信息
+        登录并获取tbs以及当前账号信息
 
         Returns:
-            BasicUserInfo: 简略版用户信息 仅保证包含user_name/portrait/user_id
+            bool: 操作是否成功
         """
 
         payload = [
@@ -1984,15 +1998,14 @@ class Client(object):
 
             user_dict = res_json['user']
             user_proto = ParseDict(user_dict, User_pb2.User(), ignore_unknown_fields=True)
-            user = BasicUserInfo(_raw_data=user_proto)
-
+            self._user = BasicUserInfo(_raw_data=user_proto)
             self._tbs = res_json['anti']['tbs']
 
         except Exception as err:
-            LOG.warning(f"Failed to get UserInfo of current account. reason:{err}")
-            user = BasicUserInfo()
+            LOG.warning(f"Failed to login. reason:{err}")
+            return False
 
-        return user
+        return True
 
     async def get_newmsg(self) -> Dict[str, bool]:
         """
