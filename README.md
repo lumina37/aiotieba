@@ -34,17 +34,19 @@ pip install -r requirements.txt
 
 ## 若要开启云审查功能
 
-+ 参考`config/config_full_example.yaml`中的注释完成对`database`字段的配置，你需要一个`MySQL`数据库用来缓存通过检测的内容id以及记录用户权限级别（黑、白名单）。配置完成的`config/config.yaml`如下所示
++ 参考`config/config_full_example.toml`中的注释完成对`Database`字段的配置，你需要一个`MySQL`数据库用来缓存通过检测的内容id以及记录用户权限级别（黑、白名单）。配置完成的`config/config.toml`如下所示
 
-```yaml
-BDUSS:
-  starry: ABCDEFGai2LdUd5TTVHblhFeXoxdGyOVURGUE1OYzNqVXVRaWF-HnpGckRCNFJnRVFBQUFBJCQAAAAAAAAAAAEAAADiglQb0f3Osqmv0rbJ2QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMN6XGDDelxgc
+```toml
+[User]
 
-database:
-  host: 127.0.0.1
-  port: 3306
-  user: root
-  password: 123456
+[User.starry]
+BDUSS = "ABCDEFGai2LdUd5TTVHblhFeXoxdGyOVURGUE1OYzNqVXVRaWF-HnpGckRCNFJnRVFBQUFBJCQAAAAAAAAAAAEAAADiglQb0f3Osqmv0rbJ2QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMN6XGDDelxgc"
+
+[Database]
+host = "127.0.0.1"
+port = 3306
+user = "root"
+password = "123456"
 ```
 
 + 使用函数`Database.init_database()`一键建库，如下例所示

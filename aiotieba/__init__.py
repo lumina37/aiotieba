@@ -5,7 +5,7 @@
 @License: Unlicense
 @Homepage: https://github.com/Starry-OvO/Tieba-Manager
 @Required Python Version: 3.9+
-@Required Modules: pyyaml aiohttp protobuf lxml beautifulsoup4 pycryptodome aiomysql opencv-contrib-python
+@Required Modules: tomli aiohttp protobuf lxml beautifulsoup4 pycryptodome aiomysql opencv-contrib-python
 """
 
 import os

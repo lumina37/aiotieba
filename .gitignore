@@ -10,6 +10,7 @@ __*/
 *.zip
 *.rar
 *.md
+*.cmd
 *.jpg
 *.proto
 *.code-workspace

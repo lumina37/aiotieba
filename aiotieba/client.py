@@ -172,8 +172,9 @@ class Client(object):
 
     def __init__(self, BDUSS_key: str = '') -> None:
         self.BDUSS_key = BDUSS_key
-        self.BDUSS: str = CONFIG['BDUSS'].get(BDUSS_key, '')
-        self.STOKEN: str = CONFIG['STOKEN'].get(BDUSS_key, '')
+        user_dict: Dict[str, str] = CONFIG['User'].get(BDUSS_key, {})
+        self.BDUSS: str = user_dict.get('BDUSS', '')
+        self.STOKEN: str = user_dict.get('STOKEN', '')
         self._user: BasicUserInfo = None
 
         self._connector: aiohttp.TCPConnector = None
