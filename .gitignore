@@ -20,7 +20,7 @@ log/
 charles/
 
 test*
-*.py
+/*.py
 *.proto
 
 !.github

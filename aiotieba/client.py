@@ -34,6 +34,10 @@ from .tieba_protobuf import (
     FrsPageResIdl_pb2,
     GetBawuInfoReqIdl_pb2,
     GetBawuInfoResIdl_pb2,
+    GetDislikeListReqIdl_pb2,
+    GetDislikeListResIdl_pb2,
+    GetForumSquareReqIdl_pb2,
+    GetForumSquareResIdl_pb2,
     GetUserByTiebaUidReqIdl_pb2,
     GetUserByTiebaUidResIdl_pb2,
     GetUserInfoReqIdl_pb2,
@@ -193,7 +197,7 @@ class Client(object):
         self._cuid_galaxy2: str = None
 
     async def enter(self) -> "Client":
-        _trust_env = False
+        _trust_env = True
         _timeout = aiohttp.ClientTimeout(connect=8, sock_connect=3, sock_read=12)
         self._connector = aiohttp.TCPConnector(
             ttl_dns_cache=600, keepalive_timeout=60, limit=0, family=socket.AF_INET, ssl=False
@@ -647,6 +651,37 @@ class Client(object):
             await self.login()
 
         return self._user
+
+    async def login(self) -> bool:
+        """
+        登录并获取tbs以及当前账号信息
+
+        Returns:
+            bool: 操作是否成功
+        """
+
+        payload = [
+            ('_client_version', self.latest_version),
+            ('bdusstoken', self.BDUSS),
+        ]
+
+        try:
+            res = await self.app.post("/c/s/login", data=self.pack_form(payload))
+
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
+
+            user_dict = res_json['user']
+            user_proto = ParseDict(user_dict, User_pb2.User(), ignore_unknown_fields=True)
+            self._user = BasicUserInfo(_raw_data=user_proto)
+            self._tbs = res_json['anti']['tbs']
+
+        except Exception as err:
+            LOG.warning(f"Failed to login. reason:{err}")
+            return False
+
+        return True
 
     async def get_fid(self, fname: str) -> int:
         """
@@ -1115,6 +1150,553 @@ class Client(object):
 
         return comments
 
+    async def search_post(
+        self,
+        fname_or_fid: Union[str, int],
+        query: str,
+        pn: int = 1,
+        rn: int = 30,
+        query_type: int = 0,
+        only_thread: bool = False,
+    ) -> Searches:
+        """
+        贴吧搜索
+
+        Args:
+            fname_or_fid (str | int): 查询的贴吧名或fid 优先贴吧名
+            query (str): 查询文本
+            pn (int, optional): 页码. Defaults to 1.
+            rn (int, optional): 请求的条目数. Defaults to 30.
+            query_type (int, optional): 查询模式 0为全部搜索结果并且app似乎不提供这一模式 1为app时间倒序 2为app相关性排序. Defaults to 0.
+            only_thread (bool, optional): 是否仅查询主题帖. Defaults to False.
+
+        Returns:
+            Searches: 搜索结果列表
+        """
+
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
+
+        payload = [
+            ('_client_version', self.latest_version),
+            ('kw', fname),
+            ('only_thread', int(only_thread)),
+            ('pn', pn),
+            ('rn', rn),
+            ('sm', query_type),
+            ('word', query),
+        ]
+
+        try:
+            res = await self.app.post("/c/s/searchpost", data=self.pack_form(payload))
+
+            res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
+
+            searches = Searches(res_json)
+
+        except Exception as err:
+            LOG.warning(f"Failed to search {query} in {fname}. reason:{err}")
+            searches = Searches()
+
+        return searches
+
+    async def get_forum_detail(self, fname_or_fid: Union[str, int]) -> Tuple[str, int, int]:
+        """
+        通过forum_id获取贴吧信息
+
+        Args:
+            fname_or_fid (str | int): 目标贴吧名或fid 优先fid
+
+        Returns:
+            tuple[str, int, int]: 该贴吧的贴吧名, 吧会员数, 主题帖数
+        """
+
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+
+        payload = [
+            ('_client_version', self.latest_version),
+            ('forum_id', fid),
+        ]
+
+        try:
+            res = await self.app.post("/c/f/forum/getforumdetail", data=self.pack_form(payload))
+
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
+
+            fname = res_json['forum_info']['forum_name']
+            member_num = int(res_json['forum_info']['member_count'])
+            thread_num = int(res_json['forum_info']['thread_count'])
+
+        except Exception as err:
+            LOG.warning(f"Failed to get forum_detail of {fname_or_fid}. reason:{err}")
+            fname = ''
+            member_num = 0
+            thread_num = 0
+
+        return fname, member_num, thread_num
+
+    async def get_bawu_dict(self, fname_or_fid: Union[str, int]) -> Dict[str, List[BasicUserInfo]]:
+        """
+        获取吧务信息
+
+        Args:
+            fname_or_fid (str | int): 目标贴吧名或fid 优先fid
+
+        Returns:
+            dict[str, list[BasicUserInfo]]: {吧务类型: list[吧务基本用户信息]}
+        """
+
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+
+        common_proto = CommonReq_pb2.CommonReq()
+        common_proto._client_version = self.latest_version
+        data_proto = GetBawuInfoReqIdl_pb2.GetBawuInfoReqIdl.DataReq()
+        data_proto.common.CopyFrom(common_proto)
+        data_proto.forum_id = fid
+        req_proto = GetBawuInfoReqIdl_pb2.GetBawuInfoReqIdl()
+        req_proto.data.CopyFrom(data_proto)
+
+        try:
+            res = await self.app_proto.post(
+                "/c/f/forum/getBawuInfo?cmd=301007", data=self.pack_proto_bytes(req_proto.SerializeToString())
+            )
+
+            res_proto = GetBawuInfoResIdl_pb2.GetBawuInfoResIdl()
+            res_proto.ParseFromString(await res.content.read())
+            if int(res_proto.error.errorno):
+                raise ValueError(res_proto.error.errmsg)
+
+            roledes_protos = res_proto.data.bawu_team_info.bawu_team_list
+            bawu_dict = {
+                roledes_proto.role_name: [
+                    BasicUserInfo(_raw_data=roleinfo_proto) for roleinfo_proto in roledes_proto.role_info
+                ]
+                for roledes_proto in roledes_protos
+            }
+
+        except Exception as err:
+            LOG.warning(f"Failed to get bawu_dict. reason: {err}")
+            bawu_dict = {}
+
+        return bawu_dict
+
+    async def get_tab_map(self, fname_or_fid: Union[str, int]) -> Dict[str, int]:
+        """
+        获取分区名到分区id的映射字典
+
+        Args:
+            fname_or_fid (str | int): 目标贴吧名或fid 优先贴吧名
+
+        Returns:
+            dict[str, int]: {分区名:分区id}
+        """
+
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
+
+        common_proto = CommonReq_pb2.CommonReq()
+        common_proto.BDUSS = self.BDUSS
+        common_proto._client_version = self.latest_version
+        data_proto = SearchPostForumReqIdl_pb2.SearchPostForumReqIdl.DataReq()
+        data_proto.common.CopyFrom(common_proto)
+        data_proto.word = fname
+        req_proto = SearchPostForumReqIdl_pb2.SearchPostForumReqIdl()
+        req_proto.data.CopyFrom(data_proto)
+
+        try:
+            res = await self.app_proto.post(
+                "/c/f/forum/searchPostForum?cmd=309466", data=self.pack_proto_bytes(req_proto.SerializeToString())
+            )
+
+            res_proto = SearchPostForumResIdl_pb2.SearchPostForumResIdl()
+            res_proto.ParseFromString(await res.content.read())
+            if int(res_proto.error.errorno):
+                raise ValueError(res_proto.error.errmsg)
+
+            tab_map = {tab_proto.tab_name: tab_proto.tab_id for tab_proto in res_proto.data.exact_match.tab_info}
+
+        except Exception as err:
+            LOG.warning(f"Failed to get tab_map of {fname}. reason:{err}")
+            tab_map = {}
+
+        return tab_map
+
+    async def get_rank_list(
+        self, fname_or_fid: Union[str, int], pn: int = 1
+    ) -> Tuple[List[Tuple[str, int, int, bool]], bool]:
+        """
+        获取pn页的贴吧等级排行榜
+
+        Args:
+            fname_or_fid (str | int): 目标贴吧名或fid 优先贴吧名
+            pn (int, optional): 页码. Defaults to 1.
+
+        Returns:
+            tuple[list[tuple[str, int, int, bool]], bool]: list[用户名,等级,经验值,是否vip], 是否还有下一页
+        """
+
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
+
+        try:
+            res = await self.web.get(
+                "http://tieba.baidu.com/f/like/furank",
+                params={
+                    'kw': fname,
+                    'pn': pn,
+                    'ie': 'utf-8',
+                },
+            )
+
+            soup = BeautifulSoup(await res.text(), 'lxml')
+            items = soup.select('tr[class^=drl_list_item]')
+
+            def _parse_item(item):
+                user_name_item = item.td.next_sibling
+                user_name = user_name_item.text
+                is_vip = 'drl_item_vip' in user_name_item.div['class']
+                level_item = user_name_item.next_sibling
+                # e.g. get level 16 from string "bg_lv16" by slicing [5:]
+                level = int(level_item.div['class'][0][5:])
+                exp_item = level_item.next_sibling
+                exp = int(exp_item.text)
+
+                return user_name, level, exp, is_vip
+
+            res_list = [_parse_item(item) for item in items]
+            has_more = len(items) == 20
+
+        except Exception as err:
+            LOG.warning(f"Failed to get rank_list of {fname} pn:{pn}. reason:{err}")
+            res_list = []
+            has_more = False
+
+        return res_list, has_more
+
+    async def get_member_list(
+        self, fname_or_fid: Union[str, int], pn: int = 1
+    ) -> Tuple[List[Tuple[str, str, int]], bool]:
+        """
+        获取pn页的贴吧最新关注用户列表
+
+        Args:
+            fname_or_fid (str | int): 目标贴吧名或fid 优先贴吧名
+            pn (int, optional): 页码. Defaults to 1.
+
+        Returns:
+            tuple[list[tuple[str, str, int]], bool]: list[用户名,portrait,等级], 是否还有下一页
+        """
+
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
+
+        try:
+            res = await self.web.get(
+                "http://tieba.baidu.com/bawu2/platform/listMemberInfo",
+                params={
+                    'word': fname,
+                    'pn': pn,
+                    'ie': 'utf-8',
+                },
+            )
+
+            soup = BeautifulSoup(await res.text(), 'lxml')
+            items = soup.find_all('div', class_='name_wrap')
+
+            def _parse_item(item):
+                user_item = item.a
+                user_name = user_item['title']
+                portrait = user_item['href'][14:]
+                level_item = item.span
+                level = int(level_item['class'][1][12:])
+                return user_name, portrait, level
+
+            res_list = [_parse_item(item) for item in items]
+            has_more = len(items) == 24
+
+        except Exception as err:
+            LOG.warning(f"Failed to get member_list of {fname} pn:{pn}. reason:{err}")
+            res_list = []
+            has_more = False
+
+        return res_list, has_more
+
+    async def get_forum_square(
+        self, class_name: str, pn: int = 1, rn: int = 20
+    ) -> List[Tuple[str, int, bool, int, int]]:
+        """
+        获取吧广场列表
+
+        Args:
+            class_name (str): 类别名
+            pn (int, optional): 页码. Defaults to 1.
+            rn (int, optional): 请求的条目数. Defaults to 20.
+
+        Returns:
+            tuple[list[tuple[str, int, bool, int, int]], bool]: list[贴吧名,贴吧id,是否已关注,吧会员数,主题帖数], 是否还有下一页
+        """
+
+        common_proto = CommonReq_pb2.CommonReq()
+        common_proto.BDUSS = self.BDUSS
+        common_proto._client_version = self.latest_version
+        data_proto = GetForumSquareReqIdl_pb2.GetForumSquareReqIdl.DataReq()
+        data_proto.common.CopyFrom(common_proto)
+        data_proto.class_name = class_name
+        data_proto.pn = pn
+        data_proto.rn = rn
+        req_proto = GetForumSquareReqIdl_pb2.GetForumSquareReqIdl()
+        req_proto.data.CopyFrom(data_proto)
+
+        try:
+            res = await self.app_proto.post(
+                "/c/f/forum/getForumSquare?cmd=309653", data=self.pack_proto_bytes(req_proto.SerializeToString())
+            )
+
+            res_proto = GetForumSquareResIdl_pb2.GetForumSquareResIdl()
+            res_proto.ParseFromString(await res.content.read())
+            if int(res_proto.error.errorno):
+                raise ValueError(res_proto.error.errmsg)
+
+            res_list = [
+                (forum.forum_name, forum.forum_id, bool(forum.is_like), forum.member_count, forum.thread_count)
+                for forum in res_proto.data.forum_info
+            ]
+            has_more = bool(res_proto.data.page.has_more)
+
+        except Exception as err:
+            LOG.warning(f"Failed to get forum_square. reason:{err}")
+            res_list = []
+            has_more = False
+
+        return res_list, has_more
+
+    async def get_homepage(self, _id: Union[str, int]) -> Tuple[UserInfo, List[Thread]]:
+        """
+        获取用户个人页信息
+
+        Args:
+            _id (str | int): 待获取用户的id user_id/user_name/portrait 优先portrait
+
+        Returns:
+            tuple[UserInfo, list[Thread]]: 用户信息, list[帖子信息]
+        """
+
+        if not BasicUserInfo.is_portrait(_id):
+            user = await self.get_basic_user_info(_id)
+        else:
+            user = BasicUserInfo(_id)
+
+        payload = [
+            ('_client_type', '2'),  # 删除该字段会导致post_list为空
+            ('_client_version', self.latest_version),  # 删除该字段会导致post_list和dynamic_list为空
+            ('friend_uid_portrait', user.portrait),
+            ('need_post_count', '1'),  # 删除该字段会导致无法获取发帖回帖数量
+            # ('uid', user_id),  # 用该字段检查共同关注的吧
+        ]
+
+        try:
+            res = await self.app.post("/c/u/user/profile", data=self.pack_form(payload))
+
+            res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
+            if not res_json.__contains__('user'):
+                raise ValueError("invalid params")
+
+        except Exception as err:
+            LOG.warning(f"Failed to get profile of {user.portrait}. reason:{err}")
+            return UserInfo(), []
+
+        user = UserInfo(_raw_data=ParseDict(res_json['user'], User_pb2.User(), ignore_unknown_fields=True))
+
+        def _pack_thread_dict(thread_dict: dict) -> NewThread:
+            thread = NewThread(ParseDict(thread_dict, NewThreadInfo_pb2.NewThreadInfo(), ignore_unknown_fields=True))
+            thread._user = user
+            return thread
+
+        threads = [_pack_thread_dict(thread_dict) for thread_dict in res_json['post_list']]
+
+        return user, threads
+
+    async def get_statistics(self, fname_or_fid: Union[str, int]) -> Dict[str, List[int]]:
+        """
+        获取吧务后台中最近29天的统计数据
+
+        Args:
+            fname_or_fid (str | int): 目标贴吧名或fid 优先fid
+
+        Returns:
+            dict[str, list[int]]: {字段名:按时间顺序排列的统计数据}
+            {'view': 浏览量,
+             'thread': 主题帖数,
+             'new_member': 新增关注数,
+             'post': 回复数,
+             'sign_ratio': 签到率,
+             'average_time': 人均浏览时长,
+             'average_times': 人均进吧次数,
+             'recommend': 首页推荐数}
+        """
+
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+
+        payload = [
+            ('BDUSS', self.BDUSS),
+            ('_client_version', self.latest_version),
+            ('forum_id', fid),
+        ]
+
+        field_names = [
+            'view',
+            'thread',
+            'new_member',
+            'post',
+            'sign_ratio',
+            'average_time',
+            'average_times',
+            'recommend',
+        ]
+        try:
+            res = await self.app.post("/c/f/forum/getforumdata", data=self.pack_form(payload))
+
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
+
+            data = res_json['data']
+            stat = {
+                field_name: [int(item['value']) for item in reversed(data_i['group'][1]['values'])]
+                for field_name, data_i in zip(field_names, data)
+            }
+
+        except Exception as err:
+            LOG.warning(f"Failed to get statistics of {fname_or_fid}. reason:{err}")
+            stat = {field_name: [] for field_name in field_names}
+
+        return stat
+
+    async def get_forum_list(self, _id: Union[str, int]) -> List[Tuple[str, int, int, int]]:
+        """
+        获取用户关注贴吧列表
+
+        Args:
+            _id (str | int): 待获取用户的id user_id/user_name/portrait 优先user_id
+
+        Returns:
+            list[tuple[str, int, int, int]]: list[贴吧名,贴吧id,等级,经验值]
+        """
+
+        if not BasicUserInfo.is_user_id(_id):
+            user = await self.get_basic_user_info(_id)
+        else:
+            user = BasicUserInfo(_id)
+
+        payload = [
+            ('BDUSS', self.BDUSS),
+            ('friend_uid', user.user_id),
+        ]
+
+        try:
+            res = await self.app.post("/c/f/forum/like", data=self.pack_form(payload))
+
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
+
+            forums: list[dict] = res_json.get('forum_list', [])
+
+            res_list = [
+                (forum['name'], int(forum['id']), int(forum['level_id']), int(forum['cur_score'])) for forum in forums
+            ]
+
+        except Exception as err:
+            LOG.warning(f"Failed to get forum_list of {user.user_id}. reason:{err}")
+            res_list = []
+
+        return res_list
+
+    async def get_recom_status(self, fname_or_fid: Union[str, int]) -> Tuple[int, int]:
+        """
+        获取大吧主推荐功能的月度配额状态
+
+        Args:
+            fname_or_fid (str | int): 目标贴吧名或fid 优先fid
+
+        Returns:
+            tuple[int, int]: 本月总推荐配额, 本月已使用的推荐配额
+        """
+
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+
+        payload = [
+            ('BDUSS', self.BDUSS),
+            ('_client_version', self.latest_version),
+            ('forum_id', fid),
+            ('pn', '1'),
+            ('rn', '0'),
+        ]
+
+        try:
+            res = await self.app.post("/c/f/bawu/getRecomThreadList", data=self.pack_form(payload))
+
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
+
+            total_recom_num = int(res_json['total_recommend_num'])
+            used_recom_num = int(res_json['used_recommend_num'])
+
+        except Exception as err:
+            LOG.warning(f"Failed to get recom_status of {fname_or_fid}. reason:{err}")
+            total_recom_num = 0
+            used_recom_num = 0
+
+        return total_recom_num, used_recom_num
+
+    async def get_recom_list(self, fname_or_fid: Union[str, int], pn: int = 1) -> Tuple[List[Tuple[Thread, int]], bool]:
+        """
+        获取pn页的大吧主推荐帖列表
+
+        Args:
+            fname_or_fid (str | int): 目标贴吧名或fid 优先fid
+            pn (int, optional): 页码. Defaults to 1.
+
+        Returns:
+            tuple[list[tuple[Thread, int]], bool]: list[被推荐帖子信息,新增浏览量], 是否还有下一页
+        """
+
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+
+        payload = [
+            ('BDUSS', self.BDUSS),
+            ('_client_version', self.latest_version),
+            ('forum_id', fid),
+            ('pn', pn),
+            ('rn', '30'),
+        ]
+
+        try:
+            res = await self.app.post("/c/f/bawu/getRecomThreadHistory", data=self.pack_form(payload))
+
+            res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
+
+            def _pack_data_dict(data_dict):
+                thread_dict = data_dict['thread_list']
+                thread = Thread(ParseDict(thread_dict, ThreadInfo_pb2.ThreadInfo(), ignore_unknown_fields=True))
+                add_view = thread.view_num - int(data_dict['current_pv'])
+                return thread, add_view
+
+            res_list = [_pack_data_dict(data_dict) for data_dict in res_json['recom_thread_list']]
+            has_more = bool(int(res_json['is_has_more']))
+
+        except Exception as err:
+            LOG.warning(f"Failed to get recom_list of {fname_or_fid}. reason:{err}")
+            res_list = []
+            has_more = False
+
+        return res_list, has_more
+
     async def block(
         self, fname_or_fid: Union[str, int], user: BasicUserInfo, day: Literal[1, 3, 10], reason: str = ''
     ) -> bool:
@@ -1417,10 +1999,7 @@ class Client(object):
             ('_client_version', self.latest_version),
             ('forum_id', fid),
             ('tbs', await self.get_tbs()),
-            (
-                'threads',
-                str([{'thread_id', tid, 'from_tab_id', from_tab_id, 'to_tab_id', to_tab_id}]).replace('\'', '"'),
-            ),
+            ('threads', json.dumps([{'thread_id', tid, 'from_tab_id', from_tab_id, 'to_tab_id', to_tab_id}])),
         ]
 
         try:
@@ -1865,6 +2444,44 @@ class Client(object):
         LOG.info(f"Successfully removed {user.log_name} from black_list in {fname}")
         return True
 
+    async def get_unblock_appeal_list(self, fname_or_fid: Union[str, int]) -> List[int]:
+        """
+        获取第1页的申诉请求列表
+
+        Args:
+            fname_or_fid (str | int): 目标贴吧的贴吧名或fid
+
+        Returns:
+            list[int]: 申诉请求的appeal_id的列表
+        """
+
+        if isinstance(fname_or_fid, str):
+            fname = fname_or_fid
+            fid = await self.get_fid(fname)
+        else:
+            fid = fname_or_fid
+            fname = await self.get_fname(fid)
+
+        params = {
+            'fn': fname,
+            'fid': fid,
+            'is_ajax': '1',
+            'pn': '1',
+        }
+
+        try:
+            res = await self.web.get("https://tieba.baidu.com/mo/q/bawuappeal", params=params)
+
+            text = await res.text(encoding='utf-8')
+
+            res_list = [int(item.group(1)) for item in re.finditer('aid=(\\d+)', text)]
+
+        except Exception as err:
+            LOG.warning(f"Failed to get appeal_list of {fname}. reason:{err}")
+            res_list = []
+
+        return res_list
+
     async def handle_unblock_appeal(self, fname_or_fid: Union[str, int], appeal_id: int, refuse: bool = True) -> bool:
         """
         拒绝或通过解封申诉
@@ -1910,44 +2527,6 @@ class Client(object):
         LOG.info(f"Successfully handled {appeal_id} in {fname}. refuse:{refuse}")
         return True
 
-    async def get_unblock_appeal_list(self, fname_or_fid: Union[str, int]) -> List[int]:
-        """
-        获取第1页的申诉请求列表
-
-        Args:
-            fname_or_fid (str | int): 目标贴吧的贴吧名或fid
-
-        Returns:
-            list[int]: 申诉请求的appeal_id的列表
-        """
-
-        if isinstance(fname_or_fid, str):
-            fname = fname_or_fid
-            fid = await self.get_fid(fname)
-        else:
-            fid = fname_or_fid
-            fname = await self.get_fname(fid)
-
-        params = {
-            'fn': fname,
-            'fid': fid,
-            'is_ajax': '1',
-            'pn': '1',
-        }
-
-        try:
-            res = await self.web.get("https://tieba.baidu.com/mo/q/bawuappeal", params=params)
-
-            text = await res.text(encoding='utf-8')
-
-            res_list = [int(item.group(1)) for item in re.finditer('aid=(\\d+)', text)]
-
-        except Exception as err:
-            LOG.warning(f"Failed to get appeal_list of {fname}. reason:{err}")
-            res_list = []
-
-        return res_list
-
     async def get_image(self, img_url: str) -> np.ndarray:
         """
         从链接获取静态图像
@@ -1976,37 +2555,6 @@ class Client(object):
             image = np.empty(0, dtype=np.uint8)
 
         return image
-
-    async def login(self) -> bool:
-        """
-        登录并获取tbs以及当前账号信息
-
-        Returns:
-            bool: 操作是否成功
-        """
-
-        payload = [
-            ('_client_version', self.latest_version),
-            ('bdusstoken', self.BDUSS),
-        ]
-
-        try:
-            res = await self.app.post("/c/s/login", data=self.pack_form(payload))
-
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
-
-            user_dict = res_json['user']
-            user_proto = ParseDict(user_dict, User_pb2.User(), ignore_unknown_fields=True)
-            self._user = BasicUserInfo(_raw_data=user_proto)
-            self._tbs = res_json['anti']['tbs']
-
-        except Exception as err:
-            LOG.warning(f"Failed to login. reason:{err}")
-            return False
-
-        return True
 
     async def get_newmsg(self) -> Dict[str, bool]:
         """
@@ -2277,42 +2825,6 @@ class Client(object):
 
         return res_list, has_more
 
-    async def remove_fan(self, _id: Union[str, int]):
-        """
-        移除粉丝
-
-        Args:
-            _id (str | int): 待移除粉丝的id user_id/user_name/portrait 优先user_id
-
-        Returns:
-            bool: 操作是否成功
-        """
-
-        if not BasicUserInfo.is_user_id(_id):
-            user = await self.get_basic_user_info(_id)
-        else:
-            user = BasicUserInfo(_id)
-
-        payload = [
-            ('BDUSS', self.BDUSS),
-            ('fans_uid', user.user_id),
-            ('tbs', await self.get_tbs()),
-        ]
-
-        try:
-            res = await self.app.post("/c/c/user/removeFans", data=self.pack_form(payload))
-
-            res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
-            if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
-
-        except Exception as err:
-            LOG.warning(f"Failed to remove fan {user.log_name}. reason:{err}")
-            return False
-
-        LOG.info(f"Successfully removed fan {user.log_name}")
-        return True
-
     async def get_self_follow_list(self, pn: int = 1) -> Tuple[List[UserInfo], bool]:
         """
         获取第pn页的本人关注列表
@@ -2350,7 +2862,117 @@ class Client(object):
 
         return res_list, has_more
 
-    async def follow(self, _id: Union[str, int]):
+    async def get_self_forum_list(self, pn: int = 1) -> Tuple[List[Tuple[str, int]], bool]:
+        """
+        获取第pn页的本人关注贴吧列表
+
+        Args:
+            pn (int, optional): 页码. Defaults to 1.
+
+        Returns:
+            tuple[list[tuple[str, int]], bool]: list[贴吧名, 贴吧id], 是否还有下一页
+        """
+
+        try:
+            res = await self.web.get("https://tieba.baidu.com/mg/o/getForumHome", params={'pn': pn, 'rn': 200})
+
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['errno']):
+                raise ValueError(res_json['errmsg'])
+
+            forums: list[dict] = res_json['data']['like_forum']['list']
+            res_list = [(forum['forum_name'], int(forum['forum_id'])) for forum in forums]
+            has_more = len(forums) == 200
+
+        except Exception as err:
+            LOG.warning(f"Failed to get self_forum_list. reason:{err}")
+            res_list = []
+            has_more = False
+
+        return res_list, has_more
+
+    async def get_self_dislike_forum_list(self, pn: int = 1, rn: int = 20) -> List[Tuple[str, int, int, int, int]]:
+        """
+        获取首页推荐屏蔽的贴吧列表
+
+        Args:
+            pn (int, optional): 页码. Defaults to 1.
+            rn (int, optional): 请求的条目数. Defaults to 20.
+
+        Returns:
+            tuple[list[tuple[str, int, int, int, int]], bool]: list[贴吧名,贴吧id,吧会员数,主题帖数,总帖数], 是否还有下一页
+        """
+
+        common_proto = CommonReq_pb2.CommonReq()
+        common_proto.BDUSS = self.BDUSS
+        common_proto._client_version = self.latest_version
+        data_proto = GetDislikeListReqIdl_pb2.GetDislikeListReqIdl.DataReq()
+        data_proto.common.CopyFrom(common_proto)
+        data_proto.pn = pn
+        data_proto.rn = rn
+        req_proto = GetDislikeListReqIdl_pb2.GetDislikeListReqIdl()
+        req_proto.data.CopyFrom(data_proto)
+
+        try:
+            res = await self.app_proto.post(
+                "/c/u/user/getDislikeList?cmd=309692", data=self.pack_proto_bytes(req_proto.SerializeToString())
+            )
+
+            res_proto = GetDislikeListResIdl_pb2.GetDislikeListResIdl()
+            res_proto.ParseFromString(await res.content.read())
+            if int(res_proto.error.errorno):
+                raise ValueError(res_proto.error.errmsg)
+
+            res_list = [
+                (forum.forum_name, forum.forum_id, forum.member_count, forum.thread_num, forum.post_num)
+                for forum in res_proto.data.forum_list
+            ]
+            has_more = bool(res_proto.data.has_more)
+
+        except Exception as err:
+            LOG.warning(f"Failed to get self_dislike_forum_list. reason:{err}")
+            res_list = []
+            has_more = False
+
+        return res_list, has_more
+
+    async def remove_fan(self, _id: Union[str, int]):
+        """
+        移除粉丝
+
+        Args:
+            _id (str | int): 待移除粉丝的id user_id/user_name/portrait 优先user_id
+
+        Returns:
+            bool: 操作是否成功
+        """
+
+        if not BasicUserInfo.is_user_id(_id):
+            user = await self.get_basic_user_info(_id)
+        else:
+            user = BasicUserInfo(_id)
+
+        payload = [
+            ('BDUSS', self.BDUSS),
+            ('fans_uid', user.user_id),
+            ('tbs', await self.get_tbs()),
+        ]
+
+        try:
+            res = await self.app.post("/c/c/user/removeFans", data=self.pack_form(payload))
+
+            res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
+
+        except Exception as err:
+            LOG.warning(f"Failed to remove fan {user.log_name}. reason:{err}")
+            return False
+
+        LOG.info(f"Successfully removed fan {user.log_name}")
+        return True
+
+    async def follow_user(self, _id: Union[str, int]):
         """
         关注用户
 
@@ -2386,7 +3008,7 @@ class Client(object):
         LOG.info(f"Successfully followed user {user.log_name}")
         return True
 
-    async def unfollow(self, _id: Union[str, int]):
+    async def unfollow_user(self, _id: Union[str, int]):
         """
         取关用户
 
@@ -2422,36 +3044,7 @@ class Client(object):
         LOG.info(f"Successfully unfollowed user {user.log_name}")
         return True
 
-    async def get_self_forum_list(self, pn: int = 1) -> Tuple[List[Tuple[str, int]], bool]:
-        """
-        获取第pn页的本人关注贴吧列表
-
-        Args:
-            pn (int, optional): 页码. Defaults to 1.
-
-        Returns:
-            tuple[list[tuple[str, int]], bool]: list[贴吧名, 贴吧id], 是否还有下一页
-        """
-
-        try:
-            res = await self.web.get("https://tieba.baidu.com/mg/o/getForumHome", params={'pn': pn, 'rn': 200})
-
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(res_json['errno']):
-                raise ValueError(res_json['errmsg'])
-
-            forums: list[dict] = res_json['data']['like_forum']['list']
-            res_list = [(forum['forum_name'], int(forum['forum_id'])) for forum in forums]
-            has_more = len(forums) == 200
-
-        except Exception as err:
-            LOG.warning(f"Failed to get self_forum_list. reason:{err}")
-            res_list = []
-            has_more = False
-
-        return res_list, has_more
-
-    async def like_forum(self, fname_or_fid: Union[str, int]) -> bool:
+    async def follow_forum(self, fname_or_fid: Union[str, int]) -> bool:
         """
         关注贴吧
 
@@ -2480,13 +3073,13 @@ class Client(object):
                 raise ValueError(res_json['error']['errmsg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to like forum {fname_or_fid}. reason:{err}")
+            LOG.warning(f"Failed to follow forum {fname_or_fid}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully liked forum {fname_or_fid}")
+        LOG.info(f"Successfully followed forum {fname_or_fid}")
         return True
 
-    async def unlike_forum(self, fname_or_fid: Union[str, int]) -> bool:
+    async def unfollow_forum(self, fname_or_fid: Union[str, int]) -> bool:
         """
         取关贴吧
 
@@ -2513,15 +3106,120 @@ class Client(object):
                 raise ValueError(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to unlike forum {fname_or_fid}. reason:{err}")
+            LOG.warning(f"Failed to unfollow forum {fname_or_fid}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully unliked forum {fname_or_fid}")
+        LOG.info(f"Successfully unfollowed forum {fname_or_fid}")
+        return True
+
+    async def dislike_forum(self, fname_or_fid: Union[str, int]) -> bool:
+        """
+        屏蔽贴吧 使其不再出现在首页推荐列表中
+
+        Args:
+            fname_or_fid (str | int): 待屏蔽贴吧的贴吧名或fid 优先fid
+
+        Returns:
+            bool: 操作是否成功
+        """
+
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+
+        try:
+            payload = [
+                ('BDUSS', self.BDUSS),
+                ('_client_version', self.latest_version),
+                ('dislike', json.dumps([{"tid": 1, "dislike_ids": 7, "fid": fid, "click_time": self.timestamp_ms}])),
+                ('dislike_from', "homepage"),
+            ]
+
+            res = await self.app.post("/c/c/excellent/submitDislike", data=self.pack_form(payload))
+
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
+
+        except Exception as err:
+            LOG.warning(f"Failed to dislike {fname_or_fid}. reason:{err}")
+            return False
+
+        LOG.info(f"Successfully disliked {fname_or_fid}")
+        return True
+
+    async def undislike_forum(self, fname_or_fid: Union[str, int]) -> bool:
+        """
+        解除贴吧的首页推荐屏蔽
+
+        Args:
+            fname_or_fid (str | int): 待屏蔽贴吧的贴吧名或fid 优先fid
+
+        Returns:
+            bool: 操作是否成功
+        """
+
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+
+        try:
+            payload = [
+                ('BDUSS', self.BDUSS),
+                ('cuid', self.cuid),
+                ('forum_id', fid),
+            ]
+
+            res = await self.app.post("/c/c/excellent/submitCancelDislike", data=self.pack_form(payload))
+
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
+
+        except Exception as err:
+            LOG.warning(f"Failed to undislike {fname_or_fid}. reason:{err}")
+            return False
+
+        LOG.info(f"Successfully undisliked {fname_or_fid}")
+        return True
+
+    async def set_privacy(self, fname_or_fid: Union[str, int], tid: int, pid: int, hide: bool = True) -> bool:
+        """
+        隐藏主题帖
+
+        Args:
+            fname_or_fid (str | int): 主题帖所在贴吧的贴吧名或fid 优先fid
+            tid (int): 主题帖tid
+            tid (int): 主题帖pid
+            hide (bool, optional): True则设为隐藏 False则取消隐藏. Defaults to True.
+
+        Returns:
+            bool: 操作是否成功
+        """
+
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+
+        try:
+            payload = [
+                ('BDUSS', self.BDUSS),
+                ('forum_id', fid),
+                ('is_hide', int(hide)),
+                ('post_id', pid),
+                ('thread_id', tid),
+            ]
+
+            res = await self.app.post("/c/c/thread/setPrivacy", data=self.pack_form(payload))
+
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
+
+        except Exception as err:
+            LOG.warning(f"Failed to set privacy to {tid}. reason:{err}")
+            return False
+
+        LOG.info(f"Successfully set privacy to {tid}. is_hide:{hide}")
         return True
 
     async def sign_forum(self, fname_or_fid: Union[str, int]) -> bool:
         """
-        签到吧
+        单个贴吧签到
 
         Args:
             fname_or_fid (str | int): 要签到贴吧的贴吧名或fid 优先贴吧名
@@ -2559,507 +3257,9 @@ class Client(object):
         LOG.info(f"Successfully signed forum {fname}")
         return True
 
-    async def get_homepage(self, _id: Union[str, int]) -> Tuple[UserInfo, List[Thread]]:
-        """
-        获取用户个人页信息
-
-        Args:
-            _id (str | int): 待获取用户的id user_id/user_name/portrait 优先portrait
-
-        Returns:
-            tuple[UserInfo, list[Thread]]: 用户信息, list[帖子信息]
-        """
-
-        if not BasicUserInfo.is_portrait(_id):
-            user = await self.get_basic_user_info(_id)
-        else:
-            user = BasicUserInfo(_id)
-
-        payload = [
-            ('_client_type', '2'),  # 删除该字段会导致post_list为空
-            ('_client_version', self.latest_version),  # 删除该字段会导致post_list和dynamic_list为空
-            ('friend_uid_portrait', user.portrait),
-            ('need_post_count', '1'),  # 删除该字段会导致无法获取发帖回帖数量
-            # ('uid', user_id),  # 用该字段检查共同关注的吧
-        ]
-
-        try:
-            res = await self.app.post("/c/u/user/profile", data=self.pack_form(payload))
-
-            res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
-            if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
-            if not res_json.__contains__('user'):
-                raise ValueError("invalid params")
-
-        except Exception as err:
-            LOG.warning(f"Failed to get profile of {user.portrait}. reason:{err}")
-            return UserInfo(), []
-
-        user = UserInfo(_raw_data=ParseDict(res_json['user'], User_pb2.User(), ignore_unknown_fields=True))
-
-        def _pack_thread_dict(thread_dict: dict) -> NewThread:
-            thread = NewThread(ParseDict(thread_dict, NewThreadInfo_pb2.NewThreadInfo(), ignore_unknown_fields=True))
-            thread._user = user
-            return thread
-
-        threads = [_pack_thread_dict(thread_dict) for thread_dict in res_json['post_list']]
-
-        return user, threads
-
-    async def search_post(
-        self,
-        fname_or_fid: Union[str, int],
-        query: str,
-        pn: int = 1,
-        rn: int = 30,
-        query_type: int = 0,
-        only_thread: bool = False,
-    ) -> Searches:
-        """
-        贴吧搜索
-
-        Args:
-            fname_or_fid (str | int): 查询的贴吧名或fid 优先贴吧名
-            query (str): 查询文本
-            pn (int, optional): 页码. Defaults to 1.
-            rn (int, optional): 请求的条目数. Defaults to 30.
-            query_type (int, optional): 查询模式 0为全部搜索结果并且app似乎不提供这一模式 1为app时间倒序 2为app相关性排序. Defaults to 0.
-            only_thread (bool, optional): 是否仅查询主题帖. Defaults to False.
-
-        Returns:
-            Searches: 搜索结果列表
-        """
-
-        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
-
-        payload = [
-            ('_client_version', self.latest_version),
-            ('kw', fname),
-            ('only_thread', int(only_thread)),
-            ('pn', pn),
-            ('rn', rn),
-            ('sm', query_type),
-            ('word', query),
-        ]
-
-        try:
-            res = await self.app.post("/c/s/searchpost", data=self.pack_form(payload))
-
-            res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
-            if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
-
-            searches = Searches(res_json)
-
-        except Exception as err:
-            LOG.warning(f"Failed to search {query} in {fname}. reason:{err}")
-            searches = Searches()
-
-        return searches
-
-    async def get_forum_list(self, _id: Union[str, int]) -> List[Tuple[str, int, int, int]]:
-        """
-        获取用户关注贴吧列表
-
-        Args:
-            _id (str | int): 待获取用户的id user_id/user_name/portrait 优先user_id
-
-        Returns:
-            list[tuple[str, int, int, int]]: list[贴吧名, 贴吧id, 等级, 经验值]
-        """
-
-        if not BasicUserInfo.is_user_id(_id):
-            user = await self.get_basic_user_info(_id)
-        else:
-            user = BasicUserInfo(_id)
-
-        payload = [
-            ('BDUSS', self.BDUSS),
-            ('friend_uid', user.user_id),
-        ]
-
-        try:
-            res = await self.app.post("/c/f/forum/like", data=self.pack_form(payload))
-
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
-
-            forums: list[dict] = res_json.get('forum_list', [])
-
-            res_list = [
-                (forum['name'], int(forum['id']), int(forum['level_id']), int(forum['cur_score'])) for forum in forums
-            ]
-
-        except Exception as err:
-            LOG.warning(f"Failed to get forum_list of {user.user_id}. reason:{err}")
-            res_list = []
-
-        return res_list
-
-    async def get_forum_detail(self, fname_or_fid: Union[str, int]) -> Tuple[str, int, int]:
-        """
-        通过forum_id获取贴吧信息
-
-        Args:
-            fname_or_fid (str | int): 目标贴吧名或fid 优先fid
-
-        Returns:
-            tuple[str, int, int]: 该贴吧的贴吧名, 关注人数, 主题帖数
-        """
-
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
-
-        payload = [
-            ('_client_version', self.latest_version),
-            ('forum_id', fid),
-        ]
-
-        try:
-            res = await self.app.post("/c/f/forum/getforumdetail", data=self.pack_form(payload))
-
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
-
-            fname = res_json['forum_info']['forum_name']
-            member_num = int(res_json['forum_info']['member_count'])
-            thread_num = int(res_json['forum_info']['thread_count'])
-
-        except Exception as err:
-            LOG.warning(f"Failed to get forum_detail of {fname_or_fid}. reason:{err}")
-            fname = ''
-            member_num = 0
-            thread_num = 0
-
-        return fname, member_num, thread_num
-
-    async def get_bawu_dict(self, fname_or_fid: Union[str, int]) -> Dict[str, List[BasicUserInfo]]:
-        """
-        获取吧务信息
-
-        Args:
-            fname_or_fid (str | int): 目标贴吧名或fid 优先fid
-
-        Returns:
-            dict[str, list[BasicUserInfo]]: {吧务类型: list[吧务基本用户信息]}
-        """
-
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
-
-        common_proto = CommonReq_pb2.CommonReq()
-        common_proto._client_version = self.latest_version
-        data_proto = GetBawuInfoReqIdl_pb2.GetBawuInfoReqIdl.DataReq()
-        data_proto.common.CopyFrom(common_proto)
-        data_proto.forum_id = fid
-        req_proto = GetBawuInfoReqIdl_pb2.GetBawuInfoReqIdl()
-        req_proto.data.CopyFrom(data_proto)
-
-        try:
-            res = await self.app_proto.post(
-                "/c/f/forum/getBawuInfo?cmd=301007", data=self.pack_proto_bytes(req_proto.SerializeToString())
-            )
-
-            res_proto = GetBawuInfoResIdl_pb2.GetBawuInfoResIdl()
-            res_proto.ParseFromString(await res.content.read())
-            if int(res_proto.error.errorno):
-                raise ValueError(res_proto.error.errmsg)
-
-            roledes_protos = res_proto.data.bawu_team_info.bawu_team_list
-            bawu_dict = {
-                roledes_proto.role_name: [
-                    BasicUserInfo(_raw_data=roleinfo_proto) for roleinfo_proto in roledes_proto.role_info
-                ]
-                for roledes_proto in roledes_protos
-            }
-
-        except Exception as err:
-            LOG.warning(f"Failed to get bawu_dict. reason: {err}")
-            bawu_dict = {}
-
-        return bawu_dict
-
-    async def get_tab_map(self, fname_or_fid: Union[str, int]) -> Dict[str, int]:
-        """
-        获取分区名到分区id的映射字典
-
-        Args:
-            fname_or_fid (str | int): 目标贴吧名或fid 优先贴吧名
-
-        Returns:
-            dict[str, int]: {分区名:分区id}
-        """
-
-        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
-
-        common_proto = CommonReq_pb2.CommonReq()
-        common_proto.BDUSS = self.BDUSS
-        common_proto._client_version = self.latest_version
-        data_proto = SearchPostForumReqIdl_pb2.SearchPostForumReqIdl.DataReq()
-        data_proto.common.CopyFrom(common_proto)
-        data_proto.word = fname
-        req_proto = SearchPostForumReqIdl_pb2.SearchPostForumReqIdl()
-        req_proto.data.CopyFrom(data_proto)
-
-        try:
-            res = await self.app_proto.post(
-                "/c/f/forum/searchPostForum?cmd=309466", data=self.pack_proto_bytes(req_proto.SerializeToString())
-            )
-
-            res_proto = SearchPostForumResIdl_pb2.SearchPostForumResIdl()
-            res_proto.ParseFromString(await res.content.read())
-            if int(res_proto.error.errorno):
-                raise ValueError(res_proto.error.errmsg)
-
-            tab_map = {tab_proto.tab_name: tab_proto.tab_id for tab_proto in res_proto.data.exact_match.tab_info}
-
-        except Exception as err:
-            LOG.warning(f"Failed to get tab_map of {fname}. reason:{err}")
-            tab_map = {}
-
-        return tab_map
-
-    async def get_recom_list(self, fname_or_fid: Union[str, int], pn: int = 1) -> Tuple[List[Tuple[Thread, int]], bool]:
-        """
-        获取pn页的大吧主推荐帖列表
-
-        Args:
-            fname_or_fid (str | int): 目标贴吧名或fid 优先fid
-            pn (int, optional): 页码. Defaults to 1.
-
-        Returns:
-            tuple[list[tuple[Thread, int]], bool]: list[被推荐帖子信息,新增浏览量], 是否还有下一页
-        """
-
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
-
-        payload = [
-            ('BDUSS', self.BDUSS),
-            ('_client_version', self.latest_version),
-            ('forum_id', fid),
-            ('pn', pn),
-            ('rn', '30'),
-        ]
-
-        try:
-            res = await self.app.post("/c/f/bawu/getRecomThreadHistory", data=self.pack_form(payload))
-
-            res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
-            if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
-
-            def _pack_data_dict(data_dict):
-                thread_dict = data_dict['thread_list']
-                thread = Thread(ParseDict(thread_dict, ThreadInfo_pb2.ThreadInfo(), ignore_unknown_fields=True))
-                add_view = thread.view_num - int(data_dict['current_pv'])
-                return thread, add_view
-
-            res_list = [_pack_data_dict(data_dict) for data_dict in res_json['recom_thread_list']]
-            has_more = bool(int(res_json['is_has_more']))
-
-        except Exception as err:
-            LOG.warning(f"Failed to get recom_list of {fname_or_fid}. reason:{err}")
-            res_list = []
-            has_more = False
-
-        return res_list, has_more
-
-    async def get_recom_status(self, fname_or_fid: Union[str, int]) -> Tuple[int, int]:
-        """
-        获取大吧主推荐功能的月度配额状态
-
-        Args:
-            fname_or_fid (str | int): 目标贴吧名或fid 优先fid
-
-        Returns:
-            tuple[int, int]: 本月总推荐配额, 本月已使用的推荐配额
-        """
-
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
-
-        payload = [
-            ('BDUSS', self.BDUSS),
-            ('_client_version', self.latest_version),
-            ('forum_id', fid),
-            ('pn', '1'),
-            ('rn', '0'),
-        ]
-
-        try:
-            res = await self.app.post("/c/f/bawu/getRecomThreadList", data=self.pack_form(payload))
-
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
-
-            total_recom_num = int(res_json['total_recommend_num'])
-            used_recom_num = int(res_json['used_recommend_num'])
-
-        except Exception as err:
-            LOG.warning(f"Failed to get recom_status of {fname_or_fid}. reason:{err}")
-            total_recom_num = 0
-            used_recom_num = 0
-
-        return total_recom_num, used_recom_num
-
-    async def get_statistics(self, fname_or_fid: Union[str, int]) -> Dict[str, List[int]]:
-        """
-        获取吧务后台中最近29天的统计数据
-
-        Args:
-            fname_or_fid (str | int): 目标贴吧名或fid 优先fid
-
-        Returns:
-            dict[str, list[int]]: {字段名:按时间顺序排列的统计数据}
-            {'view': 浏览量,
-             'thread': 主题帖数,
-             'new_member': 新增关注数,
-             'post': 回复数,
-             'sign_ratio': 签到率,
-             'average_time': 人均浏览时长,
-             'average_times': 人均进吧次数,
-             'recommend': 首页推荐数}
-        """
-
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
-
-        payload = [
-            ('BDUSS', self.BDUSS),
-            ('_client_version', self.latest_version),
-            ('forum_id', fid),
-        ]
-
-        field_names = [
-            'view',
-            'thread',
-            'new_member',
-            'post',
-            'sign_ratio',
-            'average_time',
-            'average_times',
-            'recommend',
-        ]
-        try:
-            res = await self.app.post("/c/f/forum/getforumdata", data=self.pack_form(payload))
-
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
-
-            data = res_json['data']
-            stat = {
-                field_name: [int(item['value']) for item in reversed(data_i['group'][1]['values'])]
-                for field_name, data_i in zip(field_names, data)
-            }
-
-        except Exception as err:
-            LOG.warning(f"Failed to get statistics of {fname_or_fid}. reason:{err}")
-            stat = {field_name: [] for field_name in field_names}
-
-        return stat
-
-    async def get_rank_list(
-        self, fname_or_fid: Union[str, int], pn: int = 1
-    ) -> Tuple[List[Tuple[str, int, int, bool]], bool]:
-        """
-        获取pn页的贴吧等级排行榜
-
-        Args:
-            fname_or_fid (str | int): 目标贴吧名或fid 优先贴吧名
-            pn (int, optional): 页码. Defaults to 1.
-
-        Returns:
-            tuple[list[tuple[str, int, int, bool]], bool]: list[用户名,等级,经验值,是否vip], 是否还有下一页
-        """
-
-        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
-
-        try:
-            res = await self.web.get(
-                "http://tieba.baidu.com/f/like/furank",
-                params={
-                    'kw': fname,
-                    'pn': pn,
-                    'ie': 'utf-8',
-                },
-            )
-
-            soup = BeautifulSoup(await res.text(), 'lxml')
-            items = soup.select('tr[class^=drl_list_item]')
-
-            def _parse_item(item):
-                user_name_item = item.td.next_sibling
-                user_name = user_name_item.text
-                is_vip = 'drl_item_vip' in user_name_item.div['class']
-                level_item = user_name_item.next_sibling
-                # e.g. get level 16 from string "bg_lv16" by slicing [5:]
-                level = int(level_item.div['class'][0][5:])
-                exp_item = level_item.next_sibling
-                exp = int(exp_item.text)
-
-                return user_name, level, exp, is_vip
-
-            res_list = [_parse_item(item) for item in items]
-            has_more = len(items) == 20
-
-        except Exception as err:
-            LOG.warning(f"Failed to get rank_list of {fname} pn:{pn}. reason:{err}")
-            res_list = []
-            has_more = False
-
-        return res_list, has_more
-
-    async def get_member_list(
-        self, fname_or_fid: Union[str, int], pn: int = 1
-    ) -> Tuple[List[Tuple[str, str, int]], bool]:
-        """
-        获取pn页的贴吧最新关注用户列表
-
-        Args:
-            fname_or_fid (str | int): 目标贴吧名或fid 优先贴吧名
-            pn (int, optional): 页码. Defaults to 1.
-
-        Returns:
-            tuple[list[tuple[str, str, int]], bool]: list[用户名,portrait,等级], 是否还有下一页
-        """
-
-        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
-
-        try:
-            res = await self.web.get(
-                "http://tieba.baidu.com/bawu2/platform/listMemberInfo",
-                params={
-                    'word': fname,
-                    'pn': pn,
-                    'ie': 'utf-8',
-                },
-            )
-
-            soup = BeautifulSoup(await res.text(), 'lxml')
-            items = soup.find_all('div', class_='name_wrap')
-
-            def _parse_item(item):
-                user_item = item.a
-                user_name = user_item['title']
-                portrait = user_item['href'][14:]
-                level_item = item.span
-                level = int(level_item['class'][1][12:])
-                return user_name, portrait, level
-
-            res_list = [_parse_item(item) for item in items]
-            has_more = len(items) == 24
-
-        except Exception as err:
-            LOG.warning(f"Failed to get member_list of {fname} pn:{pn}. reason:{err}")
-            res_list = []
-            has_more = False
-
-        return res_list, has_more
-
     async def add_post(self, fname_or_fid: Union[str, int], tid: int, content: str) -> bool:
         """
-        回帖
+        回复主题帖
 
         Args:
             fname_or_fid (str | int): 要回复的主题帖所在贴吧的贴吧名或fid
@@ -3177,42 +3377,4 @@ class Client(object):
             return False
 
         LOG.info(f"Successfully sent msg to {user.user_id}")
-        return True
-
-    async def set_privacy(self, fname_or_fid: Union[str, int], tid: int, pid: int, hide: bool = True) -> bool:
-        """
-        隐藏主题帖
-
-        Args:
-            fname_or_fid (str | int): 主题帖所在贴吧的贴吧名或fid 优先fid
-            tid (int): 主题帖tid
-            tid (int): 主题帖pid
-            hide (bool, optional): True则设为隐藏 False则取消隐藏. Defaults to True.
-
-        Returns:
-            bool: 操作是否成功
-        """
-
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
-
-        try:
-            payload = [
-                ('BDUSS', self.BDUSS),
-                ('forum_id', fid),
-                ('is_hide', int(hide)),
-                ('post_id', pid),
-                ('thread_id', tid),
-            ]
-
-            res = await self.app.post("/c/c/thread/setPrivacy", data=self.pack_form(payload))
-
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
-            if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
-
-        except Exception as err:
-            LOG.warning(f"Failed to set privacy to {tid}. reason:{err}")
-            return False
-
-        LOG.info(f"Successfully set privacy to {tid}. is_hide:{hide}")
         return True
