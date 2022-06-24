@@ -462,7 +462,7 @@ class Database(object):
         LOG.info(f"Successfully deleted {tid} from table of {fname}")
         return True
 
-    async def get_tid_list(self, fname: str, tag: int = 0, limit: int = 128, offset: int = 0) -> List[int]:
+    async def get_tid_list(self, fname: str, tag: int = 0, *, limit: int = 128, offset: int = 0) -> List[int]:
         """
         获取表tid_{fname}中对应tag的tid列表
 
@@ -611,7 +611,7 @@ class Database(object):
             return 0, '', datetime.datetime(1970, 1, 1)
 
     async def get_user_id_list(
-        self, fname: str, lower_permission: int = 0, upper_permission: int = 5, limit: int = 1, offset: int = 0
+        self, fname: str, lower_permission: int = 0, upper_permission: int = 5, *, limit: int = 1, offset: int = 0
     ) -> List[int]:
         """
         获取表user_id_{fname}中user_id的列表

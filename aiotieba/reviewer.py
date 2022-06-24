@@ -294,7 +294,7 @@ class Reviewer(Client):
         return await self.database.get_user_id_full(self.fname, user_id)
 
     async def get_user_id_list(
-        self, lower_permission: int = 0, upper_permission: int = 5, limit: int = 1, offset: int = 0
+        self, lower_permission: int = 0, upper_permission: int = 5, *, limit: int = 1, offset: int = 0
     ) -> List[int]:
         """
         获取表user_id_{fname}中user_id的列表

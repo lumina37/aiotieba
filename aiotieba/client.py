@@ -435,7 +435,7 @@ class Client(object):
         return self._ws_aes_chiper
 
     def _pack_ws_bytes(
-        self, ws_bytes: bytes, cmd: int, req_id: int, need_gzip: bool = True, need_encrypt: bool = True
+        self, ws_bytes: bytes, /, cmd: int, req_id: int, *, need_gzip: bool = True, need_encrypt: bool = True
     ) -> bytes:
         """
         对ws_bytes进行打包 压缩加密并添加9字节头部
@@ -541,7 +541,7 @@ class Client(object):
         return not (self.websocket is None or self.websocket.closed or self.websocket._writer.transport.is_closing())
 
     async def send_ws_bytes(
-        self, ws_bytes: bytes, cmd: int, need_gzip: bool = True, need_encrypt: bool = True
+        self, ws_bytes: bytes, /, cmd: int, *, need_gzip: bool = True, need_encrypt: bool = True
     ) -> WebsocketResponse:
         """
         将ws_bytes通过贴吧websocket发送
@@ -996,7 +996,7 @@ class Client(object):
         return user
 
     async def get_threads(
-        self, fname_or_fid: Union[str, int], pn: int = 1, sort: int = 5, is_good: bool = False
+        self, fname_or_fid: Union[str, int], /, pn: int = 1, *, rn: int = 30, sort: int = 5, is_good: bool = False
     ) -> Threads:
         """
         获取首页帖子
@@ -1004,6 +1004,7 @@ class Client(object):
         Args:
             fname_or_fid (str | int): 贴吧的贴吧名或fid 优先贴吧名
             pn (int, optional): 页码. Defaults to 1.
+            rn (int, optional): 请求的条目数. Defaults to 30.
             sort (int, optional): 排序方式 对于有热门分区的贴吧0是热门排序1是按发布时间2报错34都是热门排序>=5是按回复时间 \
                 对于无热门分区的贴吧0是按回复时间1是按发布时间2报错>=3是按回复时间. Defaults to 5.
             is_good (bool, optional): True为获取精品区帖子 False为获取普通区帖子. Defaults to False.
@@ -1020,7 +1021,7 @@ class Client(object):
         data_proto.common.CopyFrom(common_proto)
         data_proto.kw = fname
         data_proto.pn = pn
-        data_proto.rn = 30
+        data_proto.rn = rn
         data_proto.is_good = is_good
         data_proto.sort_type = sort
         req_proto = FrsPageReqIdl_pb2.FrsPageReqIdl()
@@ -1048,6 +1049,7 @@ class Client(object):
     async def get_posts(
         self,
         tid: int,
+        /,
         pn: int = 1,
         rn: int = 30,
         sort: int = 0,
@@ -1111,7 +1113,7 @@ class Client(object):
 
         return posts
 
-    async def get_comments(self, tid: int, pid: int, pn: int = 1, is_floor: bool = False) -> Comments:
+    async def get_comments(self, tid: int, pid: int, /, pn: int = 1, *, is_floor: bool = False) -> Comments:
         """
         获取楼中楼回复
 
@@ -1161,6 +1163,7 @@ class Client(object):
         self,
         fname_or_fid: Union[str, int],
         query: str,
+        /,
         pn: int = 1,
         rn: int = 30,
         query_type: int = 0,
@@ -1339,7 +1342,7 @@ class Client(object):
         return tab_map
 
     async def get_rank_list(
-        self, fname_or_fid: Union[str, int], pn: int = 1
+        self, fname_or_fid: Union[str, int], /, pn: int = 1
     ) -> Tuple[List[Tuple[str, int, int, bool]], bool]:
         """
         获取pn页的贴吧等级排行榜
@@ -1390,7 +1393,7 @@ class Client(object):
         return res_list, has_more
 
     async def get_member_list(
-        self, fname_or_fid: Union[str, int], pn: int = 1
+        self, fname_or_fid: Union[str, int], /, pn: int = 1
     ) -> Tuple[List[Tuple[str, str, int]], bool]:
         """
         获取pn页的贴吧最新关注用户列表
@@ -1437,7 +1440,7 @@ class Client(object):
         return res_list, has_more
 
     async def get_forum_square(
-        self, class_name: str, pn: int = 1, rn: int = 20
+        self, class_name: str, /, pn: int = 1, *, rn: int = 20
     ) -> List[Tuple[str, int, bool, int, int]]:
         """
         获取吧广场列表
@@ -1680,7 +1683,9 @@ class Client(object):
 
         return total_recom_num, used_recom_num
 
-    async def get_recom_list(self, fname_or_fid: Union[str, int], pn: int = 1) -> Tuple[List[Tuple[Thread, int]], bool]:
+    async def get_recom_list(
+        self, fname_or_fid: Union[str, int], /, pn: int = 1
+    ) -> Tuple[List[Tuple[Thread, int]], bool]:
         """
         获取pn页的大吧主推荐帖列表
 
@@ -2340,15 +2345,15 @@ class Client(object):
         return True
 
     async def get_recover_list(
-        self, fname_or_fid: Union[str, int], pn: int = 1, name: str = ''
+        self, fname_or_fid: Union[str, int], /, name: str = '', pn: int = 1
     ) -> Tuple[List[Tuple[int, int, bool]], bool]:
         """
         获取pn页的待恢复帖子列表
 
         Args:
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid
-            pn (int, optional): 页码. Defaults to 1.
             name (str, optional): 通过被删帖作者的用户名/昵称查询 默认为空即查询全部. Defaults to ''.
+            pn (int, optional): 页码. Defaults to 1.
 
         Returns:
             tuple[list[tuple[int, int, bool]], bool]: list[tid,pid,是否为屏蔽], 是否还有下一页
@@ -2398,7 +2403,7 @@ class Client(object):
 
         return res_list, has_more
 
-    async def get_black_list(self, fname_or_fid: Union[str, int], pn: int = 1) -> Tuple[List[BasicUserInfo], bool]:
+    async def get_black_list(self, fname_or_fid: Union[str, int], /, pn: int = 1) -> Tuple[List[BasicUserInfo], bool]:
         """
         获取pn页的黑名单
 
@@ -2820,16 +2825,16 @@ class Client(object):
         return await self._get_user_contents(user, pn)
 
     async def _get_user_contents(
-        self, user: BasicUserInfo, pn: int = 1, is_thread: bool = True, public_only: bool = False
+        self, user: BasicUserInfo, /, pn: int = 1, *, is_thread: bool = True, public_only: bool = False
     ) -> Union[List[NewThread], List[UserPosts]]:
         """
         获取用户发布的主题帖/回复列表
 
         Args:
             user (BasicUserInfo): 待获取用户的基本用户信息
-            pn (int, optional): 页码. Defaults to 1.
             is_thread (bool, optional): 是否请求主题帖. Defaults to True.
             public_only (bool, optional): 是否仅获取公开帖. Defaults to False.
+            pn (int, optional): 页码. Defaults to 1.
 
         Returns:
             list[NewThread] | list[UserPosts]: 主题帖/回复列表
@@ -2991,7 +2996,9 @@ class Client(object):
 
         return res_list, has_more
 
-    async def get_self_dislike_forum_list(self, pn: int = 1, rn: int = 20) -> List[Tuple[str, int, int, int, int]]:
+    async def get_self_dislike_forum_list(
+        self, pn: int = 1, /, *, rn: int = 20
+    ) -> List[Tuple[str, int, int, int, int]]:
         """
         获取首页推荐屏蔽的贴吧列表
 
