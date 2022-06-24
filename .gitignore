@@ -31,4 +31,3 @@ test*
 !requirements.txt
 !admin_listen.py
 !cloud_review_hanime.py
-!tutorial*.py

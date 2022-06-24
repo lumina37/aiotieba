@@ -1,28 +1,39 @@
 # Tieba-Manager
 
 [![gitee](https://img.shields.io/badge/mirror-gitee-red)](https://gitee.com/Starry-OvO/Tieba-Manager)
-[![release](https://img.shields.io/github/release/Starry-OvO/Tieba-Manager?color=blue&logo=github)](https://github.com/Starry-OvO/Tieba-Manager/releases)
-[![license](https://img.shields.io/github/license/Starry-OvO/Tieba-Manager?color=blue&logo=github)](https://github.com/Starry-OvO/Tieba-Manager/blob/master/LICENSE)
+[![release](https://img.shields.io/github/release/Starry-OvO/Tieba-Manager?color=blue&logo=github)](../../releases)
+[![license](https://img.shields.io/github/license/Starry-OvO/Tieba-Manager?color=blue&logo=github)](LICENSE)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/Starry-OvO/Tieba-Manager?logo=lgtm)](https://lgtm.com/projects/g/Starry-OvO/Tieba-Manager/context:python)
 
-## 功能概览
+## 简介
+
+`aiotieba`库是一个使用`aiohttp`实现的异步贴吧客户端，封装了下列实用接口并额外封装了一些数据库和图像处理功能以方便自动化的吧务管理
+
+封装的官方接口包括
 
 + 按回复时间/发布时间/热门序获取贴吧主题帖/精华帖列表。支持获取带转发/投票/转发嵌套投票/各种卡片的主题帖信息
 + 获取带图片链接/小尾巴内容/点赞情况/用户信息（用户名/user_id/portrait/等级/性别/是否锁回复）/每条回复的前排楼中楼（支持按或不按点赞数排序）的回复列表
 + 获取带所有前述用户信息的楼中楼列表
-+ 根据`用户名` `昵称` `portrait` `user_id`中的任一项反查其他用户信息
++ 根据`用户名` `昵称` `portrait` `user_id`中的任一项反查其他用户信息，或通过用户主页的`tieba_uid`反查其他用户信息
 + 使用小吧主、语音小编的`BDUSS`删帖/屏蔽/封禁任意用户3天或10天
 + 使用已被大吧主分配解封/恢复/处理申诉权限的吧务`BDUSS`解封/恢复/处理申诉。支持一键拒绝所有解封申诉
 + 使用大吧主`BDUSS`推荐帖子到首页/移动帖子到指定分区/加精/撤精/置顶/撤置顶/添加黑名单/查看黑名单/取消黑名单
-+ 获取用户主页信息/关注贴吧列表/关注用户列表/粉丝列表/发帖历史/回复历史
++ 获取用户主页信息/关注贴吧列表/屏蔽贴吧列表/关注用户列表/粉丝列表/发帖历史/回复历史
 + 获取贴吧最新关注用户列表/等级排行榜/吧务列表/吧详情
-+ 使用`BDUSS`关注贴吧/取关贴吧/关注用户/取关用户/移除粉丝/管理贴吧屏蔽列表/签到/水帖/发送私信
++ 使用`BDUSS`关注贴吧/取关贴吧/关注用户/取关用户/移除粉丝/屏蔽贴吧/取消屏蔽贴吧/签到/水帖/发送私信
 
-## 入门使用
+额外功能包括
+
++ 用于缓存贴吧常量/为用户添加标记/为帖子或回复添加标记/为图像hash添加标记的数据库功能
++ 图像解码/二维码解析/图像hash解析的图像处理功能
+
+在`aiotieba`的基础上我开发了多种自动化吧务管理工具，如[云审查](wikis/cloud_review_introduction.md)和[指令管理器](../../wiki/%E6%8C%87%E4%BB%A4%E7%AE%A1%E7%90%86%E5%99%A8%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E%E4%B9%A6)
+
+## 入门教程
 
 + 确保你的[`Python`](https://www.python.org/downloads/)版本在`3.9`及以上
 
-+ 拉取代码并安装依赖
++ 下载仓库并安装依赖
 
 ```bash
 git clone https://github.com/Starry-OvO/Tieba-Manager.git
@@ -30,7 +41,7 @@ cd ./Tieba-Manager
 pip install -r requirements.txt
 ```
 
-+ 依序运行教程脚本`tutorial-*.py`，参考注释学习`aiotieba`的用法
++ 完整阅读[教程](wikis/tutorial.md)
 
 ## 若要开启云审查功能
 
@@ -38,9 +49,9 @@ pip install -r requirements.txt
 
 + 使用函数`aiotieba.database.Database.init_database(["贴吧名1", "贴吧名2"])`一键建库
 
-+ 自定义审查行为：请参照我给出的例子自己编程修改[`cloud_review_hanime.py`](https://github.com/Starry-OvO/Tieba-Manager/blob/master/cloud_review_hanime.py)，这是被实际应用于[宫漫吧](https://tieba.baidu.com/f?ie=utf-8&kw=%E5%AE%AB%E6%BC%AB)的云审查工具
++ 自定义审查行为：请参照我给出的例子自己编程修改[`cloud_review_hanime.py`](cloud_review_hanime.py)，这是被实际应用于[宫漫吧](https://tieba.baidu.com/f?ie=utf-8&kw=%E5%AE%AB%E6%BC%AB)的云审查工具
 
-+ 运行`cloud_review_yours.py`。对`Windows`平台，建议使用`pythonw.exe`无窗口运行，对`Linux`平台，建议使用如下的`nohup`指令在后台运行
++ 运行`cloud_review_yours.py`（对`Windows`平台，建议使用`pythonw.exe`无窗口运行，对`Linux`平台，建议使用如下的`nohup`指令在后台运行）
 
 ```bash
 nohup python cloud_review_yours.py >/dev/null 2>&1 &

@@ -191,7 +191,7 @@ class Client(object):
         self._ws_aes_chiper = None
         self._ws_dispatcher: asyncio.Task = None
 
-        self._tbs: str = ''
+        self._tbs: str = None
         self._client_id: str = None
         self._cuid: str = None
         self._cuid_galaxy2: str = None
@@ -682,6 +682,8 @@ class Client(object):
 
         except Exception as err:
             LOG.warning(f"Failed to login. reason:{err}")
+            self._user = BasicUserInfo()
+            self._tbs = ""
             return False
 
         return True
