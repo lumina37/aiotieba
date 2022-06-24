@@ -27,7 +27,7 @@
 + 用于缓存贴吧常量/为用户添加标记/为帖子或回复添加标记/为图像hash添加标记的数据库功能
 + 图像解码/二维码解析/图像hash解析的图像处理功能
 
-在`aiotieba`的基础上我开发了多种自动化吧务管理工具，如[云审查工具](wikis/cloud_review_introduction.md)和[指令管理器](../../wiki/%E6%8C%87%E4%BB%A4%E7%AE%A1%E7%90%86%E5%99%A8%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E%E4%B9%A6)
+在`aiotieba`的基础上我开发了多种自动化吧务管理工具，如[云审查工具](wikis/cloud_review_introduction.md)和[指令管理器](../../wiki/%E6%8C%87%E4%BB%A4%E7%AE%A1%E7%90%86%E5%99%A8%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E%E4%B9%A6)，以及一些[自动化脚本的案例](wikis/many_utils.md)
 
 ## 入门教程
 
@@ -41,13 +41,13 @@ cd ./Tieba-Manager
 pip install -r requirements.txt
 ```
 
-+ 完整阅读[aiotieba入门教程](wikis/tutorial.md)
++ 参考[aiotieba入门教程](wikis/tutorial.md)完成实战操作
 
-## 若要开启云审查功能
+## 若要启用云审查功能
 
-+ 参考`config/config_full_example.toml`中的注释完成对`Database`字段的配置，你需要一个`MySQL`数据库用来缓存通过检测的内容id以及记录用户权限级别（黑、白名单）。配置完成的`config/config.toml`如下所示
++ 参考`config/config_full_example.toml`中的注释完成对`Database`字段的配置，你需要一个`MySQL`数据库用来缓存通过检测的内容id以及记录用户权限级别（黑、白名单）
 
-+ 使用函数`aiotieba.database.Database.init_database(["贴吧名1", "贴吧名2"])`一键建库
++ 使用函数`Database.init_database(["贴吧名1", "贴吧名2"])`一键建库
 
 + 自定义审查行为：请参照我给出的例子自己编程修改[`cloud_review_hanime.py`](cloud_review_hanime.py)，这是被实际应用于[宫漫吧](https://tieba.baidu.com/f?ie=utf-8&kw=%E5%AE%AB%E6%BC%AB)的云审查工具
 
@@ -63,7 +63,7 @@ nohup python cloud_review_yours.py >/dev/null 2>&1 &
 + [另一个仍在活跃更新的贴吧管理器（有用户界面）](https://github.com/dog194/TiebaManager)
 + [用户反馈（我的个人吧）](https://tieba.baidu.com/f?ie=utf-8&kw=starry)
 
-## 用户名单
+## 客户名单
 
 云审查工具&指令管理器已在以下贴吧应用（2022.06.25更新，按启用时间先后排序）
 
