@@ -27,7 +27,7 @@
 + 用于缓存贴吧常量/为用户添加标记/为帖子或回复添加标记/为图像hash添加标记的数据库功能
 + 图像解码/二维码解析/图像hash解析的图像处理功能
 
-在`aiotieba`的基础上我开发了多种自动化吧务管理工具，如[云审查](wikis/cloud_review_introduction.md)和[指令管理器](../../wiki/%E6%8C%87%E4%BB%A4%E7%AE%A1%E7%90%86%E5%99%A8%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E%E4%B9%A6)
+在`aiotieba`的基础上我开发了多种自动化吧务管理工具，如[云审查工具](wikis/cloud_review_introduction.md)和[指令管理器](../../wiki/%E6%8C%87%E4%BB%A4%E7%AE%A1%E7%90%86%E5%99%A8%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E%E4%B9%A6)
 
 ## 入门教程
 

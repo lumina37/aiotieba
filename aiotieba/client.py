@@ -557,7 +557,7 @@ class Client(object):
         """
 
         ws_res = WebsocketResponse()
-        ws_bytes = self._pack_ws_bytes(ws_bytes, cmd, ws_res.req_id, need_gzip, need_encrypt)
+        ws_bytes = self._pack_ws_bytes(ws_bytes, cmd, ws_res.req_id, need_gzip=need_gzip, need_encrypt=need_encrypt)
 
         WebsocketResponse.ws_res_wait_dict[ws_res.req_id] = ws_res
         await self.websocket.send_bytes(ws_bytes)
