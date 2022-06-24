@@ -1,4 +1,4 @@
-pyyaml
+tomli
 aiohttp
 protobuf
 lxml

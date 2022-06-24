@@ -1,18 +1,20 @@
 # -*- coding:utf-8 -*-
 """
 指令管理器
-使用前请在当前目录的config文件夹中新建listen_config.yaml配置文件，并参考下列案例填写你自己的配置
+使用前请在当前目录的config文件夹中新建listen_config.toml配置文件，并参考下列案例填写你自己的配置
 
-listener_key: listener # 在这里填用于监听at信息的账号的BDUSS_key
-configs:
-  -
-    fname: lol半价 # 在这里填贴吧名
-    admin_key: default # 在这里填用于在该吧行使吧务权限的账号的BDUSS_key
-    speaker_key: default # 在这里填用于在该吧发送回复的账号的BDUSS_key
-  -
-    fname: asoul # 在这里填另一个贴吧名
-    admin_key: default # 在这里填用于在该吧行使吧务权限的账号的BDUSS_key
-    speaker_key: default # 在这里填用于在该吧发送回复的账号的BDUSS_key
+--------
+listener_key = "listener"  # 在这里填用于监听at信息的账号的BDUSS_key
+
+[[Configs]]
+fname = "lol半价"  # 在这里填贴吧名
+admin_key = "default"  # 在这里填用于在该吧行使吧务权限的账号的BDUSS_key
+speaker_key = "default"  # 在这里填用于在该吧发送回复的账号的BDUSS_key
+
+[[Configs]]
+fname = "asoul"  # 在这里填另一个贴吧名
+admin_key = "default"  # 在这里填用于在该吧行使吧务权限的账号的BDUSS_key
+speaker_key = "default"  # 在这里填用于在该吧发送回复的账号的BDUSS_key
 """
 
 import asyncio
@@ -22,13 +24,13 @@ import time
 from collections.abc import Callable
 from typing import List
 
-import yaml
+import tomli
 
 import aiotieba as tb
 from aiotieba.config import SCRIPT_PATH
 
-with (SCRIPT_PATH.parent / 'config/listen_config.yaml').open('r', encoding='utf-8') as file:
-    LISTEN_CONFIG = yaml.load(file, Loader=yaml.SafeLoader)
+with (SCRIPT_PATH.parent / 'config/listen_config.toml').open('rb') as file:
+    LISTEN_CONFIG = tomli.load(file)
 
 
 class TimerRecorder(object):
@@ -228,7 +230,7 @@ class Listener(object):
 
     def __init__(self) -> None:
 
-        self.handlers = {(handler := Handler(**_config)).fname: handler for _config in LISTEN_CONFIG['configs']}
+        self.handlers = {(handler := Handler(**_config)).fname: handler for _config in LISTEN_CONFIG['Configs']}
 
         self.listener = tb.Reviewer(LISTEN_CONFIG['listener_key'], '')
 
@@ -320,7 +322,7 @@ class Listener(object):
 
         active_admin_list = [
             (await self.listener.get_basic_user_info(user_id)).user_name
-            for user_id in await ctx.handler.admin.get_user_id_list(lower_permission=2, limit=4)
+            for user_id in await ctx.handler.admin.get_user_id_list(lower_permission=2, limit=5)
         ]
         extra_info = ctx.args[0] if len(ctx.args) else '无'
         content = f"该回复为吧务召唤指令@.v_guard holyshit的自动响应\n召唤人诉求: {extra_info}@" + " @".join(active_admin_list)

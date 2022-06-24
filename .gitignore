@@ -5,10 +5,12 @@ __*/
 *.xlsx
 *.pyproj
 *.txt
+*.log
 *.bin
 *.zip
 *.rar
 *.md
+*.cmd
 *.jpg
 *.proto
 *.code-workspace
@@ -18,14 +20,14 @@ log/
 charles/
 
 test*
-*.py
+/*.py
 *.proto
 
 !.github
 !.github/**
+!wikis/**
 
 !README.md
 !requirements.txt
 !admin_listen.py
 !cloud_review_hanime.py
-!tutorial*.py

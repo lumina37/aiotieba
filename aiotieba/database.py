@@ -20,8 +20,8 @@ class Database(object):
     __slots__ = ['_db_name', '_pool_recycle', '_pool']
 
     def __init__(self) -> None:
-        self._db_name: str = CONFIG['database'].get('db', 'tieba_cloud_review')
-        self._pool_recycle: int = CONFIG['database'].get('pool_recycle', 28800)
+        self._db_name: str = CONFIG['Database'].get('db', 'tieba_cloud_review')
+        self._pool_recycle: int = CONFIG['Database'].get('pool_recycle', 28800)
         self._pool: aiomysql.Pool = None
 
     async def enter(self) -> "Database":
@@ -32,7 +32,7 @@ class Database(object):
                 pool_recycle=self._pool_recycle,
                 db=self._db_name,
                 autocommit=True,
-                **CONFIG['database'],
+                **CONFIG['Database'],
             )
         except aiomysql.Error as err:
             LOG.warning(f"Cannot link to the database {self._db_name}. reason:{err}")
@@ -57,7 +57,7 @@ class Database(object):
             fnames (list[str]): 贴吧名列表
         """
 
-        conn: aiomysql.Connection = await aiomysql.connect(autocommit=True, **CONFIG['database'])
+        conn: aiomysql.Connection = await aiomysql.connect(autocommit=True, **CONFIG['Database'])
 
         async with conn.cursor() as cursor:
             await cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{self._db_name}`")
@@ -68,7 +68,7 @@ class Database(object):
             pool_recycle=self._pool_recycle,
             db=self._db_name,
             autocommit=True,
-            **CONFIG['database'],
+            **CONFIG['Database'],
         )
 
         for fname in fnames:
@@ -413,7 +413,7 @@ class Database(object):
             LOG.warning(f"Failed to insert {tid}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully added {tid} to table of {fname}. mode: {tag}")
+        LOG.info(f"Successfully added {tid} to table of {fname}. tag: {tag}")
         return True
 
     async def get_tid(self, fname: str, tid: int) -> Optional[int]:
@@ -462,7 +462,7 @@ class Database(object):
         LOG.info(f"Successfully deleted {tid} from table of {fname}")
         return True
 
-    async def get_tid_list(self, fname: str, tag: int = 0, limit: int = 128, offset: int = 0) -> List[int]:
+    async def get_tid_list(self, fname: str, tag: int = 0, *, limit: int = 128, offset: int = 0) -> List[int]:
         """
         获取表tid_{fname}中对应tag的tid列表
 
@@ -611,7 +611,7 @@ class Database(object):
             return 0, '', datetime.datetime(1970, 1, 1)
 
     async def get_user_id_list(
-        self, fname: str, lower_permission: int = 0, upper_permission: int = 5, limit: int = 1, offset: int = 0
+        self, fname: str, lower_permission: int = 0, upper_permission: int = 5, *, limit: int = 1, offset: int = 0
     ) -> List[int]:
         """
         获取表user_id_{fname}中user_id的列表
