@@ -30,41 +30,16 @@ cd ./Tieba-Manager
 pip install -r requirements.txt
 ```
 
-+ 依序运行教程脚本`tutorial-*.py`，参考注释学习用法
++ 依序运行教程脚本`tutorial-*.py`，参考注释学习`aiotieba`的用法
 
 ## 若要开启云审查功能
 
 + 参考`config/config_full_example.toml`中的注释完成对`Database`字段的配置，你需要一个`MySQL`数据库用来缓存通过检测的内容id以及记录用户权限级别（黑、白名单）。配置完成的`config/config.toml`如下所示
 
-```toml
-[User]
-
-[User.starry]
-BDUSS = "ABCDEFGai2LdUd5TTVHblhFeXoxdGyOVURGUE1OYzNqVXVRaWF-HnpGckRCNFJnRVFBQUFBJCQAAAAAAAAAAAEAAADiglQb0f3Osqmv0rbJ2QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMN6XGDDelxgc"
-
-[Database]
-host = "127.0.0.1"
-port = 3306
-user = "root"
-password = "123456"
-```
-
-+ 使用函数`Database.init_database()`一键建库，如下例所示
-
-```python
-import asyncio
-
-import aiotieba as tb
-
-
-async def main():
-    async with tb.Reviewer() as brow:
-        await brow.database.init_database(["贴吧名1", "贴吧名2"])
-
-asyncio.run(main())
-```
++ 使用函数`aiotieba.database.Database.init_database(["贴吧名1", "贴吧名2"])`一键建库
 
 + 自定义审查行为：请参照我给出的例子自己编程修改[`cloud_review_hanime.py`](https://github.com/Starry-OvO/Tieba-Manager/blob/master/cloud_review_hanime.py)，这是被实际应用于[宫漫吧](https://tieba.baidu.com/f?ie=utf-8&kw=%E5%AE%AB%E6%BC%AB)的云审查工具
+
 + 运行`cloud_review_yours.py`。对`Windows`平台，建议使用`pythonw.exe`无窗口运行，对`Linux`平台，建议使用如下的`nohup`指令在后台运行
 
 ```bash
