@@ -323,4 +323,6 @@ asyncio.run(crawler("图拉丁"))
 
 使用异步请求相当于用更高的调度成本换取更低的时间成本，其核心价值就在于减少同步IO对爬虫效率的限制
 
-想进一步了解`aiotieba`在云审查上的应用，请阅读[云审查工具介绍](cloud_review_introduction.md)
+想进一步了解如何使用`aiotieba`优雅地实现一些实用工具，请阅读[实用工具合集](many_utils.md)
+
+如果你对云审查感兴趣，请阅读[云审查工具介绍](cloud_review_introduction.md)
