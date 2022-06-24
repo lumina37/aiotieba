@@ -76,7 +76,7 @@ asyncio.run(main())
 
 此时在`debug.py`的同级目录下会生成一个`config`文件夹，点开里面自动生成的`config.toml`文件，将你的`BDUSS`填入正确的位置
 
-`BDUSS`的提取方式请自行搜索“浏览器如何获取BDUSS”
+`BDUSS`的提取方式请自行搜索[浏览器如何获取BDUSS](https://cn.bing.com/search?q=%E6%B5%8F%E8%A7%88%E5%99%A8%E5%A6%82%E4%BD%95%E8%8E%B7%E5%8F%96BDUSS)
 
 填写完毕的`config.toml`大概长这样
 
@@ -323,4 +323,4 @@ asyncio.run(crawler("图拉丁"))
 
 使用异步请求相当于用更高的调度成本换取更低的时间成本，其核心价值就在于减少同步IO对爬虫效率的限制
 
-想进一步了解`aiotieba`在云审查上的应用，请阅读[云审查工具介绍](wikis/cloud_review_introduction.md)
+想进一步了解`aiotieba`在云审查上的应用，请阅读[云审查工具介绍](cloud_review_introduction.md)

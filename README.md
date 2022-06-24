@@ -41,7 +41,7 @@ cd ./Tieba-Manager
 pip install -r requirements.txt
 ```
 
-+ 完整阅读[教程](wikis/tutorial.md)
++ 完整阅读[aiotieba入门教程](wikis/tutorial.md)
 
 ## 若要开启云审查功能
 
