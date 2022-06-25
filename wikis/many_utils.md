@@ -83,7 +83,7 @@ import aiotieba as tb
 async def main() -> None:
 
     async with tb.Client("default") as client:
-        # 海象运算符(:=)会在创建threads变量的同时检查其是否为空
+        # 海象运算符(:=)会在创建threads变量并赋值的同时返回该值，方便while语句检查其是否为空
         # 更多信息请搜索“Python海象运算符”
         while threads := await client.get_self_public_threads():
             await asyncio.gather(*[client.set_privacy(thread.fid, thread.tid, thread.pid) for thread in threads])
@@ -169,7 +169,7 @@ import asyncio
 import aiotieba as tb
 
 
-async def main():
+async def main() -> None:
     async with tb.Client('default') as client:
         while posts_list := await client.get_self_posts():
             await asyncio.gather(
