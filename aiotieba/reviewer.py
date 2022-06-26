@@ -24,7 +24,7 @@ class Reviewer(Client):
         fname (str, optional): 贴吧名. Defaults to ''.
     """
 
-    __slots__ = ['fname', 'database', '_qrdetector']
+    __slots__ = ['fname', 'database', '_img_hasher', '_qrdetector']
 
     def __init__(self, BDUSS_key: str = '', fname: str = ''):
         super(Reviewer, self).__init__(BDUSS_key)
@@ -32,6 +32,7 @@ class Reviewer(Client):
         self.fname: str = fname
 
         self.database: Database = Database()
+        self._img_hasher: cv.img_hash.AverageHash = None
         self._qrdetector: cv.QRCodeDetector = None
 
     async def enter(self) -> "Reviewer":
@@ -46,6 +47,12 @@ class Reviewer(Client):
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.close()
+
+    @property
+    def img_hasher(self) -> cv.img_hash.AverageHash:
+        if self._img_hasher is None:
+            self._img_hasher = cv.img_hash.AverageHash.create()
+        return self._img_hasher
 
     @property
     def qrdetector(self) -> cv.QRCodeDetector:
@@ -343,7 +350,7 @@ class Reviewer(Client):
         """
 
         try:
-            img_hash_array = cv.img_hash.averageHash(image)
+            img_hash_array = self.img_hasher.compute(image)
             img_hash = binascii.hexlify(img_hash_array.tobytes()).decode('ascii')
         except Exception as err:
             LOG.warning(f"Failed to get imagehash. reason:{err}")
