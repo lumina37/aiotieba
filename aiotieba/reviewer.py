@@ -317,7 +317,9 @@ class Reviewer(Client):
             list[int]: user_id列表
         """
 
-        return await self.database.get_user_id_list(self.fname, lower_permission, upper_permission, limit, offset)
+        return await self.database.get_user_id_list(
+            self.fname, lower_permission, upper_permission, limit=limit, offset=offset
+        )
 
     def scan_QRcode(self, image: np.ndarray) -> str:
         """
