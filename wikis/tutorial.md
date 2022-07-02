@@ -109,7 +109,7 @@ async def main():
     # 使用键名"default"对应的BDUSS创建客户端
     async with tb.Client("default") as client:
         # 下面这行语句会同时请求用户个人信息和图拉丁吧首页前30帖
-        # 你可以将若干协程作为参数传入asyncio.gather，这里传入的参数client.get_self_info()和client.get_threads('图拉丁')
+        # 你可以将若干协程作为参数传入asyncio.gather，这里传入的参数为client.get_self_info()和client.get_threads('图拉丁')
         # asyncio.gather会为每个传入的协程创建对应的任务来同时执行它们（并发）
         # 同时asyncio.gather(...)也会返回一个协程，在前面添加await等待其执行完毕
         # 执行完毕后，返回数据的顺序与传入参数的顺序一致，即user对应client.get_self_info()，threads对应client.get_threads('图拉丁')
@@ -191,7 +191,7 @@ async def crawler(fname: str):
     thread_list: List[tb.Thread] = []
 
     # 使用键名"default"对应的BDUSS创建客户端
-    async with tb.Client("default") as brow:
+    async with tb.Client("default") as client:
 
         # asyncio.Queue是一个任务队列
         # maxsize=8意味着缓冲区长度为8
@@ -237,7 +237,7 @@ async def crawler(fname: str):
                         return
                 else:
                     # 执行被分派的任务，即爬取pn页的帖子列表
-                    threads = await brow.get_threads(fname, pn)
+                    threads = await client.get_threads(fname, pn)
                     # 这里的nonlocal同样是为了修改闭包外的变量thread_list
                     nonlocal thread_list
                     thread_list += threads
@@ -321,7 +321,7 @@ asyncio.run(crawler("图拉丁"))
 
 ## 结语
 
-使用异步请求相当于用更高的调度成本换取更低的时间成本，其核心价值就在于减少同步IO对爬虫效率的限制
+使用异步请求相当于用更高的调度成本换取更低的时间成本，以克服客户端在同步IO上的速度瓶颈
 
 想进一步了解如何使用`aiotieba`优雅地实现一些实用工具，请阅读[实用工具合集](many_utils.md)
 

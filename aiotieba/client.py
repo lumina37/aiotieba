@@ -1053,6 +1053,7 @@ class Client(object):
         tid: int,
         /,
         pn: int = 1,
+        *,
         rn: int = 30,
         sort: int = 0,
         only_thread_author: bool = False,
@@ -1167,6 +1168,7 @@ class Client(object):
         query: str,
         /,
         pn: int = 1,
+        *,
         rn: int = 30,
         query_type: int = 0,
         only_thread: bool = False,
@@ -2635,10 +2637,55 @@ class Client(object):
 
             image = cv.imdecode(np.frombuffer(content, np.uint8), cv.IMREAD_COLOR)
             if image is None:
-                raise ValueError("error in opencv.imdecode")
+                raise ValueError("Error in opencv.imdecode")
 
         except Exception as err:
             LOG.warning(f"Failed to get image {img_url}. reason:{err}")
+            image = np.empty(0, dtype=np.uint8)
+
+        return image
+
+    async def get_portrait(self, _id: Union[str, int], size: Literal['L', 'M', 'S'] = 'S') -> np.ndarray:
+        """
+        获取用户头像
+
+        Args:
+            _id (str | int): 用户的id user_id/user_name/portrait 优先portrait
+            size (Literal['L', 'M', 'S'], optional): 获取头像的大小 S为55x55 M为110x110 L为原图. Defaults to 'S'.
+
+        Returns:
+            np.ndarray: 头像
+        """
+
+        if not BasicUserInfo.is_portrait(_id):
+            user = await self.get_basic_user_info(_id)
+        else:
+            user = BasicUserInfo(_id)
+
+        if size == 'S':
+            path = 'n'
+        elif size == 'L':
+            path = 'h'
+        else:
+            path = ''
+
+        try:
+            res = await self.web.get(
+                yarl.URL.build(
+                    scheme="http",
+                    host="tb.himg.baidu.com",
+                    path=f"/sys/portrait{path}/item/{user.portrait}",
+                )
+            )
+
+            content = await res.content.read()
+
+            image = cv.imdecode(np.frombuffer(content, np.uint8), cv.IMREAD_COLOR)
+            if image is None:
+                raise ValueError("Error in opencv.imdecode")
+
+        except Exception as err:
+            LOG.warning(f"Failed to get portrait of {user.log_name}. reason:{err}")
             image = np.empty(0, dtype=np.uint8)
 
         return image

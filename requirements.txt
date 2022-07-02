@@ -5,4 +5,4 @@ lxml
 beautifulsoup4
 pycryptodome
 aiomysql
-opencv-contrib-python
+opencv-contrib-python>=4.6.0.66
