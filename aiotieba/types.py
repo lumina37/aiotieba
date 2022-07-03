@@ -909,6 +909,10 @@ class ShareThread(_BasicContainer):
 
             if self._raw_data:
                 self._contents = Fragments(self._raw_data.content)
+                img_frags = [FragImage(media_proto) for media_proto in self._raw_data.media]
+                self._contents._frags += img_frags
+                self._contents._imgs += img_frags
+
             else:
                 self._contents = Fragments()
 
