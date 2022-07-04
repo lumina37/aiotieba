@@ -876,7 +876,7 @@ class VoteInfo(_DataWrapper):
 
         else:
             self.title = ''
-            self.options = []
+            self._options = []
             self.is_multi = False
             self.total_vote = 0
             self.total_user = 0
