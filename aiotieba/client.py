@@ -806,11 +806,17 @@ class Client(object):
             else:
                 gender = 0
 
-            user.user_name = user_dict['name']
-            user.nick_name = user_dict['show_nickname']
-            user.portrait = user_dict['portrait']
             user.user_id = user_dict['id']
+            user.user_name = user_dict['name']
+            user.portrait = user_dict['portrait']
+            user.nick_name = user_dict['show_nickname']
+
             user.gender = gender
+            user.age = float(user_dict['tb_age'])
+            post_num_str: str = user_dict['post_num']
+            user.post_num = int(float(post_num_str.removesuffix('万')) * 1e4)
+            user.fan_num = int(user_dict['followed_count'])
+
             user.is_vip = int(vip_dict['v_status']) if (vip_dict := user_dict['vipInfo']) else False
 
         except Exception as err:
@@ -1603,15 +1609,19 @@ class Client(object):
 
         return stat
 
-    async def get_forum_list(self, _id: Union[str, int]) -> List[Tuple[str, int, int, int]]:
+    async def get_forum_list(
+        self, _id: Union[str, int], /, pn: int = 1, *, rn: int = 50
+    ) -> Tuple[List[Tuple[str, int, int, int]], bool]:
         """
         获取用户关注贴吧列表
 
         Args:
             _id (str | int): 待获取用户的id user_id/user_name/portrait 优先user_id
+            pn (int, optional): 页码. Defaults to 1.
+            rn (int, optional): 请求的条目数. Defaults to 50.
 
         Returns:
-            list[tuple[str, int, int, int]]: list[贴吧名,贴吧id,等级,经验值]
+            tuple[list[tuple[str, int, int, int]], bool]: list[贴吧名, 贴吧id, 等级, 经验值], 是否还有下一页
         """
 
         if not BasicUserInfo.is_user_id(_id):
@@ -1621,7 +1631,10 @@ class Client(object):
 
         payload = [
             ('BDUSS', self.BDUSS),
+            ('_client_version', self.latest_version),
             ('friend_uid', user.user_id),
+            ('page_no', pn),
+            ('page_size', rn),
         ]
 
         try:
@@ -1634,17 +1647,22 @@ class Client(object):
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
-            forums: list[dict] = res_json.get('forum_list', [])
+            forums: list[dict] = []
+            if 'forum_list' in res_json and isinstance(res_json['forum_list'], dict):
+                forums += res_json['forum_list']['non-gconforum']
+                forums += res_json['forum_list'].get('gconforum', [])
 
             res_list = [
                 (forum['name'], int(forum['id']), int(forum['level_id']), int(forum['cur_score'])) for forum in forums
             ]
+            has_more = bool(int(res_json.get('has_more', 0)))
 
         except Exception as err:
             LOG.warning(f"Failed to get forum_list of {user.user_id}. reason:{err}")
             res_list = []
+            has_more = False
 
-        return res_list
+        return res_list, has_more
 
     async def get_recom_status(self, fname_or_fid: Union[str, int]) -> Tuple[int, int]:
         """
@@ -2645,7 +2663,7 @@ class Client(object):
 
         return image
 
-    async def get_portrait(self, _id: Union[str, int], size: Literal['L', 'M', 'S'] = 'S') -> np.ndarray:
+    async def get_portrait(self, _id: Union[str, int], /, size: Literal['L', 'M', 'S'] = 'S') -> np.ndarray:
         """
         获取用户头像
 

@@ -195,42 +195,76 @@ class UserInfo(BasicUserInfo):
         user_name (str): 发帖用户名
         portrait (str): 用户头像portrait值
         nick_name (str): 发帖人昵称
+        tieba_uid (int): 新版主页uid
 
         level (int): 等级
         gender (int): 性别 (1男2女0未知)
+        age (float): 吧龄 (以年为单位)
+        post_num (int): 发帖数
+        fan_num (int): 粉丝数
+        follow_num (int): 关注数
+        ip (str): ip归属地
+
         is_bawu (bool): 是否吧务
         is_vip (bool): 是否vip
         is_god (bool): 是否大神
         priv_like (int): 是否公开关注贴吧 (1完全可见2好友可见3完全隐藏)
         priv_reply (int): 帖子评论权限 (1所有人5我的粉丝6我的关注)
-        ip (str): ip归属地
     """
 
-    __slots__ = ['level', 'gender', 'is_bawu', 'is_vip', 'is_god', 'priv_like', 'priv_reply', 'ip']
+    __slots__ = [
+        'tieba_uid',
+        'level',
+        'gender',
+        'age',
+        'post_num',
+        'fan_num',
+        'follow_num',
+        'ip',
+        'is_bawu',
+        'is_vip',
+        'is_god',
+        'priv_like',
+        'priv_reply',
+    ]
 
     def __init__(self, _id: Union[str, int, None] = None, _raw_data: Optional[User_pb2.User] = None) -> None:
         super(UserInfo, self).__init__(_id, _raw_data)
 
         if _raw_data:
+            self.tieba_uid: int = int(tieba_uid) if (tieba_uid := _raw_data.tieba_uid) else 0
+
             self.level: int = _raw_data.level_id
             self.gender: int = _raw_data.gender or _raw_data.sex
+            self.age: float = float(tb_age) if (tb_age := _raw_data.tb_age) else 0.0
+            self.post_num: int = _raw_data.post_num
+            self.fan_num: int = _raw_data.fans_num
+            self.follow_num: int = _raw_data.concern_num
+            self.ip: str = _raw_data.ip_address
+
             self.is_bawu: bool = bool(_raw_data.is_bawu)
             self.is_vip: bool = True if _raw_data.new_tshow_icon else bool(_raw_data.vipInfo.v_status)
             self.is_god: bool = bool(_raw_data.new_god_data.status)
             priv_raw_data = _raw_data.priv_sets
-            self.priv_like: int = priv_raw_data.like
-            self.priv_reply: int = priv_raw_data.reply
-            self.ip = _raw_data.ip_address
+            self.priv_like: int = priv_like if (priv_like := priv_raw_data.like) else 1
+            self.priv_reply: int = priv_reply if (priv_reply := priv_raw_data.reply) else 1
 
         else:
+            self.tieba_uid = 0
+
             self.level = 0
             self.gender = 0
+            self.age = 0.0
+            self.post_num = 0
+            self.fan_num = 0
+            self.follow_num = 0
+            self.ip = ''
+
             self.is_bawu = False
             self.is_vip = False
             self.is_god = False
             self.priv_like = 3
             self.priv_reply = 1
-            self.ip = ''
 
     def __eq__(self, obj: "UserInfo") -> bool:
         return super(UserInfo, self).__eq__(obj)

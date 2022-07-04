@@ -268,7 +268,7 @@ class CloudReview(tb.Reviewer):
             return Punish()
 
         text = obj.text
-        if re.search("\u05af|足硿笨|𝒂𝒋|𝒗：", text, re.I):
+        if re.search("\u05af|足硿笨|𝒂𝒋|𝒗|𝒍𝒊𝒌𝒆", text, re.I):
             return Punish(1, 1)
 
         return Punish()
