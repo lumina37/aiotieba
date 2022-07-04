@@ -126,10 +126,10 @@ class Reviewer(Client):
         拒绝本吧所有解封申诉
         """
 
-        while appeal_ids := await self.get_unblock_appeal_list(self.fname):
-            await asyncio.gather(*[self.handle_unblock_appeal(self.fname, appeal_id) for appeal_id in appeal_ids])
+        while appeal_ids := (await self.get_unblock_appeal_list(self.fname))[0]:
+            await self.handle_unblock_appeals(self.fname, appeal_ids, refuse=True)
 
-    async def add_id(self, _id: int, id_last_edit: int = 0) -> bool:
+    async def add_id(self, /, _id: int, *, id_last_edit: int = 0) -> bool:
         """
         将id添加到表id_{fname}
 
@@ -142,7 +142,7 @@ class Reviewer(Client):
             bool: 操作是否成功
         """
 
-        return await self.database.add_id(self.fname, _id, id_last_edit)
+        return await self.database.add_id(self.fname, _id, tag=id_last_edit)
 
     async def get_id(self, _id: int) -> int:
         """
@@ -186,7 +186,7 @@ class Reviewer(Client):
 
         return await self.database.del_ids(self.fname, hour)
 
-    async def add_tid(self, tid: int, mode: bool) -> bool:
+    async def add_tid(self, /, tid: int, *, mode: bool) -> bool:
         """
         将tid添加到表tid_water_{fname}
 
@@ -198,7 +198,7 @@ class Reviewer(Client):
             bool: 操作是否成功
         """
 
-        return await self.database.add_tid(self.fname, tid, int(mode))
+        return await self.database.add_tid(self.fname, tid, tag=int(mode))
 
     async def is_tid_hide(self, tid: int) -> Optional[bool]:
         """
@@ -301,7 +301,7 @@ class Reviewer(Client):
         return await self.database.get_user_id_full(self.fname, user_id)
 
     async def get_user_id_list(
-        self, lower_permission: int = 0, upper_permission: int = 5, *, limit: int = 1, offset: int = 0
+        self, /, lower_permission: int = 0, upper_permission: int = 5, *, limit: int = 1, offset: int = 0
     ) -> List[int]:
         """
         获取表user_id_{fname}中user_id的列表

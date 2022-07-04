@@ -8,7 +8,6 @@ import gzip
 import hashlib
 import json
 import random
-import re
 import socket
 import time
 import uuid
@@ -553,7 +552,7 @@ class Client(object):
             need_encrypt (bool, optional): 是否需要aes加密. Defaults to False.
 
         Returns:
-            bytes: 封装后的websocket数据
+            WebsocketResponse: 用于等待返回数据的WebsocketResponse实例
         """
 
         ws_res = WebsocketResponse()
@@ -1013,7 +1012,7 @@ class Client(object):
             fname_or_fid (str | int): 贴吧的贴吧名或fid 优先贴吧名
             pn (int, optional): 页码. Defaults to 1.
             rn (int, optional): 请求的条目数. Defaults to 30.
-            sort (int, optional): 排序方式 对于有热门分区的贴吧0是热门排序1是按发布时间2报错34都是热门排序>=5是按回复时间 \
+            sort (int, optional): 排序方式 对于有热门分区的贴吧0是热门排序1是按发布时间2报错34都是热门排序>=5是按回复时间
                 对于无热门分区的贴吧0是按回复时间1是按发布时间2报错>=3是按回复时间. Defaults to 5.
             is_good (bool, optional): True为获取精品区帖子 False为获取普通区帖子. Defaults to False.
 
@@ -1756,7 +1755,7 @@ class Client(object):
         return res_list, has_more
 
     async def block(
-        self, fname_or_fid: Union[str, int], user: BasicUserInfo, day: Literal[1, 3, 10], reason: str = ''
+        self, fname_or_fid: Union[str, int], /, user: BasicUserInfo, *, day: Literal[1, 3, 10], reason: str = ''
     ) -> bool:
         """
         封禁用户
@@ -1809,7 +1808,7 @@ class Client(object):
         LOG.info(f"Successfully blocked {user.log_name} in {fname} for {day} days")
         return True
 
-    async def unblock(self, fname_or_fid: Union[str, int], user: BasicUserInfo) -> bool:
+    async def unblock(self, fname_or_fid: Union[str, int], /, user: BasicUserInfo) -> bool:
         """
         解封用户
 
@@ -1854,7 +1853,7 @@ class Client(object):
         LOG.info(f"Successfully unblocked {user.log_name} in {fname}")
         return True
 
-    async def hide_thread(self, fname_or_fid: Union[str, int], tid: int) -> bool:
+    async def hide_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
         屏蔽主题帖
 
@@ -1868,7 +1867,7 @@ class Client(object):
 
         return await self._del_thread(fname_or_fid, tid, is_hide=True)
 
-    async def del_thread(self, fname_or_fid: Union[str, int], tid: int) -> bool:
+    async def del_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
         删除主题帖
 
@@ -1882,7 +1881,7 @@ class Client(object):
 
         return await self._del_thread(fname_or_fid, tid, is_hide=False)
 
-    async def _del_thread(self, fname_or_fid: Union[str, int], tid: int, is_hide: bool = False) -> bool:
+    async def _del_thread(self, fname_or_fid: Union[str, int], /, tid: int, *, is_hide: bool = False) -> bool:
         """
         删除/屏蔽主题帖
 
@@ -1922,7 +1921,7 @@ class Client(object):
         LOG.info(f"Successfully deleted thread tid:{tid} is_hide:{is_hide} in {fname_or_fid}")
         return True
 
-    async def del_post(self, fname_or_fid: Union[str, int], tid: int, pid: int) -> bool:
+    async def del_post(self, fname_or_fid: Union[str, int], /, tid: int, pid: int) -> bool:
         """
         删除回复
 
@@ -1962,7 +1961,7 @@ class Client(object):
         LOG.info(f"Successfully deleted post {pid} in {tid} in {fname_or_fid}")
         return True
 
-    async def unhide_thread(self, fname_or_fid: Union[str, int], tid: int) -> bool:
+    async def unhide_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
         解除主题帖屏蔽
 
@@ -1976,7 +1975,7 @@ class Client(object):
 
         return await self._recover(fname_or_fid, tid=tid, is_hide=True)
 
-    async def recover_thread(self, fname_or_fid: Union[str, int], tid: int) -> bool:
+    async def recover_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
         恢复主题帖
 
@@ -1990,7 +1989,7 @@ class Client(object):
 
         return await self._recover(fname_or_fid, tid=tid, is_hide=False)
 
-    async def recover_post(self, fname_or_fid: Union[str, int], pid: int) -> bool:
+    async def recover_post(self, fname_or_fid: Union[str, int], /, pid: int) -> bool:
         """
         恢复主题帖
 
@@ -2004,7 +2003,9 @@ class Client(object):
 
         return await self._recover(fname_or_fid, pid=pid, is_hide=False)
 
-    async def _recover(self, fname_or_fid: Union[str, int], tid: int = 0, pid: int = 0, is_hide: bool = False) -> bool:
+    async def _recover(
+        self, fname_or_fid: Union[str, int], /, tid: int = 0, pid: int = 0, *, is_hide: bool = False
+    ) -> bool:
         """
         恢复帖子
 
@@ -2051,7 +2052,7 @@ class Client(object):
         LOG.info(f"Successfully recovered tid:{tid} pid:{pid} hide:{is_hide} in {fname}")
         return True
 
-    async def move(self, fname_or_fid: Union[str, int], tid: int, to_tab_id: int, from_tab_id: int = 0) -> bool:
+    async def move(self, fname_or_fid: Union[str, int], /, tid: int, *, to_tab_id: int, from_tab_id: int = 0) -> bool:
         """
         将主题帖移动至另一分区
 
@@ -2092,7 +2093,7 @@ class Client(object):
         LOG.info(f"Successfully moved {tid} to tab:{to_tab_id} in {fname_or_fid}")
         return True
 
-    async def recommend(self, fname_or_fid: Union[str, int], tid: int) -> bool:
+    async def recommend(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
         大吧主首页推荐
 
@@ -2131,7 +2132,7 @@ class Client(object):
         LOG.info(f"Successfully recommended {tid} in {fname_or_fid}")
         return True
 
-    async def good(self, fname_or_fid: Union[str, int], tid: int, cname: str = '') -> bool:
+    async def good(self, fname_or_fid: Union[str, int], /, tid: int, *, cname: str = '') -> bool:
         """
         加精主题帖
 
@@ -2233,7 +2234,7 @@ class Client(object):
 
         return await _good(await _cname2cid())
 
-    async def ungood(self, fname_or_fid: Union[str, int], tid: int) -> bool:
+    async def ungood(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
         撤精主题帖
 
@@ -2277,7 +2278,7 @@ class Client(object):
         LOG.info(f"Successfully removed {tid} from good_list in {fname}")
         return True
 
-    async def top(self, fname_or_fid: Union[str, int], tid: int) -> bool:
+    async def top(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
         置顶主题帖
 
@@ -2322,7 +2323,7 @@ class Client(object):
         LOG.info(f"Successfully added {tid} to top_list in {fname}")
         return True
 
-    async def untop(self, fname_or_fid: Union[str, int], tid: int) -> bool:
+    async def untop(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
         撤销置顶主题帖
 
@@ -2469,7 +2470,7 @@ class Client(object):
 
         return res_list, has_more
 
-    async def blacklist_add(self, fname_or_fid: Union[str, int], user: BasicUserInfo) -> bool:
+    async def blacklist_add(self, fname_or_fid: Union[str, int], /, user: BasicUserInfo) -> bool:
         """
         添加贴吧黑名单
 
@@ -2507,7 +2508,7 @@ class Client(object):
         LOG.info(f"Successfully added {user.log_name} to black_list in {fname}")
         return True
 
-    async def blacklist_del(self, fname_or_fid: Union[str, int], user: BasicUserInfo) -> bool:
+    async def blacklist_del(self, fname_or_fid: Union[str, int], /, user: BasicUserInfo) -> bool:
         """
         移出贴吧黑名单
 
@@ -2545,15 +2546,19 @@ class Client(object):
         LOG.info(f"Successfully removed {user.log_name} from black_list in {fname}")
         return True
 
-    async def get_unblock_appeal_list(self, fname_or_fid: Union[str, int]) -> List[int]:
+    async def get_unblock_appeal_list(
+        self, fname_or_fid: Union[str, int], /, pn: int = 1, *, rn: int = 5
+    ) -> Tuple[List[int], bool]:
         """
-        获取第1页的申诉请求列表
+        获取申诉请求列表
 
         Args:
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid
+            pn (int, optional): 页码. Defaults to 1.
+            rn (int, optional): 请求的条目数. Defaults to 5.
 
         Returns:
-            list[int]: 申诉请求的appeal_id的列表
+            tuple[list[int], bool]: list[申诉请求的appeal_id], 是否还有下一页
         """
 
         if isinstance(fname_or_fid, str):
@@ -2566,37 +2571,41 @@ class Client(object):
         params = {
             'fn': fname,
             'fid': fid,
-            'is_ajax': '1',
-            'pn': '1',
+            'pn': pn,
+            'rn': rn,
+            'tbs': await self.get_tbs(),
         }
 
         try:
             res = await self.web.get(
-                yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mo/q/bawuappeal"),
+                yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mo/q/getBawuAppealList"),
                 params=params,
             )
 
-            text = await res.text(encoding='utf-8')
+            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            if int(res_json['no']):
+                raise ValueError(res_json['error'])
 
-            res_list = [int(item.group(1)) for item in re.finditer('aid=(\\d+)', text)]
+            res_list = [int(appeal_dict['appeal_id']) for appeal_dict in res_json['data'].get('appeal_list', [])]
+            has_more = res_json['data'].get('has_more', False)
 
         except Exception as err:
             LOG.warning(f"Failed to get appeal_list of {fname}. reason:{err}")
             res_list = []
+            has_more = False
 
-        return res_list
+        return res_list, has_more
 
-    async def handle_unblock_appeal(self, fname_or_fid: Union[str, int], appeal_id: int, refuse: bool = True) -> bool:
+    async def handle_unblock_appeals(
+        self, fname_or_fid: Union[str, int], /, appeal_ids: List[int], *, refuse: bool = True
+    ) -> bool:
         """
         拒绝或通过解封申诉
 
         Args:
             fname_or_fid (str | int): 申诉所在贴吧的贴吧名或fid
-            appeal_id (int): 申诉请求的appeal_id
+            appeal_ids (list[int]): 申诉请求的appeal_id列表
             refuse (bool, optional): True则拒绝申诉 False则接受申诉. Defaults to True.
-
-        Closure Args:
-            fname (str): 贴吧名
 
         Returns:
             bool: 操作是否成功
@@ -2609,17 +2618,22 @@ class Client(object):
             fid = fname_or_fid
             fname = await self.get_fname(fid)
 
-        payload = [
-            ('fn', fname),
-            ('fid', fid),
-            ('status', '2' if refuse else '1'),
-            ('refuse_reason', 'auto refuse'),
-            ('appeal_id', appeal_id),
-        ]
+        payload = (
+            [
+                ('fn', fname),
+                ('fid', fid),
+            ]
+            + [(f'appeal_list[{i}]', appeal_id) for i, appeal_id in enumerate(appeal_ids)]
+            + [
+                ('status', '2' if refuse else '1'),
+                ('refuse_reason', ' '),
+                ('tbs', await self.get_tbs()),
+            ]
+        )
 
         try:
             res = await self.web.post(
-                yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mo/q/bawuappealhandle"),
+                yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mo/q/multiAppealhandle"),
                 data=payload,
             )
 
@@ -2628,10 +2642,10 @@ class Client(object):
                 raise ValueError(res_json['error'])
 
         except Exception as err:
-            LOG.warning(f"Failed to handle {appeal_id} in {fname}. reason:{err}")
+            LOG.warning(f"Failed to handle unblock_appeals in {fname}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully handled {appeal_id} in {fname}. refuse:{refuse}")
+        LOG.info(f"Successfully handled unblock_appeals in {fname}. refuse:{refuse}")
         return True
 
     async def get_image(self, img_url: str) -> np.ndarray:
@@ -2899,9 +2913,9 @@ class Client(object):
 
         Args:
             user (BasicUserInfo): 待获取用户的基本用户信息
+            pn (int, optional): 页码. Defaults to 1.
             is_thread (bool, optional): 是否请求主题帖. Defaults to True.
             public_only (bool, optional): 是否仅获取公开帖. Defaults to False.
-            pn (int, optional): 页码. Defaults to 1.
 
         Returns:
             list[NewThread] | list[UserPosts]: 主题帖/回复列表
@@ -3375,7 +3389,7 @@ class Client(object):
         LOG.info(f"Successfully undisliked {fname_or_fid}")
         return True
 
-    async def set_privacy(self, fname_or_fid: Union[str, int], tid: int, pid: int, hide: bool = True) -> bool:
+    async def set_privacy(self, fname_or_fid: Union[str, int], /, tid: int, pid: int, *, hide: bool = True) -> bool:
         """
         隐藏主题帖
 
@@ -3459,7 +3473,7 @@ class Client(object):
         LOG.info(f"Successfully signed forum {fname}")
         return True
 
-    async def add_post(self, fname_or_fid: Union[str, int], tid: int, content: str) -> bool:
+    async def add_post(self, fname_or_fid: Union[str, int], /, tid: int, content: str) -> bool:
         """
         回复主题帖
 

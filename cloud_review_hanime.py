@@ -145,7 +145,7 @@ class CloudReview(tb.Reviewer):
         await asyncio.gather(*coros)
 
         # 缓存该tid的子孙结点编辑状态
-        await self.add_id(thread.tid, thread.last_time)
+        await self.add_id(thread.tid, id_last_edit=thread.last_time)
         return Punish()
 
     async def _handle_post(self, post: tb.Post) -> None:
@@ -179,7 +179,7 @@ class CloudReview(tb.Reviewer):
             return Punish(-1)
         # 该回复下的楼中楼可能被抽 需要缓存抽楼后的reply_num
         elif post.reply_num < id_last_edit:
-            await self.add_id(post.pid, post.reply_num)
+            await self.add_id(post.pid, id_last_edit=post.reply_num)
             return Punish(-1)
 
         punish = await self._check_text(post)
@@ -198,7 +198,7 @@ class CloudReview(tb.Reviewer):
             await asyncio.gather(*coros)
 
         # 缓存该pid的子结点编辑状态
-        await self.add_id(post.pid, post.reply_num)
+        await self.add_id(post.pid, id_last_edit=post.reply_num)
         return Punish()
 
     async def _handle_comment(self, comment: tb.Comment) -> None:
