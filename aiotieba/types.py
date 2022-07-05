@@ -24,7 +24,7 @@ __all__ = [
 
 import json
 import urllib.parse
-from typing import Dict, Generic, Iterable, Iterator, List, Optional, TypeVar, Union
+from typing import ClassVar, Dict, Generic, Iterable, Iterator, List, Optional, TypeVar, Union
 
 import yarl
 from google.protobuf.json_format import ParseDict
@@ -62,8 +62,8 @@ class _DataWrapper(object):
     """
     raw_data包装器
 
-    Fields:
-        _raw_data (Any): 原始raw_data数据
+    Attributes:
+        _raw_data (Any): protobuf源数据
     """
 
     __slots__ = ['_raw_data']
@@ -77,46 +77,47 @@ class BasicUserInfo(_DataWrapper):
     基本用户属性
 
     Args:
-        _id (str | int | None): 用于快速构造UserInfo的自适应参数 输入用户名/portrait/user_id
-        _raw_data (User_pb2.User)
+        _id (str | int, optional): 用于快速构造UserInfo的自适应参数 输入用户名/portrait/user_id
+        _raw_data (User_pb2.User): protobuf源数据
 
-    Fields:
-        user_id (int): 贴吧旧版user_id
-        user_name (str): 发帖用户名
-        portrait (str): 用户头像portrait值
-        nick_name (str): 发帖人昵称
+    Attributes:
+        user_id (int)
+        user_name (str): 用户名
+        portrait (str)
     """
 
-    __slots__ = ['user_id', 'user_name', '_portrait', '_nick_name']
+    __slots__ = [
+        '_user_id',
+        '_user_name',
+        '_portrait',
+    ]
 
     def __init__(self, _id: Union[str, int, None] = None, _raw_data: Optional[User_pb2.User] = None) -> None:
         super(BasicUserInfo, self).__init__(_raw_data)
 
         if _raw_data:
-            self.user_id: int = _raw_data.id
-            self.user_name: str = _raw_data.name
+            self._user_id = _raw_data.id
+            self._user_name = _raw_data.name
             self.portrait = _raw_data.portrait
-            self.nick_name = _raw_data.name_show
 
         else:
-            self.user_id = 0
-            self.user_name = ''
+            self._user_id = 0
+            self._user_name = ''
             self._portrait = ''
-            self._nick_name = ''
 
             if _id:
                 if self.is_user_id(_id):
-                    self.user_id = _id
+                    self._user_id = _id
                 else:
                     self.portrait = _id
                     if not self.portrait:
-                        self.user_name = _id
+                        self._user_name = _id
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__} [user_id:{self.user_id} / user_name:{self.user_name} / portrait:{self._portrait} / nick_name:{self._nick_name}]"
+        return f"{self.__class__.__name__} [user_id:{self.user_id} / user_name:{self.user_name} / portrait:{self.portrait}]"
 
     def __eq__(self, obj: "BasicUserInfo") -> bool:
-        return self.user_id == obj.user_id and self.user_name == obj.user_name and self._portrait == obj.portrait
+        return self.user_id == obj.user_id and self.user_name == obj.user_name and self.portrait == obj.portrait
 
     def __hash__(self) -> int:
         return self.user_id
@@ -129,14 +130,62 @@ class BasicUserInfo(_DataWrapper):
 
     @staticmethod
     def is_portrait(portrait: str) -> bool:
-        return portrait.startswith('tb.')
+        """
+        判断数据是否符合portrait格式
+        """
+
+        return isinstance(portrait, str) and portrait.startswith('tb.')
 
     @staticmethod
     def is_user_id(user_id: int) -> bool:
+        """
+        判断数据是否符合user_id格式
+        """
+
         return isinstance(user_id, int)
 
     @property
+    def user_id(self) -> int:
+        """
+        用户user_id
+
+        Note:
+            具有唯一性
+            请注意与用户主页的tieba_uid区分
+        """
+
+        return self._user_id
+
+    @user_id.setter
+    def user_id(self, new_user_id: int) -> None:
+        self._user_id = int(new_user_id) if new_user_id else 0
+
+    @property
+    def user_name(self) -> str:
+        """
+        用户名
+
+        Note:
+            具有唯一性
+            请注意与用户昵称区分
+        """
+
+        return self._user_name
+
+    @user_name.setter
+    def user_name(self, new_user_name: str) -> None:
+        self._user_name = new_user_name
+
+    @property
     def portrait(self) -> str:
+        """
+        用户portrait
+
+        Note:
+            具有唯一性
+            可以用于获取用户头像
+        """
+
         return self._portrait
 
     @portrait.setter
@@ -159,27 +208,17 @@ class BasicUserInfo(_DataWrapper):
             self._portrait = ''
 
     @property
-    def nick_name(self) -> str:
-        return self._nick_name
-
-    @nick_name.setter
-    def nick_name(self, new_nick_name: str) -> None:
-
-        if self.user_name != new_nick_name:
-            self._nick_name = new_nick_name
-        else:
-            self._nick_name = ''
-
-    @property
-    def show_name(self) -> str:
-        return self.nick_name if self.nick_name else self.user_name
-
-    @property
     def log_name(self) -> str:
+        """
+        用于在日志中记录用户属性
+        """
+
         if self.user_name:
             return self.user_name
+        elif self.portrait:
+            return self.portrait
         else:
-            return f"{self._nick_name} / {self._portrait}"
+            return str(self.user_id)
 
 
 class UserInfo(BasicUserInfo):
@@ -187,19 +226,20 @@ class UserInfo(BasicUserInfo):
     用户属性
 
     Args:
-        _id (Union[str, int, None]): 用于快速构造UserInfo的自适应参数 输入用户名或portrait或user_id
+        _id (str | int, optional): 用于快速构造UserInfo的自适应参数 输入用户名或portrait或user_id
         _raw_data (User_pb2.User)
 
-    Fields:
-        user_id (int): 贴吧旧版user_id
-        user_name (str): 发帖用户名
-        portrait (str): 用户头像portrait值
-        nick_name (str): 发帖人昵称
-        tieba_uid (int): 新版主页uid
+    Attributes:
+        user_id (int)
+        user_name (str): 用户名
+        portrait (str)
+        old_nick_name (str): 旧版昵称
+        new_nick_name (str): 新版昵称
+        tieba_uid (int): 用户个人主页uid
 
         level (int): 等级
-        gender (int): 性别 (1男2女0未知)
-        age (float): 吧龄 (以年为单位)
+        gender (int): 性别
+        age (float): 吧龄
         post_num (int): 发帖数
         fan_num (int): 粉丝数
         follow_num (int): 关注数
@@ -208,69 +248,321 @@ class UserInfo(BasicUserInfo):
         is_bawu (bool): 是否吧务
         is_vip (bool): 是否vip
         is_god (bool): 是否大神
-        priv_like (int): 是否公开关注贴吧 (1完全可见2好友可见3完全隐藏)
-        priv_reply (int): 帖子评论权限 (1所有人5我的粉丝6我的关注)
+        priv_like (int): 是否公开关注贴吧
+        priv_reply (int): 帖子评论权限
     """
 
     __slots__ = [
-        'tieba_uid',
-        'level',
-        'gender',
-        'age',
-        'post_num',
-        'fan_num',
-        'follow_num',
-        'ip',
-        'is_bawu',
-        'is_vip',
-        'is_god',
-        'priv_like',
-        'priv_reply',
+        '_old_nick_name',
+        '_new_nick_name',
+        '_tieba_uid',
+        '_level',
+        '_gender',
+        '_age',
+        '_post_num',
+        '_fan_num',
+        '_follow_num',
+        '_ip',
+        '_is_bawu',
+        '_is_vip',
+        '_is_god',
+        '_priv_like',
+        '_priv_reply',
     ]
 
     def __init__(self, _id: Union[str, int, None] = None, _raw_data: Optional[User_pb2.User] = None) -> None:
         super(UserInfo, self).__init__(_id, _raw_data)
 
+        self._old_nick_name = ''
+
         if _raw_data:
-            self.tieba_uid: int = int(tieba_uid) if (tieba_uid := _raw_data.tieba_uid) else 0
+            self.new_nick_name = _raw_data.name_show
+            self.tieba_uid = _raw_data.tieba_uid
 
-            self.level: int = _raw_data.level_id
-            self.gender: int = _raw_data.gender or _raw_data.sex
-            self.age: float = float(tb_age) if (tb_age := _raw_data.tb_age) else 0.0
-            self.post_num: int = _raw_data.post_num
-            self.fan_num: int = _raw_data.fans_num
-            self.follow_num: int = _raw_data.concern_num
-            self.ip: str = _raw_data.ip_address
+            self._level = _raw_data.level_id
+            self._gender = _raw_data.gender or _raw_data.sex
+            self.age = _raw_data.tb_age
+            self._post_num = _raw_data.post_num
+            self._fan_num = _raw_data.fans_num
+            self._follow_num = _raw_data.concern_num
+            self._ip = _raw_data.ip_address
 
-            self.is_bawu: bool = bool(_raw_data.is_bawu)
-            self.is_vip: bool = True if _raw_data.new_tshow_icon else bool(_raw_data.vipInfo.v_status)
-            self.is_god: bool = bool(_raw_data.new_god_data.status)
-            priv_raw_data = _raw_data.priv_sets
-            self.priv_like: int = priv_like if (priv_like := priv_raw_data.like) else 1
-            self.priv_reply: int = priv_reply if (priv_reply := priv_raw_data.reply) else 1
+            self._is_bawu = bool(_raw_data.is_bawu)
+            self._is_vip = True if _raw_data.new_tshow_icon else bool(_raw_data.vipInfo.v_status)
+            self._is_god = bool(_raw_data.new_god_data.status)
+            self.priv_like = _raw_data.priv_sets.like
+            self.priv_reply = _raw_data.priv_sets.reply
 
         else:
-            self.tieba_uid = 0
+            self._new_nick_name = ''
+            self._tieba_uid = 0
 
-            self.level = 0
-            self.gender = 0
-            self.age = 0.0
-            self.post_num = 0
-            self.fan_num = 0
-            self.follow_num = 0
-            self.ip = ''
+            self._level = 0
+            self._gender = 0
+            self._age = 0.0
+            self._post_num = 0
+            self._fan_num = 0
+            self._follow_num = 0
+            self._ip = ''
 
-            self.is_bawu = False
-            self.is_vip = False
-            self.is_god = False
-            self.priv_like = 3
-            self.priv_reply = 1
+            self._is_bawu = False
+            self._is_vip = False
+            self._is_god = False
+            self._priv_like = 1
+            self._priv_reply = 1
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__} [user_id:{self.user_id} / user_name:{self.user_name} / portrait:{self.portrait} / nick_name:{self.nick_name}]"
 
     def __eq__(self, obj: "UserInfo") -> bool:
         return super(UserInfo, self).__eq__(obj)
 
     def __hash__(self) -> int:
         return super(UserInfo, self).__hash__()
+
+    @property
+    def new_nick_name(self) -> str:
+        """
+        新版用户昵称
+
+        Note:
+            不具有唯一性
+            可以不包含emoji
+            支持重复
+        """
+
+        return self._new_nick_name
+
+    @new_nick_name.setter
+    def new_nick_name(self, new_new_nick_name: str) -> None:
+
+        if new_new_nick_name != self.user_name and new_new_nick_name != self.old_nick_name:
+            self._new_nick_name = new_new_nick_name
+        else:
+            self._new_nick_name = ''
+
+    @property
+    def old_nick_name(self) -> str:
+        """
+        旧版用户昵称
+
+        Note:
+            不具有唯一性
+            必须包含emoji
+            不支持重复
+        """
+
+        return self._old_nick_name
+
+    @old_nick_name.setter
+    def old_nick_name(self, new_old_nick_name: str) -> None:
+
+        if new_old_nick_name != self.user_name:
+            self._old_nick_name = new_old_nick_name
+        else:
+            self._old_nick_name = ''
+
+    @property
+    def nick_name(self) -> str:
+        """
+        用户昵称
+
+        Note:
+            优先返回新版昵称
+        """
+
+        if self.new_nick_name:
+            return self.new_nick_name
+        else:
+            return self.old_nick_name
+
+    @property
+    def log_name(self) -> str:
+        """
+        用于在日志中记录用户属性
+        """
+
+        if self.user_name:
+            return self.user_name
+        elif self.portrait:
+            return f"{self.nick_name}/{self.portrait}"
+        else:
+            return str(self.user_id)
+
+    @property
+    def tieba_uid(self) -> int:
+        """
+        用户个人主页uid
+
+        Note:
+            具有唯一性
+            请注意与user_id区分
+        """
+
+        return self._tieba_uid
+
+    @tieba_uid.setter
+    def tieba_uid(self, new_tieba_uid: int) -> None:
+        self._tieba_uid = int(new_tieba_uid) if new_tieba_uid else 0
+
+    @property
+    def level(self) -> int:
+        """
+        等级
+        """
+
+        return self._level
+
+    @level.setter
+    def level(self, new_level: int) -> None:
+        self._level = new_level
+
+    @property
+    def gender(self) -> int:
+        """
+        性别
+
+        Note:
+            未知0 男1 女2
+        """
+
+        return self._gender
+
+    @gender.setter
+    def gender(self, new_gender: int) -> None:
+        self._gender = new_gender
+
+    @property
+    def age(self) -> float:
+        """
+        吧龄
+
+        Note:
+            以年为单位
+        """
+
+        return self._age
+
+    @age.setter
+    def age(self, new_age: float) -> None:
+        self._age = float(new_age) if new_age else 0.0
+
+    @property
+    def post_num(self) -> int:
+        """
+        发帖数
+
+        Note:
+            是回复数和主题帖数的总和
+        """
+
+        return self._post_num
+
+    @post_num.setter
+    def post_num(self, new_post_num: int) -> None:
+        self._post_num = new_post_num
+
+    @property
+    def fan_num(self) -> int:
+        """
+        粉丝数
+        """
+
+        return self._fan_num
+
+    @fan_num.setter
+    def fan_num(self, new_fan_num: int) -> None:
+        self._fan_num = new_fan_num
+
+    @property
+    def follow_num(self) -> int:
+        """
+        关注数
+        """
+
+        return self._follow_num
+
+    @follow_num.setter
+    def follow_num(self, new_follow_num: int) -> None:
+        self._follow_num = new_follow_num
+
+    @property
+    def ip(self) -> str:
+        """
+        ip归属地
+        """
+
+        return self._ip
+
+    @ip.setter
+    def ip(self, new_ip: str) -> None:
+        self._ip = new_ip
+
+    @property
+    def is_bawu(self) -> bool:
+        """
+        是否吧务
+        """
+
+        return self._is_bawu
+
+    @is_bawu.setter
+    def is_bawu(self, new_is_bawu: bool) -> None:
+        self._is_bawu = new_is_bawu
+
+    @property
+    def is_vip(self) -> bool:
+        """
+        是否超级会员
+        """
+
+        return self._is_vip
+
+    @is_vip.setter
+    def is_vip(self, new_is_vip: bool) -> None:
+        self._is_vip = new_is_vip
+
+    @property
+    def is_god(self) -> bool:
+        """
+        是否贴吧大神
+        """
+
+        return self._is_god
+
+    @is_god.setter
+    def is_god(self, new_is_god: bool) -> None:
+        self._is_god = new_is_god
+
+    @property
+    def priv_like(self) -> int:
+        """
+        是否公开关注贴吧
+
+        Note:
+            完全可见1 好友可见2 完全隐藏3
+        """
+
+        return self._priv_like
+
+    @priv_like.setter
+    def priv_like(self, new_priv_like: int) -> None:
+        self._priv_like = int(new_priv_like) if new_priv_like else 1
+
+    @property
+    def priv_reply(self) -> int:
+        """
+        帖子评论权限
+
+        Note:
+            允许所有人1 仅允许我的粉丝5 仅允许我的关注6
+        """
+
+        return self._priv_reply
+
+    @priv_reply.setter
+    def priv_reply(self, new_priv_reply: int) -> None:
+        self._priv_reply = int(new_priv_reply) if new_priv_reply else 1
 
 
 class _Fragment(_DataWrapper):
@@ -282,9 +574,6 @@ class _Fragment(_DataWrapper):
 
     def __init__(self, _raw_data: Optional[PbContent_pb2.PbContent] = None) -> None:
         super(_Fragment, self).__init__(_raw_data)
-
-    def __bool__(self) -> bool:
-        return bool(self._raw_data)
 
 
 class FragmentUnknown(_Fragment):
@@ -299,71 +588,131 @@ class FragText(_Fragment):
     """
     纯文本碎片
 
-    Fields:
+    Attributes:
         text (str): 文本内容
     """
 
-    __slots__ = ['text']
+    __slots__ = ['_text']
 
     def __init__(self, _raw_data: PbContent_pb2.PbContent) -> None:
         super(FragText, self).__init__(_raw_data)
 
-        self.text: str = self._raw_data.text
+        self._text = self._raw_data.text
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} [text:{self.text}]"
+
+    @property
+    def text(self) -> str:
+        """
+        文本内容
+        """
+
+        return self._text
 
 
 class FragEmoji(_Fragment):
     """
     表情碎片
 
-    Fields:
+    Attributes:
         desc (str): 表情描述
     """
 
-    __slots__ = ['desc']
+    __slots__ = ['_desc']
 
     def __init__(self, _raw_data: PbContent_pb2.PbContent) -> None:
         super(FragEmoji, self).__init__(_raw_data)
 
-        self.desc: str = self._raw_data.c
+        self._desc: str = self._raw_data.c
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} [desc:{self.desc}]"
+
+    @property
+    def desc(self) -> str:
+        """
+        表情描述
+        """
+
+        return self._desc
 
 
 class FragImage(_Fragment):
     """
     图像碎片
 
-    Fields:
-        src (str): 压缩图像cdn_url
-        big_src (str): 大图cdn_url
-        origin_src (str): 图像源url
-        hash (str): 百度图库hash
-        show_width (int): 显示宽度
-        show_height (int): 显示高度
+    Attributes:
+        src (str): 压缩图像链接
+        big_src (str): 大图链接
+        origin_src (str): 原图链接
+        hash (str): 百度图床hash
+        show_width (int): 图像在客户端显示的宽度
+        show_height (int): 图像在客户端显示的高度
     """
 
-    __slots__ = ['src', 'big_src', 'origin_src', 'origin_size', '_hash', '_show_width', '_show_height']
+    __slots__ = [
+        '_src',
+        '_big_src',
+        '_origin_src',
+        '_origin_size',
+        '_hash',
+        '_show_width',
+        '_show_height',
+    ]
 
     def __init__(self, _raw_data: PbContent_pb2.PbContent) -> None:
         super(FragImage, self).__init__(_raw_data)
 
-        self.src: str = self._raw_data.cdn_src or self._raw_data.src
-        self.big_src: str = self._raw_data.big_cdn_src or self._raw_data.big_src
-        self.origin_src: str = self._raw_data.origin_src
-        self.origin_size: int = self._raw_data.origin_size
-        self._hash: str = None
-        self._show_width: int = None
-        self._show_height: int = None
+        self._src = self._raw_data.cdn_src or self._raw_data.src
+        self._big_src = self._raw_data.big_cdn_src or self._raw_data.big_src
+        self._origin_src = self._raw_data.origin_src
+        self._origin_size = self._raw_data.origin_size
+
+        self._hash = None
+        self._show_width = None
+        self._show_height = None
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} [src:{self.src}]"
 
     @property
+    def src(self) -> str:
+        """
+        压缩图像链接
+        """
+
+        return self._src
+
+    @property
+    def big_src(self) -> str:
+        """
+        大图链接
+        """
+
+        return self._big_src
+
+    @property
+    def origin_src(self) -> str:
+        """
+        原图链接
+        """
+
+        return self._origin_src
+
+    @property
+    def origin_size(self) -> int:
+        """
+        原图大小
+        """
+
+        return self._origin_size
+
+    @property
     def hash(self) -> str:
+        """
+        图像的百度图床hash
+        """
 
         if self._hash is None:
             first_qmark_idx = self.src.find('?')
@@ -392,65 +741,113 @@ class FragImage(_Fragment):
 
     @property
     def show_width(self) -> int:
+        """
+        图像在客户端显示的宽度
+        """
+
         if self._show_width is None:
             self._init_wh()
         return self._show_width
 
     @property
     def show_height(self) -> int:
+        """
+        图像在客户端显示的高度
+        """
+
         if self._show_height is None:
             self._init_wh()
         return self._show_height
 
 
-class FragAt(FragText):
+class FragAt(_Fragment):
     """
     @碎片
 
-    Fields:
+    Attributes:
         text (str): 被@用户的昵称
         user_id (int): 被@用户的user_id
     """
 
-    __slots__ = ['text', 'user_id']
+    __slots__ = [
+        '_text',
+        '_user_id',
+    ]
 
     def __init__(self, _raw_data: PbContent_pb2.PbContent) -> None:
         super(FragAt, self).__init__(_raw_data)
 
-        self.text: str = self._raw_data.text + " "
-        self.user_id: int = self._raw_data.uid
+        self._text = self._raw_data.text + " "
+        self._user_id = self._raw_data.uid
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} [text:{self.text} / user_id:{self.user_id}]"
 
+    @property
+    def text(self) -> str:
+        """
+        被@用户的昵称
+        """
 
-class FragLink(FragText):
+        return self._text
+
+    @property
+    def user_id(self) -> int:
+        """
+        被@用户的user_id
+        """
+
+        return self._user_id
+
+
+class FragLink(_Fragment):
     """
     链接碎片
 
-    Fields:
+    Attributes:
         text (str): 链接标题
         url (yarl.URL): 使用yarl解析后的链接 外链会在去除前缀后解析
         raw_url (str): 原始链接
         is_external (bool): 是否外部链接
     """
 
-    __slots__ = ['text', '_url', 'raw_url', 'is_external']
+    __slots__ = [
+        '_text',
+        '_url',
+        '_raw_url',
+        '_is_external',
+    ]
 
-    external_perfix = "http://tieba.baidu.com/mo/q/checkurl"
+    external_perfix: ClassVar[str] = "http://tieba.baidu.com/mo/q/checkurl"
 
     def __init__(self, _raw_data: PbContent_pb2.PbContent) -> None:
         super(FragLink, self).__init__(_raw_data)
-        self.text: str = self._raw_data.text
-        self._url: yarl.URL = None
-        self.raw_url: str = self._raw_data.link
-        self.is_external = self.raw_url.startswith(self.external_perfix)
+
+        self._text = self._raw_data.text
+        self._url = None
+        self._raw_url = self._raw_data.link
+        self._is_external = self.raw_url.startswith(self.external_perfix)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} [text:{self.text} / raw_url:{self.raw_url}]"
 
     @property
+    def text(self) -> str:
+        """
+        链接标题
+        """
+
+        return self._text
+
+    @property
     def url(self) -> yarl.URL:
+        """
+        yarl解析后的链接
+
+        Note:
+            外链会在解析前先去除external_perfix前缀
+        """
+
         if self._url is None:
 
             if self.is_external:
@@ -462,72 +859,129 @@ class FragLink(FragText):
 
         return self._url
 
+    @property
+    def raw_url(self) -> str:
+        """
+        原始链接
+        """
+
+        return self._raw_url
+
+    @property
+    def is_external(self) -> bool:
+        """
+        是否外部链接
+        """
+
+        return self._is_external
+
 
 class FragVoice(_Fragment):
     """
     音频碎片
 
-    Fields:
-        voice_md5 (str): 声音md5
+    Attributes:
+        voice_md5 (str): 音频md5
     """
 
-    __slots__ = ['voice_md5']
+    __slots__ = ['_voice_md5']
 
     def __init__(self, _raw_data: Optional[PbContent_pb2.PbContent] = None) -> None:
         super(FragVoice, self).__init__(_raw_data)
-        self.voice_md5: str = self._raw_data.voice_md5 if _raw_data else ''
+
+        if _raw_data:
+            self._voice_md5 = self._raw_data.voice_md5
+
+        else:
+            self._voice_md5 = ''
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} [voice_md5:{self.voice_md5}]"
 
+    @property
+    def voice_md5(self) -> str:
+        """
+        音频md5
 
-class FragTiebaPlus(FragText):
+        Note:
+            可用于下载音频
+        """
+
+        return self._voice_md5
+
+
+class FragTiebaPlus(_Fragment):
     """
-    贴吧+碎片
+    贴吧+广告碎片
 
-    Fields:
-        text (str): 描述
-        url (str): 跳转链接
+    Attributes:
+        text (str): 贴吧+广告描述
+        url (str): 贴吧+广告跳转链接
     """
 
-    __slots__ = ['text', 'url']
+    __slots__ = [
+        '_text',
+        '_url',
+    ]
 
     def __init__(self, _raw_data: PbContent_pb2.PbContent) -> None:
         super(FragTiebaPlus, self).__init__(_raw_data)
 
-        self.text: str = self._raw_data.tiebaplus_info.desc
-        self.url: str = self._raw_data.tiebaplus_info.jump_url
+        self._text = self._raw_data.tiebaplus_info.desc
+        self._url = self._raw_data.tiebaplus_info.jump_url
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} [text:{self.text} / url:{self.url}]"
 
+    @property
+    def text(self) -> str:
+        """
+        贴吧+广告描述
+        """
 
-class FragItem(FragText):
+        return self._text
+
+    @property
+    def url(self) -> str:
+        """
+        贴吧+广告跳转链接
+        """
+
+        return self._url
+
+
+class FragItem(_Fragment):
     """
     item碎片
 
-    Fields:
+    Attributes:
         text (str): item名称
-        item_name (str): item名称
     """
 
-    __slots__ = ['text', 'item_name']
+    __slots__ = ['_text']
 
     def __init__(self, _raw_data: PbContent_pb2.PbContent) -> None:
         super(FragItem, self).__init__(_raw_data)
 
-        self.text: str = self._raw_data.item.item_name
-        self.item_name: str = self._raw_data.item.item_name
+        self._text = self._raw_data.item.item_name
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__} [item_name:{self.item_name}]"
+        return f"{self.__class__.__name__} [text:{self.text}]"
+
+    @property
+    def text(self) -> str:
+        """
+        item名称
+        """
+
+        return self._text
 
 
 class Fragments(object):
     """
-    内容碎片列表
+    正文内容碎片列表
 
-    Fields:
+    Attributes:
         _frags (list[_Fragment]): 所有碎片的混合列表
 
         text (str): 文本内容
@@ -541,7 +995,17 @@ class Fragments(object):
         tiebapluses (list[FragTiebaPlus]): 贴吧+碎片列表
     """
 
-    __slots__ = ['_frags', '_text', '_texts', '_emojis', '_imgs', '_ats', '_links', '_voice', '_tiebapluses']
+    __slots__ = [
+        '_frags',
+        '_text',
+        '_texts',
+        '_emojis',
+        '_imgs',
+        '_ats',
+        '_links',
+        '_voice',
+        '_tiebapluses',
+    ]
 
     def __init__(self, _raw_datas: Optional[Iterable[PbContent_pb2.PbContent]] = None) -> None:
         def _init_by_type(_raw_data) -> _Fragment:
@@ -594,47 +1058,78 @@ class Fragments(object):
 
     @property
     def text(self) -> str:
+        """
+        文本内容
+        """
+
         if self._text is None:
             self._text = ''.join([frag.text for frag in self.texts])
         return self._text
 
     @property
     def texts(self) -> List[FragText]:
-        if self._texts is None:
-            self._texts = [frag for frag in self._frags if isinstance(frag, FragText)]
+        """
+        纯文本碎片列表
+        """
 
+        if self._texts is None:
+            self._texts = [frag for frag in self._frags if hasattr(frag, 'text')]
         return self._texts
 
     @property
     def emojis(self) -> List[FragEmoji]:
+        """
+        表情碎片列表
+        """
+
         return self._emojis
 
     @property
     def imgs(self) -> List[FragImage]:
+        """
+        图像碎片列表
+        """
+
         return self._imgs
 
     @property
     def ats(self) -> List[FragAt]:
+        """
+        @碎片列表
+        """
+
         return self._ats
 
     @property
+    def links(self) -> List[FragLink]:
+        """
+        链接碎片列表
+        """
+
+        return self._links
+
+    @property
     def voice(self) -> FragVoice:
+        """
+        音频碎片
+        """
+
         if self._voice is None:
             self._voice = FragVoice()
         return self._voice
 
     @property
-    def links(self) -> List[FragLink]:
-        return self._links
-
-    @property
     def tiebapluses(self) -> List[FragTiebaPlus]:
+        """
+        贴吧+碎片列表
+        """
+
         return self._tiebapluses
 
     def __iter__(self) -> Iterator[_Fragment]:
         return iter(self._frags)
 
-    def __getitem__(self, idx: int) -> Union[_Fragment, List[_Fragment]]:
+    def __getitem__(self, idx) -> Union[_Fragment, List[_Fragment]]:
         return self._frags[idx]
 
     def __setitem__(self, idx, val) -> None:
@@ -652,38 +1147,54 @@ class Fragments(object):
 
 class Forum(_DataWrapper):
     """
-    吧信息
+    贴吧信息
 
-    Fields:
-        fid (int): 吧id
-        fname (str): 吧名
+    Attributes:
+        fid (int): 贴吧id
+        fname (str): 贴吧名
     """
 
-    __slots__ = ['_raw_data', 'fid', 'fname']
+    __slots__ = [
+        '_fid',
+        '_fname',
+    ]
 
-    def __init__(
-        self,
-        _raw_data: Union[SimpleForum_pb2.SimpleForum, FrsPageResIdl_pb2.FrsPageResIdl.DataRes.ForumInfo, None] = None,
-    ) -> None:
+    def __init__(self, _raw_data: Optional[SimpleForum_pb2.SimpleForum] = None) -> None:
         super(Forum, self).__init__(_raw_data)
 
         if _raw_data:
-            self.fid: int = _raw_data.id
-            self.fname: str = _raw_data.name
+            self._fid = _raw_data.id
+            self._fname = _raw_data.name
 
         else:
-            self.fid = 0
-            self.fname = ''
+            self._fid = 0
+            self._fname = ''
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} [fid:{self.fid} / fname:{self.fname}]"
+
+    @property
+    def fid(self) -> int:
+        """
+        贴吧id
+        """
+
+        return self._fid
+
+    @property
+    def fname(self) -> str:
+        """
+        贴吧名
+        """
+
+        return self._fname
 
 
 class Page(_DataWrapper):
     """
     页信息
 
-    Fields:
+    Attributes:
         page_size (int): 页大小
         current_page (int): 当前页码
         total_page (int): 总页码
@@ -693,84 +1204,182 @@ class Page(_DataWrapper):
         has_prev (bool): 是否有前驱页
     """
 
-    __slots__ = ['_raw_data', 'page_size', 'current_page', 'total_page', 'total_count', 'has_more', 'has_prev']
+    __slots__ = [
+        '_raw_data',
+        '_page_size',
+        '_current_page',
+        '_total_page',
+        '_total_count',
+        '_has_more',
+        '_has_prev',
+    ]
 
     def __init__(self, _raw_data: Optional[Page_pb2.Page] = None) -> None:
         super(Page, self).__init__(_raw_data)
 
         if _raw_data:
-            self.page_size: int = _raw_data.page_size
-            self.current_page: int = _raw_data.current_page
-            self.total_page: int = _raw_data.total_page
+            self._page_size = _raw_data.page_size
+            self._current_page = _raw_data.current_page
+            self._total_page = _raw_data.total_page
+            self._total_count = _raw_data.total_count
 
             if self.current_page and self.total_page:
-                self.has_more = self.current_page < self.total_page
-                self.has_prev = self.current_page > self.total_page
+                self._has_more = self.current_page < self.total_page
+                self._has_prev = self.current_page > self.total_page
             else:
-                self.has_more = bool(_raw_data.has_more)
-                self.has_prev = bool(_raw_data.has_prev)
-
-            self.total_count: int = _raw_data.total_count
+                self._has_more = bool(_raw_data.has_more)
+                self._has_prev = bool(_raw_data.has_prev)
 
         else:
-            self.page_size = 0
-            self.current_page = 0
-            self.total_page = 0
+            self._page_size = 0
+            self._current_page = 0
+            self._total_page = 0
+            self._total_count = 0
 
-            self.has_more = False
-            self.has_prev = False
-
-            self.total_count = 0
+            self._has_more = False
+            self._has_prev = False
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} [current_page:{self.current_page} / total_page:{self.total_page} / has_more:{self.has_more} / has_prev:{self.has_prev}]"
+
+    @property
+    def page_size(self) -> int:
+        """
+        页大小
+        """
+
+        return self._page_size
+
+    @property
+    def current_page(self) -> int:
+        """
+        当前页码
+        """
+
+        return self._current_page
+
+    @property
+    def total_page(self) -> int:
+        """
+        总页码
+        """
+
+        return self._total_page
+
+    @property
+    def total_count(self) -> int:
+        """
+        总计数
+        """
+
+        return self._total_count
+
+    @property
+    def has_more(self) -> bool:
+        """
+        是否有后继页
+        """
+
+        return self._has_more
+
+    @property
+    def has_prev(self) -> bool:
+        """
+        是否有前驱页
+        """
+
+        return self._has_prev
 
 
 class _BasicContainer(_DataWrapper):
     """
     基本的内容容器
 
-    Fields:
+    Attributes:
         text (str): 文本内容
 
         fid (int): 所在吧id
         fname (str): 所在贴吧名
         tid (int): 主题帖tid
-        pid (int): 回复pid
-        user (UserInfo): 发布者信息
-        author_id (int): 发布者user_id
+        pid (int): 回复id
+        user (UserInfo): 发布者的用户信息
+        author_id (int): 发布者的user_id
     """
 
-    __slots__ = ['_text', 'fname', 'fid', 'tid', 'pid', '_user', '_author_id']
+    __slots__ = ['_text', '_fname', '_fid', '_tid', '_pid', '_user', '_author_id']
 
     def __init__(self, _raw_data) -> None:
         super(_BasicContainer, self).__init__(_raw_data)
 
-        self._text: str = None
-        self.fid: int = 0
-        self.fname: str = ''
-        self.tid: int = 0
-        self.pid: int = 0
-        self._user: UserInfo = None
-        self._author_id: int = None
+        self._text = None
+        self._fid = 0
+        self._fname = ''
+        self._tid = 0
+        self._pid = 0
+        self._user = None
+        self._author_id = None
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} [tid:{self.tid} / pid:{self.pid} / user:{self.user.log_name} / text:{self.text}]"
 
     @property
     def text(self) -> str:
+        """
+        文本内容
+        """
+
         if self._text is None:
             raise NotImplementedError
         return self._text
 
     @property
+    def fid(self) -> int:
+        """
+        所在吧id
+        """
+
+        return self._fid
+
+    @property
+    def fname(self) -> str:
+        """
+        所在贴吧名
+        """
+
+        return self._fname
+
+    @property
+    def tid(self) -> int:
+        """
+        所在主题帖id
+        """
+
+        return self._tid
+
+    @property
+    def pid(self) -> int:
+        """
+        回复id
+        """
+
+        return self._pid
+
+    @property
     def user(self) -> UserInfo:
+        """
+        发布者的用户信息
+        """
+
         if self._user is None:
             self._user = UserInfo()
         return self._user
 
     @property
     def author_id(self) -> int:
+        """
+        发布者的user_id
+        """
+
         if not self._author_id:
             self._author_id = self.user.user_id
         return self._author_id
@@ -784,9 +1393,9 @@ class _Containers(_DataWrapper, Generic[_TContainer]):
     内容列表的泛型基类
     约定取内容的通用接口
 
-    Fields:
-        _objs (list[_TContainer]): 内容列表
-        page (Page): 页码信息
+    Attributes:
+        objs (list[_TContainer]): 内容列表
+        page (Page): 页信息
     """
 
     __slots__ = ['_objs', '_page']
@@ -794,12 +1403,8 @@ class _Containers(_DataWrapper, Generic[_TContainer]):
     def __init__(self, _raw_data) -> None:
         _DataWrapper.__init__(self, _raw_data)
 
-        self._objs: List[_TContainer] = None
-        self._page: Page = None
-
-    @property
-    def objs(self) -> List[_TContainer]:
-        raise NotImplementedError
+        self._objs = None
+        self._page = None
 
     def __iter__(self) -> Iterator[_TContainer]:
         return iter(self.objs)
@@ -820,7 +1425,18 @@ class _Containers(_DataWrapper, Generic[_TContainer]):
         return bool(self.objs)
 
     @property
+    def objs(self) -> List[_TContainer]:
+        """
+        内容列表
+        """
+
+        raise NotImplementedError
+
+    @property
     def page(self) -> Page:
+        """
+        页信息
+        """
 
         if self._page is None:
 
@@ -832,100 +1448,182 @@ class _Containers(_DataWrapper, Generic[_TContainer]):
         return self._page
 
 
+class VoteOption(object):
+    """
+    投票选项信息
+
+    Attributes:
+        vote_num (int): 得票数
+        text (str): 选项描述文字
+        image (str): 选项描述图像链接
+    """
+
+    __slots__ = ['_vote_num', '_text', '_image']
+
+    def __init__(self, _raw_data: PollInfo_pb2.PollInfo.PollOption) -> None:
+
+        self._vote_num = _raw_data.num
+        self._text = _raw_data.text
+        self._image = _raw_data.image
+
+    @property
+    def vote_num(self) -> int:
+        """
+        得票数
+        """
+
+        return self._vote_num
+
+    @property
+    def text(self) -> str:
+        """
+        选项文字
+        """
+
+        return self._text
+
+    @property
+    def image(self) -> str:
+        """
+        选项图片链接
+        """
+
+        return self._image
+
+
 class VoteInfo(_DataWrapper):
     """
     投票信息
 
-    Fields:
+    Attributes:
         title (str): 投票标题
-        options (list[VoteOption]): 选项列表
         is_multi (bool): 是否多选
+        options (list[VoteOption]): 选项列表
         total_vote (int): 总投票数
         total_user (int): 总投票人数
     """
 
-    __slots__ = ['title', '_options', 'is_multi', 'total_vote', 'total_user']
-
-    class VoteOption(object):
-        """
-        投票选项信息
-
-        Fields:
-            vote_num (int): 得票数
-            text (str): 选项描述文字
-            image (str): 选项描述图像链接
-        """
-
-        __slots__ = ['vote_num', 'text', 'image']
-
-        def __init__(self, _raw_data: PollInfo_pb2.PollInfo.PollOption) -> None:
-
-            self.vote_num: int = _raw_data.num
-            self.text: str = _raw_data.text
-            self.image: str = _raw_data.image
+    __slots__ = [
+        '_title',
+        '_is_multi',
+        '_options',
+        '_total_vote',
+        '_total_user',
+    ]
 
     def __init__(self, _raw_data: Optional[PollInfo_pb2.PollInfo] = None) -> None:
         super(VoteInfo, self).__init__(_raw_data)
 
+        self._options = None
+
         if _raw_data:
-            self.title: str = _raw_data.title
-            self._options: List[self.VoteOption] = None
-            self.is_multi = bool(_raw_data.is_multi)
-            self.total_vote: int = _raw_data.total_poll
-            self.total_user: int = _raw_data.total_num
+            self._title = _raw_data.title
+            self._is_multi = bool(_raw_data.is_multi)
+            self._total_vote = _raw_data.total_poll
+            self._total_user = _raw_data.total_num
 
         else:
-            self.title = ''
-            self._options = []
-            self.is_multi = False
-            self.total_vote = 0
-            self.total_user = 0
+            self._title = ''
+            self._is_multi = False
+            self._total_vote = 0
+            self._total_user = 0
 
     @property
-    def options(self):
+    def title(self) -> str:
+        """
+        投票标题
+        """
+
+        return self._title
+
+    @property
+    def is_multi(self) -> bool:
+        """
+        是否多选
+        """
+
+        return self._is_multi
+
+    @property
+    def options(self) -> List[VoteOption]:
+        """
+        选项列表
+        """
+
         if self._options is None:
-            self._options = [self.VoteOption(option_proto) for option_proto in self._raw_data.options]
+
+            if self._raw_data:
+                self._options = [VoteOption(option_proto) for option_proto in self._raw_data.options]
+            else:
+                self._options = []
+
         return self._options
+
+    @property
+    def total_vote(self) -> int:
+        """
+        总投票数
+        """
+
+        return self._total_vote
+
+    @property
+    def total_user(self) -> int:
+        """
+        总投票人数
+        """
+
+        return self._total_user
 
 
 class ShareThread(_BasicContainer):
     """
     被分享的主题帖信息
 
-    Fields:
+    Attributes:
         text (str): 文本内容
-        contents (Fragments): 内容碎片列表
+        contents (Fragments): 正文内容碎片列表
+        title (str): 标题内容
 
         fid (int): 所在吧id
         fname (str): 所在贴吧名
         tid (int): 主题帖tid
-        pid (int): 首楼的回复pid
+        pid (int): 首楼的回复id
 
-        title (str): 标题内容
         vote_info (VoteInfo): 投票内容
     """
 
-    __slots__ = ['_contents', 'title', '_vote_info']
+    __slots__ = [
+        '_contents',
+        '_title',
+        '_vote_info',
+    ]
 
     def __init__(self, _raw_data: Optional[ThreadInfo_pb2.ThreadInfo.OriginThreadInfo] = None) -> None:
         super(ShareThread, self).__init__(_raw_data)
 
-        self._contents: Fragments = None
-        self._vote_info: VoteInfo = None
+        self._contents = None
+        self._vote_info = None
 
         if _raw_data:
-            self.fid: int = _raw_data.fid
-            self.fname: str = _raw_data.fname
-            self.tid: int = int(_raw_data.tid)
-            self.pid: int = _raw_data.pid
+            self._title = _raw_data.title
 
-            self.title: str = _raw_data.title
+            self._fid = _raw_data.fid
+            self._fname = _raw_data.fname
+            self._tid = int(_raw_data.tid)
+            self._pid = _raw_data.pid
 
         else:
-            self.title = ''
+            self._title = ''
 
     @property
     def text(self) -> str:
+        """
+        文本内容
+
+        Note:
+            如果有标题的话还会在正文前附上标题
+        """
 
         if self._text is None:
 
@@ -938,6 +1636,9 @@ class ShareThread(_BasicContainer):
 
     @property
     def contents(self) -> Fragments:
+        """
+        正文内容碎片列表
+        """
 
         if self._contents is None:
 
@@ -953,7 +1654,18 @@ class ShareThread(_BasicContainer):
         return self._contents
 
     @property
+    def title(self) -> str:
+        """
+        帖子标题
+        """
+
+        return self._title
+
+    @property
     def vote_info(self) -> VoteInfo:
+        """
+        投票内容
+        """
 
         if self._vote_info is None:
 
@@ -975,16 +1687,17 @@ class Thread(_BasicContainer):
     主题帖信息
     用于c/f/frs/page接口
 
-    Fields:
+    Attributes:
         text (str): 文本内容
-        contents (Fragments): 内容碎片列表
+        contents (Fragments): 正文内容碎片列表
+        title (str): 标题
 
         fid (int): 所在吧id
         fname (str): 所在贴吧名
         tid (int): 主题帖tid
-        pid (int): 首楼的回复pid
-        user (UserInfo): 发布者信息
-        author_id (int): int 发布者user_id
+        pid (int): 首楼的回复id
+        user (UserInfo): 发布者的用户信息
+        author_id (int): int 发布者的user_id
 
         tab_id (int): 分区编号
         is_good (bool): 是否精品帖
@@ -993,88 +1706,95 @@ class Thread(_BasicContainer):
         is_hide (bool): 是否被屏蔽
         is_livepost (bool): 是否为置顶话题
 
-        title (str): 标题内容
-        vote_info (VoteInfo): 投票内容
-        share_origin (Thread | None): 转发来的原帖内容
+        vote_info (VoteInfo): 投票信息
+        share_origin (ShareThread): 转发来的原帖内容
         view_num (int): 浏览量
         reply_num (int): 回复数
         share_num (int): 分享数
         agree (int): 点赞数
         disagree (int): 点踩数
-        create_time (int): 10位时间戳 创建时间
-        last_time (int): 10位时间戳 最后回复时间
+        create_time (int): 创建时间
+        last_time (int): 最后回复时间
     """
 
     __slots__ = [
         '_contents',
-        'tab_id',
-        'is_good',
-        'is_top',
-        'is_share',
-        'is_hide',
-        'is_livepost',
-        'title',
+        '_title',
+        '_tab_id',
+        '_is_good',
+        '_is_top',
+        '_is_share',
+        '_is_hide',
+        '_is_livepost',
         '_vote_info',
         '_share_origin',
-        'view_num',
-        'reply_num',
-        'share_num',
-        'agree',
-        'disagree',
-        'create_time',
-        'last_time',
+        '_view_num',
+        '_reply_num',
+        '_share_num',
+        '_agree',
+        '_disagree',
+        '_create_time',
+        '_last_time',
     ]
 
     def __init__(self, _raw_data: Optional[ThreadInfo_pb2.ThreadInfo] = None) -> None:
         super(Thread, self).__init__(_raw_data)
 
-        self._contents: Fragments = None
-        self._vote_info: VoteInfo = None
-        self._share_origin: ShareThread = None
+        self._contents = None
+        self._vote_info = None
+        self._share_origin = None
 
         if _raw_data:
-            self.fid: int = _raw_data.fid
-            self.fname: str = _raw_data.fname
-            self.tid: int = _raw_data.id
-            self.pid: int = _raw_data.first_post_id
+            self._title = _raw_data.title
+
+            self._fid = _raw_data.fid
+            self._fname = _raw_data.fname
+            self._tid = _raw_data.id
+            self._pid = _raw_data.first_post_id
             self._user = UserInfo(_raw_data=_raw_data.author) if _raw_data.author.id else None
-            self._author_id: int = _raw_data.author_id
+            self._author_id = _raw_data.author_id
 
-            self.tab_id: int = _raw_data.tab_id
-            self.is_good = bool(_raw_data.is_good)
-            self.is_top = bool(_raw_data.is_top)
-            self.is_share = bool(_raw_data.is_share_thread)
-            self.is_hide = bool(_raw_data.is_frs_mask)
-            self.is_livepost = bool(_raw_data.is_livepost)
+            self._tab_id = _raw_data.tab_id
+            self._is_good = bool(_raw_data.is_good)
+            self._is_top = bool(_raw_data.is_top)
+            self._is_share = bool(_raw_data.is_share_thread)
+            self._is_hide = bool(_raw_data.is_frs_mask)
+            self._is_livepost = bool(_raw_data.is_livepost)
 
-            self.title: str = _raw_data.title
-            self.view_num: int = _raw_data.view_num
-            self.reply_num: int = _raw_data.reply_num
-            self.share_num: int = _raw_data.share_num
-            self.agree: int = _raw_data.agree.agree_num
-            self.disagree: int = _raw_data.agree.disagree_num
-            self.create_time: int = _raw_data.create_time
-            self.last_time: int = _raw_data.last_time_int
+            self._view_num = _raw_data.view_num
+            self._reply_num = _raw_data.reply_num
+            self._share_num = _raw_data.share_num
+            self._agree = _raw_data.agree.agree_num
+            self._disagree = _raw_data.agree.disagree_num
+            self._create_time = _raw_data.create_time
+            self._last_time = _raw_data.last_time_int
 
         else:
-            self.tab_id = 0
-            self.is_good = False
-            self.is_top = False
-            self.is_share = False
-            self.is_hide = False
-            self.is_livepost = False
+            self._title = ''
 
-            self.title = ''
-            self.view_num = 0
-            self.reply_num = 0
-            self.share_num = 0
-            self.agree = 0
-            self.disagree = 0
-            self.create_time = 0
-            self.last_time = 0
+            self._tab_id = 0
+            self._is_good = False
+            self._is_top = False
+            self._is_share = False
+            self._is_hide = False
+            self._is_livepost = False
+
+            self._view_num = 0
+            self._reply_num = 0
+            self._share_num = 0
+            self._agree = 0
+            self._disagree = 0
+            self._create_time = 0
+            self._last_time = 0
 
     @property
     def text(self) -> str:
+        """
+        文本内容
+
+        Note:
+            如果有标题的话还会在正文前附上标题
+        """
 
         if self._text is None:
 
@@ -1087,6 +1807,9 @@ class Thread(_BasicContainer):
 
     @property
     def contents(self) -> Fragments:
+        """
+        正文内容碎片列表
+        """
 
         if self._contents is None:
 
@@ -1098,7 +1821,66 @@ class Thread(_BasicContainer):
         return self._contents
 
     @property
+    def title(self) -> str:
+        """
+        帖子标题
+        """
+
+        return self._title
+
+    @property
+    def tab_id(self) -> int:
+        """
+        帖子所在分区id
+        """
+
+        return self._tab_id
+
+    @property
+    def is_good(self) -> bool:
+        """
+        是否精品帖
+        """
+
+        return self._is_good
+
+    @property
+    def is_top(self) -> bool:
+        """
+        是否置顶帖
+        """
+
+        return self._is_top
+
+    @property
+    def is_share(self) -> bool:
+        """
+        是否分享帖
+        """
+
+        return self._is_share
+
+    @property
+    def is_hide(self) -> bool:
+        """
+        是否被屏蔽
+        """
+
+        return self._is_hide
+
+    @property
+    def is_livepost(self) -> bool:
+        """
+        是否为置顶话题
+        """
+
+        return self._is_livepost
+
+    @property
     def vote_info(self) -> VoteInfo:
+        """
+        投票信息
+        """
 
         if self._vote_info is None:
 
@@ -1116,6 +1898,9 @@ class Thread(_BasicContainer):
 
     @property
     def share_origin(self) -> ShareThread:
+        """
+        转发来的原帖内容
+        """
 
         if self._share_origin is None:
 
@@ -1126,17 +1911,79 @@ class Thread(_BasicContainer):
 
         return self._share_origin
 
+    @property
+    def view_num(self) -> int:
+        """
+        浏览量
+        """
+
+        return self._view_num
+
+    @property
+    def reply_num(self) -> int:
+        """
+        回复数
+        """
+
+        return self._reply_num
+
+    @property
+    def share_num(self) -> int:
+        """
+        分享数
+        """
+
+        return self._share_num
+
+    @property
+    def agree(self) -> int:
+        """
+        点赞数
+        """
+
+        return self._agree
+
+    @property
+    def disagree(self) -> int:
+        """
+        点踩数
+        """
+
+        return self._disagree
+
+    @property
+    def create_time(self) -> int:
+        """
+        创建时间
+
+        Note:
+            10位时间戳
+        """
+
+        return self._create_time
+
+    @property
+    def last_time(self) -> int:
+        """
+        最后回复时间
+
+        Note:
+            10位时间戳
+        """
+
+        return self._last_time
+
 
 class Threads(_Containers[Thread]):
     """
-    Thread列表
+    主题帖列表
 
-    Fields:
-        _objs (list[Thread])
+    Attributes:
+        objs (list[Thread]): 主题帖列表
         page (Page): 页码信息
 
         forum (Forum): 所在吧信息
-        tab_map (dict[str, int]): {分区名:分区id}
+        tab_map (dict[str, int]): 分区名到分区id的映射表
     """
 
     __slots__ = ['_forum', '_tab_map']
@@ -1144,8 +1991,8 @@ class Threads(_Containers[Thread]):
     def __init__(self, _raw_data: Optional[FrsPageResIdl_pb2.FrsPageResIdl.DataRes] = None) -> None:
         super(Threads, self).__init__(_raw_data)
 
-        self._forum: Forum = None
-        self._tab_map: dict[str, int] = None
+        self._forum = None
+        self._tab_map = None
 
         if _raw_data:
             self._raw_data = _raw_data
@@ -1155,6 +2002,9 @@ class Threads(_Containers[Thread]):
 
     @property
     def objs(self) -> List[Thread]:
+        """
+        主题帖列表
+        """
 
         if self._objs is None:
 
@@ -1168,7 +2018,7 @@ class Threads(_Containers[Thread]):
                 self._objs = [Thread(thread_proto) for thread_proto in self._raw_data.thread_list]
 
                 for thread in self._objs:
-                    thread.fname = self.forum.fname
+                    thread._fname = self.forum.fname
                     thread._user = users[thread.author_id]
 
             else:
@@ -1178,6 +2028,9 @@ class Threads(_Containers[Thread]):
 
     @property
     def forum(self) -> Forum:
+        """
+        所在吧信息
+        """
 
         if self._forum is None:
 
@@ -1189,7 +2042,10 @@ class Threads(_Containers[Thread]):
         return self._forum
 
     @property
-    def tab_map(self) -> Forum:
+    def tab_map(self) -> Dict[str, int]:
+        """
+        分区名到分区id的映射表
+        """
 
         if self._tab_map is None:
 
@@ -1205,23 +2061,23 @@ class Post(_BasicContainer):
     """
     楼层信息
 
-    Fields:
+    Attributes:
         text (str): 文本内容
-        contents (Fragments): 内容碎片列表
+        contents (Fragments): 正文内容碎片列表
         sign (str): 小尾巴文本内容
-        comments (list[Comment]): 高赞楼中楼
+        comments (list[Comment]): 楼中楼列表
 
         fid (int): 所在吧id
-        tid (int): 所在主题帖tid
-        pid (int): 回复pid
-        user (UserInfo): 发布者信息
-        author_id (int): int 发布者user_id
+        tid (int): 所在主题帖id
+        pid (int): 回复id
+        user (UserInfo): 发布者的用户信息
+        author_id (int): int 发布者的user_id
 
         floor (int): 楼层数
         reply_num (int): 楼中楼数
         agree (int): 点赞数
         disagree (int): 点踩数
-        create_time (int): 10位时间戳，创建时间
+        create_time (int): 创建时间
         is_thread_author (bool): 是否楼主
     """
 
@@ -1229,32 +2085,32 @@ class Post(_BasicContainer):
         '_contents',
         '_sign',
         '_comments',
-        'floor',
-        'reply_num',
-        'agree',
-        'disagree',
-        'create_time',
-        'is_thread_author',
+        '_floor',
+        '_reply_num',
+        '_agree',
+        '_disagree',
+        '_create_time',
+        '_is_thread_author',
     ]
 
     def __init__(self, _raw_data: Optional[Post_pb2.Post] = None) -> None:
         super(Post, self).__init__(_raw_data)
 
-        self._contents: Fragments = None
-        self._sign: str = None
-        self._comments: List[Comment] = None
-        self.is_thread_author = False
+        self._contents = None
+        self._sign = None
+        self._comments = None
+        self._is_thread_author = False
 
         if _raw_data:
-            self.pid: int = _raw_data.id
+            self._pid = _raw_data.id
             self._user = UserInfo(_raw_data=_raw_data.author) if _raw_data.author.id else None
-            self._author_id: int = _raw_data.author_id
+            self._author_id = _raw_data.author_id
 
-            self.floor: int = _raw_data.floor
-            self.reply_num: int = _raw_data.sub_post_number
-            self.agree: int = _raw_data.agree.agree_num
-            self.disagree: int = _raw_data.agree.disagree_num
-            self.create_time: int = _raw_data.time
+            self._floor = _raw_data.floor
+            self._reply_num = _raw_data.sub_post_number
+            self._agree = _raw_data.agree.agree_num
+            self._disagree = _raw_data.agree.disagree_num
+            self._create_time = _raw_data.time
 
         else:
             self._floor = 0
@@ -1265,6 +2121,13 @@ class Post(_BasicContainer):
 
     @property
     def text(self) -> str:
+        """
+        文本内容
+
+        Note:
+            如果有小尾巴的话还会在正文后附上小尾巴
+        """
+
         if self._text is None:
 
             if self.sign:
@@ -1276,6 +2139,10 @@ class Post(_BasicContainer):
 
     @property
     def contents(self) -> Fragments:
+        """
+        正文内容碎片列表
+        """
+
         if self._contents is None:
 
             if self._raw_data:
@@ -1287,6 +2154,10 @@ class Post(_BasicContainer):
 
     @property
     def sign(self) -> Fragments:
+        """
+        小尾巴内容碎片列表
+        """
+
         if self._sign is None:
 
             if self._raw_data:
@@ -1298,6 +2169,10 @@ class Post(_BasicContainer):
 
     @property
     def comments(self) -> List["Comment"]:
+        """
+        楼中楼列表
+        """
+
         if self._comments is None:
 
             if self._raw_data:
@@ -1309,13 +2184,64 @@ class Post(_BasicContainer):
 
         return self._comments
 
+    @property
+    def floor(self) -> int:
+        """
+        楼层数
+        """
+
+        return self._floor
+
+    @property
+    def reply_num(self) -> int:
+        """
+        楼中楼数
+        """
+
+        return self._reply_num
+
+    @property
+    def agree(self) -> int:
+        """
+        点赞数
+        """
+
+        return self._agree
+
+    @property
+    def disagree(self) -> int:
+        """
+        点踩数
+        """
+
+        return self._disagree
+
+    @property
+    def create_time(self) -> int:
+        """
+        创建时间
+
+        Note:
+            10位时间戳
+        """
+
+        return self._create_time
+
+    @property
+    def is_thread_author(self) -> bool:
+        """
+        是否楼主
+        """
+
+        return self._is_thread_author
+
 
 class Posts(_Containers[Post]):
     """
-    Post列表
+    回复列表
 
-    Fields:
-        _objs (list[Post])
+    Attributes:
+        objs (list[Post]): 回复列表
         page (Page): 页码信息
 
         forum (Forum): 所在吧信息
@@ -1324,25 +2250,32 @@ class Posts(_Containers[Post]):
         has_fold (bool): 是否存在折叠楼层
     """
 
-    __slots__ = ['_forum', '_thread', 'has_fold']
+    __slots__ = [
+        '_forum',
+        '_thread',
+        '_has_fold',
+    ]
 
     def __init__(self, _raw_data: Optional[PbPageResIdl_pb2.PbPageResIdl.DataRes] = None) -> None:
         super(Posts, self).__init__(_raw_data)
 
         if _raw_data:
-            self._forum: Forum = None
-            self._thread: Thread = None
+            self._forum = None
+            self._thread = None
 
-            self.has_fold = bool(self._raw_data.has_fold_comment)
+            self._has_fold = bool(self._raw_data.has_fold_comment)
 
         else:
             self._forum = None
             self._thread = None
 
-            self.has_fold = False
+            self._has_fold = False
 
     @property
     def objs(self) -> List[Post]:
+        """
+        回复列表
+        """
 
         if self._objs is None:
 
@@ -1357,16 +2290,16 @@ class Posts(_Containers[Post]):
 
                 for post in self._objs:
 
-                    post.fid = self.forum.fid
-                    post.fname = self.forum.fname
-                    post.tid = self.thread.tid
+                    post._fid = self.forum.fid
+                    post._fname = self.forum.fname
+                    post._tid = self.thread.tid
                     post._user = users.get(post.author_id, None)
-                    post.is_thread_author = self.thread.author_id == post.author_id
+                    post._is_thread_author = self.thread.author_id == post.author_id
 
                     for comment in post.comments:
-                        comment.fid = post.fid
-                        comment.fname = post.fname
-                        comment.tid = post.tid
+                        comment._fid = post.fid
+                        comment._fname = post.fname
+                        comment._tid = post.tid
                         comment._user = users.get(comment.author_id, None)
 
             else:
@@ -1376,6 +2309,10 @@ class Posts(_Containers[Post]):
 
     @property
     def forum(self) -> Forum:
+        """
+        所在吧信息
+        """
+
         if self._forum is None:
 
             if self._raw_data:
@@ -1387,66 +2324,91 @@ class Posts(_Containers[Post]):
 
     @property
     def thread(self) -> Thread:
+        """
+        所在主题帖信息
+        """
+
         if self._thread is None:
 
             if self._raw_data:
                 self._thread = Thread(self._raw_data.thread)
-                self._thread.fid = self.forum.fid
+                self._thread._fid = self.forum.fid
 
             else:
                 self._thread = Thread()
 
         return self._thread
 
+    @property
+    def has_fold(self) -> bool:
+        """
+        是否存在折叠楼层
+        """
+
+        return self._has_fold
+
 
 class Comment(_BasicContainer):
     """
     楼中楼信息
 
-    Fields:
+    Attributes:
         text (str): 文本内容
-        contents (Fragments): 内容碎片列表
+        contents (Fragments): 正文内容碎片列表
 
         fid (int): 所在吧id
-        tid (int): 所在主题帖tid
-        pid (int): 回复pid
-        user (UserInfo): 发布者信息
-        author_id (int): int 发布者user_id
+        tid (int): 所在主题帖id
+        pid (int): 回复id
+        user (UserInfo): 发布者的用户信息
+        author_id (int): int 发布者的user_id
 
         agree (int): 点赞数
         disagree (int): 点踩数
-        create_time (int): 10位时间戳，创建时间
+        create_time (int): 创建时间
     """
 
-    __slots__ = ['_contents', 'agree', 'disagree', 'create_time']
+    __slots__ = [
+        '_contents',
+        '_agree',
+        '_disagree',
+        '_create_time',
+    ]
 
     def __init__(self, _raw_data: Optional[SubPostList_pb2.SubPostList] = None) -> None:
         super(Comment, self).__init__(_raw_data)
 
-        self._contents: Fragments = None
+        self._contents = None
 
         if _raw_data:
-            self.pid: int = _raw_data.id
+            self._pid = _raw_data.id
             self._user = UserInfo(_raw_data=_raw_data.author)
             self._author_id = _raw_data.author_id
 
-            self.agree: int = _raw_data.agree.agree_num
-            self.disagree: int = _raw_data.agree.disagree_num
-            self.create_time: int = _raw_data.time
+            self._agree = _raw_data.agree.agree_num
+            self._disagree = _raw_data.agree.disagree_num
+            self._create_time = _raw_data.time
 
         else:
-            self.agree = 0
-            self.disagree = 0
-            self.create_time = 0
+            self._agree = 0
+            self._disagree = 0
+            self._create_time = 0
 
     @property
     def text(self) -> str:
+        """
+        文本内容
+        """
+
         if not self._text:
             self._text = self.contents.text
         return self._text
 
     @property
     def contents(self) -> Fragments:
+        """
+        正文内容碎片列表
+        """
+
         if self._contents is None:
 
             if self._raw_data:
@@ -1457,13 +2419,40 @@ class Comment(_BasicContainer):
 
         return self._contents
 
+    @property
+    def agree(self) -> int:
+        """
+        点赞数
+        """
+
+        return self._agree
+
+    @property
+    def disagree(self) -> int:
+        """
+        点踩数
+        """
+
+        return self._disagree
+
+    @property
+    def create_time(self) -> int:
+        """
+        创建时间
+
+        Note:
+            10位时间戳
+        """
+
+        return self._create_time
+
 
 class Comments(_Containers[Comment]):
     """
-    Comment列表
+    楼中楼列表
 
-    Fields:
-        _objs (list[Comment])
+    Attributes:
+        objs (list[Comment]): 楼中楼列表
         page (Page): 页码信息
 
         forum (Forum): 所在吧信息
@@ -1476,12 +2465,15 @@ class Comments(_Containers[Comment]):
     def __init__(self, _raw_data: Optional[PbFloorResIdl_pb2.PbFloorResIdl.DataRes] = None) -> None:
         super(Comments, self).__init__(_raw_data)
 
-        self._forum: Forum = None
-        self._thread: Thread = None
-        self._post: Post = None
+        self._forum = None
+        self._thread = None
+        self._post = None
 
     @property
     def objs(self) -> List[Comment]:
+        """
+        楼中楼列表
+        """
 
         if self._objs is None:
 
@@ -1489,9 +2481,9 @@ class Comments(_Containers[Comment]):
                 self._objs = [Comment(comment_proto) for comment_proto in self._raw_data.subpost_list]
 
                 for comment in self._objs:
-                    comment.fid = self.forum.fid
-                    comment.fname = self.forum.fname
-                    comment.tid = self.thread.tid
+                    comment._fid = self.forum.fid
+                    comment._fname = self.forum.fname
+                    comment._tid = self.thread.tid
 
             else:
                 self._objs = []
@@ -1500,6 +2492,10 @@ class Comments(_Containers[Comment]):
 
     @property
     def forum(self) -> Forum:
+        """
+        所在吧信息
+        """
+
         if self._forum is None:
 
             if self._raw_data:
@@ -1511,11 +2507,15 @@ class Comments(_Containers[Comment]):
 
     @property
     def thread(self) -> Thread:
+        """
+        所在主题帖信息
+        """
+
         if self._thread is None:
 
             if self._raw_data:
                 self._thread = Thread(self._raw_data.thread)
-                self._thread.fid = self.forum.fid
+                self._thread._fid = self.forum.fid
 
             else:
                 self._thread = Thread()
@@ -1524,12 +2524,16 @@ class Comments(_Containers[Comment]):
 
     @property
     def post(self) -> Post:
+        """
+        所在回复信息
+        """
+
         if self._post is None:
 
             if self._raw_data:
                 self._post = Post(self._raw_data.post)
-                self._post.fid = self.forum.fid
-                self._post.tid = self.thread.tid
+                self._post._fid = self.forum.fid
+                self._post._tid = self.thread.tid
 
             else:
                 self._post = Post()
@@ -1540,55 +2544,69 @@ class Comments(_Containers[Comment]):
 class Reply(_BasicContainer):
     """
     回复信息
-    Fields:
+    Attributes:
         text (str): 文本内容
 
         fname (str): 所在贴吧名
-        tid (int): 所在主题帖tid
-        pid (int): 回复pid
-        user (UserInfo): 发布者信息
-        author_id (int): int 发布者user_id
+        tid (int): 所在主题帖id
+        pid (int): 回复id
+        user (UserInfo): 发布者的用户信息
+        author_id (int): int 发布者的user_id
         post_pid (int): 楼层pid
         post_user (BasicUserInfo): 楼层用户信息
         thread_user (BasicUserInfo): 楼主用户信息
 
         is_floor (bool): 是否楼中楼
-        create_time (int): 10位时间戳，创建时间
+        create_time (int): 创建时间
     """
 
-    __slots__ = ['post_pid', '_post_user', '_thread_user', 'is_floor', 'create_time']
+    __slots__ = [
+        '_post_pid',
+        '_post_user',
+        '_thread_user',
+        '_is_floor',
+        '_create_time',
+    ]
 
     def __init__(self, _raw_data: Optional[ReplyMeResIdl_pb2.ReplyMeResIdl.DataRes.ReplyList] = None) -> None:
         super(Reply, self).__init__(_raw_data)
 
-        self._post_user: UserInfo = None
-        self._thread_user: UserInfo = None
+        self._post_user = None
+        self._thread_user = None
 
         if _raw_data:
-            self._text: str = _raw_data.content
+            self._text = _raw_data.content
 
-            self.fname: str = _raw_data.fname
-            self.tid: int = _raw_data.thread_id
-            self.pid: int = _raw_data.post_id
-            self.post_pid: int = _raw_data.quote_pid
+            self._fname = _raw_data.fname
+            self._tid = _raw_data.thread_id
+            self._pid = _raw_data.post_id
+            self._post_pid = _raw_data.quote_pid
 
-            self.is_floor = bool(_raw_data.is_floor)
-            self.create_time = _raw_data.time
+            self._is_floor = bool(_raw_data.is_floor)
+            self._create_time = _raw_data.time
 
         else:
-            self._text: str = ''
+            self._text = ''
 
-            self.post_pid: int = 0
+            self._post_pid = 0
 
-            self.is_floor: bool = False
-            self.create_time: int = 0
+            self._is_floor = False
+            self._create_time = 0
 
     @property
     def text(self) -> str:
+        """
+        文本内容
+        """
+
         return self._text
 
     @property
     def user(self) -> UserInfo:
+        """
+        发布者的用户信息
+        """
+
         if self._user is None:
 
             if self._raw_data:
@@ -1601,7 +2619,19 @@ class Reply(_BasicContainer):
         return self._user
 
     @property
+    def post_pid(self) -> int:
+        """
+        楼层pid
+        """
+
+        return self._post_pid
+
+    @property
     def post_user(self) -> BasicUserInfo:
+        """
+        楼层用户信息
+        """
+
         if self._post_user is None:
 
             if self._raw_data:
@@ -1617,6 +2647,10 @@ class Reply(_BasicContainer):
 
     @property
     def thread_user(self) -> BasicUserInfo:
+        """
+        楼主用户信息
+        """
+
         if self._thread_user is None:
 
             if self._raw_data:
@@ -1630,13 +2664,32 @@ class Reply(_BasicContainer):
 
         return self._thread_user
 
+    @property
+    def is_floor(self) -> bool:
+        """
+        是否楼中楼
+        """
+
+        return self._is_floor
+
+    @property
+    def create_time(self) -> int:
+        """
+        创建时间
+
+        Note:
+            10位时间戳
+        """
+
+        return self._create_time
+
 
 class Replys(_Containers[Reply]):
     """
-    Reply列表
+    收到回复列表
 
-    Fields:
-        _objs (list[Reply])
+    Attributes:
+        objs (list[Reply]): 收到回复列表
         page (Page): 页码信息
     """
 
@@ -1647,6 +2700,9 @@ class Replys(_Containers[Reply]):
 
     @property
     def objs(self) -> List[Reply]:
+        """
+        收到回复列表
+        """
 
         if self._objs is None:
 
@@ -1662,46 +2718,50 @@ class At(_BasicContainer):
     """
     @信息
 
-    Fields:
+    Attributes:
         text (str): 文本内容
 
         fname (str): 所在贴吧名
-        tid (int): 所在主题帖tid
-        pid (int): 回复pid
-        user (UserInfo): 发布者信息
-        author_id (int): 发布者user_id
+        tid (int): 所在主题帖id
+        pid (int): 回复id
+        user (UserInfo): 发布者的用户信息
+        author_id (int): 发布者的user_id
 
         is_floor (bool): 是否楼中楼
         is_thread (bool): 是否主题帖
 
-        create_time (int): 10位时间戳，创建时间
+        create_time (int): 创建时间
     """
 
-    __slots__ = ['is_floor', 'is_thread', 'create_time']
+    __slots__ = ['_is_floor', '_is_thread', '_create_time']
 
     def __init__(self, _raw_data: Optional[Dict] = None) -> None:
         super(At, self).__init__(_raw_data)
 
         if _raw_data:
-            self._text: str = _raw_data['content']
+            self._text = _raw_data['content']
 
-            self.fname: str = _raw_data['fname']
-            self.tid = int(_raw_data['thread_id'])
-            self.pid = int(_raw_data['post_id'])
+            self._fname = _raw_data['fname']
+            self._tid = int(_raw_data['thread_id'])
+            self._pid = int(_raw_data['post_id'])
 
-            self.is_floor = bool(int(_raw_data['is_floor']))
-            self.is_thread = bool(int(_raw_data['is_first_post']))
-            self.create_time = int(_raw_data['time'])
+            self._is_floor = bool(int(_raw_data['is_floor']))
+            self._is_thread = bool(int(_raw_data['is_first_post']))
+            self._create_time = int(_raw_data['time'])
 
         else:
             self._text = ''
 
-            self.is_floor = False
-            self.is_thread = False
-            self.create_time = 0
+            self._is_floor = False
+            self._is_thread = False
+            self._create_time = 0
 
     @property
     def user(self) -> UserInfo:
+        """
+        发布者的用户信息
+        """
+
         if self._user is None:
 
             if self._raw_data:
@@ -1712,13 +2772,40 @@ class At(_BasicContainer):
 
         return self._user
 
+    @property
+    def is_floor(self) -> bool:
+        """
+        是否楼中楼
+        """
+
+        return self._is_floor
+
+    @property
+    def is_thread(self) -> bool:
+        """
+        是否主题帖
+        """
+
+        return self._is_thread
+
+    @property
+    def create_time(self) -> int:
+        """
+        创建时间
+
+        Note:
+            10位时间戳
+        """
+
+        return self._create_time
+
 
 class Ats(_Containers[At]):
     """
-    At列表
+    @信息列表
 
-    Fields:
-        _objs (list[At])
+    Attributes:
+        objs (list[At]): @信息列表
         page (Page): 页码信息
     """
 
@@ -1729,6 +2816,9 @@ class Ats(_Containers[At]):
 
     @property
     def objs(self) -> List[At]:
+        """
+        @信息列表
+        """
 
         if self._objs is None:
 
@@ -1741,6 +2831,10 @@ class Ats(_Containers[At]):
 
     @property
     def page(self) -> Page:
+        """
+        页信息
+        """
+
         if self._page is None:
 
             if self._raw_data:
@@ -1757,44 +2851,61 @@ class Search(_BasicContainer):
     """
     搜索结果
 
-    Fields:
+    Attributes:
         text (str): 文本内容
         title (str): 标题
 
         fname (str): 所在贴吧名
-        tid (int): 所在主题帖tid
-        pid (int): 回复pid
+        tid (int): 所在主题帖id
+        pid (int): 回复id
+        user (UserInfo): 发布者的用户信息
 
         is_floor (bool): 是否楼中楼
 
-        create_time (int): 10位时间戳，创建时间
+        create_time (int): 创建时间
     """
 
-    __slots__ = ['title', 'is_floor', 'create_time']
+    __slots__ = [
+        '_title',
+        '_is_floor',
+        '_create_time',
+    ]
 
     def __init__(self, _raw_data: Optional[Dict] = None) -> None:
         super(Search, self).__init__(_raw_data)
 
         if _raw_data:
             self._text = _raw_data['content']
-            self.title = _raw_data['title']
+            self._title = _raw_data['title']
 
-            self.fname = _raw_data['fname']
-            self.tid = int(_raw_data['tid'])
-            self.pid = int(_raw_data['pid'])
+            self._fname = _raw_data['fname']
+            self._tid = int(_raw_data['tid'])
+            self._pid = int(_raw_data['pid'])
 
-            self.is_floor = bool(int(_raw_data['is_floor']))
-            self.create_time = int(_raw_data['time'])
+            self._is_floor = bool(int(_raw_data['is_floor']))
+            self._create_time = int(_raw_data['time'])
 
         else:
             self._text = ''
-            self.title = ''
+            self._title = ''
 
             self._is_floor = False
             self._create_time = 0
 
     @property
+    def title(self) -> str:
+        """
+        帖子标题
+        """
+
+        return self._title
+
+    @property
     def user(self) -> UserInfo:
+        """
+        发布者的用户信息
+        """
+
         if self._user is None:
 
             if self._raw_data:
@@ -1806,13 +2917,32 @@ class Search(_BasicContainer):
 
         return self._user
 
+    @property
+    def is_floor(self) -> bool:
+        """
+        是否楼中楼
+        """
+
+        return self._is_floor
+
+    @property
+    def create_time(self) -> int:
+        """
+        创建时间
+
+        Note:
+            10位时间戳
+        """
+
+        return self._create_time
+
 
 class Searches(_Containers[Search]):
     """
     搜索结果列表
 
-    Fields:
-        _objs (list[Search])
+    Attributes:
+        objs (list[Search]): 搜索结果列表
         page (Page): 页码信息
     """
 
@@ -1823,6 +2953,9 @@ class Searches(_Containers[Search]):
 
     @property
     def objs(self) -> List[Search]:
+        """
+        搜索结果列表
+        """
 
         if self._objs is None:
 
@@ -1835,6 +2968,10 @@ class Searches(_Containers[Search]):
 
     @property
     def page(self) -> Page:
+        """
+        页信息
+        """
+
         if self._page is None:
 
             if self._raw_data:
@@ -1852,18 +2989,18 @@ class NewThread(_BasicContainer):
     新版主题帖信息
     删除无用字段并适配新版字段名
 
-    Fields:
+    Attributes:
         text (str): 文本内容
-        contents (Fragments): 内容碎片列表
+        contents (Fragments): 正文内容碎片列表
+        title (str): 标题内容
 
         fid (int): 所在吧id
         fname (str): 所在吧名
         tid (int): 主题帖tid
-        pid (int): 首楼的回复pid
-        user (UserInfo): 发布者信息
-        author_id (int): int 发布者user_id
+        pid (int): 首楼的回复id
+        user (UserInfo): 发布者的用户信息
+        author_id (int): int 发布者的user_id
 
-        title (str): 标题内容
         vote_info (VoteInfo): 投票内容
         view_num (int): 浏览量
         reply_num (int): 回复数
@@ -1875,14 +3012,14 @@ class NewThread(_BasicContainer):
 
     __slots__ = [
         '_contents',
-        'title',
+        '_title',
         '_vote_info',
-        'view_num',
-        'reply_num',
-        'share_num',
-        'agree',
-        'disagree',
-        'create_time',
+        '_view_num',
+        '_reply_num',
+        '_share_num',
+        '_agree',
+        '_disagree',
+        '_create_time',
     ]
 
     def __init__(self, _raw_data: Optional[NewThreadInfo_pb2.NewThreadInfo] = None) -> None:
@@ -1892,31 +3029,39 @@ class NewThread(_BasicContainer):
         self._vote_info: VoteInfo = None
 
         if _raw_data:
-            self.fid: int = _raw_data.forum_id
-            self.fname: str = _raw_data.forum_name
-            self.tid: int = _raw_data.thread_id
-            self.pid: int = _raw_data.post_id
-            self._author_id: int = _raw_data.user_id
+            self._title = _raw_data.title
 
-            self.title: str = _raw_data.title
-            self.view_num: int = _raw_data.freq_num
-            self.reply_num: int = _raw_data.reply_num
-            self.share_num: int = _raw_data.share_num
-            self.agree: int = _raw_data.agree.agree_num
-            self.disagree: int = _raw_data.agree.disagree_num
-            self.create_time: int = _raw_data.create_time
+            self._fid = _raw_data.forum_id
+            self._fname = _raw_data.forum_name
+            self._tid = _raw_data.thread_id
+            self._pid = _raw_data.post_id
+            self._author_id = _raw_data.user_id
+
+            self._view_num = _raw_data.freq_num
+            self._reply_num = _raw_data.reply_num
+            self._share_num = _raw_data.share_num
+            self._agree = _raw_data.agree.agree_num
+            self._disagree = _raw_data.agree.disagree_num
+            self._create_time = _raw_data.create_time
 
         else:
-            self.title = ''
-            self.view_num = 0
-            self.reply_num = 0
-            self.share_num = 0
-            self.agree = 0
-            self.disagree = 0
-            self.create_time = 0
+            self._title = ''
+
+            self._view_num = 0
+            self._reply_num = 0
+            self._share_num = 0
+            self._agree = 0
+            self._disagree = 0
+            self._create_time = 0
 
     @property
     def text(self) -> str:
+        """
+        文本内容
+
+        Note:
+            如果有标题的话还会在正文前附上标题
+        """
 
         if self._text is None:
 
@@ -1929,6 +3074,9 @@ class NewThread(_BasicContainer):
 
     @property
     def contents(self) -> Fragments:
+        """
+        正文内容碎片列表
+        """
 
         if self._contents is None:
 
@@ -1941,6 +3089,9 @@ class NewThread(_BasicContainer):
 
     @property
     def vote_info(self) -> VoteInfo:
+        """
+        投票信息
+        """
 
         if self._vote_info is None:
 
@@ -1956,25 +3107,79 @@ class NewThread(_BasicContainer):
 
         return self._vote_info
 
+    @property
+    def view_num(self) -> int:
+        """
+        浏览量
+        """
+
+        return self._view_num
+
+    @property
+    def reply_num(self) -> int:
+        """
+        回复数
+        """
+
+        return self._reply_num
+
+    @property
+    def share_num(self) -> int:
+        """
+        分享数
+        """
+
+        return self._share_num
+
+    @property
+    def agree(self) -> int:
+        """
+        点赞数
+        """
+
+        return self._agree
+
+    @property
+    def disagree(self) -> int:
+        """
+        点踩数
+        """
+
+        return self._disagree
+
+    @property
+    def create_time(self) -> int:
+        """
+        创建时间
+
+        Note:
+            10位时间戳
+        """
+
+        return self._create_time
+
 
 class UserPost(_BasicContainer):
     """
     用户历史回复信息
 
-    Fields:
+    Attributes:
         text (str): 文本内容
-        contents (Fragments): 内容碎片列表
+        contents (Fragments): 正文内容碎片列表
 
         fid (int): 所在吧id
-        tid (int): 所在主题帖tid
-        pid (int): 回复pid
-        user (UserInfo): 发布者信息
-        author_id (int): int 发布者user_id
+        tid (int): 所在主题帖id
+        pid (int): 回复id
+        user (UserInfo): 发布者的用户信息
+        author_id (int): int 发布者的user_id
 
-        create_time (int): 10位时间戳，创建时间
+        create_time (int): 创建时间
     """
 
-    __slots__ = ['_contents', 'create_time']
+    __slots__ = [
+        '_contents',
+        '_create_time',
+    ]
 
     def __init__(
         self, _raw_data: Optional[UserPostResIdl_pb2.UserPostResIdl.DataRes.PostInfoList.PostInfoContent] = None
@@ -1984,21 +3189,29 @@ class UserPost(_BasicContainer):
         self._contents: Fragments = None
 
         if _raw_data:
-            self.pid: int = _raw_data.post_id
+            self._pid = _raw_data.post_id
 
-            self.create_time: int = _raw_data.create_time
+            self._create_time = _raw_data.create_time
 
         else:
             self._create_time = 0
 
     @property
     def text(self) -> str:
+        """
+        文本内容
+        """
+
         if self._text is None:
             self._text = self.contents.text
         return self._text
 
     @property
     def contents(self) -> Fragments:
+        """
+        正文内容碎片列表
+        """
+
         if self._contents is None:
 
             if self._raw_data:
@@ -2008,25 +3221,44 @@ class UserPost(_BasicContainer):
 
         return self._contents
 
+    @property
+    def create_time(self) -> int:
+        """
+        创建时间
+
+        Note:
+            10位时间戳
+        """
+
+        return self._create_time
+
 
 class UserPosts(_Containers[UserPost]):
     """
-    UserPost列表
+    用户历史回复信息列表
 
-    Fields:
-        _objs (list[UserPost])
+    Attributes:
+        objs (list[UserPost]): 用户历史回复信息列表
+        fid (int): 所在吧id
+        tid (int): 所在主题帖id
     """
 
-    __slots__ = ['fid', 'tid']
+    __slots__ = [
+        '_fid',
+        '_tid',
+    ]
 
     def __init__(self, _raw_data: Optional[UserPostResIdl_pb2.UserPostResIdl.DataRes.PostInfoList] = None) -> None:
         super(UserPosts, self).__init__(_raw_data)
 
-        self.fid: int = self._raw_data.forum_id
-        self.tid: int = self._raw_data.thread_id
+        self._fid = self._raw_data.forum_id
+        self._tid = self._raw_data.thread_id
 
     @property
     def objs(self) -> List[UserPost]:
+        """
+        用户历史回复信息列表
+        """
 
         if self._objs is None:
 
@@ -2035,10 +3267,26 @@ class UserPosts(_Containers[UserPost]):
 
                 for post in self._objs:
 
-                    post.fid = self.fid
-                    post.tid = self.tid
+                    post._fid = self.fid
+                    post._tid = self.tid
 
             else:
                 self._objs = []
 
         return self._objs
+
+    @property
+    def fid(self) -> int:
+        """
+        所在吧id
+        """
+
+        return self._fid
+
+    @property
+    def tid(self) -> int:
+        """
+        所在主题帖id
+        """
+
+        return self._tid

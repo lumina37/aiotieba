@@ -483,7 +483,7 @@ class Listener(object):
 
         user = await self._arg2user_info(ctx.args[0])
 
-        if await ctx.handler.admin.block(ctx.fname, user, day=block_days, reason=ctx.note):
+        if await ctx.handler.admin.block(ctx.fname, user.portrait, day=block_days, reason=ctx.note):
             await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=2, need_arg_num=1)
@@ -625,7 +625,7 @@ class Listener(object):
                 coros.append(ctx.handler.admin.del_thread(ctx.fname, ctx.parent.tid))
 
         if block_days:
-            coros.append(ctx.handler.admin.block(ctx.fname, ctx.parent.user, day=block_days, reason=ctx.note))
+            coros.append(ctx.handler.admin.block(ctx.fname, ctx.parent.user.portrait, day=block_days, reason=ctx.note))
         if blacklist:
             old_permission, old_note, _ = await ctx.handler.admin.get_user_id_full(ctx.parent.user.user_id)
             if old_permission < ctx.this_permission:
@@ -852,7 +852,7 @@ class Listener(object):
 
         user = await self._arg2user_info(ctx.args[0])
 
-        if await ctx.handler.admin.blacklist_add(ctx.fname, user):
+        if await ctx.handler.admin.blacklist_add(ctx.fname, user.user_id):
             await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=3, need_arg_num=1)
@@ -866,7 +866,7 @@ class Listener(object):
 
         user = await self._arg2user_info(ctx.args[0])
 
-        if await ctx.handler.admin.blacklist_del(ctx.fname, user):
+        if await ctx.handler.admin.blacklist_del(ctx.fname, user.user_id):
             await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=2, need_arg_num=0)

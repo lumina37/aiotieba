@@ -78,7 +78,7 @@ class CloudReview(tb.Reviewer):
         punish = await self._check_thread(thread)
         if punish.block_days:
             # 封禁
-            await self.block(self.fname, thread.user, day=punish.block_days, reason=punish.note)
+            await self.block(self.fname, thread.user.portrait, day=punish.block_days, reason=punish.note)
         if punish.del_flag == 0:
             pass
         elif punish.del_flag == 1:
@@ -155,7 +155,7 @@ class CloudReview(tb.Reviewer):
 
         punish = await self._check_post(post)
         if punish.block_days:
-            await self.block(self.fname, post.user, day=punish.block_days, reason=punish.note)
+            await self.block(self.fname, post.user.portrait, day=punish.block_days, reason=punish.note)
         if punish.del_flag <= 0:
             pass
         elif punish.del_flag == 1:
@@ -208,7 +208,7 @@ class CloudReview(tb.Reviewer):
 
         punish = await self._check_comment(comment)
         if punish.block_days:
-            await self.block(self.fname, comment.user, day=punish.block_days, reason=punish.note)
+            await self.block(self.fname, comment.user.portrait, day=punish.block_days, reason=punish.note)
         if punish.del_flag <= 0:
             pass
         elif punish.del_flag == 1:

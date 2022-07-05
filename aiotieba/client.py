@@ -77,7 +77,7 @@ class WebsocketResponse(object):
     """
     websocket响应
 
-    Fields:
+    Attributes:
         _timestamp (int): 请求时间戳
         _req_id (int): 唯一的请求id
         _readable_event (asyncio.Event): 当该事件被set时意味着data已经可读
@@ -773,7 +773,7 @@ class Client(object):
 
     async def _id2user_info(self, user: UserInfo) -> UserInfo:
         """
-        通过用户名或昵称或portrait补全完整版用户信息
+        通过用户名或旧版昵称或portrait补全完整版用户信息
 
         Args:
             user (UserInfo): 待补全的用户信息
@@ -787,7 +787,7 @@ class Client(object):
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/home/get/panel"),
                 params={
                     'id': user.portrait,
-                    'un': user.user_name or user.nick_name,
+                    'un': user.user_name or user.old_nick_name,
                 },
             )
 
@@ -808,7 +808,8 @@ class Client(object):
             user.user_id = user_dict['id']
             user.user_name = user_dict['name']
             user.portrait = user_dict['portrait']
-            user.nick_name = user_dict['show_nickname']
+            user.old_nick_name = user_dict['name_show']
+            user.new_nick_name = user_dict['show_nickname']
 
             user.gender = gender
             user.age = float(user_dict['tb_age'])
@@ -826,7 +827,7 @@ class Client(object):
 
     async def _id2basic_user_info(self, user: BasicUserInfo) -> BasicUserInfo:
         """
-        通过用户名或昵称或portrait补全简略版用户信息
+        通过用户名或portrait补全简略版用户信息
 
         Args:
             user (BasicUserInfo): 待补全的用户信息
@@ -840,7 +841,7 @@ class Client(object):
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/home/get/panel"),
                 params={
                     'id': user.portrait,
-                    'un': user.user_name or user.nick_name,
+                    'un': user.user_name,
                 },
             )
 
@@ -849,10 +850,9 @@ class Client(object):
                 raise ValueError(res_json['error'])
 
             user_dict = res_json['data']
-            user.user_name = user_dict['name']
-            user.nick_name = user_dict['show_nickname']
-            user.portrait = user_dict['portrait']
             user.user_id = user_dict['id']
+            user.user_name = user_dict['name']
+            user.portrait = user_dict['portrait']
 
         except Exception as err:
             LOG.warning(f"Failed to get BasicUserInfo of {user.log_name}. reason:{err}")
@@ -955,7 +955,7 @@ class Client(object):
                 raise ValueError(res_json['errmsg'])
 
             user_dict = res_json['chatUser']
-            user.user_name = user_dict['uname']
+            user._user_name = user_dict['uname']
             user.portrait = user_dict['portrait']
 
         except Exception as err:
@@ -1535,7 +1535,7 @@ class Client(object):
                 raise ValueError("invalid params")
 
         except Exception as err:
-            LOG.warning(f"Failed to get profile of {user.portrait}. reason:{err}")
+            LOG.warning(f"Failed to get profile of {user.log_name}. reason:{err}")
             return UserInfo(), []
 
         user = UserInfo(_raw_data=ParseDict(res_json['user'], User_pb2.User(), ignore_unknown_fields=True))
@@ -1657,7 +1657,7 @@ class Client(object):
             has_more = bool(int(res_json.get('has_more', 0)))
 
         except Exception as err:
-            LOG.warning(f"Failed to get forum_list of {user.user_id}. reason:{err}")
+            LOG.warning(f"Failed to get forum_list of {user.log_name}. reason:{err}")
             res_list = []
             has_more = False
 
@@ -1755,15 +1755,15 @@ class Client(object):
         return res_list, has_more
 
     async def block(
-        self, fname_or_fid: Union[str, int], /, user: BasicUserInfo, *, day: Literal[1, 3, 10], reason: str = ''
+        self, fname_or_fid: Union[str, int], /, _id: Union[str, int], *, day: Literal[1, 3, 10] = 1, reason: str = ''
     ) -> bool:
         """
         封禁用户
 
         Args:
             fname_or_fid (str | int): 所在贴吧的贴吧名或fid
-            user (BasicUserInfo): 待封禁用户信息
-            day (Literal[1, 3, 10]): 封禁天数
+            _id (str | int): 待封禁用户的id user_id/user_name/portrait 优先portrait
+            day (Literal[1, 3, 10], optional): 封禁天数. Defaults to 1.
             reason (str, optional): 封禁理由. Defaults to ''.
 
         Returns:
@@ -1777,18 +1777,21 @@ class Client(object):
             fid = fname_or_fid
             fname = await self.get_fname(fid)
 
+        if not BasicUserInfo.is_portrait(_id):
+            user = await self.get_basic_user_info(_id)
+        else:
+            user = BasicUserInfo(_id)
+
         payload = [
             ('BDUSS', self.BDUSS),
             ('day', day),
             ('fid', fid),
-            ('nick_name', user.show_name),
             ('ntn', 'banid'),
             ('portrait', user.portrait),
             ('reason', reason),
             ('tbs', await self.get_tbs()),
-            ('un', user.user_name),
             ('word', fname),
-            ('z', '42'),
+            ('z', '6'),
         ]
 
         try:
@@ -1808,13 +1811,13 @@ class Client(object):
         LOG.info(f"Successfully blocked {user.log_name} in {fname} for {day} days")
         return True
 
-    async def unblock(self, fname_or_fid: Union[str, int], /, user: BasicUserInfo) -> bool:
+    async def unblock(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> bool:
         """
         解封用户
 
         Args:
             fname_or_fid (str | int): 所在贴吧的贴吧名或fid
-            user (BasicUserInfo): 基本用户信息
+            _id (str | int): 待解封用户的id user_id/user_name/portrait 优先user_id
 
         Returns:
             bool: 操作是否成功
@@ -1827,12 +1830,16 @@ class Client(object):
             fid = fname_or_fid
             fname = await self.get_fname(fid)
 
+        if not BasicUserInfo.is_user_id(_id):
+            user = await self.get_basic_user_info(_id)
+        else:
+            user = BasicUserInfo(_id)
+
         payload = [
             ('fn', fname),
             ('fid', fid),
-            ('block_un', user.user_name),
+            ('block_un', ' '),
             ('block_uid', user.user_id),
-            ('block_nickname', user.nick_name),
             ('tbs', await self.get_tbs()),
         ]
 
@@ -2470,19 +2477,24 @@ class Client(object):
 
         return res_list, has_more
 
-    async def blacklist_add(self, fname_or_fid: Union[str, int], /, user: BasicUserInfo) -> bool:
+    async def blacklist_add(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> bool:
         """
         添加贴吧黑名单
 
         Args:
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先贴吧名
-            user (BasicUserInfo): 基本用户信息
+            _id (str | int): 待加黑名单用户的id user_id/user_name/portrait 优先user_id
 
         Returns:
             bool: 操作是否成功
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
+
+        if not BasicUserInfo.is_user_id(_id):
+            user = await self.get_basic_user_info(_id)
+        else:
+            user = BasicUserInfo(_id)
 
         payload = [
             ('tbs', await self.get_tbs()),
@@ -2502,25 +2514,30 @@ class Client(object):
                 raise ValueError(res_json['errmsg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to add {user.log_name} to black_list in {fname}. reason:{err}")
+            LOG.warning(f"Failed to add {user.user_id} to black_list in {fname}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully added {user.log_name} to black_list in {fname}")
+        LOG.info(f"Successfully added {user.user_id} to black_list in {fname}")
         return True
 
-    async def blacklist_del(self, fname_or_fid: Union[str, int], /, user: BasicUserInfo) -> bool:
+    async def blacklist_del(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> bool:
         """
         移出贴吧黑名单
 
         Args:
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先贴吧名
-            user (BasicUserInfo): 基本用户信息
+            _id (str | int): 待解黑名单用户的id user_id/user_name/portrait 优先user_id
 
         Returns:
             bool: 操作是否成功
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
+
+        if not BasicUserInfo.is_user_id(_id):
+            user = await self.get_basic_user_info(_id)
+        else:
+            user = BasicUserInfo(_id)
 
         payload = [
             ('word', fname),
@@ -2540,10 +2557,10 @@ class Client(object):
                 raise ValueError(res_json['errmsg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to remove {user.log_name} from black_list in {fname}. reason:{err}")
+            LOG.warning(f"Failed to remove {user.user_id} from black_list in {fname}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully removed {user.log_name} from black_list in {fname}")
+        LOG.info(f"Successfully removed {user.user_id} from black_list in {fname}")
         return True
 
     async def get_unblock_appeal_list(
@@ -2957,7 +2974,7 @@ class Client(object):
                         userpost._user = user
 
         except Exception as err:
-            LOG.warning(f"Failed to get user_contents of {user.user_id}. reason:{err}")
+            LOG.warning(f"Failed to get user_contents of {user.log_name}. reason:{err}")
             res_list = []
 
         return res_list
@@ -3592,8 +3609,8 @@ class Client(object):
                 raise ValueError(res_proto.data.blockInfo.blockErrmsg)
 
         except Exception as err:
-            LOG.warning(f"Failed to send msg to {user.user_id}. reason:{err}")
+            LOG.warning(f"Failed to send msg to {user.log_name}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully sent msg to {user.user_id}")
+        LOG.info(f"Successfully sent msg to {user.log_name}")
         return True
