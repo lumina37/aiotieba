@@ -259,7 +259,7 @@ class Reviewer(Client):
             bool: 操作是否成功
         """
 
-        return await self.database.add_user_id(self.fname, user_id, permission, note)
+        return await self.database.add_user_id(self.fname, user_id, permission=permission, note=note)
 
     async def del_user_id(self, user_id: int) -> bool:
         """

@@ -497,7 +497,7 @@ class Listener(object):
 
         user = await self._arg2user_info(ctx.args[0])
 
-        if await ctx.handler.admin.unblock(ctx.fname, user):
+        if await ctx.handler.admin.unblock(ctx.fname, user.user_id):
             await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=2, need_arg_num=0)
@@ -634,18 +634,6 @@ class Listener(object):
 
         await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
         await asyncio.gather(*coros)
-
-    @check_permission(need_permission=2, need_arg_num=0)
-    async def cmd_refuse_appeals(self, ctx: Context) -> None:
-        """
-        refuse_appeals指令
-        一键拒绝所有解封申诉
-        """
-
-        tb.LOG.info(f"{ctx.log_name}:{ctx.text} in tid:{ctx.tid}")
-
-        await ctx.handler.admin.refuse_unblock_appeals(ctx.fname)
-        await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=4, need_arg_num=2)
     async def cmd_set(self, ctx: Context) -> None:
@@ -820,7 +808,7 @@ class Listener(object):
                     if comment.user.level >= min_level and keyword in text:
                         vote_set.add(comment.user.user_id)
 
-                if not comments.page.has_more:
+                if not comments.has_more:
                     break
 
             if vote_num := len(vote_set):

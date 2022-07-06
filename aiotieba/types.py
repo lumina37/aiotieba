@@ -2,32 +2,52 @@
 __all__ = [
     'BasicUserInfo',
     'UserInfo',
+    'FragmentUnknown',
+    'FragText',
+    'FragEmoji',
+    'FragImage',
+    'FragAt',
+    'FragLink',
+    'FragVoice',
+    'FragTiebaPlus',
+    'FragItem',
+    'Fragments',
+    'BasicForum',
+    'Forum',
+    'Page',
+    'VoteInfo',
+    'ShareThread',
     'Thread',
-    'Post',
-    'Comment',
-    'At',
-    'Reply',
-    'Search',
     'Threads',
+    'Post',
     'Posts',
+    'Comment',
     'Comments',
-    'Ats',
+    'Reply',
     'Replys',
+    'At',
+    'Ats',
+    'Search',
     'Searches',
     'NewThread',
     'UserPost',
     'UserPosts',
-    'Fragments',
-    'Forum',
-    'Page',
+    'RankUser',
+    'RankUsers',
+    'MemberUser',
+    'MemberUsers',
+    'SquareForums',
 ]
 
 import json
 import urllib.parse
 from typing import ClassVar, Dict, Generic, Iterable, Iterator, List, Optional, TypeVar, Union
 
+import bs4
 import yarl
 from google.protobuf.json_format import ParseDict
+
+from aiotieba.tieba_protobuf import GetForumSquareResIdl_pb2
 
 from .logger import LOG
 from .tieba_protobuf import (
@@ -72,6 +92,9 @@ class _DataWrapper(object):
         self._raw_data = _raw_data
 
 
+_TDWrapper = TypeVar('_TDWrapper', bound=_DataWrapper)
+
+
 class BasicUserInfo(_DataWrapper):
     """
     基本用户属性
@@ -114,7 +137,13 @@ class BasicUserInfo(_DataWrapper):
                         self._user_name = _id
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__} [user_id:{self.user_id} / user_name:{self.user_name} / portrait:{self.portrait}]"
+        return str(
+            {
+                'user_id': self.user_id,
+                'user_name': self.user_name,
+                'portrait': self.portrait,
+            }
+        )
 
     def __eq__(self, obj: "BasicUserInfo") -> bool:
         return self.user_id == obj.user_id and self.user_name == obj.user_name and self.portrait == obj.portrait
@@ -312,7 +341,14 @@ class UserInfo(BasicUserInfo):
             self._priv_reply = 1
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__} [user_id:{self.user_id} / user_name:{self.user_name} / portrait:{self.portrait} / nick_name:{self.nick_name}]"
+        return str(
+            {
+                'user_id': self.user_id,
+                'user_name': self.user_name,
+                'portrait': self.portrait,
+                'nick_name': self.nick_name,
+            }
+        )
 
     def __eq__(self, obj: "UserInfo") -> bool:
         return super(UserInfo, self).__eq__(obj)
@@ -600,7 +636,7 @@ class FragText(_Fragment):
         self._text = self._raw_data.text
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__} [text:{self.text}]"
+        return str({'text': self.text})
 
     @property
     def text(self) -> str:
@@ -627,7 +663,7 @@ class FragEmoji(_Fragment):
         self._desc: str = self._raw_data.c
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__} [desc:{self.desc}]"
+        return str({'desc': self.desc})
 
     @property
     def desc(self) -> str:
@@ -674,7 +710,7 @@ class FragImage(_Fragment):
         self._show_height = None
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__} [src:{self.src}]"
+        return str({'src': self.src})
 
     @property
     def src(self) -> str:
@@ -781,7 +817,12 @@ class FragAt(_Fragment):
         self._user_id = self._raw_data.uid
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__} [text:{self.text} / user_id:{self.user_id}]"
+        return str(
+            {
+                'text': self.text,
+                'user_id': self.user_id,
+            }
+        )
 
     @property
     def text(self) -> str:
@@ -829,7 +870,12 @@ class FragLink(_Fragment):
         self._is_external = self.raw_url.startswith(self.external_perfix)
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__} [text:{self.text} / raw_url:{self.raw_url}]"
+        return str(
+            {
+                'text': self.text,
+                'raw_url': self.raw_url,
+            }
+        )
 
     @property
     def text(self) -> str:
@@ -896,7 +942,7 @@ class FragVoice(_Fragment):
             self._voice_md5 = ''
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__} [voice_md5:{self.voice_md5}]"
+        return str({'voice_md5': self.voice_md5})
 
     @property
     def voice_md5(self) -> str:
@@ -931,7 +977,12 @@ class FragTiebaPlus(_Fragment):
         self._url = self._raw_data.tiebaplus_info.jump_url
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__} [text:{self.text} / url:{self.url}]"
+        return str(
+            {
+                'text': self.text,
+                'url': self.url,
+            }
+        )
 
     @property
     def text(self) -> str:
@@ -966,7 +1017,7 @@ class FragItem(_Fragment):
         self._text = self._raw_data.item.item_name
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__} [text:{self.text}]"
+        return str({'text': self.text})
 
     @property
     def text(self) -> str:
@@ -1145,9 +1196,9 @@ class Fragments(object):
         return bool(self._frags)
 
 
-class Forum(_DataWrapper):
+class BasicForum(_DataWrapper):
     """
-    贴吧信息
+    贴吧基本信息
 
     Attributes:
         fid (int): 贴吧id
@@ -1160,18 +1211,23 @@ class Forum(_DataWrapper):
     ]
 
     def __init__(self, _raw_data: Optional[SimpleForum_pb2.SimpleForum] = None) -> None:
-        super(Forum, self).__init__(_raw_data)
+        super(BasicForum, self).__init__(_raw_data)
 
         if _raw_data:
-            self._fid = _raw_data.id
-            self._fname = _raw_data.name
+            self._fid = _raw_data.forum_id
+            self._fname = _raw_data.forum_name
 
         else:
             self._fid = 0
             self._fname = ''
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__} [fid:{self.fid} / fname:{self.fname}]"
+        return str(
+            {
+                'fid': self.fid,
+                'fname': self.fname,
+            }
+        )
 
     @property
     def fid(self) -> int:
@@ -1188,6 +1244,100 @@ class Forum(_DataWrapper):
         """
 
         return self._fname
+
+
+class Forum(BasicForum):
+    """
+    贴吧信息
+
+    Attributes:
+        fid (int): 贴吧id
+        fname (str): 贴吧名
+
+        member_num (int): 吧会员数
+        thread_num (int): 主题帖数
+
+        is_followed (bool): 是否已关注
+        level (int): 等级
+        exp (int): 经验值
+    """
+
+    __slots__ = [
+        '_member_num',
+        '_thread_num',
+        '_is_followed',
+        '_level',
+        '_exp',
+    ]
+
+    def __init__(
+        self, _raw_data: Optional[GetForumSquareResIdl_pb2.GetForumSquareResIdl.DataRes.RecommendForumInfo] = None
+    ) -> None:
+        super(Forum, self).__init__(_raw_data)
+
+        self._level = 0
+        self._exp = 0
+
+        if _raw_data:
+            self._member_num = _raw_data.member_count
+            self._thread_num = _raw_data.thread_num
+
+            self._is_followed = bool(_raw_data.is_like)
+
+        else:
+            self._member_num = 0
+            self._thread_num = 0
+
+            self._is_followed = False
+
+    def __repr__(self) -> str:
+        return str(
+            {
+                'fid': self.fid,
+                'fname': self.fname,
+                'member_num': self.member_num,
+            }
+        )
+
+    @property
+    def member_num(self) -> int:
+        """
+        吧会员数
+        """
+
+        return self._member_num
+
+    @property
+    def thread_num(self) -> int:
+        """
+        主题帖数
+        """
+
+        return self._thread_num
+
+    @property
+    def is_followed(self) -> bool:
+        """
+        是否已关注
+        """
+
+        return self._is_followed
+
+    @property
+    def level(self) -> int:
+        """
+        等级
+        """
+
+        return self._level
+
+    @property
+    def exp(self) -> int:
+        """
+        经验值
+        """
+
+        return self._exp
 
 
 class Page(_DataWrapper):
@@ -1217,18 +1367,14 @@ class Page(_DataWrapper):
     def __init__(self, _raw_data: Optional[Page_pb2.Page] = None) -> None:
         super(Page, self).__init__(_raw_data)
 
+        self._has_more = None
+        self._has_prev = None
+
         if _raw_data:
             self._page_size = _raw_data.page_size
             self._current_page = _raw_data.current_page
             self._total_page = _raw_data.total_page
             self._total_count = _raw_data.total_count
-
-            if self.current_page and self.total_page:
-                self._has_more = self.current_page < self.total_page
-                self._has_prev = self.current_page > self.total_page
-            else:
-                self._has_more = bool(_raw_data.has_more)
-                self._has_prev = bool(_raw_data.has_prev)
 
         else:
             self._page_size = 0
@@ -1236,11 +1382,15 @@ class Page(_DataWrapper):
             self._total_page = 0
             self._total_count = 0
 
-            self._has_more = False
-            self._has_prev = False
-
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__} [current_page:{self.current_page} / total_page:{self.total_page} / has_more:{self.has_more} / has_prev:{self.has_prev}]"
+        return str(
+            {
+                'current_page': self.current_page,
+                'total_page': self.total_page,
+                'has_more': self.has_more,
+                'has_prev': self.has_prev,
+            }
+        )
 
     @property
     def page_size(self) -> int:
@@ -1274,12 +1424,22 @@ class Page(_DataWrapper):
 
         return self._total_count
 
+    def _init_flags(self) -> None:
+        if self.current_page and self.total_page:
+            self._has_more = self.current_page < self.total_page
+            self._has_prev = self.current_page > self.total_page
+        else:
+            self._has_more = bool(self._raw_data.has_more)
+            self._has_prev = bool(self._raw_data.has_prev)
+
     @property
     def has_more(self) -> bool:
         """
         是否有后继页
         """
 
+        if self._has_more is None:
+            self._init_flags()
         return self._has_more
 
     @property
@@ -1288,10 +1448,12 @@ class Page(_DataWrapper):
         是否有前驱页
         """
 
+        if self._has_prev is None:
+            self._init_flags()
         return self._has_prev
 
 
-class _BasicContainer(_DataWrapper):
+class _Container(_DataWrapper):
     """
     基本的内容容器
 
@@ -1309,7 +1471,7 @@ class _BasicContainer(_DataWrapper):
     __slots__ = ['_text', '_fname', '_fid', '_tid', '_pid', '_user', '_author_id']
 
     def __init__(self, _raw_data) -> None:
-        super(_BasicContainer, self).__init__(_raw_data)
+        super(_Container, self).__init__(_raw_data)
 
         self._text = None
         self._fid = 0
@@ -1320,7 +1482,14 @@ class _BasicContainer(_DataWrapper):
         self._author_id = None
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__} [tid:{self.tid} / pid:{self.pid} / user:{self.user.log_name} / text:{self.text}]"
+        return str(
+            {
+                'tid': self.tid,
+                'pid': self.pid,
+                'user': self.user.log_name,
+                'text': self.text,
+            }
+        )
 
     @property
     def text(self) -> str:
@@ -1385,20 +1554,17 @@ class _BasicContainer(_DataWrapper):
         return self._author_id
 
 
-_TContainer = TypeVar('_TContainer', bound=_BasicContainer)
-
-
-class _Containers(_DataWrapper, Generic[_TContainer]):
+class _Containers(_DataWrapper, Generic[_TDWrapper]):
     """
     内容列表的泛型基类
     约定取内容的通用接口
 
     Attributes:
         objs (list[_TContainer]): 内容列表
-        page (Page): 页信息
+        has_more (bool): 是否还有下一页
     """
 
-    __slots__ = ['_objs', '_page']
+    __slots__ = ['_objs']
 
     def __init__(self, _raw_data) -> None:
         _DataWrapper.__init__(self, _raw_data)
@@ -1406,10 +1572,13 @@ class _Containers(_DataWrapper, Generic[_TContainer]):
         self._objs = None
         self._page = None
 
-    def __iter__(self) -> Iterator[_TContainer]:
+    def __repr__(self) -> str:
+        return str(self.objs)
+
+    def __iter__(self) -> Iterator[_TDWrapper]:
         return iter(self.objs)
 
-    def __getitem__(self, idx) -> Union[_TContainer, List[_TContainer]]:
+    def __getitem__(self, idx) -> Union[_TDWrapper, List[_TDWrapper]]:
         return self.objs[idx]
 
     def __setitem__(self, idx, val):
@@ -1425,7 +1594,7 @@ class _Containers(_DataWrapper, Generic[_TContainer]):
         return bool(self.objs)
 
     @property
-    def objs(self) -> List[_TContainer]:
+    def objs(self) -> List[_TDWrapper]:
         """
         内容列表
         """
@@ -1433,22 +1602,15 @@ class _Containers(_DataWrapper, Generic[_TContainer]):
         raise NotImplementedError
 
     @property
-    def page(self) -> Page:
+    def has_more(self) -> bool:
         """
-        页信息
+        是否还有下一页
         """
 
-        if self._page is None:
-
-            if self._raw_data:
-                self._page = Page(self._raw_data.page)
-            else:
-                self._page = Page()
-
-        return self._page
+        raise NotImplementedError
 
 
-class VoteOption(object):
+class _VoteOption(object):
     """
     投票选项信息
 
@@ -1545,7 +1707,7 @@ class VoteInfo(_DataWrapper):
         return self._is_multi
 
     @property
-    def options(self) -> List[VoteOption]:
+    def options(self) -> List[_VoteOption]:
         """
         选项列表
         """
@@ -1553,7 +1715,7 @@ class VoteInfo(_DataWrapper):
         if self._options is None:
 
             if self._raw_data:
-                self._options = [VoteOption(option_proto) for option_proto in self._raw_data.options]
+                self._options = [_VoteOption(option_proto) for option_proto in self._raw_data.options]
             else:
                 self._options = []
 
@@ -1576,7 +1738,7 @@ class VoteInfo(_DataWrapper):
         return self._total_user
 
 
-class ShareThread(_BasicContainer):
+class ShareThread(_Container):
     """
     被分享的主题帖信息
 
@@ -1682,7 +1844,7 @@ class ShareThread(_BasicContainer):
         return self._vote_info
 
 
-class Thread(_BasicContainer):
+class Thread(_Container):
     """
     主题帖信息
     用于c/f/frs/page接口
@@ -1980,16 +2142,24 @@ class Threads(_Containers[Thread]):
 
     Attributes:
         objs (list[Thread]): 主题帖列表
-        page (Page): 页码信息
 
-        forum (Forum): 所在吧信息
+        page (Page): 页信息
+        has_more (bool): 是否还有下一页
+
+        forum (BasicForum): 所在吧信息
         tab_map (dict[str, int]): 分区名到分区id的映射表
     """
 
-    __slots__ = ['_forum', '_tab_map']
+    __slots__ = [
+        '_page',
+        '_forum',
+        '_tab_map',
+    ]
 
     def __init__(self, _raw_data: Optional[FrsPageResIdl_pb2.FrsPageResIdl.DataRes] = None) -> None:
         super(Threads, self).__init__(_raw_data)
+
+        self._page = None
 
         self._forum = None
         self._tab_map = None
@@ -2027,7 +2197,30 @@ class Threads(_Containers[Thread]):
         return self._objs
 
     @property
-    def forum(self) -> Forum:
+    def page(self) -> Page:
+        """
+        页信息
+        """
+
+        if self._page is None:
+
+            if self._raw_data:
+                self._page = Page(self._raw_data.page)
+            else:
+                self._page = Page()
+
+        return self._page
+
+    @property
+    def has_more(self) -> bool:
+        """
+        是否还有下一页
+        """
+
+        return self.page.has_more
+
+    @property
+    def forum(self) -> BasicForum:
         """
         所在吧信息
         """
@@ -2035,9 +2228,9 @@ class Threads(_Containers[Thread]):
         if self._forum is None:
 
             if self._raw_data:
-                self._forum = Forum(self._raw_data.forum)
+                self._forum = BasicForum(self._raw_data.forum)
             else:
-                self._forum = Forum()
+                self._forum = BasicForum()
 
         return self._forum
 
@@ -2057,7 +2250,7 @@ class Threads(_Containers[Thread]):
         return self._tab_map
 
 
-class Post(_BasicContainer):
+class Post(_Container):
     """
     楼层信息
 
@@ -2242,15 +2435,18 @@ class Posts(_Containers[Post]):
 
     Attributes:
         objs (list[Post]): 回复列表
-        page (Page): 页码信息
 
-        forum (Forum): 所在吧信息
+        page (Page): 页信息
+        has_more (bool): 是否还有下一页
+
+        forum (BasicForum): 所在吧信息
         thread (Thread): 所在主题帖信息
 
         has_fold (bool): 是否存在折叠楼层
     """
 
     __slots__ = [
+        '_page',
         '_forum',
         '_thread',
         '_has_fold',
@@ -2259,16 +2455,15 @@ class Posts(_Containers[Post]):
     def __init__(self, _raw_data: Optional[PbPageResIdl_pb2.PbPageResIdl.DataRes] = None) -> None:
         super(Posts, self).__init__(_raw_data)
 
-        if _raw_data:
-            self._forum = None
-            self._thread = None
+        self._page = None
 
+        self._forum = None
+        self._thread = None
+
+        if _raw_data:
             self._has_fold = bool(self._raw_data.has_fold_comment)
 
         else:
-            self._forum = None
-            self._thread = None
-
             self._has_fold = False
 
     @property
@@ -2308,7 +2503,30 @@ class Posts(_Containers[Post]):
         return self._objs
 
     @property
-    def forum(self) -> Forum:
+    def page(self) -> Page:
+        """
+        页信息
+        """
+
+        if self._page is None:
+
+            if self._raw_data:
+                self._page = Page(self._raw_data.page)
+            else:
+                self._page = Page()
+
+        return self._page
+
+    @property
+    def has_more(self) -> bool:
+        """
+        是否还有下一页
+        """
+
+        return self.page.has_more
+
+    @property
+    def forum(self) -> BasicForum:
         """
         所在吧信息
         """
@@ -2316,9 +2534,9 @@ class Posts(_Containers[Post]):
         if self._forum is None:
 
             if self._raw_data:
-                self._forum = Forum(self._raw_data.forum)
+                self._forum = BasicForum(self._raw_data.forum)
             else:
-                self._forum = Forum()
+                self._forum = BasicForum()
 
         return self._forum
 
@@ -2348,7 +2566,7 @@ class Posts(_Containers[Post]):
         return self._has_fold
 
 
-class Comment(_BasicContainer):
+class Comment(_Container):
     """
     楼中楼信息
 
@@ -2453,17 +2671,25 @@ class Comments(_Containers[Comment]):
 
     Attributes:
         objs (list[Comment]): 楼中楼列表
-        page (Page): 页码信息
 
-        forum (Forum): 所在吧信息
+        page (Page): 页信息
+
+        forum (BasicForum): 所在吧信息
         thread (Thread): 所在主题帖信息
         post (Post): 所在回复信息
     """
 
-    __slots__ = ['_forum', '_thread', '_post']
+    __slots__ = [
+        '_page',
+        '_forum',
+        '_thread',
+        '_post',
+    ]
 
     def __init__(self, _raw_data: Optional[PbFloorResIdl_pb2.PbFloorResIdl.DataRes] = None) -> None:
         super(Comments, self).__init__(_raw_data)
+
+        self._page = None
 
         self._forum = None
         self._thread = None
@@ -2491,7 +2717,30 @@ class Comments(_Containers[Comment]):
         return self._objs
 
     @property
-    def forum(self) -> Forum:
+    def page(self) -> Page:
+        """
+        页信息
+        """
+
+        if self._page is None:
+
+            if self._raw_data:
+                self._page = Page(self._raw_data.page)
+            else:
+                self._page = Page()
+
+        return self._page
+
+    @property
+    def has_more(self) -> bool:
+        """
+        是否还有下一页
+        """
+
+        return self.page.has_more
+
+    @property
+    def forum(self) -> BasicForum:
         """
         所在吧信息
         """
@@ -2499,9 +2748,9 @@ class Comments(_Containers[Comment]):
         if self._forum is None:
 
             if self._raw_data:
-                self._forum = Forum(self._raw_data.forum)
+                self._forum = BasicForum(self._raw_data.forum)
             else:
-                self._forum = Forum()
+                self._forum = BasicForum()
 
         return self._forum
 
@@ -2541,7 +2790,7 @@ class Comments(_Containers[Comment]):
         return self._post
 
 
-class Reply(_BasicContainer):
+class Reply(_Container):
     """
     回复信息
     Attributes:
@@ -2690,13 +2939,17 @@ class Replys(_Containers[Reply]):
 
     Attributes:
         objs (list[Reply]): 收到回复列表
-        page (Page): 页码信息
+
+        page (Page): 页信息
+        has_more (bool): 是否还有下一页
     """
 
-    __slots__ = []
+    __slots__ = ['_page']
 
     def __init__(self, _raw_data: Optional[ReplyMeResIdl_pb2.ReplyMeResIdl] = None) -> None:
         super(Replys, self).__init__(_raw_data)
+
+        self._page = None
 
     @property
     def objs(self) -> List[Reply]:
@@ -2713,8 +2966,31 @@ class Replys(_Containers[Reply]):
 
         return self._objs
 
+    @property
+    def page(self) -> Page:
+        """
+        页信息
+        """
 
-class At(_BasicContainer):
+        if self._page is None:
+
+            if self._raw_data:
+                self._page = Page(self._raw_data.page)
+            else:
+                self._page = Page()
+
+        return self._page
+
+    @property
+    def has_more(self) -> bool:
+        """
+        是否还有下一页
+        """
+
+        return self.page.has_more
+
+
+class At(_Container):
     """
     @信息
 
@@ -2806,13 +3082,17 @@ class Ats(_Containers[At]):
 
     Attributes:
         objs (list[At]): @信息列表
-        page (Page): 页码信息
+
+        page (Page): 页信息
+        has_more (bool): 是否还有下一页
     """
 
-    __slots__ = []
+    __slots__ = ['_page']
 
     def __init__(self, _raw_data: Optional[Dict] = None) -> None:
         super(Ats, self).__init__(_raw_data)
+
+        self._page = None
 
     @property
     def objs(self) -> List[At]:
@@ -2846,8 +3126,16 @@ class Ats(_Containers[At]):
 
         return self._page
 
+    @property
+    def has_more(self) -> bool:
+        """
+        是否还有下一页
+        """
 
-class Search(_BasicContainer):
+        return self.page.has_more
+
+
+class Search(_Container):
     """
     搜索结果
 
@@ -2943,13 +3231,17 @@ class Searches(_Containers[Search]):
 
     Attributes:
         objs (list[Search]): 搜索结果列表
-        page (Page): 页码信息
+
+        page (Page): 页信息
+        has_more (bool): 是否还有下一页
     """
 
-    __slots__ = []
+    __slots__ = ['_page']
 
     def __init__(self, _raw_data: Optional[Dict] = None) -> None:
         super(Searches, self).__init__(_raw_data)
+
+        self._page = None
 
     @property
     def objs(self) -> List[Search]:
@@ -2983,8 +3275,16 @@ class Searches(_Containers[Search]):
 
         return self._page
 
+    @property
+    def has_more(self) -> bool:
+        """
+        是否还有下一页
+        """
 
-class NewThread(_BasicContainer):
+        return self.page.has_more
+
+
+class NewThread(_Container):
     """
     新版主题帖信息
     删除无用字段并适配新版字段名
@@ -3159,7 +3459,7 @@ class NewThread(_BasicContainer):
         return self._create_time
 
 
-class UserPost(_BasicContainer):
+class UserPost(_Container):
     """
     用户历史回复信息
 
@@ -3266,7 +3566,6 @@ class UserPosts(_Containers[UserPost]):
                 self._objs = [UserPost(userpost_proto) for userpost_proto in self._raw_data.content]
 
                 for post in self._objs:
-
                     post._fid = self.fid
                     post._tid = self.tid
 
@@ -3290,3 +3589,348 @@ class UserPosts(_Containers[UserPost]):
         """
 
         return self._tid
+
+
+class RankUser(_DataWrapper):
+    """
+    等级排行榜用户信息
+
+    Attributes:
+        user_name (str): 用户名
+        level (int): 等级
+        exp (int): 经验值
+        is_vip (bool): 是否vip
+    """
+
+    __slots__ = [
+        '_user_name',
+        '_level',
+        '_exp',
+        '_is_vip',
+    ]
+
+    def __init__(self, _raw_data: Optional[bs4.element.Tag] = None) -> None:
+        super(RankUser, self).__init__(_raw_data)
+
+        if _raw_data:
+            user_name_item = _raw_data.td.next_sibling
+            self._user_name = user_name_item.text
+            self._is_vip = 'drl_item_vip' in user_name_item.div['class']
+            level_item = user_name_item.next_sibling
+            # e.g. get level 16 from string "bg_lv16" by slicing [5:]
+            self._level = int(level_item.div['class'][0][5:])
+            exp_item = level_item.next_sibling
+            self._exp = int(exp_item.text)
+
+        else:
+            self._user_name = ''
+            self._level = 0
+            self._exp = 0
+            self._is_vip = False
+
+    def __repr__(self) -> str:
+        return str(
+            {
+                'user_name': self.user_name,
+                'level': self.level,
+                'exp': self.exp,
+                'is_vip': self.is_vip,
+            }
+        )
+
+    @property
+    def user_name(self) -> str:
+        """
+        用户名
+        """
+
+        return self._user_name
+
+    @property
+    def level(self) -> int:
+        """
+        等级
+        """
+
+        return self._level
+
+    @property
+    def exp(self) -> int:
+        """
+        经验值
+        """
+
+        return self._exp
+
+    @property
+    def is_vip(self) -> bool:
+        """
+        是否vip
+        """
+
+        return self._is_vip
+
+
+class RankUsers(_Containers[RankUser]):
+    """
+    等级排行榜用户列表
+
+    Attributes:
+        objs (list[RankUser]): 等级排行榜用户列表
+
+        page (Page): 页信息
+        has_more (bool): 是否还有下一页
+    """
+
+    __slots__ = ['_page']
+
+    def __init__(self, _raw_data: Optional[bs4.BeautifulSoup] = None) -> None:
+        super(RankUsers, self).__init__(_raw_data)
+
+        self._page = None
+
+    @property
+    def objs(self) -> List[RankUser]:
+        """
+        等级排行榜用户列表
+        """
+
+        if self._objs is None:
+
+            if self._raw_data:
+                self._objs = [
+                    RankUser(_raw_data=rank_user_tag)
+                    for rank_user_tag in self._raw_data('tr', class_=['drl_list_item', 'drl_list_item_self'])
+                ]
+            else:
+                self._objs = []
+
+        return self._objs
+
+    @property
+    def page(self) -> Page:
+        """
+        页信息
+        """
+
+        if self._page is None:
+
+            if self._raw_data:
+                page_item = self._raw_data.find('ul', class_='p_rank_pager')
+                page_dict: Dict[str, int] = json.loads(page_item['data-field'])
+                page_dict['current_page'] = page_dict.pop('cur_page')
+                page_dict['total_count'] = page_dict.pop('total_num')
+                page_proto = ParseDict(page_dict, Page_pb2.Page(), ignore_unknown_fields=True)
+                self._page = Page(page_proto)
+
+            else:
+                self._page = Page()
+
+        return self._page
+
+    @property
+    def has_more(self) -> bool:
+        """
+        是否还有下一页
+        """
+
+        return self.page.has_more
+
+
+class MemberUser(_DataWrapper):
+    """
+    最新关注用户信息
+
+    Attributes:
+        user_name (str): 用户名
+        portrait (str): portrait
+        level (int): 等级
+    """
+
+    __slots__ = [
+        '_user_name',
+        '_portrait',
+        '_level',
+    ]
+
+    def __init__(self, _raw_data: Optional[bs4.element.Tag] = None) -> None:
+        super(MemberUser, self).__init__(_raw_data)
+
+        if _raw_data:
+            user_item = _raw_data.a
+            self._user_name = user_item['title']
+            self._portrait = user_item['href'][14:]
+            level_item = _raw_data.span
+            self._level = int(level_item['class'][1][12:])
+
+        else:
+            self._user_name = ''
+            self._level = 0
+            self._exp = 0
+            self._is_vip = False
+
+    def __repr__(self) -> str:
+        return str(
+            {
+                'user_name': self.user_name,
+                'portrait': self.portrait,
+                'level': self.level,
+            }
+        )
+
+    @property
+    def user_name(self) -> str:
+        """
+        用户名
+
+        Note:
+            具有唯一性
+            请注意与用户昵称区分
+        """
+
+        return self._user_name
+
+    @property
+    def portrait(self) -> str:
+        """
+        用户portrait
+
+        Note:
+            具有唯一性
+            可以用于获取用户头像
+        """
+
+        return self._portrait
+
+    @property
+    def level(self) -> int:
+        """
+        等级
+        """
+
+        return self._level
+
+
+class MemberUsers(_Containers[MemberUser]):
+    """
+    最新关注用户列表
+
+    Attributes:
+        objs (list[MemberUser]): 最新关注用户列表
+
+        page (Page): 页信息
+        has_more (bool): 是否还有下一页
+    """
+
+    __slots__ = ['_page']
+
+    def __init__(self, _raw_data: Optional[bs4.BeautifulSoup] = None) -> None:
+        super(MemberUsers, self).__init__(_raw_data)
+
+        self._page = None
+
+    @property
+    def objs(self) -> List[MemberUser]:
+        """
+        最新关注用户列表
+        """
+
+        if self._objs is None:
+
+            if self._raw_data:
+                self._objs = [
+                    MemberUser(_raw_data=member_user_tag)
+                    for member_user_tag in self._raw_data('div', class_='name_wrap')
+                ]
+            else:
+                self._objs = []
+
+        return self._objs
+
+    @property
+    def page(self) -> Page:
+        """
+        页信息
+        """
+
+        if self._page is None:
+
+            if self._raw_data:
+                self._page = Page()
+                current_page_item = self._raw_data.find('li', class_='active')
+                self._page._current_page = int(current_page_item.text)
+                total_page_item = current_page_item.parent.next_sibling
+                self._page._total_page = int(total_page_item.text[1:-1])
+
+            else:
+                self._page = Page()
+
+        return self._page
+
+    @property
+    def has_more(self) -> bool:
+        """
+        是否还有下一页
+        """
+
+        return self.page.has_more
+
+
+class SquareForums(_Containers[Forum]):
+    """
+    吧广场列表
+
+    Attributes:
+        objs (list[MemberUser]): 吧广场列表
+
+        page (Page): 页信息
+        has_more (bool): 是否还有下一页
+    """
+
+    __slots__ = ['_page']
+
+    def __init__(
+        self,
+        _raw_data: Optional[Iterable[GetForumSquareResIdl_pb2.GetForumSquareResIdl.DataRes.RecommendForumInfo]] = None,
+    ) -> None:
+        super(SquareForums, self).__init__(_raw_data)
+
+        self._page = None
+
+    @property
+    def objs(self) -> List[Forum]:
+        """
+        吧广场列表
+        """
+
+        if self._objs is None:
+
+            if self._raw_data:
+                self._objs = [Forum(_raw_data=forum_proto) for forum_proto in self._raw_data.forum_info]
+            else:
+                self._objs = []
+
+        return self._objs
+
+    @property
+    def page(self) -> Page:
+        """
+        页信息
+        """
+
+        if self._page is None:
+
+            if self._raw_data:
+                self._page = Page(self._raw_data.page)
+            else:
+                self._page = Page()
+
+        return self._page
+
+    @property
+    def has_more(self) -> bool:
+        """
+        是否还有下一页
+        """
+
+        return self.page.has_more

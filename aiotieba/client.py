@@ -15,10 +15,10 @@ import weakref
 from typing import ClassVar, Dict, List, Literal, Optional, Tuple, Union
 
 import aiohttp
+import bs4
 import cv2 as cv
 import numpy as np
 import yarl
-from bs4 import BeautifulSoup
 from Crypto.Cipher import AES, PKCS1_v1_5
 from Crypto.PublicKey import RSA
 from google.protobuf.json_format import ParseDict
@@ -70,6 +70,9 @@ from .types import (
     Threads,
     UserInfo,
     UserPosts,
+    RankUsers,
+    MemberUsers,
+    SquareForums,
 )
 
 
@@ -78,8 +81,8 @@ class WebsocketResponse(object):
     websocket响应
 
     Attributes:
-        _timestamp (int): 请求时间戳
-        _req_id (int): 唯一的请求id
+        timestamp (int): 请求时间戳
+        req_id (int): 唯一的请求id
         _readable_event (asyncio.Event): 当该事件被set时意味着data已经可读
         _data (bytes): 来自websocket的数据
     """
@@ -91,14 +94,10 @@ class WebsocketResponse(object):
 
     def __init__(self) -> None:
         self._timestamp: int = int(time.time())
-
-        if self._websocket_request_id is None:
-            self._websocket_request_id = self._timestamp - 1
-        self._websocket_request_id += 1
-        self._req_id = self._websocket_request_id
-
+        self._req_id = self.websocket_request_id
         self._readable_event: asyncio.Event = asyncio.Event()
         self._data: bytes = None
+
         self.ws_res_wait_dict[self._req_id] = self
 
     def __hash__(self) -> int:
@@ -108,12 +107,35 @@ class WebsocketResponse(object):
         return self._readable_event is obj._readable_event and self._req_id == obj._req_id
 
     @property
-    def req_id(self) -> int:
-        return self._req_id
+    def timestamp(self) -> int:
+        """
+        请求时间戳
+
+        Note:
+            13位时间戳
+        """
+
+        return self._timestamp
 
     @property
-    def timestamp(self) -> int:
-        return self._timestamp
+    def websocket_request_id(self) -> int:
+        """
+        每次调用都会返回一个唯一的请求id
+        """
+
+        if self._websocket_request_id is None:
+            self._websocket_request_id = self._timestamp
+        self._websocket_request_id += 1
+
+        return self._websocket_request_id
+
+    @property
+    def req_id(self) -> int:
+        """
+        唯一的请求id
+        """
+
+        return self._req_id
 
     async def read(self, timeout: float) -> bytes:
         """
@@ -813,8 +835,11 @@ class Client(object):
 
             user.gender = gender
             user.age = float(user_dict['tb_age'])
-            post_num_str: str = user_dict['post_num']
-            user.post_num = int(float(post_num_str.removesuffix('万')) * 1e4)
+            post_num: str = user_dict['post_num']
+            if isinstance(post_num, str):
+                user.post_num = int(float(post_num.removesuffix('万')) * 1e4)
+            else:
+                user.post_num = post_num
             user.fan_num = int(user_dict['followed_count'])
 
             user.is_vip = int(vip_dict['v_status']) if (vip_dict := user_dict['vipInfo']) else False
@@ -1350,18 +1375,16 @@ class Client(object):
 
         return tab_map
 
-    async def get_rank_list(
-        self, fname_or_fid: Union[str, int], /, pn: int = 1
-    ) -> Tuple[List[Tuple[str, int, int, bool]], bool]:
+    async def get_rank_users(self, fname_or_fid: Union[str, int], /, pn: int = 1) -> RankUsers:
         """
-        获取pn页的贴吧等级排行榜
+        获取pn页的等级排行榜用户列表
 
         Args:
             fname_or_fid (str | int): 目标贴吧名或fid 优先贴吧名
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
-            tuple[list[tuple[str, int, int, bool]], bool]: list[用户名,等级,经验值,是否vip], 是否还有下一页
+            RankUsers: 等级排行榜用户列表
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
@@ -1376,43 +1399,25 @@ class Client(object):
                 },
             )
 
-            soup = BeautifulSoup(await res.text(), 'lxml')
-            items = soup.select('tr[class^=drl_list_item]')
-
-            def _parse_item(item):
-                user_name_item = item.td.next_sibling
-                user_name = user_name_item.text
-                is_vip = 'drl_item_vip' in user_name_item.div['class']
-                level_item = user_name_item.next_sibling
-                # e.g. get level 16 from string "bg_lv16" by slicing [5:]
-                level = int(level_item.div['class'][0][5:])
-                exp_item = level_item.next_sibling
-                exp = int(exp_item.text)
-
-                return user_name, level, exp, is_vip
-
-            res_list = [_parse_item(item) for item in items]
-            has_more = len(items) == 20
+            soup = bs4.BeautifulSoup(await res.text(), 'lxml')
+            rank_users = RankUsers(soup)
 
         except Exception as err:
-            LOG.warning(f"Failed to get rank_list of {fname} pn:{pn}. reason:{err}")
-            res_list = []
-            has_more = False
+            LOG.warning(f"Failed to get rank_users of {fname} pn:{pn}. reason:{err}")
+            rank_users = RankUsers()
 
-        return res_list, has_more
+        return rank_users
 
-    async def get_member_list(
-        self, fname_or_fid: Union[str, int], /, pn: int = 1
-    ) -> Tuple[List[Tuple[str, str, int]], bool]:
+    async def get_member_users(self, fname_or_fid: Union[str, int], /, pn: int = 1) -> MemberUsers:
         """
-        获取pn页的贴吧最新关注用户列表
+        获取pn页的最新关注用户列表
 
         Args:
             fname_or_fid (str | int): 目标贴吧名或fid 优先贴吧名
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
-            tuple[list[tuple[str, str, int]], bool]: list[用户名,portrait,等级], 是否还有下一页
+            MemberUsers: 最新关注用户列表
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
@@ -1427,30 +1432,16 @@ class Client(object):
                 },
             )
 
-            soup = BeautifulSoup(await res.text(), 'lxml')
-            items = soup.find_all('div', class_='name_wrap')
-
-            def _parse_item(item):
-                user_item = item.a
-                user_name = user_item['title']
-                portrait = user_item['href'][14:]
-                level_item = item.span
-                level = int(level_item['class'][1][12:])
-                return user_name, portrait, level
-
-            res_list = [_parse_item(item) for item in items]
-            has_more = len(items) == 24
+            soup = bs4.BeautifulSoup(await res.text(), 'lxml')
+            member_users = MemberUsers(soup)
 
         except Exception as err:
-            LOG.warning(f"Failed to get member_list of {fname} pn:{pn}. reason:{err}")
-            res_list = []
-            has_more = False
+            LOG.warning(f"Failed to get member_users of {fname} pn:{pn}. reason:{err}")
+            member_users = MemberUsers()
 
-        return res_list, has_more
+        return member_users
 
-    async def get_forum_square(
-        self, class_name: str, /, pn: int = 1, *, rn: int = 20
-    ) -> List[Tuple[str, int, bool, int, int]]:
+    async def get_square_forums(self, class_name: str, /, pn: int = 1, *, rn: int = 20) -> SquareForums:
         """
         获取吧广场列表
 
@@ -1460,7 +1451,7 @@ class Client(object):
             rn (int, optional): 请求的条目数. Defaults to 20.
 
         Returns:
-            tuple[list[tuple[str, int, bool, int, int]], bool]: list[贴吧名,贴吧id,是否已关注,吧会员数,主题帖数], 是否还有下一页
+            SquareForums: 吧广场列表
         """
 
         common_proto = CommonReq_pb2.CommonReq()
@@ -1485,18 +1476,13 @@ class Client(object):
             if int(res_proto.error.errorno):
                 raise ValueError(res_proto.error.errmsg)
 
-            res_list = [
-                (forum.forum_name, forum.forum_id, bool(forum.is_like), forum.member_count, forum.thread_count)
-                for forum in res_proto.data.forum_info
-            ]
-            has_more = bool(res_proto.data.page.has_more)
+            square_forums = SquareForums(res_proto.data)
 
         except Exception as err:
-            LOG.warning(f"Failed to get forum_square. reason:{err}")
-            res_list = []
-            has_more = False
+            LOG.warning(f"Failed to get square_forums. reason:{err}")
+            square_forums = SquareForums()
 
-        return res_list, has_more
+        return square_forums
 
     async def get_homepage(self, _id: Union[str, int]) -> Tuple[UserInfo, List[Thread]]:
         """
@@ -1715,7 +1701,7 @@ class Client(object):
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
-            tuple[list[tuple[Thread, int]], bool]: list[被推荐帖子信息,新增浏览量], 是否还有下一页
+            tuple[list[tuple[Thread, int]], bool]: list[被推荐帖子信息, 新增浏览量], 是否还有下一页
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -2413,7 +2399,7 @@ class Client(object):
                 raise ValueError(res_json['error'])
 
             data = res_json['data']
-            soup = BeautifulSoup(data['content'], 'lxml')
+            soup = bs4.BeautifulSoup(data['content'], 'lxml')
             items = soup.find_all('a', class_='recover_list_item_btn')
 
             def _parse_item(item):
@@ -2456,7 +2442,7 @@ class Client(object):
                 },
             )
 
-            soup = BeautifulSoup(await res.text(), 'lxml')
+            soup = bs4.BeautifulSoup(await res.text(), 'lxml')
             items = soup.find_all('td', class_='left_cell')
 
             def _parse_item(item):
