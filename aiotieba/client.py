@@ -78,7 +78,6 @@ from .types import (
     Searches,
     SelfFollowForums,
     SquareForums,
-    Thread,
     Threads,
     UserInfo,
     UserPosts,
@@ -851,7 +850,7 @@ class Client(object):
                 user.post_num = post_num
             user.fan_num = int(user_dict['followed_count'])
 
-            user.is_vip = int(vip_dict['v_status']) if (vip_dict := user_dict['vipInfo']) else False
+            user.is_vip = bool(int(vip_dict['v_status'])) if (vip_dict := user_dict['vipInfo']) else False
 
         except Exception as err:
             LOG.warning(f"Failed to get UserInfo of {user.log_name}. reason:{err}")
@@ -1498,7 +1497,7 @@ class Client(object):
 
         return square_forums
 
-    async def get_homepage(self, _id: Union[str, int]) -> Tuple[UserInfo, List[Thread]]:
+    async def get_homepage(self, _id: Union[str, int]) -> Tuple[UserInfo, List[NewThread]]:
         """
         获取用户个人页信息
 
@@ -1506,7 +1505,7 @@ class Client(object):
             _id (str | int): 待获取用户的id user_id/user_name/portrait 优先portrait
 
         Returns:
-            tuple[UserInfo, list[Thread]]: 用户信息, list[帖子信息]
+            tuple[UserInfo, list[NewThread]]: 用户信息, list[帖子信息]
         """
 
         if not BasicUserInfo.is_portrait(_id):
@@ -3413,6 +3412,7 @@ class Client(object):
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
+        error_code = 0
         try:
             payload = [
                 ('BDUSS', self.BDUSS),

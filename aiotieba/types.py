@@ -53,7 +53,7 @@ __all__ = [
 
 import json
 import urllib.parse
-from typing import ClassVar, Dict, Generic, Iterable, Iterator, List, Optional, TypeVar, Union
+from typing import Any, ClassVar, Dict, Generic, Iterable, Iterator, List, Optional, TypeVar, Union
 
 import bs4
 import yarl
@@ -171,7 +171,7 @@ class BasicUserInfo(_DataWrapper):
         return bool(self.user_id)
 
     @staticmethod
-    def is_portrait(portrait: str) -> bool:
+    def is_portrait(portrait: Any) -> bool:
         """
         判断数据是否符合portrait格式
         """
@@ -179,7 +179,7 @@ class BasicUserInfo(_DataWrapper):
         return isinstance(portrait, str) and portrait.startswith('tb.')
 
     @staticmethod
-    def is_user_id(user_id: int) -> bool:
+    def is_user_id(user_id: Any) -> bool:
         """
         判断数据是否符合user_id格式
         """
