@@ -121,14 +121,6 @@ class Reviewer(Client):
 
         return user
 
-    async def refuse_unblock_appeals(self) -> None:
-        """
-        拒绝本吧所有解封申诉
-        """
-
-        while appeal_ids := (await self.get_unblock_appeal_list(self.fname))[0]:
-            await self.handle_unblock_appeals(self.fname, appeal_ids, refuse=True)
-
     async def add_id(self, /, _id: int, *, id_last_edit: int = 0) -> bool:
         """
         将id添加到表id_{fname}

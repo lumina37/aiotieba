@@ -38,9 +38,9 @@ async def sign(BDUSS_key: str, retry_times: int = 0) -> None:
 
         retry_list: List[str] = []
         for pn in range(1, 9999):
-            tups, has_more = await client.get_self_forum_list(pn)
-            retry_list += [tup[0] for tup in tups]
-            if not has_more:
+            forums = await client.get_self_follow_forums(pn)
+            retry_list += [forum.fname for forum in forums]
+            if not forums.has_more:
                 break
 
         for _ in range(retry_times + 1):
@@ -135,9 +135,11 @@ async def main() -> None:
             "保持屏蔽的贴吧名C",
         ]
         while 1:
-            tups, has_more = await client.get_self_dislike_forum_list()
-            await asyncio.gather(*[client.undislike_forum(tup[1]) for tup in tups if tup[0] not in preserve_fnames])
-            if not has_more:
+            forums = await client.get_dislike_forums()
+            await asyncio.gather(
+                *[client.undislike_forum(forum.fid) for forum in forums if forum.fname not in preserve_fnames]
+            )
+            if not forums.has_more:
                 break
 
 
@@ -154,7 +156,7 @@ import aiotieba as tb
 
 async def main() -> None:
     async with tb.Client("default") as client:
-        while fans := (await client.get_self_fan_list())[0]:
+        while fans := await client.get_fans():
             await asyncio.gather(*[client.remove_fan(fan.user_id) for fan in fans])
 
 

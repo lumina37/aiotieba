@@ -13,7 +13,6 @@ __all__ = [
     'FragItem',
     'Fragments',
     'BasicForum',
-    'Forum',
     'Page',
     'VoteInfo',
     'ShareThread',
@@ -36,12 +35,20 @@ __all__ = [
     'RankUsers',
     'MemberUser',
     'MemberUsers',
+    'SquareForum',
     'SquareForums',
+    'Forum',
     'FollowForums',
     'RecomThreads',
     'Recover',
     'Recovers',
     'BlacklistUsers',
+    'Appeal',
+    'Appeals',
+    'Fans',
+    'Follows',
+    'SelfFollowForums',
+    'DislikeForums',
 ]
 
 import json
@@ -57,6 +64,7 @@ from aiotieba.tieba_protobuf import GetForumSquareResIdl_pb2
 from .logger import LOG
 from .tieba_protobuf import (
     FrsPageResIdl_pb2,
+    GetDislikeListResIdl_pb2,
     NewThreadInfo_pb2,
     Page_pb2,
     PbContent_pb2,
@@ -1249,91 +1257,6 @@ class BasicForum(_DataWrapper):
         """
 
         return self._fname
-
-
-class Forum(BasicForum):
-    """
-    贴吧信息
-
-    Attributes:
-        fid (int): 贴吧id
-        fname (str): 贴吧名
-
-        member_num (int): 吧会员数
-        thread_num (int): 主题帖数
-
-        is_followed (bool): 是否已关注
-        level (int): 等级
-        exp (int): 经验值
-    """
-
-    __slots__ = [
-        '_member_num',
-        '_thread_num',
-        '_is_followed',
-        '_level',
-        '_exp',
-    ]
-
-    def __init__(
-        self, _raw_data: Optional[GetForumSquareResIdl_pb2.GetForumSquareResIdl.DataRes.RecommendForumInfo] = None
-    ) -> None:
-        super(Forum, self).__init__(_raw_data)
-
-        self._level = 0
-        self._exp = 0
-
-        if _raw_data:
-            self._member_num = _raw_data.member_count
-            self._thread_num = _raw_data.thread_num
-
-            self._is_followed = bool(_raw_data.is_like)
-
-        else:
-            self._member_num = 0
-            self._thread_num = 0
-
-            self._is_followed = False
-
-    @property
-    def member_num(self) -> int:
-        """
-        吧会员数
-        """
-
-        return self._member_num
-
-    @property
-    def thread_num(self) -> int:
-        """
-        主题帖数
-        """
-
-        return self._thread_num
-
-    @property
-    def is_followed(self) -> bool:
-        """
-        是否已关注
-        """
-
-        return self._is_followed
-
-    @property
-    def level(self) -> int:
-        """
-        等级
-        """
-
-        return self._level
-
-    @property
-    def exp(self) -> int:
-        """
-        经验值
-        """
-
-        return self._exp
 
 
 class Page(_DataWrapper):
@@ -3833,7 +3756,8 @@ class MemberUsers(_Containers[MemberUser]):
 
             if self._raw_data:
                 self._page = Page()
-                current_page_item = self._raw_data.find('li', class_='active')
+                bar_item = self._raw_data.find('div', class_='tbui_pagination')
+                current_page_item = bar_item.find('li', class_='active')
                 self._page._current_page = int(current_page_item.text)
                 total_page_item = current_page_item.parent.next_sibling
                 self._page._total_page = int(total_page_item.text[1:-1])
@@ -3852,12 +3776,97 @@ class MemberUsers(_Containers[MemberUser]):
         return self.page.has_more
 
 
-class SquareForums(_Containers[Forum]):
+class SquareForum(BasicForum):
+    """
+    吧广场贴吧信息
+
+    Attributes:
+        fid (int): 贴吧id
+        fname (str): 贴吧名
+
+        member_num (int): 吧会员数
+        thread_num (int): 主题帖数
+
+        is_followed (bool): 是否已关注
+        level (int): 等级
+        exp (int): 经验值
+    """
+
+    __slots__ = [
+        '_member_num',
+        '_thread_num',
+        '_is_followed',
+        '_level',
+        '_exp',
+    ]
+
+    def __init__(
+        self, _raw_data: Optional[GetForumSquareResIdl_pb2.GetForumSquareResIdl.DataRes.RecommendForumInfo] = None
+    ) -> None:
+        super(SquareForum, self).__init__(_raw_data)
+
+        self._level = 0
+        self._exp = 0
+
+        if _raw_data:
+            self._member_num = _raw_data.member_count
+            self._thread_num = _raw_data.thread_num
+
+            self._is_followed = bool(_raw_data.is_like)
+
+        else:
+            self._member_num = 0
+            self._thread_num = 0
+
+            self._is_followed = False
+
+    @property
+    def member_num(self) -> int:
+        """
+        吧会员数
+        """
+
+        return self._member_num
+
+    @property
+    def thread_num(self) -> int:
+        """
+        主题帖数
+        """
+
+        return self._thread_num
+
+    @property
+    def is_followed(self) -> bool:
+        """
+        是否已关注
+        """
+
+        return self._is_followed
+
+    @property
+    def level(self) -> int:
+        """
+        等级
+        """
+
+        return self._level
+
+    @property
+    def exp(self) -> int:
+        """
+        经验值
+        """
+
+        return self._exp
+
+
+class SquareForums(_Containers[SquareForum]):
     """
     吧广场列表
 
     Attributes:
-        objs (list[Forum]): 吧广场列表
+        objs (list[SquareForum]): 吧广场列表
 
         page (Page): 页信息
         has_more (bool): 是否还有下一页
@@ -3874,7 +3883,7 @@ class SquareForums(_Containers[Forum]):
         self._page = None
 
     @property
-    def objs(self) -> List[Forum]:
+    def objs(self) -> List[SquareForum]:
         """
         吧广场列表
         """
@@ -3882,7 +3891,7 @@ class SquareForums(_Containers[Forum]):
         if self._objs is None:
 
             if self._raw_data:
-                self._objs = [Forum(_proto) for _proto in self._raw_data.forum_info]
+                self._objs = [SquareForum(_proto) for _proto in self._raw_data.forum_info]
             else:
                 self._objs = []
 
@@ -3910,6 +3919,89 @@ class SquareForums(_Containers[Forum]):
         """
 
         return self.page.has_more
+
+
+class Forum(BasicForum):
+    """
+    贴吧信息
+
+    Attributes:
+        fid (int): 贴吧id
+        fname (str): 贴吧名
+
+        member_num (int): 吧会员数
+        thread_num (int): 主题帖数
+        post_num (int): 总发帖数
+
+        level (int): 等级
+        exp (int): 经验值
+    """
+
+    __slots__ = [
+        '_member_num',
+        '_thread_num',
+        '_post_num',
+        '_level',
+        '_exp',
+    ]
+
+    def __init__(
+        self, _raw_data: Optional[GetDislikeListResIdl_pb2.GetDislikeListResIdl.DataRes.ForumList] = None
+    ) -> None:
+        super(Forum, self).__init__(_raw_data)
+
+        self._level = 0
+        self._exp = 0
+
+        if _raw_data:
+            self._member_num = _raw_data.member_count
+            self._thread_num = _raw_data.thread_num
+            self._post_num = _raw_data.post_num
+
+        else:
+            self._member_num = 0
+            self._thread_num = 0
+            self._post_num = 0
+
+    @property
+    def member_num(self) -> int:
+        """
+        吧会员数
+        """
+
+        return self._member_num
+
+    @property
+    def thread_num(self) -> int:
+        """
+        主题帖数
+        """
+
+        return self._thread_num
+
+    @property
+    def post_num(self) -> int:
+        """
+        总发帖数
+        """
+
+        return self._post_num
+
+    @property
+    def level(self) -> int:
+        """
+        等级
+        """
+
+        return self._level
+
+    @property
+    def exp(self) -> int:
+        """
+        经验值
+        """
+
+        return self._exp
 
 
 class FollowForums(_Containers[Forum]):
@@ -4138,15 +4230,16 @@ class BlacklistUsers(_Containers[BasicUserInfo]):
     Attributes:
         objs (list[BasicUserInfo]): 黑名单用户列表
 
+        page (Page): 页信息
         has_more (bool): 是否还有下一页
     """
 
-    __slots__ = ['_has_more']
+    __slots__ = ['_page']
 
     def __init__(self, _raw_data: Optional[bs4.BeautifulSoup] = None) -> None:
         super(BlacklistUsers, self).__init__(_raw_data)
 
-        self._has_more = False
+        self._page = None
 
     @property
     def objs(self) -> List[BasicUserInfo]:
@@ -4167,6 +4260,330 @@ class BlacklistUsers(_Containers[BasicUserInfo]):
                     return user
 
                 self._objs = [parse_tag(_tag) for _tag in self._raw_data('td', class_='left_cell')]
+
+            else:
+                self._objs = []
+
+        return self._objs
+
+    @property
+    def page(self) -> Page:
+        """
+        页信息
+        """
+
+        if self._page is None:
+
+            if self._raw_data:
+                self._page = Page()
+                bar_item = self._raw_data.find('div', class_='tbui_pagination')
+                current_page_item = bar_item.find('li', class_='active')
+                self._page._current_page = int(current_page_item.text)
+                total_page_item = current_page_item.parent.next_sibling
+                self._page._total_page = int(total_page_item.text[1:-1])
+
+            else:
+                self._page = Page()
+
+        return self._page
+
+    @property
+    def has_more(self) -> bool:
+        """
+        是否还有下一页
+        """
+
+        return self.page.has_more
+
+
+class Appeal(_DataWrapper):
+    """
+    申诉请求信息
+
+    Attributes:
+        aid (int): 申诉请求id
+    """
+
+    __slots__ = ['_aid']
+
+    def __init__(self, _raw_data: Optional[dict] = None) -> None:
+        super(Appeal, self).__init__(_raw_data)
+
+        if _raw_data:
+            self._aid = int(_raw_data['appeal_id'])
+
+        else:
+            self._aid = 0
+
+    def __repr__(self) -> str:
+        return str({'aid': self.aid})
+
+    @property
+    def aid(self) -> int:
+        """
+        申诉请求id
+        """
+
+        return self._aid
+
+
+class Appeals(_Containers[Appeal]):
+    """
+    申诉请求列表
+
+    Attributes:
+        objs (list[Appeal]): 申诉请求列表
+
+        has_more (bool): 是否还有下一页
+    """
+
+    __slots__ = ['_has_more']
+
+    def __init__(self, _raw_data: Optional[dict] = None) -> None:
+        super(Appeals, self).__init__(_raw_data)
+
+        if _raw_data:
+            self._has_more = _raw_data['data'].get('has_more', False)
+
+        else:
+            self._has_more = False
+
+    @property
+    def objs(self) -> List[Appeal]:
+        """
+        申诉请求列表
+        """
+
+        if self._objs is None:
+
+            if self._raw_data:
+                self._objs = [Appeal(_dict) for _dict in self._raw_data['data'].get('appeal_list', [])]
+
+            else:
+                self._objs = []
+
+        return self._objs
+
+    @property
+    def has_more(self) -> bool:
+        """
+        是否还有下一页
+        """
+
+        return self._has_more
+
+
+class Fans(_Containers[UserInfo]):
+    """
+    粉丝列表
+
+    Attributes:
+        objs (list[UserInfo]): 粉丝列表
+
+        page (Page): 页信息
+        has_more (bool): 是否还有下一页
+    """
+
+    __slots__ = ['_page']
+
+    def __init__(self, _raw_data: Optional[dict] = None) -> None:
+        super(Fans, self).__init__(_raw_data)
+
+        self._page = None
+
+    @property
+    def objs(self) -> List[UserInfo]:
+        """
+        粉丝列表
+        """
+
+        if self._objs is None:
+
+            if self._raw_data:
+                self._objs = [
+                    UserInfo(_raw_data=ParseDict(_dict, User_pb2.User(), ignore_unknown_fields=True))
+                    for _dict in self._raw_data['user_list']
+                ]
+            else:
+                self._objs = []
+
+        return self._objs
+
+    @property
+    def page(self) -> Page:
+        """
+        页信息
+        """
+
+        if self._page is None:
+
+            if self._raw_data:
+                self._page = Page(ParseDict(self._raw_data['page'], Page_pb2.Page(), ignore_unknown_fields=True))
+            else:
+                self._page = Page()
+
+        return self._page
+
+    @property
+    def has_more(self) -> bool:
+        """
+        是否还有下一页
+        """
+
+        return self.page.has_more
+
+
+class Follows(_Containers[UserInfo]):
+    """
+    关注列表
+
+    Attributes:
+        objs (list[UserInfo]): 关注列表
+
+        has_more (bool): 是否还有下一页
+    """
+
+    __slots__ = ['_has_more']
+
+    def __init__(self, _raw_data: Optional[dict] = None) -> None:
+        super(Follows, self).__init__(_raw_data)
+
+        if _raw_data:
+            self._has_more = bool(int(_raw_data['has_more']))
+
+        else:
+            self._has_more = False
+
+    @property
+    def objs(self) -> List[UserInfo]:
+        """
+        关注列表
+        """
+
+        if self._objs is None:
+
+            if self._raw_data:
+                self._objs = [
+                    UserInfo(_raw_data=ParseDict(_dict, User_pb2.User(), ignore_unknown_fields=True))
+                    for _dict in self._raw_data['follow_list']
+                ]
+            else:
+                self._objs = []
+
+        return self._objs
+
+    @property
+    def has_more(self) -> bool:
+        """
+        是否还有下一页
+        """
+
+        return self._has_more
+
+
+class SelfFollowForums(_Containers[Forum]):
+    """
+    本账号关注贴吧列表
+
+    Attributes:
+        objs (list[Forum]): 本账号关注贴吧列表
+
+        page (Page): 页信息
+        has_more (bool): 是否还有下一页
+    """
+
+    __slots__ = ['_page']
+
+    def __init__(self, _raw_data: Optional[dict] = None) -> None:
+        super(SelfFollowForums, self).__init__(_raw_data)
+
+        self._page = None
+
+    @property
+    def objs(self) -> List[Forum]:
+        """
+        本账号关注贴吧列表
+        """
+
+        if self._objs is None:
+
+            if self._raw_data:
+                self._objs = [
+                    Forum(
+                        ParseDict(
+                            _dict,
+                            GetForumSquareResIdl_pb2.GetForumSquareResIdl.DataRes.RecommendForumInfo(),
+                            ignore_unknown_fields=True,
+                        )
+                    )
+                    for _dict in self._raw_data['data']['like_forum']['list']
+                ]
+
+            else:
+                self._objs = []
+
+        return self._objs
+
+    @property
+    def page(self) -> Page:
+        """
+        页信息
+        """
+
+        if self._page is None:
+
+            if self._raw_data:
+                page_dict: Dict[str, int] = self._raw_data['data']['like_forum']['page']
+                page_dict['current_page'] = page_dict.pop('cur_page')
+                self._page = Page(ParseDict(page_dict, Page_pb2.Page(), ignore_unknown_fields=True))
+
+            else:
+                self._page = Page()
+
+        return self._page
+
+    @property
+    def has_more(self) -> bool:
+        """
+        是否还有下一页
+        """
+
+        return self.page.has_more
+
+
+class DislikeForums(_Containers[Forum]):
+    """
+    首页推荐屏蔽的贴吧列表
+
+    Attributes:
+        objs (list[Forum]): 首页推荐屏蔽的贴吧列表
+
+        has_more (bool): 是否还有下一页
+    """
+
+    __slots__ = ['_has_more']
+
+    def __init__(
+        self, _raw_data: Optional[GetDislikeListResIdl_pb2.GetDislikeListResIdl.DataRes.ForumList] = None
+    ) -> None:
+        super(DislikeForums, self).__init__(_raw_data)
+
+        if _raw_data:
+            self._has_more = bool(_raw_data.has_more)
+
+        else:
+            self._has_more = False
+
+    @property
+    def objs(self) -> List[Forum]:
+        """
+        首页推荐屏蔽的贴吧列表
+        """
+
+        if self._objs is None:
+
+            if self._raw_data:
+                self._objs = [Forum(_proto) for _proto in self._raw_data.forum_list]
 
             else:
                 self._objs = []

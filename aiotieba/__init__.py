@@ -22,3 +22,8 @@ if os.name == 'posix':
         raise KeyboardInterrupt
 
     signal.signal(signal.SIGTERM, terminate)
+
+elif os.name == 'nt':
+    import asyncio
+
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())

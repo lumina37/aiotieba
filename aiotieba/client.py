@@ -58,24 +58,30 @@ from .tieba_protobuf import (
 )
 from .types import (
     JSON_DECODER,
+    Appeals,
     Ats,
     BasicUserInfo,
+    BlacklistUsers,
     Comments,
+    DislikeForums,
+    Fans,
+    Forum,
+    FollowForums,
+    Follows,
+    MemberUsers,
     NewThread,
     Posts,
+    RankUsers,
+    RecomThreads,
+    Recovers,
     Replys,
     Searches,
+    SelfFollowForums,
+    SquareForums,
     Thread,
     Threads,
     UserInfo,
     UserPosts,
-    RankUsers,
-    MemberUsers,
-    SquareForums,
-    FollowForums,
-    RecomThreads,
-    Recovers,
-    BlacklistUsers,
 )
 
 
@@ -756,7 +762,7 @@ class Client(object):
             str: 该贴吧的贴吧名
         """
 
-        fname = (await self.get_forum_detail(fid))[0]
+        fname = (await self.get_forum_detail(fid)).fname
 
         return fname
 
@@ -1251,7 +1257,7 @@ class Client(object):
 
         return searches
 
-    async def get_forum_detail(self, fname_or_fid: Union[str, int]) -> Tuple[str, int, int]:
+    async def get_forum_detail(self, fname_or_fid: Union[str, int]) -> Forum:
         """
         通过forum_id获取贴吧信息
 
@@ -1259,7 +1265,7 @@ class Client(object):
             fname_or_fid (str | int): 目标贴吧名或fid 优先fid
 
         Returns:
-            tuple[str, int, int]: 该贴吧的贴吧名, 吧会员数, 主题帖数
+            Forum: 贴吧信息
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -1279,19 +1285,24 @@ class Client(object):
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
-            fname = res_json['forum_info']['forum_name']
-            member_num = int(res_json['forum_info']['member_count'])
-            thread_num = int(res_json['forum_info']['thread_count'])
+            forum_dict: Dict[str, str] = res_json['forum_info']
+            forum_dict['thread_num'] = forum_dict.pop('thread_count')
+
+            res = Forum(
+                ParseDict(
+                    forum_dict,
+                    GetDislikeListResIdl_pb2.GetDislikeListResIdl.DataRes.ForumList(),
+                    ignore_unknown_fields=True,
+                )
+            )
 
         except Exception as err:
             LOG.warning(f"Failed to get forum_detail of {fname_or_fid}. reason:{err}")
-            fname = ''
-            member_num = 0
-            thread_num = 0
+            res = Forum()
 
-        return fname, member_num, thread_num
+        return res
 
-    async def get_bawu_dict(self, fname_or_fid: Union[str, int]) -> Dict[str, List[BasicUserInfo]]:
+    async def get_bawu_info(self, fname_or_fid: Union[str, int]) -> Dict[str, List[BasicUserInfo]]:
         """
         获取吧务信息
 
@@ -2415,7 +2426,7 @@ class Client(object):
             blacklist_users = BlacklistUsers(soup)
 
         except Exception as err:
-            LOG.warning(f"Failed to get black_list of {fname} pn:{pn}. reason:{err}")
+            LOG.warning(f"Failed to get blacklist_users of {fname} pn:{pn}. reason:{err}")
             blacklist_users = BlacklistUsers()
 
         return blacklist_users
@@ -2506,9 +2517,7 @@ class Client(object):
         LOG.info(f"Successfully removed {user.user_id} from black_list in {fname}")
         return True
 
-    async def get_unblock_appeal_list(
-        self, fname_or_fid: Union[str, int], /, pn: int = 1, *, rn: int = 5
-    ) -> Tuple[List[int], bool]:
+    async def get_unblock_appeals(self, fname_or_fid: Union[str, int], /, pn: int = 1, *, rn: int = 5) -> Appeals:
         """
         获取申诉请求列表
 
@@ -2518,7 +2527,7 @@ class Client(object):
             rn (int, optional): 请求的条目数. Defaults to 5.
 
         Returns:
-            tuple[list[int], bool]: list[申诉请求的appeal_id], 是否还有下一页
+            Appeals: 申诉请求列表
         """
 
         if isinstance(fname_or_fid, str):
@@ -2546,15 +2555,13 @@ class Client(object):
             if int(res_json['no']):
                 raise ValueError(res_json['error'])
 
-            res_list = [int(appeal_dict['appeal_id']) for appeal_dict in res_json['data'].get('appeal_list', [])]
-            has_more = res_json['data'].get('has_more', False)
+            appeals = Appeals(res_json)
 
         except Exception as err:
-            LOG.warning(f"Failed to get appeal_list of {fname}. reason:{err}")
-            res_list = []
-            has_more = False
+            LOG.warning(f"Failed to get appeals of {fname}. reason:{err}")
+            appeals = Appeals()
 
-        return res_list, has_more
+        return appeals
 
     async def handle_unblock_appeals(
         self, fname_or_fid: Union[str, int], /, appeal_ids: List[int], *, refuse: bool = True
@@ -2922,21 +2929,31 @@ class Client(object):
 
         return res_list
 
-    async def get_self_fan_list(self, pn: int = 1) -> Tuple[List[UserInfo], bool]:
+    async def get_fans(self, _id: Union[str, int, None] = None, /, pn: int = 1) -> Fans:
         """
-        获取第pn页的本人粉丝列表
+        获取粉丝列表
 
         Args:
             pn (int, optional): 页码. Defaults to 1.
+            _id (str | int | None): 待获取用户的id user_id/user_name/portrait 优先user_id
+                默认为None即获取本账号信息. Defaults to None.
 
         Returns:
-            tuple[list[UserInfo], bool]: list[粉丝用户信息], 是否还有下一页
+            Fans: 粉丝列表
         """
+
+        if _id is None:
+            user = await self.get_self_info()
+        elif not BasicUserInfo.is_user_id(_id):
+            user = await self.get_basic_user_info(_id)
+        else:
+            user = BasicUserInfo(_id)
 
         payload = [
             ('BDUSS', self.BDUSS),
             ('_client_version', self.latest_version),
             ('pn', pn),
+            ('uid', user.user_id),
         ]
 
         try:
@@ -2949,34 +2966,39 @@ class Client(object):
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
-            res_list = [
-                UserInfo(_raw_data=ParseDict(user_dict, User_pb2.User(), ignore_unknown_fields=True))
-                for user_dict in res_json['user_list']
-            ]
-            has_more = bool(int(res_json['page']['has_more']))
+            fans = Fans(res_json)
 
         except Exception as err:
-            LOG.warning(f"Failed to get self_fan_list. reason:{err}")
-            res_list = []
-            has_more = False
+            LOG.warning(f"Failed to get fans. reason:{err}")
+            fans = Fans()
 
-        return res_list, has_more
+        return fans
 
-    async def get_self_follow_list(self, pn: int = 1) -> Tuple[List[UserInfo], bool]:
+    async def get_follows(self, _id: Union[str, int, None] = None, /, pn: int = 1) -> Follows:
         """
-        获取第pn页的本人关注列表
+        获取关注列表
 
         Args:
             pn (int, optional): 页码. Defaults to 1.
+            _id (str | int | None): 待获取用户的id user_id/user_name/portrait 优先user_id
+                默认为None即获取本账号信息. Defaults to None.
 
         Returns:
-            tuple[list[UserInfo], bool]: list[关注用户信息], 是否还有下一页
+            Follows: 关注列表
         """
+
+        if _id is None:
+            user = await self.get_self_info()
+        elif not BasicUserInfo.is_user_id(_id):
+            user = await self.get_basic_user_info(_id)
+        else:
+            user = BasicUserInfo(_id)
 
         payload = [
             ('BDUSS', self.BDUSS),
             ('_client_version', self.latest_version),
             ('pn', pn),
+            ('uid', user.user_id),
         ]
 
         try:
@@ -2989,28 +3011,26 @@ class Client(object):
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
-            res_list = [
-                UserInfo(_raw_data=ParseDict(user_dict, User_pb2.User(), ignore_unknown_fields=True))
-                for user_dict in res_json['follow_list']
-            ]
-            has_more = bool(int(res_json['has_more']))
+            follows = Follows(res_json)
 
         except Exception as err:
-            LOG.warning(f"Failed to get self_follow_list. reason:{err}")
-            res_list = []
-            has_more = False
+            LOG.warning(f"Failed to get follows. reason:{err}")
+            follows = Follows()
 
-        return res_list, has_more
+        return follows
 
-    async def get_self_forum_list(self, pn: int = 1) -> Tuple[List[Tuple[str, int]], bool]:
+    async def get_self_follow_forums(self, pn: int = 1) -> SelfFollowForums:
         """
-        获取第pn页的本人关注贴吧列表
+        获取本账号关注贴吧列表
 
         Args:
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
-            tuple[list[tuple[str, int]], bool]: list[贴吧名, 贴吧id], 是否还有下一页
+            SelfFollowForums: 本账号关注贴吧列表
+
+        Note:
+            本接口需要STOKEN
         """
 
         try:
@@ -3026,20 +3046,15 @@ class Client(object):
             if int(res_json['errno']):
                 raise ValueError(res_json['errmsg'])
 
-            forums: list[dict] = res_json['data']['like_forum']['list']
-            res_list = [(forum['forum_name'], int(forum['forum_id'])) for forum in forums]
-            has_more = len(forums) == 200
+            self_follow_forums = SelfFollowForums(res_json)
 
         except Exception as err:
-            LOG.warning(f"Failed to get self_forum_list. reason:{err}")
-            res_list = []
-            has_more = False
+            LOG.warning(f"Failed to get self_follow_forums. reason:{err}")
+            self_follow_forums = SelfFollowForums()
 
-        return res_list, has_more
+        return self_follow_forums
 
-    async def get_self_dislike_forum_list(
-        self, pn: int = 1, /, *, rn: int = 20
-    ) -> List[Tuple[str, int, int, int, int]]:
+    async def get_dislike_forums(self, pn: int = 1, /, *, rn: int = 20) -> DislikeForums:
         """
         获取首页推荐屏蔽的贴吧列表
 
@@ -3048,7 +3063,7 @@ class Client(object):
             rn (int, optional): 请求的条目数. Defaults to 20.
 
         Returns:
-            tuple[list[tuple[str, int, int, int, int]], bool]: list[贴吧名,贴吧id,吧会员数,主题帖数,总帖数], 是否还有下一页
+            DislikeForums: 首页推荐屏蔽的贴吧列表
         """
 
         common_proto = CommonReq_pb2.CommonReq()
@@ -3072,18 +3087,13 @@ class Client(object):
             if int(res_proto.error.errorno):
                 raise ValueError(res_proto.error.errmsg)
 
-            res_list = [
-                (forum.forum_name, forum.forum_id, forum.member_count, forum.thread_num, forum.post_num)
-                for forum in res_proto.data.forum_list
-            ]
-            has_more = bool(res_proto.data.has_more)
+            dislike_forums = DislikeForums(res_proto.data)
 
         except Exception as err:
-            LOG.warning(f"Failed to get self_dislike_forum_list. reason:{err}")
-            res_list = []
-            has_more = False
+            LOG.warning(f"Failed to get dislike_forums. reason:{err}")
+            dislike_forums = DislikeForums()
 
-        return res_list, has_more
+        return dislike_forums
 
     async def remove_fan(self, _id: Union[str, int]):
         """
