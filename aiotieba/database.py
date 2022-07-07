@@ -523,7 +523,7 @@ class Database(object):
         """
 
         if not user_id:
-            return
+            return False
 
         try:
             async with self._pool.acquire() as conn:
