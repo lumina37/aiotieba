@@ -2592,8 +2592,8 @@ class Client(object):
             ]
             + [(f'appeal_list[{i}]', appeal_id) for i, appeal_id in enumerate(appeal_ids)]
             + [
+                ('refuse_reason', '_'),
                 ('status', '2' if refuse else '1'),
-                ('refuse_reason', ' '),
                 ('tbs', await self.get_tbs()),
             ]
         )
