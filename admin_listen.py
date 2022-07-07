@@ -447,6 +447,27 @@ class Listener(object):
         await self._delete(ctx)
 
     @check_permission(need_permission=2, need_arg_num=1)
+    async def cmd_recover(self, ctx: Context) -> None:
+        """
+        recover指令
+        恢复删帖
+        """
+
+        tb.LOG.info(f"{ctx.log_name}:{ctx.text} in tid:{ctx.tid}")
+
+        _id = ctx.args[0]
+        _id = _id[_id.rfind('#') + 1 :]
+        _id = int(_id)
+
+        if _id < 1e11:
+            success = await ctx.handler.admin.recover_thread(ctx.fname, _id)
+        else:
+            success = await ctx.handler.admin.recover_post(ctx.fname, _id)
+
+        if success:
+            await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
+
+    @check_permission(need_permission=2, need_arg_num=1)
     async def cmd_block(self, ctx: Context) -> None:
         """
         block指令
