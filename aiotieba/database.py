@@ -276,7 +276,7 @@ class Database(object):
                     DO DELETE FROM `id_{fname}` WHERE record_time<(CURRENT_TIMESTAMP() + INTERVAL -15 DAY)"""
                 )
 
-    async def add_id(self, fname: str, _id: int, tag: int = 0) -> bool:
+    async def add_id(self, fname: str, /, _id: int, *, tag: int = 0) -> bool:
         """
         将id添加到表id_{fname}
 
@@ -298,7 +298,7 @@ class Database(object):
             return False
         return True
 
-    async def get_id(self, fname: str, _id: int) -> Optional[int]:
+    async def get_id(self, fname: str, /, _id: int) -> Optional[int]:
         """
         获取表id_{fname}中id对应的tag值
 
@@ -322,7 +322,7 @@ class Database(object):
                 return res_tuple[0]
             return None
 
-    async def del_id(self, fname: str, _id: int) -> bool:
+    async def del_id(self, fname: str, /, _id: int) -> bool:
         """
         从表id_{fname}中删除id
 
@@ -345,7 +345,7 @@ class Database(object):
         LOG.info(f"Successfully deleted {_id} from table of {fname}")
         return True
 
-    async def del_ids(self, fname: str, hour: int) -> bool:
+    async def del_ids(self, fname: str, /, hour: int) -> bool:
         """
         删除表id_{fname}中最近hour个小时记录的id
 
@@ -392,7 +392,7 @@ class Database(object):
                     DO DELETE FROM `tid_{fname}` WHERE `record_time`<(CURRENT_TIMESTAMP() + INTERVAL -15 DAY)"""
                 )
 
-    async def add_tid(self, fname: str, tid: int, tag: int = 0) -> bool:
+    async def add_tid(self, fname: str, /, tid: int, *, tag: int = 0) -> bool:
         """
         将tid添加到表tid_{fname}
 
@@ -416,7 +416,7 @@ class Database(object):
         LOG.info(f"Successfully added {tid} to table of {fname}. tag: {tag}")
         return True
 
-    async def get_tid(self, fname: str, tid: int) -> Optional[int]:
+    async def get_tid(self, fname: str, /, tid: int) -> Optional[int]:
         """
         获取表tid_{fname}中tid对应的tag值
 
@@ -440,7 +440,7 @@ class Database(object):
                 return res_tuple[0]
             return None
 
-    async def del_tid(self, fname: str, tid: int) -> bool:
+    async def del_tid(self, fname: str, /, tid: int) -> bool:
         """
         从表tid_{fname}中删除tid
 
@@ -462,7 +462,7 @@ class Database(object):
         LOG.info(f"Successfully deleted {tid} from table of {fname}")
         return True
 
-    async def get_tid_list(self, fname: str, tag: int = 0, *, limit: int = 128, offset: int = 0) -> List[int]:
+    async def get_tid_list(self, fname: str, /, tag: int = 0, *, limit: int = 128, offset: int = 0) -> List[int]:
         """
         获取表tid_{fname}中对应tag的tid列表
 
@@ -508,7 +508,7 @@ class Database(object):
                     INDEX `permission`(permission), INDEX `record_time`(record_time))"
                 )
 
-    async def add_user_id(self, fname: str, user_id: int, permission: int = 0, note: str = '') -> bool:
+    async def add_user_id(self, fname: str, /, user_id: int, *, permission: int = 0, note: str = '') -> bool:
         """
         将user_id添加到表user_id_{fname}
 
@@ -537,7 +537,7 @@ class Database(object):
         LOG.info(f"Successfully added {user_id} to table of {fname}. permission: {permission} note: {note}")
         return True
 
-    async def del_user_id(self, fname: str, user_id: int) -> bool:
+    async def del_user_id(self, fname: str, /, user_id: int) -> bool:
         """
         从表user_id_{fname}中删除user_id
 
@@ -559,7 +559,7 @@ class Database(object):
         LOG.info(f"Successfully deleted {user_id} from table of {fname}")
         return True
 
-    async def get_user_id(self, fname: str, user_id: int) -> int:
+    async def get_user_id(self, fname: str, /, user_id: int) -> int:
         """
         获取表user_id_{fname}中user_id的权限级别
 
@@ -583,7 +583,7 @@ class Database(object):
                 return res_tuple[0]
             return 0
 
-    async def get_user_id_full(self, fname: str, user_id: int) -> Tuple[int, str, datetime.datetime]:
+    async def get_user_id_full(self, fname: str, /, user_id: int) -> Tuple[int, str, datetime.datetime]:
         """
         获取表user_id_{fname}中user_id的完整信息
 
@@ -611,7 +611,7 @@ class Database(object):
             return 0, '', datetime.datetime(1970, 1, 1)
 
     async def get_user_id_list(
-        self, fname: str, lower_permission: int = 0, upper_permission: int = 5, *, limit: int = 1, offset: int = 0
+        self, fname: str, /, lower_permission: int = 0, upper_permission: int = 5, *, limit: int = 1, offset: int = 0
     ) -> List[int]:
         """
         获取表user_id_{fname}中user_id的列表
@@ -659,7 +659,9 @@ class Database(object):
                     INDEX `permission`(permission), INDEX `record_time`(record_time))"
                 )
 
-    async def add_imghash(self, fname: str, img_hash: str, raw_hash: str, permission: int = 0, note: str = '') -> bool:
+    async def add_imghash(
+        self, fname: str, /, img_hash: str, raw_hash: str, *, permission: int = 0, note: str = ''
+    ) -> bool:
         """
         将img_hash添加到表imghash_{fname}
 
@@ -688,7 +690,7 @@ class Database(object):
         LOG.info(f"Successfully added {img_hash} to table of {fname}. permission: {permission} note: {note}")
         return True
 
-    async def del_imghash(self, fname: str, img_hash: str) -> bool:
+    async def del_imghash(self, fname: str, /, img_hash: str) -> bool:
         """
         从imghash_{fname}中删除img_hash
 
@@ -711,7 +713,7 @@ class Database(object):
         LOG.info(f"Successfully deleted {img_hash} from table of {fname}")
         return True
 
-    async def get_imghash(self, fname: str, img_hash: str) -> int:
+    async def get_imghash(self, fname: str, /, img_hash: str) -> int:
         """
         获取表imghash_{fname}中img_hash的封锁级别
 
@@ -735,7 +737,7 @@ class Database(object):
                 return res_tuple[0]
             return 0
 
-    async def get_imghash_full(self, fname: str, img_hash: str) -> Tuple[int, str]:
+    async def get_imghash_full(self, fname: str, /, img_hash: str) -> Tuple[int, str]:
         """
         获取表imghash_{fname}中img_hash的完整信息
 

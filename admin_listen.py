@@ -360,7 +360,7 @@ class Listener(object):
                 from_tab_id = thread.tab_id
         to_tab_id = threads.tab_map.get(ctx.args[0], 0)
 
-        if await ctx.handler.admin.move(ctx.fname, ctx.tid, to_tab_id, from_tab_id):
+        if await ctx.handler.admin.move(ctx.fname, ctx.tid, to_tab_id=to_tab_id, from_tab_id=from_tab_id):
             await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=2, need_arg_num=0)
@@ -374,7 +374,7 @@ class Listener(object):
 
         cname = ctx.args[0] if len(ctx.args) else ''
 
-        if await ctx.handler.admin.good(ctx.fname, ctx.tid, cname):
+        if await ctx.handler.admin.good(ctx.fname, ctx.tid, cname=cname):
             await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=2, need_arg_num=0)
@@ -447,6 +447,27 @@ class Listener(object):
         await self._delete(ctx)
 
     @check_permission(need_permission=2, need_arg_num=1)
+    async def cmd_recover(self, ctx: Context) -> None:
+        """
+        recover指令
+        恢复删帖
+        """
+
+        tb.LOG.info(f"{ctx.log_name}:{ctx.text} in tid:{ctx.tid}")
+
+        _id = ctx.args[0]
+        _id = _id[_id.rfind('#') + 1 :]
+        _id = int(_id)
+
+        if _id < 1e11:
+            success = await ctx.handler.admin.recover_thread(ctx.fname, _id)
+        else:
+            success = await ctx.handler.admin.recover_post(ctx.fname, _id)
+
+        if success:
+            await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
+
+    @check_permission(need_permission=2, need_arg_num=1)
     async def cmd_block(self, ctx: Context) -> None:
         """
         block指令
@@ -483,7 +504,7 @@ class Listener(object):
 
         user = await self._arg2user_info(ctx.args[0])
 
-        if await ctx.handler.admin.block(ctx.fname, user, block_days, ctx.note):
+        if await ctx.handler.admin.block(ctx.fname, user.portrait, day=block_days, reason=ctx.note):
             await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=2, need_arg_num=1)
@@ -497,7 +518,7 @@ class Listener(object):
 
         user = await self._arg2user_info(ctx.args[0])
 
-        if await ctx.handler.admin.unblock(ctx.fname, user):
+        if await ctx.handler.admin.unblock(ctx.fname, user.user_id):
             await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=2, need_arg_num=0)
@@ -625,7 +646,7 @@ class Listener(object):
                 coros.append(ctx.handler.admin.del_thread(ctx.fname, ctx.parent.tid))
 
         if block_days:
-            coros.append(ctx.handler.admin.block(ctx.fname, ctx.parent.user, block_days, ctx.note))
+            coros.append(ctx.handler.admin.block(ctx.fname, ctx.parent.user.portrait, day=block_days, reason=ctx.note))
         if blacklist:
             old_permission, old_note, _ = await ctx.handler.admin.get_user_id_full(ctx.parent.user.user_id)
             if old_permission < ctx.this_permission:
@@ -634,18 +655,6 @@ class Listener(object):
 
         await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
         await asyncio.gather(*coros)
-
-    @check_permission(need_permission=2, need_arg_num=0)
-    async def cmd_refuse_appeals(self, ctx: Context) -> None:
-        """
-        refuse_appeals指令
-        一键拒绝所有解封申诉
-        """
-
-        tb.LOG.info(f"{ctx.log_name}:{ctx.text} in tid:{ctx.tid}")
-
-        await ctx.handler.admin.refuse_unblock_appeals(ctx.fname)
-        await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=4, need_arg_num=2)
     async def cmd_set(self, ctx: Context) -> None:
@@ -724,7 +733,9 @@ class Listener(object):
                 return
             img_hash = self.listener.compute_imghash(image)
 
-            await ctx.handler.admin.database.add_imghash(ctx.fname, img_hash, img.hash, permission, note)
+            await ctx.handler.admin.database.add_imghash(
+                ctx.fname, img_hash, img.hash, permission=permission, note=note
+            )
 
         await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
 
@@ -818,7 +829,7 @@ class Listener(object):
                     if comment.user.level >= min_level and keyword in text:
                         vote_set.add(comment.user.user_id)
 
-                if not comments.page.has_more:
+                if not comments.has_more:
                     break
 
             if vote_num := len(vote_set):
@@ -850,7 +861,7 @@ class Listener(object):
 
         user = await self._arg2user_info(ctx.args[0])
 
-        if await ctx.handler.admin.blacklist_add(ctx.fname, user):
+        if await ctx.handler.admin.blacklist_add(ctx.fname, user.user_id):
             await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=3, need_arg_num=1)
@@ -864,7 +875,7 @@ class Listener(object):
 
         user = await self._arg2user_info(ctx.args[0])
 
-        if await ctx.handler.admin.blacklist_del(ctx.fname, user):
+        if await ctx.handler.admin.blacklist_del(ctx.fname, user.user_id):
             await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=2, need_arg_num=0)
@@ -876,7 +887,9 @@ class Listener(object):
 
         tb.LOG.info(f"{ctx.log_name}:{ctx.text} in tid:{ctx.tid}")
 
-        if await ctx.handler.admin.add_tid(ctx.tid, True) and await ctx.handler.admin.hide_thread(ctx.fname, ctx.tid):
+        if await ctx.handler.admin.add_tid(ctx.tid, mode=True) and await ctx.handler.admin.hide_thread(
+            ctx.fname, ctx.tid
+        ):
             await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=2, need_arg_num=0)
@@ -901,17 +914,17 @@ class Listener(object):
         tb.LOG.info(f"{ctx.log_name}:{ctx.text} in tid:{ctx.tid}")
 
         if ctx.args[0] == "enter":
-            if await ctx.handler.admin.add_tid(0, True):
+            if await ctx.handler.admin.add_tid(0, mode=True):
                 await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
         elif ctx.args[0] == "exit":
-            if await ctx.handler.admin.add_tid(0, False):
+            if await ctx.handler.admin.add_tid(0, mode=False):
                 await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
             limit = 128
             tids = await ctx.handler.admin.get_tid_hide_list(limit=limit)
             while 1:
                 for tid in tids:
                     if await ctx.handler.admin.unhide_thread(ctx.fname, tid):
-                        await ctx.handler.admin.add_tid(tid, False)
+                        await ctx.handler.admin.add_tid(tid, mode=False)
                 if len(tids) != limit:
                     break
 

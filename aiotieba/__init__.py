@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 """
-@Version: 2.7.6_beta
+@Version: 2.7.6
 @Author: starry.qvq@gmail.com
 @License: Unlicense
 @Homepage: https://github.com/Starry-OvO/Tieba-Manager
@@ -22,3 +22,8 @@ if os.name == 'posix':
         raise KeyboardInterrupt
 
     signal.signal(signal.SIGTERM, terminate)
+
+elif os.name == 'nt':
+    import asyncio
+
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())

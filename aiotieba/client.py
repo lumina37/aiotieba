@@ -8,7 +8,6 @@ import gzip
 import hashlib
 import json
 import random
-import re
 import socket
 import time
 import uuid
@@ -16,10 +15,10 @@ import weakref
 from typing import ClassVar, Dict, List, Literal, Optional, Tuple, Union
 
 import aiohttp
+import bs4
 import cv2 as cv
 import numpy as np
 import yarl
-from bs4 import BeautifulSoup
 from Crypto.Cipher import AES, PKCS1_v1_5
 from Crypto.PublicKey import RSA
 from google.protobuf.json_format import ParseDict
@@ -51,7 +50,6 @@ from .tieba_protobuf import (
     ReplyMeResIdl_pb2,
     SearchPostForumReqIdl_pb2,
     SearchPostForumResIdl_pb2,
-    ThreadInfo_pb2,
     UpdateClientInfoReqIdl_pb2,
     UpdateClientInfoResIdl_pb2,
     User_pb2,
@@ -60,13 +58,26 @@ from .tieba_protobuf import (
 )
 from .types import (
     JSON_DECODER,
+    Appeals,
     Ats,
     BasicUserInfo,
+    BlacklistUsers,
     Comments,
+    DislikeForums,
+    Fans,
+    Forum,
+    FollowForums,
+    Follows,
+    MemberUsers,
     NewThread,
     Posts,
+    RankUsers,
+    RecomThreads,
+    Recovers,
     Replys,
     Searches,
+    SelfFollowForums,
+    SquareForums,
     Thread,
     Threads,
     UserInfo,
@@ -78,9 +89,9 @@ class WebsocketResponse(object):
     """
     websocket响应
 
-    Fields:
-        _timestamp (int): 请求时间戳
-        _req_id (int): 唯一的请求id
+    Attributes:
+        timestamp (int): 请求时间戳
+        req_id (int): 唯一的请求id
         _readable_event (asyncio.Event): 当该事件被set时意味着data已经可读
         _data (bytes): 来自websocket的数据
     """
@@ -92,14 +103,10 @@ class WebsocketResponse(object):
 
     def __init__(self) -> None:
         self._timestamp: int = int(time.time())
-
-        if self._websocket_request_id is None:
-            self._websocket_request_id = self._timestamp - 1
-        self._websocket_request_id += 1
-        self._req_id = self._websocket_request_id
-
+        self._req_id = self.websocket_request_id
         self._readable_event: asyncio.Event = asyncio.Event()
         self._data: bytes = None
+
         self.ws_res_wait_dict[self._req_id] = self
 
     def __hash__(self) -> int:
@@ -109,12 +116,35 @@ class WebsocketResponse(object):
         return self._readable_event is obj._readable_event and self._req_id == obj._req_id
 
     @property
-    def req_id(self) -> int:
-        return self._req_id
+    def timestamp(self) -> int:
+        """
+        请求时间戳
+
+        Note:
+            13位时间戳
+        """
+
+        return self._timestamp
 
     @property
-    def timestamp(self) -> int:
-        return self._timestamp
+    def websocket_request_id(self) -> int:
+        """
+        每次调用都会返回一个唯一的请求id
+        """
+
+        if self._websocket_request_id is None:
+            self._websocket_request_id = self._timestamp
+        self._websocket_request_id += 1
+
+        return self._websocket_request_id
+
+    @property
+    def req_id(self) -> int:
+        """
+        唯一的请求id
+        """
+
+        return self._req_id
 
     async def read(self, timeout: float) -> bytes:
         """
@@ -168,7 +198,7 @@ class Client(object):
         '_cuid_galaxy2',
     ]
 
-    latest_version: ClassVar[str] = "12.25.4.3"  # 这是目前的最新版本
+    latest_version: ClassVar[str] = "12.25.5.0"  # 这是目前的最新版本
     no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
     post_version: ClassVar[str] = "9.1.0.0"  # 发帖使用极速版
 
@@ -553,7 +583,7 @@ class Client(object):
             need_encrypt (bool, optional): 是否需要aes加密. Defaults to False.
 
         Returns:
-            bytes: 封装后的websocket数据
+            WebsocketResponse: 用于等待返回数据的WebsocketResponse实例
         """
 
         ws_res = WebsocketResponse()
@@ -611,12 +641,12 @@ class Client(object):
                 req_proto.data.CopyFrom(data_proto)
                 req_proto.cuid = f"{self.cuid}|com.baidu.tieba_mini{self.post_version}"
 
-                res = await self.send_ws_bytes(
+                resp = await self.send_ws_bytes(
                     req_proto.SerializeToString(), cmd=1001, need_gzip=False, need_encrypt=False
                 )
 
                 res_proto = UpdateClientInfoResIdl_pb2.UpdateClientInfoResIdl()
-                res_proto.ParseFromString(await res.read(timeout=5))
+                res_proto.ParseFromString(await resp.read(timeout=5))
                 if int(res_proto.error.errorno):
                     raise ValueError(res_proto.error.errmsg)
 
@@ -666,12 +696,12 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post(
+            resp = await self.app.post(
                 yarl.URL.build(path="/c/s/login"),
                 data=self.pack_form(payload),
             )
 
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -703,12 +733,12 @@ class Client(object):
             return fid
 
         try:
-            res = await self.web.get(
+            resp = await self.web.get(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/f/commit/share/fnameShareApi"),
                 params={'fname': fname, 'ie': 'utf-8'},
             )
 
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['no']):
                 raise ValueError(res_json['error'])
 
@@ -732,7 +762,7 @@ class Client(object):
             str: 该贴吧的贴吧名
         """
 
-        fname = (await self.get_forum_detail(fid))[0]
+        fname = (await self.get_forum_detail(fid)).fname
 
         return fname
 
@@ -774,7 +804,7 @@ class Client(object):
 
     async def _id2user_info(self, user: UserInfo) -> UserInfo:
         """
-        通过用户名或昵称或portrait补全完整版用户信息
+        通过用户名或旧版昵称或portrait补全完整版用户信息
 
         Args:
             user (UserInfo): 待补全的用户信息
@@ -784,15 +814,15 @@ class Client(object):
         """
 
         try:
-            res = await self.web.get(
+            resp = await self.web.get(
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/home/get/panel"),
                 params={
                     'id': user.portrait,
-                    'un': user.user_name or user.nick_name,
+                    'un': user.user_name or user.old_nick_name,
                 },
             )
 
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['no']):
                 raise ValueError(res_json['error'])
 
@@ -806,11 +836,21 @@ class Client(object):
             else:
                 gender = 0
 
-            user.user_name = user_dict['name']
-            user.nick_name = user_dict['show_nickname']
-            user.portrait = user_dict['portrait']
             user.user_id = user_dict['id']
+            user.user_name = user_dict['name']
+            user.portrait = user_dict['portrait']
+            user.old_nick_name = user_dict['name_show']
+            user.new_nick_name = user_dict['show_nickname']
+
             user.gender = gender
+            user.age = float(user_dict['tb_age'])
+            post_num: str = user_dict['post_num']
+            if isinstance(post_num, str):
+                user.post_num = int(float(post_num.removesuffix('万')) * 1e4)
+            else:
+                user.post_num = post_num
+            user.fan_num = int(user_dict['followed_count'])
+
             user.is_vip = int(vip_dict['v_status']) if (vip_dict := user_dict['vipInfo']) else False
 
         except Exception as err:
@@ -821,7 +861,7 @@ class Client(object):
 
     async def _id2basic_user_info(self, user: BasicUserInfo) -> BasicUserInfo:
         """
-        通过用户名或昵称或portrait补全简略版用户信息
+        通过用户名或portrait补全简略版用户信息
 
         Args:
             user (BasicUserInfo): 待补全的用户信息
@@ -831,23 +871,22 @@ class Client(object):
         """
 
         try:
-            res = await self.web.get(
+            resp = await self.web.get(
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/home/get/panel"),
                 params={
                     'id': user.portrait,
-                    'un': user.user_name or user.nick_name,
+                    'un': user.user_name,
                 },
             )
 
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['no']):
                 raise ValueError(res_json['error'])
 
             user_dict = res_json['data']
-            user.user_name = user_dict['name']
-            user.nick_name = user_dict['show_nickname']
-            user.portrait = user_dict['portrait']
             user.user_id = user_dict['id']
+            user.user_name = user_dict['name']
+            user.portrait = user_dict['portrait']
 
         except Exception as err:
             LOG.warning(f"Failed to get BasicUserInfo of {user.log_name}. reason:{err}")
@@ -867,7 +906,7 @@ class Client(object):
         """
 
         try:
-            res = await self.web.get(
+            resp = await self.web.get(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/i/sys/user_json"),
                 params={
                     'un': user.user_name,
@@ -875,7 +914,7 @@ class Client(object):
                 },
             )
 
-            text = await res.text(encoding='utf-8', errors='ignore')
+            text = await resp.text(encoding='utf-8', errors='ignore')
             res_json = json.loads(text)
             if not res_json:
                 raise ValueError("empty response")
@@ -909,13 +948,13 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            res = await self.app_proto.post(
+            resp = await self.app_proto.post(
                 yarl.URL.build(path="/c/u/user/getuserinfo", query_string="cmd=303024"),
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = GetUserInfoResIdl_pb2.GetUserInfoResIdl()
-            res_proto.ParseFromString(await res.content.read())
+            res_proto.ParseFromString(await resp.content.read())
             if int(res_proto.error.errorno):
                 raise ValueError(res_proto.error.errmsg)
 
@@ -940,17 +979,17 @@ class Client(object):
         """
 
         try:
-            res = await self.web.get(
+            resp = await self.web.get(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/im/pcmsg/query/getUserInfo"),
                 params={'chatUid': user.user_id},
             )
 
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['errno']):
                 raise ValueError(res_json['errmsg'])
 
             user_dict = res_json['chatUser']
-            user.user_name = user_dict['uname']
+            user._user_name = user_dict['uname']
             user.portrait = user_dict['portrait']
 
         except Exception as err:
@@ -978,13 +1017,13 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            res = await self.app_proto.post(
+            resp = await self.app_proto.post(
                 yarl.URL.build(path="/c/u/user/getUserByTiebaUid", query_string="cmd=309702"),
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = GetUserByTiebaUidResIdl_pb2.GetUserByTiebaUidResIdl()
-            res_proto.ParseFromString(await res.content.read())
+            res_proto.ParseFromString(await resp.content.read())
             if int(res_proto.error.errorno):
                 raise ValueError(res_proto.error.errmsg)
 
@@ -1007,7 +1046,7 @@ class Client(object):
             fname_or_fid (str | int): 贴吧的贴吧名或fid 优先贴吧名
             pn (int, optional): 页码. Defaults to 1.
             rn (int, optional): 请求的条目数. Defaults to 30.
-            sort (int, optional): 排序方式 对于有热门分区的贴吧0是热门排序1是按发布时间2报错34都是热门排序>=5是按回复时间 \
+            sort (int, optional): 排序方式 对于有热门分区的贴吧0是热门排序1是按发布时间2报错34都是热门排序>=5是按回复时间
                 对于无热门分区的贴吧0是按回复时间1是按发布时间2报错>=3是按回复时间. Defaults to 5.
             is_good (bool, optional): True为获取精品区帖子 False为获取普通区帖子. Defaults to False.
 
@@ -1030,13 +1069,13 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            res = await self.app_proto.post(
+            resp = await self.app_proto.post(
                 yarl.URL.build(path="/c/f/frs/page", query_string="cmd=301001"),
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = FrsPageResIdl_pb2.FrsPageResIdl()
-            res_proto.ParseFromString(await res.content.read())
+            res_proto.ParseFromString(await resp.content.read())
             if int(res_proto.error.errorno):
                 raise ValueError(res_proto.error.errmsg)
 
@@ -1098,13 +1137,13 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            res = await self.app_proto.post(
+            resp = await self.app_proto.post(
                 yarl.URL.build(path="/c/f/pb/page", query_string="cmd=302001"),
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = PbPageResIdl_pb2.PbPageResIdl()
-            res_proto.ParseFromString(await res.content.read())
+            res_proto.ParseFromString(await resp.content.read())
             if int(res_proto.error.errorno):
                 raise ValueError(res_proto.error.errmsg)
 
@@ -1144,13 +1183,13 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            res = await self.app_proto.post(
+            resp = await self.app_proto.post(
                 yarl.URL.build(path="/c/f/pb/floor", query_string="cmd=302002"),
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = PbFloorResIdl_pb2.PbFloorResIdl()
-            res_proto.ParseFromString(await res.content.read())
+            res_proto.ParseFromString(await resp.content.read())
             if int(res_proto.error.errorno):
                 raise ValueError(res_proto.error.errmsg)
 
@@ -1201,12 +1240,12 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post(
+            resp = await self.app.post(
                 yarl.URL.build(path="/c/s/searchpost"),
                 data=self.pack_form(payload),
             )
 
-            res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -1218,7 +1257,7 @@ class Client(object):
 
         return searches
 
-    async def get_forum_detail(self, fname_or_fid: Union[str, int]) -> Tuple[str, int, int]:
+    async def get_forum_detail(self, fname_or_fid: Union[str, int]) -> Forum:
         """
         通过forum_id获取贴吧信息
 
@@ -1226,7 +1265,7 @@ class Client(object):
             fname_or_fid (str | int): 目标贴吧名或fid 优先fid
 
         Returns:
-            tuple[str, int, int]: 该贴吧的贴吧名, 吧会员数, 主题帖数
+            Forum: 贴吧信息
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -1237,28 +1276,33 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post(
+            resp = await self.app.post(
                 yarl.URL.build(path="/c/f/forum/getforumdetail"),
                 data=self.pack_form(payload),
             )
 
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
-            fname = res_json['forum_info']['forum_name']
-            member_num = int(res_json['forum_info']['member_count'])
-            thread_num = int(res_json['forum_info']['thread_count'])
+            forum_dict: Dict[str, str] = res_json['forum_info']
+            forum_dict['thread_num'] = forum_dict.pop('thread_count')
+
+            res = Forum(
+                ParseDict(
+                    forum_dict,
+                    GetDislikeListResIdl_pb2.GetDislikeListResIdl.DataRes.ForumList(),
+                    ignore_unknown_fields=True,
+                )
+            )
 
         except Exception as err:
             LOG.warning(f"Failed to get forum_detail of {fname_or_fid}. reason:{err}")
-            fname = ''
-            member_num = 0
-            thread_num = 0
+            res = Forum()
 
-        return fname, member_num, thread_num
+        return res
 
-    async def get_bawu_dict(self, fname_or_fid: Union[str, int]) -> Dict[str, List[BasicUserInfo]]:
+    async def get_bawu_info(self, fname_or_fid: Union[str, int]) -> Dict[str, List[BasicUserInfo]]:
         """
         获取吧务信息
 
@@ -1280,13 +1324,13 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            res = await self.app_proto.post(
+            resp = await self.app_proto.post(
                 yarl.URL.build(path="/c/f/forum/getBawuInfo", query_string="cmd=301007"),
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = GetBawuInfoResIdl_pb2.GetBawuInfoResIdl()
-            res_proto.ParseFromString(await res.content.read())
+            res_proto.ParseFromString(await resp.content.read())
             if int(res_proto.error.errorno):
                 raise ValueError(res_proto.error.errmsg)
 
@@ -1327,13 +1371,13 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            res = await self.app_proto.post(
+            resp = await self.app_proto.post(
                 yarl.URL.build(path="/c/f/forum/searchPostForum", query_string="cmd=309466"),
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = SearchPostForumResIdl_pb2.SearchPostForumResIdl()
-            res_proto.ParseFromString(await res.content.read())
+            res_proto.ParseFromString(await resp.content.read())
             if int(res_proto.error.errorno):
                 raise ValueError(res_proto.error.errmsg)
 
@@ -1345,24 +1389,22 @@ class Client(object):
 
         return tab_map
 
-    async def get_rank_list(
-        self, fname_or_fid: Union[str, int], /, pn: int = 1
-    ) -> Tuple[List[Tuple[str, int, int, bool]], bool]:
+    async def get_rank_users(self, fname_or_fid: Union[str, int], /, pn: int = 1) -> RankUsers:
         """
-        获取pn页的贴吧等级排行榜
+        获取pn页的等级排行榜用户列表
 
         Args:
             fname_or_fid (str | int): 目标贴吧名或fid 优先贴吧名
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
-            tuple[list[tuple[str, int, int, bool]], bool]: list[用户名,等级,经验值,是否vip], 是否还有下一页
+            RankUsers: 等级排行榜用户列表
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         try:
-            res = await self.web.get(
+            resp = await self.web.get(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/f/like/furank"),
                 params={
                     'kw': fname,
@@ -1371,49 +1413,31 @@ class Client(object):
                 },
             )
 
-            soup = BeautifulSoup(await res.text(), 'lxml')
-            items = soup.select('tr[class^=drl_list_item]')
-
-            def _parse_item(item):
-                user_name_item = item.td.next_sibling
-                user_name = user_name_item.text
-                is_vip = 'drl_item_vip' in user_name_item.div['class']
-                level_item = user_name_item.next_sibling
-                # e.g. get level 16 from string "bg_lv16" by slicing [5:]
-                level = int(level_item.div['class'][0][5:])
-                exp_item = level_item.next_sibling
-                exp = int(exp_item.text)
-
-                return user_name, level, exp, is_vip
-
-            res_list = [_parse_item(item) for item in items]
-            has_more = len(items) == 20
+            soup = bs4.BeautifulSoup(await resp.text(), 'lxml')
+            rank_users = RankUsers(soup)
 
         except Exception as err:
-            LOG.warning(f"Failed to get rank_list of {fname} pn:{pn}. reason:{err}")
-            res_list = []
-            has_more = False
+            LOG.warning(f"Failed to get rank_users of {fname} pn:{pn}. reason:{err}")
+            rank_users = RankUsers()
 
-        return res_list, has_more
+        return rank_users
 
-    async def get_member_list(
-        self, fname_or_fid: Union[str, int], /, pn: int = 1
-    ) -> Tuple[List[Tuple[str, str, int]], bool]:
+    async def get_member_users(self, fname_or_fid: Union[str, int], /, pn: int = 1) -> MemberUsers:
         """
-        获取pn页的贴吧最新关注用户列表
+        获取pn页的最新关注用户列表
 
         Args:
             fname_or_fid (str | int): 目标贴吧名或fid 优先贴吧名
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
-            tuple[list[tuple[str, str, int]], bool]: list[用户名,portrait,等级], 是否还有下一页
+            MemberUsers: 最新关注用户列表
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         try:
-            res = await self.web.get(
+            resp = await self.web.get(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/bawu2/platform/listMemberInfo"),
                 params={
                     'word': fname,
@@ -1422,30 +1446,16 @@ class Client(object):
                 },
             )
 
-            soup = BeautifulSoup(await res.text(), 'lxml')
-            items = soup.find_all('div', class_='name_wrap')
-
-            def _parse_item(item):
-                user_item = item.a
-                user_name = user_item['title']
-                portrait = user_item['href'][14:]
-                level_item = item.span
-                level = int(level_item['class'][1][12:])
-                return user_name, portrait, level
-
-            res_list = [_parse_item(item) for item in items]
-            has_more = len(items) == 24
+            soup = bs4.BeautifulSoup(await resp.text(), 'lxml')
+            member_users = MemberUsers(soup)
 
         except Exception as err:
-            LOG.warning(f"Failed to get member_list of {fname} pn:{pn}. reason:{err}")
-            res_list = []
-            has_more = False
+            LOG.warning(f"Failed to get member_users of {fname} pn:{pn}. reason:{err}")
+            member_users = MemberUsers()
 
-        return res_list, has_more
+        return member_users
 
-    async def get_forum_square(
-        self, class_name: str, /, pn: int = 1, *, rn: int = 20
-    ) -> List[Tuple[str, int, bool, int, int]]:
+    async def get_square_forums(self, class_name: str, /, pn: int = 1, *, rn: int = 20) -> SquareForums:
         """
         获取吧广场列表
 
@@ -1455,7 +1465,7 @@ class Client(object):
             rn (int, optional): 请求的条目数. Defaults to 20.
 
         Returns:
-            tuple[list[tuple[str, int, bool, int, int]], bool]: list[贴吧名,贴吧id,是否已关注,吧会员数,主题帖数], 是否还有下一页
+            SquareForums: 吧广场列表
         """
 
         common_proto = CommonReq_pb2.CommonReq()
@@ -1470,28 +1480,23 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            res = await self.app_proto.post(
+            resp = await self.app_proto.post(
                 yarl.URL.build(path="/c/f/forum/getForumSquare", query_string="cmd=309653"),
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = GetForumSquareResIdl_pb2.GetForumSquareResIdl()
-            res_proto.ParseFromString(await res.content.read())
+            res_proto.ParseFromString(await resp.content.read())
             if int(res_proto.error.errorno):
                 raise ValueError(res_proto.error.errmsg)
 
-            res_list = [
-                (forum.forum_name, forum.forum_id, bool(forum.is_like), forum.member_count, forum.thread_count)
-                for forum in res_proto.data.forum_info
-            ]
-            has_more = bool(res_proto.data.page.has_more)
+            square_forums = SquareForums(res_proto.data)
 
         except Exception as err:
-            LOG.warning(f"Failed to get forum_square. reason:{err}")
-            res_list = []
-            has_more = False
+            LOG.warning(f"Failed to get square_forums. reason:{err}")
+            square_forums = SquareForums()
 
-        return res_list, has_more
+        return square_forums
 
     async def get_homepage(self, _id: Union[str, int]) -> Tuple[UserInfo, List[Thread]]:
         """
@@ -1518,19 +1523,19 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post(
+            resp = await self.app.post(
                 yarl.URL.build(path="/c/u/user/profile"),
                 data=self.pack_form(payload),
             )
 
-            res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
             if not res_json.__contains__('user'):
                 raise ValueError("invalid params")
 
         except Exception as err:
-            LOG.warning(f"Failed to get profile of {user.portrait}. reason:{err}")
+            LOG.warning(f"Failed to get profile of {user.log_name}. reason:{err}")
             return UserInfo(), []
 
         user = UserInfo(_raw_data=ParseDict(res_json['user'], User_pb2.User(), ignore_unknown_fields=True))
@@ -1582,12 +1587,12 @@ class Client(object):
             'recommend',
         ]
         try:
-            res = await self.app.post(
+            resp = await self.app.post(
                 yarl.URL.build(path="/c/f/forum/getforumdata"),
                 data=self.pack_form(payload),
             )
 
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -1603,15 +1608,17 @@ class Client(object):
 
         return stat
 
-    async def get_forum_list(self, _id: Union[str, int]) -> List[Tuple[str, int, int, int]]:
+    async def get_follow_forums(self, _id: Union[str, int], /, pn: int = 1, *, rn: int = 50) -> FollowForums:
         """
         获取用户关注贴吧列表
 
         Args:
             _id (str | int): 待获取用户的id user_id/user_name/portrait 优先user_id
+            pn (int, optional): 页码. Defaults to 1.
+            rn (int, optional): 请求的条目数. Defaults to 50.
 
         Returns:
-            list[tuple[str, int, int, int]]: list[贴吧名,贴吧id,等级,经验值]
+            FollowForums: 用户关注贴吧列表
         """
 
         if not BasicUserInfo.is_user_id(_id):
@@ -1621,30 +1628,29 @@ class Client(object):
 
         payload = [
             ('BDUSS', self.BDUSS),
+            ('_client_version', self.latest_version),
             ('friend_uid', user.user_id),
+            ('page_no', pn),
+            ('page_size', rn),
         ]
 
         try:
-            res = await self.app.post(
+            resp = await self.app.post(
                 yarl.URL.build(path="/c/f/forum/like"),
                 data=self.pack_form(payload),
             )
 
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
-            forums: list[dict] = res_json.get('forum_list', [])
-
-            res_list = [
-                (forum['name'], int(forum['id']), int(forum['level_id']), int(forum['cur_score'])) for forum in forums
-            ]
+            follow_forums = FollowForums(res_json)
 
         except Exception as err:
-            LOG.warning(f"Failed to get forum_list of {user.user_id}. reason:{err}")
-            res_list = []
+            LOG.warning(f"Failed to get follow_forums of {user.log_name}. reason:{err}")
+            follow_forums = FollowForums()
 
-        return res_list
+        return follow_forums
 
     async def get_recom_status(self, fname_or_fid: Union[str, int]) -> Tuple[int, int]:
         """
@@ -1668,12 +1674,12 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post(
+            resp = await self.app.post(
                 yarl.URL.build(path="/c/f/bawu/getRecomThreadList"),
                 data=self.pack_form(payload),
             )
 
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -1687,18 +1693,17 @@ class Client(object):
 
         return total_recom_num, used_recom_num
 
-    async def get_recom_list(
-        self, fname_or_fid: Union[str, int], /, pn: int = 1
-    ) -> Tuple[List[Tuple[Thread, int]], bool]:
+    async def get_recom_threads(self, fname_or_fid: Union[str, int], /, pn: int = 1, *, rn: int = 30) -> RecomThreads:
         """
         获取pn页的大吧主推荐帖列表
 
         Args:
             fname_or_fid (str | int): 目标贴吧名或fid 优先fid
             pn (int, optional): 页码. Defaults to 1.
+            rn (int, optional): 请求的条目数. Defaults to 30.
 
         Returns:
-            tuple[list[tuple[Thread, int]], bool]: list[被推荐帖子信息,新增浏览量], 是否还有下一页
+            RecomThreads: 大吧主推荐帖列表
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -1708,45 +1713,37 @@ class Client(object):
             ('_client_version', self.latest_version),
             ('forum_id', fid),
             ('pn', pn),
-            ('rn', '30'),
+            ('rn', rn),
         ]
 
         try:
-            res = await self.app.post(
+            resp = await self.app.post(
                 yarl.URL.build(path="/c/f/bawu/getRecomThreadHistory"),
                 data=self.pack_form(payload),
             )
 
-            res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
-            def _pack_data_dict(data_dict):
-                thread_dict = data_dict['thread_list']
-                thread = Thread(ParseDict(thread_dict, ThreadInfo_pb2.ThreadInfo(), ignore_unknown_fields=True))
-                add_view = thread.view_num - int(data_dict['current_pv'])
-                return thread, add_view
-
-            res_list = [_pack_data_dict(data_dict) for data_dict in res_json['recom_thread_list']]
-            has_more = bool(int(res_json['is_has_more']))
+            recom_threads = RecomThreads(res_json)
 
         except Exception as err:
-            LOG.warning(f"Failed to get recom_list of {fname_or_fid}. reason:{err}")
-            res_list = []
-            has_more = False
+            LOG.warning(f"Failed to get recom_threads of {fname_or_fid}. reason:{err}")
+            recom_threads = RecomThreads()
 
-        return res_list, has_more
+        return recom_threads
 
     async def block(
-        self, fname_or_fid: Union[str, int], user: BasicUserInfo, day: Literal[1, 3, 10], reason: str = ''
+        self, fname_or_fid: Union[str, int], /, _id: Union[str, int], *, day: Literal[1, 3, 10] = 1, reason: str = ''
     ) -> bool:
         """
         封禁用户
 
         Args:
             fname_or_fid (str | int): 所在贴吧的贴吧名或fid
-            user (BasicUserInfo): 待封禁用户信息
-            day (Literal[1, 3, 10]): 封禁天数
+            _id (str | int): 待封禁用户的id user_id/user_name/portrait 优先portrait
+            day (Literal[1, 3, 10], optional): 封禁天数. Defaults to 1.
             reason (str, optional): 封禁理由. Defaults to ''.
 
         Returns:
@@ -1760,27 +1757,30 @@ class Client(object):
             fid = fname_or_fid
             fname = await self.get_fname(fid)
 
+        if not BasicUserInfo.is_portrait(_id):
+            user = await self.get_basic_user_info(_id)
+        else:
+            user = BasicUserInfo(_id)
+
         payload = [
             ('BDUSS', self.BDUSS),
             ('day', day),
             ('fid', fid),
-            ('nick_name', user.show_name),
             ('ntn', 'banid'),
             ('portrait', user.portrait),
             ('reason', reason),
             ('tbs', await self.get_tbs()),
-            ('un', user.user_name),
             ('word', fname),
-            ('z', '42'),
+            ('z', '6'),
         ]
 
         try:
-            res = await self.app.post(
+            resp = await self.app.post(
                 yarl.URL.build(path="/c/c/bawu/commitprison"),
                 data=self.pack_form(payload),
             )
 
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -1791,13 +1791,13 @@ class Client(object):
         LOG.info(f"Successfully blocked {user.log_name} in {fname} for {day} days")
         return True
 
-    async def unblock(self, fname_or_fid: Union[str, int], user: BasicUserInfo) -> bool:
+    async def unblock(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> bool:
         """
         解封用户
 
         Args:
             fname_or_fid (str | int): 所在贴吧的贴吧名或fid
-            user (BasicUserInfo): 基本用户信息
+            _id (str | int): 待解封用户的id user_id/user_name/portrait 优先user_id
 
         Returns:
             bool: 操作是否成功
@@ -1810,22 +1810,26 @@ class Client(object):
             fid = fname_or_fid
             fname = await self.get_fname(fid)
 
+        if not BasicUserInfo.is_user_id(_id):
+            user = await self.get_basic_user_info(_id)
+        else:
+            user = BasicUserInfo(_id)
+
         payload = [
             ('fn', fname),
             ('fid', fid),
-            ('block_un', user.user_name),
+            ('block_un', ' '),
             ('block_uid', user.user_id),
-            ('block_nickname', user.nick_name),
             ('tbs', await self.get_tbs()),
         ]
 
         try:
-            res = await self.web.post(
+            resp = await self.web.post(
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mo/q/bawublockclear"),
                 data=payload,
             )
 
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['no']):
                 raise ValueError(res_json['error'])
 
@@ -1836,7 +1840,7 @@ class Client(object):
         LOG.info(f"Successfully unblocked {user.log_name} in {fname}")
         return True
 
-    async def hide_thread(self, fname_or_fid: Union[str, int], tid: int) -> bool:
+    async def hide_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
         屏蔽主题帖
 
@@ -1850,7 +1854,7 @@ class Client(object):
 
         return await self._del_thread(fname_or_fid, tid, is_hide=True)
 
-    async def del_thread(self, fname_or_fid: Union[str, int], tid: int) -> bool:
+    async def del_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
         删除主题帖
 
@@ -1864,7 +1868,7 @@ class Client(object):
 
         return await self._del_thread(fname_or_fid, tid, is_hide=False)
 
-    async def _del_thread(self, fname_or_fid: Union[str, int], tid: int, is_hide: bool = False) -> bool:
+    async def _del_thread(self, fname_or_fid: Union[str, int], /, tid: int, *, is_hide: bool = False) -> bool:
         """
         删除/屏蔽主题帖
 
@@ -1888,12 +1892,12 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post(
+            resp = await self.app.post(
                 yarl.URL.build(path="/c/c/bawu/delthread"),
                 data=self.pack_form(payload),
             )
 
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -1904,7 +1908,7 @@ class Client(object):
         LOG.info(f"Successfully deleted thread tid:{tid} is_hide:{is_hide} in {fname_or_fid}")
         return True
 
-    async def del_post(self, fname_or_fid: Union[str, int], tid: int, pid: int) -> bool:
+    async def del_post(self, fname_or_fid: Union[str, int], /, tid: int, pid: int) -> bool:
         """
         删除回复
 
@@ -1928,12 +1932,12 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post(
+            resp = await self.app.post(
                 yarl.URL.build(path="/c/c/bawu/delpost"),
                 data=self.pack_form(payload),
             )
 
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -1944,7 +1948,7 @@ class Client(object):
         LOG.info(f"Successfully deleted post {pid} in {tid} in {fname_or_fid}")
         return True
 
-    async def unhide_thread(self, fname_or_fid: Union[str, int], tid: int) -> bool:
+    async def unhide_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
         解除主题帖屏蔽
 
@@ -1958,7 +1962,7 @@ class Client(object):
 
         return await self._recover(fname_or_fid, tid=tid, is_hide=True)
 
-    async def recover_thread(self, fname_or_fid: Union[str, int], tid: int) -> bool:
+    async def recover_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
         恢复主题帖
 
@@ -1972,7 +1976,7 @@ class Client(object):
 
         return await self._recover(fname_or_fid, tid=tid, is_hide=False)
 
-    async def recover_post(self, fname_or_fid: Union[str, int], pid: int) -> bool:
+    async def recover_post(self, fname_or_fid: Union[str, int], /, pid: int) -> bool:
         """
         恢复主题帖
 
@@ -1986,7 +1990,9 @@ class Client(object):
 
         return await self._recover(fname_or_fid, pid=pid, is_hide=False)
 
-    async def _recover(self, fname_or_fid: Union[str, int], tid: int = 0, pid: int = 0, is_hide: bool = False) -> bool:
+    async def _recover(
+        self, fname_or_fid: Union[str, int], /, tid: int = 0, pid: int = 0, *, is_hide: bool = False
+    ) -> bool:
         """
         恢复帖子
 
@@ -2017,12 +2023,12 @@ class Client(object):
         ]
 
         try:
-            res = await self.web.post(
+            resp = await self.web.post(
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mo/q/bawurecoverthread"),
                 data=payload,
             )
 
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['no']):
                 raise ValueError(res_json['error'])
 
@@ -2033,7 +2039,7 @@ class Client(object):
         LOG.info(f"Successfully recovered tid:{tid} pid:{pid} hide:{is_hide} in {fname}")
         return True
 
-    async def move(self, fname_or_fid: Union[str, int], tid: int, to_tab_id: int, from_tab_id: int = 0) -> bool:
+    async def move(self, fname_or_fid: Union[str, int], /, tid: int, *, to_tab_id: int, from_tab_id: int = 0) -> bool:
         """
         将主题帖移动至另一分区
 
@@ -2058,12 +2064,12 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post(
+            resp = await self.app.post(
                 yarl.URL.build(path="/c/c/bawu/moveTabThread"),
                 data=self.pack_form(payload),
             )
 
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -2074,7 +2080,7 @@ class Client(object):
         LOG.info(f"Successfully moved {tid} to tab:{to_tab_id} in {fname_or_fid}")
         return True
 
-    async def recommend(self, fname_or_fid: Union[str, int], tid: int) -> bool:
+    async def recommend(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
         大吧主首页推荐
 
@@ -2095,12 +2101,12 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post(
+            resp = await self.app.post(
                 yarl.URL.build(path="/c/c/bawu/pushRecomToPersonalized"),
                 data=self.pack_form(payload),
             )
 
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
             if int(res_json['data']['is_push_success']) != 1:
@@ -2113,7 +2119,7 @@ class Client(object):
         LOG.info(f"Successfully recommended {tid} in {fname_or_fid}")
         return True
 
-    async def good(self, fname_or_fid: Union[str, int], tid: int, cname: str = '') -> bool:
+    async def good(self, fname_or_fid: Union[str, int], /, tid: int, *, cname: str = '') -> bool:
         """
         加精主题帖
 
@@ -2151,12 +2157,12 @@ class Client(object):
             ]
 
             try:
-                res = await self.app.post(
+                resp = await self.app.post(
                     yarl.URL.build(path="/c/c/bawu/goodlist"),
                     data=self.pack_form(payload),
                 )
 
-                res_json: dict = await res.json(encoding='utf-8', content_type=None)
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
                 if int(res_json['error_code']):
                     raise ValueError(res_json['error_msg'])
 
@@ -2197,12 +2203,12 @@ class Client(object):
             ]
 
             try:
-                res = await self.app.post(
+                resp = await self.app.post(
                     yarl.URL.build(path="/c/c/bawu/commitgood"),
                     data=self.pack_form(payload),
                 )
 
-                res_json: dict = await res.json(encoding='utf-8', content_type=None)
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
                 if int(res_json['error_code']):
                     raise ValueError(res_json['error_msg'])
 
@@ -2215,7 +2221,7 @@ class Client(object):
 
         return await _good(await _cname2cid())
 
-    async def ungood(self, fname_or_fid: Union[str, int], tid: int) -> bool:
+    async def ungood(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
         撤精主题帖
 
@@ -2243,12 +2249,12 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post(
+            resp = await self.app.post(
                 yarl.URL.build(path="/c/c/bawu/commitgood"),
                 data=self.pack_form(payload),
             )
 
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -2259,7 +2265,7 @@ class Client(object):
         LOG.info(f"Successfully removed {tid} from good_list in {fname}")
         return True
 
-    async def top(self, fname_or_fid: Union[str, int], tid: int) -> bool:
+    async def top(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
         置顶主题帖
 
@@ -2288,12 +2294,12 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post(
+            resp = await self.app.post(
                 yarl.URL.build(path="/c/c/bawu/committop"),
                 data=self.pack_form(payload),
             )
 
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -2304,7 +2310,7 @@ class Client(object):
         LOG.info(f"Successfully added {tid} to top_list in {fname}")
         return True
 
-    async def untop(self, fname_or_fid: Union[str, int], tid: int) -> bool:
+    async def untop(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
         撤销置顶主题帖
 
@@ -2332,12 +2338,12 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post(
+            resp = await self.app.post(
                 yarl.URL.build(path="/c/c/bawu/committop"),
                 data=self.pack_form(payload),
             )
 
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -2348,19 +2354,17 @@ class Client(object):
         LOG.info(f"Successfully removed {tid} from top_list in {fname}")
         return True
 
-    async def get_recover_list(
-        self, fname_or_fid: Union[str, int], /, name: str = '', pn: int = 1
-    ) -> Tuple[List[Tuple[int, int, bool]], bool]:
+    async def get_recovers(self, fname_or_fid: Union[str, int], /, pn: int = 1, name: str = '') -> Recovers:
         """
         获取pn页的待恢复帖子列表
 
         Args:
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid
-            name (str, optional): 通过被删帖作者的用户名/昵称查询 默认为空即查询全部. Defaults to ''.
             pn (int, optional): 页码. Defaults to 1.
+            name (str, optional): 通过被删帖作者的用户名/昵称查询 默认为空即查询全部. Defaults to ''.
 
         Returns:
-            tuple[list[tuple[int, int, bool]], bool]: list[tid,pid,是否为屏蔽], 是否还有下一页
+            Recovers: 待恢复帖子列表
         """
 
         if isinstance(fname_or_fid, str):
@@ -2371,7 +2375,7 @@ class Client(object):
             fname = await self.get_fname(fid)
 
         try:
-            res = await self.web.get(
+            resp = await self.web.get(
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mo/q/bawurecover"),
                 params={
                     'fn': fname,
@@ -2382,47 +2386,34 @@ class Client(object):
                 },
             )
 
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['no']):
                 raise ValueError(res_json['error'])
 
-            data = res_json['data']
-            soup = BeautifulSoup(data['content'], 'lxml')
-            items = soup.find_all('a', class_='recover_list_item_btn')
-
-            def _parse_item(item):
-                tid = int(item['attr-tid'])
-                pid = int(item['attr-pid'])
-                is_frs_mask = bool(int(item['attr-isfrsmask']))
-
-                return tid, pid, is_frs_mask
-
-            res_list = [_parse_item(item) for item in items]
-            has_more = data['page']['have_next']
+            recovers = Recovers(res_json)
 
         except Exception as err:
-            LOG.warning(f"Failed to get recover_list of {fname} pn:{pn}. reason:{err}")
-            res_list = []
-            has_more = False
+            LOG.warning(f"Failed to get recovers of {fname} pn:{pn}. reason:{err}")
+            recovers = Recovers()
 
-        return res_list, has_more
+        return recovers
 
-    async def get_black_list(self, fname_or_fid: Union[str, int], /, pn: int = 1) -> Tuple[List[BasicUserInfo], bool]:
+    async def get_blacklist_users(self, fname_or_fid: Union[str, int], /, pn: int = 1) -> BlacklistUsers:
         """
-        获取pn页的黑名单
+        获取pn页的黑名单用户列表
 
         Args:
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先贴吧名
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
-            tuple[list[BasicUserInfo], bool]: list[基本用户信息], 是否还有下一页
+            BlacklistUsers: 黑名单用户列表
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         try:
-            res = await self.web.get(
+            resp = await self.web.get(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/bawu2/platform/listBlackUser"),
                 params={
                     'word': fname,
@@ -2430,40 +2421,34 @@ class Client(object):
                 },
             )
 
-            soup = BeautifulSoup(await res.text(), 'lxml')
-            items = soup.find_all('td', class_='left_cell')
+            soup = bs4.BeautifulSoup(await resp.text(), 'lxml')
 
-            def _parse_item(item):
-                user_info_item = item.previous_sibling.input
-                user = BasicUserInfo()
-                user.user_name = user_info_item['data-user-name']
-                user.user_id = int(user_info_item['data-user-id'])
-                user.portrait = item.a.img['src'][43:]
-                return user
-
-            res_list = [_parse_item(item) for item in items]
-            has_more = len(items) == 15
+            blacklist_users = BlacklistUsers(soup)
 
         except Exception as err:
-            LOG.warning(f"Failed to get black_list of {fname} pn:{pn}. reason:{err}")
-            res_list = []
-            has_more = False
+            LOG.warning(f"Failed to get blacklist_users of {fname} pn:{pn}. reason:{err}")
+            blacklist_users = BlacklistUsers()
 
-        return res_list, has_more
+        return blacklist_users
 
-    async def blacklist_add(self, fname_or_fid: Union[str, int], user: BasicUserInfo) -> bool:
+    async def blacklist_add(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> bool:
         """
         添加贴吧黑名单
 
         Args:
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先贴吧名
-            user (BasicUserInfo): 基本用户信息
+            _id (str | int): 待加黑名单用户的id user_id/user_name/portrait 优先user_id
 
         Returns:
             bool: 操作是否成功
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
+
+        if not BasicUserInfo.is_user_id(_id):
+            user = await self.get_basic_user_info(_id)
+        else:
+            user = BasicUserInfo(_id)
 
         payload = [
             ('tbs', await self.get_tbs()),
@@ -2473,35 +2458,40 @@ class Client(object):
         ]
 
         try:
-            res = await self.web.post(
+            resp = await self.web.post(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/bawu2/platform/addBlack"),
                 data=payload,
             )
 
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['errno']):
                 raise ValueError(res_json['errmsg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to add {user.log_name} to black_list in {fname}. reason:{err}")
+            LOG.warning(f"Failed to add {user.user_id} to black_list in {fname}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully added {user.log_name} to black_list in {fname}")
+        LOG.info(f"Successfully added {user.user_id} to black_list in {fname}")
         return True
 
-    async def blacklist_del(self, fname_or_fid: Union[str, int], user: BasicUserInfo) -> bool:
+    async def blacklist_del(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> bool:
         """
         移出贴吧黑名单
 
         Args:
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先贴吧名
-            user (BasicUserInfo): 基本用户信息
+            _id (str | int): 待解黑名单用户的id user_id/user_name/portrait 优先user_id
 
         Returns:
             bool: 操作是否成功
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
+
+        if not BasicUserInfo.is_user_id(_id):
+            user = await self.get_basic_user_info(_id)
+        else:
+            user = BasicUserInfo(_id)
 
         payload = [
             ('word', fname),
@@ -2511,31 +2501,33 @@ class Client(object):
         ]
 
         try:
-            res = await self.web.post(
+            resp = await self.web.post(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/bawu2/platform/cancelBlack"),
                 data=payload,
             )
 
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['errno']):
                 raise ValueError(res_json['errmsg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to remove {user.log_name} from black_list in {fname}. reason:{err}")
+            LOG.warning(f"Failed to remove {user.user_id} from black_list in {fname}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully removed {user.log_name} from black_list in {fname}")
+        LOG.info(f"Successfully removed {user.user_id} from black_list in {fname}")
         return True
 
-    async def get_unblock_appeal_list(self, fname_or_fid: Union[str, int]) -> List[int]:
+    async def get_unblock_appeals(self, fname_or_fid: Union[str, int], /, pn: int = 1, *, rn: int = 5) -> Appeals:
         """
-        获取第1页的申诉请求列表
+        获取申诉请求列表
 
         Args:
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid
+            pn (int, optional): 页码. Defaults to 1.
+            rn (int, optional): 请求的条目数. Defaults to 5.
 
         Returns:
-            list[int]: 申诉请求的appeal_id的列表
+            Appeals: 申诉请求列表
         """
 
         if isinstance(fname_or_fid, str):
@@ -2548,37 +2540,39 @@ class Client(object):
         params = {
             'fn': fname,
             'fid': fid,
-            'is_ajax': '1',
-            'pn': '1',
+            'pn': pn,
+            'rn': rn,
+            'tbs': await self.get_tbs(),
         }
 
         try:
-            res = await self.web.get(
-                yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mo/q/bawuappeal"),
+            resp = await self.web.get(
+                yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mo/q/getBawuAppealList"),
                 params=params,
             )
 
-            text = await res.text(encoding='utf-8')
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
+            if int(res_json['no']):
+                raise ValueError(res_json['error'])
 
-            res_list = [int(item.group(1)) for item in re.finditer('aid=(\\d+)', text)]
+            appeals = Appeals(res_json)
 
         except Exception as err:
-            LOG.warning(f"Failed to get appeal_list of {fname}. reason:{err}")
-            res_list = []
+            LOG.warning(f"Failed to get appeals of {fname}. reason:{err}")
+            appeals = Appeals()
 
-        return res_list
+        return appeals
 
-    async def handle_unblock_appeal(self, fname_or_fid: Union[str, int], appeal_id: int, refuse: bool = True) -> bool:
+    async def handle_unblock_appeals(
+        self, fname_or_fid: Union[str, int], /, appeal_ids: List[int], *, refuse: bool = True
+    ) -> bool:
         """
         拒绝或通过解封申诉
 
         Args:
             fname_or_fid (str | int): 申诉所在贴吧的贴吧名或fid
-            appeal_id (int): 申诉请求的appeal_id
+            appeal_ids (list[int]): 申诉请求的appeal_id列表
             refuse (bool, optional): True则拒绝申诉 False则接受申诉. Defaults to True.
-
-        Closure Args:
-            fname (str): 贴吧名
 
         Returns:
             bool: 操作是否成功
@@ -2591,29 +2585,34 @@ class Client(object):
             fid = fname_or_fid
             fname = await self.get_fname(fid)
 
-        payload = [
-            ('fn', fname),
-            ('fid', fid),
-            ('status', '2' if refuse else '1'),
-            ('refuse_reason', 'auto refuse'),
-            ('appeal_id', appeal_id),
-        ]
+        payload = (
+            [
+                ('fn', fname),
+                ('fid', fid),
+            ]
+            + [(f'appeal_list[{i}]', appeal_id) for i, appeal_id in enumerate(appeal_ids)]
+            + [
+                ('status', '2' if refuse else '1'),
+                ('refuse_reason', ' '),
+                ('tbs', await self.get_tbs()),
+            ]
+        )
 
         try:
-            res = await self.web.post(
-                yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mo/q/bawuappealhandle"),
+            resp = await self.web.post(
+                yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mo/q/multiAppealhandle"),
                 data=payload,
             )
 
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['no']):
                 raise ValueError(res_json['error'])
 
         except Exception as err:
-            LOG.warning(f"Failed to handle {appeal_id} in {fname}. reason:{err}")
+            LOG.warning(f"Failed to handle unblock_appeals in {fname}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully handled {appeal_id} in {fname}. refuse:{refuse}")
+        LOG.info(f"Successfully handled unblock_appeals in {fname}. refuse:{refuse}")
         return True
 
     async def get_image(self, img_url: str) -> np.ndarray:
@@ -2628,12 +2627,12 @@ class Client(object):
         """
 
         try:
-            res = await self.web.get(img_url)
+            resp = await self.web.get(img_url)
 
-            content = await res.content.read()
-            img_type = res.content_type.removeprefix('image/')
+            content = await resp.content.read()
+            img_type = resp.content_type.removeprefix('image/')
             if img_type not in ['jpeg', 'png', 'bmp']:
-                raise ValueError(f"Content-Type should be jpeg, png or bmp rather than {res.content_type}")
+                raise ValueError(f"Content-Type should be jpeg, png or bmp rather than {resp.content_type}")
 
             image = cv.imdecode(np.frombuffer(content, np.uint8), cv.IMREAD_COLOR)
             if image is None:
@@ -2645,7 +2644,7 @@ class Client(object):
 
         return image
 
-    async def get_portrait(self, _id: Union[str, int], size: Literal['L', 'M', 'S'] = 'S') -> np.ndarray:
+    async def get_portrait(self, _id: Union[str, int], /, size: Literal['L', 'M', 'S'] = 'S') -> np.ndarray:
         """
         获取用户头像
 
@@ -2670,7 +2669,7 @@ class Client(object):
             path = ''
 
         try:
-            res = await self.web.get(
+            resp = await self.web.get(
                 yarl.URL.build(
                     scheme="http",
                     host="tb.himg.baidu.com",
@@ -2678,7 +2677,7 @@ class Client(object):
                 )
             )
 
-            content = await res.content.read()
+            content = await resp.content.read()
 
             image = cv.imdecode(np.frombuffer(content, np.uint8), cv.IMREAD_COLOR)
             if image is None:
@@ -2710,12 +2709,12 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post(
+            resp = await self.app.post(
                 yarl.URL.build(path="/c/s/msg"),
                 data=self.pack_form(payload),
             )
 
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -2756,13 +2755,13 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            res = await self.app_proto.post(
+            resp = await self.app_proto.post(
                 yarl.URL.build(path="/c/u/feed/replyme", query_string="cmd=303007"),
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = ReplyMeResIdl_pb2.ReplyMeResIdl()
-            res_proto.ParseFromString(await res.content.read())
+            res_proto.ParseFromString(await resp.content.read())
             if int(res_proto.error.errorno):
                 raise ValueError(res_proto.error.errmsg)
 
@@ -2792,12 +2791,12 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post(
+            resp = await self.app.post(
                 yarl.URL.build(path="/c/u/feed/atme"),
                 data=self.pack_form(payload),
             )
 
-            res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -2881,9 +2880,9 @@ class Client(object):
 
         Args:
             user (BasicUserInfo): 待获取用户的基本用户信息
+            pn (int, optional): 页码. Defaults to 1.
             is_thread (bool, optional): 是否请求主题帖. Defaults to True.
             public_only (bool, optional): 是否仅获取公开帖. Defaults to False.
-            pn (int, optional): 页码. Defaults to 1.
 
         Returns:
             list[NewThread] | list[UserPosts]: 主题帖/回复列表
@@ -2903,13 +2902,13 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            res = await self.app_proto.post(
+            resp = await self.app_proto.post(
                 yarl.URL.build(path="/c/u/feed/userpost", query_string="cmd=303002"),
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = UserPostResIdl_pb2.UserPostResIdl()
-            res_proto.ParseFromString(await res.content.read())
+            res_proto.ParseFromString(await resp.content.read())
             if int(res_proto.error.errorno):
                 raise ValueError(res_proto.error.errmsg)
 
@@ -2925,104 +2924,117 @@ class Client(object):
                         userpost._user = user
 
         except Exception as err:
-            LOG.warning(f"Failed to get user_contents of {user.user_id}. reason:{err}")
+            LOG.warning(f"Failed to get user_contents of {user.log_name}. reason:{err}")
             res_list = []
 
         return res_list
 
-    async def get_self_fan_list(self, pn: int = 1) -> Tuple[List[UserInfo], bool]:
+    async def get_fans(self, _id: Union[str, int, None] = None, /, pn: int = 1) -> Fans:
         """
-        获取第pn页的本人粉丝列表
+        获取粉丝列表
 
         Args:
             pn (int, optional): 页码. Defaults to 1.
+            _id (str | int | None): 待获取用户的id user_id/user_name/portrait 优先user_id
+                默认为None即获取本账号信息. Defaults to None.
 
         Returns:
-            tuple[list[UserInfo], bool]: list[粉丝用户信息], 是否还有下一页
+            Fans: 粉丝列表
         """
+
+        if _id is None:
+            user = await self.get_self_info()
+        elif not BasicUserInfo.is_user_id(_id):
+            user = await self.get_basic_user_info(_id)
+        else:
+            user = BasicUserInfo(_id)
 
         payload = [
             ('BDUSS', self.BDUSS),
             ('_client_version', self.latest_version),
             ('pn', pn),
+            ('uid', user.user_id),
         ]
 
         try:
-            res = await self.app.post(
+            resp = await self.app.post(
                 yarl.URL.build(path="/c/u/fans/page"),
                 data=self.pack_form(payload),
             )
 
-            res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
-            res_list = [
-                UserInfo(_raw_data=ParseDict(user_dict, User_pb2.User(), ignore_unknown_fields=True))
-                for user_dict in res_json['user_list']
-            ]
-            has_more = bool(int(res_json['page']['has_more']))
+            fans = Fans(res_json)
 
         except Exception as err:
-            LOG.warning(f"Failed to get self_fan_list. reason:{err}")
-            res_list = []
-            has_more = False
+            LOG.warning(f"Failed to get fans. reason:{err}")
+            fans = Fans()
 
-        return res_list, has_more
+        return fans
 
-    async def get_self_follow_list(self, pn: int = 1) -> Tuple[List[UserInfo], bool]:
+    async def get_follows(self, _id: Union[str, int, None] = None, /, pn: int = 1) -> Follows:
         """
-        获取第pn页的本人关注列表
+        获取关注列表
 
         Args:
             pn (int, optional): 页码. Defaults to 1.
+            _id (str | int | None): 待获取用户的id user_id/user_name/portrait 优先user_id
+                默认为None即获取本账号信息. Defaults to None.
 
         Returns:
-            tuple[list[UserInfo], bool]: list[关注用户信息], 是否还有下一页
+            Follows: 关注列表
         """
+
+        if _id is None:
+            user = await self.get_self_info()
+        elif not BasicUserInfo.is_user_id(_id):
+            user = await self.get_basic_user_info(_id)
+        else:
+            user = BasicUserInfo(_id)
 
         payload = [
             ('BDUSS', self.BDUSS),
             ('_client_version', self.latest_version),
             ('pn', pn),
+            ('uid', user.user_id),
         ]
 
         try:
-            res = await self.app.post(
+            resp = await self.app.post(
                 yarl.URL.build(path="/c/u/follow/followList"),
                 data=self.pack_form(payload),
             )
 
-            res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
-            res_list = [
-                UserInfo(_raw_data=ParseDict(user_dict, User_pb2.User(), ignore_unknown_fields=True))
-                for user_dict in res_json['follow_list']
-            ]
-            has_more = bool(int(res_json['has_more']))
+            follows = Follows(res_json)
 
         except Exception as err:
-            LOG.warning(f"Failed to get self_follow_list. reason:{err}")
-            res_list = []
-            has_more = False
+            LOG.warning(f"Failed to get follows. reason:{err}")
+            follows = Follows()
 
-        return res_list, has_more
+        return follows
 
-    async def get_self_forum_list(self, pn: int = 1) -> Tuple[List[Tuple[str, int]], bool]:
+    async def get_self_follow_forums(self, pn: int = 1) -> SelfFollowForums:
         """
-        获取第pn页的本人关注贴吧列表
+        获取本账号关注贴吧列表
 
         Args:
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
-            tuple[list[tuple[str, int]], bool]: list[贴吧名, 贴吧id], 是否还有下一页
+            SelfFollowForums: 本账号关注贴吧列表
+
+        Note:
+            本接口需要STOKEN
         """
 
         try:
-            res = await self.web.get(
+            resp = await self.web.get(
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mg/o/getForumHome"),
                 params={
                     'pn': pn,
@@ -3030,24 +3042,19 @@ class Client(object):
                 },
             )
 
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['errno']):
                 raise ValueError(res_json['errmsg'])
 
-            forums: list[dict] = res_json['data']['like_forum']['list']
-            res_list = [(forum['forum_name'], int(forum['forum_id'])) for forum in forums]
-            has_more = len(forums) == 200
+            self_follow_forums = SelfFollowForums(res_json)
 
         except Exception as err:
-            LOG.warning(f"Failed to get self_forum_list. reason:{err}")
-            res_list = []
-            has_more = False
+            LOG.warning(f"Failed to get self_follow_forums. reason:{err}")
+            self_follow_forums = SelfFollowForums()
 
-        return res_list, has_more
+        return self_follow_forums
 
-    async def get_self_dislike_forum_list(
-        self, pn: int = 1, /, *, rn: int = 20
-    ) -> List[Tuple[str, int, int, int, int]]:
+    async def get_dislike_forums(self, pn: int = 1, /, *, rn: int = 20) -> DislikeForums:
         """
         获取首页推荐屏蔽的贴吧列表
 
@@ -3056,7 +3063,7 @@ class Client(object):
             rn (int, optional): 请求的条目数. Defaults to 20.
 
         Returns:
-            tuple[list[tuple[str, int, int, int, int]], bool]: list[贴吧名,贴吧id,吧会员数,主题帖数,总帖数], 是否还有下一页
+            DislikeForums: 首页推荐屏蔽的贴吧列表
         """
 
         common_proto = CommonReq_pb2.CommonReq()
@@ -3070,28 +3077,23 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            res = await self.app_proto.post(
+            resp = await self.app_proto.post(
                 yarl.URL.build(path="/c/u/user/getDislikeList", query_string="cmd=309692"),
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
             )
 
             res_proto = GetDislikeListResIdl_pb2.GetDislikeListResIdl()
-            res_proto.ParseFromString(await res.content.read())
+            res_proto.ParseFromString(await resp.content.read())
             if int(res_proto.error.errorno):
                 raise ValueError(res_proto.error.errmsg)
 
-            res_list = [
-                (forum.forum_name, forum.forum_id, forum.member_count, forum.thread_num, forum.post_num)
-                for forum in res_proto.data.forum_list
-            ]
-            has_more = bool(res_proto.data.has_more)
+            dislike_forums = DislikeForums(res_proto.data)
 
         except Exception as err:
-            LOG.warning(f"Failed to get self_dislike_forum_list. reason:{err}")
-            res_list = []
-            has_more = False
+            LOG.warning(f"Failed to get dislike_forums. reason:{err}")
+            dislike_forums = DislikeForums()
 
-        return res_list, has_more
+        return dislike_forums
 
     async def remove_fan(self, _id: Union[str, int]):
         """
@@ -3116,12 +3118,12 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post(
+            resp = await self.app.post(
                 yarl.URL.build(path="/c/c/user/removeFans"),
                 data=self.pack_form(payload),
             )
 
-            res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -3155,12 +3157,12 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post(
+            resp = await self.app.post(
                 yarl.URL.build(path="/c/c/user/follow"),
                 data=self.pack_form(payload),
             )
 
-            res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -3194,12 +3196,12 @@ class Client(object):
         ]
 
         try:
-            res = await self.app.post(
+            resp = await self.app.post(
                 yarl.URL.build(path="/c/c/user/unfollow"),
                 data=self.pack_form(payload),
             )
 
-            res_json: dict = await res.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -3230,12 +3232,12 @@ class Client(object):
                 ('tbs', await self.get_tbs()),
             ]
 
-            res = await self.app.post(
+            resp = await self.app.post(
                 yarl.URL.build(path="/c/c/forum/like"),
                 data=self.pack_form(payload),
             )
 
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
             if int(res_json['error']['errno']):
@@ -3268,12 +3270,12 @@ class Client(object):
                 ('tbs', await self.get_tbs()),
             ]
 
-            res = await self.app.post(
+            resp = await self.app.post(
                 yarl.URL.build(path="/c/c/forum/unfavolike"),
                 data=self.pack_form(payload),
             )
 
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -3305,12 +3307,12 @@ class Client(object):
                 ('dislike_from', "homepage"),
             ]
 
-            res = await self.app.post(
+            resp = await self.app.post(
                 yarl.URL.build(path="/c/c/excellent/submitDislike"),
                 data=self.pack_form(payload),
             )
 
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -3341,12 +3343,12 @@ class Client(object):
                 ('forum_id', fid),
             ]
 
-            res = await self.app.post(
+            resp = await self.app.post(
                 yarl.URL.build(path="/c/c/excellent/submitCancelDislike"),
                 data=self.pack_form(payload),
             )
 
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -3357,7 +3359,7 @@ class Client(object):
         LOG.info(f"Successfully undisliked {fname_or_fid}")
         return True
 
-    async def set_privacy(self, fname_or_fid: Union[str, int], tid: int, pid: int, hide: bool = True) -> bool:
+    async def set_privacy(self, fname_or_fid: Union[str, int], /, tid: int, pid: int, *, hide: bool = True) -> bool:
         """
         隐藏主题帖
 
@@ -3382,12 +3384,12 @@ class Client(object):
                 ('thread_id', tid),
             ]
 
-            res = await self.app.post(
+            resp = await self.app.post(
                 yarl.URL.build(path="/c/c/thread/setPrivacy"),
                 data=self.pack_form(payload),
             )
 
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -3419,12 +3421,12 @@ class Client(object):
                 ('tbs', await self.get_tbs()),
             ]
 
-            res = await self.app.post(
+            resp = await self.app.post(
                 yarl.URL.build(path="/c/c/forum/sign"),
                 data=self.pack_form(payload),
             )
 
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             error_code = int(res_json['error_code'])
             if error_code:
                 raise ValueError(res_json['error_msg'])
@@ -3441,7 +3443,7 @@ class Client(object):
         LOG.info(f"Successfully signed forum {fname}")
         return True
 
-    async def add_post(self, fname_or_fid: Union[str, int], tid: int, content: str) -> bool:
+    async def add_post(self, fname_or_fid: Union[str, int], /, tid: int, content: str) -> bool:
         """
         回复主题帖
 
@@ -3504,12 +3506,12 @@ class Client(object):
                 ('z_id', '74FFB5E615AA72E0B057EE43E3D5A23A8BA34AAC1672FC9B56A7106C57BA03'),
             ]
 
-            res = await self.app.post(
+            resp = await self.app.post(
                 yarl.URL.build(path="/c/c/post/add"),
                 data=self.pack_form(payload),
             )
 
-            res_json: dict = await res.json(encoding='utf-8', content_type=None)
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
             if int(res_json['info']['need_vcode']):
@@ -3550,18 +3552,18 @@ class Client(object):
             if not await self._init_websocket():
                 return False
 
-            res = await self.send_ws_bytes(req_proto.SerializeToString(), cmd=205001)
+            resp = await self.send_ws_bytes(req_proto.SerializeToString(), cmd=205001)
 
             res_proto = CommitPersonalMsgResIdl_pb2.CommitPersonalMsgResIdl()
-            res_proto.ParseFromString(await res.read(timeout=5))
+            res_proto.ParseFromString(await resp.read(timeout=5))
             if int(res_proto.error.errorno):
                 raise ValueError(res_proto.error.errmsg)
             if int(res_proto.data.blockInfo.blockErrno):
                 raise ValueError(res_proto.data.blockInfo.blockErrmsg)
 
         except Exception as err:
-            LOG.warning(f"Failed to send msg to {user.user_id}. reason:{err}")
+            LOG.warning(f"Failed to send msg to {user.log_name}. reason:{err}")
             return False
 
-        LOG.info(f"Successfully sent msg to {user.user_id}")
+        LOG.info(f"Successfully sent msg to {user.log_name}")
         return True
