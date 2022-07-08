@@ -26,6 +26,7 @@ if os.name == 'posix':
 elif os.name == 'nt':
     import asyncio
 
-    # To fix "RuntimeError: Event loop is closed" occured in _ProactorBasePipeTransport.__del__ while using asyncio.run(...)
+    # To fix "RuntimeError: Event loop is closed" occured in _ProactorBasePipeTransport.__del__
     # See: https://github.com/aio-libs/aiohttp/issues/4324
+    # The future version of asyncio will fix this bug. See: https://github.com/python/cpython/pull/92842
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
