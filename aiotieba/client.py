@@ -229,7 +229,11 @@ class Client(object):
         _trust_env = False
         _timeout = aiohttp.ClientTimeout(connect=8, sock_connect=3, sock_read=12)
         self._connector = aiohttp.TCPConnector(
-            ttl_dns_cache=600, keepalive_timeout=60, limit=0, family=socket.AF_INET, ssl=False
+            ttl_dns_cache=600,
+            keepalive_timeout=60,
+            limit=0,
+            family=socket.AF_INET,
+            ssl=False,
         )
 
         _app_base_url = yarl.URL.build(scheme="http", host="c.tieba.baidu.com")
@@ -817,7 +821,7 @@ class Client(object):
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/home/get/panel"),
                 params={
                     'id': user.portrait,
-                    'un': user.user_name or user.old_nick_name,
+                    'un': user.user_name or user.nick_name,
                 },
             )
 
@@ -838,8 +842,7 @@ class Client(object):
             user.user_id = user_dict['id']
             user.user_name = user_dict['name']
             user.portrait = user_dict['portrait']
-            user.old_nick_name = user_dict['name_show']
-            user.new_nick_name = user_dict['show_nickname']
+            user.nick_name = user_dict['show_nickname']
 
             user.gender = gender
             user.age = float(user_dict['tb_age'])

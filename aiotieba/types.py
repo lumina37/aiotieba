@@ -275,8 +275,7 @@ class UserInfo(BasicUserInfo):
         user_id (int): user_id
         user_name (str): 用户名
         portrait (str): portrait
-        old_nick_name (str): 旧版昵称
-        new_nick_name (str): 新版昵称
+        nick_name (str): 用户昵称
         tieba_uid (int): 用户个人主页uid
 
         level (int): 等级
@@ -295,8 +294,7 @@ class UserInfo(BasicUserInfo):
     """
 
     __slots__ = [
-        '_old_nick_name',
-        '_new_nick_name',
+        '_nick_name',
         '_tieba_uid',
         '_level',
         '_gender',
@@ -315,10 +313,8 @@ class UserInfo(BasicUserInfo):
     def __init__(self, _id: Union[str, int, None] = None, _raw_data: Optional[User_pb2.User] = None) -> None:
         super(UserInfo, self).__init__(_id, _raw_data)
 
-        self._old_nick_name = ''
-
         if _raw_data:
-            self.new_nick_name = _raw_data.name_show
+            self._nick_name = _raw_data.name_show
             self.tieba_uid = _raw_data.tieba_uid
 
             self._level = _raw_data.level_id
@@ -336,7 +332,7 @@ class UserInfo(BasicUserInfo):
             self.priv_reply = _raw_data.priv_sets.reply
 
         else:
-            self._new_nick_name = ''
+            self._nick_name = ''
             self._tieba_uid = 0
 
             self._level = 0
@@ -370,60 +366,23 @@ class UserInfo(BasicUserInfo):
         return super(UserInfo, self).__hash__()
 
     @property
-    def new_nick_name(self) -> str:
-        """
-        新版用户昵称
-
-        Note:
-            不具有唯一性
-            可以不包含emoji
-            支持重复
-        """
-
-        return self._new_nick_name
-
-    @new_nick_name.setter
-    def new_nick_name(self, new_new_nick_name: str) -> None:
-
-        if new_new_nick_name != self.user_name and new_new_nick_name != self.old_nick_name:
-            self._new_nick_name = new_new_nick_name
-        else:
-            self._new_nick_name = ''
-
-    @property
-    def old_nick_name(self) -> str:
-        """
-        旧版用户昵称
-
-        Note:
-            不具有唯一性
-            必须包含emoji
-            不支持重复
-        """
-
-        return self._old_nick_name
-
-    @old_nick_name.setter
-    def old_nick_name(self, new_old_nick_name: str) -> None:
-
-        if new_old_nick_name != self.user_name:
-            self._old_nick_name = new_old_nick_name
-        else:
-            self._old_nick_name = ''
-
-    @property
     def nick_name(self) -> str:
         """
         用户昵称
 
         Note:
-            优先返回新版昵称
+            不具有唯一性
         """
 
-        if self.new_nick_name:
-            return self.new_nick_name
+        return self._nick_name
+
+    @nick_name.setter
+    def nick_name(self, new_nick_name: str) -> None:
+
+        if new_nick_name != self.user_name:
+            self._nick_name = new_nick_name
         else:
-            return self.old_nick_name
+            self._nick_name = ''
 
     @property
     def log_name(self) -> str:
