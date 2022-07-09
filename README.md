@@ -1,15 +1,16 @@
 # Tieba-Manager
 
 [![gitee](https://img.shields.io/badge/mirror-gitee-red)](https://gitee.com/Starry-OvO/Tieba-Manager)
-[![release](https://img.shields.io/github/release/Starry-OvO/Tieba-Manager?color=blue&logo=github)](../../releases)
-[![license](https://img.shields.io/github/license/Starry-OvO/Tieba-Manager?color=blue&logo=github)](LICENSE)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/Starry-OvO/Tieba-Manager?logo=lgtm)](https://lgtm.com/projects/g/Starry-OvO/Tieba-Manager/context:python)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 ## 简介
 
-`aiotieba`库是一个使用`aiohttp`实现的**异步贴吧客户端**，封装了下列实用接口并额外添加了一些数据库和图像处理功能以方便自动化的吧务管理
+`aiotieba`库是一个使用`aiohttp`实现的**异步贴吧客户端**
 
-封装的官方接口包括
+封装了下列实用接口并额外添加了一些数据库和图像处理功能以方便自动化的吧务管理
+
+封装的官方接口包括：
 
 + 按**回复时间**/**发布时间**/**热门序**获取贴吧**主题帖**/**精华帖列表**。支持获取带**转发**/**投票**/**转发嵌套投票**/**各种卡片**的主题帖信息
 + 获取带**图片链接**/**小尾巴内容**/**点赞情况**/**用户信息**（**用户名**/**user_id**/**portrait**/**等级**/**性别**/**是否锁回复**）/每条回复的**前排楼中楼**（支持按或不按点赞数排序）的**回复列表**
@@ -22,7 +23,7 @@
 + 获取贴吧**最新关注用户列表**/**等级排行榜**/**吧务列表**/**吧详情**
 + 使用`BDUSS`**关注贴吧**/**取关贴吧**/**关注用户**/**取关用户**/**移除粉丝**/**屏蔽贴吧**/**取消屏蔽贴吧**/**签到**/**水帖**/**发送私信**
 
-额外功能包括
+额外功能包括：
 
 + 数据库功能：**缓存贴吧常量**（如贴吧名到fid的映射关系）/**为用户添加标记**/**为帖子或回复添加标记**/**为图像hash添加标记**
 + 图像处理功能：**图像解码**/**二维码解析**/**图像hash计算**
