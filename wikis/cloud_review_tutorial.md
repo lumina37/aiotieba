@@ -1,10 +1,24 @@
-# 云审查工具简介
+# 云审查
 
 ## 这是什么？
 
 这是一个以`aiotieba`为基础，二次开发的自动扫描并处理首页违规信息的管理工具
 
 **它可以极大节约吧务人工巡逻的时间成本**
+
+## 使用方法
+
++ 参考`config/config_full_example.toml`中的注释完成对`Database`字段的配置，你需要一个`MySQL`数据库用来缓存通过检测的内容id以及记录用户权限级别（黑、白名单）
+
++ 使用函数`Database.init_database(["贴吧名1", "贴吧名2"])`一键建库
+
++ 自定义审查行为：请参照我给出的例子自己编程修改[`cloud_review_hanime.py`](../cloud_review_hanime.py)，这是被实际应用于[宫漫吧](https://tieba.baidu.com/f?ie=utf-8&kw=%E5%AE%AB%E6%BC%AB)的云审查工具
+
++ 运行`cloud_review_yours.py`（对`Windows`平台，建议使用`pythonw.exe`无窗口运行，对`Linux`平台，建议使用如下的`nohup`指令在后台运行）
+
+```bash
+nohup python cloud_review_yours.py >/dev/null 2>&1 &
+```
 
 ## 扫描范围
 
@@ -27,10 +41,6 @@
 + **黑名单用户**
 
 ![eg_4](https://user-images.githubusercontent.com/48282276/176145443-2021e697-c858-48c3-91b4-fba409ef6e20.png)
-
-## 使用方法
-
-参照我给出的例子自己编程修改[`cloud_review_hanime.py`](../cloud_review_hanime.py)，这是被实际应用于[宫漫吧](https://tieba.baidu.com/f?ie=utf-8&kw=%E5%AE%AB%E6%BC%AB)的云审查工具。注释比较规范全面，请自行理解各api的功能
 
 ## 实战效果
 

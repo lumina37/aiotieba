@@ -22,7 +22,7 @@ import functools
 import re
 import time
 from collections.abc import Callable
-from typing import List
+from typing import List, Union
 
 import tomli
 
@@ -38,22 +38,22 @@ class TimerRecorder(object):
     时间记录器
 
     Args:
-        shift_sec: int 启动时允许解析shift_sec秒之前的at
-        post_interval: int 两次post_add之间需要的时间间隔
+        shift_sec (float): 启动时允许解析shift_sec秒之前的at
+        post_interval (float): 两次post_add之间需要的间隔秒数
 
-    Fields:
-        last_parse_time: int 上次解析at信息的时间(以百度服务器为准)
-        last_post_time: int 上次发送回复的时间(以百度服务器为准)
-        post_interval: int 两次post_add之间需要的时间间隔
+    Attributes:
+        last_parse_time (float): 上次解析at信息的时间(以百度服务器为准)
+        last_post_time (float): 上次发送回复的时间(以百度服务器为准)
+        post_interval (float): 两次post_add之间需要的时间间隔
     """
 
     __slots__ = ['last_parse_time', 'last_post_time', 'post_interval']
 
-    def __init__(self, shift_sec: int, post_interval: int) -> None:
+    def __init__(self, shift_sec: float, post_interval: float) -> None:
 
-        self.last_post_time: int = 0
-        self.post_interval: int = post_interval
-        self.last_parse_time: int = int(time.time()) - shift_sec
+        self.last_post_time: float = 0
+        self.post_interval: float = post_interval
+        self.last_parse_time: float = time.time() - shift_sec
 
     def is_inrange(self, check_time: int) -> bool:
         return self.last_parse_time < check_time
@@ -79,7 +79,7 @@ class Context(object):
         self._args = None
         self._cmd_type = None
         self.this_permission: int = 0
-        self.parent: tb.Thread | tb.Post = None
+        self.parent: Union[tb.Thread, tb.Post] = None
         self.note: str = ''
 
     async def _init(self) -> bool:

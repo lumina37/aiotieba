@@ -16,9 +16,9 @@
 + 清空粉丝列表
 + 清除所有历史回复
 
-## [cloud_review_introduction](cloud_review_introduction.md)
+## [cloud_review_tutorial](cloud_review_tutorial.md)
 
-云审查工具介绍，包括实战效果展示与性能测试
+云审查教程，还包括实战效果展示与性能测试
 
 ## [websocket_reverse_engineering](websocket_reverse_engineering.md)
 

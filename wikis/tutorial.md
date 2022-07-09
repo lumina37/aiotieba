@@ -1,4 +1,4 @@
-# aiotieba库使用教程
+# aiotieba库入门教程
 
 ## 准备知识
 
@@ -210,6 +210,7 @@ async def crawler(fname: str):
                 await task_queue.put(pn)
             # 这里需要nonlocal来允许对闭包外的变量的修改操作（类似于引用传递和值传递的区别）
             nonlocal is_running
+            # 将is_running设置为False以允许各消费协程超时退出
             is_running = False
 
         async def worker(i: int):

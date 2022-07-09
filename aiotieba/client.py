@@ -78,7 +78,6 @@ from .types import (
     Searches,
     SelfFollowForums,
     SquareForums,
-    Thread,
     Threads,
     UserInfo,
     UserPosts,
@@ -230,7 +229,11 @@ class Client(object):
         _trust_env = False
         _timeout = aiohttp.ClientTimeout(connect=8, sock_connect=3, sock_read=12)
         self._connector = aiohttp.TCPConnector(
-            ttl_dns_cache=600, keepalive_timeout=60, limit=0, family=socket.AF_INET, ssl=False
+            ttl_dns_cache=600,
+            keepalive_timeout=60,
+            limit=0,
+            family=socket.AF_INET,
+            ssl=False,
         )
 
         _app_base_url = yarl.URL.build(scheme="http", host="c.tieba.baidu.com")
@@ -818,7 +821,7 @@ class Client(object):
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/home/get/panel"),
                 params={
                     'id': user.portrait,
-                    'un': user.user_name or user.old_nick_name,
+                    'un': user.user_name or user.nick_name,
                 },
             )
 
@@ -839,8 +842,7 @@ class Client(object):
             user.user_id = user_dict['id']
             user.user_name = user_dict['name']
             user.portrait = user_dict['portrait']
-            user.old_nick_name = user_dict['name_show']
-            user.new_nick_name = user_dict['show_nickname']
+            user.nick_name = user_dict['show_nickname']
 
             user.gender = gender
             user.age = float(user_dict['tb_age'])
@@ -851,7 +853,7 @@ class Client(object):
                 user.post_num = post_num
             user.fan_num = int(user_dict['followed_count'])
 
-            user.is_vip = int(vip_dict['v_status']) if (vip_dict := user_dict['vipInfo']) else False
+            user.is_vip = bool(int(vip_dict['v_status'])) if (vip_dict := user_dict['vipInfo']) else False
 
         except Exception as err:
             LOG.warning(f"Failed to get UserInfo of {user.log_name}. reason:{err}")
@@ -1498,7 +1500,7 @@ class Client(object):
 
         return square_forums
 
-    async def get_homepage(self, _id: Union[str, int]) -> Tuple[UserInfo, List[Thread]]:
+    async def get_homepage(self, _id: Union[str, int]) -> Tuple[UserInfo, List[NewThread]]:
         """
         获取用户个人页信息
 
@@ -1506,7 +1508,7 @@ class Client(object):
             _id (str | int): 待获取用户的id user_id/user_name/portrait 优先portrait
 
         Returns:
-            tuple[UserInfo, list[Thread]]: 用户信息, list[帖子信息]
+            tuple[UserInfo, list[NewThread]]: 用户信息, list[帖子信息]
         """
 
         if not BasicUserInfo.is_portrait(_id):
@@ -2592,8 +2594,8 @@ class Client(object):
             ]
             + [(f'appeal_list[{i}]', appeal_id) for i, appeal_id in enumerate(appeal_ids)]
             + [
+                ('refuse_reason', '_'),
                 ('status', '2' if refuse else '1'),
-                ('refuse_reason', ' '),
                 ('tbs', await self.get_tbs()),
             ]
         )
@@ -3413,6 +3415,7 @@ class Client(object):
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
+        error_code = 0
         try:
             payload = [
                 ('BDUSS', self.BDUSS),
