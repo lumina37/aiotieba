@@ -1,4 +1,4 @@
-<p align="center">
+<div align="center">
 
 # Tieba-Manager
 
@@ -6,7 +6,7 @@
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/Starry-OvO/Tieba-Manager?logo=lgtm)](https://lgtm.com/projects/g/Starry-OvO/Tieba-Manager/context:python)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-</p>
+</div>
 
 ## 简介
 
