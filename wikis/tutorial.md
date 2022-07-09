@@ -1,4 +1,4 @@
-# aiotieba库使用教程
+# aiotieba库入门教程
 
 ## 准备知识
 
