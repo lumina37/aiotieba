@@ -603,9 +603,8 @@ class Client(object):
         """
 
         try:
-            while 1:
-                res_bytes: bytes = (await self.websocket.receive()).data
-                res_bytes, _, req_id = self._unpack_ws_bytes(res_bytes)
+            async for resp in self.websocket:
+                res_bytes, _, req_id = self._unpack_ws_bytes(resp.data)
 
                 ws_res = WebsocketResponse.ws_res_wait_dict.get(req_id, None)
                 if ws_res:
