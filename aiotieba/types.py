@@ -4477,7 +4477,7 @@ class SelfFollowForums(_Containers[Forum]):
                     Forum(
                         ParseDict(
                             _dict,
-                            GetForumSquareResIdl_pb2.GetForumSquareResIdl.DataRes.RecommendForumInfo(),
+                            GetDislikeListResIdl_pb2.GetDislikeListResIdl.DataRes.ForumList(),
                             ignore_unknown_fields=True,
                         )
                     )
