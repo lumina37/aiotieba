@@ -603,8 +603,8 @@ class Client(object):
         """
 
         try:
-            async for resp in self.websocket:
-                res_bytes, _, req_id = self._unpack_ws_bytes(resp.data)
+            async for msg in self.websocket:
+                res_bytes, _, req_id = self._unpack_ws_bytes(msg.data)
 
                 ws_res = WebsocketResponse.ws_res_wait_dict.get(req_id, None)
                 if ws_res:
@@ -698,12 +698,12 @@ class Client(object):
         ]
 
         try:
-            resp = await self.app.post(
+            async with self.app.post(
                 yarl.URL.build(path="/c/s/login"),
                 data=self.pack_form(payload),
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -735,12 +735,12 @@ class Client(object):
             return fid
 
         try:
-            resp = await self.web.get(
+            async with self.web.get(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/f/commit/share/fnameShareApi"),
                 params={'fname': fname, 'ie': 'utf-8'},
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['no']):
                 raise ValueError(res_json['error'])
 
@@ -816,15 +816,15 @@ class Client(object):
         """
 
         try:
-            resp = await self.web.get(
+            async with self.web.get(
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/home/get/panel"),
                 params={
                     'id': user.portrait,
                     'un': user.user_name or user.nick_name,
                 },
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['no']):
                 raise ValueError(res_json['error'])
 
@@ -872,15 +872,15 @@ class Client(object):
         """
 
         try:
-            resp = await self.web.get(
+            async with self.web.get(
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/home/get/panel"),
                 params={
                     'id': user.portrait,
                     'un': user.user_name,
                 },
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['no']):
                 raise ValueError(res_json['error'])
 
@@ -907,18 +907,18 @@ class Client(object):
         """
 
         try:
-            resp = await self.web.get(
+            async with self.web.get(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/i/sys/user_json"),
                 params={
                     'un': user.user_name,
                     'ie': 'utf-8',
                 },
-            )
+            ) as resp:
+                text = await resp.text(encoding='utf-8', errors='ignore')
 
-            text = await resp.text(encoding='utf-8', errors='ignore')
-            res_json = json.loads(text)
-            if not res_json:
+            if not text:
                 raise ValueError("empty response")
+            res_json = json.loads(text)
 
             user_dict = res_json['creator']
             user.user_id = user_dict['id']
@@ -949,13 +949,13 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            resp = await self.app_proto.post(
+            async with self.app_proto.post(
                 yarl.URL.build(path="/c/u/user/getuserinfo", query_string="cmd=303024"),
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
-            )
+            ) as resp:
+                res_proto = GetUserInfoResIdl_pb2.GetUserInfoResIdl()
+                res_proto.ParseFromString(await resp.content.read())
 
-            res_proto = GetUserInfoResIdl_pb2.GetUserInfoResIdl()
-            res_proto.ParseFromString(await resp.content.read())
             if int(res_proto.error.errorno):
                 raise ValueError(res_proto.error.errmsg)
 
@@ -980,12 +980,12 @@ class Client(object):
         """
 
         try:
-            resp = await self.web.get(
+            async with self.web.get(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/im/pcmsg/query/getUserInfo"),
                 params={'chatUid': user.user_id},
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['errno']):
                 raise ValueError(res_json['errmsg'])
 
@@ -1018,13 +1018,13 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            resp = await self.app_proto.post(
+            async with self.app_proto.post(
                 yarl.URL.build(path="/c/u/user/getUserByTiebaUid", query_string="cmd=309702"),
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
-            )
+            ) as resp:
+                res_proto = GetUserByTiebaUidResIdl_pb2.GetUserByTiebaUidResIdl()
+                res_proto.ParseFromString(await resp.content.read())
 
-            res_proto = GetUserByTiebaUidResIdl_pb2.GetUserByTiebaUidResIdl()
-            res_proto.ParseFromString(await resp.content.read())
             if int(res_proto.error.errorno):
                 raise ValueError(res_proto.error.errmsg)
 
@@ -1070,13 +1070,13 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            resp = await self.app_proto.post(
+            async with self.app_proto.post(
                 yarl.URL.build(path="/c/f/frs/page", query_string="cmd=301001"),
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
-            )
+            ) as resp:
+                res_proto = FrsPageResIdl_pb2.FrsPageResIdl()
+                res_proto.ParseFromString(await resp.content.read())
 
-            res_proto = FrsPageResIdl_pb2.FrsPageResIdl()
-            res_proto.ParseFromString(await resp.content.read())
             if int(res_proto.error.errorno):
                 raise ValueError(res_proto.error.errmsg)
 
@@ -1138,13 +1138,13 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            resp = await self.app_proto.post(
+            async with self.app_proto.post(
                 yarl.URL.build(path="/c/f/pb/page", query_string="cmd=302001"),
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
-            )
+            ) as resp:
+                res_proto = PbPageResIdl_pb2.PbPageResIdl()
+                res_proto.ParseFromString(await resp.content.read())
 
-            res_proto = PbPageResIdl_pb2.PbPageResIdl()
-            res_proto.ParseFromString(await resp.content.read())
             if int(res_proto.error.errorno):
                 raise ValueError(res_proto.error.errmsg)
 
@@ -1184,13 +1184,13 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            resp = await self.app_proto.post(
+            async with self.app_proto.post(
                 yarl.URL.build(path="/c/f/pb/floor", query_string="cmd=302002"),
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
-            )
+            ) as resp:
+                res_proto = PbFloorResIdl_pb2.PbFloorResIdl()
+                res_proto.ParseFromString(await resp.content.read())
 
-            res_proto = PbFloorResIdl_pb2.PbFloorResIdl()
-            res_proto.ParseFromString(await resp.content.read())
             if int(res_proto.error.errorno):
                 raise ValueError(res_proto.error.errmsg)
 
@@ -1241,12 +1241,12 @@ class Client(object):
         ]
 
         try:
-            resp = await self.app.post(
+            async with self.app.post(
                 yarl.URL.build(path="/c/s/searchpost"),
                 data=self.pack_form(payload),
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -1277,12 +1277,12 @@ class Client(object):
         ]
 
         try:
-            resp = await self.app.post(
+            async with self.app.post(
                 yarl.URL.build(path="/c/f/forum/getforumdetail"),
                 data=self.pack_form(payload),
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -1325,13 +1325,13 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            resp = await self.app_proto.post(
+            async with self.app_proto.post(
                 yarl.URL.build(path="/c/f/forum/getBawuInfo", query_string="cmd=301007"),
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
-            )
+            ) as resp:
+                res_proto = GetBawuInfoResIdl_pb2.GetBawuInfoResIdl()
+                res_proto.ParseFromString(await resp.content.read())
 
-            res_proto = GetBawuInfoResIdl_pb2.GetBawuInfoResIdl()
-            res_proto.ParseFromString(await resp.content.read())
             if int(res_proto.error.errorno):
                 raise ValueError(res_proto.error.errmsg)
 
@@ -1372,13 +1372,13 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            resp = await self.app_proto.post(
+            async with self.app_proto.post(
                 yarl.URL.build(path="/c/f/forum/searchPostForum", query_string="cmd=309466"),
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
-            )
+            ) as resp:
+                res_proto = SearchPostForumResIdl_pb2.SearchPostForumResIdl()
+                res_proto.ParseFromString(await resp.content.read())
 
-            res_proto = SearchPostForumResIdl_pb2.SearchPostForumResIdl()
-            res_proto.ParseFromString(await resp.content.read())
             if int(res_proto.error.errorno):
                 raise ValueError(res_proto.error.errmsg)
 
@@ -1405,16 +1405,16 @@ class Client(object):
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         try:
-            resp = await self.web.get(
+            async with self.web.get(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/f/like/furank"),
                 params={
                     'kw': fname,
                     'pn': pn,
                     'ie': 'utf-8',
                 },
-            )
+            ) as resp:
+                soup = bs4.BeautifulSoup(await resp.text(), 'lxml')
 
-            soup = bs4.BeautifulSoup(await resp.text(), 'lxml')
             rank_users = RankUsers(soup)
 
         except Exception as err:
@@ -1438,16 +1438,16 @@ class Client(object):
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         try:
-            resp = await self.web.get(
+            async with self.web.get(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/bawu2/platform/listMemberInfo"),
                 params={
                     'word': fname,
                     'pn': pn,
                     'ie': 'utf-8',
                 },
-            )
+            ) as resp:
+                soup = bs4.BeautifulSoup(await resp.text(), 'lxml')
 
-            soup = bs4.BeautifulSoup(await resp.text(), 'lxml')
             member_users = MemberUsers(soup)
 
         except Exception as err:
@@ -1481,13 +1481,13 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            resp = await self.app_proto.post(
+            async with self.app_proto.post(
                 yarl.URL.build(path="/c/f/forum/getForumSquare", query_string="cmd=309653"),
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
-            )
+            ) as resp:
+                res_proto = GetForumSquareResIdl_pb2.GetForumSquareResIdl()
+                res_proto.ParseFromString(await resp.content.read())
 
-            res_proto = GetForumSquareResIdl_pb2.GetForumSquareResIdl()
-            res_proto.ParseFromString(await resp.content.read())
             if int(res_proto.error.errorno):
                 raise ValueError(res_proto.error.errmsg)
 
@@ -1524,12 +1524,12 @@ class Client(object):
         ]
 
         try:
-            resp = await self.app.post(
+            async with self.app.post(
                 yarl.URL.build(path="/c/u/user/profile"),
                 data=self.pack_form(payload),
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
             if not res_json.__contains__('user'):
@@ -1588,12 +1588,12 @@ class Client(object):
             'recommend',
         ]
         try:
-            resp = await self.app.post(
+            async with self.app.post(
                 yarl.URL.build(path="/c/f/forum/getforumdata"),
                 data=self.pack_form(payload),
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -1636,12 +1636,12 @@ class Client(object):
         ]
 
         try:
-            resp = await self.app.post(
+            async with self.app.post(
                 yarl.URL.build(path="/c/f/forum/like"),
                 data=self.pack_form(payload),
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -1675,12 +1675,12 @@ class Client(object):
         ]
 
         try:
-            resp = await self.app.post(
+            async with self.app.post(
                 yarl.URL.build(path="/c/f/bawu/getRecomThreadList"),
                 data=self.pack_form(payload),
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -1718,12 +1718,12 @@ class Client(object):
         ]
 
         try:
-            resp = await self.app.post(
+            async with self.app.post(
                 yarl.URL.build(path="/c/f/bawu/getRecomThreadHistory"),
                 data=self.pack_form(payload),
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -1776,12 +1776,12 @@ class Client(object):
         ]
 
         try:
-            resp = await self.app.post(
+            async with self.app.post(
                 yarl.URL.build(path="/c/c/bawu/commitprison"),
                 data=self.pack_form(payload),
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -1825,12 +1825,12 @@ class Client(object):
         ]
 
         try:
-            resp = await self.web.post(
+            async with self.web.post(
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mo/q/bawublockclear"),
                 data=payload,
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['no']):
                 raise ValueError(res_json['error'])
 
@@ -1893,12 +1893,12 @@ class Client(object):
         ]
 
         try:
-            resp = await self.app.post(
+            async with self.app.post(
                 yarl.URL.build(path="/c/c/bawu/delthread"),
                 data=self.pack_form(payload),
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -1933,12 +1933,12 @@ class Client(object):
         ]
 
         try:
-            resp = await self.app.post(
+            async with self.app.post(
                 yarl.URL.build(path="/c/c/bawu/delpost"),
                 data=self.pack_form(payload),
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -2024,12 +2024,12 @@ class Client(object):
         ]
 
         try:
-            resp = await self.web.post(
+            async with self.web.post(
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mo/q/bawurecoverthread"),
                 data=payload,
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['no']):
                 raise ValueError(res_json['error'])
 
@@ -2065,12 +2065,12 @@ class Client(object):
         ]
 
         try:
-            resp = await self.app.post(
+            async with self.app.post(
                 yarl.URL.build(path="/c/c/bawu/moveTabThread"),
                 data=self.pack_form(payload),
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -2102,12 +2102,12 @@ class Client(object):
         ]
 
         try:
-            resp = await self.app.post(
+            async with self.app.post(
                 yarl.URL.build(path="/c/c/bawu/pushRecomToPersonalized"),
                 data=self.pack_form(payload),
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
             if int(res_json['data']['is_push_success']) != 1:
@@ -2158,12 +2158,12 @@ class Client(object):
             ]
 
             try:
-                resp = await self.app.post(
+                async with self.app.post(
                     yarl.URL.build(path="/c/c/bawu/goodlist"),
                     data=self.pack_form(payload),
-                )
+                ) as resp:
+                    res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
                 if int(res_json['error_code']):
                     raise ValueError(res_json['error_msg'])
 
@@ -2204,12 +2204,12 @@ class Client(object):
             ]
 
             try:
-                resp = await self.app.post(
+                async with self.app.post(
                     yarl.URL.build(path="/c/c/bawu/commitgood"),
                     data=self.pack_form(payload),
-                )
+                ) as resp:
+                    res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
                 if int(res_json['error_code']):
                     raise ValueError(res_json['error_msg'])
 
@@ -2250,12 +2250,12 @@ class Client(object):
         ]
 
         try:
-            resp = await self.app.post(
+            async with self.app.post(
                 yarl.URL.build(path="/c/c/bawu/commitgood"),
                 data=self.pack_form(payload),
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -2295,12 +2295,12 @@ class Client(object):
         ]
 
         try:
-            resp = await self.app.post(
+            async with self.app.post(
                 yarl.URL.build(path="/c/c/bawu/committop"),
                 data=self.pack_form(payload),
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -2339,12 +2339,12 @@ class Client(object):
         ]
 
         try:
-            resp = await self.app.post(
+            async with self.app.post(
                 yarl.URL.build(path="/c/c/bawu/committop"),
                 data=self.pack_form(payload),
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -2376,7 +2376,7 @@ class Client(object):
             fname = await self.get_fname(fid)
 
         try:
-            resp = await self.web.get(
+            async with self.web.get(
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mo/q/bawurecover"),
                 params={
                     'fn': fname,
@@ -2385,9 +2385,9 @@ class Client(object):
                     'is_ajax': '1',
                     'pn': pn,
                 },
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['no']):
                 raise ValueError(res_json['error'])
 
@@ -2414,15 +2414,14 @@ class Client(object):
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         try:
-            resp = await self.web.get(
+            async with self.web.get(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/bawu2/platform/listBlackUser"),
                 params={
                     'word': fname,
                     'pn': pn,
                 },
-            )
-
-            soup = bs4.BeautifulSoup(await resp.text(), 'lxml')
+            ) as resp:
+                soup = bs4.BeautifulSoup(await resp.text(), 'lxml')
 
             blacklist_users = BlacklistUsers(soup)
 
@@ -2459,12 +2458,12 @@ class Client(object):
         ]
 
         try:
-            resp = await self.web.post(
+            async with self.web.post(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/bawu2/platform/addBlack"),
                 data=payload,
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['errno']):
                 raise ValueError(res_json['errmsg'])
 
@@ -2502,12 +2501,12 @@ class Client(object):
         ]
 
         try:
-            resp = await self.web.post(
+            async with self.web.post(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/bawu2/platform/cancelBlack"),
                 data=payload,
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['errno']):
                 raise ValueError(res_json['errmsg'])
 
@@ -2547,12 +2546,12 @@ class Client(object):
         }
 
         try:
-            resp = await self.web.get(
+            async with self.web.get(
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mo/q/getBawuAppealList"),
                 params=params,
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['no']):
                 raise ValueError(res_json['error'])
 
@@ -2600,12 +2599,12 @@ class Client(object):
         )
 
         try:
-            resp = await self.web.post(
+            async with self.web.post(
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mo/q/multiAppealhandle"),
                 data=payload,
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['no']):
                 raise ValueError(res_json['error'])
 
@@ -2628,12 +2627,11 @@ class Client(object):
         """
 
         try:
-            resp = await self.web.get(img_url)
-
-            content = await resp.content.read()
-            img_type = resp.content_type.removeprefix('image/')
-            if img_type not in ['jpeg', 'png', 'bmp']:
-                raise ValueError(f"Content-Type should be jpeg, png or bmp rather than {resp.content_type}")
+            async with self.web.get(img_url) as resp:
+                img_type = resp.content_type.removeprefix('image/')
+                if img_type not in ['jpeg', 'png', 'bmp']:
+                    raise ValueError(f"Content-Type should be jpeg, png or bmp rather than {resp.content_type}")
+                content = await resp.content.read()
 
             image = cv.imdecode(np.frombuffer(content, np.uint8), cv.IMREAD_COLOR)
             if image is None:
@@ -2670,17 +2668,15 @@ class Client(object):
             path = ''
 
         try:
-            resp = await self.web.get(
+            async with self.web.get(
                 yarl.URL.build(
                     scheme="http",
                     host="tb.himg.baidu.com",
                     path=f"/sys/portrait{path}/item/{user.portrait}",
                 )
-            )
+            ) as resp:
+                image = cv.imdecode(np.frombuffer(await resp.content.read(), np.uint8), cv.IMREAD_COLOR)
 
-            content = await resp.content.read()
-
-            image = cv.imdecode(np.frombuffer(content, np.uint8), cv.IMREAD_COLOR)
             if image is None:
                 raise ValueError("Error in opencv.imdecode")
 
@@ -2710,12 +2706,12 @@ class Client(object):
         ]
 
         try:
-            resp = await self.app.post(
+            async with self.app.post(
                 yarl.URL.build(path="/c/s/msg"),
                 data=self.pack_form(payload),
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -2756,13 +2752,13 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            resp = await self.app_proto.post(
+            async with self.app_proto.post(
                 yarl.URL.build(path="/c/u/feed/replyme", query_string="cmd=303007"),
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
-            )
+            ) as resp:
+                res_proto = ReplyMeResIdl_pb2.ReplyMeResIdl()
+                res_proto.ParseFromString(await resp.content.read())
 
-            res_proto = ReplyMeResIdl_pb2.ReplyMeResIdl()
-            res_proto.ParseFromString(await resp.content.read())
             if int(res_proto.error.errorno):
                 raise ValueError(res_proto.error.errmsg)
 
@@ -2792,12 +2788,12 @@ class Client(object):
         ]
 
         try:
-            resp = await self.app.post(
+            async with self.app.post(
                 yarl.URL.build(path="/c/u/feed/atme"),
                 data=self.pack_form(payload),
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -2903,13 +2899,13 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            resp = await self.app_proto.post(
+            async with self.app_proto.post(
                 yarl.URL.build(path="/c/u/feed/userpost", query_string="cmd=303002"),
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
-            )
+            ) as resp:
+                res_proto = UserPostResIdl_pb2.UserPostResIdl()
+                res_proto.ParseFromString(await resp.content.read())
 
-            res_proto = UserPostResIdl_pb2.UserPostResIdl()
-            res_proto.ParseFromString(await resp.content.read())
             if int(res_proto.error.errorno):
                 raise ValueError(res_proto.error.errmsg)
 
@@ -2958,12 +2954,12 @@ class Client(object):
         ]
 
         try:
-            resp = await self.app.post(
+            async with self.app.post(
                 yarl.URL.build(path="/c/u/fans/page"),
                 data=self.pack_form(payload),
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -3003,12 +2999,12 @@ class Client(object):
         ]
 
         try:
-            resp = await self.app.post(
+            async with self.app.post(
                 yarl.URL.build(path="/c/u/follow/followList"),
                 data=self.pack_form(payload),
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -3035,15 +3031,15 @@ class Client(object):
         """
 
         try:
-            resp = await self.web.get(
+            async with self.web.get(
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mg/o/getForumHome"),
                 params={
                     'pn': pn,
                     'rn': 200,
                 },
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['errno']):
                 raise ValueError(res_json['errmsg'])
 
@@ -3078,13 +3074,13 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            resp = await self.app_proto.post(
+            async with self.app_proto.post(
                 yarl.URL.build(path="/c/u/user/getDislikeList", query_string="cmd=309692"),
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
-            )
+            ) as resp:
+                res_proto = GetDislikeListResIdl_pb2.GetDislikeListResIdl()
+                res_proto.ParseFromString(await resp.content.read())
 
-            res_proto = GetDislikeListResIdl_pb2.GetDislikeListResIdl()
-            res_proto.ParseFromString(await resp.content.read())
             if int(res_proto.error.errorno):
                 raise ValueError(res_proto.error.errmsg)
 
@@ -3119,12 +3115,12 @@ class Client(object):
         ]
 
         try:
-            resp = await self.app.post(
+            async with self.app.post(
                 yarl.URL.build(path="/c/c/user/removeFans"),
                 data=self.pack_form(payload),
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -3158,12 +3154,12 @@ class Client(object):
         ]
 
         try:
-            resp = await self.app.post(
+            async with self.app.post(
                 yarl.URL.build(path="/c/c/user/follow"),
                 data=self.pack_form(payload),
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -3197,12 +3193,12 @@ class Client(object):
         ]
 
         try:
-            resp = await self.app.post(
+            async with self.app.post(
                 yarl.URL.build(path="/c/c/user/unfollow"),
                 data=self.pack_form(payload),
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -3233,12 +3229,12 @@ class Client(object):
                 ('tbs', await self.get_tbs()),
             ]
 
-            resp = await self.app.post(
+            async with self.app.post(
                 yarl.URL.build(path="/c/c/forum/like"),
                 data=self.pack_form(payload),
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
             if int(res_json['error']['errno']):
@@ -3271,12 +3267,12 @@ class Client(object):
                 ('tbs', await self.get_tbs()),
             ]
 
-            resp = await self.app.post(
+            async with self.app.post(
                 yarl.URL.build(path="/c/c/forum/unfavolike"),
                 data=self.pack_form(payload),
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -3308,12 +3304,12 @@ class Client(object):
                 ('dislike_from', "homepage"),
             ]
 
-            resp = await self.app.post(
+            async with self.app.post(
                 yarl.URL.build(path="/c/c/excellent/submitDislike"),
                 data=self.pack_form(payload),
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -3344,12 +3340,12 @@ class Client(object):
                 ('forum_id', fid),
             ]
 
-            resp = await self.app.post(
+            async with self.app.post(
                 yarl.URL.build(path="/c/c/excellent/submitCancelDislike"),
                 data=self.pack_form(payload),
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -3385,12 +3381,12 @@ class Client(object):
                 ('thread_id', tid),
             ]
 
-            resp = await self.app.post(
+            async with self.app.post(
                 yarl.URL.build(path="/c/c/thread/setPrivacy"),
                 data=self.pack_form(payload),
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
@@ -3423,12 +3419,12 @@ class Client(object):
                 ('tbs', await self.get_tbs()),
             ]
 
-            resp = await self.app.post(
+            async with self.app.post(
                 yarl.URL.build(path="/c/c/forum/sign"),
                 data=self.pack_form(payload),
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             error_code = int(res_json['error_code'])
             if error_code:
                 raise ValueError(res_json['error_msg'])
@@ -3508,12 +3504,12 @@ class Client(object):
                 ('z_id', '74FFB5E615AA72E0B057EE43E3D5A23A8BA34AAC1672FC9B56A7106C57BA03'),
             ]
 
-            resp = await self.app.post(
+            async with self.app.post(
                 yarl.URL.build(path="/c/c/post/add"),
                 data=self.pack_form(payload),
-            )
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
             if int(res_json['info']['need_vcode']):
