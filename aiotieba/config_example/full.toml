@@ -1,6 +1,6 @@
 [User]
 
-# default是自定义的BDUSS_key，你可以改成你喜欢的标记
+# default是自定义的BDUSS_key，你可以改成你喜欢的标识
 # 该设计是为了方便通过BDUSS_key快速调用BDUSS，这样你就不用每次都填一串很长的东西作为参数
 [User.default]
 # 把你的那一串长长的BDUSS放在这

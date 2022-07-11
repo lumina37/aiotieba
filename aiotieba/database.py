@@ -35,7 +35,7 @@ class Database(object):
                 **CONFIG['Database'],
             )
         except aiomysql.Error as err:
-            LOG.warning(f"Cannot link to the database {self._db_name}. reason:{err}")
+            LOG.warning(f"无法连接数据库`{self._db_name}`请检查配置文件中的`Database`字段是否填写正确. reason:{err}")
 
         return self
 

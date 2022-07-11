@@ -59,12 +59,11 @@ import bs4
 import yarl
 from google.protobuf.json_format import ParseDict
 
-from aiotieba.tieba_protobuf import GetForumSquareResIdl_pb2
-
 from .logger import LOG
 from .tieba_protobuf import (
     FrsPageResIdl_pb2,
     GetDislikeListResIdl_pb2,
+    GetForumSquareResIdl_pb2,
     NewThreadInfo_pb2,
     Page_pb2,
     PbContent_pb2,

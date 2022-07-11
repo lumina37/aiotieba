@@ -102,17 +102,17 @@ class WebsocketResponse(object):
 
     def __init__(self) -> None:
         self._timestamp: int = int(time.time())
-        self._req_id = self.websocket_request_id
+        self._req_id = None
         self._readable_event: asyncio.Event = asyncio.Event()
         self._data: bytes = None
 
-        self.ws_res_wait_dict[self._req_id] = self
+        self.ws_res_wait_dict[self.req_id] = self
 
     def __hash__(self) -> int:
-        return self._req_id
+        return self.req_id
 
     def __eq__(self, obj: "WebsocketResponse"):
-        return self._readable_event is obj._readable_event and self._req_id == obj._req_id
+        return self._readable_event is obj._readable_event and self.req_id == obj.req_id
 
     @property
     def timestamp(self) -> int:
@@ -126,22 +126,18 @@ class WebsocketResponse(object):
         return self._timestamp
 
     @property
-    def websocket_request_id(self) -> int:
-        """
-        每次调用都会返回一个唯一的请求id
-        """
-
-        if self._websocket_request_id is None:
-            self._websocket_request_id = self._timestamp
-        self._websocket_request_id += 1
-
-        return self._websocket_request_id
-
-    @property
     def req_id(self) -> int:
         """
-        唯一的请求id
+        返回一个唯一的请求id
+        在初次生成后该属性便不会再发生变化
         """
+
+        if self._req_id is None:
+
+            if self._websocket_request_id is None:
+                self._websocket_request_id = self._timestamp
+            self._websocket_request_id += 1
+            self._req_id = self._websocket_request_id
 
         return self._req_id
 
@@ -174,13 +170,13 @@ class Client(object):
     贴吧客户端
 
     Args:
-        BDUSS_key (str, optional): 用于从CONFIG中提取BDUSS. Defaults to ''.
+        BDUSS_key (str, optional): 用于从CONFIG中提取BDUSS. Defaults to None.
     """
 
     __slots__ = [
         'BDUSS_key',
-        'BDUSS',
-        'STOKEN',
+        '_BDUSS',
+        '_STOKEN',
         '_user',
         '_connector',
         'app',
@@ -203,11 +199,11 @@ class Client(object):
 
     fid_dict: ClassVar[Dict[str, int]] = {}
 
-    def __init__(self, BDUSS_key: str = '') -> None:
+    def __init__(self, BDUSS_key: Optional[str] = None) -> None:
         self.BDUSS_key = BDUSS_key
         user_dict: Dict[str, str] = CONFIG['User'].get(BDUSS_key, {})
-        self.BDUSS: str = user_dict.get('BDUSS', '')
-        self.STOKEN: str = user_dict.get('STOKEN', '')
+        self.BDUSS: str = user_dict.get('BDUSS', None)
+        self.STOKEN: str = user_dict.get('STOKEN', None)
         self._user: BasicUserInfo = None
 
         self._connector: aiohttp.TCPConnector = None
@@ -332,6 +328,56 @@ class Client(object):
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.close()
+
+    @property
+    def BDUSS(self) -> str:
+        """
+        当前账号的BDUSS
+        """
+
+        return self._BDUSS
+
+    @BDUSS.setter
+    def BDUSS(self, new_BDUSS: str) -> None:
+
+        if not new_BDUSS:
+            self._BDUSS = ""
+            return
+
+        legal_length = 192
+        if (len_new_BDUSS := len(new_BDUSS)) != legal_length:
+            LOG.warning(
+                f"BDUSS的长度应为{legal_length}个字符，而输入的{new_BDUSS}有{len_new_BDUSS}个字符"
+            )
+            self._BDUSS = ""
+            return
+
+        self._BDUSS = new_BDUSS
+
+    @property
+    def STOKEN(self) -> str:
+        """
+        当前账号的STOKEN
+        """
+
+        return self._STOKEN
+
+    @STOKEN.setter
+    def STOKEN(self, new_STOKEN: str) -> None:
+
+        if not new_STOKEN:
+            self._STOKEN = ""
+            return
+
+        legal_length = 64
+        if (len_new_STOKEN := len(new_STOKEN)) != legal_length:
+            LOG.warning(
+                f"STOKEN的长度应为{legal_length}个字符，而输入的{new_STOKEN}有{len_new_STOKEN}个字符"
+            )
+            self._STOKEN = ""
+            return
+
+        self._STOKEN = new_STOKEN
 
     @property
     def timestamp_ms(self) -> int:
@@ -2187,7 +2233,8 @@ class Client(object):
                 cid (int, optional): 将主题帖加到cid对应的精华分区 cid默认为0即不分区. Defaults to 0.
 
             Closure Args:
-                fname (str): 帖子所在贴吧名
+                fid (int): 帖子所在贴吧的fid
+                fname (str): 帖子所在贴吧的贴吧名
 
             Returns:
                 bool: 操作是否成功
@@ -3453,7 +3500,7 @@ class Client(object):
         Returns:
             bool: 回帖是否成功
 
-        Notice:
+        Note:
             本接口仍处于测试阶段，有一定永封风险！请谨慎使用！
             已通过的测试: cookie白板号(无头像无关注吧无发帖记录 2元/个) 通过异地阿里云ip出口以3分钟的发送间隔发15条回复不吞楼不封号
         """

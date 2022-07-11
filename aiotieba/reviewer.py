@@ -20,13 +20,13 @@ class Reviewer(Client):
     提供贴吧审查功能
 
     Args:
-        BDUSS_key (str, optional): 用于从CONFIG中提取BDUSS. Defaults to ''.
+        BDUSS_key (str, optional): 用于从CONFIG中提取BDUSS. Defaults to None.
         fname (str, optional): 贴吧名. Defaults to ''.
     """
 
     __slots__ = ['fname', 'database', '_img_hasher', '_qrdetector']
 
-    def __init__(self, BDUSS_key: str = '', fname: str = ''):
+    def __init__(self, BDUSS_key: Optional[str] = None, fname: str = ''):
         super(Reviewer, self).__init__(BDUSS_key)
 
         self.fname: str = fname

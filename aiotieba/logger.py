@@ -1,10 +1,15 @@
 # -*- coding:utf-8 -*-
-__all__ = ['LOG']
+__all__ = [
+    'SCRIPT_PATH',
+    'SCRIPT_DIR',
+    'MODULE_DIR',
+    'LOG',
+]
 
 import logging
 import logging.handlers
-
-from .config import SCRIPT_DIR, SCRIPT_PATH
+import sys
+from pathlib import Path
 
 logging._srcfile = None
 logging.logThreads = False
@@ -12,6 +17,10 @@ logging.logProcesses = False
 logging.logMultiprocessing = False
 logging.raiseExceptions = False
 # logging.Formatter.default_msec_format = '%s.%03d'
+
+SCRIPT_PATH = Path(sys.argv[0])
+SCRIPT_DIR = SCRIPT_PATH.parent
+MODULE_DIR = Path(__file__).parent
 
 
 class _Logger(logging.Logger):
