@@ -1307,8 +1307,9 @@ class Page(_DataWrapper):
             self._has_more = self.current_page < self.total_page
             self._has_prev = self.current_page > self.total_page
         else:
-            self._has_more = bool(self._raw_data.has_more)
-            self._has_prev = bool(self._raw_data.has_prev)
+            if self._raw_data:
+                self._has_more = bool(self._raw_data.has_more)
+                self._has_prev = bool(self._raw_data.has_prev)
 
     @property
     def has_more(self) -> bool:
