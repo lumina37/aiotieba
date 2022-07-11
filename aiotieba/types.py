@@ -1567,6 +1567,12 @@ class VoteInfo(_DataWrapper):
             self._total_vote = 0
             self._total_user = 0
 
+    def __len__(self) -> int:
+        return len(self.options)
+
+    def __bool__(self) -> bool:
+        return bool(self.options)
+
     @property
     def title(self) -> str:
         """
