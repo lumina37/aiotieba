@@ -27,7 +27,7 @@ from typing import List, Union
 import tomli
 
 import aiotieba as tb
-from aiotieba.config import SCRIPT_PATH
+from aiotieba.logger import SCRIPT_PATH
 
 with (SCRIPT_PATH.parent / 'config/listen_config.toml').open('rb') as file:
     LISTEN_CONFIG = tomli.load(file)
