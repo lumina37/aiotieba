@@ -27,7 +27,7 @@ from typing import List, Union
 import tomli
 
 import aiotieba as tb
-from aiotieba.logger import SCRIPT_PATH
+from aiotieba.paths import SCRIPT_PATH
 
 with (SCRIPT_PATH.parent / 'config/listen_config.toml').open('rb') as file:
     LISTEN_CONFIG = tomli.load(file)
@@ -720,7 +720,7 @@ class Listener(object):
 
         if len(ctx.args) > 2:
             index = int(ctx.args[0])
-            imgs: List[tb.types.FragImage] = imgs[index - 1 : index]
+            imgs: List[tb.typedef.FragImage] = imgs[index - 1 : index]
             permission = int(ctx.args[1])
             note = ctx.args[2]
         else:
@@ -753,7 +753,7 @@ class Listener(object):
 
         if ctx.args:
             index = int(ctx.args[0])
-            imgs: List[tb.types.FragImage] = imgs[index - 1 : index]
+            imgs: List[tb.typedef.FragImage] = imgs[index - 1 : index]
 
         for img in imgs:
             image = await self.listener.get_image(img.src)

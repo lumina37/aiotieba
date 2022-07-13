@@ -24,7 +24,7 @@ from Crypto.PublicKey import RSA
 from google.protobuf.json_format import ParseDict
 
 from .config import CONFIG
-from .logger import LOG
+from .log import LOG
 from .tieba_protobuf import (
     CommitPersonalMsgReqIdl_pb2,
     CommitPersonalMsgResIdl_pb2,
@@ -56,7 +56,7 @@ from .tieba_protobuf import (
     UserPostReqIdl_pb2,
     UserPostResIdl_pb2,
 )
-from .types import (
+from .typedef import (
     JSON_DECODER,
     Appeals,
     Ats,
@@ -65,9 +65,9 @@ from .types import (
     Comments,
     DislikeForums,
     Fans,
-    Forum,
     FollowForums,
     Follows,
+    Forum,
     MemberUsers,
     NewThread,
     Posts,
@@ -346,9 +346,7 @@ class Client(object):
 
         legal_length = 192
         if (len_new_BDUSS := len(new_BDUSS)) != legal_length:
-            LOG.warning(
-                f"BDUSS的长度应为{legal_length}个字符，而输入的{new_BDUSS}有{len_new_BDUSS}个字符"
-            )
+            LOG.warning(f"BDUSS的长度应为{legal_length}个字符，而输入的{new_BDUSS}有{len_new_BDUSS}个字符")
             self._BDUSS = ""
             return
 
@@ -371,9 +369,7 @@ class Client(object):
 
         legal_length = 64
         if (len_new_STOKEN := len(new_STOKEN)) != legal_length:
-            LOG.warning(
-                f"STOKEN的长度应为{legal_length}个字符，而输入的{new_STOKEN}有{len_new_STOKEN}个字符"
-            )
+            LOG.warning(f"STOKEN的长度应为{legal_length}个字符，而输入的{new_STOKEN}有{len_new_STOKEN}个字符")
             self._STOKEN = ""
             return
 

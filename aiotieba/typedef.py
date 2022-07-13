@@ -59,7 +59,7 @@ import bs4
 import yarl
 from google.protobuf.json_format import ParseDict
 
-from .logger import LOG
+from .log import LOG
 from .tieba_protobuf import (
     FrsPageResIdl_pb2,
     GetDislikeListResIdl_pb2,

@@ -11,8 +11,8 @@ import numpy as np
 
 from .client import Client
 from .database import Database
-from .logger import LOG
-from .types import BasicUserInfo
+from .log import LOG
+from .typedef import BasicUserInfo
 
 
 class Reviewer(Client):

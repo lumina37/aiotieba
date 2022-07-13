@@ -1,7 +1,8 @@
 # -*- coding:utf-8 -*-
 __all__ = ['CONFIG']
 
-from .logger import LOG, MODULE_DIR, SCRIPT_DIR
+from .log import LOG
+from .paths import MODULE_DIR, SCRIPT_DIR
 
 try:
     import tomli

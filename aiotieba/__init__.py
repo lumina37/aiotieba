@@ -1,19 +1,18 @@
 # -*- coding:utf-8 -*-
 """
-@Version: 2.8.1_beta
 @Author: starry.qvq@gmail.com
 @License: Unlicense
 @Homepage: https://github.com/Starry-OvO/Tieba-Manager
-@Required Python Version: 3.9+
-@Required Modules: tomli aiohttp protobuf lxml beautifulsoup4 pycryptodome aiomysql numpy opencv-contrib-python
 """
 
 import os
 
 from .client import *
-from .logger import *
+from .log import *
 from .reviewer import *
-from .types import *
+from .typedef import *
+
+__version__ = "2.8.1"
 
 if os.name == 'posix':
     import signal

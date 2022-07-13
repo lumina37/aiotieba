@@ -8,8 +8,8 @@ from typing import List, Optional, Tuple, Union
 import aiomysql
 
 from .config import CONFIG
-from .logger import LOG
-from .types import BasicUserInfo
+from .log import LOG
+from .typedef import BasicUserInfo
 
 
 class Database(object):
