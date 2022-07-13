@@ -887,12 +887,26 @@ class Client(object):
 
             user.gender = gender
             user.age = float(user_dict['tb_age'])
-            post_num: str = user_dict['post_num']
-            if isinstance(post_num, str):
-                user.post_num = int(float(post_num.removesuffix('万')) * 1e4)
-            else:
-                user.post_num = post_num
-            user.fan_num = int(user_dict['followed_count'])
+
+            def tb_num2int(tb_num: str) -> int:
+                """
+                将贴吧数字字符串转为int
+                可能会以xx万作为单位
+
+                Args:
+                    tb_num (str): 贴吧数字字符串
+
+                Returns:
+                    int: 对应数字
+                """
+
+                if isinstance(tb_num, str):
+                    return int(float(tb_num.removesuffix('万')) * 1e4)
+                else:
+                    return tb_num
+
+            user.post_num = tb_num2int(user_dict['post_num'])
+            user.fan_num = tb_num2int(user_dict['followed_count'])
 
             user.is_vip = bool(int(vip_dict['v_status'])) if (vip_dict := user_dict['vipInfo']) else False
 
