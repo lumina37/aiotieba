@@ -1828,10 +1828,10 @@ class Client(object):
                 raise ValueError(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname_or_fid} user={user}")
+            LOG.warning(f"{err}. forum={fname_or_fid} user={user} day={day}")
             return False
 
-        LOG.info(f"Succeeded. forum={fname_or_fid} user={user}")
+        LOG.info(f"Succeeded. forum={fname_or_fid} user={user} day={day}")
         return True
 
     async def unblock(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> bool:
