@@ -1,13 +1,8 @@
 # -*- coding:utf-8 -*-
-__all__ = ['SCRIPT_PATH', 'SCRIPT_DIR', 'MODULE_DIR', 'CONFIG']
+__all__ = ['CONFIG']
 
-import sys
-from pathlib import Path
-
-SCRIPT_PATH = Path(sys.argv[0])
-SCRIPT_DIR = SCRIPT_PATH.parent
-MODULE_DIR = Path(__file__).parent
-
+from .log import LOG
+from .paths import MODULE_DIR, SCRIPT_DIR
 
 try:
     import tomli
@@ -21,12 +16,17 @@ except FileNotFoundError:
 
     config_dir = SCRIPT_DIR / "config"
     config_dir.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(str(MODULE_DIR / "config_example/minimal.toml"), str(config_dir / "config.toml"))
+    minimal_config_path = config_dir / "config.toml"
+    shutil.copyfile(str(MODULE_DIR / "config_example/minimal.toml"), str(minimal_config_path))
     shutil.copyfile(str(MODULE_DIR / "config_example/full.toml"), str(config_dir / "config_full_example.toml"))
 
     CONFIG = {}
 
+    LOG.warning(
+        f"找不到配置文件 请参考[https://github.com/Starry-OvO/Tieba-Manager/blob/master/wikis/tutorial.md]完成对{minimal_config_path}的配置"
+    )
+
 required_keys = ['User', 'Database']
 for required_key in required_keys:
-    if not (CONFIG.__contains__(required_key) and isinstance(CONFIG[required_key], dict)):
+    if required_key not in CONFIG or not isinstance(CONFIG[required_key], dict):
         CONFIG[required_key] = {}

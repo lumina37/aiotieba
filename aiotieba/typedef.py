@@ -59,12 +59,11 @@ import bs4
 import yarl
 from google.protobuf.json_format import ParseDict
 
-from aiotieba.tieba_protobuf import GetForumSquareResIdl_pb2
-
-from .logger import LOG
+from .log import LOG
 from .tieba_protobuf import (
     FrsPageResIdl_pb2,
     GetDislikeListResIdl_pb2,
+    GetForumSquareResIdl_pb2,
     NewThreadInfo_pb2,
     Page_pb2,
     PbContent_pb2,
@@ -148,6 +147,14 @@ class BasicUserInfo(_DataWrapper):
                     self.portrait = _id
                     if not self.portrait:
                         self._user_name = _id
+
+    def __str__(self) -> str:
+        if self.user_name:
+            return self.user_name
+        elif self.portrait:
+            return self.portrait
+        else:
+            return str(self.user_id)
 
     def __repr__(self) -> str:
         return str(
@@ -248,19 +255,6 @@ class BasicUserInfo(_DataWrapper):
 
         else:
             self._portrait = ''
-
-    @property
-    def log_name(self) -> str:
-        """
-        用于在日志中记录用户属性
-        """
-
-        if self.user_name:
-            return self.user_name
-        elif self.portrait:
-            return self.portrait
-        else:
-            return str(self.user_id)
 
 
 class UserInfo(BasicUserInfo):
@@ -1061,7 +1055,7 @@ class Fragments(object):
                 self._tiebapluses.append(fragment)
             else:
                 fragment = FragmentUnknown(_raw_data)
-                LOG.warning(f"Unknown fragment type:{_raw_data.type}")
+                LOG.warning(f"Unknown fragment type. type={_raw_data.type}")
 
             return fragment
 
@@ -1567,6 +1561,12 @@ class VoteInfo(_DataWrapper):
             self._is_multi = False
             self._total_vote = 0
             self._total_user = 0
+
+    def __len__(self) -> int:
+        return len(self.options)
+
+    def __bool__(self) -> bool:
+        return bool(self.options)
 
     @property
     def title(self) -> str:
@@ -4472,7 +4472,7 @@ class SelfFollowForums(_Containers[Forum]):
                     Forum(
                         ParseDict(
                             _dict,
-                            GetForumSquareResIdl_pb2.GetForumSquareResIdl.DataRes.RecommendForumInfo(),
+                            GetDislikeListResIdl_pb2.GetDislikeListResIdl.DataRes.ForumList(),
                             ignore_unknown_fields=True,
                         )
                     )

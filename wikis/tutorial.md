@@ -2,7 +2,7 @@
 
 ## 准备知识
 
-想要用好`aiotieba`库，必须初步掌握`Python`异步编程
+想要用好`aiotieba`库，你必须初步掌握`Python`异步编程
 
 如果你不熟悉`Python`异步编程，建议阅读下列教程：
 
@@ -68,8 +68,9 @@ asyncio.run(main())
 然后，你会获得如下结果
 
 ```log
-<2022-07-07 09:44:31> [WARNING] Failed to login. reason:用户名或密码错误
-<2022-07-07 09:44:31> [INFO] 当前用户信息: {'user_id': 0, 'user_name': '', 'portrait': ''}
+<2022-07-11 17:36:27> [WARNING] 找不到配置文件，请参考[https://github.com/Starry-OvO/Tieba-Manager/blob/master/wikis/tutorial.md]完成对...\config\config.toml的配置
+<2022-07-11 17:36:27> [WARNING] Failed to login. reason:用户名或密码错误
+{'user_id': 0, 'user_name': '', 'portrait': ''}
 ```
 
 ### 步骤2

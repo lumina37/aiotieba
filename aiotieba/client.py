@@ -24,7 +24,7 @@ from Crypto.PublicKey import RSA
 from google.protobuf.json_format import ParseDict
 
 from .config import CONFIG
-from .logger import LOG
+from .log import LOG
 from .tieba_protobuf import (
     CommitPersonalMsgReqIdl_pb2,
     CommitPersonalMsgResIdl_pb2,
@@ -56,7 +56,7 @@ from .tieba_protobuf import (
     UserPostReqIdl_pb2,
     UserPostResIdl_pb2,
 )
-from .types import (
+from .typedef import (
     JSON_DECODER,
     Appeals,
     Ats,
@@ -65,9 +65,9 @@ from .types import (
     Comments,
     DislikeForums,
     Fans,
-    Forum,
     FollowForums,
     Follows,
+    Forum,
     MemberUsers,
     NewThread,
     Posts,
@@ -102,17 +102,17 @@ class WebsocketResponse(object):
 
     def __init__(self) -> None:
         self._timestamp: int = int(time.time())
-        self._req_id = self.websocket_request_id
+        self._req_id = None
         self._readable_event: asyncio.Event = asyncio.Event()
         self._data: bytes = None
 
-        self.ws_res_wait_dict[self._req_id] = self
+        self.ws_res_wait_dict[self.req_id] = self
 
     def __hash__(self) -> int:
-        return self._req_id
+        return self.req_id
 
     def __eq__(self, obj: "WebsocketResponse"):
-        return self._readable_event is obj._readable_event and self._req_id == obj._req_id
+        return self._readable_event is obj._readable_event and self.req_id == obj.req_id
 
     @property
     def timestamp(self) -> int:
@@ -126,22 +126,18 @@ class WebsocketResponse(object):
         return self._timestamp
 
     @property
-    def websocket_request_id(self) -> int:
-        """
-        每次调用都会返回一个唯一的请求id
-        """
-
-        if self._websocket_request_id is None:
-            self._websocket_request_id = self._timestamp
-        self._websocket_request_id += 1
-
-        return self._websocket_request_id
-
-    @property
     def req_id(self) -> int:
         """
-        唯一的请求id
+        返回一个唯一的请求id
+        在初次生成后该属性便不会再发生变化
         """
+
+        if self._req_id is None:
+
+            if self._websocket_request_id is None:
+                self._websocket_request_id = self._timestamp
+            self._websocket_request_id += 1
+            self._req_id = self._websocket_request_id
 
         return self._req_id
 
@@ -174,13 +170,13 @@ class Client(object):
     贴吧客户端
 
     Args:
-        BDUSS_key (str, optional): 用于从CONFIG中提取BDUSS. Defaults to ''.
+        BDUSS_key (str, optional): 用于从CONFIG中提取BDUSS. Defaults to None.
     """
 
     __slots__ = [
         'BDUSS_key',
-        'BDUSS',
-        'STOKEN',
+        '_BDUSS',
+        '_STOKEN',
         '_user',
         '_connector',
         'app',
@@ -203,11 +199,11 @@ class Client(object):
 
     fid_dict: ClassVar[Dict[str, int]] = {}
 
-    def __init__(self, BDUSS_key: str = '') -> None:
+    def __init__(self, BDUSS_key: Optional[str] = None) -> None:
         self.BDUSS_key = BDUSS_key
         user_dict: Dict[str, str] = CONFIG['User'].get(BDUSS_key, {})
-        self.BDUSS: str = user_dict.get('BDUSS', '')
-        self.STOKEN: str = user_dict.get('STOKEN', '')
+        self.BDUSS: str = user_dict.get('BDUSS', None)
+        self.STOKEN: str = user_dict.get('STOKEN', None)
         self._user: BasicUserInfo = None
 
         self._connector: aiohttp.TCPConnector = None
@@ -332,6 +328,52 @@ class Client(object):
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.close()
+
+    @property
+    def BDUSS(self) -> str:
+        """
+        当前账号的BDUSS
+        """
+
+        return self._BDUSS
+
+    @BDUSS.setter
+    def BDUSS(self, new_BDUSS: str) -> None:
+
+        if not new_BDUSS:
+            self._BDUSS = ""
+            return
+
+        legal_length = 192
+        if (len_new_BDUSS := len(new_BDUSS)) != legal_length:
+            LOG.warning(f"BDUSS的长度应为{legal_length}个字符 而输入的{new_BDUSS}有{len_new_BDUSS}个字符")
+            self._BDUSS = ""
+            return
+
+        self._BDUSS = new_BDUSS
+
+    @property
+    def STOKEN(self) -> str:
+        """
+        当前账号的STOKEN
+        """
+
+        return self._STOKEN
+
+    @STOKEN.setter
+    def STOKEN(self, new_STOKEN: str) -> None:
+
+        if not new_STOKEN:
+            self._STOKEN = ""
+            return
+
+        legal_length = 64
+        if (len_new_STOKEN := len(new_STOKEN)) != legal_length:
+            LOG.warning(f"STOKEN的长度应为{legal_length}个字符 而输入的{new_STOKEN}有{len_new_STOKEN}个字符")
+            self._STOKEN = ""
+            return
+
+        self._STOKEN = new_STOKEN
 
     @property
     def timestamp_ms(self) -> int:
@@ -557,7 +599,7 @@ class Client(object):
             self._ws_dispatcher = asyncio.create_task(self._ws_dispatch(), name="ws_dispatcher")
 
         except Exception as err:
-            LOG.warning(f"Failed to create websocket. reason:{err}")
+            LOG.warning(err)
             return False
 
         return True
@@ -653,7 +695,7 @@ class Client(object):
                     raise ValueError(res_proto.error.errmsg)
 
             except Exception as err:
-                LOG.warning(f"Failed to create tieba_websocket. reason:{err}")
+                LOG.warning(err)
                 return False
 
         return True
@@ -713,7 +755,7 @@ class Client(object):
             self._tbs = res_json['anti']['tbs']
 
         except Exception as err:
-            LOG.warning(f"Failed to login. reason:{err}")
+            LOG.warning(err)
             self._user = BasicUserInfo()
             self._tbs = ""
             return False
@@ -748,7 +790,7 @@ class Client(object):
                 self.fid_dict[fname] = fid
 
         except Exception as err:
-            LOG.warning(f"Failed to get fid of {fname}. reason:{err}")
+            LOG.warning(f"{err}. fname={fname}")
             fid = 0
 
         return fid
@@ -845,17 +887,31 @@ class Client(object):
 
             user.gender = gender
             user.age = float(user_dict['tb_age'])
-            post_num: str = user_dict['post_num']
-            if isinstance(post_num, str):
-                user.post_num = int(float(post_num.removesuffix('万')) * 1e4)
-            else:
-                user.post_num = post_num
-            user.fan_num = int(user_dict['followed_count'])
+
+            def tb_num2int(tb_num: str) -> int:
+                """
+                将贴吧数字字符串转为int
+                可能会以xx万作为单位
+
+                Args:
+                    tb_num (str): 贴吧数字字符串
+
+                Returns:
+                    int: 对应数字
+                """
+
+                if isinstance(tb_num, str):
+                    return int(float(tb_num.removesuffix('万')) * 1e4)
+                else:
+                    return tb_num
+
+            user.post_num = tb_num2int(user_dict['post_num'])
+            user.fan_num = tb_num2int(user_dict['followed_count'])
 
             user.is_vip = bool(int(vip_dict['v_status'])) if (vip_dict := user_dict['vipInfo']) else False
 
         except Exception as err:
-            LOG.warning(f"Failed to get UserInfo of {user.log_name}. reason:{err}")
+            LOG.warning(f"{err}. user={user}")
             user = UserInfo()
 
         return user
@@ -890,7 +946,7 @@ class Client(object):
             user.portrait = user_dict['portrait']
 
         except Exception as err:
-            LOG.warning(f"Failed to get BasicUserInfo of {user.log_name}. reason:{err}")
+            LOG.warning(f"{err}. user={user}")
             user = UserInfo()
 
         return user
@@ -925,7 +981,7 @@ class Client(object):
             user.portrait = user_dict['portrait']
 
         except Exception as err:
-            LOG.warning(f"Failed to get BasicUserInfo of {user.user_name}. reason:{err}")
+            LOG.warning(f"{err}. user={user}")
             user = BasicUserInfo()
 
         return user
@@ -963,7 +1019,7 @@ class Client(object):
             user = UserInfo(_raw_data=user_proto)
 
         except Exception as err:
-            LOG.warning(f"Failed to get UserInfo of {user.user_id}. reason:{err}")
+            LOG.warning(f"{err}. user={user}")
             user = UserInfo()
 
         return user
@@ -994,7 +1050,7 @@ class Client(object):
             user.portrait = user_dict['portrait']
 
         except Exception as err:
-            LOG.warning(f"Failed to get BasicUserInfo of {user.user_id}. reason:{err}")
+            LOG.warning(f"{err}. user={user}")
             user = BasicUserInfo()
 
         return user
@@ -1032,7 +1088,7 @@ class Client(object):
             user = UserInfo(_raw_data=user_proto)
 
         except Exception as err:
-            LOG.warning(f"Failed to get UserInfo of {tieba_uid}. reason:{err}")
+            LOG.warning(f"{err}. tieba_uid={tieba_uid}")
             user = UserInfo()
 
         return user
@@ -1083,7 +1139,7 @@ class Client(object):
             threads = Threads(res_proto.data)
 
         except Exception as err:
-            LOG.warning(f"Failed to get threads of {fname}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname}")
             threads = Threads()
 
         return threads
@@ -1151,7 +1207,7 @@ class Client(object):
             posts = Posts(res_proto.data)
 
         except Exception as err:
-            LOG.warning(f"Failed to get posts of {tid}. reason:{err}")
+            LOG.warning(f"{err}. tid={tid}")
             posts = Posts()
 
         return posts
@@ -1197,7 +1253,7 @@ class Client(object):
             comments = Comments(res_proto.data)
 
         except Exception as err:
-            LOG.warning(f"Failed to get comments of {pid} in {tid}. reason:{err}")
+            LOG.warning(f"{err}. tid={tid} pid={pid}")
             comments = Comments()
 
         return comments
@@ -1253,7 +1309,7 @@ class Client(object):
             searches = Searches(res_json)
 
         except Exception as err:
-            LOG.warning(f"Failed to search {query} in {fname}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname}")
             searches = Searches()
 
         return searches
@@ -1298,7 +1354,7 @@ class Client(object):
             )
 
         except Exception as err:
-            LOG.warning(f"Failed to get forum_detail of {fname_or_fid}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname_or_fid}")
             res = Forum()
 
         return res
@@ -1344,7 +1400,7 @@ class Client(object):
             }
 
         except Exception as err:
-            LOG.warning(f"Failed to get bawu_dict. reason: {err}")
+            LOG.warning(err)
             bawu_dict = {}
 
         return bawu_dict
@@ -1385,7 +1441,7 @@ class Client(object):
             tab_map = {tab_proto.tab_name: tab_proto.tab_id for tab_proto in res_proto.data.exact_match.tab_info}
 
         except Exception as err:
-            LOG.warning(f"Failed to get tab_map of {fname}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname_or_fid}")
             tab_map = {}
 
         return tab_map
@@ -1418,7 +1474,7 @@ class Client(object):
             rank_users = RankUsers(soup)
 
         except Exception as err:
-            LOG.warning(f"Failed to get rank_users of {fname} pn:{pn}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname}")
             rank_users = RankUsers()
 
         return rank_users
@@ -1451,7 +1507,7 @@ class Client(object):
             member_users = MemberUsers(soup)
 
         except Exception as err:
-            LOG.warning(f"Failed to get member_users of {fname} pn:{pn}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname}")
             member_users = MemberUsers()
 
         return member_users
@@ -1494,7 +1550,7 @@ class Client(object):
             square_forums = SquareForums(res_proto.data)
 
         except Exception as err:
-            LOG.warning(f"Failed to get square_forums. reason:{err}")
+            LOG.warning(err)
             square_forums = SquareForums()
 
         return square_forums
@@ -1536,7 +1592,7 @@ class Client(object):
                 raise ValueError("invalid params")
 
         except Exception as err:
-            LOG.warning(f"Failed to get profile of {user.log_name}. reason:{err}")
+            LOG.warning(f"{err}. user={user}")
             return UserInfo(), []
 
         user = UserInfo(_raw_data=ParseDict(res_json['user'], User_pb2.User(), ignore_unknown_fields=True))
@@ -1604,7 +1660,7 @@ class Client(object):
             }
 
         except Exception as err:
-            LOG.warning(f"Failed to get statistics of {fname_or_fid}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname_or_fid}")
             stat = {field_name: [] for field_name in field_names}
 
         return stat
@@ -1648,7 +1704,7 @@ class Client(object):
             follow_forums = FollowForums(res_json)
 
         except Exception as err:
-            LOG.warning(f"Failed to get follow_forums of {user.log_name}. reason:{err}")
+            LOG.warning(f"{err}. user={user}")
             follow_forums = FollowForums()
 
         return follow_forums
@@ -1688,7 +1744,7 @@ class Client(object):
             used_recom_num = int(res_json['used_recommend_num'])
 
         except Exception as err:
-            LOG.warning(f"Failed to get recom_status of {fname_or_fid}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname_or_fid}")
             total_recom_num = 0
             used_recom_num = 0
 
@@ -1730,7 +1786,7 @@ class Client(object):
             recom_threads = RecomThreads(res_json)
 
         except Exception as err:
-            LOG.warning(f"Failed to get recom_threads of {fname_or_fid}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname_or_fid}")
             recom_threads = RecomThreads()
 
         return recom_threads
@@ -1786,10 +1842,10 @@ class Client(object):
                 raise ValueError(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to block {user.log_name} in {fname}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname_or_fid} user={user} day={day}")
             return False
 
-        LOG.info(f"Successfully blocked {user.log_name} in {fname} for {day} days")
+        LOG.info(f"Succeeded. forum={fname_or_fid} user={user} day={day}")
         return True
 
     async def unblock(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> bool:
@@ -1835,10 +1891,10 @@ class Client(object):
                 raise ValueError(res_json['error'])
 
         except Exception as err:
-            LOG.warning(f"Failed to unblock {user.log_name} in {fname}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname} user={user}")
             return False
 
-        LOG.info(f"Successfully unblocked {user.log_name} in {fname}")
+        LOG.info(f"Succeeded. forum={fname} user={user}")
         return True
 
     async def hide_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
@@ -1903,10 +1959,10 @@ class Client(object):
                 raise ValueError(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to delete thread tid:{tid} is_hide:{is_hide} in {fname_or_fid}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname_or_fid} tid={tid} is_hide={is_hide}")
             return False
 
-        LOG.info(f"Successfully deleted thread tid:{tid} is_hide:{is_hide} in {fname_or_fid}")
+        LOG.info(f"Succeeded. forum={fname_or_fid} tid={tid} is_hide={is_hide}")
         return True
 
     async def del_post(self, fname_or_fid: Union[str, int], /, tid: int, pid: int) -> bool:
@@ -1943,10 +1999,10 @@ class Client(object):
                 raise ValueError(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to delete post {pid} in {tid} in {fname_or_fid}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname_or_fid} tid={tid} pid={pid}")
             return False
 
-        LOG.info(f"Successfully deleted post {pid} in {tid} in {fname_or_fid}")
+        LOG.info(f"Succeeded. forum={fname_or_fid} tid={tid} pid={pid}")
         return True
 
     async def unhide_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
@@ -2034,10 +2090,10 @@ class Client(object):
                 raise ValueError(res_json['error'])
 
         except Exception as err:
-            LOG.warning(f"Failed to recover tid:{tid} pid:{pid} hide:{is_hide} in {fname}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname} tid={tid} pid={pid} is_hide={is_hide}")
             return False
 
-        LOG.info(f"Successfully recovered tid:{tid} pid:{pid} hide:{is_hide} in {fname}")
+        LOG.info(f"Succeeded. forum={fname} tid={tid} pid={pid} is_hide={is_hide}")
         return True
 
     async def move(self, fname_or_fid: Union[str, int], /, tid: int, *, to_tab_id: int, from_tab_id: int = 0) -> bool:
@@ -2075,10 +2131,10 @@ class Client(object):
                 raise ValueError(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to move {tid} to tab:{to_tab_id} in {fname_or_fid}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname_or_fid} tid={tid}")
             return False
 
-        LOG.info(f"Successfully moved {tid} to tab:{to_tab_id} in {fname_or_fid}")
+        LOG.info(f"Succeeded. forum={fname_or_fid} tid={tid}")
         return True
 
     async def recommend(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
@@ -2114,10 +2170,10 @@ class Client(object):
                 raise ValueError(res_json['data']['msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to recommend {tid} in {fname_or_fid}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname_or_fid} tid={tid}")
             return False
 
-        LOG.info(f"Successfully recommended {tid} in {fname_or_fid}")
+        LOG.info(f"Succeeded. forum={fname_or_fid} tid={tid}")
         return True
 
     async def good(self, fname_or_fid: Union[str, int], /, tid: int, *, cname: str = '') -> bool:
@@ -2145,7 +2201,7 @@ class Client(object):
             由加精分区名cname获取cid
 
             Closure Args:
-                fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
+                fname (str): 帖子所在贴吧的贴吧名
                 cname (str, optional): 待添加的精华分区名称 默认为''即不分区. Defaults to ''.
 
             Returns:
@@ -2174,7 +2230,7 @@ class Client(object):
                         break
 
             except Exception as err:
-                LOG.warning(f"Failed to get cid of {cname} in {fname}. reason:{err}")
+                LOG.warning(f"{err}. forum={fname} cname={cname}")
                 return 0
 
             return cid
@@ -2187,7 +2243,8 @@ class Client(object):
                 cid (int, optional): 将主题帖加到cid对应的精华分区 cid默认为0即不分区. Defaults to 0.
 
             Closure Args:
-                fname (str): 帖子所在贴吧名
+                fid (int): 帖子所在贴吧的fid
+                fname (str): 帖子所在贴吧的贴吧名
 
             Returns:
                 bool: 操作是否成功
@@ -2214,10 +2271,10 @@ class Client(object):
                     raise ValueError(res_json['error_msg'])
 
             except Exception as err:
-                LOG.warning(f"Failed to add {tid} to good_list:{cname} in {fname}. reason:{err}")
+                LOG.warning(f"{err}. forum={fname} tid={tid}")
                 return False
 
-            LOG.info(f"Successfully added {tid} to good_list:{cname} in {fname}")
+            LOG.info(f"Succeeded. forum={fname} tid={tid}")
             return True
 
         return await _good(await _cname2cid())
@@ -2260,10 +2317,10 @@ class Client(object):
                 raise ValueError(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to remove {tid} from good_list in {fname}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname} tid={tid}")
             return False
 
-        LOG.info(f"Successfully removed {tid} from good_list in {fname}")
+        LOG.info(f"Succeeded. forum={fname} tid={tid}")
         return True
 
     async def top(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
@@ -2305,10 +2362,10 @@ class Client(object):
                 raise ValueError(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to add {tid} to top_list in {fname}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname} tid={tid}")
             return False
 
-        LOG.info(f"Successfully added {tid} to top_list in {fname}")
+        LOG.info(f"Succeeded. forum={fname} tid={tid}")
         return True
 
     async def untop(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
@@ -2349,10 +2406,10 @@ class Client(object):
                 raise ValueError(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to remove {tid} from top_list in {fname}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname} tid={tid}")
             return False
 
-        LOG.info(f"Successfully removed {tid} from top_list in {fname}")
+        LOG.info(f"Succeeded. forum={fname} tid={tid}")
         return True
 
     async def get_recovers(self, fname_or_fid: Union[str, int], /, pn: int = 1, name: str = '') -> Recovers:
@@ -2394,7 +2451,7 @@ class Client(object):
             recovers = Recovers(res_json)
 
         except Exception as err:
-            LOG.warning(f"Failed to get recovers of {fname} pn:{pn}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname}")
             recovers = Recovers()
 
         return recovers
@@ -2426,7 +2483,7 @@ class Client(object):
             blacklist_users = BlacklistUsers(soup)
 
         except Exception as err:
-            LOG.warning(f"Failed to get blacklist_users of {fname} pn:{pn}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname}")
             blacklist_users = BlacklistUsers()
 
         return blacklist_users
@@ -2468,10 +2525,10 @@ class Client(object):
                 raise ValueError(res_json['errmsg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to add {user.user_id} to black_list in {fname}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname} user={user.user_id}")
             return False
 
-        LOG.info(f"Successfully added {user.user_id} to black_list in {fname}")
+        LOG.info(f"Succeeded. forum={fname} user={user.user_id}")
         return True
 
     async def blacklist_del(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> bool:
@@ -2511,10 +2568,10 @@ class Client(object):
                 raise ValueError(res_json['errmsg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to remove {user.user_id} from black_list in {fname}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname} user={user.user_id}")
             return False
 
-        LOG.info(f"Successfully removed {user.user_id} from black_list in {fname}")
+        LOG.info(f"Succeeded. forum={fname} user={user.user_id}")
         return True
 
     async def get_unblock_appeals(self, fname_or_fid: Union[str, int], /, pn: int = 1, *, rn: int = 5) -> Appeals:
@@ -2558,7 +2615,7 @@ class Client(object):
             appeals = Appeals(res_json)
 
         except Exception as err:
-            LOG.warning(f"Failed to get appeals of {fname}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname}")
             appeals = Appeals()
 
         return appeals
@@ -2609,10 +2666,10 @@ class Client(object):
                 raise ValueError(res_json['error'])
 
         except Exception as err:
-            LOG.warning(f"Failed to handle unblock_appeals in {fname}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname}")
             return False
 
-        LOG.info(f"Successfully handled unblock_appeals in {fname}. refuse:{refuse}")
+        LOG.info(f"Succeeded. forum={fname}")
         return True
 
     async def get_image(self, img_url: str) -> np.ndarray:
@@ -2635,10 +2692,10 @@ class Client(object):
 
             image = cv.imdecode(np.frombuffer(content, np.uint8), cv.IMREAD_COLOR)
             if image is None:
-                raise ValueError("Error in opencv.imdecode")
+                raise ValueError("Error with opencv.imdecode")
 
         except Exception as err:
-            LOG.warning(f"Failed to get image {img_url}. reason:{err}")
+            LOG.warning(f"{err}. url={img_url}")
             image = np.empty(0, dtype=np.uint8)
 
         return image
@@ -2681,7 +2738,7 @@ class Client(object):
                 raise ValueError("Error in opencv.imdecode")
 
         except Exception as err:
-            LOG.warning(f"Failed to get portrait of {user.log_name}. reason:{err}")
+            LOG.warning(f"{err}. user={user}")
             image = np.empty(0, dtype=np.uint8)
 
         return image
@@ -2718,7 +2775,7 @@ class Client(object):
             msg = {key: bool(int(value)) for key, value in res_json['message'].items()}
 
         except Exception as err:
-            LOG.warning(f"Failed to get new_msg. reason:{err}")
+            LOG.warning(err)
             msg = {
                 'fans': False,
                 'replyme': False,
@@ -2765,7 +2822,7 @@ class Client(object):
             replys = Replys(res_proto.data)
 
         except Exception as err:
-            LOG.warning(f"Failed to get replys. reason:{err}")
+            LOG.warning(err)
             replys = Replys()
 
         return replys
@@ -2800,7 +2857,7 @@ class Client(object):
             ats = Ats(res_json)
 
         except Exception as err:
-            LOG.warning(f"Failed to get ats. reason:{err}")
+            LOG.warning(err)
             ats = Ats()
 
         return ats
@@ -2921,7 +2978,7 @@ class Client(object):
                         userpost._user = user
 
         except Exception as err:
-            LOG.warning(f"Failed to get user_contents of {user.log_name}. reason:{err}")
+            LOG.warning(f"{err}. user={user}")
             res_list = []
 
         return res_list
@@ -2966,7 +3023,7 @@ class Client(object):
             fans = Fans(res_json)
 
         except Exception as err:
-            LOG.warning(f"Failed to get fans. reason:{err}")
+            LOG.warning(err)
             fans = Fans()
 
         return fans
@@ -3011,7 +3068,7 @@ class Client(object):
             follows = Follows(res_json)
 
         except Exception as err:
-            LOG.warning(f"Failed to get follows. reason:{err}")
+            LOG.warning(err)
             follows = Follows()
 
         return follows
@@ -3046,7 +3103,7 @@ class Client(object):
             self_follow_forums = SelfFollowForums(res_json)
 
         except Exception as err:
-            LOG.warning(f"Failed to get self_follow_forums. reason:{err}")
+            LOG.warning(err)
             self_follow_forums = SelfFollowForums()
 
         return self_follow_forums
@@ -3087,7 +3144,7 @@ class Client(object):
             dislike_forums = DislikeForums(res_proto.data)
 
         except Exception as err:
-            LOG.warning(f"Failed to get dislike_forums. reason:{err}")
+            LOG.warning(err)
             dislike_forums = DislikeForums()
 
         return dislike_forums
@@ -3125,10 +3182,10 @@ class Client(object):
                 raise ValueError(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to remove fan {user.log_name}. reason:{err}")
+            LOG.warning(f"{err}. user={user}")
             return False
 
-        LOG.info(f"Successfully removed fan {user.log_name}")
+        LOG.info(f"Succeeded. user={user}")
         return True
 
     async def follow_user(self, _id: Union[str, int]):
@@ -3164,10 +3221,10 @@ class Client(object):
                 raise ValueError(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to follow user {user.log_name}. reason:{err}")
+            LOG.warning(f"{err}. user={user}")
             return False
 
-        LOG.info(f"Successfully followed user {user.log_name}")
+        LOG.info(f"Succeeded. user={user}")
         return True
 
     async def unfollow_user(self, _id: Union[str, int]):
@@ -3203,10 +3260,10 @@ class Client(object):
                 raise ValueError(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to unfollow user {user.log_name}. reason:{err}")
+            LOG.warning(f"{err}. user={user}")
             return False
 
-        LOG.info(f"Successfully unfollowed user {user.log_name}")
+        LOG.info(f"Succeeded. user={user}")
         return True
 
     async def follow_forum(self, fname_or_fid: Union[str, int]) -> bool:
@@ -3241,10 +3298,10 @@ class Client(object):
                 raise ValueError(res_json['error']['errmsg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to follow forum {fname_or_fid}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname_or_fid}")
             return False
 
-        LOG.info(f"Successfully followed forum {fname_or_fid}")
+        LOG.info(f"Succeeded. forum={fname_or_fid}")
         return True
 
     async def unfollow_forum(self, fname_or_fid: Union[str, int]) -> bool:
@@ -3277,10 +3334,10 @@ class Client(object):
                 raise ValueError(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to unfollow forum {fname_or_fid}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname_or_fid}")
             return False
 
-        LOG.info(f"Successfully unfollowed forum {fname_or_fid}")
+        LOG.info(f"Succeeded. forum={fname_or_fid}")
         return True
 
     async def dislike_forum(self, fname_or_fid: Union[str, int]) -> bool:
@@ -3314,10 +3371,10 @@ class Client(object):
                 raise ValueError(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to dislike {fname_or_fid}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname_or_fid}")
             return False
 
-        LOG.info(f"Successfully disliked {fname_or_fid}")
+        LOG.info(f"Succeeded. forum={fname_or_fid}")
         return True
 
     async def undislike_forum(self, fname_or_fid: Union[str, int]) -> bool:
@@ -3350,10 +3407,10 @@ class Client(object):
                 raise ValueError(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to undislike {fname_or_fid}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname_or_fid}")
             return False
 
-        LOG.info(f"Successfully undisliked {fname_or_fid}")
+        LOG.info(f"Succeeded. forum={fname_or_fid}")
         return True
 
     async def set_privacy(self, fname_or_fid: Union[str, int], /, tid: int, pid: int, *, hide: bool = True) -> bool:
@@ -3391,10 +3448,10 @@ class Client(object):
                 raise ValueError(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"Failed to set privacy to {tid}. reason:{err}")
+            LOG.warning(f"{err}. tid={tid}")
             return False
 
-        LOG.info(f"Successfully set privacy to {tid}. is_hide:{hide}")
+        LOG.info(f"Succeeded. tid={tid}")
         return True
 
     async def sign_forum(self, fname_or_fid: Union[str, int]) -> bool:
@@ -3432,13 +3489,13 @@ class Client(object):
                 raise ValueError("sign_bonus_point is 0")
 
         except Exception as err:
-            LOG.warning(f"Failed to sign forum {fname}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname}")
             if error_code in [160002, 340006]:
                 # 已经签过或吧被屏蔽
                 return True
             return False
 
-        LOG.info(f"Successfully signed forum {fname}")
+        LOG.info(f"Succeeded. forum={fname}")
         return True
 
     async def add_post(self, fname_or_fid: Union[str, int], /, tid: int, content: str) -> bool:
@@ -3453,7 +3510,7 @@ class Client(object):
         Returns:
             bool: 回帖是否成功
 
-        Notice:
+        Note:
             本接口仍处于测试阶段，有一定永封风险！请谨慎使用！
             已通过的测试: cookie白板号(无头像无关注吧无发帖记录 2元/个) 通过异地阿里云ip出口以3分钟的发送间隔发15条回复不吞楼不封号
         """
@@ -3516,10 +3573,10 @@ class Client(object):
                 raise ValueError("need verify code")
 
         except Exception as err:
-            LOG.warning(f"Failed to add post in {tid}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname} tid={tid}")
             return False
 
-        LOG.info(f"Successfully added post in {tid}")
+        LOG.info(f"Succeeded. forum={fname} tid={tid}")
         return True
 
     async def send_msg(self, _id: Union[str, int], content: str) -> bool:
@@ -3560,8 +3617,8 @@ class Client(object):
                 raise ValueError(res_proto.data.blockInfo.blockErrmsg)
 
         except Exception as err:
-            LOG.warning(f"Failed to send msg to {user.log_name}. reason:{err}")
+            LOG.warning(f"{err}. user={user}")
             return False
 
-        LOG.info(f"Successfully sent msg to {user.log_name}")
+        LOG.info(f"Succeeded. user={user}")
         return True

@@ -11,8 +11,8 @@ import numpy as np
 
 from .client import Client
 from .database import Database
-from .logger import LOG
-from .types import BasicUserInfo
+from .log import LOG
+from .typedef import BasicUserInfo
 
 
 class Reviewer(Client):
@@ -20,13 +20,13 @@ class Reviewer(Client):
     提供贴吧审查功能
 
     Args:
-        BDUSS_key (str, optional): 用于从CONFIG中提取BDUSS. Defaults to ''.
+        BDUSS_key (str, optional): 用于从CONFIG中提取BDUSS. Defaults to None.
         fname (str, optional): 贴吧名. Defaults to ''.
     """
 
     __slots__ = ['fname', 'database', '_img_hasher', '_qrdetector']
 
-    def __init__(self, BDUSS_key: str = '', fname: str = ''):
+    def __init__(self, BDUSS_key: Optional[str] = None, fname: str = ''):
         super(Reviewer, self).__init__(BDUSS_key)
 
         self.fname: str = fname
@@ -327,7 +327,7 @@ class Reviewer(Client):
         try:
             data = self.qrdetector.detectAndDecode(image)[0]
         except Exception as err:
-            LOG.warning(f"Failed to decode image. reason:{err}")
+            LOG.warning(err)
             data = ''
 
         return data
@@ -347,7 +347,7 @@ class Reviewer(Client):
             img_hash_array = self.img_hasher.compute(image)
             img_hash = binascii.hexlify(img_hash_array.tobytes()).decode('ascii')
         except Exception as err:
-            LOG.warning(f"Failed to get imagehash. reason:{err}")
+            LOG.warning(err)
             img_hash = ''
 
         return img_hash
