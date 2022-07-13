@@ -148,6 +148,14 @@ class BasicUserInfo(_DataWrapper):
                     if not self.portrait:
                         self._user_name = _id
 
+    def __str__(self) -> str:
+        if self.user_name:
+            return self.user_name
+        elif self.portrait:
+            return self.portrait
+        else:
+            return str(self.user_id)
+
     def __repr__(self) -> str:
         return str(
             {
@@ -247,19 +255,6 @@ class BasicUserInfo(_DataWrapper):
 
         else:
             self._portrait = ''
-
-    @property
-    def log_name(self) -> str:
-        """
-        用于在日志中记录用户属性
-        """
-
-        if self.user_name:
-            return self.user_name
-        elif self.portrait:
-            return self.portrait
-        else:
-            return str(self.user_id)
 
 
 class UserInfo(BasicUserInfo):
@@ -1060,7 +1055,7 @@ class Fragments(object):
                 self._tiebapluses.append(fragment)
             else:
                 fragment = FragmentUnknown(_raw_data)
-                LOG.warning(f"Unknown fragment type:{_raw_data.type}")
+                LOG.warning(f"Unknown fragment type. type={_raw_data.type}")
 
             return fragment
 

@@ -84,14 +84,14 @@ class CloudReview(tb.Reviewer):
         elif punish.del_flag == 1:
             # 删帖
             tb.LOG.info(
-                f"Try to delete thread {thread.text} post by {thread.user.log_name}. level:{thread.user.level}. {punish.note}"
+                f"Try to delete thread {thread.text} post by {thread.user}. level:{thread.user.level}. {punish.note}"
             )
             await self.del_thread(thread.fid, thread.tid)
             return
         elif punish.del_flag == 2:
             # 屏蔽帖
             tb.LOG.info(
-                f"Try to hide thread {thread.text} post by {thread.user.log_name}. level:{thread.user.level}. {punish.note}"
+                f"Try to hide thread {thread.text} post by {thread.user}. level:{thread.user.level}. {punish.note}"
             )
             await self.hide_thread(thread.fid, thread.tid)
             return
@@ -160,9 +160,7 @@ class CloudReview(tb.Reviewer):
             pass
         elif punish.del_flag == 1:
             # 内容违规 删回复
-            tb.LOG.info(
-                f"Try to delete post {post.text} post by {post.user.log_name}. level:{post.user.level}. {punish.note}"
-            )
+            tb.LOG.info(f"Try to delete post {post.text} post by {post.user}. level:{post.user.level}. {punish.note}")
             await self.del_post(post.fid, post.tid, post.pid)
             return
 
@@ -214,7 +212,7 @@ class CloudReview(tb.Reviewer):
         elif punish.del_flag == 1:
             # 内容违规 删楼中楼
             tb.LOG.info(
-                f"Try to delete post {comment.text} post by {comment.user.log_name}. level:{comment.user.level}. {punish.note}"
+                f"Try to delete post {comment.text} post by {comment.user}. level:{comment.user.level}. {punish.note}"
             )
             await self.del_post(comment.fid, comment.tid, comment.pid)
             return

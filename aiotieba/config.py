@@ -23,7 +23,7 @@ except FileNotFoundError:
     CONFIG = {}
 
     LOG.warning(
-        f"找不到配置文件，请参考[https://github.com/Starry-OvO/Tieba-Manager/blob/master/wikis/tutorial.md]完成对{minimal_config_path}的配置"
+        f"找不到配置文件 请参考[https://github.com/Starry-OvO/Tieba-Manager/blob/master/wikis/tutorial.md]完成对{minimal_config_path}的配置"
     )
 
 required_keys = ['User', 'Database']

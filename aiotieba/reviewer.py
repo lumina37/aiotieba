@@ -327,7 +327,7 @@ class Reviewer(Client):
         try:
             data = self.qrdetector.detectAndDecode(image)[0]
         except Exception as err:
-            LOG.warning(f"Failed to decode image. reason:{err}")
+            LOG.warning(err)
             data = ''
 
         return data
@@ -347,7 +347,7 @@ class Reviewer(Client):
             img_hash_array = self.img_hasher.compute(image)
             img_hash = binascii.hexlify(img_hash_array.tobytes()).decode('ascii')
         except Exception as err:
-            LOG.warning(f"Failed to get imagehash. reason:{err}")
+            LOG.warning(err)
             img_hash = ''
 
         return img_hash

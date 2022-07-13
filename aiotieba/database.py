@@ -35,7 +35,7 @@ class Database(object):
                 **CONFIG['Database'],
             )
         except aiomysql.Error as err:
-            LOG.warning(f"无法连接数据库`{self._db_name}`请检查配置文件中的`Database`字段是否填写正确. reason:{err}")
+            LOG.warning(f"{err}. 无法连接数据库`{self._db_name}`请检查配置文件中的`Database`字段是否填写正确")
 
         return self
 
@@ -109,7 +109,7 @@ class Database(object):
                 async with conn.cursor() as cursor:
                     await cursor.execute("SELECT `fid` FROM `forum` WHERE `fname`=%s", (fname,))
         except aiomysql.Error as err:
-            LOG.warning(f"Failed to select {fname}. reason:{err}")
+            LOG.warning(f"{err}. fname={fname}")
             return 0
         else:
             if res_tuple := await cursor.fetchone():
@@ -132,7 +132,7 @@ class Database(object):
                 async with conn.cursor() as cursor:
                     await cursor.execute("SELECT `fname` FROM `forum` WHERE `fid`=%s", (fid,))
         except aiomysql.Error as err:
-            LOG.warning(f"Failed to select {fid}. reason:{err}")
+            LOG.warning(f"{err}. fid={fid}")
             return ''
         else:
             if res_tuple := await cursor.fetchone():
@@ -156,7 +156,7 @@ class Database(object):
                 async with conn.cursor() as cursor:
                     await cursor.execute("INSERT IGNORE INTO `forum` VALUES (%s,%s)", (fid, fname))
         except aiomysql.Error as err:
-            LOG.warning(f"Failed to insert {fid}. reason:{err}")
+            LOG.warning(f"{err}. fname={fname} fid={fid}")
             return False
         return True
 
@@ -196,7 +196,7 @@ class Database(object):
                     elif user.user_name:
                         await cursor.execute("SELECT * FROM `user` WHERE `user_name`=%s", (user.user_name,))
         except aiomysql.Error as err:
-            LOG.warning(f"Failed to select {user}. reason:{err}")
+            LOG.warning(f"{err}. user={user}")
             return BasicUserInfo()
         else:
             if res_tuple := await cursor.fetchone():
@@ -225,7 +225,7 @@ class Database(object):
                         "INSERT IGNORE INTO `user` VALUES (%s,%s,%s)", (user.user_id, user.user_name, user.portrait)
                     )
         except aiomysql.Error as err:
-            LOG.warning(f"Failed to insert {user}. reason:{err}")
+            LOG.warning(f"{err}. user={user}")
             return False
         return True
 
@@ -250,10 +250,10 @@ class Database(object):
                     elif user.user_name:
                         await cursor.execute("DELETE FROM `user` WHERE `user_name`=%s", (user.user_name,))
         except aiomysql.Error as err:
-            LOG.warning(f"Failed to delete {user}. reason:{err}")
+            LOG.warning(f"{err}. user={user}")
             return False
 
-        LOG.info(f"Successfully deleted {user} from table user")
+        LOG.info(f"Succeeded. user={user}")
         return True
 
     async def _create_table_id(self, fname: str) -> None:
@@ -294,7 +294,7 @@ class Database(object):
                 async with conn.cursor() as cursor:
                     await cursor.execute(f"REPLACE INTO `id_{fname}` VALUES (%s,%s,DEFAULT)", (_id, tag))
         except aiomysql.Error as err:
-            LOG.warning(f"Failed to insert {_id}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname} id={_id}")
             return False
         return True
 
@@ -315,7 +315,7 @@ class Database(object):
                 async with conn.cursor() as cursor:
                     await cursor.execute(f"SELECT `tag` FROM `id_{fname}` WHERE `id`=%s", (_id,))
         except aiomysql.Error as err:
-            LOG.warning(f"Failed to select {_id}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname} id={_id}")
             return False
         else:
             if res_tuple := await cursor.fetchone():
@@ -339,10 +339,10 @@ class Database(object):
                 async with conn.cursor() as cursor:
                     await cursor.execute(f"DELETE FROM `id_{fname}` WHERE `id`=%s", (_id,))
         except aiomysql.Error as err:
-            LOG.warning(f"Failed to delete {_id}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname} id={_id}")
             return False
 
-        LOG.info(f"Successfully deleted {_id} from table of {fname}")
+        LOG.info(f"Succeeded. forum={fname} id={_id}")
         return True
 
     async def del_ids(self, fname: str, /, hour: int) -> bool:
@@ -365,10 +365,10 @@ class Database(object):
                         (hour,),
                     )
         except aiomysql.Error as err:
-            LOG.warning(f"Failed to delete id in id_{fname}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname}")
             return False
 
-        LOG.info(f"Successfully deleted id in id_{fname} within {hour} hour(s)")
+        LOG.info(f"Succeeded. forum={fname} hour={hour}")
         return True
 
     async def _create_table_tid(self, fname: str) -> None:
@@ -410,10 +410,10 @@ class Database(object):
                 async with conn.cursor() as cursor:
                     await cursor.execute(f"REPLACE INTO `tid_{fname}` VALUES (%s,%s,DEFAULT)", (tid, tag))
         except aiomysql.Error as err:
-            LOG.warning(f"Failed to insert {tid}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname} tid={tid}")
             return False
 
-        LOG.info(f"Successfully added {tid} to table of {fname}. tag: {tag}")
+        LOG.info(f"Succeeded. forum={fname} tid={tid} tag={tag}")
         return True
 
     async def get_tid(self, fname: str, /, tid: int) -> Optional[int]:
@@ -433,7 +433,7 @@ class Database(object):
                 async with conn.cursor() as cursor:
                     await cursor.execute(f"SELECT `tag` FROM `tid_{fname}` WHERE `tid`=%s", (tid,))
         except aiomysql.Error as err:
-            LOG.warning(f"Failed to select {tid}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname} tid={tid}")
             return None
         else:
             if res_tuple := await cursor.fetchone():
@@ -457,9 +457,9 @@ class Database(object):
                 async with conn.cursor() as cursor:
                     await cursor.execute(f"DELETE FROM `tid_{fname}` WHERE `tid`=%s", (tid,))
         except aiomysql.Error as err:
-            LOG.warning(f"Failed to delete {tid}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname} tid={tid}")
             return False
-        LOG.info(f"Successfully deleted {tid} from table of {fname}")
+        LOG.info(f"Succeeded. forum={fname} tid={tid}")
         return True
 
     async def get_tid_list(self, fname: str, /, tag: int = 0, *, limit: int = 128, offset: int = 0) -> List[int]:
@@ -484,7 +484,7 @@ class Database(object):
                         (tag, limit, offset),
                     )
         except aiomysql.Error as err:
-            LOG.warning(f"Failed to get tids in {fname}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname}")
             res_list = []
         else:
             res_tuples = await cursor.fetchall()
@@ -532,9 +532,9 @@ class Database(object):
                         f"REPLACE INTO `user_id_{fname}` VALUES (%s,%s,%s,DEFAULT)", (user_id, permission, note)
                     )
         except aiomysql.Error as err:
-            LOG.warning(f"Failed to insert {user_id}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname} user_id={user_id}")
             return False
-        LOG.info(f"Successfully added {user_id} to table of {fname}. permission: {permission} note: {note}")
+        LOG.info(f"Succeeded. forum={fname} user_id={user_id} permission={permission}")
         return True
 
     async def del_user_id(self, fname: str, /, user_id: int) -> bool:
@@ -554,9 +554,9 @@ class Database(object):
                 async with conn.cursor() as cursor:
                     await cursor.execute(f"DELETE FROM `user_id_{fname}` WHERE `user_id`=%s", (user_id,))
         except aiomysql.Error as err:
-            LOG.warning(f"Failed to delete {user_id}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname} user_id={user_id}")
             return False
-        LOG.info(f"Successfully deleted {user_id} from table of {fname}")
+        LOG.info(f"Succeeded. forum={fname} user_id={user_id}")
         return True
 
     async def get_user_id(self, fname: str, /, user_id: int) -> int:
@@ -576,7 +576,7 @@ class Database(object):
                 async with conn.cursor() as cursor:
                     await cursor.execute(f"SELECT `permission` FROM `user_id_{fname}` WHERE `user_id`=%s", (user_id,))
         except aiomysql.Error as err:
-            LOG.warning(f"Failed to get {user_id}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname} user_id={user_id}")
             return 0
         else:
             if res_tuple := await cursor.fetchone():
@@ -603,7 +603,7 @@ class Database(object):
                         (user_id,),
                     )
         except aiomysql.Error as err:
-            LOG.warning(f"Failed to get full {user_id}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname} user_id={user_id}")
             return 0, '', datetime.datetime(1970, 1, 1)
         else:
             if res_tuple := await cursor.fetchone():
@@ -635,7 +635,7 @@ class Database(object):
                         (lower_permission, upper_permission, limit, offset),
                     )
         except aiomysql.Error as err:
-            LOG.warning(f"Failed to get user_ids in {fname}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname}")
             res_list = []
         else:
             res_tuples = await cursor.fetchall()
@@ -684,10 +684,10 @@ class Database(object):
                         (img_hash, raw_hash, permission, note),
                     )
         except aiomysql.Error as err:
-            LOG.warning(f"Failed to insert {img_hash}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname} img_hash={img_hash}")
             return False
 
-        LOG.info(f"Successfully added {img_hash} to table of {fname}. permission: {permission} note: {note}")
+        LOG.info(f"Succeeded. forum={fname} img_hash={img_hash} permission={permission}")
         return True
 
     async def del_imghash(self, fname: str, /, img_hash: str) -> bool:
@@ -707,10 +707,10 @@ class Database(object):
                 async with conn.cursor() as cursor:
                     await cursor.execute(f"DELETE FROM `imghash_{fname}` WHERE `img_hash`=%s", (img_hash,))
         except aiomysql.Error as err:
-            LOG.warning(f"Failed to delete {img_hash}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname} img_hash={img_hash}")
             return False
 
-        LOG.info(f"Successfully deleted {img_hash} from table of {fname}")
+        LOG.info(f"Succeeded. forum={fname} img_hash={img_hash}")
         return True
 
     async def get_imghash(self, fname: str, /, img_hash: str) -> int:
@@ -730,7 +730,7 @@ class Database(object):
                 async with conn.cursor() as cursor:
                     await cursor.execute(f"SELECT `permission` FROM `imghash_{fname}` WHERE `img_hash`=%s", (img_hash,))
         except aiomysql.Error as err:
-            LOG.warning(f"Failed to select {img_hash}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname} img_hash={img_hash}")
             return False
         else:
             if res_tuple := await cursor.fetchone():
@@ -756,7 +756,7 @@ class Database(object):
                         f"SELECT `permission`,`note` FROM `imghash_{fname}` WHERE `img_hash`=%s", (img_hash,)
                     )
         except aiomysql.Error as err:
-            LOG.warning(f"Failed to select {img_hash}. reason:{err}")
+            LOG.warning(f"{err}. forum={fname} img_hash={img_hash}")
             return 0, ''
         else:
             if res_tuple := await cursor.fetchone():

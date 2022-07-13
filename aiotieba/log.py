@@ -7,14 +7,13 @@ from typing import ClassVar, Union
 
 from .paths import SCRIPT_DIR, SCRIPT_PATH
 
-logging._srcfile = None
 logging.logThreads = False
 logging.logProcesses = False
 logging.logMultiprocessing = False
 logging.raiseExceptions = False
-# logging.Formatter.default_msec_format = '%s.%03d'
+logging.Formatter.default_msec_format = '%s.%03d'
 
-Level = Union[int, str]
+LogLevel = Union[int, str]
 
 
 class TiebaLogger(logging.Logger):
@@ -25,12 +24,12 @@ class TiebaLogger(logging.Logger):
         name (str): 日志文件名(不含扩展名)
     """
 
-    file_log_level: ClassVar[Level] = logging.INFO
-    console_log_level: ClassVar[Level] = logging.DEBUG
+    file_log_level: ClassVar[LogLevel] = logging.INFO
+    console_log_level: ClassVar[LogLevel] = logging.DEBUG
     enable_file_log: ClassVar[bool] = True
 
     formatter: ClassVar[logging.Formatter] = logging.Formatter(
-        "<{asctime}> [{levelname}] {message}", datefmt='%Y-%m-%d %H:%M:%S', style='{'
+        "<{asctime}> [{levelname}] [{funcName}] {message}", style='{'
     )
 
     __slots__ = [
