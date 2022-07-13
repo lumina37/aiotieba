@@ -195,6 +195,8 @@ class Database(object):
                         await cursor.execute("SELECT * FROM `user` WHERE `portrait`=%s", (user.portrait,))
                     elif user.user_name:
                         await cursor.execute("SELECT * FROM `user` WHERE `user_name`=%s", (user.user_name,))
+                    else:
+                        raise ValueError("用户属性为空")
         except aiomysql.Error as err:
             LOG.warning(f"{err}. user={user}")
             return BasicUserInfo()
@@ -249,6 +251,8 @@ class Database(object):
                         await cursor.execute("DELETE FROM `user` WHERE `portrait`=%s", (user.portrait,))
                     elif user.user_name:
                         await cursor.execute("DELETE FROM `user` WHERE `user_name`=%s", (user.user_name,))
+                    else:
+                        raise ValueError("用户属性为空")
         except aiomysql.Error as err:
             LOG.warning(f"{err}. user={user}")
             return False
