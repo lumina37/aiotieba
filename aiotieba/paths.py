@@ -5,9 +5,8 @@ __all__ = [
     'MODULE_DIR',
 ]
 
-from pathlib import Path
 import sys
-
+from pathlib import Path
 
 SCRIPT_PATH = Path(sys.argv[0])
 SCRIPT_DIR = SCRIPT_PATH.parent
