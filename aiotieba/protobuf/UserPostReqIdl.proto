@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+import "CommonReq.proto";
+
+message UserPostReqIdl {
+    message DataReq {
+        int64 user_id = 1;
+        uint32 rn = 2;
+        uint32 is_thread = 4;
+        uint32 need_content = 5;
+        uint32 pn = 26;
+        int32 is_view_card = 33;
+        CommonReq common = 27;
+    }
+    DataReq data = 1;
+}

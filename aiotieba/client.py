@@ -25,7 +25,7 @@ from google.protobuf.json_format import ParseDict
 
 from .config import CONFIG
 from .log import LOG
-from .tieba_protobuf import (
+from .protobuf import (
     CommitPersonalMsgReqIdl_pb2,
     CommitPersonalMsgResIdl_pb2,
     CommonReq_pb2,
@@ -1066,12 +1066,8 @@ class Client(object):
             UserInfo: 完整版用户信息
         """
 
-        common_proto = CommonReq_pb2.CommonReq()
-        data_proto = GetUserByTiebaUidReqIdl_pb2.GetUserByTiebaUidReqIdl.DataReq()
-        data_proto.common.CopyFrom(common_proto)
-        data_proto.tieba_uid = str(tieba_uid)
         req_proto = GetUserByTiebaUidReqIdl_pb2.GetUserByTiebaUidReqIdl()
-        req_proto.data.CopyFrom(data_proto)
+        req_proto.data.tieba_uid = str(tieba_uid)
 
         try:
             async with self.app_proto.post(

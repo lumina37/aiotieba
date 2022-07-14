@@ -1,9 +1,4 @@
 # -*- coding:utf-8 -*-
-"""
-@Author: starry.qvq@gmail.com
-@License: Unlicense
-@Homepage: https://github.com/Starry-OvO/Tieba-Manager
-"""
 
 from . import (
     CommitPersonalMsgReqIdl_pb2,

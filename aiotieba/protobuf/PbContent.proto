@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+message PbContent {
+    uint32 type = 1;
+    string text = 2;
+    string link = 3;
+    string src = 4;
+    string bsize = 5;
+    string big_src = 6;
+    string cdn_src = 8;
+    string big_cdn_src = 9;
+    string c = 11;
+    string voice_md5 = 12;
+    int64 uid = 15;
+    string phonetype = 21;
+    string origin_src = 25;
+    uint32 origin_size = 27;
+    message TiebaPlusInfo {
+        string title = 1;
+        string desc = 2;
+        string jump_url = 3;
+        string app_icon = 6;
+        int32 target_type = 12;
+        int32 h5_jump_type = 13;
+        string h5_jump_number = 14;
+        string h5_jump_param = 15;
+        int32 jump_type = 16;
+        string button_desc = 23;
+    }
+    TiebaPlusInfo tiebaplus_info = 40;
+    message Item {
+        string item_name = 2;
+    }
+    Item item = 41;
+}

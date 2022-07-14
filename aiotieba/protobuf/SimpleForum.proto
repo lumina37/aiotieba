@@ -1,0 +1,6 @@
+syntax = "proto3";
+
+message SimpleForum {
+    int64 forum_id = 1;  // raw: id
+    string forum_name = 2;  // raw: name
+}

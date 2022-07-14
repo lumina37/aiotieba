@@ -60,7 +60,7 @@ import yarl
 from google.protobuf.json_format import ParseDict
 
 from .log import LOG
-from .tieba_protobuf import (
+from .protobuf import (
     FrsPageResIdl_pb2,
     GetDislikeListResIdl_pb2,
     GetForumSquareResIdl_pb2,
@@ -1800,8 +1800,8 @@ class Thread(_Container):
             self._view_num = _raw_data.view_num
             self._reply_num = _raw_data.reply_num
             self._share_num = _raw_data.share_num
-            self._agree = _raw_data.agree.agree_num
-            self._disagree = _raw_data.agree.disagree_num
+            self._agree = _raw_data.agree.agree
+            self._disagree = _raw_data.agree.disagree
             self._create_time = _raw_data.create_time
             self._last_time = _raw_data.last_time_int
 
@@ -2171,8 +2171,8 @@ class Post(_Container):
 
             self._floor = _raw_data.floor
             self._reply_num = _raw_data.sub_post_number
-            self._agree = _raw_data.agree.agree_num
-            self._disagree = _raw_data.agree.disagree_num
+            self._agree = _raw_data.agree.agree
+            self._disagree = _raw_data.agree.disagree
             self._create_time = _raw_data.time
 
         else:
@@ -2470,8 +2470,8 @@ class Comment(_Container):
             self._user = UserInfo(_raw_data=_raw_data.author)
             self._author_id = _raw_data.author_id
 
-            self._agree = _raw_data.agree.agree_num
-            self._disagree = _raw_data.agree.disagree_num
+            self._agree = _raw_data.agree.agree
+            self._disagree = _raw_data.agree.disagree
             self._create_time = _raw_data.time
 
         else:
@@ -3204,8 +3204,8 @@ class NewThread(_Container):
             self._view_num = _raw_data.freq_num
             self._reply_num = _raw_data.reply_num
             self._share_num = _raw_data.share_num
-            self._agree = _raw_data.agree.agree_num
-            self._disagree = _raw_data.agree.disagree_num
+            self._agree = _raw_data.agree.agree
+            self._disagree = _raw_data.agree.disagree
             self._create_time = _raw_data.create_time
 
         else:

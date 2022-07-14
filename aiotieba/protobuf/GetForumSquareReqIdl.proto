@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+import "CommonReq.proto";
+
+message GetForumSquareReqIdl {
+    message DataReq {
+        CommonReq common = 1;
+        string class_name = 2;
+        int32 pn = 3;
+        int32 rn = 4;
+        int64 user_id = 5;
+    }
+    DataReq data = 1;
+}

@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+import "SimpleForum.proto";
+import "Page.proto";
+import "Post.proto";
+import "ThreadInfo.proto";
+import "User.proto";
+import "SubPostList.proto";
+import "Error.proto";
+
+message PbPageResIdl {
+    message DataRes {
+        SimpleForum forum = 2;
+        Page page = 3;
+        repeated Post post_list = 6;
+        ThreadInfo thread = 8;
+        repeated User user_list = 13;
+        SubPost sub_post_list = 15;
+        int32 has_fold_comment = 68;
+    }
+    Error error = 1;
+    DataRes data = 2;
+}

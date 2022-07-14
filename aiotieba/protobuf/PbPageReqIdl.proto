@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+import "CommonReq.proto";
+
+message PbPageReqIdl {
+    message DataReq {
+        CommonReq common = 25;
+        int64 kz = 4;
+        int32 lz = 5;
+        int32 r = 6;
+        int64 pid = 7;
+        int32 with_floor = 8;
+        int32 floor_rn = 9;
+        int32 rn = 13;
+        int32 pn = 18;
+        int32 floor_sort_type = 74;
+        int32 is_fold_comment_req = 78;
+    }
+    DataReq data = 1;
+}

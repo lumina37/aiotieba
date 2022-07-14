@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+import "CommonReq.proto";
+
+message FrsPageReqIdl {
+    message DataReq {
+        CommonReq common = 39;
+        string kw = 1;
+        int32 rn = 2;
+        int32 rn_need = 3;
+        int32 is_good = 4;
+        int32 cid = 5;
+        int32 with_group = 8;
+        int32 pn = 15;
+        int32 sort_type = 47;
+    }
+    DataReq data = 1;
+}

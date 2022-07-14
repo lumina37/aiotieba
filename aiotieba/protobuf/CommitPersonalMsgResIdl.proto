@@ -1,0 +1,24 @@
+// protobuf.CommitPersonalMsg
+syntax = "proto3";
+
+import "Error.proto";
+
+message CommitPersonalMsgResIdl {
+    Error error = 1;
+    message DataRes {
+        int64 msgId = 1;
+        int64 groupId = 2;
+        int64 recordId = 3;
+        int64 toUid = 4;
+        int32 toUserType = 5;
+        message BlockInfo {
+            int32 blockErrno = 1;
+            string blockErrmsg = 2;
+            string blockDealurl = 3;
+            string blockConfirm = 4;
+            string blockCancel = 5;
+        }
+        BlockInfo blockInfo = 6;
+    }
+    DataRes data = 2;
+}

@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+import "Error.proto";
+
+message GetBawuInfoResIdl {
+    message DataRes {
+        message BawuTeam {
+            int32 total_num = 1;
+            message BawuRoleDes {
+                string role_name = 1;
+                message BawuRoleInfoPub {
+                    int64 id = 2;  // raw name: user_id
+                    int32 role_id = 3;
+                    string role_name = 4;
+                    string portrait = 5;
+                    int32 user_level = 6;
+                    string name = 8;  // raw name: user_name
+                    string name_show = 9;
+                }
+                repeated BawuRoleInfoPub role_info = 2;
+            }
+            repeated BawuRoleDes bawu_team_list = 2;
+        }
+        BawuTeam bawu_team_info = 1;
+    }
+    DataRes data = 1;
+    Error error = 2;
+}

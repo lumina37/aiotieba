@@ -1,0 +1,7 @@
+// tbclient
+syntax = "proto3";
+
+message Agree {
+    int64 agree = 1;
+    int64 disagree = 4;
+}
