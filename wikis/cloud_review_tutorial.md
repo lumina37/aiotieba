@@ -12,7 +12,7 @@
 
 + 使用函数`Database.init_database(["贴吧名1", "贴吧名2"])`一键建库
 
-+ 自定义审查行为：请参照我给出的例子自己编程修改[`cloud_review_hanime.py`](../cloud_review_hanime.py)，这是被实际应用于[宫漫吧](https://tieba.baidu.com/f?ie=utf-8&kw=%E5%AE%AB%E6%BC%AB)的云审查工具
++ 自定义审查行为：请参照我给出的例子自己编程修改[`cloud_review_vtuber.py`](../cloud_review_vtuber.py)，这是被实际应用于[vtuber吧](https://tieba.baidu.com/vtuber)的云审查工具
 
 + 运行`cloud_review_yours.py`（对`Windows`平台，建议使用`pythonw.exe`无窗口运行，对`Linux`平台，建议使用如下的`nohup`指令在后台运行）
 
@@ -22,9 +22,9 @@ nohup python cloud_review_yours.py >/dev/null 2>&1 &
 
 ## 扫描范围
 
-在我给出的范例[`cloud_review_hanime.py`](../cloud_review_hanime.py)中，每一轮扫描都会覆盖宫漫吧首页**按回复时间顺序**的前**30个**`主题帖`；以及这些`主题帖`中最新的**30条**`回复`；如果帖子被定义为`热门帖`，云审查还会检查`主题帖`的前**30条**`热门回复`；以及上述所有`回复`中点赞数最高的前**10条**`楼中楼`内容
+在我给出的范例[`cloud_review_vtuber.py`](../cloud_review_vtuber.py)中，每一轮扫描都会覆盖宫漫吧首页**按回复时间顺序**的前**30个**`主题帖`；以及这些`主题帖`中最新的**30条**`回复`；以及上述所有`回复`中点赞数最高的前**10条**`楼中楼`内容
 
-云审查工具会检查以上内容中是否存在：
+云审查工具可以检查以上内容中是否存在：
 
 + **违规图片**
 

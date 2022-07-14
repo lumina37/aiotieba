@@ -44,24 +44,24 @@ class CloudReview(tb.Reviewer):
 
         while 1:
             try:
-                start_time = time.perf_counter()
-
-                # 获取主题帖列表
-                threads = await self.get_threads(self.fname)
-                # 创建异步任务列表 并规定每个任务的延迟时间 避免高并发下的网络阻塞
-                coros = [self._handle_thread(thread, idx / 10) for idx, thread in enumerate(threads)]
-                # 并发运行协程
-                await asyncio.gather(*coros)
-
-                tb.LOG.debug(f"Cycle time_cost: {time.perf_counter()-start_time:.4f}")
+                asyncio.create_task(self.check_threads())
                 # 主动释放CPU 转而运行其他协程
-                await asyncio.sleep(60)
+                await asyncio.sleep(45)
 
             except Exception:
                 tb.LOG.critical("Unexcepted error", exc_info=True)
                 return
 
-    async def _handle_thread(self, thread: tb.Thread, delay: float) -> None:
+    async def check_threads(self, pn: int = 1) -> None:
+        start_time = time.perf_counter()
+        # 获取主题帖列表
+        threads = await self.get_threads(self.fname, pn)
+        # 并发运行协程检查主题帖内的违规内容
+        await asyncio.gather(*[self._handle_thread(thread) for thread in threads])
+
+        tb.LOG.debug(f"Cycle time_cost={time.perf_counter()-start_time:.4f}")
+
+    async def _handle_thread(self, thread: tb.Thread) -> None:
         """
         处理thread
         """
@@ -69,10 +69,6 @@ class CloudReview(tb.Reviewer):
         if thread.is_livepost:
             # 置顶话题直接返回
             return
-
-        if delay:
-            # 无延迟则不使用await 避免不必要的切换开销
-            await asyncio.sleep(delay)
 
         # 检查帖子内容
         punish = await self._check_thread(thread)
@@ -84,14 +80,14 @@ class CloudReview(tb.Reviewer):
         elif punish.del_flag == 1:
             # 删帖
             tb.LOG.info(
-                f"Try to delete thread {thread.text} post by {thread.user}. level:{thread.user.level}. {punish.note}"
+                f"Try to del. text={thread.text} user={thread.user} level={thread.user.level} note={punish.note}"
             )
             await self.del_thread(thread.fid, thread.tid)
             return
         elif punish.del_flag == 2:
             # 屏蔽帖
             tb.LOG.info(
-                f"Try to hide thread {thread.text} post by {thread.user}. level:{thread.user.level}. {punish.note}"
+                f"Try to hide. text={thread.text} user={thread.user} level={thread.user.level} note={punish.note}"
             )
             await self.hide_thread(thread.fid, thread.tid)
             return
@@ -110,17 +106,7 @@ class CloudReview(tb.Reviewer):
         if thread.last_time <= await self.get_id(thread.tid):
             return Punish()
 
-        # 回复数>50且点赞数>回复数的两倍则判断为热帖
-        is_hot_thread = thread.reply_num >= 50 and thread.agree > thread.reply_num * 2
-        if is_hot_thread:
-            # 同时拉取热门序和最后一页的回复列表
-            hot_posts, posts = await asyncio.gather(
-                self.get_posts(thread.tid, sort=2, with_comments=True),
-                self.get_posts(thread.tid, pn=99999, with_comments=True),
-            )
-        else:
-            # 仅拉取最后一页的回复列表
-            posts = await self.get_posts(thread.tid, pn=99999, with_comments=True)
+        posts = await self.get_posts(thread.tid, pn=99999, with_comments=True)
 
         if len(posts) == 0:
             return Punish()
@@ -138,10 +124,14 @@ class CloudReview(tb.Reviewer):
             # 无异常 继续检查
             pass
 
+        if thread.last_time - thread.create_time > 365 * 24 * 3600 and thread.last_time > 1657702000:
+            for post, next_post in zip(posts, posts[1:]):
+                if next_post.create_time - post.create_time > 90 * 24 * 3600:
+                    await self.block(thread.fid, next_post.user.portrait, day=1, note="挖坟")
+                    await self.del_post(next_post.fid, next_post.tid, next_post.pid)
+
         # 并发检查回复内容 因为是CPU密集任务所以不需要设计delay
         coros = [self._handle_post(post) for post in posts]
-        if is_hot_thread:
-            coros.extend([self._handle_post(post) for post in hot_posts])
         await asyncio.gather(*coros)
 
         # 缓存该tid的子孙结点编辑状态
@@ -160,7 +150,7 @@ class CloudReview(tb.Reviewer):
             pass
         elif punish.del_flag == 1:
             # 内容违规 删回复
-            tb.LOG.info(f"Try to delete post {post.text} post by {post.user}. level:{post.user.level}. {punish.note}")
+            tb.LOG.info(f"Try to del. text={post.text} user={post.user} level={post.user.level} note={punish.note}")
             await self.del_post(post.fid, post.tid, post.pid)
             return
 
@@ -190,6 +180,11 @@ class CloudReview(tb.Reviewer):
             # 无异常 继续检查
             pass
 
+        text = post.text
+        if text.count('\n') > 128:
+            # 闪光弹
+            return Punish(1, 0, note="闪光弹")
+
         if post.comments:
             # 并发检查楼中楼内容 因为是CPU密集任务所以不需要设计delay
             coros = [self._handle_comment(comment) for comment in post.comments]
@@ -212,7 +207,7 @@ class CloudReview(tb.Reviewer):
         elif punish.del_flag == 1:
             # 内容违规 删楼中楼
             tb.LOG.info(
-                f"Try to delete post {comment.text} post by {comment.user}. level:{comment.user.level}. {punish.note}"
+                f"Try to del. text={comment.text} user={comment.user} level={comment.user.level} note={punish.note}"
             )
             await self.del_post(comment.fid, comment.tid, comment.pid)
             return
@@ -266,8 +261,8 @@ class CloudReview(tb.Reviewer):
             return Punish()
 
         text = obj.text
-        if re.search("\u05af|足硿笨|𝒂𝒋|𝒗|𝒍𝒊𝒌𝒆", text, re.I):
-            return Punish(1, 1)
+        if re.search("蜘蛛", text):
+            return Punish(1)
 
         return Punish()
 
@@ -275,7 +270,7 @@ class CloudReview(tb.Reviewer):
 if __name__ == '__main__':
 
     async def main():
-        async with CloudReview('starry', '宫漫') as review:
+        async with CloudReview('listener', 'vtuber') as review:
             await review.run()
 
     try:
