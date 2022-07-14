@@ -53,7 +53,20 @@ __all__ = [
 
 import json
 import urllib.parse
-from typing import Any, ClassVar, Dict, Generic, Iterable, Iterator, List, Optional, TypeVar, Union
+from typing import (
+    Any,
+    ClassVar,
+    Dict,
+    Generic,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Protocol,
+    TypeVar,
+    Union,
+    runtime_checkable,
+)
 
 import bs4
 import yarl
@@ -104,7 +117,7 @@ class _DataWrapper(object):
         self._raw_data = _raw_data
 
 
-_TDWrapper = TypeVar('_TDWrapper', bound=_DataWrapper)
+_TypeDataWrapper = TypeVar('_TypeDataWrapper', bound=_DataWrapper)
 
 
 class BasicUserInfo(_DataWrapper):
@@ -578,6 +591,9 @@ class _Fragment(_DataWrapper):
         super(_Fragment, self).__init__(_raw_data)
 
 
+_TypeFragment = TypeVar('_TypeFragment', bound=_Fragment)
+
+
 class FragmentUnknown(_Fragment):
     """
     未知碎片
@@ -611,6 +627,12 @@ class FragText(_Fragment):
         """
 
         return self._text
+
+
+@runtime_checkable
+class ProtocolText(Protocol):
+    def text(self) -> str:
+        ...
 
 
 class FragEmoji(_Fragment):
@@ -1025,7 +1047,7 @@ class Fragments(object):
     ]
 
     def __init__(self, _raw_datas: Optional[Iterable[PbContent_pb2.PbContent]] = None) -> None:
-        def _init_by_type(_raw_data) -> _Fragment:
+        def _init_by_type(_raw_data) -> _TypeFragment:
             frag_type: int = _raw_data.type
             # 0纯文本 9电话号 18话题 27百科词条
             if frag_type in [0, 9, 18, 27]:
@@ -1069,7 +1091,7 @@ class Fragments(object):
         self._tiebapluses: List[FragTiebaPlus] = []
 
         if _raw_datas:
-            self._frags: List[_Fragment] = [_init_by_type(frag_proto) for frag_proto in _raw_datas]
+            self._frags: List[_TypeFragment] = [_init_by_type(frag_proto) for frag_proto in _raw_datas]
         else:
             self._frags = []
 
@@ -1084,13 +1106,13 @@ class Fragments(object):
         return self._text
 
     @property
-    def texts(self) -> List[FragText]:
+    def texts(self) -> List[ProtocolText]:
         """
         纯文本碎片列表
         """
 
         if self._texts is None:
-            self._texts = [frag for frag in self._frags if hasattr(frag, 'text')]
+            self._texts = [frag for frag in self._frags if isinstance(frag, ProtocolText)]
         return self._texts
 
     @property
@@ -1143,10 +1165,10 @@ class Fragments(object):
 
         return self._tiebapluses
 
-    def __iter__(self) -> Iterator[_Fragment]:
+    def __iter__(self) -> Iterator[_TypeFragment]:
         return iter(self._frags)
 
-    def __getitem__(self, idx) -> Union[_Fragment, List[_Fragment]]:
+    def __getitem__(self, idx) -> Union[_TypeFragment, List[_TypeFragment]]:
         return self._frags[idx]
 
     def __setitem__(self, idx, val) -> None:
@@ -1427,7 +1449,7 @@ class _Container(_DataWrapper):
         return self._author_id
 
 
-class _Containers(_DataWrapper, Generic[_TDWrapper]):
+class _Containers(_DataWrapper, Generic[_TypeDataWrapper]):
     """
     内容列表的泛型基类
     约定取内容的通用接口
@@ -1447,10 +1469,10 @@ class _Containers(_DataWrapper, Generic[_TDWrapper]):
     def __repr__(self) -> str:
         return str(self.objs)
 
-    def __iter__(self) -> Iterator[_TDWrapper]:
+    def __iter__(self) -> Iterator[_TypeDataWrapper]:
         return iter(self.objs)
 
-    def __getitem__(self, idx) -> Union[_TDWrapper, List[_TDWrapper]]:
+    def __getitem__(self, idx) -> Union[_TypeDataWrapper, List[_TypeDataWrapper]]:
         return self.objs[idx]
 
     def __setitem__(self, idx, val):
@@ -1466,7 +1488,7 @@ class _Containers(_DataWrapper, Generic[_TDWrapper]):
         return bool(self.objs)
 
     @property
-    def objs(self) -> List[_TDWrapper]:
+    def objs(self) -> List[_TypeDataWrapper]:
         """
         内容列表
         """
