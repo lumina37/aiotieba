@@ -1,3 +1,4 @@
+// tbclient.GetBawuInfo.GetBawuInfoResIdl
 syntax = "proto3";
 
 import "Error.proto";
@@ -9,12 +10,12 @@ message GetBawuInfoResIdl {
             message BawuRoleDes {
                 string role_name = 1;
                 message BawuRoleInfoPub {
-                    int64 id = 2;  // raw name: user_id
+                    int64 id = 2;
                     int32 role_id = 3;
                     string role_name = 4;
                     string portrait = 5;
                     int32 user_level = 6;
-                    string name = 8;  // raw name: user_name
+                    string name = 8;
                     string name_show = 9;
                 }
                 repeated BawuRoleInfoPub role_info = 2;

@@ -1,3 +1,4 @@
+// tbclient.PbContent
 syntax = "proto3";
 
 message PbContent {

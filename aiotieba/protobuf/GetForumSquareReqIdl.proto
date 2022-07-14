@@ -1,3 +1,4 @@
+// tbclient.GetForumSquare.GetForumSquareReqIdl
 syntax = "proto3";
 
 import "CommonReq.proto";

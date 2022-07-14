@@ -1,3 +1,4 @@
+// tbclient.SubPost
 syntax = "proto3";
 
 import "PbContent.proto";

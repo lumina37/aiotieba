@@ -1,4 +1,4 @@
-// protobuf.CommitPersonalMsg
+// protobuf.CommitPersonalMsg.CommitPersonalMsgReqIdl
 syntax = "proto3";
 
 message CommitPersonalMsgReqIdl {

@@ -14,7 +14,7 @@ _sym_db = _symbol_database.Default()
 from . import CommonReq_pb2 as CommonReq__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13PbFloorReqIdl.proto\x1a\x0f\x43ommonReq.proto\"\x8f\x01\n\rPbFloorReqIdl\x12$\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x16.PbFloorReqIdl.DataReq\x1aX\n\x07\x44\x61taReq\x12\x1a\n\x06\x63ommon\x18\t \x01(\x0b\x32\n.CommonReq\x12\n\n\x02kz\x18\x01 \x01(\x03\x12\x0b\n\x03pid\x18\x02 \x01(\x03\x12\x0c\n\x04spid\x18\x03 \x01(\x03\x12\n\n\x02pn\x18\x04 \x01(\x05\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13PbFloorReqIdl.proto\x1a\x0f\x43ommonReq.proto\"\x90\x01\n\rPbFloorReqIdl\x12$\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x16.PbFloorReqIdl.DataReq\x1aY\n\x07\x44\x61taReq\x12\x1a\n\x06\x63ommon\x18\t \x01(\x0b\x32\n.CommonReq\x12\x0b\n\x03tid\x18\x01 \x01(\x03\x12\x0b\n\x03pid\x18\x02 \x01(\x03\x12\x0c\n\x04spid\x18\x03 \x01(\x03\x12\n\n\x02pn\x18\x04 \x01(\x05\x62\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'PbFloorReqIdl_pb2', globals())
@@ -22,7 +22,7 @@ if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
   _PBFLOORREQIDL._serialized_start=41
-  _PBFLOORREQIDL._serialized_end=184
+  _PBFLOORREQIDL._serialized_end=185
   _PBFLOORREQIDL_DATAREQ._serialized_start=96
-  _PBFLOORREQIDL_DATAREQ._serialized_end=184
+  _PBFLOORREQIDL_DATAREQ._serialized_end=185
 # @@protoc_insertion_point(module_scope)

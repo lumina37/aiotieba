@@ -1,3 +1,4 @@
+// tbclient.UserPost.UserPostReqIdl
 syntax = "proto3";
 
 import "CommonReq.proto";

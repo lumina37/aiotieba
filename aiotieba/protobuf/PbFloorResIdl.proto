@@ -1,13 +1,15 @@
+// tbclient.PbFloor.PbFloorResIdl
 syntax = "proto3";
 
+import "Error.proto";
 import "SimpleForum.proto";
 import "Page.proto";
 import "Post.proto";
 import "ThreadInfo.proto";
 import "SubPostList.proto";
-import "Error.proto";
 
 message PbFloorResIdl {
+    Error error = 1;
     message DataRes {
         Page page = 1;
         Post post = 3;
@@ -15,6 +17,5 @@ message PbFloorResIdl {
         ThreadInfo thread = 5;
         SimpleForum forum = 6;
     }
-    Error error = 1;
     DataRes data = 2;
 }

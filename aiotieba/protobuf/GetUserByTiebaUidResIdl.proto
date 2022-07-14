@@ -1,3 +1,4 @@
+// tbclient.GetUserByTiebaUid.GetUserByTiebaUidResIdl
 syntax = "proto3";
 
 import "Error.proto";

@@ -1,3 +1,4 @@
+// tbclient.PollInfo
 syntax = "proto3";
 
 message PollInfo {

@@ -1,3 +1,4 @@
+// tbclient.ThreadInfo
 syntax = "proto3";
 
 import "User.proto";

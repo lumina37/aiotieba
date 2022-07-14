@@ -1,10 +1,12 @@
+// tbclient.ReplyMe.ReplyMeResIdl
 syntax = "proto3";
 
+import "Error.proto";
 import "Page.proto";
 import "User.proto";
-import "Error.proto";
 
 message ReplyMeResIdl {
+    Error error = 1;
     message DataRes {
         Page page = 1;
         message ReplyList {
@@ -22,6 +24,5 @@ message ReplyMeResIdl {
         }
         repeated ReplyList reply_list = 2;
     }
-    Error error = 1;
     DataRes data = 2;
 }

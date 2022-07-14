@@ -1,12 +1,14 @@
+// tbclient.FrsPage.FrsPageResIdl
 syntax = "proto3";
 
+import "Error.proto";
 import "Page.proto";
 import "ThreadInfo.proto";
 import "User.proto";
 import "FrsTabInfo.proto";
-import "Error.proto";
 
 message FrsPageResIdl {
+    Error error = 1;
     message DataRes {
         message ForumInfo {
             int64 forum_id = 1;  // raw: id
@@ -23,6 +25,5 @@ message FrsPageResIdl {
         }
         NavTabInfo nav_tab_info = 37;
     }
-    Error error = 1;
     DataRes data = 2;
 }

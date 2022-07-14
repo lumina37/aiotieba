@@ -1,14 +1,16 @@
+// tbclient.PbPage.PbPageResIdl
 syntax = "proto3";
 
+import "Error.proto";
 import "SimpleForum.proto";
 import "Page.proto";
 import "Post.proto";
 import "ThreadInfo.proto";
 import "User.proto";
 import "SubPostList.proto";
-import "Error.proto";
 
 message PbPageResIdl {
+    Error error = 1;
     message DataRes {
         SimpleForum forum = 2;
         Page page = 3;
@@ -18,6 +20,5 @@ message PbPageResIdl {
         SubPost sub_post_list = 15;
         int32 has_fold_comment = 68;
     }
-    Error error = 1;
     DataRes data = 2;
 }

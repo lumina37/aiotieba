@@ -1,3 +1,4 @@
+// tbclient.PostInfoList
 syntax = "proto3";
 
 import "PollInfo.proto";

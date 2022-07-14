@@ -1,3 +1,4 @@
+// tbclient.GetDislikeList.GetDislikeListReqIdl
 syntax = "proto3";
 
 import "CommonReq.proto";

@@ -1,9 +1,11 @@
+// tbclient.SearchPostForum.SearchPostForumResIdl
 syntax = "proto3";
 
-import "FrsTabInfo.proto";
 import "Error.proto";
+import "FrsTabInfo.proto";
 
 message SearchPostForumResIdl {
+    Error error = 1;
     message DataRes {
         message SearchForum {
             int64 forum_id = 1;
@@ -12,6 +14,5 @@ message SearchPostForumResIdl {
         }
         SearchForum exact_match = 1;
     }
-    Error error = 1;
     DataRes data = 2;
 }

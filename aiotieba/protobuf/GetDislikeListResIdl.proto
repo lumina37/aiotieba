@@ -1,3 +1,4 @@
+// tbclient.GetDislikeList.GetDislikeListResIdl
 syntax = "proto3";
 
 import "Error.proto";

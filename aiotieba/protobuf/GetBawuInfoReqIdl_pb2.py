@@ -14,7 +14,7 @@ _sym_db = _symbol_database.Default()
 from . import CommonReq_pb2 as CommonReq__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x17GetBawuInfoReqIdl.proto\x1a\x0f\x43ommonReq.proto\"v\n\x11GetBawuInfoReqIdl\x12(\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x1a.GetBawuInfoReqIdl.DataReq\x1a\x37\n\x07\x44\x61taReq\x12\x1a\n\x06\x63ommon\x18\x01 \x01(\x0b\x32\n.CommonReq\x12\x10\n\x08\x66orum_id\x18\x02 \x01(\x04\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x17GetBawuInfoReqIdl.proto\x1a\x0f\x43ommonReq.proto\"q\n\x11GetBawuInfoReqIdl\x12(\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x1a.GetBawuInfoReqIdl.DataReq\x1a\x32\n\x07\x44\x61taReq\x12\x1a\n\x06\x63ommon\x18\x01 \x01(\x0b\x32\n.CommonReq\x12\x0b\n\x03\x66id\x18\x02 \x01(\x04\x62\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'GetBawuInfoReqIdl_pb2', globals())
@@ -22,7 +22,7 @@ if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
   _GETBAWUINFOREQIDL._serialized_start=44
-  _GETBAWUINFOREQIDL._serialized_end=162
+  _GETBAWUINFOREQIDL._serialized_end=157
   _GETBAWUINFOREQIDL_DATAREQ._serialized_start=107
-  _GETBAWUINFOREQIDL_DATAREQ._serialized_end=162
+  _GETBAWUINFOREQIDL_DATAREQ._serialized_end=157
 # @@protoc_insertion_point(module_scope)

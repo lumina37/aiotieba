@@ -11,18 +11,17 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 
-from . import CommonReq_pb2 as CommonReq__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x17GetUserInfoReqIdl.proto\x1a\x0f\x43ommonReq.proto\"q\n\x11GetUserInfoReqIdl\x12(\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x1a.GetUserInfoReqIdl.DataReq\x1a\x32\n\x07\x44\x61taReq\x12\x1a\n\x06\x63ommon\x18\x01 \x01(\x0b\x32\n.CommonReq\x12\x0b\n\x03uid\x18\x02 \x01(\x03\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x17GetUserInfoReqIdl.proto\"Y\n\x11GetUserInfoReqIdl\x12(\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x1a.GetUserInfoReqIdl.DataReq\x1a\x1a\n\x07\x44\x61taReq\x12\x0f\n\x07user_id\x18\x02 \x01(\x03\x62\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'GetUserInfoReqIdl_pb2', globals())
 if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
-  _GETUSERINFOREQIDL._serialized_start=44
-  _GETUSERINFOREQIDL._serialized_end=157
-  _GETUSERINFOREQIDL_DATAREQ._serialized_start=107
-  _GETUSERINFOREQIDL_DATAREQ._serialized_end=157
+  _GETUSERINFOREQIDL._serialized_start=27
+  _GETUSERINFOREQIDL._serialized_end=116
+  _GETUSERINFOREQIDL_DATAREQ._serialized_start=90
+  _GETUSERINFOREQIDL_DATAREQ._serialized_end=116
 # @@protoc_insertion_point(module_scope)

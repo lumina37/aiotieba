@@ -1,11 +1,13 @@
+// tbclient.UserPost.UserPostResIdl
 syntax = "proto3";
 
+import "Error.proto";
 import "PbContent.proto";
 import "PollInfo.proto";
 import "Agree.proto";
-import "Error.proto";
 
 message UserPostResIdl {
+    Error error = 1;
     message DataRes {
         message PostInfoList {
             uint64 forum_id = 1;
@@ -34,6 +36,5 @@ message UserPostResIdl {
         }
         repeated PostInfoList post_list = 1;
     }
-    Error error = 1;
     DataRes data = 2;
 }

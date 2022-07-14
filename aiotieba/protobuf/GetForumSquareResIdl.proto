@@ -1,3 +1,4 @@
+// tbclient.GetForumSquare.GetForumSquareResIdl
 syntax = "proto3";
 
 import "Error.proto";
@@ -11,7 +12,7 @@ message GetForumSquareResIdl {
             string forum_name = 3;
             uint32 is_like = 4;
             uint32 member_count = 5;
-            uint32 thread_num = 6;  // raw: thread_count
+            uint32 thread_num = 6;
         }
         repeated RecommendForumInfo forum_info = 2;
         Page page = 3;

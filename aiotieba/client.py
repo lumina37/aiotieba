@@ -28,7 +28,6 @@ from .log import LOG
 from .protobuf import (
     CommitPersonalMsgReqIdl_pb2,
     CommitPersonalMsgResIdl_pb2,
-    CommonReq_pb2,
     FrsPageReqIdl_pb2,
     FrsPageResIdl_pb2,
     GetBawuInfoReqIdl_pb2,
@@ -997,12 +996,8 @@ class Client(object):
             UserInfo: 完整版用户信息
         """
 
-        common_proto = CommonReq_pb2.CommonReq()
-        data_proto = GetUserInfoReqIdl_pb2.GetUserInfoReqIdl.DataReq()
-        data_proto.common.CopyFrom(common_proto)
-        data_proto.uid = user.user_id
         req_proto = GetUserInfoReqIdl_pb2.GetUserInfoReqIdl()
-        req_proto.data.CopyFrom(data_proto)
+        req_proto.data.user_id = user.user_id
 
         try:
             async with self.app_proto.post(
@@ -1109,17 +1104,13 @@ class Client(object):
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
-        common_proto = CommonReq_pb2.CommonReq()
-        common_proto._client_version = self.latest_version
-        data_proto = FrsPageReqIdl_pb2.FrsPageReqIdl.DataReq()
-        data_proto.common.CopyFrom(common_proto)
-        data_proto.kw = fname
-        data_proto.pn = pn
-        data_proto.rn = rn
-        data_proto.is_good = is_good
-        data_proto.sort_type = sort
         req_proto = FrsPageReqIdl_pb2.FrsPageReqIdl()
-        req_proto.data.CopyFrom(data_proto)
+        req_proto.data.common._client_version = self.latest_version
+        req_proto.data.fname = fname
+        req_proto.data.pn = pn
+        req_proto.data.rn = rn
+        req_proto.data.is_good = is_good
+        req_proto.data.sort = sort
 
         try:
             async with self.app_proto.post(
@@ -1172,22 +1163,18 @@ class Client(object):
             Posts: 回复列表
         """
 
-        common_proto = CommonReq_pb2.CommonReq()
-        common_proto._client_version = self.latest_version
-        data_proto = PbPageReqIdl_pb2.PbPageReqIdl.DataReq()
-        data_proto.common.CopyFrom(common_proto)
-        data_proto.kz = tid
-        data_proto.pn = pn
-        data_proto.rn = rn if rn > 1 else 2
-        data_proto.r = sort
-        data_proto.lz = only_thread_author
-        data_proto.is_fold_comment_req = is_fold
-        if with_comments:
-            data_proto.with_floor = with_comments
-            data_proto.floor_sort_type = comment_sort_by_agree
-            data_proto.floor_rn = comment_rn
         req_proto = PbPageReqIdl_pb2.PbPageReqIdl()
-        req_proto.data.CopyFrom(data_proto)
+        req_proto.data.common._client_version = self.latest_version
+        req_proto.data.tid = tid
+        req_proto.data.pn = pn
+        req_proto.data.rn = rn if rn > 1 else 2
+        req_proto.data.sort = sort
+        req_proto.data.only_thread_author = only_thread_author
+        req_proto.data.is_fold = is_fold
+        if with_comments:
+            req_proto.data.with_comments = with_comments
+            req_proto.data.comment_sort_by_agree = comment_sort_by_agree
+            req_proto.data.comment_rn = comment_rn
 
         try:
             async with self.app_proto.post(
@@ -1222,18 +1209,14 @@ class Client(object):
             Comments: 楼中楼列表
         """
 
-        common_proto = CommonReq_pb2.CommonReq()
-        common_proto._client_version = self.latest_version
-        data_proto = PbFloorReqIdl_pb2.PbFloorReqIdl.DataReq()
-        data_proto.common.CopyFrom(common_proto)
-        data_proto.kz = tid
-        if is_floor:
-            data_proto.spid = pid
-        else:
-            data_proto.pid = pid
-        data_proto.pn = pn
         req_proto = PbFloorReqIdl_pb2.PbFloorReqIdl()
-        req_proto.data.CopyFrom(data_proto)
+        req_proto.data.common._client_version = self.latest_version
+        req_proto.data.tid = tid
+        if is_floor:
+            req_proto.data.spid = pid
+        else:
+            req_proto.data.pid = pid
+        req_proto.data.pn = pn
 
         try:
             async with self.app_proto.post(
@@ -1368,13 +1351,9 @@ class Client(object):
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
-        common_proto = CommonReq_pb2.CommonReq()
-        common_proto._client_version = self.latest_version
-        data_proto = GetBawuInfoReqIdl_pb2.GetBawuInfoReqIdl.DataReq()
-        data_proto.common.CopyFrom(common_proto)
-        data_proto.forum_id = fid
         req_proto = GetBawuInfoReqIdl_pb2.GetBawuInfoReqIdl()
-        req_proto.data.CopyFrom(data_proto)
+        req_proto.data.common._client_version = self.latest_version
+        req_proto.data.fid = fid
 
         try:
             async with self.app_proto.post(
@@ -1414,14 +1393,10 @@ class Client(object):
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
-        common_proto = CommonReq_pb2.CommonReq()
-        common_proto.BDUSS = self.BDUSS
-        common_proto._client_version = self.latest_version
-        data_proto = SearchPostForumReqIdl_pb2.SearchPostForumReqIdl.DataReq()
-        data_proto.common.CopyFrom(common_proto)
-        data_proto.word = fname
         req_proto = SearchPostForumReqIdl_pb2.SearchPostForumReqIdl()
-        req_proto.data.CopyFrom(data_proto)
+        req_proto.data.common.BDUSS = self.BDUSS
+        req_proto.data.common._client_version = self.latest_version
+        req_proto.data.fname = fname
 
         try:
             async with self.app_proto.post(
@@ -1521,16 +1496,12 @@ class Client(object):
             SquareForums: 吧广场列表
         """
 
-        common_proto = CommonReq_pb2.CommonReq()
-        common_proto.BDUSS = self.BDUSS
-        common_proto._client_version = self.latest_version
-        data_proto = GetForumSquareReqIdl_pb2.GetForumSquareReqIdl.DataReq()
-        data_proto.common.CopyFrom(common_proto)
-        data_proto.class_name = class_name
-        data_proto.pn = pn
-        data_proto.rn = rn
         req_proto = GetForumSquareReqIdl_pb2.GetForumSquareReqIdl()
-        req_proto.data.CopyFrom(data_proto)
+        req_proto.data.common.BDUSS = self.BDUSS
+        req_proto.data.common._client_version = self.latest_version
+        req_proto.data.class_name = class_name
+        req_proto.data.pn = pn
+        req_proto.data.rn = rn
 
         try:
             async with self.app_proto.post(
@@ -2795,14 +2766,10 @@ class Client(object):
             Replys: 回复列表
         """
 
-        common_proto = CommonReq_pb2.CommonReq()
-        common_proto.BDUSS = self.BDUSS
-        common_proto._client_version = self.latest_version
-        data_proto = ReplyMeReqIdl_pb2.ReplyMeReqIdl.DataReq()
-        data_proto.pn = str(pn)
-        data_proto.common.CopyFrom(common_proto)
         req_proto = ReplyMeReqIdl_pb2.ReplyMeReqIdl()
-        req_proto.data.CopyFrom(data_proto)
+        req_proto.data.common.BDUSS = self.BDUSS
+        req_proto.data.common._client_version = self.latest_version
+        req_proto.data.pn = str(pn)
 
         try:
             async with self.app_proto.post(
@@ -2938,18 +2905,14 @@ class Client(object):
             list[NewThread] | list[UserPosts]: 主题帖/回复列表
         """
 
-        common_proto = CommonReq_pb2.CommonReq()
-        common_proto.BDUSS = self.BDUSS
-        common_proto._client_version = self.latest_version
-        data_proto = UserPostReqIdl_pb2.UserPostReqIdl.DataReq()
-        data_proto.user_id = user.user_id
-        data_proto.is_thread = is_thread
-        data_proto.need_content = 1
-        data_proto.pn = pn
-        data_proto.is_view_card = 2 if public_only else 1
-        data_proto.common.CopyFrom(common_proto)
         req_proto = UserPostReqIdl_pb2.UserPostReqIdl()
-        req_proto.data.CopyFrom(data_proto)
+        req_proto.data.common.BDUSS = self.BDUSS
+        req_proto.data.common._client_version = self.latest_version
+        req_proto.data.user_id = user.user_id
+        req_proto.data.is_thread = is_thread
+        req_proto.data.need_content = 1
+        req_proto.data.pn = pn
+        req_proto.data.is_view_card = 2 if public_only else 1
 
         try:
             async with self.app_proto.post(
@@ -3116,15 +3079,11 @@ class Client(object):
             DislikeForums: 首页推荐屏蔽的贴吧列表
         """
 
-        common_proto = CommonReq_pb2.CommonReq()
-        common_proto.BDUSS = self.BDUSS
-        common_proto._client_version = self.latest_version
-        data_proto = GetDislikeListReqIdl_pb2.GetDislikeListReqIdl.DataReq()
-        data_proto.common.CopyFrom(common_proto)
-        data_proto.pn = pn
-        data_proto.rn = rn
         req_proto = GetDislikeListReqIdl_pb2.GetDislikeListReqIdl()
-        req_proto.data.CopyFrom(data_proto)
+        req_proto.data.common.BDUSS = self.BDUSS
+        req_proto.data.common._client_version = self.latest_version
+        req_proto.data.pn = pn
+        req_proto.data.rn = rn
 
         try:
             async with self.app_proto.post(

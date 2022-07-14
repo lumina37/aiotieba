@@ -1,9 +1,11 @@
 # -*- coding:utf-8 -*-
 
 from . import (
+    Agree_pb2,
     CommitPersonalMsgReqIdl_pb2,
     CommitPersonalMsgResIdl_pb2,
     CommonReq_pb2,
+    Error_pb2,
     FrsPageReqIdl_pb2,
     FrsPageResIdl_pb2,
     GetBawuInfoReqIdl_pb2,

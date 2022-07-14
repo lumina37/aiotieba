@@ -1,3 +1,4 @@
+// tbclient.User
 syntax = "proto3";
 
 message User {
