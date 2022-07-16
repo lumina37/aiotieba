@@ -32,7 +32,7 @@
 + 数据库功能：**缓存贴吧常量**（如贴吧名到fid的映射关系）/**为用户添加标记**/**为帖子或回复添加标记**/**为图像hash添加标记**
 + 图像处理功能：**图像解码**/**二维码解析**/**图像hash计算**
 
-在`aiotieba`的基础上，我开发了多种自动化吧务管理工具，如[云审查工具](wikis/cloud_review_introduction.md)和[指令管理器](../../wiki/%E6%8C%87%E4%BB%A4%E7%AE%A1%E7%90%86%E5%99%A8%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E%E4%B9%A6)，以及一些[自动化脚本的案例](wikis/many_utils.md)
+在`aiotieba`的基础上，我开发了多种自动化吧务管理工具，如[云审查工具](docs/cloud_review_introduction.md)和[指令管理器](../../wiki/%E6%8C%87%E4%BB%A4%E7%AE%A1%E7%90%86%E5%99%A8%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E%E4%B9%A6)，以及一些[自动化脚本的案例](docs/many_utils.md)
 
 ## 入门教程
 
@@ -46,9 +46,9 @@ cd ./Tieba-Manager
 pip install -r requirements.txt
 ```
 
-+ 入门教程请参考[aiotieba入门教程](wikis/tutorial.md)
++ 入门教程请参考[aiotieba入门教程](docs/tutorial.md)
 
-+ 云审查教程请参考[云审查教程](wikis/cloud_review_tutorial.md)
++ 云审查教程请参考[云审查教程](docs/cloud_review_tutorial.md)
 
 ## 友情链接
 

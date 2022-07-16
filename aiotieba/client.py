@@ -24,6 +24,7 @@ from Crypto.PublicKey import RSA
 from google.protobuf.json_format import ParseDict
 
 from .config import CONFIG
+from .helpers import JSON_DECODER
 from .log import LOG
 from .protobuf import (
     CommitPersonalMsgReqIdl_pb2,
@@ -56,7 +57,6 @@ from .protobuf import (
     UserPostResIdl_pb2,
 )
 from .typedef import (
-    JSON_DECODER,
     Appeals,
     Ats,
     BasicUserInfo,
