@@ -19,13 +19,13 @@
 
 ## 案例1 配置BDUSS
 
-本例中，你将学会`config.toml`配置文件的基本填写方法，并使用`aiotieba`库获取贴吧账号的非敏感个人信息
+本例中，你将学会`aiotieba.toml`配置文件的基本填写方法，并使用`aiotieba`库获取贴吧账号的非敏感个人信息
 
 ### 步骤1
 
 在`aiotieba`文件夹的旁边新建一个`debug.py`文件。当然你也可以在任何一个可以引用到`aiotieba`库的地方新建脚本，又或是另起一个你喜欢的脚本名
 
-将下列代码复制到`debug.py`并运行
+将下列代码复制到`debug.py`并用`Python`解释器运行
 
 ```python
 import asyncio
@@ -68,18 +68,18 @@ asyncio.run(main())
 然后，你会获得如下结果
 
 ```log
-<2022-07-11 17:36:27> [WARNING] 找不到配置文件，请参考[https://github.com/Starry-OvO/Tieba-Manager/blob/master/wikis/tutorial.md]完成对...\config\config.toml的配置
-<2022-07-11 17:36:27> [WARNING] Failed to login. reason:用户名或密码错误
-{'user_id': 0, 'user_name': '', 'portrait': ''}
+<2022-07-16 20:13:54.514> [WARNING] [<module>] 配置文件已生成 请参考[https://github.com/Starry-OvO/Tieba-Manager/blob/master/docs/tutorial.md]完成对./aiotieba.toml的配置
+<2022-07-16 20:13:54.770> [WARNING] [login] 用户名或密码错误
+<2022-07-16 20:13:54.771> [INFO] [main] 当前用户信息: {'user_id': 0, 'user_name': '', 'portrait': ''}
 ```
 
 ### 步骤2
 
-此时在`debug.py`的同级目录下会生成一个`config`文件夹，点开里面自动生成的`config.toml`文件，将你的`BDUSS`填入正确的位置
+此时在工作目录下会自动生成一个`aiotieba.toml`配置文件，将你的`BDUSS`填入该文件的正确位置
 
 `BDUSS`的提取方式请自行搜索[浏览器如何获取BDUSS](https://cn.bing.com/search?q=%E6%B5%8F%E8%A7%88%E5%99%A8%E5%A6%82%E4%BD%95%E8%8E%B7%E5%8F%96BDUSS)
 
-填写完毕的`config.toml`大概长这样
+填写完毕的`aiotieba.toml`大概长这样
 
 ```toml
 [User]
@@ -93,7 +93,7 @@ BDUSS = "2dNNk1wMXVSZmw2MnpkWDNqMnM4MmFaeFZYNVVPUEhPS0thNFZzUERjME52V1KpSVFBQUFB
 再次运行`debug.py`，如果你的`BDUSS`填写无误，你就能得到类似这样的用户个人信息
 
 ```log
-<2022-07-07 09:45:22> [INFO] 当前用户信息: {'user_id': 957339815, 'user_name': 'kk不好玩', 'portrait': 'tb.1.8277e641.gUE2cTq4A4z5fi2EHn5k3Q'}
+<2022-07-16 20:14:34.597> [INFO] [main] 当前用户信息: {'user_id': 957339815, 'user_name': 'kk不好玩', 'portrait': 'tb.1.8277e641.gUE2cTq4A4z5fi2EHn5k3Q'}
 ```
 
 ## 案例2 简单并发爬虫

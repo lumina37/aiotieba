@@ -117,7 +117,7 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
-## 清除所有贴吧的屏蔽状态
+## 解除多个贴吧的屏蔽状态
 
 ```python
 import asyncio

@@ -1,5 +1,6 @@
 .*/
 __*/
+*.toml
 *.exe
 *.csv
 *.xlsx
@@ -14,7 +15,6 @@ __*/
 *.jpg
 *.code-workspace
 
-config/
 log/
 charles/
 
@@ -23,9 +23,10 @@ test*
 
 !.github
 !.github/**
-!wikis/**
+!docs/**
+!aiotieba/config_example/**
 
 !README.md
 !requirements.txt
-!admin_listen.py
+!cmd_handler.py
 !cloud_review_vtuber.py

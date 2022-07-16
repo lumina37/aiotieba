@@ -1,29 +1,29 @@
 # -*- coding:utf-8 -*-
 __all__ = ['CONFIG']
 
+from pathlib import Path
 from .log import LOG
-from .paths import MODULE_DIR, SCRIPT_DIR
+
+config_filename = "aiotieba.toml"
 
 try:
     import tomli
 
-    with (SCRIPT_DIR / "config/config.toml").open("rb") as file:
+    with open(config_filename, "rb") as file:
         CONFIG = tomli.load(file)
 
 except FileNotFoundError:
 
     import shutil
 
-    config_dir = SCRIPT_DIR / "config"
-    config_dir.mkdir(parents=True, exist_ok=True)
-    minimal_config_path = config_dir / "config.toml"
-    shutil.copyfile(str(MODULE_DIR / "config_example/minimal.toml"), str(minimal_config_path))
-    shutil.copyfile(str(MODULE_DIR / "config_example/full.toml"), str(config_dir / "config_full_example.toml"))
+    module_dir = Path(__file__).parent
+    shutil.copyfile(str(module_dir / "config_example/minimal.toml"), config_filename)
+    shutil.copyfile(str(module_dir / "config_example/full.toml"), "aiotieba_full_example.toml")
 
     CONFIG = {}
 
     LOG.warning(
-        f"找不到配置文件 请参考[https://github.com/Starry-OvO/Tieba-Manager/blob/master/wikis/tutorial.md]完成对{minimal_config_path}的配置"
+        f"配置文件已生成 请参考[https://github.com/Starry-OvO/Tieba-Manager/blob/master/docs/tutorial.md]完成对./{config_filename}的配置"
     )
 
 required_keys = ['User', 'Database']

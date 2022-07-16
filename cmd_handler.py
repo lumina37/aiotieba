@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 """
 指令管理器
-使用前请在当前目录的config文件夹中新建listen_config.toml配置文件，并参考下列案例填写你自己的配置
+使用前请在当前工作目录下新建cmd_handler.toml配置文件，并参考下列案例填写你自己的配置
 
 --------
 listener_key = "listener"  # 在这里填用于监听at信息的账号的BDUSS_key
@@ -27,9 +27,8 @@ from typing import List, Union
 import tomli
 
 import aiotieba as tb
-from aiotieba.paths import SCRIPT_PATH
 
-with (SCRIPT_PATH.parent / 'config/listen_config.toml').open('rb') as file:
+with open("cmd_handler.toml", 'rb') as file:
     LISTEN_CONFIG = tomli.load(file)
 
 

@@ -1,4 +1,4 @@
-name: Python Basic Test
+name: Basic Test
 
 on:
   push:
@@ -40,7 +40,7 @@ jobs:
       run: |
         mv .github/test/test_all.py .
         mkdir config
-        gpg --quiet --batch --yes --decrypt --passphrase=${{ secrets.PASSPHRASE }} --output config/config.toml .github/test/config.toml.gpg
+        gpg --quiet --batch --yes --decrypt --passphrase=${{ secrets.PASSPHRASE }} --output aiotieba.toml .github/test/aiotieba.toml.gpg
 
     - name: Run test
       run: python test_all.py
