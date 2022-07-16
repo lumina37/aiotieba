@@ -1,0 +1,38 @@
+// tbclient.Post
+syntax = "proto3";
+
+import "PbContent.proto";
+import "SubPostList.proto";
+import "User.proto";
+import "Agree.proto";
+import "SimpleForum.proto";
+
+message Post {
+    int64 id = 1;
+    string title = 2;
+    uint32 floor = 3;
+    uint32 time = 4;
+    repeated PbContent content = 5;
+    uint32 sub_post_number = 13;
+    int64 author_id = 19;
+    message SubPost {
+        uint64 pid = 1;
+        repeated SubPostList sub_post_list = 2;
+    }
+    SubPost sub_post_list = 15;
+    message SignatureData {
+        int32 signature_id = 1;
+        string fontKeyName = 2;
+        string fontColor = 3;
+        message SignatureContent {
+            int32 type = 1;
+            string text = 2;
+        }
+        repeated SignatureContent content = 4;
+    }
+    SignatureData signature = 21;
+    User author = 23;
+    Agree agree = 37;
+    SimpleForum from_forum = 38;
+    int64 tid = 46;
+}

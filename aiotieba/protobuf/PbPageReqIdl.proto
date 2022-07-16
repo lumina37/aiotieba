@@ -1,0 +1,21 @@
+// tbclient.PbPage.PbPageReqIdl
+syntax = "proto3";
+
+import "CommonReq.proto";
+
+message PbPageReqIdl {
+    message DataReq {
+        CommonReq common = 25;
+        int64 tid = 4;
+        int32 only_thread_author = 5;
+        int32 sort = 6;
+        int64 pid = 7;
+        int32 with_comments = 8;
+        int32 comment_rn = 9;
+        int32 rn = 13;
+        int32 pn = 18;
+        int32 comment_sort_by_agree = 74;
+        int32 is_fold = 78;
+    }
+    DataReq data = 1;
+}

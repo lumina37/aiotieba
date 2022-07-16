@@ -1,0 +1,22 @@
+// tbclient.SubPost
+syntax = "proto3";
+
+import "PbContent.proto";
+import "User.proto";
+import "Agree.proto";
+
+message SubPostList {
+    int64 id = 1;
+    repeated PbContent content = 2;
+    uint32 time = 3;
+    int64 author_id = 4;
+    string title = 5;
+    uint32 floor = 6;
+    User author = 7;
+    Agree agree = 9;
+}
+
+message SubPost {
+    uint64 pid = 1;
+    repeated SubPostList sub_post_list = 2;
+}

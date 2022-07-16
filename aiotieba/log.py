@@ -3,9 +3,9 @@ __all__ = ['LOG']
 
 import logging
 import logging.handlers
+import sys
+from pathlib import Path
 from typing import ClassVar, Union
-
-from .paths import SCRIPT_DIR, SCRIPT_PATH
 
 logging.logThreads = False
 logging.logProcesses = False
@@ -55,10 +55,10 @@ class TiebaLogger(logging.Logger):
 
         if self._file_hd is None:
 
-            log_dir = SCRIPT_DIR / 'log'
+            log_dir = Path("log")
             log_dir.mkdir(0o755, exist_ok=True)
 
-            log_filepath = log_dir / f'{SCRIPT_PATH.stem}.log'
+            log_filepath = log_dir / f"{self.name}.log"
             self._file_hd = logging.handlers.TimedRotatingFileHandler(
                 str(log_filepath), when='MIDNIGHT', backupCount=5, encoding='utf-8'
             )
@@ -86,4 +86,5 @@ class TiebaLogger(logging.Logger):
         return self._console_hd
 
 
-LOG = TiebaLogger(__name__)
+script_name = Path(sys.argv[0]).stem
+LOG = TiebaLogger(script_name)

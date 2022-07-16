@@ -1,0 +1,13 @@
+// tbclient.GetUserInfo.GetUserInfoResIdl
+syntax = "proto3";
+
+import "Error.proto";
+import "User.proto";
+
+message GetUserInfoResIdl {
+    Error error = 1;
+    message DataRes {
+        User user = 1;
+    }
+    DataRes data = 2;
+}

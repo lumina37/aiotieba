@@ -1,5 +1,6 @@
 .*/
 __*/
+*.toml
 *.exe
 *.csv
 *.xlsx
@@ -12,22 +13,20 @@ __*/
 *.md
 *.cmd
 *.jpg
-*.proto
 *.code-workspace
 
-config/
 log/
 charles/
 
 test*
 /*.py
-*.proto
 
 !.github
 !.github/**
-!wikis/**
+!docs/**
+!aiotieba/config_example/**
 
 !README.md
 !requirements.txt
-!admin_listen.py
-!cloud_review_hanime.py
+!cmd_handler.py
+!cloud_review_vtuber.py

@@ -1,0 +1,11 @@
+// protobuf.CommitPersonalMsg.CommitPersonalMsgReqIdl
+syntax = "proto3";
+
+message CommitPersonalMsgReqIdl {
+    message DataReq {
+        int64 toUid = 2;
+        int32 msgType = 3;
+        string content = 4;
+    }
+    DataReq data = 1;
+}

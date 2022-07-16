@@ -1,0 +1,13 @@
+// tbclient.GetDislikeList.GetDislikeListReqIdl
+syntax = "proto3";
+
+import "CommonReq.proto";
+
+message GetDislikeListReqIdl {
+    message DataReq {
+        CommonReq common = 1;
+        int32 pn = 3;
+        int32 rn = 4;
+    }
+    DataReq data = 1;
+}
