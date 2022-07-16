@@ -59,7 +59,6 @@ from typing import (
     Dict,
     Generic,
     Iterable,
-    Iterator,
     List,
     Optional,
     Protocol,
@@ -1155,7 +1154,7 @@ class Fragments(object):
 
         return self._tiebapluses
 
-    def __iter__(self) -> Iterator[_TypeFragment]:
+    def __iter__(self) -> Iterable[_TypeFragment]:
         return iter(self._frags)
 
     def __getitem__(self, idx) -> Union[_TypeFragment, List[_TypeFragment]]:
@@ -1459,7 +1458,7 @@ class _Containers(_DataWrapper, Generic[_TypeDataWrapper]):
     def __repr__(self) -> str:
         return str(self.objs)
 
-    def __iter__(self) -> Iterator[_TypeDataWrapper]:
+    def __iter__(self) -> Iterable[_TypeDataWrapper]:
         return iter(self.objs)
 
     def __getitem__(self, idx) -> Union[_TypeDataWrapper, List[_TypeDataWrapper]]:
