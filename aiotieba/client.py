@@ -94,7 +94,7 @@ class WebsocketResponse(object):
         _data (bytes): 来自websocket的数据
     """
 
-    __slots__ = ['__weakref__', '__dict__', '_timestamp', '_req_id', '_readable_event', '_data']
+    __slots__ = ['__weakref__', '__dict__', '_timestamp', '_req_id', '_data_future']
 
     ws_res_wait_dict: weakref.WeakValueDictionary[int, "WebsocketResponse"] = weakref.WeakValueDictionary()
     _websocket_request_id: int = None
@@ -102,8 +102,7 @@ class WebsocketResponse(object):
     def __init__(self) -> None:
         self._timestamp: int = int(time.time())
         self._req_id = None
-        self._readable_event: asyncio.Event = asyncio.Event()
-        self._data: bytes = None
+        self._data_future: asyncio.Future = asyncio.Future()
 
         self.ws_res_wait_dict[self.req_id] = self
 
@@ -111,7 +110,7 @@ class WebsocketResponse(object):
         return self.req_id
 
     def __eq__(self, obj: "WebsocketResponse"):
-        return self._readable_event is obj._readable_event and self.req_id == obj.req_id
+        return self.req_id == obj.req_id
 
     @property
     def timestamp(self) -> int:
@@ -155,13 +154,13 @@ class WebsocketResponse(object):
         """
 
         try:
-            await asyncio.wait_for(self._readable_event.wait(), timeout)
+            data: bytes = await asyncio.wait_for(self._data_future, timeout)
         except asyncio.TimeoutError:
             del self.ws_res_wait_dict[self.req_id]
             raise asyncio.TimeoutError("Timeout to read")
 
         del self.ws_res_wait_dict[self.req_id]
-        return self._data
+        return data
 
 
 class Client(object):
@@ -649,8 +648,7 @@ class Client(object):
 
                 ws_res = WebsocketResponse.ws_res_wait_dict.get(req_id, None)
                 if ws_res:
-                    ws_res._data = res_bytes
-                    ws_res._readable_event.set()
+                    ws_res._data_future.set_result(res_bytes)
 
         except asyncio.CancelledError:
             return
