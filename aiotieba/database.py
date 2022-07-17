@@ -9,7 +9,7 @@ import aiomysql
 
 from .config import CONFIG
 from .log import LOG
-from .typedef import BasicUserInfo
+from .typedefs import BasicUserInfo
 
 
 class Database(object):

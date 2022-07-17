@@ -12,7 +12,7 @@ import numpy as np
 from .client import Client
 from .database import Database
 from .log import LOG
-from .typedef import BasicUserInfo
+from .typedefs import BasicUserInfo
 
 
 class Reviewer(Client):

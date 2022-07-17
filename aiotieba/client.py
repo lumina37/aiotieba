@@ -56,7 +56,7 @@ from .protobuf import (
     UserPostReqIdl_pb2,
     UserPostResIdl_pb2,
 )
-from .typedef import (
+from .typedefs import (
     Appeals,
     Ats,
     BasicUserInfo,
