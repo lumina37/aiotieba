@@ -28,5 +28,6 @@ test*
 
 !README.md
 !requirements.txt
+!pyproject.toml
 !cmd_handler.py
 !cloud_review_vtuber.py
