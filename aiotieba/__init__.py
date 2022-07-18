@@ -10,7 +10,7 @@ import os
 from .client import *
 from .log import *
 from .reviewer import *
-from .typedef import *
+from .typedefs import *
 
 __version__ = "2.8.1"
 

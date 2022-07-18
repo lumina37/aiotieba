@@ -5,6 +5,7 @@ on:
     branches: [ develop ]
     paths:
       - 'aiotieba/**'
+      - '.github/workflows/**'
   pull_request:
     branches: [ develop ]
 
@@ -20,27 +21,30 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ["3.9", "3.10"]
+        python-version: ['3.9', '3.10']
 
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout
+      uses: actions/checkout@v3
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
+        cache: 'pip'
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        pip install pytest-asyncio
+        pip install -r requirements.txt
 
     - name: Prepare config
       shell: bash
       run: |
-        mv .github/test/test_all.py .
+        mv .github/workflows/tests/test_all.py .
         mkdir config
-        gpg --quiet --batch --yes --decrypt --passphrase=${{ secrets.PASSPHRASE }} --output aiotieba.toml .github/test/aiotieba.toml.gpg
+        gpg --quiet --batch --yes --decrypt --passphrase=${{ secrets.PASSPHRASE }} --output aiotieba.toml .github/workflows/tests/aiotieba.toml.gpg
 
-    - name: Run test
-      run: python test_all.py
+    - name: Run tests
+      run: pytest test_all.py

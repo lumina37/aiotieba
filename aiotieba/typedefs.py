@@ -98,7 +98,7 @@ class _DataWrapper(object):
     raw_data包装器
 
     Attributes:
-        _raw_data (Any): protobuf源数据
+        _raw_data (Any): 源数据
     """
 
     __slots__ = ['_raw_data']
@@ -621,8 +621,9 @@ class FragText(_Fragment):
 
 @runtime_checkable
 class ProtocolText(Protocol):
+    @property
     def text(self) -> str:
-        ...
+        pass
 
 
 class FragEmoji(_Fragment):
@@ -1011,11 +1012,11 @@ class Fragments(object):
     正文内容碎片列表
 
     Attributes:
-        _frags (list[_Fragment]): 所有碎片的混合列表
+        _frags (list[_TypeFragment]): 所有碎片的混合列表
 
         text (str): 文本内容
 
-        texts (list[FragText]): 纯文本碎片列表
+        texts (list[ProtocolText]): 纯文本碎片列表
         emojis (list[FragEmoji]): 表情碎片列表
         imgs (list[FragImage]): 图像碎片列表
         ats (list[FragAt]): @碎片列表
@@ -1445,7 +1446,7 @@ class _Containers(_DataWrapper, Generic[_TypeDataWrapper]):
     约定取内容的通用接口
 
     Attributes:
-        objs (list[_TContainer]): 内容列表
+        objs (list[_TypeDataWrapper]): 内容列表
         has_more (bool): 是否还有下一页
     """
 
@@ -1696,9 +1697,13 @@ class ShareThread(_Container):
 
             if self._raw_data:
                 self._contents = Fragments(self._raw_data.content)
+
                 img_frags = [FragImage(_proto) for _proto in self._raw_data.media]
                 self._contents._frags += img_frags
                 self._contents._imgs += img_frags
+
+                if _protos := self._raw_data.voice:
+                    self._contents._voice = FragVoice(_protos[0])
 
             else:
                 self._contents = Fragments()
