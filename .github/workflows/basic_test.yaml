@@ -36,7 +36,8 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        pip install pytest-asyncio
+        pip install -r requirements.txt
 
     - name: Prepare config
       shell: bash
@@ -46,4 +47,4 @@ jobs:
         gpg --quiet --batch --yes --decrypt --passphrase=${{ secrets.PASSPHRASE }} --output aiotieba.toml .github/workflows/tests/aiotieba.toml.gpg
 
     - name: Run tests
-      run: python test_all.py
+      run: pytest test_all.py
