@@ -12,7 +12,7 @@ from .log import *
 from .reviewer import *
 from .typedefs import *
 
-__version__ = "2.8.1"
+__version__ = "2.8.2_beta"
 
 if os.name == 'posix':
     import signal

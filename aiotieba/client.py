@@ -174,6 +174,10 @@ class Client(object):
         '_BDUSS',
         '_STOKEN',
         '_user',
+        '_tbs',
+        '_client_id',
+        '_cuid',
+        '_cuid_galaxy2',
         '_connector',
         'app',
         'app_proto',
@@ -183,10 +187,6 @@ class Client(object):
         '_ws_password',
         '_ws_aes_chiper',
         '_ws_dispatcher',
-        '_tbs',
-        '_client_id',
-        '_cuid',
-        '_cuid_galaxy2',
     ]
 
     latest_version: ClassVar[str] = "12.26.1.0"  # 这是目前的最新版本
@@ -200,7 +200,12 @@ class Client(object):
         user_dict: Dict[str, str] = CONFIG['User'].get(BDUSS_key, {})
         self.BDUSS = user_dict.get('BDUSS', None)
         self.STOKEN = user_dict.get('STOKEN', None)
+        
         self._user: BasicUserInfo = None
+        self._tbs: str = None
+        self._client_id: str = None
+        self._cuid: str = None
+        self._cuid_galaxy2: str = None
 
         self._connector: aiohttp.TCPConnector = None
         self.app: aiohttp.ClientSession = None
@@ -211,11 +216,6 @@ class Client(object):
         self._ws_password: bytes = None
         self._ws_aes_chiper = None
         self._ws_dispatcher: asyncio.Task = None
-
-        self._tbs: str = None
-        self._client_id: str = None
-        self._cuid: str = None
-        self._cuid_galaxy2: str = None
 
     async def enter(self) -> "Client":
         _trust_env = False
