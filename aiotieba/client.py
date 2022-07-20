@@ -90,8 +90,6 @@ class WebsocketResponse(object):
     Attributes:
         timestamp (int): 请求时间戳
         req_id (int): 唯一的请求id
-        _readable_event (asyncio.Event): 当该事件被set时意味着data已经可读
-        _data (bytes): 来自websocket的数据
     """
 
     __slots__ = ['__weakref__', '__dict__', '_timestamp', '_req_id', '_data_future']
@@ -176,6 +174,10 @@ class Client(object):
         '_BDUSS',
         '_STOKEN',
         '_user',
+        '_tbs',
+        '_client_id',
+        '_cuid',
+        '_cuid_galaxy2',
         '_connector',
         'app',
         'app_proto',
@@ -185,10 +187,6 @@ class Client(object):
         '_ws_password',
         '_ws_aes_chiper',
         '_ws_dispatcher',
-        '_tbs',
-        '_client_id',
-        '_cuid',
-        '_cuid_galaxy2',
     ]
 
     latest_version: ClassVar[str] = "12.26.1.0"  # 这是目前的最新版本
@@ -200,9 +198,14 @@ class Client(object):
     def __init__(self, BDUSS_key: Optional[str] = None) -> None:
         self.BDUSS_key = BDUSS_key
         user_dict: Dict[str, str] = CONFIG['User'].get(BDUSS_key, {})
-        self.BDUSS: str = user_dict.get('BDUSS', None)
-        self.STOKEN: str = user_dict.get('STOKEN', None)
+        self.BDUSS = user_dict.get('BDUSS', None)
+        self.STOKEN = user_dict.get('STOKEN', None)
+        
         self._user: BasicUserInfo = None
+        self._tbs: str = None
+        self._client_id: str = None
+        self._cuid: str = None
+        self._cuid_galaxy2: str = None
 
         self._connector: aiohttp.TCPConnector = None
         self.app: aiohttp.ClientSession = None
@@ -213,11 +216,6 @@ class Client(object):
         self._ws_password: bytes = None
         self._ws_aes_chiper = None
         self._ws_dispatcher: asyncio.Task = None
-
-        self._tbs: str = None
-        self._client_id: str = None
-        self._cuid: str = None
-        self._cuid_galaxy2: str = None
 
     async def enter(self) -> "Client":
         _trust_env = False
@@ -883,7 +881,7 @@ class Client(object):
             user.nick_name = user_dict['show_nickname']
 
             user.gender = gender
-            user.age = float(user_dict['tb_age'])
+            user.age = float(tb_age) if (tb_age := user_dict['tb_age']) != '-' else 0.0
 
             def tb_num2int(tb_num: str) -> int:
                 """
@@ -1553,7 +1551,7 @@ class Client(object):
 
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
-            if not res_json.__contains__('user'):
+            if 'user' not in res_json:
                 raise ValueError("invalid params")
 
         except Exception as err:

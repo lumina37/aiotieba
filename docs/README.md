@@ -21,6 +21,10 @@
 
 云审查教程，还包括实战效果展示与性能测试
 
+## [command_tutorial](command_tutorial.md)
+
+指令管理器使用教程
+
 ## [websocket_reverse_engineering](websocket_reverse_engineering.md)
 
 贴吧APP的逆向攻略

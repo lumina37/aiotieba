@@ -1,6 +1,116 @@
-# aiotieba库入门教程
+# aiotieba使用教程
 
-## 准备知识
+## 命名约定
+
+如果你希望从贴吧后端获取数据，那么你应该对以下字段的含义有一个基本的认识
+
+### BDUSS
+
+> 贴吧的服务端使用`BDUSS`来确认用户身份
+> 
+> `BDUSS`是一串由纯`ascii`字符组成的，长度为`192`的字符串
+> 
+> 使用`BDUSS`可以完成**一切**不需要手机/邮箱验证码的操作，包括**发帖**/**发私信**/**获取账号上的所有历史发言**
+> 
+> `BDUSS`没有时效性，只能通过退出登录或修改密码使其失效
+> 
+> 因此将`BDUSS`泄露给不受信任的人可能导致长期的账号安全风险和隐私泄露风险
+> 
+> 在浏览器的`Cookie`和各种表单参数中你都能看到它的身影
+> 
+> 搜索 `你的浏览器型号`+`如何查看网站的Cookie` 就能知道如何获取你的贴吧账号的`BDUSS`了
+> 
+> 以`Chorme`为例，在任何一个贴吧网页下按<kbd>F12</kbd>调出开发者选项，然后你就能在下图的位置找到它
+
+![Chrome Cookie](https://user-images.githubusercontent.com/48282276/179938990-77139ea2-2d94-4d38-8d7d-9c6a3d99b69e.png)
+
+### user_name
+
+> 用户名
+> 
+> 每个贴吧用户的用户名都是唯一的，但用户可以没有用户名
+> 
+> 请注意将其与可重复的昵称`nick_name`相区分
+> 
+> 在`utf-8`编码下，用户名的长度一般不会超过`14`个字节
+
+### portrait
+
+> 头像ID
+> 
+> 每个贴吧用户都有且仅有一个`portrait`
+> 
+> `portrait`是一串由纯`ascii`字符组成的，以`tb.1.`作为开头的，长度为`33~36`的字符串（仅有一些远古时期的ip账号不符合这个规则）
+> 
+> 譬如我的`portrait`就是`tb.1.8277e641.gUE2cTq4A4z5fi2EHn5k3Q`
+> 
+> 你可以通过`portrait`获取用户头像，例如[我的头像](http://tb.himg.baidu.com/sys/portraith/item/tb.1.8277e641.gUE2cTq4A4z5fi2EHn5k3Q)
+> 
+> 你可以在[client.py](../aiotieba/client.py)中搜索`user.portrait`来查看`portrait`的具体应用场合
+
+### user_id
+
+> 用户ID
+> 
+> 每个贴吧用户都有且仅有一个`user_id`
+> 
+> 请注意将其与用户个人主页的`tieba_uid`相区分
+> 
+> `user_id`是一个`uint64`值（仅有一些远古时期的ip账号不符合这个规则）
+> 
+> 你可以在[client.py](../aiotieba/client.py)中搜索`user.user_id`来查看`user_id`的具体应用场合
+> 
+> `user_name` `portrait` `user_id` 都是满足唯一性的用户标识符，并可以通过其中任意一个的值反查其余两个
+
+### tieba_uid
+
+> 用户个人主页ID
+> 
+> 每个贴吧用户都有且仅有一个`tieba_uid`
+> 
+> 请注意将其与用户的`user_id`相区分
+> 
+> `tieba_uid`是一个`uint64`值（仅有一些远古时期的ip账号不符合这个规则）
+> 
+> 可以通过`tieba_uid`的值反查`user_name` `portrait` `user_id`
+
+### fid
+
+> 吧ID
+> 
+> 每个贴吧都有且仅有一个`fid`
+> 
+> `fid`是一个`uint64`值
+> 
+> 你可以在[client.py](../aiotieba/client.py)中搜索`fid: int`来查看使用了`fid`作为参数的接口
+> 
+> 在贴吧混乱的字段命名中，它在某些场合下会被命名为`forum_id`
+
+### tid
+
+> 主题帖ID
+> 
+> 每个主题帖都有且仅有一个`tid`
+> 
+> `tid`是一个`uint64`值
+> 
+> 你可以在[client.py](../aiotieba/client.py)中搜索`tid: int`来查看使用了`tid`作为参数的接口
+> 
+> 在贴吧混乱的字段命名中，它在某些场合下会被命名为`thread_id`
+
+### pid
+
+> 回复ID
+> 
+> 每个楼层、楼中楼都有且仅有一个`pid`
+> 
+> `pid`是一个`uint64`值
+> 
+> 你可以在[client.py](../aiotieba/client.py)中搜索`pid: int`来查看使用了`pid`作为参数的接口
+> 
+> 在贴吧混乱的字段命名中，它在某些场合下会被命名为`post_id`
+
+## Python异步编程入门
 
 想要用好`aiotieba`库，你必须初步掌握`Python`异步编程
 
@@ -17,15 +127,45 @@
 
 当然即便你没有阅读上面的教程，我也会针对异步编程的初学者为每一行异步代码撰写详细的注释
 
-## 案例1 配置BDUSS
+## 案例1 配置BDUSS并获取账号信息
 
-本例中，你将学会`aiotieba.toml`配置文件的基本填写方法，并使用`aiotieba`库获取贴吧账号的非敏感个人信息
+如果你刚刚已经运行过下列代码
 
-### 步骤1
+```python
+import asyncio
 
-在`aiotieba`文件夹的旁边新建一个`debug.py`文件。当然你也可以在任何一个可以引用到`aiotieba`库的地方新建脚本，又或是另起一个你喜欢的脚本名
+import aiotieba
 
-将下列代码复制到`debug.py`并用`Python`解释器运行
+
+async def main():
+    async with aiotieba.Client() as client:
+        print(await client.get_threads("图拉丁"))
+
+
+asyncio.run(main())
+```
+
+那么你可能注意到了一条日志输出
+
+```log
+<2022-07-16 20:13:54.514> [WARNING] [<module>] 配置文件已生成 请参考[https://github.com/Starry-OvO/Tieba-Manager/blob/master/docs/tutorial.md]完成对./aiotieba.toml的配置
+...
+```
+
+在工作目录下，你能看到自动生成的`aiotieba.toml`配置文件
+
+如果你需要使用账号相关的功能，那么你需要将你的`BDUSS`填入该文件的正确位置
+
+填写完毕的`aiotieba.toml`大概长这样
+
+```toml
+[User]
+
+[User.default]
+BDUSS = "2dNNk1wMXVSZmw2MnpkWDNqMnM4MmFaeFZYNVVPUEhPS0thNFZzUERjME52V1KpSVFBQUFBJCQAAAAAAQAAAAEAAAA0lUwndl9ndWFyZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA0wPmINMD5iY" # 把你的那一串长长的BDUSS放在这
+```
+
+然后复制下列代码并运行
 
 ```python
 import asyncio
@@ -56,7 +196,7 @@ async def main():
         user = await client.get_self_info()
 
     # 将获取的信息打印到日志
-    tb.LOG.info(f"当前用户信息: {user}")
+    tb.LOG.info(f"当前用户信息: {user!r}")
 
 
 # 执行协程main()
@@ -65,32 +205,7 @@ async def main():
 asyncio.run(main())
 ```
 
-然后，你会获得如下结果
-
-```log
-<2022-07-16 20:13:54.514> [WARNING] [<module>] 配置文件已生成 请参考[https://github.com/Starry-OvO/Tieba-Manager/blob/master/docs/tutorial.md]完成对./aiotieba.toml的配置
-<2022-07-16 20:13:54.770> [WARNING] [login] 用户名或密码错误
-<2022-07-16 20:13:54.771> [INFO] [main] 当前用户信息: {'user_id': 0, 'user_name': '', 'portrait': ''}
-```
-
-### 步骤2
-
-此时在工作目录下会自动生成一个`aiotieba.toml`配置文件，将你的`BDUSS`填入该文件的正确位置
-
-`BDUSS`的提取方式请自行搜索[浏览器如何获取BDUSS](https://cn.bing.com/search?q=%E6%B5%8F%E8%A7%88%E5%99%A8%E5%A6%82%E4%BD%95%E8%8E%B7%E5%8F%96BDUSS)
-
-填写完毕的`aiotieba.toml`大概长这样
-
-```toml
-[User]
-
-[User.default]
-BDUSS = "2dNNk1wMXVSZmw2MnpkWDNqMnM4MmFaeFZYNVVPUEhPS0thNFZzUERjME52V1KpSVFBQUFBJCQAAAAAAQAAAAEAAAA0lUwndl9ndWFyZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA0wPmINMD5iY" # 把你的那一串长长的BDUSS放在这
-```
-
-### 步骤3
-
-再次运行`debug.py`，如果你的`BDUSS`填写无误，你就能得到类似这样的用户个人信息
+如果你的`BDUSS`填写无误，你会获得类似下面这样的结果
 
 ```log
 <2022-07-16 20:14:34.597> [INFO] [main] 当前用户信息: {'user_id': 957339815, 'user_name': 'kk不好玩', 'portrait': 'tb.1.8277e641.gUE2cTq4A4z5fi2EHn5k3Q'}
@@ -98,7 +213,7 @@ BDUSS = "2dNNk1wMXVSZmw2MnpkWDNqMnM4MmFaeFZYNVVPUEhPS0thNFZzUERjME52V1KpSVFBQUFB
 
 ## 案例2 简单并发爬虫
 
-将下列代码复制到`debug.py`并运行
+复制下列代码并运行
 
 ```python
 import asyncio
@@ -167,7 +282,7 @@ asyncio.run(main())
 
 ## 案例3 多协程爬虫
 
-将下列代码复制到`debug.py`并运行
+复制下列代码并运行
 
 ```python
 import asyncio
