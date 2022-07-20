@@ -563,7 +563,7 @@
 
 > ***开发者说***
 > 
-> `block`和`delete`的组合，用于提升删封操作效率
+> [`block`](#block--block3--block1-封禁)和[`delete`](#delete-删帖)的组合，用于提升删封操作效率
 
 </details>
 
