@@ -6,109 +6,109 @@
 
 ### BDUSS
 
-贴吧的服务端使用`BDUSS`来确认用户身份
-
-`BDUSS`是一串由纯`ascii`字符组成的，长度为`192`的字符串
-
-使用`BDUSS`可以完成**一切**不需要手机/邮箱验证码的操作，包括**发帖**/**发私信**/**获取账号上的所有历史发言**
-
-`BDUSS`没有时效性，只能通过退出登录或修改密码使其失效
-
-因此将`BDUSS`泄露给不受信任的人可能导致长期的账号安全风险和隐私泄露风险
-
-在浏览器的`Cookie`和各种表单参数中你都能看到它的身影
-
-搜索 `你的浏览器型号`+`如何查看网站的Cookie` 就能知道如何获取你的贴吧账号的`BDUSS`了
-
-以`Chorme`为例，在任何一个贴吧网页下按<kbd>F12</kbd>调出开发者选项，然后你就能在下图的位置找到它
+> 贴吧的服务端使用`BDUSS`来确认用户身份
+> 
+> `BDUSS`是一串由纯`ascii`字符组成的，长度为`192`的字符串
+> 
+> 使用`BDUSS`可以完成**一切**不需要手机/邮箱验证码的操作，包括**发帖**/**发私信**/**获取账号上的所有历史发言**
+> 
+> `BDUSS`没有时效性，只能通过退出登录或修改密码使其失效
+> 
+> 因此将`BDUSS`泄露给不受信任的人可能导致长期的账号安全风险和隐私泄露风险
+> 
+> 在浏览器的`Cookie`和各种表单参数中你都能看到它的身影
+> 
+> 搜索 `你的浏览器型号`+`如何查看网站的Cookie` 就能知道如何获取你的贴吧账号的`BDUSS`了
+> 
+> 以`Chorme`为例，在任何一个贴吧网页下按<kbd>F12</kbd>调出开发者选项，然后你就能在下图的位置找到它
 
 ![Chrome Cookie](https://user-images.githubusercontent.com/48282276/179938990-77139ea2-2d94-4d38-8d7d-9c6a3d99b69e.png)
 
 ### user_name
 
-用户名
-
-每个贴吧用户的用户名都是唯一的，但用户可以没有用户名
-
-请注意将其与可重复的昵称`nick_name`相区分
-
-在`utf-8`编码下，用户名的长度一般不会超过`14`个字节
+> 用户名
+> 
+> 每个贴吧用户的用户名都是唯一的，但用户可以没有用户名
+> 
+> 请注意将其与可重复的昵称`nick_name`相区分
+> 
+> 在`utf-8`编码下，用户名的长度一般不会超过`14`个字节
 
 ### portrait
 
-头像ID
-
-每个贴吧用户都有且仅有一个`portrait`
-
-`portrait`是一串由纯`ascii`字符组成的，以`tb.1.`作为开头的，长度为`33~36`的字符串（仅有一些远古时期的ip账号不符合这个规则）
-
-譬如我的`portrait`就是`tb.1.8277e641.gUE2cTq4A4z5fi2EHn5k3Q`
-
-你可以通过`portrait`获取用户头像，例如[我的头像](http://tb.himg.baidu.com/sys/portraith/item/tb.1.8277e641.gUE2cTq4A4z5fi2EHn5k3Q)
-
-你可以在[client.py](../aiotieba/client.py)中搜索`user.portrait`来查看`portrait`的具体应用场合
+> 头像ID
+> 
+> 每个贴吧用户都有且仅有一个`portrait`
+> 
+> `portrait`是一串由纯`ascii`字符组成的，以`tb.1.`作为开头的，长度为`33~36`的字符串（仅有一些远古时期的ip账号不符合这个规则）
+> 
+> 譬如我的`portrait`就是`tb.1.8277e641.gUE2cTq4A4z5fi2EHn5k3Q`
+> 
+> 你可以通过`portrait`获取用户头像，例如[我的头像](http://tb.himg.baidu.com/sys/portraith/item/tb.1.8277e641.gUE2cTq4A4z5fi2EHn5k3Q)
+> 
+> 你可以在[client.py](../aiotieba/client.py)中搜索`user.portrait`来查看`portrait`的具体应用场合
 
 ### user_id
 
-用户ID
-
-每个贴吧用户都有且仅有一个`user_id`
-
-请注意将其与用户个人主页的`tieba_uid`相区分
-
-`user_id`是一个`uint64`值（仅有一些远古时期的ip账号不符合这个规则）
-
-你可以在[client.py](../aiotieba/client.py)中搜索`user.user_id`来查看`user_id`的具体应用场合
-
-`user_name` `portrait` `user_id` 都是满足唯一性的用户标识符，并可以通过其中任意一个的值反查其余两个
+> 用户ID
+> 
+> 每个贴吧用户都有且仅有一个`user_id`
+> 
+> 请注意将其与用户个人主页的`tieba_uid`相区分
+> 
+> `user_id`是一个`uint64`值（仅有一些远古时期的ip账号不符合这个规则）
+> 
+> 你可以在[client.py](../aiotieba/client.py)中搜索`user.user_id`来查看`user_id`的具体应用场合
+> 
+> `user_name` `portrait` `user_id` 都是满足唯一性的用户标识符，并可以通过其中任意一个的值反查其余两个
 
 ### tieba_uid
 
-用户个人主页ID
-
-每个贴吧用户都有且仅有一个`tieba_uid`
-
-请注意将其与用户的`user_id`相区分
-
-`tieba_uid`是一个`uint64`值（仅有一些远古时期的ip账号不符合这个规则）
-
-可以通过`tieba_uid`的值反查`user_name` `portrait` `user_id`
+> 用户个人主页ID
+> 
+> 每个贴吧用户都有且仅有一个`tieba_uid`
+> 
+> 请注意将其与用户的`user_id`相区分
+> 
+> `tieba_uid`是一个`uint64`值（仅有一些远古时期的ip账号不符合这个规则）
+> 
+> 可以通过`tieba_uid`的值反查`user_name` `portrait` `user_id`
 
 ### fid
 
-吧ID
-
-每个贴吧都有且仅有一个`fid`
-
-`fid`是一个`uint64`值
-
-你可以在[client.py](../aiotieba/client.py)中搜索`fid: int`来查看使用了`fid`作为参数的接口
-
-在贴吧混乱的字段命名中，它在某些场合下会被命名为`forum_id`
+> 吧ID
+> 
+> 每个贴吧都有且仅有一个`fid`
+> 
+> `fid`是一个`uint64`值
+> 
+> 你可以在[client.py](../aiotieba/client.py)中搜索`fid: int`来查看使用了`fid`作为参数的接口
+> 
+> 在贴吧混乱的字段命名中，它在某些场合下会被命名为`forum_id`
 
 ### tid
 
-主题帖ID
-
-每个主题帖都有且仅有一个`tid`
-
-`tid`是一个`uint64`值
-
-你可以在[client.py](../aiotieba/client.py)中搜索`tid: int`来查看使用了`tid`作为参数的接口
-
-在贴吧混乱的字段命名中，它在某些场合下会被命名为`thread_id`
+> 主题帖ID
+> 
+> 每个主题帖都有且仅有一个`tid`
+> 
+> `tid`是一个`uint64`值
+> 
+> 你可以在[client.py](../aiotieba/client.py)中搜索`tid: int`来查看使用了`tid`作为参数的接口
+> 
+> 在贴吧混乱的字段命名中，它在某些场合下会被命名为`thread_id`
 
 ### pid
 
-回复ID
-
-每个楼层、楼中楼都有且仅有一个`pid`
-
-`pid`是一个`uint64`值
-
-你可以在[client.py](../aiotieba/client.py)中搜索`pid: int`来查看使用了`pid`作为参数的接口
-
-在贴吧混乱的字段命名中，它在某些场合下会被命名为`post_id`
+> 回复ID
+> 
+> 每个楼层、楼中楼都有且仅有一个`pid`
+> 
+> `pid`是一个`uint64`值
+> 
+> 你可以在[client.py](../aiotieba/client.py)中搜索`pid: int`来查看使用了`pid`作为参数的接口
+> 
+> 在贴吧混乱的字段命名中，它在某些场合下会被命名为`post_id`
 
 ## Python异步编程入门
 
@@ -129,7 +129,7 @@
 
 ## 案例1 配置BDUSS并获取账号信息
 
-如果你刚刚已经运行了下列代码
+如果你刚刚已经运行过下列代码
 
 ```python
 import asyncio
