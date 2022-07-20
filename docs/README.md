@@ -23,7 +23,7 @@
 
 ## [command_tutorial](command_tutorial.md)
 
-指令管理器教程
+指令管理器使用教程
 
 ## [websocket_reverse_engineering](websocket_reverse_engineering.md)
 
