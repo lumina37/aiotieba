@@ -14,26 +14,26 @@
 
 > 发现一个违规主题帖
 
-<img width="35%" alt="1_1" src="https://user-images.githubusercontent.com/48282276/171667469-6a70703e-08ca-4df7-aa7a-de5cb8b11e40.jpg">
+<img width="40%" alt="1_1" src="https://user-images.githubusercontent.com/48282276/171667469-6a70703e-08ca-4df7-aa7a-de5cb8b11e40.jpg">
 
 > 先`@v_guard`并确保@变蓝
 
-<img width="35%" alt="1_2" src="https://user-images.githubusercontent.com/48282276/171667750-0cde4816-c755-4565-9d22-e1688a563dd7.jpg">
+<img width="40%" alt="1_2" src="https://user-images.githubusercontent.com/48282276/171667750-0cde4816-c755-4565-9d22-e1688a563dd7.jpg">
 
 > 再输入<br>
 > **指令类型**: `drop`<br>
 > **参数1**: `test1234` (封禁理由)<br>
 > 并发布回复
 
-<img width="35%" alt="1_3_1" src="https://user-images.githubusercontent.com/48282276/171667893-68643002-8abb-47a1-87d6-72090c8f5a41.jpg">
+<img width="40%" alt="1_3_1" src="https://user-images.githubusercontent.com/48282276/171667893-68643002-8abb-47a1-87d6-72090c8f5a41.jpg">
 
-<img width="35%" alt="1_3_2" src="https://user-images.githubusercontent.com/48282276/171670836-2a575815-be7f-45fe-8f3c-a5b32e57e10a.jpg">
+<img width="40%" alt="1_3_2" src="https://user-images.githubusercontent.com/48282276/171670836-2a575815-be7f-45fe-8f3c-a5b32e57e10a.jpg">
 
 > 指令生效<br>
 > 主题帖被删除<br>
 > 楼主`v_guard`被封十天
 
-<img width="100%" alt="1_4_1" src="https://user-images.githubusercontent.com/48282276/171667952-fec55cfc-1a65-426a-8b2f-7941f626a441.png">
+<img width="80%" alt="1_4_1" src="https://user-images.githubusercontent.com/48282276/171667952-fec55cfc-1a65-426a-8b2f-7941f626a441.png">
 
 <img width="80%" alt="1_4_2" src="https://user-images.githubusercontent.com/48282276/171668105-2d4115c8-e63a-447d-a827-42159477658e.png">
 
@@ -43,7 +43,7 @@
 
 > 先在目标用户的个人主页复制包含其`tieba_uid`的字符串
 
-<img width="35%" alt="2_1" src="https://user-images.githubusercontent.com/48282276/160992857-c4f29b1c-1b46-4074-b1c5-b6f83a62de46.jpg">
+<img width="40%" alt="2_1" src="https://user-images.githubusercontent.com/48282276/160992857-c4f29b1c-1b46-4074-b1c5-b6f83a62de46.jpg">
 
 > 在这个吧的任何位置拉起一个回复框<br>
 > 先`@v_guard`并确保@变蓝<br>
@@ -52,7 +52,7 @@
 > **参数1**: `刚刚复制的那坨东西` (用户id: 包含tieba_uid的字符串)<br>
 > 点击回复
 
-<img width="35%" alt="2_2" src="https://user-images.githubusercontent.com/48282276/160992862-341c666c-5a45-40f2-ab75-ab098b456235.jpg">
+<img width="40%" alt="2_2" src="https://user-images.githubusercontent.com/48282276/160992862-341c666c-5a45-40f2-ab75-ab098b456235.jpg">
 
 > 指令生效<br>
 > `tieba_uid=316431307`的用户`kk不好玩`被封十天
@@ -67,7 +67,7 @@
 > **指令类型**: `drop3`<br>
 > 点击回复
 
-<img width="35%" alt="3_1" src="https://user-images.githubusercontent.com/48282276/160995393-903511ae-9ec3-4055-890e-e144a7540fac.jpg">
+<img width="40%" alt="3_1" src="https://user-images.githubusercontent.com/48282276/160995393-903511ae-9ec3-4055-890e-e144a7540fac.jpg">
 
 > 指令生效<br>
 > 楼层被删<br>
@@ -83,7 +83,7 @@
 > 每个用户都有唯一的`portrait`<br>
 > 把它复制出来
 
-<img width="100%" alt="4_1" src="https://user-images.githubusercontent.com/48282276/160996223-8afa7be5-1051-4cdd-9d4c-0e05044774e9.png">
+<img width="80%" alt="4_1" src="https://user-images.githubusercontent.com/48282276/160996223-8afa7be5-1051-4cdd-9d4c-0e05044774e9.png">
 
 > 在这个吧的任何位置拉起一个回复框<br>
 > 先`@v_guard`并确保@变蓝<br>
@@ -92,12 +92,12 @@
 > **参数1**: `刚刚复制的那坨东西` (用户id: portrait)<br>
 > 点击回复
 
-<img width="100%" alt="4_2" src="https://user-images.githubusercontent.com/48282276/160996234-67fb1940-9276-4069-8eb7-c67f532620d5.png">
+<img width="80%" alt="4_2" src="https://user-images.githubusercontent.com/48282276/160996234-67fb1940-9276-4069-8eb7-c67f532620d5.png">
 
 > 指令生效<br>
 > `portrait=tb.1.8277e641.gUE2cTq4A4z5fi2EHn5k3Q`的用户`kk不好玩`被解封
 
-<img width="100%" alt="4_3" src="https://user-images.githubusercontent.com/48282276/160996957-66f0976a-976a-42f4-8166-2d461561c45a.png">
+<img width="80%" alt="4_3" src="https://user-images.githubusercontent.com/48282276/160996957-66f0976a-976a-42f4-8166-2d461561c45a.png">
 
 ## 总结使用方法
 
@@ -113,7 +113,7 @@
 @v_guard block 李彦宏 封禁测试
 ```
 
-中，`block`表示**指令类型**，`李彦宏`为**参数1** (待封禁用户的id: 用户名)，封禁测试为**参数2** (可选的封禁理由)
+中，`block`表示**指令类型**，`李彦宏`为**参数1** (待封禁用户的id: 用户名)，`封禁测试`为**参数2** (可选的封禁理由)
 
 需要注意的是一定要使@信息变蓝，才能确保监听账号`v_guard`收到指令请求
 
