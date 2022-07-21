@@ -41,7 +41,7 @@
 
 ## 如何在app不依赖任何现有发言封禁任意用户十天
 
-> 先在目标用户的个人主页复制包含其`tieba_uid`的字符串
+> 先在目标用户的个人主页复制包含其[`tieba_uid`](tutorial.md#tieba_uid)的字符串
 
 <img width="40%" alt="2_1" src="https://user-images.githubusercontent.com/48282276/160992857-c4f29b1c-1b46-4074-b1c5-b6f83a62de46.jpg">
 
@@ -115,9 +115,9 @@
 
 中，`block`表示**指令类型**，`李彦宏`为**参数1** (待封禁用户的id: 用户名)，`封禁测试`为**参数2** (可选的封禁理由)
 
-需要注意的是一定要使@信息变蓝，才能确保监听账号`v_guard`收到指令请求
+需要注意的是一定要使@变蓝，才能确保监听账号`v_guard`收到指令请求
 
-若你的指令完全执行成功，指令会被删除并进入吧务后台供其他吧务或吧友（如果这个吧应用了[`公开后台`](https://github.com/n0099/vtop)）监督
+若你的指令完全执行成功，指令会被删除并进入吧务后台供其他吧务监督
 
 ## 权限级别说明
 
@@ -519,7 +519,7 @@
 
 > ***参数说明***
 > 
-> `id`: `用户名`或`portrait`或包含`tieba_uid`的字符串或包含`user_id`的字符串
+> `id`: [`用户名`](tutorial.md#user_name)或[`portrait`](tutorial.md#portrait)或包含[`tieba_uid`](tutorial.md#tieba_uid)的字符串或包含[`user_id`](tutorial.md#user_id)的字符串
 
 > ***能使用该指令的最低权限级别***
 > 
@@ -584,7 +584,7 @@
 
 > ***参数说明***
 > 
-> `id`: `用户名`或`portrait`或包含`tieba_uid`的字符串或包含`user_id`的字符串<br>
+> `id`: [`用户名`](tutorial.md#user_name)或[`portrait`](tutorial.md#portrait)或包含[`tieba_uid`](tutorial.md#tieba_uid)的字符串或包含[`user_id`](tutorial.md#user_id)的字符串<br>
 > `note`: 可选参数，操作理由，方便日后查阅
 
 > ***能使用该指令的最低权限级别***
@@ -615,7 +615,7 @@
 
 > ***参数说明***
 > 
-> `id`: `用户名`或`portrait`或包含`tieba_uid`的字符串或包含`user_id`的字符串<br>
+> `id`: [`用户名`](tutorial.md#user_name)或[`portrait`](tutorial.md#portrait)或包含[`tieba_uid`](tutorial.md#tieba_uid)的字符串或包含[`user_id`](tutorial.md#user_id)的字符串<br>
 > `note`: 可选参数，操作理由，方便日后查阅
 
 > ***能使用该指令的最低权限级别***
@@ -645,7 +645,7 @@
 
 > ***参数说明***
 > 
-> `id`: `用户名`或`portrait`或包含`tieba_uid`的字符串或包含`user_id`的字符串
+> `id`: [`用户名`](tutorial.md#user_name)或[`portrait`](tutorial.md#portrait)或包含[`tieba_uid`](tutorial.md#tieba_uid)的字符串或包含[`user_id`](tutorial.md#user_id)的字符串
 
 > ***能使用该指令的最低权限级别***
 > 
@@ -697,7 +697,7 @@
 
 > ***参数说明***
 > 
-> `id`: `用户名`或`portrait`或包含`tieba_uid`的字符串或包含`user_id`的字符串<br>
+> `id`: [`用户名`](tutorial.md#user_name)或[`portrait`](tutorial.md#portrait)或包含[`tieba_uid`](tutorial.md#tieba_uid)的字符串或包含[`user_id`](tutorial.md#user_id)的字符串<br>
 > `permission`: 目标用户的新权限级别<br>
 > `note`: 可选参数，操作理由，方便日后查阅
 > 
@@ -738,7 +738,7 @@ record_time: 2022-04-13 10:20:22
 
 > ***参数说明***
 > 
-> `id`: `用户名`或`portrait`或包含`tieba_uid`的字符串或包含`user_id`的字符串
+> `id`: [`用户名`](tutorial.md#user_name)或[`portrait`](tutorial.md#portrait)或包含[`tieba_uid`](tutorial.md#tieba_uid)的字符串或包含[`user_id`](tutorial.md#user_id)的字符串
 
 > ***能使用该指令的最低权限级别***
 > 
@@ -889,7 +889,7 @@ floor=4 num=四楼票数(第二高)
 
 > ***参数说明***
 > 
-> `id`: `用户名`或`portrait`或包含`tieba_uid`的字符串或包含`user_id`的字符串
+> `id`: [`用户名`](tutorial.md#user_name)或[`portrait`](tutorial.md#portrait)或包含[`tieba_uid`](tutorial.md#tieba_uid)的字符串或包含[`user_id`](tutorial.md#user_id)的字符串
 
 > ***能使用该指令的最低权限级别***
 > 
@@ -917,7 +917,7 @@ floor=4 num=四楼票数(第二高)
 
 > ***参数说明***
 > 
-> `id`: `用户名`或`portrait`或包含`tieba_uid`的字符串或包含`user_id`的字符串
+> `id`: [`用户名`](tutorial.md#user_name)或[`portrait`](tutorial.md#portrait)或包含[`tieba_uid`](tutorial.md#tieba_uid)的字符串或包含[`user_id`](tutorial.md#user_id)的字符串
 
 > ***能使用该指令的最低权限级别***
 > 
@@ -941,7 +941,7 @@ floor=4 num=四楼票数(第二高)
 
 > ***功能***
 > 
-> 将指令所在主题帖标记为无关水，并立即**临时屏蔽**。需要与`water_restrict` `unwater`指令配合<br>
+> 将指令所在主题帖标记为无关水，并立即**临时屏蔽**。需要与[`water_restrict`](#water_restrict-设置限水状态) [`unwater`](#unwater-清除无关水标记)指令配合<br>
 > 被标记为无关水的主题帖，会在**云审查工具**进入无关水管制状态后被自动**临时屏蔽**<br>
 > 在特定事件（如：赛事、直播、Breaking News）发生时，吧务可用该指令临时管制版面上的无关水帖
 
@@ -965,8 +965,8 @@ floor=4 num=四楼票数(第二高)
 
 > ***功能***
 > 
-> 清除指令所在主题帖的无关水标记，并立刻解除**临时屏蔽**。需要与`water_restrict` `water`指令配合<br>
-> 该指令用于回滚`water`指令已产生的任何效果
+> 清除指令所在主题帖的无关水标记，并立刻解除**临时屏蔽**。需要与[`water_restrict`](#water_restrict-设置限水状态) [`water`](#water-标记无关水)指令配合<br>
+> 该指令用于回滚[`water`](#water-标记无关水)指令已产生的任何效果
 
 > ***能使用该指令的最低权限级别***
 > 
@@ -985,7 +985,7 @@ floor=4 num=四楼票数(第二高)
 > ***功能***
 > 
 > 需要配合**云审查工具**才能产生效果<br>
-> 命令**云审查工具**进入或退出无关水管制模式。需要与`water` `unwater`指令配合
+> 命令**云审查工具**进入或退出无关水管制模式。需要与[`water`](#water-标记无关水) [`unwater`](#unwater-清除无关水标记)指令配合
 
 > ***参数说明***
 > 
@@ -1017,7 +1017,7 @@ floor=4 num=四楼票数(第二高)
 
 > ***功能***
 > 
-> 如果某个吧务目前有空管事，他可以使用`active`指令将自己移动到活跃吧务队列的最前端，这样当吧友使用`holyshit`指令时就会优先召唤他
+> 如果某个吧务目前有空管事，他可以使用`active`指令将自己移动到活跃吧务队列的最前端，这样当吧友使用[`holyshit`](#holyshit-召唤吧务)指令时就会优先召唤他
 
 > ***能使用该指令的最低权限级别***
 > 
