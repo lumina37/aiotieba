@@ -564,7 +564,7 @@ class Listener(object):
 
         tb.LOG.info(f"forum={ctx.fname} user={user} old_note={old_note}")
 
-        if await ctx.handler.admin.add_user_id(user.user_id, -5, ctx.note):
+        if await ctx.handler.admin.add_user_id(user.user_id, permission=-5, note=ctx.note):
             await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=3, need_arg_num=1)
@@ -584,7 +584,7 @@ class Listener(object):
 
         tb.LOG.info(f"forum={ctx.fname} user={user} old_note={old_note}")
 
-        if await ctx.handler.admin.add_user_id(user.user_id, 1, ctx.note):
+        if await ctx.handler.admin.add_user_id(user.user_id, permission=1, note=ctx.note):
             await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=3, need_arg_num=1)
@@ -650,7 +650,7 @@ class Listener(object):
             old_permission, old_note, _ = await ctx.handler.admin.get_user_id_full(ctx.parent.user.user_id)
             if old_permission < ctx.this_permission:
                 tb.LOG.info(f"Try to black {ctx.parent.user} in {ctx.fname}. old_note:{old_note}")
-                coros.append(ctx.handler.admin.add_user_id(ctx.parent.user.user_id, -5, ctx.note))
+                coros.append(ctx.handler.admin.add_user_id(ctx.parent.user.user_id, permission=-5, note=ctx.note))
 
         await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
         await asyncio.gather(*coros)
@@ -676,7 +676,7 @@ class Listener(object):
 
         tb.LOG.info(f"Try to set {user} in {ctx.fname}. old_note:{old_note}")
 
-        if await ctx.handler.admin.add_user_id(user.user_id, new_permission, ctx.note):
+        if await ctx.handler.admin.add_user_id(user.user_id, permission=new_permission, note=ctx.note):
             await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=0, need_arg_num=1)
@@ -936,7 +936,7 @@ class Listener(object):
 
         tb.LOG.info(f"{ctx.log_name}: {ctx.text} in tid: {ctx.tid}")
 
-        if await ctx.handler.admin.add_user_id(ctx.user_id, ctx.this_permission, "cmd_active"):
+        if await ctx.handler.admin.add_user_id(ctx.user_id, permission=ctx.this_permission, note="cmd_active"):
             await ctx.handler.admin.del_post(ctx.fname, ctx.tid, ctx.pid)
 
     @check_permission(need_permission=1, need_arg_num=0)

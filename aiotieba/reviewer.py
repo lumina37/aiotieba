@@ -238,7 +238,7 @@ class Reviewer(Client):
 
         return await self.database.get_tid_list(self.fname, tag=1, limit=limit, offset=offset)
 
-    async def add_user_id(self, user_id: int, permission: int = 0, note: str = '') -> bool:
+    async def add_user_id(self, /, user_id: int, *, permission: int = 0, note: str = '') -> bool:
         """
         将user_id添加到表user_id_{fname}
 
