@@ -37,8 +37,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pytest-asyncio
-        pip install -r requirements.txt
+        pip install -r .github/workflows/requirements_test.txt
 
     - name: Prepare config
       shell: bash
