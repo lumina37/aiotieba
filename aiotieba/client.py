@@ -200,7 +200,7 @@ class Client(object):
         user_dict: Dict[str, str] = CONFIG['User'].get(BDUSS_key, {})
         self.BDUSS = user_dict.get('BDUSS', None)
         self.STOKEN = user_dict.get('STOKEN', None)
-        
+
         self._user: BasicUserInfo = None
         self._tbs: str = None
         self._client_id: str = None

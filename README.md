@@ -2,7 +2,7 @@
 
 # Tieba-Manager
 
-[![gitee](https://img.shields.io/badge/mirror-gitee-red)](https://gitee.com/Starry-OvO/Tieba-Manager)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/Starry-OvO/Tieba-Manager/CI?label=CI&logo=github)](https://github.com/Starry-OvO/Tieba-Manager/actions)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/Starry-OvO/Tieba-Manager?logo=lgtm)](https://lgtm.com/projects/g/Starry-OvO/Tieba-Manager/context:python)
 [![Code style: black](https://img.shields.io/badge/code_style-black-000000)](https://github.com/psf/black)
 
@@ -75,24 +75,24 @@ asyncio.run(main())
 
 ## 客户名单
 
-2022.07.22更新
+2022.07.23更新
 
 |      吧名      | 关注用户数 | 最近29天日均访问量 | 日均主题帖数 | 日均回复数 |
 | :------------: | :--------: | :----------------: | :----------: | :--------: |
-|    抗压背锅    | 3,813,406  |     1,064,757      |    3,037     |   79,190   |
-|     孙笑川     | 2,117,653  |      602,511       |    6,799     |  177,652   |
-|    lol半价     | 1,951,965  |      163,064       |     542      |   10,183   |
-|      宫漫      | 1,287,342  |       47,223       |     254      |   3,574    |
-|    新孙笑川    |  258,377   |       43,793       |     412      |   15,742   |
-|     vtuber     |  209,475   |       27,556       |     214      |   2,336    |
-|     asoul      |  159,132   |       41,933       |     446      |   3,502    |
-|      嘉然      |   55,158   |       20,262       |     162      |   2,212    |
-|      向晚      |   28,262   |       17,983       |     175      |   2,461    |
-|      贝拉      |   21,597   |       15,130       |      92      |   1,725    |
-|      乃琳      |   16,759   |       5,506        |      40      |    556     |
-| vtuber自由讨论 |   16,537   |       2,649        |      3       |     70     |
-| asoul一个魂儿  |   14,938   |       1,801        |      23      |    215     |
-|     贝贝珈     |   1,657    |       1,325        |      5       |     55     |
+|    抗压背锅    | 3,819,939  |     1,058,028      |    2,971     |   78,315   |
+|     孙笑川     | 2,124,541  |      603,877       |    6,850     |  177,806   |
+|    lol半价     | 1,952,239  |      162,571       |     541      |   10,134   |
+|      宫漫      | 1,288,426  |       47,412       |     256      |   3,580    |
+|    新孙笑川    |  259,456   |       44,586       |     416      |   16,020   |
+|     vtuber     |  209,553   |       29,418       |     230      |   2,475    |
+|     asoul      |  159,093   |       37,662       |     414      |   3,022    |
+|      嘉然      |   55,170   |       19,895       |     157      |   2,134    |
+|      向晚      |   28,289   |       17,891       |     175      |   2,432    |
+|      贝拉      |   21,600   |       14,991       |      91      |   1,705    |
+|      乃琳      |   16,773   |       5,472        |      39      |    545     |
+| vtuber自由讨论 |   16,538   |       2,675        |      3       |     70     |
+| asoul一个魂儿  |   14,930   |       1,753        |      21      |    209     |
+|     贝贝珈     |   1,657    |       1,305        |      4       |     51     |
 
 ## 友情链接
 
