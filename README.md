@@ -1,6 +1,6 @@
 <div align="center">
 
-![Tieba-Manager](https://socialify.git.ci/Starry-OvO/Tieba-Manager/image?font=Bitter&forks=1&logo=http%3A%2F%2Ftb.himg.baidu.com%2Fsys%2Fportraith%2Fitem%2Ftb.1.8277e641.gUE2cTq4A4z5fi2EHn5k3Q&name=1&owner=1&pattern=Circuit%20Board&stargazers=1&theme=Dark)
+![Tieba-Manager](https://socialify.git.ci/Starry-OvO/Tieba-Manager/image?font=Bitter&forks=1&language=1&logo=https%3A%2F%2Favatars.githubusercontent.com%2Fu%2F48282276&name=1&owner=1&pattern=Circuit%20Board&stargazers=1&theme=Dark)
 
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/Starry-OvO/Tieba-Manager/CI?label=CI&logo=github)](https://github.com/Starry-OvO/Tieba-Manager/actions)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/Starry-OvO/Tieba-Manager?logo=lgtm)](https://lgtm.com/projects/g/Starry-OvO/Tieba-Manager/context:python)
