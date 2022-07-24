@@ -20,7 +20,7 @@ class Database(object):
     __slots__ = ['_db_name', '_pool_recycle', '_pool']
 
     def __init__(self) -> None:
-        self._db_name: str = CONFIG['Database'].get('db', 'tieba_cloud_review')
+        self._db_name: str = CONFIG['Database'].get('db', 'aiotieba')
         self._pool_recycle: int = CONFIG['Database'].get('pool_recycle', 28800)
         self._pool: aiomysql.Pool = None
 
@@ -49,12 +49,12 @@ class Database(object):
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.close()
 
-    async def init_database(self, fnames: List[str]) -> None:
+    async def init_database(self, fnames: Optional[List[str]] = None) -> None:
         """
         初始化各个fname对应贴吧的数据库
 
         Args:
-            fnames (list[str]): 贴吧名列表
+            fnames (list[str], optional): 贴吧名列表
         """
 
         conn: aiomysql.Connection = await aiomysql.connect(autocommit=True, **CONFIG['Database'])
@@ -71,14 +71,16 @@ class Database(object):
             **CONFIG['Database'],
         )
 
-        for fname in fnames:
-            await asyncio.gather(
-                self._create_table_id(fname),
-                self._create_table_user_id(fname),
-                self._create_table_imghash(fname),
-                self._create_table_tid(fname),
-            )
+        if fnames:
+            for fname in fnames:
+                await asyncio.gather(
+                    self._create_table_id(fname),
+                    self._create_table_user_id(fname),
+                    self._create_table_imghash(fname),
+                    self._create_table_tid(fname),
+                )
         await asyncio.gather(self._create_table_forum(), self._create_table_user())
+
         await conn.ensure_closed()
 
     async def _create_table_forum(self) -> None:
