@@ -115,7 +115,7 @@ class BasicUserInfo(_DataWrapper):
     基本用户属性
 
     Args:
-        _id (str | int, optional): 用于快速构造UserInfo的自适应参数 输入用户名/portrait/user_id
+        _id (str | int, optional): 用于快速构造BasicUserInfo的自适应参数 输入用户名/portrait/user_id
         _raw_data (User_pb2.User): protobuf源数据
 
     Attributes:
