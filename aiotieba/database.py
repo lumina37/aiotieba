@@ -14,7 +14,7 @@ from .typedefs import BasicUserInfo
 
 class Database(object):
     """
-    提供与MySQL交互的方法
+    MySQL方法封装
     """
 
     __slots__ = ['_db_name', '_pool_recycle', '_pool']
@@ -28,7 +28,7 @@ class Database(object):
         try:
             self._pool: aiomysql.Pool = await aiomysql.create_pool(
                 minsize=0,
-                maxsize=8,
+                maxsize=16,
                 pool_recycle=self._pool_recycle,
                 db=self._db_name,
                 autocommit=True,
@@ -54,7 +54,7 @@ class Database(object):
         初始化各个fname对应贴吧的数据库
 
         Args:
-            fnames (list[str], optional): 贴吧名列表
+            fnames (list[str], optional): 贴吧名列表. Defaults to None.
         """
 
         conn: aiomysql.Connection = await aiomysql.connect(autocommit=True, **CONFIG['Database'])

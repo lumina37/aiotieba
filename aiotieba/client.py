@@ -193,7 +193,7 @@ class Client(object):
     no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
     post_version: ClassVar[str] = "9.1.0.0"  # 发帖使用极速版
 
-    fid_dict: ClassVar[Dict[str, int]] = {}
+    _fname2fid: ClassVar[Dict[str, int]] = {}
 
     def __init__(self, BDUSS_key: Optional[str] = None) -> None:
         self.BDUSS_key = BDUSS_key
@@ -467,11 +467,9 @@ class Client(object):
             )
         }
         payload = aiohttp.BytesPayload(req_bytes, content_type='', headers=payload_headers)
+        payload.headers.popone(aiohttp.hdrs.CONTENT_TYPE)
         writer.append_payload(payload)
-
-        # 删除无用参数
-        writer._parts[0][0]._headers.popone(aiohttp.hdrs.CONTENT_TYPE)
-        writer._parts[0][0]._headers.popone(aiohttp.hdrs.CONTENT_LENGTH)
+        writer._parts[0][0].headers.popone(aiohttp.hdrs.CONTENT_LENGTH)
 
         return writer
 
@@ -571,15 +569,15 @@ class Client(object):
 
         return ws_bytes, cmd, req_id
 
-    async def _create_websocket(self, heartbeat: Optional[float] = None) -> bool:
+    async def _create_websocket(self, heartbeat: Optional[float] = None) -> None:
         """
         建立weboscket连接
 
         Args:
             heartbeat (float, optional): 是否定时ping. Defaults to None.
 
-        Returns:
-            bool: 连接是否成功
+        Raises:
+            aiohttp.WSServerHandshakeError: websocket握手失败
         """
 
         if self._app_websocket is None:
@@ -588,17 +586,10 @@ class Client(object):
         if self._ws_dispatcher is not None and not self._ws_dispatcher.cancelled():
             self._ws_dispatcher.cancel()
 
-        try:
-            self.websocket = await self._app_websocket._ws_connect(
-                yarl.URL.build(scheme="ws", host="im.tieba.baidu.com", port=8000), heartbeat=heartbeat, ssl=False
-            )
-            self._ws_dispatcher = asyncio.create_task(self._ws_dispatch(), name="ws_dispatcher")
-
-        except Exception as err:
-            LOG.warning(err)
-            return False
-
-        return True
+        self.websocket = await self._app_websocket._ws_connect(
+            yarl.URL.build(scheme="ws", host="im.tieba.baidu.com", port=8000), heartbeat=heartbeat, ssl=False
+        )
+        self._ws_dispatcher = asyncio.create_task(self._ws_dispatch(), name="ws_dispatcher")
 
     @property
     def is_ws_aviliable(self) -> bool:
@@ -655,43 +646,40 @@ class Client(object):
         """
         初始化weboscket连接对象并发送初始化信息
 
+        Raises:
+            ValueError: 服务端返回错误
+
         Returns:
             bool: 操作是否成功
         """
 
         if not self.is_ws_aviliable:
-            try:
-                if not await self._create_websocket():
-                    return False
+            await self._create_websocket()
 
-                pub_key_bytes = base64.b64decode(
-                    "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwQpwBZxXJV/JVRF/uNfyMSdu7YWwRNLM8+2xbniGp2iIQHOikPpTYQjlQgMi1uvq1kZpJ32rHo3hkwjy2l0lFwr3u4Hk2Wk7vnsqYQjAlYlK0TCzjpmiI+OiPOUNVtbWHQiLiVqFtzvpvi4AU7C1iKGvc/4IS45WjHxeScHhnZZ7njS4S1UgNP/GflRIbzgbBhyZ9kEW5/OO5YfG1fy6r4KSlDJw4o/mw5XhftyIpL+5ZBVBC6E1EIiP/dd9AbK62VV1PByfPMHMixpxI3GM2qwcmFsXcCcgvUXJBa9k6zP8dDQ3csCM2QNT+CQAOxthjtp/TFWaD7MzOdsIYb3THwIDAQAB".encode(
-                        'ascii'
-                    )
+            pub_key_bytes = base64.b64decode(
+                "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwQpwBZxXJV/JVRF/uNfyMSdu7YWwRNLM8+2xbniGp2iIQHOikPpTYQjlQgMi1uvq1kZpJ32rHo3hkwjy2l0lFwr3u4Hk2Wk7vnsqYQjAlYlK0TCzjpmiI+OiPOUNVtbWHQiLiVqFtzvpvi4AU7C1iKGvc/4IS45WjHxeScHhnZZ7njS4S1UgNP/GflRIbzgbBhyZ9kEW5/OO5YfG1fy6r4KSlDJw4o/mw5XhftyIpL+5ZBVBC6E1EIiP/dd9AbK62VV1PByfPMHMixpxI3GM2qwcmFsXcCcgvUXJBa9k6zP8dDQ3csCM2QNT+CQAOxthjtp/TFWaD7MzOdsIYb3THwIDAQAB".encode(
+                    'ascii'
                 )
-                pub_key = RSA.import_key(pub_key_bytes)
-                rsa_chiper = PKCS1_v1_5.new(pub_key)
+            )
+            pub_key = RSA.import_key(pub_key_bytes)
+            rsa_chiper = PKCS1_v1_5.new(pub_key)
 
-                data_proto = UpdateClientInfoReqIdl_pb2.UpdateClientInfoReqIdl.DataReq()
-                data_proto.bduss = self.BDUSS
-                data_proto.device = f"""{{"subapp_type":"mini","_client_version":"{self.post_version}","pversion":"1.0.3","_msg_status":"1","_phone_imei":"000000000000000","from":"1021099l","cuid_galaxy2":"{self.cuid_galaxy2}","model":"LIO-AN00","_client_type":"2"}}"""
-                data_proto.secretKey = rsa_chiper.encrypt(self.ws_password)
-                req_proto = UpdateClientInfoReqIdl_pb2.UpdateClientInfoReqIdl()
-                req_proto.data.CopyFrom(data_proto)
-                req_proto.cuid = f"{self.cuid}|com.baidu.tieba_mini{self.post_version}"
+            data_proto = UpdateClientInfoReqIdl_pb2.UpdateClientInfoReqIdl.DataReq()
+            data_proto.bduss = self.BDUSS
+            data_proto.device = f"""{{"subapp_type":"mini","_client_version":"{self.post_version}","pversion":"1.0.3","_msg_status":"1","_phone_imei":"000000000000000","from":"1021099l","cuid_galaxy2":"{self.cuid_galaxy2}","model":"LIO-AN00","_client_type":"2"}}"""
+            data_proto.secretKey = rsa_chiper.encrypt(self.ws_password)
+            req_proto = UpdateClientInfoReqIdl_pb2.UpdateClientInfoReqIdl()
+            req_proto.data.CopyFrom(data_proto)
+            req_proto.cuid = f"{self.cuid}|com.baidu.tieba_mini{self.post_version}"
 
-                resp = await self.send_ws_bytes(
-                    req_proto.SerializeToString(), cmd=1001, need_gzip=False, need_encrypt=False
-                )
+            resp = await self.send_ws_bytes(
+                req_proto.SerializeToString(), cmd=1001, need_gzip=False, need_encrypt=False
+            )
 
-                res_proto = UpdateClientInfoResIdl_pb2.UpdateClientInfoResIdl()
-                res_proto.ParseFromString(await resp.read(timeout=5))
-                if int(res_proto.error.errorno):
-                    raise ValueError(res_proto.error.errmsg)
-
-            except Exception as err:
-                LOG.warning(err)
-                return False
+            res_proto = UpdateClientInfoResIdl_pb2.UpdateClientInfoResIdl()
+            res_proto.ParseFromString(await resp.read(timeout=5))
+            if int(res_proto.error.errorno):
+                raise ValueError(res_proto.error.errmsg)
 
         return True
 
@@ -768,7 +756,7 @@ class Client(object):
             int: 该贴吧的forum_id
         """
 
-        if fid := self.fid_dict.get(fname, 0):
+        if fid := self._fname2fid.get(fname, 0):
             return fid
 
         try:
@@ -782,7 +770,7 @@ class Client(object):
                 raise ValueError(res_json['error'])
 
             if fid := int(res_json['data']['fid']):
-                self.fid_dict[fname] = fid
+                self._fname2fid[fname] = fid
 
         except Exception as err:
             LOG.warning(f"{err}. fname={fname}")
@@ -1081,7 +1069,14 @@ class Client(object):
         return user
 
     async def get_threads(
-        self, fname_or_fid: Union[str, int], /, pn: int = 1, *, rn: int = 30, sort: int = 5, is_good: bool = False
+        self,
+        fname_or_fid: Union[str, int],
+        /,
+        pn: int = 1,
+        *,
+        rn: int = 30,
+        sort: int = 5,
+        is_good: bool = False,
     ) -> Threads:
         """
         获取首页帖子
@@ -1191,7 +1186,15 @@ class Client(object):
 
         return posts
 
-    async def get_comments(self, tid: int, pid: int, /, pn: int = 1, *, is_floor: bool = False) -> Comments:
+    async def get_comments(
+        self,
+        tid: int,
+        pid: int,
+        /,
+        pn: int = 1,
+        *,
+        is_floor: bool = False,
+    ) -> Comments:
         """
         获取楼中楼回复
 
@@ -1755,7 +1758,13 @@ class Client(object):
         return recom_threads
 
     async def block(
-        self, fname_or_fid: Union[str, int], /, _id: Union[str, int], *, day: Literal[1, 3, 10] = 1, reason: str = ''
+        self,
+        fname_or_fid: Union[str, int],
+        /,
+        _id: Union[str, int],
+        *,
+        day: Literal[1, 3, 10] = 1,
+        reason: str = '',
     ) -> bool:
         """
         封禁用户
@@ -1872,7 +1881,15 @@ class Client(object):
             bool: 操作是否成功
         """
 
-        return await self._del_thread(fname_or_fid, tid, is_hide=True)
+        try:
+            await self._del_thread(fname_or_fid, tid, is_hide=True)
+
+        except Exception as err:
+            LOG.warning(f"{err}. forum={fname_or_fid} tid={tid}")
+            return False
+
+        LOG.info(f"Succeeded. forum={fname_or_fid} tid={tid}")
+        return True
 
     async def del_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
@@ -1886,9 +1903,17 @@ class Client(object):
             bool: 操作是否成功
         """
 
-        return await self._del_thread(fname_or_fid, tid, is_hide=False)
+        try:
+            await self._del_thread(fname_or_fid, tid, is_hide=False)
 
-    async def _del_thread(self, fname_or_fid: Union[str, int], /, tid: int, *, is_hide: bool = False) -> bool:
+        except Exception as err:
+            LOG.warning(f"{err}. forum={fname_or_fid} tid={tid}")
+            return False
+
+        LOG.info(f"Succeeded. forum={fname_or_fid} tid={tid}")
+        return True
+
+    async def _del_thread(self, fname_or_fid: Union[str, int], /, tid: int, *, is_hide: bool = False) -> None:
         """
         删除/屏蔽主题帖
 
@@ -1897,8 +1922,9 @@ class Client(object):
             tid (int): 待删除/屏蔽的主题帖tid
             is_hide (bool, optional): True则屏蔽帖 False则删除帖. Defaults to False.
 
-        Returns:
-            bool: 操作是否成功
+        Raises:
+            RuntimeError: 网络请求失败
+            ValueError: 服务端返回错误
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -1911,22 +1937,14 @@ class Client(object):
             ('z', tid),
         ]
 
-        try:
-            async with self.app.post(
-                yarl.URL.build(path="/c/c/bawu/delthread"),
-                data=self.pack_form(payload),
-            ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
+        async with self.app.post(
+            yarl.URL.build(path="/c/c/bawu/delthread"),
+            data=self.pack_form(payload),
+        ) as resp:
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
-
-        except Exception as err:
-            LOG.warning(f"{err}. forum={fname_or_fid} tid={tid} is_hide={is_hide}")
-            return False
-
-        LOG.info(f"Succeeded. forum={fname_or_fid} tid={tid} is_hide={is_hide}")
-        return True
+        if int(res_json['error_code']):
+            raise ValueError(res_json['error_msg'])
 
     async def del_post(self, fname_or_fid: Union[str, int], /, tid: int, pid: int) -> bool:
         """
@@ -1980,7 +1998,15 @@ class Client(object):
             bool: 操作是否成功
         """
 
-        return await self._recover(fname_or_fid, tid=tid, is_hide=True)
+        try:
+            await self._recover(fname_or_fid, tid=tid, is_hide=True)
+
+        except Exception as err:
+            LOG.warning(f"{err}. forum={fname_or_fid} tid={tid}")
+            return False
+
+        LOG.info(f"Succeeded. forum={fname_or_fid} tid={tid}")
+        return True
 
     async def recover_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
@@ -1994,7 +2020,15 @@ class Client(object):
             bool: 操作是否成功
         """
 
-        return await self._recover(fname_or_fid, tid=tid, is_hide=False)
+        try:
+            await self._recover(fname_or_fid, tid=tid, is_hide=False)
+
+        except Exception as err:
+            LOG.warning(f"{err}. forum={fname_or_fid} tid={tid}")
+            return False
+
+        LOG.info(f"Succeeded. forum={fname_or_fid} tid={tid}")
+        return True
 
     async def recover_post(self, fname_or_fid: Union[str, int], /, pid: int) -> bool:
         """
@@ -2008,11 +2042,25 @@ class Client(object):
             bool: 操作是否成功
         """
 
-        return await self._recover(fname_or_fid, pid=pid, is_hide=False)
+        try:
+            await self._recover(fname_or_fid, pid=pid, is_hide=False)
+
+        except Exception as err:
+            LOG.warning(f"{err}. forum={fname_or_fid} pid={pid}")
+            return False
+
+        LOG.info(f"Succeeded. forum={fname_or_fid} pid={pid}")
+        return True
 
     async def _recover(
-        self, fname_or_fid: Union[str, int], /, tid: int = 0, pid: int = 0, *, is_hide: bool = False
-    ) -> bool:
+        self,
+        fname_or_fid: Union[str, int],
+        /,
+        tid: int = 0,
+        pid: int = 0,
+        *,
+        is_hide: bool = False,
+    ) -> None:
         """
         恢复帖子
 
@@ -2022,8 +2070,9 @@ class Client(object):
             pid (int, optional): 待恢复的回复pid. Defaults to 0.
             is_hide (bool, optional): True则取消屏蔽主题帖 False则恢复删帖. Defaults to False.
 
-        Returns:
-            bool: 操作是否成功
+        Raises:
+            RuntimeError: 网络请求失败
+            ValueError: 服务端返回错误
         """
 
         if isinstance(fname_or_fid, str):
@@ -2042,22 +2091,14 @@ class Client(object):
             ('is_frs_mask_list[]', int(is_hide)),
         ]
 
-        try:
-            async with self.web.post(
-                yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mo/q/bawurecoverthread"),
-                data=payload,
-            ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
+        async with self.web.post(
+            yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mo/q/bawurecoverthread"),
+            data=payload,
+        ) as resp:
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            if int(res_json['no']):
-                raise ValueError(res_json['error'])
-
-        except Exception as err:
-            LOG.warning(f"{err}. forum={fname} tid={tid} pid={pid} is_hide={is_hide}")
-            return False
-
-        LOG.info(f"Succeeded. forum={fname} tid={tid} pid={pid} is_hide={is_hide}")
-        return True
+        if int(res_json['no']):
+            raise ValueError(res_json['error'])
 
     async def move(self, fname_or_fid: Union[str, int], /, tid: int, *, to_tab_id: int, from_tab_id: int = 0) -> bool:
         """
@@ -2159,7 +2200,7 @@ class Client(object):
             fid = fname_or_fid
             fname = await self.get_fname(fid)
 
-        async def _cname2cid() -> int:
+        async def _get_cid() -> int:
             """
             由加精分区名cname获取cid
 
@@ -2240,7 +2281,7 @@ class Client(object):
             LOG.info(f"Succeeded. forum={fname} tid={tid}")
             return True
 
-        return await _good(await _cname2cid())
+        return await _good(await _get_cid())
 
     async def ungood(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
@@ -2735,7 +2776,7 @@ class Client(object):
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
 
-            msg = {key: bool(int(value)) for key, value in res_json['message'].items()}
+            msg = {k: bool(int(v)) for k, v in res_json['message'].items()}
 
         except Exception as err:
             LOG.warning(err)
@@ -2834,7 +2875,12 @@ class Client(object):
 
         user = await self.get_self_info()
 
-        return await self._get_user_contents(user, pn, is_thread=True, public_only=True)
+        try:
+            return await self._get_user_contents(user, pn, is_thread=True, public_only=True)
+
+        except Exception as err:
+            LOG.warning(f"{err}. user={user}")
+            return []
 
     async def get_self_threads(self, pn: int = 1) -> List[NewThread]:
         """
@@ -2849,7 +2895,12 @@ class Client(object):
 
         user = await self.get_self_info()
 
-        return await self._get_user_contents(user, pn, is_thread=True)
+        try:
+            return await self._get_user_contents(user, pn, is_thread=True)
+
+        except Exception as err:
+            LOG.warning(f"{err}. user={user}")
+            return []
 
     async def get_self_posts(self, pn: int = 1) -> List[UserPosts]:
         """
@@ -2864,7 +2915,12 @@ class Client(object):
 
         user = await self.get_self_info()
 
-        return await self._get_user_contents(user, pn, is_thread=False)
+        try:
+            return await self._get_user_contents(user, pn, is_thread=False)
+
+        except Exception as err:
+            LOG.warning(f"{err}. user={user}")
+            return []
 
     async def get_user_threads(self, _id: Union[str, int], pn: int = 1) -> List[NewThread]:
         """
@@ -2883,7 +2939,12 @@ class Client(object):
         else:
             user = BasicUserInfo(_id)
 
-        return await self._get_user_contents(user, pn)
+        try:
+            return await self._get_user_contents(user, pn)
+
+        except Exception as err:
+            LOG.warning(f"{err}. user={user}")
+            return []
 
     async def _get_user_contents(
         self, user: BasicUserInfo, /, pn: int = 1, *, is_thread: bool = True, public_only: bool = False
@@ -2896,6 +2957,10 @@ class Client(object):
             pn (int, optional): 页码. Defaults to 1.
             is_thread (bool, optional): 是否请求主题帖. Defaults to True.
             public_only (bool, optional): 是否仅获取公开帖. Defaults to False.
+
+        Raises:
+            RuntimeError: 网络请求失败
+            ValueError: 服务端返回错误
 
         Returns:
             list[NewThread] | list[UserPosts]: 主题帖/回复列表
@@ -2910,31 +2975,26 @@ class Client(object):
         req_proto.data.pn = pn
         req_proto.data.is_view_card = 2 if public_only else 1
 
-        try:
-            async with self.app_proto.post(
-                yarl.URL.build(path="/c/u/feed/userpost", query_string="cmd=303002"),
-                data=self.pack_proto_bytes(req_proto.SerializeToString()),
-            ) as resp:
-                res_proto = UserPostResIdl_pb2.UserPostResIdl()
-                res_proto.ParseFromString(await resp.content.read())
+        async with self.app_proto.post(
+            yarl.URL.build(path="/c/u/feed/userpost", query_string="cmd=303002"),
+            data=self.pack_proto_bytes(req_proto.SerializeToString()),
+        ) as resp:
+            res_proto = UserPostResIdl_pb2.UserPostResIdl()
+            res_proto.ParseFromString(await resp.content.read())
 
-            if int(res_proto.error.errorno):
-                raise ValueError(res_proto.error.errmsg)
+        if int(res_proto.error.errorno):
+            raise ValueError(res_proto.error.errmsg)
 
-            res_data_proto = res_proto.data
-            if is_thread:
-                res_list = [NewThread(thread_proto) for thread_proto in res_data_proto.post_list]
-                for thread in res_list:
-                    thread._user = user
-            else:
-                res_list = [UserPosts(posts_proto) for posts_proto in res_data_proto.post_list]
-                for userposts in res_list:
-                    for userpost in userposts:
-                        userpost._user = user
-
-        except Exception as err:
-            LOG.warning(f"{err}. user={user}")
-            res_list = []
+        res_data_proto = res_proto.data
+        if is_thread:
+            res_list = [NewThread(thread_proto) for thread_proto in res_data_proto.post_list]
+            for thread in res_list:
+                thread._user = user
+        else:
+            res_list = [UserPosts(posts_proto) for posts_proto in res_data_proto.post_list]
+            for userposts in res_list:
+                for userpost in userposts:
+                    userpost._user = user
 
         return res_list
 
@@ -3555,8 +3615,7 @@ class Client(object):
         req_proto.data.CopyFrom(data_proto)
 
         try:
-            if not await self._init_websocket():
-                return False
+            await self._init_websocket()
 
             resp = await self.send_ws_bytes(req_proto.SerializeToString(), cmd=205001)
 

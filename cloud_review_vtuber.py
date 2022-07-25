@@ -55,7 +55,7 @@ class CloudReview(tb.Reviewer):
     async def check_threads(self, pn: int = 1) -> None:
         start_time = time.perf_counter()
         # 获取主题帖列表
-        threads = await self.get_threads(self.fname, pn)
+        threads = await self.get_threads(pn)
         # 并发运行协程检查主题帖内的违规内容
         await asyncio.gather(*[self._handle_thread(thread) for thread in threads])
 
@@ -74,7 +74,7 @@ class CloudReview(tb.Reviewer):
         punish = await self._check_thread(thread)
         if punish.block_days:
             # 封禁
-            await self.block(self.fname, thread.user.portrait, day=punish.block_days, reason=punish.note)
+            await self.block(thread.user.portrait, day=punish.block_days, reason=punish.note)
         if punish.del_flag == 0:
             pass
         elif punish.del_flag == 1:
@@ -145,7 +145,7 @@ class CloudReview(tb.Reviewer):
 
         punish = await self._check_post(post)
         if punish.block_days:
-            await self.block(self.fname, post.user.portrait, day=punish.block_days, reason=punish.note)
+            await self.block(post.user.portrait, day=punish.block_days, reason=punish.note)
         if punish.del_flag <= 0:
             pass
         elif punish.del_flag == 1:
@@ -201,7 +201,7 @@ class CloudReview(tb.Reviewer):
 
         punish = await self._check_comment(comment)
         if punish.block_days:
-            await self.block(self.fname, comment.user.portrait, day=punish.block_days, reason=punish.note)
+            await self.block(comment.user.portrait, day=punish.block_days, reason=punish.note)
         if punish.del_flag <= 0:
             pass
         elif punish.del_flag == 1:

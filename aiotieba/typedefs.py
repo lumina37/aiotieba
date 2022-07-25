@@ -1157,10 +1157,10 @@ class Fragments(object):
         return self._tiebapluses
 
     def __iter__(self) -> Iterator[_TypeFragment]:
-        return iter(self._frags)
+        return self._frags.__iter__()
 
     def __getitem__(self, idx) -> Union[_TypeFragment, List[_TypeFragment]]:
-        return self._frags[idx]
+        return self._frags.__getitem__(idx)
 
     def __setitem__(self, idx, val) -> None:
         raise NotImplementedError
@@ -1169,7 +1169,7 @@ class Fragments(object):
         raise NotImplementedError
 
     def __len__(self) -> int:
-        return len(self._frags)
+        return self._frags.__len__()
 
     def __bool__(self) -> bool:
         return bool(self._frags)
@@ -1461,10 +1461,10 @@ class _Containers(_DataWrapper, Generic[_TypeDataWrapper]):
         return str(self.objs)
 
     def __iter__(self) -> Iterator[_TypeDataWrapper]:
-        return iter(self.objs)
+        return self.objs.__iter__()
 
     def __getitem__(self, idx) -> Union[_TypeDataWrapper, List[_TypeDataWrapper]]:
-        return self.objs[idx]
+        return self.objs.__getitem__(idx)
 
     def __setitem__(self, idx, val):
         raise NotImplementedError
@@ -1473,7 +1473,7 @@ class _Containers(_DataWrapper, Generic[_TypeDataWrapper]):
         raise NotImplementedError
 
     def __len__(self) -> int:
-        return len(self.objs)
+        return self.objs.__len__()
 
     def __bool__(self) -> bool:
         return bool(self.objs)
@@ -1576,7 +1576,7 @@ class VoteInfo(_DataWrapper):
             self._total_user = 0
 
     def __len__(self) -> int:
-        return len(self.options)
+        return self.options.__len__()
 
     def __bool__(self) -> bool:
         return bool(self.options)
