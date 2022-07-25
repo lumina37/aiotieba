@@ -202,27 +202,6 @@ class Reviewer(object):
             is_fold=is_fold,
         )
 
-    async def block(
-        self,
-        _id: Union[str, int],
-        *,
-        day: Literal[1, 3, 10] = 1,
-        reason: str = '',
-    ) -> bool:
-        """
-        封禁用户
-
-        Args:
-            _id (str | int): 待封禁用户的id user_id/user_name/portrait 优先portrait
-            day (Literal[1, 3, 10], optional): 封禁天数. Defaults to 1.
-            reason (str, optional): 封禁理由. Defaults to ''.
-
-        Returns:
-            bool: 操作是否成功
-        """
-
-        return await self.client.block(self.fname, _id, day=day, reason=reason)
-
     async def get_comments(
         self,
         tid: int,
@@ -246,6 +225,27 @@ class Reviewer(object):
         """
 
         return await self.client.get_comments(tid, pid, pn, is_floor=is_floor)
+
+    async def block(
+        self,
+        _id: Union[str, int],
+        *,
+        day: Literal[1, 3, 10] = 1,
+        reason: str = '',
+    ) -> bool:
+        """
+        封禁用户
+
+        Args:
+            _id (str | int): 待封禁用户的id user_id/user_name/portrait 优先portrait
+            day (Literal[1, 3, 10], optional): 封禁天数. Defaults to 1.
+            reason (str, optional): 封禁理由. Defaults to ''.
+
+        Returns:
+            bool: 操作是否成功
+        """
+
+        return await self.client.block(self.fname, _id, day=day, reason=reason)
 
     async def hide_thread(self, tid: int) -> bool:
         """
