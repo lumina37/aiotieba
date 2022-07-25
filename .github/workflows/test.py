@@ -297,18 +297,18 @@ async def test_Ats(client: tb.Client):
 
 @pytest.mark.asyncio
 async def test_Database(reviewer: tb.Reviewer):
-    user = await reviewer.get_self_info()
+    user = await reviewer.client.get_self_info()
     fname = reviewer.fname
-    fid = await reviewer.database.get_fid(fname)
-    assert fname == await reviewer.database.get_fname(fid)
+    fid = await reviewer.db.get_fid(fname)
+    assert fname == await reviewer.db.get_fname(fid)
     await asyncio.gather(
         *[
-            reviewer.database.get_basic_user_info(user.user_id),
-            reviewer.database.get_basic_user_info(user.user_name),
-            reviewer.database.get_basic_user_info(user.portrait),
-            reviewer.database.get_tid(fname, 7763274602),
-            reviewer.database.get_id(fname, 7763274602),
-            reviewer.database.get_user_id_list(fname),
-            reviewer.database.get_tid_list(fname, limit=3),
+            reviewer.db.get_basic_user_info(user.user_id),
+            reviewer.db.get_basic_user_info(user.user_name),
+            reviewer.db.get_basic_user_info(user.portrait),
+            reviewer.db.get_tid(fname, 7763274602),
+            reviewer.db.get_id(fname, 7763274602),
+            reviewer.db.get_user_id_list(fname),
+            reviewer.db.get_tid_list(fname, limit=3),
         ]
     )

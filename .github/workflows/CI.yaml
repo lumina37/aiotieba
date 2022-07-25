@@ -42,9 +42,9 @@ jobs:
     - name: Prepare config
       shell: bash
       run: |
-        mv .github/workflows/test_all.py .
+        mv .github/workflows/test.py .
         mkdir config
         gpg --quiet --batch --yes --decrypt --passphrase=${{ secrets.PASSPHRASE }} --output aiotieba.toml .github/workflows/aiotieba.toml.gpg
 
     - name: Run tests
-      run: pytest test_all.py
+      run: pytest test.py
