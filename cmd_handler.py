@@ -636,7 +636,7 @@ class Listener(object):
                     return
                 if not ctx.parent.contents.ats:
                     return
-                ctx.parent.user = await self.listener.get_basic_user_info(ctx.parent.contents.ats[0].user_id)
+                ctx.parent._user = await self.listener.get_basic_user_info(ctx.parent.contents.ats[0].user_id)
                 tb.LOG.info(f"Try to delete thread {ctx.parent.text} post by {ctx.parent.user}")
                 coros.append(ctx.handler.admin.del_thread(ctx.parent.tid))
 
