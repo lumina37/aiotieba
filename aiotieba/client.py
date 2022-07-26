@@ -194,6 +194,7 @@ class Client(object):
     post_version: ClassVar[str] = "9.1.0.0"  # 发帖使用极速版
 
     _fname2fid: ClassVar[Dict[str, int]] = {}
+    _fid2fname: ClassVar[Dict[int, str]] = {}
 
     def __init__(self, BDUSS_key: Optional[str] = None) -> None:
         self.BDUSS_key = BDUSS_key
@@ -769,12 +770,14 @@ class Client(object):
             if int(res_json['no']):
                 raise ValueError(res_json['error'])
 
-            if fid := int(res_json['data']['fid']):
-                self._fname2fid[fname] = fid
+            if not (fid := int(res_json['data']['fid'])):
+                raise ValueError("fid is 0")
 
         except Exception as err:
             LOG.warning(f"{err}. fname={fname}")
             fid = 0
+
+        self.add_forum_cache(fname, fid)
 
         return fid
 
@@ -789,9 +792,26 @@ class Client(object):
             str: 该贴吧的贴吧名
         """
 
+        if fname := self._fid2fname.get(fid, ''):
+            return fname
+
         fname = (await self.get_forum_detail(fid)).fname
 
+        self.add_forum_cache(fname, fid)
+
         return fname
+
+    def add_forum_cache(self, fname: str, fid: int) -> None:
+        """
+        将贴吧名与贴吧id的映射关系添加到缓存
+
+        Args:
+            fname (str): 贴吧名
+            fid (int): 贴吧id
+        """
+
+        self._fname2fid[fname] = fid
+        self._fid2fname[fid] = fname
 
     async def get_user_info(self, _id: Union[str, int]) -> UserInfo:
         """
@@ -1882,7 +1902,7 @@ class Client(object):
         """
 
         try:
-            await self._del_thread(fname_or_fid, tid, is_hide=True)
+            await self._del_or_hide_thread(fname_or_fid, tid, is_hide=True)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname_or_fid} tid={tid}")
@@ -1904,7 +1924,7 @@ class Client(object):
         """
 
         try:
-            await self._del_thread(fname_or_fid, tid, is_hide=False)
+            await self._del_or_hide_thread(fname_or_fid, tid, is_hide=False)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname_or_fid} tid={tid}")
@@ -1913,9 +1933,9 @@ class Client(object):
         LOG.info(f"Succeeded. forum={fname_or_fid} tid={tid}")
         return True
 
-    async def _del_thread(self, fname_or_fid: Union[str, int], /, tid: int, *, is_hide: bool = False) -> None:
+    async def _del_or_hide_thread(self, fname_or_fid: Union[str, int], /, tid: int, *, is_hide: bool = False) -> None:
         """
-        删除/屏蔽主题帖
+        主题帖删除/屏蔽相关操作
 
         Args:
             fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid 优先fid
@@ -1923,8 +1943,7 @@ class Client(object):
             is_hide (bool, optional): True则屏蔽帖 False则删除帖. Defaults to False.
 
         Raises:
-            RuntimeError: 网络请求失败
-            ValueError: 服务端返回错误
+            RuntimeError: 网络请求失败或服务端返回错误
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -1999,7 +2018,7 @@ class Client(object):
         """
 
         try:
-            await self._recover(fname_or_fid, tid=tid, is_hide=True)
+            await self.recover(fname_or_fid, tid=tid, is_hide=True)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname_or_fid} tid={tid}")
@@ -2021,7 +2040,7 @@ class Client(object):
         """
 
         try:
-            await self._recover(fname_or_fid, tid=tid, is_hide=False)
+            await self.recover(fname_or_fid, tid=tid, is_hide=False)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname_or_fid} tid={tid}")
@@ -2043,7 +2062,7 @@ class Client(object):
         """
 
         try:
-            await self._recover(fname_or_fid, pid=pid, is_hide=False)
+            await self.recover(fname_or_fid, pid=pid, is_hide=False)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname_or_fid} pid={pid}")
@@ -2052,7 +2071,7 @@ class Client(object):
         LOG.info(f"Succeeded. forum={fname_or_fid} pid={pid}")
         return True
 
-    async def _recover(
+    async def recover(
         self,
         fname_or_fid: Union[str, int],
         /,
@@ -2062,7 +2081,7 @@ class Client(object):
         is_hide: bool = False,
     ) -> None:
         """
-        恢复帖子
+        帖子恢复相关操作
 
         Args:
             fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
@@ -2071,8 +2090,7 @@ class Client(object):
             is_hide (bool, optional): True则取消屏蔽主题帖 False则恢复删帖. Defaults to False.
 
         Raises:
-            RuntimeError: 网络请求失败
-            ValueError: 服务端返回错误
+            RuntimeError: 网络请求失败或服务端返回错误
         """
 
         if isinstance(fname_or_fid, str):
@@ -2193,95 +2211,16 @@ class Client(object):
             bool: 操作是否成功
         """
 
-        if isinstance(fname_or_fid, str):
-            fname = fname_or_fid
-            fid = await self.get_fid(fname)
-        else:
-            fid = fname_or_fid
-            fname = await self.get_fname(fid)
+        try:
+            cid = await self._get_cid(fname_or_fid, cname)
+            await self._good(fname_or_fid, tid, cid=cid, is_set=True)
 
-        async def _get_cid() -> int:
-            """
-            由加精分区名cname获取cid
+        except Exception as err:
+            LOG.warning(f"{err}. forum={fname_or_fid} cname={cname}")
+            return False
 
-            Closure Args:
-                fname (str): 帖子所在贴吧的贴吧名
-                cname (str, optional): 待添加的精华分区名称 默认为''即不分区. Defaults to ''.
-
-            Returns:
-                int: cname对应的分区id
-            """
-
-            payload = [
-                ('BDUSS', self.BDUSS),
-                ('word', fname),
-            ]
-
-            try:
-                async with self.app.post(
-                    yarl.URL.build(path="/c/c/bawu/goodlist"),
-                    data=self.pack_form(payload),
-                ) as resp:
-                    res_json: dict = await resp.json(encoding='utf-8', content_type=None)
-
-                if int(res_json['error_code']):
-                    raise ValueError(res_json['error_msg'])
-
-                cid = 0
-                for item in res_json['cates']:
-                    if cname == item['class_name']:
-                        cid = int(item['class_id'])
-                        break
-
-            except Exception as err:
-                LOG.warning(f"{err}. forum={fname} cname={cname}")
-                return 0
-
-            return cid
-
-        async def _good(cid: int = 0) -> bool:
-            """
-            加精主题帖
-
-            Args:
-                cid (int, optional): 将主题帖加到cid对应的精华分区 cid默认为0即不分区. Defaults to 0.
-
-            Closure Args:
-                fid (int): 帖子所在贴吧的fid
-                fname (str): 帖子所在贴吧的贴吧名
-
-            Returns:
-                bool: 操作是否成功
-            """
-
-            payload = [
-                ('BDUSS', self.BDUSS),
-                ('cid', cid),
-                ('fid', fid),
-                ('ntn', 'set'),
-                ('tbs', await self.get_tbs()),
-                ('word', fname),
-                ('z', tid),
-            ]
-
-            try:
-                async with self.app.post(
-                    yarl.URL.build(path="/c/c/bawu/commitgood"),
-                    data=self.pack_form(payload),
-                ) as resp:
-                    res_json: dict = await resp.json(encoding='utf-8', content_type=None)
-
-                if int(res_json['error_code']):
-                    raise ValueError(res_json['error_msg'])
-
-            except Exception as err:
-                LOG.warning(f"{err}. forum={fname} tid={tid}")
-                return False
-
-            LOG.info(f"Succeeded. forum={fname} tid={tid}")
-            return True
-
-        return await _good(await _get_cid())
+        LOG.info(f"Succeeded. forum={fname_or_fid} tid={tid}")
+        return True
 
     async def ungood(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
@@ -2295,6 +2234,71 @@ class Client(object):
             bool: 操作是否成功
         """
 
+        try:
+            await self._good(fname_or_fid, tid, is_set=False)
+
+        except Exception as err:
+            LOG.warning(f"{err}. forum={fname_or_fid} tid={tid}")
+            return False
+
+        LOG.info(f"Succeeded. forum={fname_or_fid} tid={tid}")
+        return True
+
+    async def _get_cid(self, fname_or_fid: Union[str, int], /, cname: str) -> int:
+        """
+        通过加精分区名获取加精分区id
+
+        Args:
+            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
+            cname (str): 加精分区名
+
+        Returns:
+            int: 加精分区id
+        """
+
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
+
+        payload = [
+            ('BDUSS', self.BDUSS),
+            ('word', fname),
+        ]
+
+        try:
+            async with self.app.post(
+                yarl.URL.build(path="/c/c/bawu/goodlist"),
+                data=self.pack_form(payload),
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
+
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
+
+            cid = 0
+            for item in res_json['cates']:
+                if cname == item['class_name']:
+                    cid = int(item['class_id'])
+                    break
+
+        except Exception as err:
+            LOG.warning(f"{err}. forum={fname} cname={cname}")
+            cid = 0
+
+        return cid
+
+    async def _good(self, fname_or_fid: Union[str, int], /, tid: int, *, cid: int = 0, is_set: bool = True) -> None:
+        """
+        主题帖加精相关操作
+
+        Args:
+            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
+            tid (int): 待撤精的主题帖tid
+            cid (int, optional): 将主题帖加到cid对应的精华分区 cid默认为0即不分区. Defaults to 0.
+            is_set (bool, optional): 加精或取消加精 默认为True即加精. Defaults to True.
+
+        Raises:
+            RuntimeError: 网络请求失败或服务端返回错误
+        """
+
         if isinstance(fname_or_fid, str):
             fname = fname_or_fid
             fid = await self.get_fid(fname)
@@ -2304,28 +2308,22 @@ class Client(object):
 
         payload = [
             ('BDUSS', self.BDUSS),
+            ('cid', cid),
             ('fid', fid),
+            ('ntn', 'set' if is_set else None),
             ('tbs', await self.get_tbs()),
             ('word', fname),
             ('z', tid),
         ]
 
-        try:
-            async with self.app.post(
-                yarl.URL.build(path="/c/c/bawu/commitgood"),
-                data=self.pack_form(payload),
-            ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
+        async with self.app.post(
+            yarl.URL.build(path="/c/c/bawu/commitgood"),
+            data=self.pack_form(payload),
+        ) as resp:
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
-
-        except Exception as err:
-            LOG.warning(f"{err}. forum={fname} tid={tid}")
-            return False
-
-        LOG.info(f"Succeeded. forum={fname} tid={tid}")
-        return True
+        if int(res_json['error_code']):
+            raise ValueError(res_json['error_msg'])
 
     async def top(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
@@ -2339,37 +2337,14 @@ class Client(object):
             bool: 操作是否成功
         """
 
-        if isinstance(fname_or_fid, str):
-            fname = fname_or_fid
-            fid = await self.get_fid(fname)
-        else:
-            fid = fname_or_fid
-            fname = await self.get_fname(fid)
-
-        payload = [
-            ('BDUSS', self.BDUSS),
-            ('fid', fid),
-            ('ntn', 'set'),
-            ('tbs', await self.get_tbs()),
-            ('word', fname),
-            ('z', tid),
-        ]
-
         try:
-            async with self.app.post(
-                yarl.URL.build(path="/c/c/bawu/committop"),
-                data=self.pack_form(payload),
-            ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
-
-            if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
+            await self._top(fname_or_fid, tid, is_set=True)
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname} tid={tid}")
+            LOG.warning(f"{err}. forum={fname_or_fid} tid={tid}")
             return False
 
-        LOG.info(f"Succeeded. forum={fname} tid={tid}")
+        LOG.info(f"Succeeded. forum={fname_or_fid} tid={tid}")
         return True
 
     async def untop(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
@@ -2384,6 +2359,29 @@ class Client(object):
             bool: 操作是否成功
         """
 
+        try:
+            await self._top(fname_or_fid, tid, is_set=False)
+
+        except Exception as err:
+            LOG.warning(f"{err}. forum={fname_or_fid} tid={tid}")
+            return False
+
+        LOG.info(f"Succeeded. forum={fname_or_fid} tid={tid}")
+        return True
+
+    async def _top(self, fname_or_fid: Union[str, int], /, tid: int, *, is_set: bool = True) -> None:
+        """
+        主题帖置顶相关操作
+
+        Args:
+            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
+            tid (int): 待撤销置顶的主题帖tid
+            is_set (bool, optional): 置顶或撤销置顶 默认为True即置顶. Defaults to True.
+
+        Raises:
+            RuntimeError: 网络请求失败或服务端返回错误
+        """
+
         if isinstance(fname_or_fid, str):
             fname = fname_or_fid
             fid = await self.get_fid(fname)
@@ -2394,27 +2392,20 @@ class Client(object):
         payload = [
             ('BDUSS', self.BDUSS),
             ('fid', fid),
+            ('ntn', 'set' if is_set else None),
             ('tbs', await self.get_tbs()),
             ('word', fname),
             ('z', tid),
         ]
 
-        try:
-            async with self.app.post(
-                yarl.URL.build(path="/c/c/bawu/committop"),
-                data=self.pack_form(payload),
-            ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
+        async with self.app.post(
+            yarl.URL.build(path="/c/c/bawu/committop"),
+            data=self.pack_form(payload),
+        ) as resp:
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
-            if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
-
-        except Exception as err:
-            LOG.warning(f"{err}. forum={fname} tid={tid}")
-            return False
-
-        LOG.info(f"Succeeded. forum={fname} tid={tid}")
-        return True
+        if int(res_json['error_code']):
+            raise ValueError(res_json['error_msg'])
 
     async def get_recovers(self, fname_or_fid: Union[str, int], /, pn: int = 1, name: str = '') -> Recovers:
         """
@@ -2959,8 +2950,7 @@ class Client(object):
             public_only (bool, optional): 是否仅获取公开帖. Defaults to False.
 
         Raises:
-            RuntimeError: 网络请求失败
-            ValueError: 服务端返回错误
+            RuntimeError: 网络请求失败或服务端返回错误
 
         Returns:
             list[NewThread] | list[UserPosts]: 主题帖/回复列表

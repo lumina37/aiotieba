@@ -87,10 +87,11 @@ class Reviewer(object):
             return fid
 
         if fid := await self.db.get_fid(fname):
-            self.client._fname2fid[fname] = fid
+            self.client.add_forum_cache(fname, fid)
             return fid
 
         if fid := await self.client.get_fid(fname):
+            self.client.add_forum_cache(fname, fid)
             await self.db.add_forum(fid, fname)
 
         return fid
@@ -106,10 +107,15 @@ class Reviewer(object):
             str: 该贴吧的贴吧名
         """
 
+        if fname := self.client._fid2fname.get(fid, 0):
+            return fname
+
         if fname := await self.db.get_fname(fid):
+            self.client.add_forum_cache(fname, fid)
             return fname
 
         if fname := await self.client.get_fname(fid):
+            self.client.add_forum_cache(fname, fid)
             await self.db.add_forum(fid, fname)
 
         return fname
