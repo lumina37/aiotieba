@@ -570,11 +570,11 @@ class Listener(object):
         await ctx._init_full()
 
         note = ctx.args[0] if len(ctx.args) > 0 else ctx.note
-        success = True
+        coros = []
 
         if ctx.at.is_floor:
             tb.LOG.info(f"Try to del post. text={ctx.parent.text} user={ctx.parent.user}")
-            success = success and await ctx.admin.del_post(ctx.parent.tid, ctx.parent.pid)
+            coros.append(ctx.admin.del_post(ctx.parent.tid, ctx.parent.pid))
 
         else:
             if ctx.at.is_thread:
@@ -585,17 +585,17 @@ class Listener(object):
                 ctx.parent._user = await self.listener.get_basic_user_info(ctx.parent.contents.ats[0].user_id)
 
                 tb.LOG.info(f"Try to del thread. text={ctx.parent.text} user={ctx.parent.user}")
-                success = success and await ctx.admin.del_thread(ctx.parent.tid)
+                coros.append(ctx.admin.del_thread(ctx.parent.tid))
 
             else:
                 tb.LOG.info(f"Try to del thread. text={ctx.parent.text} user={ctx.parent.user}")
-                success = success and await ctx.admin.del_thread(ctx.parent.tid)
+                coros.append(ctx.admin.del_thread(ctx.parent.tid))
 
         if day:
-            success = success and await ctx.admin.block(ctx.parent.user.portrait, day=day, reason=note)
+            coros.append(ctx.admin.block(ctx.parent.user.portrait, day=day, reason=note))
 
-        if success:
-            await ctx.admin.del_post(ctx.tid, ctx.pid)
+        await ctx.admin.del_post(ctx.tid, ctx.pid)
+        await asyncio.gather(*coros)
 
     @check_and_log(need_permission=4, need_arg_num=1)
     async def cmd_black(self, ctx: Context) -> None:
