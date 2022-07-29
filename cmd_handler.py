@@ -238,7 +238,7 @@ class Listener(object):
         def _parse_config(_config: Dict[str, str]) -> Tuple[str, tb.Reviewer, tb.Client]:
             fname = _config['fname']
             admin = tb.Reviewer(_config['admin_key'], fname)
-            speaker = tb.Client(_config['speaker_key'], fname)
+            speaker = tb.Client(_config['speaker_key'])
             return fname, admin, speaker
 
         self.admins = {
