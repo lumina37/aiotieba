@@ -1,4 +1,3 @@
-# -*- coding:utf-8 -*-
 """
 @Author: starry.qvq@gmail.com
 @License: Unlicense

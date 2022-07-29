@@ -1,4 +1,3 @@
-# -*- coding:utf-8 -*-
 __all__ = ['LOG']
 
 import logging
