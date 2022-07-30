@@ -1,10 +1,9 @@
-# -*- coding:utf-8 -*-
 __all__ = ['Reviewer']
 
 import asyncio
 import binascii
 import datetime
-from typing import List, Optional, Tuple, Union
+from typing import List, Literal, Optional, Tuple, Union
 
 import cv2 as cv
 import numpy as np
@@ -12,38 +11,50 @@ import numpy as np
 from .client import Client
 from .database import Database
 from .log import LOG
-from .typedefs import BasicUserInfo
+from .typedefs import BasicUserInfo, Comments, Posts, Threads
 
 
-class Reviewer(Client):
+class Reviewer(object):
     """
     提供贴吧审查功能
 
     Args:
         BDUSS_key (str, optional): 用于从CONFIG中提取BDUSS. Defaults to None.
         fname (str, optional): 贴吧名. Defaults to ''.
+
+    Attributes:
+        fname (str): 贴吧名
+        client (Client): 客户端
+        db (Database): 数据库连接
     """
 
-    __slots__ = ['fname', 'database', '_img_hasher', '_qrdetector']
+    __slots__ = [
+        'fname',
+        'client',
+        'db',
+        '_img_hasher',
+        '_qrdetector',
+    ]
 
     def __init__(self, BDUSS_key: Optional[str] = None, fname: str = ''):
-        super(Reviewer, self).__init__(BDUSS_key)
+        super(Reviewer, self).__init__()
 
         self.fname: str = fname
 
-        self.database: Database = Database()
+        self.client = Client(BDUSS_key)
+        self.db = Database()
         self._img_hasher: cv.img_hash.AverageHash = None
         self._qrdetector: cv.QRCodeDetector = None
 
     async def enter(self) -> "Reviewer":
-        await asyncio.gather(super().enter(), self.database.enter())
+        await asyncio.gather(self.client.enter(), self.db.enter())
         return self
 
     async def __aenter__(self) -> "Reviewer":
         return await self.enter()
 
     async def close(self) -> None:
-        await asyncio.gather(super().close(), self.database.close(), return_exceptions=True)
+        await asyncio.gather(self.client.close(), self.db.close(), return_exceptions=True)
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.close()
@@ -71,15 +82,16 @@ class Reviewer(Client):
             int: 该贴吧的fid
         """
 
-        if fid := self.fid_dict.get(fname, 0):
+        if fid := self.client._fname2fid.get(fname, 0):
             return fid
 
-        if fid := await self.database.get_fid(fname):
-            self.fid_dict[fname] = fid
+        if fid := await self.db.get_fid(fname):
+            self.client.add_forum_cache(fname, fid)
             return fid
 
-        if fid := await super().get_fid(fname):
-            await self.database.add_forum(fid, fname)
+        if fid := await self.client.get_fid(fname):
+            self.client.add_forum_cache(fname, fid)
+            await self.db.add_forum(fid, fname)
 
         return fid
 
@@ -94,11 +106,16 @@ class Reviewer(Client):
             str: 该贴吧的贴吧名
         """
 
-        if fname := await self.database.get_fname(fid):
+        if fname := self.client._fid2fname.get(fid, 0):
             return fname
 
-        if fname := await super().get_fname(fid):
-            await self.database.add_forum(fid, fname)
+        if fname := await self.db.get_fname(fid):
+            self.client.add_forum_cache(fname, fid)
+            return fname
+
+        if fname := await self.client.get_fname(fid):
+            self.client.add_forum_cache(fname, fid)
+            await self.db.add_forum(fid, fname)
 
         return fname
 
@@ -113,15 +130,169 @@ class Reviewer(Client):
             BasicUserInfo: 简略版用户信息 仅保证包含user_name/portrait/user_id
         """
 
-        if user := await self.database.get_basic_user_info(_id):
+        if user := await self.db.get_basic_user_info(_id):
             return user
 
-        if user := await super().get_basic_user_info(_id):
-            await self.database.add_user(user)
+        if user := await self.client.get_basic_user_info(_id):
+            await self.db.add_user(user)
 
         return user
 
-    async def add_id(self, /, _id: int, *, id_last_edit: int = 0) -> bool:
+    async def get_threads(
+        self,
+        /,
+        pn: int = 1,
+        *,
+        rn: int = 30,
+        sort: int = 5,
+        is_good: bool = False,
+    ) -> Threads:
+        """
+        获取首页帖子
+
+        Args:
+            pn (int, optional): 页码. Defaults to 1.
+            rn (int, optional): 请求的条目数. Defaults to 30.
+            sort (int, optional): 排序方式 对于有热门分区的贴吧0是热门排序1是按发布时间2报错34都是热门排序>=5是按回复时间
+                对于无热门分区的贴吧0是按回复时间1是按发布时间2报错>=3是按回复时间. Defaults to 5.
+            is_good (bool, optional): True为获取精品区帖子 False为获取普通区帖子. Defaults to False.
+
+        Returns:
+            Threads: 帖子列表
+        """
+
+        return await self.client.get_threads(self.fname, pn, rn=rn, sort=sort, is_good=is_good)
+
+    async def get_posts(
+        self,
+        tid: int,
+        /,
+        pn: int = 1,
+        *,
+        rn: int = 30,
+        sort: int = 0,
+        only_thread_author: bool = False,
+        with_comments: bool = False,
+        comment_sort_by_agree: bool = True,
+        comment_rn: int = 10,
+        is_fold: bool = False,
+    ) -> Posts:
+        """
+        获取主题帖内回复
+
+        Args:
+            tid (int): 所在主题帖tid
+            pn (int, optional): 页码. Defaults to 1.
+            rn (int, optional): 请求的条目数. Defaults to 30.
+            sort (int, optional): 0则按时间顺序请求 1则按时间倒序请求 2则按热门序请求. Defaults to 0.
+            only_thread_author (bool, optional): True则只看楼主 False则请求全部. Defaults to False.
+            with_comments (bool, optional): True则同时请求高赞楼中楼 False则返回的Posts.comments为空. Defaults to False.
+            comment_sort_by_agree (bool, optional): True则楼中楼按点赞数顺序 False则楼中楼按时间顺序. Defaults to True.
+            comment_rn (int, optional): 请求的楼中楼数量. Defaults to 10.
+            is_fold (bool, optional): 是否请求被折叠的回复. Defaults to False.
+
+        Returns:
+            Posts: 回复列表
+        """
+
+        return await self.client.get_posts(
+            tid,
+            pn,
+            rn=rn,
+            sort=sort,
+            only_thread_author=only_thread_author,
+            with_comments=with_comments,
+            comment_sort_by_agree=comment_sort_by_agree,
+            comment_rn=comment_rn,
+            is_fold=is_fold,
+        )
+
+    async def get_comments(
+        self,
+        tid: int,
+        pid: int,
+        /,
+        pn: int = 1,
+        *,
+        is_floor: bool = False,
+    ) -> Comments:
+        """
+        获取楼中楼回复
+
+        Args:
+            tid (int): 所在主题帖tid
+            pid (int): 所在回复pid或楼中楼pid
+            pn (int, optional): 页码. Defaults to 1.
+            is_floor (bool, optional): pid是否指向楼中楼. Defaults to False.
+
+        Returns:
+            Comments: 楼中楼列表
+        """
+
+        return await self.client.get_comments(tid, pid, pn, is_floor=is_floor)
+
+    async def block(
+        self,
+        _id: Union[str, int],
+        *,
+        day: Literal[1, 3, 10] = 1,
+        reason: str = '',
+    ) -> bool:
+        """
+        封禁用户
+
+        Args:
+            _id (str | int): 待封禁用户的id user_id/user_name/portrait 优先portrait
+            day (Literal[1, 3, 10], optional): 封禁天数. Defaults to 1.
+            reason (str, optional): 封禁理由. Defaults to ''.
+
+        Returns:
+            bool: 操作是否成功
+        """
+
+        return await self.client.block(self.fname, _id, day=day, reason=reason)
+
+    async def hide_thread(self, tid: int) -> bool:
+        """
+        屏蔽主题帖
+
+        Args:
+            tid (int): 待屏蔽的主题帖tid
+
+        Returns:
+            bool: 操作是否成功
+        """
+
+        return await self.client.hide_thread(self.fname, tid)
+
+    async def del_thread(self, tid: int) -> bool:
+        """
+        删除主题帖
+
+        Args:
+            tid (int): 待删除的主题帖tid
+
+        Returns:
+            bool: 操作是否成功
+        """
+
+        return await self.client.del_thread(self.fname, tid)
+
+    async def del_post(self, tid: int, pid: int) -> bool:
+        """
+        删除回复
+
+        Args:
+            tid (int): 回复所在的主题帖tid
+            pid (int): 待删除的回复pid
+
+        Returns:
+            bool: 操作是否成功
+        """
+
+        return await self.client.del_post(self.fname, tid, pid)
+
+    async def add_id(self, _id: int, *, id_last_edit: int = 0) -> bool:
         """
         将id添加到表id_{fname}
 
@@ -134,7 +305,7 @@ class Reviewer(Client):
             bool: 操作是否成功
         """
 
-        return await self.database.add_id(self.fname, _id, tag=id_last_edit)
+        return await self.db.add_id(self.fname, _id, tag=id_last_edit)
 
     async def get_id(self, _id: int) -> int:
         """
@@ -147,7 +318,7 @@ class Reviewer(Client):
             int: id_last_edit -1表示表中无id
         """
 
-        res = await self.database.get_id(self.fname, _id)
+        res = await self.db.get_id(self.fname, _id)
         if res is None:
             res = -1
         return res
@@ -163,7 +334,7 @@ class Reviewer(Client):
             bool: 操作是否成功
         """
 
-        return await self.database.del_id(self.fname, _id)
+        return await self.db.del_id(self.fname, _id)
 
     async def del_ids(self, hour: int) -> bool:
         """
@@ -176,9 +347,9 @@ class Reviewer(Client):
             bool: 操作是否成功
         """
 
-        return await self.database.del_ids(self.fname, hour)
+        return await self.db.del_ids(self.fname, hour)
 
-    async def add_tid(self, /, tid: int, *, mode: bool) -> bool:
+    async def add_tid(self, tid: int, *, mode: bool) -> bool:
         """
         将tid添加到表tid_water_{fname}
 
@@ -190,7 +361,7 @@ class Reviewer(Client):
             bool: 操作是否成功
         """
 
-        return await self.database.add_tid(self.fname, tid, tag=int(mode))
+        return await self.db.add_tid(self.fname, tid, tag=int(mode))
 
     async def is_tid_hide(self, tid: int) -> Optional[bool]:
         """
@@ -203,7 +374,7 @@ class Reviewer(Client):
             bool | None: True表示tid待恢复 False表示tid已恢复 None表示表中无记录
         """
 
-        res = await self.database.get_tid(self.fname, tid)
+        res = await self.db.get_tid(self.fname, tid)
         if res == 1:
             return True
         elif res == 0:
@@ -222,7 +393,7 @@ class Reviewer(Client):
             bool: 操作是否成功
         """
 
-        return await self.database.del_tid(self.fname, tid)
+        return await self.db.del_tid(self.fname, tid)
 
     async def get_tid_hide_list(self, limit: int = 128, offset: int = 0) -> List[int]:
         """
@@ -236,9 +407,9 @@ class Reviewer(Client):
             list[int]: tid列表
         """
 
-        return await self.database.get_tid_list(self.fname, tag=1, limit=limit, offset=offset)
+        return await self.db.get_tid_list(self.fname, tag=1, limit=limit, offset=offset)
 
-    async def add_user_id(self, /, user_id: int, *, permission: int = 0, note: str = '') -> bool:
+    async def add_user_id(self, user_id: int, *, permission: int = 0, note: str = '') -> bool:
         """
         将user_id添加到表user_id_{fname}
 
@@ -251,7 +422,7 @@ class Reviewer(Client):
             bool: 操作是否成功
         """
 
-        return await self.database.add_user_id(self.fname, user_id, permission=permission, note=note)
+        return await self.db.add_user_id(self.fname, user_id, permission=permission, note=note)
 
     async def del_user_id(self, user_id: int) -> bool:
         """
@@ -264,7 +435,7 @@ class Reviewer(Client):
             bool: 操作是否成功
         """
 
-        return await self.database.del_user_id(self.fname, user_id)
+        return await self.db.del_user_id(self.fname, user_id)
 
     async def get_user_id(self, user_id: int) -> int:
         """
@@ -277,7 +448,7 @@ class Reviewer(Client):
             int: 权限级别
         """
 
-        return await self.database.get_user_id(self.fname, user_id)
+        return await self.db.get_user_id(self.fname, user_id)
 
     async def get_user_id_full(self, user_id: int) -> Tuple[int, str, datetime.datetime]:
         """
@@ -290,10 +461,10 @@ class Reviewer(Client):
             tuple[int, str, datetime.datetime]: 权限级别, 备注, 记录时间
         """
 
-        return await self.database.get_user_id_full(self.fname, user_id)
+        return await self.db.get_user_id_full(self.fname, user_id)
 
     async def get_user_id_list(
-        self, /, lower_permission: int = 0, upper_permission: int = 5, *, limit: int = 1, offset: int = 0
+        self, lower_permission: int = 0, upper_permission: int = 5, *, limit: int = 1, offset: int = 0
     ) -> List[int]:
         """
         获取表user_id_{fname}中user_id的列表
@@ -309,7 +480,7 @@ class Reviewer(Client):
             list[int]: user_id列表
         """
 
-        return await self.database.get_user_id_list(
+        return await self.db.get_user_id_list(
             self.fname, lower_permission, upper_permission, limit=limit, offset=offset
         )
 
@@ -364,7 +535,7 @@ class Reviewer(Client):
         """
 
         if img_hash := self.compute_imghash(image):
-            return await self.database.get_imghash(self.fname, img_hash)
+            return await self.db.get_imghash(self.fname, img_hash)
         return 0
 
     async def get_imghash_full(self, image: np.ndarray) -> Tuple[int, str]:
@@ -379,5 +550,5 @@ class Reviewer(Client):
         """
 
         if img_hash := self.compute_imghash(image):
-            return await self.database.get_imghash_full(self.fname, img_hash)
+            return await self.db.get_imghash_full(self.fname, img_hash)
         return 0, ''

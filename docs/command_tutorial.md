@@ -836,45 +836,6 @@ Used: 15 / 100 = 15.00%
 
 </details>
 
-### vote_stat 投票统计
-
-<details>
-
-```java
-@v_guard vote_stat [keyword] [limit] [min_level]
-```
-
-> ***功能***
-> 
-> 对主题帖的每一楼层统计投票数，并按用户的`user_id`去重<br>
-> 文字内容包含`keyword`且用户等级大于等于`min_level`的楼中楼回复会视作一票
-
-> ***参数说明***
-> 
-> `limit`: 按票数顺序返回得票最高的`limit`条结果<br>
-> `keyword`: 记票关键字<br>
-> `min_level`: 纳入统计的最低等级
-
-> ***举例***
-> 
-> `@v_guard vote_stat 支持 2 7`
-> 
-> 若该指令生效，`speaker`就会在该主题帖下回复下列结果
-```
-@召唤者 
-keyword=支持
-min_level=7
-floor=2 num=二楼票数(最高)
-floor=4 num=四楼票数(第二高)
-```
-> 为保护`speaker`的生命安全，该指令有长达10秒的全局冷却时间
-
-> ***能使用该指令的最低权限级别***
-> 
-> 1 非吧务的优秀创作者
-
-</details>
-
 ### tb_black 贴吧黑名单
 
 <details>

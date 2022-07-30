@@ -1,4 +1,3 @@
-# -*- coding:utf-8 -*-
 __all__ = ['CONFIG']
 
 from pathlib import Path

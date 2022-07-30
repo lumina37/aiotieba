@@ -55,7 +55,7 @@ class CloudReview(tb.Reviewer):
     async def check_threads(self, pn: int = 1) -> None:
         start_time = time.perf_counter()
         # 获取主题帖列表
-        threads = await self.get_threads(self.fname, pn)
+        threads = await self.get_threads(pn)
         # 并发运行协程检查主题帖内的违规内容
         await asyncio.gather(*[self._handle_thread(thread) for thread in threads])
 
@@ -74,7 +74,7 @@ class CloudReview(tb.Reviewer):
         punish = await self._check_thread(thread)
         if punish.block_days:
             # 封禁
-            await self.block(self.fname, thread.user.portrait, day=punish.block_days, reason=punish.note)
+            await self.block(thread.user.portrait, day=punish.block_days, reason=punish.note)
         if punish.del_flag == 0:
             pass
         elif punish.del_flag == 1:
@@ -82,14 +82,14 @@ class CloudReview(tb.Reviewer):
             tb.LOG.info(
                 f"Try to del. text={thread.text} user={thread.user} level={thread.user.level} note={punish.note}"
             )
-            await self.del_thread(thread.fid, thread.tid)
+            await self.del_thread(thread.tid)
             return
         elif punish.del_flag == 2:
             # 屏蔽帖
             tb.LOG.info(
                 f"Try to hide. text={thread.text} user={thread.user} level={thread.user.level} note={punish.note}"
             )
-            await self.hide_thread(thread.fid, thread.tid)
+            await self.hide_thread(thread.tid)
             return
 
         return
@@ -128,7 +128,7 @@ class CloudReview(tb.Reviewer):
             for post, next_post in zip(posts, posts[1:]):
                 if next_post.create_time - post.create_time > 90 * 24 * 3600:
                     await self.block(thread.fid, next_post.user.portrait, day=1, note="挖坟")
-                    await self.del_post(next_post.fid, next_post.tid, next_post.pid)
+                    await self.del_post(next_post.tid, next_post.pid)
 
         # 并发检查回复内容 因为是CPU密集任务所以不需要设计delay
         coros = [self._handle_post(post) for post in posts]
@@ -145,13 +145,13 @@ class CloudReview(tb.Reviewer):
 
         punish = await self._check_post(post)
         if punish.block_days:
-            await self.block(self.fname, post.user.portrait, day=punish.block_days, reason=punish.note)
+            await self.block(post.user.portrait, day=punish.block_days, reason=punish.note)
         if punish.del_flag <= 0:
             pass
         elif punish.del_flag == 1:
             # 内容违规 删回复
             tb.LOG.info(f"Try to del. text={post.text} user={post.user} level={post.user.level} note={punish.note}")
-            await self.del_post(post.fid, post.tid, post.pid)
+            await self.del_post(post.tid, post.pid)
             return
 
     async def _check_post(self, post: tb.Post) -> Punish:
@@ -201,7 +201,7 @@ class CloudReview(tb.Reviewer):
 
         punish = await self._check_comment(comment)
         if punish.block_days:
-            await self.block(self.fname, comment.user.portrait, day=punish.block_days, reason=punish.note)
+            await self.block(comment.user.portrait, day=punish.block_days, reason=punish.note)
         if punish.del_flag <= 0:
             pass
         elif punish.del_flag == 1:
@@ -209,7 +209,7 @@ class CloudReview(tb.Reviewer):
             tb.LOG.info(
                 f"Try to del. text={comment.text} user={comment.user} level={comment.user.level} note={punish.note}"
             )
-            await self.del_post(comment.fid, comment.tid, comment.pid)
+            await self.del_post(comment.tid, comment.pid)
             return
 
     async def _check_comment(self, comment: tb.Comment) -> Punish:

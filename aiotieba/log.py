@@ -1,4 +1,3 @@
-# -*- coding:utf-8 -*-
 __all__ = ['LOG']
 
 import logging
@@ -7,13 +6,16 @@ import sys
 from pathlib import Path
 from typing import ClassVar, Union
 
+LogLevel = Union[int, str]
+
+logging.addLevelName(logging.FATAL, "FATAL")
+logging.addLevelName(logging.WARN, "WARN")
+
 logging.logThreads = False
 logging.logProcesses = False
 logging.logMultiprocessing = False
 logging.raiseExceptions = False
 logging.Formatter.default_msec_format = '%s.%03d'
-
-LogLevel = Union[int, str]
 
 
 class TiebaLogger(logging.Logger):
