@@ -280,6 +280,7 @@ class UserInfo(BasicUserInfo):
         post_num (int): 发帖数
         fan_num (int): 粉丝数
         follow_num (int): 关注数
+        sign (str): 个性签名
         ip (str): ip归属地
 
         is_bawu (bool): 是否吧务
@@ -298,6 +299,7 @@ class UserInfo(BasicUserInfo):
         '_post_num',
         '_fan_num',
         '_follow_num',
+        '_sign',
         '_ip',
         '_is_bawu',
         '_is_vip',
@@ -319,6 +321,7 @@ class UserInfo(BasicUserInfo):
             self._post_num = _raw_data.post_num
             self._fan_num = _raw_data.fans_num
             self._follow_num = _raw_data.concern_num
+            self._sign = _raw_data.intro
             self._ip = _raw_data.ip_address
 
             self._is_bawu = bool(_raw_data.is_bawu)
@@ -337,6 +340,7 @@ class UserInfo(BasicUserInfo):
             self._post_num = 0
             self._fan_num = 0
             self._follow_num = 0
+            self._sign = ''
             self._ip = ''
 
             self._is_bawu = False
@@ -489,6 +493,18 @@ class UserInfo(BasicUserInfo):
     @follow_num.setter
     def follow_num(self, new_follow_num: int) -> None:
         self._follow_num = new_follow_num
+
+    @property
+    def sign(self) -> str:
+        """
+        个性签名
+        """
+
+        return self._sign
+
+    @sign.setter
+    def sign(self, new_sign: str) -> None:
+        self._sign = new_sign
 
     @property
     def ip(self) -> str:
@@ -3266,6 +3282,14 @@ class NewThread(_Container):
                 self._contents = Fragments()
 
         return self._contents
+
+    @property
+    def title(self) -> str:
+        """
+        帖子标题
+        """
+
+        return self._title
 
     @property
     def vote_info(self) -> VoteInfo:
