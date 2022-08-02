@@ -268,7 +268,7 @@ class Client(object):
 
         # Init web client
         web_headers = {
-            aiohttp.hdrs.USER_AGENT: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:101.0) Gecko/20100101 Firefox/101.0",
+            aiohttp.hdrs.USER_AGENT: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:103.0) Gecko/20100101 Firefox/103.0",
             aiohttp.hdrs.ACCEPT_ENCODING: "gzip, deflate, br",
             aiohttp.hdrs.CACHE_CONTROL: "no-cache",
             aiohttp.hdrs.CONNECTION: "keep-alive",
