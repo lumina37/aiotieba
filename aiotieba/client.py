@@ -2694,13 +2694,13 @@ class Client(object):
 
         return image
 
-    async def get_portrait(self, _id: Union[str, int], /, size: Literal['L', 'M', 'S'] = 'S') -> np.ndarray:
+    async def get_portrait(self, _id: Union[str, int], /, size: Literal['S', 'M', 'L'] = 'S') -> np.ndarray:
         """
         获取用户头像
 
         Args:
             _id (str | int): 用户的id user_id/user_name/portrait 优先portrait
-            size (Literal['L', 'M', 'S'], optional): 获取头像的大小 S为55x55 M为110x110 L为原图. Defaults to 'S'.
+            size (Literal['S', 'M', 'L'], optional): 获取头像的大小 S为55x55 M为110x110 L为原图. Defaults to 'S'.
 
         Returns:
             np.ndarray: 头像
