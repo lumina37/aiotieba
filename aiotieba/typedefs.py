@@ -840,9 +840,10 @@ class FragLink(_Fragment):
     链接碎片
 
     Attributes:
-        text (str): 链接标题
-        url (yarl.URL): 使用yarl解析后的链接 外链会在去除前缀后解析
-        raw_url (str): 原始链接
+        text (str): 标题与原链接
+        title (str): 链接标题
+        url (yarl.URL): 使用yarl解析后的链接
+        raw_url (str): 原链接
         is_external (bool): 是否外部链接
     """
 
@@ -860,19 +861,34 @@ class FragLink(_Fragment):
 
         self._text = self._raw_data.text
         self._url = None
-        self._raw_url = self._raw_data.link
-        self._is_external = self.raw_url.startswith(self.external_perfix)
+
+        self._raw_url: str = self._raw_data.link
+        self._is_external = self._raw_url.startswith(self.external_perfix)
+
+        if self._is_external:
+            self._raw_url = urllib.parse.unquote(self._raw_url.removeprefix(self.external_perfix + "?url="))
 
     def __repr__(self) -> str:
         return str(
             {
-                'text': self.text,
+                'title': self.title,
                 'raw_url': self.raw_url,
             }
         )
 
     @property
     def text(self) -> str:
+        """
+        原链接
+
+        Note:
+            外链会在解析前先去除external_perfix前缀
+        """
+
+        return self._raw_url
+
+    @property
+    def title(self) -> str:
         """
         链接标题
         """
@@ -889,20 +905,16 @@ class FragLink(_Fragment):
         """
 
         if self._url is None:
-
-            if self.is_external:
-                external_url = urllib.parse.unquote(self.raw_url.removeprefix(self.external_perfix + "?url="))
-                self._url = yarl.URL(external_url)
-
-            else:
-                self._url = yarl.URL(self.raw_url)
-
+            self._url = yarl.URL(self._raw_url)
         return self._url
 
     @property
     def raw_url(self) -> str:
         """
-        原始链接
+        原链接
+
+        Note:
+            外链会在解析前先去除external_perfix前缀
         """
 
         return self._raw_url
