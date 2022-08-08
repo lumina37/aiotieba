@@ -188,7 +188,7 @@ class Client(object):
         '_ws_dispatcher',
     ]
 
-    latest_version: ClassVar[str] = "12.26.4.3"  # 这是目前的最新版本
+    latest_version: ClassVar[str] = "12.27.0.2"  # 这是目前的最新版本
     no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
     post_version: ClassVar[str] = "9.1.0.0"  # 发帖使用极速版
 
@@ -228,13 +228,13 @@ class Client(object):
             ssl=False,
         )
 
-        _app_base_url = yarl.URL.build(scheme="http", host="c.tieba.baidu.com")
+        _app_base_url = yarl.URL.build(scheme="http", host="tiebac.baidu.com")
         # Init app client
         app_headers = {
-            aiohttp.hdrs.USER_AGENT: f"bdtb for Android {self.latest_version}",
+            aiohttp.hdrs.USER_AGENT: f"tieba/{self.latest_version}",
             aiohttp.hdrs.CONNECTION: "keep-alive",
             aiohttp.hdrs.ACCEPT_ENCODING: "gzip",
-            aiohttp.hdrs.HOST: "c.tieba.baidu.com",
+            aiohttp.hdrs.HOST: _app_base_url.host,
         }
         self.app = aiohttp.ClientSession(
             base_url=_app_base_url,
@@ -249,11 +249,11 @@ class Client(object):
 
         # Init app protobuf client
         app_proto_headers = {
-            aiohttp.hdrs.USER_AGENT: f"bdtb for Android {self.latest_version}",
+            aiohttp.hdrs.USER_AGENT: f"tieba/{self.latest_version}",
             "x_bd_data_type": "protobuf",
             aiohttp.hdrs.CONNECTION: "keep-alive",
             aiohttp.hdrs.ACCEPT_ENCODING: "gzip",
-            aiohttp.hdrs.HOST: "c.tieba.baidu.com",
+            aiohttp.hdrs.HOST: _app_base_url.host,
         }
         self.app_proto = aiohttp.ClientSession(
             base_url=_app_base_url,
@@ -1576,18 +1576,21 @@ class Client(object):
             if 'user' not in res_json:
                 raise ValueError("invalid params")
 
+            user = UserInfo(_raw_data=ParseDict(res_json['user'], User_pb2.User(), ignore_unknown_fields=True))
+
+            def _pack_thread_dict(thread_dict: dict) -> NewThread:
+                thread = NewThread(
+                    ParseDict(thread_dict, NewThreadInfo_pb2.NewThreadInfo(), ignore_unknown_fields=True)
+                )
+                thread._user = user
+                return thread
+
+            threads = [_pack_thread_dict(thread_dict) for thread_dict in res_json['post_list']]
+
         except Exception as err:
             LOG.warning(f"{err}. user={user}")
-            return UserInfo(), []
-
-        user = UserInfo(_raw_data=ParseDict(res_json['user'], User_pb2.User(), ignore_unknown_fields=True))
-
-        def _pack_thread_dict(thread_dict: dict) -> NewThread:
-            thread = NewThread(ParseDict(thread_dict, NewThreadInfo_pb2.NewThreadInfo(), ignore_unknown_fields=True))
-            thread._user = user
-            return thread
-
-        threads = [_pack_thread_dict(thread_dict) for thread_dict in res_json['post_list']]
+            user = UserInfo()
+            threads = []
 
         return user, threads
 
@@ -3149,6 +3152,129 @@ class Client(object):
 
         return dislike_forums
 
+    async def agree(self, tid: int, pid: int = 0) -> bool:
+        """
+        点赞主题帖或回复
+
+        Args:
+            tid (int): 待点赞的主题帖或回复所在的主题帖的tid
+            pid (int, optional): 待点赞的回复pid. Defaults to 0.
+
+        Returns:
+            bool: 操作是否成功
+        """
+
+        try:
+            await self._agree(tid, pid)
+
+        except Exception as err:
+            LOG.warning(f"{err}. tid={tid} pid={pid}")
+            return False
+
+        LOG.info(f"Succeeded. tid={tid} pid={pid}")
+        return True
+
+    async def unagree(self, tid: int, pid: int = 0) -> bool:
+        """
+        取消点赞主题帖或回复
+
+        Args:
+            tid (int): 待取消点赞的主题帖或回复所在的主题帖的tid
+            pid (int, optional): 待取消点赞的回复pid. Defaults to 0.
+
+        Returns:
+            bool: 操作是否成功
+        """
+
+        try:
+            await self._agree(tid, pid, is_undo=True)
+
+        except Exception as err:
+            LOG.warning(f"{err}. tid={tid} pid={pid}")
+            return False
+
+        LOG.info(f"Succeeded. tid={tid} pid={pid}")
+        return True
+
+    async def disagree(self, tid: int, pid: int = 0) -> bool:
+        """
+        点踩主题帖或回复
+
+        Args:
+            tid (int): 待点踩的主题帖或回复所在的主题帖的tid
+            pid (int, optional): 待点踩的回复pid. Defaults to 0.
+
+        Returns:
+            bool: 操作是否成功
+        """
+
+        try:
+            await self._agree(tid, pid, is_disagree=True)
+
+        except Exception as err:
+            LOG.warning(f"{err}. tid={tid} pid={pid}")
+            return False
+
+        LOG.info(f"Succeeded. tid={tid} pid={pid}")
+        return True
+
+    async def undisagree(self, tid: int, pid: int = 0) -> bool:
+        """
+        取消点踩主题帖或回复
+
+        Args:
+            tid (int): 待取消点踩的主题帖或回复所在的主题帖的tid
+            pid (int, optional): 待取消点踩的回复pid. Defaults to 0.
+
+        Returns:
+            bool: 操作是否成功
+        """
+
+        try:
+            await self._agree(tid, pid, is_disagree=True, is_undo=True)
+
+        except Exception as err:
+            LOG.warning(f"{err}. tid={tid} pid={pid}")
+            return False
+
+        LOG.info(f"Succeeded. tid={tid} pid={pid}")
+        return True
+
+    async def _agree(self, tid: int, pid: int = 0, *, is_disagree: bool = False, is_undo: bool = False) -> None:
+        """
+        点赞点踩
+
+        Args:
+            tid (int): 待点赞点踩的主题帖或回复所在的主题帖的tid
+            pid (int, optional): 待点赞点踩的回复pid. Defaults to 0.
+            is_disagree (bool, optional): 是否为点踩. Defaults to False.
+            is_undo (bool, optional): 是否为取消. Defaults to False.
+
+        Raises:
+            RuntimeError: 网络请求失败或服务端返回错误
+        """
+
+        payload = [
+            ('BDUSS', self.BDUSS),
+            ('_client_version', self.latest_version),
+            ('agree_type', 5 if is_disagree else 2),
+            ('cuid', self.cuid_galaxy2),
+            ('obj_type', 1 if pid else 3),
+            ('op_type', int(is_undo)),
+            ('post_id', pid),
+            ('tbs', await self.get_tbs()),
+            ('thread_id', tid),
+        ]
+
+        async with self.app.post(
+            yarl.URL.build(path="/c/c/agree/opAgree"),
+            data=self.pack_form(payload),
+        ) as resp:
+            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
+
+        if int(res_json['error_code']):
+            raise ValueError(res_json['error_msg'])
+
     async def remove_fan(self, _id: Union[str, int]):
         """
         移除粉丝
@@ -3176,7 +3302,7 @@ class Client(object):
                 yarl.URL.build(path="/c/c/user/removeFans"),
                 data=self.pack_form(payload),
             ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
@@ -3215,7 +3341,7 @@ class Client(object):
                 yarl.URL.build(path="/c/c/user/follow"),
                 data=self.pack_form(payload),
             ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
@@ -3254,7 +3380,7 @@ class Client(object):
                 yarl.URL.build(path="/c/c/user/unfollow"),
                 data=self.pack_form(payload),
             ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
