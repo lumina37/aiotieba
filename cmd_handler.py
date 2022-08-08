@@ -585,11 +585,11 @@ class Listener(object):
                 ctx.parent._user = await self.listener.get_basic_user_info(ctx.parent.contents.ats[0].user_id)
 
                 tb.LOG.info(f"Try to del thread. text={ctx.parent.text} user={ctx.parent.user}")
-                coros.append(ctx.admin.del_thread(ctx.parent.tid))
+                coros.append(ctx.admin.del_post(ctx.parent.pid))
 
             else:
                 tb.LOG.info(f"Try to del thread. text={ctx.parent.text} user={ctx.parent.user}")
-                coros.append(ctx.admin.del_thread(ctx.parent.tid))
+                coros.append(ctx.admin.del_post(ctx.parent.pid))
 
         if day:
             coros.append(ctx.admin.block(ctx.parent.user.portrait, day=day, reason=note))

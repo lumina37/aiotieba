@@ -82,7 +82,7 @@ class CloudReview(tb.Reviewer):
             tb.LOG.info(
                 f"Try to del. text={thread.text} user={thread.user} level={thread.user.level} note={punish.note}"
             )
-            await self.del_thread(thread.tid)
+            await self.del_post(thread.pid)
             return
         elif punish.del_flag == 2:
             # 屏蔽帖
