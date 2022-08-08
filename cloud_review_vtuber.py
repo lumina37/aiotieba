@@ -128,7 +128,7 @@ class CloudReview(tb.Reviewer):
             for post, next_post in zip(posts, posts[1:]):
                 if next_post.create_time - post.create_time > 90 * 24 * 3600:
                     await self.block(thread.fid, next_post.user.portrait, day=1, note="挖坟")
-                    await self.del_post(next_post.tid, next_post.pid)
+                    await self.del_post(next_post.pid)
 
         # 并发检查回复内容 因为是CPU密集任务所以不需要设计delay
         coros = [self._handle_post(post) for post in posts]
@@ -151,7 +151,7 @@ class CloudReview(tb.Reviewer):
         elif punish.del_flag == 1:
             # 内容违规 删回复
             tb.LOG.info(f"Try to del. text={post.text} user={post.user} level={post.user.level} note={punish.note}")
-            await self.del_post(post.tid, post.pid)
+            await self.del_post(post.pid)
             return
 
     async def _check_post(self, post: tb.Post) -> Punish:
@@ -209,7 +209,7 @@ class CloudReview(tb.Reviewer):
             tb.LOG.info(
                 f"Try to del. text={comment.text} user={comment.user} level={comment.user.level} note={punish.note}"
             )
-            await self.del_post(comment.tid, comment.pid)
+            await self.del_post(comment.pid)
             return
 
     async def _check_comment(self, comment: tb.Comment) -> Punish:

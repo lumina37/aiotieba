@@ -1967,13 +1967,54 @@ class Client(object):
         if int(res_json['error_code']):
             raise ValueError(res_json['error_msg'])
 
-    async def del_post(self, fname_or_fid: Union[str, int], /, tid: int, pid: int) -> bool:
+    async def del_threads(self, fname_or_fid: Union[str, int], /, tids: List[int], *, block: bool = False) -> bool:
+        """
+        批量删除主题帖
+
+        Args:
+            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid 优先fid
+            tids (list[int]): 待删除的主题帖tid列表
+            block (bool, optional): 是否同时封一天. Defaults to False.
+
+        Returns:
+            bool: 操作是否成功
+        """
+
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+
+        payload = [
+            ('BDUSS', self.BDUSS),
+            ('forum_id', fid),
+            ('tbs', await self.get_tbs()),
+            ('thread_ids', ','.join(map(str, tids))),
+            ('type', 2 if block else 1),
+        ]
+
+        try:
+            async with self.app.post(
+                yarl.URL.build(path="/c/c/bawu/multiDelThread"),
+                data=self.pack_form(payload),
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
+
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
+            if res_json['info']['ret_type']:
+                raise ValueError(res_json['info']['text'])
+
+        except Exception as err:
+            LOG.warning(f"{err}. forum={fname_or_fid} tids={tids}")
+            return False
+
+        LOG.info(f"Succeeded. forum={fname_or_fid} tids={tids}")
+        return True
+
+    async def del_post(self, fname_or_fid: Union[str, int], /, pid: int) -> bool:
         """
         删除回复
 
         Args:
             fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid 优先fid
-            tid (int): 回复所在的主题帖tid
             pid (int): 待删除的回复pid
 
         Returns:
@@ -1987,7 +2028,7 @@ class Client(object):
             ('fid', fid),
             ('pid', pid),
             ('tbs', await self.get_tbs()),
-            ('z', tid),
+            ('z', 2),
         ]
 
         try:
@@ -2001,10 +2042,53 @@ class Client(object):
                 raise ValueError(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname_or_fid} tid={tid} pid={pid}")
+            LOG.warning(f"{err}. forum={fname_or_fid} pid={pid}")
             return False
 
-        LOG.info(f"Succeeded. forum={fname_or_fid} tid={tid} pid={pid}")
+        LOG.info(f"Succeeded. forum={fname_or_fid} pid={pid}")
+        return True
+
+    async def del_posts(self, fname_or_fid: Union[str, int], /, pids: List[int], *, block: bool = False) -> bool:
+        """
+        批量删除回复
+
+        Args:
+            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid 优先fid
+            pids (list[int]): 待删除的回复pid列表
+            block (bool, optional): 是否同时封一天. Defaults to False.
+
+        Returns:
+            bool: 操作是否成功
+        """
+
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+
+        payload = [
+            ('BDUSS', self.BDUSS),
+            ('forum_id', fid),
+            ('post_ids', ','.join(map(str, pids))),
+            ('tbs', await self.get_tbs()),
+            ('thread_id', 2),
+            ('type', 2 if block else 1),
+        ]
+
+        try:
+            async with self.app.post(
+                yarl.URL.build(path="/c/c/bawu/multiDelPost"),
+                data=self.pack_form(payload),
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
+
+            if int(res_json['error_code']):
+                raise ValueError(res_json['error_msg'])
+            if res_json['info']['ret_type']:
+                raise ValueError(res_json['info']['text'])
+
+        except Exception as err:
+            LOG.warning(f"{err}. forum={fname_or_fid} pids={pids}")
+            return False
+
+        LOG.info(f"Succeeded. forum={fname_or_fid} pids={pids}")
         return True
 
     async def unhide_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:

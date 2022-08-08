@@ -278,19 +278,18 @@ class Reviewer(object):
 
         return await self.client.del_thread(self.fname, tid)
 
-    async def del_post(self, tid: int, pid: int) -> bool:
+    async def del_post(self, pid: int) -> bool:
         """
         删除回复
 
         Args:
-            tid (int): 回复所在的主题帖tid
             pid (int): 待删除的回复pid
 
         Returns:
             bool: 操作是否成功
         """
 
-        return await self.client.del_post(self.fname, tid, pid)
+        return await self.client.del_post(self.fname, pid)
 
     async def add_id(self, _id: int, *, id_last_edit: int = 0) -> bool:
         """
