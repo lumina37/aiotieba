@@ -20,12 +20,3 @@ if os.name == 'posix':
         raise KeyboardInterrupt
 
     signal.signal(signal.SIGTERM, terminate)
-
-elif os.name == 'nt':
-    import asyncio
-
-    # 此举是为了规避 _ProactorBasePipeTransport.__del__ 中的 RuntimeError: Event loop is closed
-    # 参考: https://github.com/aio-libs/aiohttp/issues/4324
-    # 将来的asyncio版本会修复该bug
-    # 参考: https://github.com/python/cpython/pull/92842
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
