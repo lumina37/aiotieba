@@ -364,7 +364,7 @@ class Listener(object):
         content = f"该回复为吧务召唤指令@.v_guard holyshit的自动响应\n召唤人诉求: {extra_info} @" + " @".join(active_admin_list)
 
         if await ctx.speaker.add_post(ctx.fname, ctx.tid, content):
-            await ctx.admin.del_post(ctx.tid, ctx.pid)
+            await ctx.admin.del_post(ctx.pid)
 
     @check_and_log(need_permission=1, need_arg_num=0)
     async def cmd_recommend(self, ctx: Context) -> None:
@@ -374,7 +374,7 @@ class Listener(object):
         """
 
         if await ctx.admin.client.recommend(ctx.fname, ctx.tid):
-            await ctx.admin.del_post(ctx.tid, ctx.pid)
+            await ctx.admin.del_post(ctx.pid)
 
     @check_and_log(need_permission=2, need_arg_num=1)
     async def cmd_move(self, ctx: Context) -> None:
@@ -393,7 +393,7 @@ class Listener(object):
         to_tab_id = threads.tab_map.get(ctx.args[0], 0)
 
         if await ctx.admin.client.move(ctx.fname, ctx.tid, to_tab_id=to_tab_id, from_tab_id=from_tab_id):
-            await ctx.admin.del_post(ctx.tid, ctx.pid)
+            await ctx.admin.del_post(ctx.pid)
 
     @check_and_log(need_permission=2, need_arg_num=0)
     async def cmd_good(self, ctx: Context) -> None:
@@ -405,7 +405,7 @@ class Listener(object):
         cname = ctx.args[0] if len(ctx.args) else ''
 
         if await ctx.admin.client.good(ctx.fname, ctx.tid, cname=cname):
-            await ctx.admin.del_post(ctx.tid, ctx.pid)
+            await ctx.admin.del_post(ctx.pid)
 
     @check_and_log(need_permission=2, need_arg_num=0)
     async def cmd_ungood(self, ctx: Context) -> None:
@@ -415,7 +415,7 @@ class Listener(object):
         """
 
         if await ctx.admin.client.ungood(ctx.fname, ctx.tid):
-            await ctx.admin.del_post(ctx.tid, ctx.pid)
+            await ctx.admin.del_post(ctx.pid)
 
     @check_and_log(need_permission=4, need_arg_num=0)
     async def cmd_top(self, ctx: Context) -> None:
@@ -425,7 +425,7 @@ class Listener(object):
         """
 
         if await ctx.admin.client.top(ctx.fname, ctx.tid):
-            await ctx.admin.del_post(ctx.tid, ctx.pid)
+            await ctx.admin.del_post(ctx.pid)
 
     @check_and_log(need_permission=4, need_arg_num=0)
     async def cmd_untop(self, ctx: Context) -> None:
@@ -435,7 +435,7 @@ class Listener(object):
         """
 
         if await ctx.admin.client.untop(ctx.fname, ctx.tid):
-            await ctx.admin.del_post(ctx.tid, ctx.pid)
+            await ctx.admin.del_post(ctx.pid)
 
     @check_and_log(need_permission=2, need_arg_num=0)
     async def cmd_hide(self, ctx: Context) -> None:
@@ -445,7 +445,7 @@ class Listener(object):
         """
 
         if await ctx.admin.hide_thread(ctx.tid):
-            await ctx.admin.del_post(ctx.tid, ctx.pid)
+            await ctx.admin.del_post(ctx.pid)
 
     @check_and_log(need_permission=2, need_arg_num=0)
     async def cmd_unhide(self, ctx: Context) -> None:
@@ -455,7 +455,7 @@ class Listener(object):
         """
 
         if await ctx.admin.client.unhide_thread(ctx.fname, ctx.tid):
-            await ctx.admin.del_post(ctx.tid, ctx.pid)
+            await ctx.admin.del_post(ctx.pid)
 
     @check_and_log(need_permission=2, need_arg_num=0)
     async def cmd_delete(self, ctx: Context) -> None:
@@ -483,7 +483,7 @@ class Listener(object):
             success = await ctx.admin.client.recover_post(ctx.fname, _id)
 
         if success:
-            await ctx.admin.del_post(ctx.tid, ctx.pid)
+            await ctx.admin.del_post(ctx.pid)
 
     @check_and_log(need_permission=2, need_arg_num=1)
     async def cmd_block(self, ctx: Context) -> None:
@@ -521,7 +521,7 @@ class Listener(object):
         note = ctx.args[1] if len(ctx.args) > 1 else ctx.note
 
         if await ctx.admin.block(user.portrait, day=day, reason=note):
-            await ctx.admin.del_post(ctx.tid, ctx.pid)
+            await ctx.admin.del_post(ctx.pid)
 
     @check_and_log(need_permission=2, need_arg_num=1)
     async def cmd_unblock(self, ctx: Context) -> None:
@@ -533,7 +533,7 @@ class Listener(object):
         user = await self._arg2user_info(ctx.args[0])
 
         if await ctx.admin.client.unblock(ctx.fname, user.user_id):
-            await ctx.admin.del_post(ctx.tid, ctx.pid)
+            await ctx.admin.del_post(ctx.pid)
 
     @check_and_log(need_permission=2, need_arg_num=0)
     async def cmd_drop(self, ctx: Context) -> None:
@@ -574,7 +574,7 @@ class Listener(object):
 
         if ctx.at.is_floor:
             tb.LOG.info(f"Try to del post. text={ctx.parent.text} user={ctx.parent.user}")
-            coros.append(ctx.admin.del_post(ctx.parent.tid, ctx.parent.pid))
+            coros.append(ctx.admin.del_post(ctx.parent.pid))
 
         else:
             if ctx.at.is_thread:
@@ -585,16 +585,16 @@ class Listener(object):
                 ctx.parent._user = await self.listener.get_basic_user_info(ctx.parent.contents.ats[0].user_id)
 
                 tb.LOG.info(f"Try to del thread. text={ctx.parent.text} user={ctx.parent.user}")
-                coros.append(ctx.admin.del_thread(ctx.parent.tid))
+                coros.append(ctx.admin.del_post(ctx.parent.pid))
 
             else:
                 tb.LOG.info(f"Try to del thread. text={ctx.parent.text} user={ctx.parent.user}")
-                coros.append(ctx.admin.del_thread(ctx.parent.tid))
+                coros.append(ctx.admin.del_post(ctx.parent.pid))
 
         if day:
             coros.append(ctx.admin.block(ctx.parent.user.portrait, day=day, reason=note))
 
-        await ctx.admin.del_post(ctx.tid, ctx.pid)
+        await ctx.admin.del_post(ctx.pid)
         await asyncio.gather(*coros)
 
     @check_and_log(need_permission=4, need_arg_num=1)
@@ -607,7 +607,7 @@ class Listener(object):
         note = ctx.args[1] if len(ctx.args) > 1 else ctx.note
 
         if await self._cmd_set(ctx, -5, note):
-            await ctx.admin.del_post(ctx.tid, ctx.pid)
+            await ctx.admin.del_post(ctx.pid)
 
     @check_and_log(need_permission=3, need_arg_num=1)
     async def cmd_white(self, ctx: Context) -> None:
@@ -619,7 +619,7 @@ class Listener(object):
         note = ctx.args[1] if len(ctx.args) > 1 else ctx.note
 
         if await self._cmd_set(ctx, 1, note):
-            await ctx.admin.del_post(ctx.tid, ctx.pid)
+            await ctx.admin.del_post(ctx.pid)
 
     @check_and_log(need_permission=3, need_arg_num=1)
     async def cmd_reset(self, ctx: Context) -> None:
@@ -631,7 +631,7 @@ class Listener(object):
         note = ctx.args[1] if len(ctx.args) > 1 else ctx.note
 
         if await self._cmd_set(ctx, 0, note):
-            await ctx.admin.del_post(ctx.tid, ctx.pid)
+            await ctx.admin.del_post(ctx.pid)
 
     @check_and_log(need_permission=4, need_arg_num=0)
     async def cmd_exdrop(self, ctx: Context) -> None:
@@ -658,7 +658,7 @@ class Listener(object):
         note = ctx.args[2] if len(ctx.args) > 2 else ctx.note
 
         if await self._cmd_set(ctx, new_permission, note):
-            await ctx.admin.del_post(ctx.tid, ctx.pid)
+            await ctx.admin.del_post(ctx.pid)
 
     @check_and_log(need_permission=0, need_arg_num=1)
     async def cmd_get(self, ctx: Context) -> None:
@@ -681,7 +681,7 @@ class Listener(object):
             ctx.speaker.send_msg(ctx.user.user_id, msg_content),
         )
         if success:
-            await ctx.admin.del_post(ctx.tid, ctx.pid)
+            await ctx.admin.del_post(ctx.pid)
 
     @check_and_log(need_permission=4, need_arg_num=2)
     async def cmd_img_set(self, ctx: Context) -> None:
@@ -710,7 +710,7 @@ class Listener(object):
 
             await ctx.admin.db.add_imghash(ctx.fname, img_hash, img.hash, permission=permission, note=note)
 
-        await ctx.admin.del_post(ctx.tid, ctx.pid)
+        await ctx.admin.del_post(ctx.pid)
 
     @check_and_log(need_permission=3, need_arg_num=0)
     async def cmd_img_reset(self, ctx: Context) -> None:
@@ -734,7 +734,7 @@ class Listener(object):
 
             await ctx.admin.db.del_imghash(ctx.fname, img_hash)
 
-        await ctx.admin.del_post(ctx.tid, ctx.pid)
+        await ctx.admin.del_post(ctx.pid)
 
     @check_and_log(need_permission=1, need_arg_num=0)
     async def cmd_recom_status(self, ctx: Context) -> None:
@@ -750,7 +750,7 @@ class Listener(object):
         content = f"Used: {used_recom_num} / {total_recom_num} = {used_recom_num/total_recom_num*100:.2f}%"
 
         if await ctx.speaker.send_msg(ctx.user.user_id, content):
-            await ctx.admin.del_post(ctx.tid, ctx.pid)
+            await ctx.admin.del_post(ctx.pid)
 
     @check_and_log(need_permission=4, need_arg_num=1)
     async def cmd_tb_black(self, ctx: Context) -> None:
@@ -762,7 +762,7 @@ class Listener(object):
         user = await self._arg2user_info(ctx.args[0])
 
         if await ctx.admin.client.blacklist_add(ctx.fname, user.user_id):
-            await ctx.admin.del_post(ctx.tid, ctx.pid)
+            await ctx.admin.del_post(ctx.pid)
 
     @check_and_log(need_permission=3, need_arg_num=1)
     async def cmd_tb_reset(self, ctx: Context) -> None:
@@ -774,7 +774,7 @@ class Listener(object):
         user = await self._arg2user_info(ctx.args[0])
 
         if await ctx.admin.client.blacklist_del(ctx.fname, user.user_id):
-            await ctx.admin.del_post(ctx.tid, ctx.pid)
+            await ctx.admin.del_post(ctx.pid)
 
     @check_and_log(need_permission=2, need_arg_num=0)
     async def cmd_water(self, ctx: Context) -> None:
@@ -784,7 +784,7 @@ class Listener(object):
         """
 
         if await ctx.admin.add_tid(ctx.tid, mode=True) and await ctx.admin.hide_thread(ctx.tid):
-            await ctx.admin.del_post(ctx.tid, ctx.pid)
+            await ctx.admin.del_post(ctx.pid)
 
     @check_and_log(need_permission=2, need_arg_num=0)
     async def cmd_unwater(self, ctx: Context) -> None:
@@ -794,7 +794,7 @@ class Listener(object):
         """
 
         if await ctx.admin.del_tid(ctx.tid) and await ctx.admin.client.unhide_thread(ctx.fname, ctx.tid):
-            await ctx.admin.del_post(ctx.tid, ctx.pid)
+            await ctx.admin.del_post(ctx.pid)
 
     @check_and_log(need_permission=3, need_arg_num=1)
     async def cmd_water_restrict(self, ctx: Context) -> None:
@@ -805,10 +805,10 @@ class Listener(object):
 
         if ctx.args[0] == "enter":
             if await ctx.admin.add_tid(0, mode=True):
-                await ctx.admin.del_post(ctx.tid, ctx.pid)
+                await ctx.admin.del_post(ctx.pid)
         elif ctx.args[0] == "exit":
             if await ctx.admin.add_tid(0, mode=False):
-                await ctx.admin.del_post(ctx.tid, ctx.pid)
+                await ctx.admin.del_post(ctx.pid)
             limit = 128
             tids = await ctx.admin.get_tid_hide_list(limit=limit)
             while 1:
@@ -826,7 +826,7 @@ class Listener(object):
         """
 
         if await ctx.admin.add_user_id(ctx.user.user_id, permission=ctx.exec_permission, note="cmd_active"):
-            await ctx.admin.del_post(ctx.tid, ctx.pid)
+            await ctx.admin.del_post(ctx.pid)
 
     @check_and_log(need_permission=1, need_arg_num=0)
     async def cmd_ping(self, ctx: Context) -> None:
@@ -835,7 +835,7 @@ class Listener(object):
         用于测试bot可用性的空指令
         """
 
-        await ctx.admin.del_post(ctx.tid, ctx.pid)
+        await ctx.admin.del_post(ctx.pid)
 
     @check_and_log(need_permission=129, need_arg_num=65536)
     async def cmd_default(self, ctx: Context) -> None:

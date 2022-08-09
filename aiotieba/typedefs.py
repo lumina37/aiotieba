@@ -280,6 +280,7 @@ class UserInfo(BasicUserInfo):
         post_num (int): 发帖数
         fan_num (int): 粉丝数
         follow_num (int): 关注数
+        sign (str): 个性签名
         ip (str): ip归属地
 
         is_bawu (bool): 是否吧务
@@ -298,6 +299,7 @@ class UserInfo(BasicUserInfo):
         '_post_num',
         '_fan_num',
         '_follow_num',
+        '_sign',
         '_ip',
         '_is_bawu',
         '_is_vip',
@@ -319,6 +321,7 @@ class UserInfo(BasicUserInfo):
             self._post_num = _raw_data.post_num
             self._fan_num = _raw_data.fans_num
             self._follow_num = _raw_data.concern_num
+            self._sign = _raw_data.intro
             self._ip = _raw_data.ip_address
 
             self._is_bawu = bool(_raw_data.is_bawu)
@@ -337,6 +340,7 @@ class UserInfo(BasicUserInfo):
             self._post_num = 0
             self._fan_num = 0
             self._follow_num = 0
+            self._sign = ''
             self._ip = ''
 
             self._is_bawu = False
@@ -489,6 +493,18 @@ class UserInfo(BasicUserInfo):
     @follow_num.setter
     def follow_num(self, new_follow_num: int) -> None:
         self._follow_num = new_follow_num
+
+    @property
+    def sign(self) -> str:
+        """
+        个性签名
+        """
+
+        return self._sign
+
+    @sign.setter
+    def sign(self, new_sign: str) -> None:
+        self._sign = new_sign
 
     @property
     def ip(self) -> str:
@@ -824,9 +840,10 @@ class FragLink(_Fragment):
     链接碎片
 
     Attributes:
-        text (str): 链接标题
-        url (yarl.URL): 使用yarl解析后的链接 外链会在去除前缀后解析
-        raw_url (str): 原始链接
+        text (str): 标题与原链接
+        title (str): 链接标题
+        url (yarl.URL): 使用yarl解析后的链接
+        raw_url (str): 原链接
         is_external (bool): 是否外部链接
     """
 
@@ -844,19 +861,34 @@ class FragLink(_Fragment):
 
         self._text = self._raw_data.text
         self._url = None
-        self._raw_url = self._raw_data.link
-        self._is_external = self.raw_url.startswith(self.external_perfix)
+
+        self._raw_url: str = self._raw_data.link
+        self._is_external = self._raw_url.startswith(self.external_perfix)
+
+        if self._is_external:
+            self._raw_url = urllib.parse.unquote(self._raw_url.removeprefix(self.external_perfix + "?url="))
 
     def __repr__(self) -> str:
         return str(
             {
-                'text': self.text,
+                'title': self.title,
                 'raw_url': self.raw_url,
             }
         )
 
     @property
     def text(self) -> str:
+        """
+        原链接
+
+        Note:
+            外链会在解析前先去除external_perfix前缀
+        """
+
+        return self._raw_url
+
+    @property
+    def title(self) -> str:
         """
         链接标题
         """
@@ -873,20 +905,16 @@ class FragLink(_Fragment):
         """
 
         if self._url is None:
-
-            if self.is_external:
-                external_url = urllib.parse.unquote(self.raw_url.removeprefix(self.external_perfix + "?url="))
-                self._url = yarl.URL(external_url)
-
-            else:
-                self._url = yarl.URL(self.raw_url)
-
+            self._url = yarl.URL(self._raw_url)
         return self._url
 
     @property
     def raw_url(self) -> str:
         """
-        原始链接
+        原链接
+
+        Note:
+            外链会在解析前先去除external_perfix前缀
         """
 
         return self._raw_url
@@ -3266,6 +3294,14 @@ class NewThread(_Container):
                 self._contents = Fragments()
 
         return self._contents
+
+    @property
+    def title(self) -> str:
+        """
+        帖子标题
+        """
+
+        return self._title
 
     @property
     def vote_info(self) -> VoteInfo:

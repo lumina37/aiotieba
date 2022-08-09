@@ -1,15 +1,26 @@
 # 实用工具
 
-## 签到水帖
+## 签到水经验
 
 ```python
 import asyncio
-from typing import List, Tuple
+import itertools
+from typing import List
 
 import aiotieba as tb
 
 
-async def water(BDUSS_key: str, fname_tids: List[Tuple[str, int]]) -> None:
+class WaterTask(object):
+
+    __slots__ = ['fname', 'tid', 'times']
+
+    def __init__(self, fname: str, tid: int, times: int = 6) -> None:
+        self.fname = fname
+        self.tid = tid
+        self.times = times
+
+
+async def water(BDUSS_key: str, tasks: List[WaterTask]) -> None:
     """
     水帖
 
@@ -19,13 +30,52 @@ async def water(BDUSS_key: str, fname_tids: List[Tuple[str, int]]) -> None:
     """
 
     async with tb.Client(BDUSS_key) as client:
-        for fname, tid in fname_tids:
-            for i in range(6):
-                await client.add_post(fname, tid, str(i))
+        for task in tasks:
+            for i in range(task.times):
+                await client.add_post(task.fname, task.tid, str(i))
                 await asyncio.sleep(120)
 
 
-async def sign(BDUSS_key: str, retry_times: int = 0) -> None:
+async def agree(BDUSS_key: str, tid: int, *, max_fail: int, max_times: int = -1):
+    """
+    点赞楼层刷经验
+
+    Args:
+        BDUSS_key (str): 用于创建客户端
+        tid (int): 待点赞的楼层为该tid对应的主题帖的最后一楼
+        max_fail (int): 最大连续失败次数
+        max_times (int, optional): 运行轮数 每轮包含一次点赞和一次取消赞. Defaults to -1.
+    """
+
+    async with tb.Client(BDUSS_key) as client:
+        posts = await client.get_posts(tid, 99999)
+        tid = posts[-1].tid
+        pid = posts[-1].pid
+
+        if max_times <= 0:
+            iterator = itertools.count()
+        else:
+            iterator = range(max_times)
+
+        fail_count = 0
+        for _ in iterator:
+
+            if await client.agree(tid, pid):
+                fail_count = 0
+            else:
+                fail_count += 1
+                await asyncio.sleep(10)
+
+            await asyncio.sleep(6)
+
+            await client.unagree(tid, pid)
+            if fail_count == max_fail:
+                break
+
+            await asyncio.sleep(6)
+
+
+async def sign(BDUSS_key: str, *, retry_times: int = 0) -> None:
     """
     签到
 
@@ -54,18 +104,22 @@ async def sign(BDUSS_key: str, retry_times: int = 0) -> None:
 
 
 async def main() -> None:
-    # 大号每天在lol半价吧和个人吧水6个帖
-    # 大小号每天签到，大号每次签到重试3轮，确保连签不断，小号只重试1轮
     await asyncio.gather(
+        # 大号每天在lol半价吧和v吧水6帖 在个人吧水1帖以保证吧主不掉
         water(
             "default",
             [
-                ("lol半价", 2986143112),
-                ("starry", 6154402005),
+                WaterTask("lol半价", 2986143112),
+                WaterTask("v", 3611123694),
+                WaterTask("starry", 6154402005, 1),
             ],
         ),
-        sign("default", 3),
-        sign("backup", 1),
+        # 大小号每天签到 大号每次签到重试3轮 确保连签不断 小号只重试1轮
+        sign("default", retry_times=3),
+        sign("backup", retry_times=1),
+        # 大小号每天在v吧点赞刷经验 大号无限刷直到连续6次失败即视为达到每日上限 小号只刷100轮
+        agree("default", 3611123694, max_fail=6),
+        agree("backup", 3611123694, max_fail=6, max_times=100),
     )
 
 
@@ -175,7 +229,7 @@ async def main() -> None:
     async with tb.Client('default') as client:
         while posts_list := await client.get_self_posts():
             await asyncio.gather(
-                *[client.del_post(post.fid, post.tid, post.pid) for posts in posts_list for post in posts]
+                *[client.del_post(post.fid, post.pid) for posts in posts_list for post in posts]
             )
 
 
