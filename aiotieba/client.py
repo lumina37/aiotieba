@@ -7,7 +7,6 @@ import gzip
 import hashlib
 import json
 import random
-import socket
 import time
 import uuid
 import weakref
@@ -221,20 +220,20 @@ class Client(object):
         _trust_env = False
         _timeout = aiohttp.ClientTimeout(connect=8, sock_connect=3, sock_read=12)
         self._connector = aiohttp.TCPConnector(
-            ttl_dns_cache=600,
+            ttl_dns_cache=900,
             keepalive_timeout=60,
             limit=0,
-            family=socket.AF_INET,
             ssl=False,
         )
 
-        _app_base_url = yarl.URL.build(scheme="http", host="tiebac.baidu.com")
+        _app_host = "tiebac.baidu.com"
+        _app_base_url = yarl.URL.build(scheme="http", host=_app_host)
         # Init app client
         app_headers = {
             aiohttp.hdrs.USER_AGENT: f"tieba/{self.latest_version}",
             aiohttp.hdrs.CONNECTION: "keep-alive",
             aiohttp.hdrs.ACCEPT_ENCODING: "gzip",
-            aiohttp.hdrs.HOST: _app_base_url.host,
+            aiohttp.hdrs.HOST: _app_host,
         }
         self.app = aiohttp.ClientSession(
             base_url=_app_base_url,
@@ -253,7 +252,7 @@ class Client(object):
             "x_bd_data_type": "protobuf",
             aiohttp.hdrs.CONNECTION: "keep-alive",
             aiohttp.hdrs.ACCEPT_ENCODING: "gzip",
-            aiohttp.hdrs.HOST: _app_base_url.host,
+            aiohttp.hdrs.HOST: _app_host,
         }
         self.app_proto = aiohttp.ClientSession(
             base_url=_app_base_url,

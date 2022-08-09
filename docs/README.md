@@ -6,7 +6,7 @@
 
 ## [many_utils](many_utils.md)
 
-基于`aiotieba`实用工具合集
+使用`aiotieba`开发的实用小工具合集
 
 使用寥寥数行代码实现高效且强大的自动化处理，具体功能包括：
 

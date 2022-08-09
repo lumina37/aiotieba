@@ -26,7 +26,7 @@ async def water(BDUSS_key: str, tasks: List[WaterTask]) -> None:
 
     Args:
         BDUSS_key (str): 用于创建客户端
-        fname_tids (List[Tuple[str, int]]): 贴吧名和水楼的tid组成的元组列表
+        tasks (List[WaterTask]): 水帖任务列表
     """
 
     async with tb.Client(BDUSS_key) as client:
@@ -117,9 +117,9 @@ async def main() -> None:
         # 大小号每天签到 大号每次签到重试3轮 确保连签不断 小号只重试1轮
         sign("default", retry_times=3),
         sign("backup", retry_times=1),
-        # 大小号每天在v吧点赞刷经验 大号无限刷直到连续6次失败即视为达到每日上限 小号只刷100轮
-        agree("default", 3611123694, max_fail=6),
-        agree("backup", 3611123694, max_fail=6, max_times=100),
+        # 大小号每天在v吧点赞刷经验
+        agree("default", 3611123694, max_fail=1, max_times=1),
+        agree("backup", 3611123694, max_fail=1, max_times=1),
     )
 
 
