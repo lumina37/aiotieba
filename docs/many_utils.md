@@ -4,7 +4,6 @@
 
 ```python
 import asyncio
-import itertools
 from typing import List
 
 import aiotieba as tb
@@ -36,43 +35,29 @@ async def water(BDUSS_key: str, tasks: List[WaterTask]) -> None:
                 await asyncio.sleep(120)
 
 
-async def agree(BDUSS_key: str, tid: int, *, max_fail: int, max_times: int = -1):
+async def agree(BDUSS_key: str, tids: List[int], *, max_times: int = 3):
     """
     点赞楼层刷经验
 
     Args:
         BDUSS_key (str): 用于创建客户端
-        tid (int): 待点赞的楼层为该tid对应的主题帖的最后一楼
-        max_fail (int): 最大连续失败次数
-        max_times (int, optional): 运行轮数 每轮包含一次点赞和一次取消赞. Defaults to -1.
+        tids (list[int]): tid列表 对每个tid的最后一楼执行点赞操作
+        times (int, optional): 点赞轮数 每轮包含一次点赞和一次取消赞. Defaults to 3.
     """
 
     async with tb.Client(BDUSS_key) as client:
-        posts = await client.get_posts(tid, 99999)
-        tid = posts[-1].tid
-        pid = posts[-1].pid
 
-        if max_times <= 0:
-            iterator = itertools.count()
-        else:
-            iterator = range(max_times)
+        for tid in tids:
 
-        fail_count = 0
-        for _ in iterator:
+            posts = await client.get_posts(tid, 0xFFFF, rn=0, sort=1)
+            tid = posts[-1].tid
+            pid = posts[-1].pid
 
-            if await client.agree(tid, pid):
-                fail_count = 0
-            else:
-                fail_count += 1
-                await asyncio.sleep(10)
-
-            await asyncio.sleep(6)
-
-            await client.unagree(tid, pid)
-            if fail_count == max_fail:
-                break
-
-            await asyncio.sleep(6)
+            for _ in range(max_times):
+                await client.agree(tid, pid)
+                await asyncio.sleep(6)
+                await client.unagree(tid, pid)
+                await asyncio.sleep(6)
 
 
 async def sign(BDUSS_key: str, *, retry_times: int = 0) -> None:
@@ -104,6 +89,9 @@ async def sign(BDUSS_key: str, *, retry_times: int = 0) -> None:
 
 
 async def main() -> None:
+
+    agree_tids = [2986143112, 3611123694, 7689322018, 7966279046]
+
     await asyncio.gather(
         # 大号每天在lol半价吧和v吧水6帖 在个人吧水1帖以保证吧主不掉
         water(
@@ -117,9 +105,9 @@ async def main() -> None:
         # 大小号每天签到 大号每次签到重试3轮 确保连签不断 小号只重试1轮
         sign("default", retry_times=3),
         sign("backup", retry_times=1),
-        # 大小号每天在v吧点赞刷经验
-        agree("default", 3611123694, max_fail=1, max_times=1),
-        agree("backup", 3611123694, max_fail=1, max_times=1),
+        # 大小号每天点赞刷经验
+        agree("default", agree_tids, max_times=1),
+        agree("backup", agree_tids, max_times=1),
     )
 
 
