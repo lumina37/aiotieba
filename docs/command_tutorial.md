@@ -21,8 +21,8 @@
 <img width="40%" alt="1_2" src="https://user-images.githubusercontent.com/48282276/171667750-0cde4816-c755-4565-9d22-e1688a563dd7.jpg">
 
 > 再输入<br>
-> **指令类型**: `drop`<br>
-> **参数1**: `test1234` (封禁理由)<br>
+> **指令类型**: [`drop`](#drop--drop3--drop1-删封)<br>
+> **参数1**: `test1234` (可选的封禁理由)<br>
 > 并发布回复
 
 <img width="40%" alt="1_3_1" src="https://user-images.githubusercontent.com/48282276/171667893-68643002-8abb-47a1-87d6-72090c8f5a41.jpg">
@@ -48,8 +48,8 @@
 > 在这个吧的任何位置拉起一个回复框<br>
 > 先`@v_guard`并确保@变蓝<br>
 > 再输入<br>
-> **指令类型**: `block`<br>
-> **参数1**: `刚刚复制的那坨东西` (用户id: 包含tieba_uid的字符串)<br>
+> **指令类型**: [`block`](#block--block3--block1-封禁)<br>
+> **参数1**: `刚刚复制的那坨东西` (用户id: 包含[tieba_uid](tutorial.md#tieba_uid)的字符串)<br>
 > 点击回复
 
 <img width="40%" alt="2_2" src="https://user-images.githubusercontent.com/48282276/160992862-341c666c-5a45-40f2-ab75-ab098b456235.jpg">
@@ -64,7 +64,7 @@
 > 点一下需要删除的楼层拉起回复框<br>
 > 先`@v_guard`并确保@变蓝<br>
 > 再输入<br>
-> **指令类型**: `drop3`<br>
+> **指令类型**: [`drop3`](#drop--drop3--drop1-删封)<br>
 > 点击回复
 
 <img width="40%" alt="3_1" src="https://user-images.githubusercontent.com/48282276/160995393-903511ae-9ec3-4055-890e-e144a7540fac.jpg">
@@ -80,7 +80,7 @@
 ## 网页端如何解封任意用户
 
 > 点开用户主页，在链接里找到一串`tb.1.`开头的东西，这个东西叫[`portrait`](tutorial.md#portrait)<br>
-> 每个用户都有唯一的`portrait`<br>
+> 每个用户都有唯一的[`portrait`](tutorial.md#portrait)<br>
 > 把它复制出来
 
 <img width="80%" alt="4_1" src="https://user-images.githubusercontent.com/48282276/160996223-8afa7be5-1051-4cdd-9d4c-0e05044774e9.png">
@@ -88,7 +88,7 @@
 > 在这个吧的任何位置拉起一个回复框<br>
 > 先`@v_guard`并确保@变蓝<br>
 > 再输入<br>
-> **指令类型**: `unblock`<br>
+> **指令类型**: [`unblock`](#unblock-解封)<br>
 > **参数1**: `刚刚复制的那坨东西` (用户id: portrait)<br>
 > 点击回复
 
