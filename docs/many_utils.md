@@ -35,7 +35,7 @@ async def water(BDUSS_key: str, tasks: List[WaterTask]) -> None:
                 await asyncio.sleep(120)
 
 
-async def agree(BDUSS_key: str, tids: List[int], *, max_times: int = 3):
+async def agree(BDUSS_key: str, tids: List[int], *, times: int = 3):
     """
     点赞楼层刷经验
 
@@ -53,7 +53,7 @@ async def agree(BDUSS_key: str, tids: List[int], *, max_times: int = 3):
             tid = posts[-1].tid
             pid = posts[-1].pid
 
-            for _ in range(max_times):
+            for _ in range(times):
                 await client.agree(tid, pid)
                 await asyncio.sleep(6)
                 await client.unagree(tid, pid)
