@@ -54,7 +54,8 @@ class Reviewer(object):
         return await self.enter()
 
     async def close(self) -> None:
-        await asyncio.gather(self.client.close(), self.db.close(), return_exceptions=True)
+        await self.client.close()
+        await self.db.close()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.close()

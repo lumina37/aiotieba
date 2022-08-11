@@ -220,7 +220,7 @@ class Client(object):
         _trust_env = False
         _timeout = aiohttp.ClientTimeout(connect=8, sock_connect=3, sock_read=12)
         self._connector = aiohttp.TCPConnector(
-            ttl_dns_cache=900,
+            ttl_dns_cache=600,
             keepalive_timeout=60,
             limit=0,
             ssl=False,
@@ -309,15 +309,13 @@ class Client(object):
         if self._ws_dispatcher is not None:
             self._ws_dispatcher.cancel()
 
-        close_coros = [
-            self.app.close(),
-            self.app_proto.close(),
-            self.web.close(),
-            self._app_websocket.close(),
-        ]
+        await self.app.close()
+        await self.app_proto.close()
+        await self.web.close()
+        await self._app_websocket.close()
+
         if self.websocket is not None and not self.websocket.closed:
-            close_coros.append(self.websocket.close())
-        await asyncio.gather(*close_coros)
+            await self.websocket.close()
 
         await self._connector.close()
 
