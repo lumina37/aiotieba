@@ -187,7 +187,7 @@ class Client(object):
         '_ws_dispatcher',
     ]
 
-    latest_version: ClassVar[str] = "12.27.1.0"  # 这是目前的最新版本
+    latest_version: ClassVar[str] = "12.27.1.1"  # 这是目前的最新版本
     no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
     post_version: ClassVar[str] = "9.1.0.0"  # 发帖使用极速版
 
@@ -1582,7 +1582,7 @@ class Client(object):
                 thread._user = user
                 return thread
 
-            threads = [_pack_thread_dict(thread_dict) for thread_dict in res_json['post_list']]
+            threads = [_pack_thread_dict(thread_dict) for thread_dict in res_json.get('post_list', [])]
 
         except Exception as err:
             LOG.warning(f"{err}. user={user}")
