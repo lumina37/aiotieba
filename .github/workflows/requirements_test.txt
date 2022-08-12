@@ -20,7 +20,7 @@ lxml==4.9.1
 multidict==6.0.2
 numpy==1.23.1
 opencv-contrib-python-headless==4.6.0.66
-protobuf==4.21.4
+protobuf==4.21.5
 pycryptodome==3.15.0
 soupsieve==2.3.2.post1
 yarl==1.8.1
