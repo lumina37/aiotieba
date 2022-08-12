@@ -1582,7 +1582,11 @@ class Client(object):
                 thread._user = user
                 return thread
 
-            threads = [_pack_thread_dict(thread_dict) for thread_dict in res_json.get('post_list', [])]
+            threads = (
+                [_pack_thread_dict(thread_dict) for thread_dict in post_list]
+                if (post_list := res_json['post_list'])
+                else []
+            )
 
         except Exception as err:
             LOG.warning(f"{err}. user={user}")
