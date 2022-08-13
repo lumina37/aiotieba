@@ -1584,7 +1584,7 @@ class Client(object):
 
             threads = (
                 [_pack_thread_dict(thread_dict) for thread_dict in post_list]
-                if (post_list := res_json['post_list'])
+                if (post_list := res_json.get('post_list', None))
                 else []
             )
 

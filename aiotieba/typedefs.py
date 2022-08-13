@@ -1130,7 +1130,7 @@ class Fragments(object):
         """
 
         if self._texts is None:
-            self._texts = [frag for frag in self._frags if isinstance(frag, ProtocolText)]
+            self._texts = [frag for frag in self._frags if hasattr(frag, 'text')]
         return self._texts
 
     @property
