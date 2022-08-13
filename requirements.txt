@@ -1,9 +1,11 @@
-tomli
+aiodns
 aiohttp
-protobuf
-lxml
-beautifulsoup4
-pycryptodome
 aiomysql
+beautifulsoup4
+Brotli
+lxml
 numpy
 opencv-contrib-python-headless>=4.6.0.66
+protobuf
+pycryptodome
+tomli
