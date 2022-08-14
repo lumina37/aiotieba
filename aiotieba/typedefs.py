@@ -1404,6 +1404,12 @@ class _Container(_DataWrapper):
             }
         )
 
+    def __eq__(self, obj: "_Container") -> bool:
+        return self._pid == obj._pid and self.text == obj.text
+
+    def __hash__(self) -> int:
+        return self._pid
+
     @property
     def text(self) -> str:
         """
