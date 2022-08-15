@@ -188,7 +188,7 @@ class Client(object):
     ]
 
     latest_version: ClassVar[str] = "12.27.1.1"  # 这是目前的最新版本
-    no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
+    # no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
     post_version: ClassVar[str] = "9.1.0.0"  # 发帖使用极速版
 
     _fname2fid: ClassVar[Dict[str, int]] = {}
@@ -218,12 +218,15 @@ class Client(object):
 
     async def enter(self) -> "Client":
         _trust_env = False
-        _timeout = aiohttp.ClientTimeout(connect=8, sock_connect=3, sock_read=12)
+        _timeout = aiohttp.ClientTimeout(connect=8.0, sock_connect=3.0, sock_read=12.0)
+
+        _loop = asyncio.get_running_loop()
         self._connector = aiohttp.TCPConnector(
             ttl_dns_cache=600,
             keepalive_timeout=60,
             limit=0,
             ssl=False,
+            loop=_loop,
         )
 
         _app_host = "tiebac.baidu.com"
@@ -238,6 +241,7 @@ class Client(object):
         self.app = aiohttp.ClientSession(
             base_url=_app_base_url,
             connector=self._connector,
+            loop=_loop,
             headers=app_headers,
             connector_owner=False,
             raise_for_status=True,
@@ -257,6 +261,7 @@ class Client(object):
         self.app_proto = aiohttp.ClientSession(
             base_url=_app_base_url,
             connector=self._connector,
+            loop=_loop,
             headers=app_proto_headers,
             connector_owner=False,
             raise_for_status=True,
@@ -276,6 +281,7 @@ class Client(object):
         web_cookie_jar.update_cookies({'BDUSS': self.BDUSS, 'STOKEN': self.STOKEN})
         self.web = aiohttp.ClientSession(
             connector=self._connector,
+            loop=_loop,
             headers=web_headers,
             cookie_jar=web_cookie_jar,
             connector_owner=False,
@@ -292,6 +298,7 @@ class Client(object):
         }
         self._app_websocket = aiohttp.ClientSession(
             connector=self._connector,
+            loop=_loop,
             headers=app_websocket_headers,
             connector_owner=False,
             raise_for_status=True,
@@ -308,11 +315,6 @@ class Client(object):
     async def close(self) -> None:
         if self._ws_dispatcher is not None:
             self._ws_dispatcher.cancel()
-
-        await self.app.close()
-        await self.app_proto.close()
-        await self.web.close()
-        await self._app_websocket.close()
 
         if self.websocket is not None and not self.websocket.closed:
             await self.websocket.close()
@@ -759,6 +761,7 @@ class Client(object):
         try:
             async with self.web.get(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/f/commit/share/fnameShareApi"),
+                allow_redirects=False,
                 params={'fname': fname, 'ie': 'utf-8'},
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
@@ -859,6 +862,7 @@ class Client(object):
         try:
             async with self.web.get(
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/home/get/panel"),
+                allow_redirects=False,
                 params={
                     'id': user.portrait,
                     'un': user.user_name or user.nick_name,
@@ -929,6 +933,7 @@ class Client(object):
         try:
             async with self.web.get(
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/home/get/panel"),
+                allow_redirects=False,
                 params={
                     'id': user.portrait,
                     'un': user.user_name,
@@ -964,6 +969,7 @@ class Client(object):
         try:
             async with self.web.get(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/i/sys/user_json"),
+                allow_redirects=False,
                 params={
                     'un': user.user_name,
                     'ie': 'utf-8',
@@ -1033,6 +1039,7 @@ class Client(object):
         try:
             async with self.web.get(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/im/pcmsg/query/getUserInfo"),
+                allow_redirects=False,
                 params={'chatUid': user.user_id},
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
@@ -1449,6 +1456,7 @@ class Client(object):
         try:
             async with self.web.get(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/f/like/furank"),
+                allow_redirects=False,
                 params={
                     'kw': fname,
                     'pn': pn,
@@ -1482,6 +1490,7 @@ class Client(object):
         try:
             async with self.web.get(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/bawu2/platform/listMemberInfo"),
+                allow_redirects=False,
                 params={
                     'word': fname,
                     'pn': pn,
@@ -2517,6 +2526,7 @@ class Client(object):
         try:
             async with self.web.get(
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mo/q/bawurecover"),
+                allow_redirects=False,
                 params={
                     'fn': fname,
                     'fid': fid,
@@ -2555,6 +2565,7 @@ class Client(object):
         try:
             async with self.web.get(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/bawu2/platform/listBlackUser"),
+                allow_redirects=False,
                 params={
                     'word': fname,
                     'pn': pn,
@@ -2687,6 +2698,7 @@ class Client(object):
         try:
             async with self.web.get(
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mo/q/getBawuAppealList"),
+                allow_redirects=False,
                 params=params,
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
@@ -2766,7 +2778,7 @@ class Client(object):
         """
 
         try:
-            async with self.web.get(img_url) as resp:
+            async with self.web.get(img_url, allow_redirects=False) as resp:
                 img_type = resp.content_type.removeprefix('image/')
                 if img_type not in ['jpeg', 'png', 'bmp']:
                     raise ValueError(f"Content-Type should be jpeg, png or bmp rather than {resp.content_type}")
@@ -2809,10 +2821,9 @@ class Client(object):
         try:
             async with self.web.get(
                 yarl.URL.build(
-                    scheme="http",
-                    host="tb.himg.baidu.com",
-                    path=f"/sys/portrait{path}/item/{user.portrait}",
-                )
+                    scheme="http", host="tb.himg.baidu.com", path=f"/sys/portrait{path}/item/{user.portrait}"
+                ),
+                allow_redirects=False,
             ) as resp:
                 image = cv.imdecode(np.frombuffer(await resp.content.read(), np.uint8), cv.IMREAD_COLOR)
 
@@ -3182,6 +3193,7 @@ class Client(object):
         try:
             async with self.web.get(
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mg/o/getForumHome"),
+                allow_redirects=False,
                 params={
                     'pn': pn,
                     'rn': 200,
