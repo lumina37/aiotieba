@@ -1,4 +1,3 @@
-# -*- coding:utf-8 -*-
 """
 指令管理器
 使用前请在当前工作目录下新建cmd_handler.toml配置文件，并参考下列案例填写你自己的配置
@@ -220,7 +219,7 @@ def check_and_log(need_permission: int = 0, need_arg_num: int = 0) -> _TypeComma
                 await func(self, ctx)
 
             except Exception as err:
-                tb.LOG.warning(err)
+                tb.LOG.error(err)
 
         return _
 

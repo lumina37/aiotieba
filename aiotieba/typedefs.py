@@ -1130,7 +1130,7 @@ class Fragments(object):
         """
 
         if self._texts is None:
-            self._texts = [frag for frag in self._frags if isinstance(frag, ProtocolText)]
+            self._texts = [frag for frag in self._frags if hasattr(frag, 'text')]
         return self._texts
 
     @property
@@ -1403,6 +1403,12 @@ class _Container(_DataWrapper):
                 'text': self.text,
             }
         )
+
+    def __eq__(self, obj: "_Container") -> bool:
+        return self._pid == obj._pid and self.text == obj.text
+
+    def __hash__(self) -> int:
+        return self._pid
 
     @property
     def text(self) -> str:

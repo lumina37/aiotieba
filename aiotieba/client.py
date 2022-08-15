@@ -7,7 +7,6 @@ import gzip
 import hashlib
 import json
 import random
-import socket
 import time
 import uuid
 import weakref
@@ -188,8 +187,8 @@ class Client(object):
         '_ws_dispatcher',
     ]
 
-    latest_version: ClassVar[str] = "12.27.0.2"  # 这是目前的最新版本
-    no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
+    latest_version: ClassVar[str] = "12.27.1.1"  # 这是目前的最新版本
+    # no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
     post_version: ClassVar[str] = "9.1.0.0"  # 发帖使用极速版
 
     _fname2fid: ClassVar[Dict[str, int]] = {}
@@ -219,26 +218,30 @@ class Client(object):
 
     async def enter(self) -> "Client":
         _trust_env = False
-        _timeout = aiohttp.ClientTimeout(connect=8, sock_connect=3, sock_read=12)
+        _timeout = aiohttp.ClientTimeout(connect=8.0, sock_connect=3.0, sock_read=12.0)
+
+        _loop = asyncio.get_running_loop()
         self._connector = aiohttp.TCPConnector(
             ttl_dns_cache=600,
             keepalive_timeout=60,
             limit=0,
-            family=socket.AF_INET,
             ssl=False,
+            loop=_loop,
         )
 
-        _app_base_url = yarl.URL.build(scheme="http", host="tiebac.baidu.com")
+        _app_host = "tiebac.baidu.com"
+        _app_base_url = yarl.URL.build(scheme="http", host=_app_host)
         # Init app client
         app_headers = {
             aiohttp.hdrs.USER_AGENT: f"tieba/{self.latest_version}",
             aiohttp.hdrs.CONNECTION: "keep-alive",
             aiohttp.hdrs.ACCEPT_ENCODING: "gzip",
-            aiohttp.hdrs.HOST: _app_base_url.host,
+            aiohttp.hdrs.HOST: _app_host,
         }
         self.app = aiohttp.ClientSession(
             base_url=_app_base_url,
             connector=self._connector,
+            loop=_loop,
             headers=app_headers,
             connector_owner=False,
             raise_for_status=True,
@@ -253,11 +256,12 @@ class Client(object):
             "x_bd_data_type": "protobuf",
             aiohttp.hdrs.CONNECTION: "keep-alive",
             aiohttp.hdrs.ACCEPT_ENCODING: "gzip",
-            aiohttp.hdrs.HOST: _app_base_url.host,
+            aiohttp.hdrs.HOST: _app_host,
         }
         self.app_proto = aiohttp.ClientSession(
             base_url=_app_base_url,
             connector=self._connector,
+            loop=_loop,
             headers=app_proto_headers,
             connector_owner=False,
             raise_for_status=True,
@@ -277,6 +281,7 @@ class Client(object):
         web_cookie_jar.update_cookies({'BDUSS': self.BDUSS, 'STOKEN': self.STOKEN})
         self.web = aiohttp.ClientSession(
             connector=self._connector,
+            loop=_loop,
             headers=web_headers,
             cookie_jar=web_cookie_jar,
             connector_owner=False,
@@ -293,6 +298,7 @@ class Client(object):
         }
         self._app_websocket = aiohttp.ClientSession(
             connector=self._connector,
+            loop=_loop,
             headers=app_websocket_headers,
             connector_owner=False,
             raise_for_status=True,
@@ -310,15 +316,8 @@ class Client(object):
         if self._ws_dispatcher is not None:
             self._ws_dispatcher.cancel()
 
-        close_coros = [
-            self.app.close(),
-            self.app_proto.close(),
-            self.web.close(),
-            self._app_websocket.close(),
-        ]
         if self.websocket is not None and not self.websocket.closed:
-            close_coros.append(self.websocket.close())
-        await asyncio.gather(*close_coros)
+            await self.websocket.close()
 
         await self._connector.close()
 
@@ -762,6 +761,7 @@ class Client(object):
         try:
             async with self.web.get(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/f/commit/share/fnameShareApi"),
+                allow_redirects=False,
                 params={'fname': fname, 'ie': 'utf-8'},
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
@@ -862,6 +862,7 @@ class Client(object):
         try:
             async with self.web.get(
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/home/get/panel"),
+                allow_redirects=False,
                 params={
                     'id': user.portrait,
                     'un': user.user_name or user.nick_name,
@@ -932,6 +933,7 @@ class Client(object):
         try:
             async with self.web.get(
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/home/get/panel"),
+                allow_redirects=False,
                 params={
                     'id': user.portrait,
                     'un': user.user_name,
@@ -967,6 +969,7 @@ class Client(object):
         try:
             async with self.web.get(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/i/sys/user_json"),
+                allow_redirects=False,
                 params={
                     'un': user.user_name,
                     'ie': 'utf-8',
@@ -1036,6 +1039,7 @@ class Client(object):
         try:
             async with self.web.get(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/im/pcmsg/query/getUserInfo"),
+                allow_redirects=False,
                 params={'chatUid': user.user_id},
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
@@ -1452,6 +1456,7 @@ class Client(object):
         try:
             async with self.web.get(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/f/like/furank"),
+                allow_redirects=False,
                 params={
                     'kw': fname,
                     'pn': pn,
@@ -1485,6 +1490,7 @@ class Client(object):
         try:
             async with self.web.get(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/bawu2/platform/listMemberInfo"),
+                allow_redirects=False,
                 params={
                     'word': fname,
                     'pn': pn,
@@ -1585,7 +1591,11 @@ class Client(object):
                 thread._user = user
                 return thread
 
-            threads = [_pack_thread_dict(thread_dict) for thread_dict in res_json['post_list']]
+            threads = (
+                [_pack_thread_dict(thread_dict) for thread_dict in post_list]
+                if (post_list := res_json.get('post_list', None))
+                else []
+            )
 
         except Exception as err:
             LOG.warning(f"{err}. user={user}")
@@ -2516,6 +2526,7 @@ class Client(object):
         try:
             async with self.web.get(
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mo/q/bawurecover"),
+                allow_redirects=False,
                 params={
                     'fn': fname,
                     'fid': fid,
@@ -2554,6 +2565,7 @@ class Client(object):
         try:
             async with self.web.get(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/bawu2/platform/listBlackUser"),
+                allow_redirects=False,
                 params={
                     'word': fname,
                     'pn': pn,
@@ -2686,6 +2698,7 @@ class Client(object):
         try:
             async with self.web.get(
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mo/q/getBawuAppealList"),
+                allow_redirects=False,
                 params=params,
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
@@ -2765,7 +2778,7 @@ class Client(object):
         """
 
         try:
-            async with self.web.get(img_url) as resp:
+            async with self.web.get(img_url, allow_redirects=False) as resp:
                 img_type = resp.content_type.removeprefix('image/')
                 if img_type not in ['jpeg', 'png', 'bmp']:
                     raise ValueError(f"Content-Type should be jpeg, png or bmp rather than {resp.content_type}")
@@ -2781,13 +2794,13 @@ class Client(object):
 
         return image
 
-    async def get_portrait(self, _id: Union[str, int], /, size: Literal['S', 'M', 'L'] = 'S') -> np.ndarray:
+    async def get_portrait(self, _id: Union[str, int], /, size: Literal['s', 'm', 'l'] = 's') -> np.ndarray:
         """
         获取用户头像
 
         Args:
             _id (str | int): 用户的id user_id/user_name/portrait 优先portrait
-            size (Literal['S', 'M', 'L'], optional): 获取头像的大小 S为55x55 M为110x110 L为原图. Defaults to 'S'.
+            size (Literal['s', 'm', 'l'], optional): 获取头像的大小 s为55x55 m为110x110 l为原图. Defaults to 's'.
 
         Returns:
             np.ndarray: 头像
@@ -2808,10 +2821,9 @@ class Client(object):
         try:
             async with self.web.get(
                 yarl.URL.build(
-                    scheme="http",
-                    host="tb.himg.baidu.com",
-                    path=f"/sys/portrait{path}/item/{user.portrait}",
-                )
+                    scheme="http", host="tb.himg.baidu.com", path=f"/sys/portrait{path}/item/{user.portrait}"
+                ),
+                allow_redirects=False,
             ) as resp:
                 image = cv.imdecode(np.frombuffer(await resp.content.read(), np.uint8), cv.IMREAD_COLOR)
 
@@ -3181,6 +3193,7 @@ class Client(object):
         try:
             async with self.web.get(
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mg/o/getForumHome"),
+                allow_redirects=False,
                 params={
                     'pn': pn,
                     'rn': 200,
@@ -3246,6 +3259,10 @@ class Client(object):
 
         Returns:
             bool: 操作是否成功
+
+        Note:
+            本接口仍处于测试阶段
+            高频率调用会导致<发帖秒删>！请谨慎使用！恢复方法是刷回复永封后再申诉解封
         """
 
         try:
@@ -3721,7 +3738,8 @@ class Client(object):
             bool: 回帖是否成功
 
         Note:
-            本接口仍处于测试阶段，有一定永封风险！请谨慎使用！
+            本接口仍处于测试阶段
+            高频率调用会导致<永久封禁屏蔽>！请谨慎使用！
             已通过的测试: cookie白板号(无头像无关注吧无发帖记录 2元/个) 通过异地阿里云ip出口以3分钟的发送间隔发15条回复不吞楼不封号
         """
 
@@ -3741,18 +3759,11 @@ class Client(object):
                 ('_phone_imei', '000000000000000'),
                 ('anonymous', '1'),
                 ('apid', 'sw'),
-                ('barrage_time', '0'),
-                ('can_no_forum', '0'),
                 ('content', content),
                 ('cuid', self.cuid),
                 ('cuid_galaxy2', self.cuid_galaxy2),
                 ('cuid_gid', ''),
                 ('fid', fid),
-                ('from', '1021099l'),
-                ('from_fourm_id', 'null'),
-                ('is_ad', '0'),
-                ('is_barrage', '0'),
-                ('is_feedback', '0'),
                 ('kw', fname),
                 ('model', 'M2012K11AC'),
                 ('net_type', '1'),
@@ -3761,14 +3772,12 @@ class Client(object):
                 ('reply_uid', 'null'),
                 ('stoken', self.STOKEN),
                 ('subapp_type', 'mini'),
-                ('takephoto_num', '0'),
                 ('tbs', await self.get_tbs()),
                 ('tid', tid),
                 ('timestamp', self.timestamp_ms),
                 ('v_fid', ''),
                 ('v_fname', ''),
                 ('vcode_tag', '12'),
-                ('z_id', '74FFB5E615AA72E0B057EE43E3D5A23A8BA34AAC1672FC9B56A7106C57BA03'),
             ]
 
             async with self.app.post(
