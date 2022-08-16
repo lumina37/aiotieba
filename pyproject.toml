@@ -3,17 +3,6 @@ line-length = 120
 skip-string-normalization = true
 target-version = ['py39', 'py310']
 include = '\.pyi?$'
-exclude = '''
-(
-  /(
-      \.txt
-    | \.git
-    | \.toml
-    | \.md
-    | \.code-workspace
-  )/
-)
-'''
 
 [tool.pytest.ini_options]
 minversion = "6.0"

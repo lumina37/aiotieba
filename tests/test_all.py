@@ -298,7 +298,7 @@ async def test_Ats(client: tb.Client):
 @pytest.mark.asyncio
 async def test_Database(reviewer: tb.Reviewer):
     user = await reviewer.client.get_self_info()
-    fname = reviewer.fname
+    fname = reviewer.db.fname
     fid = await reviewer.db.get_fid(fname)
     assert fname == await reviewer.db.get_fname(fid)
     await asyncio.gather(

@@ -5,6 +5,7 @@ on:
     branches: [ develop ]
     paths:
       - 'aiotieba/**'
+      - '.github/workflows/**'
       - 'tests/**'
   pull_request:
     branches: [ develop ]
@@ -21,7 +22,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.9']
+        python-version: ['3.9', '3.10']
 
     steps:
     - name: Checkout

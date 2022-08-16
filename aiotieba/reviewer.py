@@ -28,7 +28,6 @@ class Reviewer(object):
     """
 
     __slots__ = [
-        'fname',
         'client',
         'db',
         '_img_hasher',
@@ -37,8 +36,6 @@ class Reviewer(object):
 
     def __init__(self, BDUSS_key: Optional[str] = None, fname: str = ''):
         super(Reviewer, self).__init__()
-
-        self.fname: str = fname
 
         self.client = Client(BDUSS_key)
         self.db = Database(fname)
@@ -161,7 +158,7 @@ class Reviewer(object):
             Threads: 帖子列表
         """
 
-        return await self.client.get_threads(self.fname, pn, rn=rn, sort=sort, is_good=is_good)
+        return await self.client.get_threads(self.db.fname, pn, rn=rn, sort=sort, is_good=is_good)
 
     async def get_posts(
         self,
@@ -250,7 +247,7 @@ class Reviewer(object):
             bool: 操作是否成功
         """
 
-        return await self.client.block(self.fname, _id, day=day, reason=reason)
+        return await self.client.block(self.db.fname, _id, day=day, reason=reason)
 
     async def hide_thread(self, tid: int) -> bool:
         """
@@ -263,7 +260,7 @@ class Reviewer(object):
             bool: 操作是否成功
         """
 
-        return await self.client.hide_thread(self.fname, tid)
+        return await self.client.hide_thread(self.db.fname, tid)
 
     async def del_thread(self, tid: int) -> bool:
         """
@@ -276,7 +273,7 @@ class Reviewer(object):
             bool: 操作是否成功
         """
 
-        return await self.client.del_thread(self.fname, tid)
+        return await self.client.del_thread(self.db.fname, tid)
 
     async def del_post(self, pid: int) -> bool:
         """
@@ -289,7 +286,7 @@ class Reviewer(object):
             bool: 操作是否成功
         """
 
-        return await self.client.del_post(self.fname, pid)
+        return await self.client.del_post(self.db.fname, pid)
 
     async def add_id(self, _id: int, *, id_last_edit: int = 0) -> bool:
         """
@@ -402,7 +399,7 @@ class Reviewer(object):
         """
 
         if img_hash := self.compute_imghash(image):
-            return await self.db.get_imghash(self.fname, img_hash)
+            return await self.db.get_imghash(img_hash)
         return 0
 
     async def get_imghash_full(self, image: np.ndarray) -> Tuple[int, str]:
@@ -417,5 +414,5 @@ class Reviewer(object):
         """
 
         if img_hash := self.compute_imghash(image):
-            return await self.db.get_imghash_full(self.fname, img_hash)
+            return await self.db.get_imghash_full(img_hash)
         return 0, ''
