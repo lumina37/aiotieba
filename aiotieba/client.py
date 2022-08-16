@@ -181,7 +181,7 @@ class Client(object):
         '_ws_dispatcher',
     ]
 
-    latest_version: ClassVar[str] = "12.27.1.1"  # 这是目前的最新版本
+    latest_version: ClassVar[str] = "12.27.4.1"  # 这是目前的最新版本
     # no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
     post_version: ClassVar[str] = "9.1.0.0"  # 发帖使用极速版
 
@@ -643,10 +643,10 @@ class Client(object):
             str: 贴吧反csrf校验码tbs
         """
 
-        if not self._tbs:
+        if not self.account._tbs:
             await self.login()
 
-        return self._tbs
+        return self.account._tbs
 
     async def get_self_info(self) -> BasicUserInfo:
         """
