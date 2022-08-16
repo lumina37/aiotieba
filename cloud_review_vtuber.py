@@ -247,7 +247,7 @@ class CloudReview(tb.Reviewer):
         """
 
         # 查数据库获取用户权限级别
-        permission = await self.get_user_id(obj.user.user_id)
+        permission = await self.db.get_user_id(obj.user.user_id)
         if permission >= 1:
             # 白名单用户
             return Punish(-1)

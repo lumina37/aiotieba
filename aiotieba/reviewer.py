@@ -2,15 +2,14 @@ __all__ = ['Reviewer']
 
 import asyncio
 import binascii
-import datetime
 from typing import List, Literal, Optional, Tuple, Union
 
 import cv2 as cv
 import numpy as np
 
+from ._logger import LOG
 from .client import Client
 from .database import Database
-from .log import LOG
 from .typedefs import BasicUserInfo, Comments, Posts, Threads
 
 
@@ -42,7 +41,7 @@ class Reviewer(object):
         self.fname: str = fname
 
         self.client = Client(BDUSS_key)
-        self.db = Database()
+        self.db = Database(fname)
         self._img_hasher: cv.img_hash.AverageHash = None
         self._qrdetector: cv.QRCodeDetector = None
 
@@ -295,73 +294,29 @@ class Reviewer(object):
     async def add_id(self, _id: int, *, id_last_edit: int = 0) -> bool:
         """
         将id添加到表id_{fname}
-
         Args:
             _id (int): tid或pid
             id_last_edit (int): 用于识别id的子对象列表是否发生修改 \
                 若该id为tid则id_last_edit应为last_time 若该id为pid则id_last_edit应为reply_num. Defaults to 0.
-
         Returns:
             bool: 操作是否成功
         """
 
-        return await self.db.add_id(self.fname, _id, tag=id_last_edit)
+        return await self.db.add_id(_id, tag=id_last_edit)
 
     async def get_id(self, _id: int) -> int:
         """
         获取表id_{fname}中id对应的id_last_edit值
-
         Args:
             _id (int): tid或pid
-
         Returns:
             int: id_last_edit -1表示表中无id
         """
 
-        res = await self.db.get_id(self.fname, _id)
+        res = await self.db.get_id(_id)
         if res is None:
             res = -1
         return res
-
-    async def del_id(self, _id: int) -> bool:
-        """
-        从表id_{fname}中删除id
-
-        Args:
-            _id (int): tid或pid
-
-        Returns:
-            bool: 操作是否成功
-        """
-
-        return await self.db.del_id(self.fname, _id)
-
-    async def del_ids(self, hour: int) -> bool:
-        """
-        删除表id_{fname}中最近hour个小时记录的id
-
-        Args:
-            hour (int): 小时数
-
-        Returns:
-            bool: 操作是否成功
-        """
-
-        return await self.db.del_ids(self.fname, hour)
-
-    async def add_tid(self, tid: int, *, mode: bool) -> bool:
-        """
-        将tid添加到表tid_water_{fname}
-
-        Args:
-            tid (int): 主题帖tid
-            mode (bool): 待恢复状态 True对应待恢复 False对应已恢复
-
-        Returns:
-            bool: 操作是否成功
-        """
-
-        return await self.db.add_tid(self.fname, tid, tag=int(mode))
 
     async def is_tid_hide(self, tid: int) -> Optional[bool]:
         """
@@ -374,26 +329,13 @@ class Reviewer(object):
             bool | None: True表示tid待恢复 False表示tid已恢复 None表示表中无记录
         """
 
-        res = await self.db.get_tid(self.fname, tid)
+        res = await self.db.get_tid(tid)
         if res == 1:
             return True
         elif res == 0:
             return False
         else:
             return None
-
-    async def del_tid(self, tid: int) -> bool:
-        """
-        从表tid_water_{fname}中删除tid
-
-        Args:
-            tid (int): 主题帖tid
-
-        Returns:
-            bool: 操作是否成功
-        """
-
-        return await self.db.del_tid(self.fname, tid)
 
     async def get_tid_hide_list(self, limit: int = 128, offset: int = 0) -> List[int]:
         """
@@ -407,82 +349,7 @@ class Reviewer(object):
             list[int]: tid列表
         """
 
-        return await self.db.get_tid_list(self.fname, tag=1, limit=limit, offset=offset)
-
-    async def add_user_id(self, user_id: int, *, permission: int = 0, note: str = '') -> bool:
-        """
-        将user_id添加到表user_id_{fname}
-
-        Args:
-            user_id (int): 用户的user_id
-            permission (int, optional): 权限级别. Defaults to 0.
-            note (str, optional): 备注. Defaults to ''.
-
-        Returns:
-            bool: 操作是否成功
-        """
-
-        return await self.db.add_user_id(self.fname, user_id, permission=permission, note=note)
-
-    async def del_user_id(self, user_id: int) -> bool:
-        """
-        从表user_id_{fname}中删除user_id
-
-        Args:
-            user_id (int): 用户的user_id
-
-        Returns:
-            bool: 操作是否成功
-        """
-
-        return await self.db.del_user_id(self.fname, user_id)
-
-    async def get_user_id(self, user_id: int) -> int:
-        """
-        获取表user_id_{fname}中user_id的权限级别
-
-        Args:
-            user_id (int): 用户的user_id
-
-        Returns:
-            int: 权限级别
-        """
-
-        return await self.db.get_user_id(self.fname, user_id)
-
-    async def get_user_id_full(self, user_id: int) -> Tuple[int, str, datetime.datetime]:
-        """
-        获取表user_id_{fname}中user_id的完整信息
-
-        Args:
-            user_id (int): 用户的user_id
-
-        Returns:
-            tuple[int, str, datetime.datetime]: 权限级别, 备注, 记录时间
-        """
-
-        return await self.db.get_user_id_full(self.fname, user_id)
-
-    async def get_user_id_list(
-        self, lower_permission: int = 0, upper_permission: int = 5, *, limit: int = 1, offset: int = 0
-    ) -> List[int]:
-        """
-        获取表user_id_{fname}中user_id的列表
-
-        Args:
-            fname (str): 贴吧名
-            lower_permission (int, optional): 获取所有权限级别大于等于lower_permission的user_id. Defaults to 0.
-            upper_permission (int, optional): 获取所有权限级别小于等于upper_permission的user_id. Defaults to 5.
-            limit (int, optional): 返回数量限制. Defaults to 1.
-            offset (int, optional): 偏移. Defaults to 0.
-
-        Returns:
-            list[int]: user_id列表
-        """
-
-        return await self.db.get_user_id_list(
-            self.fname, lower_permission, upper_permission, limit=limit, offset=offset
-        )
+        return await self.db.get_tid_list(tag=1, limit=limit, offset=offset)
 
     def scan_QRcode(self, image: np.ndarray) -> str:
         """

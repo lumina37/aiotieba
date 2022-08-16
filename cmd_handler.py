@@ -92,7 +92,7 @@ class Context(object):
         self.parent: Union[tb.ShareThread, tb.Thread, tb.Post] = None
 
     async def _init(self) -> bool:
-        self.exec_permission = await self.admin.get_user_id(self.user.user_id)
+        self.exec_permission = await self.admin.db.get_user_id(self.user.user_id)
         if len(self.at.text.encode('utf-8')) >= 78:
             await self._init_full()
 
@@ -331,7 +331,7 @@ class Listener(object):
         if user is None:
             user = await self._arg2user_info(ctx.args[0])
 
-        old_permission, old_note, _ = await ctx.admin.get_user_id_full(user.user_id)
+        old_permission, old_note, _ = await ctx.admin.db.get_user_id_full(user.user_id)
         if old_permission >= ctx.exec_permission:
             raise ValueError("原权限大于等于操作者权限")
         if new_permission >= ctx.exec_permission:
@@ -340,9 +340,9 @@ class Listener(object):
         tb.LOG.info(f"forum={ctx.fname} user={user} old_note={old_note}")
 
         if new_permission != 0:
-            success = await ctx.admin.add_user_id(user.user_id, permission=new_permission, note=note)
+            success = await ctx.admin.db.add_user_id(user.user_id, new_permission, note=note)
         else:
-            success = await ctx.admin.del_user_id(user.user_id)
+            success = await ctx.admin.db.del_user_id(user.user_id)
 
         return success
 
@@ -358,7 +358,7 @@ class Listener(object):
 
         active_admin_list = [
             (await self.listener.get_basic_user_info(user_id)).user_name
-            for user_id in await ctx.admin.get_user_id_list(lower_permission=2, limit=5)
+            for user_id in await ctx.admin.db.get_user_id_list(lower_permission=2, limit=5)
         ]
         extra_info = ctx.args[0] if len(ctx.args) else '无'
         content = f"该回复为吧务召唤指令@.v_guard holyshit的自动响应\n召唤人诉求: {extra_info} @" + " @".join(active_admin_list)
@@ -672,7 +672,7 @@ class Listener(object):
 
         user = await self._arg2user_info(ctx.args[0])
 
-        permission, note, record_time = await ctx.admin.get_user_id_full(user.user_id)
+        permission, note, record_time = await ctx.admin.db.get_user_id_full(user.user_id)
         msg_content = f"""user_name: {user.user_name}\nuser_id: {user.user_id}\nportrait: {user.portrait}\npermission: {permission}\nnote: {note}\nrecord_time: {record_time.strftime("%Y-%m-%d %H:%M:%S")}"""
         post_content = f"""@{ctx.at.user.user_name} \n{msg_content}"""
 
@@ -783,7 +783,7 @@ class Listener(object):
         将指令所在主题帖标记为无关水，并临时屏蔽
         """
 
-        if await ctx.admin.add_tid(ctx.tid, mode=True) and await ctx.admin.hide_thread(ctx.tid):
+        if await ctx.admin.db.add_tid(ctx.tid, mode=True) and await ctx.admin.hide_thread(ctx.tid):
             await ctx.admin.del_post(ctx.pid)
 
     @check_and_log(need_permission=2, need_arg_num=0)
@@ -793,7 +793,7 @@ class Listener(object):
         清除指令所在主题帖的无关水标记，并立刻解除屏蔽
         """
 
-        if await ctx.admin.del_tid(ctx.tid) and await ctx.admin.client.unhide_thread(ctx.fname, ctx.tid):
+        if await ctx.admin.db.del_tid(ctx.tid) and await ctx.admin.client.unhide_thread(ctx.fname, ctx.tid):
             await ctx.admin.del_post(ctx.pid)
 
     @check_and_log(need_permission=3, need_arg_num=1)
@@ -804,17 +804,17 @@ class Listener(object):
         """
 
         if ctx.args[0] == "enter":
-            if await ctx.admin.add_tid(0, mode=True):
+            if await ctx.admin.db.add_tid(0, mode=True):
                 await ctx.admin.del_post(ctx.pid)
         elif ctx.args[0] == "exit":
-            if await ctx.admin.add_tid(0, mode=False):
+            if await ctx.admin.db.add_tid(0, mode=False):
                 await ctx.admin.del_post(ctx.pid)
             limit = 128
             tids = await ctx.admin.get_tid_hide_list(limit=limit)
             while 1:
                 for tid in tids:
                     if await ctx.admin.client.unhide_thread(ctx.fname, tid):
-                        await ctx.admin.add_tid(tid, mode=False)
+                        await ctx.admin.db.add_tid(tid, mode=False)
                 if len(tids) != limit:
                     break
 
@@ -825,7 +825,7 @@ class Listener(object):
         将发起指令的吧务移动到活跃吧务队列的最前端，以响应holyshit指令
         """
 
-        if await ctx.admin.add_user_id(ctx.user.user_id, permission=ctx.exec_permission, note="cmd_active"):
+        if await ctx.admin.db.add_user_id(ctx.user.user_id, ctx.exec_permission, note="cmd_active"):
             await ctx.admin.del_post(ctx.pid)
 
     @check_and_log(need_permission=1, need_arg_num=0)

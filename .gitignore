@@ -24,6 +24,8 @@ test*
 !.github
 !.github/**
 !docs/**
+!tests
+!tests/**
 !aiotieba/config_example/**
 
 !README.md
