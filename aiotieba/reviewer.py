@@ -47,7 +47,7 @@ class Reviewer(object):
         self._qrdetector: cv.QRCodeDetector = None
 
     async def enter(self) -> "Reviewer":
-        await asyncio.gather(self.client.enter(), self.db.enter())
+        await asyncio.gather(self.client.__aenter__(), self.db.__aenter__())
         return self
 
     async def __aenter__(self) -> "Reviewer":

@@ -177,10 +177,13 @@ class Client(object):
         '_cuid',
         '_cuid_galaxy2',
         '_connector',
-        'app',
-        'app_proto',
-        'web',
-        '_app_websocket',
+        '_trust_env',
+        '_loop',
+        '_app_base_url',
+        '_session_app',
+        '_session_app_proto',
+        '_session_web',
+        '_session_websocket',
         'websocket',
         '_ws_password',
         '_ws_aes_chiper',
@@ -206,111 +209,22 @@ class Client(object):
         self._cuid: str = None
         self._cuid_galaxy2: str = None
 
+        self._trust_env = False
+        self._loop = asyncio.get_running_loop()
+        self._app_base_url = yarl.URL.build(scheme="http", host="tiebac.baidu.com")
+
         self._connector: aiohttp.TCPConnector = None
-        self.app: aiohttp.ClientSession = None
-        self.app_proto: aiohttp.ClientSession = None
-        self.web: aiohttp.ClientSession = None
-        self._app_websocket: aiohttp.ClientSession = None
+        self._session_app: aiohttp.ClientSession = None
+        self._session_app_proto: aiohttp.ClientSession = None
+        self._session_web: aiohttp.ClientSession = None
+        self._session_websocket: aiohttp.ClientSession = None
         self.websocket: aiohttp.ClientWebSocketResponse = None
         self._ws_password: bytes = None
         self._ws_aes_chiper = None
         self._ws_dispatcher: asyncio.Task = None
 
-    async def enter(self) -> "Client":
-        _trust_env = False
-        _timeout = aiohttp.ClientTimeout(connect=8.0, sock_connect=3.0, sock_read=12.0)
-
-        _loop = asyncio.get_running_loop()
-        self._connector = aiohttp.TCPConnector(
-            ttl_dns_cache=600,
-            keepalive_timeout=60,
-            limit=0,
-            ssl=False,
-            loop=_loop,
-        )
-
-        _app_host = "tiebac.baidu.com"
-        _app_base_url = yarl.URL.build(scheme="http", host=_app_host)
-        # Init app client
-        app_headers = {
-            aiohttp.hdrs.USER_AGENT: f"tieba/{self.latest_version}",
-            aiohttp.hdrs.CONNECTION: "keep-alive",
-            aiohttp.hdrs.ACCEPT_ENCODING: "gzip",
-            aiohttp.hdrs.HOST: _app_host,
-        }
-        self.app = aiohttp.ClientSession(
-            base_url=_app_base_url,
-            connector=self._connector,
-            loop=_loop,
-            headers=app_headers,
-            connector_owner=False,
-            raise_for_status=True,
-            timeout=_timeout,
-            read_bufsize=1 << 18,  # 256KiB
-            trust_env=_trust_env,
-        )
-
-        # Init app protobuf client
-        app_proto_headers = {
-            aiohttp.hdrs.USER_AGENT: f"tieba/{self.latest_version}",
-            "x_bd_data_type": "protobuf",
-            aiohttp.hdrs.CONNECTION: "keep-alive",
-            aiohttp.hdrs.ACCEPT_ENCODING: "gzip",
-            aiohttp.hdrs.HOST: _app_host,
-        }
-        self.app_proto = aiohttp.ClientSession(
-            base_url=_app_base_url,
-            connector=self._connector,
-            loop=_loop,
-            headers=app_proto_headers,
-            connector_owner=False,
-            raise_for_status=True,
-            timeout=_timeout,
-            read_bufsize=1 << 18,  # 256KiB
-            trust_env=_trust_env,
-        )
-
-        # Init web client
-        web_headers = {
-            aiohttp.hdrs.USER_AGENT: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:103.0) Gecko/20100101 Firefox/103.0",
-            aiohttp.hdrs.ACCEPT_ENCODING: "gzip, deflate, br",
-            aiohttp.hdrs.CACHE_CONTROL: "no-cache",
-            aiohttp.hdrs.CONNECTION: "keep-alive",
-        }
-        web_cookie_jar = aiohttp.CookieJar()
-        web_cookie_jar.update_cookies({'BDUSS': self.BDUSS, 'STOKEN': self.STOKEN})
-        self.web = aiohttp.ClientSession(
-            connector=self._connector,
-            loop=_loop,
-            headers=web_headers,
-            cookie_jar=web_cookie_jar,
-            connector_owner=False,
-            raise_for_status=True,
-            timeout=_timeout,
-            read_bufsize=1 << 20,  # 1MiB
-            trust_env=_trust_env,
-        )
-
-        # Init app websocket client
-        app_websocket_headers = {
-            aiohttp.hdrs.HOST: "im.tieba.baidu.com:8000",
-            aiohttp.hdrs.SEC_WEBSOCKET_EXTENSIONS: "im_version=2.3",
-        }
-        self._app_websocket = aiohttp.ClientSession(
-            connector=self._connector,
-            loop=_loop,
-            headers=app_websocket_headers,
-            connector_owner=False,
-            raise_for_status=True,
-            timeout=_timeout,
-            read_bufsize=1 << 18,  # 256KiB
-            trust_env=_trust_env,
-        )
-
-        return self
-
     async def __aenter__(self) -> "Client":
-        return await self.enter()
+        return self
 
     async def close(self) -> None:
         if self._ws_dispatcher is not None:
@@ -319,10 +233,159 @@ class Client(object):
         if self.websocket is not None and not self.websocket.closed:
             await self.websocket.close()
 
-        await self._connector.close()
+        if self._connector is not None:
+            await self._connector.close()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.close()
+
+    @property
+    def connector(self) -> aiohttp.TCPConnector:
+        """
+        TCP连接器
+
+        Returns:
+            aiohttp.TCPConnector
+        """
+
+        if self._connector is None:
+            self._connector = aiohttp.TCPConnector(
+                ttl_dns_cache=600,
+                keepalive_timeout=60,
+                limit=0,
+                ssl=False,
+                loop=self._loop,
+            )
+
+        return self._connector
+
+    @property
+    def session_app(self) -> aiohttp.ClientSession:
+        """
+        用于APP请求
+
+        Returns:
+            aiohttp.ClientSession
+        """
+
+        if self._session_app is None:
+            headers = {
+                aiohttp.hdrs.USER_AGENT: f"tieba/{self.latest_version}",
+                aiohttp.hdrs.CONNECTION: "keep-alive",
+                aiohttp.hdrs.ACCEPT_ENCODING: "gzip",
+                aiohttp.hdrs.HOST: self._app_base_url.host,
+            }
+            timeout = aiohttp.ClientTimeout(connect=8.0, sock_connect=3.0, sock_read=12.0)
+
+            self._session_app = aiohttp.ClientSession(
+                base_url=self._app_base_url,
+                connector=self.connector,
+                loop=self._loop,
+                headers=headers,
+                connector_owner=False,
+                raise_for_status=True,
+                timeout=timeout,
+                read_bufsize=1 << 18,  # 256KiB
+                trust_env=self._trust_env,
+            )
+
+        return self._session_app
+
+    @property
+    def session_app_proto(self) -> aiohttp.ClientSession:
+        """
+        用于APP protobuf请求
+
+        Returns:
+            aiohttp.ClientSession
+        """
+
+        if self._session_app_proto is None:
+            headers = {
+                aiohttp.hdrs.USER_AGENT: f"tieba/{self.latest_version}",
+                "x_bd_data_type": "protobuf",
+                aiohttp.hdrs.CONNECTION: "keep-alive",
+                aiohttp.hdrs.ACCEPT_ENCODING: "gzip",
+                aiohttp.hdrs.HOST: self._app_base_url.host,
+            }
+            timeout = aiohttp.ClientTimeout(connect=8.0, sock_connect=3.0, sock_read=12.0)
+
+            self._session_app_proto = aiohttp.ClientSession(
+                base_url=self._app_base_url,
+                connector=self.connector,
+                loop=self._loop,
+                headers=headers,
+                connector_owner=False,
+                raise_for_status=True,
+                timeout=timeout,
+                read_bufsize=1 << 18,  # 256KiB
+                trust_env=self._trust_env,
+            )
+
+        return self._session_app_proto
+
+    @property
+    def session_web(self) -> aiohttp.ClientSession:
+        """
+        用于网页端请求
+
+        Returns:
+            aiohttp.ClientSession
+        """
+
+        if self._session_web is None:
+            headers = {
+                aiohttp.hdrs.USER_AGENT: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:103.0) Gecko/20100101 Firefox/103.0",
+                aiohttp.hdrs.ACCEPT_ENCODING: "gzip, deflate, br",
+                aiohttp.hdrs.CACHE_CONTROL: "no-cache",
+                aiohttp.hdrs.CONNECTION: "keep-alive",
+            }
+            cookie_jar = aiohttp.CookieJar()
+            cookie_jar.update_cookies({'BDUSS': self.BDUSS, 'STOKEN': self.STOKEN})
+            timeout = aiohttp.ClientTimeout(connect=8.0, sock_connect=3.0, sock_read=12.0)
+
+            self._session_web = aiohttp.ClientSession(
+                connector=self.connector,
+                loop=self._loop,
+                headers=headers,
+                cookie_jar=cookie_jar,
+                connector_owner=False,
+                raise_for_status=True,
+                timeout=timeout,
+                read_bufsize=1 << 20,  # 1MiB
+                trust_env=self._trust_env,
+            )
+
+        return self._session_web
+
+    @property
+    def session_websocket(self) -> aiohttp.ClientSession:
+        """
+        用于websocket请求
+
+        Returns:
+            aiohttp.ClientSession
+        """
+
+        if self._session_websocket is None:
+            headers = {
+                aiohttp.hdrs.HOST: "im.tieba.baidu.com:8000",
+                aiohttp.hdrs.SEC_WEBSOCKET_EXTENSIONS: "im_version=2.3",
+            }
+            timeout = aiohttp.ClientTimeout(connect=8.0, sock_connect=3.0, sock_read=12.0)
+
+            self._session_websocket = aiohttp.ClientSession(
+                connector=self.connector,
+                loop=self._loop,
+                headers=headers,
+                connector_owner=False,
+                raise_for_status=True,
+                timeout=timeout,
+                read_bufsize=1 << 18,  # 256KiB
+                trust_env=self._trust_env,
+            )
+
+        return self._session_websocket
 
     @property
     def BDUSS(self) -> str:
@@ -579,13 +642,13 @@ class Client(object):
             aiohttp.WSServerHandshakeError: websocket握手失败
         """
 
-        if self._app_websocket is None:
+        if self.session_websocket is None:
             await self.enter()
 
         if self._ws_dispatcher is not None and not self._ws_dispatcher.cancelled():
             self._ws_dispatcher.cancel()
 
-        self.websocket = await self._app_websocket._ws_connect(
+        self.websocket = await self.session_websocket._ws_connect(
             yarl.URL.build(scheme="ws", host="im.tieba.baidu.com", port=8000), heartbeat=heartbeat, ssl=False
         )
         self._ws_dispatcher = asyncio.create_task(self._ws_dispatch(), name="ws_dispatcher")
@@ -722,7 +785,7 @@ class Client(object):
         ]
 
         try:
-            async with self.app.post(
+            async with self.session_app.post(
                 yarl.URL.build(path="/c/s/login"),
                 data=self.pack_form(payload),
             ) as resp:
@@ -759,7 +822,7 @@ class Client(object):
             return fid
 
         try:
-            async with self.web.get(
+            async with self.session_web.get(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/f/commit/share/fnameShareApi"),
                 allow_redirects=False,
                 params={'fname': fname, 'ie': 'utf-8'},
@@ -860,7 +923,7 @@ class Client(object):
         """
 
         try:
-            async with self.web.get(
+            async with self.session_web.get(
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/home/get/panel"),
                 allow_redirects=False,
                 params={
@@ -931,7 +994,7 @@ class Client(object):
         """
 
         try:
-            async with self.web.get(
+            async with self.session_web.get(
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/home/get/panel"),
                 allow_redirects=False,
                 params={
@@ -967,7 +1030,7 @@ class Client(object):
         """
 
         try:
-            async with self.web.get(
+            async with self.session_web.get(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/i/sys/user_json"),
                 allow_redirects=False,
                 params={
@@ -1006,7 +1069,7 @@ class Client(object):
         req_proto.data.user_id = user.user_id
 
         try:
-            async with self.app_proto.post(
+            async with self.session_app_proto.post(
                 yarl.URL.build(path="/c/u/user/getuserinfo", query_string="cmd=303024"),
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
             ) as resp:
@@ -1037,7 +1100,7 @@ class Client(object):
         """
 
         try:
-            async with self.web.get(
+            async with self.session_web.get(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/im/pcmsg/query/getUserInfo"),
                 allow_redirects=False,
                 params={'chatUid': user.user_id},
@@ -1072,7 +1135,7 @@ class Client(object):
         req_proto.data.tieba_uid = str(tieba_uid)
 
         try:
-            async with self.app_proto.post(
+            async with self.session_app_proto.post(
                 yarl.URL.build(path="/c/u/user/getUserByTiebaUid", query_string="cmd=309702"),
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
             ) as resp:
@@ -1127,7 +1190,7 @@ class Client(object):
         req_proto.data.sort = sort
 
         try:
-            async with self.app_proto.post(
+            async with self.session_app_proto.post(
                 yarl.URL.build(path="/c/f/frs/page", query_string="cmd=301001"),
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
             ) as resp:
@@ -1191,7 +1254,7 @@ class Client(object):
             req_proto.data.comment_rn = comment_rn
 
         try:
-            async with self.app_proto.post(
+            async with self.session_app_proto.post(
                 yarl.URL.build(path="/c/f/pb/page", query_string="cmd=302001"),
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
             ) as resp:
@@ -1241,7 +1304,7 @@ class Client(object):
         req_proto.data.pn = pn
 
         try:
-            async with self.app_proto.post(
+            async with self.session_app_proto.post(
                 yarl.URL.build(path="/c/f/pb/floor", query_string="cmd=302002"),
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
             ) as resp:
@@ -1298,7 +1361,7 @@ class Client(object):
         ]
 
         try:
-            async with self.app.post(
+            async with self.session_app.post(
                 yarl.URL.build(path="/c/s/searchpost"),
                 data=self.pack_form(payload),
             ) as resp:
@@ -1334,7 +1397,7 @@ class Client(object):
         ]
 
         try:
-            async with self.app.post(
+            async with self.session_app.post(
                 yarl.URL.build(path="/c/f/forum/getforumdetail"),
                 data=self.pack_form(payload),
             ) as resp:
@@ -1378,7 +1441,7 @@ class Client(object):
         req_proto.data.fid = fid
 
         try:
-            async with self.app_proto.post(
+            async with self.session_app_proto.post(
                 yarl.URL.build(path="/c/f/forum/getBawuInfo", query_string="cmd=301007"),
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
             ) as resp:
@@ -1421,7 +1484,7 @@ class Client(object):
         req_proto.data.fname = fname
 
         try:
-            async with self.app_proto.post(
+            async with self.session_app_proto.post(
                 yarl.URL.build(path="/c/f/forum/searchPostForum", query_string="cmd=309466"),
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
             ) as resp:
@@ -1454,7 +1517,7 @@ class Client(object):
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         try:
-            async with self.web.get(
+            async with self.session_web.get(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/f/like/furank"),
                 allow_redirects=False,
                 params={
@@ -1488,7 +1551,7 @@ class Client(object):
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         try:
-            async with self.web.get(
+            async with self.session_web.get(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/bawu2/platform/listMemberInfo"),
                 allow_redirects=False,
                 params={
@@ -1528,7 +1591,7 @@ class Client(object):
         req_proto.data.rn = rn
 
         try:
-            async with self.app_proto.post(
+            async with self.session_app_proto.post(
                 yarl.URL.build(path="/c/f/forum/getForumSquare", query_string="cmd=309653"),
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
             ) as resp:
@@ -1571,7 +1634,7 @@ class Client(object):
         ]
 
         try:
-            async with self.app.post(
+            async with self.session_app.post(
                 yarl.URL.build(path="/c/u/user/profile"),
                 data=self.pack_form(payload),
             ) as resp:
@@ -1642,7 +1705,7 @@ class Client(object):
             'recommend',
         ]
         try:
-            async with self.app.post(
+            async with self.session_app.post(
                 yarl.URL.build(path="/c/f/forum/getforumdata"),
                 data=self.pack_form(payload),
             ) as resp:
@@ -1690,7 +1753,7 @@ class Client(object):
         ]
 
         try:
-            async with self.app.post(
+            async with self.session_app.post(
                 yarl.URL.build(path="/c/f/forum/like"),
                 data=self.pack_form(payload),
             ) as resp:
@@ -1729,7 +1792,7 @@ class Client(object):
         ]
 
         try:
-            async with self.app.post(
+            async with self.session_app.post(
                 yarl.URL.build(path="/c/f/bawu/getRecomThreadList"),
                 data=self.pack_form(payload),
             ) as resp:
@@ -1772,7 +1835,7 @@ class Client(object):
         ]
 
         try:
-            async with self.app.post(
+            async with self.session_app.post(
                 yarl.URL.build(path="/c/f/bawu/getRecomThreadHistory"),
                 data=self.pack_form(payload),
             ) as resp:
@@ -1836,7 +1899,7 @@ class Client(object):
         ]
 
         try:
-            async with self.app.post(
+            async with self.session_app.post(
                 yarl.URL.build(path="/c/c/bawu/commitprison"),
                 data=self.pack_form(payload),
             ) as resp:
@@ -1885,7 +1948,7 @@ class Client(object):
         ]
 
         try:
-            async with self.web.post(
+            async with self.session_web.post(
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mo/q/bawublockclear"),
                 data=payload,
             ) as resp:
@@ -1968,7 +2031,7 @@ class Client(object):
             ('z', tid),
         ]
 
-        async with self.app.post(
+        async with self.session_app.post(
             yarl.URL.build(path="/c/c/bawu/delthread"),
             data=self.pack_form(payload),
         ) as resp:
@@ -2001,7 +2064,7 @@ class Client(object):
         ]
 
         try:
-            async with self.app.post(
+            async with self.session_app.post(
                 yarl.URL.build(path="/c/c/bawu/multiDelThread"),
                 data=self.pack_form(payload),
             ) as resp:
@@ -2042,7 +2105,7 @@ class Client(object):
         ]
 
         try:
-            async with self.app.post(
+            async with self.session_app.post(
                 yarl.URL.build(path="/c/c/bawu/delpost"),
                 data=self.pack_form(payload),
             ) as resp:
@@ -2083,7 +2146,7 @@ class Client(object):
         ]
 
         try:
-            async with self.app.post(
+            async with self.session_app.post(
                 yarl.URL.build(path="/c/c/bawu/multiDelPost"),
                 data=self.pack_form(payload),
             ) as resp:
@@ -2205,7 +2268,7 @@ class Client(object):
             ('is_frs_mask_list[]', int(is_hide)),
         ]
 
-        async with self.web.post(
+        async with self.session_web.post(
             yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mo/q/bawurecoverthread"),
             data=payload,
         ) as resp:
@@ -2239,7 +2302,7 @@ class Client(object):
         ]
 
         try:
-            async with self.app.post(
+            async with self.session_app.post(
                 yarl.URL.build(path="/c/c/bawu/moveTabThread"),
                 data=self.pack_form(payload),
             ) as resp:
@@ -2276,7 +2339,7 @@ class Client(object):
         ]
 
         try:
-            async with self.app.post(
+            async with self.session_app.post(
                 yarl.URL.build(path="/c/c/bawu/pushRecomToPersonalized"),
                 data=self.pack_form(payload),
             ) as resp:
@@ -2360,7 +2423,7 @@ class Client(object):
         ]
 
         try:
-            async with self.app.post(
+            async with self.session_app.post(
                 yarl.URL.build(path="/c/c/bawu/goodlist"),
                 data=self.pack_form(payload),
             ) as resp:
@@ -2412,7 +2475,7 @@ class Client(object):
             ('z', tid),
         ]
 
-        async with self.app.post(
+        async with self.session_app.post(
             yarl.URL.build(path="/c/c/bawu/commitgood"),
             data=self.pack_form(payload),
         ) as resp:
@@ -2494,7 +2557,7 @@ class Client(object):
             ('z', tid),
         ]
 
-        async with self.app.post(
+        async with self.session_app.post(
             yarl.URL.build(path="/c/c/bawu/committop"),
             data=self.pack_form(payload),
         ) as resp:
@@ -2524,7 +2587,7 @@ class Client(object):
             fname = await self.get_fname(fid)
 
         try:
-            async with self.web.get(
+            async with self.session_web.get(
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mo/q/bawurecover"),
                 allow_redirects=False,
                 params={
@@ -2563,7 +2626,7 @@ class Client(object):
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         try:
-            async with self.web.get(
+            async with self.session_web.get(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/bawu2/platform/listBlackUser"),
                 allow_redirects=False,
                 params={
@@ -2608,7 +2671,7 @@ class Client(object):
         ]
 
         try:
-            async with self.web.post(
+            async with self.session_web.post(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/bawu2/platform/addBlack"),
                 data=payload,
             ) as resp:
@@ -2651,7 +2714,7 @@ class Client(object):
         ]
 
         try:
-            async with self.web.post(
+            async with self.session_web.post(
                 yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/bawu2/platform/cancelBlack"),
                 data=payload,
             ) as resp:
@@ -2696,7 +2759,7 @@ class Client(object):
         }
 
         try:
-            async with self.web.get(
+            async with self.session_web.get(
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mo/q/getBawuAppealList"),
                 allow_redirects=False,
                 params=params,
@@ -2750,7 +2813,7 @@ class Client(object):
         )
 
         try:
-            async with self.web.post(
+            async with self.session_web.post(
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mo/q/multiAppealhandle"),
                 data=payload,
             ) as resp:
@@ -2778,7 +2841,7 @@ class Client(object):
         """
 
         try:
-            async with self.web.get(img_url, allow_redirects=False) as resp:
+            async with self.session_web.get(img_url, allow_redirects=False) as resp:
                 img_type = resp.content_type.removeprefix('image/')
                 if img_type not in ['jpeg', 'png', 'bmp']:
                     raise ValueError(f"Content-Type should be jpeg, png or bmp rather than {resp.content_type}")
@@ -2819,7 +2882,7 @@ class Client(object):
             path = ''
 
         try:
-            async with self.web.get(
+            async with self.session_web.get(
                 yarl.URL.build(
                     scheme="http", host="tb.himg.baidu.com", path=f"/sys/portrait{path}/item/{user.portrait}"
                 ),
@@ -2856,7 +2919,7 @@ class Client(object):
         ]
 
         try:
-            async with self.app.post(
+            async with self.session_app.post(
                 yarl.URL.build(path="/c/s/msg"),
                 data=self.pack_form(payload),
             ) as resp:
@@ -2898,7 +2961,7 @@ class Client(object):
         req_proto.data.pn = str(pn)
 
         try:
-            async with self.app_proto.post(
+            async with self.session_app_proto.post(
                 yarl.URL.build(path="/c/u/feed/replyme", query_string="cmd=303007"),
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
             ) as resp:
@@ -2934,7 +2997,7 @@ class Client(object):
         ]
 
         try:
-            async with self.app.post(
+            async with self.session_app.post(
                 yarl.URL.build(path="/c/u/feed/atme"),
                 data=self.pack_form(payload),
             ) as resp:
@@ -3063,7 +3126,7 @@ class Client(object):
         req_proto.data.pn = pn
         req_proto.data.is_view_card = 2 if public_only else 1
 
-        async with self.app_proto.post(
+        async with self.session_app_proto.post(
             yarl.URL.build(path="/c/u/feed/userpost", query_string="cmd=303002"),
             data=self.pack_proto_bytes(req_proto.SerializeToString()),
         ) as resp:
@@ -3114,7 +3177,7 @@ class Client(object):
         ]
 
         try:
-            async with self.app.post(
+            async with self.session_app.post(
                 yarl.URL.build(path="/c/u/fans/page"),
                 data=self.pack_form(payload),
             ) as resp:
@@ -3159,7 +3222,7 @@ class Client(object):
         ]
 
         try:
-            async with self.app.post(
+            async with self.session_app.post(
                 yarl.URL.build(path="/c/u/follow/followList"),
                 data=self.pack_form(payload),
             ) as resp:
@@ -3191,7 +3254,7 @@ class Client(object):
         """
 
         try:
-            async with self.web.get(
+            async with self.session_web.get(
                 yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mg/o/getForumHome"),
                 allow_redirects=False,
                 params={
@@ -3231,7 +3294,7 @@ class Client(object):
         req_proto.data.rn = rn
 
         try:
-            async with self.app_proto.post(
+            async with self.session_app_proto.post(
                 yarl.URL.build(path="/c/u/user/getDislikeList", query_string="cmd=309692"),
                 data=self.pack_proto_bytes(req_proto.SerializeToString()),
             ) as resp:
@@ -3367,7 +3430,7 @@ class Client(object):
             ('thread_id', tid),
         ]
 
-        async with self.app.post(
+        async with self.session_app.post(
             yarl.URL.build(path="/c/c/agree/opAgree"),
             data=self.pack_form(payload),
         ) as resp:
@@ -3399,7 +3462,7 @@ class Client(object):
         ]
 
         try:
-            async with self.app.post(
+            async with self.session_app.post(
                 yarl.URL.build(path="/c/c/user/removeFans"),
                 data=self.pack_form(payload),
             ) as resp:
@@ -3438,7 +3501,7 @@ class Client(object):
         ]
 
         try:
-            async with self.app.post(
+            async with self.session_app.post(
                 yarl.URL.build(path="/c/c/user/follow"),
                 data=self.pack_form(payload),
             ) as resp:
@@ -3477,7 +3540,7 @@ class Client(object):
         ]
 
         try:
-            async with self.app.post(
+            async with self.session_app.post(
                 yarl.URL.build(path="/c/c/user/unfollow"),
                 data=self.pack_form(payload),
             ) as resp:
@@ -3513,7 +3576,7 @@ class Client(object):
                 ('tbs', await self.get_tbs()),
             ]
 
-            async with self.app.post(
+            async with self.session_app.post(
                 yarl.URL.build(path="/c/c/forum/like"),
                 data=self.pack_form(payload),
             ) as resp:
@@ -3551,7 +3614,7 @@ class Client(object):
                 ('tbs', await self.get_tbs()),
             ]
 
-            async with self.app.post(
+            async with self.session_app.post(
                 yarl.URL.build(path="/c/c/forum/unfavolike"),
                 data=self.pack_form(payload),
             ) as resp:
@@ -3588,7 +3651,7 @@ class Client(object):
                 ('dislike_from', "homepage"),
             ]
 
-            async with self.app.post(
+            async with self.session_app.post(
                 yarl.URL.build(path="/c/c/excellent/submitDislike"),
                 data=self.pack_form(payload),
             ) as resp:
@@ -3624,7 +3687,7 @@ class Client(object):
                 ('forum_id', fid),
             ]
 
-            async with self.app.post(
+            async with self.session_app.post(
                 yarl.URL.build(path="/c/c/excellent/submitCancelDislike"),
                 data=self.pack_form(payload),
             ) as resp:
@@ -3665,7 +3728,7 @@ class Client(object):
                 ('thread_id', tid),
             ]
 
-            async with self.app.post(
+            async with self.session_app.post(
                 yarl.URL.build(path="/c/c/thread/setPrivacy"),
                 data=self.pack_form(payload),
             ) as resp:
@@ -3703,7 +3766,7 @@ class Client(object):
                 ('tbs', await self.get_tbs()),
             ]
 
-            async with self.app.post(
+            async with self.session_app.post(
                 yarl.URL.build(path="/c/c/forum/sign"),
                 data=self.pack_form(payload),
             ) as resp:
@@ -3780,7 +3843,7 @@ class Client(object):
                 ('vcode_tag', '12'),
             ]
 
-            async with self.app.post(
+            async with self.session_app.post(
                 yarl.URL.build(path="/c/c/post/add"),
                 data=self.pack_form(payload),
             ) as resp:

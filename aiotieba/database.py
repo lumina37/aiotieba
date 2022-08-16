@@ -23,7 +23,7 @@ class Database(object):
         self._pool_recycle: int = CONFIG['Database'].get('pool_recycle', 28800)
         self._pool: aiomysql.Pool = None
 
-    async def enter(self) -> "Database":
+    async def __aenter__(self) -> "Database":
         try:
             self._pool: aiomysql.Pool = await aiomysql.create_pool(
                 minsize=0,
@@ -37,9 +37,6 @@ class Database(object):
             LOG.warning(f"{err}. 无法连接数据库`{self._db_name}`请检查配置文件中的`Database`字段是否填写正确")
 
         return self
-
-    async def __aenter__(self) -> "Database":
-        return await self.enter()
 
     async def close(self) -> None:
         self._pool.close()
