@@ -19,10 +19,9 @@ class Reviewer(object):
 
     Args:
         BDUSS_key (str, optional): 用于从CONFIG中提取BDUSS. Defaults to None.
-        fname (str, optional): 贴吧名. Defaults to ''.
+        fname (str, optional): 操作的目标贴吧名. Defaults to ''.
 
     Attributes:
-        fname (str): 贴吧名
         client (Client): 客户端
         db (Database): 数据库连接
     """

@@ -17,6 +17,9 @@ class Database(object):
 
     Args:
         fname (str): 操作的目标贴吧名. Defaults to ''.
+
+    Attributes:
+        fname (str): 操作的目标贴吧名
     """
 
     __slots__ = ['fname', '_pool']
