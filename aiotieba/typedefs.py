@@ -1701,6 +1701,12 @@ class ShareThread(_Container):
 
         else:
             self._title = ''
+            
+    def __eq__(self, obj: "ShareThread") -> bool:
+        return super(ShareThread, self).__eq__(obj)
+
+    def __hash__(self) -> int:
+        return super(ShareThread, self).__hash__()
 
     @property
     def text(self) -> str:
@@ -1872,6 +1878,12 @@ class Thread(_Container):
             self._disagree = 0
             self._create_time = 0
             self._last_time = 0
+            
+    def __eq__(self, obj: "Thread") -> bool:
+        return super(Thread, self).__eq__(obj)
+
+    def __hash__(self) -> int:
+        return super(Thread, self).__hash__()
 
     @property
     def text(self) -> str:
@@ -2231,6 +2243,12 @@ class Post(_Container):
             self._agree = 0
             self._disagree = 0
             self._create_time = 0
+            
+    def __eq__(self, obj: "Post") -> bool:
+        return super(Post, self).__eq__(obj)
+
+    def __hash__(self) -> int:
+        return super(Post, self).__hash__()
 
     @property
     def text(self) -> str:
@@ -2528,6 +2546,12 @@ class Comment(_Container):
             self._agree = 0
             self._disagree = 0
             self._create_time = 0
+            
+    def __eq__(self, obj: "Comment") -> bool:
+        return super(Comment, self).__eq__(obj)
+
+    def __hash__(self) -> int:
+        return super(Comment, self).__hash__()
 
     @property
     def text(self) -> str:
@@ -2759,6 +2783,12 @@ class Reply(_Container):
 
             self._is_floor = False
             self._create_time = 0
+            
+    def __eq__(self, obj: "Reply") -> bool:
+        return super(Reply, self).__eq__(obj)
+
+    def __hash__(self) -> int:
+        return super(Reply, self).__hash__()
 
     @property
     def text(self) -> str:
@@ -2945,6 +2975,12 @@ class At(_Container):
             self._is_floor = False
             self._is_thread = False
             self._create_time = 0
+            
+    def __eq__(self, obj: "At") -> bool:
+        return super(At, self).__eq__(obj)
+
+    def __hash__(self) -> int:
+        return super(At, self).__hash__()
 
     @property
     def user(self) -> UserInfo:
@@ -3093,6 +3129,12 @@ class Search(_Container):
 
             self._is_floor = False
             self._create_time = 0
+            
+    def __eq__(self, obj: "Search") -> bool:
+        return super(Search, self).__eq__(obj)
+
+    def __hash__(self) -> int:
+        return super(Search, self).__hash__()
 
     @property
     def title(self) -> str:
@@ -3267,6 +3309,12 @@ class NewThread(_Container):
             self._agree = 0
             self._disagree = 0
             self._create_time = 0
+            
+    def __eq__(self, obj: "NewThread") -> bool:
+        return super(NewThread, self).__eq__(obj)
+
+    def __hash__(self) -> int:
+        return super(NewThread, self).__hash__()
 
     @property
     def text(self) -> str:
@@ -3413,6 +3461,12 @@ class UserPost(_Container):
 
         else:
             self._create_time = 0
+            
+    def __eq__(self, obj: "UserPost") -> bool:
+        return super(UserPost, self).__eq__(obj)
+
+    def __hash__(self) -> int:
+        return super(UserPost, self).__hash__()
 
     @property
     def text(self) -> str:

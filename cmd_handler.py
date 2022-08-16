@@ -253,7 +253,8 @@ class Listener(object):
 
     async def __aenter__(self) -> "Listener":
         await asyncio.gather(
-            *[client.enter() for client in itertools.chain.from_iterable(self.admins.values())], self.listener.enter()
+            *[client.__aenter__() for client in itertools.chain.from_iterable(self.admins.values())],
+            self.listener.__aenter__(),
         )
         return self
 
