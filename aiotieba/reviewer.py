@@ -1,21 +1,36 @@
-__all__ = ['Reviewer']
+__all__ = [
+    'Punish',
+    'DelFlag',
+    'ReviewUtils',
+    'Reviewer',
+]
+
+try:
+    import cv2 as cv
+    import numpy as np
+except ImportError:
+    cv = None
+    np = None
 
 import asyncio
 import binascii
+import enum
+import functools
+import sys
+import time
+import types
+from collections.abc import Callable, Iterator
 from typing import List, Literal, Optional, Tuple, Union
-
-import cv2 as cv
-import numpy as np
 
 from ._logger import LOG
 from .client import Client
 from .database import Database
-from .typedefs import BasicUserInfo, Comments, Posts, Threads
+from .typedefs import BasicUserInfo, Comment, Comments, Post, Posts, Thread, Threads
 
 
-class Reviewer(object):
+class ReviewUtils(object):
     """
-    提供贴吧审查功能
+    贴吧审查实用功能
 
     Args:
         BDUSS_key (str, optional): 用于从CONFIG中提取BDUSS. Defaults to None.
@@ -34,19 +49,16 @@ class Reviewer(object):
     ]
 
     def __init__(self, BDUSS_key: Optional[str] = None, fname: str = ''):
-        super(Reviewer, self).__init__()
+        super(ReviewUtils, self).__init__()
 
         self.client = Client(BDUSS_key)
         self.db = Database(fname)
-        self._img_hasher: cv.img_hash.AverageHash = None
-        self._qrdetector: cv.QRCodeDetector = None
+        self._img_hasher: "cv.img_hash.AverageHash" = None
+        self._qrdetector: "cv.QRCodeDetector" = None
 
-    async def enter(self) -> "Reviewer":
+    async def __aenter__(self) -> "ReviewUtils":
         await asyncio.gather(self.client.__aenter__(), self.db.__aenter__())
         return self
-
-    async def __aenter__(self) -> "Reviewer":
-        return await self.enter()
 
     async def close(self) -> None:
         await self.client.close()
@@ -56,7 +68,7 @@ class Reviewer(object):
         await self.close()
 
     @property
-    def img_hasher(self) -> cv.img_hash.AverageHash:
+    def img_hasher(self) -> "cv.img_hash.AverageHash":
         if self._img_hasher is None:
             self._img_hasher = cv.img_hash.AverageHash.create()
         return self._img_hasher
@@ -347,9 +359,9 @@ class Reviewer(object):
 
         return await self.db.get_tid_list(tag=1, limit=limit, offset=offset)
 
-    def scan_QRcode(self, image: np.ndarray) -> str:
+    def scan_QRcode(self, image: "np.ndarray") -> str:
         """
-        扫描图像中的二维码
+        审查图像中的二维码
 
         Args:
             image (np.ndarray): 图像
@@ -366,7 +378,7 @@ class Reviewer(object):
 
         return data
 
-    def compute_imghash(self, image: np.ndarray) -> str:
+    def compute_imghash(self, image: "np.ndarray") -> str:
         """
         计算图像的phash
 
@@ -386,7 +398,7 @@ class Reviewer(object):
 
         return img_hash
 
-    async def get_imghash(self, image: np.ndarray) -> int:
+    async def get_imghash(self, image: "np.ndarray") -> int:
         """
         获取图像的封锁级别
 
@@ -401,7 +413,7 @@ class Reviewer(object):
             return await self.db.get_imghash(img_hash)
         return 0
 
-    async def get_imghash_full(self, image: np.ndarray) -> Tuple[int, str]:
+    async def get_imghash_full(self, image: "np.ndarray") -> Tuple[int, str]:
         """
         获取图像的完整信息
 
@@ -415,3 +427,620 @@ class Reviewer(object):
         if img_hash := self.compute_imghash(image):
             return await self.db.get_imghash_full(img_hash)
         return 0, ''
+
+
+class DelFlag(enum.IntEnum):
+    DELETE = -2
+    HIDE = -1
+    NORMAL = 0
+    WHITE = 1
+
+
+class Punish(object):
+    """
+    处罚操作
+
+    Fields:
+        del_flag (DelFlag, optional): 处理结果. Defaults to DelFlag.NORMAL.
+        block_days (int, optional): 封禁天数. Defaults to 0.
+        note (str, optional): 处罚理由. Defaults to ''.
+    """
+
+    __slots__ = [
+        'del_flag',
+        'block_days',
+        'note',
+    ]
+
+    def __init__(self, del_flag: DelFlag = DelFlag.NORMAL, block_days: int = 0, note: str = ''):
+        self.del_flag: DelFlag = del_flag
+        self.block_days: int = block_days
+        if del_flag > 0:
+            line = sys._getframe(1).f_lineno
+            self.note = f"L{line} {note}" if note else f"L{line}"
+        else:
+            self.note = note
+
+    def __bool__(self) -> bool:
+        if self.del_flag < DelFlag.NORMAL:
+            return True
+        return bool(self.block_days)
+
+
+def _check_permission(func):
+    """
+    装饰器检查用户黑白名单状态
+    """
+
+    @functools.wraps(func)
+    async def _(self: "Reviewer", obj: Union[Thread, Post, Comment]) -> Optional[Punish]:
+        permission = await self.db.get_user_id(obj.user.user_id)
+        if permission <= -5:
+            return Punish(DelFlag.DELETE, 10, "黑名单")
+        if permission >= 1:
+            return Punish(DelFlag.WHITE)
+        return await func(self, obj)
+
+    return _
+
+
+def _check_tid_cache(func):
+    """
+    装饰器检查tid是否已被缓存
+    """
+
+    @functools.wraps(func)
+    async def _(self: "Reviewer", thread: Thread) -> Optional[Punish]:
+        if thread.last_time <= await self.get_id(thread.tid):
+            return
+        punish = await func(self, thread)
+        if not punish:
+            await self.add_id(thread.tid, id_last_edit=thread.last_time)
+        return punish
+
+    return _
+
+
+def _check_pid_cache(func):
+    """
+    装饰器检查回复pid是否已被缓存
+    """
+
+    @functools.wraps(func)
+    async def _(self: "Reviewer", post: Post) -> Optional[Punish]:
+        if post.reply_num == (id_last_edit := await self.get_id(post.pid)):
+            return
+        elif post.reply_num < id_last_edit:
+            await self.add_id(post.pid, id_last_edit=post.reply_num)
+            return
+        punish = await func(self, post)
+        if not punish:
+            await self.add_id(post.pid, id_last_edit=post.reply_num)
+        return punish
+
+    return _
+
+
+def _check_spid_cache(func):
+    """
+    装饰器检查楼中楼pid是否已被缓存
+    """
+
+    @functools.wraps(func)
+    async def _(self: "Reviewer", comment: Comment) -> Optional[Punish]:
+        if await self.get_id(comment.pid) != -1:
+            return
+        punish = await func(self, comment)
+        if not punish:
+            await self.add_id(comment.pid)
+        return punish
+
+    return _
+
+
+def _exce_punish(func):
+    """
+    装饰器执行删封操作
+    """
+
+    @functools.wraps(func)
+    async def _(self: "Reviewer", obj: Union[Thread, Post, Comment]) -> None:
+        punish: Optional[Punish] = await func(self, obj)
+
+        if punish:
+            if self.test_mode:
+                if punish.del_flag == DelFlag.DELETE:
+                    LOG.info(
+                        f"Del {obj.__class__.__name__}. text={obj.text} user={obj.user} level={obj.user.level} note={punish.note}"
+                    )
+                elif punish.del_flag == DelFlag.HIDE:
+                    LOG.info(
+                        f"Hide {obj.__class__.__name__}. text={obj.text} user={obj.user} level={obj.user.level} note={punish.note}"
+                    )
+
+                if punish.block_days:
+                    LOG.info(f"Block. user={obj.user} note={punish.note}")
+
+            else:
+                if punish.del_flag == DelFlag.DELETE:
+                    LOG.info(
+                        f"Del {obj.__class__.__name__}. text={obj.text} user={obj.user} level={obj.user.level} note={punish.note}"
+                    )
+                    await self.del_post(obj.pid)
+                elif punish.del_flag == DelFlag.HIDE:
+                    LOG.info(
+                        f"Hide {obj.__class__.__name__}. text={obj.text} user={obj.user} level={obj.user.level} note={punish.note}"
+                    )
+                    await self.hide_thread(obj.tid)
+
+                if punish.block_days:
+                    await self.block(obj.user.portrait, day=punish.block_days, reason=punish.note)
+
+    return _
+
+
+def log_timeit(func) -> None:
+    @functools.wraps(func)
+    async def _(*args, **kwargs):
+        start_time = time.perf_counter()
+        res = await func(*args, **kwargs)
+        LOG.debug(f"{func.__name__} time_cost: {time.perf_counter()-start_time:.4f}")
+        return res
+
+    return _
+
+
+class Reviewer(ReviewUtils):
+
+    __slots__ = [
+        '__dict__',
+    ]
+
+    def __init__(self, BDUSS_key: str, fname: str):
+        super(Reviewer, self).__init__(BDUSS_key, fname)
+
+        self.test_mode = True
+
+        self.thread_checkers = []
+        self.post_checkers = []
+        self.comment_checkers = []
+
+    async def __aenter__(self) -> "Reviewer":
+        await super(Reviewer, self).__aenter__()
+        return self
+
+    def time_interval(self) -> Callable[[], float]:
+        """
+        单页循环审查时由该方法提供执行间隔
+
+        Returns:
+            Callable[[], float]: 用于返回时间间隔的闭包
+        """
+
+        def _() -> float:
+            return 12.0
+
+        return _
+
+    def time_threshold(self) -> Callable[[], int]:
+        """
+        该方法提供时间下限
+        创建日期早于时间下限的对象不会被审查
+
+        Returns:
+            Callable[[], int]: 返回时间下限的闭包
+        """
+
+        time_thre = int(time.time()) - 15 * 24 * 3600
+
+        def _() -> int:
+            return time_thre
+
+        return _
+
+    async def review_loop(self) -> None:
+        """
+        单页循环审查
+        """
+
+        self.test_mode = False
+        time_interval_closure = self.time_interval()
+        self.time_thre_closure = self.time_threshold()
+
+        while 1:
+            try:
+                asyncio.create_task(self.loop_handler_pn2threads())
+                await asyncio.sleep(time_interval_closure())
+
+            except Exception:
+                LOG.critical("Unexcepted error", exc_info=True)
+                return
+
+    @log_timeit
+    async def loop_handler_pn2threads(self, pn: int = 1) -> None:
+        """
+        处理一个页码
+
+        Args:
+            pn (int, optional): 页码. Defaults to 1.
+        """
+
+        threads = await self.loop_get_threads(pn)
+        threads = set(threads)
+        await asyncio.gather(*[self.loop_handler_thread(thread) for thread in threads])
+
+    async def loop_get_threads(self, pn: int) -> Iterator[Thread]:
+        """
+        单页循环审查时由该方法获取页码下的待审查主题帖
+
+        Args:
+            pn (int): 待审查主题帖列表所在页码
+
+        Returns:
+            Iterator[Thread]: 待审查主题帖的迭代器
+        """
+
+        time_thre = self.time_thre_closure()
+
+        threads = await self.get_threads(pn)
+        return [thread for thread in threads if not thread.is_livepost and thread.create_time > time_thre]
+
+    @_exce_punish
+    @_check_tid_cache
+    @_check_permission
+    async def loop_handler_thread(self, thread: Thread) -> Optional[Punish]:
+        """
+        处理单个主题帖
+
+        Args:
+            thread (Thread): 待审查的主题帖
+
+        Returns:
+            Optional[Punish]: 主题帖的审查结果
+        """
+
+        posts = await self.set_thread_level(thread)
+
+        for checker in self.thread_checkers:
+            punish = await checker(thread)
+            if punish:
+                return punish
+
+        return await self.loop_handler_thread2posts(thread, posts)
+
+    async def set_thread_level(self, thread: Thread) -> Posts:
+        """
+        补充主题帖楼主的等级
+
+        Args:
+            thread (Thread): 待设置楼主等级的主题帖
+
+        Returns:
+            Posts: 尾页回复列表
+        """
+
+        posts = await self.get_posts(thread.tid, pn=99999, sort=1, with_comments=True)
+        thread._user = posts.thread.user
+        return posts
+
+    async def loop_handler_thread2posts(self, thread: Thread, last_posts: Posts) -> Optional[Punish]:
+        """
+        审查主题帖下的回复
+
+        Args:
+            thread (Thread): 父级主题帖
+            last_posts (Posts): 尾页回复列表
+
+        Returns:
+            Optional[Punish]: 主题帖的审查结果
+        """
+
+        posts = await self.loop_get_posts(thread, last_posts)
+        posts = set(posts)
+        await asyncio.gather(*[self.loop_handler_post(post) for post in posts])
+
+    async def loop_get_posts(self, thread: Thread, last_posts: Posts) -> Iterator[Post]:
+        """
+        单页循环审查时由该方法获取主题帖下的待审查回复列表
+
+        Args:
+            thread (Thread): 父级主题帖
+            last_posts (Iterator[Post]): 尾页回复列表
+
+        Returns:
+            Iterator[Post]: 待审查回复的迭代器
+        """
+
+        time_thre = self.time_thre_closure()
+
+        posts = [post for post in last_posts if post.create_time > time_thre]
+        if thread.reply_num > 30:
+            first_posts = await self.get_posts(thread.tid, with_comments=True)
+            posts += [post for post in first_posts if post.create_time > time_thre]
+
+        return posts
+
+    @_exce_punish
+    @_check_pid_cache
+    @_check_permission
+    async def loop_handler_post(self, post: Post) -> Optional[Punish]:
+        """
+        处理单个回复
+
+        Args:
+            post (Post): 待审查的回复
+
+        Returns:
+            Optional[Punish]: 回复的审查结果
+        """
+
+        for checker in self.post_checkers:
+            punish = await checker(post)
+            if punish:
+                return punish
+
+        return await self.loop_handler_post2comments(post)
+
+    async def loop_handler_post2comments(self, post: Post) -> Optional[Punish]:
+        """
+        审查回复下的楼中楼
+
+        Args:
+            post (Post): 父级回复
+
+        Returns:
+            Optional[Punish]: 回复审查结果
+        """
+
+        comments = await self.loop_get_comments(post)
+        comments = set(comments)
+        await asyncio.gather(*[self.loop_handler_comment(comment) for comment in comments])
+
+    async def loop_get_comments(self, post: Post) -> Iterator[Comment]:
+        """
+        单页循环审查时由该方法获取回复下的待审查楼中楼
+
+        Args:
+            post (Post): 父级回复
+
+        Returns:
+            Iterator[Comment]: 待审查楼中楼的迭代器
+        """
+
+        if post.reply_num > 10:
+            last_comments = await self.get_comments(post.tid, post.pid, pn=post.reply_num // 30 + 1)
+            return post.comments + last_comments.objs
+
+        else:
+            return post.comments
+
+    @_exce_punish
+    @_check_spid_cache
+    @_check_permission
+    async def loop_handler_comment(self, comment: Comment) -> Optional[Punish]:
+        """
+        审查单个楼中楼
+
+        Args:
+            comment (Comment): 待审查的楼中楼
+
+        Returns:
+            Optional[Punish]: 楼中楼审查结果
+        """
+
+        for checker in self.comment_checkers:
+            punish = await checker(comment)
+            if punish:
+                return punish
+
+    async def review_multi(self, worker_num: int = 8) -> None:
+        """
+        多页审查
+
+        Args:
+            worker_num (int, optional): 并发协程数. Defaults to 8.
+        """
+
+        pn_queue: asyncio.Queue[int] = asyncio.Queue(maxsize=worker_num)
+        self.time_thre_closure = self.time_threshold()
+
+        running_flag = True
+
+        async def producer() -> None:
+            pn_iterator = self.multi_pn_iterator()
+            for pn in pn_iterator:
+                await pn_queue.put(pn)
+            nonlocal running_flag
+            running_flag = False
+
+        async def worker(i: int) -> None:
+            while 1:
+                try:
+                    pn = await asyncio.wait_for(pn_queue.get(), timeout=1.0)
+                    LOG.info(f"Worker#{i} handling pn:{pn}")
+                except asyncio.TimeoutError:
+                    nonlocal running_flag
+                    if not running_flag:
+                        LOG.info(f"Worker#{i} quit")
+                        return
+
+                await self.multi_handler_pn2threads(pn)
+
+        workers = [worker(i) for i in range(worker_num)]
+        await asyncio.gather(*workers, producer())
+
+    def multi_pn_iterator(self) -> Iterator[int]:
+        """
+        返回一个页码迭代器
+
+        Returns:
+            Iterator[int]: 页码迭代器
+        """
+        return range(128, 1, -1)
+
+    async def multi_handler_pn2threads(self, pn: int) -> None:
+        """
+        处理一个页码
+
+        Args:
+            pn (int, optional): 页码. Defaults to 1.
+        """
+
+        async for thread in self.multi_get_threads(pn):
+            await self.multi_handler_thread(thread)
+
+    async def multi_get_threads(self, pn: int) -> Thread:
+        """
+        多页审查时由该方法获取页码下的待审查主题帖
+
+        Args:
+            pn (int): 待审查主题帖列表所在页码
+
+        Yields:
+            Thread: 待审查主题帖
+        """
+
+        time_thre = self.time_thre_closure()
+
+        threads = await self.get_threads(pn)
+        for thread in [thread for thread in threads if not thread.is_livepost and thread.create_time > time_thre]:
+            yield thread
+
+    @_exce_punish
+    @_check_permission
+    async def multi_handler_thread(self, thread: Thread) -> Optional[Punish]:
+        """
+        处理单个主题帖
+
+        Args:
+            thread (Thread): 待审查的主题帖
+
+        Returns:
+            Optional[Punish]: 主题帖的审查结果
+        """
+
+        posts = await self.set_thread_level(thread)
+
+        for checker in self.thread_checkers:
+            punish = await checker(thread)
+            if punish:
+                return punish
+
+        return await self.multi_handler_thread2posts(thread, posts)
+
+    async def multi_handler_thread2posts(self, thread: Thread, last_posts: Posts) -> Optional[Punish]:
+        """
+        审查主题帖下的回复
+
+        Args:
+            thread (Thread): 父级主题帖
+            last_posts (Iterator[Post]): 尾页回复列表
+
+        Returns:
+            Optional[Punish]: 主题帖的审查结果
+        """
+
+        async for post in self.multi_get_posts(thread, last_posts):
+            await self.multi_handler_post(post)
+
+    async def multi_get_posts(self, thread: Thread, last_posts: Posts) -> Post:
+        """
+        多页审查时由该方法获取主题帖下的待审查回复列表
+
+        Args:
+            thread (Thread): 父级主题帖
+            last_posts (Posts): 尾页回复列表
+
+        Yields:
+            Post: 待审查回复
+        """
+
+        time_thre = self.time_thre_closure()
+
+        for post in [post for post in last_posts if post.create_time > time_thre]:
+            yield post
+
+        if (total_page := last_posts.page.total_page) >= 2:
+
+            for post_pn in range(total_page - 1, 0, -1):
+                LOG.debug(f"Scanning tid={thread.tid} pn={post_pn}")
+                posts = await self.get_posts(thread.tid, pn=post_pn, with_comments=True)
+                if posts:
+                    for post in posts:
+                        yield post
+                    if posts[0].create_time < time_thre:
+                        break
+
+    @_exce_punish
+    @_check_permission
+    async def multi_handler_post(self, post: Post) -> Optional[Punish]:
+        """
+        处理单个回复
+
+        Args:
+            post (Post): 待审查的回复
+
+        Returns:
+            Optional[Punish]: 回复的审查结果
+        """
+
+        for checker in self.post_checkers:
+            punish = await checker(post)
+            if punish:
+                return punish
+
+        return await self.multi_handler_post2comments(post)
+
+    async def multi_handler_post2comments(self, post: Post) -> Optional[Punish]:
+        comments = await self.multi_get_comments(post)
+        comments = set(comments)
+        await asyncio.gather(*[self.multi_handler_comment(comment) for comment in comments])
+
+    async def multi_get_comments(self, post: Post) -> Iterator[Comment]:
+        """
+        多页审查时由该方法获取回复下的待审查楼中楼
+
+        Args:
+            post (Post): 父级回复
+
+        Returns:
+            Iterator[Comment]: 待审查楼中楼的迭代器
+        """
+
+        if post.reply_num > 10:
+            last_comments = await self.get_comments(post.tid, post.pid, pn=post.reply_num // 30 + 1)
+            return post.comments + last_comments.objs
+
+        else:
+            return post.comments
+
+    @_exce_punish
+    @_check_permission
+    async def multi_handler_comment(self, comment: Comment) -> Optional[Punish]:
+        """
+        审查回复下的楼中楼
+
+        Args:
+            post (Post): 父级回复
+
+        Returns:
+            Optional[Punish]: 回复审查结果
+        """
+
+        for checker in self.comment_checkers:
+            punish = await checker(comment)
+            if punish:
+                return punish
+
+    async def review_test(self) -> None:
+        self.test_mode = True
+
+        def pn_iterator(_):
+            return range(16, 7, -1)
+
+        self.multi_pn_iterator = types.MethodType(pn_iterator, self)
+
+        try:
+            await self.review_multi(8)
+        except KeyboardInterrupt:
+            return

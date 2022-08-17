@@ -11,7 +11,7 @@ from .client import *
 from .reviewer import *
 from .typedefs import *
 
-__version__ = "2.8.4.beta1"
+__version__ = "2.9.0.beta1"
 
 if os.name == 'posix':
     import signal

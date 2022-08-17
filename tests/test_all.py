@@ -23,7 +23,7 @@ async def client():
 
 @pytest_asyncio.fixture(scope="module")
 async def reviewer():
-    async with tb.Reviewer('default', 'starry') as reviewer:
+    async with tb.ReviewUtils('default', 'starry') as reviewer:
         yield reviewer
 
 
@@ -296,7 +296,7 @@ async def test_Ats(client: tb.Client):
 
 
 @pytest.mark.asyncio
-async def test_Database(reviewer: tb.Reviewer):
+async def test_Database(reviewer: tb.ReviewUtils):
     user = await reviewer.client.get_self_info()
     fname = reviewer.db.fname
     fid = await reviewer.db.get_fid(fname)

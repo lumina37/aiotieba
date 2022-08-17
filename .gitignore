@@ -4,16 +4,13 @@ __*/
 *.exe
 *.csv
 *.xlsx
-*.pyproj
 *.txt
-*.log
 *.bin
 *.zip
 *.rar
 *.md
 *.cmd
 *.jpg
-*.code-workspace
 
 log/
 charles/
@@ -31,5 +28,9 @@ test*
 !README.md
 !requirements.txt
 !pyproject.toml
-!cmd_handler.py
-!cloud_review_vtuber.py
+
+*.pyproj
+*.log
+*.code-workspace
+*.pyc
+__pycache__

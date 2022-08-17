@@ -82,7 +82,7 @@ class Context(object):
 
     def __init__(self, at: tb.At) -> None:
         self.at: tb.At = at
-        self.admin: tb.Reviewer = None
+        self.admin: tb.ReviewUtils = None
         self.speaker: tb.Client = None
         self._init_full_success: bool = False
         self._args = None
@@ -232,11 +232,11 @@ class Listener(object):
 
     def __init__(self) -> None:
 
-        self.listener = tb.Reviewer(LISTEN_CONFIG['listener_key'])
+        self.listener = tb.ReviewUtils(LISTEN_CONFIG['listener_key'])
 
-        def _parse_config(_config: Dict[str, str]) -> Tuple[str, tb.Reviewer, tb.Client]:
+        def _parse_config(_config: Dict[str, str]) -> Tuple[str, tb.ReviewUtils, tb.Client]:
             fname = _config['fname']
-            admin = tb.Reviewer(_config['admin_key'], fname)
+            admin = tb.ReviewUtils(_config['admin_key'], fname)
             speaker = tb.Client(_config['speaker_key'])
             return fname, admin, speaker
 

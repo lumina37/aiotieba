@@ -30,7 +30,7 @@ class Punish(object):
             self.note = note
 
 
-class CloudReview(tb.Reviewer):
+class CloudReview(tb.ReviewUtils):
 
     __slots__ = []
 
@@ -38,7 +38,8 @@ class CloudReview(tb.Reviewer):
         super().__init__(BDUSS_key, fname)
 
     async def __aenter__(self) -> "CloudReview":
-        return await self.enter()
+        await super(CloudReview, self).__aenter__()
+        return self
 
     async def run(self) -> None:
 
