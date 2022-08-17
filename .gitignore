@@ -12,11 +12,12 @@ __*/
 *.cmd
 *.jpg
 
-log/
-charles/
+*.py
 
 test*
-/*.py
+
+log/
+charles/
 
 !.github
 !.github/**
