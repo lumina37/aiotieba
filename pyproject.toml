@@ -1,3 +1,26 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aiotieba"
+description = "百度贴吧吧务管理器 删帖机 使用aiohttp封装大部分常用贴吧接口"
+requires-python = ">=3.9"
+keywords = ["one", "two"]
+classifiers = ["Programming Language :: Python :: 3"]
+dependencies = ["requests", 'importlib-metadata; python_version<"3.8"']
+dynamic = ["version", "readme"]
+
+[tool.setuptools.packages.find]
+where = ["aiotieba"]
+
+[tool.setuptools.package-data]
+"aiotieba.config_example" = ["*.toml"]
+
+[tool.setuptools.dynamic]
+version = { attr = "aiotieba.__version__" }
+readme = { file = "README.md" }
+
 [tool.black]
 line-length = 120
 skip-string-normalization = true

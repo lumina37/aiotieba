@@ -455,7 +455,7 @@ class Punish(object):
     def __init__(self, del_flag: DelFlag = DelFlag.NORMAL, block_days: int = 0, note: str = ''):
         self.del_flag: DelFlag = del_flag
         self.block_days: int = block_days
-        if del_flag > 0:
+        if del_flag < DelFlag.NORMAL:
             line = sys._getframe(1).f_lineno
             self.note = f"L{line} {note}" if note else f"L{line}"
         else:
