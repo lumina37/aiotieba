@@ -176,7 +176,6 @@ class Client(object):
         '_session_web',
         '_session_websocket',
         'websocket',
-        '_ws_password',
         '_ws_aes_chiper',
         '_ws_dispatcher',
     ]
@@ -201,7 +200,6 @@ class Client(object):
         self._session_web: aiohttp.ClientSession = None
         self._session_websocket: aiohttp.ClientSession = None
         self.websocket: aiohttp.ClientWebSocketResponse = None
-        self._ws_password: bytes = None
         self._ws_aes_chiper = None
         self._ws_dispatcher: asyncio.Task = None
 

@@ -28,6 +28,7 @@ class Account(object):
         '_client_id',
         '_cuid',
         '_cuid_galaxy2',
+        '_ws_password',
     ]
 
     def __init__(self, BDUSS_key: Optional[str] = None) -> None:
@@ -41,6 +42,7 @@ class Account(object):
         self._client_id: str = None
         self._cuid: str = None
         self._cuid_galaxy2: str = None
+        self._ws_password: bytes = None
 
     @property
     def BDUSS(self) -> str:
