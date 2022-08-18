@@ -1,5 +1,4 @@
-.*/
-__*/
+*/
 *.toml
 *.exe
 *.csv
@@ -14,17 +13,14 @@ __*/
 
 *.py
 
-test*
-
-log/
-charles/
-
-!.github
+!aiotieba
+!aiotieba/**
+!.github/
 !.github/**
-!docs/**
-!tests
-!tests/**
-!aiotieba/config_example/**
+!docs
+!docs/*
+!tests/
+!tests/*
 
 !README.md
 !requirements.txt

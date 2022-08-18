@@ -17,7 +17,6 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Topic :: Internet :: WWW/HTTP :: Session",
 ]
-urls = { Homepage = "https://github.com/Starry-OvO/Tieba-Manager" }
 dependencies = [
     "aiodns>=3.0.0",
     "aiohttp>=3.8.0",
@@ -32,7 +31,7 @@ dependencies = [
 dynamic = ["version", "readme"]
 
 [tool.setuptools.packages.find]
-where = ["aiotieba"]
+include = ["aiotieba*"]
 
 [tool.setuptools.package-data]
 "aiotieba.config_example" = ["*.toml"]
