@@ -11,7 +11,6 @@ keywords = ["tieba", "crawler", "spider"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Framework :: AsyncIO",
-    "Intended Audience :: Information Technology",
     "License :: OSI Approved :: The Unlicense (Unlicense)",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3 :: Only",
