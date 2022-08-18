@@ -1,5 +1,3 @@
-# -*- coding:utf-8 -*-
-
 from . import (
     Agree_pb2,
     CommitPersonalMsgReqIdl_pb2,
