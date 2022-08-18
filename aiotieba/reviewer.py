@@ -20,7 +20,7 @@ import types
 from collections.abc import Callable, Iterator
 from typing import List, Literal, Optional, Tuple, Union
 
-from ._helpers import DelFlag, Punish
+from ._helpers import DelFlag, Punish, alog_time
 from ._logger import LOG
 from .client import Client
 from .database import Database
@@ -540,17 +540,6 @@ def _exce_punish(func):
     return _
 
 
-def log_timeit(func) -> None:
-    @functools.wraps(func)
-    async def _(*args, **kwargs):
-        start_time = time.perf_counter()
-        res = await func(*args, **kwargs)
-        LOG.debug(f"{func.__name__} time_cost: {time.perf_counter()-start_time:.4f}")
-        return res
-
-    return _
-
-
 class Reviewer(ReviewUtils):
 
     __slots__ = [
@@ -617,7 +606,7 @@ class Reviewer(ReviewUtils):
                 LOG.critical("Unexcepted error", exc_info=True)
                 return
 
-    @log_timeit
+    @alog_time
     async def loop_handler_pn2threads(self, pn: int = 1) -> None:
         """
         处理一个页码

@@ -5,8 +5,12 @@ __all__ = [
 ]
 
 import enum
+import functools
 import json
 import sys
+import time
+
+from ._logger import LOG
 
 
 def _json_decoder_hook(_dict):
@@ -55,3 +59,14 @@ class Punish(object):
         if self.del_flag < DelFlag.NORMAL:
             return True
         return bool(self.block_days)
+
+
+def alog_time(func) -> None:
+    @functools.wraps(func)
+    async def _(*args, **kwargs):
+        start_time = time.perf_counter()
+        res = await func(*args, **kwargs)
+        LOG.debug(f"{func.__name__} time_cost: {time.perf_counter()-start_time:.4f}")
+        return res
+
+    return _
