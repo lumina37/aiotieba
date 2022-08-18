@@ -2,11 +2,13 @@ __all__ = ['Client']
 
 import asyncio
 import base64
+import binascii
 import gzip
 import hashlib
 import json
 import random
 import time
+import uuid
 import weakref
 from typing import ClassVar, Dict, List, Literal, Optional, Tuple, Union
 
@@ -19,9 +21,9 @@ from Crypto.Cipher import AES, PKCS1_v1_5
 from Crypto.PublicKey import RSA
 from google.protobuf.json_format import ParseDict
 
+from ._config import CONFIG
 from ._helpers import JSON_DECODER
 from ._logger import LOG
-from .account import Account
 from .protobuf import (
     CommitPersonalMsgReqIdl_pb2,
     CommitPersonalMsgResIdl_pb2,
@@ -166,7 +168,15 @@ class Client(object):
     """
 
     __slots__ = [
-        '_account',
+        '_BDUSS_key',
+        '_BDUSS',
+        '_STOKEN',
+        '_user',
+        '_tbs',
+        '_client_id',
+        '_cuid',
+        '_cuid_galaxy2',
+        '_ws_password',
         '_connector',
         '_trust_env',
         '_loop',
@@ -188,7 +198,18 @@ class Client(object):
     _fid2fname: ClassVar[Dict[int, str]] = {}
 
     def __init__(self, BDUSS_key: Optional[str] = None) -> None:
-        self._account = Account(BDUSS_key)
+        self._BDUSS_key = BDUSS_key
+
+        user_dict: Dict[str, str] = CONFIG['User'].get(BDUSS_key, {})
+        self.BDUSS = user_dict.get('BDUSS', '')
+        self.STOKEN = user_dict.get('STOKEN', '')
+
+        self._user: BasicUserInfo = None
+        self._tbs: str = None
+        self._client_id: str = None
+        self._cuid: str = None
+        self._cuid_galaxy2: str = None
+        self._ws_password: bytes = None
 
         self._trust_env = False
         self._loop = asyncio.get_running_loop()
@@ -220,28 +241,135 @@ class Client(object):
         await self.close()
 
     @property
-    def account(self) -> Account:
+    def BDUSS_key(self) -> str:
         """
-        当前客户端上挂载的账号
+        当前账号的BDUSS_key
+        """
+
+        return self._BDUSS_key
+
+    @property
+    def BDUSS(self) -> str:
+        """
+        当前账号的BDUSS
+        """
+
+        return self._BDUSS
+
+    @BDUSS.setter
+    def BDUSS(self, new_BDUSS: str) -> None:
+
+        if hasattr(self, "_BDUSS"):
+            LOG.warning("BDUSS已初始化 无法修改")
+            return
+
+        if not new_BDUSS:
+            self._BDUSS = ""
+            return
+
+        legal_length = 192
+        if (len_new_BDUSS := len(new_BDUSS)) != legal_length:
+            LOG.warning(f"BDUSS的长度应为{legal_length}个字符 而输入的{new_BDUSS}有{len_new_BDUSS}个字符")
+            self._BDUSS = ""
+            return
+
+        self._BDUSS = new_BDUSS
+
+    @property
+    def STOKEN(self) -> str:
+        """
+        当前账号的STOKEN
+        """
+
+        return self._STOKEN
+
+    @STOKEN.setter
+    def STOKEN(self, new_STOKEN: str) -> None:
+
+        if hasattr(self, "_STOKEN"):
+            LOG.warning("STOKEN已初始化 无法修改")
+            return
+
+        if not new_STOKEN:
+            self._STOKEN = ""
+            return
+
+        legal_length = 64
+        if (len_new_STOKEN := len(new_STOKEN)) != legal_length:
+            LOG.warning(f"STOKEN的长度应为{legal_length}个字符 而输入的{new_STOKEN}有{len_new_STOKEN}个字符")
+            self._STOKEN = ""
+            return
+
+        self._STOKEN = new_STOKEN
+
+    @property
+    def timestamp_ms(self) -> int:
+        """
+        返回13位毫秒级整数时间戳
 
         Returns:
-            Account
+            int: 毫秒级整数时间戳
         """
 
-        return self._account
+        return int(time.time() * 1000)
 
-    def _update_cookies(self) -> None:
+    @property
+    def client_id(self) -> str:
         """
-        使用当前挂载的账号信息更新cookies
+        返回一个供贴吧客户端使用的client_id
+        在初次生成后该属性便不会再发生变化
+
+        Returns:
+            str: 举例 wappc_1653660000000_123
         """
 
-        if self._session_web is not None:
-            self._session_web.cookie_jar.update_cookies({'BDUSS': self.account.BDUSS, 'STOKEN': self.account.STOKEN})
+        if self._client_id is None:
+            self._client_id = f"wappc_{self.timestamp_ms}_{random.randint(0,999):03d}"
+        return self._client_id
 
-    @account.setter
-    def account(self, new_account: Account) -> None:
-        self._account = new_account
-        self._update_cookies()
+    @property
+    def cuid(self) -> str:
+        """
+        返回一个供贴吧客户端使用的cuid
+        在初次生成后该属性便不会再发生变化
+
+        Returns:
+            str: 举例 baidutiebaappe4200716-58a8-4170-af15-ea7edeb8e513
+        """
+
+        if self._cuid is None:
+            self._cuid = "baidutiebaapp" + str(uuid.uuid4())
+        return self._cuid
+
+    @property
+    def cuid_galaxy2(self) -> str:
+        """
+        返回一个供贴吧客户端使用的cuid_galaxy2
+        在初次生成后该属性便不会再发生变化
+
+        Returns:
+            str: 举例 159AB36E0E5C55E4AAE340CA046F1303|0
+        """
+
+        if self._cuid_galaxy2 is None:
+            rand_str = binascii.hexlify(random.randbytes(16)).decode('ascii').upper()
+            self._cuid_galaxy2 = rand_str + "|0"
+
+        return self._cuid_galaxy2
+
+    @property
+    def ws_password(self) -> bytes:
+        """
+        返回一个供贴吧websocket使用的随机密码
+        在初次生成后该属性便不会再发生变化
+
+        Returns:
+            bytes: 长度为36字节的随机密码
+        """
+
+        if self._ws_password is None:
+            self._ws_password = random.randbytes(36)
+        return self._ws_password
 
     @property
     def connector(self) -> aiohttp.TCPConnector:
@@ -345,19 +473,20 @@ class Client(object):
                 aiohttp.hdrs.CONNECTION: "keep-alive",
             }
             timeout = aiohttp.ClientTimeout(connect=8.0, sock_connect=3.0, sock_read=12.0)
+            cookie_jar = aiohttp.CookieJar(loop=self._loop)
+            cookie_jar.update_cookies({'BDUSS': self.BDUSS, 'STOKEN': self.STOKEN})
 
             self._session_web = aiohttp.ClientSession(
                 connector=self.connector,
                 loop=self._loop,
                 headers=headers,
+                cookie_jar=cookie_jar,
                 connector_owner=False,
                 raise_for_status=True,
                 timeout=timeout,
                 read_bufsize=1 << 20,  # 1MiB
                 trust_env=self._trust_env,
             )
-
-            self._update_cookies()
 
         return self._session_web
 
@@ -448,7 +577,7 @@ class Client(object):
 
         if self._ws_aes_chiper is None:
             salt = b'\xa4\x0b\xc8\x34\xd6\x95\xf3\x13'
-            ws_secret_key = hashlib.pbkdf2_hmac('sha1', self.account.ws_password, salt, 5, 32)
+            ws_secret_key = hashlib.pbkdf2_hmac('sha1', self.ws_password, salt, 5, 32)
             self._ws_aes_chiper = AES.new(ws_secret_key, AES.MODE_ECB)
 
         return self._ws_aes_chiper
@@ -615,12 +744,12 @@ class Client(object):
             rsa_chiper = PKCS1_v1_5.new(pub_key)
 
             data_proto = UpdateClientInfoReqIdl_pb2.UpdateClientInfoReqIdl.DataReq()
-            data_proto.bduss = self.account.BDUSS
-            data_proto.device = f"""{{"subapp_type":"mini","_client_version":"{self.post_version}","pversion":"1.0.3","_msg_status":"1","_phone_imei":"000000000000000","from":"1021099l","cuid_galaxy2":"{self.account.cuid_galaxy2}","model":"LIO-AN00","_client_type":"2"}}"""
-            data_proto.secretKey = rsa_chiper.encrypt(self.account.ws_password)
+            data_proto.bduss = self.BDUSS
+            data_proto.device = f"""{{"subapp_type":"mini","_client_version":"{self.post_version}","pversion":"1.0.3","_msg_status":"1","_phone_imei":"000000000000000","from":"1021099l","cuid_galaxy2":"{self.cuid_galaxy2}","model":"LIO-AN00","_client_type":"2"}}"""
+            data_proto.secretKey = rsa_chiper.encrypt(self.ws_password)
             req_proto = UpdateClientInfoReqIdl_pb2.UpdateClientInfoReqIdl()
             req_proto.data.CopyFrom(data_proto)
-            req_proto.cuid = f"{self.account.cuid}|com.baidu.tieba_mini{self.post_version}"
+            req_proto.cuid = f"{self.cuid}|com.baidu.tieba_mini{self.post_version}"
 
             resp = await self.send_ws_bytes(
                 req_proto.SerializeToString(), cmd=1001, need_gzip=False, need_encrypt=False
@@ -641,10 +770,10 @@ class Client(object):
             str: 贴吧反csrf校验码tbs
         """
 
-        if not self.account._tbs:
+        if not self._tbs:
             await self.login()
 
-        return self.account._tbs
+        return self._tbs
 
     async def get_self_info(self) -> BasicUserInfo:
         """
@@ -654,10 +783,10 @@ class Client(object):
             BasicUserInfo: 简略版用户信息 仅保证包含user_name/portrait/user_id
         """
 
-        if self.account._user is None:
+        if self._user is None:
             await self.login()
 
-        return self.account._user
+        return self._user
 
     async def login(self) -> bool:
         """
@@ -669,7 +798,7 @@ class Client(object):
 
         payload = [
             ('_client_version', self.latest_version),
-            ('bdusstoken', self.account.BDUSS),
+            ('bdusstoken', self.BDUSS),
         ]
 
         try:
@@ -684,13 +813,13 @@ class Client(object):
 
             user_dict = res_json['user']
             user_proto = ParseDict(user_dict, User_pb2.User(), ignore_unknown_fields=True)
-            self.account._user = BasicUserInfo(_raw_data=user_proto)
-            self.account._tbs = res_json['anti']['tbs']
+            self._user = BasicUserInfo(_raw_data=user_proto)
+            self._tbs = res_json['anti']['tbs']
 
         except Exception as err:
             LOG.warning(err)
-            self.account._user = BasicUserInfo()
-            self.account._tbs = ""
+            self._user = BasicUserInfo()
+            self._tbs = ""
             return False
 
         return True
@@ -1367,7 +1496,7 @@ class Client(object):
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         req_proto = SearchPostForumReqIdl_pb2.SearchPostForumReqIdl()
-        req_proto.data.common.BDUSS = self.account.BDUSS
+        req_proto.data.common.BDUSS = self.BDUSS
         req_proto.data.common._client_version = self.latest_version
         req_proto.data.fname = fname
 
@@ -1472,7 +1601,7 @@ class Client(object):
         """
 
         req_proto = GetForumSquareReqIdl_pb2.GetForumSquareReqIdl()
-        req_proto.data.common.BDUSS = self.account.BDUSS
+        req_proto.data.common.BDUSS = self.BDUSS
         req_proto.data.common._client_version = self.latest_version
         req_proto.data.class_name = class_name
         req_proto.data.pn = pn
@@ -1577,7 +1706,7 @@ class Client(object):
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         payload = [
-            ('BDUSS', self.account.BDUSS),
+            ('BDUSS', self.BDUSS),
             ('_client_version', self.latest_version),
             ('forum_id', fid),
         ]
@@ -1633,7 +1762,7 @@ class Client(object):
             user = BasicUserInfo(_id)
 
         payload = [
-            ('BDUSS', self.account.BDUSS),
+            ('BDUSS', self.BDUSS),
             ('_client_version', self.latest_version),
             ('friend_uid', user.user_id),
             ('page_no', pn),
@@ -1672,7 +1801,7 @@ class Client(object):
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         payload = [
-            ('BDUSS', self.account.BDUSS),
+            ('BDUSS', self.BDUSS),
             ('_client_version', self.latest_version),
             ('forum_id', fid),
             ('pn', '1'),
@@ -1715,7 +1844,7 @@ class Client(object):
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         payload = [
-            ('BDUSS', self.account.BDUSS),
+            ('BDUSS', self.BDUSS),
             ('_client_version', self.latest_version),
             ('forum_id', fid),
             ('pn', pn),
@@ -1775,7 +1904,7 @@ class Client(object):
             user = BasicUserInfo(_id)
 
         payload = [
-            ('BDUSS', self.account.BDUSS),
+            ('BDUSS', self.BDUSS),
             ('day', day),
             ('fid', fid),
             ('ntn', 'banid'),
@@ -1912,7 +2041,7 @@ class Client(object):
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         payload = [
-            ('BDUSS', self.account.BDUSS),
+            ('BDUSS', self.BDUSS),
             ('fid', fid),
             ('is_frs_mask', int(is_hide)),
             ('tbs', await self.get_tbs()),
@@ -1944,7 +2073,7 @@ class Client(object):
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         payload = [
-            ('BDUSS', self.account.BDUSS),
+            ('BDUSS', self.BDUSS),
             ('forum_id', fid),
             ('tbs', await self.get_tbs()),
             ('thread_ids', ','.join(map(str, tids))),
@@ -1985,7 +2114,7 @@ class Client(object):
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         payload = [
-            ('BDUSS', self.account.BDUSS),
+            ('BDUSS', self.BDUSS),
             ('fid', fid),
             ('pid', pid),
             ('tbs', await self.get_tbs()),
@@ -2025,7 +2154,7 @@ class Client(object):
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         payload = [
-            ('BDUSS', self.account.BDUSS),
+            ('BDUSS', self.BDUSS),
             ('forum_id', fid),
             ('post_ids', ','.join(map(str, pids))),
             ('tbs', await self.get_tbs()),
@@ -2182,7 +2311,7 @@ class Client(object):
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         payload = [
-            ('BDUSS', self.account.BDUSS),
+            ('BDUSS', self.BDUSS),
             ('_client_version', self.latest_version),
             ('forum_id', fid),
             ('tbs', await self.get_tbs()),
@@ -2221,7 +2350,7 @@ class Client(object):
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         payload = [
-            ('BDUSS', self.account.BDUSS),
+            ('BDUSS', self.BDUSS),
             ('forum_id', fid),
             ('thread_id', tid),
         ]
@@ -2306,7 +2435,7 @@ class Client(object):
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         payload = [
-            ('BDUSS', self.account.BDUSS),
+            ('BDUSS', self.BDUSS),
             ('word', fname),
         ]
 
@@ -2354,7 +2483,7 @@ class Client(object):
             fname = await self.get_fname(fid)
 
         payload = [
-            ('BDUSS', self.account.BDUSS),
+            ('BDUSS', self.BDUSS),
             ('cid', cid),
             ('fid', fid),
             ('ntn', 'set' if is_set else None),
@@ -2437,7 +2566,7 @@ class Client(object):
             fname = await self.get_fname(fid)
 
         payload = [
-            ('BDUSS', self.account.BDUSS),
+            ('BDUSS', self.BDUSS),
             ('fid', fid),
             ('ntn', 'set' if is_set else None),
             ('tbs', await self.get_tbs()),
@@ -2803,7 +2932,7 @@ class Client(object):
         """
 
         payload = [
-            ('BDUSS', self.account.BDUSS),
+            ('BDUSS', self.BDUSS),
         ]
 
         try:
@@ -2844,7 +2973,7 @@ class Client(object):
         """
 
         req_proto = ReplyMeReqIdl_pb2.ReplyMeReqIdl()
-        req_proto.data.common.BDUSS = self.account.BDUSS
+        req_proto.data.common.BDUSS = self.BDUSS
         req_proto.data.common._client_version = self.latest_version
         req_proto.data.pn = str(pn)
 
@@ -2879,7 +3008,7 @@ class Client(object):
         """
 
         payload = [
-            ('BDUSS', self.account.BDUSS),
+            ('BDUSS', self.BDUSS),
             ('_client_version', self.latest_version),
             ('pn', pn),
         ]
@@ -3006,7 +3135,7 @@ class Client(object):
         """
 
         req_proto = UserPostReqIdl_pb2.UserPostReqIdl()
-        req_proto.data.common.BDUSS = self.account.BDUSS
+        req_proto.data.common.BDUSS = self.BDUSS
         req_proto.data.common._client_version = self.latest_version
         req_proto.data.user_id = user.user_id
         req_proto.data.is_thread = is_thread
@@ -3058,7 +3187,7 @@ class Client(object):
             user = BasicUserInfo(_id)
 
         payload = [
-            ('BDUSS', self.account.BDUSS),
+            ('BDUSS', self.BDUSS),
             ('_client_version', self.latest_version),
             ('pn', pn),
             ('uid', user.user_id),
@@ -3103,7 +3232,7 @@ class Client(object):
             user = BasicUserInfo(_id)
 
         payload = [
-            ('BDUSS', self.account.BDUSS),
+            ('BDUSS', self.BDUSS),
             ('_client_version', self.latest_version),
             ('pn', pn),
             ('uid', user.user_id),
@@ -3176,7 +3305,7 @@ class Client(object):
         """
 
         req_proto = GetDislikeListReqIdl_pb2.GetDislikeListReqIdl()
-        req_proto.data.common.BDUSS = self.account.BDUSS
+        req_proto.data.common.BDUSS = self.BDUSS
         req_proto.data.common._client_version = self.latest_version
         req_proto.data.pn = pn
         req_proto.data.rn = rn
@@ -3307,10 +3436,10 @@ class Client(object):
         """
 
         payload = [
-            ('BDUSS', self.account.BDUSS),
+            ('BDUSS', self.BDUSS),
             ('_client_version', self.latest_version),
             ('agree_type', 5 if is_disagree else 2),
-            ('cuid', self.account.cuid_galaxy2),
+            ('cuid', self.cuid_galaxy2),
             ('obj_type', 1 if pid else 3),
             ('op_type', int(is_undo)),
             ('post_id', pid),
@@ -3344,7 +3473,7 @@ class Client(object):
             user = BasicUserInfo(_id)
 
         payload = [
-            ('BDUSS', self.account.BDUSS),
+            ('BDUSS', self.BDUSS),
             ('fans_uid', user.user_id),
             ('tbs', await self.get_tbs()),
         ]
@@ -3383,7 +3512,7 @@ class Client(object):
             user = BasicUserInfo(_id)
 
         payload = [
-            ('BDUSS', self.account.BDUSS),
+            ('BDUSS', self.BDUSS),
             ('portrait', user.portrait),
             ('tbs', await self.get_tbs()),
         ]
@@ -3422,7 +3551,7 @@ class Client(object):
             user = BasicUserInfo(_id)
 
         payload = [
-            ('BDUSS', self.account.BDUSS),
+            ('BDUSS', self.BDUSS),
             ('portrait', user.portrait),
             ('tbs', await self.get_tbs()),
         ]
@@ -3459,7 +3588,7 @@ class Client(object):
 
         try:
             payload = [
-                ('BDUSS', self.account.BDUSS),
+                ('BDUSS', self.BDUSS),
                 ('fid', fid),
                 ('tbs', await self.get_tbs()),
             ]
@@ -3497,7 +3626,7 @@ class Client(object):
 
         try:
             payload = [
-                ('BDUSS', self.account.BDUSS),
+                ('BDUSS', self.BDUSS),
                 ('fid', fid),
                 ('tbs', await self.get_tbs()),
             ]
@@ -3533,11 +3662,11 @@ class Client(object):
 
         try:
             payload = [
-                ('BDUSS', self.account.BDUSS),
+                ('BDUSS', self.BDUSS),
                 ('_client_version', self.latest_version),
                 (
                     'dislike',
-                    json.dumps([{"tid": 1, "dislike_ids": 7, "fid": fid, "click_time": self.account.timestamp_ms}]),
+                    json.dumps([{"tid": 1, "dislike_ids": 7, "fid": fid, "click_time": self.timestamp_ms}]),
                 ),
                 ('dislike_from', "homepage"),
             ]
@@ -3573,8 +3702,8 @@ class Client(object):
 
         try:
             payload = [
-                ('BDUSS', self.account.BDUSS),
-                ('cuid', self.account.cuid),
+                ('BDUSS', self.BDUSS),
+                ('cuid', self.cuid),
                 ('forum_id', fid),
             ]
 
@@ -3612,7 +3741,7 @@ class Client(object):
 
         try:
             payload = [
-                ('BDUSS', self.account.BDUSS),
+                ('BDUSS', self.BDUSS),
                 ('forum_id', fid),
                 ('is_hide', int(hide)),
                 ('post_id', pid),
@@ -3651,7 +3780,7 @@ class Client(object):
         error_code = 0
         try:
             payload = [
-                ('BDUSS', self.account.BDUSS),
+                ('BDUSS', self.BDUSS),
                 ('_client_version', self.latest_version),
                 ('kw', fname),
                 ('tbs', await self.get_tbs()),
@@ -3706,16 +3835,16 @@ class Client(object):
 
         try:
             payload = [
-                ('BDUSS', self.account.BDUSS),
-                ('_client_id', self.account.client_id),
+                ('BDUSS', self.BDUSS),
+                ('_client_id', self.client_id),
                 ('_client_type', '2'),
                 ('_client_version', self.post_version),
                 ('_phone_imei', '000000000000000'),
                 ('anonymous', '1'),
                 ('apid', 'sw'),
                 ('content', content),
-                ('cuid', self.account.cuid),
-                ('cuid_galaxy2', self.account.cuid_galaxy2),
+                ('cuid', self.cuid),
+                ('cuid_galaxy2', self.cuid_galaxy2),
                 ('cuid_gid', ''),
                 ('fid', fid),
                 ('kw', fname),
@@ -3724,11 +3853,11 @@ class Client(object):
                 ('new_vcode', '1'),
                 ('post_from', '3'),
                 ('reply_uid', 'null'),
-                ('stoken', self.account.STOKEN),
+                ('stoken', self.STOKEN),
                 ('subapp_type', 'mini'),
                 ('tbs', await self.get_tbs()),
                 ('tid', tid),
-                ('timestamp', self.account.timestamp_ms),
+                ('timestamp', self.timestamp_ms),
                 ('v_fid', ''),
                 ('v_fname', ''),
                 ('vcode_tag', '12'),

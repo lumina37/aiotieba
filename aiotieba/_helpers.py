@@ -58,7 +58,18 @@ class Punish(object):
     def __bool__(self) -> bool:
         if self.del_flag < DelFlag.NORMAL:
             return True
-        return bool(self.block_days)
+        if self.block_days:
+            return True
+        return False
+
+    def __repr__(self) -> str:
+        return str(
+            {
+                'del_flag': self.del_flag,
+                'block_days': self.block_days,
+                'note': self.note,
+            }
+        )
 
 
 def alog_time(func) -> None:

@@ -148,7 +148,7 @@ asyncio.run(main())
 那么你可能注意到了一条日志输出
 
 ```log
-<2022-07-16 20:13:54.514> [WARNING] [<module>] 配置文件已生成 请参考[https://github.com/Starry-OvO/Tieba-Manager/blob/master/docs/tutorial.md]完成对./aiotieba.toml的配置
+<2022-07-16 20:13:54.514> [WARN] [<module>] 配置文件已生成 请参考[https://github.com/Starry-OvO/Tieba-Manager/blob/master/docs/tutorial.md]完成对./aiotieba.toml的配置
 ...
 ```
 

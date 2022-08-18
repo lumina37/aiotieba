@@ -507,40 +507,23 @@ def _exce_punish(func):
     @functools.wraps(func)
     async def _(self: "Reviewer", obj: Union[Thread, Post, Comment]) -> None:
         punish: Optional[Punish] = await func(self, obj)
-
         if punish:
-            if self.test_mode:
-                if punish.del_flag == DelFlag.DELETE:
-                    LOG.info(
-                        f"Del {obj.__class__.__name__}. text={obj.text} user={obj.user} level={obj.user.level} note={punish.note}"
-                    )
-                elif punish.del_flag == DelFlag.HIDE:
-                    LOG.info(
-                        f"Hide {obj.__class__.__name__}. text={obj.text} user={obj.user} level={obj.user.level} note={punish.note}"
-                    )
-
-                if punish.block_days:
-                    LOG.info(f"Block. user={obj.user} note={punish.note}")
-
-            else:
-                if punish.del_flag == DelFlag.DELETE:
-                    LOG.info(
-                        f"Del {obj.__class__.__name__}. text={obj.text} user={obj.user} level={obj.user.level} note={punish.note}"
-                    )
-                    await self.del_post(obj.pid)
-                elif punish.del_flag == DelFlag.HIDE:
-                    LOG.info(
-                        f"Hide {obj.__class__.__name__}. text={obj.text} user={obj.user} level={obj.user.level} note={punish.note}"
-                    )
-                    await self.hide_thread(obj.tid)
-
-                if punish.block_days:
-                    await self.block(obj.user.portrait, day=punish.block_days, reason=punish.note)
+            await self.exce_delete(obj, punish)
+            await self.exce_block(obj, punish)
 
     return _
 
 
 class Reviewer(ReviewUtils):
+    """
+    贴吧审查器
+
+    请使用以`review_`开头的类方法作为入口函数
+
+    Args:
+        BDUSS_key (str, optional): 用于从CONFIG中提取BDUSS. Defaults to None.
+        fname (str, optional): 操作的目标贴吧名. Defaults to ''.
+    """
 
     __slots__ = [
         '__dict__',
@@ -549,7 +532,8 @@ class Reviewer(ReviewUtils):
     def __init__(self, BDUSS_key: str, fname: str):
         super(Reviewer, self).__init__(BDUSS_key, fname)
 
-        self.test_mode = True
+        self.exce_delete = self._exce_delete_debug
+        self.exce_block = self._exce_block_debug
 
         self.thread_checkers = []
         self.post_checkers = []
@@ -588,26 +572,96 @@ class Reviewer(ReviewUtils):
 
         return _
 
+    async def _exce_block(self, obj: Union[Thread, Post, Comment], punish: Punish) -> None:
+        """
+        执行封禁
+
+        Args:
+            obj (Union[Thread,Post,Comment]): 封禁目标为obj.user
+            punish (Punish): 待执行的惩罚
+        """
+        if punish.block_days:
+            await self.block(obj.user.portrait, day=punish.block_days, reason=punish.note)
+
+    async def _exce_block_debug(self, obj: Union[Thread, Post, Comment], punish: Punish) -> None:
+        """
+        执行封禁方法的一个debug替换
+        一般在debug模式下不会实际执行封禁
+
+        Args:
+            obj (Union[Thread,Post,Comment]): 封禁目标为obj.user
+            punish (Punish): 待执行的惩罚
+        """
+        if punish.block_days:
+            LOG.info(f"Block. user={obj.user} note={punish.note}")
+
+    async def _exce_delete(self, obj: Union[Thread, Post, Comment], punish: Punish) -> None:
+        """
+        执行删除
+
+        Args:
+            obj (Union[Thread,Post,Comment]): 删除目标
+            punish (Punish): 待执行的惩罚
+        """
+
+        if punish.del_flag == DelFlag.DELETE:
+            LOG.info(
+                f"Del {obj.__class__.__name__}. text={obj.text} user={obj.user} level={obj.user.level} note={punish.note}"
+            )
+            await self.del_post(obj.pid)
+        elif punish.del_flag == DelFlag.HIDE:
+            LOG.info(
+                f"Hide {obj.__class__.__name__}. text={obj.text} user={obj.user} level={obj.user.level} note={punish.note}"
+            )
+            await self.hide_thread(obj.tid)
+
+    async def _exce_delete_debug(self, obj: Union[Thread, Post, Comment], punish: Punish) -> None:
+        """
+        执行删除方法的一个debug替换
+        一般在debug模式下不会实际执行删除
+
+        Args:
+            obj (Union[Thread,Post,Comment]): 删除目标
+            punish (Punish): 待执行的惩罚
+        """
+
+        if punish.del_flag == DelFlag.DELETE:
+            LOG.info(
+                f"Del {obj.__class__.__name__}. text={obj.text} user={obj.user} level={obj.user.level} note={punish.note}"
+            )
+        elif punish.del_flag == DelFlag.HIDE:
+            LOG.info(
+                f"Hide {obj.__class__.__name__}. text={obj.text} user={obj.user} level={obj.user.level} note={punish.note}"
+            )
+
     async def review_loop(self) -> None:
         """
         单页循环审查
         """
 
-        self.test_mode = False
-        time_interval_closure = self.time_interval()
+        self.set_no_debug()
+        self.time_interval_closure = self.time_interval()
         self.time_thre_closure = self.time_threshold()
 
         while 1:
             try:
-                asyncio.create_task(self.loop_handler_pn2threads())
-                await asyncio.sleep(time_interval_closure())
+                asyncio.create_task(self.loop_handle_threads())
+                await asyncio.sleep(self.time_interval_closure())
 
             except Exception:
                 LOG.critical("Unexcepted error", exc_info=True)
                 return
 
+    def set_no_debug(self) -> None:
+        """
+        生产环境下取消debug模式
+        """
+
+        self.exce_block = self._exce_block
+        self.exce_delete = self._exce_delete
+
     @alog_time
-    async def loop_handler_pn2threads(self, pn: int = 1) -> None:
+    async def loop_handle_threads(self, pn: int = 1) -> None:
         """
         处理一个页码
 
@@ -617,7 +671,7 @@ class Reviewer(ReviewUtils):
 
         threads = await self.loop_get_threads(pn)
         threads = set(threads)
-        await asyncio.gather(*[self.loop_handler_thread(thread) for thread in threads])
+        await asyncio.gather(*[self.loop_handle_thread(thread) for thread in threads])
 
     async def loop_get_threads(self, pn: int) -> Iterator[Thread]:
         """
@@ -638,25 +692,24 @@ class Reviewer(ReviewUtils):
     @_exce_punish
     @_check_tid_cache
     @_check_permission
-    async def loop_handler_thread(self, thread: Thread) -> Optional[Punish]:
+    async def loop_handle_thread(self, thread: Thread) -> Optional[Punish]:
         """
         处理单个主题帖
 
         Args:
-            thread (Thread): 待审查的主题帖
+            thread (Thread): 待处理的主题帖
 
         Returns:
-            Optional[Punish]: 主题帖的审查结果
+            Optional[Punish]: 审查结果
         """
 
         posts = await self.set_thread_level(thread)
 
-        for checker in self.thread_checkers:
-            punish = await checker(thread)
-            if punish:
-                return punish
+        punish = await self.check_thread(thread)
+        if punish:
+            return punish
 
-        return await self.loop_handler_thread2posts(thread, posts)
+        return await self.loop_handle_posts(thread, posts)
 
     async def set_thread_level(self, thread: Thread) -> Posts:
         """
@@ -673,9 +726,25 @@ class Reviewer(ReviewUtils):
         thread._user = posts.thread.user
         return posts
 
-    async def loop_handler_thread2posts(self, thread: Thread, last_posts: Posts) -> Optional[Punish]:
+    async def check_thread(self, thread: Thread) -> Optional[Punish]:
         """
-        审查主题帖下的回复
+        审查单个主题帖
+
+        Args:
+            thread (Thread): 待审查的主题帖
+
+        Returns:
+            Optional[Punish]: 审查结果
+        """
+
+        for checker in self.thread_checkers:
+            punish = await checker(thread)
+            if punish:
+                return punish
+
+    async def loop_handle_posts(self, thread: Thread, last_posts: Posts) -> Optional[Punish]:
+        """
+        处理主题帖下的回复
 
         Args:
             thread (Thread): 父级主题帖
@@ -687,7 +756,7 @@ class Reviewer(ReviewUtils):
 
         posts = await self.loop_get_posts(thread, last_posts)
         posts = set(posts)
-        await asyncio.gather(*[self.loop_handler_post(post) for post in posts])
+        await asyncio.gather(*[self.loop_handle_post(post) for post in posts])
 
     async def loop_get_posts(self, thread: Thread, last_posts: Posts) -> Iterator[Post]:
         """
@@ -713,15 +782,31 @@ class Reviewer(ReviewUtils):
     @_exce_punish
     @_check_pid_cache
     @_check_permission
-    async def loop_handler_post(self, post: Post) -> Optional[Punish]:
+    async def loop_handle_post(self, post: Post) -> Optional[Punish]:
         """
         处理单个回复
+
+        Args:
+            post (Post): 待处理的回复
+
+        Returns:
+            Optional[Punish]: 审查结果
+        """
+
+        punish = await self.check_post(post)
+        if punish:
+            return punish
+        return await self.loop_handle_comments(post)
+
+    async def check_post(self, post: Post) -> Optional[Punish]:
+        """
+        审查单个回复
 
         Args:
             post (Post): 待审查的回复
 
         Returns:
-            Optional[Punish]: 回复的审查结果
+            Optional[Punish]: 审查结果
         """
 
         for checker in self.post_checkers:
@@ -729,11 +814,9 @@ class Reviewer(ReviewUtils):
             if punish:
                 return punish
 
-        return await self.loop_handler_post2comments(post)
-
-    async def loop_handler_post2comments(self, post: Post) -> Optional[Punish]:
+    async def loop_handle_comments(self, post: Post) -> Optional[Punish]:
         """
-        审查回复下的楼中楼
+        处理回复下的楼中楼
 
         Args:
             post (Post): 父级回复
@@ -744,7 +827,7 @@ class Reviewer(ReviewUtils):
 
         comments = await self.loop_get_comments(post)
         comments = set(comments)
-        await asyncio.gather(*[self.loop_handler_comment(comment) for comment in comments])
+        await asyncio.gather(*[self.loop_handle_comment(comment) for comment in comments])
 
     async def loop_get_comments(self, post: Post) -> Iterator[Comment]:
         """
@@ -767,15 +850,15 @@ class Reviewer(ReviewUtils):
     @_exce_punish
     @_check_spid_cache
     @_check_permission
-    async def loop_handler_comment(self, comment: Comment) -> Optional[Punish]:
+    async def loop_handle_comment(self, comment: Comment) -> Optional[Punish]:
         """
-        审查单个楼中楼
+        处理单个楼中楼
 
         Args:
-            comment (Comment): 待审查的楼中楼
+            comment (Comment): 待处理的楼中楼
 
         Returns:
-            Optional[Punish]: 楼中楼审查结果
+            Optional[Punish]: 审查结果
         """
 
         for checker in self.comment_checkers:
@@ -792,9 +875,8 @@ class Reviewer(ReviewUtils):
         """
 
         pn_queue: asyncio.Queue[int] = asyncio.Queue(maxsize=worker_num)
-        self.time_thre_closure = self.time_threshold()
-
         running_flag = True
+        self.time_thre_closure = self.time_threshold()
 
         async def producer() -> None:
             pn_iterator = self.multi_pn_iterator()
@@ -814,7 +896,7 @@ class Reviewer(ReviewUtils):
                         LOG.info(f"Worker#{i} quit")
                         return
 
-                await self.multi_handler_pn2threads(pn)
+                await self.multi_handle_threads(pn)
 
         workers = [worker(i) for i in range(worker_num)]
         await asyncio.gather(*workers, producer())
@@ -828,7 +910,7 @@ class Reviewer(ReviewUtils):
         """
         return range(128, 1, -1)
 
-    async def multi_handler_pn2threads(self, pn: int) -> None:
+    async def multi_handle_threads(self, pn: int) -> None:
         """
         处理一个页码
 
@@ -837,7 +919,7 @@ class Reviewer(ReviewUtils):
         """
 
         async for thread in self.multi_get_threads(pn):
-            await self.multi_handler_thread(thread)
+            await self.multi_handle_thread(thread)
 
     async def multi_get_threads(self, pn: int) -> Thread:
         """
@@ -858,7 +940,7 @@ class Reviewer(ReviewUtils):
 
     @_exce_punish
     @_check_permission
-    async def multi_handler_thread(self, thread: Thread) -> Optional[Punish]:
+    async def multi_handle_thread(self, thread: Thread) -> Optional[Punish]:
         """
         处理单个主题帖
 
@@ -871,14 +953,13 @@ class Reviewer(ReviewUtils):
 
         posts = await self.set_thread_level(thread)
 
-        for checker in self.thread_checkers:
-            punish = await checker(thread)
-            if punish:
-                return punish
+        punish = await self.check_thread(thread)
+        if punish:
+            return punish
 
-        return await self.multi_handler_thread2posts(thread, posts)
+        return await self.multi_handle_posts(thread, posts)
 
-    async def multi_handler_thread2posts(self, thread: Thread, last_posts: Posts) -> Optional[Punish]:
+    async def multi_handle_posts(self, thread: Thread, last_posts: Posts) -> Optional[Punish]:
         """
         审查主题帖下的回复
 
@@ -891,7 +972,7 @@ class Reviewer(ReviewUtils):
         """
 
         async for post in self.multi_get_posts(thread, last_posts):
-            await self.multi_handler_post(post)
+            await self.multi_handle_post(post)
 
     async def multi_get_posts(self, thread: Thread, last_posts: Posts) -> Post:
         """
@@ -923,7 +1004,7 @@ class Reviewer(ReviewUtils):
 
     @_exce_punish
     @_check_permission
-    async def multi_handler_post(self, post: Post) -> Optional[Punish]:
+    async def multi_handle_post(self, post: Post) -> Optional[Punish]:
         """
         处理单个回复
 
@@ -944,7 +1025,7 @@ class Reviewer(ReviewUtils):
     async def multi_handler_post2comments(self, post: Post) -> Optional[Punish]:
         comments = await self.multi_get_comments(post)
         comments = set(comments)
-        await asyncio.gather(*[self.multi_handler_comment(comment) for comment in comments])
+        await asyncio.gather(*[self.multi_handle_comment(comment) for comment in comments])
 
     async def multi_get_comments(self, post: Post) -> Iterator[Comment]:
         """
@@ -966,7 +1047,7 @@ class Reviewer(ReviewUtils):
 
     @_exce_punish
     @_check_permission
-    async def multi_handler_comment(self, comment: Comment) -> Optional[Punish]:
+    async def multi_handle_comment(self, comment: Comment) -> Optional[Punish]:
         """
         审查回复下的楼中楼
 
@@ -982,8 +1063,18 @@ class Reviewer(ReviewUtils):
             if punish:
                 return punish
 
-    async def review_test(self) -> None:
-        self.test_mode = True
+    async def review_debug(self) -> None:
+        """
+        debug审查
+
+        在8*30个主题帖上测试审查规则
+        请在投入生产环境前使用该方法执行最终检查
+        并仔细观察是否存在误删误封的情况
+        该方法不会实际执行删封操作
+        """
+
+        self.exce_delete = self._exce_delete_debug
+        self.exce_block = self._exce_block_debug
 
         def pn_iterator(_):
             return range(16, 7, -1)
@@ -994,3 +1085,32 @@ class Reviewer(ReviewUtils):
             await self.review_multi(8)
         except KeyboardInterrupt:
             return
+
+    async def review_test(self, tid: Optional[int] = None, pid: Optional[int] = None, is_floor: bool = False) -> None:
+        """
+        在单个实际目标上测试审查规则
+
+        Args:
+            tid (int, optional): 目标所在主题帖id. Defaults to None.
+            pid (int, optional): 目标所在回复或楼中楼id. Defaults to None.
+            is_floor (bool, optional): pid是否指向一个楼中楼. Defaults to False.
+        """
+
+        async def check_and_print(checkers, obj):
+            LOG.debug(f"{obj.__class__.__name__}={obj}")
+            for checker in checkers:
+                punish = await checker(obj)
+                LOG.debug(f"Checker={checker.__name__} punish={punish}")
+
+        if pid:
+            comments = await self.get_comments(tid, pid, is_floor=is_floor)
+            if is_floor:
+                post = comments.post
+                await check_and_print(self.post_checkers, post)
+            else:
+                comment = comments[0]
+                await check_and_print(self.comment_checkers, comment)
+        else:
+            posts = await self.get_posts(tid, rn=0)
+            thread = posts.thread
+            await check_and_print(self.thread_checkers, thread)
