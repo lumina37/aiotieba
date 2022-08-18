@@ -20,11 +20,11 @@ import types
 from collections.abc import Callable, Iterator
 from typing import List, Literal, Optional, Tuple, Union
 
+from ._helpers import DelFlag, Punish
 from ._logger import LOG
 from .client import Client
 from .database import Database
 from .typedefs import BasicUserInfo, Comment, Comments, Post, Posts, Thread, Threads
-from ._helpers import DelFlag, Punish
 
 
 class ReviewUtils(object):
