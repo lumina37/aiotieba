@@ -1,6 +1,4 @@
 __all__ = [
-    'Punish',
-    'DelFlag',
     'ReviewUtils',
     'Reviewer',
 ]
@@ -639,9 +637,7 @@ class Reviewer(ReviewUtils):
         单页循环审查
         """
 
-        self.set_no_debug()
-        self.time_interval_closure = self.time_interval()
-        self.time_thre_closure = self.time_threshold()
+        self.prepare_cfg_loop()
 
         while 1:
             try:
@@ -651,6 +647,15 @@ class Reviewer(ReviewUtils):
             except Exception:
                 LOG.critical("Unexcepted error", exc_info=True)
                 return
+
+    def prepare_cfg_loop(self) -> None:
+        """
+        在单页循环审查开始前使用该函数设置参数
+        """
+
+        self.set_no_debug()
+        self.time_interval_closure = self.time_interval()
+        self.time_thre_closure = self.time_threshold()
 
     def set_no_debug(self) -> None:
         """
@@ -874,9 +879,9 @@ class Reviewer(ReviewUtils):
             worker_num (int, optional): 并发协程数. Defaults to 8.
         """
 
+        self.prepare_cfg_multi()
         pn_queue: asyncio.Queue[int] = asyncio.Queue(maxsize=worker_num)
         running_flag = True
-        self.time_thre_closure = self.time_threshold()
 
         async def producer() -> None:
             pn_iterator = self.multi_pn_iterator()
@@ -900,6 +905,14 @@ class Reviewer(ReviewUtils):
 
         workers = [worker(i) for i in range(worker_num)]
         await asyncio.gather(*workers, producer())
+
+    def prepare_cfg_multi(self) -> None:
+        """
+        在多页审查开始前使用该函数设置参数
+        """
+
+        self.set_no_debug()
+        self.time_thre_closure = self.time_threshold()
 
     def multi_pn_iterator(self) -> Iterator[int]:
         """
@@ -1073,18 +1086,31 @@ class Reviewer(ReviewUtils):
         该方法不会实际执行删封操作
         """
 
+        self.prepare_cfg_debug()
+
+        try:
+            await self.review_multi(8)
+        except KeyboardInterrupt:
+            return
+
+    def prepare_cfg_debug(self) -> None:
+        """
+        在debug审查开始前使用该函数设置参数
+        """
+
         self.exce_delete = self._exce_delete_debug
         self.exce_block = self._exce_block_debug
+        self.time_thre_closure = self.time_threshold()
 
         def pn_iterator(_):
             return range(16, 7, -1)
 
         self.multi_pn_iterator = types.MethodType(pn_iterator, self)
 
-        try:
-            await self.review_multi(8)
-        except KeyboardInterrupt:
-            return
+        def prepare_cfg_multi(_):
+            pass
+
+        self.prepare_cfg_multi = types.MethodType(prepare_cfg_multi, self)
 
     async def review_test(self, tid: Optional[int] = None, pid: Optional[int] = None, is_floor: bool = False) -> None:
         """

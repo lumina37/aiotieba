@@ -1,9 +1,3 @@
-__all__ = [
-    'JSON_DECODER',
-    'DelFlag',
-    'Punish',
-]
-
 import enum
 import functools
 import json
