@@ -6,6 +6,8 @@
 
 ### BDUSS
 
+<details>
+
 > 贴吧的服务端使用`BDUSS`来确认用户身份
 > 
 > `BDUSS`是一串由纯`ascii`字符组成的，长度为`192`的字符串
@@ -24,7 +26,11 @@
 
 ![Chrome Cookie](https://user-images.githubusercontent.com/48282276/179938990-77139ea2-2d94-4d38-8d7d-9c6a3d99b69e.png)
 
+</details>
+
 ### user_name
+
+<details>
 
 > 用户名
 > 
@@ -34,7 +40,11 @@
 > 
 > 在`utf-8`编码下，用户名的长度一般不会超过`14`个字节
 
+</details>
+
 ### portrait
+
+<details>
 
 > 头像ID
 > 
@@ -48,7 +58,11 @@
 > 
 > 你可以在[client.py](../aiotieba/client.py)中搜索`user.portrait`来查看`portrait`的具体应用场合
 
+</details>
+
 ### user_id
+
+<details>
 
 > 用户ID
 > 
@@ -62,7 +76,11 @@
 > 
 > `user_name` `portrait` `user_id` 都是满足唯一性的用户标识符，并可以通过其中任意一个的值反查其余两个
 
+</details>
+
 ### tieba_uid
+
+<details>
 
 > 用户个人主页ID
 > 
@@ -74,7 +92,11 @@
 > 
 > 可以通过`tieba_uid`的值反查`user_name` `portrait` `user_id`
 
+</details>
+
 ### fid
+
+<details>
 
 > 吧ID
 > 
@@ -86,7 +108,11 @@
 > 
 > 在贴吧混乱的字段命名中，它在某些场合下会被命名为`forum_id`
 
+</details>
+
 ### tid
+
+<details>
 
 > 主题帖ID
 > 
@@ -98,7 +124,11 @@
 > 
 > 在贴吧混乱的字段命名中，它在某些场合下会被命名为`thread_id`
 
+</details>
+
 ### pid
+
+<details>
 
 > 回复ID
 > 
@@ -109,6 +139,8 @@
 > 你可以在[client.py](../aiotieba/client.py)中搜索`pid: int`来查看使用了`pid`作为参数的接口
 > 
 > 在贴吧混乱的字段命名中，它在某些场合下会被命名为`post_id`
+
+</details>
 
 ## Python异步编程入门
 
