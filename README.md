@@ -10,11 +10,11 @@
 
 ## 简介
 
-`aiotieba`库是一个使用[`asyncio`](https://docs.python.org/zh-cn/3/library/asyncio.html)+[`aiohttp`](https://github.com/aio-libs/aiohttp)实现的**贴吧客户端**
+*aiotieba*使用[*asyncio*](https://docs.python.org/zh-cn/3/library/asyncio.html)和[*aiohttp*](https://github.com/aio-libs/aiohttp)还原了**百度贴吧客户端**的[大部分核心接口](aiotieba/client.py)，并为吧务管理设计了一套[内容审查脚手架](aiotieba/reviewer.py)
 
 <details>
 
-<summary>封装的贴吧接口列表</summary>
+<summary>贴吧接口列表</summary>
 
 > 按**回复时间**/**发布时间**/**热门序**获取贴吧**主题帖**/**精华帖列表**。支持获取带**转发**/**投票**/**转发嵌套投票**/**各种卡片**的主题帖信息
 > 
@@ -40,9 +40,9 @@
 
 <details>
 
-<summary>附加功能列表</summary>
+<summary>额外的审查功能列表</summary>
 
-> 数据库功能：**缓存贴吧常量**（如贴吧名到fid的映射关系）/**为用户添加标记**/**为帖子或回复添加标记**/**为图像hash添加标记**
+> 数据库功能：**缓存贴吧常量**（如贴吧名到fid的映射关系、用户基本信息等）/**为用户添加标记**/**为帖子或回复添加标记**/**为图像hash添加标记**
 > 
 > 图像处理功能：**图像解码**/**二维码解析**/**图像hash计算**
 
@@ -50,7 +50,7 @@
 
 ## 安装并使用
 
-+ 确保你的[`Python`](https://www.python.org/downloads/)版本在`3.9`及以上
++ 确保你的[Python](https://www.python.org/downloads/)版本`>=3.9`
 
 + 安装
 
