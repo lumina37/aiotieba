@@ -1,7 +1,8 @@
 __all__ = ['CONFIG']
 
 from pathlib import Path
-from .log import LOG
+
+from ._logger import LOG
 
 config_filename = "aiotieba.toml"
 

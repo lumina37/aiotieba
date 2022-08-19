@@ -21,9 +21,9 @@ from Crypto.Cipher import AES, PKCS1_v1_5
 from Crypto.PublicKey import RSA
 from google.protobuf.json_format import ParseDict
 
-from .config import CONFIG
-from .helpers import JSON_DECODER
-from .log import LOG
+from ._config import CONFIG
+from ._helpers import JSON_DECODER
+from ._logger import LOG
 from .protobuf import (
     CommitPersonalMsgReqIdl_pb2,
     CommitPersonalMsgResIdl_pb2,
@@ -168,7 +168,7 @@ class Client(object):
     """
 
     __slots__ = [
-        'BDUSS_key',
+        '_BDUSS_key',
         '_BDUSS',
         '_STOKEN',
         '_user',
@@ -176,6 +176,7 @@ class Client(object):
         '_client_id',
         '_cuid',
         '_cuid_galaxy2',
+        '_ws_password',
         '_connector',
         '_trust_env',
         '_loop',
@@ -185,12 +186,11 @@ class Client(object):
         '_session_web',
         '_session_websocket',
         'websocket',
-        '_ws_password',
         '_ws_aes_chiper',
         '_ws_dispatcher',
     ]
 
-    latest_version: ClassVar[str] = "12.27.1.1"  # 这是目前的最新版本
+    latest_version: ClassVar[str] = "12.27.5.0"  # 这是目前的最新版本
     # no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
     post_version: ClassVar[str] = "9.1.0.0"  # 发帖使用极速版
 
@@ -198,16 +198,18 @@ class Client(object):
     _fid2fname: ClassVar[Dict[int, str]] = {}
 
     def __init__(self, BDUSS_key: Optional[str] = None) -> None:
-        self.BDUSS_key = BDUSS_key
+        self._BDUSS_key = BDUSS_key
+
         user_dict: Dict[str, str] = CONFIG['User'].get(BDUSS_key, {})
-        self.BDUSS = user_dict.get('BDUSS', None)
-        self.STOKEN = user_dict.get('STOKEN', None)
+        self.BDUSS = user_dict.get('BDUSS', '')
+        self.STOKEN = user_dict.get('STOKEN', '')
 
         self._user: BasicUserInfo = None
         self._tbs: str = None
         self._client_id: str = None
         self._cuid: str = None
         self._cuid_galaxy2: str = None
+        self._ws_password: bytes = None
 
         self._trust_env = False
         self._loop = asyncio.get_running_loop()
@@ -219,7 +221,6 @@ class Client(object):
         self._session_web: aiohttp.ClientSession = None
         self._session_websocket: aiohttp.ClientSession = None
         self.websocket: aiohttp.ClientWebSocketResponse = None
-        self._ws_password: bytes = None
         self._ws_aes_chiper = None
         self._ws_dispatcher: asyncio.Task = None
 
@@ -240,152 +241,12 @@ class Client(object):
         await self.close()
 
     @property
-    def connector(self) -> aiohttp.TCPConnector:
+    def BDUSS_key(self) -> str:
         """
-        TCP连接器
-
-        Returns:
-            aiohttp.TCPConnector
+        当前账号的BDUSS_key
         """
 
-        if self._connector is None:
-            self._connector = aiohttp.TCPConnector(
-                ttl_dns_cache=600,
-                keepalive_timeout=60,
-                limit=0,
-                ssl=False,
-                loop=self._loop,
-            )
-
-        return self._connector
-
-    @property
-    def session_app(self) -> aiohttp.ClientSession:
-        """
-        用于APP请求
-
-        Returns:
-            aiohttp.ClientSession
-        """
-
-        if self._session_app is None:
-            headers = {
-                aiohttp.hdrs.USER_AGENT: f"tieba/{self.latest_version}",
-                aiohttp.hdrs.CONNECTION: "keep-alive",
-                aiohttp.hdrs.ACCEPT_ENCODING: "gzip",
-                aiohttp.hdrs.HOST: self._app_base_url.host,
-            }
-            timeout = aiohttp.ClientTimeout(connect=8.0, sock_connect=3.0, sock_read=12.0)
-
-            self._session_app = aiohttp.ClientSession(
-                base_url=self._app_base_url,
-                connector=self.connector,
-                loop=self._loop,
-                headers=headers,
-                connector_owner=False,
-                raise_for_status=True,
-                timeout=timeout,
-                read_bufsize=1 << 18,  # 256KiB
-                trust_env=self._trust_env,
-            )
-
-        return self._session_app
-
-    @property
-    def session_app_proto(self) -> aiohttp.ClientSession:
-        """
-        用于APP protobuf请求
-
-        Returns:
-            aiohttp.ClientSession
-        """
-
-        if self._session_app_proto is None:
-            headers = {
-                aiohttp.hdrs.USER_AGENT: f"tieba/{self.latest_version}",
-                "x_bd_data_type": "protobuf",
-                aiohttp.hdrs.CONNECTION: "keep-alive",
-                aiohttp.hdrs.ACCEPT_ENCODING: "gzip",
-                aiohttp.hdrs.HOST: self._app_base_url.host,
-            }
-            timeout = aiohttp.ClientTimeout(connect=8.0, sock_connect=3.0, sock_read=12.0)
-
-            self._session_app_proto = aiohttp.ClientSession(
-                base_url=self._app_base_url,
-                connector=self.connector,
-                loop=self._loop,
-                headers=headers,
-                connector_owner=False,
-                raise_for_status=True,
-                timeout=timeout,
-                read_bufsize=1 << 18,  # 256KiB
-                trust_env=self._trust_env,
-            )
-
-        return self._session_app_proto
-
-    @property
-    def session_web(self) -> aiohttp.ClientSession:
-        """
-        用于网页端请求
-
-        Returns:
-            aiohttp.ClientSession
-        """
-
-        if self._session_web is None:
-            headers = {
-                aiohttp.hdrs.USER_AGENT: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:103.0) Gecko/20100101 Firefox/103.0",
-                aiohttp.hdrs.ACCEPT_ENCODING: "gzip, deflate, br",
-                aiohttp.hdrs.CACHE_CONTROL: "no-cache",
-                aiohttp.hdrs.CONNECTION: "keep-alive",
-            }
-            cookie_jar = aiohttp.CookieJar()
-            cookie_jar.update_cookies({'BDUSS': self.BDUSS, 'STOKEN': self.STOKEN})
-            timeout = aiohttp.ClientTimeout(connect=8.0, sock_connect=3.0, sock_read=12.0)
-
-            self._session_web = aiohttp.ClientSession(
-                connector=self.connector,
-                loop=self._loop,
-                headers=headers,
-                cookie_jar=cookie_jar,
-                connector_owner=False,
-                raise_for_status=True,
-                timeout=timeout,
-                read_bufsize=1 << 20,  # 1MiB
-                trust_env=self._trust_env,
-            )
-
-        return self._session_web
-
-    @property
-    def session_websocket(self) -> aiohttp.ClientSession:
-        """
-        用于websocket请求
-
-        Returns:
-            aiohttp.ClientSession
-        """
-
-        if self._session_websocket is None:
-            headers = {
-                aiohttp.hdrs.HOST: "im.tieba.baidu.com:8000",
-                aiohttp.hdrs.SEC_WEBSOCKET_EXTENSIONS: "im_version=2.3",
-            }
-            timeout = aiohttp.ClientTimeout(connect=8.0, sock_connect=3.0, sock_read=12.0)
-
-            self._session_websocket = aiohttp.ClientSession(
-                connector=self.connector,
-                loop=self._loop,
-                headers=headers,
-                connector_owner=False,
-                raise_for_status=True,
-                timeout=timeout,
-                read_bufsize=1 << 18,  # 256KiB
-                trust_env=self._trust_env,
-            )
-
-        return self._session_websocket
+        return self._BDUSS_key
 
     @property
     def BDUSS(self) -> str:
@@ -397,6 +258,10 @@ class Client(object):
 
     @BDUSS.setter
     def BDUSS(self, new_BDUSS: str) -> None:
+
+        if hasattr(self, "_BDUSS"):
+            LOG.warning("BDUSS已初始化 无法修改")
+            return
 
         if not new_BDUSS:
             self._BDUSS = ""
@@ -420,6 +285,10 @@ class Client(object):
 
     @STOKEN.setter
     def STOKEN(self, new_STOKEN: str) -> None:
+
+        if hasattr(self, "_STOKEN"):
+            LOG.warning("STOKEN已初始化 无法修改")
+            return
 
         if not new_STOKEN:
             self._STOKEN = ""
@@ -488,6 +357,168 @@ class Client(object):
 
         return self._cuid_galaxy2
 
+    @property
+    def ws_password(self) -> bytes:
+        """
+        返回一个供贴吧websocket使用的随机密码
+        在初次生成后该属性便不会再发生变化
+
+        Returns:
+            bytes: 长度为36字节的随机密码
+        """
+
+        if self._ws_password is None:
+            self._ws_password = random.randbytes(36)
+        return self._ws_password
+
+    @property
+    def connector(self) -> aiohttp.TCPConnector:
+        """
+        TCP连接器
+
+        Returns:
+            aiohttp.TCPConnector
+        """
+
+        if self._connector is None:
+            self._connector = aiohttp.TCPConnector(
+                ttl_dns_cache=600,
+                keepalive_timeout=60,
+                limit=0,
+                ssl=False,
+                loop=self._loop,
+            )
+
+        return self._connector
+
+    @property
+    def session_app(self) -> aiohttp.ClientSession:
+        """
+        用于APP请求
+
+        Returns:
+            aiohttp.ClientSession
+        """
+
+        if self._session_app is None:
+            headers = {
+                aiohttp.hdrs.USER_AGENT: f"tieba/{self.latest_version}",
+                aiohttp.hdrs.CONNECTION: "keep-alive",
+                aiohttp.hdrs.ACCEPT_ENCODING: "gzip",
+                aiohttp.hdrs.HOST: self._app_base_url.host,
+            }
+            timeout = aiohttp.ClientTimeout(connect=6.0, sock_connect=3.2, sock_read=12.0)
+
+            self._session_app = aiohttp.ClientSession(
+                base_url=self._app_base_url,
+                connector=self.connector,
+                loop=self._loop,
+                headers=headers,
+                connector_owner=False,
+                raise_for_status=True,
+                timeout=timeout,
+                read_bufsize=1 << 18,  # 256KiB
+                trust_env=self._trust_env,
+            )
+
+        return self._session_app
+
+    @property
+    def session_app_proto(self) -> aiohttp.ClientSession:
+        """
+        用于APP protobuf请求
+
+        Returns:
+            aiohttp.ClientSession
+        """
+
+        if self._session_app_proto is None:
+            headers = {
+                aiohttp.hdrs.USER_AGENT: f"tieba/{self.latest_version}",
+                "x_bd_data_type": "protobuf",
+                aiohttp.hdrs.CONNECTION: "keep-alive",
+                aiohttp.hdrs.ACCEPT_ENCODING: "gzip",
+                aiohttp.hdrs.HOST: self._app_base_url.host,
+            }
+            timeout = aiohttp.ClientTimeout(connect=6.0, sock_connect=3.2, sock_read=12.0)
+
+            self._session_app_proto = aiohttp.ClientSession(
+                base_url=self._app_base_url,
+                connector=self.connector,
+                loop=self._loop,
+                headers=headers,
+                connector_owner=False,
+                raise_for_status=True,
+                timeout=timeout,
+                read_bufsize=1 << 18,  # 256KiB
+                trust_env=self._trust_env,
+            )
+
+        return self._session_app_proto
+
+    @property
+    def session_web(self) -> aiohttp.ClientSession:
+        """
+        用于网页端请求
+
+        Returns:
+            aiohttp.ClientSession
+        """
+
+        if self._session_web is None:
+            headers = {
+                aiohttp.hdrs.USER_AGENT: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:103.0) Gecko/20100101 Firefox/103.0",
+                aiohttp.hdrs.ACCEPT_ENCODING: "gzip, deflate, br",
+                aiohttp.hdrs.CACHE_CONTROL: "no-cache",
+                aiohttp.hdrs.CONNECTION: "keep-alive",
+            }
+            timeout = aiohttp.ClientTimeout(connect=6.0, sock_connect=3.2, sock_read=12.0)
+            cookie_jar = aiohttp.CookieJar(loop=self._loop)
+            cookie_jar.update_cookies({'BDUSS': self.BDUSS, 'STOKEN': self.STOKEN})
+
+            self._session_web = aiohttp.ClientSession(
+                connector=self.connector,
+                loop=self._loop,
+                headers=headers,
+                cookie_jar=cookie_jar,
+                connector_owner=False,
+                raise_for_status=True,
+                timeout=timeout,
+                read_bufsize=1 << 20,  # 1MiB
+                trust_env=self._trust_env,
+            )
+
+        return self._session_web
+
+    @property
+    def session_websocket(self) -> aiohttp.ClientSession:
+        """
+        用于websocket请求
+
+        Returns:
+            aiohttp.ClientSession
+        """
+
+        if self._session_websocket is None:
+            headers = {
+                aiohttp.hdrs.HOST: "im.tieba.baidu.com:8000",
+                aiohttp.hdrs.SEC_WEBSOCKET_EXTENSIONS: "im_version=2.3",
+            }
+            timeout = aiohttp.ClientTimeout(connect=6.0, sock_connect=3.2, sock_read=12.0)
+
+            self._session_websocket = aiohttp.ClientSession(
+                connector=self.connector,
+                loop=self._loop,
+                headers=headers,
+                connector_owner=False,
+                raise_for_status=True,
+                timeout=timeout,
+                read_bufsize=1 << 18,  # 256KiB
+                trust_env=self._trust_env,
+            )
+
+        return self._session_websocket
+
     @staticmethod
     def pack_form(forms: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
         """
@@ -534,20 +565,6 @@ class Client(object):
         writer._parts[0][0].headers.popone(aiohttp.hdrs.CONTENT_LENGTH)
 
         return writer
-
-    @property
-    def ws_password(self) -> bytes:
-        """
-        返回一个供贴吧websocket使用的随机密码
-        在初次生成后该属性便不会再发生变化
-
-        Returns:
-            bytes: 长度为36字节的随机密码
-        """
-
-        if self._ws_password is None:
-            self._ws_password = random.randbytes(36)
-        return self._ws_password
 
     @property
     def ws_aes_chiper(self):
@@ -3647,7 +3664,10 @@ class Client(object):
             payload = [
                 ('BDUSS', self.BDUSS),
                 ('_client_version', self.latest_version),
-                ('dislike', json.dumps([{"tid": 1, "dislike_ids": 7, "fid": fid, "click_time": self.timestamp_ms}])),
+                (
+                    'dislike',
+                    json.dumps([{"tid": 1, "dislike_ids": 7, "fid": fid, "click_time": self.timestamp_ms}]),
+                ),
                 ('dislike_from', "homepage"),
             ]
 

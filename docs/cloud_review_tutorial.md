@@ -8,9 +8,9 @@
 
 ## 使用方法
 
-+ 参考`config/config_full_example.toml`中的注释完成对`Database`字段的配置，你需要一个`MySQL`数据库用来缓存通过检测的内容id以及记录用户权限级别（黑、白名单）
++ 参考`aiotieba_full_example.toml`中的注释完成对`Database`字段的配置，你需要一个`MySQL`数据库用来缓存通过检测的内容id以及记录用户权限级别（黑、白名单）
 
-+ 使用函数`Database.init_database(["贴吧名1", "贴吧名2"])`一键建库
++ 使用函数`Database.create_database()`一键建库
 
 + 自定义审查行为：请参照我给出的例子自己编程修改[`cloud_review_vtuber.py`](../cloud_review_vtuber.py)，这是被实际应用于[vtuber吧](https://tieba.baidu.com/vtuber)的云审查工具
 

@@ -71,7 +71,7 @@ import bs4
 import yarl
 from google.protobuf.json_format import ParseDict
 
-from .log import LOG
+from ._logger import LOG
 from .protobuf import (
     FrsPageResIdl_pb2,
     GetDislikeListResIdl_pb2,
@@ -1701,7 +1701,7 @@ class ShareThread(_Container):
 
         else:
             self._title = ''
-            
+
     def __eq__(self, obj: "ShareThread") -> bool:
         return super(ShareThread, self).__eq__(obj)
 
@@ -1878,7 +1878,7 @@ class Thread(_Container):
             self._disagree = 0
             self._create_time = 0
             self._last_time = 0
-            
+
     def __eq__(self, obj: "Thread") -> bool:
         return super(Thread, self).__eq__(obj)
 
@@ -2243,7 +2243,7 @@ class Post(_Container):
             self._agree = 0
             self._disagree = 0
             self._create_time = 0
-            
+
     def __eq__(self, obj: "Post") -> bool:
         return super(Post, self).__eq__(obj)
 
@@ -2546,7 +2546,7 @@ class Comment(_Container):
             self._agree = 0
             self._disagree = 0
             self._create_time = 0
-            
+
     def __eq__(self, obj: "Comment") -> bool:
         return super(Comment, self).__eq__(obj)
 
@@ -2783,7 +2783,7 @@ class Reply(_Container):
 
             self._is_floor = False
             self._create_time = 0
-            
+
     def __eq__(self, obj: "Reply") -> bool:
         return super(Reply, self).__eq__(obj)
 
@@ -2975,7 +2975,7 @@ class At(_Container):
             self._is_floor = False
             self._is_thread = False
             self._create_time = 0
-            
+
     def __eq__(self, obj: "At") -> bool:
         return super(At, self).__eq__(obj)
 
@@ -3129,7 +3129,7 @@ class Search(_Container):
 
             self._is_floor = False
             self._create_time = 0
-            
+
     def __eq__(self, obj: "Search") -> bool:
         return super(Search, self).__eq__(obj)
 
@@ -3309,7 +3309,7 @@ class NewThread(_Container):
             self._agree = 0
             self._disagree = 0
             self._create_time = 0
-            
+
     def __eq__(self, obj: "NewThread") -> bool:
         return super(NewThread, self).__eq__(obj)
 
@@ -3461,7 +3461,7 @@ class UserPost(_Container):
 
         else:
             self._create_time = 0
-            
+
     def __eq__(self, obj: "UserPost") -> bool:
         return super(UserPost, self).__eq__(obj)
 

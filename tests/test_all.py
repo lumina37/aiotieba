@@ -23,7 +23,7 @@ async def client():
 
 @pytest_asyncio.fixture(scope="module")
 async def reviewer():
-    async with tb.Reviewer('default', 'starry') as reviewer:
+    async with tb.ReviewUtils('default', 'starry') as reviewer:
         yield reviewer
 
 
@@ -107,11 +107,11 @@ async def test_Posts_and_Fragments(client: tb.Client):
 
     # Test FragLink
     frag = posts[3].contents.links[0]
-    assert isinstance(frag.text, str)
-    assert frag.text != ""
+    assert isinstance(frag.title, str)
+    assert frag.title != ""
     assert isinstance(frag.url, yarl.URL)
-    assert isinstance(frag.raw_url, str)
-    assert frag.raw_url != ""
+    assert isinstance(frag.title, str)
+    assert frag.title != ""
     assert isinstance(frag.is_external, bool)
     frag = posts[9].contents.links[0]
     assert frag.is_external is True
@@ -167,11 +167,11 @@ def check_ShareThread(thread: tb.ShareThread):
 
     # Test FragLink
     frag = thread.contents.links[0]
-    assert isinstance(frag.text, str)
-    assert frag.text != ""
+    assert isinstance(frag.title, str)
+    assert frag.title != ""
     assert isinstance(frag.url, yarl.URL)
-    assert isinstance(frag.raw_url, str)
-    assert frag.raw_url != ""
+    assert isinstance(frag.title, str)
+    assert frag.title != ""
     assert isinstance(frag.is_external, bool)
 
     # Test FragVoice
@@ -296,9 +296,9 @@ async def test_Ats(client: tb.Client):
 
 
 @pytest.mark.asyncio
-async def test_Database(reviewer: tb.Reviewer):
+async def test_Database(reviewer: tb.ReviewUtils):
     user = await reviewer.client.get_self_info()
-    fname = reviewer.fname
+    fname = reviewer.db.fname
     fid = await reviewer.db.get_fid(fname)
     assert fname == await reviewer.db.get_fname(fid)
     await asyncio.gather(
@@ -306,9 +306,9 @@ async def test_Database(reviewer: tb.Reviewer):
             reviewer.db.get_basic_user_info(user.user_id),
             reviewer.db.get_basic_user_info(user.user_name),
             reviewer.db.get_basic_user_info(user.portrait),
-            reviewer.db.get_tid(fname, 7763274602),
-            reviewer.db.get_id(fname, 7763274602),
-            reviewer.db.get_user_id_list(fname),
-            reviewer.db.get_tid_list(fname, limit=3),
+            reviewer.db.get_tid(7763274602),
+            reviewer.db.get_id(7763274602),
+            reviewer.db.get_user_id_list(),
+            reviewer.db.get_tid_list(limit=3),
         ]
     )

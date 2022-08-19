@@ -1,33 +1,33 @@
-.*/
-__*/
+*/
 *.toml
 *.exe
 *.csv
 *.xlsx
-*.pyproj
 *.txt
-*.log
 *.bin
 *.zip
 *.rar
 *.md
 *.cmd
 *.jpg
-*.code-workspace
 
-log/
-charles/
+*.py
 
-test*
-/*.py
-
+!aiotieba
+!aiotieba/**
 !.github
 !.github/**
-!docs/**
-!aiotieba/config_example/**
+!docs
+!docs/*
+!tests
+!tests/**
 
 !README.md
 !requirements.txt
 !pyproject.toml
-!cmd_handler.py
-!cloud_review_vtuber.py
+
+*.pyproj
+*.log
+*.code-workspace
+*.pyc
+__pycache__

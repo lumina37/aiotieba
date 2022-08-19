@@ -5,23 +5,23 @@ on:
     branches: [ develop ]
     paths:
       - 'aiotieba/**'
-      - '.github/workflows/**'
+      - 'tests/**'
+      - '.github/workflows/CI*'
+      - 'pyproject.toml'
   pull_request:
     branches: [ develop ]
-
-permissions:
-  contents: read
 
 jobs:
   test:
 
+    name: Test
     runs-on: ubuntu-latest
 
     environment: develop
 
     strategy:
       matrix:
-        python-version: ['3.9']
+        python-version: ['3.9', '3.10']
 
     steps:
     - name: Checkout
@@ -32,19 +32,16 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
-        cache-dependency-path: '.github/workflows/requirements_test.txt'
+        cache-dependency-path: 'tests/requirements.txt'
 
     - name: Install dependencies
       run: |
         python -m pip install -U pip
-        pip install -r .github/workflows/requirements_test.txt
+        pip install -r tests/requirements.txt
 
     - name: Prepare config
-      shell: bash
       run: |
-        mv .github/workflows/test_all.py .
-        mkdir config
-        gpg --quiet --batch --yes --decrypt --passphrase=${{ secrets.PASSPHRASE }} --output aiotieba.toml .github/workflows/aiotieba.toml.gpg
+        gpg --quiet --batch --yes --decrypt --passphrase=${{ secrets.PASSPHRASE }} --output aiotieba.toml tests/aiotieba.toml.gpg
 
     - name: Run tests
-      run: pytest test_all.py
+      run: pytest tests
