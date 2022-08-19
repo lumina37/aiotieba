@@ -6,6 +6,8 @@ on:
     paths:
       - 'aiotieba/**'
       - 'tests/**'
+      - '.github/workflows/CI*'
+      - 'pyproject.toml'
   pull_request:
     branches: [ develop ]
 
@@ -39,8 +41,7 @@ jobs:
 
     - name: Prepare config
       run: |
-        mv tests/test_all.py .
         gpg --quiet --batch --yes --decrypt --passphrase=${{ secrets.PASSPHRASE }} --output aiotieba.toml tests/aiotieba.toml.gpg
 
     - name: Run tests
-      run: pytest test_all.py
+      run: pytest tests

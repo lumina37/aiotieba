@@ -15,12 +15,12 @@
 
 !aiotieba
 !aiotieba/**
-!.github/
+!.github
 !.github/**
 !docs
 !docs/*
-!tests/
-!tests/*
+!tests
+!tests/**
 
 !README.md
 !requirements.txt

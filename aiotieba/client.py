@@ -190,7 +190,7 @@ class Client(object):
         '_ws_dispatcher',
     ]
 
-    latest_version: ClassVar[str] = "12.27.4.2"  # 这是目前的最新版本
+    latest_version: ClassVar[str] = "12.27.5.0"  # 这是目前的最新版本
     # no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
     post_version: ClassVar[str] = "9.1.0.0"  # 发帖使用极速版
 
@@ -407,7 +407,7 @@ class Client(object):
                 aiohttp.hdrs.ACCEPT_ENCODING: "gzip",
                 aiohttp.hdrs.HOST: self._app_base_url.host,
             }
-            timeout = aiohttp.ClientTimeout(connect=8.0, sock_connect=3.0, sock_read=12.0)
+            timeout = aiohttp.ClientTimeout(connect=6.0, sock_connect=3.2, sock_read=12.0)
 
             self._session_app = aiohttp.ClientSession(
                 base_url=self._app_base_url,
@@ -440,7 +440,7 @@ class Client(object):
                 aiohttp.hdrs.ACCEPT_ENCODING: "gzip",
                 aiohttp.hdrs.HOST: self._app_base_url.host,
             }
-            timeout = aiohttp.ClientTimeout(connect=8.0, sock_connect=3.0, sock_read=12.0)
+            timeout = aiohttp.ClientTimeout(connect=6.0, sock_connect=3.2, sock_read=12.0)
 
             self._session_app_proto = aiohttp.ClientSession(
                 base_url=self._app_base_url,
@@ -472,7 +472,7 @@ class Client(object):
                 aiohttp.hdrs.CACHE_CONTROL: "no-cache",
                 aiohttp.hdrs.CONNECTION: "keep-alive",
             }
-            timeout = aiohttp.ClientTimeout(connect=8.0, sock_connect=3.0, sock_read=12.0)
+            timeout = aiohttp.ClientTimeout(connect=6.0, sock_connect=3.2, sock_read=12.0)
             cookie_jar = aiohttp.CookieJar(loop=self._loop)
             cookie_jar.update_cookies({'BDUSS': self.BDUSS, 'STOKEN': self.STOKEN})
 
@@ -504,7 +504,7 @@ class Client(object):
                 aiohttp.hdrs.HOST: "im.tieba.baidu.com:8000",
                 aiohttp.hdrs.SEC_WEBSOCKET_EXTENSIONS: "im_version=2.3",
             }
-            timeout = aiohttp.ClientTimeout(connect=8.0, sock_connect=3.0, sock_read=12.0)
+            timeout = aiohttp.ClientTimeout(connect=6.0, sock_connect=3.2, sock_read=12.0)
 
             self._session_websocket = aiohttp.ClientSession(
                 connector=self.connector,

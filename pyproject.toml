@@ -5,6 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "aiotieba"
 description = "Asynchronous I/O Client/Reviewer for Baidu Tieba"
+readme = "README.md"
 requires-python = ">=3.9"
 authors = [{ name = "Starry-OvO", email = "starry.qvq@gmail.com" }]
 keywords = ["tieba", "crawler", "spider"]
@@ -13,7 +14,8 @@ classifiers = [
     "Framework :: AsyncIO",
     "License :: OSI Approved :: The Unlicense (Unlicense)",
     "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
     "Topic :: Internet :: WWW/HTTP :: Session",
 ]
 dependencies = [
@@ -21,14 +23,13 @@ dependencies = [
     "aiohttp>=3.8.0",
     "aiomysql>=0.1.0",
     "beautifulsoup4>=4.0.0",
-    "Brotli>=1.0.0",
     "lxml>=4.0.0",
     "opencv-contrib-python-headless>=4.6.0.66",
     "protobuf>=4.12.0",
     "pycryptodome>=3.0.0",
     "tomli>=2.0.0",
 ]
-dynamic = ["version", "readme"]
+dynamic = ["version"]
 
 [tool.setuptools.packages.find]
 include = ["aiotieba*"]
@@ -38,7 +39,6 @@ include = ["aiotieba*"]
 
 [tool.setuptools.dynamic]
 version = { attr = "aiotieba.__version__" }
-readme = { file = "README.md" }
 
 [tool.black]
 line-length = 120
