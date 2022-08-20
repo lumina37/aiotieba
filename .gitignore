@@ -17,8 +17,8 @@
 !aiotieba/**
 !.github
 !.github/**
-!docs
-!docs/*
+!tutorials
+!tutorials/**
 !tests
 !tests/**
 

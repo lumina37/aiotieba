@@ -144,7 +144,7 @@
 
 ## Python异步编程入门
 
-想要用好`aiotieba`库，你必须初步掌握`Python`异步编程
+想要用好*aiotieba*库，你必须初步掌握`Python`异步编程
 
 如果你不熟悉`Python`异步编程，建议阅读下列教程：
 
@@ -180,13 +180,13 @@ asyncio.run(main())
 那么你可能注意到了一条日志输出
 
 ```log
-<2022-07-16 20:13:54.514> [WARN] [<module>] 配置文件已生成 请参考[https://github.com/Starry-OvO/Tieba-Manager/blob/master/docs/tutorial.md]完成对./aiotieba.toml的配置
+<2022-07-16 20:13:54.514> [WARN] [<module>] 配置文件./aiotieba.toml已生成 请参考注释补充个性化配置
 ...
 ```
 
 在工作目录下，你能看到自动生成的`aiotieba.toml`配置文件
 
-如果你需要使用账号相关的功能，那么你需要将你的`BDUSS`填入该文件的正确位置
+如果你需要使用账号相关的功能，那么你需要将你的[`BDUSS`](#BDUSS)填入该文件的正确位置
 
 填写完毕的`aiotieba.toml`大概长这样
 
@@ -472,4 +472,4 @@ asyncio.run(crawler("图拉丁"))
 
 使用异步请求相当于用更高的调度成本换取更低的时间成本，以克服客户端在同步IO上的速度瓶颈
 
-想进一步了解如何使用`aiotieba`优雅地实现一些实用功能，请阅读[实用工具合集](many_utils.md)
+想进一步了解如何使用*aiotieba*优雅地实现一些实用功能，请阅读[实用工具合集](many_utils.md)

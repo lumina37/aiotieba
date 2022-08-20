@@ -866,6 +866,21 @@ class Reviewer(ReviewUtils):
             Optional[Punish]: 审查结果
         """
 
+        punish = await self.check_comment(comment)
+        if punish:
+            return punish
+
+    async def check_comment(self, comment: Comment) -> Optional[Punish]:
+        """
+        审查单个楼中楼
+
+        Args:
+            comment (Comment): 待审查的楼中楼
+
+        Returns:
+            Optional[Punish]: 审查结果
+        """
+
         for checker in self.comment_checkers:
             punish = await checker(comment)
             if punish:
@@ -879,7 +894,7 @@ class Reviewer(ReviewUtils):
             worker_num (int, optional): 并发协程数. Defaults to 8.
         """
 
-        self.prepare_cfg_multi()
+        self.multi_prepare()
         pn_queue: asyncio.Queue[int] = asyncio.Queue(maxsize=worker_num)
         running_flag = True
 
@@ -906,7 +921,7 @@ class Reviewer(ReviewUtils):
         workers = [worker(i) for i in range(worker_num)]
         await asyncio.gather(*workers, producer())
 
-    def prepare_cfg_multi(self) -> None:
+    def multi_prepare(self) -> None:
         """
         在多页审查开始前使用该函数设置参数
         """
@@ -1028,14 +1043,12 @@ class Reviewer(ReviewUtils):
             Optional[Punish]: 回复的审查结果
         """
 
-        for checker in self.post_checkers:
-            punish = await checker(post)
-            if punish:
-                return punish
+        punish = await self.check_post(post)
+        if punish:
+            return punish
+        return await self.multi_handle_comments(post)
 
-        return await self.multi_handler_post2comments(post)
-
-    async def multi_handler_post2comments(self, post: Post) -> Optional[Punish]:
+    async def multi_handle_comments(self, post: Post) -> Optional[Punish]:
         comments = await self.multi_get_comments(post)
         comments = set(comments)
         await asyncio.gather(*[self.multi_handle_comment(comment) for comment in comments])
@@ -1071,10 +1084,9 @@ class Reviewer(ReviewUtils):
             Optional[Punish]: 回复审查结果
         """
 
-        for checker in self.comment_checkers:
-            punish = await checker(comment)
-            if punish:
-                return punish
+        punish = await self.check_comment(comment)
+        if punish:
+            return punish
 
     async def review_debug(self) -> None:
         """
@@ -1086,14 +1098,14 @@ class Reviewer(ReviewUtils):
         该方法不会实际执行删封操作
         """
 
-        self.prepare_cfg_debug()
+        self.debug_prepare()
 
         try:
             await self.review_multi(8)
         except KeyboardInterrupt:
             return
 
-    def prepare_cfg_debug(self) -> None:
+    def debug_prepare(self) -> None:
         """
         在debug审查开始前使用该函数设置参数
         """
@@ -1110,7 +1122,7 @@ class Reviewer(ReviewUtils):
         def prepare_cfg_multi(_):
             pass
 
-        self.prepare_cfg_multi = types.MethodType(prepare_cfg_multi, self)
+        self.multi_prepare = types.MethodType(prepare_cfg_multi, self)
 
     async def review_test(self, tid: Optional[int] = None, pid: Optional[int] = None, is_floor: bool = False) -> None:
         """

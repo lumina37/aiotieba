@@ -10,7 +10,7 @@
 
 ## 简介
 
-*aiotieba*使用[*asyncio*](https://docs.python.org/zh-cn/3/library/asyncio.html)和[*aiohttp*](https://github.com/aio-libs/aiohttp)还原了**百度贴吧客户端**的[大部分核心接口](aiotieba/client.py)，并为吧务管理设计了一套[内容审查脚手架](aiotieba/reviewer.py)
+*aiotieba*使用[*asyncio*](https://tutorials.python.org/zh-cn/3/library/asyncio.html)和[*aiohttp*](https://github.com/aio-libs/aiohttp)还原了**百度贴吧客户端**的[大部分核心接口](aiotieba/client.py)，并为吧务管理设计了一套[内容审查脚手架](aiotieba/reviewer.py)
 
 <details>
 
@@ -18,11 +18,11 @@
 
 > 按**回复时间**/**发布时间**/**热门序**获取贴吧**主题帖**/**精华帖列表**。支持获取带**转发**/**投票**/**转发嵌套投票**/**各种卡片**的主题帖信息
 > 
-> 获取带**图片链接**/**小尾巴内容**/**点赞情况**/**用户信息**（[**用户名**](docs/tutorial.md#user_name)/[**portrait**](docs/tutorial.md#portrait)/[**user_id**](docs/tutorial.md#user_id)/**等级**/**性别**/**是否锁回复**）/每条回复的**前排楼中楼**（支持按或不按点赞数排序）的**楼层列表**
+> 获取带**图片链接**/**小尾巴内容**/**点赞情况**/**用户信息**（[**用户名**](tutorials/tutorial.md#user_name)/[**portrait**](tutorials/tutorial.md#portrait)/[**user_id**](tutorials/tutorial.md#user_id)/**等级**/**性别**/**是否锁回复**）/每条回复的**前排楼中楼**（支持按或不按点赞数排序）的**楼层列表**
 > 
 > 获取带所有前述用户信息的**楼中楼列表**
 > 
-> 根据[**用户名**](docs/tutorial.md#user_name)/[**portrait**](docs/tutorial.md#portrait)/[**user_id**](docs/tutorial.md#user_id)中的任一项反查其他用户信息，或通过用户主页的[**tieba_uid**](docs/tutorial.md#tieba_uid)反查其他用户信息
+> 根据[**用户名**](tutorials/tutorial.md#user_name)/[**portrait**](tutorials/tutorial.md#portrait)/[**user_id**](tutorials/tutorial.md#user_id)中的任一项反查其他用户信息，或通过用户主页的[**tieba_uid**](tutorials/tutorial.md#tieba_uid)反查其他用户信息
 > 
 > 使用小吧主、语音小编的账号**删帖**/**屏蔽**/**封禁**。支持**删除视频帖**/**批量删帖**/**多于1天的封禁**
 > 
@@ -74,7 +74,7 @@ async def main():
 asyncio.run(main())
 ```
 
-+ 继续阅读[入门教程](docs/tutorial.md)
++ 继续阅读[**入门教程**](tutorials/tutorial.md)
 
 ## 客户名单
 
