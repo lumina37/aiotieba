@@ -14,17 +14,17 @@
 
 + 自定义审查行为：请参照我给出的例子自己编程修改[reviewer_kybg.py](reviewer_kybg.py)，这是[抗压背锅吧](https://tieba.baidu.com/f?kw=%E6%8A%97%E5%8E%8B%E8%83%8C%E9%94%85&ie=utf-8)审查规则的一个脱敏精简版本
 
-+ 运行`cloud_review_yours.py`（对`Windows`平台，建议使用`pythonw.exe`无窗口运行，对`Linux`平台，建议使用如下的`nohup`指令在后台运行）
++ 运行`reviewer_yours.py`（对`Windows`平台，建议使用`pythonw.exe`无窗口运行，对`Linux`平台，建议使用如下的`nohup`指令在后台运行）
 
 ```bash
-nohup python cloud_review_yours.py >/dev/null 2>&1 &
+nohup python -OO cloud_review_yours.py --no_dbg >/dev/null 2>&1 &
 ```
 
 ## 扫描范围
 
 在我给出的范例[reviewer_kybg.py](reviewer_kybg.py)中，理想情况下扫描可以完全覆盖抗吧的每一条内容
 
-云审查工具可以检查以上内容中是否存在：
+通过适当的配置，审查工具可以检查以上内容中是否存在：
 
 + **违规图片**
 
