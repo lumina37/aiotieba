@@ -783,7 +783,7 @@ class Listener(object):
         将指令所在主题帖标记为无关水，并临时屏蔽
         """
 
-        if await ctx.admin.db.add_tid(ctx.tid, mode=True) and await ctx.admin.hide_thread(ctx.tid):
+        if await ctx.admin.db.add_tid(ctx.tid, tag=1) and await ctx.admin.hide_thread(ctx.tid):
             await ctx.admin.del_post(ctx.pid)
 
     @check_and_log(need_permission=2, need_arg_num=0)
@@ -804,17 +804,17 @@ class Listener(object):
         """
 
         if ctx.args[0] == "enter":
-            if await ctx.admin.db.add_tid(0, mode=True):
+            if await ctx.admin.db.add_tid(0, tag=1):
                 await ctx.admin.del_post(ctx.pid)
         elif ctx.args[0] == "exit":
-            if await ctx.admin.db.add_tid(0, mode=False):
+            if await ctx.admin.db.add_tid(0, tag=0):
                 await ctx.admin.del_post(ctx.pid)
             limit = 128
             tids = await ctx.admin.get_tid_hide_list(limit=limit)
             while 1:
                 for tid in tids:
                     if await ctx.admin.client.unhide_thread(ctx.fname, tid):
-                        await ctx.admin.db.add_tid(tid, mode=False)
+                        await ctx.admin.db.add_tid(tid, tag=1)
                 if len(tids) != limit:
                     break
 
