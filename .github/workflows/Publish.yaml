@@ -14,7 +14,7 @@ jobs:
        name: publish
 
     env:
-      PYTHON_VER: 3.10
+      PYTHON_VER: "3.10"
 
     steps:
     - name: Checkout
