@@ -2,11 +2,11 @@
 
 ## [tutorial](tutorial.md)
 
-`aiotieba`的入门教程
+aiotieba的入门教程
 
 ## [many_utils](many_utils.md)
 
-使用`aiotieba`开发的实用小工具合集
+使用aiotieba开发的实用小工具合集
 
 使用寥寥数行代码实现高效且强大的自动化处理，具体功能包括：
 
@@ -17,11 +17,11 @@
 + 清空粉丝列表
 + 清除所有历史回复
 
-## [cloud_review_tutorial](cloud_review_tutorial.md)
+## [reviewer_tutorial](reviewer_tutorial/reviewer_tutorial.md)
 
-云审查教程，还包括实战效果展示与性能测试
+审查框架（删帖机）使用教程，包括实战效果展示
 
-## [command_tutorial](command_tutorial.md)
+## [cmd_handler_tutorial](cmd_handler_tutorial/cmd_handler_tutorial.md)
 
 指令管理器使用教程
 

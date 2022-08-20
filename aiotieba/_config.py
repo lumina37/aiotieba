@@ -22,9 +22,7 @@ except FileNotFoundError:
 
     CONFIG = {}
 
-    LOG.warning(
-        f"配置文件已生成 请参考[https://github.com/Starry-OvO/Tieba-Manager/blob/master/docs/tutorial.md]完成对./{config_filename}的配置"
-    )
+    LOG.warning(f"配置文件./{config_filename}已生成 请参考注释补充个性化配置")
 
 required_keys = ['User', 'Database']
 for required_key in required_keys:

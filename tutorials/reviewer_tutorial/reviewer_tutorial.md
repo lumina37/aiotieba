@@ -2,7 +2,7 @@
 
 ## 这是什么？
 
-这是一个以`aiotieba`为基础开发的自动扫描并处理首页违规信息的管理工具
+这是一个以aiotieba为基础开发的自动扫描并处理首页违规信息的管理工具
 
 **它可以极大节约吧务人工巡逻的时间成本**
 
@@ -12,7 +12,7 @@
 
 + 使用函数`Database.create_database()`一键建库
 
-+ 自定义审查行为：请参照我给出的例子自己编程修改[`cloud_review_vtuber.py`](../cloud_review_vtuber.py)，这是被实际应用于[vtuber吧](https://tieba.baidu.com/vtuber)的云审查工具
++ 自定义审查行为：请参照我给出的例子自己编程修改[reviewer_kybg.py](reviewer_kybg.py)，这是[抗压背锅吧](https://tieba.baidu.com/f?kw=%E6%8A%97%E5%8E%8B%E8%83%8C%E9%94%85&ie=utf-8)审查规则的一个脱敏精简版本
 
 + 运行`cloud_review_yours.py`（对`Windows`平台，建议使用`pythonw.exe`无窗口运行，对`Linux`平台，建议使用如下的`nohup`指令在后台运行）
 
@@ -22,7 +22,7 @@ nohup python cloud_review_yours.py >/dev/null 2>&1 &
 
 ## 扫描范围
 
-在我给出的范例[`cloud_review_vtuber.py`](../cloud_review_vtuber.py)中，每一轮扫描都会覆盖vtuber吧首页**按回复时间顺序**的前**30个**`主题帖`；以及这些`主题帖`中最新的**30条**`回复`；以及上述所有`回复`中点赞数最高的前**10条**`楼中楼`内容
+在我给出的范例[reviewer_kybg.py](reviewer_kybg.py)中，理想情况下扫描可以完全覆盖抗吧的每一条内容
 
 云审查工具可以检查以上内容中是否存在：
 
