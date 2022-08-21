@@ -1143,11 +1143,13 @@ class Reviewer(ReviewUtils):
         if pid:
             comments = await self.get_comments(tid, pid, is_floor=is_floor)
             if is_floor:
+                for comment in comments:
+                    if comment.pid == pid:
+                        break
+                await check_and_print(self.comment_checkers, comment)
+            else:
                 post = comments.post
                 await check_and_print(self.post_checkers, post)
-            else:
-                comment = comments[0]
-                await check_and_print(self.comment_checkers, comment)
         else:
             posts = await self.get_posts(tid, rn=0)
             thread = posts.thread
