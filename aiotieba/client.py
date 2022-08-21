@@ -1,5 +1,12 @@
 __all__ = ['Client']
 
+try:
+    import cv2 as cv
+    import numpy as np
+except ImportError:
+    cv = None
+    np = None
+
 import asyncio
 import base64
 import binascii
@@ -14,8 +21,6 @@ from typing import ClassVar, Dict, List, Literal, Optional, Tuple, Union
 
 import aiohttp
 import bs4
-import cv2 as cv
-import numpy as np
 import yarl
 from Crypto.Cipher import AES, PKCS1_v1_5
 from Crypto.PublicKey import RSA
@@ -468,7 +473,7 @@ class Client(object):
         if self._session_web is None:
             headers = {
                 aiohttp.hdrs.USER_AGENT: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:103.0) Gecko/20100101 Firefox/103.0",
-                aiohttp.hdrs.ACCEPT_ENCODING: "gzip, deflate, br",
+                aiohttp.hdrs.ACCEPT_ENCODING: "gzip, deflate",
                 aiohttp.hdrs.CACHE_CONTROL: "no-cache",
                 aiohttp.hdrs.CONNECTION: "keep-alive",
             }
