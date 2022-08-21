@@ -708,7 +708,7 @@ class Listener(object):
                 continue
             img_hash = self.listener.compute_imghash(image)
 
-            await ctx.admin.db.add_imghash(ctx.fname, img_hash, img.hash, permission=permission, note=note)
+            await ctx.admin.db.add_imghash(img_hash, img.hash, permission=permission, note=note)
 
         await ctx.admin.del_post(ctx.pid)
 
@@ -732,7 +732,7 @@ class Listener(object):
                 continue
             img_hash = self.listener.compute_imghash(image)
 
-            await ctx.admin.db.del_imghash(ctx.fname, img_hash)
+            await ctx.admin.db.del_imghash(img_hash)
 
         await ctx.admin.del_post(ctx.pid)
 
