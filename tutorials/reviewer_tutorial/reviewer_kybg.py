@@ -5,7 +5,6 @@ from collections.abc import Callable
 from typing import Optional, Union
 
 import aiotieba as tb
-from aiotieba import Punish
 
 
 class MyReviewer(tb.Reviewer):
@@ -22,7 +21,7 @@ class MyReviewer(tb.Reviewer):
 
         return _
 
-    async def check_thread(self, thread: tb.Thread) -> Optional[Punish]:
+    async def check_thread(self, thread: tb.Thread) -> Optional[tb.Punish]:
 
         if not (user := thread.user):
             return
@@ -30,13 +29,13 @@ class MyReviewer(tb.Reviewer):
         if thread.share_origin.vote_info:
             # 转发来源包含投票
             if user.level <= 9:
-                return Punish(tb.DelFlag.DELETE, 10, note="广告 申诉可解")
+                return tb.Punish(tb.DelFlag.DELETE, 10, note="广告 申诉可解")
 
         # 帖子文本内容警告
         if re.search('\\.cc|п|⒏|㏄|荬', thread.text):
-            return Punish(tb.DelFlag.DELETE, 10, note="广告 申诉可解")
+            return tb.Punish(tb.DelFlag.DELETE, 10, note="广告 申诉可解")
 
-    async def check_post(self, post: tb.Post) -> Optional[Punish]:
+    async def check_post(self, post: tb.Post) -> Optional[tb.Punish]:
 
         for img_content in post.contents.imgs:
             img = await self.client.get_image(img_content.src)
@@ -44,13 +43,13 @@ class MyReviewer(tb.Reviewer):
                 continue
             permission = await self.get_imghash(img)
             if permission <= -5:
-                return Punish(tb.DelFlag.DELETE, 10, '广告 申诉可解')
+                return tb.Punish(tb.DelFlag.DELETE, 10, '广告 申诉可解')
             if permission == -3:
-                return Punish(tb.DelFlag.DELETE, 1, "违规图片-3")
+                return tb.Punish(tb.DelFlag.DELETE, 1, "违规图片-3")
             if permission == -2:
-                return Punish(tb.DelFlag.DELETE)
+                return tb.Punish(tb.DelFlag.DELETE)
 
-    async def check_comment(self, comment: tb.Comment) -> Optional[Punish]:
+    async def check_comment(self, comment: tb.Comment) -> Optional[tb.Punish]:
 
         if comment.user.level >= 7:
             return
@@ -66,16 +65,16 @@ class MyReviewer(tb.Reviewer):
                         "t.cn",
                     )
                 ):
-                    return Punish(tb.DelFlag.DELETE, 10, note="广告 申诉可解")
+                    return tb.Punish(tb.DelFlag.DELETE, 10, note="广告 申诉可解")
 
-    async def check_text(self, obj: Union[tb.Thread, tb.Post, tb.Comment]) -> Optional[Punish]:
+    async def check_text(self, obj: Union[tb.Thread, tb.Post, tb.Comment]) -> Optional[tb.Punish]:
 
         if obj.user.level >= 7:
             return
 
         for at in obj.contents.ats:
             if at.user_id == 2093991357:
-                return Punish(tb.DelFlag.DELETE, 10, note="广告 申诉可解")
+                return tb.Punish(tb.DelFlag.DELETE, 10, note="广告 申诉可解")
 
 
 if __name__ == '__main__':
