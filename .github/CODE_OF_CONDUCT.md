@@ -24,7 +24,7 @@ pip install black
 
 + Linting: [`flake8`](https://github.com/PyCQA/flake8)
 
-+ 配置`flake8`命令行参数
++ 配置`flake8`命令行参数，或使用`pyproject.toml`中的配置
 
 ```bash
 --max-line-length=120 --ignore=E402,E203,E501,W503

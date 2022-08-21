@@ -3,11 +3,11 @@ name: Publish
 on:
   push:
     tags:
-      - '*'
+      - "*"
 
 jobs:
   publish:
-    name: Publish Release
+    name: Publish
     runs-on: ubuntu-latest
 
     environment:

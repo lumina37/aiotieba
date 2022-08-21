@@ -3,8 +3,9 @@
 ![Tieba-Manager](https://socialify.git.ci/Starry-OvO/Tieba-Manager/image?description=1&descriptionEditable=Asynchronous%20I%2FO%20Client%2FReviewer%20for%20Baidu%20Tieba&font=Bitter&language=1&logo=https%3A%2F%2Favatars.githubusercontent.com%2Fu%2F48282276&name=1&owner=1&pattern=Circuit%20Board&theme=Dark)
 
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/Starry-OvO/Tieba-Manager/CI?label=CI&logo=github)](https://github.com/Starry-OvO/Tieba-Manager/actions)
+[![PyPI version](https://badge.fury.io/py/aiotieba.svg)](https://badge.fury.io/py/aiotieba)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/Starry-OvO/Tieba-Manager?logo=lgtm)](https://lgtm.com/projects/g/Starry-OvO/Tieba-Manager/context:python)
-[![Code style: black](https://img.shields.io/badge/code_style-black-000000)](https://github.com/psf/black)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/aiotieba)](https://pypi.org/project/aiotieba)
 
 </div>
 
@@ -52,7 +53,7 @@
 
 + 检查Python版本
 
-aiotieba需要**Python>=3.9**和[**CPython**](https://www.python.org/downloads/)
+aiotieba需要**Python>=3.9**
 
 + 安装
 
@@ -80,24 +81,24 @@ asyncio.run(main())
 
 ## 客户名单
 
-2022.08.20更新
+2022.08.21更新
 
 |      吧名      | 关注用户数 | 最近29天日均访问量 | 日均主题帖数 | 日均回复数 |
 | :------------: | :--------: | :----------------: | :----------: | :--------: |
-|    抗压背锅    | 3,936,224  |     1,260,571      |    2,714     |   92,072   |
-|     孙笑川     | 2,315,491  |      743,139       |    8,692     |  223,208   |
-|    lol半价     | 1,957,169  |      109,517       |     285      |   5,608    |
-|      宫漫      | 1,314,492  |       51,454       |     247      |   3,727    |
-|    新孙笑川    |  306,332   |       58,692       |     489      |   20,007   |
-|     vtuber     |  211,954   |       15,185       |     102      |    959     |
-|     asoul      |  158,475   |       25,388       |     261      |   1,617    |
-|      嘉然      |   56,377   |       23,981       |     164      |   2,403    |
-|      向晚      |   29,030   |       16,878       |     162      |   2,276    |
-|      贝拉      |   21,631   |       12,378       |      63      |   1,132    |
-|      乃琳      |   17,139   |       6,873        |      46      |    601     |
-| vtuber自由讨论 |   16,675   |       4,416        |      4       |     89     |
-| asoul一个魂儿  |   14,716   |       1,240        |      8       |     68     |
-|     贝贝珈     |   1,644    |       1,140        |      2       |     34     |
+|    抗压背锅    | 3,941,688  |     1,285,818      |    2,887     |   94,625   |
+|     孙笑川     | 2,324,087  |      747,869       |    8,766     |  225,031   |
+|    lol半价     | 1,957,170  |      107,874       |     275      |   5,467    |
+|      宫漫      | 1,314,849  |       51,217       |     247      |   3,765    |
+|    新孙笑川    |  308,572   |       60,664       |     498      |   20,801   |
+|     vtuber     |  212,050   |       14,846       |     100      |    941     |
+|     asoul      |  158,452   |       24,886       |     255      |   1,569    |
+|      嘉然      |   56,406   |       23,667       |     162      |   2,419    |
+|      向晚      |   29,044   |       17,017       |     165      |   2,275    |
+|      贝拉      |   21,627   |       12,181       |      59      |   1,096    |
+|      乃琳      |   17,131   |       6,860        |      46      |    595     |
+| vtuber自由讨论 |   16,683   |       4,426        |      4       |     90     |
+| asoul一个魂儿  |   14,715   |       1,226        |      8       |     68     |
+|     贝贝珈     |   1,644    |       1,113        |      2       |     33     |
 
 ## 友情链接
 
