@@ -9,7 +9,8 @@ import os
 from ._helpers import DelFlag, Punish
 from ._logger import LOG
 from .client import Client
-from .reviewer import Reviewer, ReviewUtils
+from .database import Database
+from .reviewer import Reviewer
 from .typedefs import (
     Appeal,
     Appeals,

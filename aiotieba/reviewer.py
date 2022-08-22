@@ -1,7 +1,4 @@
-__all__ = [
-    'ReviewUtils',
-    'Reviewer',
-]
+__all__ = ['Reviewer']
 
 try:
     import cv2 as cv
@@ -25,7 +22,7 @@ from .database import Database
 from .typedefs import BasicUserInfo, Comment, Comments, Post, Posts, Thread, Threads
 
 
-class ReviewUtils(object):
+class _ReviewUtils(object):
     """
     贴吧审查实用功能
 
@@ -46,14 +43,14 @@ class ReviewUtils(object):
     ]
 
     def __init__(self, BDUSS_key: Optional[str] = None, fname: str = ''):
-        super(ReviewUtils, self).__init__()
+        super(_ReviewUtils, self).__init__()
 
         self.client = Client(BDUSS_key)
         self.db = Database(fname)
         self._img_hasher: "cv.img_hash.AverageHash" = None
         self._qrdetector: "cv.QRCodeDetector" = None
 
-    async def __aenter__(self) -> "ReviewUtils":
+    async def __aenter__(self) -> "_ReviewUtils":
         await asyncio.gather(self.client.__aenter__(), self.db.__aenter__())
         return self
 
@@ -512,7 +509,7 @@ def _exce_punish(func):
     return _
 
 
-class Reviewer(ReviewUtils):
+class Reviewer(_ReviewUtils):
     """
     贴吧审查器
 

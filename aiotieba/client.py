@@ -1207,7 +1207,7 @@ class Client(object):
         req_proto.data.common._client_version = self.latest_version
         req_proto.data.fname = fname
         req_proto.data.pn = pn
-        req_proto.data.rn = rn
+        req_proto.data.rn = rn if rn > 0 else 1
         req_proto.data.is_good = is_good
         req_proto.data.sort = sort
 
