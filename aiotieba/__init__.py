@@ -1,7 +1,7 @@
 """
 @Author: starry.qvq@gmail.com
 @License: Unlicense
-@Homepage: https://github.com/Starry-OvO/Tieba-Manager
+@Repository: https://github.com/Starry-OvO/Tieba-Manager
 """
 
 import os
@@ -63,7 +63,7 @@ from .typedefs import (
     VoteInfo,
 )
 
-__version__ = "2.9.1a1"
+__version__ = "2.9.1a2"
 
 if os.name == 'posix':
     import signal
