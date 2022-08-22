@@ -22,9 +22,9 @@ async def client():
 
 
 @pytest_asyncio.fixture(scope="module")
-async def reviewer():
-    async with tb._ReviewUtils('default', 'starry') as reviewer:
-        yield reviewer
+async def db():
+    async with tb.Database('starry') as db:
+        yield db
 
 
 def check_BasicUserInfo(user: tb.BasicUserInfo):
@@ -296,19 +296,16 @@ async def test_Ats(client: tb.Client):
 
 
 @pytest.mark.asyncio
-async def test_Database(reviewer: tb._ReviewUtils):
-    user = await reviewer.client.get_self_info()
-    fname = reviewer.db.fname
-    fid = await reviewer.db.get_fid(fname)
-    assert fname == await reviewer.db.get_fname(fid)
+async def test_Database(db: tb.Database):
+    fname = db.fname
+    fid = await db.get_fid(fname)
+    assert fname == await db.get_fname(fid)
     await asyncio.gather(
         *[
-            reviewer.db.get_basic_user_info(user.user_id),
-            reviewer.db.get_basic_user_info(user.user_name),
-            reviewer.db.get_basic_user_info(user.portrait),
-            reviewer.db.get_tid(7763274602),
-            reviewer.db.get_id(7763274602),
-            reviewer.db.get_user_id_list(),
-            reviewer.db.get_tid_list(limit=3),
+            db.get_basic_user_info("v_guard"),
+            db.get_tid(7763274602),
+            db.get_id(7763274602),
+            db.get_user_id_list(),
+            db.get_tid_list(limit=3),
         ]
     )
