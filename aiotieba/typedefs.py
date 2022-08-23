@@ -807,7 +807,7 @@ class FragAt(_Fragment):
     def __init__(self, _raw_data: PbContent_pb2.PbContent) -> None:
         super(FragAt, self).__init__(_raw_data)
 
-        self._text = self._raw_data.text + " "
+        self._text = self._raw_data.text
         self._user_id = self._raw_data.uid
 
     def __repr__(self) -> str:
@@ -1405,7 +1405,7 @@ class _Container(_DataWrapper):
         )
 
     def __eq__(self, obj: "_Container") -> bool:
-        return self._pid == obj._pid and self.text == obj.text
+        return self._pid == obj._pid
 
     def __hash__(self) -> int:
         return self._pid

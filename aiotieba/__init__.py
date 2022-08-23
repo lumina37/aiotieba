@@ -1,7 +1,7 @@
 """
 @Author: starry.qvq@gmail.com
 @License: Unlicense
-@Homepage: https://github.com/Starry-OvO/Tieba-Manager
+@Repository: https://github.com/Starry-OvO/Tieba-Manager
 """
 
 import os
@@ -9,7 +9,8 @@ import os
 from ._helpers import DelFlag, Punish
 from ._logger import LOG
 from .client import Client
-from .reviewer import Reviewer, ReviewUtils
+from .database import Database
+from .reviewer import Reviewer
 from .typedefs import (
     Appeal,
     Appeals,
@@ -62,7 +63,7 @@ from .typedefs import (
     VoteInfo,
 )
 
-__version__ = "2.9.1a1"
+__version__ = "2.9.1a3"
 
 if os.name == 'posix':
     import signal

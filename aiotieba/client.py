@@ -4,8 +4,7 @@ try:
     import cv2 as cv
     import numpy as np
 except ImportError:
-    cv = None
-    np = None
+    pass
 
 import asyncio
 import base64
@@ -1207,7 +1206,7 @@ class Client(object):
         req_proto.data.common._client_version = self.latest_version
         req_proto.data.fname = fname
         req_proto.data.pn = pn
-        req_proto.data.rn = rn
+        req_proto.data.rn = rn if rn > 0 else 1
         req_proto.data.is_good = is_good
         req_proto.data.sort = sort
 
@@ -2851,7 +2850,7 @@ class Client(object):
         LOG.info(f"Succeeded. forum={fname}")
         return True
 
-    async def get_image(self, img_url: str) -> np.ndarray:
+    async def get_image(self, img_url: str) -> "np.ndarray":
         """
         从链接获取静态图像
 
@@ -2879,7 +2878,7 @@ class Client(object):
 
         return image
 
-    async def get_portrait(self, _id: Union[str, int], /, size: Literal['s', 'm', 'l'] = 's') -> np.ndarray:
+    async def get_portrait(self, _id: Union[str, int], /, size: Literal['s', 'm', 'l'] = 's') -> "np.ndarray":
         """
         获取用户头像
 

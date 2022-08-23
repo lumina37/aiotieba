@@ -69,6 +69,7 @@ class TimerRecorder(object):
 class Context(object):
 
     __slots__ = [
+        '__dict__',
         'at',
         'admin',
         'speaker',
@@ -80,9 +81,11 @@ class Context(object):
         'parent',
     ]
 
+    listener_perfix: str = None
+
     def __init__(self, at: tb.At) -> None:
         self.at: tb.At = at
-        self.admin: tb.ReviewUtils = None
+        self.admin: tb.reviewer._ReviewUtils = None
         self.speaker: tb.Client = None
         self._init_full_success: bool = False
         self._args = None
@@ -139,15 +142,15 @@ class Context(object):
         self._init_full_success = True
         return True
 
-    def _init_args(self):
+    def _init_args(self) -> None:
         text = self.at.text
         self._args = []
         self._cmd_type = ''
 
-        if (first_blank_idx := text.find(' ', text.find('@') + 1)) == -1:
+        if (listener_perfix_idx := text.find(self.listener_perfix)) == -1:
             return
 
-        text = text[first_blank_idx + 1 :]
+        text = text[listener_perfix_idx + len(self.listener_perfix) :]
         self._args = [arg.lstrip(' ') for arg in text.split(' ') if arg]
         if self._args:
             self._cmd_type = self._args[0]
@@ -208,9 +211,14 @@ def check_and_log(need_permission: int = 0, need_arg_num: int = 0) -> _TypeComma
         @functools.wraps(func)
         async def _(self: "Listener", ctx: Context) -> None:
 
-            tb.LOG.info(f"user={ctx.user} type={ctx.cmd_type} args={ctx.args} tid={ctx.tid}")
-
             try:
+                if ctx.fname not in self.admins:
+                    raise RuntimeError(f"找不到管理员. fname={ctx.fname}")
+                ctx.admin, ctx.speaker = self.admins[ctx.fname]
+
+                await ctx._init()
+                tb.LOG.info(f"user={ctx.user} type={ctx.cmd_type} args={ctx.args} tid={ctx.tid}")
+
                 if len(ctx.args) < need_arg_num:
                     raise ValueError("参数量不足")
                 if ctx.exec_permission < need_permission:
@@ -232,11 +240,11 @@ class Listener(object):
 
     def __init__(self) -> None:
 
-        self.listener = tb.ReviewUtils(LISTEN_CONFIG['listener_key'])
+        self.listener = tb.reviewer._ReviewUtils(LISTEN_CONFIG['listener_key'])
 
-        def _parse_config(_config: Dict[str, str]) -> Tuple[str, tb.ReviewUtils, tb.Client]:
+        def _parse_config(_config: Dict[str, str]) -> Tuple[str, tb.reviewer._ReviewUtils, tb.Client]:
             fname = _config['fname']
-            admin = tb.ReviewUtils(_config['admin_key'], fname)
+            admin = tb.reviewer._ReviewUtils(_config['admin_key'], fname)
             speaker = tb.Client(_config['speaker_key'])
             return fname, admin, speaker
 
@@ -248,13 +256,14 @@ class Listener(object):
 
     async def close(self) -> None:
         await asyncio.gather(
-            *[client.close() for client in itertools.chain.from_iterable(self.admins.values())], self.listener.close()
+            *[c.close() for c in itertools.chain.from_iterable(self.admins.values())], self.listener.close()
         )
 
     async def __aenter__(self) -> "Listener":
+        listener_user = await self.listener.client.get_self_info()
+        Context.listener_perfix = f"@{listener_user.user_name}"
         await asyncio.gather(
-            *[client.__aenter__() for client in itertools.chain.from_iterable(self.admins.values())],
-            self.listener.__aenter__(),
+            *[c.__aenter__() for c in itertools.chain.from_iterable(self.admins.values())], self.listener.__aenter__()
         )
         return self
 
@@ -289,12 +298,6 @@ class Listener(object):
 
     async def _execute_cmd(self, at: tb.At) -> None:
         ctx = Context(at)
-        ctx.admin, ctx.speaker = self.admins.get(ctx.fname, (None, None))
-        if ctx.admin is None:
-            return
-        if not await ctx._init():
-            return
-
         cmd_func = getattr(self, f'cmd_{ctx.cmd_type}', self.cmd_default)
         await cmd_func(ctx)
 
