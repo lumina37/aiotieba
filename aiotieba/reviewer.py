@@ -4,8 +4,7 @@ try:
     import cv2 as cv
     import numpy as np
 except ImportError:
-    cv = None
-    np = None
+    pass
 
 import asyncio
 import binascii
@@ -707,7 +706,7 @@ class Reviewer(_ReviewUtils):
 
         posts = await self.set_thread_level(thread)
 
-        punish = await self.check_thread(thread)
+        punish = await self.run_thread_checkers(thread)
         if punish:
             return punish
 
@@ -728,7 +727,7 @@ class Reviewer(_ReviewUtils):
         thread._user = posts.thread.user
         return posts
 
-    async def check_thread(self, thread: Thread) -> Optional[Punish]:
+    async def run_thread_checkers(self, thread: Thread) -> Optional[Punish]:
         """
         审查单个主题帖
 
@@ -795,12 +794,12 @@ class Reviewer(_ReviewUtils):
             Optional[Punish]: 审查结果
         """
 
-        punish = await self.check_post(post)
+        punish = await self.run_post_checkers(post)
         if punish:
             return punish
         return await self.loop_handle_comments(post)
 
-    async def check_post(self, post: Post) -> Optional[Punish]:
+    async def run_post_checkers(self, post: Post) -> Optional[Punish]:
         """
         审查单个回复
 
@@ -863,11 +862,11 @@ class Reviewer(_ReviewUtils):
             Optional[Punish]: 审查结果
         """
 
-        punish = await self.check_comment(comment)
+        punish = await self.run_comment_checkers(comment)
         if punish:
             return punish
 
-    async def check_comment(self, comment: Comment) -> Optional[Punish]:
+    async def run_comment_checkers(self, comment: Comment) -> Optional[Punish]:
         """
         审查单个楼中楼
 
@@ -978,7 +977,7 @@ class Reviewer(_ReviewUtils):
 
         posts = await self.set_thread_level(thread)
 
-        punish = await self.check_thread(thread)
+        punish = await self.run_thread_checkers(thread)
         if punish:
             return punish
 
@@ -1040,7 +1039,7 @@ class Reviewer(_ReviewUtils):
             Optional[Punish]: 回复的审查结果
         """
 
-        punish = await self.check_post(post)
+        punish = await self.run_post_checkers(post)
         if punish:
             return punish
         return await self.multi_handle_comments(post)
@@ -1072,16 +1071,16 @@ class Reviewer(_ReviewUtils):
     @_check_permission
     async def multi_handle_comment(self, comment: Comment) -> Optional[Punish]:
         """
-        审查回复下的楼中楼
+        处理单个楼中楼
 
         Args:
-            post (Post): 父级回复
+            comment (Comment): 待审查的楼中楼
 
         Returns:
-            Optional[Punish]: 回复审查结果
+            Optional[Punish]: 楼中楼的审查结果
         """
 
-        punish = await self.check_comment(comment)
+        punish = await self.run_comment_checkers(comment)
         if punish:
             return punish
 
