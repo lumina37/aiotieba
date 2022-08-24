@@ -24,25 +24,26 @@ class Database(object):
 
     __slots__ = ['fname', '_pool']
 
-    _db_name: str = CONFIG['Database'].get('db', 'aiotieba')
-    _pool_recycle: int = CONFIG['Database'].get('pool_recycle', 28800)
-
     def __init__(self, fname: str = '') -> None:
         self.fname: str = fname
         self._pool: aiomysql.Pool = None
 
     async def __aenter__(self) -> "Database":
         try:
+            database_config: dict = CONFIG['Database']
+            if 'db' not in database_config:
+                database_config['db'] = 'aiotieba'
+            if 'pool_recycle' not in database_config:
+                database_config['pool_recycle'] = 28800
+
             self._pool: aiomysql.Pool = await aiomysql.create_pool(
                 minsize=0,
                 maxsize=16,
-                pool_recycle=self._pool_recycle,
-                db=self._db_name,
                 autocommit=True,
-                **CONFIG['Database'],
+                **database_config,
             )
         except aiomysql.Error as err:
-            LOG.warning(f"{err}. 无法连接数据库`{self._db_name}`请检查配置文件中的`Database`字段是否填写正确")
+            LOG.warning(f"{err}. 无法连接数据库`{database_config['db']}`请检查配置文件中的`Database`字段是否填写正确")
 
         return self
 
@@ -62,13 +63,11 @@ class Database(object):
         conn: aiomysql.Connection = await aiomysql.connect(autocommit=True, **CONFIG['Database'])
 
         async with conn.cursor() as cursor:
-            await cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{self._db_name}`")
+            await cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{CONFIG['Database']['db']}`")
 
         self._pool: aiomysql.Pool = await aiomysql.create_pool(
             minsize=0,
             maxsize=16,
-            pool_recycle=self._pool_recycle,
-            db=self._db_name,
             autocommit=True,
             **CONFIG['Database'],
         )
