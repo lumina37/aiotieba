@@ -77,9 +77,10 @@ class Database(object):
 
         db_config: dict = CONFIG['Database']
         conn: aiomysql.Connection = await aiomysql.connect(
+            host=db_config.get('host', 'localhost'),
+            port=db_config.get('port', self._default_port),
             user=db_config['user'],
             password=db_config['password'],
-            port=db_config.get('port', self._default_port),
             unix_socket=db_config.get('unix_socket', None),
             autocommit=True,
             loop=asyncio.get_running_loop(),
