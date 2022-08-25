@@ -2,7 +2,7 @@ __all__ = ['Database']
 
 import asyncio
 import datetime
-from typing import List, Optional, Tuple, Union
+from typing import Final, List, Optional, Tuple, Union
 
 import aiomysql
 
@@ -23,6 +23,12 @@ class Database(object):
     """
 
     __slots__ = ['fname', '_pool']
+
+    _default_port: Final[int] = 3306
+    _default_db_name: Final[str] = 'aiotieba'
+    _default_minsize: Final[int] = 0
+    _default_maxsize: Final[int] = 16
+    _default_pool_recycle: Final[int] = 28800
 
     def __init__(self, fname: str = '') -> None:
         self.fname: str = fname
@@ -53,14 +59,14 @@ class Database(object):
         self._pool: aiomysql.Pool = await aiomysql.create_pool(
             user=db_config['user'],
             password=db_config['password'],
-            db=db_config.get('db', 'aiotieba'),
-            minsize=db_config.get('minsize', 0),
-            maxsize=db_config.get('maxsize', 16),
-            pool_recycle=db_config.get('pool_recycle', 28800),
+            db=db_config.get('db', self._default_db_name),
+            minsize=db_config.get('minsize', self._default_minsize),
+            maxsize=db_config.get('maxsize', self._default_maxsize),
+            pool_recycle=db_config.get('pool_recycle', self._default_pool_recycle),
             loop=asyncio.get_running_loop(),
             autocommit=True,
             host=db_config.get('host', 'localhost'),
-            port=db_config.get('port', 3306),
+            port=db_config.get('port', self._default_port),
             unix_socket=db_config.get('unix_socket', None),
         )
 
@@ -73,14 +79,15 @@ class Database(object):
         conn: aiomysql.Connection = await aiomysql.connect(
             user=db_config['user'],
             password=db_config['password'],
-            port=db_config.get('port', 3306),
+            port=db_config.get('port', self._default_port),
             unix_socket=db_config.get('unix_socket', None),
             autocommit=True,
             loop=asyncio.get_running_loop(),
         )
 
         async with conn.cursor() as cursor:
-            await cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{CONFIG['Database']['db']}`")
+            db_name = db_config.get('db', self._default_db_name)
+            await cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{db_name}`")
 
         await self._create_pool()
 
