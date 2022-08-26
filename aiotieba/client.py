@@ -1203,6 +1203,7 @@ class Client(object):
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         req_proto = FrsPageReqIdl_pb2.FrsPageReqIdl()
+        req_proto.data.common._client_type = 2
         req_proto.data.common._client_version = self.latest_version
         req_proto.data.fname = fname
         req_proto.data.pn = pn
