@@ -67,7 +67,7 @@ class _ReviewUtils(object):
         return self._img_hasher
 
     @property
-    def qrdetector(self) -> cv.QRCodeDetector:
+    def qrdetector(self) -> "cv.QRCodeDetector":
         if self._qrdetector is None:
             self._qrdetector = cv.QRCodeDetector()
         return self._qrdetector
