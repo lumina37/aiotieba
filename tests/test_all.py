@@ -195,9 +195,7 @@ def check_ShareThread(thread: tb.ShareThread):
     assert isinstance(vote_info.title, str)
     assert vote_info.title != ""
     assert isinstance(vote_info.total_vote, int)
-    assert vote_info.total_vote > 0
     assert isinstance(vote_info.total_user, int)
-    assert vote_info.total_user > 0
     for option in vote_info.options:
         assert isinstance(option.vote_num, int)
         assert isinstance(option.text, str)

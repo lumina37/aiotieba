@@ -194,7 +194,7 @@ class Client(object):
         '_ws_dispatcher',
     ]
 
-    latest_version: ClassVar[str] = "12.27.5.0"  # 这是目前的最新版本
+    latest_version: ClassVar[str] = "12.28.0.0"  # 这是目前的最新版本
     # no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
     post_version: ClassVar[str] = "9.1.0.0"  # 发帖使用极速版
 
@@ -1203,6 +1203,7 @@ class Client(object):
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         req_proto = FrsPageReqIdl_pb2.FrsPageReqIdl()
+        req_proto.data.common._client_type = 2
         req_proto.data.common._client_version = self.latest_version
         req_proto.data.fname = fname
         req_proto.data.pn = pn

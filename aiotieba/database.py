@@ -2,7 +2,7 @@ __all__ = ['Database']
 
 import asyncio
 import datetime
-from typing import List, Optional, Tuple, Union
+from typing import Final, List, Optional, Tuple, Union
 
 import aiomysql
 
@@ -24,8 +24,11 @@ class Database(object):
 
     __slots__ = ['fname', '_pool']
 
-    _db_name: str = CONFIG['Database'].get('db', 'aiotieba')
-    _pool_recycle: int = CONFIG['Database'].get('pool_recycle', 28800)
+    _default_port: Final[int] = 3306
+    _default_db_name: Final[str] = 'aiotieba'
+    _default_minsize: Final[int] = 0
+    _default_maxsize: Final[int] = 16
+    _default_pool_recycle: Final[int] = 28800
 
     def __init__(self, fname: str = '') -> None:
         self.fname: str = fname
@@ -33,16 +36,9 @@ class Database(object):
 
     async def __aenter__(self) -> "Database":
         try:
-            self._pool: aiomysql.Pool = await aiomysql.create_pool(
-                minsize=0,
-                maxsize=16,
-                pool_recycle=self._pool_recycle,
-                db=self._db_name,
-                autocommit=True,
-                **CONFIG['Database'],
-            )
+            await self._create_pool()
         except aiomysql.Error as err:
-            LOG.warning(f"{err}. 无法连接数据库`{self._db_name}`请检查配置文件中的`Database`字段是否填写正确")
+            LOG.warning(f"{err}. 无法连接数据库 请检查配置文件中的`Database`字段是否填写正确")
 
         return self
 
@@ -54,24 +50,47 @@ class Database(object):
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.close()
 
+    async def _create_pool(self) -> None:
+        """
+        创建连接池
+        """
+
+        db_config: dict = CONFIG['Database']
+        self._pool: aiomysql.Pool = await aiomysql.create_pool(
+            user=db_config['user'],
+            password=db_config['password'],
+            db=db_config.get('db', self._default_db_name),
+            minsize=db_config.get('minsize', self._default_minsize),
+            maxsize=db_config.get('maxsize', self._default_maxsize),
+            pool_recycle=db_config.get('pool_recycle', self._default_pool_recycle),
+            loop=asyncio.get_running_loop(),
+            autocommit=True,
+            host=db_config.get('host', 'localhost'),
+            port=db_config.get('port', self._default_port),
+            unix_socket=db_config.get('unix_socket', None),
+        )
+
     async def create_database(self) -> None:
         """
         创建并初始化数据库
         """
 
-        conn: aiomysql.Connection = await aiomysql.connect(autocommit=True, **CONFIG['Database'])
+        db_config: dict = CONFIG['Database']
+        conn: aiomysql.Connection = await aiomysql.connect(
+            host=db_config.get('host', 'localhost'),
+            port=db_config.get('port', self._default_port),
+            user=db_config['user'],
+            password=db_config['password'],
+            unix_socket=db_config.get('unix_socket', None),
+            autocommit=True,
+            loop=asyncio.get_running_loop(),
+        )
 
         async with conn.cursor() as cursor:
-            await cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{self._db_name}`")
+            db_name = db_config.get('db', self._default_db_name)
+            await cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{db_name}`")
 
-        self._pool: aiomysql.Pool = await aiomysql.create_pool(
-            minsize=0,
-            maxsize=16,
-            pool_recycle=self._pool_recycle,
-            db=self._db_name,
-            autocommit=True,
-            **CONFIG['Database'],
-        )
+        await self._create_pool()
 
         coros = [
             self._create_table_forum(),
