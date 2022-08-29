@@ -2896,9 +2896,9 @@ class Client(object):
         else:
             user = BasicUserInfo(_id)
 
-        if size == 'S':
+        if size == 's':
             path = 'n'
-        elif size == 'L':
+        elif size == 'l':
             path = 'h'
         else:
             path = ''

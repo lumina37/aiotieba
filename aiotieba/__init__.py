@@ -1,4 +1,6 @@
 """
+Asynchronous I/O Client/Reviewer for Baidu Tieba
+
 @Author: starry.qvq@gmail.com
 @License: Unlicense
 @Repository: https://github.com/Starry-OvO/Tieba-Manager
