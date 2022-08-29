@@ -26,7 +26,7 @@ from Crypto.PublicKey import RSA
 from google.protobuf.json_format import ParseDict
 
 from ._config import CONFIG
-from ._helpers import JSON_DECODER
+from ._helpers import JSON_DECODE_FUNC
 from ._logger import LOG
 from .protobuf import (
     CommitPersonalMsgReqIdl_pb2,
@@ -1387,7 +1387,7 @@ class Client(object):
                 yarl.URL.build(path="/c/s/searchpost"),
                 data=self.pack_form(payload),
             ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
+                res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODE_FUNC, content_type=None)
 
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
@@ -1660,7 +1660,7 @@ class Client(object):
                 yarl.URL.build(path="/c/u/user/profile"),
                 data=self.pack_form(payload),
             ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
+                res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODE_FUNC, content_type=None)
 
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
@@ -1861,7 +1861,7 @@ class Client(object):
                 yarl.URL.build(path="/c/f/bawu/getRecomThreadHistory"),
                 data=self.pack_form(payload),
             ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
+                res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODE_FUNC, content_type=None)
 
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
@@ -3023,7 +3023,7 @@ class Client(object):
                 yarl.URL.build(path="/c/u/feed/atme"),
                 data=self.pack_form(payload),
             ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
+                res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODE_FUNC, content_type=None)
 
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
@@ -3203,7 +3203,7 @@ class Client(object):
                 yarl.URL.build(path="/c/u/fans/page"),
                 data=self.pack_form(payload),
             ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
+                res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODE_FUNC, content_type=None)
 
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])
@@ -3248,7 +3248,7 @@ class Client(object):
                 yarl.URL.build(path="/c/u/follow/followList"),
                 data=self.pack_form(payload),
             ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODER.decode, content_type=None)
+                res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODE_FUNC, content_type=None)
 
             if int(res_json['error_code']):
                 raise ValueError(res_json['error_msg'])

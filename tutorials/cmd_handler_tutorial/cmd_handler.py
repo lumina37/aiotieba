@@ -588,7 +588,7 @@ class Listener(object):
                 ctx.parent._user = await self.listener.get_basic_user_info(ctx.parent.contents.ats[0].user_id)
 
                 tb.LOG.info(f"Try to del thread. text={ctx.parent.text} user={ctx.parent.user}")
-                coros.append(ctx.admin.del_post(ctx.parent.pid))
+                coros.append(ctx.admin.del_thread(ctx.parent.tid))
 
             else:
                 tb.LOG.info(f"Try to del thread. text={ctx.parent.text} user={ctx.parent.user}")
