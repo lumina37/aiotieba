@@ -841,7 +841,8 @@ class Reviewer(_ReviewUtils):
             Iterator[Comment]: 待审查楼中楼的迭代器
         """
 
-        if post.reply_num > 10:
+        reply_num = post.reply_num
+        if (reply_num <= 10 and len(post.comments) != reply_num) or reply_num > 10:
             last_comments = await self.get_comments(post.tid, post.pid, pn=post.reply_num // 30 + 1)
             comments = set(last_comments)
             comments.update(post.comments)
@@ -1062,7 +1063,8 @@ class Reviewer(_ReviewUtils):
             Iterator[Comment]: 待审查楼中楼的迭代器
         """
 
-        if post.reply_num > 10:
+        reply_num = post.reply_num
+        if (reply_num <= 10 and len(post.comments) != reply_num) or reply_num > 10:
             last_comments = await self.get_comments(post.tid, post.pid, pn=post.reply_num // 30 + 1)
             comments = set(last_comments)
             comments.update(post.comments)
