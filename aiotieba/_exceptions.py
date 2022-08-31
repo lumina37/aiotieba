@@ -1,4 +1,4 @@
-class TiebaInvalidParam(RuntimeError):
+class TiebaServerError(RuntimeError):
     """
-    请求发送成功 但贴吧服务器拒绝了所用参数
+    贴吧服务器异常
     """

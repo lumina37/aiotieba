@@ -26,7 +26,7 @@ from Crypto.PublicKey import RSA
 from google.protobuf.json_format import ParseDict
 
 from ._config import CONFIG
-from ._exceptions import TiebaInvalidParam
+from ._exceptions import TiebaServerError
 from ._helpers import JSON_DECODE_FUNC
 from ._logger import LOG
 from .protobuf import (
@@ -764,7 +764,7 @@ class Client(object):
             res_proto = UpdateClientInfoResIdl_pb2.UpdateClientInfoResIdl()
             res_proto.ParseFromString(await resp.read(timeout=5))
             if int(res_proto.error.errorno):
-                raise TiebaInvalidParam(res_proto.error.errmsg)
+                raise TiebaServerError(res_proto.error.errmsg)
 
         return True
 
@@ -815,7 +815,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise TiebaInvalidParam(res_json['error_msg'])
+                raise TiebaServerError(res_json['error_msg'])
 
             user_dict = res_json['user']
             user_proto = ParseDict(user_dict, User_pb2.User(), ignore_unknown_fields=True)
@@ -853,10 +853,10 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['no']):
-                raise TiebaInvalidParam(res_json['error'])
+                raise TiebaServerError(res_json['error'])
 
             if not (fid := int(res_json['data']['fid'])):
-                raise TiebaInvalidParam("fid is 0")
+                raise TiebaServerError("fid is 0")
 
         except Exception as err:
             LOG.warning(f"{err!r}. fname={fname}")
@@ -967,7 +967,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['no']):
-                raise TiebaInvalidParam(res_json['error'])
+                raise TiebaServerError(res_json['error'])
 
             user_dict: dict = res_json['data']
 
@@ -1038,7 +1038,7 @@ class Client(object):
                 text = await resp.text(encoding='utf-8', errors='ignore')
 
             if not text:
-                raise TiebaInvalidParam("empty response")
+                raise TiebaServerError("empty response")
             res_json = json.loads(text)
 
             user_dict = res_json['creator']
@@ -1074,7 +1074,7 @@ class Client(object):
                 res_proto.ParseFromString(await resp.content.read())
 
             if int(res_proto.error.errorno):
-                raise TiebaInvalidParam(res_proto.error.errmsg)
+                raise TiebaServerError(res_proto.error.errmsg)
 
             user_proto = res_proto.data.user
             user = UserInfo(_raw_data=user_proto)
@@ -1105,7 +1105,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['errno']):
-                raise TiebaInvalidParam(res_json['errmsg'])
+                raise TiebaServerError(res_json['errmsg'])
 
             user_dict = res_json['chatUser']
             user._user_name = user_dict['uname']
@@ -1140,7 +1140,7 @@ class Client(object):
                 res_proto.ParseFromString(await resp.content.read())
 
             if int(res_proto.error.errorno):
-                raise TiebaInvalidParam(res_proto.error.errmsg)
+                raise TiebaServerError(res_proto.error.errmsg)
 
             user_proto = res_proto.data.user
             user = UserInfo(_raw_data=user_proto)
@@ -1196,7 +1196,7 @@ class Client(object):
                 res_proto.ParseFromString(await resp.content.read())
 
             if int(res_proto.error.errorno):
-                raise TiebaInvalidParam(res_proto.error.errmsg)
+                raise TiebaServerError(res_proto.error.errmsg)
 
             threads = Threads(res_proto.data)
 
@@ -1260,7 +1260,7 @@ class Client(object):
                 res_proto.ParseFromString(await resp.content.read())
 
             if int(res_proto.error.errorno):
-                raise TiebaInvalidParam(res_proto.error.errmsg)
+                raise TiebaServerError(res_proto.error.errmsg)
 
             posts = Posts(res_proto.data)
 
@@ -1310,7 +1310,7 @@ class Client(object):
                 res_proto.ParseFromString(await resp.content.read())
 
             if int(res_proto.error.errorno):
-                raise TiebaInvalidParam(res_proto.error.errmsg)
+                raise TiebaServerError(res_proto.error.errmsg)
 
             comments = Comments(res_proto.data)
 
@@ -1366,7 +1366,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODE_FUNC, content_type=None)
 
             if int(res_json['error_code']):
-                raise TiebaInvalidParam(res_json['error_msg'])
+                raise TiebaServerError(res_json['error_msg'])
 
             searches = Searches(res_json)
 
@@ -1402,7 +1402,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise TiebaInvalidParam(res_json['error_msg'])
+                raise TiebaServerError(res_json['error_msg'])
 
             forum_dict: Dict[str, str] = res_json['forum_info']
             forum_dict['thread_num'] = forum_dict.pop('thread_count')
@@ -1447,7 +1447,7 @@ class Client(object):
                 res_proto.ParseFromString(await resp.content.read())
 
             if int(res_proto.error.errorno):
-                raise TiebaInvalidParam(res_proto.error.errmsg)
+                raise TiebaServerError(res_proto.error.errmsg)
 
             roledes_protos = res_proto.data.bawu_team_info.bawu_team_list
             bawu_dict = {
@@ -1490,7 +1490,7 @@ class Client(object):
                 res_proto.ParseFromString(await resp.content.read())
 
             if int(res_proto.error.errorno):
-                raise TiebaInvalidParam(res_proto.error.errmsg)
+                raise TiebaServerError(res_proto.error.errmsg)
 
             tab_map = {tab_proto.tab_name: tab_proto.tab_id for tab_proto in res_proto.data.exact_match.tab_info}
 
@@ -1597,7 +1597,7 @@ class Client(object):
                 res_proto.ParseFromString(await resp.content.read())
 
             if int(res_proto.error.errorno):
-                raise TiebaInvalidParam(res_proto.error.errmsg)
+                raise TiebaServerError(res_proto.error.errmsg)
 
             square_forums = SquareForums(res_proto.data)
 
@@ -1648,7 +1648,7 @@ class Client(object):
                 res_proto.ParseFromString(await resp.content.read())
 
             if int(res_proto.error.errorno):
-                raise TiebaInvalidParam(res_proto.error.errmsg)
+                raise TiebaServerError(res_proto.error.errmsg)
 
             user = UserInfo(_raw_data=res_proto.data.user)
             threads = [NewThread(thread_proto) for thread_proto in res_proto.data.post_list]
@@ -1707,7 +1707,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise TiebaInvalidParam(res_json['error_msg'])
+                raise TiebaServerError(res_json['error_msg'])
 
             data = res_json['data']
             stat = {
@@ -1755,7 +1755,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise TiebaInvalidParam(res_json['error_msg'])
+                raise TiebaServerError(res_json['error_msg'])
 
             follow_forums = FollowForums(res_json)
 
@@ -1794,7 +1794,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise TiebaInvalidParam(res_json['error_msg'])
+                raise TiebaServerError(res_json['error_msg'])
 
             total_recom_num = int(res_json['total_recommend_num'])
             used_recom_num = int(res_json['used_recommend_num'])
@@ -1837,7 +1837,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODE_FUNC, content_type=None)
 
             if int(res_json['error_code']):
-                raise TiebaInvalidParam(res_json['error_msg'])
+                raise TiebaServerError(res_json['error_msg'])
 
             recom_threads = RecomThreads(res_json)
 
@@ -1901,7 +1901,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise TiebaInvalidParam(res_json['error_msg'])
+                raise TiebaServerError(res_json['error_msg'])
 
         except Exception as err:
             LOG.warning(f"{err!r}. forum={fname_or_fid} user={user} day={day}")
@@ -1950,7 +1950,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['no']):
-                raise TiebaInvalidParam(res_json['error'])
+                raise TiebaServerError(res_json['error'])
 
         except Exception as err:
             LOG.warning(f"{err!r}. forum={fname} user={user}")
@@ -2033,7 +2033,7 @@ class Client(object):
             res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
         if int(res_json['error_code']):
-            raise TiebaInvalidParam(res_json['error_msg'])
+            raise TiebaServerError(res_json['error_msg'])
 
     async def del_threads(self, fname_or_fid: Union[str, int], /, tids: List[int], *, block: bool = False) -> bool:
         """
@@ -2066,9 +2066,9 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise TiebaInvalidParam(res_json['error_msg'])
+                raise TiebaServerError(res_json['error_msg'])
             if res_json['info']['ret_type']:
-                raise TiebaInvalidParam(res_json['info']['text'])
+                raise TiebaServerError(res_json['info']['text'])
 
         except Exception as err:
             LOG.warning(f"{err!r}. forum={fname_or_fid} tids={tids}")
@@ -2107,7 +2107,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise TiebaInvalidParam(res_json['error_msg'])
+                raise TiebaServerError(res_json['error_msg'])
 
         except Exception as err:
             LOG.warning(f"{err!r}. forum={fname_or_fid} pid={pid}")
@@ -2148,9 +2148,9 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise TiebaInvalidParam(res_json['error_msg'])
+                raise TiebaServerError(res_json['error_msg'])
             if res_json['info']['ret_type']:
-                raise TiebaInvalidParam(res_json['info']['text'])
+                raise TiebaServerError(res_json['info']['text'])
 
         except Exception as err:
             LOG.warning(f"{err!r}. forum={fname_or_fid} pids={pids}")
@@ -2270,7 +2270,7 @@ class Client(object):
             res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
         if int(res_json['no']):
-            raise TiebaInvalidParam(res_json['error'])
+            raise TiebaServerError(res_json['error'])
 
     async def move(self, fname_or_fid: Union[str, int], /, tid: int, *, to_tab_id: int, from_tab_id: int = 0) -> bool:
         """
@@ -2304,7 +2304,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise TiebaInvalidParam(res_json['error_msg'])
+                raise TiebaServerError(res_json['error_msg'])
 
         except Exception as err:
             LOG.warning(f"{err!r}. forum={fname_or_fid} tid={tid}")
@@ -2341,9 +2341,9 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise TiebaInvalidParam(res_json['error_msg'])
+                raise TiebaServerError(res_json['error_msg'])
             if int(res_json['data']['is_push_success']) != 1:
-                raise TiebaInvalidParam(res_json['data']['msg'])
+                raise TiebaServerError(res_json['data']['msg'])
 
         except Exception as err:
             LOG.warning(f"{err!r}. forum={fname_or_fid} tid={tid}")
@@ -2425,7 +2425,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise TiebaInvalidParam(res_json['error_msg'])
+                raise TiebaServerError(res_json['error_msg'])
 
             cid = 0
             for item in res_json['cates']:
@@ -2477,7 +2477,7 @@ class Client(object):
             res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
         if int(res_json['error_code']):
-            raise TiebaInvalidParam(res_json['error_msg'])
+            raise TiebaServerError(res_json['error_msg'])
 
     async def top(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
@@ -2559,7 +2559,7 @@ class Client(object):
             res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
         if int(res_json['error_code']):
-            raise TiebaInvalidParam(res_json['error_msg'])
+            raise TiebaServerError(res_json['error_msg'])
 
     async def get_recovers(self, fname_or_fid: Union[str, int], /, pn: int = 1, name: str = '') -> Recovers:
         """
@@ -2596,7 +2596,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['no']):
-                raise TiebaInvalidParam(res_json['error'])
+                raise TiebaServerError(res_json['error'])
 
             recovers = Recovers(res_json)
 
@@ -2673,7 +2673,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['errno']):
-                raise TiebaInvalidParam(res_json['errmsg'])
+                raise TiebaServerError(res_json['errmsg'])
 
         except Exception as err:
             LOG.warning(f"{err!r}. forum={fname} user={user.user_id}")
@@ -2716,7 +2716,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['errno']):
-                raise TiebaInvalidParam(res_json['errmsg'])
+                raise TiebaServerError(res_json['errmsg'])
 
         except Exception as err:
             LOG.warning(f"{err!r}. forum={fname} user={user.user_id}")
@@ -2762,7 +2762,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['no']):
-                raise TiebaInvalidParam(res_json['error'])
+                raise TiebaServerError(res_json['error'])
 
             appeals = Appeals(res_json)
 
@@ -2815,7 +2815,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['no']):
-                raise TiebaInvalidParam(res_json['error'])
+                raise TiebaServerError(res_json['error'])
 
         except Exception as err:
             LOG.warning(f"{err!r}. forum={fname}")
@@ -2921,7 +2921,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise TiebaInvalidParam(res_json['error_msg'])
+                raise TiebaServerError(res_json['error_msg'])
 
             msg = {k: bool(int(v)) for k, v in res_json['message'].items()}
 
@@ -2964,7 +2964,7 @@ class Client(object):
                 res_proto.ParseFromString(await resp.content.read())
 
             if int(res_proto.error.errorno):
-                raise TiebaInvalidParam(res_proto.error.errmsg)
+                raise TiebaServerError(res_proto.error.errmsg)
 
             replys = Replys(res_proto.data)
 
@@ -2999,7 +2999,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODE_FUNC, content_type=None)
 
             if int(res_json['error_code']):
-                raise TiebaInvalidParam(res_json['error_msg'])
+                raise TiebaServerError(res_json['error_msg'])
 
             ats = Ats(res_json)
 
@@ -3129,7 +3129,7 @@ class Client(object):
             res_proto.ParseFromString(await resp.content.read())
 
         if int(res_proto.error.errorno):
-            raise TiebaInvalidParam(res_proto.error.errmsg)
+            raise TiebaServerError(res_proto.error.errmsg)
 
         res_data_proto = res_proto.data
         if is_thread:
@@ -3179,7 +3179,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODE_FUNC, content_type=None)
 
             if int(res_json['error_code']):
-                raise TiebaInvalidParam(res_json['error_msg'])
+                raise TiebaServerError(res_json['error_msg'])
 
             fans = Fans(res_json)
 
@@ -3224,7 +3224,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODE_FUNC, content_type=None)
 
             if int(res_json['error_code']):
-                raise TiebaInvalidParam(res_json['error_msg'])
+                raise TiebaServerError(res_json['error_msg'])
 
             follows = Follows(res_json)
 
@@ -3260,7 +3260,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['errno']):
-                raise TiebaInvalidParam(res_json['errmsg'])
+                raise TiebaServerError(res_json['errmsg'])
 
             self_follow_forums = SelfFollowForums(res_json)
 
@@ -3297,7 +3297,7 @@ class Client(object):
                 res_proto.ParseFromString(await resp.content.read())
 
             if int(res_proto.error.errorno):
-                raise TiebaInvalidParam(res_proto.error.errmsg)
+                raise TiebaServerError(res_proto.error.errmsg)
 
             dislike_forums = DislikeForums(res_proto.data)
 
@@ -3432,7 +3432,7 @@ class Client(object):
             res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
         if int(res_json['error_code']):
-            raise TiebaInvalidParam(res_json['error_msg'])
+            raise TiebaServerError(res_json['error_msg'])
 
     async def remove_fan(self, _id: Union[str, int]):
         """
@@ -3464,7 +3464,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise TiebaInvalidParam(res_json['error_msg'])
+                raise TiebaServerError(res_json['error_msg'])
 
         except Exception as err:
             LOG.warning(f"{err!r}. user={user}")
@@ -3503,7 +3503,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise TiebaInvalidParam(res_json['error_msg'])
+                raise TiebaServerError(res_json['error_msg'])
 
         except Exception as err:
             LOG.warning(f"{err!r}. user={user}")
@@ -3542,7 +3542,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise TiebaInvalidParam(res_json['error_msg'])
+                raise TiebaServerError(res_json['error_msg'])
 
         except Exception as err:
             LOG.warning(f"{err!r}. user={user}")
@@ -3578,9 +3578,9 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise TiebaInvalidParam(res_json['error_msg'])
+                raise TiebaServerError(res_json['error_msg'])
             if int(res_json['error']['errno']):
-                raise TiebaInvalidParam(res_json['error']['errmsg'])
+                raise TiebaServerError(res_json['error']['errmsg'])
 
         except Exception as err:
             LOG.warning(f"{err!r}. forum={fname_or_fid}")
@@ -3616,7 +3616,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise TiebaInvalidParam(res_json['error_msg'])
+                raise TiebaServerError(res_json['error_msg'])
 
         except Exception as err:
             LOG.warning(f"{err!r}. forum={fname_or_fid}")
@@ -3656,7 +3656,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise TiebaInvalidParam(res_json['error_msg'])
+                raise TiebaServerError(res_json['error_msg'])
 
         except Exception as err:
             LOG.warning(f"{err!r}. forum={fname_or_fid}")
@@ -3692,7 +3692,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise TiebaInvalidParam(res_json['error_msg'])
+                raise TiebaServerError(res_json['error_msg'])
 
         except Exception as err:
             LOG.warning(f"{err!r}. forum={fname_or_fid}")
@@ -3733,7 +3733,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise TiebaInvalidParam(res_json['error_msg'])
+                raise TiebaServerError(res_json['error_msg'])
 
         except Exception as err:
             LOG.warning(f"{err!r}. tid={tid}")
@@ -3772,9 +3772,9 @@ class Client(object):
 
             error_code = int(res_json['error_code'])
             if error_code:
-                raise TiebaInvalidParam(res_json['error_msg'])
+                raise TiebaServerError(res_json['error_msg'])
             if int(res_json['user_info']['sign_bonus_point']) == 0:
-                raise TiebaInvalidParam("sign_bonus_point is 0")
+                raise TiebaServerError("sign_bonus_point is 0")
 
         except Exception as err:
             LOG.warning(f"{err!r}. forum={fname}")
@@ -3848,9 +3848,9 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise TiebaInvalidParam(res_json['error_msg'])
+                raise TiebaServerError(res_json['error_msg'])
             if int(res_json['info']['need_vcode']):
-                raise TiebaInvalidParam("need verify code")
+                raise TiebaServerError("need verify code")
 
         except Exception as err:
             LOG.warning(f"{err!r}. forum={fname} tid={tid}")
@@ -3891,9 +3891,9 @@ class Client(object):
             res_proto = CommitPersonalMsgResIdl_pb2.CommitPersonalMsgResIdl()
             res_proto.ParseFromString(await resp.read(timeout=5))
             if int(res_proto.error.errorno):
-                raise TiebaInvalidParam(res_proto.error.errmsg)
+                raise TiebaServerError(res_proto.error.errmsg)
             if int(res_proto.data.blockInfo.blockErrno):
-                raise TiebaInvalidParam(res_proto.data.blockInfo.blockErrmsg)
+                raise TiebaServerError(res_proto.data.blockInfo.blockErrmsg)
 
         except Exception as err:
             LOG.warning(f"{err!r}. user={user}")
