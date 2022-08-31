@@ -25,12 +25,14 @@ dependencies = [
     "aiomysql>=0.1.0",
     "beautifulsoup4>=4.0.0",
     "lxml>=4.0.0",
-    "opencv-contrib-python-headless>=4.6.0.66",
     "protobuf>=4.12.0",
     "pycryptodome>=3.0.0",
     "tomli>=2.0.0",
 ]
 dynamic = ["version"]
+
+[project.optional-dependencies]
+img = ["opencv-contrib-python-headless>=4.6.0.66"]
 
 [tool.setuptools.packages.find]
 include = ["aiotieba*"]

@@ -1,0 +1,15 @@
+// tbclient.Profile.ProfileResIdl
+syntax = "proto3";
+
+import "Error.proto";
+import "User.proto";
+import "PostInfoList.proto";
+
+message ProfileResIdl {
+    Error error = 1;
+    message DataRes {
+        User user = 1;
+        repeated PostInfoList post_list = 4;
+    }
+    DataRes data = 2;
+}

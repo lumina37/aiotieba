@@ -3,18 +3,20 @@ import functools
 import json
 import sys
 import time
+from typing import Dict
 
 from ._logger import LOG
 
 
-def _json_decoder_hook(_dict):
+def _json_decoder_hook(_dict: Dict):
     for key, value in _dict.items():
         if not value:
             _dict[key] = None
     return _dict
 
 
-JSON_DECODER = json.JSONDecoder(object_hook=_json_decoder_hook)
+_DECODER = json.JSONDecoder(object_hook=_json_decoder_hook)
+JSON_DECODE_FUNC = _DECODER.decode
 
 
 class DelFlag(enum.IntEnum):

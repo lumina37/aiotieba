@@ -76,13 +76,13 @@ from .protobuf import (
     FrsPageResIdl_pb2,
     GetDislikeListResIdl_pb2,
     GetForumSquareResIdl_pb2,
-    NewThreadInfo_pb2,
     Page_pb2,
     PbContent_pb2,
     PbFloorResIdl_pb2,
     PbPageResIdl_pb2,
     PollInfo_pb2,
     Post_pb2,
+    PostInfoList_pb2,
     ReplyMeResIdl_pb2,
     SimpleForum_pb2,
     SubPostList_pb2,
@@ -3278,7 +3278,7 @@ class NewThread(_Container):
         '_create_time',
     ]
 
-    def __init__(self, _raw_data: Optional[NewThreadInfo_pb2.NewThreadInfo] = None) -> None:
+    def __init__(self, _raw_data: Optional[PostInfoList_pb2.PostInfoList] = None) -> None:
         super(NewThread, self).__init__(_raw_data)
 
         self._contents: Fragments = None

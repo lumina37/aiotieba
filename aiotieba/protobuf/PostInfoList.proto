@@ -1,0 +1,22 @@
+// tbclient.PostInfoList
+syntax = "proto3";
+
+import "PollInfo.proto";
+import "PbContent.proto";
+import "Agree.proto";
+
+message PostInfoList {
+    int64 forum_id = 1;
+    int64 thread_id = 2;
+    int64 post_id = 3;
+    uint32 create_time = 5;
+    string forum_name = 6;
+    string title = 7;
+    uint32 reply_num = 17;
+    int64 user_id = 18;
+    PollInfo poll_info = 28;
+    int32 freq_num = 33;
+    int32 share_num = 39;
+    Agree agree = 40;
+    repeated PbContent first_post_content = 49;
+}

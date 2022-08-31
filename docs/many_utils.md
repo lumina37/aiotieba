@@ -188,6 +188,24 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
+## 拒绝所有解封申诉
+
+```python
+import asyncio
+
+import aiotieba as tb
+
+
+async def main() -> None:
+    async with tb.Client("default") as client:
+        fname = "待拒绝申诉的贴吧名"
+        while appeals := await client.get_unblock_appeals(fname, rn=30):
+            await client.handle_unblock_appeals(fname, [a.aid for a in appeals])
+
+
+asyncio.run(main())
+```
+
 ## 清空default账号的粉丝列表（无法复原的危险操作，请谨慎使用！）
 
 ```python

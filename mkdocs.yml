@@ -1,0 +1,26 @@
+site_name: aiotieba文档
+site_url: https://v-8.top/
+theme:
+  name: material
+  features:
+    - navigation.sections
+  language: zh
+
+repo_name: Starry-OvO/Tieba-Manager
+repo_url: https://github.com/Starry-OvO/Tieba-Manager
+edit_uri: ""
+
+nav:
+    - 介绍: index.md
+    - 教程:
+      - 入门教程: tutorials/quickstart.md
+      - 爬虫教程: tutorials/crawler.md
+      - 云审查教程: tutorials/reviewer.md
+      - 指令管理器教程: tutorials/cmd_handler.md
+    - 实用微脚本合集: many_utils.md
+
+markdown_extensions:
+  - md_in_html
+  - admonition
+  - codehilite:
+      css_class: highlight

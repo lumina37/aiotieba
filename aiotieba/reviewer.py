@@ -366,7 +366,7 @@ class _ReviewUtils(object):
         try:
             data = self.qrdetector.detectAndDecode(image)[0]
         except Exception as err:
-            LOG.warning(err)
+            LOG.warning(repr(err))
             data = ''
 
         return data
@@ -386,7 +386,7 @@ class _ReviewUtils(object):
             img_hash_array = self.img_hasher.compute(image)
             img_hash = binascii.hexlify(img_hash_array.tobytes()).decode('ascii')
         except Exception as err:
-            LOG.warning(err)
+            LOG.warning(repr(err))
             img_hash = ''
 
         return img_hash
@@ -841,9 +841,12 @@ class Reviewer(_ReviewUtils):
             Iterator[Comment]: 待审查楼中楼的迭代器
         """
 
-        if post.reply_num > 10:
+        reply_num = post.reply_num
+        if (reply_num <= 10 and len(post.comments) != reply_num) or reply_num > 10:
             last_comments = await self.get_comments(post.tid, post.pid, pn=post.reply_num // 30 + 1)
-            return post.comments + last_comments.objs
+            comments = set(last_comments)
+            comments.update(post.comments)
+            return comments
 
         else:
             return post.comments
@@ -1060,9 +1063,12 @@ class Reviewer(_ReviewUtils):
             Iterator[Comment]: 待审查楼中楼的迭代器
         """
 
-        if post.reply_num > 10:
+        reply_num = post.reply_num
+        if (reply_num <= 10 and len(post.comments) != reply_num) or reply_num > 10:
             last_comments = await self.get_comments(post.tid, post.pid, pn=post.reply_num // 30 + 1)
-            return post.comments + last_comments.objs
+            comments = set(last_comments)
+            comments.update(post.comments)
+            return comments
 
         else:
             return post.comments

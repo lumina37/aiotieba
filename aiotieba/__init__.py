@@ -1,4 +1,6 @@
 """
+Asynchronous I/O Client/Reviewer for Baidu Tieba
+
 @Author: starry.qvq@gmail.com
 @License: Unlicense
 @Repository: https://github.com/Starry-OvO/Tieba-Manager
@@ -63,7 +65,7 @@ from .typedefs import (
     VoteInfo,
 )
 
-__version__ = "2.9.1"
+__version__ = "2.9.2a1"
 
 if os.name == 'posix':
     import signal
