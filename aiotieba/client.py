@@ -26,6 +26,7 @@ from Crypto.PublicKey import RSA
 from google.protobuf.json_format import ParseDict
 
 from ._config import CONFIG
+from ._exceptions import TiebaInvalidParam
 from ._helpers import JSON_DECODE_FUNC
 from ._logger import LOG
 from .protobuf import (
@@ -763,7 +764,7 @@ class Client(object):
             res_proto = UpdateClientInfoResIdl_pb2.UpdateClientInfoResIdl()
             res_proto.ParseFromString(await resp.read(timeout=5))
             if int(res_proto.error.errorno):
-                raise ValueError(res_proto.error.errmsg)
+                raise TiebaInvalidParam(res_proto.error.errmsg)
 
         return True
 
@@ -814,7 +815,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
+                raise TiebaInvalidParam(res_json['error_msg'])
 
             user_dict = res_json['user']
             user_proto = ParseDict(user_dict, User_pb2.User(), ignore_unknown_fields=True)
@@ -822,7 +823,7 @@ class Client(object):
             self._tbs = res_json['anti']['tbs']
 
         except Exception as err:
-            LOG.warning(err)
+            LOG.warning(repr(err))
             self._user = BasicUserInfo()
             self._tbs = ""
             return False
@@ -852,13 +853,13 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['no']):
-                raise ValueError(res_json['error'])
+                raise TiebaInvalidParam(res_json['error'])
 
             if not (fid := int(res_json['data']['fid'])):
-                raise ValueError("fid is 0")
+                raise TiebaInvalidParam("fid is 0")
 
         except Exception as err:
-            LOG.warning(f"{err}. fname={fname}")
+            LOG.warning(f"{err!r}. fname={fname}")
             fid = 0
 
         self.add_forum_cache(fname, fid)
@@ -966,7 +967,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['no']):
-                raise ValueError(res_json['error'])
+                raise TiebaInvalidParam(res_json['error'])
 
             user_dict: dict = res_json['data']
 
@@ -1009,7 +1010,7 @@ class Client(object):
             user.is_vip = bool(int(vip_dict['v_status'])) if (vip_dict := user_dict['vipInfo']) else False
 
         except Exception as err:
-            LOG.warning(f"{err}. user={user}")
+            LOG.warning(f"{err!r}. user={user}")
             user = UserInfo()
 
         return user
@@ -1037,7 +1038,7 @@ class Client(object):
                 text = await resp.text(encoding='utf-8', errors='ignore')
 
             if not text:
-                raise ValueError("empty response")
+                raise TiebaInvalidParam("empty response")
             res_json = json.loads(text)
 
             user_dict = res_json['creator']
@@ -1045,7 +1046,7 @@ class Client(object):
             user.portrait = user_dict['portrait']
 
         except Exception as err:
-            LOG.warning(f"{err}. user={user}")
+            LOG.warning(f"{err!r}. user={user}")
             user = BasicUserInfo()
 
         return user
@@ -1073,13 +1074,13 @@ class Client(object):
                 res_proto.ParseFromString(await resp.content.read())
 
             if int(res_proto.error.errorno):
-                raise ValueError(res_proto.error.errmsg)
+                raise TiebaInvalidParam(res_proto.error.errmsg)
 
             user_proto = res_proto.data.user
             user = UserInfo(_raw_data=user_proto)
 
         except Exception as err:
-            LOG.warning(f"{err}. user={user}")
+            LOG.warning(f"{err!r}. user={user}")
             user = UserInfo()
 
         return user
@@ -1104,14 +1105,14 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['errno']):
-                raise ValueError(res_json['errmsg'])
+                raise TiebaInvalidParam(res_json['errmsg'])
 
             user_dict = res_json['chatUser']
             user._user_name = user_dict['uname']
             user.portrait = user_dict['portrait']
 
         except Exception as err:
-            LOG.warning(f"{err}. user={user}")
+            LOG.warning(f"{err!r}. user={user}")
             user = BasicUserInfo()
 
         return user
@@ -1139,13 +1140,13 @@ class Client(object):
                 res_proto.ParseFromString(await resp.content.read())
 
             if int(res_proto.error.errorno):
-                raise ValueError(res_proto.error.errmsg)
+                raise TiebaInvalidParam(res_proto.error.errmsg)
 
             user_proto = res_proto.data.user
             user = UserInfo(_raw_data=user_proto)
 
         except Exception as err:
-            LOG.warning(f"{err}. tieba_uid={tieba_uid}")
+            LOG.warning(f"{err!r}. tieba_uid={tieba_uid}")
             user = UserInfo()
 
         return user
@@ -1195,12 +1196,12 @@ class Client(object):
                 res_proto.ParseFromString(await resp.content.read())
 
             if int(res_proto.error.errorno):
-                raise ValueError(res_proto.error.errmsg)
+                raise TiebaInvalidParam(res_proto.error.errmsg)
 
             threads = Threads(res_proto.data)
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname}")
+            LOG.warning(f"{err!r}. forum={fname}")
             threads = Threads()
 
         return threads
@@ -1259,12 +1260,12 @@ class Client(object):
                 res_proto.ParseFromString(await resp.content.read())
 
             if int(res_proto.error.errorno):
-                raise ValueError(res_proto.error.errmsg)
+                raise TiebaInvalidParam(res_proto.error.errmsg)
 
             posts = Posts(res_proto.data)
 
         except Exception as err:
-            LOG.warning(f"{err}. tid={tid}")
+            LOG.warning(f"{err!r}. tid={tid}")
             posts = Posts()
 
         return posts
@@ -1309,12 +1310,12 @@ class Client(object):
                 res_proto.ParseFromString(await resp.content.read())
 
             if int(res_proto.error.errorno):
-                raise ValueError(res_proto.error.errmsg)
+                raise TiebaInvalidParam(res_proto.error.errmsg)
 
             comments = Comments(res_proto.data)
 
         except Exception as err:
-            LOG.warning(f"{err}. tid={tid} pid={pid}")
+            LOG.warning(f"{err!r}. tid={tid} pid={pid}")
             comments = Comments()
 
         return comments
@@ -1365,12 +1366,12 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODE_FUNC, content_type=None)
 
             if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
+                raise TiebaInvalidParam(res_json['error_msg'])
 
             searches = Searches(res_json)
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname}")
+            LOG.warning(f"{err!r}. forum={fname}")
             searches = Searches()
 
         return searches
@@ -1401,7 +1402,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
+                raise TiebaInvalidParam(res_json['error_msg'])
 
             forum_dict: Dict[str, str] = res_json['forum_info']
             forum_dict['thread_num'] = forum_dict.pop('thread_count')
@@ -1415,7 +1416,7 @@ class Client(object):
             )
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname_or_fid}")
+            LOG.warning(f"{err!r}. forum={fname_or_fid}")
             res = Forum()
 
         return res
@@ -1446,7 +1447,7 @@ class Client(object):
                 res_proto.ParseFromString(await resp.content.read())
 
             if int(res_proto.error.errorno):
-                raise ValueError(res_proto.error.errmsg)
+                raise TiebaInvalidParam(res_proto.error.errmsg)
 
             roledes_protos = res_proto.data.bawu_team_info.bawu_team_list
             bawu_dict = {
@@ -1457,7 +1458,7 @@ class Client(object):
             }
 
         except Exception as err:
-            LOG.warning(err)
+            LOG.warning(repr(err))
             bawu_dict = {}
 
         return bawu_dict
@@ -1489,12 +1490,12 @@ class Client(object):
                 res_proto.ParseFromString(await resp.content.read())
 
             if int(res_proto.error.errorno):
-                raise ValueError(res_proto.error.errmsg)
+                raise TiebaInvalidParam(res_proto.error.errmsg)
 
             tab_map = {tab_proto.tab_name: tab_proto.tab_id for tab_proto in res_proto.data.exact_match.tab_info}
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname_or_fid}")
+            LOG.warning(f"{err!r}. forum={fname_or_fid}")
             tab_map = {}
 
         return tab_map
@@ -1528,7 +1529,7 @@ class Client(object):
             rank_users = RankUsers(soup)
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname}")
+            LOG.warning(f"{err!r}. forum={fname}")
             rank_users = RankUsers()
 
         return rank_users
@@ -1562,7 +1563,7 @@ class Client(object):
             member_users = MemberUsers(soup)
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname}")
+            LOG.warning(f"{err!r}. forum={fname}")
             member_users = MemberUsers()
 
         return member_users
@@ -1596,12 +1597,12 @@ class Client(object):
                 res_proto.ParseFromString(await resp.content.read())
 
             if int(res_proto.error.errorno):
-                raise ValueError(res_proto.error.errmsg)
+                raise TiebaInvalidParam(res_proto.error.errmsg)
 
             square_forums = SquareForums(res_proto.data)
 
         except Exception as err:
-            LOG.warning(err)
+            LOG.warning(repr(err))
             square_forums = SquareForums()
 
         return square_forums
@@ -1647,7 +1648,7 @@ class Client(object):
                 res_proto.ParseFromString(await resp.content.read())
 
             if int(res_proto.error.errorno):
-                raise ValueError(res_proto.error.errmsg)
+                raise TiebaInvalidParam(res_proto.error.errmsg)
 
             user = UserInfo(_raw_data=res_proto.data.user)
             threads = [NewThread(thread_proto) for thread_proto in res_proto.data.post_list]
@@ -1655,7 +1656,7 @@ class Client(object):
                 thread._user = user
 
         except Exception as err:
-            LOG.warning(f"{err}. user={user}")
+            LOG.warning(f"{err!r}. user={user}")
             user = UserInfo()
             threads = []
 
@@ -1706,7 +1707,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
+                raise TiebaInvalidParam(res_json['error_msg'])
 
             data = res_json['data']
             stat = {
@@ -1715,7 +1716,7 @@ class Client(object):
             }
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname_or_fid}")
+            LOG.warning(f"{err!r}. forum={fname_or_fid}")
             stat = {field_name: [] for field_name in field_names}
 
         return stat
@@ -1754,12 +1755,12 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
+                raise TiebaInvalidParam(res_json['error_msg'])
 
             follow_forums = FollowForums(res_json)
 
         except Exception as err:
-            LOG.warning(f"{err}. user={user}")
+            LOG.warning(f"{err!r}. user={user}")
             follow_forums = FollowForums()
 
         return follow_forums
@@ -1793,13 +1794,13 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
+                raise TiebaInvalidParam(res_json['error_msg'])
 
             total_recom_num = int(res_json['total_recommend_num'])
             used_recom_num = int(res_json['used_recommend_num'])
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname_or_fid}")
+            LOG.warning(f"{err!r}. forum={fname_or_fid}")
             total_recom_num = 0
             used_recom_num = 0
 
@@ -1836,12 +1837,12 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODE_FUNC, content_type=None)
 
             if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
+                raise TiebaInvalidParam(res_json['error_msg'])
 
             recom_threads = RecomThreads(res_json)
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname_or_fid}")
+            LOG.warning(f"{err!r}. forum={fname_or_fid}")
             recom_threads = RecomThreads()
 
         return recom_threads
@@ -1900,10 +1901,10 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
+                raise TiebaInvalidParam(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname_or_fid} user={user} day={day}")
+            LOG.warning(f"{err!r}. forum={fname_or_fid} user={user} day={day}")
             return False
 
         LOG.info(f"Succeeded. forum={fname_or_fid} user={user} day={day}")
@@ -1949,10 +1950,10 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['no']):
-                raise ValueError(res_json['error'])
+                raise TiebaInvalidParam(res_json['error'])
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname} user={user}")
+            LOG.warning(f"{err!r}. forum={fname} user={user}")
             return False
 
         LOG.info(f"Succeeded. forum={fname} user={user}")
@@ -1974,7 +1975,7 @@ class Client(object):
             await self._del_or_hide_thread(fname_or_fid, tid, is_hide=True)
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname_or_fid} tid={tid}")
+            LOG.warning(f"{err!r}. forum={fname_or_fid} tid={tid}")
             return False
 
         LOG.info(f"Succeeded. forum={fname_or_fid} tid={tid}")
@@ -1996,7 +1997,7 @@ class Client(object):
             await self._del_or_hide_thread(fname_or_fid, tid, is_hide=False)
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname_or_fid} tid={tid}")
+            LOG.warning(f"{err!r}. forum={fname_or_fid} tid={tid}")
             return False
 
         LOG.info(f"Succeeded. forum={fname_or_fid} tid={tid}")
@@ -2032,7 +2033,7 @@ class Client(object):
             res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
         if int(res_json['error_code']):
-            raise ValueError(res_json['error_msg'])
+            raise TiebaInvalidParam(res_json['error_msg'])
 
     async def del_threads(self, fname_or_fid: Union[str, int], /, tids: List[int], *, block: bool = False) -> bool:
         """
@@ -2065,12 +2066,12 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
+                raise TiebaInvalidParam(res_json['error_msg'])
             if res_json['info']['ret_type']:
-                raise ValueError(res_json['info']['text'])
+                raise TiebaInvalidParam(res_json['info']['text'])
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname_or_fid} tids={tids}")
+            LOG.warning(f"{err!r}. forum={fname_or_fid} tids={tids}")
             return False
 
         LOG.info(f"Succeeded. forum={fname_or_fid} tids={tids}")
@@ -2106,10 +2107,10 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
+                raise TiebaInvalidParam(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname_or_fid} pid={pid}")
+            LOG.warning(f"{err!r}. forum={fname_or_fid} pid={pid}")
             return False
 
         LOG.info(f"Succeeded. forum={fname_or_fid} pid={pid}")
@@ -2147,12 +2148,12 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
+                raise TiebaInvalidParam(res_json['error_msg'])
             if res_json['info']['ret_type']:
-                raise ValueError(res_json['info']['text'])
+                raise TiebaInvalidParam(res_json['info']['text'])
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname_or_fid} pids={pids}")
+            LOG.warning(f"{err!r}. forum={fname_or_fid} pids={pids}")
             return False
 
         LOG.info(f"Succeeded. forum={fname_or_fid} pids={pids}")
@@ -2174,7 +2175,7 @@ class Client(object):
             await self.recover(fname_or_fid, tid=tid, is_hide=True)
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname_or_fid} tid={tid}")
+            LOG.warning(f"{err!r}. forum={fname_or_fid} tid={tid}")
             return False
 
         LOG.info(f"Succeeded. forum={fname_or_fid} tid={tid}")
@@ -2196,7 +2197,7 @@ class Client(object):
             await self.recover(fname_or_fid, tid=tid, is_hide=False)
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname_or_fid} tid={tid}")
+            LOG.warning(f"{err!r}. forum={fname_or_fid} tid={tid}")
             return False
 
         LOG.info(f"Succeeded. forum={fname_or_fid} tid={tid}")
@@ -2218,7 +2219,7 @@ class Client(object):
             await self.recover(fname_or_fid, pid=pid, is_hide=False)
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname_or_fid} pid={pid}")
+            LOG.warning(f"{err!r}. forum={fname_or_fid} pid={pid}")
             return False
 
         LOG.info(f"Succeeded. forum={fname_or_fid} pid={pid}")
@@ -2269,7 +2270,7 @@ class Client(object):
             res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
         if int(res_json['no']):
-            raise ValueError(res_json['error'])
+            raise TiebaInvalidParam(res_json['error'])
 
     async def move(self, fname_or_fid: Union[str, int], /, tid: int, *, to_tab_id: int, from_tab_id: int = 0) -> bool:
         """
@@ -2303,10 +2304,10 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
+                raise TiebaInvalidParam(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname_or_fid} tid={tid}")
+            LOG.warning(f"{err!r}. forum={fname_or_fid} tid={tid}")
             return False
 
         LOG.info(f"Succeeded. forum={fname_or_fid} tid={tid}")
@@ -2340,12 +2341,12 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
+                raise TiebaInvalidParam(res_json['error_msg'])
             if int(res_json['data']['is_push_success']) != 1:
-                raise ValueError(res_json['data']['msg'])
+                raise TiebaInvalidParam(res_json['data']['msg'])
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname_or_fid} tid={tid}")
+            LOG.warning(f"{err!r}. forum={fname_or_fid} tid={tid}")
             return False
 
         LOG.info(f"Succeeded. forum={fname_or_fid} tid={tid}")
@@ -2369,7 +2370,7 @@ class Client(object):
             await self._good(fname_or_fid, tid, cid=cid, is_set=True)
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname_or_fid} cname={cname}")
+            LOG.warning(f"{err!r}. forum={fname_or_fid} cname={cname}")
             return False
 
         LOG.info(f"Succeeded. forum={fname_or_fid} tid={tid}")
@@ -2391,7 +2392,7 @@ class Client(object):
             await self._good(fname_or_fid, tid, is_set=False)
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname_or_fid} tid={tid}")
+            LOG.warning(f"{err!r}. forum={fname_or_fid} tid={tid}")
             return False
 
         LOG.info(f"Succeeded. forum={fname_or_fid} tid={tid}")
@@ -2424,7 +2425,7 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
+                raise TiebaInvalidParam(res_json['error_msg'])
 
             cid = 0
             for item in res_json['cates']:
@@ -2433,7 +2434,7 @@ class Client(object):
                     break
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname} cname={cname}")
+            LOG.warning(f"{err!r}. forum={fname} cname={cname}")
             cid = 0
 
         return cid
@@ -2476,7 +2477,7 @@ class Client(object):
             res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
         if int(res_json['error_code']):
-            raise ValueError(res_json['error_msg'])
+            raise TiebaInvalidParam(res_json['error_msg'])
 
     async def top(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
@@ -2494,7 +2495,7 @@ class Client(object):
             await self._top(fname_or_fid, tid, is_set=True)
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname_or_fid} tid={tid}")
+            LOG.warning(f"{err!r}. forum={fname_or_fid} tid={tid}")
             return False
 
         LOG.info(f"Succeeded. forum={fname_or_fid} tid={tid}")
@@ -2516,7 +2517,7 @@ class Client(object):
             await self._top(fname_or_fid, tid, is_set=False)
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname_or_fid} tid={tid}")
+            LOG.warning(f"{err!r}. forum={fname_or_fid} tid={tid}")
             return False
 
         LOG.info(f"Succeeded. forum={fname_or_fid} tid={tid}")
@@ -2558,7 +2559,7 @@ class Client(object):
             res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
         if int(res_json['error_code']):
-            raise ValueError(res_json['error_msg'])
+            raise TiebaInvalidParam(res_json['error_msg'])
 
     async def get_recovers(self, fname_or_fid: Union[str, int], /, pn: int = 1, name: str = '') -> Recovers:
         """
@@ -2595,12 +2596,12 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['no']):
-                raise ValueError(res_json['error'])
+                raise TiebaInvalidParam(res_json['error'])
 
             recovers = Recovers(res_json)
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname}")
+            LOG.warning(f"{err!r}. forum={fname}")
             recovers = Recovers()
 
         return recovers
@@ -2633,7 +2634,7 @@ class Client(object):
             blacklist_users = BlacklistUsers(soup)
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname}")
+            LOG.warning(f"{err!r}. forum={fname}")
             blacklist_users = BlacklistUsers()
 
         return blacklist_users
@@ -2672,10 +2673,10 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['errno']):
-                raise ValueError(res_json['errmsg'])
+                raise TiebaInvalidParam(res_json['errmsg'])
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname} user={user.user_id}")
+            LOG.warning(f"{err!r}. forum={fname} user={user.user_id}")
             return False
 
         LOG.info(f"Succeeded. forum={fname} user={user.user_id}")
@@ -2715,10 +2716,10 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['errno']):
-                raise ValueError(res_json['errmsg'])
+                raise TiebaInvalidParam(res_json['errmsg'])
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname} user={user.user_id}")
+            LOG.warning(f"{err!r}. forum={fname} user={user.user_id}")
             return False
 
         LOG.info(f"Succeeded. forum={fname} user={user.user_id}")
@@ -2761,12 +2762,12 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['no']):
-                raise ValueError(res_json['error'])
+                raise TiebaInvalidParam(res_json['error'])
 
             appeals = Appeals(res_json)
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname}")
+            LOG.warning(f"{err!r}. forum={fname}")
             appeals = Appeals()
 
         return appeals
@@ -2814,10 +2815,10 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['no']):
-                raise ValueError(res_json['error'])
+                raise TiebaInvalidParam(res_json['error'])
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname}")
+            LOG.warning(f"{err!r}. forum={fname}")
             return False
 
         LOG.info(f"Succeeded. forum={fname}")
@@ -2838,15 +2839,15 @@ class Client(object):
             async with self.session_web.get(img_url, allow_redirects=False) as resp:
                 img_type = resp.content_type.removeprefix('image/')
                 if img_type not in ['jpeg', 'png', 'bmp']:
-                    raise ValueError(f"Content-Type should be jpeg, png or bmp rather than {resp.content_type}")
+                    raise aiohttp.ContentTypeError(f"expect jpeg, png or bmp. got {resp.content_type}")
                 content = await resp.content.read()
 
             image = cv.imdecode(np.frombuffer(content, np.uint8), cv.IMREAD_COLOR)
             if image is None:
-                raise ValueError("Error with opencv.imdecode")
+                raise RuntimeError("error with opencv.imdecode")
 
         except Exception as err:
-            LOG.warning(f"{err}. url={img_url}")
+            LOG.warning(f"{err!r}. url={img_url}")
             image = np.empty(0, dtype=np.uint8)
 
         return image
@@ -2885,10 +2886,10 @@ class Client(object):
                 image = cv.imdecode(np.frombuffer(await resp.content.read(), np.uint8), cv.IMREAD_COLOR)
 
             if image is None:
-                raise ValueError("Error in opencv.imdecode")
+                raise RuntimeError("error in opencv.imdecode")
 
         except Exception as err:
-            LOG.warning(f"{err}. user={user}")
+            LOG.warning(f"{err!r}. user={user}")
             image = np.empty(0, dtype=np.uint8)
 
         return image
@@ -2920,12 +2921,12 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
+                raise TiebaInvalidParam(res_json['error_msg'])
 
             msg = {k: bool(int(v)) for k, v in res_json['message'].items()}
 
         except Exception as err:
-            LOG.warning(err)
+            LOG.warning(repr(err))
             msg = {
                 'fans': False,
                 'replyme': False,
@@ -2963,12 +2964,12 @@ class Client(object):
                 res_proto.ParseFromString(await resp.content.read())
 
             if int(res_proto.error.errorno):
-                raise ValueError(res_proto.error.errmsg)
+                raise TiebaInvalidParam(res_proto.error.errmsg)
 
             replys = Replys(res_proto.data)
 
         except Exception as err:
-            LOG.warning(err)
+            LOG.warning(repr(err))
             replys = Replys()
 
         return replys
@@ -2998,12 +2999,12 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODE_FUNC, content_type=None)
 
             if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
+                raise TiebaInvalidParam(res_json['error_msg'])
 
             ats = Ats(res_json)
 
         except Exception as err:
-            LOG.warning(err)
+            LOG.warning(repr(err))
             ats = Ats()
 
         return ats
@@ -3025,7 +3026,7 @@ class Client(object):
             return await self._get_user_contents(user, pn, is_thread=True, public_only=True)
 
         except Exception as err:
-            LOG.warning(f"{err}. user={user}")
+            LOG.warning(f"{err!r}. user={user}")
             return []
 
     async def get_self_threads(self, pn: int = 1) -> List[NewThread]:
@@ -3045,7 +3046,7 @@ class Client(object):
             return await self._get_user_contents(user, pn, is_thread=True)
 
         except Exception as err:
-            LOG.warning(f"{err}. user={user}")
+            LOG.warning(f"{err!r}. user={user}")
             return []
 
     async def get_self_posts(self, pn: int = 1) -> List[UserPosts]:
@@ -3065,7 +3066,7 @@ class Client(object):
             return await self._get_user_contents(user, pn, is_thread=False)
 
         except Exception as err:
-            LOG.warning(f"{err}. user={user}")
+            LOG.warning(f"{err!r}. user={user}")
             return []
 
     async def get_user_threads(self, _id: Union[str, int], pn: int = 1) -> List[NewThread]:
@@ -3089,7 +3090,7 @@ class Client(object):
             return await self._get_user_contents(user, pn)
 
         except Exception as err:
-            LOG.warning(f"{err}. user={user}")
+            LOG.warning(f"{err!r}. user={user}")
             return []
 
     async def _get_user_contents(
@@ -3128,7 +3129,7 @@ class Client(object):
             res_proto.ParseFromString(await resp.content.read())
 
         if int(res_proto.error.errorno):
-            raise ValueError(res_proto.error.errmsg)
+            raise TiebaInvalidParam(res_proto.error.errmsg)
 
         res_data_proto = res_proto.data
         if is_thread:
@@ -3178,12 +3179,12 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODE_FUNC, content_type=None)
 
             if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
+                raise TiebaInvalidParam(res_json['error_msg'])
 
             fans = Fans(res_json)
 
         except Exception as err:
-            LOG.warning(err)
+            LOG.warning(repr(err))
             fans = Fans()
 
         return fans
@@ -3223,12 +3224,12 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODE_FUNC, content_type=None)
 
             if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
+                raise TiebaInvalidParam(res_json['error_msg'])
 
             follows = Follows(res_json)
 
         except Exception as err:
-            LOG.warning(err)
+            LOG.warning(repr(err))
             follows = Follows()
 
         return follows
@@ -3259,12 +3260,12 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['errno']):
-                raise ValueError(res_json['errmsg'])
+                raise TiebaInvalidParam(res_json['errmsg'])
 
             self_follow_forums = SelfFollowForums(res_json)
 
         except Exception as err:
-            LOG.warning(err)
+            LOG.warning(repr(err))
             self_follow_forums = SelfFollowForums()
 
         return self_follow_forums
@@ -3296,12 +3297,12 @@ class Client(object):
                 res_proto.ParseFromString(await resp.content.read())
 
             if int(res_proto.error.errorno):
-                raise ValueError(res_proto.error.errmsg)
+                raise TiebaInvalidParam(res_proto.error.errmsg)
 
             dislike_forums = DislikeForums(res_proto.data)
 
         except Exception as err:
-            LOG.warning(err)
+            LOG.warning(repr(err))
             dislike_forums = DislikeForums()
 
         return dislike_forums
@@ -3326,7 +3327,7 @@ class Client(object):
             await self._agree(tid, pid)
 
         except Exception as err:
-            LOG.warning(f"{err}. tid={tid} pid={pid}")
+            LOG.warning(f"{err!r}. tid={tid} pid={pid}")
             return False
 
         LOG.info(f"Succeeded. tid={tid} pid={pid}")
@@ -3348,7 +3349,7 @@ class Client(object):
             await self._agree(tid, pid, is_undo=True)
 
         except Exception as err:
-            LOG.warning(f"{err}. tid={tid} pid={pid}")
+            LOG.warning(f"{err!r}. tid={tid} pid={pid}")
             return False
 
         LOG.info(f"Succeeded. tid={tid} pid={pid}")
@@ -3370,7 +3371,7 @@ class Client(object):
             await self._agree(tid, pid, is_disagree=True)
 
         except Exception as err:
-            LOG.warning(f"{err}. tid={tid} pid={pid}")
+            LOG.warning(f"{err!r}. tid={tid} pid={pid}")
             return False
 
         LOG.info(f"Succeeded. tid={tid} pid={pid}")
@@ -3392,7 +3393,7 @@ class Client(object):
             await self._agree(tid, pid, is_disagree=True, is_undo=True)
 
         except Exception as err:
-            LOG.warning(f"{err}. tid={tid} pid={pid}")
+            LOG.warning(f"{err!r}. tid={tid} pid={pid}")
             return False
 
         LOG.info(f"Succeeded. tid={tid} pid={pid}")
@@ -3431,7 +3432,7 @@ class Client(object):
             res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
         if int(res_json['error_code']):
-            raise ValueError(res_json['error_msg'])
+            raise TiebaInvalidParam(res_json['error_msg'])
 
     async def remove_fan(self, _id: Union[str, int]):
         """
@@ -3463,10 +3464,10 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
+                raise TiebaInvalidParam(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"{err}. user={user}")
+            LOG.warning(f"{err!r}. user={user}")
             return False
 
         LOG.info(f"Succeeded. user={user}")
@@ -3502,10 +3503,10 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
+                raise TiebaInvalidParam(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"{err}. user={user}")
+            LOG.warning(f"{err!r}. user={user}")
             return False
 
         LOG.info(f"Succeeded. user={user}")
@@ -3541,10 +3542,10 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
+                raise TiebaInvalidParam(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"{err}. user={user}")
+            LOG.warning(f"{err!r}. user={user}")
             return False
 
         LOG.info(f"Succeeded. user={user}")
@@ -3577,12 +3578,12 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
+                raise TiebaInvalidParam(res_json['error_msg'])
             if int(res_json['error']['errno']):
-                raise ValueError(res_json['error']['errmsg'])
+                raise TiebaInvalidParam(res_json['error']['errmsg'])
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname_or_fid}")
+            LOG.warning(f"{err!r}. forum={fname_or_fid}")
             return False
 
         LOG.info(f"Succeeded. forum={fname_or_fid}")
@@ -3615,10 +3616,10 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
+                raise TiebaInvalidParam(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname_or_fid}")
+            LOG.warning(f"{err!r}. forum={fname_or_fid}")
             return False
 
         LOG.info(f"Succeeded. forum={fname_or_fid}")
@@ -3655,10 +3656,10 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
+                raise TiebaInvalidParam(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname_or_fid}")
+            LOG.warning(f"{err!r}. forum={fname_or_fid}")
             return False
 
         LOG.info(f"Succeeded. forum={fname_or_fid}")
@@ -3691,10 +3692,10 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
+                raise TiebaInvalidParam(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname_or_fid}")
+            LOG.warning(f"{err!r}. forum={fname_or_fid}")
             return False
 
         LOG.info(f"Succeeded. forum={fname_or_fid}")
@@ -3732,10 +3733,10 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
+                raise TiebaInvalidParam(res_json['error_msg'])
 
         except Exception as err:
-            LOG.warning(f"{err}. tid={tid}")
+            LOG.warning(f"{err!r}. tid={tid}")
             return False
 
         LOG.info(f"Succeeded. tid={tid}")
@@ -3771,12 +3772,12 @@ class Client(object):
 
             error_code = int(res_json['error_code'])
             if error_code:
-                raise ValueError(res_json['error_msg'])
+                raise TiebaInvalidParam(res_json['error_msg'])
             if int(res_json['user_info']['sign_bonus_point']) == 0:
-                raise ValueError("sign_bonus_point is 0")
+                raise TiebaInvalidParam("sign_bonus_point is 0")
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname}")
+            LOG.warning(f"{err!r}. forum={fname}")
             if error_code in [160002, 340006]:
                 # 已经签过或吧被屏蔽
                 return True
@@ -3847,12 +3848,12 @@ class Client(object):
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
             if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
+                raise TiebaInvalidParam(res_json['error_msg'])
             if int(res_json['info']['need_vcode']):
-                raise ValueError("need verify code")
+                raise TiebaInvalidParam("need verify code")
 
         except Exception as err:
-            LOG.warning(f"{err}. forum={fname} tid={tid}")
+            LOG.warning(f"{err!r}. forum={fname} tid={tid}")
             return False
 
         LOG.info(f"Succeeded. forum={fname} tid={tid}")
@@ -3890,12 +3891,12 @@ class Client(object):
             res_proto = CommitPersonalMsgResIdl_pb2.CommitPersonalMsgResIdl()
             res_proto.ParseFromString(await resp.read(timeout=5))
             if int(res_proto.error.errorno):
-                raise ValueError(res_proto.error.errmsg)
+                raise TiebaInvalidParam(res_proto.error.errmsg)
             if int(res_proto.data.blockInfo.blockErrno):
-                raise ValueError(res_proto.data.blockInfo.blockErrmsg)
+                raise TiebaInvalidParam(res_proto.data.blockInfo.blockErrmsg)
 
         except Exception as err:
-            LOG.warning(f"{err}. user={user}")
+            LOG.warning(f"{err!r}. user={user}")
             return False
 
         LOG.info(f"Succeeded. user={user}")

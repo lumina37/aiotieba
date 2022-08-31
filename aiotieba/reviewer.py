@@ -366,7 +366,7 @@ class _ReviewUtils(object):
         try:
             data = self.qrdetector.detectAndDecode(image)[0]
         except Exception as err:
-            LOG.warning(err)
+            LOG.warning(repr(err))
             data = ''
 
         return data
@@ -386,7 +386,7 @@ class _ReviewUtils(object):
             img_hash_array = self.img_hasher.compute(image)
             img_hash = binascii.hexlify(img_hash_array.tobytes()).decode('ascii')
         except Exception as err:
-            LOG.warning(err)
+            LOG.warning(repr(err))
             img_hash = ''
 
         return img_hash
