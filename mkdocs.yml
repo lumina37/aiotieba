@@ -3,7 +3,8 @@ site_url: https://v-8.top/
 theme:
   name: material
   features:
-          - navigation.sections
+    - navigation.sections
+  language: zh
 
 repo_name: Starry-OvO/Tieba-Manager
 repo_url: https://github.com/Starry-OvO/Tieba-Manager

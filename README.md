@@ -34,9 +34,9 @@
 <summary>贴吧接口列表</summary>
 
 + 按回复时间/发布时间/热门序获取贴吧主题帖/精华帖列表。支持获取带转发/投票/转发嵌套投票/各种卡片的主题帖信息
-+ 获取带图片链接/小尾巴内容/点赞情况/用户信息（[用户名](docs/tutorial.md#user_name)/[portrait](docs/tutorial.md#portrait)/[user_id](docs/tutorial.md#user_id)/等级/性别/是否锁回复）/每条回复的前排楼中楼（支持按或不按点赞数排序）的楼层列表
++ 获取带图片链接/小尾巴内容/点赞情况/用户信息（[用户名](https://starry-ovo.github.io/Tieba-Manager/tutorials/quickstart#user_name)/[portrait](https://starry-ovo.github.io/Tieba-Manager/tutorials/quickstart#portrait)/[user_id](https://starry-ovo.github.io/Tieba-Manager/tutorials/quickstart#user_id)/等级/性别/是否锁回复）/每条回复的前排楼中楼（支持按或不按点赞数排序）的楼层列表
 + 获取带所有前述用户信息的楼中楼列表
-+ 根据[用户名](docs/tutorial.md#user_name)/[portrait](docs/tutorial.md#portrait)/[user_id](docs/tutorial.md#user_id)中的任一项反查其他用户信息，或通过用户主页的[tieba_uid](docs/tutorial.md#tieba_uid)反查其他用户信息
++ 根据[用户名](https://starry-ovo.github.io/Tieba-Manager/tutorials/quickstart#user_name)/[portrait](https://starry-ovo.github.io/Tieba-Manager/tutorials/quickstart#portrait)/[user_id](https://starry-ovo.github.io/Tieba-Manager/tutorials/quickstart#user_id)中的任一项反查其他用户信息，或通过用户主页的[tieba_uid](https://starry-ovo.github.io/Tieba-Manager/tutorials/quickstart#tieba_uid)反查其他用户信息
 + 使用小吧主、语音小编的账号删帖/屏蔽/封禁。支持删除视频帖/批量删帖/多于1天的封禁
 + 使用已被大吧主分配解封/恢复/处理申诉权限的吧务账号解封/恢复/处理申诉
 + 使用大吧主账号推荐帖子到首页/移动帖子到指定分区/加精/撤精/置顶/撤置顶/添加黑名单/查看黑名单/取消黑名单
@@ -81,7 +81,7 @@ async def main():
 asyncio.run(main())
 ```
 
-+ 继续阅读[**入门教程**](docs/quickstart.md)
++ 继续阅读[**入门教程**](https://starry-ovo.github.io/Tieba-Manager/tutorials/quickstart)
 
 ## 友情链接
 

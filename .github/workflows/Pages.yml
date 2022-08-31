@@ -4,10 +4,12 @@ on:
   push:
     branches: [ develop ]
     paths:
+      - "mkdocs.yml"
       - "docs/**"
   pull_request:
     branches: [ develop ]
     paths:
+      - "mkdocs.yml"
       - "docs/**"
 
 jobs:

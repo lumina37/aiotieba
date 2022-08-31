@@ -10,7 +10,9 @@
 
 ## 先看使用案例
 
-### 如何删除一个主题帖并顺便封楼主十天
+### 案例1
+
+*如何删除一个主题帖并顺便封楼主十天*
 
 发现一个违规主题帖
 
@@ -41,7 +43,9 @@
 
 <img width="80%" alt="1_4_3" src="https://user-images.githubusercontent.com/48282276/171668249-798c08f6-2fba-4fea-8186-079937a291e8.png">
 
-## 如何在app不依赖任何现有发言封禁任意用户十天
+### 案例2
+
+*如何在app不依赖任何现有发言封禁任意用户十天*
 
 先在目标用户的个人主页复制包含其[`tieba_uid`](quickstart.md#tieba_uid)的字符串
 
@@ -64,7 +68,9 @@
 
 <img width="80%" alt="2_3" src="https://user-images.githubusercontent.com/48282276/160992854-04d2128b-934c-4ba1-9a22-11d768c6989d.png">
 
-## 如何删除一条违规回复并顺便封层主三天
+### 案例3
+
+*如何删除一条违规回复并顺便封层主三天*
 
 点一下需要删除的楼层拉起回复框<br>
 先`@v_guard`并确保@变蓝<br>
@@ -84,7 +90,9 @@
 
 <img width="80%" alt="3_2_2" src="https://user-images.githubusercontent.com/48282276/160995724-63c9afd8-bf41-454b-8647-7858461d6c72.png">
 
-## 网页端如何解封任意用户
+### 案例4
+
+*网页端如何解封任意用户*
 
 点开用户主页，在链接里找到一串`tb.1.`开头的东西，这个东西叫[`portrait`](quickstart.md#portrait)<br>
 每个用户都有唯一的[`portrait`](quickstart.md#portrait)<br>
