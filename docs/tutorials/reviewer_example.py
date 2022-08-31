@@ -88,7 +88,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     async def main():
-        async with MyReviewer('kybg', '抗压背锅') as reviewer:
+        async with MyReviewer('default', '在这里填你要审查的贴吧名') as reviewer:
             if args.no_dbg:
                 await reviewer.review_loop()
             else:

@@ -26,7 +26,7 @@ from Crypto.PublicKey import RSA
 from google.protobuf.json_format import ParseDict
 
 from ._config import CONFIG
-from ._exceptions import TiebaServerError
+from ._exceptions import ContentTypeError, TiebaServerError
 from ._helpers import JSON_DECODE_FUNC
 from ._logger import LOG
 from .protobuf import (
@@ -2839,7 +2839,7 @@ class Client(object):
             async with self.session_web.get(img_url, allow_redirects=False) as resp:
                 img_type = resp.content_type.removeprefix('image/')
                 if img_type not in ['jpeg', 'png', 'bmp']:
-                    raise aiohttp.ContentTypeError(f"expect jpeg, png or bmp. got {resp.content_type}")
+                    raise ContentTypeError(f"expect jpeg, png or bmp. got {resp.content_type}")
                 content = await resp.content.read()
 
             image = cv.imdecode(np.frombuffer(content, np.uint8), cv.IMREAD_COLOR)

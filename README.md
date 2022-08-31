@@ -1,41 +1,48 @@
+<p align="center">
+
+<img src="docs/img/aiotieba.svg">
+
+</p>
+
 <div align="center">
-
-![Tieba-Manager](https://socialify.git.ci/Starry-OvO/Tieba-Manager/image?description=1&descriptionEditable=Asynchronous%20I%2FO%20Client%2FReviewer%20for%20Baidu%20Tieba&font=Bitter&language=1&logo=https%3A%2F%2Favatars.githubusercontent.com%2Fu%2F48282276&name=1&owner=1&pattern=Circuit%20Board&theme=Dark)
-
-[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/Starry-OvO/Tieba-Manager/CI?label=CI&logo=github)](https://github.com/Starry-OvO/Tieba-Manager/actions)
-[![PyPI version](https://badge.fury.io/py/aiotieba.svg)](https://badge.fury.io/py/aiotieba)
-[![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/Starry-OvO/Tieba-Manager?logo=lgtm)](https://lgtm.com/projects/g/Starry-OvO/Tieba-Manager/context:python)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/aiotieba)](https://pypi.org/project/aiotieba)
-
+<p>
+<a href="https://github.com/Starry-OvO/Tieba-Manager/actions">
+    <img src="https://img.shields.io/github/workflow/status/Starry-OvO/Tieba-Manager/CI?label=CI&logo=github" alt="GitHub Workflow Status">
+</a>
+<a href="https://pypi.org/project/aiotieba">
+    <img src="https://badge.fury.io/py/aiotieba.svg" alt="PyPI version">
+</a>
+<a href="https://lgtm.com/projects/g/Starry-OvO/Tieba-Manager/context:python">
+    <img src="https://img.shields.io/lgtm/grade/python/g/Starry-OvO/Tieba-Manager?logo=lgtm" alt="PyPI version">
+</a>
+<a href="https://pypi.org/project/aiotieba">
+    <img src="https://img.shields.io/pypi/pyversions/aiotieba" alt="PyPI - Python Version">
+</a>
+</p>
 </div>
+
+---
 
 ## 简介
 
-**aiotieba**使用[**asyncio**](https://tutorials.python.org/zh-cn/3/library/asyncio.html)和[**aiohttp**](https://github.com/aio-libs/aiohttp)还原了**百度贴吧客户端**的[大部分核心接口](aiotieba/client.py)，并为吧务管理设计了一套[内容审查脚手架](aiotieba/reviewer.py)
+**aiotieba**使用[**asyncio**](https://tutorials.python.org/zh-cn/3/library/asyncio.html)和[**aiohttp**](https://github.com/aio-libs/aiohttp)还原了百度贴吧客户端的[大部分核心接口](https://github.com/Starry-OvO/Tieba-Manager/blob/master/aiotieba/client.py)
+
+并为吧务管理设计了一套[内容审查脚手架](https://github.com/Starry-OvO/Tieba-Manager/blob/master/aiotieba/reviewer.py)
 
 <details>
 
 <summary>贴吧接口列表</summary>
 
-> 按**回复时间**/**发布时间**/**热门序**获取贴吧**主题帖**/**精华帖列表**。支持获取带**转发**/**投票**/**转发嵌套投票**/**各种卡片**的主题帖信息
-> 
-> 获取带**图片链接**/**小尾巴内容**/**点赞情况**/**用户信息**（[**用户名**](tutorials/tutorial.md#user_name)/[**portrait**](tutorials/tutorial.md#portrait)/[**user_id**](tutorials/tutorial.md#user_id)/**等级**/**性别**/**是否锁回复**）/每条回复的**前排楼中楼**（支持按或不按点赞数排序）的**楼层列表**
-> 
-> 获取带所有前述用户信息的**楼中楼列表**
-> 
-> 根据[**用户名**](tutorials/tutorial.md#user_name)/[**portrait**](tutorials/tutorial.md#portrait)/[**user_id**](tutorials/tutorial.md#user_id)中的任一项反查其他用户信息，或通过用户主页的[**tieba_uid**](tutorials/tutorial.md#tieba_uid)反查其他用户信息
-> 
-> 使用小吧主、语音小编的账号**删帖**/**屏蔽**/**封禁**。支持**删除视频帖**/**批量删帖**/**多于1天的封禁**
-> 
-> 使用已被大吧主分配解封/恢复/处理申诉权限的吧务账号**解封**/**恢复**/**处理申诉**
-> 
-> 使用大吧主账号**推荐帖子到首页**/**移动帖子到指定分区**/**加精**/**撤精**/**置顶**/**撤置顶**/**添加黑名单**/**查看黑名单**/**取消黑名单**
-> 
-> 获取其他用户的**主页信息**/**关注贴吧列表**/**关注用户列表**/**粉丝列表**/**发布的主题帖列表**
-> 
-> 使用当前账号**关注贴吧**/**取关贴吧**/**关注用户**/**取关用户**/**移除粉丝**/**获取屏蔽贴吧列表**/**屏蔽贴吧**/**取消屏蔽贴吧**/**点赞点踩**/**取消点赞点踩**/**签到**/**水帖**/**发送私信**/**获取回复历史**
-> 
-> 获取一个贴吧的**最新关注用户列表**/**等级排行榜**/**吧务列表**/**吧详情**
++ 按回复时间/发布时间/热门序获取贴吧主题帖/精华帖列表。支持获取带转发/投票/转发嵌套投票/各种卡片的主题帖信息
++ 获取带图片链接/小尾巴内容/点赞情况/用户信息（[用户名](docs/tutorial.md#user_name)/[portrait](docs/tutorial.md#portrait)/[user_id](docs/tutorial.md#user_id)/等级/性别/是否锁回复）/每条回复的前排楼中楼（支持按或不按点赞数排序）的楼层列表
++ 获取带所有前述用户信息的楼中楼列表
++ 根据[用户名](docs/tutorial.md#user_name)/[portrait](docs/tutorial.md#portrait)/[user_id](docs/tutorial.md#user_id)中的任一项反查其他用户信息，或通过用户主页的[tieba_uid](docs/tutorial.md#tieba_uid)反查其他用户信息
++ 使用小吧主、语音小编的账号删帖/屏蔽/封禁。支持删除视频帖/批量删帖/多于1天的封禁
++ 使用已被大吧主分配解封/恢复/处理申诉权限的吧务账号解封/恢复/处理申诉
++ 使用大吧主账号推荐帖子到首页/移动帖子到指定分区/加精/撤精/置顶/撤置顶/添加黑名单/查看黑名单/取消黑名单
++ 获取其他用户的主页信息/关注贴吧列表/关注用户列表/粉丝列表/发布的主题帖列表
++ 使用当前账号关注贴吧/取关贴吧/关注用户/取关用户/移除粉丝/获取屏蔽贴吧列表/屏蔽贴吧/取消屏蔽贴吧/点赞点踩/取消点赞点踩/签到/水帖/发送私信/获取回复历史
++ 获取一个贴吧的最新关注用户列表/等级排行榜/吧务列表/吧详情
 
 </details>
 
@@ -43,9 +50,8 @@
 
 <summary>额外的审查功能列表</summary>
 
-> 数据库功能：**缓存贴吧常量**（如贴吧名到fid的映射关系、用户基本信息等）/**为用户添加标记**/**为帖子或回复添加标记**/**为图像hash添加标记**
-> 
-> 图像处理功能：**图像解码**/**二维码解析**/**图像hash计算**
++ 数据库功能：缓存贴吧常量（如贴吧名到fid的映射关系、用户基本信息等）/为用户添加标记/为帖子或回复添加标记/为图像hash添加标记
++ 图像处理功能：图像解码/二维码解析/图像hash计算
 
 </details>
 
@@ -55,7 +61,7 @@
 
 + 安装
 
-```bash
+```shell
 pip install aiotieba[img]
 ```
 
@@ -75,7 +81,7 @@ async def main():
 asyncio.run(main())
 ```
 
-+ 继续阅读[**入门教程**](tutorials/tutorial.md)
++ 继续阅读[**入门教程**](docs/quickstart.md)
 
 ## 友情链接
 
