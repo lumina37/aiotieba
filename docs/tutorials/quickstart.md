@@ -13,6 +13,7 @@
 `BDUSS`是一串由纯`ascii`字符组成的，长度为`192`的字符串
 
 !!! warning
+
     使用`BDUSS`可以完成**一切**不需要手机/邮箱验证码的操作，包括**发帖**/**发私信**/**获取账号上的所有历史发言**
 
     `BDUSS`不会在一段时间后过期，只能通过退出登录或修改密码使其失效
@@ -144,7 +145,7 @@ import aiotieba
 
 async def main():
     async with aiotieba.Client() as client:
-        print(await client.get_threads("图拉丁"))
+        print(await client.get_threads("天堂鸡汤"))
 
 
 asyncio.run(main())

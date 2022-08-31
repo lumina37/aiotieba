@@ -25,9 +25,9 @@
 
 ## 简介
 
-**aiotieba**使用[**asyncio**](https://tutorials.python.org/zh-cn/3/library/asyncio.html)和[**aiohttp**](https://github.com/aio-libs/aiohttp)还原了百度贴吧客户端的[大部分核心接口](https://github.com/Starry-OvO/Tieba-Manager/blob/master/aiotieba/client.py)
+**aiotieba**使用[**asyncio**](https://tutorials.python.org/zh-cn/3/library/asyncio.html)和[**aiohttp**](https://github.com/aio-libs/aiohttp)封装了百度贴吧客户端的[大部分核心接口](https://github.com/Starry-OvO/Tieba-Manager/blob/master/aiotieba/client.py)，并为吧务管理设计了一套[内容审查脚手架](https://github.com/Starry-OvO/Tieba-Manager/blob/master/aiotieba/reviewer.py)
 
-并为吧务管理设计了一套[内容审查脚手架](https://github.com/Starry-OvO/Tieba-Manager/blob/master/aiotieba/reviewer.py)
+本框架以提高二次开发速度为首要设计目标。规范且符合直觉的命名规律、全覆盖的类型注解和文档注释让你体验飞一般的开发体验
 
 <details>
 
@@ -75,7 +75,7 @@ import aiotieba
 
 async def main():
     async with aiotieba.Client() as client:
-        print(await client.get_threads("图拉丁"))
+        print(await client.get_threads("天堂鸡汤"))
 
 
 asyncio.run(main())
@@ -96,20 +96,20 @@ asyncio.run(main())
 
 |      吧名      | 关注用户数 | 最近29天日均访问量 | 日均主题帖数 | 日均回复数 |
 | :------------: | :--------: | :----------------: | :----------: | :--------: |
-|    抗压背锅    | 3,989,658  |     1,583,581      |    4,406     |  116,392   |
-|     孙笑川     | 2,395,282  |      783,147       |    8,954     |  243,482   |
-|    lol半价     | 1,957,717  |       99,815       |     264      |   4,929    |
-|      宫漫      | 1,320,540  |       48,198       |     234      |   3,543    |
-|    逆水寒ol    |  714,484   |       37,790       |     121      |   2,784    |
-|    新孙笑川    |  324,601   |       70,238       |     559      |   25,027   |
-|     vtuber     |  212,816   |       12,869       |      75      |    767     |
-|     asoul      |  158,216   |       20,808       |     203      |   1,214    |
-|      嘉然      |   56,696   |       21,482       |     160      |   2,357    |
-|      向晚      |   29,343   |       15,676       |     143      |   1,949    |
-|      贝拉      |   21,657   |       10,774       |      56      |    948     |
-|      乃琳      |   17,151   |       5,612        |      35      |    443     |
-| vtuber自由讨论 |   16,737   |       4,575        |      4       |     93     |
-| asoul一个魂儿  |   14,658   |       1,152        |      7       |     57     |
-|     贝贝珈     |   1,638    |        915         |      2       |     22     |
+|    抗压背锅    | 3,992,158  |     1,538,625      |    4,324     |  115,934   |
+|     孙笑川     | 2,400,028  |      782,985       |    9,011     |  245,697   |
+|    lol半价     | 1,957,751  |      100,118       |     267      |   4,987    |
+|      宫漫      | 1,320,835  |       48,343       |     235      |   3,574    |
+|    逆水寒ol    |  714,499   |       38,079       |     121      |   2,864    |
+|    新孙笑川    |  325,473   |       71,163       |     562      |   25,377   |
+|     vtuber     |  212,849   |       12,783       |      75      |    780     |
+|     asoul      |  158,222   |       19,937       |     190      |   1,119    |
+|      嘉然      |   56,697   |       21,123       |     158      |   2,333    |
+|      向晚      |   29,352   |       15,428       |     140      |   1,908    |
+|      贝拉      |   21,657   |       10,551       |      55      |    920     |
+|      乃琳      |   17,148   |       5,351        |      33      |    399     |
+| vtuber自由讨论 |   16,738   |       4,543        |      3       |     85     |
+| asoul一个魂儿  |   14,655   |       1,127        |      7       |     54     |
+|     贝贝珈     |   1,639    |        892         |      1       |     21     |
 
 </details>

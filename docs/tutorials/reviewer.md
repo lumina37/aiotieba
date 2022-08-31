@@ -2,11 +2,11 @@
 
 ## 这是什么？
 
-[reviewer](https://github.com/Starry-OvO/Tieba-Manager/blob/master/aiotieba/reviewer.py)是一个以aiotieba为基础开发的云审查脚手架，它支持高自由度的删帖规则和极高的扫描频率
+[reviewer](https://github.com/Starry-OvO/Tieba-Manager/blob/master/aiotieba/reviewer.py)是一个以aiotieba为基础开发的云审查脚手架，它支持高自由度的可快速应变的删帖规则和极高的扫描频率
 
 ## 扫描范围
 
-在我给出的范例[reviewer_example.py](reviewer_example.py)中，在贴吧服务端不出现故障的理想情况下，扫描可以完全覆盖抗吧首页的每一条内容
+在我给出的范例[reviewer_example.py](https://github.com/Starry-OvO/Tieba-Manager/blob/master/docs/tutorials/reviewer_example.py)中，在贴吧服务端不出现故障的理想情况下，扫描可以完全覆盖抗吧首页的每一条内容
 
 通过适当的配置，审查工具可以检查以上内容中是否存在：
 
@@ -56,7 +56,7 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
-自定义审查行为：请参照我给出的例子自己编程修改[reviewer_example.py](reviewer_example.py)，这是[抗压背锅吧](https://tieba.baidu.com/f?kw=%E6%8A%97%E5%8E%8B%E8%83%8C%E9%94%85&ie=utf-8)审查规则的一个脱敏精简版本
+自定义审查行为：请参照我给出的例子自己编程修改[reviewer_example.py](https://github.com/Starry-OvO/Tieba-Manager/blob/master/docs/tutorials/reviewer_example.py)，这是[抗压背锅吧](https://tieba.baidu.com/f?kw=%E6%8A%97%E5%8E%8B%E8%83%8C%E9%94%85&ie=utf-8)审查规则的一个脱敏精简版本
 
 运行`your_reviewer.py`（对`Windows`平台，建议使用`pythonw.exe`无窗口运行，对`Linux`平台，建议使用如下的`nohup`指令在后台运行）
 

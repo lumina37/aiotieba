@@ -7,14 +7,12 @@ on:
       - "aiotieba/**"
       - "tests/**"
       - ".github/workflows/CI*"
-      - "pyproject.toml"
   pull_request:
     branches: [ develop ]
     paths:
       - "aiotieba/**"
       - "tests/**"
       - ".github/workflows/CI*"
-      - "pyproject.toml"
 
 jobs:
   test:
