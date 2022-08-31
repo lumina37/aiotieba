@@ -43,11 +43,12 @@ from .protobuf import (
     GetUserByTiebaUidResIdl_pb2,
     GetUserInfoReqIdl_pb2,
     GetUserInfoResIdl_pb2,
-    NewThreadInfo_pb2,
     PbFloorReqIdl_pb2,
     PbFloorResIdl_pb2,
     PbPageReqIdl_pb2,
     PbPageResIdl_pb2,
+    ProfileReqIdl_pb2,
+    ProfileResIdl_pb2,
     ReplyMeReqIdl_pb2,
     ReplyMeResIdl_pb2,
     SearchPostForumReqIdl_pb2,
@@ -194,7 +195,7 @@ class Client(object):
         '_ws_dispatcher',
     ]
 
-    latest_version: ClassVar[str] = "12.28.0.0"  # 这是目前的最新版本
+    latest_version: ClassVar[str] = "12.28.1.0"  # 这是目前的最新版本
     # no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
     post_version: ClassVar[str] = "9.1.0.0"  # 发帖使用极速版
 
@@ -910,8 +911,13 @@ class Client(object):
         user = UserInfo(_id)
         if user.user_id:
             return await self._user_id2user_info(user)
+        elif user.portrait:
+            user, _ = await self.get_homepage(user.portrait, with_threads=False)
+            return user
         else:
-            return await self._id2user_info(user)
+            user = await self._user_name2basic_user_info(user)
+            user, _ = await self.get_homepage(user.portrait, with_threads=False)
+            return user
 
     async def get_basic_user_info(self, _id: Union[str, int]) -> BasicUserInfo:
         """
@@ -930,7 +936,8 @@ class Client(object):
         elif user.user_name:
             return await self._user_name2basic_user_info(user)
         else:
-            return await self._id2basic_user_info(user)
+            user, _ = await self.get_homepage(user.portrait, with_threads=False)
+            return user
 
     async def _id2user_info(self, user: UserInfo) -> UserInfo:
         """
@@ -1631,56 +1638,53 @@ class Client(object):
 
         return square_forums
 
-    async def get_homepage(self, _id: Union[str, int]) -> Tuple[UserInfo, List[NewThread]]:
+    async def get_homepage(
+        self, _id: Union[str, int], *, with_threads: bool = True
+    ) -> Tuple[UserInfo, List[NewThread]]:
         """
         获取用户个人页信息
 
         Args:
-            _id (str | int): 待获取用户的id user_id/user_name/portrait 优先portrait
+            _id (str | int): 待获取用户的id user_id/user_name/portrait 优先user_id次优先portrait
+            with_threads (bool, optional): True则同时请求主页帖子列表 False则返回的threads为空. Defaults to True.
 
         Returns:
             tuple[UserInfo, list[NewThread]]: 用户信息, list[帖子信息]
         """
 
-        if not BasicUserInfo.is_portrait(_id):
+        if not BasicUserInfo.is_user_id(_id) and not BasicUserInfo.is_portrait(_id):
             user = await self.get_basic_user_info(_id)
         else:
             user = BasicUserInfo(_id)
 
-        payload = [
-            ('_client_type', '2'),  # 删除该字段会导致post_list为空
-            ('_client_version', self.latest_version),  # 删除该字段会导致post_list和dynamic_list为空
-            ('friend_uid_portrait', user.portrait),
-            ('need_post_count', '1'),  # 删除该字段会导致无法获取发帖回帖数量
-            # ('uid', user_id),  # 用该字段检查共同关注的吧
-        ]
+        req_proto = ProfileReqIdl_pb2.ProfileReqIdl()
+        req_proto.data.common._client_version = self.latest_version  # 删除该字段会导致post_list和dynamic_list为空
+        if user.user_id:
+            req_proto.data.friend_uid = user.user_id
+        else:
+            req_proto.data.friend_uid_portrait = user.portrait
+        if with_threads:
+            req_proto.data.need_post_count = 1
+            req_proto.data.common._client_type = 2  # 删除该字段会导致post_list为空
+        req_proto.data.pn = 1
+        req_proto.data.rn = 20
+        # req_proto.data.uid = (await self.get_self_info()).user_id  # 用该字段检查共同关注的吧
 
         try:
-            async with self.session_app.post(
-                yarl.URL.build(path="/c/u/user/profile"),
-                data=self.pack_form(payload),
+            async with self.session_app_proto.post(
+                yarl.URL.build(path="/c/u/user/profile", query_string="cmd=303012"),
+                data=self.pack_proto_bytes(req_proto.SerializeToString()),
             ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODE_FUNC, content_type=None)
+                res_proto = ProfileResIdl_pb2.ProfileResIdl()
+                res_proto.ParseFromString(await resp.content.read())
 
-            if int(res_json['error_code']):
-                raise ValueError(res_json['error_msg'])
-            if 'user' not in res_json:
-                raise ValueError("invalid params")
+            if int(res_proto.error.errorno):
+                raise ValueError(res_proto.error.errmsg)
 
-            user = UserInfo(_raw_data=ParseDict(res_json['user'], User_pb2.User(), ignore_unknown_fields=True))
-
-            def _pack_thread_dict(thread_dict: dict) -> NewThread:
-                thread = NewThread(
-                    ParseDict(thread_dict, NewThreadInfo_pb2.NewThreadInfo(), ignore_unknown_fields=True)
-                )
+            user = UserInfo(_raw_data=res_proto.data.user)
+            threads = [NewThread(thread_proto) for thread_proto in res_proto.data.post_list]
+            for thread in threads:
                 thread._user = user
-                return thread
-
-            threads = (
-                [_pack_thread_dict(thread_dict) for thread_dict in post_list]
-                if (post_list := res_json.get('post_list', None))
-                else []
-            )
 
         except Exception as err:
             LOG.warning(f"{err}. user={user}")
