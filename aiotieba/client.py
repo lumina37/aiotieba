@@ -947,7 +947,11 @@ class Client(object):
             user (UserInfo): 待补全的用户信息
 
         Returns:
-            UserInfo: 完整版用户信息
+            UserInfo: 完整版用户信息 但不含user_id
+
+        Note:
+            这是一个https接口 可能引入额外的性能开销
+            2022.08.30 服务端不再返回user_id字段 请谨慎使用
         """
 
         try:
@@ -974,7 +978,7 @@ class Client(object):
             else:
                 gender = 0
 
-            user.user_id = user_dict['id']
+            # user.user_id = user_dict['id']
             user.user_name = user_dict['name']
             user.portrait = user_dict['portrait']
             user.nick_name = user_dict['show_nickname']
@@ -1003,42 +1007,6 @@ class Client(object):
             user.fan_num = tb_num2int(user_dict['followed_count'])
 
             user.is_vip = bool(int(vip_dict['v_status'])) if (vip_dict := user_dict['vipInfo']) else False
-
-        except Exception as err:
-            LOG.warning(f"{err}. user={user}")
-            user = UserInfo()
-
-        return user
-
-    async def _id2basic_user_info(self, user: BasicUserInfo) -> BasicUserInfo:
-        """
-        通过用户名或portrait补全简略版用户信息
-
-        Args:
-            user (BasicUserInfo): 待补全的用户信息
-
-        Returns:
-            BasicUserInfo: 简略版用户信息 仅保证包含user_name/portrait/user_id
-        """
-
-        try:
-            async with self.session_web.get(
-                yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/home/get/panel"),
-                allow_redirects=False,
-                params={
-                    'id': user.portrait,
-                    'un': user.user_name,
-                },
-            ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
-
-            if int(res_json['no']):
-                raise ValueError(res_json['error'])
-
-            user_dict = res_json['data']
-            user.user_id = user_dict['id']
-            user.user_name = user_dict['name']
-            user.portrait = user_dict['portrait']
 
         except Exception as err:
             LOG.warning(f"{err}. user={user}")
