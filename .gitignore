@@ -19,6 +19,8 @@
 !.github/**
 !docs
 !docs/**
+!examples
+!examples/**
 !tests
 !tests/**
 

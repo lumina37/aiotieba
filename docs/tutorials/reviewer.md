@@ -6,7 +6,7 @@
 
 ## 扫描范围
 
-在我给出的范例[reviewer_example.py](https://github.com/Starry-OvO/Tieba-Manager/blob/master/docs/tutorials/reviewer_example.py)中，在贴吧服务端不出现故障的理想情况下，扫描可以完全覆盖抗吧首页的每一条内容
+在我给出的范例[reviewer_example.py](https://github.com/Starry-OvO/Tieba-Manager/blob/master/examples/reviewer_example.py)中，在贴吧服务端不出现故障的理想情况下，扫描可以完全覆盖抗吧首页的每一条内容
 
 通过适当的配置，审查工具可以检查以上内容中是否存在：
 
@@ -28,7 +28,7 @@
 
 ## 实战效果
 
-以下是应用于[`孙笑川吧`](https://tieba.baidu.com/f?ie=utf-8&kw=%E5%AD%99%E7%AC%91%E5%B7%9D)的云审查工具的实战效果。
+以下是应用于[孙笑川吧](https://tieba.baidu.com/f?ie=utf-8&kw=%E5%AD%99%E7%AC%91%E5%B7%9D)的云审查工具的实战效果。
 
 ![backstage](https://user-images.githubusercontent.com/48282276/165777398-47e00f26-a46f-4b7c-a03e-03092e5d31ba.png)
 

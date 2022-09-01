@@ -1,4 +1,12 @@
-# 使用python+aiohttp还原某度某吧私信的websocket+protobuf+RSA/AES加密流程
+# 贴吧私信接口逆向分析
+
+## 原标题
+
+使用python+aiohttp还原某度某吧私信的websocket+protobuf+RSA/AES加密流程
+
+首发于[吾爱破解](https://www.52pojie.cn/thread-1648818-1-1.html)
+
+## 正文
 
 本人是一名大三学生，因为某吧吧务管理有自动发送私信的需求，我就利用课余时间逆向研究了某吧app的私信功能。刚准备研究的时候，我在github和吾爱破解都搜了一下，没找到相关内容，这篇文章算是补个漏吧
 

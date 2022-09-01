@@ -1,3 +1,5 @@
+# 
+
 <p align="center">
 
 <img src="img/aiotieba.svg">
@@ -54,5 +56,3 @@ async def main():
 
 asyncio.run(main())
 ```
-
-+ 继续阅读[**入门教程**](tutorials/quickstart.md)

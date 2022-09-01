@@ -1,5 +1,5 @@
-site_name: aiotieba文档
-site_url: https://v-8.top/
+site_name: aiotieba
+site_description: aiotieba开发文档
 theme:
   name: material
   features:
@@ -8,16 +8,20 @@ theme:
 
 repo_name: Starry-OvO/Tieba-Manager
 repo_url: https://github.com/Starry-OvO/Tieba-Manager
-edit_uri: ""
 
 nav:
     - 介绍: index.md
     - 教程:
-      - 入门教程: tutorials/quickstart.md
+      - 快速入门: tutorials/quickstart.md
       - 爬虫教程: tutorials/crawler.md
       - 云审查教程: tutorials/reviewer.md
-      - 指令管理器教程: tutorials/cmd_handler.md
-    - 实用微脚本合集: many_utils.md
+      - 指令管理器使用教程: tutorials/cmd_handler_user.md
+      - 指令管理器配置教程: tutorials/cmd_handler_dev.md
+      - 实用微脚本合集: tutorials/many_utils.md
+    - 参考文档:
+      - aiotieba.Client: reference/client.md
+    - 逆向分析教程:
+      - 贴吧私信接口逆向分析: misc/websocket_reverse_engineering.md
 
 markdown_extensions:
   - md_in_html

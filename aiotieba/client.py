@@ -87,7 +87,7 @@ from .typedefs import (
 )
 
 
-class WebsocketResponse(object):
+class _WebsocketResponse(object):
     """
     websocket响应
 
@@ -98,7 +98,7 @@ class WebsocketResponse(object):
 
     __slots__ = ['__weakref__', '__dict__', '_timestamp', '_req_id', '_data_future']
 
-    ws_res_wait_dict: weakref.WeakValueDictionary[int, "WebsocketResponse"] = weakref.WeakValueDictionary()
+    ws_res_wait_dict: weakref.WeakValueDictionary[int, "_WebsocketResponse"] = weakref.WeakValueDictionary()
     _websocket_request_id: int = None
 
     def __init__(self) -> None:
@@ -111,7 +111,7 @@ class WebsocketResponse(object):
     def __hash__(self) -> int:
         return self.req_id
 
-    def __eq__(self, obj: "WebsocketResponse"):
+    def __eq__(self, obj: "_WebsocketResponse"):
         return self.req_id == obj.req_id
 
     @property
@@ -165,6 +165,9 @@ class WebsocketResponse(object):
         return data
 
 
+_TRUST_ENV = False
+
+
 class Client(object):
     """
     贴吧客户端
@@ -184,7 +187,6 @@ class Client(object):
         '_cuid_galaxy2',
         '_ws_password',
         '_connector',
-        '_trust_env',
         '_loop',
         '_app_base_url',
         '_session_app',
@@ -217,7 +219,6 @@ class Client(object):
         self._cuid_galaxy2: str = None
         self._ws_password: bytes = None
 
-        self._trust_env = False
         self._loop = asyncio.get_running_loop()
         self._app_base_url = yarl.URL.build(scheme="http", host="tiebac.baidu.com")
 
@@ -424,7 +425,7 @@ class Client(object):
                 raise_for_status=True,
                 timeout=timeout,
                 read_bufsize=1 << 18,  # 256KiB
-                trust_env=self._trust_env,
+                trust_env=_TRUST_ENV,
             )
 
         return self._session_app
@@ -457,7 +458,7 @@ class Client(object):
                 raise_for_status=True,
                 timeout=timeout,
                 read_bufsize=1 << 18,  # 256KiB
-                trust_env=self._trust_env,
+                trust_env=_TRUST_ENV,
             )
 
         return self._session_app_proto
@@ -491,7 +492,7 @@ class Client(object):
                 raise_for_status=True,
                 timeout=timeout,
                 read_bufsize=1 << 20,  # 1MiB
-                trust_env=self._trust_env,
+                trust_env=_TRUST_ENV,
             )
 
         return self._session_web
@@ -520,7 +521,7 @@ class Client(object):
                 raise_for_status=True,
                 timeout=timeout,
                 read_bufsize=1 << 18,  # 256KiB
-                trust_env=self._trust_env,
+                trust_env=_TRUST_ENV,
             )
 
         return self._session_websocket
@@ -689,7 +690,7 @@ class Client(object):
 
     async def send_ws_bytes(
         self, ws_bytes: bytes, /, cmd: int, *, need_gzip: bool = True, need_encrypt: bool = True
-    ) -> WebsocketResponse:
+    ) -> _WebsocketResponse:
         """
         将ws_bytes通过贴吧websocket发送
 
@@ -703,10 +704,10 @@ class Client(object):
             WebsocketResponse: 用于等待返回数据的WebsocketResponse实例
         """
 
-        ws_res = WebsocketResponse()
+        ws_res = _WebsocketResponse()
         ws_bytes = self._pack_ws_bytes(ws_bytes, cmd, ws_res.req_id, need_gzip=need_gzip, need_encrypt=need_encrypt)
 
-        WebsocketResponse.ws_res_wait_dict[ws_res.req_id] = ws_res
+        _WebsocketResponse.ws_res_wait_dict[ws_res.req_id] = ws_res
         await self.websocket.send_bytes(ws_bytes)
 
         return ws_res
@@ -720,7 +721,7 @@ class Client(object):
             async for msg in self.websocket:
                 res_bytes, _, req_id = self._unpack_ws_bytes(msg.data)
 
-                ws_res = WebsocketResponse.ws_res_wait_dict.get(req_id, None)
+                ws_res = _WebsocketResponse.ws_res_wait_dict.get(req_id, None)
                 if ws_res:
                     ws_res._data_future.set_result(res_bytes)
 
@@ -1627,14 +1628,14 @@ class Client(object):
             user = BasicUserInfo(_id)
 
         req_proto = ProfileReqIdl_pb2.ProfileReqIdl()
-        req_proto.data.common._client_version = self.latest_version  # 删除该字段会导致post_list和dynamic_list为空
+        req_proto.data.common._client_version = self.latest_version
         if user.user_id:
             req_proto.data.friend_uid = user.user_id
         else:
             req_proto.data.friend_uid_portrait = user.portrait
         if with_threads:
             req_proto.data.need_post_count = 1
-            req_proto.data.common._client_type = 2  # 删除该字段会导致post_list为空
+            req_proto.data.common._client_type = 2
         req_proto.data.pn = 1
         req_proto.data.rn = 20
         # req_proto.data.uid = (await self.get_self_info()).user_id  # 用该字段检查共同关注的吧
