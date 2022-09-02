@@ -28,3 +28,6 @@ markdown_extensions:
   - admonition
   - codehilite:
       css_class: highlight
+
+extra_css:
+    - css/custom.css

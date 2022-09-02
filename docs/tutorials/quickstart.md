@@ -2,9 +2,7 @@
 
 ## 预备知识
 
-我们假定本教程的每位读者都拥有一定的Python编程基础
-
-想要流畅地使用aiotieba库，你应当初步掌握Python异步编程
+阅读本教程前，你应当掌握一定的Python编程基础，而想要流畅地使用aiotieba库，你应当初步了解Python异步编程
 
 当然即便你没有异步编程的基础，我也会针对这部分初学者为每一行异步代码撰写详细的注释
 
@@ -37,7 +35,7 @@
 
     使用`BDUSS`可以完成**一切**不需要手机/邮箱验证码的操作，包括**发帖**/**发私信**/**获取账号上的所有历史发言**
 
-    `BDUSS`不会在一段时间后过期，只能通过退出登录或修改密码使其失效
+    `BDUSS`的过期时间长达十年，一般只能通过退出登录或修改密码使其失效
 
     因此将`BDUSS`泄露给不受信任的人可能导致长期的账号安全风险和隐私泄露风险
 
@@ -193,7 +191,7 @@ import aiotieba as tb
 # 你需要使用await或asyncio.run或其他语句来等待协程执行完毕后才能拿到返回结果
 async def main():
     # 使用键名"default"对应的BDUSS创建客户端
-    # async with会先调用tb.Client的__init__方法同步地创建一个实例
+    # async with会先调用tb.Client的__init__方法创建一个实例
     # 再异步调用__aenter__方法来自动完成一些资源初始化工作（如创建连接池），并将返回值赋给client变量
     # 最后，在async with的作用域结束时，tb.Client的__aexit__方法会被自动地异步调用以完成一些清理工作（如关闭所有连接并释放资源）
     # async with...as...与with...as...的用途类似，都是为了实现优雅的初始化操作与退出操作
@@ -221,5 +219,5 @@ asyncio.run(main())
 如果你的`BDUSS`填写无误，你会获得类似下面这样的结果
 
 ```log
-<2022-07-16 20:14:34.597> [INFO] [main] 当前用户信息: {'user_id': 957339815, 'user_name': 'kk不好玩', 'portrait': 'tb.1.8277e641.gUE2cTq4A4z5fi2EHn5k3Q'}
+<2022-07-16 20:14:34.597> [INFO] [main] 当前用户信息: {'user_id': 957339815, 'user_name': 'Starry_OvO', 'portrait': 'tb.1.8277e641.gUE2cTq4A4z5fi2EHn5k3Q'}
 ```

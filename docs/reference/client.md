@@ -2,7 +2,7 @@
 
 ## 如何使用
 
-我们在`aiotieba.Client`中封装了大量百度贴吧的官方接口，你可以把它理解成一个“客户端”
+`aiotieba.Client`是aiotieba的核心入口点 (Entry Point)，其中封装了大量操作百度贴吧核心API的简便方法，你可以把它理解成一个“客户端”
 
 我们推荐通过异步上下文管理器来使用`Client`，例如：
 
@@ -33,4 +33,10 @@ await client.__aexit__()
 
 ## 类方法文档
 
+class aiotieba.**Client**(*BDUSS_key: Optional[str] = None*)
+
+<div class="docstring">
+
 TODO
+
+</div>

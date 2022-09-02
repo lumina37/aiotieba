@@ -165,9 +165,6 @@ class _WebsocketResponse(object):
         return data
 
 
-_TRUST_ENV = False
-
-
 class Client(object):
     """
     贴吧客户端
@@ -198,6 +195,8 @@ class Client(object):
         '_ws_dispatcher',
     ]
 
+    _trust_env = False
+
     latest_version: ClassVar[str] = "12.28.1.0"  # 这是目前的最新版本
     # no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
     post_version: ClassVar[str] = "9.1.0.0"  # 发帖使用极速版
@@ -208,9 +207,9 @@ class Client(object):
     def __init__(self, BDUSS_key: Optional[str] = None) -> None:
         self._BDUSS_key = BDUSS_key
 
-        user_dict: Dict[str, str] = CONFIG['User'].get(BDUSS_key, {})
-        self.BDUSS = user_dict.get('BDUSS', '')
-        self.STOKEN = user_dict.get('STOKEN', '')
+        user_cfg: Dict[str, str] = CONFIG['User'].get(BDUSS_key, {})
+        self.BDUSS = user_cfg.get('BDUSS', '')
+        self.STOKEN = user_cfg.get('STOKEN', '')
 
         self._user: BasicUserInfo = None
         self._tbs: str = None
@@ -425,7 +424,7 @@ class Client(object):
                 raise_for_status=True,
                 timeout=timeout,
                 read_bufsize=1 << 18,  # 256KiB
-                trust_env=_TRUST_ENV,
+                trust_env=self._trust_env,
             )
 
         return self._session_app
@@ -458,7 +457,7 @@ class Client(object):
                 raise_for_status=True,
                 timeout=timeout,
                 read_bufsize=1 << 18,  # 256KiB
-                trust_env=_TRUST_ENV,
+                trust_env=self._trust_env,
             )
 
         return self._session_app_proto
@@ -492,7 +491,7 @@ class Client(object):
                 raise_for_status=True,
                 timeout=timeout,
                 read_bufsize=1 << 20,  # 1MiB
-                trust_env=_TRUST_ENV,
+                trust_env=self._trust_env,
             )
 
         return self._session_web
@@ -521,7 +520,7 @@ class Client(object):
                 raise_for_status=True,
                 timeout=timeout,
                 read_bufsize=1 << 18,  # 256KiB
-                trust_env=_TRUST_ENV,
+                trust_env=self._trust_env,
             )
 
         return self._session_websocket
