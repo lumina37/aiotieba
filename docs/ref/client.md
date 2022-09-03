@@ -35,10 +35,23 @@ await client.__aexit__()
 
 class aiotieba.**Client**(*BDUSS_key: Optional[str] = None*)
 
-<div class="docstring">
+<div class="docstring" markdown="1">
 
-Parameters:
+**参数**
 
-+ BDUSS_key - 
++ **BDUSS_key** - 用于快捷调用BDUSS
+
+</div>
+
+<div class="docstring" markdown="1">
+
+**属性**
+
++ **BDUSS_key** *(str, 只读)* - 当前`Client`使用的BDUSS_key
++ **BDUSS** *(str, 首次写入后只读)* - 当前`Client`使用的[BDUSS](../tutorial/quickstart.md#BDUSS)
++ **STOKEN** *(str, 首次写入后只读)* - 当前`Client`使用的STOKEN
++ **timestamp_ms** *(int, 只读)* - 毫秒级本机时间戳 (13位整数)
++ **client_id** *(str, 只读)* - 返回一个可作为请求参数的client_id 例如`wappc_1653660000000_123`
++ **cuid** *(str, 只读)* - 返回一个可作为请求参数的cuid 例如`baidutiebaappe4200716-58a8-4170-af15-ea7edeb8e513`
 
 </div>

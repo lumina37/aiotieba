@@ -311,7 +311,7 @@ class Client(object):
     @property
     def timestamp_ms(self) -> int:
         """
-        返回13位毫秒级整数时间戳
+        毫秒级本机时间戳 (13位整数)
 
         Returns:
             int: 毫秒级整数时间戳
@@ -322,7 +322,7 @@ class Client(object):
     @property
     def client_id(self) -> str:
         """
-        返回一个供贴吧客户端使用的client_id
+        返回一个可作为请求参数的client_id
         在初次生成后该属性便不会再发生变化
 
         Returns:
@@ -336,7 +336,7 @@ class Client(object):
     @property
     def cuid(self) -> str:
         """
-        返回一个供贴吧客户端使用的cuid
+        返回一个可作为请求参数的cuid
         在初次生成后该属性便不会再发生变化
 
         Returns:
@@ -350,7 +350,7 @@ class Client(object):
     @property
     def cuid_galaxy2(self) -> str:
         """
-        返回一个供贴吧客户端使用的cuid_galaxy2
+        返回一个可作为请求参数的cuid_galaxy2
         在初次生成后该属性便不会再发生变化
 
         Returns:
@@ -1621,7 +1621,7 @@ class Client(object):
             tuple[UserInfo, list[NewThread]]: 用户信息, list[帖子信息]
         """
 
-        if not BasicUserInfo.is_user_id(_id) and not BasicUserInfo.is_portrait(_id):
+        if not (BasicUserInfo.is_user_id(_id) or BasicUserInfo.is_portrait(_id)):
             user = await self.get_basic_user_info(_id)
         else:
             user = BasicUserInfo(_id)
@@ -2839,12 +2839,12 @@ class Client(object):
             async with self.session_web.get(img_url, allow_redirects=False) as resp:
                 img_type = resp.content_type.removeprefix('image/')
                 if img_type not in ['jpeg', 'png', 'bmp']:
-                    raise ContentTypeError(f"expect jpeg, png or bmp. got {resp.content_type}")
+                    raise ContentTypeError(f"Expect jpeg, png or bmp. Got {resp.content_type}")
                 content = await resp.content.read()
 
             image = cv.imdecode(np.frombuffer(content, np.uint8), cv.IMREAD_COLOR)
             if image is None:
-                raise RuntimeError("error with opencv.imdecode")
+                raise RuntimeError("Error with opencv.imdecode")
 
         except Exception as err:
             LOG.warning(f"{err}. url={img_url}")
