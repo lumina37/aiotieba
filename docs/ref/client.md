@@ -37,6 +37,8 @@ class aiotieba.**Client**(*BDUSS_key: Optional[str] = None*)
 
 <div class="docstring">
 
-TODO
+Parameters:
+
++ BDUSS_key - 
 
 </div>

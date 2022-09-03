@@ -1,4 +1,7 @@
-__all__ = ['Reviewer']
+__all__ = [
+    'BaseReviewer',
+    'Reviewer',
+]
 
 try:
     import cv2 as cv
@@ -21,17 +24,10 @@ from .database import Database
 from .typedefs import BasicUserInfo, Comment, Comments, Post, Posts, Thread, Threads
 
 
-class _ReviewUtils(object):
+class BaseReviewer(object):
     """
     贴吧审查实用功能
 
-    Args:
-        BDUSS_key (str, optional): 用于从CONFIG中提取BDUSS. Defaults to None.
-        fname (str, optional): 操作的目标贴吧名. Defaults to ''.
-
-    Attributes:
-        client (Client): 客户端
-        db (Database): 数据库连接
     """
 
     __slots__ = [
@@ -42,14 +38,14 @@ class _ReviewUtils(object):
     ]
 
     def __init__(self, BDUSS_key: Optional[str] = None, fname: str = ''):
-        super(_ReviewUtils, self).__init__()
+        super(BaseReviewer, self).__init__()
 
         self.client = Client(BDUSS_key)
         self.db = Database(fname)
         self._img_hasher: "cv.img_hash.AverageHash" = None
         self._qrdetector: "cv.QRCodeDetector" = None
 
-    async def __aenter__(self) -> "_ReviewUtils":
+    async def __aenter__(self) -> "BaseReviewer":
         await asyncio.gather(self.client.__aenter__(), self.db.__aenter__())
         return self
 
@@ -508,15 +504,19 @@ def _exce_punish(func):
     return _
 
 
-class Reviewer(_ReviewUtils):
+class Reviewer(BaseReviewer):
     """
     贴吧审查器
 
     请使用以`review_`开头的类方法作为入口函数
 
     Args:
-        BDUSS_key (str, optional): 用于从CONFIG中提取BDUSS. Defaults to None.
+        BDUSS_key (str, optional): 用于快捷调用BDUSS. Defaults to None.
         fname (str, optional): 操作的目标贴吧名. Defaults to ''.
+
+    Attributes:
+        client (Client): 客户端
+        db (Database): 数据库连接
     """
 
     __slots__ = [

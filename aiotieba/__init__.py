@@ -12,7 +12,7 @@ from ._helpers import DelFlag, Punish
 from ._logger import LOG
 from .client import Client
 from .database import Database
-from .reviewer import Reviewer
+from .reviewer import BaseReviewer, Reviewer
 from .typedefs import (
     Appeal,
     Appeals,
@@ -65,7 +65,7 @@ from .typedefs import (
     VoteInfo,
 )
 
-__version__ = "2.9.2a1"
+__version__ = "2.9.2a2"
 
 if os.name == 'posix':
     import signal

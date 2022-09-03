@@ -170,7 +170,7 @@ class Client(object):
     贴吧客户端
 
     Args:
-        BDUSS_key (str, optional): 用于从CONFIG中提取BDUSS. Defaults to None.
+        BDUSS_key (str, optional): 用于快捷调用BDUSS. Defaults to None.
     """
 
     __slots__ = [
