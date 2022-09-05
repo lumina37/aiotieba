@@ -2837,8 +2837,7 @@ class Client(object):
 
         try:
             async with self.session_web.get(img_url, allow_redirects=False) as resp:
-                img_type = resp.content_type.removeprefix('image/')
-                if img_type not in ['jpeg', 'png', 'bmp']:
+                if not resp.content_type.endswith(('jpeg', 'png', 'bmp'), 6):
                     raise ContentTypeError(f"Expect jpeg, png or bmp. Got {resp.content_type}")
                 content = await resp.content.read()
 

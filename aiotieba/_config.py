@@ -17,7 +17,7 @@ except FileNotFoundError:
     import shutil
 
     module_dir = Path(__file__).parent
-    shutil.copyfile(str(module_dir / "config_example/minimal.toml"), _CONFIG_FILENAME)
+    shutil.copyfile(str(module_dir / "config_example/min.toml"), _CONFIG_FILENAME)
     shutil.copyfile(str(module_dir / "config_example/full.toml"), "aiotieba_full_example.toml")
 
     CONFIG = {}
