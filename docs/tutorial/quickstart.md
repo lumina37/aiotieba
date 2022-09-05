@@ -97,39 +97,29 @@
 
 可以通过`tieba_uid`的值反查`user_name` `portrait` `user_id`
 
-### fid
+### forum_id
 
-吧ID
+吧ID，简称`fid`
 
 每个贴吧都有且仅有一个`fid`
 
 `fid`是一个`uint64`值
 
-你可以在[client.py](https://github.com/Starry-OvO/Tieba-Manager/blob/master/aiotieba/client.py)中搜索`fid: int`来查看使用了`fid`作为参数的接口
+### thread_id
 
-在贴吧混乱的字段命名中，它在某些场合下会被命名为`forum_id`
-
-### tid
-
-主题帖ID
+主题帖ID，简称`tid`
 
 每个主题帖都有且仅有一个`tid`
 
 `tid`是一个`uint64`值
 
-你可以在[client.py](https://github.com/Starry-OvO/Tieba-Manager/blob/master/aiotieba/client.py)中搜索`tid: int`来查看使用了`tid`作为参数的接口
+### post_id
 
-在贴吧混乱的字段命名中，它在某些场合下会被命名为`thread_id`
-
-### pid
-
-回复ID
+回复ID，简称`pid`
 
 每个楼层、楼中楼都有且仅有一个`pid`
 
 `pid`是一个`uint64`值
-
-你可以在[client.py](https://github.com/Starry-OvO/Tieba-Manager/blob/master/aiotieba/client.py)中搜索`pid: int`来查看使用了`pid`作为参数的接口
 
 在贴吧混乱的字段命名中，它在某些场合下会被命名为`post_id`
 

@@ -121,13 +121,13 @@ class Database(object):
 
     async def get_fid(self, fname: str) -> int:
         """
-        通过贴吧名获取fid
+        通过贴吧名获取forum_id
 
         Args:
             fname (str): 贴吧名
 
         Returns:
-            int: 该贴吧的fid
+            int: 该贴吧的forum_id
         """
 
         try:
@@ -144,10 +144,10 @@ class Database(object):
 
     async def get_fname(self, fid: int) -> str:
         """
-        通过fid获取贴吧名
+        通过forum_id获取贴吧名
 
         Args:
-            fid (int): fid
+            fid (int): forum_id
 
         Returns:
             str: 该贴吧的贴吧名
@@ -167,14 +167,14 @@ class Database(object):
 
     async def add_forum(self, fid: int, fname: str) -> bool:
         """
-        向表forum添加fid和贴吧名的映射关系
+        向表forum添加forum_id和贴吧名的映射关系
 
         Args:
-            fid (int): fid
+            fid (int): forum_id
             fname (str): 贴吧名
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -243,7 +243,7 @@ class Database(object):
             user (BasicUserInfo): 待添加的简略版用户信息
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -265,7 +265,7 @@ class Database(object):
             user (BasicUserInfo): 待删除的简略版用户信息
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -312,7 +312,7 @@ class Database(object):
             tag (int, optional): 自定义标签. Defaults to 0.
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -355,7 +355,7 @@ class Database(object):
             _id (int): tid或pid
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -377,7 +377,7 @@ class Database(object):
             hour (int): 小时数
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -421,7 +421,7 @@ class Database(object):
             tag (int, optional): 自定义标签. Defaults to 0.
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -466,7 +466,7 @@ class Database(object):
             tid (int): 主题帖tid
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -531,7 +531,7 @@ class Database(object):
             note (str, optional): 备注. Defaults to ''.
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         if not user_id:
@@ -557,7 +557,7 @@ class Database(object):
             user_id (int): 用户的user_id
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -677,7 +677,7 @@ class Database(object):
             note (str, optional): 备注. Defaults to ''.
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -702,7 +702,7 @@ class Database(object):
             img_hash (str): 图像的phash
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:

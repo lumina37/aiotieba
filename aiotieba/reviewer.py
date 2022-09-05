@@ -70,13 +70,13 @@ class BaseReviewer(object):
 
     async def get_fid(self, fname: str) -> int:
         """
-        通过贴吧名获取fid
+        通过贴吧名获取forum_id
 
         Args:
             fname (str): 贴吧名
 
         Returns:
-            int: 该贴吧的fid
+            int: 该贴吧的forum_id
         """
 
         if fid := self.client._fname2fid.get(fname, 0):
@@ -94,7 +94,7 @@ class BaseReviewer(object):
 
     async def get_fname(self, fid: int) -> str:
         """
-        通过fid获取贴吧名
+        通过forum_id获取贴吧名
 
         Args:
             fid (int): forum_id
@@ -244,7 +244,7 @@ class BaseReviewer(object):
             reason (str, optional): 封禁理由. Defaults to ''.
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         return await self.client.block(self.db.fname, _id, day=day, reason=reason)
@@ -257,7 +257,7 @@ class BaseReviewer(object):
             tid (int): 待屏蔽的主题帖tid
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         return await self.client.hide_thread(self.db.fname, tid)
@@ -270,7 +270,7 @@ class BaseReviewer(object):
             tid (int): 待删除的主题帖tid
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         return await self.client.del_thread(self.db.fname, tid)
@@ -283,7 +283,7 @@ class BaseReviewer(object):
             pid (int): 待删除的回复pid
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         return await self.client.del_post(self.db.fname, pid)
@@ -296,7 +296,7 @@ class BaseReviewer(object):
             id_last_edit (int): 用于识别id的子对象列表是否发生修改 \
                 若该id为tid则id_last_edit应为last_time 若该id为pid则id_last_edit应为reply_num. Defaults to 0.
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         return await self.db.add_id(_id, tag=id_last_edit)
@@ -685,10 +685,8 @@ class Reviewer(BaseReviewer):
             Iterator[Thread]: 待审查主题帖的迭代器
         """
 
-        time_thre = self.time_thre_closure()
-
         threads = await self.get_threads(pn)
-        return [thread for thread in threads if not thread.is_livepost and thread.create_time > time_thre]
+        return [thread for thread in threads if not thread.is_livepost]
 
     @_exce_punish
     @_check_tid_cache

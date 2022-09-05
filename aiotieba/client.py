@@ -679,10 +679,10 @@ class Client(object):
     @property
     def is_ws_aviliable(self) -> bool:
         """
-        websocket是否可用
+        self.websocket是否可用
 
         Returns:
-            bool: True则websocket可用 反之不可用
+            bool: True则self.websocket可用 反之不可用
         """
 
         return not (self.websocket is None or self.websocket.closed or self.websocket._writer.transport.is_closing())
@@ -735,7 +735,7 @@ class Client(object):
             ValueError: 服务端返回错误
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         if not self.is_ws_aviliable:
@@ -796,10 +796,10 @@ class Client(object):
 
     async def login(self) -> bool:
         """
-        登录并获取tbs以及当前账号信息
+        登录并获取tbs和当前账号的简略版用户信息
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         payload = [
@@ -832,7 +832,7 @@ class Client(object):
 
     async def get_fid(self, fname: str) -> int:
         """
-        通过贴吧名获取fid
+        通过贴吧名获取forum_id
 
         Args:
             fname (str): 贴吧名
@@ -868,7 +868,7 @@ class Client(object):
 
     async def get_fname(self, fid: int) -> str:
         """
-        通过fid获取贴吧名
+        通过forum_id获取贴吧名
 
         Args:
             fid (int): forum_id
@@ -1866,7 +1866,7 @@ class Client(object):
             reason (str, optional): 封禁理由. Defaults to ''.
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         if isinstance(fname_or_fid, str):
@@ -1919,7 +1919,7 @@ class Client(object):
             _id (str | int): 待解封用户的id user_id/user_name/portrait 优先user_id
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         if isinstance(fname_or_fid, str):
@@ -1968,7 +1968,7 @@ class Client(object):
             tid (int): 待屏蔽的主题帖tid
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -1990,7 +1990,7 @@ class Client(object):
             tid (int): 待删除的主题帖tid
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -2045,7 +2045,7 @@ class Client(object):
             block (bool, optional): 是否同时封一天. Defaults to False.
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -2086,7 +2086,7 @@ class Client(object):
             pid (int): 待删除的回复pid
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -2126,7 +2126,7 @@ class Client(object):
             block (bool, optional): 是否同时封一天. Defaults to False.
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -2168,7 +2168,7 @@ class Client(object):
             tid (int, optional): 待解除屏蔽的主题帖tid
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -2190,7 +2190,7 @@ class Client(object):
             tid (int, optional): 待恢复的主题帖tid
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -2212,7 +2212,7 @@ class Client(object):
             pid (int, optional): 待恢复的回复pid
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -2283,7 +2283,7 @@ class Client(object):
             from_tab_id (int, optional): 来源分区id 默认为0即无分区. Defaults to 0.
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -2322,7 +2322,7 @@ class Client(object):
             tid (int): 待推荐的主题帖tid
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -2362,7 +2362,7 @@ class Client(object):
             cname (str, optional): 待添加的精华分区名称 默认为''即不分区. Defaults to ''.
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -2385,7 +2385,7 @@ class Client(object):
             tid (int): 待撤精的主题帖tid
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -2488,7 +2488,7 @@ class Client(object):
             tid (int): 待置顶的主题帖tid
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -2510,7 +2510,7 @@ class Client(object):
             tid (int): 待撤销置顶的主题帖tid
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -2648,7 +2648,7 @@ class Client(object):
             _id (str | int): 待加黑名单用户的id user_id/user_name/portrait 优先user_id
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
@@ -2691,7 +2691,7 @@ class Client(object):
             _id (str | int): 待解黑名单用户的id user_id/user_name/portrait 优先user_id
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
@@ -2784,7 +2784,7 @@ class Client(object):
             refuse (bool, optional): True则拒绝申诉 False则接受申诉. Defaults to True.
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         if isinstance(fname_or_fid, str):
@@ -3316,7 +3316,7 @@ class Client(object):
             pid (int, optional): 待点赞的回复pid. Defaults to 0.
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
 
         Note:
             本接口仍处于测试阶段
@@ -3342,7 +3342,7 @@ class Client(object):
             pid (int, optional): 待取消点赞的回复pid. Defaults to 0.
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -3364,7 +3364,7 @@ class Client(object):
             pid (int, optional): 待点踩的回复pid. Defaults to 0.
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -3386,7 +3386,7 @@ class Client(object):
             pid (int, optional): 待取消点踩的回复pid. Defaults to 0.
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -3442,7 +3442,7 @@ class Client(object):
             _id (str | int): 待移除粉丝的id user_id/user_name/portrait 优先user_id
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         if not BasicUserInfo.is_user_id(_id):
@@ -3481,7 +3481,7 @@ class Client(object):
             _id (str | int): 待关注用户的id user_id/user_name/portrait 优先portrait
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         if not BasicUserInfo.is_portrait(_id):
@@ -3520,7 +3520,7 @@ class Client(object):
             _id (str | int): 待取关用户的id user_id/user_name/portrait 优先portrait
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         if not BasicUserInfo.is_portrait(_id):
@@ -3559,7 +3559,7 @@ class Client(object):
             fname_or_fid (str | int): 要关注贴吧的贴吧名或fid 优先fid
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -3597,7 +3597,7 @@ class Client(object):
             fname_or_fid (str | int): 要取关贴吧的贴吧名或fid 优先fid
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -3633,7 +3633,7 @@ class Client(object):
             fname_or_fid (str | int): 待屏蔽贴吧的贴吧名或fid 优先fid
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -3673,7 +3673,7 @@ class Client(object):
             fname_or_fid (str | int): 待屏蔽贴吧的贴吧名或fid 优先fid
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -3712,7 +3712,7 @@ class Client(object):
             hide (bool, optional): True则设为隐藏 False则取消隐藏. Defaults to True.
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -3868,7 +3868,7 @@ class Client(object):
             content (str): 发送内容
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         if not BasicUserInfo.is_user_id(_id):

@@ -11,15 +11,6 @@ async with aiotieba.Client("default") as client:
     ...
 ```
 
-或者，你也可以手动调用`Client`的`__aenter__`方法完成资源初始化、`__aexit__`方法完成资源的释放和清理工作，例如：
-
-```python
-client = aiotieba.Client("default")
-await client.__aenter__()
-...
-await client.__aexit__()
-```
-
 <details markdown="1"><summary>如果你不了解“上下文管理器”或“异步上下文管理器”</summary>
 
 你可以阅读以下文章快速入门
@@ -31,27 +22,69 @@ await client.__aexit__()
 
 </details>
 
-## 类方法文档
+## 参考文档
 
-class aiotieba.**Client**(*BDUSS_key: Optional[str] = None*)
+class `aiotieba.Client`(*BDUSS_key: Optional[str] = None*)
+
+
+### 构造参数
+
+**BDUSS_key**
 
 <div class="docstring" markdown="1">
-
-**参数**
-
-+ **BDUSS_key** - 用于快捷调用BDUSS
-
+用于快捷调用BDUSS
 </div>
 
+
+### 类属性
+
+**BDUSS_key**
+
 <div class="docstring" markdown="1">
+当前`Client`使用的BDUSS_key
 
-**属性**
+*str, 只读*
+</div>
 
-+ **BDUSS_key** *(str, 只读)* - 当前`Client`使用的BDUSS_key
-+ **BDUSS** *(str, 首次写入后只读)* - 当前`Client`使用的[BDUSS](../tutorial/quickstart.md#BDUSS)
-+ **STOKEN** *(str, 首次写入后只读)* - 当前`Client`使用的STOKEN
-+ **timestamp_ms** *(int, 只读)* - 毫秒级本机时间戳 (13位整数)
-+ **client_id** *(str, 只读)* - 返回一个可作为请求参数的client_id 例如`wappc_1653660000000_123`
-+ **cuid** *(str, 只读)* - 返回一个可作为请求参数的cuid 例如`baidutiebaappe4200716-58a8-4170-af15-ea7edeb8e513`
+**BDUSS** 
 
+<div class="docstring" markdown="1">
+当前`Client`使用的[BDUSS](../tutorial/quickstart.md#BDUSS)
+
+*str, 只读*
+</div>
+
+**STOKEN**
+
+<div class="docstring" markdown="1">
+当前`Client`使用的STOKEN
+
+*str, 只读*
+</div>
+
+**is_ws_aviliable**
+
+<div class="docstring" markdown="1">
+`self.websocket`是否可用
+
+*bool, 只读*
+</div>
+
+
+### 类方法
+
+async def `login`() -> *bool*
+
+<div class="docstring" markdown="1">
+登录并获取tbs和当前账号的简略版用户信息
+
+**Returns**: True成功 False失败
+</div>
+
+async def `get_fid`(*fname: str*) -> *int*
+
+<div class="docstring" markdown="1">
+通过贴吧名获取forum_id
+
+**Returns**: [forum_id](../tutorial/quickstart.md#forum_id)
 </div>

@@ -36,11 +36,9 @@
 
 ## 使用方法
 
-首先，你需要一个`MySQL`数据库，用来缓存通过检测的内容id以及记录用户权限级别（黑、白名单）
-
-你应该注意到在第一次使用aiotieba时，工作目录下还生成了一个完全体配置文件`aiotieba_full_example.toml`。你需要参考其中的注释，填写`Database`字段，以便aiotieba使用你的`MySQL`数据库
-
-使用下列脚本初始化数据库
++ 首先，你需要一个`MySQL`数据库，用来缓存通过检测的内容id以及记录用户权限级别（黑、白名单）
++ 你应该注意到在第一次使用aiotieba时，工作目录下还生成了一个完全体配置文件`aiotieba_full_example.toml`。你需要参考其中的注释，填写`Database`字段，以便aiotieba使用你的`MySQL`数据库
++ 使用下列脚本初始化数据库
 
 ```python
 import asyncio
@@ -56,9 +54,8 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
-自定义审查行为：请参照我给出的例子自己编程修改[reviewer_example.py](https://github.com/Starry-OvO/Tieba-Manager/blob/master/docs/tutorials/reviewer_example.py)，这是[抗压背锅吧](https://tieba.baidu.com/f?kw=%E6%8A%97%E5%8E%8B%E8%83%8C%E9%94%85&ie=utf-8)审查规则的一个脱敏精简版本
-
-运行`your_reviewer.py`（对`Windows`平台，建议使用`pythonw.exe`无窗口运行，对`Linux`平台，建议使用如下的`nohup`指令在后台运行）
++ 自定义审查行为：请参照我给出的例子自己编程修改[reviewer_example.py](https://github.com/Starry-OvO/Tieba-Manager/blob/master/docs/tutorials/reviewer_example.py)，这是[抗压背锅吧](https://tieba.baidu.com/f?kw=%E6%8A%97%E5%8E%8B%E8%83%8C%E9%94%85&ie=utf-8)审查规则的一个脱敏精简版本
++ 运行`your_reviewer.py`（对`Windows`平台，建议使用`pythonw.exe`无窗口运行，对`Linux`平台，建议使用如下的`nohup`指令在后台运行）
 
 ```shell
 nohup python -OO your_reviewer.py --no_dbg >/dev/null 2>&1 &
