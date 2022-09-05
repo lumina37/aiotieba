@@ -2,7 +2,7 @@
 
 <p align="center">
 
-<img src="img/aiotieba.svg">
+<img src="https://github.com/Starry-OvO/Tieba-Manager/blob/master/docs/img/aiotieba.svg">
 
 </p>
 

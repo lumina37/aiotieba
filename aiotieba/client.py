@@ -915,9 +915,12 @@ class Client(object):
         elif user.portrait:
             user, _ = await self.get_homepage(user.portrait, with_threads=False)
             return user
-        else:
+        elif user.user_name:
             user = await self._user_name2basic_user_info(user)
             user, _ = await self.get_homepage(user.portrait, with_threads=False)
+            return user
+        else:
+            LOG.warning("Null input")
             return user
 
     async def get_basic_user_info(self, _id: Union[str, int]) -> BasicUserInfo:
@@ -936,8 +939,11 @@ class Client(object):
             return await self._user_id2basic_user_info(user)
         elif user.user_name:
             return await self._user_name2basic_user_info(user)
-        else:
+        elif user.portrait:
             user, _ = await self.get_homepage(user.portrait, with_threads=False)
+            return user
+        else:
+            LOG.warning("Null input")
             return user
 
     async def _id2user_info(self, user: UserInfo) -> UserInfo:
