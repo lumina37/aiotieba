@@ -83,11 +83,11 @@ class BaseReviewer(object):
             return fid
 
         if fid := await self.db.get_fid(fname):
-            self.client.add_forum_cache(fname, fid)
+            self.client._add_forum_cache(fname, fid)
             return fid
 
         if fid := await self.client.get_fid(fname):
-            self.client.add_forum_cache(fname, fid)
+            self.client._add_forum_cache(fname, fid)
             await self.db.add_forum(fid, fname)
 
         return fid
@@ -107,11 +107,11 @@ class BaseReviewer(object):
             return fname
 
         if fname := await self.db.get_fname(fid):
-            self.client.add_forum_cache(fname, fid)
+            self.client._add_forum_cache(fname, fid)
             return fname
 
         if fname := await self.client.get_fname(fid):
-            self.client.add_forum_cache(fname, fid)
+            self.client._add_forum_cache(fname, fid)
             await self.db.add_forum(fid, fname)
 
         return fname

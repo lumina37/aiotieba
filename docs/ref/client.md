@@ -78,7 +78,7 @@ async def `login`() -> *bool*
 <div class="docstring" markdown="1">
 登录并获取tbs和当前账号的简略版用户信息
 
-**Returns**: True成功 False失败
+**返回**: True成功 False失败
 </div>
 
 async def `get_fid`(*fname: str*) -> *int*
@@ -86,5 +86,15 @@ async def `get_fid`(*fname: str*) -> *int*
 <div class="docstring" markdown="1">
 通过贴吧名获取forum_id
 
-**Returns**: [forum_id](../tutorial/quickstart.md#forum_id)
+**返回**: [forum_id](../tutorial/quickstart.md#forum_id)
+</div>
+
+async def `get_fname`(*self, fid: int*) -> *str*:
+
+<div class="docstring" markdown="1">
+通过forum_id获取贴吧名
+
+**参数**: [forum_id](../tutorial/quickstart.md#forum_id)
+
+**返回**: 该贴吧的贴吧名
 </div>

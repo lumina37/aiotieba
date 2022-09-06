@@ -862,7 +862,7 @@ class Client(object):
             LOG.warning(f"{err}. fname={fname}")
             fid = 0
 
-        self.add_forum_cache(fname, fid)
+        self._add_forum_cache(fname, fid)
 
         return fid
 
@@ -882,11 +882,11 @@ class Client(object):
 
         fname = (await self.get_forum_detail(fid)).fname
 
-        self.add_forum_cache(fname, fid)
+        self._add_forum_cache(fname, fid)
 
         return fname
 
-    def add_forum_cache(self, fname: str, fid: int) -> None:
+    def _add_forum_cache(self, fname: str, fid: int) -> None:
         """
         将贴吧名与贴吧id的映射关系添加到缓存
 
@@ -2844,7 +2844,7 @@ class Client(object):
         try:
             async with self.session_web.get(img_url, allow_redirects=False) as resp:
                 if not resp.content_type.endswith(('jpeg', 'png', 'bmp'), 6):
-                    raise ContentTypeError(f"Expect jpeg, png or bmp. Got {resp.content_type}")
+                    raise ContentTypeError(f"Expect jpeg, png or bmp, got {resp.content_type}")
                 content = await resp.content.read()
 
             image = cv.imdecode(np.frombuffer(content, np.uint8), cv.IMREAD_COLOR)
