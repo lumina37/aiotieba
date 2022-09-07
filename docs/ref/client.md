@@ -89,7 +89,7 @@ async def `get_fid`(*fname: str*) -> *int*
 **返回**: [forum_id](../tutorial/quickstart.md#forum_id)
 </div>
 
-async def `get_fname`(*self, fid: int*) -> *str*:
+async def `get_fname`(*fid: int*) -> *str*:
 
 <div class="docstring" markdown="1">
 通过forum_id获取贴吧名
