@@ -673,7 +673,7 @@ class Reviewer(BaseReviewer):
             thread (Thread): 待设置楼主等级的主题帖
         """
 
-        posts = await self.get_posts(7806500201, rn=0, only_thread_author=True)
+        posts = await self.get_posts(thread.tid, rn=0, only_thread_author=True)
         thread._user = posts.thread.user
 
     async def run_thread_checkers(self, thread: Thread) -> Optional[Punish]:
@@ -820,6 +820,9 @@ class Reviewer(BaseReviewer):
 
         Returns:
             Optional[Punish]: 审查结果
+
+        Note:
+            一般不需要重写该函数
         """
 
         if await self.get_id(comment.pid) != -1:

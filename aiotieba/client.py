@@ -197,7 +197,7 @@ class Client(object):
 
     _trust_env = False
 
-    latest_version: ClassVar[str] = "12.28.1.0"  # 这是目前的最新版本
+    latest_version: ClassVar[str] = "12.28.1.1"  # 这是目前的最新版本
     # no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
     post_version: ClassVar[str] = "9.1.0.0"  # 发帖使用极速版
 
@@ -473,7 +473,7 @@ class Client(object):
 
         if self._session_web is None:
             headers = {
-                aiohttp.hdrs.USER_AGENT: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:103.0) Gecko/20100101 Firefox/103.0",
+                aiohttp.hdrs.USER_AGENT: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:104.0) Gecko/20100101 Firefox/104.0",
                 aiohttp.hdrs.ACCEPT_ENCODING: "gzip, deflate",
                 aiohttp.hdrs.CACHE_CONTROL: "no-cache",
                 aiohttp.hdrs.CONNECTION: "keep-alive",
