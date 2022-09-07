@@ -971,10 +971,11 @@ class Reviewer(BaseReviewer):
         time_thre = self.time_thre_closure()
 
         posts = await self.get_posts(thread.tid, pn=99999, sort=1, with_comments=True)
-        for post in posts:
-            yield post
-        if posts[0].create_time < time_thre:
-            return
+        if posts:
+            for post in posts:
+                yield post
+            if posts[0].create_time < time_thre:
+                return
 
         if (total_page := posts.page.total_page) >= 2:
             for post_pn in range(total_page - 2, 0, -1):
