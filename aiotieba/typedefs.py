@@ -69,40 +69,26 @@ from typing import (
 
 import bs4
 import yarl
+from google.protobuf.message import Message
 from google.protobuf.json_format import ParseDict
 
 from ._logger import LOG
-from .protobuf import (
-    FrsPageResIdl_pb2,
-    GetDislikeListResIdl_pb2,
-    GetForumSquareResIdl_pb2,
-    Page_pb2,
-    PbContent_pb2,
-    PbFloorResIdl_pb2,
-    PbPageResIdl_pb2,
-    PollInfo_pb2,
-    Post_pb2,
-    PostInfoList_pb2,
-    ReplyMeResIdl_pb2,
-    SimpleForum_pb2,
-    SubPostList_pb2,
-    ThreadInfo_pb2,
-    User_pb2,
-    UserPostResIdl_pb2,
-)
+from .protobuf import GetDislikeListResIdl_pb2, Page_pb2, ThreadInfo_pb2, User_pb2
+
+_TypeMessage = TypeVar('_TypeMessage', bound=Message)
 
 
 class _DataWrapper(object):
     """
-    raw_data包装器
+    源数据包装器
 
-    Attributes:
-        _raw_data (Any): 源数据
+    Args:
+        _raw_data (Any): 以protobuf或json或html格式组织的源数据
     """
 
     __slots__ = ['_raw_data']
 
-    def __init__(self, _raw_data) -> None:
+    def __init__(self, _raw_data: Any) -> None:
         self._raw_data = _raw_data
 
 
@@ -115,7 +101,7 @@ class BasicUserInfo(_DataWrapper):
 
     Args:
         _id (str | int, optional): 用于快速构造BasicUserInfo的自适应参数 输入用户名/portrait/user_id
-        _raw_data (User_pb2.User): protobuf源数据
+        _raw_data (_TypeMessage): protobuf源数据
 
     Attributes:
         user_id (int): user_id
@@ -129,7 +115,7 @@ class BasicUserInfo(_DataWrapper):
         '_portrait',
     ]
 
-    def __init__(self, _id: Union[str, int, None] = None, _raw_data: Optional[User_pb2.User] = None) -> None:
+    def __init__(self, _id: Union[str, int, None] = None, _raw_data: Optional[_TypeMessage] = None) -> None:
         super(BasicUserInfo, self).__init__(_raw_data)
 
         if _raw_data:
@@ -265,7 +251,7 @@ class UserInfo(BasicUserInfo):
 
     Args:
         _id (str | int, optional): 用于快速构造UserInfo的自适应参数 输入用户名或portrait或user_id
-        _raw_data (User_pb2.User)
+        _raw_data (_TypeMessage): protobuf源数据
 
     Attributes:
         user_id (int): user_id
@@ -308,7 +294,7 @@ class UserInfo(BasicUserInfo):
         '_priv_reply',
     ]
 
-    def __init__(self, _id: Union[str, int, None] = None, _raw_data: Optional[User_pb2.User] = None) -> None:
+    def __init__(self, _id: Union[str, int, None] = None, _raw_data: Optional[_TypeMessage] = None) -> None:
         super(UserInfo, self).__init__(_id, _raw_data)
 
         if _raw_data:
@@ -592,7 +578,7 @@ class _Fragment(_DataWrapper):
 
     __slots__ = []
 
-    def __init__(self, _raw_data: Optional[PbContent_pb2.PbContent] = None) -> None:
+    def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
         super(_Fragment, self).__init__(_raw_data)
 
 
@@ -617,7 +603,7 @@ class FragText(_Fragment):
 
     __slots__ = ['_text']
 
-    def __init__(self, _raw_data: PbContent_pb2.PbContent) -> None:
+    def __init__(self, _raw_data: _TypeMessage) -> None:
         super(FragText, self).__init__(_raw_data)
 
         self._text = self._raw_data.text
@@ -651,7 +637,7 @@ class FragEmoji(_Fragment):
 
     __slots__ = ['_desc']
 
-    def __init__(self, _raw_data: PbContent_pb2.PbContent) -> None:
+    def __init__(self, _raw_data: _TypeMessage) -> None:
         super(FragEmoji, self).__init__(_raw_data)
 
         self._desc: str = self._raw_data.c
@@ -691,7 +677,7 @@ class FragImage(_Fragment):
         '_show_height',
     ]
 
-    def __init__(self, _raw_data: PbContent_pb2.PbContent) -> None:
+    def __init__(self, _raw_data: _TypeMessage) -> None:
         super(FragImage, self).__init__(_raw_data)
 
         self._src = self._raw_data.cdn_src or self._raw_data.src
@@ -804,7 +790,7 @@ class FragAt(_Fragment):
         '_user_id',
     ]
 
-    def __init__(self, _raw_data: PbContent_pb2.PbContent) -> None:
+    def __init__(self, _raw_data: _TypeMessage) -> None:
         super(FragAt, self).__init__(_raw_data)
 
         self._text = self._raw_data.text
@@ -856,7 +842,7 @@ class FragLink(_Fragment):
 
     external_perfix: ClassVar[str] = "http://tieba.baidu.com/mo/q/checkurl"
 
-    def __init__(self, _raw_data: PbContent_pb2.PbContent) -> None:
+    def __init__(self, _raw_data: _TypeMessage) -> None:
         super(FragLink, self).__init__(_raw_data)
 
         self._text = self._raw_data.text
@@ -938,7 +924,7 @@ class FragVoice(_Fragment):
 
     __slots__ = ['_voice_md5']
 
-    def __init__(self, _raw_data: Optional[PbContent_pb2.PbContent] = None) -> None:
+    def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
         super(FragVoice, self).__init__(_raw_data)
 
         if _raw_data:
@@ -976,7 +962,7 @@ class FragTiebaPlus(_Fragment):
         '_url',
     ]
 
-    def __init__(self, _raw_data: PbContent_pb2.PbContent) -> None:
+    def __init__(self, _raw_data: _TypeMessage) -> None:
         super(FragTiebaPlus, self).__init__(_raw_data)
 
         self._text = self._raw_data.tiebaplus_info.desc
@@ -1017,7 +1003,7 @@ class FragItem(_Fragment):
 
     __slots__ = ['_text']
 
-    def __init__(self, _raw_data: PbContent_pb2.PbContent) -> None:
+    def __init__(self, _raw_data: _TypeMessage) -> None:
         super(FragItem, self).__init__(_raw_data)
 
         self._text = self._raw_data.item.item_name
@@ -1064,7 +1050,7 @@ class Fragments(object):
         '_tiebapluses',
     ]
 
-    def __init__(self, _raw_datas: Optional[Iterable[PbContent_pb2.PbContent]] = None) -> None:
+    def __init__(self, _raw_datas: Optional[Iterable[_TypeMessage]] = None) -> None:
         def _init_by_type(_raw_data) -> _TypeFragment:
             frag_type: int = _raw_data.type
             # 0纯文本 9电话号 18话题 27百科词条
@@ -1216,7 +1202,7 @@ class BasicForum(_DataWrapper):
         '_fname',
     ]
 
-    def __init__(self, _raw_data: Optional[SimpleForum_pb2.SimpleForum] = None) -> None:
+    def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
         super(BasicForum, self).__init__(_raw_data)
 
         if _raw_data:
@@ -1276,7 +1262,7 @@ class Page(_DataWrapper):
         '_has_prev',
     ]
 
-    def __init__(self, _raw_data: Optional[Page_pb2.Page] = None) -> None:
+    def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
         super(Page, self).__init__(_raw_data)
 
         self._has_more = None
@@ -1540,7 +1526,7 @@ class _VoteOption(object):
 
     __slots__ = ['_vote_num', '_text', '_image']
 
-    def __init__(self, _raw_data: PollInfo_pb2.PollInfo.PollOption) -> None:
+    def __init__(self, _raw_data: _TypeMessage) -> None:
 
         self._vote_num = _raw_data.num
         self._text = _raw_data.text
@@ -1591,7 +1577,7 @@ class VoteInfo(_DataWrapper):
         '_total_user',
     ]
 
-    def __init__(self, _raw_data: Optional[PollInfo_pb2.PollInfo] = None) -> None:
+    def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
         super(VoteInfo, self).__init__(_raw_data)
 
         self._options = None
@@ -1685,7 +1671,7 @@ class ShareThread(_Container):
         '_vote_info',
     ]
 
-    def __init__(self, _raw_data: Optional[ThreadInfo_pb2.ThreadInfo.OriginThreadInfo] = None) -> None:
+    def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
         super(ShareThread, self).__init__(_raw_data)
 
         self._contents = None
@@ -1829,7 +1815,7 @@ class Thread(_Container):
         '_last_time',
     ]
 
-    def __init__(self, _raw_data: Optional[ThreadInfo_pb2.ThreadInfo] = None) -> None:
+    def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
         super(Thread, self).__init__(_raw_data)
 
         self._contents = None
@@ -2088,7 +2074,7 @@ class Threads(_Containers[Thread]):
         '_tab_map',
     ]
 
-    def __init__(self, _raw_data: Optional[FrsPageResIdl_pb2.FrsPageResIdl.DataRes] = None) -> None:
+    def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
         super(Threads, self).__init__(_raw_data)
 
         self._page = None
@@ -2218,7 +2204,7 @@ class Post(_Container):
         '_is_thread_author',
     ]
 
-    def __init__(self, _raw_data: Optional[Post_pb2.Post] = None) -> None:
+    def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
         super(Post, self).__init__(_raw_data)
 
         self._contents = None
@@ -2388,7 +2374,7 @@ class Posts(_Containers[Post]):
         '_has_fold',
     ]
 
-    def __init__(self, _raw_data: Optional[PbPageResIdl_pb2.PbPageResIdl.DataRes] = None) -> None:
+    def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
         super(Posts, self).__init__(_raw_data)
 
         self._page = None
@@ -2528,7 +2514,7 @@ class Comment(_Container):
         '_create_time',
     ]
 
-    def __init__(self, _raw_data: Optional[SubPostList_pb2.SubPostList] = None) -> None:
+    def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
         super(Comment, self).__init__(_raw_data)
 
         self._contents = None
@@ -2628,7 +2614,7 @@ class Comments(_Containers[Comment]):
         '_post',
     ]
 
-    def __init__(self, _raw_data: Optional[PbFloorResIdl_pb2.PbFloorResIdl.DataRes] = None) -> None:
+    def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
         super(Comments, self).__init__(_raw_data)
 
         self._page = None
@@ -2759,7 +2745,7 @@ class Reply(_Container):
         '_create_time',
     ]
 
-    def __init__(self, _raw_data: Optional[ReplyMeResIdl_pb2.ReplyMeResIdl.DataRes.ReplyList] = None) -> None:
+    def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
         super(Reply, self).__init__(_raw_data)
 
         self._post_user = None
@@ -2890,7 +2876,7 @@ class Replys(_Containers[Reply]):
 
     __slots__ = ['_page']
 
-    def __init__(self, _raw_data: Optional[ReplyMeResIdl_pb2.ReplyMeResIdl] = None) -> None:
+    def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
         super(Replys, self).__init__(_raw_data)
 
         self._page = None
@@ -3278,7 +3264,7 @@ class NewThread(_Container):
         '_create_time',
     ]
 
-    def __init__(self, _raw_data: Optional[PostInfoList_pb2.PostInfoList] = None) -> None:
+    def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
         super(NewThread, self).__init__(_raw_data)
 
         self._contents: Fragments = None
@@ -3447,9 +3433,7 @@ class UserPost(_Container):
         '_create_time',
     ]
 
-    def __init__(
-        self, _raw_data: Optional[UserPostResIdl_pb2.UserPostResIdl.DataRes.PostInfoList.PostInfoContent] = None
-    ) -> None:
+    def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
         super(UserPost, self).__init__(_raw_data)
 
         self._contents: Fragments = None
@@ -3520,7 +3504,7 @@ class UserPosts(_Containers[UserPost]):
         '_tid',
     ]
 
-    def __init__(self, _raw_data: Optional[UserPostResIdl_pb2.UserPostResIdl.DataRes.PostInfoList] = None) -> None:
+    def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
         super(UserPosts, self).__init__(_raw_data)
 
         self._fid = self._raw_data.forum_id
@@ -3872,9 +3856,7 @@ class SquareForum(BasicForum):
         '_exp',
     ]
 
-    def __init__(
-        self, _raw_data: Optional[GetForumSquareResIdl_pb2.GetForumSquareResIdl.DataRes.RecommendForumInfo] = None
-    ) -> None:
+    def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
         super(SquareForum, self).__init__(_raw_data)
 
         self._level = 0
@@ -3946,10 +3928,7 @@ class SquareForums(_Containers[SquareForum]):
 
     __slots__ = ['_page']
 
-    def __init__(
-        self,
-        _raw_data: Optional[Iterable[GetForumSquareResIdl_pb2.GetForumSquareResIdl.DataRes.RecommendForumInfo]] = None,
-    ) -> None:
+    def __init__(self, _raw_data: Optional[Iterable[_TypeMessage]] = None) -> None:
         super(SquareForums, self).__init__(_raw_data)
 
         self._page = None
@@ -4017,9 +3996,7 @@ class Forum(BasicForum):
         '_exp',
     ]
 
-    def __init__(
-        self, _raw_data: Optional[GetDislikeListResIdl_pb2.GetDislikeListResIdl.DataRes.ForumList] = None
-    ) -> None:
+    def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
         super(Forum, self).__init__(_raw_data)
 
         self._level = 0
@@ -4635,9 +4612,7 @@ class DislikeForums(_Containers[Forum]):
 
     __slots__ = ['_has_more']
 
-    def __init__(
-        self, _raw_data: Optional[GetDislikeListResIdl_pb2.GetDislikeListResIdl.DataRes.ForumList] = None
-    ) -> None:
+    def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
         super(DislikeForums, self).__init__(_raw_data)
 
         if _raw_data:

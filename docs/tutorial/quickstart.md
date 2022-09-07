@@ -1,10 +1,29 @@
-# 入门教程
+# 快速入门
+
+## 预备知识
+
+阅读本教程前，你应当掌握一定的Python编程基础，而想要流畅地使用aiotieba库，你应当初步了解Python异步编程
+
+当然即便你没有异步编程的基础，我也会针对这部分初学者为每一行异步代码撰写详细的注释
+
+<details markdown="1"><summary>如果你不熟悉Python异步编程</summary>
+
++ [轻松理解Python中的async/await](https://blog.csdn.net/Likianta/article/details/90123678) 非常易于理解的入门案例
++ [Python官方文档 协程与任务](https://docs.python.org/zh-cn/3/library/asyncio-task.html) 包含详尽Reference和配套案例的官方文档，更适合有一定基础的初学者
++ [Python Async/Await入门指南](https://zhuanlan.zhihu.com/p/27258289) 已经是17年的文章了，从生成器`yield`的角度出发介绍Python异步，对初学者不太友好，更适合拔高阅读
++ [深入理解JavaScript中的async/await](https://www.cnblogs.com/youma/p/10475214.html) JavaScript中的`Promise`与Python中的`Future`概念很相似，该教程可以帮助你快速地从Promise异步模式出发理解async-await异步模式
+
+如果你已经从其他编程语言上积累了一些异步编程的知识，那么我建议你按**4-1-2-3**的顺序阅读
+
+如果你只是编程初学者或者对各种异步模式一窍不通，那么我建议你按**1-2-3**的顺序阅读
+
+</details>
 
 ## 命名约定
 
 如果你希望从贴吧的服务器爬取数据
 
-那么你首先应该对以下字段的含义有所认识
+那么你应该对以下字段的含义有所了解
 
 ### BDUSS
 
@@ -16,7 +35,7 @@
 
     使用`BDUSS`可以完成**一切**不需要手机/邮箱验证码的操作，包括**发帖**/**发私信**/**获取账号上的所有历史发言**
 
-    `BDUSS`不会在一段时间后过期，只能通过退出登录或修改密码使其失效
+    `BDUSS`的过期时间长达十年，一般只能通过退出登录或修改密码使其失效
 
     因此将`BDUSS`泄露给不受信任的人可能导致长期的账号安全风险和隐私泄露风险
 
@@ -78,58 +97,32 @@
 
 可以通过`tieba_uid`的值反查`user_name` `portrait` `user_id`
 
-### fid
+### forum_id
 
-吧ID
+吧ID，简称`fid`
 
 每个贴吧都有且仅有一个`fid`
 
 `fid`是一个`uint64`值
 
-你可以在[client.py](https://github.com/Starry-OvO/Tieba-Manager/blob/master/aiotieba/client.py)中搜索`fid: int`来查看使用了`fid`作为参数的接口
+### thread_id
 
-在贴吧混乱的字段命名中，它在某些场合下会被命名为`forum_id`
-
-### tid
-
-主题帖ID
+主题帖ID，简称`tid`
 
 每个主题帖都有且仅有一个`tid`
 
 `tid`是一个`uint64`值
 
-你可以在[client.py](https://github.com/Starry-OvO/Tieba-Manager/blob/master/aiotieba/client.py)中搜索`tid: int`来查看使用了`tid`作为参数的接口
+### post_id
 
-在贴吧混乱的字段命名中，它在某些场合下会被命名为`thread_id`
-
-### pid
-
-回复ID
+回复ID，简称`pid`
 
 每个楼层、楼中楼都有且仅有一个`pid`
 
 `pid`是一个`uint64`值
 
-你可以在[client.py](https://github.com/Starry-OvO/Tieba-Manager/blob/master/aiotieba/client.py)中搜索`pid: int`来查看使用了`pid`作为参数的接口
-
 在贴吧混乱的字段命名中，它在某些场合下会被命名为`post_id`
 
-## Python异步编程入门
-
-想要用好aiotieba库，你必须初步掌握`Python`异步编程
-
-如果你不熟悉`Python`异步编程，建议阅读下列教程：
-
-+ [轻松理解Python中的async/await](https://blog.csdn.net/Likianta/article/details/90123678) 非常易于理解的入门案例
-+ [Python官方文档 协程与任务](https://docs.python.org/zh-cn/3/library/asyncio-task.html) 包含详尽Reference和配套案例的官方文档，更适合有一定基础的初学者
-+ [Python Async/Await入门指南](https://zhuanlan.zhihu.com/p/27258289) 已经是17年的文章了，从生成器`yield`的角度出发介绍Python异步，对初学者不太友好，更适合拔高阅读
-+ [深入理解JavaScript中的async/await](https://www.cnblogs.com/youma/p/10475214.html) JavaScript中的`Promise`与Python中的`Future`概念很相似，该教程可以帮助你快速地从Promise异步模式出发理解async-await异步模式
-
-如果你已经对异步编程的相关知识非常熟悉，那么我建议你按**4-1-2-3**的顺序阅读
-
-如果你只是编程初学者或者对各种异步模式一窍不通，那么我建议你按**1-2-3**的顺序阅读
-
-当然即便你没有阅读上面的教程，我也会针对异步编程的初学者为每一行异步代码撰写详细的注释
 
 ## 入门案例
 
@@ -167,6 +160,8 @@ asyncio.run(main())
 ```toml
 [User]
 
+# default是自定义的BDUSS_key，你可以改成你喜欢的标识
+# 该设计是为了方便通过BDUSS_key快速调用BDUSS，这样你就不用每次都填一串很长的东西作为参数
 [User.default]
 BDUSS = "2dNNk1wMXVSZmw2MnpkWDNqMnM4MmFaeFZYNVVPUEhPS0thNFZzUERjME52V1KpSVFBQUFBJCQAAAAAAQAAAAEAAAA0lUwndl9ndWFyZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA0wPmINMD5iY" # 把你的那一串长长的BDUSS放在这
 ```
@@ -186,7 +181,7 @@ import aiotieba as tb
 # 你需要使用await或asyncio.run或其他语句来等待协程执行完毕后才能拿到返回结果
 async def main():
     # 使用键名"default"对应的BDUSS创建客户端
-    # async with会先调用tb.Client的__init__方法同步地创建一个实例
+    # async with会先调用tb.Client的__init__方法创建一个实例
     # 再异步调用__aenter__方法来自动完成一些资源初始化工作（如创建连接池），并将返回值赋给client变量
     # 最后，在async with的作用域结束时，tb.Client的__aexit__方法会被自动地异步调用以完成一些清理工作（如关闭所有连接并释放资源）
     # async with...as...与with...as...的用途类似，都是为了实现优雅的初始化操作与退出操作
@@ -214,5 +209,5 @@ asyncio.run(main())
 如果你的`BDUSS`填写无误，你会获得类似下面这样的结果
 
 ```log
-<2022-07-16 20:14:34.597> [INFO] [main] 当前用户信息: {'user_id': 957339815, 'user_name': 'kk不好玩', 'portrait': 'tb.1.8277e641.gUE2cTq4A4z5fi2EHn5k3Q'}
+<2022-07-16 20:14:34.597> [INFO] [main] 当前用户信息: {'user_id': 957339815, 'user_name': 'Starry_OvO', 'portrait': 'tb.1.8277e641.gUE2cTq4A4z5fi2EHn5k3Q'}
 ```

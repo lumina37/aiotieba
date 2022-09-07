@@ -1,21 +1,3 @@
-"""
-指令管理器
-使用前请在当前工作目录下新建cmd_handler.toml配置文件，并参考下列案例填写你自己的配置
-
---------
-listener_key = "listener"  # 在这里填用于监听at信息的账号的BDUSS_key
-
-[[Configs]]
-fname = "lol半价"  # 在这里填贴吧名
-admin_key = "default"  # 在这里填用于在该吧行使吧务权限的账号的BDUSS_key
-speaker_key = "default"  # 在这里填用于在该吧发送回复的账号的BDUSS_key
-
-[[Configs]]
-fname = "asoul"  # 在这里填另一个贴吧名
-admin_key = "default"  # 在这里填用于在该吧行使吧务权限的账号的BDUSS_key
-speaker_key = "default"  # 在这里填用于在该吧发送回复的账号的BDUSS_key
-"""
-
 import asyncio
 import functools
 import itertools
@@ -85,7 +67,7 @@ class Context(object):
 
     def __init__(self, at: tb.At) -> None:
         self.at: tb.At = at
-        self.admin: tb.reviewer._ReviewUtils = None
+        self.admin: tb.BaseReviewer = None
         self.speaker: tb.Client = None
         self._init_full_success: bool = False
         self._args = None
@@ -240,11 +222,11 @@ class Listener(object):
 
     def __init__(self) -> None:
 
-        self.listener = tb.reviewer._ReviewUtils(LISTEN_CONFIG['listener_key'])
+        self.listener = tb.BaseReviewer(LISTEN_CONFIG['listener_key'])
 
-        def _parse_config(_config: Dict[str, str]) -> Tuple[str, tb.reviewer._ReviewUtils, tb.Client]:
+        def _parse_config(_config: Dict[str, str]) -> Tuple[str, tb.BaseReviewer, tb.Client]:
             fname = _config['fname']
-            admin = tb.reviewer._ReviewUtils(_config['admin_key'], fname)
+            admin = tb.BaseReviewer(_config['admin_key'], fname)
             speaker = tb.Client(_config['speaker_key'])
             return fname, admin, speaker
 

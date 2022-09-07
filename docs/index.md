@@ -1,3 +1,5 @@
+# 
+
 <p align="center">
 
 <img src="img/aiotieba.svg">
@@ -25,7 +27,7 @@
 
 ## 简介
 
-**aiotieba**使用[**asyncio**](https://tutorials.python.org/zh-cn/3/library/asyncio.html)和[**aiohttp**](https://github.com/aio-libs/aiohttp)封装了百度贴吧客户端的[大部分核心接口](https://github.com/Starry-OvO/Tieba-Manager/blob/master/aiotieba/client.py)，并为吧务管理设计了一套[内容审查脚手架](https://github.com/Starry-OvO/Tieba-Manager/blob/master/aiotieba/reviewer.py)
+**aiotieba**使用[**asyncio**](https://tutorials.python.org/zh-cn/3/library/asyncio.html)和[**aiohttp**](https://github.com/aio-libs/aiohttp)封装了大量操作[百度贴吧核心API](https://github.com/Starry-OvO/Tieba-Manager/blob/master/aiotieba/client.py)的简便方法，并为吧务管理设计了一套[内容审查脚手架](https://github.com/Starry-OvO/Tieba-Manager/blob/master/aiotieba/reviewer.py)
 
 本框架以提高二次开发速度为首要设计目标。规范且符合直觉的命名规律、全覆盖的类型注解和文档注释让你体验飞一般的开发体验
 
@@ -54,5 +56,3 @@ async def main():
 
 asyncio.run(main())
 ```
-
-+ 继续阅读[**入门教程**](tutorials/quickstart.md)

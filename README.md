@@ -1,6 +1,6 @@
 <p align="center">
 
-<img src="docs/img/aiotieba.svg">
+<img src="https://raw.githubusercontent.com/Starry-OvO/Tieba-Manager/master/docs/img/aiotieba.svg">
 
 </p>
 
@@ -25,7 +25,7 @@
 
 ## 简介
 
-**aiotieba**使用[**asyncio**](https://tutorials.python.org/zh-cn/3/library/asyncio.html)和[**aiohttp**](https://github.com/aio-libs/aiohttp)封装了百度贴吧客户端的[大部分核心接口](https://github.com/Starry-OvO/Tieba-Manager/blob/master/aiotieba/client.py)，并为吧务管理设计了一套[内容审查脚手架](https://github.com/Starry-OvO/Tieba-Manager/blob/master/aiotieba/reviewer.py)
+**aiotieba**使用[**asyncio**](https://tutorial.python.org/zh-cn/3/library/asyncio.html)和[**aiohttp**](https://github.com/aio-libs/aiohttp)封装了大量操作[百度贴吧核心API](https://github.com/Starry-OvO/Tieba-Manager/blob/master/aiotieba/client.py)的简便方法，并为吧务管理设计了一套[内容审查脚手架](https://github.com/Starry-OvO/Tieba-Manager/blob/master/aiotieba/reviewer.py)
 
 本框架以提高二次开发速度为首要设计目标。规范且符合直觉的命名规律、全覆盖的类型注解和文档注释让你体验飞一般的开发体验
 
@@ -34,9 +34,9 @@
 <summary>贴吧接口列表</summary>
 
 + 按回复时间/发布时间/热门序获取贴吧主题帖/精华帖列表。支持获取带转发/投票/转发嵌套投票/各种卡片的主题帖信息
-+ 获取带图片链接/小尾巴内容/点赞情况/用户信息（[用户名](https://starry-ovo.github.io/Tieba-Manager/tutorials/quickstart#user_name)/[portrait](https://starry-ovo.github.io/Tieba-Manager/tutorials/quickstart#portrait)/[user_id](https://starry-ovo.github.io/Tieba-Manager/tutorials/quickstart#user_id)/等级/性别/是否锁回复）/每条回复的前排楼中楼（支持按或不按点赞数排序）的楼层列表
++ 获取带图片链接/小尾巴内容/点赞情况/用户信息（[用户名](https://starry-ovo.github.io/Tieba-Manager/tutorial/quickstart#user_name)/[portrait](https://starry-ovo.github.io/Tieba-Manager/tutorial/quickstart#portrait)/[user_id](https://starry-ovo.github.io/Tieba-Manager/tutorial/quickstart#user_id)/等级/性别/是否锁回复）/每条回复的前排楼中楼（支持按或不按点赞数排序）的楼层列表
 + 获取带所有前述用户信息的楼中楼列表
-+ 根据[用户名](https://starry-ovo.github.io/Tieba-Manager/tutorials/quickstart#user_name)/[portrait](https://starry-ovo.github.io/Tieba-Manager/tutorials/quickstart#portrait)/[user_id](https://starry-ovo.github.io/Tieba-Manager/tutorials/quickstart#user_id)中的任一项反查其他用户信息，或通过用户主页的[tieba_uid](https://starry-ovo.github.io/Tieba-Manager/tutorials/quickstart#tieba_uid)反查其他用户信息
++ 根据[用户名](https://starry-ovo.github.io/Tieba-Manager/tutorial/quickstart#user_name)/[portrait](https://starry-ovo.github.io/Tieba-Manager/tutorial/quickstart#portrait)/[user_id](https://starry-ovo.github.io/Tieba-Manager/tutorial/quickstart#user_id)中的任一项反查其他用户信息，或通过用户主页的[tieba_uid](https://starry-ovo.github.io/Tieba-Manager/tutorial/quickstart#tieba_uid)反查其他用户信息
 + 使用小吧主、语音小编的账号删帖/屏蔽/封禁。支持删除视频帖/批量删帖/多于1天的封禁
 + 使用已被大吧主分配解封/恢复/处理申诉权限的吧务账号解封/恢复/处理申诉
 + 使用大吧主账号推荐帖子到首页/移动帖子到指定分区/加精/撤精/置顶/撤置顶/添加黑名单/查看黑名单/取消黑名单
@@ -81,7 +81,7 @@ async def main():
 asyncio.run(main())
 ```
 
-+ 继续阅读[**入门教程**](https://starry-ovo.github.io/Tieba-Manager/tutorials/quickstart)
++ 继续阅读[**入门教程**](https://starry-ovo.github.io/Tieba-Manager/tutorial/quickstart)
 
 ## 友情链接
 
@@ -90,26 +90,24 @@ asyncio.run(main())
 
 ## 客户名单
 
-<details>
-
-<summary>2022.08.31更新</summary>
+<details><summary>2022.09.07更新</summary>
 
 |      吧名      | 关注用户数 | 最近29天日均访问量 | 日均主题帖数 | 日均回复数 |
 | :------------: | :--------: | :----------------: | :----------: | :--------: |
-|    抗压背锅    | 3,992,158  |     1,538,625      |    4,324     |  115,934   |
-|     孙笑川     | 2,400,028  |      782,985       |    9,011     |  245,697   |
-|    lol半价     | 1,957,751  |      100,118       |     267      |   4,987    |
-|      宫漫      | 1,320,835  |       48,343       |     235      |   3,574    |
-|    逆水寒ol    |  714,499   |       38,079       |     121      |   2,864    |
-|    新孙笑川    |  325,473   |       71,163       |     562      |   25,377   |
-|     vtuber     |  212,849   |       12,783       |      75      |    780     |
-|     asoul      |  158,222   |       19,937       |     190      |   1,119    |
-|      嘉然      |   56,697   |       21,123       |     158      |   2,333    |
-|      向晚      |   29,352   |       15,428       |     140      |   1,908    |
-|      贝拉      |   21,657   |       10,551       |      55      |    920     |
-|      乃琳      |   17,148   |       5,351        |      33      |    399     |
-| vtuber自由讨论 |   16,738   |       4,543        |      3       |     85     |
-| asoul一个魂儿  |   14,655   |       1,127        |      7       |     54     |
-|     贝贝珈     |   1,639    |        892         |      1       |     21     |
+|    抗压背锅    | 4,025,591  |     1,157,538      |    5,370     |  128,497   |
+|     孙笑川     | 2,441,189  |      669,206       |    8,599     |  248,885   |
+|    lol半价     | 1,958,028  |       98,299       |     279      |   5,075    |
+|      宫漫      | 1,326,668  |       48,175       |     232      |   3,585    |
+|    逆水寒ol    |  714,550   |       39,881       |     117      |   3,004    |
+|    新孙笑川    |  335,590   |       72,085       |     556      |   25,869   |
+|     vtuber     |  213,151   |       11,258       |      73      |    822     |
+|     asoul      |  158,069   |       16,822       |     154      |    862     |
+|      嘉然      |   56,782   |       16,923       |     130      |   2,028    |
+|      向晚      |   29,762   |       15,036       |     126      |   1,715    |
+|      贝拉      |   21,667   |       9,348        |      49      |    857     |
+|      乃琳      |   17,148   |       4,463        |      26      |    324     |
+| vtuber自由讨论 |   16,756   |       4,331        |      3       |     76     |
+| asoul一个魂儿  |   14,620   |       1,058        |      6       |     45     |
+|     贝贝珈     |   1,630    |        776         |      1       |     18     |
 
 </details>

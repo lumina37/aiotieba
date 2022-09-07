@@ -1,4 +1,7 @@
-__all__ = ['Reviewer']
+__all__ = [
+    'BaseReviewer',
+    'Reviewer',
+]
 
 try:
     import cv2 as cv
@@ -21,17 +24,10 @@ from .database import Database
 from .typedefs import BasicUserInfo, Comment, Comments, Post, Posts, Thread, Threads
 
 
-class _ReviewUtils(object):
+class BaseReviewer(object):
     """
     贴吧审查实用功能
 
-    Args:
-        BDUSS_key (str, optional): 用于从CONFIG中提取BDUSS. Defaults to None.
-        fname (str, optional): 操作的目标贴吧名. Defaults to ''.
-
-    Attributes:
-        client (Client): 客户端
-        db (Database): 数据库连接
     """
 
     __slots__ = [
@@ -42,14 +38,14 @@ class _ReviewUtils(object):
     ]
 
     def __init__(self, BDUSS_key: Optional[str] = None, fname: str = ''):
-        super(_ReviewUtils, self).__init__()
+        super(BaseReviewer, self).__init__()
 
         self.client = Client(BDUSS_key)
         self.db = Database(fname)
         self._img_hasher: "cv.img_hash.AverageHash" = None
         self._qrdetector: "cv.QRCodeDetector" = None
 
-    async def __aenter__(self) -> "_ReviewUtils":
+    async def __aenter__(self) -> "BaseReviewer":
         await asyncio.gather(self.client.__aenter__(), self.db.__aenter__())
         return self
 
@@ -74,31 +70,31 @@ class _ReviewUtils(object):
 
     async def get_fid(self, fname: str) -> int:
         """
-        通过贴吧名获取fid
+        通过贴吧名获取forum_id
 
         Args:
             fname (str): 贴吧名
 
         Returns:
-            int: 该贴吧的fid
+            int: 该贴吧的forum_id
         """
 
         if fid := self.client._fname2fid.get(fname, 0):
             return fid
 
         if fid := await self.db.get_fid(fname):
-            self.client.add_forum_cache(fname, fid)
+            self.client._add_forum_cache(fname, fid)
             return fid
 
         if fid := await self.client.get_fid(fname):
-            self.client.add_forum_cache(fname, fid)
+            self.client._add_forum_cache(fname, fid)
             await self.db.add_forum(fid, fname)
 
         return fid
 
     async def get_fname(self, fid: int) -> str:
         """
-        通过fid获取贴吧名
+        通过forum_id获取贴吧名
 
         Args:
             fid (int): forum_id
@@ -111,11 +107,11 @@ class _ReviewUtils(object):
             return fname
 
         if fname := await self.db.get_fname(fid):
-            self.client.add_forum_cache(fname, fid)
+            self.client._add_forum_cache(fname, fid)
             return fname
 
         if fname := await self.client.get_fname(fid):
-            self.client.add_forum_cache(fname, fid)
+            self.client._add_forum_cache(fname, fid)
             await self.db.add_forum(fid, fname)
 
         return fname
@@ -248,7 +244,7 @@ class _ReviewUtils(object):
             reason (str, optional): 封禁理由. Defaults to ''.
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         return await self.client.block(self.db.fname, _id, day=day, reason=reason)
@@ -261,7 +257,7 @@ class _ReviewUtils(object):
             tid (int): 待屏蔽的主题帖tid
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         return await self.client.hide_thread(self.db.fname, tid)
@@ -274,7 +270,7 @@ class _ReviewUtils(object):
             tid (int): 待删除的主题帖tid
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         return await self.client.del_thread(self.db.fname, tid)
@@ -287,7 +283,7 @@ class _ReviewUtils(object):
             pid (int): 待删除的回复pid
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         return await self.client.del_post(self.db.fname, pid)
@@ -300,7 +296,7 @@ class _ReviewUtils(object):
             id_last_edit (int): 用于识别id的子对象列表是否发生修改 \
                 若该id为tid则id_last_edit应为last_time 若该id为pid则id_last_edit应为reply_num. Defaults to 0.
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         return await self.db.add_id(_id, tag=id_last_edit)
@@ -366,7 +362,7 @@ class _ReviewUtils(object):
         try:
             data = self.qrdetector.detectAndDecode(image)[0]
         except Exception as err:
-            LOG.warning(repr(err))
+            LOG.warning(err)
             data = ''
 
         return data
@@ -386,7 +382,7 @@ class _ReviewUtils(object):
             img_hash_array = self.img_hasher.compute(image)
             img_hash = binascii.hexlify(img_hash_array.tobytes()).decode('ascii')
         except Exception as err:
-            LOG.warning(repr(err))
+            LOG.warning(err)
             img_hash = ''
 
         return img_hash
@@ -439,60 +435,6 @@ def _check_permission(func):
     return _
 
 
-def _check_tid_cache(func):
-    """
-    装饰器检查tid是否已被缓存
-    """
-
-    @functools.wraps(func)
-    async def _(self: "Reviewer", thread: Thread) -> Optional[Punish]:
-        if thread.last_time <= await self.get_id(thread.tid):
-            return
-        punish = await func(self, thread)
-        if not punish:
-            await self.add_id(thread.tid, id_last_edit=thread.last_time)
-        return punish
-
-    return _
-
-
-def _check_pid_cache(func):
-    """
-    装饰器检查回复pid是否已被缓存
-    """
-
-    @functools.wraps(func)
-    async def _(self: "Reviewer", post: Post) -> Optional[Punish]:
-        if post.reply_num == (id_last_edit := await self.get_id(post.pid)):
-            return
-        elif post.reply_num < id_last_edit:
-            await self.add_id(post.pid, id_last_edit=post.reply_num)
-            return
-        punish = await func(self, post)
-        if not punish:
-            await self.add_id(post.pid, id_last_edit=post.reply_num)
-        return punish
-
-    return _
-
-
-def _check_spid_cache(func):
-    """
-    装饰器检查楼中楼pid是否已被缓存
-    """
-
-    @functools.wraps(func)
-    async def _(self: "Reviewer", comment: Comment) -> Optional[Punish]:
-        if await self.get_id(comment.pid) != -1:
-            return
-        punish = await func(self, comment)
-        if not punish:
-            await self.add_id(comment.pid)
-        return punish
-
-    return _
-
-
 def _exce_punish(func):
     """
     装饰器执行删封操作
@@ -508,15 +450,19 @@ def _exce_punish(func):
     return _
 
 
-class Reviewer(_ReviewUtils):
+class Reviewer(BaseReviewer):
     """
     贴吧审查器
 
     请使用以`review_`开头的类方法作为入口函数
 
     Args:
-        BDUSS_key (str, optional): 用于从CONFIG中提取BDUSS. Defaults to None.
+        BDUSS_key (str, optional): 用于快捷调用BDUSS. Defaults to None.
         fname (str, optional): 操作的目标贴吧名. Defaults to ''.
+
+    Attributes:
+        client (Client): 客户端
+        db (Database): 数据库连接
     """
 
     __slots__ = [
@@ -651,7 +597,6 @@ class Reviewer(_ReviewUtils):
 
         self.set_no_debug()
         self.time_interval_closure = self.time_interval()
-        self.time_thre_closure = self.time_threshold()
 
     def set_no_debug(self) -> None:
         """
@@ -685,13 +630,10 @@ class Reviewer(_ReviewUtils):
             Iterator[Thread]: 待审查主题帖的迭代器
         """
 
-        time_thre = self.time_thre_closure()
-
         threads = await self.get_threads(pn)
-        return [thread for thread in threads if not thread.is_livepost and thread.create_time > time_thre]
+        return [thread for thread in threads if not thread.is_livepost]
 
     @_exce_punish
-    @_check_tid_cache
     @_check_permission
     async def loop_handle_thread(self, thread: Thread) -> Optional[Punish]:
         """
@@ -702,30 +644,37 @@ class Reviewer(_ReviewUtils):
 
         Returns:
             Optional[Punish]: 审查结果
+
+        Note:
+            一般不需要重写该函数
         """
 
-        posts = await self.set_thread_level(thread)
+        last_edit_time = await self.get_id(thread.tid)
+        if last_edit_time == -1:
+            await self.set_thread_level(thread)
+            if punish := await self.run_thread_checkers(thread):
+                return punish
+        elif thread.last_time == last_edit_time:
+            return
+        elif thread.last_time < last_edit_time:
+            await self.add_id(thread.tid, id_last_edit=thread.last_time)
+            return
+        else:
+            if punish := await self.loop_handle_posts(thread):
+                return punish
 
-        punish = await self.run_thread_checkers(thread)
-        if punish:
-            return punish
+        await self.add_id(thread.tid, id_last_edit=thread.last_time)
 
-        return await self.loop_handle_posts(thread, posts)
-
-    async def set_thread_level(self, thread: Thread) -> Posts:
+    async def set_thread_level(self, thread: Thread) -> None:
         """
         补充主题帖楼主的等级
 
         Args:
             thread (Thread): 待设置楼主等级的主题帖
-
-        Returns:
-            Posts: 尾页回复列表
         """
 
-        posts = await self.get_posts(thread.tid, pn=99999, sort=1, with_comments=True)
+        posts = await self.get_posts(thread.tid, rn=0)
         thread._user = posts.thread.user
-        return posts
 
     async def run_thread_checkers(self, thread: Thread) -> Optional[Punish]:
         """
@@ -743,45 +692,41 @@ class Reviewer(_ReviewUtils):
             if punish:
                 return punish
 
-    async def loop_handle_posts(self, thread: Thread, last_posts: Posts) -> Optional[Punish]:
+    async def loop_handle_posts(self, thread: Thread) -> Optional[Punish]:
         """
         处理主题帖下的回复
 
         Args:
             thread (Thread): 父级主题帖
-            last_posts (Posts): 尾页回复列表
 
         Returns:
             Optional[Punish]: 主题帖的审查结果
         """
 
-        posts = await self.loop_get_posts(thread, last_posts)
+        posts = await self.loop_get_posts(thread)
         posts = set(posts)
         await asyncio.gather(*[self.loop_handle_post(post) for post in posts])
 
-    async def loop_get_posts(self, thread: Thread, last_posts: Posts) -> Iterator[Post]:
+    async def loop_get_posts(self, thread: Thread) -> Iterator[Post]:
         """
         单页循环审查时由该方法获取主题帖下的待审查回复列表
 
         Args:
             thread (Thread): 父级主题帖
-            last_posts (Iterator[Post]): 尾页回复列表
 
         Returns:
             Iterator[Post]: 待审查回复的迭代器
         """
 
-        time_thre = self.time_thre_closure()
-
-        posts = [post for post in last_posts if post.create_time > time_thre]
+        posts = await self.get_posts(thread.tid, pn=99999, sort=1, with_comments=True)
+        posts = set(posts.objs)
         if thread.reply_num > 30:
             first_posts = await self.get_posts(thread.tid, with_comments=True)
-            posts += [post for post in first_posts if post.create_time > time_thre]
+            posts.update(first_posts.objs)
 
         return posts
 
     @_exce_punish
-    @_check_pid_cache
     @_check_permission
     async def loop_handle_post(self, post: Post) -> Optional[Punish]:
         """
@@ -792,12 +737,25 @@ class Reviewer(_ReviewUtils):
 
         Returns:
             Optional[Punish]: 审查结果
+
+        Note:
+            一般不需要重写该函数
         """
 
-        punish = await self.run_post_checkers(post)
-        if punish:
-            return punish
-        return await self.loop_handle_comments(post)
+        last_reply_num = await self.get_id(post.pid)
+        if post.reply_num == last_reply_num:
+            return
+        elif last_reply_num == -1:
+            if punish := await self.run_post_checkers(post):
+                return punish
+        elif post.reply_num < last_reply_num:
+            await self.add_id(post.pid, id_last_edit=post.reply_num)
+            return
+        else:
+            if punish := await self.loop_handle_comments(post):
+                return punish
+
+        await self.add_id(post.pid, id_last_edit=post.reply_num)
 
     async def run_post_checkers(self, post: Post) -> Optional[Punish]:
         """
@@ -852,7 +810,6 @@ class Reviewer(_ReviewUtils):
             return post.comments
 
     @_exce_punish
-    @_check_spid_cache
     @_check_permission
     async def loop_handle_comment(self, comment: Comment) -> Optional[Punish]:
         """
@@ -863,11 +820,17 @@ class Reviewer(_ReviewUtils):
 
         Returns:
             Optional[Punish]: 审查结果
+
+        Note:
+            一般不需要重写该函数
         """
 
-        punish = await self.run_comment_checkers(comment)
-        if punish:
+        if await self.get_id(comment.pid) != -1:
+            return
+        if punish := await self.run_comment_checkers(comment):
             return punish
+
+        await self.add_id(comment.pid)
 
     async def run_comment_checkers(self, comment: Comment) -> Optional[Punish]:
         """
@@ -959,10 +922,8 @@ class Reviewer(_ReviewUtils):
             Thread: 待审查主题帖
         """
 
-        time_thre = self.time_thre_closure()
-
         threads = await self.get_threads(pn)
-        for thread in [thread for thread in threads if not thread.is_livepost and thread.create_time > time_thre]:
+        for thread in [thread for thread in threads if not thread.is_livepost]:
             yield thread
 
     @_exce_punish
@@ -978,36 +939,33 @@ class Reviewer(_ReviewUtils):
             Optional[Punish]: 主题帖的审查结果
         """
 
-        posts = await self.set_thread_level(thread)
-
+        await self.set_thread_level(thread)
         punish = await self.run_thread_checkers(thread)
         if punish:
             return punish
 
-        return await self.multi_handle_posts(thread, posts)
+        return await self.multi_handle_posts(thread)
 
-    async def multi_handle_posts(self, thread: Thread, last_posts: Posts) -> Optional[Punish]:
+    async def multi_handle_posts(self, thread: Thread) -> Optional[Punish]:
         """
         审查主题帖下的回复
 
         Args:
             thread (Thread): 父级主题帖
-            last_posts (Iterator[Post]): 尾页回复列表
 
         Returns:
             Optional[Punish]: 主题帖的审查结果
         """
 
-        async for post in self.multi_get_posts(thread, last_posts):
+        async for post in self.multi_get_posts(thread):
             await self.multi_handle_post(post)
 
-    async def multi_get_posts(self, thread: Thread, last_posts: Posts) -> Post:
+    async def multi_get_posts(self, thread: Thread) -> Post:
         """
         多页审查时由该方法获取主题帖下的待审查回复列表
 
         Args:
             thread (Thread): 父级主题帖
-            last_posts (Posts): 尾页回复列表
 
         Yields:
             Post: 待审查回复
@@ -1015,19 +973,22 @@ class Reviewer(_ReviewUtils):
 
         time_thre = self.time_thre_closure()
 
-        for post in [post for post in last_posts if post.create_time > time_thre]:
-            yield post
+        posts = await self.get_posts(thread.tid, pn=99999, sort=1, with_comments=True)
+        if posts:
+            for post in posts:
+                yield post
+            if posts[0].create_time < time_thre:
+                return
 
-        if (total_page := last_posts.page.total_page) >= 2:
-
-            for post_pn in range(total_page - 1, 0, -1):
+        if (total_page := posts.page.total_page) >= 2:
+            for post_pn in range(total_page - 2, 0, -1):
                 LOG.debug(f"Scanning tid={thread.tid} pn={post_pn}")
                 posts = await self.get_posts(thread.tid, pn=post_pn, with_comments=True)
                 if posts:
                     for post in posts:
                         yield post
                     if posts[0].create_time < time_thre:
-                        break
+                        return
 
     @_exce_punish
     @_check_permission
@@ -1048,6 +1009,16 @@ class Reviewer(_ReviewUtils):
         return await self.multi_handle_comments(post)
 
     async def multi_handle_comments(self, post: Post) -> Optional[Punish]:
+        """
+        处理回复下的楼中楼
+
+        Args:
+            post (Post): 父级回复
+
+        Returns:
+            Optional[Punish]: 回复审查结果
+        """
+
         comments = await self.multi_get_comments(post)
         comments = set(comments)
         await asyncio.gather(*[self.multi_handle_comment(comment) for comment in comments])

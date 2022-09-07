@@ -3,16 +3,17 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
+urls = { Repository = "https://github.com/Starry-OvO/Tieba-Manager", Documentation = "https://starry-ovo.github.io/Tieba-Manager" }
 name = "aiotieba"
 description = "Asynchronous I/O Client/Reviewer for Baidu Tieba"
 readme = "README.md"
 requires-python = ">=3.9"
 authors = [{ name = "Starry-OvO", email = "starry.qvq@gmail.com" }]
 keywords = ["tieba", "crawler", "spider"]
-urls = { Repository = "https://github.com/Starry-OvO/Tieba-Manager" }
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 4 - Beta",
     "Framework :: AsyncIO",
+    "Intended Audience :: Developers",
     "License :: OSI Approved :: The Unlicense (Unlicense)",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3.9",

@@ -38,7 +38,7 @@ class Database(object):
         try:
             await self._create_pool()
         except aiomysql.Error as err:
-            LOG.warning(f"{err!r}. 无法连接数据库 请检查配置文件中的`Database`字段是否填写正确")
+            LOG.warning(f"{err}. 无法连接数据库 请检查配置文件中的`Database`字段是否填写正确")
 
         return self
 
@@ -121,13 +121,13 @@ class Database(object):
 
     async def get_fid(self, fname: str) -> int:
         """
-        通过贴吧名获取fid
+        通过贴吧名获取forum_id
 
         Args:
             fname (str): 贴吧名
 
         Returns:
-            int: 该贴吧的fid
+            int: 该贴吧的forum_id
         """
 
         try:
@@ -135,7 +135,7 @@ class Database(object):
                 async with conn.cursor() as cursor:
                     await cursor.execute("SELECT `fid` FROM `forum` WHERE `fname`=%s", (fname,))
         except aiomysql.Error as err:
-            LOG.warning(f"{err!r}. fname={self.fname}")
+            LOG.warning(f"{err}. fname={self.fname}")
             return 0
         else:
             if res_tuple := await cursor.fetchone():
@@ -144,10 +144,10 @@ class Database(object):
 
     async def get_fname(self, fid: int) -> str:
         """
-        通过fid获取贴吧名
+        通过forum_id获取贴吧名
 
         Args:
-            fid (int): fid
+            fid (int): forum_id
 
         Returns:
             str: 该贴吧的贴吧名
@@ -158,7 +158,7 @@ class Database(object):
                 async with conn.cursor() as cursor:
                     await cursor.execute("SELECT `fname` FROM `forum` WHERE `fid`=%s", (fid,))
         except aiomysql.Error as err:
-            LOG.warning(f"{err!r}. fid={fid}")
+            LOG.warning(f"{err}. fid={fid}")
             return ''
         else:
             if res_tuple := await cursor.fetchone():
@@ -167,14 +167,14 @@ class Database(object):
 
     async def add_forum(self, fid: int, fname: str) -> bool:
         """
-        向表forum添加fid和贴吧名的映射关系
+        向表forum添加forum_id和贴吧名的映射关系
 
         Args:
-            fid (int): fid
+            fid (int): forum_id
             fname (str): 贴吧名
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -182,7 +182,7 @@ class Database(object):
                 async with conn.cursor() as cursor:
                     await cursor.execute("INSERT IGNORE INTO `forum` VALUES (%s,%s)", (fid, fname))
         except aiomysql.Error as err:
-            LOG.warning(f"{err!r}. fname={self.fname} fid={fid}")
+            LOG.warning(f"{err}. fname={self.fname} fid={fid}")
             return False
         return True
 
@@ -224,7 +224,7 @@ class Database(object):
                     else:
                         raise ValueError("用户属性为空")
         except aiomysql.Error as err:
-            LOG.warning(f"{err!r}. user={user}")
+            LOG.warning(f"{err}. user={user}")
             return BasicUserInfo()
         else:
             if res_tuple := await cursor.fetchone():
@@ -243,7 +243,7 @@ class Database(object):
             user (BasicUserInfo): 待添加的简略版用户信息
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -253,7 +253,7 @@ class Database(object):
                         "INSERT IGNORE INTO `user` VALUES (%s,%s,%s)", (user.user_id, user.user_name, user.portrait)
                     )
         except aiomysql.Error as err:
-            LOG.warning(f"{err!r}. user={user}")
+            LOG.warning(f"{err}. user={user}")
             return False
         return True
 
@@ -265,7 +265,7 @@ class Database(object):
             user (BasicUserInfo): 待删除的简略版用户信息
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -280,7 +280,7 @@ class Database(object):
                     else:
                         raise ValueError("用户属性为空")
         except aiomysql.Error as err:
-            LOG.warning(f"{err!r}. user={user}")
+            LOG.warning(f"{err}. user={user}")
             return False
 
         LOG.info(f"Succeeded. user={user}")
@@ -312,7 +312,7 @@ class Database(object):
             tag (int, optional): 自定义标签. Defaults to 0.
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -320,7 +320,7 @@ class Database(object):
                 async with conn.cursor() as cursor:
                     await cursor.execute(f"REPLACE INTO `id_{self.fname}` VALUES (%s,%s,DEFAULT)", (_id, tag))
         except aiomysql.Error as err:
-            LOG.warning(f"{err!r}. forum={self.fname} id={_id}")
+            LOG.warning(f"{err}. forum={self.fname} id={_id}")
             return False
         return True
 
@@ -340,7 +340,7 @@ class Database(object):
                 async with conn.cursor() as cursor:
                     await cursor.execute(f"SELECT `tag` FROM `id_{self.fname}` WHERE `id`=%s", (_id,))
         except aiomysql.Error as err:
-            LOG.warning(f"{err!r}. forum={self.fname} id={_id}")
+            LOG.warning(f"{err}. forum={self.fname} id={_id}")
             return False
         else:
             if res_tuple := await cursor.fetchone():
@@ -355,7 +355,7 @@ class Database(object):
             _id (int): tid或pid
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -363,7 +363,7 @@ class Database(object):
                 async with conn.cursor() as cursor:
                     await cursor.execute(f"DELETE FROM `id_{self.fname}` WHERE `id`=%s", (_id,))
         except aiomysql.Error as err:
-            LOG.warning(f"{err!r}. forum={self.fname} id={_id}")
+            LOG.warning(f"{err}. forum={self.fname} id={_id}")
             return False
 
         LOG.info(f"Succeeded. forum={self.fname} id={_id}")
@@ -377,7 +377,7 @@ class Database(object):
             hour (int): 小时数
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -388,7 +388,7 @@ class Database(object):
                         (hour,),
                     )
         except aiomysql.Error as err:
-            LOG.warning(f"{err!r}. forum={self.fname}")
+            LOG.warning(f"{err}. forum={self.fname}")
             return False
 
         LOG.info(f"Succeeded. forum={self.fname} hour={hour}")
@@ -421,7 +421,7 @@ class Database(object):
             tag (int, optional): 自定义标签. Defaults to 0.
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -429,7 +429,7 @@ class Database(object):
                 async with conn.cursor() as cursor:
                     await cursor.execute(f"REPLACE INTO `tid_{self.fname}` VALUES (%s,%s,DEFAULT)", (tid, tag))
         except aiomysql.Error as err:
-            LOG.warning(f"{err!r}. forum={self.fname} tid={tid}")
+            LOG.warning(f"{err}. forum={self.fname} tid={tid}")
             return False
 
         LOG.info(f"Succeeded. forum={self.fname} tid={tid} tag={tag}")
@@ -451,7 +451,7 @@ class Database(object):
                 async with conn.cursor() as cursor:
                     await cursor.execute(f"SELECT `tag` FROM `tid_{self.fname}` WHERE `tid`=%s", (tid,))
         except aiomysql.Error as err:
-            LOG.warning(f"{err!r}. forum={self.fname} tid={tid}")
+            LOG.warning(f"{err}. forum={self.fname} tid={tid}")
             return None
         else:
             if res_tuple := await cursor.fetchone():
@@ -466,7 +466,7 @@ class Database(object):
             tid (int): 主题帖tid
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -474,7 +474,7 @@ class Database(object):
                 async with conn.cursor() as cursor:
                     await cursor.execute(f"DELETE FROM `tid_{self.fname}` WHERE `tid`=%s", (tid,))
         except aiomysql.Error as err:
-            LOG.warning(f"{err!r}. forum={self.fname} tid={tid}")
+            LOG.warning(f"{err}. forum={self.fname} tid={tid}")
             return False
         LOG.info(f"Succeeded. forum={self.fname} tid={tid}")
         return True
@@ -500,7 +500,7 @@ class Database(object):
                         (tag, limit, offset),
                     )
         except aiomysql.Error as err:
-            LOG.warning(f"{err!r}. forum={self.fname}")
+            LOG.warning(f"{err}. forum={self.fname}")
             res_list = []
         else:
             res_tuples = await cursor.fetchall()
@@ -531,7 +531,7 @@ class Database(object):
             note (str, optional): 备注. Defaults to ''.
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         if not user_id:
@@ -544,7 +544,7 @@ class Database(object):
                         f"REPLACE INTO `user_id_{self.fname}` VALUES (%s,%s,%s,DEFAULT)", (user_id, permission, note)
                     )
         except aiomysql.Error as err:
-            LOG.warning(f"{err!r}. forum={self.fname} user_id={user_id}")
+            LOG.warning(f"{err}. forum={self.fname} user_id={user_id}")
             return False
         LOG.info(f"Succeeded. forum={self.fname} user_id={user_id} permission={permission}")
         return True
@@ -557,7 +557,7 @@ class Database(object):
             user_id (int): 用户的user_id
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -565,7 +565,7 @@ class Database(object):
                 async with conn.cursor() as cursor:
                     await cursor.execute(f"DELETE FROM `user_id_{self.fname}` WHERE `user_id`=%s", (user_id,))
         except aiomysql.Error as err:
-            LOG.warning(f"{err!r}. forum={self.fname} user_id={user_id}")
+            LOG.warning(f"{err}. forum={self.fname} user_id={user_id}")
             return False
         LOG.info(f"Succeeded. forum={self.fname} user_id={user_id}")
         return True
@@ -588,7 +588,7 @@ class Database(object):
                         f"SELECT `permission` FROM `user_id_{self.fname}` WHERE `user_id`=%s", (user_id,)
                     )
         except aiomysql.Error as err:
-            LOG.warning(f"{err!r}. forum={self.fname} user_id={user_id}")
+            LOG.warning(f"{err}. forum={self.fname} user_id={user_id}")
             return 0
         else:
             if res_tuple := await cursor.fetchone():
@@ -614,7 +614,7 @@ class Database(object):
                         (user_id,),
                     )
         except aiomysql.Error as err:
-            LOG.warning(f"{err!r}. forum={self.fname} user_id={user_id}")
+            LOG.warning(f"{err}. forum={self.fname} user_id={user_id}")
             return 0, '', datetime.datetime(1970, 1, 1)
         else:
             if res_tuple := await cursor.fetchone():
@@ -645,7 +645,7 @@ class Database(object):
                         (lower_permission, upper_permission, limit, offset),
                     )
         except aiomysql.Error as err:
-            LOG.warning(f"{err!r}. forum={self.fname}")
+            LOG.warning(f"{err}. forum={self.fname}")
             res_list = []
         else:
             res_tuples = await cursor.fetchall()
@@ -677,7 +677,7 @@ class Database(object):
             note (str, optional): 备注. Defaults to ''.
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -688,7 +688,7 @@ class Database(object):
                         (img_hash, raw_hash, permission, note),
                     )
         except aiomysql.Error as err:
-            LOG.warning(f"{err!r}. forum={self.fname} img_hash={img_hash}")
+            LOG.warning(f"{err}. forum={self.fname} img_hash={img_hash}")
             return False
 
         LOG.info(f"Succeeded. forum={self.fname} img_hash={img_hash} permission={permission}")
@@ -702,7 +702,7 @@ class Database(object):
             img_hash (str): 图像的phash
 
         Returns:
-            bool: 操作是否成功
+            bool: True成功 False失败
         """
 
         try:
@@ -710,7 +710,7 @@ class Database(object):
                 async with conn.cursor() as cursor:
                     await cursor.execute(f"DELETE FROM `imghash_{self.fname}` WHERE `img_hash`=%s", (img_hash,))
         except aiomysql.Error as err:
-            LOG.warning(f"{err!r}. forum={self.fname} img_hash={img_hash}")
+            LOG.warning(f"{err}. forum={self.fname} img_hash={img_hash}")
             return False
 
         LOG.info(f"Succeeded. forum={self.fname} img_hash={img_hash}")
@@ -734,7 +734,7 @@ class Database(object):
                         f"SELECT `permission` FROM `imghash_{self.fname}` WHERE `img_hash`=%s", (img_hash,)
                     )
         except aiomysql.Error as err:
-            LOG.warning(f"{err!r}. forum={self.fname} img_hash={img_hash}")
+            LOG.warning(f"{err}. forum={self.fname} img_hash={img_hash}")
             return False
         else:
             if res_tuple := await cursor.fetchone():
@@ -759,7 +759,7 @@ class Database(object):
                         f"SELECT `permission`,`note` FROM `imghash_{self.fname}` WHERE `img_hash`=%s", (img_hash,)
                     )
         except aiomysql.Error as err:
-            LOG.warning(f"{err!r}. forum={self.fname} img_hash={img_hash}")
+            LOG.warning(f"{err}. forum={self.fname} img_hash={img_hash}")
             return 0, ''
         else:
             if res_tuple := await cursor.fetchone():
