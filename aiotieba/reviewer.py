@@ -673,7 +673,7 @@ class Reviewer(BaseReviewer):
             thread (Thread): 待设置楼主等级的主题帖
         """
 
-        posts = await self.get_posts(thread.tid, rn=0, only_thread_author=True)
+        posts = await self.get_posts(thread.tid, rn=0)
         thread._user = posts.thread.user
 
     async def run_thread_checkers(self, thread: Thread) -> Optional[Punish]:
