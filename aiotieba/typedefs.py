@@ -826,7 +826,7 @@ class FragLink(_Fragment):
     链接碎片
 
     Attributes:
-        text (str): 标题与原链接
+        text (str): 原链接
         title (str): 链接标题
         url (yarl.URL): 使用yarl解析后的链接
         raw_url (str): 原链接
