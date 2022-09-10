@@ -1775,7 +1775,7 @@ class Thread(_Container):
         tid (int): 主题帖tid
         pid (int): 首楼的回复id
         user (UserInfo): 发布者的用户信息
-        author_id (int): int 发布者的user_id
+        author_id (int): 发布者的user_id
 
         tab_id (int): 分区编号
         is_good (bool): 是否精品帖
@@ -2182,7 +2182,7 @@ class Post(_Container):
         tid (int): 所在主题帖id
         pid (int): 回复id
         user (UserInfo): 发布者的用户信息
-        author_id (int): int 发布者的user_id
+        author_id (int): 发布者的user_id
 
         floor (int): 楼层数
         reply_num (int): 楼中楼数
@@ -2500,7 +2500,8 @@ class Comment(_Container):
         tid (int): 所在主题帖id
         pid (int): 回复id
         user (UserInfo): 发布者的用户信息
-        author_id (int): int 发布者的user_id
+        author_id (int): 发布者的user_id
+        reply_to_id (int): 被回复者的user_id
 
         agree (int): 点赞数
         disagree (int): 点踩数
@@ -2509,6 +2510,7 @@ class Comment(_Container):
 
     __slots__ = [
         '_contents',
+        '_reply_to_id',
         '_agree',
         '_disagree',
         '_create_time',
@@ -2518,6 +2520,7 @@ class Comment(_Container):
         super(Comment, self).__init__(_raw_data)
 
         self._contents = None
+        self._reply_to_id = None
 
         if _raw_data:
             self._pid = _raw_data.id
@@ -2560,10 +2563,38 @@ class Comment(_Container):
             if self._raw_data:
                 self._contents = Fragments(self._raw_data.content)
 
+                first_frag = self._contents[0]
+                if (
+                    isinstance(first_frag, FragText)
+                    and len(self._contents) > 1
+                    and first_frag.text == '回复 '
+                    and (reply_to_id := self._contents[1]._raw_data.uid)
+                ):
+                    self._reply_to_id = reply_to_id
+                    if isinstance(self._contents[1], FragAt):
+                        self._contents._ats = self._contents._ats[1:]
+                    self._contents._frags = self._contents._frags[2:]
+                    if self._contents.texts:
+                        first_text_frag = self._contents.texts[0]
+                        first_text_frag._text = first_text_frag.text.removeprefix(' :')
+
             else:
                 self._contents = Fragments()
 
         return self._contents
+
+    @property
+    def reply_to_id(self) -> int:
+        """
+        被回复者的user_id
+        """
+
+        if self._reply_to_id is None:
+            _ = self.contents
+            if not self._reply_to_id:
+                self._reply_to_id = 0
+
+        return self._reply_to_id
 
     @property
     def agree(self) -> int:
@@ -2728,7 +2759,7 @@ class Reply(_Container):
         tid (int): 所在主题帖id
         pid (int): 回复id
         user (UserInfo): 发布者的用户信息
-        author_id (int): int 发布者的user_id
+        author_id (int): 发布者的user_id
         post_pid (int): 楼层pid
         post_user (BasicUserInfo): 楼层用户信息
         thread_user (BasicUserInfo): 楼主用户信息
@@ -3241,7 +3272,7 @@ class NewThread(_Container):
         tid (int): 主题帖tid
         pid (int): 首楼的回复id
         user (UserInfo): 发布者的用户信息
-        author_id (int): int 发布者的user_id
+        author_id (int): 发布者的user_id
 
         vote_info (VoteInfo): 投票内容
         view_num (int): 浏览量
@@ -3423,7 +3454,7 @@ class UserPost(_Container):
         tid (int): 所在主题帖id
         pid (int): 回复id
         user (UserInfo): 发布者的用户信息
-        author_id (int): int 发布者的user_id
+        author_id (int): 发布者的user_id
 
         create_time (int): 创建时间
     """
