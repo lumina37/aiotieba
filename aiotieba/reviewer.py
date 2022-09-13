@@ -878,8 +878,8 @@ class Reviewer(BaseReviewer):
                     if not running_flag:
                         LOG.info(f"Worker#{i} quit")
                         return
-
-                await self.multi_handle_thread(thread)
+                else:
+                    await self.multi_handle_thread(thread)
 
         workers = [worker(i) for i in range(worker_num)]
         await asyncio.gather(*workers, producer())
