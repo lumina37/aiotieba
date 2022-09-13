@@ -659,9 +659,9 @@ class Reviewer(BaseReviewer):
         elif thread.last_time < last_edit_time:
             await self.add_id(thread.tid, id_last_edit=thread.last_time)
             return
-        else:
-            if punish := await self.loop_handle_posts(thread):
-                return punish
+
+        if punish := await self.loop_handle_posts(thread):
+            return punish
 
         await self.add_id(thread.tid, id_last_edit=thread.last_time)
 
@@ -751,9 +751,9 @@ class Reviewer(BaseReviewer):
         elif post.reply_num < last_reply_num:
             await self.add_id(post.pid, id_last_edit=post.reply_num)
             return
-        else:
-            if punish := await self.loop_handle_comments(post):
-                return punish
+
+        if punish := await self.loop_handle_comments(post):
+            return punish
 
         await self.add_id(post.pid, id_last_edit=post.reply_num)
 
@@ -1054,7 +1054,7 @@ class Reviewer(BaseReviewer):
         """
         debug审查
 
-        在8*30个主题帖上测试审查规则
+        在页码(7, 16]上测试审查规则
         请在投入生产环境前使用该方法执行最终检查
         并仔细观察是否存在误删误封的情况
         该方法不会实际执行删封操作
