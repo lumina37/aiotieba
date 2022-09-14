@@ -197,7 +197,7 @@ class Client(object):
 
     _trust_env = False
 
-    latest_version: ClassVar[str] = "12.28.1.1"  # 这是目前的最新版本
+    latest_version: ClassVar[str] = "12.29.0.1"  # 这是目前的最新版本
     # no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
     post_version: ClassVar[str] = "9.1.0.0"  # 发帖使用极速版
 
@@ -1522,7 +1522,7 @@ class Client(object):
 
         try:
             async with self.session_web.get(
-                yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/f/like/furank"),
+                yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/f/like/furank"),
                 allow_redirects=False,
                 params={
                     'kw': fname,
@@ -1556,7 +1556,7 @@ class Client(object):
 
         try:
             async with self.session_web.get(
-                yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/bawu2/platform/listMemberInfo"),
+                yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/bawu2/platform/listMemberInfo"),
                 allow_redirects=False,
                 params={
                     'word': fname,
@@ -2628,7 +2628,7 @@ class Client(object):
 
         try:
             async with self.session_web.get(
-                yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/bawu2/platform/listBlackUser"),
+                yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/bawu2/platform/listBlackUser"),
                 allow_redirects=False,
                 params={
                     'word': fname,

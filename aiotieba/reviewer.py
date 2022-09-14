@@ -659,9 +659,9 @@ class Reviewer(BaseReviewer):
         elif thread.last_time < last_edit_time:
             await self.add_id(thread.tid, id_last_edit=thread.last_time)
             return
-        else:
-            if punish := await self.loop_handle_posts(thread):
-                return punish
+
+        if punish := await self.loop_handle_posts(thread):
+            return punish
 
         await self.add_id(thread.tid, id_last_edit=thread.last_time)
 
@@ -751,9 +751,9 @@ class Reviewer(BaseReviewer):
         elif post.reply_num < last_reply_num:
             await self.add_id(post.pid, id_last_edit=post.reply_num)
             return
-        else:
-            if punish := await self.loop_handle_comments(post):
-                return punish
+
+        if punish := await self.loop_handle_comments(post):
+            return punish
 
         await self.add_id(post.pid, id_last_edit=post.reply_num)
 
@@ -857,28 +857,29 @@ class Reviewer(BaseReviewer):
         """
 
         self.multi_prepare()
-        pn_queue: asyncio.Queue[int] = asyncio.Queue(maxsize=worker_num)
+        thread_queue: asyncio.Queue[Thread] = asyncio.Queue(maxsize=worker_num)
         running_flag = True
 
         async def producer() -> None:
             pn_iterator = self.multi_pn_iterator()
             for pn in pn_iterator:
-                await pn_queue.put(pn)
+                LOG.info(f"Handling thread_pn={pn}")
+                for thread in await self.multi_get_threads(pn):
+                    await thread_queue.put(thread)
             nonlocal running_flag
             running_flag = False
 
         async def worker(i: int) -> None:
             while 1:
                 try:
-                    pn = await asyncio.wait_for(pn_queue.get(), timeout=1.0)
-                    LOG.info(f"Worker#{i} handling pn:{pn}")
+                    thread = await asyncio.wait_for(thread_queue.get(), timeout=1.0)
                 except asyncio.TimeoutError:
                     nonlocal running_flag
                     if not running_flag:
                         LOG.info(f"Worker#{i} quit")
                         return
-
-                await self.multi_handle_threads(pn)
+                else:
+                    await self.multi_handle_thread(thread)
 
         workers = [worker(i) for i in range(worker_num)]
         await asyncio.gather(*workers, producer())
@@ -898,33 +899,21 @@ class Reviewer(BaseReviewer):
         Returns:
             Iterator[int]: 页码迭代器
         """
-        return range(128, 1, -1)
+        return range(64, 0, -1)
 
-    async def multi_handle_threads(self, pn: int) -> None:
-        """
-        处理一个页码
-
-        Args:
-            pn (int, optional): 页码. Defaults to 1.
-        """
-
-        async for thread in self.multi_get_threads(pn):
-            await self.multi_handle_thread(thread)
-
-    async def multi_get_threads(self, pn: int) -> Thread:
+    async def multi_get_threads(self, pn: int) -> Iterator[Thread]:
         """
         多页审查时由该方法获取页码下的待审查主题帖
 
         Args:
             pn (int): 待审查主题帖列表所在页码
 
-        Yields:
-            Thread: 待审查主题帖
+        Returns:
+            Iterator[Thread]: 待审查主题帖的迭代器
         """
 
         threads = await self.get_threads(pn)
-        for thread in [thread for thread in threads if not thread.is_livepost]:
-            yield thread
+        return [thread for thread in threads if not thread.is_livepost]
 
     @_exce_punish
     @_check_permission
@@ -1065,7 +1054,7 @@ class Reviewer(BaseReviewer):
         """
         debug审查
 
-        在8*30个主题帖上测试审查规则
+        在页码(7, 16]上测试审查规则
         请在投入生产环境前使用该方法执行最终检查
         并仔细观察是否存在误删误封的情况
         该方法不会实际执行删封操作
