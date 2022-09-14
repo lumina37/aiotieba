@@ -50,6 +50,7 @@ __all__ = [
     'DislikeForums',
 ]
 
+import abc
 import json
 import urllib.parse
 from typing import (
@@ -62,8 +63,10 @@ from typing import (
     List,
     Optional,
     Protocol,
+    SupportsIndex,
     TypeVar,
     Union,
+    overload,
     runtime_checkable,
 )
 
@@ -78,24 +81,7 @@ from .protobuf import GetDislikeListResIdl_pb2, Page_pb2, ThreadInfo_pb2, User_p
 _TypeMessage = TypeVar('_TypeMessage', bound=Message)
 
 
-class _DataWrapper(object):
-    """
-    源数据包装器
-
-    Args:
-        _raw_data (Any): 以protobuf或json或html格式组织的源数据
-    """
-
-    __slots__ = ['_raw_data']
-
-    def __init__(self, _raw_data: Any) -> None:
-        self._raw_data = _raw_data
-
-
-_TypeDataWrapper = TypeVar('_TypeDataWrapper', bound=_DataWrapper)
-
-
-class BasicUserInfo(_DataWrapper):
+class BasicUserInfo(object):
     """
     基本用户属性
 
@@ -116,7 +102,7 @@ class BasicUserInfo(_DataWrapper):
     ]
 
     def __init__(self, _id: Union[str, int, None] = None, _raw_data: Optional[_TypeMessage] = None) -> None:
-        super(BasicUserInfo, self).__init__(_raw_data)
+        super(BasicUserInfo, self).__init__()
 
         if _raw_data:
             self._user_id = _raw_data.id
@@ -243,6 +229,19 @@ class BasicUserInfo(_DataWrapper):
 
         else:
             self._portrait = ''
+
+    @property
+    def log_name(self) -> str:
+        """
+        用于在日志中记录用户属性
+        """
+
+        if self.user_name:
+            return self.user_name
+        elif self.portrait:
+            return self.portrait
+        else:
+            return str(self.user_id)
 
 
 class UserInfo(BasicUserInfo):
@@ -571,15 +570,15 @@ class UserInfo(BasicUserInfo):
         self._priv_reply = int(new_priv_reply) if new_priv_reply else 1
 
 
-class _Fragment(_DataWrapper):
+class _Fragment(object):
     """
     内容碎片基类
     """
 
-    __slots__ = []
+    __slots__ = ['_raw_data']
 
     def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
-        super(_Fragment, self).__init__(_raw_data)
+        self._raw_data = _raw_data
 
 
 _TypeFragment = TypeVar('_TypeFragment', bound=_Fragment)
@@ -605,8 +604,7 @@ class FragText(_Fragment):
 
     def __init__(self, _raw_data: _TypeMessage) -> None:
         super(FragText, self).__init__(_raw_data)
-
-        self._text = self._raw_data.text
+        self._text = _raw_data.text
 
     def __repr__(self) -> str:
         return str({'text': self.text})
@@ -639,8 +637,7 @@ class FragEmoji(_Fragment):
 
     def __init__(self, _raw_data: _TypeMessage) -> None:
         super(FragEmoji, self).__init__(_raw_data)
-
-        self._desc: str = self._raw_data.c
+        self._desc: str = _raw_data.c
 
     def __repr__(self) -> str:
         return str({'desc': self.desc})
@@ -680,10 +677,10 @@ class FragImage(_Fragment):
     def __init__(self, _raw_data: _TypeMessage) -> None:
         super(FragImage, self).__init__(_raw_data)
 
-        self._src = self._raw_data.cdn_src or self._raw_data.src
-        self._big_src = self._raw_data.big_cdn_src or self._raw_data.big_src
-        self._origin_src = self._raw_data.origin_src
-        self._origin_size = self._raw_data.origin_size
+        self._src = _raw_data.cdn_src or _raw_data.src
+        self._big_src = _raw_data.big_cdn_src or _raw_data.big_src
+        self._origin_src = _raw_data.origin_src
+        self._origin_size = _raw_data.origin_size
 
         self._hash = None
         self._show_width = None
@@ -793,8 +790,8 @@ class FragAt(_Fragment):
     def __init__(self, _raw_data: _TypeMessage) -> None:
         super(FragAt, self).__init__(_raw_data)
 
-        self._text = self._raw_data.text
-        self._user_id = self._raw_data.uid
+        self._text = _raw_data.text
+        self._user_id = _raw_data.uid
 
     def __repr__(self) -> str:
         return str(
@@ -845,10 +842,10 @@ class FragLink(_Fragment):
     def __init__(self, _raw_data: _TypeMessage) -> None:
         super(FragLink, self).__init__(_raw_data)
 
-        self._text = self._raw_data.text
+        self._text = _raw_data.text
         self._url = None
 
-        self._raw_url: str = self._raw_data.link
+        self._raw_url: str = _raw_data.link
         self._is_external = self._raw_url.startswith(self.external_perfix)
 
         if self._is_external:
@@ -928,8 +925,7 @@ class FragVoice(_Fragment):
         super(FragVoice, self).__init__(_raw_data)
 
         if _raw_data:
-            self._voice_md5 = self._raw_data.voice_md5
-
+            self._voice_md5 = _raw_data.voice_md5
         else:
             self._voice_md5 = ''
 
@@ -965,8 +961,8 @@ class FragTiebaPlus(_Fragment):
     def __init__(self, _raw_data: _TypeMessage) -> None:
         super(FragTiebaPlus, self).__init__(_raw_data)
 
-        self._text = self._raw_data.tiebaplus_info.desc
-        self._url = self._raw_data.tiebaplus_info.jump_url
+        self._text = _raw_data.tiebaplus_info.desc
+        self._url = _raw_data.tiebaplus_info.jump_url
 
     def __repr__(self) -> str:
         return str(
@@ -1005,8 +1001,7 @@ class FragItem(_Fragment):
 
     def __init__(self, _raw_data: _TypeMessage) -> None:
         super(FragItem, self).__init__(_raw_data)
-
-        self._text = self._raw_data.item.item_name
+        self._text = _raw_data.item.item_name
 
     def __repr__(self) -> str:
         return str({'text': self.text})
@@ -1099,6 +1094,9 @@ class Fragments(object):
         else:
             self._frags = []
 
+    def __repr__(self) -> str:
+        return str(self._frags)
+
     @property
     def text(self) -> str:
         """
@@ -1172,7 +1170,15 @@ class Fragments(object):
     def __iter__(self) -> Iterator[_TypeFragment]:
         return self._frags.__iter__()
 
-    def __getitem__(self, idx) -> Union[_TypeFragment, List[_TypeFragment]]:
+    @overload
+    def __getitem__(self, idx: SupportsIndex) -> _TypeFragment:
+        ...
+
+    @overload
+    def __getitem__(self, idx: slice) -> List[_TypeFragment]:
+        ...
+
+    def __getitem__(self, idx):
         return self._frags.__getitem__(idx)
 
     def __setitem__(self, idx, val) -> None:
@@ -1188,7 +1194,7 @@ class Fragments(object):
         return bool(self._frags)
 
 
-class BasicForum(_DataWrapper):
+class BasicForum(object):
     """
     贴吧基本信息
 
@@ -1203,7 +1209,7 @@ class BasicForum(_DataWrapper):
     ]
 
     def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
-        super(BasicForum, self).__init__(_raw_data)
+        super(BasicForum, self).__init__()
 
         if _raw_data:
             self._fid = _raw_data.forum_id
@@ -1238,7 +1244,7 @@ class BasicForum(_DataWrapper):
         return self._fname
 
 
-class Page(_DataWrapper):
+class Page(object):
     """
     页信息
 
@@ -1253,7 +1259,6 @@ class Page(_DataWrapper):
     """
 
     __slots__ = [
-        '_raw_data',
         '_page_size',
         '_current_page',
         '_total_page',
@@ -1263,22 +1268,26 @@ class Page(_DataWrapper):
     ]
 
     def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
-        super(Page, self).__init__(_raw_data)
-
-        self._has_more = None
-        self._has_prev = None
-
         if _raw_data:
             self._page_size = _raw_data.page_size
             self._current_page = _raw_data.current_page
             self._total_page = _raw_data.total_page
             self._total_count = _raw_data.total_count
 
+            if self.current_page and self.total_page:
+                self._has_more = self.current_page < self.total_page
+                self._has_prev = self.current_page > self.total_page
+            else:
+                self._has_more = bool(_raw_data.has_more)
+                self._has_prev = bool(_raw_data.has_prev)
+
         else:
             self._page_size = 0
             self._current_page = 0
             self._total_page = 0
             self._total_count = 0
+            self._has_more = False
+            self._has_prev = False
 
     def __repr__(self) -> str:
         return str(
@@ -1322,23 +1331,12 @@ class Page(_DataWrapper):
 
         return self._total_count
 
-    def _init_flags(self) -> None:
-        if self.current_page and self.total_page:
-            self._has_more = self.current_page < self.total_page
-            self._has_prev = self.current_page > self.total_page
-        else:
-            if self._raw_data:
-                self._has_more = bool(self._raw_data.has_more)
-                self._has_prev = bool(self._raw_data.has_prev)
-
     @property
     def has_more(self) -> bool:
         """
         是否有后继页
         """
 
-        if self._has_more is None:
-            self._init_flags()
         return self._has_more
 
     @property
@@ -1347,12 +1345,10 @@ class Page(_DataWrapper):
         是否有前驱页
         """
 
-        if self._has_prev is None:
-            self._init_flags()
         return self._has_prev
 
 
-class _Container(_DataWrapper):
+class _Container(object):
     """
     基本的内容容器
 
@@ -1367,14 +1363,20 @@ class _Container(_DataWrapper):
         author_id (int): 发布者的user_id
     """
 
-    __slots__ = ['_text', '_fname', '_fid', '_tid', '_pid', '_user', '_author_id']
+    __slots__ = [
+        '_text',
+        '_fname',
+        '_fid',
+        '_tid',
+        '_pid',
+        '_user',
+        '_author_id',
+    ]
 
-    def __init__(self, _raw_data) -> None:
-        super(_Container, self).__init__(_raw_data)
-
+    def __init__(self) -> None:
         self._text = None
-        self._fid = 0
         self._fname = ''
+        self._fid = 0
         self._tid = 0
         self._pid = 0
         self._user = None
@@ -1459,30 +1461,39 @@ class _Container(_DataWrapper):
         return self._author_id
 
 
-class _Containers(_DataWrapper, Generic[_TypeDataWrapper]):
+_TypeContainer = TypeVar('_TypeContainer', bound=_Container)
+
+
+class _Containers(Generic[_TypeContainer]):
     """
     内容列表的泛型基类
     约定取内容的通用接口
 
     Attributes:
-        objs (list[_TypeDataWrapper]): 内容列表
+        objs (list[_TypeContainer]): 内容列表
         has_more (bool): 是否还有下一页
     """
 
     __slots__ = ['_objs']
 
-    def __init__(self, _raw_data) -> None:
-        _DataWrapper.__init__(self, _raw_data)
-
+    def __init__(self) -> None:
         self._objs = None
 
     def __repr__(self) -> str:
         return str(self.objs)
 
-    def __iter__(self) -> Iterator[_TypeDataWrapper]:
+    def __iter__(self) -> Iterator[_TypeContainer]:
         return self.objs.__iter__()
 
-    def __getitem__(self, idx) -> Union[_TypeDataWrapper, List[_TypeDataWrapper]]:
+    @overload
+    def __getitem__(self, idx: SupportsIndex) -> _TypeContainer:
+        ...
+
+    @overload
+    def __getitem__(self, idx: slice) -> List[_TypeContainer]:
+        ...
+
+    def __getitem__(self, idx):
         return self.objs.__getitem__(idx)
 
     def __setitem__(self, idx, val):
@@ -1498,20 +1509,22 @@ class _Containers(_DataWrapper, Generic[_TypeDataWrapper]):
         return bool(self.objs)
 
     @property
-    def objs(self) -> List[_TypeDataWrapper]:
+    @abc.abstractmethod
+    def objs(self) -> List[_TypeContainer]:
         """
         内容列表
         """
 
-        raise NotImplementedError
+        ...
 
     @property
+    @abc.abstractmethod
     def has_more(self) -> bool:
         """
         是否还有下一页
         """
 
-        raise NotImplementedError
+        ...
 
 
 class _VoteOption(object):
@@ -1524,7 +1537,11 @@ class _VoteOption(object):
         image (str): 选项描述图像链接
     """
 
-    __slots__ = ['_vote_num', '_text', '_image']
+    __slots__ = [
+        '_vote_num',
+        '_text',
+        '_image',
+    ]
 
     def __init__(self, _raw_data: _TypeMessage) -> None:
 
@@ -1557,7 +1574,7 @@ class _VoteOption(object):
         return self._image
 
 
-class VoteInfo(_DataWrapper):
+class VoteInfo(object):
     """
     投票信息
 
@@ -1578,19 +1595,18 @@ class VoteInfo(_DataWrapper):
     ]
 
     def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
-        super(VoteInfo, self).__init__(_raw_data)
-
-        self._options = None
 
         if _raw_data:
             self._title = _raw_data.title
             self._is_multi = bool(_raw_data.is_multi)
+            self._options = _raw_data.options
             self._total_vote = _raw_data.total_poll
             self._total_user = _raw_data.total_num
 
         else:
             self._title = ''
             self._is_multi = False
+            self._options = None
             self._total_vote = 0
             self._total_user = 0
 
@@ -1622,10 +1638,9 @@ class VoteInfo(_DataWrapper):
         选项列表
         """
 
-        if self._options is None:
-
-            if self._raw_data:
-                self._options = [_VoteOption(_proto) for _proto in self._raw_data.options]
+        if not isinstance(self._options, list):
+            if self._options is not None:
+                self._options = [_VoteOption(_proto) for _proto in self._options]
             else:
                 self._options = []
 
@@ -1667,17 +1682,19 @@ class ShareThread(_Container):
 
     __slots__ = [
         '_contents',
+        '_medias',
+        '_voice',
         '_title',
         '_vote_info',
     ]
 
     def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
-        super(ShareThread, self).__init__(_raw_data)
-
-        self._contents = None
-        self._vote_info = None
+        super(ShareThread, self).__init__()
 
         if _raw_data:
+            self._contents = _raw_data.content
+            self._medias = _raw_data.media
+            self._voice = _raw_data.voice
             self._title = _raw_data.title
 
             self._fid = _raw_data.fid
@@ -1685,8 +1702,15 @@ class ShareThread(_Container):
             self._tid = int(_raw_data.tid)
             self._pid = _raw_data.pid
 
+            self._vote_info = _raw_data.poll_info
+
         else:
+            self._contents = None
+            self._medias = None
+            self._voice = None
             self._title = ''
+
+            self._vote_info = None
 
     def __eq__(self, obj: "ShareThread") -> bool:
         return super(ShareThread, self).__eq__(obj)
@@ -1718,16 +1742,16 @@ class ShareThread(_Container):
         正文内容碎片列表
         """
 
-        if self._contents is None:
+        if not isinstance(self._contents, Fragments):
+            if self._contents is not None:
 
-            if self._raw_data:
-                self._contents = Fragments(self._raw_data.content)
+                self._contents = Fragments(self._contents)
 
-                img_frags = [FragImage(_proto) for _proto in self._raw_data.media]
+                img_frags = [FragImage(_proto) for _proto in self._medias]
                 self._contents._frags += img_frags
                 self._contents._imgs += img_frags
 
-                if _protos := self._raw_data.voice:
+                if _protos := self._voice:
                     self._contents._voice = FragVoice(_protos[0])
 
             else:
@@ -1749,11 +1773,9 @@ class ShareThread(_Container):
         投票内容
         """
 
-        if self._vote_info is None:
-
-            if self._raw_data:
-                self._vote_info = VoteInfo(_proto) if (_proto := self._raw_data.poll_info).options else VoteInfo()
-
+        if not isinstance(self._vote_info, VoteInfo):
+            if self._vote_info is not None:
+                self._vote_info = VoteInfo(self._vote_info) if self._vote_info.options else VoteInfo()
             else:
                 self._vote_info = VoteInfo()
 
@@ -1816,13 +1838,10 @@ class Thread(_Container):
     ]
 
     def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
-        super(Thread, self).__init__(_raw_data)
-
-        self._contents = None
-        self._vote_info = None
-        self._share_origin = None
+        super(Thread, self).__init__()
 
         if _raw_data:
+            self._contents = _raw_data.first_post_content
             self._title = _raw_data.title
 
             self._fid = _raw_data.fid
@@ -1839,6 +1858,8 @@ class Thread(_Container):
             self._is_hide = bool(_raw_data.is_frs_mask)
             self._is_livepost = bool(_raw_data.is_livepost)
 
+            self._vote_info = _raw_data.poll_info
+            self._share_origin = _raw_data.origin_thread_info
             self._view_num = _raw_data.view_num
             self._reply_num = _raw_data.reply_num
             self._share_num = _raw_data.share_num
@@ -1848,6 +1869,7 @@ class Thread(_Container):
             self._last_time = _raw_data.last_time_int
 
         else:
+            self._contents = None
             self._title = ''
 
             self._tab_id = 0
@@ -1857,6 +1879,8 @@ class Thread(_Container):
             self._is_hide = False
             self._is_livepost = False
 
+            self._vote_info = None
+            self._share_origin = None
             self._view_num = 0
             self._reply_num = 0
             self._share_num = 0
@@ -1895,10 +1919,9 @@ class Thread(_Container):
         正文内容碎片列表
         """
 
-        if self._contents is None:
-
-            if self._raw_data:
-                self._contents = Fragments(self._raw_data.first_post_content)
+        if not isinstance(self._contents, Fragments):
+            if self._contents is not None:
+                self._contents = Fragments(self._contents)
             else:
                 self._contents = Fragments()
 
@@ -1966,11 +1989,9 @@ class Thread(_Container):
         投票信息
         """
 
-        if self._vote_info is None:
-
-            if self._raw_data:
-                self._vote_info = VoteInfo(_proto) if (_proto := self._raw_data.poll_info).options else VoteInfo()
-
+        if not isinstance(self._vote_info, VoteInfo):
+            if self._vote_info is not None:
+                self._vote_info = VoteInfo(self._vote_info) if self._vote_info.options else VoteInfo()
             else:
                 self._vote_info = VoteInfo()
 
@@ -1982,10 +2003,9 @@ class Thread(_Container):
         转发来的原帖内容
         """
 
-        if self._share_origin is None:
-
-            if self._raw_data.origin_thread_info.tid:
-                self._share_origin = ShareThread(self._raw_data.origin_thread_info)
+        if not isinstance(self._share_origin, ShareThread):
+            if self._share_origin is not None and self._share_origin.tid:
+                self._share_origin = ShareThread(self._share_origin)
             else:
                 self._share_origin = ShareThread()
 
@@ -2069,24 +2089,29 @@ class Threads(_Containers[Thread]):
     """
 
     __slots__ = [
+        '_users',
         '_page',
         '_forum',
         '_tab_map',
     ]
 
     def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
-        super(Threads, self).__init__(_raw_data)
-
-        self._page = None
-
-        self._forum = None
-        self._tab_map = None
+        super(Threads, self).__init__()
 
         if _raw_data:
-            self._raw_data = _raw_data
+            self._objs = _raw_data.thread_list
+            self._users = _raw_data.user_list
+
+            self._page = _raw_data.page
+            self._forum = _raw_data.forum
+            self._tab_map = _raw_data.nav_tab_info.tab
 
         else:
-            self._raw_data = None
+            self._users = []
+
+            self._page = None
+            self._forum = None
+            self._tab_map = None
 
     @property
     def objs(self) -> List[Thread]:
@@ -2094,16 +2119,12 @@ class Threads(_Containers[Thread]):
         主题帖列表
         """
 
-        if self._objs is None:
+        if not isinstance(self._objs, list):
+            if self._objs is not None:
 
-            if self._raw_data:
-
-                users = {
-                    user.user_id: user
-                    for _proto in self._raw_data.user_list
-                    if (user := UserInfo(_raw_data=_proto)).user_id
-                }
-                self._objs = [Thread(_proto) for _proto in self._raw_data.thread_list]
+                self._objs = [Thread(_proto) for _proto in self._objs]
+                users = {user.user_id: user for _proto in self._users if (user := UserInfo(_raw_data=_proto)).user_id}
+                self._users = None
 
                 for thread in self._objs:
                     thread._fname = self.forum.fname
@@ -2120,10 +2141,9 @@ class Threads(_Containers[Thread]):
         页信息
         """
 
-        if self._page is None:
-
-            if self._raw_data:
-                self._page = Page(self._raw_data.page)
+        if not isinstance(self._page, Page):
+            if self._page is not None:
+                self._page = Page(self._page)
             else:
                 self._page = Page()
 
@@ -2143,10 +2163,9 @@ class Threads(_Containers[Thread]):
         所在吧信息
         """
 
-        if self._forum is None:
-
-            if self._raw_data:
-                self._forum = BasicForum(self._raw_data.forum)
+        if not isinstance(self._forum, BasicForum):
+            if self._forum is not None:
+                self._forum = BasicForum(self._forum)
             else:
                 self._forum = BasicForum()
 
@@ -2158,10 +2177,9 @@ class Threads(_Containers[Thread]):
         分区名到分区id的映射表
         """
 
-        if self._tab_map is None:
-
-            if self._raw_data:
-                self._tab_map = {_proto.tab_name: _proto.tab_id for _proto in self._raw_data.nav_tab_info.tab}
+        if not isinstance(self._tab_map, dict):
+            if self._tab_map is not None:
+                self._tab_map = {_proto.tab_name: _proto.tab_id for _proto in self._tab_map}
             else:
                 self._tab_map = {}
 
@@ -2205,14 +2223,15 @@ class Post(_Container):
     ]
 
     def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
-        super(Post, self).__init__(_raw_data)
+        super(Post, self).__init__()
 
-        self._contents = None
-        self._sign = None
-        self._comments = None
         self._is_thread_author = False
 
         if _raw_data:
+            self._contents = _raw_data.content
+            self._sign = _raw_data.signature.content
+            self._comments = _raw_data.sub_post_list.sub_post_list
+
             self._pid = _raw_data.id
             self._user = UserInfo(_raw_data=_raw_data.author) if _raw_data.author.id else None
             self._author_id = _raw_data.author_id
@@ -2224,6 +2243,10 @@ class Post(_Container):
             self._create_time = _raw_data.time
 
         else:
+            self._contents = None
+            self._sign = None
+            self._comments = None
+
             self._floor = 0
             self._reply_num = 0
             self._agree = 0
@@ -2260,10 +2283,9 @@ class Post(_Container):
         正文内容碎片列表
         """
 
-        if self._contents is None:
-
-            if self._raw_data:
-                self._contents = Fragments(self._raw_data.content)
+        if not isinstance(self._contents, Fragments):
+            if self._contents is not None:
+                self._contents = Fragments(self._contents)
             else:
                 self._contents = Fragments()
 
@@ -2275,10 +2297,9 @@ class Post(_Container):
         小尾巴内容碎片列表
         """
 
-        if self._sign is None:
-
-            if self._raw_data:
-                self._sign = ''.join([_proto.text for _proto in self._raw_data.signature.content if _proto.type == 0])
+        if not isinstance(self._sign, str):
+            if self._sign is not None:
+                self._sign = ''.join([_proto.text for _proto in self._sign if _proto.type == 0])
             else:
                 self._sign = ''
 
@@ -2290,10 +2311,9 @@ class Post(_Container):
         楼中楼列表
         """
 
-        if self._comments is None:
-
-            if self._raw_data:
-                self._comments = [Comment(_proto) for _proto in self._raw_data.sub_post_list.sub_post_list]
+        if not isinstance(self._comments, list):
+            if self._comments is not None:
+                self._comments = [Comment(_proto) for _proto in self._comments]
             else:
                 self._comments = []
 
@@ -2368,6 +2388,7 @@ class Posts(_Containers[Post]):
     """
 
     __slots__ = [
+        '_users',
         '_page',
         '_forum',
         '_thread',
@@ -2375,17 +2396,25 @@ class Posts(_Containers[Post]):
     ]
 
     def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
-        super(Posts, self).__init__(_raw_data)
-
-        self._page = None
-
-        self._forum = None
-        self._thread = None
+        super(Posts, self).__init__()
 
         if _raw_data:
-            self._has_fold = bool(self._raw_data.has_fold_comment)
+            self._objs = _raw_data.post_list
+            self._users = _raw_data.user_list
+
+            self._page = _raw_data.page
+            self._forum = _raw_data.forum
+            self._thread = _raw_data.thread
+
+            self._has_fold = bool(_raw_data.has_fold_comment)
 
         else:
+            self._users = None
+
+            self._page = None
+            self._forum = None
+            self._thread = None
+
             self._has_fold = False
 
     @property
@@ -2394,16 +2423,12 @@ class Posts(_Containers[Post]):
         回复列表
         """
 
-        if self._objs is None:
+        if not isinstance(self._objs, list):
+            if self._objs is not None:
 
-            if self._raw_data:
-                users = {
-                    user.user_id: user
-                    for user_raw_data in self._raw_data.user_list
-                    if (user := UserInfo(_raw_data=user_raw_data)).user_id
-                }
-
-                self._objs = [Post(_proto) for _proto in self._raw_data.post_list]
+                self._objs = [Post(_proto) for _proto in self._objs]
+                users = {user.user_id: user for _proto in self._users if (user := UserInfo(_raw_data=_proto)).user_id}
+                self._users = None
 
                 for post in self._objs:
 
@@ -2430,10 +2455,9 @@ class Posts(_Containers[Post]):
         页信息
         """
 
-        if self._page is None:
-
-            if self._raw_data:
-                self._page = Page(self._raw_data.page)
+        if not isinstance(self._page, Page):
+            if self._page is not None:
+                self._page = Page(self._page)
             else:
                 self._page = Page()
 
@@ -2453,10 +2477,9 @@ class Posts(_Containers[Post]):
         所在吧信息
         """
 
-        if self._forum is None:
-
-            if self._raw_data:
-                self._forum = BasicForum(self._raw_data.forum)
+        if not isinstance(self._forum, BasicForum):
+            if self._forum is not None:
+                self._forum = BasicForum(self._forum)
             else:
                 self._forum = BasicForum()
 
@@ -2468,10 +2491,9 @@ class Posts(_Containers[Post]):
         所在主题帖信息
         """
 
-        if self._thread is None:
-
-            if self._raw_data:
-                self._thread = Thread(self._raw_data.thread)
+        if not isinstance(self._thread, Thread):
+            if self._thread is not None:
+                self._thread = Thread(self._thread)
                 self._thread._fid = self.forum.fid
 
             else:
@@ -2517,21 +2539,27 @@ class Comment(_Container):
     ]
 
     def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
-        super(Comment, self).__init__(_raw_data)
+        super(Comment, self).__init__()
 
         self._contents = None
-        self._reply_to_id = None
 
         if _raw_data:
+            self._contents = _raw_data.content
+
             self._pid = _raw_data.id
             self._user = UserInfo(_raw_data=_raw_data.author)
             self._author_id = _raw_data.author_id
+            self._reply_to_id = None
 
             self._agree = _raw_data.agree.agree_num
             self._disagree = _raw_data.agree.disagree_num
             self._create_time = _raw_data.time
 
         else:
+            self._contents = None
+
+            self._reply_to_id = 0
+
             self._agree = 0
             self._disagree = 0
             self._create_time = 0
@@ -2558,15 +2586,15 @@ class Comment(_Container):
         正文内容碎片列表
         """
 
-        if self._contents is None:
+        if not isinstance(self._contents, Fragments):
+            if self._contents is not None:
 
-            if self._raw_data:
-                self._contents = Fragments(self._raw_data.content)
+                self._contents = Fragments(self._contents)
 
                 first_frag = self._contents[0]
                 if (
-                    isinstance(first_frag, FragText)
-                    and len(self._contents) > 1
+                    len(self._contents) > 1
+                    and isinstance(first_frag, FragText)
                     and first_frag.text == '回复 '
                     and (reply_to_id := self._contents[1]._raw_data.uid)
                 ):
@@ -2646,13 +2674,21 @@ class Comments(_Containers[Comment]):
     ]
 
     def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
-        super(Comments, self).__init__(_raw_data)
+        super(Comments, self).__init__()
 
-        self._page = None
+        if _raw_data:
+            self._objs = _raw_data.subpost_list
 
-        self._forum = None
-        self._thread = None
-        self._post = None
+            self._page = _raw_data.page
+            self._forum = _raw_data.forum
+            self._thread = _raw_data.thread
+            self._post = _raw_data.post
+
+        else:
+            self._page = None
+            self._forum = None
+            self._thread = None
+            self._post = None
 
     @property
     def objs(self) -> List[Comment]:
@@ -2660,10 +2696,10 @@ class Comments(_Containers[Comment]):
         楼中楼列表
         """
 
-        if self._objs is None:
+        if not isinstance(self._objs, list):
+            if self._objs is not None:
 
-            if self._raw_data:
-                self._objs = [Comment(_proto) for _proto in self._raw_data.subpost_list]
+                self._objs = [Comment(_proto) for _proto in self._objs]
 
                 for comment in self._objs:
                     comment._fid = self.forum.fid
@@ -2681,10 +2717,9 @@ class Comments(_Containers[Comment]):
         页信息
         """
 
-        if self._page is None:
-
-            if self._raw_data:
-                self._page = Page(self._raw_data.page)
+        if not isinstance(self._page, Page):
+            if self._page is not None:
+                self._page = Page(self._page)
             else:
                 self._page = Page()
 
@@ -2704,10 +2739,9 @@ class Comments(_Containers[Comment]):
         所在吧信息
         """
 
-        if self._forum is None:
-
-            if self._raw_data:
-                self._forum = BasicForum(self._raw_data.forum)
+        if not isinstance(self._forum, BasicForum):
+            if self._forum is not None:
+                self._forum = BasicForum(self._forum)
             else:
                 self._forum = BasicForum()
 
@@ -2719,10 +2753,9 @@ class Comments(_Containers[Comment]):
         所在主题帖信息
         """
 
-        if self._thread is None:
-
-            if self._raw_data:
-                self._thread = Thread(self._raw_data.thread)
+        if not isinstance(self._thread, Thread):
+            if self._thread is not None:
+                self._thread = Thread(self._thread)
                 self._thread._fid = self.forum.fid
 
             else:
@@ -2736,10 +2769,9 @@ class Comments(_Containers[Comment]):
         所在回复信息
         """
 
-        if self._post is None:
-
-            if self._raw_data:
-                self._post = Post(self._raw_data.post)
+        if not isinstance(self._post, Post):
+            if self._post is not None:
+                self._post = Post(self._post)
                 self._post._fid = self.forum.fid
                 self._post._tid = self.thread.tid
 
@@ -2777,10 +2809,7 @@ class Reply(_Container):
     ]
 
     def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
-        super(Reply, self).__init__(_raw_data)
-
-        self._post_user = None
-        self._thread_user = None
+        super(Reply, self).__init__()
 
         if _raw_data:
             self._text = _raw_data.content
@@ -2788,7 +2817,10 @@ class Reply(_Container):
             self._fname = _raw_data.fname
             self._tid = _raw_data.thread_id
             self._pid = _raw_data.post_id
+            self._user = _raw_data.replyer
             self._post_pid = _raw_data.quote_pid
+            self._post_user = _raw_data.quote_user
+            self._thread_user = _raw_data.thread_author_user
 
             self._is_floor = bool(_raw_data.is_floor)
             self._create_time = _raw_data.time
@@ -2797,6 +2829,8 @@ class Reply(_Container):
             self._text = ''
 
             self._post_pid = 0
+            self._post_user = None
+            self._thread_user = None
 
             self._is_floor = False
             self._create_time = 0
@@ -2821,10 +2855,9 @@ class Reply(_Container):
         发布者的用户信息
         """
 
-        if self._user is None:
-
-            if self._raw_data:
-                self._user = UserInfo(_raw_data=_proto) if (_proto := self._raw_data.replyer).id else UserInfo()
+        if not isinstance(self._user, UserInfo):
+            if self._user is not None:
+                self._user = UserInfo(_raw_data=self._user) if self._user.id else UserInfo()
             else:
                 self._user = UserInfo()
 
@@ -2844,12 +2877,9 @@ class Reply(_Container):
         楼层用户信息
         """
 
-        if self._post_user is None:
-
-            if self._raw_data:
-                self._post_user = (
-                    BasicUserInfo(_raw_data=_proto) if (_proto := self._raw_data.quote_user).id else BasicUserInfo()
-                )
+        if not isinstance(self._post_user, BasicUserInfo):
+            if self._post_user is not None:
+                self._post_user = BasicUserInfo(_raw_data=self._post_user) if self._post_user.id else BasicUserInfo()
             else:
                 self._post_user = BasicUserInfo()
 
@@ -2861,13 +2891,10 @@ class Reply(_Container):
         楼主用户信息
         """
 
-        if self._thread_user is None:
-
-            if self._raw_data:
+        if not isinstance(self._thread_user, BasicUserInfo):
+            if self._thread_user is not None:
                 self._thread_user = (
-                    BasicUserInfo(_raw_data=_proto)
-                    if (_proto := self._raw_data.thread_author_user).id
-                    else BasicUserInfo()
+                    BasicUserInfo(_raw_data=self._thread_user) if self._thread_user.id else BasicUserInfo()
                 )
             else:
                 self._thread_user = BasicUserInfo()
@@ -2908,9 +2935,14 @@ class Replys(_Containers[Reply]):
     __slots__ = ['_page']
 
     def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
-        super(Replys, self).__init__(_raw_data)
+        super(Replys, self).__init__()
 
-        self._page = None
+        if _raw_data:
+            self._objs = _raw_data.reply_list
+            self._page = _raw_data.page
+
+        else:
+            self._page = None
 
     @property
     def objs(self) -> List[Reply]:
@@ -2918,10 +2950,9 @@ class Replys(_Containers[Reply]):
         收到回复列表
         """
 
-        if self._objs is None:
-
-            if self._raw_data:
-                self._objs = [Reply(reply_proto) for reply_proto in self._raw_data.reply_list]
+        if not isinstance(self._objs, list):
+            if self._objs is not None:
+                self._objs = [Reply(_proto) for _proto in self._objs]
             else:
                 self._objs = []
 
@@ -2933,10 +2964,9 @@ class Replys(_Containers[Reply]):
         页信息
         """
 
-        if self._page is None:
-
-            if self._raw_data:
-                self._page = Page(self._raw_data.page)
+        if not isinstance(self._page, Page):
+            if self._page is not None:
+                self._page = Page(self._page)
             else:
                 self._page = Page()
 
@@ -2970,10 +3000,14 @@ class At(_Container):
         create_time (int): 创建时间
     """
 
-    __slots__ = ['_is_floor', '_is_thread', '_create_time']
+    __slots__ = [
+        '_is_floor',
+        '_is_thread',
+        '_create_time',
+    ]
 
-    def __init__(self, _raw_data: Optional[Dict] = None) -> None:
-        super(At, self).__init__(_raw_data)
+    def __init__(self, _raw_data: Optional[dict] = None) -> None:
+        super(At, self).__init__()
 
         if _raw_data:
             self._text = _raw_data['content']
@@ -2981,6 +3015,7 @@ class At(_Container):
             self._fname = _raw_data['fname']
             self._tid = int(_raw_data['thread_id'])
             self._pid = int(_raw_data['post_id'])
+            self._user = _raw_data['replyer']
 
             self._is_floor = bool(int(_raw_data['is_floor']))
             self._is_thread = bool(int(_raw_data['is_first_post']))
@@ -3005,10 +3040,9 @@ class At(_Container):
         发布者的用户信息
         """
 
-        if self._user is None:
-
-            if self._raw_data:
-                user_proto = ParseDict(self._raw_data['replyer'], User_pb2.User(), ignore_unknown_fields=True)
+        if not isinstance(self._user, UserInfo):
+            if self._user is not None:
+                user_proto = ParseDict(self._user, User_pb2.User(), ignore_unknown_fields=True)
                 self._user = UserInfo(_raw_data=user_proto) if user_proto.id else UserInfo()
             else:
                 self._user = UserInfo()
@@ -3054,12 +3088,23 @@ class Ats(_Containers[At]):
         has_more (bool): 是否还有下一页
     """
 
-    __slots__ = ['_page']
+    __slots__ = [
+        '_raw_objs',
+        '_page',
+    ]
 
-    def __init__(self, _raw_data: Optional[Dict] = None) -> None:
-        super(Ats, self).__init__(_raw_data)
+    def __init__(self, _raw_data: Optional[dict] = None) -> None:
+        super(Ats, self).__init__()
 
-        self._page = None
+        self._objs = None
+
+        if _raw_data:
+            self._raw_objs = _raw_data.get('at_list', None)
+            self._page = _raw_data['page']
+
+        else:
+            self._raw_objs = None
+            self._page = None
 
     @property
     def objs(self) -> List[At]:
@@ -3067,10 +3112,10 @@ class Ats(_Containers[At]):
         @信息列表
         """
 
-        if self._objs is None:
-
-            if self._raw_data and (at_dicts := self._raw_data['at_list']):
-                self._objs = [At(_dict) for _dict in at_dicts]
+        if not isinstance(self._objs, list):
+            if self._raw_objs is not None:
+                self._objs = [At(_dict) for _dict in self._raw_objs]
+                self._raw_objs = None
             else:
                 self._objs = []
 
@@ -3082,12 +3127,10 @@ class Ats(_Containers[At]):
         页信息
         """
 
-        if self._page is None:
-
-            if self._raw_data:
-                page_proto = ParseDict(self._raw_data['page'], Page_pb2.Page(), ignore_unknown_fields=True)
+        if not isinstance(self._page, Page):
+            if self._page is not None:
+                page_proto = ParseDict(self._page, Page_pb2.Page(), ignore_unknown_fields=True)
                 self._page = Page(page_proto)
-
             else:
                 self._page = Page()
 
@@ -3126,8 +3169,8 @@ class Search(_Container):
         '_create_time',
     ]
 
-    def __init__(self, _raw_data: Optional[Dict] = None) -> None:
-        super(Search, self).__init__(_raw_data)
+    def __init__(self, _raw_data: Optional[dict] = None) -> None:
+        super(Search, self).__init__()
 
         if _raw_data:
             self._text = _raw_data['content']
@@ -3136,6 +3179,7 @@ class Search(_Container):
             self._fname = _raw_data['fname']
             self._tid = int(_raw_data['tid'])
             self._pid = int(_raw_data['pid'])
+            self._user = _raw_data['author']
 
             self._is_floor = bool(int(_raw_data['is_floor']))
             self._create_time = int(_raw_data['time'])
@@ -3167,12 +3211,9 @@ class Search(_Container):
         发布者的用户信息
         """
 
-        if self._user is None:
-
-            if self._raw_data:
-                user_proto = ParseDict(self._raw_data['author'], User_pb2.User(), ignore_unknown_fields=True)
-                self._user = UserInfo(_raw_data=user_proto) if user_proto.id else UserInfo()
-
+        if not isinstance(self._user, UserInfo):
+            if self._user is not None:
+                self._user = UserInfo(_raw_data=ParseDict(self._user, User_pb2.User(), ignore_unknown_fields=True))
             else:
                 self._user = UserInfo()
 
@@ -3209,12 +3250,23 @@ class Searches(_Containers[Search]):
         has_more (bool): 是否还有下一页
     """
 
-    __slots__ = ['_page']
+    __slots__ = [
+        '_raw_objs',
+        '_page',
+    ]
 
-    def __init__(self, _raw_data: Optional[Dict] = None) -> None:
-        super(Searches, self).__init__(_raw_data)
+    def __init__(self, _raw_data: Optional[dict] = None) -> None:
+        super(Searches, self).__init__()
 
-        self._page = None
+        self._objs = None
+
+        if _raw_data:
+            self._raw_objs = _raw_data.get('post_list', None)
+            self._page = _raw_data['page']
+
+        else:
+            self._raw_objs = None
+            self._page = None
 
     @property
     def objs(self) -> List[Search]:
@@ -3222,10 +3274,10 @@ class Searches(_Containers[Search]):
         搜索结果列表
         """
 
-        if self._objs is None:
-
-            if self._raw_data and (search_dicts := self._raw_data['post_list']):
-                self._objs = [Search(_dict) for _dict in search_dicts]
+        if not isinstance(self._objs, list):
+            if self._raw_objs is not None:
+                self._objs = [Search(_dict) for _dict in self._raw_objs]
+                self._raw_objs = None
             else:
                 self._objs = []
 
@@ -3237,10 +3289,9 @@ class Searches(_Containers[Search]):
         页信息
         """
 
-        if self._page is None:
-
-            if self._raw_data:
-                page_proto = ParseDict(self._raw_data['page'], Page_pb2.Page(), ignore_unknown_fields=True)
+        if not isinstance(self._page, Page):
+            if self._page is not None:
+                page_proto = ParseDict(self._page, Page_pb2.Page(), ignore_unknown_fields=True)
                 self._page = Page(page_proto)
 
             else:
@@ -3296,12 +3347,10 @@ class NewThread(_Container):
     ]
 
     def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
-        super(NewThread, self).__init__(_raw_data)
-
-        self._contents: Fragments = None
-        self._vote_info: VoteInfo = None
+        super(NewThread, self).__init__()
 
         if _raw_data:
+            self._contents = _raw_data.first_post_content
             self._title = _raw_data.title
 
             self._fid = _raw_data.forum_id
@@ -3310,6 +3359,7 @@ class NewThread(_Container):
             self._pid = _raw_data.post_id
             self._author_id = _raw_data.user_id
 
+            self._vote_info = _raw_data.poll_info
             self._view_num = _raw_data.freq_num
             self._reply_num = _raw_data.reply_num
             self._share_num = _raw_data.share_num
@@ -3318,8 +3368,10 @@ class NewThread(_Container):
             self._create_time = _raw_data.create_time
 
         else:
+            self._contents = None
             self._title = ''
 
+            self._vote_info = None
             self._view_num = 0
             self._reply_num = 0
             self._share_num = 0
@@ -3357,10 +3409,9 @@ class NewThread(_Container):
         正文内容碎片列表
         """
 
-        if self._contents is None:
-
-            if self._raw_data:
-                self._contents = Fragments(self._raw_data.first_post_content)
+        if not isinstance(self._contents, Fragments):
+            if self._contents is not None:
+                self._contents = Fragments(self._contents)
             else:
                 self._contents = Fragments()
 
@@ -3380,11 +3431,9 @@ class NewThread(_Container):
         投票信息
         """
 
-        if self._vote_info is None:
-
-            if self._raw_data:
-                self._vote_info = VoteInfo(_proto) if (_proto := self._raw_data.poll_info).options else VoteInfo()
-
+        if not isinstance(self._vote_info, VoteInfo):
+            if self._vote_info is not None:
+                self._vote_info = VoteInfo(self._vote_info) if self._vote_info.options else VoteInfo()
             else:
                 self._vote_info = VoteInfo()
 
@@ -3465,16 +3514,15 @@ class UserPost(_Container):
     ]
 
     def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
-        super(UserPost, self).__init__(_raw_data)
-
-        self._contents: Fragments = None
+        super(UserPost, self).__init__()
 
         if _raw_data:
+            self._contents = _raw_data.post_content
             self._pid = _raw_data.post_id
-
             self._create_time = _raw_data.create_time
 
         else:
+            self._contents = None
             self._create_time = 0
 
     def __eq__(self, obj: "UserPost") -> bool:
@@ -3499,10 +3547,9 @@ class UserPost(_Container):
         正文内容碎片列表
         """
 
-        if self._contents is None:
-
-            if self._raw_data:
-                self._contents = Fragments(self._raw_data.post_content)
+        if not isinstance(self._contents, Fragments):
+            if self._contents is not None:
+                self._contents = Fragments(self._contents)
             else:
                 self._contents = Fragments()
 
@@ -3536,10 +3583,16 @@ class UserPosts(_Containers[UserPost]):
     ]
 
     def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
-        super(UserPosts, self).__init__(_raw_data)
+        super(UserPosts, self).__init__()
 
-        self._fid = self._raw_data.forum_id
-        self._tid = self._raw_data.thread_id
+        if _raw_data:
+            self._objs = _raw_data.content
+            self._fid = _raw_data.forum_id
+            self._tid = _raw_data.thread_id
+
+        else:
+            self._fid = 0
+            self._tid = 0
 
     @property
     def objs(self) -> List[UserPost]:
@@ -3547,10 +3600,10 @@ class UserPosts(_Containers[UserPost]):
         用户历史回复信息列表
         """
 
-        if self._objs is None:
+        if not isinstance(self._objs, list):
+            if self._objs is not None:
 
-            if self._raw_data:
-                self._objs = [UserPost(_proto) for _proto in self._raw_data.content]
+                self._objs = [UserPost(_proto) for _proto in self._objs]
 
                 for post in self._objs:
                     post._fid = self.fid
@@ -3578,7 +3631,7 @@ class UserPosts(_Containers[UserPost]):
         return self._tid
 
 
-class RankUser(_DataWrapper):
+class RankUser(object):
     """
     等级排行榜用户信息
 
@@ -3597,14 +3650,14 @@ class RankUser(_DataWrapper):
     ]
 
     def __init__(self, _raw_data: Optional[bs4.element.Tag] = None) -> None:
-        super(RankUser, self).__init__(_raw_data)
+        super(RankUser, self).__init__()
 
         if _raw_data:
             user_name_item = _raw_data.td.next_sibling
             self._user_name = user_name_item.text
             self._is_vip = 'drl_item_vip' in user_name_item.div['class']
             level_item = user_name_item.next_sibling
-            # e.g. get level 16 from string "bg_lv16" by slicing [5:]
+            # e.g. get level 16 from "bg_lv16" by slicing [5:]
             self._level = int(level_item.div['class'][0][5:])
             exp_item = level_item.next_sibling
             self._exp = int(exp_item.text)
@@ -3669,12 +3722,25 @@ class RankUsers(_Containers[RankUser]):
         has_more (bool): 是否还有下一页
     """
 
-    __slots__ = ['_page']
+    __slots__ = [
+        '_raw_objs',
+        '_page',
+    ]
 
     def __init__(self, _raw_data: Optional[bs4.BeautifulSoup] = None) -> None:
-        super(RankUsers, self).__init__(_raw_data)
+        super(RankUsers, self).__init__()
 
-        self._page = None
+        self._objs = None
+
+        if _raw_data:
+            self._raw_objs = _raw_data('tr', class_=['drl_list_item', 'drl_list_item_self'])
+
+            page_item = _raw_data.find('ul', class_='p_rank_pager')
+            self._page = json.loads(page_item['data-field'])
+
+        else:
+            self._raw_objs = None
+            self._page = None
 
     @property
     def objs(self) -> List[RankUser]:
@@ -3682,12 +3748,9 @@ class RankUsers(_Containers[RankUser]):
         等级排行榜用户列表
         """
 
-        if self._objs is None:
-
-            if self._raw_data:
-                self._objs = [
-                    RankUser(_tag) for _tag in self._raw_data('tr', class_=['drl_list_item', 'drl_list_item_self'])
-                ]
+        if not isinstance(self._objs, list):
+            if self._raw_objs is not None:
+                self._objs = [RankUser(_tag) for _tag in self._raw_objs]
             else:
                 self._objs = []
 
@@ -3699,14 +3762,11 @@ class RankUsers(_Containers[RankUser]):
         页信息
         """
 
-        if self._page is None:
-
-            if self._raw_data:
-                page_item = self._raw_data.find('ul', class_='p_rank_pager')
-                page_dict: Dict[str, int] = json.loads(page_item['data-field'])
-                page_dict['current_page'] = page_dict.pop('cur_page')
-                page_dict['total_count'] = page_dict.pop('total_num')
-                page_proto = ParseDict(page_dict, Page_pb2.Page(), ignore_unknown_fields=True)
+        if not isinstance(self._page, Page):
+            if self._page is not None:
+                self._page['current_page'] = self._page.pop('cur_page')
+                self._page['total_count'] = self._page.pop('total_num')
+                page_proto = ParseDict(self._page, Page_pb2.Page(), ignore_unknown_fields=True)
                 self._page = Page(page_proto)
 
             else:
@@ -3723,7 +3783,7 @@ class RankUsers(_Containers[RankUser]):
         return self.page.has_more
 
 
-class MemberUser(_DataWrapper):
+class MemberUser(object):
     """
     最新关注用户信息
 
@@ -3740,7 +3800,7 @@ class MemberUser(_DataWrapper):
     ]
 
     def __init__(self, _raw_data: Optional[bs4.element.Tag] = None) -> None:
-        super(MemberUser, self).__init__(_raw_data)
+        super(MemberUser, self).__init__()
 
         if _raw_data:
             user_item = _raw_data.a
@@ -3751,9 +3811,8 @@ class MemberUser(_DataWrapper):
 
         else:
             self._user_name = ''
+            self._portrait = ''
             self._level = 0
-            self._exp = 0
-            self._is_vip = False
 
     def __repr__(self) -> str:
         return str(
@@ -3808,10 +3867,23 @@ class MemberUsers(_Containers[MemberUser]):
         has_more (bool): 是否还有下一页
     """
 
-    __slots__ = ['_page']
+    __slots__ = [
+        '_raw_objs',
+        '_page',
+    ]
 
     def __init__(self, _raw_data: Optional[bs4.BeautifulSoup] = None) -> None:
-        super(MemberUsers, self).__init__(_raw_data)
+        super(MemberUsers, self).__init__()
+
+        self._objs = None
+
+        if _raw_data:
+            self._raw_objs = _raw_data('div', class_='name_wrap')
+            self._page = _raw_data.find('div', class_='tbui_pagination').find('li', class_='active')
+
+        else:
+            self._raw_objs = None
+            self._page = None
 
         self._page = None
 
@@ -3821,13 +3893,9 @@ class MemberUsers(_Containers[MemberUser]):
         最新关注用户列表
         """
 
-        if self._objs is None:
-
-            if self._raw_data:
-                self._objs = [
-                    MemberUser(_raw_data=member_user_tag)
-                    for member_user_tag in self._raw_data('div', class_='name_wrap')
-                ]
+        if not isinstance(self._objs, list):
+            if self._raw_objs is not None:
+                self._objs = [MemberUser(_raw_data=_tag) for _tag in self._raw_objs]
             else:
                 self._objs = []
 
@@ -3839,15 +3907,13 @@ class MemberUsers(_Containers[MemberUser]):
         页信息
         """
 
-        if self._page is None:
-
-            if self._raw_data:
-                self._page = Page()
-                bar_item = self._raw_data.find('div', class_='tbui_pagination')
-                current_page_item = bar_item.find('li', class_='active')
-                self._page._current_page = int(current_page_item.text)
-                total_page_item = current_page_item.parent.next_sibling
-                self._page._total_page = int(total_page_item.text[1:-1])
+        if not isinstance(self._page, Page):
+            if self._page is not None:
+                page_proto = Page_pb2.Page()
+                page_proto.current_page = int(self._page.text)
+                total_page_item = self._page.parent.next_sibling
+                page_proto.total_page = int(total_page_item.text[1:-1])
+                self._page = Page(page_proto)
 
             else:
                 self._page = Page()
@@ -3960,9 +4026,14 @@ class SquareForums(_Containers[SquareForum]):
     __slots__ = ['_page']
 
     def __init__(self, _raw_data: Optional[Iterable[_TypeMessage]] = None) -> None:
-        super(SquareForums, self).__init__(_raw_data)
+        super(SquareForums, self).__init__()
 
-        self._page = None
+        if _raw_data:
+            self._objs = _raw_data.forum_info
+            self._page = _raw_data.page
+
+        else:
+            self._page = None
 
     @property
     def objs(self) -> List[SquareForum]:
@@ -3970,10 +4041,9 @@ class SquareForums(_Containers[SquareForum]):
         吧广场列表
         """
 
-        if self._objs is None:
-
-            if self._raw_data:
-                self._objs = [SquareForum(_proto) for _proto in self._raw_data.forum_info]
+        if not isinstance(self._objs, list):
+            if self._objs is not None:
+                self._objs = [SquareForum(_proto) for _proto in self._objs]
             else:
                 self._objs = []
 
@@ -3985,10 +4055,9 @@ class SquareForums(_Containers[SquareForum]):
         页信息
         """
 
-        if self._page is None:
-
-            if self._raw_data:
-                self._page = Page(self._raw_data.page)
+        if not isinstance(self._page, Page):
+            if self._page is not None:
+                self._page = Page(self._page)
             else:
                 self._page = Page()
 
@@ -4097,9 +4166,10 @@ class FollowForums(_Containers[Forum]):
     __slots__ = ['_has_more']
 
     def __init__(self, _raw_data: Optional[dict] = None) -> None:
-        super(FollowForums, self).__init__(_raw_data)
+        super(FollowForums, self).__init__()
 
         if _raw_data:
+            self._objs = _raw_data.get('forum_list', {})
             self._has_more = bool(int(_raw_data.get('has_more', 0)))
 
         else:
@@ -4111,9 +4181,8 @@ class FollowForums(_Containers[Forum]):
         用户关注贴吧列表
         """
 
-        if self._objs is None:
-
-            if self._raw_data:
+        if not isinstance(self._objs, list):
+            if self._objs is not None:
 
                 def parse_dict(forum_dict: Dict[str, int]) -> Forum:
                     forum = Forum()
@@ -4123,11 +4192,8 @@ class FollowForums(_Containers[Forum]):
                     forum._exp = int(forum_dict['cur_score'])
                     return forum
 
-                forum_dicts: List[dict] = []
-                if 'forum_list' in self._raw_data and isinstance(self._raw_data['forum_list'], dict):
-                    forum_dicts += self._raw_data['forum_list']['non-gconforum']
-                    forum_dicts += self._raw_data['forum_list'].get('gconforum', [])
-
+                forum_dicts: List[dict] = self._objs.get('non-gconforum', [])
+                forum_dicts += self._objs.get('gconforum', [])
                 self._objs = [parse_dict(_dict) for _dict in forum_dicts]
 
             else:
@@ -4154,15 +4220,22 @@ class RecomThreads(_Containers[Thread]):
         has_more (bool): 是否还有下一页
     """
 
-    __slots__ = ['_has_more']
+    __slots__ = [
+        '_raw_objs',
+        '_has_more',
+    ]
 
     def __init__(self, _raw_data: Optional[dict] = None) -> None:
-        super(RecomThreads, self).__init__(_raw_data)
+        super(RecomThreads, self).__init__()
+
+        self._objs = None
 
         if _raw_data:
+            self._raw_objs = _raw_data['recom_thread_list']
             self._has_more = bool(int(_raw_data['is_has_more']))
 
         else:
+            self._raw_objs = None
             self._has_more = False
 
     @property
@@ -4171,14 +4244,13 @@ class RecomThreads(_Containers[Thread]):
         大吧主推荐帖列表
         """
 
-        if self._objs is None:
-
-            if self._raw_data:
+        if not isinstance(self._objs, list):
+            if self._raw_objs is not None:
                 self._objs = [
                     Thread(ParseDict(_dict['thread_list'], ThreadInfo_pb2.ThreadInfo(), ignore_unknown_fields=True))
-                    for _dict in self._raw_data['recom_thread_list']
+                    for _dict in self._raw_objs
                 ]
-
+                self._raw_objs = None
             else:
                 self._objs = []
 
@@ -4193,7 +4265,7 @@ class RecomThreads(_Containers[Thread]):
         return self._has_more
 
 
-class Recover(_DataWrapper):
+class Recover(object):
     """
     待恢复帖子信息
 
@@ -4210,7 +4282,7 @@ class Recover(_DataWrapper):
     ]
 
     def __init__(self, _raw_data: Optional[bs4.element.Tag] = None) -> None:
-        super(Recover, self).__init__(_raw_data)
+        super(Recover, self).__init__()
 
         if _raw_data:
             self._tid = int(_raw_data['attr-tid'])
@@ -4269,9 +4341,10 @@ class Recovers(_Containers[Recover]):
     __slots__ = ['_has_more']
 
     def __init__(self, _raw_data: Optional[dict] = None) -> None:
-        super(Recovers, self).__init__(_raw_data)
+        super(Recovers, self).__init__()
 
         if _raw_data:
+            self._objs = _raw_data['data']['content']
             self._has_more = _raw_data['data']['page']['have_next']
 
         else:
@@ -4283,10 +4356,9 @@ class Recovers(_Containers[Recover]):
         待恢复帖子列表
         """
 
-        if self._objs is None:
-
-            if self._raw_data:
-                soup = bs4.BeautifulSoup(self._raw_data['data']['content'], 'lxml')
+        if not isinstance(self._objs, list):
+            if self._objs is not None:
+                soup = bs4.BeautifulSoup(self._objs, 'lxml')
                 self._objs = [Recover(_tag) for _tag in soup('a', class_='recover_list_item_btn')]
 
             else:
@@ -4314,12 +4386,23 @@ class BlacklistUsers(_Containers[BasicUserInfo]):
         has_more (bool): 是否还有下一页
     """
 
-    __slots__ = ['_page']
+    __slots__ = [
+        '_raw_objs',
+        '_page',
+    ]
 
     def __init__(self, _raw_data: Optional[bs4.BeautifulSoup] = None) -> None:
-        super(BlacklistUsers, self).__init__(_raw_data)
+        super(BlacklistUsers, self).__init__()
 
-        self._page = None
+        self._objs = None
+
+        if _raw_data:
+            self._raw_objs = _raw_data('td', class_='left_cell')
+            self._page = _raw_data.find('div', class_='tbui_pagination').find('li', class_='active')
+
+        else:
+            self._raw_objs = None
+            self._page = None
 
     @property
     def objs(self) -> List[BasicUserInfo]:
@@ -4327,9 +4410,8 @@ class BlacklistUsers(_Containers[BasicUserInfo]):
         黑名单用户列表
         """
 
-        if self._objs is None:
-
-            if self._raw_data:
+        if not isinstance(self._objs, list):
+            if self._raw_objs is not None:
 
                 def parse_tag(tag):
                     user_info_item = tag.previous_sibling.input
@@ -4339,7 +4421,7 @@ class BlacklistUsers(_Containers[BasicUserInfo]):
                     user.portrait = tag.a['href'][14:]
                     return user
 
-                self._objs = [parse_tag(_tag) for _tag in self._raw_data('td', class_='left_cell')]
+                self._objs = [parse_tag(_tag) for _tag in self._raw_objs]
 
             else:
                 self._objs = []
@@ -4352,15 +4434,13 @@ class BlacklistUsers(_Containers[BasicUserInfo]):
         页信息
         """
 
-        if self._page is None:
-
-            if self._raw_data:
-                self._page = Page()
-                bar_item = self._raw_data.find('div', class_='tbui_pagination')
-                current_page_item = bar_item.find('li', class_='active')
-                self._page._current_page = int(current_page_item.text)
-                total_page_item = current_page_item.parent.next_sibling
-                self._page._total_page = int(total_page_item.text[1:-1])
+        if not isinstance(self._page, Page):
+            if self._page is not None:
+                page_proto = Page_pb2.Page()
+                page_proto.current_page = int(self._page.text)
+                total_page_item = self._page.parent.next_sibling
+                page_proto.total_page = int(total_page_item.text[1:-1])
+                self._page = Page(page_proto)
 
             else:
                 self._page = Page()
@@ -4376,7 +4456,7 @@ class BlacklistUsers(_Containers[BasicUserInfo]):
         return self.page.has_more
 
 
-class Appeal(_DataWrapper):
+class Appeal(object):
     """
     申诉请求信息
 
@@ -4387,7 +4467,7 @@ class Appeal(_DataWrapper):
     __slots__ = ['_aid']
 
     def __init__(self, _raw_data: Optional[dict] = None) -> None:
-        super(Appeal, self).__init__(_raw_data)
+        super(Appeal, self).__init__()
 
         if _raw_data:
             self._aid = int(_raw_data['appeal_id'])
@@ -4417,15 +4497,22 @@ class Appeals(_Containers[Appeal]):
         has_more (bool): 是否还有下一页
     """
 
-    __slots__ = ['_has_more']
+    __slots__ = [
+        '_raw_objs',
+        '_has_more',
+    ]
 
     def __init__(self, _raw_data: Optional[dict] = None) -> None:
-        super(Appeals, self).__init__(_raw_data)
+        super(Appeals, self).__init__()
+
+        self._objs = None
 
         if _raw_data:
+            self._raw_objs = _raw_data['data'].get('appeal_list', [])
             self._has_more = _raw_data['data'].get('has_more', False)
 
         else:
+            self._raw_objs = None
             self._has_more = False
 
     @property
@@ -4434,11 +4521,10 @@ class Appeals(_Containers[Appeal]):
         申诉请求列表
         """
 
-        if self._objs is None:
-
-            if self._raw_data:
-                self._objs = [Appeal(_dict) for _dict in self._raw_data['data'].get('appeal_list', [])]
-
+        if not isinstance(self._objs, list):
+            if self._raw_objs is not None:
+                self._objs = [Appeal(_dict) for _dict in self._raw_objs]
+                self._raw_objs = None
             else:
                 self._objs = []
 
@@ -4464,12 +4550,23 @@ class Fans(_Containers[UserInfo]):
         has_more (bool): 是否还有下一页
     """
 
-    __slots__ = ['_page']
+    __slots__ = [
+        '_raw_objs',
+        '_page',
+    ]
 
     def __init__(self, _raw_data: Optional[dict] = None) -> None:
-        super(Fans, self).__init__(_raw_data)
+        super(Fans, self).__init__()
 
-        self._page = None
+        self._objs = None
+
+        if _raw_data:
+            self._raw_objs = _raw_data['user_list']
+            self._page = _raw_data['page']
+
+        else:
+            self._raw_objs = None
+            self._page = None
 
     @property
     def objs(self) -> List[UserInfo]:
@@ -4477,13 +4574,13 @@ class Fans(_Containers[UserInfo]):
         粉丝列表
         """
 
-        if self._objs is None:
-
-            if self._raw_data:
+        if not isinstance(self._objs, list):
+            if self._raw_objs is not None:
                 self._objs = [
                     UserInfo(_raw_data=ParseDict(_dict, User_pb2.User(), ignore_unknown_fields=True))
-                    for _dict in self._raw_data['user_list']
+                    for _dict in self._raw_objs
                 ]
+                self._raw_objs = None
             else:
                 self._objs = []
 
@@ -4495,10 +4592,9 @@ class Fans(_Containers[UserInfo]):
         页信息
         """
 
-        if self._page is None:
-
-            if self._raw_data:
-                self._page = Page(ParseDict(self._raw_data['page'], Page_pb2.Page(), ignore_unknown_fields=True))
+        if not isinstance(self._page, Page):
+            if self._page is not None:
+                self._page = Page(ParseDict(self._page, Page_pb2.Page(), ignore_unknown_fields=True))
             else:
                 self._page = Page()
 
@@ -4523,15 +4619,22 @@ class Follows(_Containers[UserInfo]):
         has_more (bool): 是否还有下一页
     """
 
-    __slots__ = ['_has_more']
+    __slots__ = [
+        '_raw_objs',
+        '_has_more',
+    ]
 
     def __init__(self, _raw_data: Optional[dict] = None) -> None:
-        super(Follows, self).__init__(_raw_data)
+        super(Follows, self).__init__()
+
+        self._objs = None
 
         if _raw_data:
+            self._raw_objs = _raw_data['follow_list']
             self._has_more = bool(int(_raw_data['has_more']))
 
         else:
+            self._raw_objs = None
             self._has_more = False
 
     @property
@@ -4540,13 +4643,13 @@ class Follows(_Containers[UserInfo]):
         关注列表
         """
 
-        if self._objs is None:
-
-            if self._raw_data:
+        if not isinstance(self._objs, list):
+            if self._raw_objs is not None:
                 self._objs = [
                     UserInfo(_raw_data=ParseDict(_dict, User_pb2.User(), ignore_unknown_fields=True))
-                    for _dict in self._raw_data['follow_list']
+                    for _dict in self._raw_objs
                 ]
+                self._raw_objs = None
             else:
                 self._objs = []
 
@@ -4572,12 +4675,23 @@ class SelfFollowForums(_Containers[Forum]):
         has_more (bool): 是否还有下一页
     """
 
-    __slots__ = ['_page']
+    __slots__ = [
+        '_raw_objs',
+        '_page',
+    ]
 
     def __init__(self, _raw_data: Optional[dict] = None) -> None:
-        super(SelfFollowForums, self).__init__(_raw_data)
+        super(SelfFollowForums, self).__init__()
 
-        self._page = None
+        self._objs = None
+
+        if _raw_data:
+            self._raw_objs = _raw_data['data']['like_forum']['list']
+            self._page = _raw_data['data']['like_forum']['page']
+
+        else:
+            self._raw_objs = None
+            self._page = None
 
     @property
     def objs(self) -> List[Forum]:
@@ -4585,9 +4699,8 @@ class SelfFollowForums(_Containers[Forum]):
         本账号关注贴吧列表
         """
 
-        if self._objs is None:
-
-            if self._raw_data:
+        if not isinstance(self._objs, list):
+            if self._raw_objs is not None:
                 self._objs = [
                     Forum(
                         ParseDict(
@@ -4596,9 +4709,9 @@ class SelfFollowForums(_Containers[Forum]):
                             ignore_unknown_fields=True,
                         )
                     )
-                    for _dict in self._raw_data['data']['like_forum']['list']
+                    for _dict in self._raw_objs
                 ]
-
+                self._raw_objs = None
             else:
                 self._objs = []
 
@@ -4610,12 +4723,10 @@ class SelfFollowForums(_Containers[Forum]):
         页信息
         """
 
-        if self._page is None:
-
-            if self._raw_data:
-                page_dict: Dict[str, int] = self._raw_data['data']['like_forum']['page']
-                page_dict['current_page'] = page_dict.pop('cur_page')
-                self._page = Page(ParseDict(page_dict, Page_pb2.Page(), ignore_unknown_fields=True))
+        if not isinstance(self._page, Page):
+            if self._page is not None:
+                self._page['current_page'] = self._page.pop('cur_page')
+                self._page = Page(ParseDict(self._page, Page_pb2.Page(), ignore_unknown_fields=True))
 
             else:
                 self._page = Page()
@@ -4644,9 +4755,10 @@ class DislikeForums(_Containers[Forum]):
     __slots__ = ['_has_more']
 
     def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
-        super(DislikeForums, self).__init__(_raw_data)
+        super(DislikeForums, self).__init__()
 
         if _raw_data:
+            self._objs = _raw_data.forum_list
             self._has_more = bool(_raw_data.has_more)
 
         else:
@@ -4658,11 +4770,9 @@ class DislikeForums(_Containers[Forum]):
         首页推荐屏蔽的贴吧列表
         """
 
-        if self._objs is None:
-
-            if self._raw_data:
-                self._objs = [Forum(_proto) for _proto in self._raw_data.forum_list]
-
+        if not isinstance(self._objs, list):
+            if self._objs is not None:
+                self._objs = [Forum(_proto) for _proto in self._objs]
             else:
                 self._objs = []
 

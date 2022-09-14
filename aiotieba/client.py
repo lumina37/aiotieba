@@ -1522,7 +1522,7 @@ class Client(object):
 
         try:
             async with self.session_web.get(
-                yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/f/like/furank"),
+                yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/f/like/furank"),
                 allow_redirects=False,
                 params={
                     'kw': fname,
@@ -1556,7 +1556,7 @@ class Client(object):
 
         try:
             async with self.session_web.get(
-                yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/bawu2/platform/listMemberInfo"),
+                yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/bawu2/platform/listMemberInfo"),
                 allow_redirects=False,
                 params={
                     'word': fname,
@@ -2628,7 +2628,7 @@ class Client(object):
 
         try:
             async with self.session_web.get(
-                yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/bawu2/platform/listBlackUser"),
+                yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/bawu2/platform/listBlackUser"),
                 allow_redirects=False,
                 params={
                     'word': fname,
