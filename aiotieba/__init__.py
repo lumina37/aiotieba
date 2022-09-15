@@ -11,7 +11,7 @@ import os
 from ._helpers import DelFlag, Punish
 from ._logger import LOG
 from .client import Client
-from .database import Database
+from .database import MySQLDB, SQLiteDB
 from .reviewer import BaseReviewer, Reviewer
 from .typedefs import (
     Appeal,
@@ -65,7 +65,7 @@ from .typedefs import (
     VoteInfo,
 )
 
-__version__ = "2.9.3"
+__version__ = "2.9.4a0"
 
 if os.name == 'posix':
     import signal

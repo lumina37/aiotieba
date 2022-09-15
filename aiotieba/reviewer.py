@@ -19,8 +19,8 @@ from typing import List, Literal, Optional, Tuple, Union
 
 from ._helpers import DelFlag, Punish, alog_time
 from ._logger import LOG
-from .client import Client
-from .database import Database
+from .client import Client, _ForumInfoCache
+from .database import MySQLDB, SQLiteDB
 from .typedefs import BasicUserInfo, Comment, Comments, Post, Posts, Thread, Threads
 
 
@@ -28,11 +28,15 @@ class BaseReviewer(object):
     """
     贴吧审查实用功能
 
+    Attributes:
+        client (Client): 贴吧客户端
+        db (MySQLDB): 与MySQL交互
     """
 
     __slots__ = [
         'client',
         'db',
+        '_db_sqlite',
         '_img_hasher',
         '_qrdetector',
     ]
@@ -41,17 +45,21 @@ class BaseReviewer(object):
         super(BaseReviewer, self).__init__()
 
         self.client = Client(BDUSS_key)
-        self.db = Database(fname)
+        self.db = MySQLDB(fname)
+        self._db_sqlite = SQLiteDB(fname)
         self._img_hasher: "cv.img_hash.AverageHash" = None
         self._qrdetector: "cv.QRCodeDetector" = None
 
     async def __aenter__(self) -> "BaseReviewer":
-        await asyncio.gather(self.client.__aenter__(), self.db.__aenter__())
+        await self.client.__aenter__()
+        await self.db.__aenter__()
+        await self._db_sqlite.__aenter__()
         return self
 
     async def close(self) -> None:
         await self.client.close()
         await self.db.close()
+        await self._db_sqlite.close()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.close()
@@ -79,15 +87,15 @@ class BaseReviewer(object):
             int: 该贴吧的forum_id
         """
 
-        if fid := self.client._fname2fid.get(fname, 0):
+        if fid := _ForumInfoCache.get_fid(fname):
             return fid
 
         if fid := await self.db.get_fid(fname):
-            self.client._add_forum_cache(fname, fid)
+            _ForumInfoCache.add_forum(fname, fid)
             return fid
 
         if fid := await self.client.get_fid(fname):
-            self.client._add_forum_cache(fname, fid)
+            _ForumInfoCache.add_forum(fname, fid)
             await self.db.add_forum(fid, fname)
 
         return fid
@@ -103,15 +111,15 @@ class BaseReviewer(object):
             str: 该贴吧的贴吧名
         """
 
-        if fname := self.client._fid2fname.get(fid, 0):
+        if fname := _ForumInfoCache.get_fname(fid):
             return fname
 
         if fname := await self.db.get_fname(fid):
-            self.client._add_forum_cache(fname, fid)
+            _ForumInfoCache.add_forum(fname, fid)
             return fname
 
         if fname := await self.client.get_fname(fid):
-            self.client._add_forum_cache(fname, fid)
+            _ForumInfoCache.add_forum(fname, fid)
             await self.db.add_forum(fid, fname)
 
         return fname
@@ -299,7 +307,7 @@ class BaseReviewer(object):
             bool: True成功 False失败
         """
 
-        return await self.db.add_id(_id, tag=id_last_edit)
+        return await self._db_sqlite.add_id(_id, tag=id_last_edit)
 
     async def get_id(self, _id: int) -> int:
         """
@@ -310,7 +318,7 @@ class BaseReviewer(object):
             int: id_last_edit -1表示表中无id
         """
 
-        res = await self.db.get_id(_id)
+        res = await self._db_sqlite.get_id(_id)
         if res is None:
             res = -1
         return res
@@ -462,7 +470,7 @@ class Reviewer(BaseReviewer):
 
     Attributes:
         client (Client): 客户端
-        db (Database): 数据库连接
+        db (MySQLDB): 数据库连接
     """
 
     __slots__ = [

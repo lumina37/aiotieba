@@ -16,6 +16,7 @@ import random
 import time
 import uuid
 import weakref
+from collections import OrderedDict
 from typing import ClassVar, Dict, List, Literal, Optional, Tuple, Union
 
 import aiohttp
@@ -165,6 +166,62 @@ class _WebsocketResponse(object):
         return data
 
 
+class _ForumInfoCache(object):
+    """
+    吧信息缓存
+    """
+
+    __slots__ = []
+
+    _fname2fid: ClassVar[OrderedDict[str, int]] = {}
+    _fid2fname: ClassVar[OrderedDict[int, str]] = {}
+
+    @classmethod
+    def get_fid(cls, fname: str) -> int:
+        """
+        通过贴吧名获取forum_id
+
+        Args:
+            fname (str): 贴吧名
+
+        Returns:
+            int: 该贴吧的forum_id
+        """
+
+        return cls._fname2fid.get(fname, '')
+
+    @classmethod
+    def get_fname(cls, fid: int) -> str:
+        """
+        通过forum_id获取贴吧名
+
+        Args:
+            fid (int): forum_id
+
+        Returns:
+            str: 该贴吧的贴吧名
+        """
+
+        return cls._fid2fname.get(fid, '')
+
+    @classmethod
+    def add_forum(cls, fname: str, fid: int) -> None:
+        """
+        将贴吧名与forum_id的映射关系添加到缓存
+
+        Args:
+            fname (str): 贴吧名
+            fid (int): 贴吧id
+        """
+
+        if len(cls._fname2fid) == 128:
+            cls._fname2fid.popitem(last=False)
+            cls._fid2fname.popitem(last=False)
+
+        cls._fname2fid[fname] = fid
+        cls._fid2fname[fid] = fname
+
+
 class Client(object):
     """
     贴吧客户端
@@ -200,9 +257,6 @@ class Client(object):
     latest_version: ClassVar[str] = "12.29.0.1"  # 这是目前的最新版本
     # no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
     post_version: ClassVar[str] = "9.1.0.0"  # 发帖使用极速版
-
-    _fname2fid: ClassVar[Dict[str, int]] = {}
-    _fid2fname: ClassVar[Dict[int, str]] = {}
 
     def __init__(self, BDUSS_key: Optional[str] = None) -> None:
         self._BDUSS_key = BDUSS_key
@@ -841,7 +895,7 @@ class Client(object):
             int: 该贴吧的forum_id
         """
 
-        if fid := self._fname2fid.get(fname, 0):
+        if fid := _ForumInfoCache.get_fid(fname):
             return fid
 
         try:
@@ -858,11 +912,11 @@ class Client(object):
             if not (fid := int(res_json['data']['fid'])):
                 raise TiebaServerError("fid is 0")
 
+            _ForumInfoCache.add_forum(fname, fid)
+
         except Exception as err:
             LOG.warning(f"{err}. fname={fname}")
             fid = 0
-
-        self._add_forum_cache(fname, fid)
 
         return fid
 
@@ -877,26 +931,15 @@ class Client(object):
             str: 该贴吧的贴吧名
         """
 
-        if fname := self._fid2fname.get(fid, ''):
+        if fname := _ForumInfoCache.get_fname(fid):
             return fname
 
         fname = (await self.get_forum_detail(fid)).fname
 
-        self._add_forum_cache(fname, fid)
+        if fname:
+            _ForumInfoCache.add_forum(fname, fid)
 
         return fname
-
-    def _add_forum_cache(self, fname: str, fid: int) -> None:
-        """
-        将贴吧名与贴吧id的映射关系添加到缓存
-
-        Args:
-            fname (str): 贴吧名
-            fid (int): 贴吧id
-        """
-
-        self._fname2fid[fname] = fid
-        self._fid2fname[fid] = fname
 
     async def get_user_info(self, _id: Union[str, int]) -> UserInfo:
         """

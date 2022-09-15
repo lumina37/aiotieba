@@ -17,6 +17,8 @@ logging.logMultiprocessing = False
 logging.raiseExceptions = False
 logging.Formatter.default_msec_format = '%s.%03d'
 
+Path("log").mkdir(0o755, exist_ok=True)
+
 
 class TiebaLogger(logging.Logger):
     """
@@ -56,15 +58,9 @@ class TiebaLogger(logging.Logger):
         """
 
         if self._file_hd is None:
-
-            log_dir = Path("log")
-            log_dir.mkdir(0o755, exist_ok=True)
-
-            log_filepath = log_dir / f"{self.name}.log"
             self._file_hd = logging.handlers.TimedRotatingFileHandler(
-                str(log_filepath), when='MIDNIGHT', backupCount=5, encoding='utf-8'
+                f"log/{self.name}.log", when='MIDNIGHT', backupCount=5, encoding='utf-8'
             )
-
             self._file_hd.setLevel(self.file_log_level)
             self._file_hd.setFormatter(self.formatter)
 

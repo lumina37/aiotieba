@@ -102,7 +102,6 @@ class BasicUserInfo(object):
     ]
 
     def __init__(self, _id: Union[str, int, None] = None, _raw_data: Optional[_TypeMessage] = None) -> None:
-        super(BasicUserInfo, self).__init__()
 
         if _raw_data:
             self._user_id = _raw_data.id
@@ -1209,7 +1208,6 @@ class BasicForum(object):
     ]
 
     def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
-        super(BasicForum, self).__init__()
 
         if _raw_data:
             self._fid = _raw_data.forum_id
@@ -1268,6 +1266,7 @@ class Page(object):
     ]
 
     def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
+
         if _raw_data:
             self._page_size = _raw_data.page_size
             self._current_page = _raw_data.current_page
@@ -1544,7 +1543,6 @@ class _VoteOption(object):
     ]
 
     def __init__(self, _raw_data: _TypeMessage) -> None:
-
         self._vote_num = _raw_data.num
         self._text = _raw_data.text
         self._image = _raw_data.image
@@ -3650,7 +3648,6 @@ class RankUser(object):
     ]
 
     def __init__(self, _raw_data: Optional[bs4.element.Tag] = None) -> None:
-        super(RankUser, self).__init__()
 
         if _raw_data:
             user_name_item = _raw_data.td.next_sibling
@@ -3800,7 +3797,6 @@ class MemberUser(object):
     ]
 
     def __init__(self, _raw_data: Optional[bs4.element.Tag] = None) -> None:
-        super(MemberUser, self).__init__()
 
         if _raw_data:
             user_item = _raw_data.a
@@ -4282,7 +4278,6 @@ class Recover(object):
     ]
 
     def __init__(self, _raw_data: Optional[bs4.element.Tag] = None) -> None:
-        super(Recover, self).__init__()
 
         if _raw_data:
             self._tid = int(_raw_data['attr-tid'])
@@ -4467,11 +4462,9 @@ class Appeal(object):
     __slots__ = ['_aid']
 
     def __init__(self, _raw_data: Optional[dict] = None) -> None:
-        super(Appeal, self).__init__()
 
         if _raw_data:
             self._aid = int(_raw_data['appeal_id'])
-
         else:
             self._aid = 0
 
