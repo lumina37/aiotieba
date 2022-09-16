@@ -31,6 +31,7 @@ class BaseReviewer(object):
     Attributes:
         client (Client): 贴吧客户端
         db (MySQLDB): 与MySQL交互
+        db_sqlite (SQLiteDB): 与SQLite交互
     """
 
     __slots__ = [
@@ -46,20 +47,20 @@ class BaseReviewer(object):
 
         self.client = Client(BDUSS_key)
         self.db = MySQLDB(fname)
-        self._db_sqlite = SQLiteDB(fname)
+        self._db_sqlite: SQLiteDB = None
         self._img_hasher: "cv.img_hash.AverageHash" = None
         self._qrdetector: "cv.QRCodeDetector" = None
 
     async def __aenter__(self) -> "BaseReviewer":
         await self.client.__aenter__()
         await self.db.__aenter__()
-        await self._db_sqlite.__aenter__()
         return self
 
     async def close(self) -> None:
         await self.client.close()
+        if self._db_sqlite is not None:
+            self._db_sqlite.close()
         await self.db.close()
-        await self._db_sqlite.close()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.close()
@@ -69,6 +70,12 @@ class BaseReviewer(object):
         if self._img_hasher is None:
             self._img_hasher = cv.img_hash.AverageHash.create()
         return self._img_hasher
+
+    @property
+    def db_sqlite(self) -> SQLiteDB:
+        if self._db_sqlite is None:
+            self._db_sqlite = SQLiteDB(self.db.fname)
+        return self._db_sqlite
 
     @property
     def qrdetector(self) -> "cv.QRCodeDetector":
@@ -307,7 +314,7 @@ class BaseReviewer(object):
             bool: True成功 False失败
         """
 
-        return await self._db_sqlite.add_id(_id, tag=id_last_edit)
+        return self.db_sqlite.add_id(_id, tag=id_last_edit)
 
     async def get_id(self, _id: int) -> int:
         """
@@ -318,7 +325,7 @@ class BaseReviewer(object):
             int: id_last_edit -1表示表中无id
         """
 
-        res = await self._db_sqlite.get_id(_id)
+        res = self.db_sqlite.get_id(_id)
         if res is None:
             res = -1
         return res

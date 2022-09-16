@@ -749,7 +749,7 @@ class Client(object):
 
         Args:
             ws_bytes (bytes): 待发送的websocket数据
-            cmd (int, optional): 请求的cmd类型
+            cmd (int): 请求的cmd类型
             need_gzip (bool, optional): 是否需要gzip压缩. Defaults to False.
             need_encrypt (bool, optional): 是否需要aes加密. Defaults to False.
 

@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Final, List, Optional, Tuple, Union
 
 import aiomysql
-import aiosqlite
 
 from ._config import CONFIG
 from ._logger import LOG
@@ -675,9 +674,6 @@ class SQLiteDB(object):
 
     def __init__(self, fname: str = '') -> None:
         self.fname = fname
-        self._conn: aiosqlite.Connection = None
-
-    async def __aenter__(self) -> "SQLiteDB":
         db_path = Path(f".cache/{self.fname}.sqlite")
         need_init = False
 
@@ -685,35 +681,26 @@ class SQLiteDB(object):
             need_init = True
             db_path.parent.mkdir(0o755, exist_ok=True)
 
-        def connector() -> sqlite3.Connection:
-            return sqlite3.connect(str(db_path), timeout=15.0, isolation_level=None, cached_statements=64)
-
-        self._conn = await aiosqlite.Connection(connector, iter_chunk_size=64)
-        await self._conn.execute("PRAGMA journal_mode=OFF")
-        await self._conn.execute("PRAGMA synchronous=OFF")
+        self._conn = sqlite3.connect(str(db_path), timeout=15.0, isolation_level=None, cached_statements=64)
+        self._conn.execute("PRAGMA journal_mode=OFF")
+        self._conn.execute("PRAGMA synchronous=OFF")
         if need_init:
-            await self._create_table_id()
+            self._create_table_id()
 
-        return self
+    def close(self) -> None:
+        self._conn.close()
 
-    async def close(self) -> None:
-        await self.truncate(7)
-        await self._conn.close()
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
-        await self.close()
-
-    async def _create_table_id(self) -> None:
+    def _create_table_id(self) -> None:
         """
         创建表id_{fname}
         """
 
-        await self._conn.execute(
+        self._conn.execute(
             f"CREATE TABLE IF NOT EXISTS `id_{self.fname}` \
             (`id` INTEGER PRIMARY KEY, `tag` INTEGER NOT NULL, `record_time` INTEGER NOT NULL DEFAULT CURRENT_TIMESTAMP)"
         )
 
-    async def add_id(self, _id: int, *, tag: int = 0) -> bool:
+    def add_id(self, _id: int, *, tag: int = 0) -> bool:
         """
         将id添加到表id_{fname}
 
@@ -726,13 +713,13 @@ class SQLiteDB(object):
         """
 
         try:
-            await self._conn.execute(f"REPLACE INTO `id_{self.fname}` VALUES (?,?,NULL)", (_id, tag))
+            self._conn.execute(f"REPLACE INTO `id_{self.fname}` VALUES (?,?,NULL)", (_id, tag))
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname} id={_id}")
             return False
         return True
 
-    async def get_id(self, _id: int) -> Optional[int]:
+    def get_id(self, _id: int) -> Optional[int]:
         """
         获取表id_{fname}中id对应的tag值
 
@@ -744,16 +731,16 @@ class SQLiteDB(object):
         """
 
         try:
-            cursor = await self._conn.execute(f"SELECT `tag` FROM `id_{self.fname}` WHERE `id`=?", (_id,))
+            cursor = self._conn.execute(f"SELECT `tag` FROM `id_{self.fname}` WHERE `id`=?", (_id,))
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname} id={_id}")
             return False
         else:
-            if res_tuple := await cursor.fetchone():
+            if res_tuple := cursor.fetchone():
                 return res_tuple[0]
             return None
 
-    async def del_id(self, _id: int) -> bool:
+    def del_id(self, _id: int) -> bool:
         """
         从表id_{fname}中删除id
 
@@ -765,7 +752,7 @@ class SQLiteDB(object):
         """
 
         try:
-            await self._conn.execute(f"DELETE FROM `id_{self.fname}` WHERE `id`=?", (_id,))
+            self._conn.execute(f"DELETE FROM `id_{self.fname}` WHERE `id`=?", (_id,))
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname} id={_id}")
             return False
@@ -773,7 +760,7 @@ class SQLiteDB(object):
         LOG.info(f"Succeeded. forum={self.fname} id={_id}")
         return True
 
-    async def truncate(self, day: int) -> bool:
+    def truncate(self, day: int) -> bool:
         """
         删除表id_{fname}中day天前的陈旧记录
 
@@ -785,9 +772,7 @@ class SQLiteDB(object):
         """
 
         try:
-            await self._conn.execute(
-                f"DELETE FROM `id_{self.fname}` WHERE `record_time` < datetime('now','-{day} day')"
-            )
+            self._conn.execute(f"DELETE FROM `id_{self.fname}` WHERE `record_time` < datetime('now','-{day} day')")
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname}")
             return False

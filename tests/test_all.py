@@ -23,7 +23,7 @@ async def client():
 
 @pytest_asyncio.fixture(scope="module")
 async def db():
-    async with tb.Database('starry') as db:
+    async with tb.MySQLDB('starry') as db:
         yield db
 
 
@@ -294,7 +294,7 @@ async def test_Ats(client: tb.Client):
 
 
 @pytest.mark.asyncio
-async def test_Database(db: tb.Database):
+async def test_Database(db: tb.MySQLDB):
     fname = db.fname
     fid = await db.get_fid(fname)
     assert fname == await db.get_fname(fid)
@@ -302,7 +302,6 @@ async def test_Database(db: tb.Database):
         *[
             db.get_basic_user_info("v_guard"),
             db.get_tid(7763274602),
-            db.get_id(7763274602),
             db.get_user_id_list(),
             db.get_tid_list(limit=3),
         ]
