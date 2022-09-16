@@ -30,8 +30,8 @@ class BaseReviewer(object):
 
     Attributes:
         client (Client): 贴吧客户端
-        db (MySQLDB): 与MySQL交互
-        db_sqlite (SQLiteDB): 与SQLite交互
+        db (MySQLDB): MySQL交互
+        db_sqlite (SQLiteDB): SQLite交互
     """
 
     __slots__ = [

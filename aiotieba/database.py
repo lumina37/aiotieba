@@ -18,13 +18,17 @@ from .typedefs import BasicUserInfo
 
 class MySQLDB(object):
     """
-    与MySQL交互
+    MySQL交互
 
     Args:
         fname (str): 操作的目标贴吧名. Defaults to ''.
 
     Attributes:
         fname (str): 操作的目标贴吧名
+
+    Note:
+        容器特点: 读多写少 允许外部访问 数据安全性好
+        一般用于数据持久化
     """
 
     __slots__ = ['fname', '_pool']
@@ -222,8 +226,8 @@ class MySQLDB(object):
                     elif user.user_name:
                         await cursor.execute("SELECT * FROM `user` WHERE `user_name`=%s", (user.user_name,))
                     else:
-                        raise ValueError("用户属性为空")
-        except aiomysql.Error as err:
+                        raise ValueError("Null input")
+        except Exception as err:
             LOG.warning(f"{err}. user={user}")
             return BasicUserInfo()
         else:
@@ -278,8 +282,8 @@ class MySQLDB(object):
                     elif user.user_name:
                         await cursor.execute("DELETE FROM `user` WHERE `user_name`=%s", (user.user_name,))
                     else:
-                        raise ValueError("用户属性为空")
-        except aiomysql.Error as err:
+                        raise ValueError("Null input")
+        except Exception as err:
             LOG.warning(f"{err}. user={user}")
             return False
 
@@ -661,13 +665,17 @@ class MySQLDB(object):
 
 class SQLiteDB(object):
     """
-    与SQLite交互
+    SQLite交互
 
     Args:
         fname (str): 操作的目标贴吧名. Defaults to ''.
 
     Attributes:
         fname (str): 操作的目标贴吧名
+
+    Note:
+        容器特点: 读多写多 不允许外部访问 数据安全性差
+        一般用于快速缓存
     """
 
     __slots__ = ['fname', '_conn']
