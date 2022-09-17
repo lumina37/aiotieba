@@ -64,7 +64,6 @@ from .protobuf import (
 from .typedefs import (
     Appeals,
     Ats,
-    BasicUserInfo,
     BlacklistUsers,
     Comments,
     DislikeForums,
@@ -252,9 +251,9 @@ class Client(object):
         '_ws_dispatcher',
     ]
 
-    _trust_env = False
+    _trust_env = True
 
-    latest_version: ClassVar[str] = "12.29.0.1"  # 这是目前的最新版本
+    latest_version: ClassVar[str] = "12.29.1.1"  # 这是目前的最新版本
     # no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
     post_version: ClassVar[str] = "9.1.0.0"  # 发帖使用极速版
 
@@ -265,7 +264,7 @@ class Client(object):
         self.BDUSS = user_cfg.get('BDUSS', '')
         self.STOKEN = user_cfg.get('STOKEN', '')
 
-        self._user: BasicUserInfo = None
+        self._user: UserInfo = None
         self._tbs: str = None
         self._client_id: str = None
         self._cuid: str = None
@@ -835,12 +834,12 @@ class Client(object):
 
         return self._tbs
 
-    async def get_self_info(self) -> BasicUserInfo:
+    async def get_self_info(self) -> UserInfo:
         """
         获取本账号信息
 
         Returns:
-            BasicUserInfo: 简略版用户信息 仅保证包含user_name/portrait/user_id
+            UserInfo: 用户信息 仅包含user_name/portrait/user_id
         """
 
         if self._user is None:
@@ -850,7 +849,7 @@ class Client(object):
 
     async def login(self) -> bool:
         """
-        登录并获取tbs和当前账号的简略版用户信息
+        登录并获取tbs和当前账号的用户信息
 
         Returns:
             bool: True成功 False失败
@@ -873,12 +872,12 @@ class Client(object):
 
             user_dict = res_json['user']
             user_proto = ParseDict(user_dict, User_pb2.User(), ignore_unknown_fields=True)
-            self._user = BasicUserInfo(_raw_data=user_proto)
+            self._user = UserInfo(_raw_data=user_proto)
             self._tbs = res_json['anti']['tbs']
 
         except Exception as err:
             LOG.warning(err)
-            self._user = BasicUserInfo()
+            self._user = UserInfo()
             self._tbs = ""
             return False
 
@@ -946,7 +945,7 @@ class Client(object):
         补全完整版用户信息
 
         Args:
-            _id (str | int): 待补全用户的id user_id/user_name/portrait
+            _id (str | int): 用户id user_id/user_name/portrait
 
         Returns:
             UserInfo: 完整版用户信息
@@ -966,18 +965,18 @@ class Client(object):
             LOG.warning("Null input")
             return user
 
-    async def get_basic_user_info(self, _id: Union[str, int]) -> BasicUserInfo:
+    async def get_basic_user_info(self, _id: Union[str, int]) -> UserInfo:
         """
-        补全简略版用户信息
+        补全用户信息
 
         Args:
-            _id (str | int): 待补全用户的id user_id/user_name/portrait
+            _id (str | int): 用户id user_id/user_name/portrait
 
         Returns:
-            BasicUserInfo: 简略版用户信息 仅保证包含user_name/portrait/user_id
+            UserInfo: 用户信息 仅包含user_name/portrait/user_id
         """
 
-        user = BasicUserInfo(_id)
+        user = UserInfo(_id)
         if user.user_id:
             return await self._user_id2basic_user_info(user)
         elif user.user_name:
@@ -1064,15 +1063,15 @@ class Client(object):
 
         return user
 
-    async def _user_name2basic_user_info(self, user: BasicUserInfo) -> BasicUserInfo:
+    async def _user_name2basic_user_info(self, user: UserInfo) -> UserInfo:
         """
-        通过用户名补全简略版用户信息
+        通过用户名补全用户信息
 
         Args:
-            user (BasicUserInfo): 待补全的用户信息
+            user (UserInfo): 待补全的用户信息
 
         Returns:
-            BasicUserInfo: 简略版用户信息 仅保证包含user_name/portrait/user_id
+            UserInfo: 用户信息 仅包含user_name/portrait/user_id
         """
 
         try:
@@ -1096,7 +1095,7 @@ class Client(object):
 
         except Exception as err:
             LOG.warning(f"{err}. user={user}")
-            user = BasicUserInfo()
+            user = UserInfo()
 
         return user
 
@@ -1134,15 +1133,15 @@ class Client(object):
 
         return user
 
-    async def _user_id2basic_user_info(self, user: BasicUserInfo) -> BasicUserInfo:
+    async def _user_id2basic_user_info(self, user: UserInfo) -> UserInfo:
         """
-        通过user_id补全简略版用户信息
+        通过user_id补全用户信息
 
         Args:
-            user (BasicUserInfo): 待补全的用户信息
+            user (UserInfo): 待补全的用户信息
 
         Returns:
-            BasicUserInfo: 简略版用户信息 仅保证包含user_name/portrait/user_id
+            UserInfo: 用户信息 仅包含user_name/portrait/user_id
         """
 
         try:
@@ -1162,7 +1161,7 @@ class Client(object):
 
         except Exception as err:
             LOG.warning(f"{err}. user={user}")
-            user = BasicUserInfo()
+            user = UserInfo()
 
         return user
 
@@ -1470,7 +1469,7 @@ class Client(object):
 
         return res
 
-    async def get_bawu_info(self, fname_or_fid: Union[str, int]) -> Dict[str, List[BasicUserInfo]]:
+    async def get_bawu_info(self, fname_or_fid: Union[str, int]) -> Dict[str, List[UserInfo]]:
         """
         获取吧务信息
 
@@ -1478,7 +1477,7 @@ class Client(object):
             fname_or_fid (str | int): 目标贴吧名或fid 优先fid
 
         Returns:
-            dict[str, list[BasicUserInfo]]: {吧务类型: list[吧务基本用户信息]}
+            dict[str, list[UserInfo]]: {吧务类型: list[吧务基本用户信息]}
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -1501,7 +1500,7 @@ class Client(object):
             roledes_protos = res_proto.data.bawu_team_info.bawu_team_list
             bawu_dict = {
                 roledes_proto.role_name: [
-                    BasicUserInfo(_raw_data=roleinfo_proto) for roleinfo_proto in roledes_proto.role_info
+                    UserInfo(_raw_data=roleinfo_proto) for roleinfo_proto in roledes_proto.role_info
                 ]
                 for roledes_proto in roledes_protos
             }
@@ -1670,10 +1669,10 @@ class Client(object):
             tuple[UserInfo, list[NewThread]]: 用户信息, list[帖子信息]
         """
 
-        if not (BasicUserInfo.is_user_id(_id) or BasicUserInfo.is_portrait(_id)):
+        if not (UserInfo.is_user_id(_id) or UserInfo.is_portrait(_id)):
             user = await self.get_basic_user_info(_id)
         else:
-            user = BasicUserInfo(_id)
+            user = UserInfo(_id)
 
         req_proto = ProfileReqIdl_pb2.ProfileReqIdl()
         req_proto.data.common._client_version = self.latest_version
@@ -1783,10 +1782,10 @@ class Client(object):
             FollowForums: 用户关注贴吧列表
         """
 
-        if not BasicUserInfo.is_user_id(_id):
+        if not UserInfo.is_user_id(_id):
             user = await self.get_basic_user_info(_id)
         else:
-            user = BasicUserInfo(_id)
+            user = UserInfo(_id)
 
         payload = [
             ('BDUSS', self.BDUSS),
@@ -1925,10 +1924,10 @@ class Client(object):
             fid = fname_or_fid
             fname = await self.get_fname(fid)
 
-        if not BasicUserInfo.is_portrait(_id):
+        if not UserInfo.is_portrait(_id):
             user = await self.get_basic_user_info(_id)
         else:
-            user = BasicUserInfo(_id)
+            user = UserInfo(_id)
 
         payload = [
             ('BDUSS', self.BDUSS),
@@ -1978,10 +1977,10 @@ class Client(object):
             fid = fname_or_fid
             fname = await self.get_fname(fid)
 
-        if not BasicUserInfo.is_user_id(_id):
+        if not UserInfo.is_user_id(_id):
             user = await self.get_basic_user_info(_id)
         else:
-            user = BasicUserInfo(_id)
+            user = UserInfo(_id)
 
         payload = [
             ('fn', fname),
@@ -2702,10 +2701,10 @@ class Client(object):
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
-        if not BasicUserInfo.is_user_id(_id):
+        if not UserInfo.is_user_id(_id):
             user = await self.get_basic_user_info(_id)
         else:
-            user = BasicUserInfo(_id)
+            user = UserInfo(_id)
 
         payload = [
             ('tbs', await self.get_tbs()),
@@ -2745,10 +2744,10 @@ class Client(object):
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
-        if not BasicUserInfo.is_user_id(_id):
+        if not UserInfo.is_user_id(_id):
             user = await self.get_basic_user_info(_id)
         else:
-            user = BasicUserInfo(_id)
+            user = UserInfo(_id)
 
         payload = [
             ('word', fname),
@@ -2912,10 +2911,10 @@ class Client(object):
             np.ndarray: 头像
         """
 
-        if not BasicUserInfo.is_portrait(_id):
+        if not UserInfo.is_portrait(_id):
             user = await self.get_basic_user_info(_id)
         else:
-            user = BasicUserInfo(_id)
+            user = UserInfo(_id)
 
         if size == 's':
             path = 'n'
@@ -3129,10 +3128,10 @@ class Client(object):
             list[NewThread]: 主题帖列表
         """
 
-        if not BasicUserInfo.is_user_id(_id):
+        if not UserInfo.is_user_id(_id):
             user = await self.get_basic_user_info(_id)
         else:
-            user = BasicUserInfo(_id)
+            user = UserInfo(_id)
 
         try:
             return await self._get_user_contents(user, pn)
@@ -3142,13 +3141,13 @@ class Client(object):
             return []
 
     async def _get_user_contents(
-        self, user: BasicUserInfo, /, pn: int = 1, *, is_thread: bool = True, public_only: bool = False
+        self, user: UserInfo, /, pn: int = 1, *, is_thread: bool = True, public_only: bool = False
     ) -> Union[List[NewThread], List[UserPosts]]:
         """
         获取用户发布的主题帖/回复列表
 
         Args:
-            user (BasicUserInfo): 待获取用户的基本用户信息
+            user (UserInfo): 待获取用户的基本用户信息
             pn (int, optional): 页码. Defaults to 1.
             is_thread (bool, optional): 是否请求主题帖. Defaults to True.
             public_only (bool, optional): 是否仅获取公开帖. Defaults to False.
@@ -3207,10 +3206,10 @@ class Client(object):
 
         if _id is None:
             user = await self.get_self_info()
-        elif not BasicUserInfo.is_user_id(_id):
+        elif not UserInfo.is_user_id(_id):
             user = await self.get_basic_user_info(_id)
         else:
-            user = BasicUserInfo(_id)
+            user = UserInfo(_id)
 
         payload = [
             ('BDUSS', self.BDUSS),
@@ -3252,10 +3251,10 @@ class Client(object):
 
         if _id is None:
             user = await self.get_self_info()
-        elif not BasicUserInfo.is_user_id(_id):
+        elif not UserInfo.is_user_id(_id):
             user = await self.get_basic_user_info(_id)
         else:
-            user = BasicUserInfo(_id)
+            user = UserInfo(_id)
 
         payload = [
             ('BDUSS', self.BDUSS),
@@ -3493,10 +3492,10 @@ class Client(object):
             bool: True成功 False失败
         """
 
-        if not BasicUserInfo.is_user_id(_id):
+        if not UserInfo.is_user_id(_id):
             user = await self.get_basic_user_info(_id)
         else:
-            user = BasicUserInfo(_id)
+            user = UserInfo(_id)
 
         payload = [
             ('BDUSS', self.BDUSS),
@@ -3532,10 +3531,10 @@ class Client(object):
             bool: True成功 False失败
         """
 
-        if not BasicUserInfo.is_portrait(_id):
+        if not UserInfo.is_portrait(_id):
             user = await self.get_basic_user_info(_id)
         else:
-            user = BasicUserInfo(_id)
+            user = UserInfo(_id)
 
         payload = [
             ('BDUSS', self.BDUSS),
@@ -3571,10 +3570,10 @@ class Client(object):
             bool: True成功 False失败
         """
 
-        if not BasicUserInfo.is_portrait(_id):
+        if not UserInfo.is_portrait(_id):
             user = await self.get_basic_user_info(_id)
         else:
-            user = BasicUserInfo(_id)
+            user = UserInfo(_id)
 
         payload = [
             ('BDUSS', self.BDUSS),
@@ -3919,10 +3918,10 @@ class Client(object):
             bool: True成功 False失败
         """
 
-        if not BasicUserInfo.is_user_id(_id):
+        if not UserInfo.is_user_id(_id):
             user = await self.get_basic_user_info(_id)
         else:
-            user = BasicUserInfo(_id)
+            user = UserInfo(_id)
 
         data_proto = CommitPersonalMsgReqIdl_pb2.CommitPersonalMsgReqIdl.DataReq()
         data_proto.toUid = user.user_id

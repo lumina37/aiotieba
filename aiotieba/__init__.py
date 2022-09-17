@@ -19,7 +19,6 @@ from .typedefs import (
     At,
     Ats,
     BasicForum,
-    BasicUserInfo,
     BlacklistUsers,
     Comment,
     Comments,

@@ -13,7 +13,7 @@ import aiomysql
 
 from ._config import CONFIG
 from ._logger import LOG
-from .typedefs import BasicUserInfo
+from .typedefs import UserInfo
 
 
 class MySQLDB(object):
@@ -203,18 +203,18 @@ class MySQLDB(object):
                     INDEX `user_name`(user_name))"
                 )
 
-    async def get_basic_user_info(self, _id: Union[str, int]) -> BasicUserInfo:
+    async def get_basic_user_info(self, _id: Union[str, int]) -> UserInfo:
         """
-        获取简略版用户信息
+        获取用户信息
 
         Args:
-            _id (str | int): 待补全用户的id user_id/user_name/portrait
+            _id (str | int): 用户id user_id/user_name/portrait
 
         Returns:
-            BasicUserInfo: 简略版用户信息 仅保证包含user_name/portrait/user_id
+            UserInfo: 用户信息 仅包含user_name/portrait/user_id
         """
 
-        user = BasicUserInfo(_id)
+        user = UserInfo(_id)
 
         try:
             async with self._pool.acquire() as conn:
@@ -229,22 +229,22 @@ class MySQLDB(object):
                         raise ValueError("Null input")
         except Exception as err:
             LOG.warning(f"{err}. user={user}")
-            return BasicUserInfo()
+            return UserInfo()
         else:
             if res_tuple := await cursor.fetchone():
-                user = BasicUserInfo()
+                user = UserInfo()
                 user.user_id = res_tuple[0]
                 user.user_name = res_tuple[1]
                 user.portrait = res_tuple[2]
                 return user
-            return BasicUserInfo()
+            return UserInfo()
 
-    async def add_user(self, user: BasicUserInfo) -> bool:
+    async def add_user(self, user: UserInfo) -> bool:
         """
-        将简略版用户信息添加到表user
+        将用户信息添加到表user
 
         Args:
-            user (BasicUserInfo): 待添加的简略版用户信息
+            user (UserInfo): 待添加的用户信息
 
         Returns:
             bool: True成功 False失败
@@ -261,12 +261,12 @@ class MySQLDB(object):
             return False
         return True
 
-    async def del_user(self, user: BasicUserInfo) -> bool:
+    async def del_user(self, user: UserInfo) -> bool:
         """
-        从表user中删除简略版用户信息
+        从表user中删除用户信息
 
         Args:
-            user (BasicUserInfo): 待删除的简略版用户信息
+            user (UserInfo): 待删除的用户信息
 
         Returns:
             bool: True成功 False失败

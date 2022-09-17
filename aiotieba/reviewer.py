@@ -21,7 +21,7 @@ from ._helpers import DelFlag, Punish, alog_time
 from ._logger import LOG
 from .client import Client, _ForumInfoCache
 from .database import MySQLDB, SQLiteDB
-from .typedefs import BasicUserInfo, Comment, Comments, Post, Posts, Thread, Threads
+from .typedefs import Comment, Comments, Post, Posts, Thread, Threads, UserInfo
 
 
 class BaseReviewer(object):
@@ -131,15 +131,15 @@ class BaseReviewer(object):
 
         return fname
 
-    async def get_basic_user_info(self, _id: Union[str, int]) -> BasicUserInfo:
+    async def get_basic_user_info(self, _id: Union[str, int]) -> UserInfo:
         """
-        获取简略版用户信息
+        获取用户信息
 
         Args:
-            _id (str | int): 待补全用户的id user_id/user_name/portrait
+            _id (str | int): 用户id user_id/user_name/portrait
 
         Returns:
-            BasicUserInfo: 简略版用户信息 仅保证包含user_name/portrait/user_id
+            UserInfo: 用户信息 仅包含user_name/portrait/user_id
         """
 
         if user := await self.db.get_basic_user_info(_id):

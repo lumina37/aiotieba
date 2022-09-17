@@ -1,5 +1,4 @@
 __all__ = [
-    'BasicUserInfo',
     'UserInfo',
     'FragmentUnknown',
     'FragText',
@@ -72,8 +71,8 @@ from typing import (
 
 import bs4
 import yarl
-from google.protobuf.message import Message
 from google.protobuf.json_format import ParseDict
+from google.protobuf.message import Message
 
 from ._logger import LOG
 from .protobuf import GetDislikeListResIdl_pb2, Page_pb2, ThreadInfo_pb2, User_pb2
@@ -81,24 +80,56 @@ from .protobuf import GetDislikeListResIdl_pb2, Page_pb2, ThreadInfo_pb2, User_p
 _TypeMessage = TypeVar('_TypeMessage', bound=Message)
 
 
-class BasicUserInfo(object):
+class UserInfo(object):
     """
-    基本用户属性
+    用户属性
 
     Args:
-        _id (str | int, optional): 用于快速构造BasicUserInfo的自适应参数 输入用户名/portrait/user_id
+        _id (str | int, optional): 用于快速构造UserInfo的自适应参数 输入用户名或portrait或user_id
         _raw_data (_TypeMessage): protobuf源数据
 
     Attributes:
         user_id (int): user_id
         user_name (str): 用户名
         portrait (str): portrait
+        nick_name (str): 用户昵称
+        tieba_uid (int): 用户个人主页uid
+
+        level (int): 等级
+        gender (int): 性别
+        age (float): 吧龄
+        post_num (int): 发帖数
+        fan_num (int): 粉丝数
+        follow_num (int): 关注数
+        sign (str): 个性签名
+        ip (str): ip归属地
+
+        is_bawu (bool): 是否吧务
+        is_vip (bool): 是否vip
+        is_god (bool): 是否大神
+        priv_like (int): 是否公开关注贴吧
+        priv_reply (int): 帖子评论权限
     """
 
     __slots__ = [
         '_user_id',
         '_user_name',
         '_portrait',
+        '_nick_name',
+        '_tieba_uid',
+        '_level',
+        '_gender',
+        '_age',
+        '_post_num',
+        '_fan_num',
+        '_follow_num',
+        '_sign',
+        '_ip',
+        '_is_bawu',
+        '_is_vip',
+        '_is_god',
+        '_priv_like',
+        '_priv_reply',
     ]
 
     def __init__(self, _id: Union[str, int, None] = None, _raw_data: Optional[_TypeMessage] = None) -> None:
@@ -107,11 +138,45 @@ class BasicUserInfo(object):
             self._user_id = _raw_data.id
             self._user_name = _raw_data.name
             self.portrait = _raw_data.portrait
+            self._nick_name = _raw_data.name_show
+            self.tieba_uid = _raw_data.tieba_uid
+
+            self._level = _raw_data.level_id
+            self._gender = _raw_data.gender or _raw_data.sex
+            self.age = _raw_data.tb_age
+            self._post_num = _raw_data.post_num
+            self._fan_num = _raw_data.fans_num
+            self._follow_num = _raw_data.concern_num
+            self._sign = _raw_data.intro
+            self._ip = _raw_data.ip_address
+
+            self._is_bawu = bool(_raw_data.is_bawu)
+            self._is_vip = True if _raw_data.new_tshow_icon else bool(_raw_data.vipInfo.v_status)
+            self._is_god = bool(_raw_data.new_god_data.status)
+            self.priv_like = _raw_data.priv_sets.like
+            self.priv_reply = _raw_data.priv_sets.reply
 
         else:
             self._user_id = 0
             self._user_name = ''
             self._portrait = ''
+            self._nick_name = ''
+            self._tieba_uid = 0
+
+            self._level = 0
+            self._gender = 0
+            self._age = 0.0
+            self._post_num = 0
+            self._fan_num = 0
+            self._follow_num = 0
+            self._sign = ''
+            self._ip = ''
+
+            self._is_bawu = False
+            self._is_vip = False
+            self._is_god = False
+            self._priv_like = 0
+            self._priv_reply = 0
 
             if _id:
                 if self.is_user_id(_id):
@@ -135,20 +200,21 @@ class BasicUserInfo(object):
                 'user_id': self.user_id,
                 'user_name': self.user_name,
                 'portrait': self.portrait,
+                'nick_name': self.nick_name,
             }
         )
 
-    def __eq__(self, obj: "BasicUserInfo") -> bool:
-        return self.user_id == obj.user_id and self.user_name == obj.user_name and self.portrait == obj.portrait
+    def __eq__(self, obj: "UserInfo") -> bool:
+        return self._user_id == obj._user_id and self._user_name == obj._user_name and self._portrait == obj._portrait
 
     def __hash__(self) -> int:
-        return self.user_id
+        return self._user_id
 
     def __int__(self) -> int:
-        return self.user_id
+        return self._user_id
 
     def __bool__(self) -> bool:
-        return bool(self.user_id)
+        return bool(self._user_id) or bool(self._user_name) or bool(self._portrait)
 
     @staticmethod
     def is_portrait(portrait: Any) -> bool:
@@ -228,126 +294,6 @@ class BasicUserInfo(object):
 
         else:
             self._portrait = ''
-
-    @property
-    def log_name(self) -> str:
-        """
-        用于在日志中记录用户属性
-        """
-
-        if self.user_name:
-            return self.user_name
-        elif self.portrait:
-            return self.portrait
-        else:
-            return str(self.user_id)
-
-
-class UserInfo(BasicUserInfo):
-    """
-    用户属性
-
-    Args:
-        _id (str | int, optional): 用于快速构造UserInfo的自适应参数 输入用户名或portrait或user_id
-        _raw_data (_TypeMessage): protobuf源数据
-
-    Attributes:
-        user_id (int): user_id
-        user_name (str): 用户名
-        portrait (str): portrait
-        nick_name (str): 用户昵称
-        tieba_uid (int): 用户个人主页uid
-
-        level (int): 等级
-        gender (int): 性别
-        age (float): 吧龄
-        post_num (int): 发帖数
-        fan_num (int): 粉丝数
-        follow_num (int): 关注数
-        sign (str): 个性签名
-        ip (str): ip归属地
-
-        is_bawu (bool): 是否吧务
-        is_vip (bool): 是否vip
-        is_god (bool): 是否大神
-        priv_like (int): 是否公开关注贴吧
-        priv_reply (int): 帖子评论权限
-    """
-
-    __slots__ = [
-        '_nick_name',
-        '_tieba_uid',
-        '_level',
-        '_gender',
-        '_age',
-        '_post_num',
-        '_fan_num',
-        '_follow_num',
-        '_sign',
-        '_ip',
-        '_is_bawu',
-        '_is_vip',
-        '_is_god',
-        '_priv_like',
-        '_priv_reply',
-    ]
-
-    def __init__(self, _id: Union[str, int, None] = None, _raw_data: Optional[_TypeMessage] = None) -> None:
-        super(UserInfo, self).__init__(_id, _raw_data)
-
-        if _raw_data:
-            self._nick_name = _raw_data.name_show
-            self.tieba_uid = _raw_data.tieba_uid
-
-            self._level = _raw_data.level_id
-            self._gender = _raw_data.gender or _raw_data.sex
-            self.age = _raw_data.tb_age
-            self._post_num = _raw_data.post_num
-            self._fan_num = _raw_data.fans_num
-            self._follow_num = _raw_data.concern_num
-            self._sign = _raw_data.intro
-            self._ip = _raw_data.ip_address
-
-            self._is_bawu = bool(_raw_data.is_bawu)
-            self._is_vip = True if _raw_data.new_tshow_icon else bool(_raw_data.vipInfo.v_status)
-            self._is_god = bool(_raw_data.new_god_data.status)
-            self.priv_like = _raw_data.priv_sets.like
-            self.priv_reply = _raw_data.priv_sets.reply
-
-        else:
-            self._nick_name = ''
-            self._tieba_uid = 0
-
-            self._level = 0
-            self._gender = 0
-            self._age = 0.0
-            self._post_num = 0
-            self._fan_num = 0
-            self._follow_num = 0
-            self._sign = ''
-            self._ip = ''
-
-            self._is_bawu = False
-            self._is_vip = False
-            self._is_god = False
-            self._priv_like = 1
-            self._priv_reply = 1
-
-    def __repr__(self) -> str:
-        return str(
-            {
-                'user_id': self.user_id,
-                'user_name': self.user_name,
-                'portrait': self.portrait,
-                'nick_name': self.nick_name,
-            }
-        )
-
-    def __eq__(self, obj: "UserInfo") -> bool:
-        return super(UserInfo, self).__eq__(obj)
-
-    def __hash__(self) -> int:
-        return super(UserInfo, self).__hash__()
 
     @property
     def nick_name(self) -> str:
@@ -544,14 +490,14 @@ class UserInfo(BasicUserInfo):
         是否公开关注贴吧
 
         Note:
-            完全可见1 好友可见2 完全隐藏3
+            完全可见1 好友可见2 完全隐藏3 未知0
         """
 
         return self._priv_like
 
     @priv_like.setter
     def priv_like(self, new_priv_like: int) -> None:
-        self._priv_like = int(new_priv_like) if new_priv_like else 1
+        self._priv_like = int(new_priv_like) if new_priv_like else 0
 
     @property
     def priv_reply(self) -> int:
@@ -559,14 +505,14 @@ class UserInfo(BasicUserInfo):
         帖子评论权限
 
         Note:
-            允许所有人1 仅允许我的粉丝5 仅允许我的关注6
+            允许所有人1 仅允许我的粉丝5 仅允许我的关注6 未知0
         """
 
         return self._priv_reply
 
     @priv_reply.setter
     def priv_reply(self, new_priv_reply: int) -> None:
-        self._priv_reply = int(new_priv_reply) if new_priv_reply else 1
+        self._priv_reply = int(new_priv_reply) if new_priv_reply else 0
 
 
 class _Fragment(object):
@@ -2307,6 +2253,9 @@ class Post(_Container):
     def comments(self) -> List["Comment"]:
         """
         楼中楼列表
+
+        Note:
+            不包含用户等级和ip属地信息
         """
 
         if not isinstance(self._comments, list):
@@ -2791,8 +2740,8 @@ class Reply(_Container):
         user (UserInfo): 发布者的用户信息
         author_id (int): 发布者的user_id
         post_pid (int): 楼层pid
-        post_user (BasicUserInfo): 楼层用户信息
-        thread_user (BasicUserInfo): 楼主用户信息
+        post_user (UserInfo): 楼层用户信息
+        thread_user (UserInfo): 楼主用户信息
 
         is_floor (bool): 是否楼中楼
         create_time (int): 创建时间
@@ -2870,32 +2819,30 @@ class Reply(_Container):
         return self._post_pid
 
     @property
-    def post_user(self) -> BasicUserInfo:
+    def post_user(self) -> UserInfo:
         """
         楼层用户信息
         """
 
-        if not isinstance(self._post_user, BasicUserInfo):
+        if not isinstance(self._post_user, UserInfo):
             if self._post_user is not None:
-                self._post_user = BasicUserInfo(_raw_data=self._post_user) if self._post_user.id else BasicUserInfo()
+                self._post_user = UserInfo(_raw_data=self._post_user) if self._post_user.id else UserInfo()
             else:
-                self._post_user = BasicUserInfo()
+                self._post_user = UserInfo()
 
         return self._post_user
 
     @property
-    def thread_user(self) -> BasicUserInfo:
+    def thread_user(self) -> UserInfo:
         """
         楼主用户信息
         """
 
-        if not isinstance(self._thread_user, BasicUserInfo):
+        if not isinstance(self._thread_user, UserInfo):
             if self._thread_user is not None:
-                self._thread_user = (
-                    BasicUserInfo(_raw_data=self._thread_user) if self._thread_user.id else BasicUserInfo()
-                )
+                self._thread_user = UserInfo(_raw_data=self._thread_user) if self._thread_user.id else UserInfo()
             else:
-                self._thread_user = BasicUserInfo()
+                self._thread_user = UserInfo()
 
         return self._thread_user
 
@@ -4370,12 +4317,12 @@ class Recovers(_Containers[Recover]):
         return self._has_more
 
 
-class BlacklistUsers(_Containers[BasicUserInfo]):
+class BlacklistUsers(_Containers[UserInfo]):
     """
     黑名单用户列表
 
     Attributes:
-        objs (list[BasicUserInfo]): 黑名单用户列表
+        objs (list[UserInfo]): 黑名单用户列表
 
         page (Page): 页信息
         has_more (bool): 是否还有下一页
@@ -4400,7 +4347,7 @@ class BlacklistUsers(_Containers[BasicUserInfo]):
             self._page = None
 
     @property
-    def objs(self) -> List[BasicUserInfo]:
+    def objs(self) -> List[UserInfo]:
         """
         黑名单用户列表
         """
@@ -4410,7 +4357,7 @@ class BlacklistUsers(_Containers[BasicUserInfo]):
 
                 def parse_tag(tag):
                     user_info_item = tag.previous_sibling.input
-                    user = BasicUserInfo()
+                    user = UserInfo()
                     user.user_name = user_info_item['data-user-name']
                     user.user_id = int(user_info_item['data-user-id'])
                     user.portrait = tag.a['href'][14:]
