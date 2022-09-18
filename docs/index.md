@@ -14,9 +14,6 @@
 <a href="https://pypi.org/project/aiotieba">
     <img src="https://badge.fury.io/py/aiotieba.svg" alt="PyPI version">
 </a>
-<a href="https://lgtm.com/projects/g/Starry-OvO/aiotieba/context:python">
-    <img src="https://img.shields.io/lgtm/grade/python/g/Starry-OvO/aiotieba?logo=lgtm" alt="PyPI version">
-</a>
 <a href="https://pypi.org/project/aiotieba">
     <img src="https://img.shields.io/pypi/pyversions/aiotieba" alt="PyPI - Python Version">
 </a>

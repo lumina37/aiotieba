@@ -251,7 +251,7 @@ class Client(object):
         '_ws_dispatcher',
     ]
 
-    _trust_env = True
+    _trust_env = False
 
     latest_version: ClassVar[str] = "12.29.1.1"  # 这是目前的最新版本
     # no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
