@@ -13,6 +13,7 @@ import gzip
 import hashlib
 import json
 import random
+import socket
 import time
 import uuid
 import weakref
@@ -442,6 +443,7 @@ class Client(object):
         if self._connector is None:
             self._connector = aiohttp.TCPConnector(
                 ttl_dns_cache=600,
+                family=socket.AF_INET,
                 keepalive_timeout=60,
                 limit=0,
                 ssl=False,
