@@ -306,9 +306,7 @@ class Listener(object):
 
         return user
 
-    async def _cmd_set(
-        self, ctx: Context, new_permission: int, note: str, user: Optional[tb.BasicUserInfo] = None
-    ) -> bool:
+    async def _cmd_set(self, ctx: Context, new_permission: int, note: str, user: Optional[tb.UserInfo] = None) -> bool:
         """
         设置权限级别
         """
