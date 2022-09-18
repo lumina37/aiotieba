@@ -490,14 +490,14 @@ class UserInfo(object):
         是否公开关注贴吧
 
         Note:
-            完全可见1 好友可见2 完全隐藏3 未知0
+            完全可见1 好友可见2 完全隐藏3
         """
 
         return self._priv_like
 
     @priv_like.setter
     def priv_like(self, new_priv_like: int) -> None:
-        self._priv_like = int(new_priv_like) if new_priv_like else 0
+        self._priv_like = int(new_priv_like) if new_priv_like else 1
 
     @property
     def priv_reply(self) -> int:
@@ -505,14 +505,14 @@ class UserInfo(object):
         帖子评论权限
 
         Note:
-            允许所有人1 仅允许我的粉丝5 仅允许我的关注6 未知0
+            允许所有人1 仅允许我的粉丝5 仅允许我的关注6
         """
 
         return self._priv_reply
 
     @priv_reply.setter
     def priv_reply(self, new_priv_reply: int) -> None:
-        self._priv_reply = int(new_priv_reply) if new_priv_reply else 0
+        self._priv_reply = int(new_priv_reply) if new_priv_reply else 1
 
 
 class _Fragment(object):

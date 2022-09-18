@@ -8,11 +8,10 @@ Asynchronous I/O Client/Reviewer for Baidu Tieba
 
 import os
 
-from ._helpers import DelFlag, Punish
 from ._logger import LOG
 from .client import Client
 from .database import MySQLDB, SQLiteDB
-from .reviewer import BaseReviewer, Reviewer
+from .reviewer import BaseReviewer, DelFlag, Punish, Reviewer
 from .typedefs import (
     Appeal,
     Appeals,
