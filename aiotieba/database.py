@@ -203,7 +203,7 @@ class MySQLDB(object):
                     INDEX `user_name`(user_name))"
                 )
 
-    async def get_basic_user_info(self, _id: Union[str, int]) -> UserInfo:
+    async def get_userinfo(self, _id: Union[str, int]) -> UserInfo:
         """
         获取用户信息
 

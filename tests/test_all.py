@@ -42,11 +42,11 @@ async def test_BasicUserInfo(client: tb.Client):
 
     user_id = user.user_id
 
-    user = await client.get_basic_user_info(user.portrait)
+    user = await client.get_user_info(user.portrait, tb.ReqUInfo.BASIC)
     assert user_id == user.user_id
     check_UserInfo(user)
 
-    user = await client.get_basic_user_info(user.user_id)
+    user = await client.get_user_info(user.user_id, tb.ReqUInfo.BASIC)
     assert user_id == user.user_id
     check_UserInfo(user)
 
@@ -300,7 +300,7 @@ async def test_Database(db: tb.MySQLDB):
     assert fname == await db.get_fname(fid)
     await asyncio.gather(
         *[
-            db.get_basic_user_info("v_guard"),
+            db.get_userinfo("v_guard"),
             db.get_tid(7763274602),
             db.get_user_id_list(),
             db.get_tid_list(limit=3),

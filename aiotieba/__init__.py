@@ -3,13 +3,13 @@ Asynchronous I/O Client/Reviewer for Baidu Tieba
 
 @Author: starry.qvq@gmail.com
 @License: Unlicense
-@Repository: https://github.com/Starry-OvO/Tieba-Manager
+@Documentation: https://v-8.top/
 """
 
 import os
 
 from ._logger import LOG
-from .client import Client
+from .client import Client, ReqUInfo
 from .database import MySQLDB, SQLiteDB
 from .reviewer import BaseReviewer, DelFlag, Punish, Reviewer
 from .typedefs import (
@@ -63,7 +63,7 @@ from .typedefs import (
     VoteInfo,
 )
 
-__version__ = "2.9.4a1"
+__version__ = "2.9.4a2"
 
 if os.name == 'posix':
     import signal

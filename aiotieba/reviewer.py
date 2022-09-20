@@ -23,7 +23,7 @@ from typing import List, Literal, Optional, Tuple, Union
 
 from ._helpers import alog_time
 from ._logger import LOG
-from .client import Client, _ForumInfoCache
+from .client import Client, ReqUInfo, _ForumInfoCache
 from .database import MySQLDB, SQLiteDB
 from .typedefs import Comment, Comments, Post, Posts, Thread, Threads, UserInfo
 
@@ -135,24 +135,19 @@ class BaseReviewer(object):
 
         return fname
 
-    async def get_basic_user_info(self, _id: Union[str, int]) -> UserInfo:
+    async def get_user_info(self, _id: Union[str, int], /, require: ReqUInfo = ReqUInfo.ALL) -> UserInfo:
         """
         获取用户信息
 
         Args:
-            _id (str | int): 用户id user_id/user_name/portrait
+            _id (str | int): 用户id user_id / user_name / portrait
+            require (ReqUInfo): 需要获取的字段
 
         Returns:
-            UserInfo: 用户信息 仅包含user_name/portrait/user_id
+            UserInfo: 用户信息
         """
 
-        if user := await self.db.get_basic_user_info(_id):
-            return user
-
-        if user := await self.client.get_basic_user_info(_id):
-            await self.db.add_user(user)
-
-        return user
+        return await self.client.get_user_info(_id, require)
 
     async def get_threads(
         self,

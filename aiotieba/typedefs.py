@@ -175,8 +175,8 @@ class UserInfo(object):
             self._is_bawu = False
             self._is_vip = False
             self._is_god = False
-            self._priv_like = 0
-            self._priv_reply = 0
+            self._priv_like = 1
+            self._priv_reply = 1
 
             if _id:
                 if self.is_user_id(_id):
