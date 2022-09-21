@@ -1518,7 +1518,7 @@ class Client(object):
             fname_or_fid (str | int): 目标贴吧名或fid 优先fid
 
         Returns:
-            dict[str, list[UserInfo]]: {吧务类型: list[吧务基本用户信息]}
+            dict[str, list[UserInfo]]: {吧务类型: list[吧务用户信息]}
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -1538,10 +1538,19 @@ class Client(object):
             if int(res_proto.error.errorno):
                 raise TiebaServerError(res_proto.error.errmsg)
 
+            def _parse_user_info(proto) -> UserInfo:
+                user = UserInfo()
+                user.user_id = proto.id
+                user.portrait = proto.portrait
+                user._user_name = proto.name
+                user.nick_name = proto.name_show
+                user._level = proto.user_level
+                return user
+
             roledes_protos = res_proto.data.bawu_team_info.bawu_team_list
             bawu_dict = {
                 roledes_proto.role_name: [
-                    UserInfo(_raw_data=roleinfo_proto) for roleinfo_proto in roledes_proto.role_info
+                    _parse_user_info(roleinfo_proto) for roleinfo_proto in roledes_proto.role_info
                 ]
                 for roledes_proto in roledes_protos
             }
@@ -3219,7 +3228,7 @@ class Client(object):
         获取用户发布的主题帖/回复列表
 
         Args:
-            user (UserInfo): 待获取用户的基本用户信息
+            user (UserInfo): 用户信息
             pn (int, optional): 页码. Defaults to 1.
             is_thread (bool, optional): 是否请求主题帖. Defaults to True.
             public_only (bool, optional): 是否仅获取公开帖. Defaults to False.

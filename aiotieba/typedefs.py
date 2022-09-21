@@ -315,19 +315,6 @@ class UserInfo(object):
             self._nick_name = ''
 
     @property
-    def log_name(self) -> str:
-        """
-        用于在日志中记录用户属性
-        """
-
-        if self.user_name:
-            return self.user_name
-        elif self.portrait:
-            return f"{self.nick_name}/{self.portrait}"
-        else:
-            return str(self.user_id)
-
-    @property
     def tieba_uid(self) -> int:
         """
         用户个人主页uid
@@ -513,6 +500,27 @@ class UserInfo(object):
     @priv_reply.setter
     def priv_reply(self, new_priv_reply: int) -> None:
         self._priv_reply = int(new_priv_reply) if new_priv_reply else 1
+
+    @property
+    def log_name(self) -> str:
+        """
+        用于在日志中记录用户属性
+        """
+
+        if self.user_name:
+            return self.user_name
+        elif self.portrait:
+            return f"{self.nick_name}/{self.portrait}"
+        else:
+            return str(self.user_id)
+
+    @property
+    def show_name(self) -> str:
+        """
+        显示名称
+        """
+
+        return self.nick_name if self.nick_name else self.user_name
 
 
 class _Fragment(object):

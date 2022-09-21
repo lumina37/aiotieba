@@ -1,7 +1,7 @@
 __all__ = [
     'BaseReviewer',
     'Reviewer',
-    'DelFlag',
+    'Ops',
     'Punish',
 ]
 
@@ -432,7 +432,11 @@ class BaseReviewer(object):
         return 0, ''
 
 
-class DelFlag(enum.IntEnum):
+class Ops(enum.IntEnum):
+    """
+    待执行的操作类型
+    """
+
     DELETE = -2
     HIDE = -1
     NORMAL = 0
@@ -455,17 +459,17 @@ class Punish(object):
         'note',
     ]
 
-    def __init__(self, del_flag: DelFlag = DelFlag.NORMAL, block_days: int = 0, note: str = ''):
-        self.del_flag: DelFlag = del_flag
+    def __init__(self, del_flag: Ops = Ops.NORMAL, block_days: int = 0, note: str = ''):
+        self.del_flag: Ops = del_flag
         self.block_days: int = block_days
-        if del_flag < DelFlag.NORMAL:
+        if del_flag < Ops.NORMAL:
             line = sys._getframe(1).f_lineno
             self.note = f"L{line} {note}" if note else f"L{line}"
         else:
             self.note = note
 
     def __bool__(self) -> bool:
-        if self.del_flag < DelFlag.NORMAL:
+        if self.del_flag < Ops.NORMAL:
             return True
         if self.block_days:
             return True
@@ -490,9 +494,9 @@ def _check_permission(func):
     async def _(self: "Reviewer", obj: Union[Thread, Post, Comment]) -> Optional[Punish]:
         permission = await self.db.get_user_id(obj.user.user_id)
         if permission <= -5:
-            return Punish(DelFlag.DELETE, 10, "黑名单")
+            return Punish(Ops.DELETE, 10, "黑名单")
         if permission >= 1:
-            return Punish(DelFlag.WHITE)
+            return Punish(Ops.WHITE)
         return await func(self, obj)
 
     return _
@@ -607,12 +611,12 @@ class Reviewer(BaseReviewer):
             punish (Punish): 待执行的惩罚
         """
 
-        if punish.del_flag == DelFlag.DELETE:
+        if punish.del_flag == Ops.DELETE:
             LOG.info(
                 f"Del {obj.__class__.__name__}. text={obj.text} user={obj.user} level={obj.user.level} note={punish.note}"
             )
             await self.del_post(obj.pid)
-        elif punish.del_flag == DelFlag.HIDE:
+        elif punish.del_flag == Ops.HIDE:
             LOG.info(
                 f"Hide {obj.__class__.__name__}. text={obj.text} user={obj.user} level={obj.user.level} note={punish.note}"
             )
@@ -628,11 +632,11 @@ class Reviewer(BaseReviewer):
             punish (Punish): 待执行的惩罚
         """
 
-        if punish.del_flag == DelFlag.DELETE:
+        if punish.del_flag == Ops.DELETE:
             LOG.info(
                 f"Del {obj.__class__.__name__}. text={obj.text} user={obj.user} level={obj.user.level} note={punish.note}"
             )
-        elif punish.del_flag == DelFlag.HIDE:
+        elif punish.del_flag == Ops.HIDE:
             LOG.info(
                 f"Hide {obj.__class__.__name__}. text={obj.text} user={obj.user} level={obj.user.level} note={punish.note}"
             )
