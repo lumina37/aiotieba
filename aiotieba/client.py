@@ -899,7 +899,7 @@ class Client(object):
                 raise TiebaServerError(res_json['error_msg'])
 
             user_dict = res_json['user']
-            self._user._user_id = user_dict['id']
+            self._user.user_id = user_dict['id']
             self._user.portrait = user_dict['portrait']
             self._user._user_name = user_dict['name']
             self._tbs = res_json['anti']['tbs']
