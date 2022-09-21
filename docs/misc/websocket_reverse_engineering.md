@@ -8,9 +8,9 @@
 
 ## 正文
 
-本人是一名大三学生，因为某吧吧务管理有自动发送私信的需求，我就利用课余时间逆向研究了某吧app的私信功能。刚准备研究的时候，我在github和吾爱破解都搜了一下，没找到相关内容，这篇文章算是补个漏吧
+本人是一名大学生，因为某吧吧务管理有自动发送私信的需求，我就利用课余时间逆向研究了某吧app的私信功能。刚准备研究的时候，我在github和吾爱破解都搜了一下，没找到相关内容，这篇文章算是补个漏吧
 
-先给个Unlicense开源仓库地址[https://github.com/Starry-OvO/Tieba-Manager](https://github.com/Starry-OvO/Tieba-Manager)还望各位能赏个star
+先给个Unlicense开源仓库地址[https://github.com/Starry-OvO/aiotieba](https://github.com/Starry-OvO/aiotieba)还望各位能赏个star
 
 jadx反编译应该算是很常规的逆向手段了，而且说实话我没写过java也不太了解java，只能靠C++的开发经验来推测代码的用途，我这篇文章的参考价值可能更多地在python实现上
 
@@ -346,6 +346,6 @@ init_websocket会发送初始化信息，RSA加密的步骤全在这里实现
 
 好了全文结束
 
-上述提到的所有python代码（不包括debug脚本）都包含在[https://github.com/Starry-OvO/Tieba-Manager/blob/master/aiotieba/client.py](https://github.com/Starry-OvO/Tieba-Manager/blob/master/aiotieba/client.py)里，食用方法参考项目的README.md
+上述提到的所有python代码（不包括debug脚本）都包含在[https://github.com/Starry-OvO/aiotieba/blob/master/aiotieba/client.py](https://github.com/Starry-OvO/aiotieba/blob/master/aiotieba/client.py)里，食用方法参考项目的README.md
 
 如果这篇文章能帮到你，请给我的开源项目点一个star，非常感谢

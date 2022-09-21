@@ -1,19 +1,16 @@
 <p align="center">
 
-<img src="https://raw.githubusercontent.com/Starry-OvO/Tieba-Manager/master/docs/img/aiotieba.svg">
+<img src="https://raw.githubusercontent.com/Starry-OvO/aiotieba/master/docs/img/aiotieba.svg">
 
 </p>
 
 <div align="center">
 <p>
-<a href="https://github.com/Starry-OvO/Tieba-Manager/actions">
-    <img src="https://img.shields.io/github/workflow/status/Starry-OvO/Tieba-Manager/CI?label=CI&logo=github" alt="GitHub Workflow Status">
+<a href="https://github.com/Starry-OvO/aiotieba/actions">
+    <img src="https://img.shields.io/github/workflow/status/Starry-OvO/aiotieba/CI?label=CI&logo=github" alt="GitHub Workflow Status">
 </a>
 <a href="https://pypi.org/project/aiotieba">
     <img src="https://badge.fury.io/py/aiotieba.svg" alt="PyPI version">
-</a>
-<a href="https://lgtm.com/projects/g/Starry-OvO/Tieba-Manager/context:python">
-    <img src="https://img.shields.io/lgtm/grade/python/g/Starry-OvO/Tieba-Manager?logo=lgtm" alt="PyPI version">
 </a>
 <a href="https://pypi.org/project/aiotieba">
     <img src="https://img.shields.io/pypi/pyversions/aiotieba" alt="PyPI - Python Version">
@@ -25,7 +22,7 @@
 
 ## 简介
 
-**aiotieba**使用[**asyncio**](https://tutorial.python.org/zh-cn/3/library/asyncio.html)和[**aiohttp**](https://github.com/aio-libs/aiohttp)封装了大量操作[百度贴吧核心API](https://github.com/Starry-OvO/Tieba-Manager/blob/master/aiotieba/client.py)的简便方法，并为吧务管理设计了一套[内容审查脚手架](https://github.com/Starry-OvO/Tieba-Manager/blob/master/aiotieba/reviewer.py)
+**aiotieba**使用[**asyncio**](https://tutorial.python.org/zh-cn/3/library/asyncio.html)和[**aiohttp**](https://github.com/aio-libs/aiohttp)封装了大量操作[百度贴吧核心API](https://github.com/Starry-OvO/aiotieba/blob/master/aiotieba/client.py)的简便方法，并为吧务管理设计了一套[内容审查脚手架](https://github.com/Starry-OvO/aiotieba/blob/master/aiotieba/reviewer.py)
 
 本框架以提高二次开发速度为首要设计目标。规范且符合直觉的命名规律、全覆盖的类型注解和文档注释让你体验飞一般的开发体验
 
@@ -34,9 +31,9 @@
 <summary>贴吧接口列表</summary>
 
 + 按回复时间/发布时间/热门序获取贴吧主题帖/精华帖列表。支持获取带转发/投票/转发嵌套投票/各种卡片的主题帖信息
-+ 获取带图片链接/小尾巴内容/点赞情况/用户信息（[用户名](https://starry-ovo.github.io/Tieba-Manager/tutorial/quickstart#user_name)/[portrait](https://starry-ovo.github.io/Tieba-Manager/tutorial/quickstart#portrait)/[user_id](https://starry-ovo.github.io/Tieba-Manager/tutorial/quickstart#user_id)/等级/性别/是否锁回复）/每条回复的前排楼中楼（支持按或不按点赞数排序）的楼层列表
++ 获取带图片链接/小尾巴内容/点赞情况/用户信息（[用户名](https://starry-ovo.github.io/aiotieba/tutorial/quickstart#user_name)/[portrait](https://starry-ovo.github.io/aiotieba/tutorial/quickstart#portrait)/[user_id](https://starry-ovo.github.io/aiotieba/tutorial/quickstart#user_id)/等级/性别/是否锁回复）/每条回复的前排楼中楼（支持按或不按点赞数排序）的楼层列表
 + 获取带所有前述用户信息的楼中楼列表
-+ 根据[用户名](https://starry-ovo.github.io/Tieba-Manager/tutorial/quickstart#user_name)/[portrait](https://starry-ovo.github.io/Tieba-Manager/tutorial/quickstart#portrait)/[user_id](https://starry-ovo.github.io/Tieba-Manager/tutorial/quickstart#user_id)中的任一项反查其他用户信息，或通过用户主页的[tieba_uid](https://starry-ovo.github.io/Tieba-Manager/tutorial/quickstart#tieba_uid)反查其他用户信息
++ 根据[用户名](https://starry-ovo.github.io/aiotieba/tutorial/quickstart#user_name)/[portrait](https://starry-ovo.github.io/aiotieba/tutorial/quickstart#portrait)/[user_id](https://starry-ovo.github.io/aiotieba/tutorial/quickstart#user_id)中的任一项反查其他用户信息，或通过用户主页的[tieba_uid](https://starry-ovo.github.io/aiotieba/tutorial/quickstart#tieba_uid)反查其他用户信息
 + 使用小吧主、语音小编的账号删帖/屏蔽/封禁。支持删除视频帖/批量删帖/多于1天的封禁
 + 使用已被大吧主分配解封/恢复/处理申诉权限的吧务账号解封/恢复/处理申诉
 + 使用大吧主账号推荐帖子到首页/移动帖子到指定分区/加精/撤精/置顶/撤置顶/添加黑名单/查看黑名单/取消黑名单
@@ -81,7 +78,7 @@ async def main():
 asyncio.run(main())
 ```
 
-+ 继续阅读[**入门教程**](https://starry-ovo.github.io/Tieba-Manager/tutorial/quickstart)
++ 继续阅读[**入门教程**](https://starry-ovo.github.io/aiotieba/tutorial/quickstart)
 
 ## 友情链接
 
@@ -90,24 +87,24 @@ asyncio.run(main())
 
 ## 客户名单
 
-<details><summary>2022.09.14更新</summary>
+<details><summary>2022.09.21更新</summary>
 
 |      吧名      | 关注用户数 | 最近29天日均访问量 | 日均主题帖数 | 日均回复数 |
 | :------------: | :--------: | :----------------: | :----------: | :--------: |
-|    抗压背锅    | 4,066,468  |     1,019,679      |    4,782     |  120,412   |
-|     孙笑川     | 2,476,583  |      591,327       |    8,367     |  238,147   |
-|    lol半价     | 1,959,284  |      101,531       |     367      |   5,323    |
-|      宫漫      | 1,330,708  |       48,546       |     234      |   3,487    |
-|    逆水寒ol    |  714,578   |       38,519       |     113      |   2,752    |
-|    新孙笑川    |  344,378   |       66,822       |     526      |   24,583   |
-|     vtuber     |  213,941   |       11,694       |      71      |    859     |
-|     asoul      |  157,948   |       14,862       |     118      |    680     |
-|      嘉然      |   56,928   |       14,403       |     116      |   1,713    |
-|      向晚      |   29,887   |       14,151       |     114      |   1,541    |
-|      贝拉      |   21,669   |       8,280        |      44      |    751     |
-|      乃琳      |   17,133   |       3,858        |      22      |    265     |
-| vtuber自由讨论 |   16,776   |       4,337        |      3       |     75     |
-| asoul一个魂儿  |   14,591   |       1,034        |      6       |     43     |
-|     贝贝珈     |   1,630    |        716         |      2       |     17     |
+|    抗压背锅    | 4,084,548  |      914,055       |    4,175     |  111,131   |
+|     孙笑川     | 2,515,173  |      586,742       |    7,960     |  229,206   |
+|    lol半价     | 1,959,972  |       98,683       |     392      |   5,319    |
+|      宫漫      | 1,334,111  |       47,027       |     224      |   3,211    |
+|    逆水寒ol    |  714,773   |       37,234       |     112      |   2,626    |
+|    新孙笑川    |  351,511   |       61,189       |     485      |   21,614   |
+|     vtuber     |  214,291   |       11,845       |      70      |    889     |
+|     asoul      |  157,734   |       13,946       |     103      |    611     |
+|      嘉然      |   57,049   |       12,719       |     107      |   1,563    |
+|      向晚      |   29,958   |       13,463       |     109      |   1,455    |
+|      贝拉      |   21,652   |       8,541        |      44      |    742     |
+|      乃琳      |   17,120   |       3,765        |      21      |    276     |
+| vtuber自由讨论 |   16,791   |       4,263        |      3       |     69     |
+| asoul一个魂儿  |   14,553   |       1,004        |      6       |     35     |
+|     贝贝珈     |   1,621    |        695         |      2       |     18     |
 
 </details>

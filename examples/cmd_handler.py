@@ -297,18 +297,16 @@ class Listener(object):
         if tieba_uid := _get_num_between_two_signs(arg, '#'):
             user = await self.listener.client.tieba_uid2user_info(tieba_uid)
         elif user_id := _get_num_between_two_signs(arg, '/'):
-            user = await self.listener.get_basic_user_info(user_id)
+            user = await self.listener.get_user_info(user_id, tb.ReqUInfo.BASIC)
         else:
-            user = await self.listener.get_basic_user_info(arg)
+            user = await self.listener.get_user_info(arg, tb.ReqUInfo.BASIC)
 
         if not user:
             raise ValueError("找不到对应的用户")
 
         return user
 
-    async def _cmd_set(
-        self, ctx: Context, new_permission: int, note: str, user: Optional[tb.BasicUserInfo] = None
-    ) -> bool:
+    async def _cmd_set(self, ctx: Context, new_permission: int, note: str, user: Optional[tb.UserInfo] = None) -> bool:
         """
         设置权限级别
         """
@@ -342,7 +340,7 @@ class Listener(object):
             raise ValueError("speaker尚未冷却完毕")
 
         active_admin_list = [
-            (await self.listener.get_basic_user_info(user_id)).user_name
+            (await self.listener.get_user_info(user_id, tb.ReqUInfo.USER_NAME)).user_name
             for user_id in await ctx.admin.db.get_user_id_list(lower_permission=2, limit=5)
         ]
         extra_info = ctx.args[0] if len(ctx.args) else '无'
@@ -567,7 +565,9 @@ class Listener(object):
                     raise ValueError("被转发帖不来自同一个吧")
                 if not ctx.parent.contents.ats:
                     raise ValueError("无法获取被转发帖的作者信息")
-                ctx.parent._user = await self.listener.get_basic_user_info(ctx.parent.contents.ats[0].user_id)
+                ctx.parent._user = await self.listener.get_user_info(
+                    ctx.parent.contents.ats[0].user_id, tb.ReqUInfo.BASIC
+                )
 
                 tb.LOG.info(f"Try to del thread. text={ctx.parent.text} user={ctx.parent.user}")
                 coros.append(ctx.admin.del_thread(ctx.parent.tid))

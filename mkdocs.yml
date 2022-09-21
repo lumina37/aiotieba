@@ -1,13 +1,15 @@
 site_name: aiotieba
 site_description: aiotieba开发文档
+site_url: https://v-8.top/
+
 theme:
   name: material
   features:
     - navigation.sections
   language: zh
 
-repo_name: Starry-OvO/Tieba-Manager
-repo_url: https://github.com/Starry-OvO/Tieba-Manager
+repo_name: Starry-OvO/aiotieba
+repo_url: https://github.com/Starry-OvO/aiotieba
 
 nav:
     - 介绍: index.md

@@ -7,7 +7,7 @@
 我们推荐通过异步上下文管理器来使用`Client`，例如：
 
 ```python
-async with aiotieba.Client("default") as client:
+async with aiotieba.Client() as client:
     ...
 ```
 
@@ -72,14 +72,6 @@ class `aiotieba.Client`(*BDUSS_key: Optional[str] = None*)
 
 
 ### 类方法
-
-async def `login`() -> *bool*
-
-<div class="docstring" markdown="1">
-登录并获取tbs和当前账号的简略版用户信息
-
-**返回**: True成功 False失败
-</div>
 
 async def `get_fid`(*fname: str*) -> *int*
 

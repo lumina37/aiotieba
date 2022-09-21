@@ -1,6 +1,8 @@
 __all__ = [
     'BaseReviewer',
     'Reviewer',
+    'Ops',
+    'Punish',
 ]
 
 try:
@@ -11,28 +13,35 @@ except ImportError:
 
 import asyncio
 import binascii
+import enum
 import functools
+import sys
 import time
 import types
 from collections.abc import Callable, Iterator
 from typing import List, Literal, Optional, Tuple, Union
 
-from ._helpers import DelFlag, Punish, alog_time
+from ._helpers import alog_time
 from ._logger import LOG
-from .client import Client
-from .database import Database
-from .typedefs import BasicUserInfo, Comment, Comments, Post, Posts, Thread, Threads
+from .client import Client, ReqUInfo, _ForumInfoCache
+from .database import MySQLDB, SQLiteDB
+from .typedefs import Comment, Comments, Post, Posts, Thread, Threads, UserInfo
 
 
 class BaseReviewer(object):
     """
     贴吧审查实用功能
 
+    Attributes:
+        client (Client): 贴吧客户端
+        db (MySQLDB): MySQL交互
+        db_sqlite (SQLiteDB): SQLite交互
     """
 
     __slots__ = [
         'client',
         'db',
+        '_db_sqlite',
         '_img_hasher',
         '_qrdetector',
     ]
@@ -41,16 +50,20 @@ class BaseReviewer(object):
         super(BaseReviewer, self).__init__()
 
         self.client = Client(BDUSS_key)
-        self.db = Database(fname)
+        self.db = MySQLDB(fname)
+        self._db_sqlite: SQLiteDB = None
         self._img_hasher: "cv.img_hash.AverageHash" = None
         self._qrdetector: "cv.QRCodeDetector" = None
 
     async def __aenter__(self) -> "BaseReviewer":
-        await asyncio.gather(self.client.__aenter__(), self.db.__aenter__())
+        await self.client.__aenter__()
+        await self.db.__aenter__()
         return self
 
     async def close(self) -> None:
         await self.client.close()
+        if self._db_sqlite is not None:
+            self._db_sqlite.close()
         await self.db.close()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
@@ -61,6 +74,12 @@ class BaseReviewer(object):
         if self._img_hasher is None:
             self._img_hasher = cv.img_hash.AverageHash.create()
         return self._img_hasher
+
+    @property
+    def db_sqlite(self) -> SQLiteDB:
+        if self._db_sqlite is None:
+            self._db_sqlite = SQLiteDB(self.db.fname)
+        return self._db_sqlite
 
     @property
     def qrdetector(self) -> "cv.QRCodeDetector":
@@ -79,15 +98,15 @@ class BaseReviewer(object):
             int: 该贴吧的forum_id
         """
 
-        if fid := self.client._fname2fid.get(fname, 0):
+        if fid := _ForumInfoCache.get_fid(fname):
             return fid
 
         if fid := await self.db.get_fid(fname):
-            self.client._add_forum_cache(fname, fid)
+            _ForumInfoCache.add_forum(fname, fid)
             return fid
 
         if fid := await self.client.get_fid(fname):
-            self.client._add_forum_cache(fname, fid)
+            _ForumInfoCache.add_forum(fname, fid)
             await self.db.add_forum(fid, fname)
 
         return fid
@@ -103,37 +122,32 @@ class BaseReviewer(object):
             str: 该贴吧的贴吧名
         """
 
-        if fname := self.client._fid2fname.get(fid, 0):
+        if fname := _ForumInfoCache.get_fname(fid):
             return fname
 
         if fname := await self.db.get_fname(fid):
-            self.client._add_forum_cache(fname, fid)
+            _ForumInfoCache.add_forum(fname, fid)
             return fname
 
         if fname := await self.client.get_fname(fid):
-            self.client._add_forum_cache(fname, fid)
+            _ForumInfoCache.add_forum(fname, fid)
             await self.db.add_forum(fid, fname)
 
         return fname
 
-    async def get_basic_user_info(self, _id: Union[str, int]) -> BasicUserInfo:
+    async def get_user_info(self, _id: Union[str, int], /, require: ReqUInfo = ReqUInfo.ALL) -> UserInfo:
         """
-        获取简略版用户信息
+        获取用户信息
 
         Args:
-            _id (str | int): 待补全用户的id user_id/user_name/portrait
+            _id (str | int): 用户id user_id / user_name / portrait
+            require (ReqUInfo): 需要获取的字段
 
         Returns:
-            BasicUserInfo: 简略版用户信息 仅保证包含user_name/portrait/user_id
+            UserInfo: 用户信息
         """
 
-        if user := await self.db.get_basic_user_info(_id):
-            return user
-
-        if user := await self.client.get_basic_user_info(_id):
-            await self.db.add_user(user)
-
-        return user
+        return await self.client.get_user_info(_id, require)
 
     async def get_threads(
         self,
@@ -239,7 +253,7 @@ class BaseReviewer(object):
         封禁用户
 
         Args:
-            _id (str | int): 待封禁用户的id user_id/user_name/portrait 优先portrait
+            _id (str | int): 用户id user_id/user_name/portrait 优先portrait
             day (Literal[1, 3, 10], optional): 封禁天数. Defaults to 1.
             reason (str, optional): 封禁理由. Defaults to ''.
 
@@ -299,7 +313,7 @@ class BaseReviewer(object):
             bool: True成功 False失败
         """
 
-        return await self.db.add_id(_id, tag=id_last_edit)
+        return self.db_sqlite.add_id(_id, tag=id_last_edit)
 
     async def get_id(self, _id: int) -> int:
         """
@@ -310,7 +324,7 @@ class BaseReviewer(object):
             int: id_last_edit -1表示表中无id
         """
 
-        res = await self.db.get_id(_id)
+        res = self.db_sqlite.get_id(_id)
         if res is None:
             res = -1
         return res
@@ -418,6 +432,59 @@ class BaseReviewer(object):
         return 0, ''
 
 
+class Ops(enum.IntEnum):
+    """
+    待执行的操作类型
+    """
+
+    DELETE = -2
+    HIDE = -1
+    NORMAL = 0
+    WHITE = 1
+
+
+class Punish(object):
+    """
+    处罚操作
+
+    Fields:
+        del_flag (DelFlag, optional): 处理结果. Defaults to DelFlag.NORMAL.
+        block_days (int, optional): 封禁天数. Defaults to 0.
+        note (str, optional): 处罚理由. Defaults to ''.
+    """
+
+    __slots__ = [
+        'del_flag',
+        'block_days',
+        'note',
+    ]
+
+    def __init__(self, del_flag: Ops = Ops.NORMAL, block_days: int = 0, note: str = ''):
+        self.del_flag: Ops = del_flag
+        self.block_days: int = block_days
+        if del_flag < Ops.NORMAL:
+            line = sys._getframe(1).f_lineno
+            self.note = f"L{line} {note}" if note else f"L{line}"
+        else:
+            self.note = note
+
+    def __bool__(self) -> bool:
+        if self.del_flag < Ops.NORMAL:
+            return True
+        if self.block_days:
+            return True
+        return False
+
+    def __repr__(self) -> str:
+        return str(
+            {
+                'del_flag': self.del_flag,
+                'block_days': self.block_days,
+                'note': self.note,
+            }
+        )
+
+
 def _check_permission(func):
     """
     装饰器检查用户黑白名单状态
@@ -427,9 +494,9 @@ def _check_permission(func):
     async def _(self: "Reviewer", obj: Union[Thread, Post, Comment]) -> Optional[Punish]:
         permission = await self.db.get_user_id(obj.user.user_id)
         if permission <= -5:
-            return Punish(DelFlag.DELETE, 10, "黑名单")
+            return Punish(Ops.DELETE, 10, "黑名单")
         if permission >= 1:
-            return Punish(DelFlag.WHITE)
+            return Punish(Ops.WHITE)
         return await func(self, obj)
 
     return _
@@ -462,7 +529,7 @@ class Reviewer(BaseReviewer):
 
     Attributes:
         client (Client): 客户端
-        db (Database): 数据库连接
+        db (MySQLDB): 数据库连接
     """
 
     __slots__ = [
@@ -544,12 +611,12 @@ class Reviewer(BaseReviewer):
             punish (Punish): 待执行的惩罚
         """
 
-        if punish.del_flag == DelFlag.DELETE:
+        if punish.del_flag == Ops.DELETE:
             LOG.info(
                 f"Del {obj.__class__.__name__}. text={obj.text} user={obj.user} level={obj.user.level} note={punish.note}"
             )
             await self.del_post(obj.pid)
-        elif punish.del_flag == DelFlag.HIDE:
+        elif punish.del_flag == Ops.HIDE:
             LOG.info(
                 f"Hide {obj.__class__.__name__}. text={obj.text} user={obj.user} level={obj.user.level} note={punish.note}"
             )
@@ -565,11 +632,11 @@ class Reviewer(BaseReviewer):
             punish (Punish): 待执行的惩罚
         """
 
-        if punish.del_flag == DelFlag.DELETE:
+        if punish.del_flag == Ops.DELETE:
             LOG.info(
                 f"Del {obj.__class__.__name__}. text={obj.text} user={obj.user} level={obj.user.level} note={punish.note}"
             )
-        elif punish.del_flag == DelFlag.HIDE:
+        elif punish.del_flag == Ops.HIDE:
             LOG.info(
                 f"Hide {obj.__class__.__name__}. text={obj.text} user={obj.user} level={obj.user.level} note={punish.note}"
             )

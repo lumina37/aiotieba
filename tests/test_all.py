@@ -23,11 +23,11 @@ async def client():
 
 @pytest_asyncio.fixture(scope="module")
 async def db():
-    async with tb.Database('starry') as db:
+    async with tb.MySQLDB('starry') as db:
         yield db
 
 
-def check_BasicUserInfo(user: tb.BasicUserInfo):
+def check_UserInfo(user: tb.UserInfo):
     assert isinstance(user.user_id, int)
     assert user.user_id != 0
     assert isinstance(user.portrait, str)
@@ -38,25 +38,25 @@ def check_BasicUserInfo(user: tb.BasicUserInfo):
 @pytest.mark.asyncio
 async def test_BasicUserInfo(client: tb.Client):
     user = await client.get_self_info()
-    check_BasicUserInfo(user)
+    check_UserInfo(user)
 
     user_id = user.user_id
 
-    user = await client.get_basic_user_info(user.portrait)
+    user = await client.get_user_info(user.portrait, tb.ReqUInfo.BASIC)
     assert user_id == user.user_id
-    check_BasicUserInfo(user)
+    check_UserInfo(user)
 
-    user = await client.get_basic_user_info(user.user_id)
+    user = await client.get_user_info(user.user_id, tb.ReqUInfo.BASIC)
     assert user_id == user.user_id
-    check_BasicUserInfo(user)
+    check_UserInfo(user)
 
     user = await client.get_user_info(user.portrait)
     assert user_id == user.user_id
-    check_BasicUserInfo(user)
+    check_UserInfo(user)
 
     user = await client.get_user_info(user.user_id)
     assert user_id == user.user_id
-    check_BasicUserInfo(user)
+    check_UserInfo(user)
 
 
 @pytest.mark.asyncio
@@ -76,7 +76,7 @@ async def test_Posts_and_Fragments(client: tb.Client):
     assert post.tid > 0
     assert isinstance(post.pid, int)
     assert post.pid > 0
-    check_BasicUserInfo(post.user)
+    check_UserInfo(post.user)
     assert post.author_id == post.user.user_id
 
     assert isinstance(post.floor, int)
@@ -225,7 +225,7 @@ async def test_Thread(client: tb.Client):
             assert thread.fname == fname
             assert isinstance(thread.pid, int)
             assert thread.pid > 0
-            check_BasicUserInfo(thread.user)
+            check_UserInfo(thread.user)
             assert thread.author_id == thread.user.user_id
 
             assert isinstance(thread.view_num, int)
@@ -268,7 +268,7 @@ async def test_Comment(client: tb.Client):
     assert comment.tid > 0
     assert isinstance(comment.pid, int)
     assert comment.pid > 0
-    check_BasicUserInfo(comment.user)
+    check_UserInfo(comment.user)
     assert comment.author_id == comment.user.user_id
 
     assert comment.create_time > 0
@@ -294,15 +294,14 @@ async def test_Ats(client: tb.Client):
 
 
 @pytest.mark.asyncio
-async def test_Database(db: tb.Database):
+async def test_Database(db: tb.MySQLDB):
     fname = db.fname
     fid = await db.get_fid(fname)
     assert fname == await db.get_fname(fid)
     await asyncio.gather(
         *[
-            db.get_basic_user_info("v_guard"),
+            db.get_userinfo("v_guard"),
             db.get_tid(7763274602),
-            db.get_id(7763274602),
             db.get_user_id_list(),
             db.get_tid_list(limit=3),
         ]
