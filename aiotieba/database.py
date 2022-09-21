@@ -781,6 +781,7 @@ class SQLiteDB(object):
 
         try:
             self._conn.execute(f"DELETE FROM `id_{self.fname}` WHERE `record_time` < datetime('now','-{day} day')")
+            self._conn.execute("VACUUM")
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname}")
             return False
