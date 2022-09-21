@@ -90,8 +90,8 @@ class UserInfo(object):
 
     Attributes:
         user_id (int): user_id
-        user_name (str): 用户名
         portrait (str): portrait
+        user_name (str): 用户名
         nick_name (str): 用户昵称
         tieba_uid (int): 用户个人主页uid
 
@@ -113,8 +113,8 @@ class UserInfo(object):
 
     __slots__ = [
         '_user_id',
-        '_user_name',
         '_portrait',
+        '_user_name',
         '_nick_name',
         '_tieba_uid',
         '_level',
@@ -136,8 +136,8 @@ class UserInfo(object):
 
         if _raw_data:
             self._user_id = _raw_data.id
-            self._user_name = _raw_data.name
             self.portrait = _raw_data.portrait
+            self._user_name = _raw_data.name
             self._nick_name = _raw_data.name_show
             self.tieba_uid = _raw_data.tieba_uid
 
@@ -158,8 +158,8 @@ class UserInfo(object):
 
         else:
             self._user_id = 0
-            self._user_name = ''
             self._portrait = ''
+            self._user_name = ''
             self._nick_name = ''
             self._tieba_uid = 0
 
@@ -217,20 +217,20 @@ class UserInfo(object):
         return bool(self._user_id) or bool(self._user_name) or bool(self._portrait)
 
     @staticmethod
-    def is_portrait(portrait: Any) -> bool:
-        """
-        判断数据是否符合portrait格式
-        """
-
-        return isinstance(portrait, str) and portrait.startswith('tb.')
-
-    @staticmethod
     def is_user_id(user_id: Any) -> bool:
         """
         判断数据是否符合user_id格式
         """
 
         return isinstance(user_id, int)
+
+    @staticmethod
+    def is_portrait(portrait: Any) -> bool:
+        """
+        判断数据是否符合portrait格式
+        """
+
+        return isinstance(portrait, str) and portrait.startswith('tb.')
 
     @property
     def user_id(self) -> int:
@@ -247,22 +247,6 @@ class UserInfo(object):
     @user_id.setter
     def user_id(self, new_user_id: int) -> None:
         self._user_id = int(new_user_id) if new_user_id else 0
-
-    @property
-    def user_name(self) -> str:
-        """
-        用户名
-
-        Note:
-            具有唯一性
-            请注意与用户昵称区分
-        """
-
-        return self._user_name
-
-    @user_name.setter
-    def user_name(self, new_user_name: str) -> None:
-        self._user_name = new_user_name
 
     @property
     def portrait(self) -> str:
@@ -294,6 +278,22 @@ class UserInfo(object):
 
         else:
             self._portrait = ''
+
+    @property
+    def user_name(self) -> str:
+        """
+        用户名
+
+        Note:
+            具有唯一性
+            请注意与用户昵称区分
+        """
+
+        return self._user_name
+
+    @user_name.setter
+    def user_name(self, new_user_name: str) -> None:
+        self._user_name = new_user_name
 
     @property
     def nick_name(self) -> str:

@@ -253,7 +253,7 @@ class BaseReviewer(object):
         封禁用户
 
         Args:
-            _id (str | int): 待封禁用户的id user_id/user_name/portrait 优先portrait
+            _id (str | int): 用户id user_id/user_name/portrait 优先portrait
             day (Literal[1, 3, 10], optional): 封禁天数. Defaults to 1.
             reason (str, optional): 封禁理由. Defaults to ''.
 

@@ -59,7 +59,6 @@ from .protobuf import (
     SearchPostForumResIdl_pb2,
     UpdateClientInfoReqIdl_pb2,
     UpdateClientInfoResIdl_pb2,
-    User_pb2,
     UserPostReqIdl_pb2,
     UserPostResIdl_pb2,
 )
@@ -285,7 +284,7 @@ class Client(object):
         self.BDUSS = user_cfg.get('BDUSS', '')
         self.STOKEN = user_cfg.get('STOKEN', '')
 
-        self._user: UserInfo = None
+        self._user = UserInfo()
         self._tbs: str = None
         self._client_id: str = None
         self._cuid: str = None
@@ -856,16 +855,23 @@ class Client(object):
 
         return self._tbs
 
-    async def get_self_info(self) -> UserInfo:
+    async def get_self_info(self, require: ReqUInfo = ReqUInfo.ALL) -> UserInfo:
         """
         获取本账号信息
 
+        Args:
+            require (ReqUInfo): 需要获取的字段
+
         Returns:
-            UserInfo: 用户信息 仅包含user_name/portrait/user_id
+            UserInfo: 用户信息
         """
 
-        if self._user is None:
-            await self.login()
+        if not self._user.user_id:
+            if require & ReqUInfo.BASIC:
+                await self.login()
+        if not self._user.tieba_uid:
+            if require & (ReqUInfo.TIEBA_UID | ReqUInfo.NICK_NAME):
+                await self._get_selfinfo_initNickname()
 
         return self._user
 
@@ -893,8 +899,9 @@ class Client(object):
                 raise TiebaServerError(res_json['error_msg'])
 
             user_dict = res_json['user']
-            user_proto = ParseDict(user_dict, User_pb2.User(), ignore_unknown_fields=True)
-            self._user = UserInfo(_raw_data=user_proto)
+            self._user._user_id = user_dict['id']
+            self._user.portrait = user_dict['portrait']
+            self._user._user_name = user_dict['name']
             self._tbs = res_json['anti']['tbs']
 
         except Exception as err:
@@ -1020,7 +1027,7 @@ class Client(object):
             name_or_portrait (str): 用户id user_name / portrait
 
         Returns:
-            UserInfo: 包含 nick_name, portrait, user_name
+            UserInfo: 包含 portrait, user_name, nick_name
 
         Note:
             从2022.08.30开始服务端不再返回user_id字段 请谨慎使用
@@ -1696,7 +1703,7 @@ class Client(object):
         获取用户个人页信息
 
         Args:
-            _id (str | int): 待获取用户的id user_id / user_name / portrait 优先portrait
+            _id (str | int): 用户id user_id / user_name / portrait 优先portrait
             with_threads (bool, optional): True则同时请求主页帖子列表 False则返回的threads为空. Defaults to True.
 
         Returns:
@@ -1805,7 +1812,7 @@ class Client(object):
         获取用户关注贴吧列表
 
         Args:
-            _id (str | int): 待获取用户的id user_id / user_name / portrait 优先user_id
+            _id (str | int): 用户id user_id / user_name / portrait 优先user_id
             pn (int, optional): 页码. Defaults to 1.
             rn (int, optional): 请求的条目数. Defaults to 50.
 
@@ -1940,7 +1947,7 @@ class Client(object):
 
         Args:
             fname_or_fid (str | int): 所在贴吧的贴吧名或fid
-            _id (str | int): 待封禁用户的id user_id / user_name / portrait 优先portrait
+            _id (str | int): 用户id user_id / user_name / portrait 优先portrait
             day (Literal[1, 3, 10], optional): 封禁天数. Defaults to 1.
             reason (str, optional): 封禁理由. Defaults to ''.
 
@@ -1995,7 +2002,7 @@ class Client(object):
 
         Args:
             fname_or_fid (str | int): 所在贴吧的贴吧名或fid
-            _id (str | int): 待解封用户的id user_id / user_name / portrait 优先user_id
+            _id (str | int): 用户id user_id / user_name / portrait 优先user_id
 
         Returns:
             bool: True成功 False失败
@@ -2724,7 +2731,7 @@ class Client(object):
 
         Args:
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先贴吧名
-            _id (str | int): 待加黑名单用户的id user_id / user_name / portrait 优先user_id
+            _id (str | int): 用户id user_id / user_name / portrait 优先user_id
 
         Returns:
             bool: True成功 False失败
@@ -2767,7 +2774,7 @@ class Client(object):
 
         Args:
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先贴吧名
-            _id (str | int): 待解黑名单用户的id user_id / user_name / portrait 优先user_id
+            _id (str | int): 用户id user_id / user_name / portrait 优先user_id
 
         Returns:
             bool: True成功 False失败
@@ -2935,7 +2942,7 @@ class Client(object):
         获取用户头像
 
         Args:
-            _id (str | int): 用户的id user_id / user_name / portrait 优先portrait
+            _id (str | int): 用户id user_id / user_name / portrait 优先portrait
             size (Literal['s', 'm', 'l'], optional): 获取头像的大小 s为55x55 m为110x110 l为原图. Defaults to 's'.
 
         Returns:
@@ -2971,6 +2978,40 @@ class Client(object):
             image = np.empty(0, dtype=np.uint8)
 
         return image
+
+    async def _get_selfinfo_initNickname(self) -> bool:
+        """
+        获取本账号信息
+
+        Returns:
+            bool: True成功 False失败
+        """
+
+        payload = [
+            ('BDUSS', self.BDUSS),
+            ('_client_version', self.latest_version),
+        ]
+
+        try:
+            async with self.session_app.post(
+                yarl.URL.build(path="/c/s/initNickname"),
+                data=self.pack_form(payload),
+            ) as resp:
+                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
+
+            if int(res_json['error_code']):
+                raise TiebaServerError(res_json['error_msg'])
+
+            user_dict: dict = res_json['user_info']
+            self._user._user_name = user_dict['user_name']
+            self._user.nick_name = user_dict['name_show']
+            self._user._tieba_uid = user_dict['tieba_uid']
+
+        except Exception as err:
+            LOG.warning(err)
+            return False
+
+        return True
 
     async def get_newmsg(self) -> Dict[str, bool]:
         """
@@ -3118,7 +3159,7 @@ class Client(object):
             list[NewThread]: 主题帖列表
         """
 
-        user = await self.get_self_info()
+        user = await self.get_self_info(ReqUInfo.USER_ID)
 
         try:
             return await self._get_user_contents(user, pn, is_thread=True)
@@ -3138,7 +3179,7 @@ class Client(object):
             list[UserPosts]: 回复列表
         """
 
-        user = await self.get_self_info()
+        user = await self.get_self_info(ReqUInfo.USER_ID)
 
         try:
             return await self._get_user_contents(user, pn, is_thread=False)
@@ -3152,7 +3193,7 @@ class Client(object):
         获取用户发布的主题帖列表
 
         Args:
-            _id (str | int): 待获取用户的id user_id / user_name / portrait 优先user_id
+            _id (str | int): 用户id user_id / user_name / portrait 优先user_id
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
@@ -3228,7 +3269,7 @@ class Client(object):
 
         Args:
             pn (int, optional): 页码. Defaults to 1.
-            _id (str | int | None): 待获取用户的id user_id / user_name / portrait 优先user_id
+            _id (str | int | None): 用户id user_id / user_name / portrait 优先user_id
                 默认为None即获取本账号信息. Defaults to None.
 
         Returns:
@@ -3236,7 +3277,7 @@ class Client(object):
         """
 
         if _id is None:
-            user = await self.get_self_info()
+            user = await self.get_self_info(ReqUInfo.USER_ID)
         elif not UserInfo.is_user_id(_id):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
         else:
@@ -3273,7 +3314,7 @@ class Client(object):
 
         Args:
             pn (int, optional): 页码. Defaults to 1.
-            _id (str | int | None): 待获取用户的id user_id / user_name / portrait 优先user_id
+            _id (str | int | None): 用户id user_id / user_name / portrait 优先user_id
                 默认为None即获取本账号信息. Defaults to None.
 
         Returns:
@@ -3281,7 +3322,7 @@ class Client(object):
         """
 
         if _id is None:
-            user = await self.get_self_info()
+            user = await self.get_self_info(ReqUInfo.USER_ID)
         elif not UserInfo.is_user_id(_id):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
         else:
@@ -3556,7 +3597,7 @@ class Client(object):
         关注用户
 
         Args:
-            _id (str | int): 待关注用户的id user_id / user_name / portrait 优先portrait
+            _id (str | int): 用户id user_id / user_name / portrait 优先portrait
 
         Returns:
             bool: True成功 False失败
@@ -3595,7 +3636,7 @@ class Client(object):
         取关用户
 
         Args:
-            _id (str | int): 待取关用户的id user_id / user_name / portrait 优先portrait
+            _id (str | int): 用户id user_id / user_name / portrait 优先portrait
 
         Returns:
             bool: True成功 False失败
@@ -3942,7 +3983,7 @@ class Client(object):
         发送私信
 
         Args:
-            _id (str | int): 待私信用户的id user_id / user_name / portrait 优先user_id
+            _id (str | int): 用户id user_id / user_name / portrait 优先user_id
             content (str): 发送内容
 
         Returns:
