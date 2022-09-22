@@ -448,7 +448,7 @@ class Punish(object):
     处罚操作
 
     Fields:
-        del_flag (DelFlag, optional): 处理结果. Defaults to DelFlag.NORMAL.
+        del_flag (Ops, optional): 处理结果. Defaults to Ops.NORMAL.
         block_days (int, optional): 封禁天数. Defaults to 0.
         note (str, optional): 处罚理由. Defaults to ''.
     """
