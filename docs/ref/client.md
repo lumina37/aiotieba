@@ -22,10 +22,9 @@ async with aiotieba.Client() as client:
 
 </details>
 
-## 参考文档
+## Client
 
 class `aiotieba.Client`(*BDUSS_key: Optional[str] = None*)
-
 
 ### 构造参数
 
@@ -34,7 +33,6 @@ class `aiotieba.Client`(*BDUSS_key: Optional[str] = None*)
 <div class="docstring" markdown="1">
 用于快捷调用BDUSS
 </div>
-
 
 ### 类属性
 
@@ -46,7 +44,7 @@ class `aiotieba.Client`(*BDUSS_key: Optional[str] = None*)
 *str, 只读*
 </div>
 
-**BDUSS** 
+**BDUSS**
 
 <div class="docstring" markdown="1">
 当前`Client`使用的[BDUSS](../tutorial/quickstart.md#BDUSS)
@@ -70,7 +68,6 @@ class `aiotieba.Client`(*BDUSS_key: Optional[str] = None*)
 *bool, 只读*
 </div>
 
-
 ### 类方法
 
 async def `get_fid`(*fname: str*) -> *int*
@@ -78,15 +75,46 @@ async def `get_fid`(*fname: str*) -> *int*
 <div class="docstring" markdown="1">
 通过贴吧名获取forum_id
 
+**参数**: 贴吧名
+
 **返回**: [forum_id](../tutorial/quickstart.md#forum_id)
 </div>
 
-async def `get_fname`(*fid: int*) -> *str*:
+
+async def `get_fname`(*fid: int*) -> *str*
 
 <div class="docstring" markdown="1">
 通过forum_id获取贴吧名
 
 **参数**: [forum_id](../tutorial/quickstart.md#forum_id)
 
-**返回**: 该贴吧的贴吧名
+**返回**: 贴吧名
 </div>
+
+
+async def `get_user_info`(*_id: str | int*, /, *require: [ReqUInfo](#ReqUInfo) = [ReqUInfo](#ReqUInfo).ALL*) -> *UserInfo*
+
+<div class="docstring" markdown="1">
+获取用户信息
+
+**参数**:
+
++ _id: 用户id [user_id](../tutorial/quickstart.md#user_id) / [portrait](../tutorial/quickstart.md#portrait) / [user_name](../tutorial/quickstart.md#user_name)
++ require: 指示需要获取的字段
+
+**返回**: 用户信息
+</div>
+
+
+## ReqUInfo
+
+使用该枚举类指定待获取的用户信息字段
+
++ **USER_ID** = 1 << 0
++ **PORTRAIT** = 1 << 1
++ **USER_NAME** = 1 << 2
++ **NICK_NAME** = 1 << 3
++ **TIEBA_UID** = 1 << 4
++ **OTHER** = 1 << 5
++ **BASIC** = USER_ID | PORTRAIT | USER_NAME
++ **ALL** = (1 << 6) - 1

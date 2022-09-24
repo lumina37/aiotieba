@@ -273,7 +273,7 @@ class Client(object):
 
     _trust_env = False
 
-    latest_version: ClassVar[str] = "12.29.4.1"  # 这是目前的最新版本
+    latest_version: ClassVar[str] = "12.29.4.2"  # 这是目前的最新版本
     # no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
     post_version: ClassVar[str] = "9.1.0.0"  # 发帖使用极速版
 
@@ -847,7 +847,7 @@ class Client(object):
         获取贴吧反csrf校验码tbs
 
         Returns:
-            str: 贴吧反csrf校验码tbs
+            str: tbs
         """
 
         if not self._tbs:
@@ -860,7 +860,7 @@ class Client(object):
         获取本账号信息
 
         Args:
-            require (ReqUInfo): 需要获取的字段
+            require (ReqUInfo): 指示需要获取的字段
 
         Returns:
             UserInfo: 用户信息
@@ -920,7 +920,7 @@ class Client(object):
             fname (str): 贴吧名
 
         Returns:
-            int: 该贴吧的forum_id
+            int: forum_id
         """
 
         if fid := _ForumInfoCache.get_fid(fname):
@@ -956,7 +956,7 @@ class Client(object):
             fid (int): forum_id
 
         Returns:
-            str: 该贴吧的贴吧名
+            str: 贴吧名
         """
 
         if fname := _ForumInfoCache.get_fname(fid):
@@ -974,8 +974,8 @@ class Client(object):
         获取用户信息
 
         Args:
-            _id (str | int): 用户id user_id / user_name / portrait
-            require (ReqUInfo): 需要获取的字段
+            _id (str | int): 用户id user_id / portrait / user_name
+            require (ReqUInfo): 指示需要获取的字段
 
         Returns:
             UserInfo: 用户信息
