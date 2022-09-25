@@ -173,8 +173,8 @@ class _ForumInfoCache(object):
 
     __slots__ = []
 
-    _fname2fid: ClassVar[OrderedDict[str, int]] = {}
-    _fid2fname: ClassVar[OrderedDict[int, str]] = {}
+    _fname2fid: ClassVar[OrderedDict[str, int]] = OrderedDict()
+    _fid2fname: ClassVar[OrderedDict[int, str]] = OrderedDict()
 
     @classmethod
     def get_fid(cls, fname: str) -> int:
