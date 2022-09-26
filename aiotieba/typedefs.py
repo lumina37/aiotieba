@@ -66,7 +66,6 @@ from typing import (
     TypeVar,
     Union,
     overload,
-    runtime_checkable,
 )
 
 import bs4
@@ -107,8 +106,8 @@ class UserInfo(object):
         is_bawu (bool): 是否吧务
         is_vip (bool): 是否vip
         is_god (bool): 是否大神
-        priv_like (int): 是否公开关注贴吧
-        priv_reply (int): 帖子评论权限
+        priv_like (int): 公开关注吧列表的设置状态
+        priv_reply (int): 帖子评论权限的设置状态
     """
 
     __slots__ = [
@@ -474,7 +473,7 @@ class UserInfo(object):
     @property
     def priv_like(self) -> int:
         """
-        是否公开关注贴吧
+        公开关注吧列表的设置状态
 
         Note:
             完全可见1 好友可见2 完全隐藏3
@@ -489,7 +488,7 @@ class UserInfo(object):
     @property
     def priv_reply(self) -> int:
         """
-        帖子评论权限
+        帖子评论权限的设置状态
 
         Note:
             允许所有人1 仅允许我的粉丝5 仅允许我的关注6
@@ -571,7 +570,6 @@ class FragText(_Fragment):
         return self._text
 
 
-@runtime_checkable
 class ProtocolText(Protocol):
     @property
     def text(self) -> str:

@@ -24,7 +24,7 @@ async with aiotieba.Client() as client:
 
 ## Client
 
-class `aiotieba.Client`(*BDUSS_key: Optional[str] = None*)
+class `aiotieba.Client`(*BDUSS_key: str | None = None*)
 
 ### 构造参数
 
@@ -92,7 +92,7 @@ async def `get_fname`(*fid: int*) -> *str*
 </div>
 
 
-async def `get_user_info`(*_id: str | int*, /, *require: [ReqUInfo](#ReqUInfo) = [ReqUInfo](#ReqUInfo).ALL*) -> *UserInfo*
+async def `get_user_info`(*_id: str | int*, /, *require: [ReqUInfo](#ReqUInfo) = [ReqUInfo](#ReqUInfo).ALL*) -> *[UserInfo](typedefs.md#UserInfo)*
 
 <div class="docstring" markdown="1">
 获取用户信息
@@ -105,16 +105,34 @@ async def `get_user_info`(*_id: str | int*, /, *require: [ReqUInfo](#ReqUInfo) =
 **返回**: 用户信息
 </div>
 
+async def `get_threads`(*fname_or_fid: str | int*, /, *pn: int = 1*, \*, *rn: int = 30*, *sort: int = 5*, *is_good: bool = False*) -> *Threads*
+
+<div class="docstring" markdown="1">
+获取首页帖子
+
+**参数**:
+
++ fname_or_fid: 贴吧名或[fid](../tutorial/quickstart.md#forum_id) 优先贴吧名
++ pn: 页码
++ rn: 请求的条目数
++ sort: 排序方式<br>
+  对于有热门分区的贴吧 0是热门排序 1是按发布时间 2报错 34都是热门排序 >=5是按回复时间<br>
+  对于无热门分区的贴吧 0是按回复时间 1是按发布时间 2报错 >=3是按回复时间
++ is_good: True则获取精品区帖子 False则获取普通区帖子
+
+**返回**: 帖子列表
+</div>
+
 
 ## ReqUInfo
 
 使用该枚举类指定待获取的用户信息字段
 
-+ **USER_ID** = 1 << 0
-+ **PORTRAIT** = 1 << 1
-+ **USER_NAME** = 1 << 2
-+ **NICK_NAME** = 1 << 3
-+ **TIEBA_UID** = 1 << 4
-+ **OTHER** = 1 << 5
-+ **BASIC** = USER_ID | PORTRAIT | USER_NAME
-+ **ALL** = (1 << 6) - 1
+**USER_ID** = 1 << 0<br>
+**PORTRAIT** = 1 << 1<br>
+**USER_NAME** = 1 << 2<br>
+**NICK_NAME** = 1 << 3<br>
+**TIEBA_UID** = 1 << 4<br>
+**OTHER** = 1 << 5<br>
+**BASIC** = USER_ID | PORTRAIT | USER_NAME<br>
+**ALL** = (1 << 6) - 1

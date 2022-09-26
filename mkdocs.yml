@@ -21,7 +21,8 @@ nav:
       - 指令管理器配置教程: tutorial/cmd_handler_dev.md
       - 实用微脚本合集: tutorial/many_utils.md
     - 参考文档:
-      - Client: ref/client.md
+      - client: ref/client.md
+      - typedefs: ref/typedefs.md
     - 逆向分析教程:
       - 贴吧私信接口逆向分析: misc/websocket_reverse_engineering.md
 
