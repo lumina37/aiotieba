@@ -362,9 +362,9 @@ class BaseReviewer(object):
 
         return await self.db.get_tid_list(tag=1, limit=limit, offset=offset)
 
-    def scan_QRcode(self, image: "np.ndarray") -> str:
+    def decode_QRcode(self, image: "np.ndarray") -> str:
         """
-        审查图像中的二维码
+        解码图像中的二维码
 
         Args:
             image (np.ndarray): 图像
@@ -380,6 +380,25 @@ class BaseReviewer(object):
             data = ''
 
         return data
+
+    def has_QRcode(self, image: "np.ndarray") -> bool:
+        """
+        图像是否包含二维码
+
+        Args:
+            image (np.ndarray): 图像
+
+        Returns:
+            bool: True则包含 False则不包含
+        """
+
+        try:
+            res = self.qrdetector.detect(image)[0]
+        except Exception as err:
+            LOG.warning(err)
+            res = False
+
+        return res
 
     def compute_imghash(self, image: "np.ndarray") -> str:
         """
