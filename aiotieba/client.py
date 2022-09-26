@@ -1090,7 +1090,7 @@ class Client(object):
             user.is_vip = bool(int(vip_dict['v_status'])) if (vip_dict := user_dict['vipInfo']) else False
 
         except Exception as err:
-            LOG.warning(f"{err}. user={user}")
+            LOG.warning(f"{err}. user={name_or_portrait}")
             user = UserInfo()
 
         return user
@@ -1129,7 +1129,7 @@ class Client(object):
             user.user_name = user_name
 
         except Exception as err:
-            LOG.warning(f"{err}. user={user}")
+            LOG.warning(f"{err}. user={user_name}")
             user = UserInfo()
 
         return user
@@ -1163,7 +1163,7 @@ class Client(object):
             user = UserInfo(_raw_data=user_proto)
 
         except Exception as err:
-            LOG.warning(f"{err}. user={user}")
+            LOG.warning(f"{err}. user={user_id}")
             user = UserInfo()
 
         return user
@@ -1198,7 +1198,7 @@ class Client(object):
             user._user_name = user_dict['uname']
 
         except Exception as err:
-            LOG.warning(f"{err}. user={user}")
+            LOG.warning(f"{err}. user={user_id}")
             user = UserInfo()
 
         return user
