@@ -547,7 +547,7 @@ class Client(object):
 
         if self._session_web is None:
             headers = {
-                aiohttp.hdrs.USER_AGENT: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:104.0) Gecko/20100101 Firefox/104.0",
+                aiohttp.hdrs.USER_AGENT: f"tieba/{self.latest_version}",
                 aiohttp.hdrs.ACCEPT_ENCODING: "gzip, deflate",
                 aiohttp.hdrs.CACHE_CONTROL: "no-cache",
                 aiohttp.hdrs.CONNECTION: "keep-alive",
@@ -1052,6 +1052,11 @@ class Client(object):
             user_dict: dict = res_json['data']
             user = UserInfo()
 
+            # user.user_id = user_dict['id']
+            user.user_name = user_dict['name']
+            user.portrait = user_dict['portrait']
+            user.nick_name = user_dict['show_nickname']
+
             _sex = user_dict['sex']
             if _sex == 'male':
                 user.gender = 1
@@ -1059,11 +1064,6 @@ class Client(object):
                 user.gender = 2
             else:
                 user.gender = 0
-
-            # user.user_id = user_dict['id']
-            user.user_name = user_dict['name']
-            user.portrait = user_dict['portrait']
-            user.nick_name = user_dict['show_nickname']
 
             user.age = float(tb_age) if (tb_age := user_dict['tb_age']) != '-' else 0.0
 
