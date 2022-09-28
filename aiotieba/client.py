@@ -8,7 +8,6 @@ except ImportError:
 
 import asyncio
 import base64
-import binascii
 import enum
 import gzip
 import hashlib
@@ -97,7 +96,13 @@ class _WebsocketResponse(object):
         req_id (int): 唯一的请求id
     """
 
-    __slots__ = ['__weakref__', '__dict__', '_timestamp', '_req_id', '_data_future']
+    __slots__ = [
+        '__weakref__',
+        '__dict__',
+        '_timestamp',
+        '_req_id',
+        '_data_future',
+    ]
 
     ws_res_wait_dict: weakref.WeakValueDictionary[int, "_WebsocketResponse"] = weakref.WeakValueDictionary()
     _websocket_request_id: int = None
@@ -273,7 +278,7 @@ class Client(object):
 
     _trust_env = False
 
-    latest_version: ClassVar[str] = "12.29.4.2"  # 这是目前的最新版本
+    latest_version: ClassVar[str] = "12.29.5.0"  # 这是目前的最新版本
     # no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
     post_version: ClassVar[str] = "9.1.0.0"  # 发帖使用极速版
 
@@ -417,7 +422,7 @@ class Client(object):
         """
 
         if self._cuid is None:
-            self._cuid = "baidutiebaapp" + str(uuid.uuid4())
+            self._cuid = f"baidutiebaapp{uuid.uuid4()}"
         return self._cuid
 
     @property
@@ -431,7 +436,7 @@ class Client(object):
         """
 
         if self._cuid_galaxy2 is None:
-            rand_str = binascii.hexlify(random.randbytes(16)).decode('ascii').upper()
+            rand_str = random.randbytes(16).hex().upper()
             self._cuid_galaxy2 = rand_str + "|0"
 
         return self._cuid_galaxy2
@@ -715,11 +720,12 @@ class Client(object):
         if len(ws_bytes) < 9:
             return ws_bytes, 0, 0
 
-        flag = ws_bytes[0]
-        cmd = int.from_bytes(ws_bytes[1:5], 'big')
-        req_id = int.from_bytes(ws_bytes[5:9], 'big')
+        ws_view = memoryview(ws_bytes)
+        flag = ws_view[0]
+        cmd = int.from_bytes(ws_view[1:5], 'big')
+        req_id = int.from_bytes(ws_view[5:9], 'big')
 
-        ws_bytes = ws_bytes[9:]
+        ws_bytes = ws_view[9:].tobytes()
         if flag & 0b10000000:
             ws_bytes = self.ws_aes_chiper.decrypt(ws_bytes)
             ws_bytes = ws_bytes.rstrip(ws_bytes[-2:-1])
@@ -738,9 +744,6 @@ class Client(object):
         Raises:
             aiohttp.WSServerHandshakeError: websocket握手失败
         """
-
-        if self.session_websocket is None:
-            await self.enter()
 
         if self._ws_dispatcher is not None and not self._ws_dispatcher.cancelled():
             self._ws_dispatcher.cancel()
@@ -823,12 +826,10 @@ class Client(object):
             pub_key = RSA.import_key(pub_key_bytes)
             rsa_chiper = PKCS1_v1_5.new(pub_key)
 
-            data_proto = UpdateClientInfoReqIdl_pb2.UpdateClientInfoReqIdl.DataReq()
-            data_proto.bduss = self.BDUSS
-            data_proto.device = f"""{{"subapp_type":"mini","_client_version":"{self.post_version}","pversion":"1.0.3","_msg_status":"1","_phone_imei":"000000000000000","from":"1021099l","cuid_galaxy2":"{self.cuid_galaxy2}","model":"LIO-AN00","_client_type":"2"}}"""
-            data_proto.secretKey = rsa_chiper.encrypt(self.ws_password)
             req_proto = UpdateClientInfoReqIdl_pb2.UpdateClientInfoReqIdl()
-            req_proto.data.CopyFrom(data_proto)
+            req_proto.data.bduss = self.BDUSS
+            req_proto.data.device = f"""{{"subapp_type":"mini","_client_version":"{self.post_version}","pversion":"1.0.3","_msg_status":"1","_phone_imei":"000000000000000","from":"1021099l","cuid_galaxy2":"{self.cuid_galaxy2}","model":"LIO-AN00","_client_type":"2"}}"""
+            req_proto.data.secretKey = rsa_chiper.encrypt(self.ws_password)
             req_proto.cuid = f"{self.cuid}|com.baidu.tieba_mini{self.post_version}"
 
             resp = await self.send_ws_bytes(
