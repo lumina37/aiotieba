@@ -81,7 +81,7 @@ _TypeMessage = TypeVar('_TypeMessage', bound=Message)
 
 class UserInfo(object):
     """
-    用户属性
+    用户信息
 
     Args:
         _id (str | int, optional): 用于快速构造UserInfo的自适应参数 输入用户名或portrait或user_id
@@ -104,10 +104,13 @@ class UserInfo(object):
         ip (str): ip归属地
 
         is_bawu (bool): 是否吧务
-        is_vip (bool): 是否vip
+        is_vip (bool): 是否超级会员
         is_god (bool): 是否大神
         priv_like (int): 公开关注吧列表的设置状态
         priv_reply (int): 帖子评论权限的设置状态
+
+        log_name (str): 用于在日志中记录用户信息
+        show_name (str): 显示名称
     """
 
     __slots__ = [
@@ -347,7 +350,7 @@ class UserInfo(object):
         性别
 
         Note:
-            未知0 男1 女2
+            0未知 1男 2女
         """
 
         return self._gender
@@ -476,7 +479,7 @@ class UserInfo(object):
         公开关注吧列表的设置状态
 
         Note:
-            完全可见1 好友可见2 完全隐藏3
+            1完全可见 2好友可见 3完全隐藏
         """
 
         return self._priv_like
@@ -491,7 +494,7 @@ class UserInfo(object):
         帖子评论权限的设置状态
 
         Note:
-            允许所有人1 仅允许我的粉丝5 仅允许我的关注6
+            1允许所有人 5仅允许我的粉丝 6仅允许我的关注
         """
 
         return self._priv_reply
@@ -503,7 +506,7 @@ class UserInfo(object):
     @property
     def log_name(self) -> str:
         """
-        用于在日志中记录用户属性
+        用于在日志中记录用户信息
         """
 
         if self.user_name:
@@ -534,14 +537,6 @@ class _Fragment(object):
 
 
 _TypeFragment = TypeVar('_TypeFragment', bound=_Fragment)
-
-
-class FragmentUnknown(_Fragment):
-    """
-    未知碎片
-    """
-
-    __slots__ = []
 
 
 class FragText(_Fragment):
@@ -607,12 +602,12 @@ class FragImage(_Fragment):
     图像碎片
 
     Attributes:
-        src (str): 压缩图像链接
-        big_src (str): 大图链接
+        src (str): 压缩图像链接 宽560px
+        big_src (str): 大图链接 宽720px
         origin_src (str): 原图链接
         hash (str): 百度图床hash
-        show_width (int): 图像在客户端显示的宽度
-        show_height (int): 图像在客户端显示的高度
+        show_width (int): 图像在客户端预览显示的宽度
+        show_height (int): 图像在客户端预览显示的高度
     """
 
     __slots__ = [
@@ -729,7 +724,7 @@ class FragAt(_Fragment):
     @碎片
 
     Attributes:
-        text (str): 被@用户的昵称
+        text (str): 被@用户的昵称 含@
         user_id (int): 被@用户的user_id
     """
 
@@ -755,7 +750,7 @@ class FragAt(_Fragment):
     @property
     def text(self) -> str:
         """
-        被@用户的昵称
+        被@用户的昵称 含@
         """
 
         return self._text
@@ -897,11 +892,11 @@ class FragVoice(_Fragment):
 
 class FragTiebaPlus(_Fragment):
     """
-    贴吧+广告碎片
+    贴吧plus广告碎片
 
     Attributes:
-        text (str): 贴吧+广告描述
-        url (str): 贴吧+广告跳转链接
+        text (str): 贴吧plus广告描述
+        url (str): 贴吧plus广告跳转链接
     """
 
     __slots__ = [
@@ -926,7 +921,7 @@ class FragTiebaPlus(_Fragment):
     @property
     def text(self) -> str:
         """
-        贴吧+广告描述
+        贴吧plus广告描述
         """
 
         return self._text
@@ -934,7 +929,7 @@ class FragTiebaPlus(_Fragment):
     @property
     def url(self) -> str:
         """
-        贴吧+广告跳转链接
+        贴吧plus广告跳转链接
         """
 
         return self._url
@@ -966,9 +961,17 @@ class FragItem(_Fragment):
         return self._text
 
 
+class FragmentUnknown(_Fragment):
+    """
+    未知碎片
+    """
+
+    __slots__ = []
+
+
 class Fragments(object):
     """
-    正文内容碎片列表
+    内容碎片列表
 
     Attributes:
         _frags (list[_TypeFragment]): 所有碎片的混合列表
@@ -981,7 +984,7 @@ class Fragments(object):
         ats (list[FragAt]): @碎片列表
         links (list[FragLink]): 链接碎片列表
         voice (FragVoice): 音频碎片
-        tiebapluses (list[FragTiebaPlus]): 贴吧+碎片列表
+        tiebapluses (list[FragTiebaPlus]): 贴吧plus碎片列表
     """
 
     __slots__ = [
@@ -1113,7 +1116,7 @@ class Fragments(object):
     @property
     def tiebapluses(self) -> List[FragTiebaPlus]:
         """
-        贴吧+碎片列表
+        贴吧plus碎片列表
         """
 
         return self._tiebapluses
@@ -1735,7 +1738,6 @@ class ShareThread(_Container):
 class Thread(_Container):
     """
     主题帖信息
-    用于c/f/frs/page接口
 
     Attributes:
         text (str): 文本内容
@@ -1745,7 +1747,7 @@ class Thread(_Container):
         fid (int): 所在吧id
         fname (str): 所在贴吧名
         tid (int): 主题帖tid
-        pid (int): 首楼的回复id
+        pid (int): 首楼回复pid
         user (UserInfo): 发布者的用户信息
         author_id (int): 发布者的user_id
 
@@ -3590,7 +3592,7 @@ class RankUser(object):
         user_name (str): 用户名
         level (int): 等级
         exp (int): 经验值
-        is_vip (bool): 是否vip
+        is_vip (bool): 是否超级会员
     """
 
     __slots__ = [
@@ -3655,7 +3657,7 @@ class RankUser(object):
     @property
     def is_vip(self) -> bool:
         """
-        是否vip
+        是否超级会员
         """
 
         return self._is_vip

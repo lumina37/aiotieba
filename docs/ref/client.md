@@ -28,44 +28,20 @@ class `aiotieba.Client`(*BDUSS_key: str | None = None*)
 
 ### 构造参数
 
-**BDUSS_key**
-
 <div class="docstring" markdown="1">
-用于快捷调用BDUSS
+**BDUSS_key** - 用于快捷调用BDUSS
 </div>
 
 ### 类属性
 
-**BDUSS_key**
-
 <div class="docstring" markdown="1">
-当前`Client`使用的BDUSS_key
+**BDUSS_key** - *(str)* 当前`Client`使用的BDUSS_key
 
-*str, 只读*
-</div>
+**BDUSS** - *(str)* 当前`Client`使用的[BDUSS](../tutorial/quickstart.md#BDUSS)
 
-**BDUSS**
+**STOKEN** - *(str)* 当前`Client`使用的STOKEN
 
-<div class="docstring" markdown="1">
-当前`Client`使用的[BDUSS](../tutorial/quickstart.md#BDUSS)
-
-*str, 只读*
-</div>
-
-**STOKEN**
-
-<div class="docstring" markdown="1">
-当前`Client`使用的STOKEN
-
-*str, 只读*
-</div>
-
-**is_ws_aviliable**
-
-<div class="docstring" markdown="1">
-`self.websocket`是否可用
-
-*bool, 只读*
+**is_ws_aviliable** - *(bool)* `Client.websocket`是否可用
 </div>
 
 ### 类方法
@@ -92,7 +68,7 @@ async def `get_fname`(*fid: int*) -> *str*
 </div>
 
 
-async def `get_user_info`(*_id: str | int*, /, *require: [ReqUInfo](#ReqUInfo) = [ReqUInfo](#ReqUInfo).ALL*) -> *[UserInfo](typedefs.md#UserInfo)*
+async def `get_user_info`(*_id: str | int*, /, *require: [ReqUInfo](#requinfo) = [ReqUInfo](#requinfo).ALL*) -> *[UserInfo](typedefs.md#userinfo)*
 
 <div class="docstring" markdown="1">
 获取用户信息
@@ -105,7 +81,7 @@ async def `get_user_info`(*_id: str | int*, /, *require: [ReqUInfo](#ReqUInfo) =
 **返回**: 用户信息
 </div>
 
-async def `get_threads`(*fname_or_fid: str | int*, /, *pn: int = 1*, \*, *rn: int = 30*, *sort: int = 5*, *is_good: bool = False*) -> *Threads*
+async def `get_threads`(*fname_or_fid: str | int*, /, *pn: int = 1*, \*, *rn: int = 30*, *sort: int = 5*, *is_good: bool = False*) -> *[Threads](typedefs.md#threads)*
 
 <div class="docstring" markdown="1">
 获取首页帖子

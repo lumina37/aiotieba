@@ -559,7 +559,12 @@ class Client(object):
             }
             timeout = aiohttp.ClientTimeout(connect=6.0, sock_connect=3.2, sock_read=12.0)
             cookie_jar = aiohttp.CookieJar(loop=self._loop)
-            cookie_jar.update_cookies({'BDUSS': self.BDUSS, 'STOKEN': self.STOKEN})
+            cookie_jar.update_cookies(
+                {
+                    'BDUSS': self.BDUSS,
+                    'STOKEN': self.STOKEN,
+                }
+            )
 
             self._session_web = aiohttp.ClientSession(
                 connector=self.connector,
@@ -1178,6 +1183,9 @@ class Client(object):
 
         Returns:
             UserInfo: 包含 user_id / portrait / user_name
+
+        Note:
+            该接口需要BDUSS
         """
 
         try:
