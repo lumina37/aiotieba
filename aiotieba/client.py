@@ -2947,10 +2947,51 @@ class Client(object):
 
             image = cv.imdecode(np.frombuffer(content, np.uint8), cv.IMREAD_COLOR)
             if image is None:
-                raise RuntimeError("Error with opencv.imdecode")
+                raise RuntimeError("Error in cv2.imdecode")
 
         except Exception as err:
             LOG.warning(f"{err}. url={img_url}")
+            image = np.empty(0, dtype=np.uint8)
+
+        return image
+
+    async def hash2image(self, raw_hash: str, /, size: Literal['s', 'm', 'l'] = 's') -> "np.ndarray":
+        """
+        从百度图库hash获取静态图像
+
+        Args:
+            img_url (str): 图像链接
+            size (Literal['s', 'm', 'l'], optional): 获取图像的大小 s为宽560 m为宽720 l为原图. Defaults to 's'.
+
+        Returns:
+            np.ndarray: 图像
+        """
+
+        try:
+            if size == 's':
+                img_url = yarl.URL.build(
+                    scheme="http", host="imgsrc.baidu.com", path=f"/forum/w=560;q=60;g=0/sign=__/{raw_hash}.jpg"
+                )
+            elif size == 'm':
+                img_url = yarl.URL.build(
+                    scheme="http", host="imgsrc.baidu.com", path=f"/forum/w=720;q=60;g=0/sign=__/{raw_hash}.jpg"
+                )
+            elif size == 'l':
+                img_url = yarl.URL.build(scheme="http", host="imgsrc.baidu.com", path=f"/forum/pic/item/{raw_hash}.jpg")
+            else:
+                raise ValueError(f"Invalid size={size}")
+
+            async with self.session_web.get(img_url, allow_redirects=False) as resp:
+                if not resp.content_type.endswith(('jpeg', 'png', 'bmp'), 6):
+                    raise ContentTypeError(f"Expect jpeg, png or bmp, got {resp.content_type}")
+                content = await resp.content.read()
+
+            image = cv.imdecode(np.frombuffer(content, np.uint8), cv.IMREAD_COLOR)
+            if image is None:
+                raise RuntimeError("Error with opencv.imdecode")
+
+        except Exception as err:
+            LOG.warning(f"{err}. raw_hash={raw_hash} size={size}")
             image = np.empty(0, dtype=np.uint8)
 
         return image
@@ -2972,14 +3013,16 @@ class Client(object):
         else:
             user = UserInfo(_id)
 
-        if size == 's':
-            path = 'n'
-        elif size == 'l':
-            path = 'h'
-        else:
-            path = ''
-
         try:
+            if size == 's':
+                path = 'n'
+            elif size == 'm':
+                path = ''
+            elif size == 'l':
+                path = 'h'
+            else:
+                raise ValueError(f"Invalid size={size}")
+
             async with self.session_web.get(
                 yarl.URL.build(
                     scheme="http", host="tb.himg.baidu.com", path=f"/sys/portrait{path}/item/{user.portrait}"
