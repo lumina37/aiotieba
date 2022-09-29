@@ -1037,6 +1037,8 @@ class Client(object):
 
         Note:
             从2022.08.30开始服务端不再返回user_id字段 请谨慎使用
+            该接口可判断用户是否被屏蔽
+            该接口rps阈值较低 建议每隔一段时间更换一个可用的Cookie字段BAIDUID
         """
 
         if UserInfo.is_portrait(name_or_portrait):
@@ -2961,7 +2963,7 @@ class Client(object):
 
         Args:
             raw_hash (str): 百度图库hash
-            size (Literal['s', 'm', 'l'], optional): 获取图像的大小 s为宽560 m为宽720 l为原图. Defaults to 's'.
+            size (Literal['s', 'm', 'l'], optional): 获取图像的大小 s为宽720 m为宽960 l为原图. Defaults to 's'.
 
         Returns:
             np.ndarray: 图像
@@ -2970,11 +2972,11 @@ class Client(object):
         try:
             if size == 's':
                 img_url = yarl.URL.build(
-                    scheme="http", host="imgsrc.baidu.com", path=f"/forum/w=560;q=60;g=0/sign=__/{raw_hash}.jpg"
+                    scheme="http", host="imgsrc.baidu.com", path=f"/forum/w=720;q=60;g=0/sign=__/{raw_hash}.jpg"
                 )
             elif size == 'm':
                 img_url = yarl.URL.build(
-                    scheme="http", host="imgsrc.baidu.com", path=f"/forum/w=720;q=60;g=0/sign=__/{raw_hash}.jpg"
+                    scheme="http", host="imgsrc.baidu.com", path=f"/forum/w=960;q=60;g=0/sign=__/{raw_hash}.jpg"
                 )
             elif size == 'l':
                 img_url = yarl.URL.build(scheme="http", host="imgsrc.baidu.com", path=f"/forum/pic/item/{raw_hash}.jpg")
