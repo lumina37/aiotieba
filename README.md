@@ -10,7 +10,7 @@
     <img src="https://img.shields.io/github/workflow/status/Starry-OvO/aiotieba/CI?label=CI&logo=github" alt="GitHub Workflow Status">
 </a>
 <a href="https://pypi.org/project/aiotieba">
-    <img src="https://badge.fury.io/py/aiotieba.svg" alt="PyPI version">
+    <img src="https://img.shields.io/pypi/v/aiotieba" alt="PyPI - Version">
 </a>
 <a href="https://pypi.org/project/aiotieba">
     <img src="https://img.shields.io/pypi/pyversions/aiotieba" alt="PyPI - Python Version">
