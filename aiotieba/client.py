@@ -2957,10 +2957,10 @@ class Client(object):
 
     async def hash2image(self, raw_hash: str, /, size: Literal['s', 'm', 'l'] = 's') -> "np.ndarray":
         """
-        从百度图库hash获取静态图像
+        通过百度图库hash获取静态图像
 
         Args:
-            img_url (str): 图像链接
+            raw_hash (str): 百度图库hash
             size (Literal['s', 'm', 'l'], optional): 获取图像的大小 s为宽560 m为宽720 l为原图. Defaults to 's'.
 
         Returns:
