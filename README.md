@@ -20,6 +20,8 @@
 
 ---
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/18b4b9a6e27c4ad798fd46b3acdd7d85)](https://app.codacy.com/gh/Starry-OvO/aiotieba?utm_source=github.com&utm_medium=referral&utm_content=Starry-OvO/aiotieba&utm_campaign=Badge_Grade_Settings)
+
 ## 简介
 
 **aiotieba**使用[**asyncio**](https://tutorial.python.org/zh-cn/3/library/asyncio.html)和[**aiohttp**](https://github.com/aio-libs/aiohttp)封装了大量操作[百度贴吧核心API](https://github.com/Starry-OvO/aiotieba/blob/master/aiotieba/client.py)的简便方法，并为吧务管理设计了一套[内容审查脚手架](https://github.com/Starry-OvO/aiotieba/blob/master/aiotieba/reviewer.py)
