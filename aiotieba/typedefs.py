@@ -602,8 +602,8 @@ class FragImage(_Fragment):
     图像碎片
 
     Attributes:
-        src (str): 压缩图像链接 宽560px
-        big_src (str): 大图链接 宽720px
+        src (str): 压缩图像链接 宽720px
+        big_src (str): 大图链接 宽960px
         origin_src (str): 原图链接
         hash (str): 百度图床hash
         show_width (int): 图像在客户端预览显示的宽度
