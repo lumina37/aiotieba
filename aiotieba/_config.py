@@ -1,7 +1,6 @@
 __all__ = ['CONFIG']
 
 import sys
-from pathlib import Path
 
 from ._logger import LOG
 
@@ -19,11 +18,14 @@ try:
 
 except FileNotFoundError:
 
-    import shutil
+    import importlib.resources
 
-    module_dir = Path(__file__).parent
-    shutil.copyfile(str(module_dir / "config_example/min.toml"), _CONFIG_FILENAME)
-    shutil.copyfile(str(module_dir / "config_example/full.toml"), "aiotieba_full_example.toml")
+    files = importlib.resources.files(__package__)
+
+    with open(_CONFIG_FILENAME, 'wb') as f:
+        f.write((files / "config_example/min.toml").read_bytes())
+    with open("aiotieba_full_example.toml", 'wb') as f:
+        f.write((files / "config_example/full.toml").read_bytes())
 
     CONFIG = {}
 
