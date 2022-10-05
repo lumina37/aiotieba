@@ -1,24 +1,31 @@
 __all__ = ['CONFIG']
 
-from pathlib import Path
+import sys
 
 from ._logger import LOG
 
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
+
 _CONFIG_FILENAME = "aiotieba.toml"
 
-try:
-    import tomli
 
-    with open(_CONFIG_FILENAME, "rb") as file:
-        CONFIG = tomli.load(file)
+try:
+    with open(_CONFIG_FILENAME, "rb") as f:
+        CONFIG = tomllib.load(f)
 
 except FileNotFoundError:
 
-    import shutil
+    import importlib.resources
 
-    module_dir = Path(__file__).parent
-    shutil.copyfile(str(module_dir / "config_example/min.toml"), _CONFIG_FILENAME)
-    shutil.copyfile(str(module_dir / "config_example/full.toml"), "aiotieba_full_example.toml")
+    files = importlib.resources.files(__package__) / 'config_example'
+
+    with open(_CONFIG_FILENAME, 'wb') as f:
+        f.write((files / "min.toml").read_bytes())
+    with open("aiotieba_full_example.toml", 'wb') as f:
+        f.write((files / "full.toml").read_bytes())
 
     CONFIG = {}
 
