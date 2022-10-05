@@ -1,16 +1,21 @@
 __all__ = ['CONFIG']
 
+import sys
 from pathlib import Path
 
 from ._logger import LOG
 
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
+
 _CONFIG_FILENAME = "aiotieba.toml"
 
-try:
-    import tomli
 
+try:
     with open(_CONFIG_FILENAME, "rb") as file:
-        CONFIG = tomli.load(file)
+        CONFIG = tomllib.load(file)
 
 except FileNotFoundError:
 
