@@ -13,19 +13,19 @@ _CONFIG_FILENAME = "aiotieba.toml"
 
 
 try:
-    with open(_CONFIG_FILENAME, "rb") as file:
-        CONFIG = tomllib.load(file)
+    with open(_CONFIG_FILENAME, "rb") as f:
+        CONFIG = tomllib.load(f)
 
 except FileNotFoundError:
 
     import importlib.resources
 
-    files = importlib.resources.files(__package__)
+    files = importlib.resources.files(__package__) / 'config_example'
 
     with open(_CONFIG_FILENAME, 'wb') as f:
-        f.write((files / "config_example/min.toml").read_bytes())
+        f.write((files / "min.toml").read_bytes())
     with open("aiotieba_full_example.toml", 'wb') as f:
-        f.write((files / "config_example/full.toml").read_bytes())
+        f.write((files / "full.toml").read_bytes())
 
     CONFIG = {}
 
