@@ -6,7 +6,7 @@
 
 ## 扫描范围
 
-在我给出的范例[reviewer_example.py](https://github.com/Starry-OvO/Tieba-Manager/blob/master/examples/reviewer_example.py)中，在贴吧服务端不出现故障的理想情况下，扫描可以完全覆盖抗吧首页的每一条内容
+在贴吧服务端不出现故障的理想情况下，默认的扫描设置可以完全覆盖目标贴吧首页的每一条内容
 
 通过适当的配置，审查工具可以检查以上内容中是否存在：
 
@@ -38,7 +38,7 @@
 
 + 首先，你需要一个`MySQL`数据库，用来缓存通过检测的内容id以及记录用户权限级别（黑、白名单）
 + 你应该注意到在第一次使用aiotieba时，工作目录下还生成了一个完全体配置文件`aiotieba_full_example.toml`。你需要参考其中的注释，填写`Database`字段，以便aiotieba使用你的`MySQL`数据库
-+ 使用下列脚本初始化数据库
++ 使用下面的脚本初始化数据库
 
 ```python
 import asyncio

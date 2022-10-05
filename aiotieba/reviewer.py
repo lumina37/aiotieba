@@ -12,7 +12,6 @@ except ImportError:
     pass
 
 import asyncio
-import binascii
 import enum
 import functools
 import sys
@@ -362,9 +361,9 @@ class BaseReviewer(object):
 
         return await self.db.get_tid_list(tag=1, limit=limit, offset=offset)
 
-    def scan_QRcode(self, image: "np.ndarray") -> str:
+    def decode_QRcode(self, image: "np.ndarray") -> str:
         """
-        审查图像中的二维码
+        解码图像中的二维码
 
         Args:
             image (np.ndarray): 图像
@@ -381,6 +380,25 @@ class BaseReviewer(object):
 
         return data
 
+    def has_QRcode(self, image: "np.ndarray") -> bool:
+        """
+        图像是否包含二维码
+
+        Args:
+            image (np.ndarray): 图像
+
+        Returns:
+            bool: True则包含 False则不包含
+        """
+
+        try:
+            res = self.qrdetector.detect(image)[0]
+        except Exception as err:
+            LOG.warning(err)
+            res = False
+
+        return res
+
     def compute_imghash(self, image: "np.ndarray") -> str:
         """
         计算图像的phash
@@ -394,7 +412,7 @@ class BaseReviewer(object):
 
         try:
             img_hash_array = self.img_hasher.compute(image)
-            img_hash = binascii.hexlify(img_hash_array.tobytes()).decode('ascii')
+            img_hash = img_hash_array.tobytes().hex()
         except Exception as err:
             LOG.warning(err)
             img_hash = ''
@@ -448,7 +466,7 @@ class Punish(object):
     处罚操作
 
     Fields:
-        del_flag (DelFlag, optional): 处理结果. Defaults to DelFlag.NORMAL.
+        del_flag (Ops, optional): 处理结果. Defaults to Ops.NORMAL.
         block_days (int, optional): 封禁天数. Defaults to 0.
         note (str, optional): 处罚理由. Defaults to ''.
     """

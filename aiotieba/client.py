@@ -8,7 +8,6 @@ except ImportError:
 
 import asyncio
 import base64
-import binascii
 import enum
 import gzip
 import hashlib
@@ -97,7 +96,13 @@ class _WebsocketResponse(object):
         req_id (int): 唯一的请求id
     """
 
-    __slots__ = ['__weakref__', '__dict__', '_timestamp', '_req_id', '_data_future']
+    __slots__ = [
+        '__weakref__',
+        '__dict__',
+        '_timestamp',
+        '_req_id',
+        '_data_future',
+    ]
 
     ws_res_wait_dict: weakref.WeakValueDictionary[int, "_WebsocketResponse"] = weakref.WeakValueDictionary()
     _websocket_request_id: int = None
@@ -173,8 +178,8 @@ class _ForumInfoCache(object):
 
     __slots__ = []
 
-    _fname2fid: ClassVar[OrderedDict[str, int]] = {}
-    _fid2fname: ClassVar[OrderedDict[int, str]] = {}
+    _fname2fid: ClassVar[OrderedDict[str, int]] = OrderedDict()
+    _fid2fname: ClassVar[OrderedDict[int, str]] = OrderedDict()
 
     @classmethod
     def get_fid(cls, fname: str) -> int:
@@ -273,7 +278,7 @@ class Client(object):
 
     _trust_env = False
 
-    latest_version: ClassVar[str] = "12.29.1.1"  # 这是目前的最新版本
+    latest_version: ClassVar[str] = "12.29.5.0"  # 这是目前的最新版本
     # no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
     post_version: ClassVar[str] = "9.1.0.0"  # 发帖使用极速版
 
@@ -417,7 +422,7 @@ class Client(object):
         """
 
         if self._cuid is None:
-            self._cuid = "baidutiebaapp" + str(uuid.uuid4())
+            self._cuid = f"baidutiebaapp{uuid.uuid4()}"
         return self._cuid
 
     @property
@@ -431,7 +436,7 @@ class Client(object):
         """
 
         if self._cuid_galaxy2 is None:
-            rand_str = binascii.hexlify(random.randbytes(16)).decode('ascii').upper()
+            rand_str = random.randbytes(16).hex().upper()
             self._cuid_galaxy2 = rand_str + "|0"
 
         return self._cuid_galaxy2
@@ -547,14 +552,19 @@ class Client(object):
 
         if self._session_web is None:
             headers = {
-                aiohttp.hdrs.USER_AGENT: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:104.0) Gecko/20100101 Firefox/104.0",
+                aiohttp.hdrs.USER_AGENT: f"tieba/{self.latest_version}",
                 aiohttp.hdrs.ACCEPT_ENCODING: "gzip, deflate",
                 aiohttp.hdrs.CACHE_CONTROL: "no-cache",
                 aiohttp.hdrs.CONNECTION: "keep-alive",
             }
             timeout = aiohttp.ClientTimeout(connect=6.0, sock_connect=3.2, sock_read=12.0)
             cookie_jar = aiohttp.CookieJar(loop=self._loop)
-            cookie_jar.update_cookies({'BDUSS': self.BDUSS, 'STOKEN': self.STOKEN})
+            cookie_jar.update_cookies(
+                {
+                    'BDUSS': self.BDUSS,
+                    'STOKEN': self.STOKEN,
+                }
+            )
 
             self._session_web = aiohttp.ClientSession(
                 connector=self.connector,
@@ -715,11 +725,12 @@ class Client(object):
         if len(ws_bytes) < 9:
             return ws_bytes, 0, 0
 
-        flag = ws_bytes[0]
-        cmd = int.from_bytes(ws_bytes[1:5], 'big')
-        req_id = int.from_bytes(ws_bytes[5:9], 'big')
+        ws_view = memoryview(ws_bytes)
+        flag = ws_view[0]
+        cmd = int.from_bytes(ws_view[1:5], 'big')
+        req_id = int.from_bytes(ws_view[5:9], 'big')
 
-        ws_bytes = ws_bytes[9:]
+        ws_bytes = ws_view[9:].tobytes()
         if flag & 0b10000000:
             ws_bytes = self.ws_aes_chiper.decrypt(ws_bytes)
             ws_bytes = ws_bytes.rstrip(ws_bytes[-2:-1])
@@ -738,9 +749,6 @@ class Client(object):
         Raises:
             aiohttp.WSServerHandshakeError: websocket握手失败
         """
-
-        if self.session_websocket is None:
-            await self.enter()
 
         if self._ws_dispatcher is not None and not self._ws_dispatcher.cancelled():
             self._ws_dispatcher.cancel()
@@ -823,12 +831,10 @@ class Client(object):
             pub_key = RSA.import_key(pub_key_bytes)
             rsa_chiper = PKCS1_v1_5.new(pub_key)
 
-            data_proto = UpdateClientInfoReqIdl_pb2.UpdateClientInfoReqIdl.DataReq()
-            data_proto.bduss = self.BDUSS
-            data_proto.device = f"""{{"subapp_type":"mini","_client_version":"{self.post_version}","pversion":"1.0.3","_msg_status":"1","_phone_imei":"000000000000000","from":"1021099l","cuid_galaxy2":"{self.cuid_galaxy2}","model":"LIO-AN00","_client_type":"2"}}"""
-            data_proto.secretKey = rsa_chiper.encrypt(self.ws_password)
             req_proto = UpdateClientInfoReqIdl_pb2.UpdateClientInfoReqIdl()
-            req_proto.data.CopyFrom(data_proto)
+            req_proto.data.bduss = self.BDUSS
+            req_proto.data.device = f"""{{"subapp_type":"mini","_client_version":"{self.post_version}","pversion":"1.0.3","_msg_status":"1","_phone_imei":"000000000000000","from":"1021099l","cuid_galaxy2":"{self.cuid_galaxy2}","model":"LIO-AN00","_client_type":"2"}}"""
+            req_proto.data.secretKey = rsa_chiper.encrypt(self.ws_password)
             req_proto.cuid = f"{self.cuid}|com.baidu.tieba_mini{self.post_version}"
 
             resp = await self.send_ws_bytes(
@@ -847,7 +853,7 @@ class Client(object):
         获取贴吧反csrf校验码tbs
 
         Returns:
-            str: 贴吧反csrf校验码tbs
+            str: tbs
         """
 
         if not self._tbs:
@@ -860,7 +866,7 @@ class Client(object):
         获取本账号信息
 
         Args:
-            require (ReqUInfo): 需要获取的字段
+            require (ReqUInfo): 指示需要获取的字段
 
         Returns:
             UserInfo: 用户信息
@@ -920,7 +926,7 @@ class Client(object):
             fname (str): 贴吧名
 
         Returns:
-            int: 该贴吧的forum_id
+            int: forum_id
         """
 
         if fid := _ForumInfoCache.get_fid(fname):
@@ -956,7 +962,7 @@ class Client(object):
             fid (int): forum_id
 
         Returns:
-            str: 该贴吧的贴吧名
+            str: 贴吧名
         """
 
         if fname := _ForumInfoCache.get_fname(fid):
@@ -974,8 +980,8 @@ class Client(object):
         获取用户信息
 
         Args:
-            _id (str | int): 用户id user_id / user_name / portrait
-            require (ReqUInfo): 需要获取的字段
+            _id (str | int): 用户id user_id / portrait / user_name
+            require (ReqUInfo): 指示需要获取的字段
 
         Returns:
             UserInfo: 用户信息
@@ -1031,6 +1037,8 @@ class Client(object):
 
         Note:
             从2022.08.30开始服务端不再返回user_id字段 请谨慎使用
+            该接口可判断用户是否被屏蔽
+            该接口rps阈值较低 建议每隔一段时间更换一个可用的Cookie字段BAIDUID
         """
 
         if UserInfo.is_portrait(name_or_portrait):
@@ -1052,6 +1060,11 @@ class Client(object):
             user_dict: dict = res_json['data']
             user = UserInfo()
 
+            # user.user_id = user_dict['id']
+            user.user_name = user_dict['name']
+            user.portrait = user_dict['portrait']
+            user.nick_name = user_dict['show_nickname']
+
             _sex = user_dict['sex']
             if _sex == 'male':
                 user.gender = 1
@@ -1059,11 +1072,6 @@ class Client(object):
                 user.gender = 2
             else:
                 user.gender = 0
-
-            # user.user_id = user_dict['id']
-            user.user_name = user_dict['name']
-            user.portrait = user_dict['portrait']
-            user.nick_name = user_dict['show_nickname']
 
             user.age = float(tb_age) if (tb_age := user_dict['tb_age']) != '-' else 0.0
 
@@ -1090,7 +1098,7 @@ class Client(object):
             user.is_vip = bool(int(vip_dict['v_status'])) if (vip_dict := user_dict['vipInfo']) else False
 
         except Exception as err:
-            LOG.warning(f"{err}. user={user}")
+            LOG.warning(f"{err}. user={name_or_portrait}")
             user = UserInfo()
 
         return user
@@ -1129,7 +1137,7 @@ class Client(object):
             user.user_name = user_name
 
         except Exception as err:
-            LOG.warning(f"{err}. user={user}")
+            LOG.warning(f"{err}. user={user_name}")
             user = UserInfo()
 
         return user
@@ -1163,7 +1171,7 @@ class Client(object):
             user = UserInfo(_raw_data=user_proto)
 
         except Exception as err:
-            LOG.warning(f"{err}. user={user}")
+            LOG.warning(f"{err}. user={user_id}")
             user = UserInfo()
 
         return user
@@ -1177,6 +1185,9 @@ class Client(object):
 
         Returns:
             UserInfo: 包含 user_id / portrait / user_name
+
+        Note:
+            该接口需要BDUSS
         """
 
         try:
@@ -1198,7 +1209,7 @@ class Client(object):
             user._user_name = user_dict['uname']
 
         except Exception as err:
-            LOG.warning(f"{err}. user={user}")
+            LOG.warning(f"{err}. user={user_id}")
             user = UserInfo()
 
         return user
@@ -1254,12 +1265,12 @@ class Client(object):
         获取首页帖子
 
         Args:
-            fname_or_fid (str | int): 贴吧的贴吧名或fid 优先贴吧名
+            fname_or_fid (str | int): 贴吧名或fid 优先贴吧名
             pn (int, optional): 页码. Defaults to 1.
             rn (int, optional): 请求的条目数. Defaults to 30.
-            sort (int, optional): 排序方式 对于有热门分区的贴吧0是热门排序1是按发布时间2报错34都是热门排序>=5是按回复时间
-                对于无热门分区的贴吧0是按回复时间1是按发布时间2报错>=3是按回复时间. Defaults to 5.
-            is_good (bool, optional): True为获取精品区帖子 False为获取普通区帖子. Defaults to False.
+            sort (int, optional): 排序方式 对于有热门分区的贴吧 0是热门排序 1是按发布时间 2报错 34都是热门排序 >=5是按回复时间
+                对于无热门分区的贴吧 0是按回复时间 1是按发布时间 2报错 >=3是按回复时间. Defaults to 5.
+            is_good (bool, optional): True则获取精品区帖子 False则获取普通区帖子. Defaults to False.
 
         Returns:
             Threads: 帖子列表
@@ -2938,10 +2949,51 @@ class Client(object):
 
             image = cv.imdecode(np.frombuffer(content, np.uint8), cv.IMREAD_COLOR)
             if image is None:
-                raise RuntimeError("Error with opencv.imdecode")
+                raise RuntimeError("Error in cv2.imdecode")
 
         except Exception as err:
             LOG.warning(f"{err}. url={img_url}")
+            image = np.empty(0, dtype=np.uint8)
+
+        return image
+
+    async def hash2image(self, raw_hash: str, /, size: Literal['s', 'm', 'l'] = 's') -> "np.ndarray":
+        """
+        通过百度图库hash获取静态图像
+
+        Args:
+            raw_hash (str): 百度图库hash
+            size (Literal['s', 'm', 'l'], optional): 获取图像的大小 s为宽720 m为宽960 l为原图. Defaults to 's'.
+
+        Returns:
+            np.ndarray: 图像
+        """
+
+        try:
+            if size == 's':
+                img_url = yarl.URL.build(
+                    scheme="http", host="imgsrc.baidu.com", path=f"/forum/w=720;q=60;g=0/sign=__/{raw_hash}.jpg"
+                )
+            elif size == 'm':
+                img_url = yarl.URL.build(
+                    scheme="http", host="imgsrc.baidu.com", path=f"/forum/w=960;q=60;g=0/sign=__/{raw_hash}.jpg"
+                )
+            elif size == 'l':
+                img_url = yarl.URL.build(scheme="http", host="imgsrc.baidu.com", path=f"/forum/pic/item/{raw_hash}.jpg")
+            else:
+                raise ValueError(f"Invalid size={size}")
+
+            async with self.session_web.get(img_url, allow_redirects=False) as resp:
+                if not resp.content_type.endswith(('jpeg', 'png', 'bmp'), 6):
+                    raise ContentTypeError(f"Expect jpeg, png or bmp, got {resp.content_type}")
+                content = await resp.content.read()
+
+            image = cv.imdecode(np.frombuffer(content, np.uint8), cv.IMREAD_COLOR)
+            if image is None:
+                raise RuntimeError("Error with opencv.imdecode")
+
+        except Exception as err:
+            LOG.warning(f"{err}. raw_hash={raw_hash} size={size}")
             image = np.empty(0, dtype=np.uint8)
 
         return image
@@ -2963,14 +3015,16 @@ class Client(object):
         else:
             user = UserInfo(_id)
 
-        if size == 's':
-            path = 'n'
-        elif size == 'l':
-            path = 'h'
-        else:
-            path = ''
-
         try:
+            if size == 's':
+                path = 'n'
+            elif size == 'm':
+                path = ''
+            elif size == 'l':
+                path = 'h'
+            else:
+                raise ValueError(f"Invalid size={size}")
+
             async with self.session_web.get(
                 yarl.URL.build(
                     scheme="http", host="tb.himg.baidu.com", path=f"/sys/portrait{path}/item/{user.portrait}"

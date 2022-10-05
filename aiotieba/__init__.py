@@ -63,7 +63,7 @@ from .typedefs import (
     VoteInfo,
 )
 
-__version__ = "2.9.4"
+__version__ = "2.9.5a1"
 
 if os.name == 'posix':
     import signal

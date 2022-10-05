@@ -22,7 +22,7 @@ classifiers = [
 ]
 dependencies = [
     "aiodns>=3.0.0",
-    "aiohttp>=3.8.0",
+    "aiohttp!=3.8.2,>=3.8.0",
     "aiomysql>=0.1.0",
     "beautifulsoup4>=4.0.0",
     "lxml>=4.0.0",
