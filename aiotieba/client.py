@@ -502,7 +502,7 @@ class Client(object):
                 connector_owner=False,
                 raise_for_status=True,
                 timeout=timeout,
-                read_bufsize=1 << 18,  # 256KiB
+                read_bufsize=1 << 16,  # 64KiB
                 trust_env=self._trust_env,
             )
 
@@ -535,7 +535,7 @@ class Client(object):
                 connector_owner=False,
                 raise_for_status=True,
                 timeout=timeout,
-                read_bufsize=1 << 18,  # 256KiB
+                read_bufsize=1 << 16,  # 64KiB
                 trust_env=self._trust_env,
             )
 
@@ -603,7 +603,7 @@ class Client(object):
                 connector_owner=False,
                 raise_for_status=True,
                 timeout=timeout,
-                read_bufsize=1 << 18,  # 256KiB
+                read_bufsize=1 << 16,  # 64KiB
                 trust_env=self._trust_env,
             )
 
