@@ -35,7 +35,6 @@ from .typedefs import (
     FragmentUnknown,
     FragText,
     FragTiebaPlus,
-    FragVoice,
     MemberUser,
     MemberUsers,
     NewThread,
@@ -63,7 +62,7 @@ from .typedefs import (
     VoteInfo,
 )
 
-__version__ = "2.9.6a0"
+__version__ = "2.9.6a1"
 
 if os.name == 'posix':
     import signal

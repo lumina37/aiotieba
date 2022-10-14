@@ -6,7 +6,6 @@ __all__ = [
     'FragImage',
     'FragAt',
     'FragLink',
-    'FragVoice',
     'FragTiebaPlus',
     'FragItem',
     'Fragments',
@@ -857,39 +856,6 @@ class FragLink(_Fragment):
         return self._is_external
 
 
-class FragVoice(_Fragment):
-    """
-    音频碎片
-
-    Attributes:
-        voice_md5 (str): 音频md5
-    """
-
-    __slots__ = ['_voice_md5']
-
-    def __init__(self, _raw_data: Optional[_TypeMessage] = None) -> None:
-        super(FragVoice, self).__init__(_raw_data)
-
-        if _raw_data:
-            self._voice_md5 = _raw_data.voice_md5
-        else:
-            self._voice_md5 = ''
-
-    def __repr__(self) -> str:
-        return str({'voice_md5': self.voice_md5})
-
-    @property
-    def voice_md5(self) -> str:
-        """
-        音频md5
-
-        Note:
-            可用于下载音频
-        """
-
-        return self._voice_md5
-
-
 class FragTiebaPlus(_Fragment):
     """
     贴吧plus广告碎片
@@ -983,8 +949,10 @@ class Fragments(object):
         imgs (list[FragImage]): 图像碎片列表
         ats (list[FragAt]): @碎片列表
         links (list[FragLink]): 链接碎片列表
-        voice (FragVoice): 音频碎片
         tiebapluses (list[FragTiebaPlus]): 贴吧plus碎片列表
+
+        has_voice (bool): 是否包含音频
+        has_video (bool): 是否包含视频
     """
 
     __slots__ = [
@@ -995,8 +963,9 @@ class Fragments(object):
         '_imgs',
         '_ats',
         '_links',
-        '_voice',
         '_tiebapluses',
+        '_has_voice',
+        '_has_video',
     ]
 
     def __init__(self, _raw_datas: Optional[Iterable[_TypeMessage]] = None) -> None:
@@ -1020,10 +989,11 @@ class Fragments(object):
                 fragment = FragLink(_raw_data)
                 self._links.append(fragment)
             elif frag_type == 5:  # video
-                fragment = FragmentUnknown(_raw_data)
+                fragment = FragmentUnknown()
+                self._has_video = True
             elif frag_type == 10:
-                fragment = FragVoice(_raw_data)
-                self._voice = fragment
+                fragment = FragmentUnknown()
+                self._has_voice = True
             # 35|36:tid=7769728331 / 37:tid=7760184147
             elif frag_type in [35, 36, 37]:
                 fragment = FragTiebaPlus(_raw_data)
@@ -1040,8 +1010,10 @@ class Fragments(object):
         self._imgs: List[FragImage] = []
         self._emojis: List[FragEmoji] = []
         self._ats: List[FragAt] = []
-        self._voice: FragVoice = None
         self._tiebapluses: List[FragTiebaPlus] = []
+
+        self._has_video = True
+        self._has_voice = True
 
         if _raw_datas:
             self._frags: List[_TypeFragment] = [_init_by_type(frag_proto) for frag_proto in _raw_datas]
@@ -1104,22 +1076,28 @@ class Fragments(object):
         return self._links
 
     @property
-    def voice(self) -> FragVoice:
-        """
-        音频碎片
-        """
-
-        if self._voice is None:
-            self._voice = FragVoice()
-        return self._voice
-
-    @property
     def tiebapluses(self) -> List[FragTiebaPlus]:
         """
         贴吧plus碎片列表
         """
 
         return self._tiebapluses
+
+    @property
+    def has_voice(self) -> bool:
+        """
+        是否包含音频
+        """
+
+        return self._has_voice
+
+    @property
+    def has_video(self) -> bool:
+        """
+        是否包含视频
+        """
+
+        return self._has_video
 
     def __iter__(self) -> Iterator[_TypeFragment]:
         return self._frags.__iter__()
@@ -1636,7 +1614,7 @@ class ShareThread(_Container):
     __slots__ = [
         '_contents',
         '_medias',
-        '_voice',
+        '_has_voice',
         '_title',
         '_vote_info',
     ]
@@ -1647,7 +1625,7 @@ class ShareThread(_Container):
         if _raw_data:
             self._contents = _raw_data.content
             self._medias = _raw_data.media
-            self._voice = _raw_data.voice
+            self._has_voice = bool(_raw_data.voice)
             self._title = _raw_data.title
 
             self._fid = _raw_data.fid
@@ -1660,7 +1638,7 @@ class ShareThread(_Container):
         else:
             self._contents = None
             self._medias = None
-            self._voice = None
+            self._has_voice = False
             self._title = ''
 
             self._vote_info = None
@@ -1703,9 +1681,7 @@ class ShareThread(_Container):
                 img_frags = [FragImage(_proto) for _proto in self._medias]
                 self._contents._frags += img_frags
                 self._contents._imgs += img_frags
-
-                if _protos := self._voice:
-                    self._contents._voice = FragVoice(_protos[0])
+                self._contents._has_voice = self._has_voice
 
             else:
                 self._contents = Fragments()

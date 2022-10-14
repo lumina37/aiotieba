@@ -181,9 +181,11 @@ class `UserInfo`(*_id: str | int | None = None*)
 
 **links** - *(list[[FragLink](#fraglink)])* 链接碎片列表
 
-**voice** - *([FragVoice](#fragvoice))* 音频碎片
-
 **tiebapluses** - *(list[[FragTiebaPlus](#fragtiebaplus)])* 贴吧plus碎片列表
+
+**has_voice** - *(bool)* 是否包含音频
+
+**has_video** - *(bool)* 是否包含视频
 </div>
 
 ### 类方法
@@ -294,16 +296,6 @@ def `__bool__`() -> *bool*
 **raw_url** - *(str)* 原链接 外链会在解析前先去除前缀
 
 **is_external** - *(bool)* 是否外部链接
-</div>
-
-### FragVoice
-
-音频碎片
-
-#### 类属性
-
-<div class="docstring" markdown="1">
-**voice_md5** - *(str)* 音频md5
 </div>
 
 ### FragTiebaPlus
