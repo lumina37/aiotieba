@@ -31,9 +31,9 @@
 <summary>贴吧接口列表</summary>
 
 + 按回复时间/发布时间/热门序获取贴吧主题帖/精华帖列表。支持获取带转发/投票/转发嵌套投票/各种卡片的主题帖信息
-+ 获取带图片链接/小尾巴内容/点赞情况/用户信息（[用户名](https://starry-ovo.github.io/aiotieba/tutorial/quickstart#user_name)/[portrait](https://starry-ovo.github.io/aiotieba/tutorial/quickstart#portrait)/[user_id](https://starry-ovo.github.io/aiotieba/tutorial/quickstart#user_id)/等级/性别/是否锁回复）/每条回复的前排楼中楼（支持按或不按点赞数排序）的楼层列表
++ 获取带图片链接/小尾巴内容/点赞情况/用户信息（[用户名](https://v-8.top/tutorial/quickstart#user_name)/[portrait](https://v-8.top/tutorial/quickstart#portrait)/[user_id](https://v-8.top/tutorial/quickstart#user_id)/等级/性别/是否锁回复）/每条回复的前排楼中楼（支持按或不按点赞数排序）的楼层列表
 + 获取带所有前述用户信息的楼中楼列表
-+ 根据[用户名](https://starry-ovo.github.io/aiotieba/tutorial/quickstart#user_name)/[portrait](https://starry-ovo.github.io/aiotieba/tutorial/quickstart#portrait)/[user_id](https://starry-ovo.github.io/aiotieba/tutorial/quickstart#user_id)中的任一项反查其他用户信息，或通过用户主页的[tieba_uid](https://starry-ovo.github.io/aiotieba/tutorial/quickstart#tieba_uid)反查其他用户信息
++ 根据[用户名](https://v-8.top/tutorial/quickstart#user_name)/[portrait](https://v-8.top/tutorial/quickstart#portrait)/[user_id](https://v-8.top/tutorial/quickstart#user_id)中的任一项反查其他用户信息，或通过用户主页的[tieba_uid](https://v-8.top/tutorial/quickstart#tieba_uid)反查其他用户信息
 + 使用小吧主、语音小编的账号删帖/屏蔽/封禁。支持删除视频帖/批量删帖/多于1天的封禁
 + 使用已被大吧主分配解封/恢复/处理申诉权限的吧务账号解封/恢复/处理申诉
 + 使用大吧主账号推荐帖子到首页/移动帖子到指定分区/加精/撤精/置顶/撤置顶/添加黑名单/查看黑名单/取消黑名单
@@ -78,7 +78,7 @@ async def main():
 asyncio.run(main())
 ```
 
-+ 继续阅读[**入门教程**](https://starry-ovo.github.io/aiotieba/tutorial/quickstart)
++ 继续阅读[**入门教程**](https://v-8.top/tutorial/quickstart)
 
 ## 友情链接
 
@@ -87,23 +87,23 @@ asyncio.run(main())
 
 ## 客户名单
 
-<details><summary>2022.10.14更新</summary>
+<details><summary>2022.10.26更新</summary>
 
 |      吧名      | 关注用户数 | 最近29天日均访问量 | 日均主题帖数 | 日均回复数 |
 | :------------: | :--------: | :----------------: | :----------: | :--------: |
-|    抗压背锅    | 4,204,518  |     1,411,264      |    3,832     |   96,535   |
-|     孙笑川     | 2,694,631  |      694,385       |    6,878     |  184,572   |
-|    lol半价     | 1,966,366  |       90,559       |     275      |   4,869    |
-|      宫漫      | 1,360,890  |       49,497       |     218      |   2,914    |
-|    逆水寒ol    |  715,453   |       31,762       |     117      |   1,807    |
-|    新孙笑川    |  420,330   |       64,526       |     489      |   20,695   |
-|     vtuber     |  216,582   |       12,449       |      71      |    830     |
-|     asoul      |  157,161   |       11,728       |      93      |    507     |
-|      嘉然      |   57,942   |       12,887       |      92      |   1,411    |
-|      向晚      |   30,191   |       10,556       |      88      |   1,082    |
-|      贝拉      |   21,714   |       9,582        |      42      |    746     |
-|      乃琳      |   17,117   |       3,875        |      22      |    272     |
-| vtuber自由讨论 |   16,967   |       4,582        |      3       |     73     |
-| asoul一个魂儿  |   14,417   |        923         |      4       |     29     |
+|    抗压背锅    | 4,231,552  |     1,668,253      |    4,994     |  107,796   |
+|     孙笑川     | 2,714,597  |      629,000       |    6,355     |  161,879   |
+|    lol半价     | 1,967,832  |       83,788       |     279      |   4,379    |
+|      宫漫      | 1,363,146  |       46,410       |     214      |   2,465    |
+|    逆水寒ol    |  715,423   |       29,071       |     110      |   1,770    |
+|    新孙笑川    |  434,512   |       74,143       |     648      |   21,645   |
+|     vtuber     |  217,150   |       12,480       |      67      |    795     |
+|     asoul      |  157,042   |       11,719       |      95      |    530     |
+|      嘉然      |   58,063   |       12,599       |      91      |   1,383    |
+|      向晚      |   30,248   |       10,075       |      87      |   1,067    |
+|      贝拉      |   21,718   |       9,380        |      42      |    715     |
+|      乃琳      |   17,140   |       3,743        |      20      |    269     |
+| vtuber自由讨论 |   16,979   |       4,541        |      3       |     73     |
+| asoul一个魂儿  |   14,387   |        894         |      4       |     18     |
 
 </details>
