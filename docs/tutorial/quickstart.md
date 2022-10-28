@@ -69,7 +69,7 @@
 
 你可以通过`portrait`获取用户头像，例如[我的头像](http://tb.himg.baidu.com/sys/portraith/item/tb.1.8277e641.gUE2cTq4A4z5fi2EHn5k3Q)
 
-你可以在[client.py](https://github.com/Starry-OvO/Tieba-Manager/blob/master/aiotieba/client.py)中搜索`user.portrait`来查看`portrait`的具体应用场合
+你可以在[client.py](https://github.com/Starry-OvO/aiotieba/blob/master/aiotieba/client.py)中搜索`user.portrait`来查看`portrait`的具体应用场合
 
 ### user_id
 
@@ -81,7 +81,7 @@
 
 `user_id`是一个`uint64`值（仅有一些远古时期的ip账号不符合这个规则）
 
-你可以在[client.py](https://github.com/Starry-OvO/Tieba-Manager/blob/master/aiotieba/client.py)中搜索`user.user_id`来查看`user_id`的具体应用场合
+你可以在[client.py](https://github.com/Starry-OvO/aiotieba/blob/master/aiotieba/client.py)中搜索`user.user_id`来查看`user_id`的具体应用场合
 
 `user_name` `portrait` `user_id` 都是满足唯一性的用户标识符，并可以通过其中任意一个的值反查其余两个
 
