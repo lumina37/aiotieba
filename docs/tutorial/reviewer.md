@@ -54,7 +54,7 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
-+ 自定义审查行为：请参照我给出的例子自己编程修改[reviewer_example.py](https://github.com/Starry-OvO/aiotieba/blob/master/docs/tutorials/reviewer_example.py)，这是[抗压背锅吧](https://tieba.baidu.com/f?kw=%E6%8A%97%E5%8E%8B%E8%83%8C%E9%94%85&ie=utf-8)审查规则的一个脱敏精简版本
++ 自定义审查行为：请参照我给出的例子自己编程修改[reviewer_example.py](https://github.com/Starry-OvO/aiotieba/blob/master/examples/reviewer_example.py)，这是[抗压背锅吧](https://tieba.baidu.com/f?kw=%E6%8A%97%E5%8E%8B%E8%83%8C%E9%94%85&ie=utf-8)审查规则的一个脱敏精简版本
 + 运行`your_reviewer.py`（对`Windows`平台，建议使用`pythonw.exe`无窗口运行，对`Linux`平台，建议使用如下的`nohup`指令在后台运行）
 
 ```shell

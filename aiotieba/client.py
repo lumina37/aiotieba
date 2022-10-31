@@ -278,7 +278,7 @@ class Client(object):
 
     _trust_env = False
 
-    latest_version: ClassVar[str] = "12.30.1.0"  # 这是目前的最新版本
+    latest_version: ClassVar[str] = "12.31.0.3"  # 这是目前的最新版本
     # no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
     post_version: ClassVar[str] = "9.1.0.0"  # 发帖使用极速版
 
