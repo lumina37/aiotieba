@@ -1139,7 +1139,7 @@ class Reviewer(BaseReviewer):
         """
         debug审查
 
-        在页码(7, 16]上测试审查规则
+        在页码(0, 8]上测试审查规则
         请在投入生产环境前使用该方法执行最终检查
         并仔细观察是否存在误删误封的情况
         该方法不会实际执行删封操作
@@ -1162,7 +1162,7 @@ class Reviewer(BaseReviewer):
         self.time_thre_closure = self.time_threshold()
 
         def pn_iterator(_):
-            return range(16, 7, -1)
+            return range(8, 0, -1)
 
         self.multi_pn_iterator = types.MethodType(pn_iterator, self)
 
