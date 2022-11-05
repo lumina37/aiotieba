@@ -47,7 +47,7 @@ import aiotieba as tb
 
 
 async def main() -> None:
-    async with tb.Database("在这里填你要审查的贴吧名") as brow:
+    async with tb.MySQLDB("在这里填你要审查的贴吧名") as brow:
         await brow.create_database()
 
 
