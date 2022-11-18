@@ -100,11 +100,13 @@ class UserInfo(object):
         fan_num (int): 粉丝数
         follow_num (int): 关注数
         sign (str): 个性签名
+        virtual_state (str): 虚拟形象状态签名
         ip (str): ip归属地
 
         is_bawu (bool): 是否吧务
         is_vip (bool): 是否超级会员
         is_god (bool): 是否大神
+        has_virtual (bool): 是否设置虚拟形象
         priv_like (int): 公开关注吧列表的设置状态
         priv_reply (int): 帖子评论权限的设置状态
 
@@ -125,10 +127,12 @@ class UserInfo(object):
         '_fan_num',
         '_follow_num',
         '_sign',
+        '_virtual_state',
         '_ip',
         '_is_bawu',
         '_is_vip',
         '_is_god',
+        '_has_virtual',
         '_priv_like',
         '_priv_reply',
     ]
@@ -149,11 +153,13 @@ class UserInfo(object):
             self._fan_num = _raw_data.fans_num
             self._follow_num = _raw_data.concern_num
             self._sign = _raw_data.intro
+            self._virtual_state = _raw_data.virtual_image_info.personal_state.text
             self._ip = _raw_data.ip_address
 
             self._is_bawu = bool(_raw_data.is_bawu)
             self._is_vip = True if _raw_data.new_tshow_icon else bool(_raw_data.vipInfo.v_status)
             self._is_god = bool(_raw_data.new_god_data.status)
+            self._has_virtual = bool(_raw_data.virtual_image_info.isset_virtual_image)
             self.priv_like = _raw_data.priv_sets.like
             self.priv_reply = _raw_data.priv_sets.reply
 
@@ -171,11 +177,13 @@ class UserInfo(object):
             self._fan_num = 0
             self._follow_num = 0
             self._sign = ''
+            self._virtual_state = ''
             self._ip = ''
 
             self._is_bawu = False
             self._is_vip = False
             self._is_god = False
+            self._has_virtual = False
             self._priv_like = 1
             self._priv_reply = 1
 
@@ -425,6 +433,18 @@ class UserInfo(object):
         self._sign = new_sign
 
     @property
+    def virtual_state(self) -> str:
+        """
+        虚拟形象状态签名
+        """
+
+        return self._virtual_state
+
+    @virtual_state.setter
+    def virtual_state(self, new_virtual_state: str) -> None:
+        self._virtual_state = new_virtual_state
+
+    @property
     def ip(self) -> str:
         """
         ip归属地
@@ -471,6 +491,18 @@ class UserInfo(object):
     @is_god.setter
     def is_god(self, new_is_god: bool) -> None:
         self._is_god = new_is_god
+
+    @property
+    def has_virtual(self) -> bool:
+        """
+        是否设置虚拟形象
+        """
+
+        return self._has_virtual
+
+    @has_virtual.setter
+    def has_virtual(self, new_has_virtual: bool) -> None:
+        self._has_virtual = new_has_virtual
 
     @property
     def priv_like(self) -> int:

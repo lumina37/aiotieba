@@ -56,4 +56,12 @@ message User {
     int32 is_default_avatar = 106;
     string tieba_uid = 120;
     string ip_address = 127;
+    message VirtualImageInfo {
+        int32 isset_virtual_image = 1;
+        message StateInfo {
+            string text = 2;
+        }
+        StateInfo personal_state = 9;
+    }
+    VirtualImageInfo virtual_image_info = 136;
 }
