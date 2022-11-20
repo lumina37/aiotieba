@@ -12,7 +12,7 @@ from ._logger import LOG
 from .client import Client, ReqUInfo
 from .database import MySQLDB, SQLiteDB
 from .reviewer import BaseReviewer, Ops, Punish, Reviewer
-from .typedefs import (
+from .typedef import (
     Appeal,
     Appeals,
     At,
@@ -59,10 +59,11 @@ from .typedefs import (
     UserInfo,
     UserPost,
     UserPosts,
+    VirtualImage,
     VoteInfo,
 )
 
-__version__ = "2.9.6b1"
+__version__ = "2.9.6"
 
 if os.name == 'posix':
     import signal

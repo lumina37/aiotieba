@@ -12,6 +12,7 @@ __all__ = [
     'BasicForum',
     'Page',
     'VoteInfo',
+    'VirtualImage',
     'ShareThread',
     'Thread',
     'Threads',
@@ -78,6 +79,55 @@ from .protobuf import GetDislikeListResIdl_pb2, Page_pb2, ThreadInfo_pb2, User_p
 _TypeMessage = TypeVar('_TypeMessage', bound=Message)
 
 
+class VirtualImage(object):
+    """
+    虚拟形象信息
+
+    Attributes:
+        enabled (bool): 是否启用虚拟形象
+        state (str): 虚拟形象状态签名
+    """
+
+    __slots__ = [
+        '_enabled',
+        '_state',
+    ]
+
+    def __init__(self, enabled: bool = False, state: str = '') -> None:
+        self._enabled = enabled
+        self._state = state
+
+    def __str__(self) -> str:
+        return self._state
+
+    def __repr__(self) -> str:
+        return str(
+            {
+                'enabled': self.enabled,
+                'state': self.state,
+            }
+        )
+
+    def __bool__(self) -> bool:
+        return self._enabled
+
+    @property
+    def enabled(self) -> bool:
+        """
+        是否启用虚拟形象
+        """
+
+        return self._enabled
+
+    @property
+    def state(self) -> str:
+        """
+        虚拟形象状态签名
+        """
+
+        return self._state
+
+
 class UserInfo(object):
     """
     用户信息
@@ -100,13 +150,12 @@ class UserInfo(object):
         fan_num (int): 粉丝数
         follow_num (int): 关注数
         sign (str): 个性签名
-        virtual_state (str): 虚拟形象状态签名
         ip (str): ip归属地
+        vimage (VirtualImage): 虚拟形象信息
 
         is_bawu (bool): 是否吧务
         is_vip (bool): 是否超级会员
         is_god (bool): 是否大神
-        has_virtual (bool): 是否设置虚拟形象
         priv_like (int): 公开关注吧列表的设置状态
         priv_reply (int): 帖子评论权限的设置状态
 
@@ -127,12 +176,11 @@ class UserInfo(object):
         '_fan_num',
         '_follow_num',
         '_sign',
-        '_virtual_state',
+        '_vimage',
         '_ip',
         '_is_bawu',
         '_is_vip',
         '_is_god',
-        '_has_virtual',
         '_priv_like',
         '_priv_reply',
     ]
@@ -153,13 +201,14 @@ class UserInfo(object):
             self._fan_num = _raw_data.fans_num
             self._follow_num = _raw_data.concern_num
             self._sign = _raw_data.intro
-            self._virtual_state = _raw_data.virtual_image_info.personal_state.text
             self._ip = _raw_data.ip_address
+            self._vimage = VirtualImage(
+                bool(_raw_data.virtual_image_info.isset_virtual_image), _raw_data.virtual_image_info.personal_state.text
+            )
 
             self._is_bawu = bool(_raw_data.is_bawu)
             self._is_vip = True if _raw_data.new_tshow_icon else bool(_raw_data.vipInfo.v_status)
             self._is_god = bool(_raw_data.new_god_data.status)
-            self._has_virtual = bool(_raw_data.virtual_image_info.isset_virtual_image)
             self.priv_like = _raw_data.priv_sets.like
             self.priv_reply = _raw_data.priv_sets.reply
 
@@ -177,13 +226,12 @@ class UserInfo(object):
             self._fan_num = 0
             self._follow_num = 0
             self._sign = ''
-            self._virtual_state = ''
+            self._vimage = VirtualImage()
             self._ip = ''
 
             self._is_bawu = False
             self._is_vip = False
             self._is_god = False
-            self._has_virtual = False
             self._priv_like = 1
             self._priv_reply = 1
 
@@ -433,18 +481,6 @@ class UserInfo(object):
         self._sign = new_sign
 
     @property
-    def virtual_state(self) -> str:
-        """
-        虚拟形象状态签名
-        """
-
-        return self._virtual_state
-
-    @virtual_state.setter
-    def virtual_state(self, new_virtual_state: str) -> None:
-        self._virtual_state = new_virtual_state
-
-    @property
     def ip(self) -> str:
         """
         ip归属地
@@ -455,6 +491,18 @@ class UserInfo(object):
     @ip.setter
     def ip(self, new_ip: str) -> None:
         self._ip = new_ip
+
+    @property
+    def vimage(self) -> VirtualImage:
+        """
+        虚拟形象信息
+        """
+
+        return self._vimage
+
+    @vimage.setter
+    def vimage(self, new_vimage: VirtualImage) -> None:
+        self._vimage = new_vimage
 
     @property
     def is_bawu(self) -> bool:
@@ -491,18 +539,6 @@ class UserInfo(object):
     @is_god.setter
     def is_god(self, new_is_god: bool) -> None:
         self._is_god = new_is_god
-
-    @property
-    def has_virtual(self) -> bool:
-        """
-        是否设置虚拟形象
-        """
-
-        return self._has_virtual
-
-    @has_virtual.setter
-    def has_virtual(self, new_has_virtual: bool) -> None:
-        self._has_virtual = new_has_virtual
 
     @property
     def priv_like(self) -> int:
@@ -2088,10 +2124,10 @@ class Threads(_Containers[Thread]):
 
                 for thread, _proto in zip(threads, self._objs):
                     thread._fname = self.forum.fname
-                    user = users[thread.author_id]
-                    user.has_virtual = bool(_proto.custom_figure.background_type)
-                    user.virtual_state = _proto.custom_state.content
-                    thread._user = user
+                    thread._user = users[thread.author_id]
+                    thread._user.vimage = VirtualImage(
+                        bool(_proto.custom_figure.background_value), _proto.custom_state.content
+                    )
 
                 self._objs = threads
 
@@ -2394,16 +2430,19 @@ class Posts(_Containers[Post]):
         if not isinstance(self._objs, list):
             if self._objs is not None:
 
-                self._objs = [Post(_proto) for _proto in self._objs]
+                posts = [Post(_proto) for _proto in self._objs]
                 users = {user.user_id: user for _proto in self._users if (user := UserInfo(_raw_data=_proto)).user_id}
                 self._users = None
 
-                for post in self._objs:
+                for post, _proto in zip(posts, self._objs):
 
                     post._fid = self.forum.fid
                     post._fname = self.forum.fname
                     post._tid = self.thread.tid
                     post._user = users.get(post.author_id, None)
+                    post._user.vimage = VirtualImage(
+                        bool(_proto.custom_figure.background_value), _proto.custom_state.content
+                    )
                     post._is_thread_author = self.thread.author_id == post.author_id
 
                     for comment in post.comments:
@@ -2411,6 +2450,8 @@ class Posts(_Containers[Post]):
                         comment._fname = post.fname
                         comment._tid = post.tid
                         comment._user = users.get(comment.author_id, None)
+
+                self._objs = posts
 
             else:
                 self._objs = []

@@ -58,7 +58,7 @@ message ThreadInfo {
     int32 is_deleted = 181;
     int32 is_frs_mask = 198;
     message CustomFigure {
-        string background_type = 2;
+        string background_value = 3;
     }
     CustomFigure custom_figure = 211;
     message CustomState {
