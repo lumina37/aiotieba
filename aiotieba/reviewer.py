@@ -20,11 +20,11 @@ import types
 from collections.abc import Callable, Iterator
 from typing import List, Literal, Optional, Tuple, Union
 
-from ._helpers import alog_time
+from ._helper import alog_time
 from ._logger import LOG
 from .client import Client, ReqUInfo, _ForumInfoCache
 from .database import MySQLDB, SQLiteDB
-from .typedefs import Comment, Comments, Post, Posts, Thread, Threads, UserInfo
+from .typedef import Comment, Comments, Post, Posts, Thread, Threads, UserInfo
 
 
 class BaseReviewer(object):

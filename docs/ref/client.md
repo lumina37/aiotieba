@@ -68,7 +68,7 @@ async def `get_fname`(*fid: int*) -> *str*
 </div>
 
 
-async def `get_user_info`(*_id: str | int*, /, *require: [ReqUInfo](#requinfo) = [ReqUInfo](#requinfo).ALL*) -> *[UserInfo](typedefs.md#userinfo)*
+async def `get_user_info`(*_id: str | int*, /, *require: [ReqUInfo](#requinfo) = [ReqUInfo](#requinfo).ALL*) -> *[UserInfo](typedef.md#userinfo)*
 
 <div class="docstring" markdown="1">
 获取用户信息
@@ -81,7 +81,7 @@ async def `get_user_info`(*_id: str | int*, /, *require: [ReqUInfo](#requinfo) =
 **返回**: 用户信息
 </div>
 
-async def `get_threads`(*fname_or_fid: str | int*, /, *pn: int = 1*, \*, *rn: int = 30*, *sort: int = 5*, *is_good: bool = False*) -> *[Threads](typedefs.md#threads)*
+async def `get_threads`(*fname_or_fid: str | int*, /, *pn: int = 1*, \*, *rn: int = 30*, *sort: int = 5*, *is_good: bool = False*) -> *[Threads](typedef.md#threads)*
 
 <div class="docstring" markdown="1">
 获取首页帖子

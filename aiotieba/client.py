@@ -28,8 +28,8 @@ from Crypto.PublicKey import RSA
 from google.protobuf.json_format import ParseDict
 
 from ._config import CONFIG
-from ._exceptions import ContentTypeError, TiebaServerError
-from ._helpers import JSON_DECODE_FUNC
+from ._exception import ContentTypeError, TiebaServerError
+from ._helper import JSON_DECODE_FUNC
 from ._logger import LOG
 from .protobuf import (
     CommitPersonalMsgReqIdl_pb2,
@@ -61,7 +61,7 @@ from .protobuf import (
     UserPostReqIdl_pb2,
     UserPostResIdl_pb2,
 )
-from .typedefs import (
+from .typedef import (
     Appeals,
     Ats,
     BlacklistUsers,
