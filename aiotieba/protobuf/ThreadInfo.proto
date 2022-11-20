@@ -57,4 +57,12 @@ message ThreadInfo {
     int32 tab_id = 175;
     int32 is_deleted = 181;
     int32 is_frs_mask = 198;
+    message CustomFigure {
+        string background_type = 2;
+    }
+    CustomFigure custom_figure = 211;
+    message CustomState {
+        string content = 2;
+    }
+    CustomState custom_state = 212;
 }

@@ -2082,13 +2082,18 @@ class Threads(_Containers[Thread]):
         if not isinstance(self._objs, list):
             if self._objs is not None:
 
-                self._objs = [Thread(_proto) for _proto in self._objs]
+                threads = [Thread(_proto) for _proto in self._objs]
                 users = {user.user_id: user for _proto in self._users if (user := UserInfo(_raw_data=_proto)).user_id}
                 self._users = None
 
-                for thread in self._objs:
+                for thread, _proto in zip(threads, self._objs):
                     thread._fname = self.forum.fname
-                    thread._user = users[thread.author_id]
+                    user = users[thread.author_id]
+                    user.has_virtual = bool(_proto.custom_figure.background_type)
+                    user.virtual_state = _proto.custom_state.content
+                    thread._user = user
+
+                self._objs = threads
 
             else:
                 self._objs = []
