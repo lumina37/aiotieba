@@ -24,16 +24,16 @@
 
 **aiotieba**使用[**asyncio**](https://tutorial.python.org/zh-cn/3/library/asyncio.html)和[**aiohttp**](https://github.com/aio-libs/aiohttp)封装了大量操作[百度贴吧核心API](https://github.com/Starry-OvO/aiotieba/blob/master/aiotieba/client.py)的简便方法，并为吧务管理设计了一套[内容审查脚手架](https://github.com/Starry-OvO/aiotieba/blob/master/aiotieba/reviewer.py)
 
-本框架以提高二次开发速度为首要设计目标。规范且符合直觉的命名规律、全覆盖的类型注解和文档注释让你体验飞一般的开发体验
+本框架以提高二次开发速度为首要设计目标。规范且符合直觉的命名规律、全覆盖的类型注解和方法注释让你体验飞一般的开发体验
 
 <details>
 
 <summary>贴吧接口列表</summary>
 
 + 按回复时间/发布时间/热门序获取贴吧主题帖/精华帖列表。支持获取带转发/投票/转发嵌套投票/各种卡片的主题帖信息
-+ 获取带图片链接/小尾巴内容/点赞情况/用户信息（[用户名](https://starry-ovo.github.io/aiotieba/tutorial/quickstart#user_name)/[portrait](https://starry-ovo.github.io/aiotieba/tutorial/quickstart#portrait)/[user_id](https://starry-ovo.github.io/aiotieba/tutorial/quickstart#user_id)/等级/性别/是否锁回复）/每条回复的前排楼中楼（支持按或不按点赞数排序）的楼层列表
++ 获取带图片链接/小尾巴内容/点赞情况/用户信息（[用户名](https://v-8.top/tutorial/quickstart#user_name)/[portrait](https://v-8.top/tutorial/quickstart#portrait)/[user_id](https://v-8.top/tutorial/quickstart#user_id)/等级/性别/是否锁回复）/每条回复的前排楼中楼（支持按或不按点赞数排序）的楼层列表
 + 获取带所有前述用户信息的楼中楼列表
-+ 根据[用户名](https://starry-ovo.github.io/aiotieba/tutorial/quickstart#user_name)/[portrait](https://starry-ovo.github.io/aiotieba/tutorial/quickstart#portrait)/[user_id](https://starry-ovo.github.io/aiotieba/tutorial/quickstart#user_id)中的任一项反查其他用户信息，或通过用户主页的[tieba_uid](https://starry-ovo.github.io/aiotieba/tutorial/quickstart#tieba_uid)反查其他用户信息
++ 根据[用户名](https://v-8.top/tutorial/quickstart#user_name)/[portrait](https://v-8.top/tutorial/quickstart#portrait)/[user_id](https://v-8.top/tutorial/quickstart#user_id)中的任一项反查其他用户信息，或通过用户主页的[tieba_uid](https://v-8.top/tutorial/quickstart#tieba_uid)反查其他用户信息
 + 使用小吧主、语音小编的账号删帖/屏蔽/封禁。支持删除视频帖/批量删帖/多于1天的封禁
 + 使用已被大吧主分配解封/恢复/处理申诉权限的吧务账号解封/恢复/处理申诉
 + 使用大吧主账号推荐帖子到首页/移动帖子到指定分区/加精/撤精/置顶/撤置顶/添加黑名单/查看黑名单/取消黑名单
@@ -78,7 +78,7 @@ async def main():
 asyncio.run(main())
 ```
 
-+ 继续阅读[**入门教程**](https://starry-ovo.github.io/aiotieba/tutorial/quickstart)
++ 继续阅读[**入门教程**](https://v-8.top/tutorial/quickstart)
 
 ## 友情链接
 
@@ -87,24 +87,23 @@ asyncio.run(main())
 
 ## 客户名单
 
-<details><summary>2022.10.05更新</summary>
+<details><summary>2022.11.20更新</summary>
 
 |      吧名      | 关注用户数 | 最近29天日均访问量 | 日均主题帖数 | 日均回复数 |
 | :------------: | :--------: | :----------------: | :----------: | :--------: |
-|    抗压背锅    | 4,112,086  |      704,813       |    2,162     |   77,347   |
-|     孙笑川     | 2,606,342  |      597,703       |    7,224     |  202,691   |
-|    lol半价     | 1,963,517  |      101,934       |     373      |   5,450    |
-|      宫漫      | 1,350,310  |       51,353       |     221      |   3,280    |
-|    逆水寒ol    |  715,117   |       34,849       |     115      |   2,106    |
-|    新孙笑川    |  369,846   |       55,767       |     424      |   18,980   |
-|     vtuber     |  215,299   |       11,619       |      66      |    831     |
-|     asoul      |  157,513   |       12,916       |      93      |    529     |
-|      嘉然      |   57,510   |       12,972       |     105      |   1,498    |
-|      向晚      |   30,060   |       12,235       |      99      |   1,283    |
-|      贝拉      |   21,663   |       9,920        |      46      |    825     |
-|      乃琳      |   17,116   |       3,990        |      22      |    297     |
-| vtuber自由讨论 |   16,828   |       4,246        |      3       |     59     |
-| asoul一个魂儿  |   14,476   |        977         |      5       |     37     |
-|     贝贝珈     |   1,608    |        685         |      2       |     15     |
+|    抗压背锅    | 4,297,600  |     1,346,462      |    3,602     |   87,919   |
+|     孙笑川     | 2,867,558  |      571,445       |    5,317     |  151,279   |
+|    lol半价     | 1,976,938  |      102,687       |     342      |   5,162    |
+|      宫漫      | 1,385,076  |       33,628       |     159      |   1,768    |
+|    逆水寒ol    |  719,939   |       27,041       |     103      |   1,915    |
+|    新孙笑川    |  470,700   |       53,570       |     650      |   15,080   |
+|     vtuber     |  218,818   |       10,819       |      57      |    686     |
+|     asoul      |  156,629   |       11,946       |     102      |    506     |
+|      嘉然      |   58,623   |       14,485       |     125      |   1,561    |
+|      向晚      |   30,468   |       11,727       |      98      |   1,235    |
+|      贝拉      |   21,735   |       8,458        |      38      |    565     |
+|      乃琳      |   17,262   |       6,120        |      36      |    546     |
+| vtuber自由讨论 |   17,023   |       4,058        |      2       |     50     |
+| asoul一个魂儿  |   14,281   |        878         |      4       |     15     |
 
 </details>

@@ -117,12 +117,8 @@ async def test_Posts_and_Fragments(client: tb.Client):
     assert frag.is_external is True
 
     # Test FragVoice
-    frag = posts[5].contents.voice
-    assert isinstance(frag.voice_md5, str)
-    assert frag.voice_md5 != ""
-    frag = posts[4].comments[0].contents.voice
-    assert isinstance(frag.voice_md5, str)
-    assert frag.voice_md5 != ""
+    assert posts[5].contents.has_voice is True
+    assert posts[4].comments[0].contents.has_voice is True
 
     # Test FragImage
     frag = posts[7].contents.imgs[0]
@@ -175,9 +171,7 @@ def check_ShareThread(thread: tb.ShareThread):
     assert isinstance(frag.is_external, bool)
 
     # Test FragVoice
-    frag = thread.contents.voice
-    assert isinstance(frag.voice_md5, str)
-    assert frag.voice_md5 != ""
+    assert thread.contents.has_voice is True
 
     # Test FragImage
     frag = thread.contents.imgs[0]

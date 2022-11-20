@@ -329,117 +329,6 @@ class Listener(object):
 
         return success
 
-    @check_and_log(need_permission=0, need_arg_num=0)
-    async def cmd_holyshit(self, ctx: Context) -> None:
-        """
-        holyshit指令
-        召唤4名活跃吧务，使用参数extra_info来附带额外的召唤需求
-        """
-
-        if not self.time_recorder.allow_execute():
-            raise ValueError("speaker尚未冷却完毕")
-
-        active_admin_list = [
-            (await self.listener.get_user_info(user_id, tb.ReqUInfo.USER_NAME)).user_name
-            for user_id in await ctx.admin.db.get_user_id_list(lower_permission=2, limit=5)
-        ]
-        extra_info = ctx.args[0] if len(ctx.args) else '无'
-        content = f"该回复为吧务召唤指令@.v_guard holyshit的自动响应\n召唤人诉求: {extra_info} @" + " @".join(active_admin_list)
-
-        if await ctx.speaker.add_post(ctx.fname, ctx.tid, content):
-            await ctx.admin.del_post(ctx.pid)
-
-    @check_and_log(need_permission=1, need_arg_num=0)
-    async def cmd_recommend(self, ctx: Context) -> None:
-        """
-        recommend指令
-        对指令所在主题帖执行“大吧主首页推荐”操作
-        """
-
-        if await ctx.admin.client.recommend(ctx.fname, ctx.tid):
-            await ctx.admin.del_post(ctx.pid)
-
-    @check_and_log(need_permission=2, need_arg_num=1)
-    async def cmd_move(self, ctx: Context) -> None:
-        """
-        move指令
-        将指令所在主题帖移动至名为tab_name的分区
-        """
-
-        if not (threads := await self.listener.client.get_threads(ctx.fname)):
-            return
-
-        from_tab_id = 0
-        for thread in threads:
-            if thread.tid == ctx.tid:
-                from_tab_id = thread.tab_id
-        to_tab_id = threads.tab_map.get(ctx.args[0], 0)
-
-        if await ctx.admin.client.move(ctx.fname, ctx.tid, to_tab_id=to_tab_id, from_tab_id=from_tab_id):
-            await ctx.admin.del_post(ctx.pid)
-
-    @check_and_log(need_permission=2, need_arg_num=0)
-    async def cmd_good(self, ctx: Context) -> None:
-        """
-        good指令
-        将指令所在主题帖加到以cname为名的精华分区。cname默认为''即不分区
-        """
-
-        cname = ctx.args[0] if len(ctx.args) else ''
-
-        if await ctx.admin.client.good(ctx.fname, ctx.tid, cname=cname):
-            await ctx.admin.del_post(ctx.pid)
-
-    @check_and_log(need_permission=2, need_arg_num=0)
-    async def cmd_ungood(self, ctx: Context) -> None:
-        """
-        ungood指令
-        撤销指令所在主题帖的精华
-        """
-
-        if await ctx.admin.client.ungood(ctx.fname, ctx.tid):
-            await ctx.admin.del_post(ctx.pid)
-
-    @check_and_log(need_permission=4, need_arg_num=0)
-    async def cmd_top(self, ctx: Context) -> None:
-        """
-        top指令
-        置顶指令所在主题帖
-        """
-
-        if await ctx.admin.client.top(ctx.fname, ctx.tid):
-            await ctx.admin.del_post(ctx.pid)
-
-    @check_and_log(need_permission=4, need_arg_num=0)
-    async def cmd_untop(self, ctx: Context) -> None:
-        """
-        untop指令
-        撤销指令所在主题帖的置顶
-        """
-
-        if await ctx.admin.client.untop(ctx.fname, ctx.tid):
-            await ctx.admin.del_post(ctx.pid)
-
-    @check_and_log(need_permission=2, need_arg_num=0)
-    async def cmd_hide(self, ctx: Context) -> None:
-        """
-        hide指令
-        屏蔽指令所在主题帖
-        """
-
-        if await ctx.admin.hide_thread(ctx.tid):
-            await ctx.admin.del_post(ctx.pid)
-
-    @check_and_log(need_permission=2, need_arg_num=0)
-    async def cmd_unhide(self, ctx: Context) -> None:
-        """
-        unhide指令
-        解除指令所在主题帖的屏蔽
-        """
-
-        if await ctx.admin.client.unhide_thread(ctx.fname, ctx.tid):
-            await ctx.admin.del_post(ctx.pid)
-
     @check_and_log(need_permission=2, need_arg_num=0)
     async def cmd_delete(self, ctx: Context) -> None:
         """
@@ -466,6 +355,26 @@ class Listener(object):
             success = await ctx.admin.client.recover_post(ctx.fname, _id)
 
         if success:
+            await ctx.admin.del_post(ctx.pid)
+
+    @check_and_log(need_permission=2, need_arg_num=0)
+    async def cmd_hide(self, ctx: Context) -> None:
+        """
+        hide指令
+        屏蔽指令所在主题帖
+        """
+
+        if await ctx.admin.hide_thread(ctx.tid):
+            await ctx.admin.del_post(ctx.pid)
+
+    @check_and_log(need_permission=2, need_arg_num=0)
+    async def cmd_unhide(self, ctx: Context) -> None:
+        """
+        unhide指令
+        解除指令所在主题帖的屏蔽
+        """
+
+        if await ctx.admin.client.unhide_thread(ctx.fname, ctx.tid):
             await ctx.admin.del_post(ctx.pid)
 
     @check_and_log(need_permission=2, need_arg_num=1)
@@ -582,6 +491,77 @@ class Listener(object):
         await ctx.admin.del_post(ctx.pid)
         await asyncio.gather(*coros)
 
+    @check_and_log(need_permission=1, need_arg_num=0)
+    async def cmd_recommend(self, ctx: Context) -> None:
+        """
+        recommend指令
+        对指令所在主题帖执行“大吧主首页推荐”操作
+        """
+
+        if await ctx.admin.client.recommend(ctx.fname, ctx.tid):
+            await ctx.admin.del_post(ctx.pid)
+
+    @check_and_log(need_permission=2, need_arg_num=1)
+    async def cmd_move(self, ctx: Context) -> None:
+        """
+        move指令
+        将指令所在主题帖移动至名为tab_name的分区
+        """
+
+        if not (threads := await self.listener.client.get_threads(ctx.fname)):
+            return
+
+        from_tab_id = 0
+        for thread in threads:
+            if thread.tid == ctx.tid:
+                from_tab_id = thread.tab_id
+        to_tab_id = threads.tab_map.get(ctx.args[0], 0)
+
+        if await ctx.admin.client.move(ctx.fname, ctx.tid, to_tab_id=to_tab_id, from_tab_id=from_tab_id):
+            await ctx.admin.del_post(ctx.pid)
+
+    @check_and_log(need_permission=2, need_arg_num=0)
+    async def cmd_good(self, ctx: Context) -> None:
+        """
+        good指令
+        将指令所在主题帖加到以cname为名的精华分区。cname默认为''即不分区
+        """
+
+        cname = ctx.args[0] if len(ctx.args) else ''
+
+        if await ctx.admin.client.good(ctx.fname, ctx.tid, cname=cname):
+            await ctx.admin.del_post(ctx.pid)
+
+    @check_and_log(need_permission=2, need_arg_num=0)
+    async def cmd_ungood(self, ctx: Context) -> None:
+        """
+        ungood指令
+        撤销指令所在主题帖的精华
+        """
+
+        if await ctx.admin.client.ungood(ctx.fname, ctx.tid):
+            await ctx.admin.del_post(ctx.pid)
+
+    @check_and_log(need_permission=4, need_arg_num=0)
+    async def cmd_top(self, ctx: Context) -> None:
+        """
+        top指令
+        置顶指令所在主题帖
+        """
+
+        if await ctx.admin.client.top(ctx.fname, ctx.tid):
+            await ctx.admin.del_post(ctx.pid)
+
+    @check_and_log(need_permission=4, need_arg_num=0)
+    async def cmd_untop(self, ctx: Context) -> None:
+        """
+        untop指令
+        撤销指令所在主题帖的置顶
+        """
+
+        if await ctx.admin.client.untop(ctx.fname, ctx.tid):
+            await ctx.admin.del_post(ctx.pid)
+
     @check_and_log(need_permission=4, need_arg_num=1)
     async def cmd_black(self, ctx: Context) -> None:
         """
@@ -666,6 +646,26 @@ class Listener(object):
             ctx.speaker.send_msg(ctx.user.user_id, msg_content),
         )
         if success:
+            await ctx.admin.del_post(ctx.pid)
+
+    @check_and_log(need_permission=0, need_arg_num=0)
+    async def cmd_holyshit(self, ctx: Context) -> None:
+        """
+        holyshit指令
+        召唤4名活跃吧务，使用参数extra_info来附带额外的召唤需求
+        """
+
+        if not self.time_recorder.allow_execute():
+            raise ValueError("speaker尚未冷却完毕")
+
+        active_admin_list = [
+            (await self.listener.get_user_info(user_id, tb.ReqUInfo.USER_NAME)).user_name
+            for user_id in await ctx.admin.db.get_user_id_list(lower_permission=2, limit=5)
+        ]
+        extra_info = ctx.args[0] if len(ctx.args) else '无'
+        content = f"该回复为吧务召唤指令@.v_guard holyshit的自动响应\n召唤人诉求: {extra_info} @" + " @".join(active_admin_list)
+
+        if await ctx.speaker.add_post(ctx.fname, ctx.tid, content):
             await ctx.admin.del_post(ctx.pid)
 
     @check_and_log(need_permission=4, need_arg_num=2)
