@@ -1795,12 +1795,14 @@ class Thread(_Container):
         user (UserInfo): 发布者的用户信息
         author_id (int): 发布者的user_id
 
+        type (int): 帖子类型
         tab_id (int): 分区编号
         is_good (bool): 是否精品帖
         is_top (bool): 是否置顶帖
         is_share (bool): 是否分享帖
         is_hide (bool): 是否被屏蔽
         is_livepost (bool): 是否为置顶话题
+        is_help (bool): 是否为求助帖
 
         vote_info (VoteInfo): 投票信息
         share_origin (ShareThread): 转发来的原帖内容
@@ -1817,6 +1819,7 @@ class Thread(_Container):
         '_contents',
         '_title',
         '_tab_id',
+        '_type',
         '_is_good',
         '_is_top',
         '_is_share',
@@ -1848,6 +1851,7 @@ class Thread(_Container):
             self._author_id = _raw_data.author_id
 
             self._tab_id = _raw_data.tab_id
+            self._type = _raw_data.thread_type
             self._is_good = bool(_raw_data.is_good)
             self._is_top = bool(_raw_data.is_top)
             self._is_share = bool(_raw_data.is_share_thread)
@@ -1874,6 +1878,7 @@ class Thread(_Container):
             self._is_share = False
             self._is_hide = False
             self._is_livepost = False
+            self._is_help = False
 
             self._vote_info = None
             self._share_origin = None
@@ -1932,6 +1937,14 @@ class Thread(_Container):
         return self._title
 
     @property
+    def type(self) -> int:
+        """
+        帖子类型
+        """
+
+        return self._type
+
+    @property
     def tab_id(self) -> int:
         """
         帖子所在分区id
@@ -1978,6 +1991,14 @@ class Thread(_Container):
         """
 
         return self._is_livepost
+
+    @property
+    def is_help(self) -> bool:
+        """
+        是否为求助帖
+        """
+
+        return self._type == 71
 
     @property
     def vote_info(self) -> VoteInfo:
