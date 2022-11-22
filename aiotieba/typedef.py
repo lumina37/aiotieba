@@ -1850,8 +1850,8 @@ class Thread(_Container):
             self._user = UserInfo(_raw_data=_raw_data.author) if _raw_data.author.id else None
             self._author_id = _raw_data.author_id
 
-            self._tab_id = _raw_data.tab_id
             self._type = _raw_data.thread_type
+            self._tab_id = _raw_data.tab_id
             self._is_good = bool(_raw_data.is_good)
             self._is_top = bool(_raw_data.is_top)
             self._is_share = bool(_raw_data.is_share_thread)
@@ -1872,13 +1872,13 @@ class Thread(_Container):
             self._contents = None
             self._title = ''
 
+            self._type = 0
             self._tab_id = 0
             self._is_good = False
             self._is_top = False
             self._is_share = False
             self._is_hide = False
             self._is_livepost = False
-            self._is_help = False
 
             self._vote_info = None
             self._share_origin = None
