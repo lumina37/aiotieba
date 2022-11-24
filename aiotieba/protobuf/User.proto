@@ -64,4 +64,8 @@ message User {
         StateInfo personal_state = 9;
     }
     VirtualImageInfo virtual_image_info = 136;
+    message UserGrowth {
+        uint32 level_id = 1;
+    }
+    UserGrowth user_growth = 137;
 }

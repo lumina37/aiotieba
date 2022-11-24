@@ -149,6 +149,7 @@ class UserInfo(object):
         post_num (int): 发帖数
         fan_num (int): 粉丝数
         follow_num (int): 关注数
+        glevel (int): 贴吧成长等级
         sign (str): 个性签名
         ip (str): ip归属地
         vimage (VirtualImage): 虚拟形象信息
@@ -175,6 +176,7 @@ class UserInfo(object):
         '_post_num',
         '_fan_num',
         '_follow_num',
+        '_glevel',
         '_sign',
         '_vimage',
         '_ip',
@@ -200,6 +202,7 @@ class UserInfo(object):
             self._post_num = _raw_data.post_num
             self._fan_num = _raw_data.fans_num
             self._follow_num = _raw_data.concern_num
+            self._glevel = _raw_data.user_growth.level_id
             self._sign = _raw_data.intro
             self._ip = _raw_data.ip_address
             self._vimage = VirtualImage(
@@ -225,6 +228,7 @@ class UserInfo(object):
             self._post_num = 0
             self._fan_num = 0
             self._follow_num = 0
+            self._glevel = 0
             self._sign = ''
             self._vimage = VirtualImage()
             self._ip = ''
@@ -467,6 +471,18 @@ class UserInfo(object):
     @follow_num.setter
     def follow_num(self, new_follow_num: int) -> None:
         self._follow_num = new_follow_num
+
+    @property
+    def glevel(self) -> int:
+        """
+        贴吧成长等级
+        """
+
+        return self._glevel
+
+    @glevel.setter
+    def glevel(self, new_glevel: int) -> None:
+        self._glevel = new_glevel
 
     @property
     def sign(self) -> str:
