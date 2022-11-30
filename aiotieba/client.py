@@ -1737,9 +1737,9 @@ class Client(object):
 
         req_proto = ProfileReqIdl_pb2.ProfileReqIdl()
         req_proto.data.common._client_version = self.latest_version
+        req_proto.data.need_post_count = 1
         req_proto.data.friend_uid_portrait = user.portrait
         if with_threads:
-            req_proto.data.need_post_count = 1
             req_proto.data.common._client_type = 2
         req_proto.data.pn = 1
         req_proto.data.rn = 20
