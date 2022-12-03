@@ -278,7 +278,7 @@ class Client(object):
 
     _use_env_proxy = False
 
-    latest_version: ClassVar[str] = "12.32.5.1"  # 这是目前的最新版本
+    latest_version: ClassVar[str] = "12.32.5.2"  # 这是目前的最新版本
     # no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
     post_version: ClassVar[str] = "9.1.0.0"  # 发帖使用极速版
 
