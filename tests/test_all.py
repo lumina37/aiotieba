@@ -61,7 +61,7 @@ async def test_BasicUserInfo(client: tb.Client):
 
 @pytest.mark.asyncio
 async def test_Posts_and_Fragments(client: tb.Client):
-    posts = await client.get_posts(7763274602, only_thread_author=True, with_comments=True)
+    posts = await client.get_posts(7763274602, with_comments=True)
 
     # Test Post
     post = posts[6]
@@ -146,6 +146,9 @@ async def test_Posts_and_Fragments(client: tb.Client):
         assert isinstance(frag.text, str)
         assert frag.text != ""
         assert isinstance(frag.url, str)
+
+    # Test VirtualImage
+    assert posts[10].vimage.enabled is True
 
 
 def check_ShareThread(thread: tb.ShareThread):
