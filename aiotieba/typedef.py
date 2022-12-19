@@ -149,6 +149,7 @@ class UserInfo(object):
         post_num (int): 发帖数
         fan_num (int): 粉丝数
         follow_num (int): 关注数
+        glevel (int): 贴吧成长等级
         sign (str): 个性签名
         ip (str): ip归属地
         vimage (VirtualImage): 虚拟形象信息
@@ -175,6 +176,7 @@ class UserInfo(object):
         '_post_num',
         '_fan_num',
         '_follow_num',
+        '_glevel',
         '_sign',
         '_vimage',
         '_ip',
@@ -200,6 +202,7 @@ class UserInfo(object):
             self._post_num = _raw_data.post_num
             self._fan_num = _raw_data.fans_num
             self._follow_num = _raw_data.concern_num
+            self._glevel = _raw_data.user_growth.level_id
             self._sign = _raw_data.intro
             self._ip = _raw_data.ip_address
             self._vimage = VirtualImage(
@@ -225,6 +228,7 @@ class UserInfo(object):
             self._post_num = 0
             self._fan_num = 0
             self._follow_num = 0
+            self._glevel = 0
             self._sign = ''
             self._vimage = VirtualImage()
             self._ip = ''
@@ -467,6 +471,18 @@ class UserInfo(object):
     @follow_num.setter
     def follow_num(self, new_follow_num: int) -> None:
         self._follow_num = new_follow_num
+
+    @property
+    def glevel(self) -> int:
+        """
+        贴吧成长等级
+        """
+
+        return self._glevel
+
+    @glevel.setter
+    def glevel(self, new_glevel: int) -> None:
+        self._glevel = new_glevel
 
     @property
     def sign(self) -> str:
@@ -1794,13 +1810,16 @@ class Thread(_Container):
         pid (int): 首楼回复pid
         user (UserInfo): 发布者的用户信息
         author_id (int): 发布者的user_id
+        vimage (VirtualImage): 虚拟形象信息
 
+        type (int): 帖子类型
         tab_id (int): 分区编号
         is_good (bool): 是否精品帖
         is_top (bool): 是否置顶帖
         is_share (bool): 是否分享帖
         is_hide (bool): 是否被屏蔽
         is_livepost (bool): 是否为置顶话题
+        is_help (bool): 是否为求助帖
 
         vote_info (VoteInfo): 投票信息
         share_origin (ShareThread): 转发来的原帖内容
@@ -1816,7 +1835,9 @@ class Thread(_Container):
     __slots__ = [
         '_contents',
         '_title',
+        '_vimage',
         '_tab_id',
+        '_type',
         '_is_good',
         '_is_top',
         '_is_share',
@@ -1846,7 +1867,9 @@ class Thread(_Container):
             self._pid = _raw_data.first_post_id
             self._user = UserInfo(_raw_data=_raw_data.author) if _raw_data.author.id else None
             self._author_id = _raw_data.author_id
+            self._vimage = VirtualImage(bool(_raw_data.custom_figure.background_value), _raw_data.custom_state.content)
 
+            self._type = _raw_data.thread_type
             self._tab_id = _raw_data.tab_id
             self._is_good = bool(_raw_data.is_good)
             self._is_top = bool(_raw_data.is_top)
@@ -1868,6 +1891,9 @@ class Thread(_Container):
             self._contents = None
             self._title = ''
 
+            self._vimage = VirtualImage()
+
+            self._type = 0
             self._tab_id = 0
             self._is_good = False
             self._is_top = False
@@ -1932,6 +1958,22 @@ class Thread(_Container):
         return self._title
 
     @property
+    def vimage(self) -> VirtualImage:
+        """
+        虚拟形象信息
+        """
+
+        return self._vimage
+
+    @property
+    def type(self) -> int:
+        """
+        帖子类型
+        """
+
+        return self._type
+
+    @property
     def tab_id(self) -> int:
         """
         帖子所在分区id
@@ -1978,6 +2020,14 @@ class Thread(_Container):
         """
 
         return self._is_livepost
+
+    @property
+    def is_help(self) -> bool:
+        """
+        是否为求助帖
+        """
+
+        return self._type == 71
 
     @property
     def vote_info(self) -> VoteInfo:
@@ -2118,18 +2168,13 @@ class Threads(_Containers[Thread]):
         if not isinstance(self._objs, list):
             if self._objs is not None:
 
-                threads = [Thread(_proto) for _proto in self._objs]
+                self._objs = [Thread(_proto) for _proto in self._objs]
                 users = {user.user_id: user for _proto in self._users if (user := UserInfo(_raw_data=_proto)).user_id}
                 self._users = None
 
-                for thread, _proto in zip(threads, self._objs):
+                for thread in self._objs:
                     thread._fname = self.forum.fname
                     thread._user = users[thread.author_id]
-                    thread._user.vimage = VirtualImage(
-                        bool(_proto.custom_figure.background_value), _proto.custom_state.content
-                    )
-
-                self._objs = threads
 
             else:
                 self._objs = []
@@ -2202,6 +2247,7 @@ class Post(_Container):
         pid (int): 回复id
         user (UserInfo): 发布者的用户信息
         author_id (int): 发布者的user_id
+        vimage (VirtualImage): 虚拟形象信息
 
         floor (int): 楼层数
         reply_num (int): 楼中楼数
@@ -2215,6 +2261,7 @@ class Post(_Container):
         '_contents',
         '_sign',
         '_comments',
+        '_vimage',
         '_floor',
         '_reply_num',
         '_agree',
@@ -2236,6 +2283,7 @@ class Post(_Container):
             self._pid = _raw_data.id
             self._user = UserInfo(_raw_data=_raw_data.author) if _raw_data.author.id else None
             self._author_id = _raw_data.author_id
+            self._vimage = VirtualImage(bool(_raw_data.custom_figure.background_value), _raw_data.custom_state.content)
 
             self._floor = _raw_data.floor
             self._reply_num = _raw_data.sub_post_number
@@ -2247,6 +2295,8 @@ class Post(_Container):
             self._contents = None
             self._sign = None
             self._comments = None
+
+            self._vimage = VirtualImage()
 
             self._floor = 0
             self._reply_num = 0
@@ -2322,6 +2372,14 @@ class Post(_Container):
                 self._comments = []
 
         return self._comments
+
+    @property
+    def vimage(self) -> VirtualImage:
+        """
+        虚拟形象信息
+        """
+
+        return self._vimage
 
     @property
     def floor(self) -> int:
@@ -2430,19 +2488,16 @@ class Posts(_Containers[Post]):
         if not isinstance(self._objs, list):
             if self._objs is not None:
 
-                posts = [Post(_proto) for _proto in self._objs]
+                self._objs = [Post(_proto) for _proto in self._objs]
                 users = {user.user_id: user for _proto in self._users if (user := UserInfo(_raw_data=_proto)).user_id}
                 self._users = None
 
-                for post, _proto in zip(posts, self._objs):
+                for post in self._objs:
 
                     post._fid = self.forum.fid
                     post._fname = self.forum.fname
                     post._tid = self.thread.tid
                     post._user = users.get(post.author_id, None)
-                    post._user.vimage = VirtualImage(
-                        bool(_proto.custom_figure.background_value), _proto.custom_state.content
-                    )
                     post._is_thread_author = self.thread.author_id == post.author_id
 
                     for comment in post.comments:
@@ -2450,8 +2505,6 @@ class Posts(_Containers[Post]):
                         comment._fname = post.fname
                         comment._tid = post.tid
                         comment._user = users.get(comment.author_id, None)
-
-                self._objs = posts
 
             else:
                 self._objs = []

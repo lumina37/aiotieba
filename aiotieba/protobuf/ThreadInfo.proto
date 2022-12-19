@@ -16,6 +16,7 @@ message ThreadInfo {
     int32 is_good = 10;
     int32 is_voice_thread = 15;
     User author = 18;
+    int32 thread_type = 26;
     int64 fid = 27;
     string fname = 28;
     int32 is_livepost = 30;
