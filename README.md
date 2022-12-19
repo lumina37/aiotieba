@@ -7,7 +7,7 @@
 <div align="center">
 <p>
 <a href="https://github.com/Starry-OvO/aiotieba/actions">
-    <img src="https://img.shields.io/github/workflow/status/Starry-OvO/aiotieba/CI?label=CI&logo=github" alt="GitHub Workflow Status">
+    <img src="https://img.shields.io/github/actions/workflow/status/Starry-OvO/aiotieba/CI.yml?branch=develop&label=CI&logo=github" alt="GitHub Workflow Status">
 </a>
 <a href="https://pypi.org/project/aiotieba">
     <img src="https://img.shields.io/pypi/v/aiotieba?color=g" alt="PyPI - Version">
