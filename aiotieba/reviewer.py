@@ -419,19 +419,20 @@ class BaseReviewer(object):
 
         return img_hash
 
-    async def get_imghash(self, image: "np.ndarray") -> int:
+    async def get_imghash(self, image: "np.ndarray", hamming_distance: int=0) -> int:
         """
         获取图像的封锁级别
 
         Args:
             image (np.ndarray): 图像
+            hamming_distance: 最大海明距离 默认为0(图像phash完全一致)
 
         Returns:
             int: 封锁级别
         """
 
         if img_hash := self.compute_imghash(image):
-            return await self.db.get_imghash(img_hash)
+            return await self.db.get_imghash(img_hash, hamming_distance)
         return 0
 
     async def get_imghash_full(self, image: "np.ndarray") -> Tuple[int, str]:
