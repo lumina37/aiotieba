@@ -807,10 +807,10 @@ class Reviewer(BaseReviewer):
             Iterator[Post]: 待审查回复的迭代器
         """
 
-        posts = await self.get_posts(thread.tid, pn=99999, sort=1, with_comments=True)
+        posts = await self.get_posts(thread.tid, pn=99999, sort=1)
         posts = set(posts.objs)
         if thread.reply_num > 30:
-            first_posts = await self.get_posts(thread.tid, with_comments=True)
+            first_posts = await self.get_posts(thread.tid)
             posts.update(first_posts.objs)
 
         return posts
@@ -1051,7 +1051,7 @@ class Reviewer(BaseReviewer):
 
         time_thre = self.time_thre_closure()
 
-        posts = await self.get_posts(thread.tid, pn=99999, sort=1, with_comments=True)
+        posts = await self.get_posts(thread.tid, pn=99999, sort=1)
         if posts:
             for post in posts:
                 yield post
@@ -1061,7 +1061,7 @@ class Reviewer(BaseReviewer):
         if (total_page := posts.page.total_page) >= 2:
             for post_pn in range(total_page - 2, 0, -1):
                 LOG.debug(f"Scanning tid={thread.tid} pn={post_pn}")
-                posts = await self.get_posts(thread.tid, pn=post_pn, with_comments=True)
+                posts = await self.get_posts(thread.tid, pn=post_pn)
                 if posts:
                     for post in posts:
                         yield post
@@ -1112,15 +1112,12 @@ class Reviewer(BaseReviewer):
             Iterator[Comment]: 待审查楼中楼的迭代器
         """
 
-        reply_num = post.reply_num
-        if (reply_num <= 10 and len(post.comments) != reply_num) or reply_num > 10:
-            last_comments = await self.get_comments(post.tid, post.pid, pn=post.reply_num // 30 + 1)
-            comments = set(last_comments)
-            comments.update(post.comments)
-            return comments
+        if post.reply_num:
+            comments = await self.get_comments(post.tid, post.pid, pn=post.reply_num // 30 + 1)
+            return comments.objs
 
         else:
-            return post.comments
+            return []
 
     @_exce_punish
     @_check_permission
