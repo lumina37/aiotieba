@@ -399,7 +399,7 @@ class BaseReviewer(object):
 
         return res
 
-    def compute_imghash(self, image: "np.ndarray") -> str:
+    def compute_imghash(self, image: "np.ndarray") -> int:
         """
         计算图像的phash
 
@@ -407,47 +407,50 @@ class BaseReviewer(object):
             image (np.ndarray): 图像
 
         Returns:
-            str: 图像的phash
+            int: 图像的phash
         """
 
         try:
-            img_hash_array = self.img_hasher.compute(image)
-            img_hash = img_hash_array.tobytes().hex()
+            img_hash_array = self.img_hasher.compute(image).flatten()
+            img_hash = 0
+            for hash_num, shift in zip(img_hash_array, range(56, -1, -8)):
+                img_hash += int(hash_num) << shift
         except Exception as err:
             LOG.warning(err)
-            img_hash = ''
+            img_hash = 0
 
         return img_hash
 
-    async def get_imghash(self, image: "np.ndarray", hamming_distance: int=0) -> int:
+    async def get_imghash(self, image: "np.ndarray", *, hamming_dist: int = 0) -> int:
         """
         获取图像的封锁级别
 
         Args:
             image (np.ndarray): 图像
-            hamming_distance: 最大海明距离 默认为0(图像phash完全一致)
+            hamming_dist (int): 匹配的最大海明距离 默认为0 即要求图像phash完全一致
 
         Returns:
             int: 封锁级别
         """
 
         if img_hash := self.compute_imghash(image):
-            return await self.db.get_imghash(img_hash, hamming_distance)
+            return await self.db.get_imghash(img_hash, hamming_dist=hamming_dist)
         return 0
 
-    async def get_imghash_full(self, image: "np.ndarray") -> Tuple[int, str]:
+    async def get_imghash_full(self, image: "np.ndarray", *, hamming_dist: int = 0) -> Tuple[int, str]:
         """
         获取图像的完整信息
 
         Args:
             image (np.ndarray): 图像
+            hamming_dist (int): 匹配的最大海明距离 默认为0 即要求图像phash完全一致
 
         Returns:
             tuple[int, str]: 封锁级别, 备注
         """
 
         if img_hash := self.compute_imghash(image):
-            return await self.db.get_imghash_full(img_hash)
+            return await self.db.get_imghash_full(img_hash, hamming_dist=hamming_dist)
         return 0, ''
 
 

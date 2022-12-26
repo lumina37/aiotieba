@@ -137,7 +137,7 @@ class MySQLDB(object):
         try:
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
-                    await cursor.execute("SELECT `fid` FROM `forum` WHERE `fname`=%s", (fname,))
+                    await cursor.execute(f"SELECT `fid` FROM `forum` WHERE `fname`='{fname}'")
         except aiomysql.Error as err:
             LOG.warning(f"{err}. fname={self.fname}")
             return 0
@@ -160,7 +160,7 @@ class MySQLDB(object):
         try:
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
-                    await cursor.execute("SELECT `fname` FROM `forum` WHERE `fid`=%s", (fid,))
+                    await cursor.execute(f"SELECT `fname` FROM `forum` WHERE `fid`={fid}")
         except aiomysql.Error as err:
             LOG.warning(f"{err}. fid={fid}")
             return ''
@@ -184,7 +184,7 @@ class MySQLDB(object):
         try:
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
-                    await cursor.execute("INSERT IGNORE INTO `forum` VALUES (%s,%s)", (fid, fname))
+                    await cursor.execute(f"INSERT IGNORE INTO `forum` VALUES ({fid},'{fname}')")
         except aiomysql.Error as err:
             LOG.warning(f"{err}. fname={self.fname} fid={fid}")
             return False
@@ -220,11 +220,11 @@ class MySQLDB(object):
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     if user.user_id:
-                        await cursor.execute("SELECT * FROM `user` WHERE `user_id`=%s", (user.user_id,))
+                        await cursor.execute(f"SELECT * FROM `user` WHERE `user_id`={user.user_id}")
                     elif user.portrait:
-                        await cursor.execute("SELECT * FROM `user` WHERE `portrait`=%s", (user.portrait,))
+                        await cursor.execute(f"SELECT * FROM `user` WHERE `portrait`={user.portrait}")
                     elif user.user_name:
-                        await cursor.execute("SELECT * FROM `user` WHERE `user_name`=%s", (user.user_name,))
+                        await cursor.execute(f"SELECT * FROM `user` WHERE `user_name`={user.user_name}")
                     else:
                         raise ValueError("Null input")
         except Exception as err:
@@ -254,7 +254,7 @@ class MySQLDB(object):
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     await cursor.execute(
-                        "INSERT IGNORE INTO `user` VALUES (%s,%s,%s)", (user.user_id, user.user_name, user.portrait)
+                        f"INSERT IGNORE INTO `user` VALUES ({user.user_id}, {user.user_name}, {user.portrait})"
                     )
         except aiomysql.Error as err:
             LOG.warning(f"{err}. user={user}")
@@ -276,11 +276,11 @@ class MySQLDB(object):
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     if user.user_id:
-                        await cursor.execute("DELETE FROM `user` WHERE `user_id`=%s", (user.user_id,))
+                        await cursor.execute(f"DELETE FROM `user` WHERE `user_id`={user.user_id}")
                     elif user.portrait:
-                        await cursor.execute("DELETE FROM `user` WHERE `portrait`=%s", (user.portrait,))
+                        await cursor.execute(f"DELETE FROM `user` WHERE `portrait`={user.portrait}")
                     elif user.user_name:
-                        await cursor.execute("DELETE FROM `user` WHERE `user_name`=%s", (user.user_name,))
+                        await cursor.execute(f"DELETE FROM `user` WHERE `user_name`={user.user_name}")
                     else:
                         raise ValueError("Null input")
         except Exception as err:
@@ -323,7 +323,7 @@ class MySQLDB(object):
         try:
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
-                    await cursor.execute(f"REPLACE INTO `tid_{self.fname}` VALUES (%s,%s,DEFAULT)", (tid, tag))
+                    await cursor.execute(f"REPLACE INTO `tid_{self.fname}` VALUES ({tid},{tag},DEFAULT)")
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname} tid={tid}")
             return False
@@ -345,7 +345,7 @@ class MySQLDB(object):
         try:
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
-                    await cursor.execute(f"SELECT `tag` FROM `tid_{self.fname}` WHERE `tid`=%s", (tid,))
+                    await cursor.execute(f"SELECT `tag` FROM `tid_{self.fname}` WHERE `tid`={tid}")
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname} tid={tid}")
             return None
@@ -368,7 +368,7 @@ class MySQLDB(object):
         try:
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
-                    await cursor.execute(f"DELETE FROM `tid_{self.fname}` WHERE `tid`=%s", (tid,))
+                    await cursor.execute(f"DELETE FROM `tid_{self.fname}` WHERE `tid`={tid}")
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname} tid={tid}")
             return False
@@ -392,8 +392,7 @@ class MySQLDB(object):
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     await cursor.execute(
-                        f"SELECT `tid` FROM `tid_{self.fname}` WHERE `tag`=%s LIMIT %s OFFSET %s",
-                        (tag, limit, offset),
+                        f"SELECT `tid` FROM `tid_{self.fname}` WHERE `tag`={tag} LIMIT {limit} OFFSET {offset}"
                     )
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname}")
@@ -437,7 +436,7 @@ class MySQLDB(object):
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     await cursor.execute(
-                        f"REPLACE INTO `user_id_{self.fname}` VALUES (%s,%s,%s,DEFAULT)", (user_id, permission, note)
+                        f"REPLACE INTO `user_id_{self.fname}` VALUES ({user_id},{permission},'{note}',DEFAULT)"
                     )
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname} user_id={user_id}")
@@ -459,7 +458,7 @@ class MySQLDB(object):
         try:
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
-                    await cursor.execute(f"DELETE FROM `user_id_{self.fname}` WHERE `user_id`=%s", (user_id,))
+                    await cursor.execute(f"DELETE FROM `user_id_{self.fname}` WHERE `user_id`={user_id}")
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname} user_id={user_id}")
             return False
@@ -480,9 +479,7 @@ class MySQLDB(object):
         try:
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
-                    await cursor.execute(
-                        f"SELECT `permission` FROM `user_id_{self.fname}` WHERE `user_id`=%s", (user_id,)
-                    )
+                    await cursor.execute(f"SELECT `permission` FROM `user_id_{self.fname}` WHERE `user_id`={user_id}")
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname} user_id={user_id}")
             return 0
@@ -506,8 +503,7 @@ class MySQLDB(object):
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     await cursor.execute(
-                        f"SELECT `permission`,`note`,`record_time` FROM `user_id_{self.fname}` WHERE `user_id`=%s",
-                        (user_id,),
+                        f"SELECT `permission`,`note`,`record_time` FROM `user_id_{self.fname}` WHERE `user_id`={user_id}"
                     )
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname} user_id={user_id}")
@@ -537,8 +533,7 @@ class MySQLDB(object):
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     await cursor.execute(
-                        f"SELECT `user_id` FROM `user_id_{self.fname}` WHERE `permission`>=%s AND `permission`<=%s ORDER BY `record_time` DESC LIMIT %s OFFSET %s",
-                        (lower_permission, upper_permission, limit, offset),
+                        f"SELECT `user_id` FROM `user_id_{self.fname}` WHERE `permission`>={lower_permission} AND `permission`<={upper_permission} ORDER BY `record_time` DESC LIMIT {limit} OFFSET {offset}"
                     )
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname}")
@@ -558,16 +553,16 @@ class MySQLDB(object):
             async with conn.cursor() as cursor:
                 await cursor.execute(
                     f"CREATE TABLE IF NOT EXISTS `imghash_{self.fname}` \
-                    (`img_hash` CHAR(16) PRIMARY KEY, `img_hash_uint64` BIGINT UNSIGNED UNIQUE NOT NULL, `raw_hash` CHAR(40) UNIQUE NOT NULL, `permission` TINYINT NOT NULL DEFAULT 0, `note` VARCHAR(64) NOT NULL DEFAULT '', `record_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, \
+                    (`img_hash` BIGINT UNSIGNED PRIMARY KEY, `raw_hash` CHAR(40) UNIQUE NOT NULL, `permission` TINYINT NOT NULL DEFAULT 0, `note` VARCHAR(64) NOT NULL DEFAULT '', `record_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, \
                     INDEX `permission`(permission), INDEX `record_time`(record_time))"
                 )
 
-    async def add_imghash(self, img_hash: str, raw_hash: str, /, permission: int = 0, *, note: str = '') -> bool:
+    async def add_imghash(self, img_hash: int, raw_hash: str, /, permission: int = 0, *, note: str = '') -> bool:
         """
         将img_hash添加到表imghash_{fname}
 
         Args:
-            img_hash (str): 图像的phash
+            img_hash (int): 图像的phash
             raw_hash (str): 贴吧图床hash
             permission (int, optional): 封锁级别. Defaults to 0.
             note (str, optional): 备注. Defaults to ''.
@@ -580,8 +575,7 @@ class MySQLDB(object):
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     await cursor.execute(
-                        f"REPLACE INTO `imghash_{self.fname}` VALUES (%s,CONV(%s,16,10),%s,%s,%s,DEFAULT)",
-                        (img_hash, img_hash, raw_hash, permission, note),
+                        f"REPLACE INTO `imghash_{self.fname}` VALUES ({img_hash},'{raw_hash}',{permission},'{note}',DEFAULT)"
                     )
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname} img_hash={img_hash}")
@@ -590,12 +584,12 @@ class MySQLDB(object):
         LOG.info(f"Succeeded. forum={self.fname} img_hash={img_hash} permission={permission}")
         return True
 
-    async def del_imghash(self, img_hash: str) -> bool:
+    async def del_imghash(self, img_hash: int) -> bool:
         """
         从表imghash_{fname}中删除img_hash
 
         Args:
-            img_hash (str): 图像的phash
+            img_hash (int): 图像的phash
 
         Returns:
             bool: True成功 False失败
@@ -604,7 +598,7 @@ class MySQLDB(object):
         try:
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
-                    await cursor.execute(f"DELETE FROM `imghash_{self.fname}` WHERE `img_hash`=%s", (img_hash,))
+                    await cursor.execute(f"DELETE FROM `imghash_{self.fname}` WHERE `img_hash`={img_hash}")
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname} img_hash={img_hash}")
             return False
@@ -612,13 +606,13 @@ class MySQLDB(object):
         LOG.info(f"Succeeded. forum={self.fname} img_hash={img_hash}")
         return True
 
-    async def get_imghash(self, img_hash: str, hamming_distance: int=0) -> int:
+    async def get_imghash(self, img_hash: int, *, hamming_dist: int = 0) -> int:
         """
         获取表imghash_{fname}中img_hash的封锁级别
 
         Args:
-            img_hash (str): 图像的phash
-            hamming_distance: 最大海明距离 默认为0(图像phash完全一致)
+            img_hash (int): 图像的phash
+            hamming_dist (int): 匹配的最大海明距离 默认为0 即要求图像phash完全一致
 
         Returns:
             int: 封锁级别
@@ -627,13 +621,13 @@ class MySQLDB(object):
         try:
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
-                    if hamming_distance > 0:
+                    if hamming_dist > 0:
                         await cursor.execute(
-                            f"SELECT `permission`, BIT_COUNT(`img_hash_uint64` ^ CONV(%s,16,10)) AS hd FROM `imghash_{self.fname}` HAVING hd <= %s ORDER BY hd ASC", (img_hash, hamming_distance)
+                            f"SELECT `permission`,BIT_COUNT(`img_hash`^{img_hash}) AS hd FROM `imghash_{self.fname}` HAVING hd<={hamming_dist} ORDER BY hd ASC LIMIT 1"
                         )
                     else:
                         await cursor.execute(
-                            f"SELECT `permission` FROM `imghash_{self.fname}` WHERE `img_hash`=%s", (img_hash,)
+                            f"SELECT `permission` FROM `imghash_{self.fname}` WHERE `img_hash`={img_hash}"
                         )
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname} img_hash={img_hash}")
@@ -643,12 +637,13 @@ class MySQLDB(object):
                 return res_tuple[0]
             return 0
 
-    async def get_imghash_full(self, img_hash: str) -> Tuple[int, str]:
+    async def get_imghash_full(self, img_hash: int, *, hamming_dist: int = 0) -> Tuple[int, str]:
         """
         获取表imghash_{fname}中img_hash的完整信息
 
         Args:
-            img_hash (str): 图像的phash
+            img_hash (int): 图像的phash
+            hamming_dist (int): 匹配的最大海明距离 默认为0 即要求图像phash完全一致
 
         Returns:
             tuple[int, str]: 封锁级别, 备注
@@ -657,15 +652,20 @@ class MySQLDB(object):
         try:
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
-                    await cursor.execute(
-                        f"SELECT `permission`,`note` FROM `imghash_{self.fname}` WHERE `img_hash`=%s", (img_hash,)
-                    )
+                    if hamming_dist > 0:
+                        await cursor.execute(
+                            f"SELECT `permission`,`note`,BIT_COUNT(`img_hash`^{img_hash}) AS hd FROM `imghash_{self.fname}` HAVING hd<={hamming_dist} ORDER BY hd ASC LIMIT 1"
+                        )
+                    else:
+                        await cursor.execute(
+                            f"SELECT `permission`,`note` FROM `imghash_{self.fname}` WHERE `img_hash`={img_hash}"
+                        )
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname} img_hash={img_hash}")
             return 0, ''
         else:
             if res_tuple := await cursor.fetchone():
-                return res_tuple
+                return res_tuple[:2]
             return 0, ''
 
 
@@ -727,7 +727,7 @@ class SQLiteDB(object):
         """
 
         try:
-            self._conn.execute(f"REPLACE INTO `id_{self.fname}` VALUES (?,?,NULL)", (_id, tag))
+            self._conn.execute(f"REPLACE INTO `id_{self.fname}` VALUES ({_id},{tag},NULL)")
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname} id={_id}")
             return False
@@ -745,7 +745,7 @@ class SQLiteDB(object):
         """
 
         try:
-            cursor = self._conn.execute(f"SELECT `tag` FROM `id_{self.fname}` WHERE `id`=?", (_id,))
+            cursor = self._conn.execute(f"SELECT `tag` FROM `id_{self.fname}` WHERE `id`={_id}")
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname} id={_id}")
             return False
@@ -766,7 +766,7 @@ class SQLiteDB(object):
         """
 
         try:
-            self._conn.execute(f"DELETE FROM `id_{self.fname}` WHERE `id`=?", (_id,))
+            self._conn.execute(f"DELETE FROM `id_{self.fname}` WHERE `id`={_id}")
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname} id={_id}")
             return False
