@@ -22,7 +22,7 @@ from typing import List, Literal, Optional, Tuple, Union
 
 from ._helper import alog_time
 from ._logger import LOG
-from .client import Client, ReqUInfo, _ForumInfoCache
+from .client.client import Client, ReqUInfo, ForumInfoCache
 from .database import MySQLDB, SQLiteDB
 from .typedef import Comment, Comments, Post, Posts, Thread, Threads, UserInfo
 
@@ -97,15 +97,15 @@ class BaseReviewer(object):
             int: 该贴吧的forum_id
         """
 
-        if fid := _ForumInfoCache.get_fid(fname):
+        if fid := ForumInfoCache.get_fid(fname):
             return fid
 
         if fid := await self.db.get_fid(fname):
-            _ForumInfoCache.add_forum(fname, fid)
+            ForumInfoCache.add_forum(fname, fid)
             return fid
 
         if fid := await self.client.get_fid(fname):
-            _ForumInfoCache.add_forum(fname, fid)
+            ForumInfoCache.add_forum(fname, fid)
             await self.db.add_forum(fid, fname)
 
         return fid
@@ -121,15 +121,15 @@ class BaseReviewer(object):
             str: 该贴吧的贴吧名
         """
 
-        if fname := _ForumInfoCache.get_fname(fid):
+        if fname := ForumInfoCache.get_fname(fid):
             return fname
 
         if fname := await self.db.get_fname(fid):
-            _ForumInfoCache.add_forum(fname, fid)
+            ForumInfoCache.add_forum(fname, fid)
             return fname
 
         if fname := await self.client.get_fname(fid):
-            _ForumInfoCache.add_forum(fname, fid)
+            ForumInfoCache.add_forum(fname, fid)
             await self.db.add_forum(fid, fname)
 
         return fname

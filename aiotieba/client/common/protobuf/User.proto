@@ -1,0 +1,71 @@
+// tbclient.User
+syntax = "proto3";
+
+message User {
+    int64 id = 2;
+    string name = 3;
+    string name_show = 4;
+    string portrait = 5;
+    int32 is_coreuser = 20;
+    int32 level_id = 23;
+    int32 is_bawu = 25;
+    string bawu_type = 26;
+    string BDUSS = 29;
+    int32 fans_num = 30;
+    int32 concern_num = 31;
+    int32 sex = 32;
+    string intro = 34;
+    int32 post_num = 37;
+    string tb_age = 38;
+    int32 gender = 42;
+    message PrivSets {
+        int32 location = 1;
+        int32 like = 2;
+        int32 group = 3;
+        int32 post = 4;
+        int32 friend = 5;
+        int32 live = 6;
+        int32 reply = 7;
+        int32 bazhu_show_inside = 8;
+        int32 bazhu_show_outside = 9;
+    }
+    PrivSets priv_sets = 45;
+    int32 is_friend = 46;
+    message LikeForumInfo {
+        string forum_name = 1;
+        uint64 forum_id = 2;
+    }
+    repeated LikeForumInfo likeForum = 47;
+    int32 is_guanfang = 52;
+    message UserVipInfo {
+        uint32 v_status = 1;
+        uint32 v_level = 5;
+    }
+    UserVipInfo vipInfo = 61;
+    message TshowInfo {
+        string name = 2;
+    }
+    repeated TshowInfo new_tshow_icon = 65;
+    int32 is_fans = 91;
+    message NewGodInfo {
+        int32 status = 1;
+        uint32 field_id = 2;
+        string field_name = 3;
+    }
+    NewGodInfo new_god_data = 101;
+    int32 is_default_avatar = 106;
+    string tieba_uid = 120;
+    string ip_address = 127;
+    message VirtualImageInfo {
+        int32 isset_virtual_image = 1;
+        message StateInfo {
+            string text = 2;
+        }
+        StateInfo personal_state = 9;
+    }
+    VirtualImageInfo virtual_image_info = 136;
+    message UserGrowth {
+        uint32 level_id = 1;
+    }
+    UserGrowth user_growth = 137;
+}

@@ -1,0 +1,9 @@
+// tbclient.GetUserByTiebaUid.GetUserByTiebaUidReqIdl
+syntax = "proto3";
+
+message GetUserByTiebaUidReqIdl {
+    message DataReq {
+        string tieba_uid = 2;
+    }
+    DataReq data = 1;
+}

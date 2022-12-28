@@ -8,30 +8,28 @@ except ImportError:
 
 import asyncio
 import base64
-import enum
 import gzip
 import hashlib
 import json
 import random
-import socket
 import time
 import uuid
-import weakref
-from collections import OrderedDict
 from typing import ClassVar, Dict, List, Literal, Optional, Tuple, Union
 
-import aiohttp
 import bs4
-import yarl
+import httpcore
+import httpx
+import httpx_ws
+import wsproto
 from Crypto.Cipher import AES, PKCS1_v1_5
 from Crypto.PublicKey import RSA
 from google.protobuf.json_format import ParseDict
 
-from ._config import CONFIG
-from ._exception import ContentTypeError, TiebaServerError
-from ._helper import JSON_DECODE_FUNC
-from ._logger import LOG
-from .protobuf import (
+from .._config import CONFIG
+from .._exception import ContentTypeError, TiebaServerError
+from .._helper import JSON_DECODE_FUNC
+from .._logger import LOG
+from ..protobuf import (
     CommitPersonalMsgReqIdl_pb2,
     CommitPersonalMsgResIdl_pb2,
     FrsPageReqIdl_pb2,
@@ -42,8 +40,6 @@ from .protobuf import (
     GetDislikeListResIdl_pb2,
     GetForumSquareReqIdl_pb2,
     GetForumSquareResIdl_pb2,
-    GetUserByTiebaUidReqIdl_pb2,
-    GetUserByTiebaUidResIdl_pb2,
     GetUserInfoReqIdl_pb2,
     GetUserInfoResIdl_pb2,
     PbFloorReqIdl_pb2,
@@ -61,7 +57,7 @@ from .protobuf import (
     UserPostReqIdl_pb2,
     UserPostResIdl_pb2,
 )
-from .typedef import (
+from ..typedef import (
     Appeals,
     Ats,
     BlacklistUsers,
@@ -85,165 +81,9 @@ from .typedef import (
     UserInfo,
     UserPosts,
 )
-
-
-class _WebsocketResponse(object):
-    """
-    websocket响应
-
-    Attributes:
-        timestamp (int): 请求时间戳
-        req_id (int): 唯一的请求id
-    """
-
-    __slots__ = [
-        '__weakref__',
-        '__dict__',
-        '_timestamp',
-        '_req_id',
-        '_data_future',
-    ]
-
-    ws_res_wait_dict: weakref.WeakValueDictionary[int, "_WebsocketResponse"] = weakref.WeakValueDictionary()
-    _websocket_request_id: int = None
-
-    def __init__(self) -> None:
-        self._timestamp: int = int(time.time())
-        self._req_id = None
-        self._data_future: asyncio.Future = asyncio.Future()
-
-        self.ws_res_wait_dict[self.req_id] = self
-
-    def __hash__(self) -> int:
-        return self.req_id
-
-    def __eq__(self, obj: "_WebsocketResponse"):
-        return self.req_id == obj.req_id
-
-    @property
-    def timestamp(self) -> int:
-        """
-        请求时间戳
-
-        Note:
-            13位时间戳
-        """
-
-        return self._timestamp
-
-    @property
-    def req_id(self) -> int:
-        """
-        返回一个唯一的请求id
-        在初次生成后该属性便不会再发生变化
-        """
-
-        if self._req_id is None:
-
-            if self._websocket_request_id is None:
-                self._websocket_request_id = self._timestamp
-            self._websocket_request_id += 1
-            self._req_id = self._websocket_request_id
-
-        return self._req_id
-
-    async def read(self, timeout: float) -> bytes:
-        """
-        读取websocket返回数据
-
-        Args:
-            timeout (float): 设置超时秒数
-
-        Raises:
-            asyncio.TimeoutError: 超时后抛出该异常
-
-        Returns:
-            bytes: 从websocket接收到的数据
-        """
-
-        try:
-            data: bytes = await asyncio.wait_for(self._data_future, timeout)
-        except asyncio.TimeoutError:
-            del self.ws_res_wait_dict[self.req_id]
-            raise asyncio.TimeoutError("Timeout to read")
-
-        del self.ws_res_wait_dict[self.req_id]
-        return data
-
-
-class _ForumInfoCache(object):
-    """
-    吧信息缓存
-    """
-
-    __slots__ = []
-
-    _fname2fid: ClassVar[OrderedDict[str, int]] = OrderedDict()
-    _fid2fname: ClassVar[OrderedDict[int, str]] = OrderedDict()
-
-    @classmethod
-    def get_fid(cls, fname: str) -> int:
-        """
-        通过贴吧名获取forum_id
-
-        Args:
-            fname (str): 贴吧名
-
-        Returns:
-            int: 该贴吧的forum_id
-        """
-
-        return cls._fname2fid.get(fname, '')
-
-    @classmethod
-    def get_fname(cls, fid: int) -> str:
-        """
-        通过forum_id获取贴吧名
-
-        Args:
-            fid (int): forum_id
-
-        Returns:
-            str: 该贴吧的贴吧名
-        """
-
-        return cls._fid2fname.get(fid, '')
-
-    @classmethod
-    def add_forum(cls, fname: str, fid: int) -> None:
-        """
-        将贴吧名与forum_id的映射关系添加到缓存
-
-        Args:
-            fname (str): 贴吧名
-            fid (int): 贴吧id
-        """
-
-        if len(cls._fname2fid) == 128:
-            cls._fname2fid.popitem(last=False)
-            cls._fid2fname.popitem(last=False)
-
-        cls._fname2fid[fname] = fid
-        cls._fid2fname[fid] = fname
-
-
-class ReqUInfo(enum.IntEnum):
-    """
-    使用该枚举类指定待获取的用户信息字段
-
-    Note:
-        各bit位的含义由高到低分别为
-        OTHER, TIEBA_UID, NICK_NAME, USER_NAME, PORTRAIT, USER_ID
-    """
-
-    USER_ID = 1 << 0
-    PORTRAIT = 1 << 1
-    USER_NAME = 1 << 2
-    NICK_NAME = 1 << 3
-    TIEBA_UID = 1 << 4
-    OTHER = 1 << 5
-    BASIC = USER_ID | PORTRAIT | USER_NAME
-    ALL = (1 << 6) - 1
+from . import get_fid, tieba_uid2user_info
+from .common.helper import pack_form, pack_proto_request, send_request
+from .common.typedef import ForumInfoCache, Header, ReqUInfo, WebsocketResponse
 
 
 class Client(object):
@@ -264,19 +104,22 @@ class Client(object):
         '_cuid',
         '_cuid_galaxy2',
         '_ws_password',
-        '_connector',
-        '_loop',
+        '_transport',
         '_app_base_url',
-        '_session_app',
-        '_session_app_proto',
-        '_session_web',
-        '_session_websocket',
+        '_client_app',
+        '_client_app_proto',
+        '_client_web',
+        '_client_ws',
         'websocket',
         '_ws_aes_chiper',
         '_ws_dispatcher',
     ]
 
-    _use_env_proxy = False
+    _use_env_proxy = True
+    _timeout: ClassVar[httpx.Timeout] = httpx.Timeout(connect=3.0, read=12.0, write=8.0, pool=3.0)
+    _limits: ClassVar[httpx.Limits] = httpx.Limits(
+        max_connections=None, max_keepalive_connections=None, keepalive_expiry=10.0
+    )
 
     latest_version: ClassVar[str] = "12.34.3.0"  # 这是目前的最新版本
     # no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
@@ -296,30 +139,30 @@ class Client(object):
         self._cuid_galaxy2: str = None
         self._ws_password: bytes = None
 
-        self._loop = asyncio.get_running_loop()
-        self._app_base_url = yarl.URL.build(scheme="http", host="tiebac.baidu.com")
+        self._app_base_url = httpcore.URL(scheme="http", host="tiebac.baidu.com")
 
-        self._connector: aiohttp.TCPConnector = None
-        self._session_app: aiohttp.ClientSession = None
-        self._session_app_proto: aiohttp.ClientSession = None
-        self._session_web: aiohttp.ClientSession = None
-        self._session_websocket: aiohttp.ClientSession = None
-        self.websocket: aiohttp.ClientWebSocketResponse = None
+        self._transport: httpx.AsyncHTTPTransport = None
+        self._client_app: httpx.AsyncClient = None
+        self._client_app_proto: httpx.AsyncClient = None
+        self._client_web: httpx.AsyncClient = None
+        self._client_ws: httpx.AsyncClient = None
+        self.websocket: httpx_ws.AsyncWebSocketSession = None
         self._ws_aes_chiper = None
         self._ws_dispatcher: asyncio.Task = None
 
     async def __aenter__(self) -> "Client":
+        await self.client_web.__aenter__()
         return self
 
     async def close(self) -> None:
         if self._ws_dispatcher is not None:
             self._ws_dispatcher.cancel()
 
-        if self.websocket is not None and not self.websocket.closed:
+        if self.is_ws_aviliable:
             await self.websocket.close()
 
-        if self._connector is not None:
-            await self._connector.close()
+        if self._transport is not None:
+            await self._transport.aclose()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.close()
@@ -456,205 +299,109 @@ class Client(object):
         return self._ws_password
 
     @property
-    def connector(self) -> aiohttp.TCPConnector:
+    def transport(self) -> httpx.AsyncHTTPTransport:
         """
-        TCP连接器
+        传输器
 
         Returns:
-            aiohttp.TCPConnector
+            httpx.AsyncHTTPTransport
         """
 
-        if self._connector is None:
-            self._connector = aiohttp.TCPConnector(
-                ttl_dns_cache=600,
-                family=socket.AF_INET,
-                keepalive_timeout=60,
-                limit=0,
-                ssl=False,
-                loop=self._loop,
+        if self._transport is None:
+            self._transport = httpx.AsyncHTTPTransport(
+                verify=False, limits=self._limits, trust_env=self._use_env_proxy, local_address="0.0.0.0"
             )
 
-        return self._connector
+        return self._transport
 
     @property
-    def session_app(self) -> aiohttp.ClientSession:
+    def client_app(self) -> httpx.AsyncClient:
         """
         用于APP请求
 
         Returns:
-            aiohttp.ClientSession
+            httpx.AsyncClient
         """
 
-        if self._session_app is None:
+        if self._client_app is None:
             headers = {
-                aiohttp.hdrs.USER_AGENT: f"tieba/{self.latest_version}",
-                aiohttp.hdrs.CONNECTION: "keep-alive",
-                aiohttp.hdrs.ACCEPT_ENCODING: "gzip",
-                aiohttp.hdrs.HOST: self._app_base_url.host,
+                Header.USER_AGENT: f"tieba/{self.latest_version}",
+                Header.CONNECTION: "keep-alive",
+                Header.ACCEPT_ENCODING: "gzip",
+                Header.HOST: self._app_base_url.host,
             }
-            timeout = aiohttp.ClientTimeout(connect=6.0, sock_connect=3.2, sock_read=12.0)
 
-            self._session_app = aiohttp.ClientSession(
-                base_url=self._app_base_url,
-                connector=self.connector,
-                loop=self._loop,
-                headers=headers,
-                connector_owner=False,
-                raise_for_status=True,
-                timeout=timeout,
-                read_bufsize=1 << 16,  # 64KiB
-                trust_env=self._use_env_proxy,
-            )
+            self._client_app = httpx.AsyncClient(headers=headers, timeout=self._timeout, transport=self.transport)
 
-        return self._session_app
+        return self._client_app
 
     @property
-    def session_app_proto(self) -> aiohttp.ClientSession:
+    def client_app_proto(self) -> httpx.AsyncClient:
         """
         用于APP protobuf请求
 
         Returns:
-            aiohttp.ClientSession
+            httpx.AsyncClient
         """
 
-        if self._session_app_proto is None:
+        if self._client_app_proto is None:
             headers = {
-                aiohttp.hdrs.USER_AGENT: f"tieba/{self.latest_version}",
-                "x_bd_data_type": "protobuf",
-                aiohttp.hdrs.CONNECTION: "keep-alive",
-                aiohttp.hdrs.ACCEPT_ENCODING: "gzip",
-                aiohttp.hdrs.HOST: self._app_base_url.host,
+                Header.USER_AGENT: f"tieba/{self.latest_version}",
+                Header.BAIDU_DATA_TYPE: "protobuf",
+                Header.CONNECTION: "keep-alive",
+                Header.ACCEPT_ENCODING: "gzip",
+                Header.HOST: self._app_base_url.host,
             }
-            timeout = aiohttp.ClientTimeout(connect=6.0, sock_connect=3.2, sock_read=12.0)
 
-            self._session_app_proto = aiohttp.ClientSession(
-                base_url=self._app_base_url,
-                connector=self.connector,
-                loop=self._loop,
-                headers=headers,
-                connector_owner=False,
-                raise_for_status=True,
-                timeout=timeout,
-                read_bufsize=1 << 16,  # 64KiB
-                trust_env=self._use_env_proxy,
-            )
+            self._client_app_proto = httpx.AsyncClient(headers=headers, timeout=self._timeout, transport=self.transport)
 
-        return self._session_app_proto
+        return self._client_app_proto
 
     @property
-    def session_web(self) -> aiohttp.ClientSession:
+    def client_web(self) -> httpx.AsyncClient:
         """
         用于网页端请求
 
         Returns:
-            aiohttp.ClientSession
+            httpx.AsyncClient
         """
 
-        if self._session_web is None:
+        if self._client_web is None:
             headers = {
-                aiohttp.hdrs.USER_AGENT: f"tieba/{self.latest_version}",
-                aiohttp.hdrs.ACCEPT_ENCODING: "gzip, deflate",
-                aiohttp.hdrs.CACHE_CONTROL: "no-cache",
-                aiohttp.hdrs.CONNECTION: "keep-alive",
+                Header.USER_AGENT: f"tieba/{self.latest_version}",
+                Header.ACCEPT_ENCODING: "gzip, deflate",
+                Header.CACHE_CONTROL: "no-cache",
+                Header.CONNECTION: "keep-alive",
             }
-            timeout = aiohttp.ClientTimeout(connect=6.0, sock_connect=3.2, sock_read=12.0)
-            cookie_jar = aiohttp.CookieJar(loop=self._loop)
-            cookie_jar.update_cookies(
-                {
-                    'BDUSS': self.BDUSS,
-                    'STOKEN': self.STOKEN,
-                }
+            cookies = {
+                'BDUSS': self.BDUSS,
+                'STOKEN': self.STOKEN,
+            }
+
+            self._client_web = httpx.AsyncClient(
+                headers=headers, cookies=cookies, timeout=self._timeout, transport=self.transport
             )
 
-            self._session_web = aiohttp.ClientSession(
-                connector=self.connector,
-                loop=self._loop,
-                headers=headers,
-                cookie_jar=cookie_jar,
-                connector_owner=False,
-                raise_for_status=True,
-                timeout=timeout,
-                read_bufsize=1 << 20,  # 1MiB
-                trust_env=self._use_env_proxy,
-            )
-
-        return self._session_web
+        return self._client_web
 
     @property
-    def session_websocket(self) -> aiohttp.ClientSession:
+    def client_ws(self) -> httpx.AsyncClient:
         """
         用于websocket请求
 
         Returns:
-            aiohttp.ClientSession
+            httpx.AsyncClient
         """
 
-        if self._session_websocket is None:
+        if self._client_ws is None:
             headers = {
-                aiohttp.hdrs.HOST: "im.tieba.baidu.com:8000",
-                aiohttp.hdrs.SEC_WEBSOCKET_EXTENSIONS: "im_version=2.3",
+                Header.HOST: "im.tieba.baidu.com:8000",
+                Header.SEC_WEBSOCKET_EXTENSIONS: "im_version=2.3",
             }
-            timeout = aiohttp.ClientTimeout(connect=6.0, sock_connect=3.2, sock_read=12.0)
 
-            self._session_websocket = aiohttp.ClientSession(
-                connector=self.connector,
-                loop=self._loop,
-                headers=headers,
-                connector_owner=False,
-                raise_for_status=True,
-                timeout=timeout,
-                read_bufsize=1 << 16,  # 64KiB
-                trust_env=self._use_env_proxy,
-            )
+            self._client_ws = httpx.AsyncClient(headers=headers, timeout=self._timeout, transport=self.transport)
 
-        return self._session_websocket
-
-    @staticmethod
-    def pack_form(forms: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
-        """
-        打包form参数元组列表 为其添加贴吧客户端签名
-
-        Args:
-            payload (list[tuple[str, str]]): form参数元组列表
-
-        Returns:
-            list[tuple[str, str]]: 签名后的form参数元组列表
-        """
-
-        raw_list = [f"{k}={v}" for k, v in forms]
-        raw_list.append("tiebaclient!!!")
-        raw_str = "".join(raw_list)
-
-        md5 = hashlib.md5()
-        md5.update(raw_str.encode('utf-8'))
-        forms.append(('sign', md5.hexdigest()))
-
-        return forms
-
-    @staticmethod
-    def pack_proto_bytes(req_bytes: bytes) -> aiohttp.MultipartWriter:
-        """
-        将req_bytes打包为贴吧客户端专用的aiohttp.MultipartWriter
-
-        Args:
-            req_bytes (bytes): protobuf序列化后的二进制数据
-
-        Returns:
-            aiohttp.MultipartWriter: 只可用于贴吧客户端
-        """
-
-        writer = aiohttp.MultipartWriter('form-data', boundary=f"*-672328094--{random.randint(0,9)}")
-        payload_headers = {
-            aiohttp.hdrs.CONTENT_DISPOSITION: aiohttp.helpers.content_disposition_header(
-                'form-data', name='data', filename='file'
-            )
-        }
-        payload = aiohttp.BytesPayload(req_bytes, content_type='', headers=payload_headers)
-        payload.headers.popone(aiohttp.hdrs.CONTENT_TYPE)
-        writer.append_payload(payload)
-        writer._parts[0][0].headers.popone(aiohttp.hdrs.CONTENT_LENGTH)
-
-        return writer
+        return self._client_ws
 
     @property
     def ws_aes_chiper(self):
@@ -747,15 +494,21 @@ class Client(object):
             heartbeat (float, optional): 是否定时ping. Defaults to None.
 
         Raises:
-            aiohttp.WSServerHandshakeError: websocket握手失败
+            httpx_ws.WebSocketUpgradeError: websocket握手失败
         """
 
         if self._ws_dispatcher is not None and not self._ws_dispatcher.cancelled():
             self._ws_dispatcher.cancel()
 
-        self.websocket = await self.session_websocket._ws_connect(
-            yarl.URL.build(scheme="ws", host="im.tieba.baidu.com", port=8000), heartbeat=heartbeat, ssl=False
+        request = self.client_ws.build_request("GET", httpcore.URL(scheme=b"ws", host=b"im.tieba.baidu.com", port=8000))
+        response = await self.client_ws.send(request=request, stream=True)
+        if response.status_code != 101:
+            raise httpx_ws.WebSocketUpgradeError(response)
+
+        self.websocket = httpx_ws.AsyncWebSocketSession(
+            response.extensions["network_stream"], keepalive_ping_interval_seconds=heartbeat
         )
+
         self._ws_dispatcher = asyncio.create_task(self._ws_dispatch(), name="ws_dispatcher")
 
     @property
@@ -767,11 +520,11 @@ class Client(object):
             bool: True则self.websocket可用 反之不可用
         """
 
-        return not (self.websocket is None or self.websocket.closed or self.websocket._writer.transport.is_closing())
+        return self.websocket is not None and self.websocket.connection.state == wsproto.connection.ConnectionState.OPEN
 
     async def send_ws_bytes(
         self, ws_bytes: bytes, /, cmd: int, *, need_gzip: bool = True, need_encrypt: bool = True
-    ) -> _WebsocketResponse:
+    ) -> WebsocketResponse:
         """
         将ws_bytes通过贴吧websocket发送
 
@@ -785,10 +538,10 @@ class Client(object):
             WebsocketResponse: 用于等待返回数据的WebsocketResponse实例
         """
 
-        ws_res = _WebsocketResponse()
+        ws_res = WebsocketResponse()
         ws_bytes = self._pack_ws_bytes(ws_bytes, cmd, ws_res.req_id, need_gzip=need_gzip, need_encrypt=need_encrypt)
 
-        _WebsocketResponse.ws_res_wait_dict[ws_res.req_id] = ws_res
+        WebsocketResponse.ws_res_wait_dict[ws_res.req_id] = ws_res
         await self.websocket.send_bytes(ws_bytes)
 
         return ws_res
@@ -799,14 +552,15 @@ class Client(object):
         """
 
         try:
-            async for msg in self.websocket:
-                res_bytes, _, req_id = self._unpack_ws_bytes(msg.data)
+            while 1:
+                res_bytes = await self.websocket.receive_bytes()
+                res_bytes, _, req_id = self._unpack_ws_bytes(res_bytes)
 
-                ws_res = _WebsocketResponse.ws_res_wait_dict.get(req_id, None)
+                ws_res = WebsocketResponse.ws_res_wait_dict.get(req_id, None)
                 if ws_res:
                     ws_res._data_future.set_result(res_bytes)
 
-        except asyncio.CancelledError:
+        except (httpx_ws.WebSocketDisconnect, asyncio.CancelledError):
             return
 
     async def _init_websocket(self) -> bool:
@@ -895,9 +649,9 @@ class Client(object):
         ]
 
         try:
-            async with self.session_app.post(
-                yarl.URL.build(path="/c/s/login"),
-                data=self.pack_form(payload),
+            async with self.client_app.post(
+                httpcore.URL(path="/c/s/login"),
+                data=pack_form(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -929,24 +683,15 @@ class Client(object):
             int: forum_id
         """
 
-        if fid := _ForumInfoCache.get_fid(fname):
+        if fid := ForumInfoCache.get_fid(fname):
             return fid
 
         try:
-            async with self.session_web.get(
-                yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/f/commit/share/fnameShareApi"),
-                allow_redirects=False,
-                params={'fname': fname, 'ie': 'utf-8'},
-            ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
+            request = get_fid.pack_request(self.client_web, fname)
+            response = await send_request(self.client_web, request)
+            fid = get_fid.parse_response(response)
 
-            if int(res_json['no']):
-                raise TiebaServerError(res_json['error'])
-
-            if not (fid := int(res_json['data']['fid'])):
-                raise TiebaServerError("fid is 0")
-
-            _ForumInfoCache.add_forum(fname, fid)
+            ForumInfoCache.add_forum(fname, fid)
 
         except Exception as err:
             LOG.warning(f"{err}. fname={fname}")
@@ -965,13 +710,13 @@ class Client(object):
             str: 贴吧名
         """
 
-        if fname := _ForumInfoCache.get_fname(fid):
+        if fname := ForumInfoCache.get_fname(fid):
             return fname
 
         fname = (await self.get_forum_detail(fid)).fname
 
         if fname:
-            _ForumInfoCache.add_forum(fname, fid)
+            ForumInfoCache.add_forum(fname, fid)
 
         return fname
 
@@ -1047,8 +792,8 @@ class Client(object):
             params = {'un': name_or_portrait}
 
         try:
-            async with self.session_web.get(
-                yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/home/get/panel"),
+            async with self.client_web.get(
+                httpcore.URL(scheme="https", host="tieba.baidu.com", path="/home/get/panel"),
                 allow_redirects=False,
                 params=params,
             ) as resp:
@@ -1115,8 +860,8 @@ class Client(object):
         """
 
         try:
-            async with self.session_web.get(
-                yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/i/sys/user_json"),
+            async with self.client_web.get(
+                httpcore.URL(scheme="http", host="tieba.baidu.com", path="/i/sys/user_json"),
                 allow_redirects=False,
                 params={
                     'un': user_name,
@@ -1157,9 +902,9 @@ class Client(object):
         req_proto.data.user_id = user_id
 
         try:
-            async with self.session_app_proto.post(
-                yarl.URL.build(path="/c/u/user/getuserinfo", query_string="cmd=303024"),
-                data=self.pack_proto_bytes(req_proto.SerializeToString()),
+            async with self.client_app_proto.post(
+                httpcore.URL(path="/c/u/user/getuserinfo", query_string="cmd=303024"),
+                data=pack_proto_request(req_proto.SerializeToString()),
             ) as resp:
                 res_proto = GetUserInfoResIdl_pb2.GetUserInfoResIdl()
                 res_proto.ParseFromString(await resp.content.read())
@@ -1191,8 +936,8 @@ class Client(object):
         """
 
         try:
-            async with self.session_web.get(
-                yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/im/pcmsg/query/getUserInfo"),
+            async with self.client_web.get(
+                httpcore.URL(scheme="http", host="tieba.baidu.com", path="/im/pcmsg/query/getUserInfo"),
                 allow_redirects=False,
                 params={'chatUid': user_id},
             ) as resp:
@@ -1228,28 +973,14 @@ class Client(object):
             请注意tieba_uid与旧版user_id的区别
         """
 
-        req_proto = GetUserByTiebaUidReqIdl_pb2.GetUserByTiebaUidReqIdl()
-        req_proto.data.tieba_uid = str(tieba_uid)
-
         try:
-            async with self.session_app_proto.post(
-                yarl.URL.build(path="/c/u/user/getUserByTiebaUid", query_string="cmd=309702"),
-                data=self.pack_proto_bytes(req_proto.SerializeToString()),
-            ) as resp:
-                res_proto = GetUserByTiebaUidResIdl_pb2.GetUserByTiebaUidResIdl()
-                res_proto.ParseFromString(await resp.content.read())
-
-            if int(res_proto.error.errorno):
-                raise TiebaServerError(res_proto.error.errmsg)
-
-            user_proto = res_proto.data.user
-            user = UserInfo(_raw_data=user_proto)
+            request = tieba_uid2user_info.pack_request(self.client_app_proto, tieba_uid)
+            response = await send_request(self.client_app_proto, request)
+            return tieba_uid2user_info.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. tieba_uid={tieba_uid}")
-            user = UserInfo()
-
-        return user
+            return UserInfo()
 
     async def get_threads(
         self,
@@ -1288,9 +1019,9 @@ class Client(object):
         req_proto.data.sort = sort
 
         try:
-            async with self.session_app_proto.post(
-                yarl.URL.build(path="/c/f/frs/page", query_string="cmd=301001"),
-                data=self.pack_proto_bytes(req_proto.SerializeToString()),
+            async with self.client_app_proto.post(
+                httpcore.URL(path="/c/f/frs/page", query_string="cmd=301001"),
+                data=pack_proto_request(req_proto.SerializeToString()),
             ) as resp:
                 res_proto = FrsPageResIdl_pb2.FrsPageResIdl()
                 res_proto.ParseFromString(await resp.content.read())
@@ -1352,9 +1083,9 @@ class Client(object):
             req_proto.data.comment_rn = comment_rn
 
         try:
-            async with self.session_app_proto.post(
-                yarl.URL.build(path="/c/f/pb/page", query_string="cmd=302001"),
-                data=self.pack_proto_bytes(req_proto.SerializeToString()),
+            async with self.client_app_proto.post(
+                httpcore.URL(path="/c/f/pb/page", query_string="cmd=302001"),
+                data=pack_proto_request(req_proto.SerializeToString()),
             ) as resp:
                 res_proto = PbPageResIdl_pb2.PbPageResIdl()
                 res_proto.ParseFromString(await resp.content.read())
@@ -1402,9 +1133,9 @@ class Client(object):
         req_proto.data.pn = pn
 
         try:
-            async with self.session_app_proto.post(
-                yarl.URL.build(path="/c/f/pb/floor", query_string="cmd=302002"),
-                data=self.pack_proto_bytes(req_proto.SerializeToString()),
+            async with self.client_app_proto.post(
+                httpcore.URL(path="/c/f/pb/floor", query_string="cmd=302002"),
+                data=pack_proto_request(req_proto.SerializeToString()),
             ) as resp:
                 res_proto = PbFloorResIdl_pb2.PbFloorResIdl()
                 res_proto.ParseFromString(await resp.content.read())
@@ -1459,9 +1190,9 @@ class Client(object):
         ]
 
         try:
-            async with self.session_app.post(
-                yarl.URL.build(path="/c/s/searchpost"),
-                data=self.pack_form(payload),
+            async with self.client_app.post(
+                httpcore.URL(path="/c/s/searchpost"),
+                data=pack_form(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODE_FUNC, content_type=None)
 
@@ -1495,9 +1226,9 @@ class Client(object):
         ]
 
         try:
-            async with self.session_app.post(
-                yarl.URL.build(path="/c/f/forum/getforumdetail"),
-                data=self.pack_form(payload),
+            async with self.client_app.post(
+                httpcore.URL(path="/c/f/forum/getforumdetail"),
+                data=pack_form(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -1539,9 +1270,9 @@ class Client(object):
         req_proto.data.fid = fid
 
         try:
-            async with self.session_app_proto.post(
-                yarl.URL.build(path="/c/f/forum/getBawuInfo", query_string="cmd=301007"),
-                data=self.pack_proto_bytes(req_proto.SerializeToString()),
+            async with self.client_app_proto.post(
+                httpcore.URL(path="/c/f/forum/getBawuInfo", query_string="cmd=301007"),
+                data=pack_proto_request(req_proto.SerializeToString()),
             ) as resp:
                 res_proto = GetBawuInfoResIdl_pb2.GetBawuInfoResIdl()
                 res_proto.ParseFromString(await resp.content.read())
@@ -1591,9 +1322,9 @@ class Client(object):
         req_proto.data.fname = fname
 
         try:
-            async with self.session_app_proto.post(
-                yarl.URL.build(path="/c/f/forum/searchPostForum", query_string="cmd=309466"),
-                data=self.pack_proto_bytes(req_proto.SerializeToString()),
+            async with self.client_app_proto.post(
+                httpcore.URL(path="/c/f/forum/searchPostForum", query_string="cmd=309466"),
+                data=pack_proto_request(req_proto.SerializeToString()),
             ) as resp:
                 res_proto = SearchPostForumResIdl_pb2.SearchPostForumResIdl()
                 res_proto.ParseFromString(await resp.content.read())
@@ -1624,8 +1355,8 @@ class Client(object):
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         try:
-            async with self.session_web.get(
-                yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/f/like/furank"),
+            async with self.client_web.get(
+                httpcore.URL(scheme="https", host="tieba.baidu.com", path="/f/like/furank"),
                 allow_redirects=False,
                 params={
                     'kw': fname,
@@ -1658,8 +1389,8 @@ class Client(object):
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         try:
-            async with self.session_web.get(
-                yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/bawu2/platform/listMemberInfo"),
+            async with self.client_web.get(
+                httpcore.URL(scheme="https", host="tieba.baidu.com", path="/bawu2/platform/listMemberInfo"),
                 allow_redirects=False,
                 params={
                     'word': fname,
@@ -1698,9 +1429,9 @@ class Client(object):
         req_proto.data.rn = rn
 
         try:
-            async with self.session_app_proto.post(
-                yarl.URL.build(path="/c/f/forum/getForumSquare", query_string="cmd=309653"),
-                data=self.pack_proto_bytes(req_proto.SerializeToString()),
+            async with self.client_app_proto.post(
+                httpcore.URL(path="/c/f/forum/getForumSquare", query_string="cmd=309653"),
+                data=pack_proto_request(req_proto.SerializeToString()),
             ) as resp:
                 res_proto = GetForumSquareResIdl_pb2.GetForumSquareResIdl()
                 res_proto.ParseFromString(await resp.content.read())
@@ -1746,9 +1477,9 @@ class Client(object):
         # req_proto.data.uid = (await self.get_self_info()).user_id  # 用该字段检查共同关注的吧
 
         try:
-            async with self.session_app_proto.post(
-                yarl.URL.build(path="/c/u/user/profile", query_string="cmd=303012"),
-                data=self.pack_proto_bytes(req_proto.SerializeToString()),
+            async with self.client_app_proto.post(
+                httpcore.URL(path="/c/u/user/profile", query_string="cmd=303012"),
+                data=pack_proto_request(req_proto.SerializeToString()),
             ) as resp:
                 res_proto = ProfileResIdl_pb2.ProfileResIdl()
                 res_proto.ParseFromString(await resp.content.read())
@@ -1806,9 +1537,9 @@ class Client(object):
             'recommend',
         ]
         try:
-            async with self.session_app.post(
-                yarl.URL.build(path="/c/f/forum/getforumdata"),
-                data=self.pack_form(payload),
+            async with self.client_app.post(
+                httpcore.URL(path="/c/f/forum/getforumdata"),
+                data=pack_form(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -1854,9 +1585,9 @@ class Client(object):
         ]
 
         try:
-            async with self.session_app.post(
-                yarl.URL.build(path="/c/f/forum/like"),
-                data=self.pack_form(payload),
+            async with self.client_app.post(
+                httpcore.URL(path="/c/f/forum/like"),
+                data=pack_form(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -1893,9 +1624,9 @@ class Client(object):
         ]
 
         try:
-            async with self.session_app.post(
-                yarl.URL.build(path="/c/f/bawu/getRecomThreadList"),
-                data=self.pack_form(payload),
+            async with self.client_app.post(
+                httpcore.URL(path="/c/f/bawu/getRecomThreadList"),
+                data=pack_form(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -1936,9 +1667,9 @@ class Client(object):
         ]
 
         try:
-            async with self.session_app.post(
-                yarl.URL.build(path="/c/f/bawu/getRecomThreadHistory"),
-                data=self.pack_form(payload),
+            async with self.client_app.post(
+                httpcore.URL(path="/c/f/bawu/getRecomThreadHistory"),
+                data=pack_form(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODE_FUNC, content_type=None)
 
@@ -2000,9 +1731,9 @@ class Client(object):
         ]
 
         try:
-            async with self.session_app.post(
-                yarl.URL.build(path="/c/c/bawu/commitprison"),
-                data=self.pack_form(payload),
+            async with self.client_app.post(
+                httpcore.URL(path="/c/c/bawu/commitprison"),
+                data=pack_form(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -2049,8 +1780,8 @@ class Client(object):
         ]
 
         try:
-            async with self.session_web.post(
-                yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mo/q/bawublockclear"),
+            async with self.client_web.post(
+                httpcore.URL(scheme="https", host="tieba.baidu.com", path="/mo/q/bawublockclear"),
                 data=payload,
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
@@ -2132,9 +1863,9 @@ class Client(object):
             ('z', tid),
         ]
 
-        async with self.session_app.post(
-            yarl.URL.build(path="/c/c/bawu/delthread"),
-            data=self.pack_form(payload),
+        async with self.client_app.post(
+            httpcore.URL(path="/c/c/bawu/delthread"),
+            data=pack_form(payload),
         ) as resp:
             res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -2165,9 +1896,9 @@ class Client(object):
         ]
 
         try:
-            async with self.session_app.post(
-                yarl.URL.build(path="/c/c/bawu/multiDelThread"),
-                data=self.pack_form(payload),
+            async with self.client_app.post(
+                httpcore.URL(path="/c/c/bawu/multiDelThread"),
+                data=pack_form(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -2206,9 +1937,9 @@ class Client(object):
         ]
 
         try:
-            async with self.session_app.post(
-                yarl.URL.build(path="/c/c/bawu/delpost"),
-                data=self.pack_form(payload),
+            async with self.client_app.post(
+                httpcore.URL(path="/c/c/bawu/delpost"),
+                data=pack_form(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -2247,9 +1978,9 @@ class Client(object):
         ]
 
         try:
-            async with self.session_app.post(
-                yarl.URL.build(path="/c/c/bawu/multiDelPost"),
-                data=self.pack_form(payload),
+            async with self.client_app.post(
+                httpcore.URL(path="/c/c/bawu/multiDelPost"),
+                data=pack_form(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -2370,8 +2101,8 @@ class Client(object):
             ('is_frs_mask_list[]', int(is_hide)),
         ]
 
-        async with self.session_web.post(
-            yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mo/q/bawurecoverthread"),
+        async with self.client_web.post(
+            httpcore.URL(scheme="https", host="tieba.baidu.com", path="/mo/q/bawurecoverthread"),
             data=payload,
         ) as resp:
             res_json: dict = await resp.json(encoding='utf-8', content_type=None)
@@ -2404,9 +2135,9 @@ class Client(object):
         ]
 
         try:
-            async with self.session_app.post(
-                yarl.URL.build(path="/c/c/bawu/moveTabThread"),
-                data=self.pack_form(payload),
+            async with self.client_app.post(
+                httpcore.URL(path="/c/c/bawu/moveTabThread"),
+                data=pack_form(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -2441,9 +2172,9 @@ class Client(object):
         ]
 
         try:
-            async with self.session_app.post(
-                yarl.URL.build(path="/c/c/bawu/pushRecomToPersonalized"),
-                data=self.pack_form(payload),
+            async with self.client_app.post(
+                httpcore.URL(path="/c/c/bawu/pushRecomToPersonalized"),
+                data=pack_form(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -2525,9 +2256,9 @@ class Client(object):
         ]
 
         try:
-            async with self.session_app.post(
-                yarl.URL.build(path="/c/c/bawu/goodlist"),
-                data=self.pack_form(payload),
+            async with self.client_app.post(
+                httpcore.URL(path="/c/c/bawu/goodlist"),
+                data=pack_form(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -2577,9 +2308,9 @@ class Client(object):
             ('z', tid),
         ]
 
-        async with self.session_app.post(
-            yarl.URL.build(path="/c/c/bawu/commitgood"),
-            data=self.pack_form(payload),
+        async with self.client_app.post(
+            httpcore.URL(path="/c/c/bawu/commitgood"),
+            data=pack_form(payload),
         ) as resp:
             res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -2659,9 +2390,9 @@ class Client(object):
             ('z', tid),
         ]
 
-        async with self.session_app.post(
-            yarl.URL.build(path="/c/c/bawu/committop"),
-            data=self.pack_form(payload),
+        async with self.client_app.post(
+            httpcore.URL(path="/c/c/bawu/committop"),
+            data=pack_form(payload),
         ) as resp:
             res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -2689,8 +2420,8 @@ class Client(object):
             fname = await self.get_fname(fid)
 
         try:
-            async with self.session_web.get(
-                yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mo/q/bawurecover"),
+            async with self.client_web.get(
+                httpcore.URL(scheme="https", host="tieba.baidu.com", path="/mo/q/bawurecover"),
                 allow_redirects=False,
                 params={
                     'fn': fname,
@@ -2728,8 +2459,8 @@ class Client(object):
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         try:
-            async with self.session_web.get(
-                yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/bawu2/platform/listBlackUser"),
+            async with self.client_web.get(
+                httpcore.URL(scheme="https", host="tieba.baidu.com", path="/bawu2/platform/listBlackUser"),
                 allow_redirects=False,
                 params={
                     'word': fname,
@@ -2773,8 +2504,8 @@ class Client(object):
         ]
 
         try:
-            async with self.session_web.post(
-                yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/bawu2/platform/addBlack"),
+            async with self.client_web.post(
+                httpcore.URL(scheme="http", host="tieba.baidu.com", path="/bawu2/platform/addBlack"),
                 data=payload,
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
@@ -2816,8 +2547,8 @@ class Client(object):
         ]
 
         try:
-            async with self.session_web.post(
-                yarl.URL.build(scheme="http", host="tieba.baidu.com", path="/bawu2/platform/cancelBlack"),
+            async with self.client_web.post(
+                httpcore.URL(scheme="http", host="tieba.baidu.com", path="/bawu2/platform/cancelBlack"),
                 data=payload,
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
@@ -2861,8 +2592,8 @@ class Client(object):
         }
 
         try:
-            async with self.session_web.get(
-                yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mo/q/getBawuAppealList"),
+            async with self.client_web.get(
+                httpcore.URL(scheme="https", host="tieba.baidu.com", path="/mo/q/getBawuAppealList"),
                 allow_redirects=False,
                 params=params,
             ) as resp:
@@ -2915,8 +2646,8 @@ class Client(object):
         )
 
         try:
-            async with self.session_web.post(
-                yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mo/q/multiAppealhandle"),
+            async with self.client_web.post(
+                httpcore.URL(scheme="https", host="tieba.baidu.com", path="/mo/q/multiAppealhandle"),
                 data=payload,
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
@@ -2943,7 +2674,7 @@ class Client(object):
         """
 
         try:
-            async with self.session_web.get(img_url, allow_redirects=False) as resp:
+            async with self.client_web.get(img_url, allow_redirects=False) as resp:
                 if not resp.content_type.endswith(('jpeg', 'png', 'bmp'), 6):
                     raise ContentTypeError(f"Expect jpeg, png or bmp, got {resp.content_type}")
                 content = await resp.content.read()
@@ -2972,19 +2703,19 @@ class Client(object):
 
         try:
             if size == 's':
-                img_url = yarl.URL.build(
+                img_url = httpcore.URL(
                     scheme="http", host="imgsrc.baidu.com", path=f"/forum/w=720;q=60;g=0/sign=__/{raw_hash}.jpg"
                 )
             elif size == 'm':
-                img_url = yarl.URL.build(
+                img_url = httpcore.URL(
                     scheme="http", host="imgsrc.baidu.com", path=f"/forum/w=960;q=60;g=0/sign=__/{raw_hash}.jpg"
                 )
             elif size == 'l':
-                img_url = yarl.URL.build(scheme="http", host="imgsrc.baidu.com", path=f"/forum/pic/item/{raw_hash}.jpg")
+                img_url = httpcore.URL(scheme="http", host="imgsrc.baidu.com", path=f"/forum/pic/item/{raw_hash}.jpg")
             else:
                 raise ValueError(f"Invalid size={size}")
 
-            async with self.session_web.get(img_url, allow_redirects=False) as resp:
+            async with self.client_web.get(img_url, allow_redirects=False) as resp:
                 if not resp.content_type.endswith(('jpeg', 'png', 'bmp'), 6):
                     raise ContentTypeError(f"Expect jpeg, png or bmp, got {resp.content_type}")
                 content = await resp.content.read()
@@ -3026,10 +2757,8 @@ class Client(object):
             else:
                 raise ValueError(f"Invalid size={size}")
 
-            async with self.session_web.get(
-                yarl.URL.build(
-                    scheme="http", host="tb.himg.baidu.com", path=f"/sys/portrait{path}/item/{user.portrait}"
-                ),
+            async with self.client_web.get(
+                httpcore.URL(scheme="http", host="tb.himg.baidu.com", path=f"/sys/portrait{path}/item/{user.portrait}"),
                 allow_redirects=False,
             ) as resp:
                 image = cv.imdecode(np.frombuffer(await resp.content.read(), np.uint8), cv.IMREAD_COLOR)
@@ -3057,9 +2786,9 @@ class Client(object):
         ]
 
         try:
-            async with self.session_app.post(
-                yarl.URL.build(path="/c/s/initNickname"),
-                data=self.pack_form(payload),
+            async with self.client_app.post(
+                httpcore.URL(path="/c/s/initNickname"),
+                data=pack_form(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -3097,9 +2826,9 @@ class Client(object):
         ]
 
         try:
-            async with self.session_app.post(
-                yarl.URL.build(path="/c/s/msg"),
-                data=self.pack_form(payload),
+            async with self.client_app.post(
+                httpcore.URL(path="/c/s/msg"),
+                data=pack_form(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -3139,9 +2868,9 @@ class Client(object):
         req_proto.data.pn = str(pn)
 
         try:
-            async with self.session_app_proto.post(
-                yarl.URL.build(path="/c/u/feed/replyme", query_string="cmd=303007"),
-                data=self.pack_proto_bytes(req_proto.SerializeToString()),
+            async with self.client_app_proto.post(
+                httpcore.URL(path="/c/u/feed/replyme", query_string="cmd=303007"),
+                data=pack_proto_request(req_proto.SerializeToString()),
             ) as resp:
                 res_proto = ReplyMeResIdl_pb2.ReplyMeResIdl()
                 res_proto.ParseFromString(await resp.content.read())
@@ -3175,9 +2904,9 @@ class Client(object):
         ]
 
         try:
-            async with self.session_app.post(
-                yarl.URL.build(path="/c/u/feed/atme"),
-                data=self.pack_form(payload),
+            async with self.client_app.post(
+                httpcore.URL(path="/c/u/feed/atme"),
+                data=pack_form(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODE_FUNC, content_type=None)
 
@@ -3304,9 +3033,9 @@ class Client(object):
         req_proto.data.pn = pn
         req_proto.data.is_view_card = 2 if public_only else 1
 
-        async with self.session_app_proto.post(
-            yarl.URL.build(path="/c/u/feed/userpost", query_string="cmd=303002"),
-            data=self.pack_proto_bytes(req_proto.SerializeToString()),
+        async with self.client_app_proto.post(
+            httpcore.URL(path="/c/u/feed/userpost", query_string="cmd=303002"),
+            data=pack_proto_request(req_proto.SerializeToString()),
         ) as resp:
             res_proto = UserPostResIdl_pb2.UserPostResIdl()
             res_proto.ParseFromString(await resp.content.read())
@@ -3355,9 +3084,9 @@ class Client(object):
         ]
 
         try:
-            async with self.session_app.post(
-                yarl.URL.build(path="/c/u/fans/page"),
-                data=self.pack_form(payload),
+            async with self.client_app.post(
+                httpcore.URL(path="/c/u/fans/page"),
+                data=pack_form(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODE_FUNC, content_type=None)
 
@@ -3400,9 +3129,9 @@ class Client(object):
         ]
 
         try:
-            async with self.session_app.post(
-                yarl.URL.build(path="/c/u/follow/followList"),
-                data=self.pack_form(payload),
+            async with self.client_app.post(
+                httpcore.URL(path="/c/u/follow/followList"),
+                data=pack_form(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODE_FUNC, content_type=None)
 
@@ -3432,8 +3161,8 @@ class Client(object):
         """
 
         try:
-            async with self.session_web.get(
-                yarl.URL.build(scheme="https", host="tieba.baidu.com", path="/mg/o/getForumHome"),
+            async with self.client_web.get(
+                httpcore.URL(scheme="https", host="tieba.baidu.com", path="/mg/o/getForumHome"),
                 allow_redirects=False,
                 params={
                     'pn': pn,
@@ -3472,9 +3201,9 @@ class Client(object):
         req_proto.data.rn = rn
 
         try:
-            async with self.session_app_proto.post(
-                yarl.URL.build(path="/c/u/user/getDislikeList", query_string="cmd=309692"),
-                data=self.pack_proto_bytes(req_proto.SerializeToString()),
+            async with self.client_app_proto.post(
+                httpcore.URL(path="/c/u/user/getDislikeList", query_string="cmd=309692"),
+                data=pack_proto_request(req_proto.SerializeToString()),
             ) as resp:
                 res_proto = GetDislikeListResIdl_pb2.GetDislikeListResIdl()
                 res_proto.ParseFromString(await resp.content.read())
@@ -3608,9 +3337,9 @@ class Client(object):
             ('thread_id', tid),
         ]
 
-        async with self.session_app.post(
-            yarl.URL.build(path="/c/c/agree/opAgree"),
-            data=self.pack_form(payload),
+        async with self.client_app.post(
+            httpcore.URL(path="/c/c/agree/opAgree"),
+            data=pack_form(payload),
         ) as resp:
             res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -3640,9 +3369,9 @@ class Client(object):
         ]
 
         try:
-            async with self.session_app.post(
-                yarl.URL.build(path="/c/c/user/removeFans"),
-                data=self.pack_form(payload),
+            async with self.client_app.post(
+                httpcore.URL(path="/c/c/user/removeFans"),
+                data=pack_form(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -3679,9 +3408,9 @@ class Client(object):
         ]
 
         try:
-            async with self.session_app.post(
-                yarl.URL.build(path="/c/c/user/follow"),
-                data=self.pack_form(payload),
+            async with self.client_app.post(
+                httpcore.URL(path="/c/c/user/follow"),
+                data=pack_form(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -3718,9 +3447,9 @@ class Client(object):
         ]
 
         try:
-            async with self.session_app.post(
-                yarl.URL.build(path="/c/c/user/unfollow"),
-                data=self.pack_form(payload),
+            async with self.client_app.post(
+                httpcore.URL(path="/c/c/user/unfollow"),
+                data=pack_form(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -3754,9 +3483,9 @@ class Client(object):
                 ('tbs', await self.get_tbs()),
             ]
 
-            async with self.session_app.post(
-                yarl.URL.build(path="/c/c/forum/like"),
-                data=self.pack_form(payload),
+            async with self.client_app.post(
+                httpcore.URL(path="/c/c/forum/like"),
+                data=pack_form(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -3792,9 +3521,9 @@ class Client(object):
                 ('tbs', await self.get_tbs()),
             ]
 
-            async with self.session_app.post(
-                yarl.URL.build(path="/c/c/forum/unfavolike"),
-                data=self.pack_form(payload),
+            async with self.client_app.post(
+                httpcore.URL(path="/c/c/forum/unfavolike"),
+                data=pack_form(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -3832,9 +3561,9 @@ class Client(object):
                 ('dislike_from', "homepage"),
             ]
 
-            async with self.session_app.post(
-                yarl.URL.build(path="/c/c/excellent/submitDislike"),
-                data=self.pack_form(payload),
+            async with self.client_app.post(
+                httpcore.URL(path="/c/c/excellent/submitDislike"),
+                data=pack_form(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -3868,9 +3597,9 @@ class Client(object):
                 ('forum_id', fid),
             ]
 
-            async with self.session_app.post(
-                yarl.URL.build(path="/c/c/excellent/submitCancelDislike"),
-                data=self.pack_form(payload),
+            async with self.client_app.post(
+                httpcore.URL(path="/c/c/excellent/submitCancelDislike"),
+                data=pack_form(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -3909,9 +3638,9 @@ class Client(object):
                 ('thread_id', tid),
             ]
 
-            async with self.session_app.post(
-                yarl.URL.build(path="/c/c/thread/setPrivacy"),
-                data=self.pack_form(payload),
+            async with self.client_app.post(
+                httpcore.URL(path="/c/c/thread/setPrivacy"),
+                data=pack_form(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -3947,9 +3676,9 @@ class Client(object):
                 ('tbs', await self.get_tbs()),
             ]
 
-            async with self.session_app.post(
-                yarl.URL.build(path="/c/c/forum/sign"),
-                data=self.pack_form(payload),
+            async with self.client_app.post(
+                httpcore.URL(path="/c/c/forum/sign"),
+                data=pack_form(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -4024,9 +3753,9 @@ class Client(object):
                 ('vcode_tag', '12'),
             ]
 
-            async with self.session_app.post(
-                yarl.URL.build(path="/c/c/post/add"),
-                data=self.pack_form(payload),
+            async with self.client_app.post(
+                httpcore.URL(path="/c/c/post/add"),
+                data=pack_form(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 

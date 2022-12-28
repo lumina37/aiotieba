@@ -22,8 +22,8 @@ classifiers = [
     "Topic :: Internet :: WWW/HTTP :: Session",
 ]
 dependencies = [
-    "aiodns>=3.0.0",
-    "aiohttp!=3.8.2,>=3.8.0",
+    "httpx>=0.23.0",
+    "httpx_ws>=0.2.2",
     "aiomysql>=0.1.0",
     "beautifulsoup4>=4.0.0",
     "lxml>=4.0.0",
