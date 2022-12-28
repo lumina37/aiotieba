@@ -1,0 +1,8 @@
+// tbclient.CommonReq
+syntax = "proto3";
+
+message CommonReq {
+    int32 _client_type = 1;
+    string _client_version = 2;
+    string BDUSS = 10;
+}

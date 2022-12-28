@@ -32,20 +32,14 @@ from .._logger import LOG
 from ..protobuf import (
     CommitPersonalMsgReqIdl_pb2,
     CommitPersonalMsgResIdl_pb2,
-    FrsPageReqIdl_pb2,
-    FrsPageResIdl_pb2,
     GetBawuInfoReqIdl_pb2,
     GetBawuInfoResIdl_pb2,
     GetDislikeListReqIdl_pb2,
     GetDislikeListResIdl_pb2,
     GetForumSquareReqIdl_pb2,
     GetForumSquareResIdl_pb2,
-    GetUserInfoReqIdl_pb2,
-    GetUserInfoResIdl_pb2,
     PbFloorReqIdl_pb2,
     PbFloorResIdl_pb2,
-    PbPageReqIdl_pb2,
-    PbPageResIdl_pb2,
     ProfileReqIdl_pb2,
     ProfileResIdl_pb2,
     ReplyMeReqIdl_pb2,
@@ -57,7 +51,7 @@ from ..protobuf import (
     UserPostReqIdl_pb2,
     UserPostResIdl_pb2,
 )
-from ..typedef import (
+from .common.typedef import (
     Appeals,
     Ats,
     BlacklistUsers,
@@ -81,8 +75,7 @@ from ..typedef import (
     UserInfo,
     UserPosts,
 )
-from . import get_fid, tieba_uid2user_info
-from .common.helper import pack_form, pack_proto_request, send_request
+from .common.helper import pack_form_request, pack_proto_request, send_request
 from .common.typedef import ForumInfoCache, Header, ReqUInfo, WebsocketResponse
 
 
@@ -104,8 +97,6 @@ class Client(object):
         '_cuid',
         '_cuid_galaxy2',
         '_ws_password',
-        '_transport',
-        '_app_base_url',
         '_client_app',
         '_client_app_proto',
         '_client_web',
@@ -139,9 +130,6 @@ class Client(object):
         self._cuid_galaxy2: str = None
         self._ws_password: bytes = None
 
-        self._app_base_url = httpcore.URL(scheme="http", host="tiebac.baidu.com")
-
-        self._transport: httpx.AsyncHTTPTransport = None
         self._client_app: httpx.AsyncClient = None
         self._client_app_proto: httpx.AsyncClient = None
         self._client_web: httpx.AsyncClient = None
@@ -161,8 +149,14 @@ class Client(object):
         if self.is_ws_aviliable:
             await self.websocket.close()
 
-        if self._transport is not None:
-            await self._transport.aclose()
+        if self._client_app is not None:
+            await self._client_app.aclose()
+        if self._client_app_proto is not None:
+            await self._client_app_proto.aclose()
+        if self._client_web is not None:
+            await self._client_web.aclose()
+        if self._client_ws is not None:
+            await self._client_ws.aclose()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.close()
@@ -299,22 +293,6 @@ class Client(object):
         return self._ws_password
 
     @property
-    def transport(self) -> httpx.AsyncHTTPTransport:
-        """
-        传输器
-
-        Returns:
-            httpx.AsyncHTTPTransport
-        """
-
-        if self._transport is None:
-            self._transport = httpx.AsyncHTTPTransport(
-                verify=False, limits=self._limits, trust_env=self._use_env_proxy, local_address="0.0.0.0"
-            )
-
-        return self._transport
-
-    @property
     def client_app(self) -> httpx.AsyncClient:
         """
         用于APP请求
@@ -328,10 +306,10 @@ class Client(object):
                 Header.USER_AGENT: f"tieba/{self.latest_version}",
                 Header.CONNECTION: "keep-alive",
                 Header.ACCEPT_ENCODING: "gzip",
-                Header.HOST: self._app_base_url.host,
+                Header.HOST: "tiebac.baidu.com",
             }
 
-            self._client_app = httpx.AsyncClient(headers=headers, timeout=self._timeout, transport=self.transport)
+            self._client_app = httpx.AsyncClient(headers=headers, timeout=self._timeout, trust_env=self._use_env_proxy)
 
         return self._client_app
 
@@ -350,10 +328,12 @@ class Client(object):
                 Header.BAIDU_DATA_TYPE: "protobuf",
                 Header.CONNECTION: "keep-alive",
                 Header.ACCEPT_ENCODING: "gzip",
-                Header.HOST: self._app_base_url.host,
+                Header.HOST: "tiebac.baidu.com",
             }
 
-            self._client_app_proto = httpx.AsyncClient(headers=headers, timeout=self._timeout, transport=self.transport)
+            self._client_app_proto = httpx.AsyncClient(
+                headers=headers, timeout=self._timeout, trust_env=self._use_env_proxy
+            )
 
         return self._client_app_proto
 
@@ -379,7 +359,7 @@ class Client(object):
             }
 
             self._client_web = httpx.AsyncClient(
-                headers=headers, cookies=cookies, timeout=self._timeout, transport=self.transport
+                headers=headers, cookies=cookies, timeout=self._timeout, trust_env=self._use_env_proxy
             )
 
         return self._client_web
@@ -399,7 +379,7 @@ class Client(object):
                 Header.SEC_WEBSOCKET_EXTENSIONS: "im_version=2.3",
             }
 
-            self._client_ws = httpx.AsyncClient(headers=headers, timeout=self._timeout, transport=self.transport)
+            self._client_ws = httpx.AsyncClient(headers=headers, timeout=self._timeout, trust_env=self._use_env_proxy)
 
         return self._client_ws
 
@@ -643,26 +623,15 @@ class Client(object):
             bool: True成功 False失败
         """
 
-        payload = [
-            ('_client_version', self.latest_version),
-            ('bdusstoken', self.BDUSS),
-        ]
+        from . import login
 
         try:
-            async with self.client_app.post(
-                httpcore.URL(path="/c/s/login"),
-                data=pack_form(payload),
-            ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
+            request = login.pack_request(self.client_app, self.latest_version, self.BDUSS)
+            response = await send_request(self.client_app, request)
+            user, tbs = login.parse_response(response)
 
-            if int(res_json['error_code']):
-                raise TiebaServerError(res_json['error_msg'])
-
-            user_dict = res_json['user']
-            self._user.user_id = user_dict['id']
-            self._user.portrait = user_dict['portrait']
-            self._user._user_name = user_dict['name']
-            self._tbs = res_json['anti']['tbs']
+            self._user = user
+            self._tbs = tbs
 
         except Exception as err:
             LOG.warning(err)
@@ -685,6 +654,8 @@ class Client(object):
 
         if fid := ForumInfoCache.get_fid(fname):
             return fid
+
+        from . import get_fid
 
         try:
             request = get_fid.pack_request(self.client_web, fname)
@@ -786,61 +757,12 @@ class Client(object):
             该接口rps阈值较低 建议每隔一段时间更换一个可用的Cookie字段BAIDUID
         """
 
-        if UserInfo.is_portrait(name_or_portrait):
-            params = {'id': name_or_portrait}
-        else:
-            params = {'un': name_or_portrait}
+        from . import get_uinfo_panel
 
         try:
-            async with self.client_web.get(
-                httpcore.URL(scheme="https", host="tieba.baidu.com", path="/home/get/panel"),
-                allow_redirects=False,
-                params=params,
-            ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
-
-            if int(res_json['no']):
-                raise TiebaServerError(res_json['error'])
-
-            user_dict: dict = res_json['data']
-            user = UserInfo()
-
-            # user.user_id = user_dict['id']
-            user.user_name = user_dict['name']
-            user.portrait = user_dict['portrait']
-            user.nick_name = user_dict['show_nickname']
-
-            _sex = user_dict['sex']
-            if _sex == 'male':
-                user.gender = 1
-            elif _sex == 'female':
-                user.gender = 2
-            else:
-                user.gender = 0
-
-            user.age = float(tb_age) if (tb_age := user_dict['tb_age']) != '-' else 0.0
-
-            def tb_num2int(tb_num: str) -> int:
-                """
-                将贴吧数字字符串转为int
-                可能会以xx万作为单位
-
-                Args:
-                    tb_num (str): 贴吧数字字符串
-
-                Returns:
-                    int: 对应数字
-                """
-
-                if isinstance(tb_num, str):
-                    return int(float(tb_num.removesuffix('万')) * 1e4)
-                else:
-                    return tb_num
-
-            user.post_num = tb_num2int(user_dict['post_num'])
-            user.fan_num = tb_num2int(user_dict['followed_count'])
-
-            user.is_vip = bool(int(vip_dict['v_status'])) if (vip_dict := user_dict['vipInfo']) else False
+            request = get_uinfo_panel.pack_request(self.client_web, name_or_portrait)
+            response = await send_request(self.client_web, request)
+            user = get_uinfo_panel.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. user={name_or_portrait}")
@@ -859,26 +781,12 @@ class Client(object):
             UserInfo: 包含 user_id / portrait / user_name
         """
 
+        from . import get_uinfo_user_json
+
         try:
-            async with self.client_web.get(
-                httpcore.URL(scheme="http", host="tieba.baidu.com", path="/i/sys/user_json"),
-                allow_redirects=False,
-                params={
-                    'un': user_name,
-                    'ie': 'utf-8',
-                },
-            ) as resp:
-                text = await resp.text(encoding='utf-8', errors='ignore')
-
-            if not text:
-                raise TiebaServerError("empty response")
-
-            res_json = json.loads(text)
-            user_dict = res_json['creator']
-
-            user = UserInfo()
-            user.user_id = user_dict['id']
-            user.portrait = user_dict['portrait']
+            request = get_uinfo_user_json.pack_request(self.client_web, user_name)
+            response = await send_request(self.client_web, request)
+            user = get_uinfo_user_json.parse_response(response)
             user.user_name = user_name
 
         except Exception as err:
@@ -898,22 +806,12 @@ class Client(object):
             UserInfo: 包含 all
         """
 
-        req_proto = GetUserInfoReqIdl_pb2.GetUserInfoReqIdl()
-        req_proto.data.user_id = user_id
+        from . import get_uinfo_getuserinfo
 
         try:
-            async with self.client_app_proto.post(
-                httpcore.URL(path="/c/u/user/getuserinfo", query_string="cmd=303024"),
-                data=pack_proto_request(req_proto.SerializeToString()),
-            ) as resp:
-                res_proto = GetUserInfoResIdl_pb2.GetUserInfoResIdl()
-                res_proto.ParseFromString(await resp.content.read())
-
-            if int(res_proto.error.errorno):
-                raise TiebaServerError(res_proto.error.errmsg)
-
-            user_proto = res_proto.data.user
-            user = UserInfo(_raw_data=user_proto)
+            request = get_uinfo_getuserinfo.pack_request(self.client_app_proto, user_id)
+            response = await send_request(self.client_app_proto, request)
+            user = get_uinfo_getuserinfo.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. user={user_id}")
@@ -935,23 +833,13 @@ class Client(object):
             该接口需要BDUSS
         """
 
+        from . import get_uinfo_getUserInfo
+
         try:
-            async with self.client_web.get(
-                httpcore.URL(scheme="http", host="tieba.baidu.com", path="/im/pcmsg/query/getUserInfo"),
-                allow_redirects=False,
-                params={'chatUid': user_id},
-            ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
-
-            if int(res_json['errno']):
-                raise TiebaServerError(res_json['errmsg'])
-
-            user_dict = res_json['chatUser']
-
-            user = UserInfo()
+            request = get_uinfo_getUserInfo.pack_request(self.client_web, user_id)
+            response = await send_request(self.client_web, request)
+            user = get_uinfo_getUserInfo.parse_response(response)
             user._user_id = user_id
-            user.portrait = user_dict['portrait']
-            user._user_name = user_dict['uname']
 
         except Exception as err:
             LOG.warning(f"{err}. user={user_id}")
@@ -973,14 +861,18 @@ class Client(object):
             请注意tieba_uid与旧版user_id的区别
         """
 
+        from . import tieba_uid2user_info
+
         try:
             request = tieba_uid2user_info.pack_request(self.client_app_proto, tieba_uid)
             response = await send_request(self.client_app_proto, request)
-            return tieba_uid2user_info.parse_response(response)
+            user = tieba_uid2user_info.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. tieba_uid={tieba_uid}")
-            return UserInfo()
+            user = UserInfo()
+
+        return user
 
     async def get_threads(
         self,
@@ -1009,27 +901,12 @@ class Client(object):
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
-        req_proto = FrsPageReqIdl_pb2.FrsPageReqIdl()
-        req_proto.data.common._client_type = 2
-        req_proto.data.common._client_version = self.latest_version
-        req_proto.data.fname = fname
-        req_proto.data.pn = pn
-        req_proto.data.rn = rn if rn > 0 else 1
-        req_proto.data.is_good = is_good
-        req_proto.data.sort = sort
+        from . import get_threads
 
         try:
-            async with self.client_app_proto.post(
-                httpcore.URL(path="/c/f/frs/page", query_string="cmd=301001"),
-                data=pack_proto_request(req_proto.SerializeToString()),
-            ) as resp:
-                res_proto = FrsPageResIdl_pb2.FrsPageResIdl()
-                res_proto.ParseFromString(await resp.content.read())
-
-            if int(res_proto.error.errorno):
-                raise TiebaServerError(res_proto.error.errmsg)
-
-            threads = Threads(res_proto.data)
+            request = get_threads.pack_request(self.client_app_proto, self.latest_version, fname, pn, rn, sort, is_good)
+            response = await send_request(self.client_app_proto, request)
+            threads = get_threads.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname}")
@@ -1069,31 +946,24 @@ class Client(object):
             Posts: 回复列表
         """
 
-        req_proto = PbPageReqIdl_pb2.PbPageReqIdl()
-        req_proto.data.common._client_version = self.latest_version
-        req_proto.data.tid = tid
-        req_proto.data.pn = pn
-        req_proto.data.rn = rn if rn > 1 else 2
-        req_proto.data.sort = sort
-        req_proto.data.only_thread_author = only_thread_author
-        req_proto.data.is_fold = is_fold
-        if with_comments:
-            req_proto.data.with_comments = with_comments
-            req_proto.data.comment_sort_by_agree = comment_sort_by_agree
-            req_proto.data.comment_rn = comment_rn
+        from . import get_posts
 
         try:
-            async with self.client_app_proto.post(
-                httpcore.URL(path="/c/f/pb/page", query_string="cmd=302001"),
-                data=pack_proto_request(req_proto.SerializeToString()),
-            ) as resp:
-                res_proto = PbPageResIdl_pb2.PbPageResIdl()
-                res_proto.ParseFromString(await resp.content.read())
-
-            if int(res_proto.error.errorno):
-                raise TiebaServerError(res_proto.error.errmsg)
-
-            posts = Posts(res_proto.data)
+            request = get_posts.pack_request(
+                self.client_app_proto,
+                self.latest_version,
+                tid,
+                pn,
+                rn,
+                sort,
+                only_thread_author,
+                with_comments,
+                comment_sort_by_agree,
+                comment_rn,
+                is_fold,
+            )
+            response = await send_request(self.client_app_proto, request)
+            posts = get_posts.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. tid={tid}")
@@ -1123,27 +993,12 @@ class Client(object):
             Comments: 楼中楼列表
         """
 
-        req_proto = PbFloorReqIdl_pb2.PbFloorReqIdl()
-        req_proto.data.common._client_version = self.latest_version
-        req_proto.data.tid = tid
-        if is_floor:
-            req_proto.data.spid = pid
-        else:
-            req_proto.data.pid = pid
-        req_proto.data.pn = pn
+        from . import get_comments
 
         try:
-            async with self.client_app_proto.post(
-                httpcore.URL(path="/c/f/pb/floor", query_string="cmd=302002"),
-                data=pack_proto_request(req_proto.SerializeToString()),
-            ) as resp:
-                res_proto = PbFloorResIdl_pb2.PbFloorResIdl()
-                res_proto.ParseFromString(await resp.content.read())
-
-            if int(res_proto.error.errorno):
-                raise TiebaServerError(res_proto.error.errmsg)
-
-            comments = Comments(res_proto.data)
+            request = get_comments.pack_request(self.client_app_proto, self.latest_version, tid, pid, pn, is_floor)
+            response = await send_request(self.client_app_proto, request)
+            comments = get_comments.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. tid={tid} pid={pid}")
@@ -1179,27 +1034,14 @@ class Client(object):
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
-        payload = [
-            ('_client_version', self.latest_version),
-            ('kw', fname),
-            ('only_thread', int(only_thread)),
-            ('pn', pn),
-            ('rn', rn),
-            ('sm', query_type),
-            ('word', query),
-        ]
+        from . import search_post
 
         try:
-            async with self.client_app.post(
-                httpcore.URL(path="/c/s/searchpost"),
-                data=pack_form(payload),
-            ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODE_FUNC, content_type=None)
-
-            if int(res_json['error_code']):
-                raise TiebaServerError(res_json['error_msg'])
-
-            searches = Searches(res_json)
+            request = search_post.pack_request(
+                self.client_app, self.latest_version, fname, query, pn, rn, query_type, only_thread
+            )
+            response = await send_request(self.client_app, request)
+            searches = search_post.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname}")
@@ -1228,7 +1070,7 @@ class Client(object):
         try:
             async with self.client_app.post(
                 httpcore.URL(path="/c/f/forum/getforumdetail"),
-                data=pack_form(payload),
+                data=pack_form_request(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -1539,7 +1381,7 @@ class Client(object):
         try:
             async with self.client_app.post(
                 httpcore.URL(path="/c/f/forum/getforumdata"),
-                data=pack_form(payload),
+                data=pack_form_request(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -1587,7 +1429,7 @@ class Client(object):
         try:
             async with self.client_app.post(
                 httpcore.URL(path="/c/f/forum/like"),
-                data=pack_form(payload),
+                data=pack_form_request(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -1626,7 +1468,7 @@ class Client(object):
         try:
             async with self.client_app.post(
                 httpcore.URL(path="/c/f/bawu/getRecomThreadList"),
-                data=pack_form(payload),
+                data=pack_form_request(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -1669,7 +1511,7 @@ class Client(object):
         try:
             async with self.client_app.post(
                 httpcore.URL(path="/c/f/bawu/getRecomThreadHistory"),
-                data=pack_form(payload),
+                data=pack_form_request(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODE_FUNC, content_type=None)
 
@@ -1733,7 +1575,7 @@ class Client(object):
         try:
             async with self.client_app.post(
                 httpcore.URL(path="/c/c/bawu/commitprison"),
-                data=pack_form(payload),
+                data=pack_form_request(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -1865,7 +1707,7 @@ class Client(object):
 
         async with self.client_app.post(
             httpcore.URL(path="/c/c/bawu/delthread"),
-            data=pack_form(payload),
+            data=pack_form_request(payload),
         ) as resp:
             res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -1898,7 +1740,7 @@ class Client(object):
         try:
             async with self.client_app.post(
                 httpcore.URL(path="/c/c/bawu/multiDelThread"),
-                data=pack_form(payload),
+                data=pack_form_request(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -1939,7 +1781,7 @@ class Client(object):
         try:
             async with self.client_app.post(
                 httpcore.URL(path="/c/c/bawu/delpost"),
-                data=pack_form(payload),
+                data=pack_form_request(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -1980,7 +1822,7 @@ class Client(object):
         try:
             async with self.client_app.post(
                 httpcore.URL(path="/c/c/bawu/multiDelPost"),
-                data=pack_form(payload),
+                data=pack_form_request(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -2137,7 +1979,7 @@ class Client(object):
         try:
             async with self.client_app.post(
                 httpcore.URL(path="/c/c/bawu/moveTabThread"),
-                data=pack_form(payload),
+                data=pack_form_request(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -2174,7 +2016,7 @@ class Client(object):
         try:
             async with self.client_app.post(
                 httpcore.URL(path="/c/c/bawu/pushRecomToPersonalized"),
-                data=pack_form(payload),
+                data=pack_form_request(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -2258,7 +2100,7 @@ class Client(object):
         try:
             async with self.client_app.post(
                 httpcore.URL(path="/c/c/bawu/goodlist"),
-                data=pack_form(payload),
+                data=pack_form_request(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -2310,7 +2152,7 @@ class Client(object):
 
         async with self.client_app.post(
             httpcore.URL(path="/c/c/bawu/commitgood"),
-            data=pack_form(payload),
+            data=pack_form_request(payload),
         ) as resp:
             res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -2392,7 +2234,7 @@ class Client(object):
 
         async with self.client_app.post(
             httpcore.URL(path="/c/c/bawu/committop"),
-            data=pack_form(payload),
+            data=pack_form_request(payload),
         ) as resp:
             res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -2788,7 +2630,7 @@ class Client(object):
         try:
             async with self.client_app.post(
                 httpcore.URL(path="/c/s/initNickname"),
-                data=pack_form(payload),
+                data=pack_form_request(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -2828,7 +2670,7 @@ class Client(object):
         try:
             async with self.client_app.post(
                 httpcore.URL(path="/c/s/msg"),
-                data=pack_form(payload),
+                data=pack_form_request(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -2906,7 +2748,7 @@ class Client(object):
         try:
             async with self.client_app.post(
                 httpcore.URL(path="/c/u/feed/atme"),
-                data=pack_form(payload),
+                data=pack_form_request(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODE_FUNC, content_type=None)
 
@@ -3086,7 +2928,7 @@ class Client(object):
         try:
             async with self.client_app.post(
                 httpcore.URL(path="/c/u/fans/page"),
-                data=pack_form(payload),
+                data=pack_form_request(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODE_FUNC, content_type=None)
 
@@ -3131,7 +2973,7 @@ class Client(object):
         try:
             async with self.client_app.post(
                 httpcore.URL(path="/c/u/follow/followList"),
-                data=pack_form(payload),
+                data=pack_form_request(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODE_FUNC, content_type=None)
 
@@ -3339,7 +3181,7 @@ class Client(object):
 
         async with self.client_app.post(
             httpcore.URL(path="/c/c/agree/opAgree"),
-            data=pack_form(payload),
+            data=pack_form_request(payload),
         ) as resp:
             res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -3371,7 +3213,7 @@ class Client(object):
         try:
             async with self.client_app.post(
                 httpcore.URL(path="/c/c/user/removeFans"),
-                data=pack_form(payload),
+                data=pack_form_request(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -3410,7 +3252,7 @@ class Client(object):
         try:
             async with self.client_app.post(
                 httpcore.URL(path="/c/c/user/follow"),
-                data=pack_form(payload),
+                data=pack_form_request(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -3449,7 +3291,7 @@ class Client(object):
         try:
             async with self.client_app.post(
                 httpcore.URL(path="/c/c/user/unfollow"),
-                data=pack_form(payload),
+                data=pack_form_request(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -3485,7 +3327,7 @@ class Client(object):
 
             async with self.client_app.post(
                 httpcore.URL(path="/c/c/forum/like"),
-                data=pack_form(payload),
+                data=pack_form_request(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -3523,7 +3365,7 @@ class Client(object):
 
             async with self.client_app.post(
                 httpcore.URL(path="/c/c/forum/unfavolike"),
-                data=pack_form(payload),
+                data=pack_form_request(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -3563,7 +3405,7 @@ class Client(object):
 
             async with self.client_app.post(
                 httpcore.URL(path="/c/c/excellent/submitDislike"),
-                data=pack_form(payload),
+                data=pack_form_request(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -3599,7 +3441,7 @@ class Client(object):
 
             async with self.client_app.post(
                 httpcore.URL(path="/c/c/excellent/submitCancelDislike"),
-                data=pack_form(payload),
+                data=pack_form_request(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -3640,7 +3482,7 @@ class Client(object):
 
             async with self.client_app.post(
                 httpcore.URL(path="/c/c/thread/setPrivacy"),
-                data=pack_form(payload),
+                data=pack_form_request(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -3678,7 +3520,7 @@ class Client(object):
 
             async with self.client_app.post(
                 httpcore.URL(path="/c/c/forum/sign"),
-                data=pack_form(payload),
+                data=pack_form_request(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 
@@ -3755,7 +3597,7 @@ class Client(object):
 
             async with self.client_app.post(
                 httpcore.URL(path="/c/c/post/add"),
-                data=pack_form(payload),
+                data=pack_form_request(payload),
             ) as resp:
                 res_json: dict = await resp.json(encoding='utf-8', content_type=None)
 

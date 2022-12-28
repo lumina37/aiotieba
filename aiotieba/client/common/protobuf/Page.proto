@@ -1,0 +1,11 @@
+// tbclient.Page
+syntax = "proto3";
+
+message Page {
+    int32 page_size = 1;
+    int32 current_page = 3;
+    int32 total_count = 4;
+    int32 total_page = 5;
+    int32 has_more = 6;
+    int32 has_prev = 7;
+}

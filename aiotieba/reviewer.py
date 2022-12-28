@@ -22,9 +22,9 @@ from typing import List, Literal, Optional, Tuple, Union
 
 from ._helper import alog_time
 from ._logger import LOG
-from .client.client import Client, ReqUInfo, ForumInfoCache
+from .client import Client, ReqUInfo, ForumInfoCache
 from .database import MySQLDB, SQLiteDB
-from .typedef import Comment, Comments, Post, Posts, Thread, Threads, UserInfo
+from .client.common.typedef import Comment, Comments, Post, Posts, Thread, Threads, UserInfo
 
 
 class BaseReviewer(object):

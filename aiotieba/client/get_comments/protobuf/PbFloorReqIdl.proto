@@ -1,0 +1,15 @@
+// tbclient.PbFloor.PbFloorReqIdl
+syntax = "proto3";
+
+import "CommonReq.proto";
+
+message PbFloorReqIdl {
+    message DataReq {
+        CommonReq common = 9;
+        int64 tid = 1;
+        int64 pid = 2;
+        int64 spid = 3;
+        int32 pn = 4;
+    }
+    DataReq data = 1;
+}

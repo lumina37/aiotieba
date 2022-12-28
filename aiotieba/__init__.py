@@ -12,7 +12,7 @@ from ._logger import LOG
 from .client import Client, ReqUInfo
 from .database import MySQLDB, SQLiteDB
 from .reviewer import BaseReviewer, Ops, Punish, Reviewer
-from .typedef import (
+from .client.common.typedef import (
     Appeal,
     Appeals,
     At,

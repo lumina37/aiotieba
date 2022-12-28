@@ -13,7 +13,7 @@ import aiomysql
 
 from ._config import CONFIG
 from ._logger import LOG
-from .typedef import UserInfo
+from .client.common.typedef import UserInfo
 
 
 class MySQLDB(object):

@@ -3,17 +3,17 @@ import httpx
 from ..._exception import TiebaServerError
 from ..common.helper import pack_proto_request
 from ..common.typedef import UserInfo
-from .protobuf import GetUserByTiebaUidReqIdl_pb2, GetUserByTiebaUidResIdl_pb2
+from .protobuf import GetUserInfoReqIdl_pb2, GetUserInfoResIdl_pb2
 
 
-def pack_request(client: httpx.AsyncClient, tieba_uid: int) -> httpx.Request:
+def pack_request(client: httpx.AsyncClient, user_id: int) -> httpx.Request:
 
-    req_proto = GetUserByTiebaUidReqIdl_pb2.GetUserByTiebaUidReqIdl()
-    req_proto.data.tieba_uid = str(tieba_uid)
+    req_proto = GetUserInfoReqIdl_pb2.GetUserInfoReqIdl()
+    req_proto.data.user_id = user_id
 
     request = pack_proto_request(
         client,
-        "http://tiebac.baidu.com/c/u/user/getUserByTiebaUid?cmd=309702",
+        "http://tiebac.baidu.com/c/u/user/getuserinfo?cmd=303024",
         req_proto.SerializeToString(),
     )
 
@@ -21,7 +21,7 @@ def pack_request(client: httpx.AsyncClient, tieba_uid: int) -> httpx.Request:
 
 
 def parse_response(response: httpx.Response) -> UserInfo:
-    res_proto = GetUserByTiebaUidResIdl_pb2.GetUserByTiebaUidResIdl()
+    res_proto = GetUserInfoResIdl_pb2.GetUserInfoResIdl()
     res_proto.ParseFromString(response.content)
 
     if int(res_proto.error.errorno):
