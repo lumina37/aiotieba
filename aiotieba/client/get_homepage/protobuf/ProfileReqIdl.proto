@@ -1,0 +1,16 @@
+// tbclient.Profile.ProfileReqIdl
+syntax = "proto3";
+
+import "CommonReq.proto";
+
+message ProfileReqIdl {
+    message DataReq {
+        int64 uid = 1;
+        uint32 need_post_count = 2;
+        uint32 pn = 6;
+        uint32 rn = 7;
+        CommonReq common = 9;
+        string friend_uid_portrait = 16;
+    }
+    DataReq data = 1;
+}

@@ -1,0 +1,12 @@
+// tbclient.SearchPostForum.SearchPostForumReqIdl
+syntax = "proto3";
+
+import "CommonReq.proto";
+
+message SearchPostForumReqIdl {
+    message DataReq {
+        CommonReq common = 1;
+        string fname = 2;
+    }
+    DataReq data = 1;
+}

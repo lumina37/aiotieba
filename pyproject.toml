@@ -31,11 +31,9 @@ dependencies = [
     "pycryptodome>=3.0.0",
     "tomli>=2.0.0;python_version<'3.11'",
     "pysimdjson>=5.0.0,<5.1.0",
+    "opencv-contrib-python-headless>=4.6.0.66"
 ]
 dynamic = ["version"]
-
-[project.optional-dependencies]
-img = ["opencv-contrib-python-headless>=4.6.0.66"]
 
 [tool.setuptools.packages.find]
 include = ["aiotieba*"]

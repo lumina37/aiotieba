@@ -29,11 +29,13 @@ def pack_request(
 
 
 def parse_response(response: httpx.Response) -> Threads:
+    response.raise_for_status()
+
     res_proto = FrsPageResIdl_pb2.FrsPageResIdl()
     res_proto.ParseFromString(response.content)
 
-    if int(res_proto.error.errorno):
-        raise TiebaServerError(res_proto.error.errmsg)
+    if code := res_proto.error.errorno:
+        raise TiebaServerError(code, res_proto.error.errmsg)
 
     threads = Threads(res_proto.data)
 

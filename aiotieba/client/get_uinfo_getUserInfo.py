@@ -18,10 +18,11 @@ def pack_request(client: httpx.AsyncClient, user_id: int) -> httpx.Request:
 
 
 def parse_response(response: httpx.Response) -> UserInfo:
-    res_json = jsonlib.loads(response.content)
+    response.raise_for_status()
 
-    if int(res_json['errno']):
-        raise TiebaServerError(res_json['errmsg'])
+    res_json = jsonlib.loads(response.content)
+    if code := int(res_json['errno']):
+        raise TiebaServerError(code, res_json['errmsg'])
 
     user_dict = res_json['chatUser']
 

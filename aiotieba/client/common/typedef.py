@@ -453,6 +453,15 @@ class UserInfo(object):
     def __bool__(self) -> bool:
         return bool(self._user_id) or bool(self._user_name) or bool(self._portrait)
 
+    def __or__(self, obj: "UserInfo") -> "UserInfo":
+        self._user_id = self._user_id or obj.user_id
+        self.portrait = self.portrait or obj.portrait
+        self._user_name = self._user_name or obj.user_name
+        self._nick_name = self._nick_name or obj.nick_name
+        self.tieba_uid = self.tieba_uid or obj.tieba_uid
+
+        return self
+
     @staticmethod
     def is_user_id(user_id: Any) -> bool:
         """

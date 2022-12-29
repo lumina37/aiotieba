@@ -27,11 +27,13 @@ def pack_request(client: httpx.AsyncClient, version: str, tid: int, pid: int, pn
 
 
 def parse_response(response: httpx.Response) -> Comments:
+    response.raise_for_status()
+
     res_proto = PbFloorResIdl_pb2.PbFloorResIdl()
     res_proto.ParseFromString(response.content)
 
-    if int(res_proto.error.errorno):
-        raise TiebaServerError(res_proto.error.errmsg)
+    if code := res_proto.error.errorno:
+        raise TiebaServerError(code, res_proto.error.errmsg)
 
     comments = Comments(res_proto.data)
 

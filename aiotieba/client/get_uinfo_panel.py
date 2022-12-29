@@ -42,10 +42,11 @@ def _num2int(tb_num: str) -> int:
 
 
 def parse_response(response: httpx.Response) -> UserInfo:
-    res_json = jsonlib.loads(response.content)
+    response.raise_for_status()
 
-    if int(res_json['no']):
-        raise TiebaServerError(res_json['error'])
+    res_json = jsonlib.loads(response.content)
+    if code := int(res_json['no']):
+        raise TiebaServerError(code, res_json['error'])
 
     user_dict = res_json['data']
     user = UserInfo()

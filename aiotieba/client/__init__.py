@@ -1,11 +1,4 @@
 __all__ = ['Client']
-
-try:
-    import cv2 as cv
-    import numpy as np
-except ImportError:
-    pass
-
 import asyncio
 import base64
 import gzip
@@ -16,41 +9,27 @@ import time
 import uuid
 from typing import ClassVar, Dict, List, Literal, Optional, Tuple, Union
 
-import bs4
 import httpcore
 import httpx
 import httpx_ws
+import numpy as np
 import wsproto
 from Crypto.Cipher import AES, PKCS1_v1_5
 from Crypto.PublicKey import RSA
-from google.protobuf.json_format import ParseDict
 
 from .._config import CONFIG
-from .._exception import ContentTypeError, TiebaServerError
+from .._exception import TiebaServerError
 from .._helper import JSON_DECODE_FUNC
 from .._logger import LOG
 from ..protobuf import (
     CommitPersonalMsgReqIdl_pb2,
     CommitPersonalMsgResIdl_pb2,
-    GetBawuInfoReqIdl_pb2,
-    GetBawuInfoResIdl_pb2,
     GetDislikeListReqIdl_pb2,
     GetDislikeListResIdl_pb2,
-    GetForumSquareReqIdl_pb2,
-    GetForumSquareResIdl_pb2,
-    PbFloorReqIdl_pb2,
-    PbFloorResIdl_pb2,
-    ProfileReqIdl_pb2,
-    ProfileResIdl_pb2,
-    ReplyMeReqIdl_pb2,
-    ReplyMeResIdl_pb2,
-    SearchPostForumReqIdl_pb2,
-    SearchPostForumResIdl_pb2,
     UpdateClientInfoReqIdl_pb2,
     UpdateClientInfoResIdl_pb2,
-    UserPostReqIdl_pb2,
-    UserPostResIdl_pb2,
 )
+from .common.helper import pack_form_request, pack_proto_request, send_request
 from .common.typedef import (
     Appeals,
     Ats,
@@ -61,6 +40,8 @@ from .common.typedef import (
     FollowForums,
     Follows,
     Forum,
+    ForumInfoCache,
+    Header,
     MemberUsers,
     NewThread,
     Posts,
@@ -68,15 +49,15 @@ from .common.typedef import (
     RecomThreads,
     Recovers,
     Replys,
+    ReqUInfo,
     Searches,
     SelfFollowForums,
     SquareForums,
     Threads,
     UserInfo,
     UserPosts,
+    WebsocketResponse,
 )
-from .common.helper import pack_form_request, pack_proto_request, send_request
-from .common.typedef import ForumInfoCache, Header, ReqUInfo, WebsocketResponse
 
 
 class Client(object):
@@ -352,6 +333,7 @@ class Client(object):
                 Header.ACCEPT_ENCODING: "gzip, deflate",
                 Header.CACHE_CONTROL: "no-cache",
                 Header.CONNECTION: "keep-alive",
+                Header.HOST: "tieba.baidu.com",
             }
             cookies = {
                 'BDUSS': self.BDUSS,
@@ -626,11 +608,11 @@ class Client(object):
         from . import login
 
         try:
-            request = login.pack_request(self.client_app, self.latest_version, self.BDUSS)
+            request = login.pack_request(self.client_app, self.BDUSS, self.latest_version)
             response = await send_request(self.client_app, request)
             user, tbs = login.parse_response(response)
 
-            self._user = user
+            self._user = self._user | user
             self._tbs = tbs
 
         except Exception as err:
@@ -1062,37 +1044,18 @@ class Client(object):
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
-        payload = [
-            ('_client_version', self.latest_version),
-            ('forum_id', fid),
-        ]
+        from . import get_forum_detail
 
         try:
-            async with self.client_app.post(
-                httpcore.URL(path="/c/f/forum/getforumdetail"),
-                data=pack_form_request(payload),
-            ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
-
-            if int(res_json['error_code']):
-                raise TiebaServerError(res_json['error_msg'])
-
-            forum_dict: Dict[str, str] = res_json['forum_info']
-            forum_dict['thread_num'] = forum_dict.pop('thread_count')
-
-            res = Forum(
-                ParseDict(
-                    forum_dict,
-                    GetDislikeListResIdl_pb2.GetDislikeListResIdl.DataRes.ForumList(),
-                    ignore_unknown_fields=True,
-                )
-            )
+            request = get_forum_detail.pack_request(self.client_app, self.latest_version, fid)
+            response = await send_request(self.client_app, request)
+            forum = get_forum_detail.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname_or_fid}")
-            res = Forum()
+            forum = Forum()
 
-        return res
+        return forum
 
     async def get_bawu_info(self, fname_or_fid: Union[str, int]) -> Dict[str, List[UserInfo]]:
         """
@@ -1107,37 +1070,12 @@ class Client(object):
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
-        req_proto = GetBawuInfoReqIdl_pb2.GetBawuInfoReqIdl()
-        req_proto.data.common._client_version = self.latest_version
-        req_proto.data.fid = fid
+        from . import get_bawu_info
 
         try:
-            async with self.client_app_proto.post(
-                httpcore.URL(path="/c/f/forum/getBawuInfo", query_string="cmd=301007"),
-                data=pack_proto_request(req_proto.SerializeToString()),
-            ) as resp:
-                res_proto = GetBawuInfoResIdl_pb2.GetBawuInfoResIdl()
-                res_proto.ParseFromString(await resp.content.read())
-
-            if int(res_proto.error.errorno):
-                raise TiebaServerError(res_proto.error.errmsg)
-
-            def _parse_user_info(proto) -> UserInfo:
-                user = UserInfo()
-                user.user_id = proto.id
-                user.portrait = proto.portrait
-                user._user_name = proto.name
-                user.nick_name = proto.name_show
-                user._level = proto.user_level
-                return user
-
-            roledes_protos = res_proto.data.bawu_team_info.bawu_team_list
-            bawu_dict = {
-                roledes_proto.role_name: [
-                    _parse_user_info(roleinfo_proto) for roleinfo_proto in roledes_proto.role_info
-                ]
-                for roledes_proto in roledes_protos
-            }
+            request = get_bawu_info.pack_request(self.client_app_proto, self.latest_version, fid)
+            response = await send_request(self.client_app_proto, request)
+            bawu_dict = get_bawu_info.parse_response(response)
 
         except Exception as err:
             LOG.warning(err)
@@ -1158,23 +1096,12 @@ class Client(object):
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
-        req_proto = SearchPostForumReqIdl_pb2.SearchPostForumReqIdl()
-        req_proto.data.common.BDUSS = self.BDUSS
-        req_proto.data.common._client_version = self.latest_version
-        req_proto.data.fname = fname
+        from . import get_tab_map
 
         try:
-            async with self.client_app_proto.post(
-                httpcore.URL(path="/c/f/forum/searchPostForum", query_string="cmd=309466"),
-                data=pack_proto_request(req_proto.SerializeToString()),
-            ) as resp:
-                res_proto = SearchPostForumResIdl_pb2.SearchPostForumResIdl()
-                res_proto.ParseFromString(await resp.content.read())
-
-            if int(res_proto.error.errorno):
-                raise TiebaServerError(res_proto.error.errmsg)
-
-            tab_map = {tab_proto.tab_name: tab_proto.tab_id for tab_proto in res_proto.data.exact_match.tab_info}
+            request = get_tab_map.pack_request(self.client_app_proto, self.BDUSS, self.latest_version, fname)
+            response = await send_request(self.client_app_proto, request)
+            tab_map = get_tab_map.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname_or_fid}")
@@ -1196,19 +1123,12 @@ class Client(object):
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
-        try:
-            async with self.client_web.get(
-                httpcore.URL(scheme="https", host="tieba.baidu.com", path="/f/like/furank"),
-                allow_redirects=False,
-                params={
-                    'kw': fname,
-                    'pn': pn,
-                    'ie': 'utf-8',
-                },
-            ) as resp:
-                soup = bs4.BeautifulSoup(await resp.text(), 'lxml')
+        from . import get_rank_users
 
-            rank_users = RankUsers(soup)
+        try:
+            request = get_rank_users.pack_request(self.client_web, fname, pn)
+            response = await send_request(self.client_web, request)
+            rank_users = get_rank_users.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname}")
@@ -1230,19 +1150,12 @@ class Client(object):
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
-        try:
-            async with self.client_web.get(
-                httpcore.URL(scheme="https", host="tieba.baidu.com", path="/bawu2/platform/listMemberInfo"),
-                allow_redirects=False,
-                params={
-                    'word': fname,
-                    'pn': pn,
-                    'ie': 'utf-8',
-                },
-            ) as resp:
-                soup = bs4.BeautifulSoup(await resp.text(), 'lxml')
+        from . import get_member_users
 
-            member_users = MemberUsers(soup)
+        try:
+            request = get_member_users.pack_request(self.client_web, fname, pn)
+            response = await send_request(self.client_web, request)
+            member_users = get_member_users.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname}")
@@ -1263,25 +1176,14 @@ class Client(object):
             SquareForums: 吧广场列表
         """
 
-        req_proto = GetForumSquareReqIdl_pb2.GetForumSquareReqIdl()
-        req_proto.data.common.BDUSS = self.BDUSS
-        req_proto.data.common._client_version = self.latest_version
-        req_proto.data.class_name = class_name
-        req_proto.data.pn = pn
-        req_proto.data.rn = rn
+        from . import get_square_forums
 
         try:
-            async with self.client_app_proto.post(
-                httpcore.URL(path="/c/f/forum/getForumSquare", query_string="cmd=309653"),
-                data=pack_proto_request(req_proto.SerializeToString()),
-            ) as resp:
-                res_proto = GetForumSquareResIdl_pb2.GetForumSquareResIdl()
-                res_proto.ParseFromString(await resp.content.read())
-
-            if int(res_proto.error.errorno):
-                raise TiebaServerError(res_proto.error.errmsg)
-
-            square_forums = SquareForums(res_proto.data)
+            request = get_square_forums.pack_request(
+                self.client_app_proto, self.BDUSS, self.latest_version, class_name, pn, rn
+            )
+            response = await send_request(self.client_app_proto, request)
+            square_forums = get_square_forums.parse_response(response)
 
         except Exception as err:
             LOG.warning(err)
@@ -1308,31 +1210,12 @@ class Client(object):
         else:
             user = UserInfo(_id)
 
-        req_proto = ProfileReqIdl_pb2.ProfileReqIdl()
-        req_proto.data.common._client_version = self.latest_version
-        req_proto.data.need_post_count = 1
-        req_proto.data.friend_uid_portrait = user.portrait
-        if with_threads:
-            req_proto.data.common._client_type = 2
-        req_proto.data.pn = 1
-        req_proto.data.rn = 20
-        # req_proto.data.uid = (await self.get_self_info()).user_id  # 用该字段检查共同关注的吧
+        from . import get_homepage
 
         try:
-            async with self.client_app_proto.post(
-                httpcore.URL(path="/c/u/user/profile", query_string="cmd=303012"),
-                data=pack_proto_request(req_proto.SerializeToString()),
-            ) as resp:
-                res_proto = ProfileResIdl_pb2.ProfileResIdl()
-                res_proto.ParseFromString(await resp.content.read())
-
-            if int(res_proto.error.errorno):
-                raise TiebaServerError(res_proto.error.errmsg)
-
-            user = UserInfo(_raw_data=res_proto.data.user)
-            threads = [NewThread(thread_proto) for thread_proto in res_proto.data.post_list]
-            for thread in threads:
-                thread._user = user
+            request = get_homepage.pack_request(self.client_app_proto, self.latest_version, user.portrait, with_threads)
+            response = await send_request(self.client_app_proto, request)
+            user, threads = get_homepage.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. user={user}")
@@ -1362,41 +1245,16 @@ class Client(object):
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
-        payload = [
-            ('BDUSS', self.BDUSS),
-            ('_client_version', self.latest_version),
-            ('forum_id', fid),
-        ]
+        from . import get_statistics
 
-        field_names = [
-            'view',
-            'thread',
-            'new_member',
-            'post',
-            'sign_ratio',
-            'average_time',
-            'average_times',
-            'recommend',
-        ]
         try:
-            async with self.client_app.post(
-                httpcore.URL(path="/c/f/forum/getforumdata"),
-                data=pack_form_request(payload),
-            ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
-
-            if int(res_json['error_code']):
-                raise TiebaServerError(res_json['error_msg'])
-
-            data = res_json['data']
-            stat = {
-                field_name: [int(item['value']) for item in reversed(data_i['group'][1]['values'])]
-                for field_name, data_i in zip(field_names, data)
-            }
+            request = get_statistics.pack_request(self.client_app, self.BDUSS, self.latest_version, fid)
+            response = await send_request(self.client_app, request)
+            stat = get_statistics.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname_or_fid}")
-            stat = {field_name: [] for field_name in field_names}
+            stat = {field_name: [] for field_name in get_statistics.field_names}
 
         return stat
 
@@ -1418,25 +1276,14 @@ class Client(object):
         else:
             user = UserInfo(_id)
 
-        payload = [
-            ('BDUSS', self.BDUSS),
-            ('_client_version', self.latest_version),
-            ('friend_uid', user.user_id),
-            ('page_no', pn),
-            ('page_size', rn),
-        ]
+        from . import get_follow_forums
 
         try:
-            async with self.client_app.post(
-                httpcore.URL(path="/c/f/forum/like"),
-                data=pack_form_request(payload),
-            ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
-
-            if int(res_json['error_code']):
-                raise TiebaServerError(res_json['error_msg'])
-
-            follow_forums = FollowForums(res_json)
+            request = get_follow_forums.pack_request(
+                self.client_app, self.BDUSS, self.latest_version, user.user_id, pn, rn
+            )
+            response = await send_request(self.client_app, request)
+            follow_forums = get_follow_forums.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. user={user}")
@@ -1457,26 +1304,12 @@ class Client(object):
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
-        payload = [
-            ('BDUSS', self.BDUSS),
-            ('_client_version', self.latest_version),
-            ('forum_id', fid),
-            ('pn', '1'),
-            ('rn', '0'),
-        ]
+        from . import get_recom_status
 
         try:
-            async with self.client_app.post(
-                httpcore.URL(path="/c/f/bawu/getRecomThreadList"),
-                data=pack_form_request(payload),
-            ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
-
-            if int(res_json['error_code']):
-                raise TiebaServerError(res_json['error_msg'])
-
-            total_recom_num = int(res_json['total_recommend_num'])
-            used_recom_num = int(res_json['used_recommend_num'])
+            request = get_recom_status.pack_request(self.client_app, self.BDUSS, self.latest_version, fid)
+            response = await send_request(self.client_app, request)
+            total_recom_num, used_recom_num = get_recom_status.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname_or_fid}")
@@ -1500,25 +1333,12 @@ class Client(object):
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
-        payload = [
-            ('BDUSS', self.BDUSS),
-            ('_client_version', self.latest_version),
-            ('forum_id', fid),
-            ('pn', pn),
-            ('rn', rn),
-        ]
+        from . import get_recom_threads
 
         try:
-            async with self.client_app.post(
-                httpcore.URL(path="/c/f/bawu/getRecomThreadHistory"),
-                data=pack_form_request(payload),
-            ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODE_FUNC, content_type=None)
-
-            if int(res_json['error_code']):
-                raise TiebaServerError(res_json['error_msg'])
-
-            recom_threads = RecomThreads(res_json)
+            request = get_recom_threads.pack_request(self.client_app, self.BDUSS, self.latest_version, fid, pn, rn)
+            response = await send_request(self.client_app, request)
+            recom_threads = get_recom_threads.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname_or_fid}")
@@ -1560,27 +1380,14 @@ class Client(object):
         else:
             user = UserInfo(_id)
 
-        payload = [
-            ('BDUSS', self.BDUSS),
-            ('day', day),
-            ('fid', fid),
-            ('ntn', 'banid'),
-            ('portrait', user.portrait),
-            ('reason', reason),
-            ('tbs', await self.get_tbs()),
-            ('word', fname),
-            ('z', '6'),
-        ]
+        tbs = await self.get_tbs()
+
+        from . import block
 
         try:
-            async with self.client_app.post(
-                httpcore.URL(path="/c/c/bawu/commitprison"),
-                data=pack_form_request(payload),
-            ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
-
-            if int(res_json['error_code']):
-                raise TiebaServerError(res_json['error_msg'])
+            request = block.pack_request(self.client_app, self.BDUSS, tbs, fname, fid, user.portrait, day, reason)
+            response = await send_request(self.client_app, request)
+            block.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname_or_fid} user={user} day={day}")
@@ -1613,23 +1420,14 @@ class Client(object):
         else:
             user = UserInfo(_id)
 
-        payload = [
-            ('fn', fname),
-            ('fid', fid),
-            ('block_un', ' '),
-            ('block_uid', user.user_id),
-            ('tbs', await self.get_tbs()),
-        ]
+        tbs = await self.get_tbs()
+
+        from . import unblock
 
         try:
-            async with self.client_web.post(
-                httpcore.URL(scheme="https", host="tieba.baidu.com", path="/mo/q/bawublockclear"),
-                data=payload,
-            ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
-
-            if int(res_json['no']):
-                raise TiebaServerError(res_json['error'])
+            request = unblock.pack_request(self.client_web, tbs, fname, fid, user.user_id)
+            response = await send_request(self.client_web, request)
+            unblock.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname} user={user}")
@@ -1650,8 +1448,15 @@ class Client(object):
             bool: True成功 False失败
         """
 
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        tbs = await self.get_tbs()
+
+        from . import del_thread
+
         try:
-            await self._del_or_hide_thread(fname_or_fid, tid, is_hide=True)
+            request = del_thread.pack_request(self.client_app, self.BDUSS, tbs, fid, tid, is_hide=True)
+            response = await send_request(self.client_app, request)
+            del_thread.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname_or_fid} tid={tid}")
@@ -1672,8 +1477,15 @@ class Client(object):
             bool: True成功 False失败
         """
 
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        tbs = await self.get_tbs()
+
+        from . import del_thread
+
         try:
-            await self._del_or_hide_thread(fname_or_fid, tid, is_hide=False)
+            request = del_thread.pack_request(self.client_app, self.BDUSS, tbs, fid, tid, is_hide=False)
+            response = await send_request(self.client_app, request)
+            del_thread.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname_or_fid} tid={tid}")
@@ -1681,38 +1493,6 @@ class Client(object):
 
         LOG.info(f"Succeeded. forum={fname_or_fid} tid={tid}")
         return True
-
-    async def _del_or_hide_thread(self, fname_or_fid: Union[str, int], /, tid: int, *, is_hide: bool = False) -> None:
-        """
-        主题帖删除/屏蔽相关操作
-
-        Args:
-            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid 优先fid
-            tid (int): 待删除/屏蔽的主题帖tid
-            is_hide (bool, optional): True则屏蔽帖 False则删除帖. Defaults to False.
-
-        Raises:
-            RuntimeError: 网络请求失败或服务端返回错误
-        """
-
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
-
-        payload = [
-            ('BDUSS', self.BDUSS),
-            ('fid', fid),
-            ('is_frs_mask', int(is_hide)),
-            ('tbs', await self.get_tbs()),
-            ('z', tid),
-        ]
-
-        async with self.client_app.post(
-            httpcore.URL(path="/c/c/bawu/delthread"),
-            data=pack_form_request(payload),
-        ) as resp:
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
-
-        if int(res_json['error_code']):
-            raise TiebaServerError(res_json['error_msg'])
 
     async def del_threads(self, fname_or_fid: Union[str, int], /, tids: List[int], *, block: bool = False) -> bool:
         """
@@ -1724,30 +1504,18 @@ class Client(object):
             block (bool, optional): 是否同时封一天. Defaults to False.
 
         Returns:
-            bool: True成功 False失败
+            bool: True成功 False失败 部分成功返回True
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        tbs = await self.get_tbs()
 
-        payload = [
-            ('BDUSS', self.BDUSS),
-            ('forum_id', fid),
-            ('tbs', await self.get_tbs()),
-            ('thread_ids', ','.join(map(str, tids))),
-            ('type', 2 if block else 1),
-        ]
+        from . import del_threads
 
         try:
-            async with self.client_app.post(
-                httpcore.URL(path="/c/c/bawu/multiDelThread"),
-                data=pack_form_request(payload),
-            ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
-
-            if int(res_json['error_code']):
-                raise TiebaServerError(res_json['error_msg'])
-            if res_json['info']['ret_type']:
-                raise TiebaServerError(res_json['info']['text'])
+            request = del_threads.pack_request(self.client_app, self.BDUSS, tbs, fid, tids, block)
+            response = await send_request(self.client_app, request)
+            del_threads.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname_or_fid} tids={tids}")
@@ -1769,24 +1537,14 @@ class Client(object):
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        tbs = await self.get_tbs()
 
-        payload = [
-            ('BDUSS', self.BDUSS),
-            ('fid', fid),
-            ('pid', pid),
-            ('tbs', await self.get_tbs()),
-            ('z', 2),
-        ]
+        from . import del_post
 
         try:
-            async with self.client_app.post(
-                httpcore.URL(path="/c/c/bawu/delpost"),
-                data=pack_form_request(payload),
-            ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
-
-            if int(res_json['error_code']):
-                raise TiebaServerError(res_json['error_msg'])
+            request = del_post.pack_request(self.client_app, self.BDUSS, tbs, fid, pid)
+            response = await send_request(self.client_app, request)
+            del_post.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname_or_fid} pid={pid}")
@@ -1805,31 +1563,18 @@ class Client(object):
             block (bool, optional): 是否同时封一天. Defaults to False.
 
         Returns:
-            bool: True成功 False失败
+            bool: True成功 False失败 部分成功返回True
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        tbs = await self.get_tbs()
 
-        payload = [
-            ('BDUSS', self.BDUSS),
-            ('forum_id', fid),
-            ('post_ids', ','.join(map(str, pids))),
-            ('tbs', await self.get_tbs()),
-            ('thread_id', 2),
-            ('type', 2 if block else 1),
-        ]
+        from . import del_posts
 
         try:
-            async with self.client_app.post(
-                httpcore.URL(path="/c/c/bawu/multiDelPost"),
-                data=pack_form_request(payload),
-            ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
-
-            if int(res_json['error_code']):
-                raise TiebaServerError(res_json['error_msg'])
-            if res_json['info']['ret_type']:
-                raise TiebaServerError(res_json['info']['text'])
+            request = del_posts.pack_request(self.client_app, self.BDUSS, tbs, fid, pids, block)
+            response = await send_request(self.client_app, request)
+            del_posts.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname_or_fid} pids={pids}")
@@ -1933,24 +1678,13 @@ class Client(object):
             fid = fname_or_fid
             fname = await self.get_fname(fid)
 
-        payload = [
-            ('tbs', await self.get_tbs()),
-            ('fn', fname),
-            ('fid', fid),
-            ('tid_list[]', tid),
-            ('pid_list[]', pid),
-            ('type_list[]', '1' if pid else '0'),
-            ('is_frs_mask_list[]', int(is_hide)),
-        ]
+        tbs = await self.get_tbs()
 
-        async with self.client_web.post(
-            httpcore.URL(scheme="https", host="tieba.baidu.com", path="/mo/q/bawurecoverthread"),
-            data=payload,
-        ) as resp:
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
+        from . import recover
 
-        if int(res_json['no']):
-            raise TiebaServerError(res_json['error'])
+        request = recover.pack_request(self.client_web, tbs, fname, fid, tid, pid, is_hide)
+        response = await send_request(self.client_web, request)
+        recover.parse_response(response)
 
     async def move(self, fname_or_fid: Union[str, int], /, tid: int, *, to_tab_id: int, from_tab_id: int = 0) -> bool:
         """
@@ -1967,24 +1701,16 @@ class Client(object):
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        tbs = await self.get_tbs()
 
-        payload = [
-            ('BDUSS', self.BDUSS),
-            ('_client_version', self.latest_version),
-            ('forum_id', fid),
-            ('tbs', await self.get_tbs()),
-            ('threads', json.dumps([{'thread_id', tid, 'from_tab_id', from_tab_id, 'to_tab_id', to_tab_id}])),
-        ]
+        from . import move
 
         try:
-            async with self.client_app.post(
-                httpcore.URL(path="/c/c/bawu/moveTabThread"),
-                data=pack_form_request(payload),
-            ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
-
-            if int(res_json['error_code']):
-                raise TiebaServerError(res_json['error_msg'])
+            request = move.pack_request(
+                self.client_app, self.BDUSS, tbs, self.latest_version, fid, tid, to_tab_id, from_tab_id
+            )
+            response = await send_request(self.client_app, request)
+            move.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname_or_fid} tid={tid}")
@@ -2007,23 +1733,12 @@ class Client(object):
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
-        payload = [
-            ('BDUSS', self.BDUSS),
-            ('forum_id', fid),
-            ('thread_id', tid),
-        ]
+        from . import recommend
 
         try:
-            async with self.client_app.post(
-                httpcore.URL(path="/c/c/bawu/pushRecomToPersonalized"),
-                data=pack_form_request(payload),
-            ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
-
-            if int(res_json['error_code']):
-                raise TiebaServerError(res_json['error_msg'])
-            if int(res_json['data']['is_push_success']) != 1:
-                raise TiebaServerError(res_json['data']['msg'])
+            request = recommend.pack_request(self.client_app, self.BDUSS, fid, tid)
+            response = await send_request(self.client_app, request)
+            recommend.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname_or_fid} tid={tid}")
@@ -2045,9 +1760,22 @@ class Client(object):
             bool: True成功 False失败
         """
 
+        if isinstance(fname_or_fid, str):
+            fname = fname_or_fid
+            fid = await self.get_fid(fname)
+        else:
+            fid = fname_or_fid
+            fname = await self.get_fname(fid)
+
+        tbs = await self.get_tbs()
+
+        from . import good
+
         try:
             cid = await self._get_cid(fname_or_fid, cname)
-            await self._good(fname_or_fid, tid, cid=cid, is_set=True)
+            request = good.pack_request(self.client_app, self.BDUSS, tbs, fname, fid, tid, cid, is_set=True)
+            response = await send_request(self.client_app, request)
+            good.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname_or_fid} cname={cname}")
@@ -2068,8 +1796,21 @@ class Client(object):
             bool: True成功 False失败
         """
 
+        if isinstance(fname_or_fid, str):
+            fname = fname_or_fid
+            fid = await self.get_fid(fname)
+        else:
+            fid = fname_or_fid
+            fname = await self.get_fname(fid)
+
+        tbs = await self.get_tbs()
+
+        from . import good
+
         try:
-            await self._good(fname_or_fid, tid, is_set=False)
+            request = good.pack_request(self.client_app, self.BDUSS, tbs, fname, fid, tid, 0, is_set=False)
+            response = await send_request(self.client_app, request)
+            good.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname_or_fid} tid={tid}")
@@ -2092,72 +1833,18 @@ class Client(object):
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
-        payload = [
-            ('BDUSS', self.BDUSS),
-            ('word', fname),
-        ]
+        from . import get_cid
 
         try:
-            async with self.client_app.post(
-                httpcore.URL(path="/c/c/bawu/goodlist"),
-                data=pack_form_request(payload),
-            ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
-
-            if int(res_json['error_code']):
-                raise TiebaServerError(res_json['error_msg'])
-
-            cid = 0
-            for item in res_json['cates']:
-                if cname == item['class_name']:
-                    cid = int(item['class_id'])
-                    break
+            request = get_cid.pack_request(self.client_app, self.BDUSS, fname)
+            response = await send_request(self.client_app, request)
+            cid = get_cid.parse_response(response, cname)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname} cname={cname}")
             cid = 0
 
         return cid
-
-    async def _good(self, fname_or_fid: Union[str, int], /, tid: int, *, cid: int = 0, is_set: bool = True) -> None:
-        """
-        主题帖加精相关操作
-
-        Args:
-            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
-            tid (int): 待撤精的主题帖tid
-            cid (int, optional): 将主题帖加到cid对应的精华分区 cid默认为0即不分区. Defaults to 0.
-            is_set (bool, optional): 加精或取消加精 默认为True即加精. Defaults to True.
-
-        Raises:
-            RuntimeError: 网络请求失败或服务端返回错误
-        """
-
-        if isinstance(fname_or_fid, str):
-            fname = fname_or_fid
-            fid = await self.get_fid(fname)
-        else:
-            fid = fname_or_fid
-            fname = await self.get_fname(fid)
-
-        payload = [
-            ('BDUSS', self.BDUSS),
-            ('cid', cid),
-            ('fid', fid),
-            ('ntn', 'set' if is_set else None),
-            ('tbs', await self.get_tbs()),
-            ('word', fname),
-            ('z', tid),
-        ]
-
-        async with self.client_app.post(
-            httpcore.URL(path="/c/c/bawu/commitgood"),
-            data=pack_form_request(payload),
-        ) as resp:
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
-
-        if int(res_json['error_code']):
-            raise TiebaServerError(res_json['error_msg'])
 
     async def top(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
@@ -2171,8 +1858,21 @@ class Client(object):
             bool: True成功 False失败
         """
 
+        if isinstance(fname_or_fid, str):
+            fname = fname_or_fid
+            fid = await self.get_fid(fname)
+        else:
+            fid = fname_or_fid
+            fname = await self.get_fname(fid)
+
+        tbs = await self.get_tbs()
+
+        from . import top
+
         try:
-            await self._top(fname_or_fid, tid, is_set=True)
+            request = top.pack_request(self.client_app, self.BDUSS, tbs, fname, fid, tid, is_set=True)
+            response = await send_request(self.client_app, request)
+            top.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname_or_fid} tid={tid}")
@@ -2193,8 +1893,21 @@ class Client(object):
             bool: True成功 False失败
         """
 
+        if isinstance(fname_or_fid, str):
+            fname = fname_or_fid
+            fid = await self.get_fid(fname)
+        else:
+            fid = fname_or_fid
+            fname = await self.get_fname(fid)
+
+        tbs = await self.get_tbs()
+
+        from . import top
+
         try:
-            await self._top(fname_or_fid, tid, is_set=False)
+            request = top.pack_request(self.client_app, self.BDUSS, tbs, fname, fid, tid, is_set=False)
+            response = await send_request(self.client_app, request)
+            top.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname_or_fid} tid={tid}")
@@ -2203,52 +1916,14 @@ class Client(object):
         LOG.info(f"Succeeded. forum={fname_or_fid} tid={tid}")
         return True
 
-    async def _top(self, fname_or_fid: Union[str, int], /, tid: int, *, is_set: bool = True) -> None:
-        """
-        主题帖置顶相关操作
-
-        Args:
-            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
-            tid (int): 待撤销置顶的主题帖tid
-            is_set (bool, optional): 置顶或撤销置顶 默认为True即置顶. Defaults to True.
-
-        Raises:
-            RuntimeError: 网络请求失败或服务端返回错误
-        """
-
-        if isinstance(fname_or_fid, str):
-            fname = fname_or_fid
-            fid = await self.get_fid(fname)
-        else:
-            fid = fname_or_fid
-            fname = await self.get_fname(fid)
-
-        payload = [
-            ('BDUSS', self.BDUSS),
-            ('fid', fid),
-            ('ntn', 'set' if is_set else None),
-            ('tbs', await self.get_tbs()),
-            ('word', fname),
-            ('z', tid),
-        ]
-
-        async with self.client_app.post(
-            httpcore.URL(path="/c/c/bawu/committop"),
-            data=pack_form_request(payload),
-        ) as resp:
-            res_json: dict = await resp.json(encoding='utf-8', content_type=None)
-
-        if int(res_json['error_code']):
-            raise TiebaServerError(res_json['error_msg'])
-
-    async def get_recovers(self, fname_or_fid: Union[str, int], /, pn: int = 1, name: str = '') -> Recovers:
+    async def get_recovers(self, fname_or_fid: Union[str, int], /, name: str = '', pn: int = 1) -> Recovers:
         """
         获取pn页的待恢复帖子列表
 
         Args:
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid
-            pn (int, optional): 页码. Defaults to 1.
             name (str, optional): 通过被删帖作者的用户名/昵称查询 默认为空即查询全部. Defaults to ''.
+            pn (int, optional): 页码. Defaults to 1.
 
         Returns:
             Recovers: 待恢复帖子列表
@@ -2261,24 +1936,12 @@ class Client(object):
             fid = fname_or_fid
             fname = await self.get_fname(fid)
 
+        from . import get_recovers
+
         try:
-            async with self.client_web.get(
-                httpcore.URL(scheme="https", host="tieba.baidu.com", path="/mo/q/bawurecover"),
-                allow_redirects=False,
-                params={
-                    'fn': fname,
-                    'fid': fid,
-                    'word': name,
-                    'is_ajax': '1',
-                    'pn': pn,
-                },
-            ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
-
-            if int(res_json['no']):
-                raise TiebaServerError(res_json['error'])
-
-            recovers = Recovers(res_json)
+            request = get_recovers.pack_request(self.client_web, fname, fid, name, pn)
+            response = await send_request(self.client_web, request)
+            recovers = get_recovers.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname}")
@@ -2300,18 +1963,12 @@ class Client(object):
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
-        try:
-            async with self.client_web.get(
-                httpcore.URL(scheme="https", host="tieba.baidu.com", path="/bawu2/platform/listBlackUser"),
-                allow_redirects=False,
-                params={
-                    'word': fname,
-                    'pn': pn,
-                },
-            ) as resp:
-                soup = bs4.BeautifulSoup(await resp.text(), 'lxml')
+        from . import get_blacklist_users
 
-            blacklist_users = BlacklistUsers(soup)
+        try:
+            request = get_blacklist_users.pack_request(self.client_web, fname, pn)
+            response = await send_request(self.client_web, request)
+            blacklist_users = get_blacklist_users.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname}")
@@ -2338,22 +1995,14 @@ class Client(object):
         else:
             user = UserInfo(_id)
 
-        payload = [
-            ('tbs', await self.get_tbs()),
-            ('user_id', user.user_id),
-            ('word', fname),
-            ('ie', 'utf-8'),
-        ]
+        tbs = await self.get_tbs()
+
+        from . import blacklist_add
 
         try:
-            async with self.client_web.post(
-                httpcore.URL(scheme="http", host="tieba.baidu.com", path="/bawu2/platform/addBlack"),
-                data=payload,
-            ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
-
-            if int(res_json['errno']):
-                raise TiebaServerError(res_json['errmsg'])
+            request = blacklist_add.pack_request(self.client_web, tbs, fname, user.user_id)
+            response = await send_request(self.client_web, request)
+            blacklist_add.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname} user={user.user_id}")
@@ -2381,22 +2030,14 @@ class Client(object):
         else:
             user = UserInfo(_id)
 
-        payload = [
-            ('word', fname),
-            ('tbs', await self.get_tbs()),
-            ('list[]', user.user_id),
-            ('ie', 'utf-8'),
-        ]
+        tbs = await self.get_tbs()
+
+        from . import blacklist_del
 
         try:
-            async with self.client_web.post(
-                httpcore.URL(scheme="http", host="tieba.baidu.com", path="/bawu2/platform/cancelBlack"),
-                data=payload,
-            ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
-
-            if int(res_json['errno']):
-                raise TiebaServerError(res_json['errmsg'])
+            request = blacklist_del.pack_request(self.client_web, tbs, fname, user.user_id)
+            response = await send_request(self.client_web, request)
+            blacklist_del.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname} user={user.user_id}")
@@ -2425,26 +2066,14 @@ class Client(object):
             fid = fname_or_fid
             fname = await self.get_fname(fid)
 
-        params = {
-            'fn': fname,
-            'fid': fid,
-            'pn': pn,
-            'rn': rn,
-            'tbs': await self.get_tbs(),
-        }
+        tbs = await self.get_tbs()
+
+        from . import get_unblock_appeals
 
         try:
-            async with self.client_web.get(
-                httpcore.URL(scheme="https", host="tieba.baidu.com", path="/mo/q/getBawuAppealList"),
-                allow_redirects=False,
-                params=params,
-            ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
-
-            if int(res_json['no']):
-                raise TiebaServerError(res_json['error'])
-
-            appeals = Appeals(res_json)
+            request = get_unblock_appeals.pack_request(self.client_web, tbs, fname, fid, pn, rn)
+            response = await send_request(self.client_web, request)
+            appeals = get_unblock_appeals.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname}")
@@ -2474,28 +2103,14 @@ class Client(object):
             fid = fname_or_fid
             fname = await self.get_fname(fid)
 
-        payload = (
-            [
-                ('fn', fname),
-                ('fid', fid),
-            ]
-            + [(f'appeal_list[{i}]', appeal_id) for i, appeal_id in enumerate(appeal_ids)]
-            + [
-                ('refuse_reason', '_'),
-                ('status', '2' if refuse else '1'),
-                ('tbs', await self.get_tbs()),
-            ]
-        )
+        tbs = await self.get_tbs()
+
+        from . import handle_unblock_appeals
 
         try:
-            async with self.client_web.post(
-                httpcore.URL(scheme="https", host="tieba.baidu.com", path="/mo/q/multiAppealhandle"),
-                data=payload,
-            ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
-
-            if int(res_json['no']):
-                raise TiebaServerError(res_json['error'])
+            request = handle_unblock_appeals.pack_request(self.client_web, tbs, fname, fid, appeal_ids, refuse)
+            response = await send_request(self.client_web, request)
+            handle_unblock_appeals.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname}")
@@ -2515,15 +2130,12 @@ class Client(object):
             np.ndarray: 图像
         """
 
-        try:
-            async with self.client_web.get(img_url, allow_redirects=False) as resp:
-                if not resp.content_type.endswith(('jpeg', 'png', 'bmp'), 6):
-                    raise ContentTypeError(f"Expect jpeg, png or bmp, got {resp.content_type}")
-                content = await resp.content.read()
+        from . import get_image
 
-            image = cv.imdecode(np.frombuffer(content, np.uint8), cv.IMREAD_COLOR)
-            if image is None:
-                raise RuntimeError("Error in cv2.imdecode")
+        try:
+            request = get_image.pack_request(self.client_web, img_url)
+            response = await send_request(self.client_web, request)
+            image = get_image.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. url={img_url}")
@@ -2543,28 +2155,12 @@ class Client(object):
             np.ndarray: 图像
         """
 
+        from . import get_image
+
         try:
-            if size == 's':
-                img_url = httpcore.URL(
-                    scheme="http", host="imgsrc.baidu.com", path=f"/forum/w=720;q=60;g=0/sign=__/{raw_hash}.jpg"
-                )
-            elif size == 'm':
-                img_url = httpcore.URL(
-                    scheme="http", host="imgsrc.baidu.com", path=f"/forum/w=960;q=60;g=0/sign=__/{raw_hash}.jpg"
-                )
-            elif size == 'l':
-                img_url = httpcore.URL(scheme="http", host="imgsrc.baidu.com", path=f"/forum/pic/item/{raw_hash}.jpg")
-            else:
-                raise ValueError(f"Invalid size={size}")
-
-            async with self.client_web.get(img_url, allow_redirects=False) as resp:
-                if not resp.content_type.endswith(('jpeg', 'png', 'bmp'), 6):
-                    raise ContentTypeError(f"Expect jpeg, png or bmp, got {resp.content_type}")
-                content = await resp.content.read()
-
-            image = cv.imdecode(np.frombuffer(content, np.uint8), cv.IMREAD_COLOR)
-            if image is None:
-                raise RuntimeError("Error with opencv.imdecode")
+            request = get_image.hash_pack_request(self.client_web, raw_hash, size)
+            response = await send_request(self.client_web, request)
+            image = get_image.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. raw_hash={raw_hash} size={size}")
@@ -2589,24 +2185,12 @@ class Client(object):
         else:
             user = UserInfo(_id)
 
+        from . import get_image
+
         try:
-            if size == 's':
-                path = 'n'
-            elif size == 'm':
-                path = ''
-            elif size == 'l':
-                path = 'h'
-            else:
-                raise ValueError(f"Invalid size={size}")
-
-            async with self.client_web.get(
-                httpcore.URL(scheme="http", host="tb.himg.baidu.com", path=f"/sys/portrait{path}/item/{user.portrait}"),
-                allow_redirects=False,
-            ) as resp:
-                image = cv.imdecode(np.frombuffer(await resp.content.read(), np.uint8), cv.IMREAD_COLOR)
-
-            if image is None:
-                raise RuntimeError("error in opencv.imdecode")
+            request = get_image.portrait_pack_request(self.client_web, user.portrait, size)
+            response = await send_request(self.client_web, request)
+            image = get_image.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. user={user}")
@@ -2622,25 +2206,14 @@ class Client(object):
             bool: True成功 False失败
         """
 
-        payload = [
-            ('BDUSS', self.BDUSS),
-            ('_client_version', self.latest_version),
-        ]
+        from . import get_selfinfo_initNickname
 
         try:
-            async with self.client_app.post(
-                httpcore.URL(path="/c/s/initNickname"),
-                data=pack_form_request(payload),
-            ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
+            request = get_selfinfo_initNickname.pack_request(self.client_app, self.BDUSS, self.latest_version)
+            response = await send_request(self.client_app, request)
+            user = get_selfinfo_initNickname.parse_response(response)
 
-            if int(res_json['error_code']):
-                raise TiebaServerError(res_json['error_msg'])
-
-            user_dict: dict = res_json['user_info']
-            self._user._user_name = user_dict['user_name']
-            self._user.nick_name = user_dict['name_show']
-            self._user._tieba_uid = user_dict['tieba_uid']
+            self._user = self._user | user
 
         except Exception as err:
             LOG.warning(err)
@@ -2663,21 +2236,12 @@ class Client(object):
              'count': 新通知}
         """
 
-        payload = [
-            ('BDUSS', self.BDUSS),
-        ]
+        from . import get_newmsg
 
         try:
-            async with self.client_app.post(
-                httpcore.URL(path="/c/s/msg"),
-                data=pack_form_request(payload),
-            ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', content_type=None)
-
-            if int(res_json['error_code']):
-                raise TiebaServerError(res_json['error_msg'])
-
-            msg = {k: bool(int(v)) for k, v in res_json['message'].items()}
+            request = get_newmsg.pack_request(self.client_app, self.BDUSS)
+            response = await send_request(self.client_app, request)
+            msg = get_newmsg.parse_response(response)
 
         except Exception as err:
             LOG.warning(err)
@@ -2704,23 +2268,12 @@ class Client(object):
             Replys: 回复列表
         """
 
-        req_proto = ReplyMeReqIdl_pb2.ReplyMeReqIdl()
-        req_proto.data.common.BDUSS = self.BDUSS
-        req_proto.data.common._client_version = self.latest_version
-        req_proto.data.pn = str(pn)
+        from . import get_replys
 
         try:
-            async with self.client_app_proto.post(
-                httpcore.URL(path="/c/u/feed/replyme", query_string="cmd=303007"),
-                data=pack_proto_request(req_proto.SerializeToString()),
-            ) as resp:
-                res_proto = ReplyMeResIdl_pb2.ReplyMeResIdl()
-                res_proto.ParseFromString(await resp.content.read())
-
-            if int(res_proto.error.errorno):
-                raise TiebaServerError(res_proto.error.errmsg)
-
-            replys = Replys(res_proto.data)
+            request = get_replys.pack_request(self.client_app_proto, self.BDUSS, self.latest_version, pn)
+            response = await send_request(self.client_app_proto, request)
+            replys = get_replys.parse_response(response)
 
         except Exception as err:
             LOG.warning(err)
@@ -2739,23 +2292,12 @@ class Client(object):
             Ats: at列表
         """
 
-        payload = [
-            ('BDUSS', self.BDUSS),
-            ('_client_version', self.latest_version),
-            ('pn', pn),
-        ]
+        from . import get_ats
 
         try:
-            async with self.client_app.post(
-                httpcore.URL(path="/c/u/feed/atme"),
-                data=pack_form_request(payload),
-            ) as resp:
-                res_json: dict = await resp.json(encoding='utf-8', loads=JSON_DECODE_FUNC, content_type=None)
-
-            if int(res_json['error_code']):
-                raise TiebaServerError(res_json['error_msg'])
-
-            ats = Ats(res_json)
+            request = get_ats.pack_request(self.client_app, self.BDUSS, self.latest_version, pn)
+            response = await send_request(self.client_app, request)
+            ats = get_ats.parse_response(response)
 
         except Exception as err:
             LOG.warning(err)
@@ -2774,14 +2316,28 @@ class Client(object):
             list[NewThread]: 主题帖列表
         """
 
-        user = await self.get_self_info()
+        user = await self.get_self_info(ReqUInfo.USER_ID)
+
+        from . import get_user_contents
 
         try:
-            return await self._get_user_contents(user, pn, is_thread=True, public_only=True)
+            request = get_user_contents.pack_request(
+                self.client_app_proto,
+                self.BDUSS,
+                self.latest_version,
+                user.user_id,
+                pn,
+                is_thread=True,
+                public_only=True,
+            )
+            response = await send_request(self.client_app_proto, request)
+            threads = get_user_contents.thread_parse_response(response, user)
 
         except Exception as err:
             LOG.warning(f"{err}. user={user}")
-            return []
+            threads = []
+
+        return threads
 
     async def get_self_threads(self, pn: int = 1) -> List[NewThread]:
         """
@@ -2796,12 +2352,26 @@ class Client(object):
 
         user = await self.get_self_info(ReqUInfo.USER_ID)
 
+        from . import get_user_contents
+
         try:
-            return await self._get_user_contents(user, pn, is_thread=True)
+            request = get_user_contents.pack_request(
+                self.client_app_proto,
+                self.BDUSS,
+                self.latest_version,
+                user.user_id,
+                pn,
+                is_thread=True,
+                public_only=False,
+            )
+            response = await send_request(self.client_app_proto, request)
+            threads = get_user_contents.thread_parse_response(response, user)
 
         except Exception as err:
             LOG.warning(f"{err}. user={user}")
-            return []
+            threads = []
+
+        return threads
 
     async def get_self_posts(self, pn: int = 1) -> List[UserPosts]:
         """
@@ -2816,12 +2386,26 @@ class Client(object):
 
         user = await self.get_self_info(ReqUInfo.USER_ID)
 
+        from . import get_user_contents
+
         try:
-            return await self._get_user_contents(user, pn, is_thread=False)
+            request = get_user_contents.pack_request(
+                self.client_app_proto,
+                self.BDUSS,
+                self.latest_version,
+                user.user_id,
+                pn,
+                is_thread=False,
+                public_only=False,
+            )
+            response = await send_request(self.client_app_proto, request)
+            res_list = get_user_contents.thread_parse_response(response, user)
 
         except Exception as err:
             LOG.warning(f"{err}. user={user}")
-            return []
+            res_list = []
+
+        return res_list
 
     async def get_user_threads(self, _id: Union[str, int], pn: int = 1) -> List[NewThread]:
         """
@@ -2840,63 +2424,26 @@ class Client(object):
         else:
             user = UserInfo(_id)
 
+        from . import get_user_contents
+
         try:
-            return await self._get_user_contents(user, pn)
+            request = get_user_contents.pack_request(
+                self.client_app_proto,
+                self.BDUSS,
+                self.latest_version,
+                user.user_id,
+                pn,
+                is_thread=True,
+                public_only=False,
+            )
+            response = await send_request(self.client_app_proto, request)
+            threads = get_user_contents.thread_parse_response(response, user)
 
         except Exception as err:
             LOG.warning(f"{err}. user={user}")
-            return []
+            threads = []
 
-    async def _get_user_contents(
-        self, user: UserInfo, /, pn: int = 1, *, is_thread: bool = True, public_only: bool = False
-    ) -> Union[List[NewThread], List[UserPosts]]:
-        """
-        获取用户发布的主题帖/回复列表
-
-        Args:
-            user (UserInfo): 用户信息
-            pn (int, optional): 页码. Defaults to 1.
-            is_thread (bool, optional): 是否请求主题帖. Defaults to True.
-            public_only (bool, optional): 是否仅获取公开帖. Defaults to False.
-
-        Raises:
-            RuntimeError: 网络请求失败或服务端返回错误
-
-        Returns:
-            list[NewThread] | list[UserPosts]: 主题帖/回复列表
-        """
-
-        req_proto = UserPostReqIdl_pb2.UserPostReqIdl()
-        req_proto.data.common.BDUSS = self.BDUSS
-        req_proto.data.common._client_version = self.latest_version
-        req_proto.data.user_id = user.user_id
-        req_proto.data.is_thread = is_thread
-        req_proto.data.need_content = 1
-        req_proto.data.pn = pn
-        req_proto.data.is_view_card = 2 if public_only else 1
-
-        async with self.client_app_proto.post(
-            httpcore.URL(path="/c/u/feed/userpost", query_string="cmd=303002"),
-            data=pack_proto_request(req_proto.SerializeToString()),
-        ) as resp:
-            res_proto = UserPostResIdl_pb2.UserPostResIdl()
-            res_proto.ParseFromString(await resp.content.read())
-
-        if int(res_proto.error.errorno):
-            raise TiebaServerError(res_proto.error.errmsg)
-
-        res_data_proto = res_proto.data
-        if is_thread:
-            res_list = [NewThread(thread_proto) for thread_proto in res_data_proto.post_list]
-            for thread in res_list:
-                thread._user = user
-        else:
-            res_list = [UserPosts(posts_proto) for posts_proto in res_data_proto.post_list]
-            for userposts in res_list:
-                for userpost in userposts:
-                    userpost._user = user
-
-        return res_list
+        return threads
 
     async def get_fans(self, _id: Union[str, int, None] = None, /, pn: int = 1) -> Fans:
         """

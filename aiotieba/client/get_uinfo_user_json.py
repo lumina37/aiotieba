@@ -18,8 +18,9 @@ def pack_request(client: httpx.AsyncClient, user_name: str) -> httpx.Request:
 
 
 def parse_response(response: httpx.Response) -> UserInfo:
+    response.raise_for_status()
     if not response.content:
-        raise TiebaServerError("empty response")
+        raise TiebaServerError(-1, "empty response")
 
     text = response.content.decode('utf-8', 'ignore')
     res_json = jsonlib.loads(text)

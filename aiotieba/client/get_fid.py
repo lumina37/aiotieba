@@ -17,12 +17,13 @@ def pack_request(client: httpx.AsyncClient, fname: str) -> httpx.Request:
 
 
 def parse_response(response: httpx.Response) -> int:
-    res_json = jsonlib.loads(response.content)
+    response.raise_for_status()
 
-    if int(res_json['no']):
-        raise TiebaServerError(res_json['error'])
+    res_json = jsonlib.loads(response.content)
+    if code := int(res_json['no']):
+        raise TiebaServerError(code, res_json['error'])
 
     if not (fid := int(res_json['data']['fid'])):
-        raise TiebaServerError("fid is 0")
+        raise TiebaServerError(-1, "fid is 0")
 
     return fid

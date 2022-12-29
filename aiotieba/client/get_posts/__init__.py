@@ -43,11 +43,13 @@ def pack_request(
 
 
 def parse_response(response: httpx.Response) -> Posts:
+    response.raise_for_status()
+
     res_proto = PbPageResIdl_pb2.PbPageResIdl()
     res_proto.ParseFromString(response.content)
 
-    if int(res_proto.error.errorno):
-        raise TiebaServerError(res_proto.error.errmsg)
+    if code := res_proto.error.errorno:
+        raise TiebaServerError(code, res_proto.error.errmsg)
 
     posts = Posts(res_proto.data)
 

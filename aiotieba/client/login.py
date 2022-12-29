@@ -3,28 +3,28 @@ from typing import Tuple
 import httpx
 
 from .._exception import TiebaServerError
-from .common.helper import jsonlib, pack_form_request
+from .common.helper import jsonlib, pack_form_request, sign
 from .common.typedef import UserInfo
 
 
-def pack_request(client: httpx.AsyncClient, version: str, bduss: str) -> httpx.Request:
-    request = pack_form_request(
-        client,
-        "http://tiebac.baidu.com/c/s/login",
-        [
-            ('_client_version', version),
-            ('bdusstoken', bduss)
-        ],
-    )
+def pack_request(client: httpx.AsyncClient, bduss: str, version: str) -> httpx.Request:
+
+    data = [
+        ('_client_version', version),
+        ('bdusstoken', bduss),
+    ]
+
+    request = pack_form_request(client, "http://tiebac.baidu.com/c/s/login", sign(data))
 
     return request
 
 
 def parse_response(response: httpx.Response) -> Tuple[UserInfo, str]:
-    res_json = jsonlib.loads(response.content)
+    response.raise_for_status()
 
-    if int(res_json['error_code']):
-        raise TiebaServerError(res_json['error_msg'])
+    res_json = jsonlib.loads(response.content)
+    if code := int(res_json['error_code']):
+        raise TiebaServerError(code, res_json['error_msg'])
 
     user = UserInfo()
     user_dict = res_json['user']

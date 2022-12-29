@@ -33,13 +33,11 @@ async def send_request(client: httpx.AsyncClient, request: httpx.Request) -> htt
     return response
 
 
-def pack_form_request(client: httpx.AsyncClient, url: str, data: List[Tuple[str, str]]) -> httpx.Request:
+def sign(data: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
     """
-    为参数元组列表添加贴吧客户端签名 并打包为Request
+    为参数元组列表添加贴吧客户端签名
 
     Args:
-        client (httpx.AsyncClient): 客户端
-        url (str): 链接
         data (list[tuple[str, str]]): 参数元组列表
 
     Returns:
@@ -53,6 +51,22 @@ def pack_form_request(client: httpx.AsyncClient, url: str, data: List[Tuple[str,
     md5 = hashlib.md5()
     md5.update(raw_str.encode('utf-8'))
     data.append(('sign', md5.hexdigest()))
+
+    return data
+
+
+def pack_form_request(client: httpx.AsyncClient, url: str, data: List[Tuple[str, str]]) -> httpx.Request:
+    """
+    将参数元组列表打包为Request
+
+    Args:
+        client (httpx.AsyncClient): 客户端
+        url (str): 链接
+        data (list[tuple[str, str]]): 参数元组列表
+
+    Returns:
+        httpx.Request
+    """
 
     body = urllib.parse.urlencode(data, doseq=True).encode("utf-8")
 
