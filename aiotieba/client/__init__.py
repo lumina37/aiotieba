@@ -8,7 +8,6 @@ import time
 import uuid
 from typing import ClassVar, Dict, List, Literal, Optional, Tuple, Union
 
-import httpcore
 import httpx
 import httpx_ws
 import numpy as np
@@ -452,7 +451,7 @@ class Client(object):
         if self._ws_dispatcher is not None and not self._ws_dispatcher.cancelled():
             self._ws_dispatcher.cancel()
 
-        request = self.client_ws.build_request("GET", httpcore.URL(scheme=b"ws", host=b"im.tieba.baidu.com", port=8000))
+        request = self.client_ws.build_request("GET", "ws://im.tieba.baidu.com:8000")
         response = await self.client_ws.send(request=request, stream=True)
         if response.status_code != 101:
             raise httpx_ws.WebSocketUpgradeError(response)
