@@ -241,7 +241,7 @@ class ReqUInfo(enum.IntEnum):
     ALL = (1 << 6) - 1
 
 
-class Header(enum.Enum):
+class Header(object):
     ACCEPT_ENCODING = "Accept-Encoding"
     BAIDU_DATA_TYPE = "x_bd_data_type"
     CACHE_CONTROL = "Cache-Control"
