@@ -2,8 +2,8 @@ import httpx
 from google.protobuf.json_format import ParseDict
 
 from .._exception import TiebaServerError
-from ..protobuf import GetDislikeListResIdl_pb2
 from .common.helper import jsonlib, pack_form_request, sign
+from .common.protobuf import ForumList_pb2
 from .common.typedef import Forum
 
 
@@ -29,10 +29,6 @@ def parse_response(response: httpx.Response) -> Forum:
     forum_dict = res_json['forum_info']
     forum_dict['thread_num'] = forum_dict.pop('thread_count')
 
-    forum = Forum(
-        ParseDict(
-            forum_dict, GetDislikeListResIdl_pb2.GetDislikeListResIdl.DataRes.ForumList(), ignore_unknown_fields=True
-        )
-    )
+    forum = Forum(ParseDict(forum_dict, ForumList_pb2.ForumList(), ignore_unknown_fields=True))
 
     return forum

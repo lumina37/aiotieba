@@ -1,7 +1,0 @@
-// tbclient.Agree
-syntax = "proto3";
-
-message Agree {
-    int64 agree_num = 1;
-    int64 disagree_num = 4;
-}

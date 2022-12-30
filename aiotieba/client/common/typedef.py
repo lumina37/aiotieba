@@ -79,7 +79,7 @@ from google.protobuf.json_format import ParseDict
 from google.protobuf.message import Message
 
 from ..._logger import LOG
-from ...protobuf import GetDislikeListResIdl_pb2, Page_pb2, ThreadInfo_pb2, User_pb2
+from .protobuf import ForumList_pb2, Page_pb2, ThreadInfo_pb2, User_pb2
 
 
 class WebsocketResponse(object):
@@ -4942,13 +4942,7 @@ class SelfFollowForums(_Containers[Forum]):
         if not isinstance(self._objs, list):
             if self._raw_objs is not None:
                 self._objs = [
-                    Forum(
-                        ParseDict(
-                            _dict,
-                            GetDislikeListResIdl_pb2.GetDislikeListResIdl.DataRes.ForumList(),
-                            ignore_unknown_fields=True,
-                        )
-                    )
+                    Forum(ParseDict(_dict, ForumList_pb2.ForumList(), ignore_unknown_fields=True))
                     for _dict in self._raw_objs
                 ]
                 self._raw_objs = None

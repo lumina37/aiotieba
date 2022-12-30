@@ -1,14 +1,22 @@
-try:
-    import simdjson as jsonlib
-except ImportError:
-    import json as jsonlib
-
 import hashlib
 import random
+import time
 import urllib.parse
 from typing import List, Tuple
 
 import httpx
+import simdjson as jsonlib
+
+
+def timestamp_ms(self) -> int:
+    """
+    毫秒级本机时间戳 (13位整数)
+
+    Returns:
+        int: 毫秒级整数时间戳
+    """
+
+    return int(time.time() * 1000)
 
 
 async def send_request(client: httpx.AsyncClient, request: httpx.Request) -> httpx.Response:

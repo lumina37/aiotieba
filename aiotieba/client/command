@@ -1,2 +1,0 @@
-protoc -I=../../common/protobuf -I=. --python_out=. *
-from ...common.protobuf 
