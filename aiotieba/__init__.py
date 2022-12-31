@@ -9,10 +9,8 @@ Asynchronous I/O Client/Reviewer for Baidu Tieba
 import os
 
 from ._logger import LOG
-from .client import Client, ReqUInfo
-from .database import MySQLDB, SQLiteDB
-from .reviewer import BaseReviewer, Ops, Punish, Reviewer
-from .typedef import (
+from .client import Client
+from .client.common.typedef import (
     Appeal,
     Appeals,
     At,
@@ -48,6 +46,7 @@ from .typedef import (
     Recovers,
     Reply,
     Replys,
+    ReqUInfo,
     Search,
     Searches,
     SelfFollowForums,
@@ -62,8 +61,10 @@ from .typedef import (
     VirtualImage,
     VoteInfo,
 )
+from .database import MySQLDB, SQLiteDB
+from .reviewer import BaseReviewer, Ops, Punish, Reviewer
 
-__version__ = "2.9.7"
+__version__ = "2.10.0"
 
 if os.name == 'posix':
     import signal

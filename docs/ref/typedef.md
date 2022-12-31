@@ -68,78 +68,6 @@ class `UserInfo`(*_id: str | int | None = None*)
 **fname** - *(str)* 贴吧名
 </div>
 
-## Thread
-
-主题帖信息
-
-### 类属性
-
-<div class="docstring" markdown="1">
-**text** - *(str)* 文本内容
-
-**contents** - *([Fragments](#fragments))* 正文内容碎片列表
-
-**title** - *(str)* 标题
-
-**fid** - *(int)* 标题
-
-**fname** - *(str)* 所在贴吧名
-
-**tid** - *(int)* 主题帖tid
-
-**pid** - *(int)* 首楼回复pid
-
-**user** - *([UserInfo](#userinfo))* 发布者的用户信息
-
-**author_id** - *(int)* 发布者的user_id
-
-**tab_id** - *(int)* 分区编号
-
-**is_good** - *(bool)* 是否精品帖
-
-**is_top** - *(bool)* 是否置顶帖
-
-**is_share** - *(bool)* 是否分享帖
-
-**is_hide** - *(bool)* 是否被屏蔽
-
-**is_livepost** - *(bool)* 是否为置顶话题
-
-**vote_info** - *(VoteInfo)* 投票信息
-
-**share_origin** - *(ShareThread)* 转发来的原帖内容
-
-**view_num** - *(int)* 浏览量
-
-**reply_num** - *(int)* 回复数
-
-**share_num** - *(int)* 分享数
-
-**agree** - *(int)* 点赞数
-
-**disagree** - *(int)* 点踩数
-
-**create_time** - *(int)* 创建时间 10位时间戳
-
-**last_time** - *(int)* 最后回复时间 10位时间戳
-</div>
-
-## Threads
-
-主题帖列表
-
-### 类属性
-
-<div class="docstring" markdown="1">
-**page** - *([Page](#page))* 页信息
-
-**has_more** - *(bool)* 是否还有下一页
-
-**forum** - *([BasicForum](#basicforum))* 所在吧信息
-
-**tab_map** - *(dict[str, int])* 分区名到分区id的映射表
-</div>
-
 ## Page
 
 页信息
@@ -291,7 +219,7 @@ def `__bool__`() -> *bool*
 
 **title** - *(str)* 链接标题
 
-**url** - *([yarl.URL](https://yarl.aio-libs.org/en/latest/api.html#yarl.URL))* 使用[yarl](https://pypi.org/project/yarl/)解析后的链接 外链会在解析前先去除前缀
+**url** - *([httpx.URL](https://www.python-httpx.org/api/#url))* 解析后的链接 外链会在解析前先去除前缀
 
 **raw_url** - *(str)* 原链接 外链会在解析前先去除前缀
 
@@ -309,3 +237,182 @@ def `__bool__`() -> *bool*
 
 **url** - *(str)* 贴吧plus广告跳转链接
 </div>
+
+## Thread
+
+主题帖信息
+
+### 类属性
+
+<div class="docstring" markdown="1">
+**text** - *(str)* 文本内容
+
+**contents** - *([Fragments](#fragments))* 正文内容碎片列表
+
+**title** - *(str)* 标题
+
+**fid** - *(int)* 标题
+
+**fname** - *(str)* 所在贴吧名
+
+**tid** - *(int)* 主题帖tid
+
+**pid** - *(int)* 首楼回复pid
+
+**user** - *([UserInfo](#userinfo))* 发布者的用户信息
+
+**author_id** - *(int)* 发布者的user_id
+
+**tab_id** - *(int)* 分区编号
+
+**is_good** - *(bool)* 是否精品帖
+
+**is_top** - *(bool)* 是否置顶帖
+
+**is_share** - *(bool)* 是否分享帖
+
+**is_hide** - *(bool)* 是否被屏蔽
+
+**is_livepost** - *(bool)* 是否为置顶话题
+
+**vote_info** - *(VoteInfo)* 投票信息
+
+**share_origin** - *(ShareThread)* 转发来的原帖内容
+
+**view_num** - *(int)* 浏览量
+
+**reply_num** - *(int)* 回复数
+
+**share_num** - *(int)* 分享数
+
+**agree** - *(int)* 点赞数
+
+**disagree** - *(int)* 点踩数
+
+**create_time** - *(int)* 创建时间 10位时间戳
+
+**last_time** - *(int)* 最后回复时间 10位时间戳
+</div>
+
+## Threads
+
+主题帖列表
+
+### 类属性
+
+<div class="docstring" markdown="1">
+**page** - *([Page](#page))* 页信息
+
+**has_more** - *(bool)* 是否还有下一页
+
+**forum** - *([BasicForum](#basicforum))* 所在吧信息
+
+**tab_map** - *(dict[str, int])* 分区名到分区id的映射表
+</div>
+
+## Post
+
+楼层信息
+
+### 类属性
+
+<div class="docstring" markdown="1">
+**text** - *(str)* 文本内容
+
+**contents** - *([Fragments](#fragments))* 正文内容碎片列表
+
+**sign** - *(str)* 小尾巴文本内容
+
+**comments** - *(list[[Comment](#comment)])* 楼中楼列表
+
+**fid** - *(int)* 所在吧id
+
+**tid** - *(int)* 所在主题帖id
+
+**pid** - *(int)* 回复id
+
+**user** - *([UserInfo](#userinfo))* 发布者的用户信息
+
+**author_id** - *(int)* 发布者的user_id
+
+**vimage** - *(VirtualImage)* 虚拟形象信息
+
+**floor** - *(int)* 楼层数
+
+**reply_num** - *(int)* 楼中楼数
+
+**agree** - *(int)* 点赞数
+
+**disagree** - *(int)* 点踩数
+
+**create_time** - *(int)* 创建时间 10位时间戳
+
+**is_thread_author** - *(bool)* 是否楼主
+</div>
+
+## Posts
+
+回复列表
+
+### 类属性
+
+<div class="docstring" markdown="1">
+**page** - *([Page](#page))* 页信息
+
+**has_more** - *(bool)* 是否还有下一页
+
+**forum** - *([BasicForum](#basicforum))* 所在吧信息
+
+**thread** - *([Thread](#thread))* 所在吧信息
+
+**has_fold** - *(bool)* 是否存在折叠楼层
+</div>
+
+## Comment
+
+楼层信息
+
+### 类属性
+
+<div class="docstring" markdown="1">
+**text** - *(str)* 文本内容
+
+**contents** - *([Fragments](#fragments))* 正文内容碎片列表
+
+**fid** - *(int)* 所在吧id
+
+**tid** - *(int)* 所在主题帖id
+
+**pid** - *(int)* 回复id
+
+**user** - *([UserInfo](#userinfo))* 发布者的用户信息
+
+**author_id** - *(int)* 发布者的user_id
+
+**reply_to_id** - *(int)* 被回复者的user_id
+
+**agree** - *(int)* 点赞数
+
+**disagree** - *(int)* 点踩数
+
+**create_time** - *(int)* 创建时间 10位时间戳
+</div>
+
+## Comments
+
+回复列表
+
+### 类属性
+
+<div class="docstring" markdown="1">
+**page** - *([Page](#page))* 页信息
+
+**has_more** - *(bool)* 是否还有下一页
+
+**forum** - *([BasicForum](#basicforum))* 所在吧信息
+
+**thread** - *([Thread](#thread))* 所在吧信息
+
+**post** - *([Post](#post))* 所在吧信息
+</div>
+

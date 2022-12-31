@@ -209,5 +209,5 @@ asyncio.run(main())
 如果你的`BDUSS`填写无误，你会获得类似下面这样的结果
 
 ```log
-<2022-07-16 20:14:34.597> [INFO] [main] 当前用户信息: {'user_id': 957339815, 'user_name': 'Starry_OvO', 'portrait': 'tb.1.8277e641.gUE2cTq4A4z5fi2EHn5k3Q'}
+<2023-01-01 00:04:23.642> [INFO] [main] 当前用户信息: {'user_id': 957339815, 'user_name': 'Starry_OvO', 'portrait': 'tb.1.8277e641.gUE2cTq4A4z5fi2EHn5k3Q', 'nick_name': 'ºStarry'}
 ```

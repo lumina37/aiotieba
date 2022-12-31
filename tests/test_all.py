@@ -1,10 +1,9 @@
 import asyncio
 
+import aiotieba as tb
+import httpx
 import pytest
 import pytest_asyncio
-import yarl
-
-import aiotieba as tb
 
 
 @pytest.fixture(scope="session")
@@ -109,7 +108,7 @@ async def test_Posts_and_Fragments(client: tb.Client):
     frag = posts[3].contents.links[0]
     assert isinstance(frag.title, str)
     assert frag.title != ""
-    assert isinstance(frag.url, yarl.URL)
+    assert isinstance(frag.url, httpx.URL)
     assert isinstance(frag.title, str)
     assert frag.title != ""
     assert isinstance(frag.is_external, bool)
@@ -168,7 +167,7 @@ def check_ShareThread(thread: tb.ShareThread):
     frag = thread.contents.links[0]
     assert isinstance(frag.title, str)
     assert frag.title != ""
-    assert isinstance(frag.url, yarl.URL)
+    assert isinstance(frag.url, httpx.URL)
     assert isinstance(frag.title, str)
     assert frag.title != ""
     assert isinstance(frag.is_external, bool)

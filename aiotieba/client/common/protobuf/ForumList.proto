@@ -1,0 +1,10 @@
+// Not actually exist
+syntax = "proto3";
+
+message ForumList {
+    int64 forum_id = 1;
+    string forum_name = 2;
+    uint32 member_count = 4;
+    int64 post_num = 7;
+    int64 thread_num = 8;
+}

@@ -20,11 +20,21 @@ import types
 from collections.abc import Callable, Iterator
 from typing import List, Literal, Optional, Tuple, Union
 
-from ._helper import alog_time
 from ._logger import LOG
-from .client import Client, ReqUInfo, _ForumInfoCache
+from .client import Client, ForumInfoCache, ReqUInfo
+from .client.common.typedef import Comment, Comments, Post, Posts, Thread, Threads, UserInfo
 from .database import MySQLDB, SQLiteDB
-from .typedef import Comment, Comments, Post, Posts, Thread, Threads, UserInfo
+
+
+def alog_time(func) -> None:
+    @functools.wraps(func)
+    async def _(*args, **kwargs):
+        start_time = time.perf_counter()
+        res = await func(*args, **kwargs)
+        LOG.debug(f"{func.__name__} time_cost: {time.perf_counter()-start_time:.4f}")
+        return res
+
+    return _
 
 
 class BaseReviewer(object):
@@ -97,15 +107,15 @@ class BaseReviewer(object):
             int: 该贴吧的forum_id
         """
 
-        if fid := _ForumInfoCache.get_fid(fname):
+        if fid := ForumInfoCache.get_fid(fname):
             return fid
 
         if fid := await self.db.get_fid(fname):
-            _ForumInfoCache.add_forum(fname, fid)
+            ForumInfoCache.add_forum(fname, fid)
             return fid
 
         if fid := await self.client.get_fid(fname):
-            _ForumInfoCache.add_forum(fname, fid)
+            ForumInfoCache.add_forum(fname, fid)
             await self.db.add_forum(fid, fname)
 
         return fid
@@ -121,15 +131,15 @@ class BaseReviewer(object):
             str: 该贴吧的贴吧名
         """
 
-        if fname := _ForumInfoCache.get_fname(fid):
+        if fname := ForumInfoCache.get_fname(fid):
             return fname
 
         if fname := await self.db.get_fname(fid):
-            _ForumInfoCache.add_forum(fname, fid)
+            ForumInfoCache.add_forum(fname, fid)
             return fname
 
         if fname := await self.client.get_fname(fid):
-            _ForumInfoCache.add_forum(fname, fid)
+            ForumInfoCache.add_forum(fname, fid)
             await self.db.add_forum(fid, fname)
 
         return fname
@@ -399,7 +409,7 @@ class BaseReviewer(object):
 
         return res
 
-    def compute_imghash(self, image: "np.ndarray") -> str:
+    def compute_imghash(self, image: "np.ndarray") -> int:
         """
         计算图像的phash
 
@@ -407,46 +417,50 @@ class BaseReviewer(object):
             image (np.ndarray): 图像
 
         Returns:
-            str: 图像的phash
+            int: 图像的phash
         """
 
         try:
-            img_hash_array = self.img_hasher.compute(image)
-            img_hash = img_hash_array.tobytes().hex()
+            img_hash_array = self.img_hasher.compute(image).flatten()
+            img_hash = 0
+            for hash_num, shift in zip(img_hash_array, range(56, -1, -8)):
+                img_hash += int(hash_num) << shift
         except Exception as err:
             LOG.warning(err)
-            img_hash = ''
+            img_hash = 0
 
         return img_hash
 
-    async def get_imghash(self, image: "np.ndarray") -> int:
+    async def get_imghash(self, image: "np.ndarray", *, hamming_dist: int = 0) -> int:
         """
         获取图像的封锁级别
 
         Args:
             image (np.ndarray): 图像
+            hamming_dist (int): 匹配的最大海明距离 默认为0 即要求图像phash完全一致
 
         Returns:
             int: 封锁级别
         """
 
         if img_hash := self.compute_imghash(image):
-            return await self.db.get_imghash(img_hash)
+            return await self.db.get_imghash(img_hash, hamming_dist=hamming_dist)
         return 0
 
-    async def get_imghash_full(self, image: "np.ndarray") -> Tuple[int, str]:
+    async def get_imghash_full(self, image: "np.ndarray", *, hamming_dist: int = 0) -> Tuple[int, str]:
         """
         获取图像的完整信息
 
         Args:
             image (np.ndarray): 图像
+            hamming_dist (int): 匹配的最大海明距离 默认为0 即要求图像phash完全一致
 
         Returns:
             tuple[int, str]: 封锁级别, 备注
         """
 
         if img_hash := self.compute_imghash(image):
-            return await self.db.get_imghash_full(img_hash)
+            return await self.db.get_imghash_full(img_hash, hamming_dist=hamming_dist)
         return 0, ''
 
 
@@ -803,10 +817,10 @@ class Reviewer(BaseReviewer):
             Iterator[Post]: 待审查回复的迭代器
         """
 
-        posts = await self.get_posts(thread.tid, pn=99999, sort=1, with_comments=True)
+        posts = await self.get_posts(thread.tid, pn=99999, sort=1)
         posts = set(posts.objs)
         if thread.reply_num > 30:
-            first_posts = await self.get_posts(thread.tid, with_comments=True)
+            first_posts = await self.get_posts(thread.tid)
             posts.update(first_posts.objs)
 
         return posts
@@ -1047,7 +1061,7 @@ class Reviewer(BaseReviewer):
 
         time_thre = self.time_thre_closure()
 
-        posts = await self.get_posts(thread.tid, pn=99999, sort=1, with_comments=True)
+        posts = await self.get_posts(thread.tid, pn=99999, sort=1)
         if posts:
             for post in posts:
                 yield post
@@ -1057,7 +1071,7 @@ class Reviewer(BaseReviewer):
         if (total_page := posts.page.total_page) >= 2:
             for post_pn in range(total_page - 2, 0, -1):
                 LOG.debug(f"Scanning tid={thread.tid} pn={post_pn}")
-                posts = await self.get_posts(thread.tid, pn=post_pn, with_comments=True)
+                posts = await self.get_posts(thread.tid, pn=post_pn)
                 if posts:
                     for post in posts:
                         yield post
@@ -1108,15 +1122,12 @@ class Reviewer(BaseReviewer):
             Iterator[Comment]: 待审查楼中楼的迭代器
         """
 
-        reply_num = post.reply_num
-        if (reply_num <= 10 and len(post.comments) != reply_num) or reply_num > 10:
-            last_comments = await self.get_comments(post.tid, post.pid, pn=post.reply_num // 30 + 1)
-            comments = set(last_comments)
-            comments.update(post.comments)
-            return comments
+        if post.reply_num:
+            comments = await self.get_comments(post.tid, post.pid, pn=post.reply_num // 30 + 1)
+            return comments.objs
 
         else:
-            return post.comments
+            return []
 
     @_exce_punish
     @_check_permission
