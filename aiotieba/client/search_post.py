@@ -18,7 +18,7 @@ def pack_request(
 ) -> httpx.Request:
 
     data = [
-        ('_client_version', core.latest_version),
+        ('_client_version', core.main_version),
         ('kw', fname),
         ('only_thread', int(only_thread)),
         ('pn', pn),

@@ -20,7 +20,7 @@ def pack_proto(
     is_fold: bool,
 ) -> bytes:
     req_proto = PbPageReqIdl_pb2.PbPageReqIdl()
-    req_proto.data.common._client_version = core.latest_version
+    req_proto.data.common._client_version = core.main_version
     req_proto.data.tid = tid
     req_proto.data.pn = pn
     req_proto.data.rn = rn if rn > 1 else 2

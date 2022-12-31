@@ -11,7 +11,7 @@ from .common.typedef import Forum
 def pack_request(client: httpx.AsyncClient, core: TiebaCore, fid: int) -> httpx.Request:
 
     data = [
-        ('_client_version', core.latest_version),
+        ('_client_version', core.main_version),
         ('forum_id', fid),
     ]
 

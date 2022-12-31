@@ -10,7 +10,7 @@ from .protobuf import FrsPageReqIdl_pb2, FrsPageResIdl_pb2
 def pack_proto(core: TiebaCore, fname: str, pn: int, rn: int, sort: int, is_good: bool) -> bytes:
     req_proto = FrsPageReqIdl_pb2.FrsPageReqIdl()
     req_proto.data.common._client_type = 2
-    req_proto.data.common._client_version = core.latest_version
+    req_proto.data.common._client_version = core.main_version
     req_proto.data.fname = fname
     req_proto.data.pn = pn
     req_proto.data.rn = rn if rn > 0 else 1

@@ -1,7 +1,7 @@
 __all__ = ['Client']
 import asyncio
 import base64
-from typing import ClassVar, Dict, List, Literal, Optional, Tuple, Union
+from typing import Dict, List, Literal, Optional, Tuple, Union
 
 import httpx
 import httpx_ws
@@ -66,10 +66,6 @@ class Client(object):
     ]
 
     _use_env_proxy = False
-    _timeout: ClassVar[httpx.Timeout] = httpx.Timeout(connect=3.0, read=12.0, write=8.0, pool=3.0)
-    _limits: ClassVar[httpx.Limits] = httpx.Limits(
-        max_connections=None, max_keepalive_connections=None, keepalive_expiry=10.0
-    )
 
     def __init__(self, BDUSS_key: Optional[str] = None) -> None:
 
@@ -78,16 +74,92 @@ class Client(object):
         self._user = UserInfo()
         self._tbs: str = None
 
-        self._client_app: httpx.AsyncClient = None
-        self._client_app_proto: httpx.AsyncClient = None
-        self._client_web: httpx.AsyncClient = None
-        self._client_ws: httpx.AsyncClient = None
+        timeout = httpx.Timeout(connect=3.0, read=12.0, write=8.0, pool=3.0)
+        limits = httpx.Limits(max_connections=None, max_keepalive_connections=None, keepalive_expiry=10.0)
+
+        transport = httpx.AsyncHTTPTransport(
+            verify=False,
+            limits=limits,
+            local_address="0.0.0.0",
+        )
+        if self._use_env_proxy:
+            mounts = {
+                key: httpx.AsyncHTTPTransport(
+                    verify=False,
+                    limits=limits,
+                    proxy=httpx.Proxy(url),
+                    local_address="0.0.0.0",
+                )
+                for key, url in httpx._client.get_environment_proxies().items()
+            }
+        else:
+            mounts = None
+
+        self._client_app = httpx.AsyncClient(
+            headers={
+                Header.USER_AGENT: f"tieba/{TiebaCore.main_version}",
+                Header.CONNECTION: "keep-alive",
+                Header.HOST: APP_BASE_HOST,
+            },
+            timeout=timeout,
+            mounts=mounts,
+            transport=transport,
+            trust_env=False,
+        )
+
+        self._client_app_proto = httpx.AsyncClient(
+            headers={
+                Header.USER_AGENT: f"tieba/{TiebaCore.main_version}",
+                Header.BAIDU_DATA_TYPE: "protobuf",
+                Header.CONNECTION: "keep-alive",
+                Header.HOST: APP_BASE_HOST,
+            },
+            timeout=timeout,
+            mounts=mounts,
+            transport=transport,
+            trust_env=False,
+        )
+
+        self._client_web = httpx.AsyncClient(
+            headers={
+                Header.USER_AGENT: f"tieba/{TiebaCore.main_version}",
+                Header.ACCEPT_ENCODING: "gzip, deflate",
+                Header.CACHE_CONTROL: "no-cache",
+                Header.CONNECTION: "keep-alive",
+                Header.HOST: "tieba.baidu.com",
+            },
+            cookies={
+                'BDUSS': self.core.BDUSS,
+                'STOKEN': self.core.STOKEN,
+            },
+            timeout=timeout,
+            mounts=mounts,
+            transport=transport,
+            trust_env=False,
+        )
+
+        self._client_ws = httpx.AsyncClient(
+            headers={
+                Header.HOST: "im.tieba.baidu.com:8000",
+                Header.SEC_WEBSOCKET_EXTENSIONS: "im_version=2.3",
+            },
+            timeout=timeout,
+            mounts=mounts,
+            transport=transport,
+            trust_env=False,
+        )
+
         self.websocket: httpx_ws.AsyncWebSocketSession = None
         self._ws_aes_chiper = None
         self._ws_dispatcher: asyncio.Task = None
 
     async def __aenter__(self) -> "Client":
-        await self.client_web.__aenter__()
+        state_opened = httpx._client.ClientState.OPENED
+        self.client_app._state = state_opened
+        self.client_app_proto._state = state_opened
+        self.client_web._state = state_opened
+        self.client_ws._state = state_opened
+
         return self
 
     async def close(self) -> None:
@@ -97,14 +169,9 @@ class Client(object):
         if self.is_ws_aviliable:
             await self.websocket.close()
 
-        if self._client_app is not None:
-            await self._client_app.aclose()
-        if self._client_app_proto is not None:
-            await self._client_app_proto.aclose()
-        if self._client_web is not None:
-            await self._client_web.aclose()
-        if self._client_ws is not None:
-            await self._client_ws.aclose()
+        await self._client_app._transport._pool.aclose()
+        for proxy_transport in self._client_app._mounts.values():
+            await proxy_transport._pool.aclose()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.close()
@@ -129,15 +196,6 @@ class Client(object):
             httpx.AsyncClient
         """
 
-        if self._client_app is None:
-            headers = {
-                Header.USER_AGENT: f"tieba/{self.core.latest_version}",
-                Header.CONNECTION: "keep-alive",
-                Header.HOST: APP_BASE_HOST,
-            }
-
-            self._client_app = httpx.AsyncClient(headers=headers, timeout=self._timeout, trust_env=self._use_env_proxy)
-
         return self._client_app
 
     @property
@@ -148,18 +206,6 @@ class Client(object):
         Returns:
             httpx.AsyncClient
         """
-
-        if self._client_app_proto is None:
-            headers = {
-                Header.USER_AGENT: f"tieba/{self.core.latest_version}",
-                Header.BAIDU_DATA_TYPE: "protobuf",
-                Header.CONNECTION: "keep-alive",
-                Header.HOST: APP_BASE_HOST,
-            }
-
-            self._client_app_proto = httpx.AsyncClient(
-                headers=headers, timeout=self._timeout, trust_env=self._use_env_proxy
-            )
 
         return self._client_app_proto
 
@@ -172,23 +218,6 @@ class Client(object):
             httpx.AsyncClient
         """
 
-        if self._client_web is None:
-            headers = {
-                Header.USER_AGENT: f"tieba/{self.core.latest_version}",
-                Header.ACCEPT_ENCODING: "gzip, deflate",
-                Header.CACHE_CONTROL: "no-cache",
-                Header.CONNECTION: "keep-alive",
-                Header.HOST: "tieba.baidu.com",
-            }
-            cookies = {
-                'BDUSS': self.core.BDUSS,
-                'STOKEN': self.core.STOKEN,
-            }
-
-            self._client_web = httpx.AsyncClient(
-                headers=headers, cookies=cookies, timeout=self._timeout, trust_env=self._use_env_proxy
-            )
-
         return self._client_web
 
     @property
@@ -199,14 +228,6 @@ class Client(object):
         Returns:
             httpx.AsyncClient
         """
-
-        if self._client_ws is None:
-            headers = {
-                Header.HOST: "im.tieba.baidu.com:8000",
-                Header.SEC_WEBSOCKET_EXTENSIONS: "im_version=2.3",
-            }
-
-            self._client_ws = httpx.AsyncClient(headers=headers, timeout=self._timeout, trust_env=self._use_env_proxy)
 
         return self._client_ws
 

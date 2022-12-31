@@ -11,7 +11,7 @@ def pack_request(
 
     data = [
         ('BDUSS', core.BDUSS),
-        ('_client_version', core.latest_version),
+        ('_client_version', core.main_version),
         ('forum_id', fid),
         ('tbs', tbs),
         ('threads', jsonlib.dumps([{'thread_id', tid, 'from_tab_id', from_tab_id, 'to_tab_id', to_tab_id}])),

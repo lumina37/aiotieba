@@ -10,7 +10,7 @@ from .protobuf import GetDislikeListReqIdl_pb2, GetDislikeListResIdl_pb2
 def pack_proto(core: TiebaCore, pn: int, rn: int) -> bytes:
     req_proto = GetDislikeListReqIdl_pb2.GetDislikeListReqIdl()
     req_proto.data.common.BDUSS = core.BDUSS
-    req_proto.data.common._client_version = core.latest_version
+    req_proto.data.common._client_version = core.main_version
     req_proto.data.pn = pn
     req_proto.data.rn = rn
 

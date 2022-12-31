@@ -11,7 +11,7 @@ def pack_request(client: httpx.AsyncClient, core: TiebaCore, fid: int) -> httpx.
 
     data = [
         ('BDUSS', core.BDUSS),
-        ('_client_version', core.latest_version),
+        ('_client_version', core.main_version),
         (
             'dislike',
             f"""[{{"tid": 1, "dislike_ids": 7, "fid": {fid}, "click_time": {int(time.time() * 1000)}}}]""",

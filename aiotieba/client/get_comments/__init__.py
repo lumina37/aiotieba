@@ -9,7 +9,7 @@ from .protobuf import PbFloorReqIdl_pb2, PbFloorResIdl_pb2
 
 def pack_proto(core: TiebaCore, tid: int, pid: int, pn: int, is_floor: bool) -> bytes:
     req_proto = PbFloorReqIdl_pb2.PbFloorReqIdl()
-    req_proto.data.common._client_version = core.latest_version
+    req_proto.data.common._client_version = core.main_version
     req_proto.data.tid = tid
     if is_floor:
         req_proto.data.spid = pid

@@ -10,7 +10,7 @@ from .protobuf import GetForumSquareReqIdl_pb2, GetForumSquareResIdl_pb2
 def pack_proto(core: TiebaCore, class_name: str, pn: int, rn: int) -> bytes:
     req_proto = GetForumSquareReqIdl_pb2.GetForumSquareReqIdl()
     req_proto.data.common.BDUSS = core.BDUSS
-    req_proto.data.common._client_version = core.latest_version
+    req_proto.data.common._client_version = core.main_version
     req_proto.data.class_name = class_name
     req_proto.data.pn = pn
     req_proto.data.rn = rn

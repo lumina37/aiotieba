@@ -11,7 +11,7 @@ from .common.typedef import UserInfo
 def pack_request(client: httpx.AsyncClient, core: TiebaCore) -> httpx.Request:
 
     data = [
-        ('_client_version', core.latest_version),
+        ('_client_version', core.main_version),
         ('bdusstoken', core.BDUSS),
     ]
 

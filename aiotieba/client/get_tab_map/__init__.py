@@ -11,7 +11,7 @@ from .protobuf import SearchPostForumReqIdl_pb2, SearchPostForumResIdl_pb2
 def pack_proto(core: TiebaCore, fname: str) -> bytes:
     req_proto = SearchPostForumReqIdl_pb2.SearchPostForumReqIdl()
     req_proto.data.common.BDUSS = core.BDUSS
-    req_proto.data.common._client_version = core.latest_version
+    req_proto.data.common._client_version = core.main_version
     req_proto.data.fname = fname
 
     return req_proto.SerializeToString()

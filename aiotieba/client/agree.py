@@ -11,7 +11,7 @@ def pack_request(
 
     data = [
         ('BDUSS', core.BDUSS),
-        ('_client_version', core.latest_version),
+        ('_client_version', core.main_version),
         ('agree_type', '5' if is_disagree else '2'),
         ('cuid', core.cuid_galaxy2),
         ('obj_type', '1' if pid else '3'),

@@ -9,7 +9,7 @@ def pack_request(client: httpx.AsyncClient, core: TiebaCore, tbs: str, fname: st
 
     data = [
         ('BDUSS', core.BDUSS),
-        ('_client_version', core.latest_version),
+        ('_client_version', core.main_version),
         ('kw', fname),
         ('tbs', tbs),
     ]

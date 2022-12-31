@@ -11,7 +11,7 @@ from .protobuf import GetBawuInfoReqIdl_pb2, GetBawuInfoResIdl_pb2
 
 def pack_proto(core: TiebaCore, fid: int) -> bytes:
     req_proto = GetBawuInfoReqIdl_pb2.GetBawuInfoReqIdl()
-    req_proto.data.common._client_version = core.latest_version
+    req_proto.data.common._client_version = core.main_version
     req_proto.data.fid = fid
 
     return req_proto.SerializeToString()

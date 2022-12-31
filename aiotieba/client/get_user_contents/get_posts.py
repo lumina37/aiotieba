@@ -12,7 +12,7 @@ from .protobuf import UserPostReqIdl_pb2, UserPostResIdl_pb2
 def pack_proto(core: TiebaCore, user_id: int, pn: int) -> bytes:
     req_proto = UserPostReqIdl_pb2.UserPostReqIdl()
     req_proto.data.common.BDUSS = core.BDUSS
-    req_proto.data.common._client_version = core.latest_version
+    req_proto.data.common._client_version = core.main_version
     req_proto.data.user_id = user_id
     req_proto.data.need_content = 1
     req_proto.data.pn = pn

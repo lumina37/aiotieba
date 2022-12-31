@@ -10,7 +10,7 @@ from .protobuf import ReplyMeReqIdl_pb2, ReplyMeResIdl_pb2
 def pack_proto(core: TiebaCore, pn: int) -> bytes:
     req_proto = ReplyMeReqIdl_pb2.ReplyMeReqIdl()
     req_proto.data.common.BDUSS = core.BDUSS
-    req_proto.data.common._client_version = core.latest_version
+    req_proto.data.common._client_version = core.main_version
     req_proto.data.pn = str(pn)
 
     return req_proto.SerializeToString()

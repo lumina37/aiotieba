@@ -11,7 +11,7 @@ from .protobuf import ProfileReqIdl_pb2, ProfileResIdl_pb2
 
 def pack_proto(core: TiebaCore, portrait: str, with_threads: bool) -> bytes:
     req_proto = ProfileReqIdl_pb2.ProfileReqIdl()
-    req_proto.data.common._client_version = core.latest_version
+    req_proto.data.common._client_version = core.main_version
     req_proto.data.need_post_count = 1
     req_proto.data.friend_uid_portrait = portrait
     if with_threads:
