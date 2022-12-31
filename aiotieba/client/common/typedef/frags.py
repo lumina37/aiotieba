@@ -266,7 +266,7 @@ class FragLink(_Fragment):
     Attributes:
         text (str): 原链接
         title (str): 链接标题
-        url (yarl.URL): 使用yarl解析后的链接
+        url (httpx.URL): 解析后的链接
         raw_url (str): 原链接
         is_external (bool): 是否外部链接
     """
@@ -436,7 +436,7 @@ class Fragments(object):
     内容碎片列表
 
     Attributes:
-        _frags (list[_TypeFragment]): 所有碎片的混合列表
+        _frags (list[TypeFragment]): 所有碎片的混合列表
 
         text (str): 文本内容
 

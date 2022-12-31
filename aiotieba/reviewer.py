@@ -21,9 +21,9 @@ from collections.abc import Callable, Iterator
 from typing import List, Literal, Optional, Tuple, Union
 
 from ._logger import LOG
-from .client import Client, ReqUInfo, ForumInfoCache
-from .database import MySQLDB, SQLiteDB
+from .client import Client, ForumInfoCache, ReqUInfo
 from .client.common.typedef import Comment, Comments, Post, Posts, Thread, Threads, UserInfo
+from .database import MySQLDB, SQLiteDB
 
 
 def alog_time(func) -> None:

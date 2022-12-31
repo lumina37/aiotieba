@@ -23,6 +23,7 @@ nav:
     - 参考文档:
       - client: ref/client.md
       - typedef: ref/typedef.md
+      - enum: ref/enum.md
     - 逆向分析教程:
       - 贴吧私信接口逆向分析: misc/websocket_reverse_engineering.md
 

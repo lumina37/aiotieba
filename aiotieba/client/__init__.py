@@ -612,6 +612,7 @@ class Client(object):
     async def tieba_uid2user_info(self, tieba_uid: int) -> UserInfo:
         """
         接口 http://tiebac.baidu.com/c/u/user/getUserByTiebaUid
+        通过tieba_uid获取用户信息
 
         Args:
             tieba_uid (int): 用户id tieba_uid

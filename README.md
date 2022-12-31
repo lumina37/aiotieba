@@ -59,7 +59,7 @@
 + 安装
 
 ```shell
-pip install aiotieba[img]
+pip install aiotieba
 ```
 
 + 体验一下

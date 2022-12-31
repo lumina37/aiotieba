@@ -365,6 +365,7 @@ class Comments(Containers[Comment]):
         objs (list[Comment]): 楼中楼列表
 
         page (Page): 页信息
+        has_more (bool): 是否还有下一页
 
         forum (BasicForum): 所在吧信息
         thread (Thread): 所在主题帖信息

@@ -127,7 +127,7 @@ class Containers(Generic[TypeContainer]):
     约定取内容的通用接口
 
     Attributes:
-        objs (list[_TypeContainer]): 内容列表
+        objs (list[TypeContainer]): 内容列表
         has_more (bool): 是否还有下一页
     """
 

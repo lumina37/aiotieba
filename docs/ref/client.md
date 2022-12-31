@@ -68,7 +68,7 @@ async def `get_fname`(*fid: int*) -> *str*
 </div>
 
 
-async def `get_user_info`(*_id: str | int*, /, *require: [ReqUInfo](#requinfo) = [ReqUInfo](#requinfo).ALL*) -> *[UserInfo](typedef.md#userinfo)*
+async def `get_user_info`(*_id: str | int*, /, *require: [ReqUInfo](enum.md#requinfo) = [ReqUInfo](enum.md#requinfo).ALL*) -> *[UserInfo](typedef.md#userinfo)*
 
 <div class="docstring" markdown="1">
 获取用户信息
@@ -77,6 +77,18 @@ async def `get_user_info`(*_id: str | int*, /, *require: [ReqUInfo](#requinfo) =
 
 + _id: 用户id [user_id](../tutorial/quickstart.md#user_id) / [portrait](../tutorial/quickstart.md#portrait) / [user_name](../tutorial/quickstart.md#user_name)
 + require: 指示需要获取的字段
+
+**返回**: 用户信息
+</div>
+
+async def `tieba_uid2user_info`(*tieba_uid: int*) -> *[UserInfo](typedef.md#userinfo)*
+
+<div class="docstring" markdown="1">
+通过[tieba_uid](../tutorial/quickstart.md#tieba_uid)获取用户信息
+
+**参数**:
+
++ tieba_uid: 用户id [tieba_uid](../tutorial/quickstart.md#tieba_uid)
 
 **返回**: 用户信息
 </div>
@@ -99,16 +111,37 @@ async def `get_threads`(*fname_or_fid: str | int*, /, *pn: int = 1*, \*, *rn: in
 **返回**: 帖子列表
 </div>
 
+async def `get_posts`(*tid: int*, /, *pn: int = 1*, \*, *rn: int = 30*, *sort: int = 0*, *only_thread_author: bool = False*, *with_comments: bool = False*, *comment_sort_by_agree: bool = True*, *comment_rn: int = 10*, *is_fold: bool = False*) -> *[Posts](typedef.md#posts)*
 
-## ReqUInfo
+<div class="docstring" markdown="1">
+获取首页帖子
 
-使用该枚举类指定待获取的用户信息字段
+**参数**:
 
-**USER_ID** = 1 << 0<br>
-**PORTRAIT** = 1 << 1<br>
-**USER_NAME** = 1 << 2<br>
-**NICK_NAME** = 1 << 3<br>
-**TIEBA_UID** = 1 << 4<br>
-**OTHER** = 1 << 5<br>
-**BASIC** = USER_ID | PORTRAIT | USER_NAME<br>
-**ALL** = (1 << 6) - 1
++ tid: 所在主题帖[tid](../tutorial/quickstart.md#thread_id)
++ pn: 页码
++ rn: 请求的条目数
++ sort: 排序方式 0则按时间顺序请求 1则按时间倒序请求 2则按热门序请求
++ only_thread_author: True则只看楼主 False则请求全部
++ with_comments: True则同时请求高赞楼中楼 False则返回的Posts.comments为空
++ comment_sort_by_agree: True则楼中楼按点赞数顺序 False则楼中楼按时间顺序
++ comment_rn: 请求的楼中楼数量
++ is_fold: 是否请求被折叠的回复
+
+**返回**: 回复列表
+</div>
+
+async def `get_comments`(*tid: int*, *pid: int*, /, *pn: int = 1*, \*, *is_floor: bool = False*) -> *[Comments](typedef.md#comments)*
+
+<div class="docstring" markdown="1">
+获取首页帖子
+
+**参数**:
+
++ tid: 所在主题帖[tid](../tutorial/quickstart.md#thread_id)
++ pid: 所在回复[pid](../tutorial/quickstart.md#post_id)或楼中楼[pid](../tutorial/quickstart.md#post_id)
++ pn: 页码
++ is_floor: pid是否指向楼中楼
+
+**返回**: 楼中楼列表
+</div>
