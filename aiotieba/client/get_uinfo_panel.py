@@ -1,20 +1,17 @@
 import httpx
 
 from .._exception import TiebaServerError
-from .common.helper import jsonlib
+from .common.helper import jsonlib, raise_for_status, url
 from .common.typedef import UserInfo
 
 
 def pack_request(client: httpx.AsyncClient, name_or_portrait: str) -> httpx.Request:
 
-    if UserInfo.is_portrait(name_or_portrait):
-        params = {'id': name_or_portrait}
-    else:
-        params = {'un': name_or_portrait}
+    params = {'id' if UserInfo.is_portrait(name_or_portrait) else 'un': name_or_portrait}
 
     request = httpx.Request(
         "GET",
-        "https://tieba.baidu.com/home/get/panel",
+        url("https", "tieba.baidu.com", "/home/get/panel"),
         params=params,
         headers=client.headers,
         cookies=client.cookies,
@@ -42,7 +39,7 @@ def _num2int(tb_num: str) -> int:
 
 
 def parse_response(response: httpx.Response) -> UserInfo:
-    response.raise_for_status()
+    raise_for_status(response)
 
     res_json = jsonlib.loads(response.content)
     if code := int(res_json['no']):

@@ -3,21 +3,26 @@ from typing import Dict, List
 import httpx
 
 from ..._exception import TiebaServerError
-from ..common.helper import pack_proto_request
+from ..common.core import TiebaCore
+from ..common.helper import APP_BASE_HOST, pack_proto_request, raise_for_status, url
 from ..common.typedef import UserInfo
 from .protobuf import GetBawuInfoReqIdl_pb2, GetBawuInfoResIdl_pb2
 
 
-def pack_request(client: httpx.AsyncClient, version: str, fid: int) -> httpx.Request:
-
+def pack_proto(core: TiebaCore, fid: int) -> bytes:
     req_proto = GetBawuInfoReqIdl_pb2.GetBawuInfoReqIdl()
-    req_proto.data.common._client_version = version
+    req_proto.data.common._client_version = core.latest_version
     req_proto.data.fid = fid
+
+    return req_proto.SerializeToString()
+
+
+def pack_request(client: httpx.AsyncClient, core: TiebaCore, fid: int) -> httpx.Request:
 
     request = pack_proto_request(
         client,
-        "http://tiebac.baidu.com/c/f/forum/getBawuInfo?cmd=301007",
-        req_proto.SerializeToString(),
+        url("http", APP_BASE_HOST, "/c/f/forum/getBawuInfo", "cmd=301007"),
+        pack_proto(core, fid),
     )
 
     return request
@@ -33,11 +38,9 @@ def _parse_user_info(proto) -> UserInfo:
     return user
 
 
-def parse_response(response: httpx.Response) -> Dict[str, List[UserInfo]]:
-    response.raise_for_status()
-
+def parse_proto(proto: bytes) -> Dict[str, List[UserInfo]]:
     res_proto = GetBawuInfoResIdl_pb2.GetBawuInfoResIdl()
-    res_proto.ParseFromString(response.content)
+    res_proto.ParseFromString(proto)
 
     if code := res_proto.error.errorno:
         raise TiebaServerError(code, res_proto.error.errmsg)
@@ -49,3 +52,9 @@ def parse_response(response: httpx.Response) -> Dict[str, List[UserInfo]]:
     }
 
     return bawu_dict
+
+
+def parse_response(response: httpx.Response) -> Dict[str, List[UserInfo]]:
+    raise_for_status(response)
+
+    return parse_proto(response.content)

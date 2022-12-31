@@ -1,4 +1,8 @@
 __all__ = [
+    'WebsocketResponse',
+    'ForumInfoCache',
+    'ReqUInfo',
+    'Header',
     'UserInfo',
     'FragmentUnknown',
     'FragText',
@@ -78,8 +82,8 @@ import httpx
 from google.protobuf.json_format import ParseDict
 from google.protobuf.message import Message
 
-from ..._logger import LOG
-from .protobuf import ForumList_pb2, Page_pb2, ThreadInfo_pb2, User_pb2
+from ...._logger import LOG
+from ..protobuf import ForumList_pb2, Page_pb2, ThreadInfo_pb2, User_pb2
 
 
 class WebsocketResponse(object):
@@ -141,29 +145,6 @@ class WebsocketResponse(object):
             self._req_id = self._websocket_request_id
 
         return self._req_id
-
-    async def read(self, timeout: float) -> bytes:
-        """
-        读取websocket返回数据
-
-        Args:
-            timeout (float): 设置超时秒数
-
-        Raises:
-            asyncio.TimeoutError: 超时后抛出该异常
-
-        Returns:
-            bytes: 从websocket接收到的数据
-        """
-
-        try:
-            data: bytes = await asyncio.wait_for(self._data_future, timeout)
-        except asyncio.TimeoutError:
-            del self.ws_res_wait_dict[self.req_id]
-            raise asyncio.TimeoutError("Timeout to read")
-
-        del self.ws_res_wait_dict[self.req_id]
-        return data
 
 
 class ForumInfoCache(object):

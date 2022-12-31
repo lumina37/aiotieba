@@ -1,32 +1,35 @@
+from typing import Dict
+
 import httpx
 
 from .._exception import TiebaServerError
-from .common.helper import jsonlib, pack_form_request, sign
+from .common.core import TiebaCore
+from .common.helper import APP_BASE_HOST, jsonlib, pack_form_request, raise_for_status, sign, url
 
 
-def pack_request(client: httpx.AsyncClient, bduss: str, fname: str) -> httpx.Request:
+def pack_request(client: httpx.AsyncClient, core: TiebaCore, fname: str) -> httpx.Request:
 
     data = [
-        ('BDUSS', bduss),
+        ('BDUSS', core.BDUSS),
         ('word', fname),
     ]
 
-    request = pack_form_request(client, "http://tiebac.baidu.com/c/c/bawu/goodlist", sign(data))
+    request = pack_form_request(
+        client,
+        url("http", APP_BASE_HOST, "/c/c/bawu/goodlist"),
+        sign(data),
+    )
 
     return request
 
 
-def parse_response(response: httpx.Response, cname: str) -> int:
-    response.raise_for_status()
+def parse_response(response: httpx.Response) -> Dict[str, str]:
+    raise_for_status(response)
 
     res_json = jsonlib.loads(response.content)
     if code := int(res_json['error_code']):
         raise TiebaServerError(code, res_json['error_msg'])
 
-    cid = 0
-    for item in res_json['cates']:
-        if cname == item['class_name']:
-            cid = int(item['class_id'])
-            break
+    cates = res_json['cates']
 
-    return cid
+    return cates

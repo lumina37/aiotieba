@@ -1,13 +1,14 @@
 import httpx
 
 from .._exception import TiebaServerError
-from .common.helper import jsonlib, pack_form_request, sign
+from .common.core import TiebaCore
+from .common.helper import APP_BASE_HOST, jsonlib, pack_form_request, raise_for_status, sign, url
 from .common.typedef import Searches
 
 
 def pack_request(
     client: httpx.AsyncClient,
-    version: str,
+    core: TiebaCore,
     fname: str,
     query: str,
     pn: int,
@@ -17,7 +18,7 @@ def pack_request(
 ) -> httpx.Request:
 
     data = [
-        ('_client_version', version),
+        ('_client_version', core.latest_version),
         ('kw', fname),
         ('only_thread', int(only_thread)),
         ('pn', pn),
@@ -26,13 +27,17 @@ def pack_request(
         ('word', query),
     ]
 
-    request = pack_form_request(client, "http://tiebac.baidu.com/c/s/searchpost", sign(data))
+    request = pack_form_request(
+        client,
+        url("http", APP_BASE_HOST, "/c/s/searchpost"),
+        sign(data),
+    )
 
     return request
 
 
 def parse_response(response: httpx.Response) -> Searches:
-    response.raise_for_status()
+    raise_for_status(response)
 
     res_json = jsonlib.loads(response.content)
     if code := int(res_json['error_code']):

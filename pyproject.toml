@@ -22,16 +22,16 @@ classifiers = [
     "Topic :: Internet :: WWW/HTTP :: Session",
 ]
 dependencies = [
-    "httpx>=0.23.0",
-    "httpx_ws>=0.2.2",
-    "aiomysql>=0.1.0",
-    "beautifulsoup4>=4.0.0",
-    "lxml>=4.0.0",
-    "protobuf>=4.12.0",
-    "pycryptodome>=3.0.0",
-    "tomli>=2.0.0;python_version<'3.11'",
-    "pysimdjson>=5.0.0,<5.1.0",
-    "opencv-contrib-python-headless>=4.6.0.66"
+    "aiomysql<0.2,>=0.1.0",
+    "beautifulsoup4<5,>=4.0.0",
+    "httpx<0.24,>=0.23.0",
+    "httpx_ws<0.3,>=0.2.2",
+    "lxml<5,>=4.0.0",
+    "opencv-contrib-python-headless==4.6.0.66",
+    "protobuf<5,>=4.12.0",
+    "pycryptodome<4,>=3.0.0",
+    "pysimdjson<5.1,>=5.0.0",
+    "tomli<3,>=2.0.0;python_version<'3.11'",
 ]
 dynamic = ["version"]
 
@@ -49,6 +49,12 @@ line-length = 120
 skip-string-normalization = true
 target-version = ['py39', 'py310']
 include = '\.pyi?$'
+
+[tool.ruff]
+line-length = 120
+select = ["W", "E", "F"]
+ignore = ["E402", "E501"]
+target-version = "py310"
 
 [tool.pytest.ini_options]
 minversion = "6.0"

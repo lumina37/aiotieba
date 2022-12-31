@@ -1,14 +1,14 @@
 import httpx
 
 from .._exception import TiebaServerError
-from .common.helper import jsonlib
+from .common.helper import jsonlib, raise_for_status, url
 from .common.typedef import Recovers
 
 
 def pack_request(client: httpx.AsyncClient, fname: str, fid: int, name: str, pn: int) -> httpx.Request:
     request = httpx.Request(
         "GET",
-        "https://tieba.baidu.com/mo/q/bawurecover",
+        url("https", "tieba.baidu.com", "/mo/q/bawurecover"),
         params={
             'fn': fname,
             'fid': fid,
@@ -24,7 +24,7 @@ def pack_request(client: httpx.AsyncClient, fname: str, fid: int, name: str, pn:
 
 
 def parse_response(response: httpx.Response) -> Recovers:
-    response.raise_for_status()
+    raise_for_status(response)
 
     res_json = jsonlib.loads(response.content)
     if code := int(res_json['no']):

@@ -1,24 +1,19 @@
 __all__ = ['Client']
 import asyncio
 import base64
-import gzip
-import hashlib
-import random
-import time
-import uuid
 from typing import ClassVar, Dict, List, Literal, Optional, Tuple, Union
 
 import httpx
 import httpx_ws
 import numpy as np
 import wsproto
-from Crypto.Cipher import AES, PKCS1_v1_5
+from Crypto.Cipher import PKCS1_v1_5
 from Crypto.PublicKey import RSA
 
-from .._config import CONFIG
 from .._exception import TiebaServerError
 from .._logger import LOG
-from .common.helper import send_request
+from .common.core import TiebaCore
+from .common.helper import APP_BASE_HOST, pack_ws_bytes, send_request, unpack_ws_bytes, url
 from .common.typedef import (
     Appeals,
     Ats,
@@ -58,15 +53,9 @@ class Client(object):
     """
 
     __slots__ = [
-        '_BDUSS_key',
-        '_BDUSS',
-        '_STOKEN',
+        '_core',
         '_user',
         '_tbs',
-        '_client_id',
-        '_cuid',
-        '_cuid_galaxy2',
-        '_ws_password',
         '_client_app',
         '_client_app_proto',
         '_client_web',
@@ -82,23 +71,12 @@ class Client(object):
         max_connections=None, max_keepalive_connections=None, keepalive_expiry=10.0
     )
 
-    latest_version: ClassVar[str] = "12.34.3.0"  # 这是目前的最新版本
-    # no_fold_version: ClassVar[str] = "12.12.1.0"  # 这是最后一个回复列表不发生折叠的版本
-    post_version: ClassVar[str] = "9.1.0.0"  # 发帖使用极速版
-
     def __init__(self, BDUSS_key: Optional[str] = None) -> None:
-        self._BDUSS_key = BDUSS_key
 
-        user_cfg: Dict[str, str] = CONFIG['User'].get(BDUSS_key, {})
-        self.BDUSS = user_cfg.get('BDUSS', '')
-        self.STOKEN = user_cfg.get('STOKEN', '')
+        self._core = TiebaCore(BDUSS_key)
 
         self._user = UserInfo()
         self._tbs: str = None
-        self._client_id: str = None
-        self._cuid: str = None
-        self._cuid_galaxy2: str = None
-        self._ws_password: bytes = None
 
         self._client_app: httpx.AsyncClient = None
         self._client_app_proto: httpx.AsyncClient = None
@@ -132,135 +110,15 @@ class Client(object):
         await self.close()
 
     @property
-    def BDUSS_key(self) -> str:
+    def core(self) -> TiebaCore:
         """
-        当前账号的BDUSS_key
-        """
-
-        return self._BDUSS_key
-
-    @property
-    def BDUSS(self) -> str:
-        """
-        当前账号的BDUSS
-        """
-
-        return self._BDUSS
-
-    @BDUSS.setter
-    def BDUSS(self, new_BDUSS: str) -> None:
-
-        if hasattr(self, "_BDUSS"):
-            LOG.warning("BDUSS已初始化 无法修改")
-            return
-
-        if not new_BDUSS:
-            self._BDUSS = ""
-            return
-
-        legal_length = 192
-        if (len_new_BDUSS := len(new_BDUSS)) != legal_length:
-            LOG.warning(f"BDUSS的长度应为{legal_length}个字符 而输入的{new_BDUSS}有{len_new_BDUSS}个字符")
-            self._BDUSS = ""
-            return
-
-        self._BDUSS = new_BDUSS
-
-    @property
-    def STOKEN(self) -> str:
-        """
-        当前账号的STOKEN
-        """
-
-        return self._STOKEN
-
-    @STOKEN.setter
-    def STOKEN(self, new_STOKEN: str) -> None:
-
-        if hasattr(self, "_STOKEN"):
-            LOG.warning("STOKEN已初始化 无法修改")
-            return
-
-        if not new_STOKEN:
-            self._STOKEN = ""
-            return
-
-        legal_length = 64
-        if (len_new_STOKEN := len(new_STOKEN)) != legal_length:
-            LOG.warning(f"STOKEN的长度应为{legal_length}个字符 而输入的{new_STOKEN}有{len_new_STOKEN}个字符")
-            self._STOKEN = ""
-            return
-
-        self._STOKEN = new_STOKEN
-
-    @property
-    def timestamp_ms(self) -> int:
-        """
-        毫秒级本机时间戳 (13位整数)
+        贴吧核心参数集
 
         Returns:
-            int: 毫秒级整数时间戳
+            TiebaCore
         """
 
-        return int(time.time() * 1000)
-
-    @property
-    def client_id(self) -> str:
-        """
-        返回一个可作为请求参数的client_id
-        在初次生成后该属性便不会再发生变化
-
-        Returns:
-            str: 举例 wappc_1653660000000_123
-        """
-
-        if self._client_id is None:
-            self._client_id = f"wappc_{self.timestamp_ms}_{random.randint(0,999):03d}"
-        return self._client_id
-
-    @property
-    def cuid(self) -> str:
-        """
-        返回一个可作为请求参数的cuid
-        在初次生成后该属性便不会再发生变化
-
-        Returns:
-            str: 举例 baidutiebaappe4200716-58a8-4170-af15-ea7edeb8e513
-        """
-
-        if self._cuid is None:
-            self._cuid = f"baidutiebaapp{uuid.uuid4()}"
-        return self._cuid
-
-    @property
-    def cuid_galaxy2(self) -> str:
-        """
-        返回一个可作为请求参数的cuid_galaxy2
-        在初次生成后该属性便不会再发生变化
-
-        Returns:
-            str: 举例 159AB36E0E5C55E4AAE340CA046F1303|0
-        """
-
-        if self._cuid_galaxy2 is None:
-            rand_str = random.randbytes(16).hex().upper()
-            self._cuid_galaxy2 = rand_str + "|0"
-
-        return self._cuid_galaxy2
-
-    @property
-    def ws_password(self) -> bytes:
-        """
-        返回一个供贴吧websocket使用的随机密码
-        在初次生成后该属性便不会再发生变化
-
-        Returns:
-            bytes: 长度为36字节的随机密码
-        """
-
-        if self._ws_password is None:
-            self._ws_password = random.randbytes(36)
-        return self._ws_password
+        return self._core
 
     @property
     def client_app(self) -> httpx.AsyncClient:
@@ -273,10 +131,9 @@ class Client(object):
 
         if self._client_app is None:
             headers = {
-                Header.USER_AGENT: f"tieba/{self.latest_version}",
+                Header.USER_AGENT: f"tieba/{self.core.latest_version}",
                 Header.CONNECTION: "keep-alive",
-                Header.ACCEPT_ENCODING: "gzip",
-                Header.HOST: "tiebac.baidu.com",
+                Header.HOST: APP_BASE_HOST,
             }
 
             self._client_app = httpx.AsyncClient(headers=headers, timeout=self._timeout, trust_env=self._use_env_proxy)
@@ -294,11 +151,10 @@ class Client(object):
 
         if self._client_app_proto is None:
             headers = {
-                Header.USER_AGENT: f"tieba/{self.latest_version}",
+                Header.USER_AGENT: f"tieba/{self.core.latest_version}",
                 Header.BAIDU_DATA_TYPE: "protobuf",
                 Header.CONNECTION: "keep-alive",
-                Header.ACCEPT_ENCODING: "gzip",
-                Header.HOST: "tiebac.baidu.com",
+                Header.HOST: APP_BASE_HOST,
             }
 
             self._client_app_proto = httpx.AsyncClient(
@@ -318,15 +174,15 @@ class Client(object):
 
         if self._client_web is None:
             headers = {
-                Header.USER_AGENT: f"tieba/{self.latest_version}",
+                Header.USER_AGENT: f"tieba/{self.core.latest_version}",
                 Header.ACCEPT_ENCODING: "gzip, deflate",
                 Header.CACHE_CONTROL: "no-cache",
                 Header.CONNECTION: "keep-alive",
                 Header.HOST: "tieba.baidu.com",
             }
             cookies = {
-                'BDUSS': self.BDUSS,
-                'STOKEN': self.STOKEN,
+                'BDUSS': self.core.BDUSS,
+                'STOKEN': self.core.STOKEN,
             }
 
             self._client_web = httpx.AsyncClient(
@@ -354,89 +210,6 @@ class Client(object):
 
         return self._client_ws
 
-    @property
-    def ws_aes_chiper(self):
-        """
-        获取供贴吧websocket使用的AES加密器
-
-        Returns:
-            Any: AES chiper
-        """
-
-        if self._ws_aes_chiper is None:
-            salt = b'\xa4\x0b\xc8\x34\xd6\x95\xf3\x13'
-            ws_secret_key = hashlib.pbkdf2_hmac('sha1', self.ws_password, salt, 5, 32)
-            self._ws_aes_chiper = AES.new(ws_secret_key, AES.MODE_ECB)
-
-        return self._ws_aes_chiper
-
-    def _pack_ws_bytes(
-        self, ws_bytes: bytes, /, cmd: int, req_id: int, *, need_gzip: bool = True, need_encrypt: bool = True
-    ) -> bytes:
-        """
-        对ws_bytes进行打包 压缩加密并添加9字节头部
-
-        Args:
-            ws_bytes (bytes): 待发送的websocket数据
-            cmd (int): 请求的cmd类型
-            req_id (int): 请求的id
-            need_gzip (bool, optional): 是否需要gzip压缩. Defaults to False.
-            need_encrypt (bool, optional): 是否需要aes加密. Defaults to False.
-
-        Returns:
-            bytes: 打包后的websocket数据
-        """
-
-        if need_gzip:
-            ws_bytes = gzip.compress(ws_bytes, 5)
-
-        if need_encrypt:
-            pad_num = AES.block_size - (len(ws_bytes) % AES.block_size)
-            ws_bytes += pad_num.to_bytes(1, 'big') * pad_num
-            ws_bytes = self.ws_aes_chiper.encrypt(ws_bytes)
-
-        flag = 0x08 | (need_gzip << 7) | (need_encrypt << 6)
-        ws_bytes = b''.join(
-            [
-                flag.to_bytes(1, 'big'),
-                cmd.to_bytes(4, 'big'),
-                req_id.to_bytes(4, 'big'),
-                ws_bytes,
-            ]
-        )
-
-        return ws_bytes
-
-    def _unpack_ws_bytes(self, ws_bytes: bytes) -> Tuple[bytes, int, int]:
-        """
-        对ws_bytes进行解包
-
-        Args:
-            ws_bytes (bytes): 接收到的websocket数据
-
-        Returns:
-            bytes: 解包后的websocket数据
-            int: 对应请求的cmd类型
-            int: 对应请求的id
-        """
-
-        if len(ws_bytes) < 9:
-            return ws_bytes, 0, 0
-
-        ws_view = memoryview(ws_bytes)
-        flag = ws_view[0]
-        cmd = int.from_bytes(ws_view[1:5], 'big')
-        req_id = int.from_bytes(ws_view[5:9], 'big')
-
-        ws_bytes = ws_view[9:].tobytes()
-        if flag & 0b10000000:
-            ws_bytes = self.ws_aes_chiper.decrypt(ws_bytes)
-            ws_bytes = ws_bytes.rstrip(ws_bytes[-2:-1])
-        if flag & 0b01000000:
-            ws_bytes = gzip.decompress(ws_bytes)
-
-        return ws_bytes, cmd, req_id
-
     async def _create_websocket(self, heartbeat: Optional[float] = None) -> None:
         """
         建立weboscket连接
@@ -451,7 +224,7 @@ class Client(object):
         if self._ws_dispatcher is not None and not self._ws_dispatcher.cancelled():
             self._ws_dispatcher.cancel()
 
-        request = self.client_ws.build_request("GET", "ws://im.tieba.baidu.com:8000")
+        request = self.client_ws.build_request("GET", url("ws", "im.tieba.baidu.com:8000"))
         response = await self.client_ws.send(request=request, stream=True)
         if response.status_code != 101:
             raise httpx_ws.WebSocketUpgradeError(response)
@@ -474,28 +247,38 @@ class Client(object):
         return self.websocket is not None and self.websocket.connection.state == wsproto.connection.ConnectionState.OPEN
 
     async def send_ws_bytes(
-        self, ws_bytes: bytes, /, cmd: int, *, need_gzip: bool = True, need_encrypt: bool = True
-    ) -> WebsocketResponse:
+        self, ws_bytes: bytes, /, cmd: int, *, timeout: float, need_gzip: bool = True, need_encrypt: bool = True
+    ) -> bytes:
         """
         将ws_bytes通过贴吧websocket发送
 
         Args:
             ws_bytes (bytes): 待发送的websocket数据
             cmd (int): 请求的cmd类型
+            timeout (float): 设置超时秒数
             need_gzip (bool, optional): 是否需要gzip压缩. Defaults to False.
             need_encrypt (bool, optional): 是否需要aes加密. Defaults to False.
 
         Returns:
-            WebsocketResponse: 用于等待返回数据的WebsocketResponse实例
+            bytes: 从websocket接收到的数据
         """
 
         ws_res = WebsocketResponse()
-        ws_bytes = self._pack_ws_bytes(ws_bytes, cmd, ws_res.req_id, need_gzip=need_gzip, need_encrypt=need_encrypt)
+        ws_bytes = pack_ws_bytes(
+            self.core, ws_bytes, cmd, ws_res.req_id, need_gzip=need_gzip, need_encrypt=need_encrypt
+        )
 
         WebsocketResponse.ws_res_wait_dict[ws_res.req_id] = ws_res
         await self.websocket.send_bytes(ws_bytes)
 
-        return ws_res
+        try:
+            data = await asyncio.wait_for(ws_res._data_future, timeout)
+        except asyncio.TimeoutError:
+            del WebsocketResponse.ws_res_wait_dict[ws_res.req_id]
+            raise asyncio.TimeoutError("Timeout to read")
+
+        del WebsocketResponse.ws_res_wait_dict[ws_res.req_id]
+        return data
 
     async def _ws_dispatch(self) -> None:
         """
@@ -505,7 +288,7 @@ class Client(object):
         try:
             while 1:
                 res_bytes = await self.websocket.receive_bytes()
-                res_bytes, _, req_id = self._unpack_ws_bytes(res_bytes)
+                res_bytes, _, req_id = unpack_ws_bytes(self.core, res_bytes)
 
                 ws_res = WebsocketResponse.ws_res_wait_dict.get(req_id, None)
                 if ws_res:
@@ -534,12 +317,12 @@ class Client(object):
             )
             pub_key = RSA.import_key(pub_key_bytes)
             rsa_chiper = PKCS1_v1_5.new(pub_key)
-            secret_key = rsa_chiper.encrypt(self.ws_password)
+            secret_key = rsa_chiper.encrypt(self.core.ws_password)
 
-            request = init_websocket.pack_proto(self.BDUSS, self.post_version, self.cuid, self.cuid_galaxy2, secret_key)
+            request = init_websocket.pack_proto(self.core, secret_key)
 
-            resp = await self.send_ws_bytes(request, cmd=1001, need_gzip=False, need_encrypt=False)
-            init_websocket.parse_proto(await resp.read(timeout=5))
+            resp = await self.send_ws_bytes(request, cmd=1001, timeout=5.0, need_gzip=False, need_encrypt=False)
+            init_websocket.parse_proto(resp)
 
     async def get_tbs(self) -> str:
         """
@@ -585,7 +368,7 @@ class Client(object):
         from . import login
 
         try:
-            request = login.pack_request(self.client_app, self.BDUSS, self.latest_version)
+            request = login.pack_request(self.client_app, self.core)
             response = await send_request(self.client_app, request)
             user, tbs = login.parse_response(response)
 
@@ -594,7 +377,6 @@ class Client(object):
 
         except Exception as err:
             LOG.warning(err)
-            self._user = UserInfo()
             self._tbs = ""
             return False
 
@@ -863,7 +645,7 @@ class Client(object):
         from . import get_threads
 
         try:
-            request = get_threads.pack_request(self.client_app_proto, self.latest_version, fname, pn, rn, sort, is_good)
+            request = get_threads.pack_request(self.client_app_proto, self.core, fname, pn, rn, sort, is_good)
             response = await send_request(self.client_app_proto, request)
             threads = get_threads.parse_response(response)
 
@@ -910,7 +692,7 @@ class Client(object):
         try:
             request = get_posts.pack_request(
                 self.client_app_proto,
-                self.latest_version,
+                self.core,
                 tid,
                 pn,
                 rn,
@@ -955,7 +737,7 @@ class Client(object):
         from . import get_comments
 
         try:
-            request = get_comments.pack_request(self.client_app_proto, self.latest_version, tid, pid, pn, is_floor)
+            request = get_comments.pack_request(self.client_app_proto, self.core, tid, pid, pn, is_floor)
             response = await send_request(self.client_app_proto, request)
             comments = get_comments.parse_response(response)
 
@@ -997,7 +779,7 @@ class Client(object):
 
         try:
             request = search_post.pack_request(
-                self.client_app, self.latest_version, fname, query, pn, rn, query_type, only_thread
+                self.client_app, self.core, fname, query, pn, rn, query_type, only_thread
             )
             response = await send_request(self.client_app, request)
             searches = search_post.parse_response(response)
@@ -1024,7 +806,7 @@ class Client(object):
         from . import get_forum_detail
 
         try:
-            request = get_forum_detail.pack_request(self.client_app, self.latest_version, fid)
+            request = get_forum_detail.pack_request(self.client_app, self.core, fid)
             response = await send_request(self.client_app, request)
             forum = get_forum_detail.parse_response(response)
 
@@ -1050,7 +832,7 @@ class Client(object):
         from . import get_bawu_info
 
         try:
-            request = get_bawu_info.pack_request(self.client_app_proto, self.latest_version, fid)
+            request = get_bawu_info.pack_request(self.client_app_proto, self.core, fid)
             response = await send_request(self.client_app_proto, request)
             bawu_dict = get_bawu_info.parse_response(response)
 
@@ -1076,7 +858,7 @@ class Client(object):
         from . import get_tab_map
 
         try:
-            request = get_tab_map.pack_request(self.client_app_proto, self.BDUSS, self.latest_version, fname)
+            request = get_tab_map.pack_request(self.client_app_proto, self.core, fname)
             response = await send_request(self.client_app_proto, request)
             tab_map = get_tab_map.parse_response(response)
 
@@ -1156,9 +938,7 @@ class Client(object):
         from . import get_square_forums
 
         try:
-            request = get_square_forums.pack_request(
-                self.client_app_proto, self.BDUSS, self.latest_version, class_name, pn, rn
-            )
+            request = get_square_forums.pack_request(self.client_app_proto, self.core, class_name, pn, rn)
             response = await send_request(self.client_app_proto, request)
             square_forums = get_square_forums.parse_response(response)
 
@@ -1190,7 +970,7 @@ class Client(object):
         from . import get_homepage
 
         try:
-            request = get_homepage.pack_request(self.client_app_proto, self.latest_version, user.portrait, with_threads)
+            request = get_homepage.pack_request(self.client_app_proto, self.core, user.portrait, with_threads)
             response = await send_request(self.client_app_proto, request)
             user, threads = get_homepage.parse_response(response)
 
@@ -1225,7 +1005,7 @@ class Client(object):
         from . import get_statistics
 
         try:
-            request = get_statistics.pack_request(self.client_app, self.BDUSS, self.latest_version, fid)
+            request = get_statistics.pack_request(self.client_app, self.core, fid)
             response = await send_request(self.client_app, request)
             stat = get_statistics.parse_response(response)
 
@@ -1256,9 +1036,7 @@ class Client(object):
         from . import get_follow_forums
 
         try:
-            request = get_follow_forums.pack_request(
-                self.client_app, self.BDUSS, self.latest_version, user.user_id, pn, rn
-            )
+            request = get_follow_forums.pack_request(self.client_app, self.core, user.user_id, pn, rn)
             response = await send_request(self.client_app, request)
             follow_forums = get_follow_forums.parse_response(response)
 
@@ -1284,7 +1062,7 @@ class Client(object):
         from . import get_recom_status
 
         try:
-            request = get_recom_status.pack_request(self.client_app, self.BDUSS, self.latest_version, fid)
+            request = get_recom_status.pack_request(self.client_app, self.core, fid)
             response = await send_request(self.client_app, request)
             total_recom_num, used_recom_num = get_recom_status.parse_response(response)
 
@@ -1313,7 +1091,7 @@ class Client(object):
         from . import get_recom_threads
 
         try:
-            request = get_recom_threads.pack_request(self.client_app, self.BDUSS, self.latest_version, fid, pn, rn)
+            request = get_recom_threads.pack_request(self.client_app, self.core, fid, pn, rn)
             response = await send_request(self.client_app, request)
             recom_threads = get_recom_threads.parse_response(response)
 
@@ -1362,7 +1140,7 @@ class Client(object):
         from . import block
 
         try:
-            request = block.pack_request(self.client_app, self.BDUSS, tbs, fname, fid, user.portrait, day, reason)
+            request = block.pack_request(self.client_app, self.core, tbs, fname, fid, user.portrait, day, reason)
             response = await send_request(self.client_app, request)
             block.parse_response(response)
 
@@ -1431,7 +1209,7 @@ class Client(object):
         from . import del_thread
 
         try:
-            request = del_thread.pack_request(self.client_app, self.BDUSS, tbs, fid, tid, is_hide=True)
+            request = del_thread.pack_request(self.client_app, self.core, tbs, fid, tid, is_hide=True)
             response = await send_request(self.client_app, request)
             del_thread.parse_response(response)
 
@@ -1460,7 +1238,7 @@ class Client(object):
         from . import del_thread
 
         try:
-            request = del_thread.pack_request(self.client_app, self.BDUSS, tbs, fid, tid, is_hide=False)
+            request = del_thread.pack_request(self.client_app, self.core, tbs, fid, tid, is_hide=False)
             response = await send_request(self.client_app, request)
             del_thread.parse_response(response)
 
@@ -1490,7 +1268,7 @@ class Client(object):
         from . import del_threads
 
         try:
-            request = del_threads.pack_request(self.client_app, self.BDUSS, tbs, fid, tids, block)
+            request = del_threads.pack_request(self.client_app, self.core, tbs, fid, tids, block)
             response = await send_request(self.client_app, request)
             del_threads.parse_response(response)
 
@@ -1519,7 +1297,7 @@ class Client(object):
         from . import del_post
 
         try:
-            request = del_post.pack_request(self.client_app, self.BDUSS, tbs, fid, pid)
+            request = del_post.pack_request(self.client_app, self.core, tbs, fid, pid)
             response = await send_request(self.client_app, request)
             del_post.parse_response(response)
 
@@ -1549,7 +1327,7 @@ class Client(object):
         from . import del_posts
 
         try:
-            request = del_posts.pack_request(self.client_app, self.BDUSS, tbs, fid, pids, block)
+            request = del_posts.pack_request(self.client_app, self.core, tbs, fid, pids, block)
             response = await send_request(self.client_app, request)
             del_posts.parse_response(response)
 
@@ -1683,9 +1461,7 @@ class Client(object):
         from . import move
 
         try:
-            request = move.pack_request(
-                self.client_app, self.BDUSS, tbs, self.latest_version, fid, tid, to_tab_id, from_tab_id
-            )
+            request = move.pack_request(self.client_app, self.core, tbs, fid, tid, to_tab_id, from_tab_id)
             response = await send_request(self.client_app, request)
             move.parse_response(response)
 
@@ -1713,7 +1489,7 @@ class Client(object):
         from . import recommend
 
         try:
-            request = recommend.pack_request(self.client_app, self.BDUSS, fid, tid)
+            request = recommend.pack_request(self.client_app, self.core, fid, tid)
             response = await send_request(self.client_app, request)
             recommend.parse_response(response)
 
@@ -1750,7 +1526,7 @@ class Client(object):
 
         try:
             cid = await self._get_cid(fname_or_fid, cname)
-            request = good.pack_request(self.client_app, self.BDUSS, tbs, fname, fid, tid, cid, is_set=True)
+            request = good.pack_request(self.client_app, self.core, tbs, fname, fid, tid, cid)
             response = await send_request(self.client_app, request)
             good.parse_response(response)
 
@@ -1782,12 +1558,12 @@ class Client(object):
 
         tbs = await self.get_tbs()
 
-        from . import good
+        from . import ungood
 
         try:
-            request = good.pack_request(self.client_app, self.BDUSS, tbs, fname, fid, tid, 0, is_set=False)
+            request = ungood.pack_request(self.client_app, self.core, tbs, fname, fid, tid)
             response = await send_request(self.client_app, request)
-            good.parse_response(response)
+            ungood.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname_or_fid} tid={tid}")
@@ -1813,9 +1589,15 @@ class Client(object):
         from . import get_cid
 
         try:
-            request = get_cid.pack_request(self.client_app, self.BDUSS, fname)
+            request = get_cid.pack_request(self.client_app, self.core, fname)
             response = await send_request(self.client_app, request)
-            cid = get_cid.parse_response(response, cname)
+            cates = get_cid.parse_response(response)
+
+            cid = 0
+            for item in cates:
+                if cname == item['class_name']:
+                    cid = int(item['class_id'])
+                    break
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname} cname={cname}")
@@ -1847,7 +1629,7 @@ class Client(object):
         from . import top
 
         try:
-            request = top.pack_request(self.client_app, self.BDUSS, tbs, fname, fid, tid, is_set=True)
+            request = top.pack_request(self.client_app, self.core, tbs, fname, fid, tid)
             response = await send_request(self.client_app, request)
             top.parse_response(response)
 
@@ -1879,12 +1661,12 @@ class Client(object):
 
         tbs = await self.get_tbs()
 
-        from . import top
+        from . import untop
 
         try:
-            request = top.pack_request(self.client_app, self.BDUSS, tbs, fname, fid, tid, is_set=False)
+            request = untop.pack_request(self.client_app, self.core, tbs, fname, fid, tid)
             response = await send_request(self.client_app, request)
-            top.parse_response(response)
+            untop.parse_response(response)
 
         except Exception as err:
             LOG.warning(f"{err}. forum={fname_or_fid} tid={tid}")
@@ -2135,7 +1917,7 @@ class Client(object):
         from . import get_image
 
         try:
-            request = get_image.hash_pack_request(self.client_web, raw_hash, size)
+            request = get_image.pack_request_hash(self.client_web, raw_hash, size)
             response = await send_request(self.client_web, request)
             image = get_image.parse_response(response)
 
@@ -2165,7 +1947,7 @@ class Client(object):
         from . import get_image
 
         try:
-            request = get_image.portrait_pack_request(self.client_web, user.portrait, size)
+            request = get_image.pack_request_portrait(self.client_web, user.portrait, size)
             response = await send_request(self.client_web, request)
             image = get_image.parse_response(response)
 
@@ -2186,7 +1968,7 @@ class Client(object):
         from . import get_selfinfo_initNickname
 
         try:
-            request = get_selfinfo_initNickname.pack_request(self.client_app, self.BDUSS, self.latest_version)
+            request = get_selfinfo_initNickname.pack_request(self.client_app, self.core)
             response = await send_request(self.client_app, request)
             user = get_selfinfo_initNickname.parse_response(response)
 
@@ -2216,7 +1998,7 @@ class Client(object):
         from . import get_newmsg
 
         try:
-            request = get_newmsg.pack_request(self.client_app, self.BDUSS)
+            request = get_newmsg.pack_request(self.client_app, self.core)
             response = await send_request(self.client_app, request)
             msg = get_newmsg.parse_response(response)
 
@@ -2248,7 +2030,7 @@ class Client(object):
         from . import get_replys
 
         try:
-            request = get_replys.pack_request(self.client_app_proto, self.BDUSS, self.latest_version, pn)
+            request = get_replys.pack_request(self.client_app_proto, self.core, pn)
             response = await send_request(self.client_app_proto, request)
             replys = get_replys.parse_response(response)
 
@@ -2272,7 +2054,7 @@ class Client(object):
         from . import get_ats
 
         try:
-            request = get_ats.pack_request(self.client_app, self.BDUSS, self.latest_version, pn)
+            request = get_ats.pack_request(self.client_app, self.core, pn)
             response = await send_request(self.client_app, request)
             ats = get_ats.parse_response(response)
 
@@ -2295,20 +2077,15 @@ class Client(object):
 
         user = await self.get_self_info(ReqUInfo.USER_ID)
 
-        from . import get_user_contents
+        from .get_user_contents import get_threads
 
         try:
-            request = get_user_contents.pack_request(
-                self.client_app_proto,
-                self.BDUSS,
-                self.latest_version,
-                user.user_id,
-                pn,
-                is_thread=True,
-                public_only=True,
-            )
+            request = get_threads.pack_request(self.client_app_proto, self.core, user.user_id, pn, public_only=True)
             response = await send_request(self.client_app_proto, request)
-            threads = get_user_contents.thread_parse_response(response, user)
+            threads = get_threads.parse_response(response)
+
+            for thread in threads:
+                thread._user = user
 
         except Exception as err:
             LOG.warning(f"{err}. user={user}")
@@ -2329,20 +2106,15 @@ class Client(object):
 
         user = await self.get_self_info(ReqUInfo.USER_ID)
 
-        from . import get_user_contents
+        from .get_user_contents import get_threads
 
         try:
-            request = get_user_contents.pack_request(
-                self.client_app_proto,
-                self.BDUSS,
-                self.latest_version,
-                user.user_id,
-                pn,
-                is_thread=True,
-                public_only=False,
-            )
+            request = get_threads.pack_request(self.client_app_proto, self.core, user.user_id, pn, public_only=False)
             response = await send_request(self.client_app_proto, request)
-            threads = get_user_contents.thread_parse_response(response, user)
+            threads = get_threads.parse_response(response)
+
+            for thread in threads:
+                thread._user = user
 
         except Exception as err:
             LOG.warning(f"{err}. user={user}")
@@ -2363,26 +2135,22 @@ class Client(object):
 
         user = await self.get_self_info(ReqUInfo.USER_ID)
 
-        from . import get_user_contents
+        from .get_user_contents import get_posts
 
         try:
-            request = get_user_contents.pack_request(
-                self.client_app_proto,
-                self.BDUSS,
-                self.latest_version,
-                user.user_id,
-                pn,
-                is_thread=False,
-                public_only=False,
-            )
+            request = get_posts.pack_request(self.client_app_proto, self.core, user.user_id, pn)
             response = await send_request(self.client_app_proto, request)
-            res_list = get_user_contents.thread_parse_response(response, user)
+            posts = get_posts.parse_response(response)
+
+            for userposts in posts:
+                for userpost in userposts:
+                    userpost._user = user
 
         except Exception as err:
             LOG.warning(f"{err}. user={user}")
-            res_list = []
+            posts = []
 
-        return res_list
+        return posts
 
     async def get_user_threads(self, _id: Union[str, int], pn: int = 1) -> List[NewThread]:
         """
@@ -2401,20 +2169,15 @@ class Client(object):
         else:
             user = UserInfo(_id)
 
-        from . import get_user_contents
+        from .get_user_contents import get_threads
 
         try:
-            request = get_user_contents.pack_request(
-                self.client_app_proto,
-                self.BDUSS,
-                self.latest_version,
-                user.user_id,
-                pn,
-                is_thread=True,
-                public_only=False,
-            )
+            request = get_threads.pack_request(self.client_app_proto, self.core, user.user_id, pn, public_only=True)
             response = await send_request(self.client_app_proto, request)
-            threads = get_user_contents.thread_parse_response(response, user)
+            threads = get_threads.parse_response(response)
+
+            for thread in threads:
+                thread._user = user
 
         except Exception as err:
             LOG.warning(f"{err}. user={user}")
@@ -2445,7 +2208,7 @@ class Client(object):
         from . import get_fans
 
         try:
-            request = get_fans.pack_request(self.client_app, self.BDUSS, self.latest_version, user.user_id, pn)
+            request = get_fans.pack_request(self.client_app, self.core, user.user_id, pn)
             response = await send_request(self.client_app, request)
             fans = get_fans.parse_response(response)
 
@@ -2478,7 +2241,7 @@ class Client(object):
         from . import get_follows
 
         try:
-            request = get_follows.pack_request(self.client_app, self.BDUSS, self.latest_version, user.user_id, pn)
+            request = get_follows.pack_request(self.client_app, self.core, user.user_id, pn)
             response = await send_request(self.client_app, request)
             follows = get_follows.parse_response(response)
 
@@ -2530,7 +2293,7 @@ class Client(object):
         from . import get_dislike_forums
 
         try:
-            request = get_dislike_forums.pack_request(self.client_app_proto, self.BDUSS, self.latest_version, pn, rn)
+            request = get_dislike_forums.pack_request(self.client_app_proto, self.core, pn, rn)
             response = await send_request(self.client_app_proto, request)
             dislike_forums = get_dislike_forums.parse_response(response)
 
@@ -2553,7 +2316,7 @@ class Client(object):
 
         Note:
             本接口仍处于测试阶段
-            高频率调用会导致<发帖秒删>！请谨慎使用！恢复方法是刷回复永封后再申诉解封
+            高频率调用会导致<发帖秒删>！请谨慎使用！
         """
 
         tbs = await self.get_tbs()
@@ -2561,17 +2324,7 @@ class Client(object):
         from . import agree
 
         try:
-            request = agree.pack_request(
-                self.client_app,
-                self.BDUSS,
-                tbs,
-                self.latest_version,
-                self.cuid_galaxy2,
-                tid,
-                pid,
-                is_disagree=False,
-                is_undo=False,
-            )
+            request = agree.pack_request(self.client_app, self.core, tbs, tid, pid, is_disagree=False, is_undo=False)
             response = await send_request(self.client_app, request)
             agree.parse_response(response)
 
@@ -2599,17 +2352,7 @@ class Client(object):
         from . import agree
 
         try:
-            request = agree.pack_request(
-                self.client_app,
-                self.BDUSS,
-                tbs,
-                self.latest_version,
-                self.cuid_galaxy2,
-                tid,
-                pid,
-                is_disagree=False,
-                is_undo=True,
-            )
+            request = agree.pack_request(self.client_app, self.core, tbs, tid, pid, is_disagree=False, is_undo=True)
             response = await send_request(self.client_app, request)
             agree.parse_response(response)
 
@@ -2637,17 +2380,7 @@ class Client(object):
         from . import agree
 
         try:
-            request = agree.pack_request(
-                self.client_app,
-                self.BDUSS,
-                tbs,
-                self.latest_version,
-                self.cuid_galaxy2,
-                tid,
-                pid,
-                is_disagree=True,
-                is_undo=False,
-            )
+            request = agree.pack_request(self.client_app, self.core, tbs, tid, pid, is_disagree=True, is_undo=False)
             response = await send_request(self.client_app, request)
             agree.parse_response(response)
 
@@ -2675,17 +2408,7 @@ class Client(object):
         from . import agree
 
         try:
-            request = agree.pack_request(
-                self.client_app,
-                self.BDUSS,
-                tbs,
-                self.latest_version,
-                self.cuid_galaxy2,
-                tid,
-                pid,
-                is_disagree=True,
-                is_undo=True,
-            )
+            request = agree.pack_request(self.client_app, self.core, tbs, tid, pid, is_disagree=True, is_undo=True)
             response = await send_request(self.client_app, request)
             agree.parse_response(response)
 
@@ -2717,7 +2440,7 @@ class Client(object):
         from . import remove_fan
 
         try:
-            request = remove_fan.pack_request(self.client_app, self.BDUSS, tbs, user.user_id)
+            request = remove_fan.pack_request(self.client_app, self.core, tbs, user.user_id)
             response = await send_request(self.client_app, request)
             remove_fan.parse_response(response)
 
@@ -2749,7 +2472,7 @@ class Client(object):
         from . import follow_user
 
         try:
-            request = follow_user.pack_request(self.client_app, self.BDUSS, tbs, user.portrait)
+            request = follow_user.pack_request(self.client_app, self.core, tbs, user.portrait)
             response = await send_request(self.client_app, request)
             follow_user.parse_response(response)
 
@@ -2781,7 +2504,7 @@ class Client(object):
         from . import unfollow_user
 
         try:
-            request = unfollow_user.pack_request(self.client_app, self.BDUSS, tbs, user.portrait)
+            request = unfollow_user.pack_request(self.client_app, self.core, tbs, user.portrait)
             response = await send_request(self.client_app, request)
             unfollow_user.parse_response(response)
 
@@ -2809,7 +2532,7 @@ class Client(object):
         from . import follow_forum
 
         try:
-            request = follow_forum.pack_request(self.client_app, self.BDUSS, tbs, fid)
+            request = follow_forum.pack_request(self.client_app, self.core, tbs, fid)
             response = await send_request(self.client_app, request)
             follow_forum.parse_response(response)
 
@@ -2837,7 +2560,7 @@ class Client(object):
         from . import unfollow_forum
 
         try:
-            request = unfollow_forum.pack_request(self.client_app, self.BDUSS, tbs, fid)
+            request = unfollow_forum.pack_request(self.client_app, self.core, tbs, fid)
             response = await send_request(self.client_app, request)
             unfollow_forum.parse_response(response)
 
@@ -2864,7 +2587,7 @@ class Client(object):
         from . import dislike_forum
 
         try:
-            request = dislike_forum.pack_request(self.client_app, self.BDUSS, self.latest_version, fid)
+            request = dislike_forum.pack_request(self.client_app, self.core, fid)
             response = await send_request(self.client_app, request)
             dislike_forum.parse_response(response)
 
@@ -2891,7 +2614,7 @@ class Client(object):
         from . import undislike_forum
 
         try:
-            request = undislike_forum.pack_request(self.client_app, self.BDUSS, self.cuid, fid)
+            request = undislike_forum.pack_request(self.client_app, self.core, fid)
             response = await send_request(self.client_app, request)
             undislike_forum.parse_response(response)
 
@@ -2921,7 +2644,7 @@ class Client(object):
         from . import set_privacy
 
         try:
-            request = set_privacy.pack_request(self.client_app, self.BDUSS, fid, tid, pid, hide)
+            request = set_privacy.pack_request(self.client_app, self.core, fid, tid, pid, hide)
             response = await send_request(self.client_app, request)
             set_privacy.parse_response(response)
 
@@ -2946,16 +2669,16 @@ class Client(object):
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
         tbs = await self.get_tbs()
 
-        from . import set_privacy
+        from . import sign_forum
 
         try:
-            request = set_privacy.pack_request(self.client_app, self.BDUSS, tbs, self.latest_version, fname)
+            request = sign_forum.pack_request(self.client_app, self.core, tbs, fname)
             response = await send_request(self.client_app, request)
-            set_privacy.parse_response(response)
+            sign_forum.parse_response(response)
 
         except TiebaServerError as err:
             LOG.warning(f"{err}. forum={fname}")
-            if err.code in [160002, 340006]:
+            if err.code in (160002, 340006):
                 # 已经签过或吧被屏蔽
                 return True
         except Exception as err:
@@ -2995,20 +2718,7 @@ class Client(object):
         from . import add_post
 
         try:
-            request = add_post.pack_request(
-                self.client_app,
-                self.BDUSS,
-                self.STOKEN,
-                tbs,
-                self.post_version,
-                self.cuid,
-                self.cuid_galaxy2,
-                self.client_id,
-                fname,
-                fid,
-                tid,
-                content,
-            )
+            request = add_post.pack_request(self.client_app, self.core, tbs, fname, fid, tid, content)
             response = await send_request(self.client_app, request)
             add_post.parse_response(response)
 
@@ -3042,8 +2752,8 @@ class Client(object):
             await self._init_websocket()
 
             request = send_msg.pack_proto(user.user_id, content)
-            resp = await self.send_ws_bytes(request, cmd=205001)
-            send_msg.parse_proto(await resp.read(timeout=5))
+            resp = await self.send_ws_bytes(request, cmd=205001, timeout=5.0)
+            send_msg.parse_proto(resp)
 
         except Exception as err:
             LOG.warning(f"{err}. user={user}")

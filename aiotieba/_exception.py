@@ -1,14 +1,20 @@
-import dataclasses
-
-
-@dataclasses.dataclass(eq=False)
 class TiebaServerError(RuntimeError):
     """
     贴吧服务器异常
     """
 
-    code: int
-    msg: str
+    __slots__ = ['code', 'msg']
+
+    def __init__(self, code: int, msg: str) -> None:
+        super().__init__(code, msg)
+        self.code = code
+        self.msg = msg
+
+
+class HTTPStatusError(RuntimeError):
+    """
+    非200状态码
+    """
 
 
 class ContentTypeError(RuntimeError):

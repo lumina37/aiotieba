@@ -1,14 +1,14 @@
 import httpx
 
 from .._exception import TiebaServerError
-from .common.helper import jsonlib
+from .common.helper import jsonlib, raise_for_status, url
 from .common.typedef import SelfFollowForums
 
 
 def pack_request(client: httpx.AsyncClient, pn: int) -> httpx.Request:
     request = httpx.Request(
         "GET",
-        "https://tieba.baidu.com/mg/o/getForumHome",
+        url("https", "tieba.baidu.com", "/mg/o/getForumHome"),
         params={'pn': pn, 'rn': '200'},
         headers=client.headers,
         cookies=client.cookies,
@@ -18,7 +18,7 @@ def pack_request(client: httpx.AsyncClient, pn: int) -> httpx.Request:
 
 
 def parse_response(response: httpx.Response) -> SelfFollowForums:
-    response.raise_for_status()
+    raise_for_status(response)
 
     res_json = jsonlib.loads(response.content)
     if code := int(res_json['errno']):

@@ -1,41 +1,42 @@
-import httpx
-
-from .._exception import ContentTypeError
 from typing import Literal
 
 import cv2 as cv
+import httpx
 import numpy as np
 
+from .._exception import ContentTypeError
+from .common.helper import raise_for_status, url
 
-def _pack_request(client: httpx.AsyncClient, url: str) -> httpx.Request:
+
+def _pack_request_without_host(client: httpx.AsyncClient, url: str) -> httpx.Request:
     request = httpx.Request("GET", url, headers=client.headers, cookies=client.cookies)
     return request
 
 
 def pack_request(client: httpx.AsyncClient, url: str) -> httpx.Request:
-    request = _pack_request(client, url)
+    request = _pack_request_without_host(client, url)
     request.headers["Host"] = request.url.host
     return request
 
 
-def hash_pack_request(client: httpx.AsyncClient, raw_hash: str, size: Literal['s', 'm', 'l']) -> httpx.Request:
+def pack_request_hash(client: httpx.AsyncClient, raw_hash: str, size: Literal['s', 'm', 'l']) -> httpx.Request:
 
     if size == 's':
-        img_url = f"http://imgsrc.baidu.com/forum/w=720;q=60;g=0/sign=__/{raw_hash}.jpg"
+        img_url = url("http", "imgsrc.baidu.com", f"/forum/w=720;q=60;g=0/sign=__/{raw_hash}.jpg")
     elif size == 'm':
-        img_url = f"http://imgsrc.baidu.com/forum/w=960;q=60;g=0/sign=__/{raw_hash}.jpg"
+        img_url = url("http", "imgsrc.baidu.com", f"/forum/w=960;q=60;g=0/sign=__/{raw_hash}.jpg")
     elif size == 'l':
-        img_url = f"http://imgsrc.baidu.com/forum/pic/item/{raw_hash}.jpg"
+        img_url = url("http", "imgsrc.baidu.com", f"/forum/pic/item/{raw_hash}.jpg")
     else:
         raise ValueError(f"Invalid size={size}")
 
-    request = _pack_request(client, img_url)
+    request = _pack_request_without_host(client, img_url)
     request.headers["Host"] = "imgsrc.baidu.com"
 
     return request
 
 
-def portrait_pack_request(client: httpx.AsyncClient, portrait: str, size: Literal['s', 'm', 'l']) -> httpx.Request:
+def pack_request_portrait(client: httpx.AsyncClient, portrait: str, size: Literal['s', 'm', 'l']) -> httpx.Request:
 
     if size == 's':
         path = 'n'
@@ -45,16 +46,16 @@ def portrait_pack_request(client: httpx.AsyncClient, portrait: str, size: Litera
         path = 'h'
     else:
         raise ValueError(f"Invalid size={size}")
-    img_url = f"http://tb.himg.baidu.com/sys/portrait{path}/item/{portrait}"
+    img_url = url("http", "tb.himg.baidu.com", f"/sys/portrait{path}/item/{portrait}")
 
-    request = _pack_request(client, img_url)
+    request = _pack_request_without_host(client, img_url)
     request.headers["Host"] = "tb.himg.baidu.com"
 
     return request
 
 
 def parse_response(response: httpx.Response) -> np.ndarray:
-    response.raise_for_status()
+    raise_for_status(response)
 
     content_type = response.headers["Content-Type"]
     if not content_type.endswith(('jpeg', 'png', 'bmp'), 6):

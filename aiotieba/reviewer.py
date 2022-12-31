@@ -20,11 +20,21 @@ import types
 from collections.abc import Callable, Iterator
 from typing import List, Literal, Optional, Tuple, Union
 
-from ._helper import alog_time
 from ._logger import LOG
 from .client import Client, ReqUInfo, ForumInfoCache
 from .database import MySQLDB, SQLiteDB
 from .client.common.typedef import Comment, Comments, Post, Posts, Thread, Threads, UserInfo
+
+
+def alog_time(func) -> None:
+    @functools.wraps(func)
+    async def _(*args, **kwargs):
+        start_time = time.perf_counter()
+        res = await func(*args, **kwargs)
+        LOG.debug(f"{func.__name__} time_cost: {time.perf_counter()-start_time:.4f}")
+        return res
+
+    return _
 
 
 class BaseReviewer(object):
