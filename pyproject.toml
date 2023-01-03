@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 urls = { Repository = "https://github.com/Starry-OvO/aiotieba/", Documentation = "https://v-8.top/" }
 name = "aiotieba"
-description = "Asynchronous I/O Client/Reviewer for Baidu Tieba"
+description = "Asynchronous I/O Client for Baidu Tieba"
 readme = "README.md"
 requires-python = ">=3.9"
 authors = [{ name = "Starry-OvO", email = "starry.qvq@gmail.com" }]
