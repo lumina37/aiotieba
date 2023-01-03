@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      PYTHON_VER: "3.10"
+      PYTHON_VER: "3.11"
 
     steps:
     - name: Checkout
