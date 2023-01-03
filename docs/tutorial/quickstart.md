@@ -121,8 +121,6 @@
 
 `pid`是一个`uint64`值
 
-在贴吧混乱的字段命名中，它在某些场合下会被命名为`post_id`
-
 
 ## 入门案例
 
@@ -166,7 +164,7 @@ asyncio.run(main())
 BDUSS = "2dNNk1wMXVSZmw2MnpkWDNqMnM4MmFaeFZYNVVPUEhPS0thNFZzUERjME52V1KpSVFBQUFBJCQAAAAAAQAAAAEAAAA0lUwndl9ndWFyZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA0wPmINMD5iY" # 把你的那一串长长的BDUSS放在这
 ```
 
-然后复制下列代码并运行
+运行下列代码
 
 ```python
 import asyncio
@@ -210,4 +208,38 @@ asyncio.run(main())
 
 ```log
 <2023-01-01 00:04:23.642> [INFO] [main] 当前用户信息: {'user_id': 957339815, 'user_name': 'Starry_OvO', 'portrait': 'tb.1.8277e641.gUE2cTq4A4z5fi2EHn5k3Q', 'nick_name': 'ºStarry'}
+```
+
+## 多账号
+
+在`aiotieba.toml`中添加一个新账户，例如：
+
+```toml
+[User]
+
+[User.default]
+BDUSS = "..."
+
+[User.anotherKey]
+BDUSS = "..."
+```
+
+然后你就可以通过输入不同的`BDUSS_key`来使用不同的账号
+
+```python
+import asyncio
+
+import aiotieba as tb
+
+
+async def main():
+    async with tb.Client("default") as client:
+        user = await client.get_self_info()
+        tb.LOG.info(f"当前用户信息: {user!r}")
+    async with tb.Client("anotherKey") as client:
+        user = await client.get_self_info()
+        tb.LOG.info(f"当前用户信息: {user!r}")
+
+
+asyncio.run(main())
 ```

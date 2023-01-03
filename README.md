@@ -1,6 +1,8 @@
 <p align="center">
 
-<img src="https://raw.githubusercontent.com/Starry-OvO/aiotieba/master/docs/img/aiotieba.svg">
+<a href="https://socialify.git.ci">
+    <img src="https://raw.githubusercontent.com/Starry-OvO/aiotieba/master/docs/img/aiotieba.svg">
+</a>
 
 </p>
 
@@ -22,7 +24,7 @@
 
 ## 简介
 
-**aiotieba**使用[**asyncio**](https://tutorial.python.org/zh-cn/3/library/asyncio.html)和[**aiohttp**](https://github.com/aio-libs/aiohttp)封装了大量操作[百度贴吧核心API](https://github.com/Starry-OvO/aiotieba/blob/master/aiotieba/client.py)的简便方法，并为吧务管理设计了一套[内容审查脚手架](https://github.com/Starry-OvO/aiotieba/blob/master/aiotieba/reviewer.py)
+**aiotieba**使用[**asyncio**](https://docs.python.org/zh-cn/3/library/asyncio.html)和[**httpx**](https://github.com/encode/httpx)封装了大量[百度贴吧核心API](https://github.com/Starry-OvO/aiotieba/blob/master/aiotieba/client)
 
 本框架以提高二次开发速度为首要设计目标。规范且符合直觉的命名规律、全覆盖的类型注解和方法注释让你体验飞一般的开发体验
 
@@ -40,15 +42,6 @@
 + 获取其他用户的主页信息/关注贴吧列表/关注用户列表/粉丝列表/发布的主题帖列表
 + 使用当前账号关注贴吧/取关贴吧/关注用户/取关用户/移除粉丝/获取屏蔽贴吧列表/屏蔽贴吧/取消屏蔽贴吧/点赞点踩/取消点赞点踩/签到/水帖/发送私信/获取回复历史
 + 获取一个贴吧的最新关注用户列表/等级排行榜/吧务列表/吧详情
-
-</details>
-
-<details>
-
-<summary>额外的审查功能列表</summary>
-
-+ 数据库功能：缓存贴吧常量（如贴吧名到fid的映射关系、用户基本信息等）/为用户添加标记/为帖子或回复添加标记/为图像hash添加标记
-+ 图像处理功能：图像解码/二维码解析/图像hash计算
 
 </details>
 
@@ -87,22 +80,22 @@ asyncio.run(main())
 
 ## 客户名单
 
-<details><summary>2022.12.31更新</summary>
+<details><summary>2023.01.01更新</summary>
 
 |      吧名      | 关注用户数 | 最近29天日均访问量 | 日均主题帖数 | 日均回复数 |
 | :------------: | :--------: | :----------------: | :----------: | :--------: |
-|    抗压背锅    | 4,454,586  |      975,040       |    1,606     |   66,824   |
-|     孙笑川     | 3,097,910  |      697,083       |    5,990     |  186,948   |
-|    lol半价     | 1,991,113  |       75,799       |     203      |   3,008    |
-|      宫漫      | 1,453,226  |       43,287       |     159      |   2,272    |
-|    逆水寒ol    |  743,405   |       28,332       |     103      |   1,859    |
-|    新孙笑川    |  514,443   |       39,771       |     287      |   13,218   |
-|     vtuber     |  220,351   |       10,427       |      57      |    691     |
-|     asoul      |  156,027   |       10,726       |      80      |    478     |
-|      嘉然      |   59,291   |       10,293       |      74      |    974     |
-|      向晚      |   30,745   |       7,441        |      55      |    684     |
-|      贝拉      |   21,767   |       6,727        |      31      |    459     |
-|      乃琳      |   17,337   |       3,451        |      20      |    258     |
-| vtuber自由讨论 |   17,174   |       3,952        |      2       |     35     |
+|    抗压背锅    | 4,463,363  |      954,177       |    1,572     |   66,895   |
+|     孙笑川     | 3,106,094  |      687,350       |    5,923     |  187,652   |
+|    lol半价     | 1,995,711  |       75,247       |     198      |   2,973    |
+|      宫漫      | 1,458,464  |       42,852       |     157      |   2,227    |
+|    逆水寒ol    |  746,608   |       28,955       |     105      |   1,914    |
+|    新孙笑川    |  518,742   |       39,955       |     287      |   13,274   |
+|     vtuber     |  220,498   |       10,363       |      55      |    691     |
+|     asoul      |  156,006   |       10,676       |      79      |    474     |
+|      嘉然      |   59,315   |       10,223       |      73      |    972     |
+|      向晚      |   30,739   |       7,425        |      55      |    687     |
+|      贝拉      |   21,761   |       6,723        |      31      |    458     |
+|      乃琳      |   17,329   |       3,462        |      21      |    257     |
+| vtuber自由讨论 |   17,178   |       3,967        |      2       |     34     |
 
 </details>

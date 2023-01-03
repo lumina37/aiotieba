@@ -35,12 +35,6 @@ class `aiotieba.Client`(*BDUSS_key: str | None = None*)
 ### 类属性
 
 <div class="docstring" markdown="1">
-**BDUSS_key** - *(str)* 当前`Client`使用的BDUSS_key
-
-**BDUSS** - *(str)* 当前`Client`使用的[BDUSS](../tutorial/quickstart.md#BDUSS)
-
-**STOKEN** - *(str)* 当前`Client`使用的STOKEN
-
 **is_ws_aviliable** - *(bool)* `Client.websocket`是否可用
 </div>
 
