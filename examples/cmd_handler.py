@@ -5,12 +5,11 @@ import time
 from collections.abc import Callable
 from typing import Dict, List, Optional, Tuple, Union
 
-import tomli
-
 import aiotieba as tb
+from aiotieba._config import tomllib
 
 with open("cmd_handler.toml", 'rb') as file:
-    LISTEN_CONFIG = tomli.load(file)
+    LISTEN_CONFIG = tomllib.load(file)
 
 
 class TimerRecorder(object):
@@ -102,14 +101,14 @@ class Context(object):
         else:
             if self.at.is_thread:
                 await asyncio.sleep(3)
-                posts = await self.admin.get_posts(self.tid, pn=-1, rn=0, sort=1)
+                posts = await self.admin.get_posts(self.tid, pn=9999, rn=0, sort=1)
                 if not posts:
                     return False
                 self.parent = posts.thread.share_origin
                 self.at._text = posts.thread.text
 
             else:
-                posts = await self.admin.get_posts(self.tid, pn=-1, rn=10, sort=1)
+                posts = await self.admin.get_posts(self.tid, pn=9999, rn=10, sort=1)
                 if not posts:
                     return False
                 for post in posts:
@@ -680,7 +679,7 @@ class Listener(object):
 
         if len(ctx.args) > 2:
             index = int(ctx.args[0])
-            imgs: List[tb.typedef.FragImage] = imgs[index - 1 : index]
+            imgs: List[tb.FragImage] = imgs[index - 1 : index]
             permission = int(ctx.args[1])
             note = ctx.args[2]
         else:
@@ -709,7 +708,7 @@ class Listener(object):
 
         if ctx.args:
             index = int(ctx.args[0])
-            imgs: List[tb.typedef.FragImage] = imgs[index - 1 : index]
+            imgs: List[tb.FragImage] = imgs[index - 1 : index]
 
         for img in imgs:
             image = await self.listener.client.get_image(img.src)
