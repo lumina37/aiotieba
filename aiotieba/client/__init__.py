@@ -13,7 +13,7 @@ from Crypto.PublicKey import RSA
 from .._exception import TiebaServerError
 from .._logger import LOG
 from .common.core import TiebaCore
-from .common.helper import APP_BASE_HOST, pack_ws_bytes, send_request, unpack_ws_bytes, url
+from .common.helper import APP_BASE_HOST, WEB_BASE_HOST, pack_ws_bytes, send_request, unpack_ws_bytes, url
 from .common.typedef import (
     Appeals,
     Ats,
@@ -126,7 +126,7 @@ class Client(object):
                 Header.ACCEPT_ENCODING: "gzip, deflate",
                 Header.CACHE_CONTROL: "no-cache",
                 Header.CONNECTION: "keep-alive",
-                Header.HOST: "tieba.baidu.com",
+                Header.HOST: WEB_BASE_HOST,
             },
             cookies={
                 'BDUSS': self.core.BDUSS,

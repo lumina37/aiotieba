@@ -183,9 +183,7 @@ def `__bool__`() -> *bool*
 #### 类属性
 
 <div class="docstring" markdown="1">
-**src** - *(str)* 压缩图像链接 宽560px
-
-**big_src** - *(str)* 大图链接 宽720px
+**src** - *(str)* 压缩图像链接 宽720px
 
 **origin_src** - *(str)* 原图链接
 

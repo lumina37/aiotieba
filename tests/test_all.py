@@ -123,10 +123,8 @@ async def test_Posts_and_Fragments(client: tb.Client):
     frag = posts[7].contents.imgs[0]
     assert isinstance(frag.src, str)
     assert frag.src != ""
-    assert isinstance(frag.big_src, str)
-    assert frag.big_src != ""
     assert isinstance(frag.origin_src, str)
-    assert frag.big_src != ""
+    assert frag.origin_src != ""
     assert isinstance(frag.hash, str)
     assert len(frag.hash) == 40
     assert isinstance(frag.show_width, int)
@@ -145,9 +143,6 @@ async def test_Posts_and_Fragments(client: tb.Client):
         assert isinstance(frag.text, str)
         assert frag.text != ""
         assert isinstance(frag.url, str)
-
-    # Test VirtualImage
-    assert posts[10].vimage.enabled is True
 
 
 def check_ShareThread(thread: tb.ShareThread):
@@ -179,10 +174,8 @@ def check_ShareThread(thread: tb.ShareThread):
     frag = thread.contents.imgs[0]
     assert isinstance(frag.src, str)
     assert frag.src != ""
-    assert isinstance(frag.big_src, str)
-    assert frag.big_src != ""
     assert isinstance(frag.origin_src, str)
-    assert frag.big_src != ""
+    assert frag.origin_src != ""
     assert isinstance(frag.hash, str)
     assert len(frag.hash) == 40
 

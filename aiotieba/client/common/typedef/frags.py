@@ -12,11 +12,12 @@ __all__ = [
 
 import urllib.parse
 from collections.abc import Iterable, Iterator
-from typing import ClassVar, List, Optional, Protocol, SupportsIndex, TypeVar, overload
+from typing import List, Optional, Protocol, SupportsIndex, TypeVar, overload
 
 import httpx
 
 from ...._logger import LOG
+from ..helper import WEB_BASE_HOST
 from .common import TypeMessage
 
 
@@ -98,7 +99,6 @@ class FragImage(_Fragment):
 
     Attributes:
         src (str): 压缩图像链接 宽720px
-        big_src (str): 大图链接 宽960px
         origin_src (str): 原图链接
         hash (str): 百度图床hash
         show_width (int): 图像在客户端预览显示的宽度
@@ -107,7 +107,6 @@ class FragImage(_Fragment):
 
     __slots__ = [
         '_src',
-        '_big_src',
         '_origin_src',
         '_origin_size',
         '_hash',
@@ -119,7 +118,6 @@ class FragImage(_Fragment):
         super(FragImage, self).__init__(_raw_data)
 
         self._src = _raw_data.cdn_src or _raw_data.src
-        self._big_src = _raw_data.big_cdn_src or _raw_data.big_src
         self._origin_src = _raw_data.origin_src
         self._origin_size = _raw_data.origin_size
 
@@ -137,14 +135,6 @@ class FragImage(_Fragment):
         """
 
         return self._src
-
-    @property
-    def big_src(self) -> str:
-        """
-        大图链接
-        """
-
-        return self._big_src
 
     @property
     def origin_src(self) -> str:
@@ -266,31 +256,26 @@ class FragLink(_Fragment):
     Attributes:
         text (str): 原链接
         title (str): 链接标题
-        url (httpx.URL): 解析后的链接
         raw_url (str): 原链接
+        url (httpx.URL): 解析后的链接
         is_external (bool): 是否外部链接
     """
 
     __slots__ = [
         '_text',
-        '_url',
         '_raw_url',
+        '_url',
         '_is_external',
     ]
-
-    external_perfix: ClassVar[str] = "http://tieba.baidu.com/mo/q/checkurl"
 
     def __init__(self, _raw_data: TypeMessage) -> None:
         super(FragLink, self).__init__(_raw_data)
 
         self._text = _raw_data.text
+        self._raw_url: str = urllib.parse.unquote(_raw_data.link)
+
         self._url = None
-
-        self._raw_url: str = _raw_data.link
-        self._is_external = self._raw_url.startswith(self.external_perfix)
-
-        if self._is_external:
-            self._raw_url = urllib.parse.unquote(self._raw_url.removeprefix(self.external_perfix + "?url="))
+        self._is_external = None
 
     def __repr__(self) -> str:
         return str(
@@ -304,9 +289,6 @@ class FragLink(_Fragment):
     def text(self) -> str:
         """
         原链接
-
-        Note:
-            外链会在解析前先去除external_perfix前缀
         """
 
         return self._raw_url
@@ -336,9 +318,6 @@ class FragLink(_Fragment):
     def raw_url(self) -> str:
         """
         原链接
-
-        Note:
-            外链会在解析前先去除external_perfix前缀
         """
 
         return self._raw_url
@@ -349,6 +328,8 @@ class FragLink(_Fragment):
         是否外部链接
         """
 
+        if self._is_external is None:
+            self._is_external = self.url.host != WEB_BASE_HOST
         return self._is_external
 
 
