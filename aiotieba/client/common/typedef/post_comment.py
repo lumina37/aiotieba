@@ -541,24 +541,41 @@ class Posts(Containers[Post]):
 
         if not isinstance(self._objs, list):
             if self._objs is not None:
-
                 self._objs = [Post(_proto) for _proto in self._objs]
-                users = {user.user_id: user for _proto in self._users if (user := UserInfo(_raw_data=_proto)).user_id}
-                self._users = None
 
-                for post in self._objs:
+                if not self._users:
 
-                    post._fid = self.forum.fid
-                    post._fname = self.forum.fname
-                    post._tid = self.thread.tid
-                    post._user = users.get(post.author_id, None)
-                    post._is_thread_author = self.thread.author_id == post.author_id
+                    for post in self._objs:
 
-                    for comment in post.comments:
-                        comment._fid = post.fid
-                        comment._fname = post.fname
-                        comment._tid = post.tid
-                        comment._user = users.get(comment.author_id, None)
+                        post._fid = self.forum.fid
+                        post._fname = self.forum.fname
+                        post._tid = self.thread.tid
+                        post._is_thread_author = self.thread.author_id == post.author_id
+
+                        for comment in post.comments:
+                            comment._fid = post.fid
+                            comment._fname = post.fname
+                            comment._tid = post.tid
+
+                else:
+                    users = {
+                        user.user_id: user for _proto in self._users if (user := UserInfo(_raw_data=_proto)).user_id
+                    }
+                    self._users = None
+
+                    for post in self._objs:
+
+                        post._fid = self.forum.fid
+                        post._fname = self.forum.fname
+                        post._tid = self.thread.tid
+                        post._user = users.get(post.author_id, None)
+                        post._is_thread_author = self.thread.author_id == post.author_id
+
+                        for comment in post.comments:
+                            comment._fid = post.fid
+                            comment._fname = post.fname
+                            comment._tid = post.tid
+                            comment._user = users.get(comment.author_id, None)
 
             else:
                 self._objs = []

@@ -507,13 +507,22 @@ class Threads(Containers[Thread]):
         if not isinstance(self._objs, list):
             if self._objs is not None:
 
-                self._objs = [Thread(_proto) for _proto in self._objs]
-                users = {user.user_id: user for _proto in self._users if (user := UserInfo(_raw_data=_proto)).user_id}
-                self._users = None
+                if self._users:
 
-                for thread in self._objs:
-                    thread._fname = self.forum.fname
-                    thread._user = users[thread.author_id]
+                    self._objs = [Thread(_proto) for _proto in self._objs]
+                    users = {
+                        user.user_id: user for _proto in self._users if (user := UserInfo(_raw_data=_proto)).user_id
+                    }
+                    self._users = None
+
+                    for thread in self._objs:
+                        thread._fname = self.forum.fname
+                        thread._user = users[thread.author_id]
+
+                else:
+                    self._objs = [Thread(_proto) for _proto in self._objs]
+                    for thread in self._objs:
+                        thread._fname = self.forum.fname
 
             else:
                 self._objs = []
