@@ -12,6 +12,7 @@ from ..._exception import HTTPStatusError
 from .core import TiebaCore
 
 APP_BASE_HOST = "tiebac.baidu.com"
+WEB_BASE_HOST = "tieba.baidu.com"
 
 
 def url(scheme: str, netloc: str, path: Optional[str] = None, query: Optional[str] = None) -> httpx.URL:
