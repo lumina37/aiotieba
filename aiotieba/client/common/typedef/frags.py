@@ -507,7 +507,7 @@ class Fragments(object):
         """
 
         if self._text is None:
-            self._text = ''.join([frag.text for frag in self.texts])
+            self._text = ''.join(frag.text for frag in self.texts)
         return self._text
 
     @property
