@@ -274,7 +274,7 @@ class Post(Container):
 
         if not isinstance(self._sign, str):
             if self._sign is not None:
-                self._sign = ''.join([_proto.text for _proto in self._sign if _proto.type == 0])
+                self._sign = ''.join(_proto.text for _proto in self._sign if _proto.type == 0)
             else:
                 self._sign = ''
 

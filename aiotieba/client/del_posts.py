@@ -14,7 +14,7 @@ def pack_request(
     data = [
         ('BDUSS', core.BDUSS),
         ('forum_id', fid),
-        ('post_ids', ','.join([str(pid) for pid in pids])),
+        ('post_ids', ','.join(str(pid) for pid in pids)),
         ('tbs', tbs),
         ('thread_id', '6'),
         ('type', '2' if block else '1'),
