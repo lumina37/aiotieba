@@ -11,10 +11,11 @@ message FrsPageResIdl {
     Error error = 1;
     message DataRes {
         message ForumInfo {
-            int64 forum_id = 1;  // raw: id
-            string forum_name = 2;  // raw: name
+            int64 id = 1;
+            string name = 2;
             // int32 member_num = 9;
             // int32 thread_num = 10;
+            // int32 post_num = 11;
         }
         ForumInfo forum = 2;
         Page page = 4;

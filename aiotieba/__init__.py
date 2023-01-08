@@ -64,7 +64,7 @@ from .client.common.typedef import (
 from .database import MySQLDB, SQLiteDB
 from .reviewer import BaseReviewer, Ops, Punish, Reviewer
 
-__version__ = "2.10.1"
+__version__ = "2.10.2a0"
 
 if os.name == 'posix':
     import signal

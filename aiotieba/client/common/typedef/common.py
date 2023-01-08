@@ -80,7 +80,6 @@ class UserInfo(object):
         gender (int): 性别
         age (float): 吧龄
         post_num (int): 发帖数
-        fan_num (int): 粉丝数
         follow_num (int): 关注数
         glevel (int): 贴吧成长等级
         sign (str): 个性签名

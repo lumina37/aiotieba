@@ -1,5 +1,5 @@
-from ..._exception import TiebaServerError
 from ..common.core import TiebaCore
+from ..common.exception import TiebaServerError
 from .protobuf import UpdateClientInfoReqIdl_pb2, UpdateClientInfoResIdl_pb2
 
 

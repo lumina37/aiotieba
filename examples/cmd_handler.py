@@ -691,6 +691,8 @@ class Listener(object):
             if image is None:
                 continue
             img_hash = self.listener.compute_imghash(image)
+            if img_hash == 4412820541203793671:
+                continue
 
             await ctx.admin.db.add_imghash(img_hash, img.hash, permission=permission, note=note)
 

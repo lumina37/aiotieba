@@ -33,11 +33,11 @@ message ThreadInfo {
         string title = 1;
         message Media {
             int32 type = 1;
-            string big_cdn_src = 2;
-            string origin_src = 3;
-            string cdn_src = 4;
-            string bsize = 12;
-            uint32 origin_size = 16;
+            string small_pic = 2;
+            string big_pic = 3;
+            string water_pic = 4;
+            uint32 width = 10;
+            uint32 height = 11;
         }
         repeated Media media = 2;
         string fname = 4;
@@ -45,9 +45,8 @@ message ThreadInfo {
         int64 fid = 7;
         message Voice {
             int32 type = 1;
-            string voice_md5 = 3;
         }
-        repeated Voice voice = 12;
+        repeated Voice voice_info = 12;
         repeated PbContent content = 14;
         PollInfo poll_info = 21;
         int64 pid = 25;

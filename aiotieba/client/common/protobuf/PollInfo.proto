@@ -7,7 +7,6 @@ message PollInfo {
     message PollOption {
         int64 num = 2;
         string text = 3;
-        string image = 4;
     }
     repeated PollOption options = 9;
     int64 total_poll = 11;

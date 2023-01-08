@@ -22,8 +22,8 @@ class Container(object):
 
     __slots__ = [
         '_text',
-        '_fname',
         '_fid',
+        '_fname',
         '_tid',
         '_pid',
         '_user',
@@ -32,8 +32,8 @@ class Container(object):
 
     def __init__(self) -> None:
         self._text = None
-        self._fname = ''
         self._fid = 0
+        self._fname = ''
         self._tid = 0
         self._pid = 0
         self._user = None
@@ -42,9 +42,9 @@ class Container(object):
     def __repr__(self) -> str:
         return str(
             {
-                'tid': self.tid,
-                'pid': self.pid,
-                'user': self.user.log_name,
+                'tid': self._tid,
+                'pid': self._pid,
+                'user': self._user.log_name,
                 'text': self.text,
             }
         )

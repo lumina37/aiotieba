@@ -2,6 +2,6 @@
 syntax = "proto3";
 
 message SimpleForum {
-    int64 forum_id = 1;
-    string forum_name = 2;
+    int64 id = 1;
+    string name = 2;
 }

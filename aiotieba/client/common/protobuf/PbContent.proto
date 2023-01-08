@@ -8,6 +8,7 @@ message PbContent {
     string src = 4;
     string bsize = 5;
     string cdn_src = 8;
+    string big_cdn_src = 9;
     string c = 11;
     string voice_md5 = 12;
     int64 uid = 15;

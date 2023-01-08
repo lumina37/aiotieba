@@ -8,11 +8,23 @@ import httpx
 import simdjson as jsonlib
 from Crypto.Cipher import AES
 
-from ..._exception import HTTPStatusError
 from .core import TiebaCore
+from .exception import HTTPStatusError
 
 APP_BASE_HOST = "tiebac.baidu.com"
 WEB_BASE_HOST = "tieba.baidu.com"
+
+
+_JSON_PARSER = jsonlib.Parser()
+parse_json = _JSON_PARSER.parse
+
+
+def is_portrait(portrait: str) -> bool:
+    """
+    简单判断输入是否符合portrait格式
+    """
+
+    return isinstance(portrait, str) and portrait.startswith('tb.')
 
 
 def url(scheme: str, netloc: str, path: Optional[str] = None, query: Optional[str] = None) -> httpx.URL:

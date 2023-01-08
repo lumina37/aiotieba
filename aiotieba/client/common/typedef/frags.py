@@ -356,8 +356,8 @@ class FragTiebaPlus(_Fragment):
     def __repr__(self) -> str:
         return str(
             {
-                'text': self.text,
-                'url': self.url,
+                'text': self._text,
+                'url': self._url,
             }
         )
 
@@ -393,7 +393,7 @@ class FragItem(_Fragment):
         self._text = _raw_data.item.item_name
 
     def __repr__(self) -> str:
-        return str({'text': self.text})
+        return str({'text': self._text})
 
     @property
     def text(self) -> str:
