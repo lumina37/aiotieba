@@ -9,8 +9,8 @@ from .._classdef.contents import (
     FragmentUnknown,
     FragText,
     FragTiebaPlus,
-    ProtocolText,
     TypeFragment,
+    TypeFragText,
 )
 
 Forum_p = Forum
@@ -137,7 +137,7 @@ class Contents_p(Containers[TypeFragment]):
 
         text (str): 文本内容
 
-        texts (list[ProtocolText]): 纯文本碎片列表
+        texts (list[TypeFragText]): 纯文本碎片列表
         emojis (list[FragEmoji_p]): 表情碎片列表
         imgs (list[FragImage_p]): 图像碎片列表
         ats (list[FragAt_p]): @碎片列表
@@ -236,7 +236,7 @@ class Contents_p(Containers[TypeFragment]):
         return self._text
 
     @property
-    def texts(self) -> List[ProtocolText]:
+    def texts(self) -> List[TypeFragText]:
         """
         纯文本碎片列表
         """
@@ -301,7 +301,7 @@ class Contents_pc(Containers[TypeFragment]):
 
         text (str): 文本内容
 
-        texts (list[ProtocolText]): 纯文本碎片列表
+        texts (list[TypeFragText]): 纯文本碎片列表
         emojis (list[FragEmoji_pc]): 表情碎片列表
         ats (list[FragAt_pc]): @碎片列表
         links (list[FragLink_pc]): 链接碎片列表
@@ -392,7 +392,7 @@ class Contents_pc(Containers[TypeFragment]):
         return self._text
 
     @property
-    def texts(self) -> List[ProtocolText]:
+    def texts(self) -> List[TypeFragText]:
         """
         纯文本碎片列表
         """
@@ -681,7 +681,6 @@ class Comment_p(object):
     """
 
     __slots__ = [
-        '_text',
         '_contents',
         '_fid',
         '_fname',
@@ -749,9 +748,7 @@ class Comment_p(object):
         文本内容
         """
 
-        if not self._text:
-            self._text = self._contents.text
-        return self._text
+        return self._contents.text
 
     @property
     def contents(self) -> Contents_pc:
@@ -1174,12 +1171,10 @@ class Post(object):
         """
 
         if self._text is None:
-
             if self.sign:
                 self._text = f'{self._contents.text}\n{self.sign}'
             else:
                 self._text = self._contents.text
-
         return self._text
 
     @property
@@ -1539,7 +1534,7 @@ class Contents_pt(Containers[TypeFragment]):
 
         text (str): 文本内容
 
-        texts (list[ProtocolText]): 纯文本碎片列表
+        texts (list[TypeFragText]): 纯文本碎片列表
         emojis (list[FragEmoji_pt]): 表情碎片列表
         imgs (list[FragImage_pt]): 图像碎片列表
         ats (list[FragAt_pt]): @碎片列表
@@ -1637,7 +1632,7 @@ class Contents_pt(Containers[TypeFragment]):
         return self._text
 
     @property
-    def texts(self) -> List[ProtocolText]:
+    def texts(self) -> List[TypeFragText]:
         """
         纯文本碎片列表
         """

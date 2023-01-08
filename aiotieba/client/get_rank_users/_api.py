@@ -1,7 +1,7 @@
 import bs4
 import httpx
 
-from ..common.helper import raise_for_status, url
+from .._helper import raise_for_status, url
 from ._classdef import RankUsers
 
 

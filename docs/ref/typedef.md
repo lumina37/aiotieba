@@ -99,7 +99,7 @@ class `UserInfo`(*_id: str | int | None = None*)
 <div class="docstring" markdown="1">
 **text** - *(str)* 全部文本内容 由**texts**拼接而成
 
-**texts** - *(list[[ProtocolText](#protocoltext)])* 纯文本碎片列表
+**texts** - *(list[[TypeFragText](#TypeFragText)])* 纯文本碎片列表
 
 **emojis** - *(list[[FragEmoji](#fragemoji)])* 表情碎片列表
 
@@ -162,7 +162,7 @@ def `__bool__`() -> *bool*
 **text** - *(str)* 文本内容
 </div>
 
-### ProtocolText
+### TypeFragText
 
 实现了**text**接口的鸭子类型
 

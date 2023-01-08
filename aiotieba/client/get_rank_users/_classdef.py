@@ -4,7 +4,7 @@ from typing import List
 import bs4
 
 from .._classdef import Containers
-from ..common.helper import parse_json
+from .._helper import parse_json
 
 
 class RankUser(object):

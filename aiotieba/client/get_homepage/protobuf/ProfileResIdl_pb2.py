@@ -11,9 +11,9 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 
-from ...common.protobuf import Error_pb2 as Error__pb2
-from ...common.protobuf import User_pb2 as User__pb2
-from ...common.protobuf import PostInfoList_pb2 as PostInfoList__pb2
+from ..._protobuf import Error_pb2 as Error__pb2
+from ..._protobuf import User_pb2 as User__pb2
+from ..._protobuf import PostInfoList_pb2 as PostInfoList__pb2
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13ProfileResIdl.proto\x1a\x0b\x45rror.proto\x1a\nUser.proto\x1a\x12PostInfoList.proto\"\x83\x02\n\rProfileResIdl\x12\x15\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x06.Error\x12$\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x16.ProfileResIdl.DataRes\x1a\xb4\x01\n\x07\x44\x61taRes\x12\x13\n\x04user\x18\x01 \x01(\x0b\x32\x05.User\x12.\n\tanti_stat\x18\x02 \x01(\x0b\x32\x1b.ProfileResIdl.DataRes.Anti\x12 \n\tpost_list\x18\x04 \x03(\x0b\x32\r.PostInfoList\x1a\x42\n\x04\x41nti\x12\x12\n\nblock_stat\x18\x06 \x01(\x05\x12\x11\n\thide_stat\x18\x07 \x01(\x05\x12\x13\n\x0b\x64\x61ys_tofree\x18\t \x01(\x05\x62\x06proto3')

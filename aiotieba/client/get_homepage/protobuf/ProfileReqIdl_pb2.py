@@ -11,7 +11,7 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 
-from ...common.protobuf import CommonReq_pb2 as CommonReq__pb2
+from ..._protobuf import CommonReq_pb2 as CommonReq__pb2
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13ProfileReqIdl.proto\x1a\x0f\x43ommonReq.proto\"\xb8\x01\n\rProfileReqIdl\x12$\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x16.ProfileReqIdl.DataReq\x1a\x80\x01\n\x07\x44\x61taReq\x12\x0b\n\x03uid\x18\x01 \x01(\x03\x12\x17\n\x0fneed_post_count\x18\x02 \x01(\r\x12\n\n\x02pn\x18\x06 \x01(\r\x12\n\n\x02rn\x18\x07 \x01(\r\x12\x1a\n\x06\x63ommon\x18\t \x01(\x0b\x32\n.CommonReq\x12\x1b\n\x13\x66riend_uid_portrait\x18\x10 \x01(\tb\x06proto3')

@@ -2,10 +2,10 @@ from typing import List
 
 import httpx
 
-from ...._exception import TiebaServerError
-from ...common.core import TiebaCore
-from ...common.helper import APP_BASE_HOST, pack_proto_request, raise_for_status, url
-from .._classdef import UserThread, UserInfo_u
+from ..._classdef.core import TiebaCore
+from ..._exception import TiebaServerError
+from ..._helper import APP_BASE_HOST, pack_proto_request, raise_for_status, url
+from .._classdef import UserInfo_u, UserThread
 from ..protobuf import UserPostReqIdl_pb2, UserPostResIdl_pb2
 
 

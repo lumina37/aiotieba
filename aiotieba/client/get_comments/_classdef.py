@@ -9,7 +9,7 @@ from .._classdef.contents import (
     FragmentUnknown,
     FragText,
     FragTiebaPlus,
-    ProtocolText,
+    TypeFragText,
     TypeFragment,
 )
 
@@ -32,7 +32,7 @@ class Contents_c(Containers[TypeFragment]):
 
         text (str): 文本内容
 
-        texts (list[ProtocolText]): 纯文本碎片列表
+        texts (list[TypeFragText]): 纯文本碎片列表
         emojis (list[FragEmoji_c]): 表情碎片列表
         ats (list[FragAt_c]): @碎片列表
         links (list[FragLink_c]): 链接碎片列表
@@ -123,7 +123,7 @@ class Contents_c(Containers[TypeFragment]):
         return self._text
 
     @property
-    def texts(self) -> List[ProtocolText]:
+    def texts(self) -> List[TypeFragText]:
         """
         纯文本碎片列表
         """
@@ -1100,7 +1100,7 @@ class Contents_cp(Containers[TypeFragment]):
 
         text (str): 文本内容
 
-        texts (list[ProtocolText]): 纯文本碎片列表
+        texts (list[TypeFragText]): 纯文本碎片列表
         emojis (list[FragEmoji_cp]): 表情碎片列表
         imgs (list[FragImage_cp]): 图像碎片列表
         ats (list[FragAt_cp]): @碎片列表
@@ -1199,7 +1199,7 @@ class Contents_cp(Containers[TypeFragment]):
         return self._text
 
     @property
-    def texts(self) -> List[ProtocolText]:
+    def texts(self) -> List[TypeFragText]:
         """
         纯文本碎片列表
         """

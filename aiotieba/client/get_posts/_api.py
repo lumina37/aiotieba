@@ -1,8 +1,8 @@
 import httpx
 
-from ..._exception import TiebaServerError
-from ..common.core import TiebaCore
-from ..common.helper import APP_BASE_HOST, pack_proto_request, raise_for_status, url
+from .._classdef.core import TiebaCore
+from .._exception import TiebaServerError
+from .._helper import APP_BASE_HOST, pack_proto_request, raise_for_status, url
 from ._classdef import Posts
 from .protobuf import PbPageReqIdl_pb2, PbPageResIdl_pb2
 
@@ -21,6 +21,7 @@ def pack_proto(
 ) -> bytes:
     req_proto = PbPageReqIdl_pb2.PbPageReqIdl()
     req_proto.data.common._client_version = core.main_version
+    req_proto.data.common.user_agent = f"tieba/{core.main_version}"
     req_proto.data.tid = tid
     req_proto.data.pn = pn
     req_proto.data.rn = rn if rn > 1 else 2

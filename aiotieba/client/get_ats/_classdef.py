@@ -1,5 +1,4 @@
 from collections.abc import Mapping
-from typing import List
 
 from .._classdef import Containers
 
@@ -99,8 +98,12 @@ class UserInfo_at(object):
         self._portrait = data_map['portrait'][:-13]
         self._user_name = data_map['name']
         self._nick_name_new = data_map['name_show']
-        self._priv_like = int(data_map['priv_sets'].get('like', 1))
-        self._priv_reply = int(data_map['priv_sets'].get('reply', 1))
+        if priv_sets := data_map['priv_sets']:
+            self._priv_like = int(priv_sets.get('like', 1))
+            self._priv_reply = int(priv_sets.get('reply', 1))
+        else:
+            self._priv_like = 1
+            self._priv_reply = 1
         return self
 
     def _init_null(self) -> "UserInfo_at":
@@ -271,6 +274,7 @@ class At(object):
         self._tid = int(data_map['thread_id'])
         self._pid = int(data_map['post_id'])
         self._user = UserInfo_at()._init(data_map['replyer'])
+        self._author_id = self._user._user_id
         self._is_floor = bool(int(data_map['is_floor']))
         self._is_thread = bool(int(data_map['is_first_post']))
         self._create_time = int(data_map['time'])
@@ -303,12 +307,44 @@ class At(object):
         return self._text
 
     @property
+    def fname(self) -> str:
+        """
+        所在贴吧名
+        """
+
+        return self._fname
+
+    @property
+    def tid(self) -> int:
+        """
+        所在主题帖id
+        """
+
+        return self._tid
+
+    @property
+    def pid(self) -> int:
+        """
+        所在主题帖id
+        """
+
+        return self._pid
+
+    @property
     def user(self) -> UserInfo_at:
         """
         发布者的用户信息
         """
 
         return self._user
+
+    @property
+    def author_id(self) -> int:
+        """
+        发布者的user_id
+        """
+
+        return self._author_id
 
     @property
     def is_floor(self) -> bool:

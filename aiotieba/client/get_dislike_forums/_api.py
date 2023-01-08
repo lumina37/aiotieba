@@ -1,8 +1,8 @@
 import httpx
 
-from ..._exception import TiebaServerError
-from ..common.core import TiebaCore
-from ..common.helper import APP_BASE_HOST, pack_proto_request, raise_for_status, url
+from .._exception import TiebaServerError
+from .._classdef.core import TiebaCore
+from .._helper import APP_BASE_HOST, pack_proto_request, raise_for_status, url
 from ._classdef import DislikeForums
 from .protobuf import GetDislikeListReqIdl_pb2, GetDislikeListResIdl_pb2
 

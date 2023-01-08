@@ -73,10 +73,14 @@ from . import (
     ungood,
     untop,
 )
-from .common.core import TiebaCore
-from .common.exception import TiebaServerError
-from .common.helper import APP_BASE_HOST, WEB_BASE_HOST, pack_ws_bytes, send_request, unpack_ws_bytes, url
-from .common.typedef import ForumInfoCache, Header, NewThread, ReqUInfo, UserInfo, WebsocketResponse
+from ._classdef.core import TiebaCore
+from ._classdef.enums import Header, ReqUInfo
+from ._classdef.misc import ForumInfoCache, WebsocketResponse
+from ._classdef.user import UserInfo
+from ._exception import TiebaServerError
+from ._helper import APP_BASE_HOST, WEB_BASE_HOST, is_portrait, pack_ws_bytes, send_request, unpack_ws_bytes, url
+from ._typing import TypeUserInfo
+from .get_homepage._classdef import UserInfo_home
 
 
 class Client(object):
@@ -106,7 +110,7 @@ class Client(object):
 
         self._core = TiebaCore(BDUSS_key)
 
-        self._user = UserInfo()
+        self._user = UserInfo_home()._init_null()
         self._tbs: str = None
 
         timeout = httpx.Timeout(connect=3.0, read=12.0, write=8.0, pool=3.0)
@@ -200,7 +204,6 @@ class Client(object):
         self.client_app_proto._state = state_opened
         self.client_web._state = state_opened
         self.client_ws._state = state_opened
-
         return self
 
     async def close(self) -> None:
@@ -399,7 +402,7 @@ class Client(object):
 
         return self._tbs
 
-    async def get_self_info(self, require: ReqUInfo = ReqUInfo.ALL) -> UserInfo:
+    async def get_self_info(self, require: ReqUInfo = ReqUInfo.ALL) -> TypeUserInfo:
         """
         获取本账号信息
 
@@ -407,13 +410,13 @@ class Client(object):
             require (ReqUInfo): 指示需要获取的字段
 
         Returns:
-            UserInfo: 用户信息
+            TypeUserInfo: 用户信息
         """
 
-        if not self._user.user_id:
+        if not self._user._user_id:
             if require & ReqUInfo.BASIC:
                 await self.login()
-        if not self._user.tieba_uid:
+        if not self._user._tieba_uid:
             if require & (ReqUInfo.TIEBA_UID | ReqUInfo.NICK_NAME):
                 await self._get_selfinfo_initNickname()
 
@@ -497,7 +500,7 @@ class Client(object):
 
         return fname
 
-    async def get_user_info(self, _id: Union[str, int], /, require: ReqUInfo = ReqUInfo.ALL) -> UserInfo:
+    async def get_user_info(self, _id: Union[str, int], /, require: ReqUInfo = ReqUInfo.ALL) -> TypeUserInfo:
         """
         获取用户信息
 
@@ -506,14 +509,14 @@ class Client(object):
             require (ReqUInfo): 指示需要获取的字段
 
         Returns:
-            UserInfo: 用户信息
+            TypeUserInfo: 用户信息
         """
 
         if not _id:
             LOG.warning("Null input")
             return UserInfo(_id)
 
-        if UserInfo.is_user_id(_id):
+        if isinstance(_id, int):
             if (require | ReqUInfo.BASIC) == ReqUInfo.BASIC:
                 # 仅有BASIC需求
                 return await self._get_uinfo_getUserInfo(_id)
@@ -525,7 +528,7 @@ class Client(object):
             else:
                 # 有除TIEBA_UID外的其他非BASIC需求
                 return await self._get_uinfo_getuserinfo(_id)
-        elif UserInfo.is_portrait(_id):
+        elif is_portrait(_id):
             if (require | ReqUInfo.BASIC) == ReqUInfo.BASIC:
                 if not require & ReqUInfo.USER_ID:
                     # 无USER_ID需求
@@ -555,7 +558,7 @@ class Client(object):
             name_or_portrait (str): 用户id user_name / portrait
 
         Returns:
-            UserInfo_panel
+            UserInfo_panel: 包含较全面的用户信息
 
         Note:
             从2022.08.30开始服务端不再返回user_id字段 请谨慎使用
@@ -583,7 +586,7 @@ class Client(object):
             user_name (str): 用户id user_name
 
         Returns:
-            UserInfo_user_json
+            UserInfo_json: 包含 user_id / portrait / user_name
         """
 
         try:
@@ -606,7 +609,8 @@ class Client(object):
             user_id (int): 用户id user_id
 
         Returns:
-            UserInfo_getuserinfo
+            UserInfo_guinfo_app: 包含 user_id / portrait / user_name / nick_name_old / 性别 /
+                是否大神 / 是否超级会员
         """
 
         try:
@@ -628,7 +632,7 @@ class Client(object):
             user_id (int): 用户id user_id
 
         Returns:
-            UserInfo: 包含 user_id / portrait / user_name
+            UserInfo_guinfo_web: 包含 user_id / portrait / user_name / nick_name_new
 
         Note:
             该接口需要BDUSS
@@ -642,7 +646,7 @@ class Client(object):
 
         except Exception as err:
             LOG.warning(f"{err}. user={user_id}")
-            user = get_uinfo_getUserInfo_web.UserInfo_guinfo_web._default()
+            user = get_uinfo_getUserInfo_web.UserInfo_guinfo_web._init_null()
 
         return user
 
@@ -655,7 +659,7 @@ class Client(object):
             tieba_uid (int): 用户id tieba_uid
 
         Returns:
-            UserInfo: 包含 all
+            UserInfo_TUid: 包含较全面的用户信息
 
         Note:
             请注意tieba_uid与旧版user_id的区别
@@ -972,7 +976,7 @@ class Client(object):
         Args:
             cname (str): 类别名
             pn (int, optional): 页码. Defaults to 1.
-            rn (int, optional): 请求的条目数. Defaults to 20. Max inf.
+            rn (int, optional): 请求的条目数. Defaults to 20.
 
         Returns:
             SquareForums: 吧广场列表
@@ -1003,7 +1007,7 @@ class Client(object):
             tuple[UserInfo_home, list[Thread_home]]: 用户信息, list[帖子信息]
         """
 
-        if not UserInfo.is_portrait(_id):
+        if not is_portrait(_id):
             user = await self.get_user_info(_id, ReqUInfo.PORTRAIT)
         else:
             user = UserInfo(_id)
@@ -1069,7 +1073,7 @@ class Client(object):
             FollowForums: 用户关注贴吧列表
         """
 
-        if not UserInfo.is_user_id(_id):
+        if not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
         else:
             user = UserInfo(_id)
@@ -1138,7 +1142,7 @@ class Client(object):
             fid = fname_or_fid
             fname = await self.get_fname(fid)
 
-        if not UserInfo.is_portrait(_id):
+        if not is_portrait(_id):
             user = await self.get_user_info(_id, ReqUInfo.PORTRAIT)
         else:
             user = UserInfo(_id)
@@ -1176,7 +1180,7 @@ class Client(object):
             fid = fname_or_fid
             fname = await self.get_fname(fid)
 
-        if not UserInfo.is_user_id(_id):
+        if not isinstance(_id, int)(_id):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
         else:
             user = UserInfo(_id)
@@ -1727,7 +1731,7 @@ class Client(object):
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
-        if not UserInfo.is_user_id(_id):
+        if not isinstance(_id, int)(_id):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
         else:
             user = UserInfo(_id)
@@ -1760,7 +1764,7 @@ class Client(object):
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
-        if not UserInfo.is_user_id(_id):
+        if not isinstance(_id, int)(_id):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
         else:
             user = UserInfo(_id)
@@ -1907,7 +1911,7 @@ class Client(object):
             np.ndarray: 头像
         """
 
-        if not UserInfo.is_portrait(_id):
+        if not is_portrait(_id):
             user = await self.get_user_info(_id, ReqUInfo.PORTRAIT)
         else:
             user = UserInfo(_id)
@@ -1937,7 +1941,6 @@ class Client(object):
             user = get_selfinfo_initNickname.parse_response(response)
 
             self._user._user_name = user._user_name
-            self._user._nick_name = user._nick_name_old
             self._user._tieba_uid = user._tieba_uid
 
         except Exception as err:
@@ -2024,7 +2027,7 @@ class Client(object):
 
         return ats
 
-    async def get_self_public_threads(self, pn: int = 1) -> List[NewThread]:
+    async def get_self_public_threads(self, pn: int = 1) -> List[get_user_contents.UserThread]:
         """
         获取本人发布的公开状态的主题帖列表
 
@@ -2032,7 +2035,7 @@ class Client(object):
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
-            list[NewThread]: 主题帖列表
+            list[UserThread]: 主题帖列表
         """
 
         user = await self.get_self_info(ReqUInfo.USER_ID)
@@ -2053,7 +2056,7 @@ class Client(object):
 
         return threads
 
-    async def get_self_threads(self, pn: int = 1) -> List[NewThread]:
+    async def get_self_threads(self, pn: int = 1) -> List[get_user_contents.UserThread]:
         """
         获取本人发布的主题帖列表
 
@@ -2061,7 +2064,7 @@ class Client(object):
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
-            list[NewThread]: 主题帖列表
+            list[UserThread]: 主题帖列表
         """
 
         user = await self.get_self_info(ReqUInfo.USER_ID)
@@ -2112,7 +2115,7 @@ class Client(object):
 
         return uposts_list
 
-    async def get_user_threads(self, _id: Union[str, int], pn: int = 1) -> List[NewThread]:
+    async def get_user_threads(self, _id: Union[str, int], pn: int = 1) -> List[get_user_contents.UserThread]:
         """
         获取用户发布的主题帖列表
 
@@ -2121,10 +2124,10 @@ class Client(object):
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
-            list[NewThread]: 主题帖列表
+            list[UserThread]: 主题帖列表
         """
 
-        if not UserInfo.is_user_id(_id):
+        if not isinstance(_id, int)(_id):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
         else:
             user = UserInfo(_id)
@@ -2160,7 +2163,7 @@ class Client(object):
 
         if _id is None:
             user = await self.get_self_info(ReqUInfo.USER_ID)
-        elif not UserInfo.is_user_id(_id):
+        elif not isinstance(_id, int)(_id):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
         else:
             user = UserInfo(_id)
@@ -2191,7 +2194,7 @@ class Client(object):
 
         if _id is None:
             user = await self.get_self_info(ReqUInfo.USER_ID)
-        elif not UserInfo.is_user_id(_id):
+        elif not isinstance(_id, int)(_id):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
         else:
             user = UserInfo(_id)
@@ -2374,7 +2377,7 @@ class Client(object):
             bool: True成功 False失败
         """
 
-        if not UserInfo.is_user_id(_id):
+        if not isinstance(_id, int)(_id):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
         else:
             user = UserInfo(_id)
@@ -2404,7 +2407,7 @@ class Client(object):
             bool: True成功 False失败
         """
 
-        if not UserInfo.is_portrait(_id):
+        if not is_portrait(_id):
             user = await self.get_user_info(_id, ReqUInfo.PORTRAIT)
         else:
             user = UserInfo(_id)
@@ -2434,7 +2437,7 @@ class Client(object):
             bool: True成功 False失败
         """
 
-        if not UserInfo.is_portrait(_id):
+        if not is_portrait(_id):
             user = await self.get_user_info(_id, ReqUInfo.PORTRAIT)
         else:
             user = UserInfo(_id)
@@ -2665,7 +2668,7 @@ class Client(object):
             bool: True成功 False失败
         """
 
-        if not UserInfo.is_user_id(_id):
+        if not isinstance(_id, int)(_id):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
         else:
             user = UserInfo(_id)

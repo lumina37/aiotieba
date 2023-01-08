@@ -47,13 +47,14 @@ version = { attr = "aiotieba.__version__" }
 [tool.black]
 line-length = 120
 skip-string-normalization = true
-target-version = ['py310', 'py311']
+target-version = ['py39']
 
 [tool.ruff]
 line-length = 120
-select = ["W", "E", "F"]
+select = ["W", "E", "F", "I"]
 ignore = ["E402", "E501"]
-target-version = "py311"
+exclude = ["_pb2.py"]
+target-version = "py39"
 
 [tool.pytest.ini_options]
 minversion = "6.0"

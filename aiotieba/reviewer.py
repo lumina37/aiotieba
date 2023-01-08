@@ -21,8 +21,10 @@ from collections.abc import Callable, Iterator
 from typing import List, Literal, Optional, Tuple, Union
 
 from ._logger import LOG
-from .client import Client, ForumInfoCache, ReqUInfo
-from .client.common.typedef import Comment, Comments, Post, Posts, Thread, Threads, UserInfo
+from .client import Client
+from .client._classdef.enums import ReqUInfo
+from .client._classdef.misc import ForumInfoCache
+from .client._typing import Comment, Comments, Post, Posts, Thread, Threads, TypeUserInfo
 from .database import MySQLDB, SQLiteDB
 
 
@@ -144,7 +146,7 @@ class BaseReviewer(object):
 
         return fname
 
-    async def get_user_info(self, _id: Union[str, int], /, require: ReqUInfo = ReqUInfo.ALL) -> UserInfo:
+    async def get_user_info(self, _id: Union[str, int], /, require: ReqUInfo = ReqUInfo.ALL) -> TypeUserInfo:
         """
         获取用户信息
 
@@ -153,7 +155,7 @@ class BaseReviewer(object):
             require (ReqUInfo): 需要获取的字段
 
         Returns:
-            UserInfo: 用户信息
+            TypeUserInfo: 用户信息
         """
 
         return await self.client.get_user_info(_id, require)

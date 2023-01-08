@@ -1,7 +1,7 @@
 import httpx
 
-from ..._exception import TiebaServerError
-from ..common.helper import parse_json, raise_for_status, url
+from .._exception import TiebaServerError
+from .._helper import parse_json, raise_for_status, url
 from ._classdef import UserInfo_json
 
 

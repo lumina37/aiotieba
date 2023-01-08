@@ -1,4 +1,4 @@
-from ..._exception import TiebaServerError
+from .._exception import TiebaServerError
 from .protobuf import CommitPersonalMsgReqIdl_pb2, CommitPersonalMsgResIdl_pb2
 
 

@@ -2,7 +2,7 @@ from collections.abc import Iterable
 from typing import List
 
 from .._classdef import Containers, TypeMessage, VoteInfo
-from .._classdef.contents import FragAt, FragEmoji, FragLink, FragmentUnknown, FragText, ProtocolText, TypeFragment
+from .._classdef.contents import FragAt, FragEmoji, FragLink, FragmentUnknown, FragText, TypeFragText, TypeFragment
 
 FragText_up = FragText_ut = FragText
 FragAt_ut = FragAt
@@ -141,7 +141,7 @@ class Contents_up(Containers[TypeFragment]):
 
         text (str): 文本内容
 
-        texts (list[ProtocolText]): 纯文本碎片列表
+        texts (list[TypeFragText]): 纯文本碎片列表
         links (list[FragLink_up]): 链接碎片列表
 
         has_voice (bool): 是否包含音频
@@ -206,7 +206,7 @@ class Contents_up(Containers[TypeFragment]):
         return self._text
 
     @property
-    def texts(self) -> List[ProtocolText]:
+    def texts(self) -> List[TypeFragText]:
         """
         纯文本碎片列表
         """
@@ -631,7 +631,7 @@ class Contents_ut(Containers[TypeFragment]):
 
         text (str): 文本内容
 
-        texts (list[ProtocolText]): 纯文本碎片列表
+        texts (list[TypeFragText]): 纯文本碎片列表
         emojis (list[FragEmoji_ut]): 表情碎片列表
         imgs (list[FragImage_ut]): 图像碎片列表
         ats (list[FragAt_ut]): @碎片列表
@@ -728,7 +728,7 @@ class Contents_ut(Containers[TypeFragment]):
         return self._text
 
     @property
-    def texts(self) -> List[ProtocolText]:
+    def texts(self) -> List[TypeFragText]:
         """
         纯文本碎片列表
         """

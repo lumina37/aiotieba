@@ -1,11 +1,9 @@
 import urllib.parse
-from collections.abc import Iterable, Iterator
-from typing import List, Optional, Protocol, SupportsIndex, TypeVar, overload
+from typing import Optional, Protocol, TypeVar
 
 import httpx
 
-from ..._logger import LOG
-from ..common.helper import WEB_BASE_HOST
+from .._helper import CHECK_URL_PERFIX, WEB_BASE_HOST
 from .common import TypeMessage
 
 TypeFragment = TypeVar('TypeFragment')
@@ -36,10 +34,13 @@ class FragText(object):
         return self._text
 
 
-class ProtocolText(Protocol):
+class TypeFragText(Protocol):
     @property
     def text(self) -> str:
-        pass
+        """
+        文本内容
+        """
+        ...
 
 
 class FragEmoji(object):
@@ -65,6 +66,15 @@ class FragEmoji(object):
         """
 
         return self._desc
+
+
+class TypeFragEmoji(Protocol):
+    @property
+    def desc(self) -> str:
+        """
+        表情描述
+        """
+        ...
 
 
 class FragImage(object):
@@ -188,6 +198,60 @@ class FragImage(object):
         return self._hash
 
 
+class TypeFragImage(Protocol):
+    @property
+    def src(self) -> str:
+        """
+        小图链接
+        """
+        ...
+
+    @property
+    def big_src(self) -> str:
+        """
+        大图链接
+        """
+        ...
+
+    @property
+    def origin_src(self) -> str:
+        """
+        原图链接
+        """
+        ...
+
+    @property
+    def origin_size(self) -> int:
+        """
+        原图大小
+
+        Note:
+            以字节为单位
+        """
+        ...
+
+    @property
+    def show_width(self) -> int:
+        """
+        图像在客户端显示的宽度
+        """
+        ...
+
+    @property
+    def show_height(self) -> int:
+        """
+        图像在客户端显示的高度
+        """
+        ...
+
+    @property
+    def hash(self) -> str:
+        """
+        图像的百度图床hash
+        """
+        ...
+
+
 class FragAt(object):
     """
     @碎片
@@ -231,6 +295,22 @@ class FragAt(object):
         return self._user_id
 
 
+class TypeFragAt(Protocol):
+    @property
+    def text(self) -> str:
+        """
+        被@用户的昵称 含@
+        """
+        ...
+
+    @property
+    def user_id(self) -> int:
+        """
+        被@用户的user_id
+        """
+        ...
+
+
 class FragLink(object):
     """
     链接碎片
@@ -244,23 +324,26 @@ class FragLink(object):
     """
 
     __slots__ = [
-        '_text',
+        '_title',
         '_raw_url',
         '_url',
         '_is_external',
     ]
 
     def __init__(self, data_proto: TypeMessage) -> None:
-        self._text = data_proto.text
-        self._raw_url: str = urllib.parse.unquote(data_proto.link)
+        self._title = data_proto.text
+
+        self._raw_url = data_proto.link
+        self._is_external = self._raw_url.startswith(CHECK_URL_PERFIX)
+        if self._is_external:
+            self._raw_url = urllib.parse.unquote(self._raw_url.removeprefix(CHECK_URL_PERFIX))
 
         self._url = None
-        self._is_external = None
 
     def __repr__(self) -> str:
         return str(
             {
-                'title': self._text,
+                'title': self._title,
                 'raw_url': self._raw_url,
             }
         )
@@ -269,6 +352,9 @@ class FragLink(object):
     def text(self) -> str:
         """
         原链接
+
+        Note:
+            外链会在解析前先去除CHECK_URL_PERFIX前缀
         """
 
         return self._raw_url
@@ -279,7 +365,7 @@ class FragLink(object):
         链接标题
         """
 
-        return self._text
+        return self._title
 
     @property
     def url(self) -> httpx.URL:
@@ -287,7 +373,7 @@ class FragLink(object):
         yarl解析后的链接
 
         Note:
-            外链会在解析前先去除external_perfix前缀
+            外链会在解析前先去除CHECK_URL_PERFIX前缀
         """
 
         if self._url is None:
@@ -298,6 +384,9 @@ class FragLink(object):
     def raw_url(self) -> str:
         """
         原链接
+
+        Note:
+            外链会在解析前先去除CHECK_URL_PERFIX前缀
         """
 
         return self._raw_url
@@ -311,6 +400,46 @@ class FragLink(object):
         if self._is_external is None:
             self._is_external = self.url.host != WEB_BASE_HOST
         return self._is_external
+
+
+class TypeFragLink(Protocol):
+    @property
+    def text(self) -> str:
+        """
+        原链接
+        """
+        ...
+
+    @property
+    def title(self) -> str:
+        """
+        链接标题
+        """
+        ...
+
+    @property
+    def url(self) -> httpx.URL:
+        """
+        yarl解析后的链接
+
+        Note:
+            外链会在解析前先去除external_perfix前缀
+        """
+        ...
+
+    @property
+    def raw_url(self) -> str:
+        """
+        原链接
+        """
+        ...
+
+    @property
+    def is_external(self) -> bool:
+        """
+        是否外部链接
+        """
+        ...
 
 
 class FragTiebaPlus(object):
@@ -356,6 +485,22 @@ class FragTiebaPlus(object):
         return self._url
 
 
+class TypeFragTiebaPlus(Protocol):
+    @property
+    def text(self) -> str:
+        """
+        贴吧plus广告描述
+        """
+        ...
+
+    @property
+    def url(self) -> str:
+        """
+        贴吧plus广告跳转链接
+        """
+        ...
+
+
 class FragItem(object):
     """
     item碎片
@@ -381,206 +526,41 @@ class FragItem(object):
         return self._text
 
 
+class TypeFragItem(Protocol):
+    @property
+    def text(self) -> str:
+        """
+        item名称
+        """
+        ...
+
+
 class FragmentUnknown(object):
     """
     未知碎片
     """
 
-    __slots__ = ['data_proto']
+    __slots__ = ['_data']
 
-    def __init__(self, data_proto: Optional[TypeMessage] = None) -> None:
-        self.data_proto = data_proto
-
-    def __repr__(self) -> str:
-        return str({'data': self.data_proto})
-
-
-class Fragments(object):
-    """
-    内容碎片列表
-
-    Attributes:
-        _frags (list[TypeFragment]): 所有碎片的混合列表
-
-        text (str): 文本内容
-
-        texts (list[ProtocolText]): 纯文本碎片列表
-        emojis (list[FragEmoji]): 表情碎片列表
-        imgs (list[FragImage]): 图像碎片列表
-        ats (list[FragAt]): @碎片列表
-        links (list[FragLink]): 链接碎片列表
-        tiebapluses (list[FragTiebaPlus]): 贴吧plus碎片列表
-
-        has_voice (bool): 是否包含音频
-        has_video (bool): 是否包含视频
-    """
-
-    __slots__ = [
-        '_frags',
-        '_text',
-        '_texts',
-        '_emojis',
-        '_imgs',
-        '_ats',
-        '_links',
-        '_tiebapluses',
-        '_has_voice',
-        '_has_video',
-    ]
-
-    def __init__(self, data_protos: Optional[Iterable[TypeMessage]] = None) -> None:
-        def _init_by_type(data_proto) -> TypeFragment:
-            frag_type: int = data_proto.type
-            # 0纯文本 9电话号 18话题 27百科词条
-            if frag_type in [0, 9, 18, 27]:
-                fragment = FragText(data_proto)
-            # 11:tid=5047676428
-            elif frag_type in [2, 11]:
-                fragment = FragEmoji(data_proto)
-                self._emojis.append(fragment)
-            # 20:tid=5470214675
-            elif frag_type in [3, 20]:
-                fragment = FragImage(data_proto)
-                self._imgs.append(fragment)
-            elif frag_type == 4:
-                fragment = FragAt(data_proto)
-                self._ats.append(fragment)
-            elif frag_type == 1:
-                fragment = FragLink(data_proto)
-                self._links.append(fragment)
-            elif frag_type == 5:  # video
-                fragment = FragmentUnknown()
-                self._has_video = True
-            elif frag_type == 10:
-                fragment = FragmentUnknown()
-                self._has_voice = True
-            # 35|36:tid=7769728331 / 37:tid=7760184147
-            elif frag_type in [35, 36, 37]:
-                fragment = FragTiebaPlus(data_proto)
-                self._tiebapluses.append(fragment)
-            else:
-                fragment = FragmentUnknown(data_proto)
-                LOG.warning(f"Unknown fragment type. type={data_proto.type}")
-
-            return fragment
-
-        self._text: str = None
-        self._texts: List[FragText] = None
-        self._links: List[FragLink] = []
-        self._imgs: List[FragImage] = []
-        self._emojis: List[FragEmoji] = []
-        self._ats: List[FragAt] = []
-        self._tiebapluses: List[FragTiebaPlus] = []
-
-        self._has_video = True
-        self._has_voice = True
-
-        if data_protos:
-            self._frags: List[TypeFragment] = [_init_by_type(frag_proto) for frag_proto in data_protos]
-        else:
-            self._frags = []
+    def __init__(self, data: Optional[TypeMessage] = None) -> None:
+        self._data = data
 
     def __repr__(self) -> str:
-        return str(self._frags)
+        return str({'data': self._data})
 
     @property
-    def text(self) -> str:
+    def data(self):
         """
-        文本内容
+        原始数据
         """
 
-        if self._text is None:
-            self._text = ''.join([frag.text for frag in self.texts])
-        return self._text
+        return self._data
 
+
+class TypeFragmentUnknown(Protocol):
     @property
-    def texts(self) -> List[ProtocolText]:
+    def data(self):
         """
-        纯文本碎片列表
+        原始数据
         """
-
-        if self._texts is None:
-            self._texts = [frag for frag in self._frags if hasattr(frag, 'text')]
-        return self._texts
-
-    @property
-    def emojis(self) -> List[FragEmoji]:
-        """
-        表情碎片列表
-        """
-
-        return self._emojis
-
-    @property
-    def imgs(self) -> List[FragImage]:
-        """
-        图像碎片列表
-        """
-
-        return self._imgs
-
-    @property
-    def ats(self) -> List[FragAt]:
-        """
-        @碎片列表
-        """
-
-        return self._ats
-
-    @property
-    def links(self) -> List[FragLink]:
-        """
-        链接碎片列表
-        """
-
-        return self._links
-
-    @property
-    def tiebapluses(self) -> List[FragTiebaPlus]:
-        """
-        贴吧plus碎片列表
-        """
-
-        return self._tiebapluses
-
-    @property
-    def has_voice(self) -> bool:
-        """
-        是否包含音频
-        """
-
-        return self._has_voice
-
-    @property
-    def has_video(self) -> bool:
-        """
-        是否包含视频
-        """
-
-        return self._has_video
-
-    def __iter__(self) -> Iterator[TypeFragment]:
-        return self._frags.__iter__()
-
-    @overload
-    def __getitem__(self, idx: SupportsIndex) -> TypeFragment:
         ...
-
-    @overload
-    def __getitem__(self, idx: slice) -> List[TypeFragment]:
-        ...
-
-    def __getitem__(self, idx):
-        return self._frags.__getitem__(idx)
-
-    def __setitem__(self, idx, val) -> None:
-        raise NotImplementedError
-
-    def __delitem__(self, idx) -> None:
-        raise NotImplementedError
-
-    def __len__(self) -> int:
-        return self._frags.__len__()
-
-    def __bool__(self) -> bool:
-        return bool(self._frags)

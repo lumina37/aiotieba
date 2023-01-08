@@ -1,7 +1,7 @@
 import httpx
 
-from .common.exception import TiebaServerError
-from .common.helper import parse_json, raise_for_status, url
+from .._exception import TiebaServerError
+from .._helper import parse_json, raise_for_status, url
 
 
 def pack_request(client: httpx.AsyncClient, fname: str) -> httpx.Request:

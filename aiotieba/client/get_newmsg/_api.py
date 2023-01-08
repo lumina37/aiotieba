@@ -2,9 +2,9 @@ from typing import Dict
 
 import httpx
 
-from ..._exception import TiebaServerError
-from ..common.core import TiebaCore
-from ..common.helper import APP_BASE_HOST, pack_form_request, parse_json, raise_for_status, sign, url
+from .._exception import TiebaServerError
+from .._classdef.core import TiebaCore
+from .._helper import APP_BASE_HOST, pack_form_request, parse_json, raise_for_status, sign, url
 
 
 def pack_request(client: httpx.AsyncClient, core: TiebaCore) -> httpx.Request:

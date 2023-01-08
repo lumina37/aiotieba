@@ -8,11 +8,12 @@ import httpx
 import simdjson as jsonlib
 from Crypto.Cipher import AES
 
-from .core import TiebaCore
-from .exception import HTTPStatusError
+from ._classdef.core import TiebaCore
+from ._exception import HTTPStatusError
 
 APP_BASE_HOST = "tiebac.baidu.com"
 WEB_BASE_HOST = "tieba.baidu.com"
+CHECK_URL_PERFIX = "http://tieba.baidu.com/mo/q/checkurl?url="
 
 
 _JSON_PARSER = jsonlib.Parser()

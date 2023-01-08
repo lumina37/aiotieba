@@ -2,8 +2,8 @@ from typing import List
 
 import httpx
 
-from ..._exception import TiebaServerError
-from ..common.helper import pack_form_request, parse_json, raise_for_status, url
+from .._exception import TiebaServerError
+from .._helper import pack_form_request, parse_json, raise_for_status, url
 
 
 def pack_request(

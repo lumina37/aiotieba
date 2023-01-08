@@ -2,7 +2,7 @@ from collections.abc import Iterable
 from typing import List
 
 from .._classdef import Containers, TypeMessage, VoteInfo
-from .._classdef.contents import FragAt, FragEmoji, FragLink, FragmentUnknown, FragText, ProtocolText, TypeFragment
+from .._classdef.contents import FragAt, FragEmoji, FragLink, FragmentUnknown, FragText, TypeFragment, TypeFragText
 
 FragAt_home = FragAt
 FragEmoji_home = FragEmoji
@@ -542,7 +542,7 @@ class Contents_home(Containers[TypeFragment]):
 
         text (str): 文本内容
 
-        texts (list[ProtocolText]): 纯文本碎片列表
+        texts (list[TypeFragText]): 纯文本碎片列表
         emojis (list[FragEmoji_home]): 表情碎片列表
         imgs (list[FragImage_home]): 图像碎片列表
         ats (list[FragAt_home]): @碎片列表
@@ -639,7 +639,7 @@ class Contents_home(Containers[TypeFragment]):
         return self._text
 
     @property
-    def texts(self) -> List[ProtocolText]:
+    def texts(self) -> List[TypeFragText]:
         """
         纯文本碎片列表
         """

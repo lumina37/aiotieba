@@ -4,8 +4,8 @@ import cv2 as cv
 import httpx
 import numpy as np
 
-from ..._exception import ContentTypeError
-from ..common.helper import raise_for_status, url
+from .._exception import ContentTypeError
+from .._helper import raise_for_status, url
 
 
 def _pack_request_without_host(client: httpx.AsyncClient, url: str) -> httpx.Request:

@@ -11,8 +11,8 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 
-from ...common.protobuf import Error_pb2 as Error__pb2
-from ...common.protobuf import PostInfoList_pb2 as PostInfoList__pb2
+from ..._protobuf import Error_pb2 as Error__pb2
+from ..._protobuf import PostInfoList_pb2 as PostInfoList__pb2
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x14UserPostResIdl.proto\x1a\x0b\x45rror.proto\x1a\x12PostInfoList.proto\"{\n\x0eUserPostResIdl\x12\x15\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x06.Error\x12%\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x17.UserPostResIdl.DataRes\x1a+\n\x07\x44\x61taRes\x12 \n\tpost_list\x18\x01 \x03(\x0b\x32\r.PostInfoListb\x06proto3')

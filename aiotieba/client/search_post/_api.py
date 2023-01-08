@@ -1,8 +1,8 @@
 import httpx
 
-from ..._exception import TiebaServerError
-from ..common.core import TiebaCore
-from ..common.helper import APP_BASE_HOST, jsonlib, pack_form_request, raise_for_status, sign, url
+from .._exception import TiebaServerError
+from .._classdef.core import TiebaCore
+from .._helper import APP_BASE_HOST, pack_form_request, parse_json, raise_for_status, sign, url
 from ._classdef import Searches
 
 
@@ -39,7 +39,7 @@ def pack_request(
 def parse_response(response: httpx.Response) -> Searches:
     raise_for_status(response)
 
-    res_json = jsonlib.loads(response.content)
+    res_json = parse_json(response.content)
     if code := int(res_json['error_code']):
         raise TiebaServerError(code, res_json['error_msg'])
 

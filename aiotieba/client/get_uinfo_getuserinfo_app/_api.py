@@ -1,7 +1,7 @@
 import httpx
 
-from ..._exception import TiebaServerError
-from ..common.helper import APP_BASE_HOST, pack_proto_request, raise_for_status, url
+from .._exception import TiebaServerError
+from .._helper import APP_BASE_HOST, pack_proto_request, raise_for_status, url
 from ._classdef import UserInfo_guinfo_app
 from .protobuf import GetUserInfoReqIdl_pb2, GetUserInfoResIdl_pb2
 

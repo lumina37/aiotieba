@@ -1,9 +1,10 @@
 import asyncio
 
-import aiotieba as tb
 import httpx
 import pytest
 import pytest_asyncio
+
+import aiotieba as tb
 
 
 @pytest.fixture(scope="session")
@@ -60,49 +61,33 @@ async def test_BasicUserInfo(client: tb.Client):
 
 @pytest.mark.asyncio
 async def test_Posts_and_Fragments(client: tb.Client):
-    posts = await client.get_posts(7763274602, with_comments=True)
+    posts = await client.get_posts(8211419000, with_comments=True)
 
     # Test Post
-    post = posts[6]
+    post = posts[1]
     assert isinstance(post.text, str)
     assert post.text != ""
 
-    assert isinstance(post.fid, int)
     assert post.fid > 0
-    assert isinstance(post.fname, str)
     assert post.fname != ""
-    assert isinstance(post.tid, int)
     assert post.tid > 0
-    assert isinstance(post.pid, int)
     assert post.pid > 0
     check_UserInfo(post.user)
     assert post.author_id == post.user.user_id
 
-    assert isinstance(post.floor, int)
     assert post.floor > 0
-    assert isinstance(post.reply_num, int)
     assert post.reply_num > 0
-    assert isinstance(post.create_time, int)
     assert post.create_time > 0
     assert post.is_thread_author == (post.author_id == posts.thread.author_id)
 
     # Test FragText
-    frag = posts[0].contents.texts[0]
-    assert isinstance(frag.text, str)
-    assert frag.text != ""
-    frag = posts[1].contents.texts[0]
-    assert isinstance(frag.text, str)
-    assert frag.text != ""
-    frag = posts[4].contents.texts[0]
-    assert isinstance(frag.text, str)
-    assert frag.text != ""
+    for frag in post.contents.texts:
+        assert frag.text != ""
 
     # Test FragAt
-    frag = posts[2].contents.ats[0]
-    assert isinstance(frag.text, str)
+    frag = post.contents.ats[0]
     assert frag.text != ""
-    assert isinstance(frag.user_id, int)
-    assert frag.user_id != 0
+    assert frag.user_id > 0
 
     # Test FragLink
     frag = posts[3].contents.links[0]
@@ -145,7 +130,7 @@ async def test_Posts_and_Fragments(client: tb.Client):
         assert isinstance(frag.url, str)
 
 
-def check_ShareThread(thread: tb.ShareThread):
+def check_ShareThread(thread: tb.client.get_threads._classdef.ShareThread):
     # Test FragText
     frag = thread.contents.texts[0]
     assert isinstance(frag.text, str)
@@ -189,7 +174,6 @@ def check_ShareThread(thread: tb.ShareThread):
         assert isinstance(option.vote_num, int)
         assert isinstance(option.text, str)
         assert option.text != ""
-        assert isinstance(option.image, str)
 
 
 @pytest.mark.asyncio
@@ -234,7 +218,6 @@ async def test_Thread(client: tb.Client):
             for option in thread.vote_info.options:
                 assert isinstance(option.vote_num, int)
                 assert isinstance(option.text, str)
-                assert isinstance(option.image, str)
 
         # Test Share Thread
         elif thread.tid == 7905926315:
