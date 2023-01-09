@@ -366,8 +366,6 @@ class FragLink(object):
         是否外部链接
         """
 
-        if self._is_external is None:
-            self._is_external = self.url.host != WEB_BASE_HOST
         return self._is_external
 
 
