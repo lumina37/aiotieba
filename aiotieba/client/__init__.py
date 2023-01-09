@@ -2047,9 +2047,6 @@ class Client(object):
             response = await send_request(self.client_app_proto, request)
             threads = get_threads.parse_response(response)
 
-            for thread in threads:
-                thread._user = user
-
         except Exception as err:
             LOG.warning(f"{err}. user={user}")
             threads = []
@@ -2076,9 +2073,6 @@ class Client(object):
             response = await send_request(self.client_app_proto, request)
             threads = get_threads.parse_response(response)
 
-            for thread in threads:
-                thread._user = user
-
         except Exception as err:
             LOG.warning(f"{err}. user={user}")
             threads = []
@@ -2104,10 +2098,6 @@ class Client(object):
             request = get_posts.pack_request(self.client_app_proto, self.core, user.user_id, pn)
             response = await send_request(self.client_app_proto, request)
             uposts_list = get_posts.parse_response(response)
-
-            for userposts in uposts_list:
-                for userpost in userposts:
-                    userpost._user = user
 
         except Exception as err:
             LOG.warning(f"{err}. user={user}")
@@ -2138,9 +2128,6 @@ class Client(object):
             request = get_threads.pack_request(self.client_app_proto, self.core, user.user_id, pn, public_only=True)
             response = await send_request(self.client_app_proto, request)
             threads = get_threads.parse_response(response)
-
-            for thread in threads:
-                thread._user = user
 
         except Exception as err:
             LOG.warning(f"{err}. user={user}")

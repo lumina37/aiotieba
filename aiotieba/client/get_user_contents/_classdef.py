@@ -559,8 +559,7 @@ class Contents_ut(Containers[TypeFragment]):
                 self._emojis.append(fragment)
             # 20:tid=5470214675
             elif _type in [3, 20]:
-                fragment = FragImage_ut(proto)
-                self._imgs.append(fragment)
+                fragment = FragmentUnknown_ut()
             elif _type == 4:
                 fragment = FragAt_ut(proto)
                 self._ats.append(fragment)
@@ -729,6 +728,9 @@ class UserThread(object):
     def _init(self, data_proto: TypeMessage) -> "UserThread":
         self._text = None
         self._contents = Contents_ut()._init(data_proto.first_post_content)
+        img_frags = [FragImage_ut(p) for p in data_proto.media]
+        self._contents._objs += img_frags
+        self._contents._imgs = img_frags
         self._title = data_proto.title
         self._fid = data_proto.forum_id
         self._fname = data_proto.forum_name
