@@ -91,8 +91,7 @@ class FollowForums(Containers[FollowForum]):
     __slots__ = ['_has_more']
 
     def _init(self, data_map: Mapping) -> "FollowForums":
-        if 'has_more' in data_map:
-            forum_list = data_map.get('forum_list', {})
+        if forum_list := data_map.get('forum_list', {}):
             forum_dicts = forum_list.get('non-gconforum', [])
             self._objs = [FollowForum()._init(m) for m in forum_dicts]
             forum_dicts = forum_list.get('gconforum', [])
