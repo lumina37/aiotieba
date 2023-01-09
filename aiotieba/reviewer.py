@@ -196,7 +196,7 @@ class BaseReviewer(object):
         only_thread_author: bool = False,
         with_comments: bool = False,
         comment_sort_by_agree: bool = True,
-        comment_rn: int = 10,
+        comment_rn: int = 30,
         is_fold: bool = False,
     ) -> Posts:
         """
@@ -210,7 +210,7 @@ class BaseReviewer(object):
             only_thread_author (bool, optional): True则只看楼主 False则请求全部. Defaults to False.
             with_comments (bool, optional): True则同时请求高赞楼中楼 False则返回的Posts.comments为空. Defaults to False.
             comment_sort_by_agree (bool, optional): True则楼中楼按点赞数顺序 False则楼中楼按时间顺序. Defaults to True.
-            comment_rn (int, optional): 请求的楼中楼数量. Defaults to 10.
+            comment_rn (int, optional): 请求的楼中楼数量. Defaults to 30.
             is_fold (bool, optional): 是否请求被折叠的回复. Defaults to False.
 
         Returns:

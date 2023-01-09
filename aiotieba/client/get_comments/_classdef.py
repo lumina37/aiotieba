@@ -416,22 +416,23 @@ class Comment(object):
     def _init(self, data_proto: TypeMessage) -> "Comment":
         contents = Contents_c()._init(data_proto.content)
 
-        first_frag = contents[0]
-        if (
-            len(contents) > 1
-            and isinstance(first_frag, FragText_c)
-            and first_frag.text == '回复 '
-            and (reply_to_id := data_proto.content[1].uid)
-        ):
-            self._reply_to_id = reply_to_id
-            if isinstance(contents[1], FragAt_c):
-                contents._ats = contents._ats[1:]
-            contents._objs = contents._objs[2:]
-            if contents.texts:
-                first_text_frag = contents.texts[0]
-                first_text_frag._text = first_text_frag._text.removeprefix(' :')
-        else:
-            self._reply_to_id = 0
+        self._reply_to_id = 0
+        if contents:
+            first_frag = contents[0]
+            if (
+                len(contents) > 1
+                and isinstance(first_frag, FragText_c)
+                and first_frag.text == '回复 '
+                and (reply_to_id := data_proto.content[1].uid)
+            ):
+                self._reply_to_id = reply_to_id
+                if isinstance(contents[1], FragAt_c):
+                    contents._ats = contents._ats[1:]
+                contents._objs = contents._objs[2:]
+                contents._texts = contents._texts[2:]
+                if contents.texts:
+                    first_text_frag = contents.texts[0]
+                    first_text_frag._text = first_text_frag._text.removeprefix(' :')
 
         self._contents = contents
 

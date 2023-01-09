@@ -29,6 +29,7 @@ def pack_proto(
     req_proto.data.only_thread_author = only_thread_author
     req_proto.data.is_fold = is_fold
     if with_comments:
+        req_proto.data.common.BDUSS = core.BDUSS
         req_proto.data.with_comments = with_comments
         req_proto.data.comment_sort_by_agree = comment_sort_by_agree
         req_proto.data.comment_rn = comment_rn

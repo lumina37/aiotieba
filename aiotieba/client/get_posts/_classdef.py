@@ -458,224 +458,6 @@ class Contents_pc(Containers[TypeFragment]):
         return self._has_voice
 
 
-class UserInfo_pc(object):
-    """
-    用户信息
-
-    Attributes:
-        user_id (int): user_id
-        portrait (str): portrait
-        user_name (str): 用户名
-        nick_name_new (str): 新版昵称
-
-        level (int): 等级
-        glevel (int): 贴吧成长等级
-
-        is_vip (bool): 是否超级会员
-        is_god (bool): 是否大神
-        priv_like (int): 公开关注吧列表的设置状态
-        priv_reply (int): 帖子评论权限的设置状态
-
-        nick_name (str): 用户昵称
-        show_name (str): 显示名称
-        log_name (str): 用于在日志中记录用户信息
-    """
-
-    __slots__ = [
-        '_user_id',
-        '_portrait',
-        '_user_name',
-        '_nick_name_new',
-        '_level',
-        '_glevel',
-        '_is_vip',
-        '_is_god',
-        '_priv_like',
-        '_priv_reply',
-    ]
-
-    def _init(self, data_proto: TypeMessage) -> "UserInfo_pc":
-        self._user_id = data_proto.id
-        self._portrait = data_proto.portrait[:-13]
-        self._user_name = data_proto.name
-        self._nick_name_new = data_proto.name_show
-        self._level = data_proto.level_id
-        self._glevel = data_proto.user_growth.level_id
-        self._is_vip = bool(data_proto.new_tshow_icon)
-        self._is_god = bool(data_proto.new_god_data.status)
-        self._priv_like = priv_like if (priv_like := data_proto.priv_sets.like) else 1
-        self._priv_reply = priv_reply if (priv_reply := data_proto.priv_sets.reply) else 1
-        return self
-
-    def _init_null(self) -> "UserInfo_pc":
-        self._user_id = 0
-        self._portrait = ''
-        self._user_name = ''
-        self._nick_name_new = ''
-        self._level = 0
-        self._glevel = 0
-        self._is_vip = False
-        self._is_god = False
-        self._priv_like = 1
-        self._priv_reply = 1
-        return self
-
-    def __str__(self) -> str:
-        return self._user_name or self._portrait or str(self._user_id)
-
-    def __repr__(self) -> str:
-        return str(
-            {
-                'user_id': self._user_id,
-                'user_name': self._user_name,
-                'portrait': self._portrait,
-                'show_name': self.show_name,
-                'level': self._level,
-                'glevel': self._glevel,
-                'priv_like': self._priv_like,
-                'priv_reply': self._priv_reply,
-            }
-        )
-
-    def __eq__(self, obj: "UserInfo_pc") -> bool:
-        return self._user_id == obj._user_id
-
-    def __hash__(self) -> int:
-        return self._user_id
-
-    def __int__(self) -> int:
-        return self._user_id
-
-    def __bool__(self) -> bool:
-        return bool(self._user_id)
-
-    @property
-    def user_id(self) -> int:
-        """
-        用户user_id
-
-        Note:
-            该字段具有唯一性且不可变
-            请注意与用户个人页的tieba_uid区分
-        """
-
-        return self._user_id
-
-    @property
-    def portrait(self) -> str:
-        """
-        用户portrait
-
-        Note:
-            该字段具有唯一性且不可变
-        """
-
-        return self._portrait
-
-    @property
-    def user_name(self) -> str:
-        """
-        用户名
-
-        Note:
-            该字段具有唯一性但可变
-            请注意与用户昵称区分
-        """
-
-        return self._user_name
-
-    @property
-    def nick_name_new(self) -> str:
-        """
-        新版昵称
-        """
-
-        return self._nick_name_new
-
-    @property
-    def level(self) -> int:
-        """
-        等级
-        """
-
-        return self._level
-
-    @property
-    def glevel(self) -> int:
-        """
-        贴吧成长等级
-        """
-
-        return self._glevel
-
-    @property
-    def is_vip(self) -> bool:
-        """
-        是否超级会员
-        """
-
-        return self._is_vip
-
-    @property
-    def is_god(self) -> bool:
-        """
-        是否贴吧大神
-        """
-
-        return self._is_god
-
-    @property
-    def priv_like(self) -> int:
-        """
-        公开关注吧列表的设置状态
-
-        Note:
-            1完全可见 2好友可见 3完全隐藏
-        """
-
-        return self._priv_like
-
-    @property
-    def priv_reply(self) -> int:
-        """
-        帖子评论权限的设置状态
-
-        Note:
-            1允许所有人 5仅允许我的粉丝 6仅允许我的关注
-        """
-
-        return self._priv_reply
-
-    @property
-    def nick_name(self) -> str:
-        """
-        用户昵称
-        """
-
-        return self._nick_name_new
-
-    @property
-    def show_name(self) -> str:
-        """
-        显示名称
-        """
-
-        return self._nick_name_new or self._user_name
-
-    @property
-    def log_name(self) -> str:
-        """
-        用于在日志中记录用户信息
-        """
-
-        if self._user_name:
-            return self._user_name
-        elif self._portrait:
-            return f"{self._nick_name_new}/{self._portrait}"
-        else:
-            return str(self._user_id)
-
-
 class Comment_p(object):
     """
     楼中楼信息
@@ -689,7 +471,7 @@ class Comment_p(object):
         tid (int): 所在主题帖id
         ppid (int): 所在回复id
         pid (int): 楼中楼id
-        user (UserInfo_pc): 发布者的用户信息
+        user (UserInfo_p): 发布者的用户信息
         author_id (int): 发布者的user_id
         reply_to_id (int): 被回复者的user_id
 
@@ -716,28 +498,28 @@ class Comment_p(object):
     def _init(self, data_proto: TypeMessage) -> Contents_pc:
         contents = Contents_pc()._init(data_proto.content)
 
-        first_frag = contents[0]
-        if (
-            len(contents) > 1
-            and isinstance(first_frag, FragText_p)
-            and first_frag.text == '回复 '
-            and (reply_to_id := data_proto.content[1].uid)
-        ):
-            self._reply_to_id = reply_to_id
-            if isinstance(contents[1], FragAt_p):
-                contents._ats = contents._ats[1:]
-            contents._objs = contents._objs[2:]
-            if contents.texts:
-                first_text_frag = contents.texts[0]
-                first_text_frag._text = first_text_frag._text.removeprefix(' :')
-        else:
-            self._reply_to_id = 0
+        self._reply_to_id = 0
+        if contents:
+            first_frag = contents[0]
+            if (
+                len(contents) > 1
+                and isinstance(first_frag, FragText_p)
+                and first_frag.text == '回复 '
+                and (reply_to_id := data_proto.content[1].uid)
+            ):
+                self._reply_to_id = reply_to_id
+                if isinstance(contents[1], FragAt_p):
+                    contents._ats = contents._ats[1:]
+                contents._objs = contents._objs[2:]
+                contents._texts = contents._texts[2:]
+                if contents.texts:
+                    first_text_frag = contents.texts[0]
+                    first_text_frag._text = first_text_frag._text.removeprefix(' :')
 
         self._contents = contents
 
         self._pid = data_proto.id
-        self._user = UserInfo_pc()._init(data_proto.author)
-        self._author_id = self._user._user_id
+        self._author_id = data_proto.author_id
         self._agree = data_proto.agree.agree_num
         self._disagree = data_proto.agree.disagree_num
         self._create_time = data_proto.time
@@ -817,7 +599,7 @@ class Comment_p(object):
         return self._pid
 
     @property
-    def user(self) -> UserInfo_pc:
+    def user(self) -> "UserInfo_p":
         """
         发布者的用户信息
         """
@@ -882,6 +664,7 @@ class UserInfo_p(object):
 
         level (int): 等级
         glevel (int): 贴吧成长等级
+        ip (str): ip归属地
 
         is_bawu (bool): 是否吧务
         is_vip (bool): 是否超级会员
@@ -901,6 +684,7 @@ class UserInfo_p(object):
         '_nick_name_new',
         '_level',
         '_glevel',
+        '_ip',
         '_is_bawu',
         '_is_vip',
         '_is_god',
@@ -915,6 +699,7 @@ class UserInfo_p(object):
         self._nick_name_new = data_proto.name_show
         self._level = data_proto.level_id
         self._glevel = data_proto.user_growth.level_id
+        self._ip = data_proto.ip_address
         self._is_bawu = bool(data_proto.is_bawu)
         self._is_vip = bool(data_proto.new_tshow_icon)
         self._is_god = bool(data_proto.new_god_data.status)
@@ -929,6 +714,7 @@ class UserInfo_p(object):
         self._nick_name_new = ''
         self._level = 0
         self._glevel = 0
+        self._ip = ''
         self._is_bawu = False
         self._is_vip = False
         self._is_god = False
@@ -948,6 +734,7 @@ class UserInfo_p(object):
                 'show_name': self.show_name,
                 'level': self._level,
                 'glevel': self._glevel,
+                'ip': self._ip,
                 'priv_like': self._priv_like,
                 'priv_reply': self._priv_reply,
             }
@@ -1016,13 +803,20 @@ class UserInfo_p(object):
 
         return self._level
 
-    @property
     def glevel(self) -> int:
         """
         贴吧成长等级
         """
 
         return self._glevel
+
+    @property
+    def ip(self) -> str:
+        """
+        ip归属地
+        """
+
+        return self._ip
 
     @property
     def is_bawu(self) -> bool:
@@ -1149,7 +943,7 @@ class Post(object):
         self._text = None
         self._contents = Contents_p()._init(data_proto.content)
         self._sign = "".join(p.text for p in data_proto.signature.content if p.type == 0)
-        self._comments = [Comment_p()._init(_proto) for _proto in data_proto.sub_post_list.sub_post_list]
+        self._comments = [Comment_p()._init(p) for p in data_proto.sub_post_list.sub_post_list]
         self._pid = data_proto.id
         self._author_id = data_proto.author_id
         self._vimage = VirtualImage_p()._init(data_proto)
@@ -1254,7 +1048,7 @@ class Post(object):
         return self._pid
 
     @property
-    def user(self) -> UserInfo_pc:
+    def user(self) -> UserInfo_p:
         """
         发布者的用户信息
         """
@@ -1726,6 +1520,7 @@ class UserInfo_pt(object):
         level (int): 等级
         glevel (int): 贴吧成长等级
         fan_num (int): 粉丝数
+        ip (str): ip归属地
 
         is_bawu (bool): 是否吧务
         is_vip (bool): 是否超级会员
@@ -1746,6 +1541,7 @@ class UserInfo_pt(object):
         '_level',
         '_glevel',
         '_fan_num',
+        '_ip',
         '_is_bawu',
         '_is_vip',
         '_is_god',
@@ -1761,6 +1557,7 @@ class UserInfo_pt(object):
         self._level = data_proto.level_id
         self._glevel = data_proto.user_growth.level_id
         self._fan_num = data_proto.fans_num
+        self._ip = data_proto.ip_address
         self._is_bawu = bool(data_proto.is_bawu)
         self._is_vip = bool(data_proto.new_tshow_icon)
         self._is_god = bool(data_proto.new_god_data.status)
@@ -1776,6 +1573,7 @@ class UserInfo_pt(object):
         self._level = 0
         self._glevel = 0
         self._fan_num = 0
+        self._ip = ''
         self._is_bawu = False
         self._is_vip = False
         self._is_god = False
@@ -1796,6 +1594,7 @@ class UserInfo_pt(object):
                 'level': self._level,
                 'glevel': self._glevel,
                 'fan_num': self._fan_num,
+                'ip': self._ip,
                 'priv_like': self._priv_like,
                 'priv_reply': self._priv_reply,
             }
@@ -1879,6 +1678,14 @@ class UserInfo_pt(object):
         """
 
         return self._fan_num
+
+    @property
+    def ip(self) -> str:
+        """
+        ip归属地
+        """
+
+        return self._ip
 
     @property
     def is_bawu(self) -> bool:
@@ -2444,7 +2251,7 @@ class Posts(Containers[Post]):
                 comment._fname = post._fname
                 comment._tid = post._tid
                 comment._ppid = post._pid
-                comment._user = users[post._author_id]
+                comment._user = users[comment._author_id]
 
         return self
 
