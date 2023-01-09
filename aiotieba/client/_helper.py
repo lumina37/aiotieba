@@ -1,7 +1,7 @@
-import gzip
 import hashlib
 import random
 import urllib.parse
+import zlib
 from typing import List, Optional, Tuple
 
 import httpx
@@ -166,7 +166,7 @@ def pack_ws_bytes(
     """
 
     if need_gzip:
-        ws_bytes = gzip.compress(ws_bytes, 5)
+        ws_bytes = zlib.compress(ws_bytes, 5)
 
     if need_encrypt:
         pad_num = AES.block_size - (len(ws_bytes) % AES.block_size)
@@ -213,7 +213,7 @@ def unpack_ws_bytes(core: TiebaCore, ws_bytes: bytes) -> Tuple[bytes, int, int]:
         ws_bytes = core.ws_aes_chiper.decrypt(ws_bytes)
         ws_bytes = ws_bytes.rstrip(ws_bytes[-2:-1])
     if flag & 0b01000000:
-        ws_bytes = gzip.decompress(ws_bytes)
+        ws_bytes = zlib.decompress(ws_bytes)
 
     return ws_bytes, cmd, req_id
 
