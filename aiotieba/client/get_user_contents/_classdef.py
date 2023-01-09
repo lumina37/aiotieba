@@ -579,7 +579,7 @@ class Contents_ut(Containers[TypeFragment]):
                 fragment = FragmentUnknown_ut(proto)
                 from ..._logger import LOG
 
-                LOG.warning(f"Unknown fragment type. type={_type}")
+                LOG.warning(f"Unknown fragment type. type={_type} frag={fragment}")
 
             return fragment
 

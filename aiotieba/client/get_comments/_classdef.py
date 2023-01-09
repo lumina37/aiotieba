@@ -82,7 +82,7 @@ class Contents_c(Containers[TypeFragment]):
                 fragment = FragmentUnknown_c(proto)
                 from ..._logger import LOG
 
-                LOG.warning(f"Unknown fragment type. type={_type}")
+                LOG.warning(f"Unknown fragment type. type={_type} frag={fragment}")
 
             return fragment
 
@@ -182,6 +182,7 @@ class UserInfo_c(object):
         nick_name_new (str): 新版昵称
 
         level (int): 等级
+        gender (int): 性别
 
         is_vip (bool): 是否超级会员
         is_god (bool): 是否大神
@@ -199,6 +200,7 @@ class UserInfo_c(object):
         '_user_name',
         '_nick_name_new',
         '_level',
+        '_gender',
         '_is_vip',
         '_is_god',
         '_priv_like',
@@ -211,6 +213,7 @@ class UserInfo_c(object):
         self._user_name = data_proto.name
         self._nick_name_new = data_proto.name_show
         self._level = data_proto.level_id
+        self._gender = data_proto.gender
         self._is_vip = bool(data_proto.new_tshow_icon)
         self._is_god = bool(data_proto.new_god_data.status)
         self._priv_like = priv_like if (priv_like := data_proto.priv_sets.like) else 1
@@ -223,6 +226,7 @@ class UserInfo_c(object):
         self._user_name = ''
         self._nick_name_new = ''
         self._level = 0
+        self._gender = 0
         self._is_vip = False
         self._is_god = False
         self._priv_like = 1
@@ -240,6 +244,7 @@ class UserInfo_c(object):
                 'portrait': self._portrait,
                 'show_name': self.show_name,
                 'level': self._level,
+                'gender': self._gender,
                 'priv_like': self._priv_like,
                 'priv_reply': self._priv_reply,
             }
@@ -307,6 +312,17 @@ class UserInfo_c(object):
         """
 
         return self._level
+
+    @property
+    def gender(self) -> int:
+        """
+        性别
+
+        Note:
+            0未知 1男 2女
+        """
+
+        return self._gender
 
     @property
     def is_vip(self) -> bool:
@@ -1158,7 +1174,7 @@ class Contents_cp(Containers[TypeFragment]):
                 fragment = FragmentUnknown_cp(proto)
                 from ..._logger import LOG
 
-                LOG.warning(f"Unknown fragment type. type={_type}")
+                LOG.warning(f"Unknown fragment type. type={_type} frag={fragment}")
 
             return fragment
 

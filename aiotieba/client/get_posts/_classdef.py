@@ -202,6 +202,8 @@ class Contents_p(Containers[TypeFragment]):
             elif _type == 10:
                 fragment = FragmentUnknown_p()
                 self._has_voice = True
+            elif _type == 5:  # video
+                fragment = FragmentUnknown_p()
             # 35|36:tid=7769728331 / 37:tid=7760184147
             elif _type in [35, 36, 37]:
                 fragment = FragTiebaPlus_p(proto)
@@ -211,7 +213,7 @@ class Contents_p(Containers[TypeFragment]):
                 fragment = FragmentUnknown_p(proto)
                 from ..._logger import LOG
 
-                LOG.warning(f"Unknown fragment type. type={_type}")
+                LOG.warning(f"Unknown fragment type. type={_type} frag={fragment}")
 
             return fragment
 
@@ -369,7 +371,7 @@ class Contents_pc(Containers[TypeFragment]):
                 fragment = FragmentUnknown_pc(proto)
                 from ..._logger import LOG
 
-                LOG.warning(f"Unknown fragment type. type={_type}")
+                LOG.warning(f"Unknown fragment type. type={_type} frag={fragment}")
 
             return fragment
 
@@ -803,6 +805,7 @@ class UserInfo_p(object):
 
         return self._level
 
+    @property
     def glevel(self) -> int:
         """
         贴吧成长等级
@@ -1399,7 +1402,7 @@ class Contents_pt(Containers[TypeFragment]):
                 fragment = FragmentUnknown_pt(proto)
                 from ..._logger import LOG
 
-                LOG.warning(f"Unknown fragment type. type={_type}")
+                LOG.warning(f"Unknown fragment type. type={_type} frag={fragment}")
 
             return fragment
 

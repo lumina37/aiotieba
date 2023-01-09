@@ -127,7 +127,7 @@ class UserInfo_home(object):
         self._portrait = data_proto.portrait[:-13]
         self._user_name = data_proto.name
         self._nick_name_new = data_proto.name_show
-        self._tieba_uid = int(data_proto.tieba_uid)
+        self._tieba_uid = int(tieba_uid) if (tieba_uid := data_proto.tieba_uid) else 0
         self._gender = data_proto.sex
         self._age = float(data_proto.tb_age)
         self._post_num = data_proto.post_num
@@ -560,6 +560,8 @@ class Contents_home(Containers[TypeFragment]):
             elif _type in [2, 11]:
                 fragment = FragEmoji_home(proto)
                 self._emojis.append(fragment)
+            elif _type == 3:
+                fragment = FragmentUnknown_home()
             elif _type == 4:
                 fragment = FragAt_home(proto)
                 self._ats.append(fragment)
@@ -578,7 +580,7 @@ class Contents_home(Containers[TypeFragment]):
                 fragment = FragmentUnknown_home(proto)
                 from ..._logger import LOG
 
-                LOG.warning(f"Unknown fragment type. type={_type}")
+                LOG.warning(f"Unknown fragment type. type={_type} frag={fragment}")
 
             return fragment
 

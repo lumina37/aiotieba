@@ -216,7 +216,7 @@ class Contents_t(Containers[TypeFragment]):
                 fragment = FragmentUnknown_t(proto)
                 from ..._logger import LOG
 
-                LOG.warning(f"Unknown fragment type. type={_type}")
+                LOG.warning(f"Unknown fragment type. type={_type} frag={fragment}")
 
             return fragment
 
@@ -834,7 +834,7 @@ class Contents_st(Containers[TypeFragment]):
                 fragment = FragmentUnknown_st(proto)
                 from ..._logger import LOG
 
-                LOG.warning(f"Unknown fragment type. type={_type}")
+                LOG.warning(f"Unknown fragment type. type={_type} frag={fragment}")
 
             return fragment
 
