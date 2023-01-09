@@ -1,0 +1,13 @@
+// tbclient.Media
+syntax = "proto3";
+
+message Media {
+    int32 type = 1;
+    string small_pic = 2;
+    string big_pic = 3;
+    string water_pic = 4;
+    uint32 width = 10;
+    uint32 height = 11;
+    string origin_pic = 15;
+    uint32 origin_size = 16;
+}

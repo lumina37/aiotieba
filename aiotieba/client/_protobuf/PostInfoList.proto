@@ -1,0 +1,36 @@
+// tbclient.PostInfoList
+syntax = "proto3";
+
+import "Media.proto";
+import "PollInfo.proto";
+import "PbContent.proto";
+import "Agree.proto";
+
+message PostInfoList {
+    uint64 forum_id = 1;
+    uint64 thread_id = 2;
+    uint64 post_id = 3;
+    uint32 create_time = 5;
+    string forum_name = 6;
+    string title = 7;
+    message PostInfoContent {
+        repeated PbContent post_content = 1;
+        uint64 create_time = 2;
+        uint64 post_type = 3;
+        uint64 post_id = 4;
+    }
+    repeated PostInfoContent content = 8;
+    string user_name = 10;
+    repeated Media media = 16;
+    uint32 reply_num = 17;
+    int64 user_id = 18;
+    string user_portrait = 19;
+    uint64 thread_type = 26;
+    PollInfo poll_info = 28;
+    int32 freq_num = 33;
+    string name_show = 35;
+    int32 share_num = 39;
+    Agree agree = 40;
+    int32 is_share_thread = 44;
+    repeated PbContent first_post_content = 49;
+}

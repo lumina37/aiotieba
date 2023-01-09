@@ -11,8 +11,8 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 
-from ...common.protobuf import Error_pb2 as Error__pb2
-from ...common.protobuf import User_pb2 as User__pb2
+from ..._protobuf import Error_pb2 as Error__pb2
+from ..._protobuf import User_pb2 as User__pb2
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1dGetUserByTiebaUidResIdl.proto\x1a\x0b\x45rror.proto\x1a\nUser.proto\"\x80\x01\n\x17GetUserByTiebaUidResIdl\x12\x15\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x06.Error\x12.\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32 .GetUserByTiebaUidResIdl.DataRes\x1a\x1e\n\x07\x44\x61taRes\x12\x13\n\x04user\x18\x01 \x01(\x0b\x32\x05.Userb\x06proto3')

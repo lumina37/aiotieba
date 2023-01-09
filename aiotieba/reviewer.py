@@ -21,8 +21,10 @@ from collections.abc import Callable, Iterator
 from typing import List, Literal, Optional, Tuple, Union
 
 from ._logger import LOG
-from .client import Client, ForumInfoCache, ReqUInfo
-from .client.common.typedef import Comment, Comments, Post, Posts, Thread, Threads, UserInfo
+from .client import Client
+from .client._classdef.enums import ReqUInfo
+from .client._classdef.misc import ForumInfoCache
+from .client._typing import Comment, Comments, Post, Posts, Thread, Threads, TypeUserInfo
 from .database import MySQLDB, SQLiteDB
 
 
@@ -144,7 +146,7 @@ class BaseReviewer(object):
 
         return fname
 
-    async def get_user_info(self, _id: Union[str, int], /, require: ReqUInfo = ReqUInfo.ALL) -> UserInfo:
+    async def get_user_info(self, _id: Union[str, int], /, require: ReqUInfo = ReqUInfo.ALL) -> TypeUserInfo:
         """
         获取用户信息
 
@@ -153,7 +155,7 @@ class BaseReviewer(object):
             require (ReqUInfo): 需要获取的字段
 
         Returns:
-            UserInfo: 用户信息
+            TypeUserInfo: 用户信息
         """
 
         return await self.client.get_user_info(_id, require)
@@ -194,7 +196,7 @@ class BaseReviewer(object):
         only_thread_author: bool = False,
         with_comments: bool = False,
         comment_sort_by_agree: bool = True,
-        comment_rn: int = 10,
+        comment_rn: int = 30,
         is_fold: bool = False,
     ) -> Posts:
         """
@@ -208,7 +210,7 @@ class BaseReviewer(object):
             only_thread_author (bool, optional): True则只看楼主 False则请求全部. Defaults to False.
             with_comments (bool, optional): True则同时请求高赞楼中楼 False则返回的Posts.comments为空. Defaults to False.
             comment_sort_by_agree (bool, optional): True则楼中楼按点赞数顺序 False则楼中楼按时间顺序. Defaults to True.
-            comment_rn (int, optional): 请求的楼中楼数量. Defaults to 10.
+            comment_rn (int, optional): 请求的楼中楼数量. Defaults to 30.
             is_fold (bool, optional): 是否请求被折叠的回复. Defaults to False.
 
         Returns:
@@ -665,13 +667,9 @@ class Reviewer(BaseReviewer):
         """
 
         if punish.del_flag == Ops.DELETE:
-            LOG.info(
-                f"Del {obj.__class__.__name__}. text={obj.text} user={obj.user} level={obj.user.level} note={punish.note}"
-            )
+            LOG.info(f"Del {obj.__class__.__name__}. text={obj.text} user={obj.user!r} note={punish.note}")
         elif punish.del_flag == Ops.HIDE:
-            LOG.info(
-                f"Hide {obj.__class__.__name__}. text={obj.text} user={obj.user} level={obj.user.level} note={punish.note}"
-            )
+            LOG.info(f"Hide {obj.__class__.__name__}. text={obj.text} user={obj.user!r} note={punish.note}")
 
     async def review_loop(self) -> None:
         """
@@ -817,11 +815,11 @@ class Reviewer(BaseReviewer):
             Iterator[Post]: 待审查回复的迭代器
         """
 
-        posts = await self.get_posts(thread.tid, pn=99999, sort=1)
-        posts = set(posts.objs)
+        posts = await self.get_posts(thread.tid, pn=99999, sort=1, with_comments=True)
+        posts = set(posts._objs)
         if thread.reply_num > 30:
-            first_posts = await self.get_posts(thread.tid)
-            posts.update(first_posts.objs)
+            first_posts = await self.get_posts(thread.tid, with_comments=True)
+            posts.update(first_posts._objs)
 
         return posts
 
@@ -899,10 +897,10 @@ class Reviewer(BaseReviewer):
         """
 
         reply_num = post.reply_num
-        if (reply_num <= 10 and len(post.comments) != reply_num) or reply_num > 10:
+        if (reply_num <= 30 and len(post.comments) != reply_num) or reply_num > 30:
             last_comments = await self.get_comments(post.tid, post.pid, pn=post.reply_num // 30 + 1)
-            comments = set(last_comments)
-            comments.update(post.comments)
+            comments = set(post.comments)
+            comments.update(last_comments)
             return comments
 
         else:
@@ -1061,7 +1059,7 @@ class Reviewer(BaseReviewer):
 
         time_thre = self.time_thre_closure()
 
-        posts = await self.get_posts(thread.tid, pn=99999, sort=1)
+        posts = await self.get_posts(thread.tid, pn=99999, sort=1, with_comments=True)
         if posts:
             for post in posts:
                 yield post
@@ -1071,7 +1069,7 @@ class Reviewer(BaseReviewer):
         if (total_page := posts.page.total_page) >= 2:
             for post_pn in range(total_page - 2, 0, -1):
                 LOG.debug(f"Scanning tid={thread.tid} pn={post_pn}")
-                posts = await self.get_posts(thread.tid, pn=post_pn)
+                posts = await self.get_posts(thread.tid, pn=post_pn, with_comments=True)
                 if posts:
                     for post in posts:
                         yield post
@@ -1122,12 +1120,15 @@ class Reviewer(BaseReviewer):
             Iterator[Comment]: 待审查楼中楼的迭代器
         """
 
-        if post.reply_num:
-            comments = await self.get_comments(post.tid, post.pid, pn=post.reply_num // 30 + 1)
-            return comments.objs
+        reply_num = post.reply_num
+        if (reply_num <= 30 and len(post.comments) != reply_num) or reply_num > 30:
+            last_comments = await self.get_comments(post.tid, post.pid, pn=post.reply_num // 30 + 1)
+            comments = set(last_comments)
+            comments.update(post.comments)
+            return comments
 
         else:
-            return []
+            return post.comments
 
     @_exce_punish
     @_check_permission

@@ -5,12 +5,12 @@ import time
 from collections.abc import Callable
 from typing import Dict, List, Optional, Tuple, Union
 
-import tomli
-
 import aiotieba as tb
+from aiotieba._config import tomllib
+from aiotieba.client.get_ats._classdef import At
 
 with open("cmd_handler.toml", 'rb') as file:
-    LISTEN_CONFIG = tomli.load(file)
+    LISTEN_CONFIG = tomllib.load(file)
 
 
 class TimerRecorder(object):
@@ -65,8 +65,8 @@ class Context(object):
 
     listener_perfix: str = None
 
-    def __init__(self, at: tb.At) -> None:
-        self.at: tb.At = at
+    def __init__(self, at: At) -> None:
+        self.at: At = at
         self.admin: tb.BaseReviewer = None
         self.speaker: tb.Client = None
         self._init_full_success: bool = False
@@ -102,14 +102,14 @@ class Context(object):
         else:
             if self.at.is_thread:
                 await asyncio.sleep(3)
-                posts = await self.admin.get_posts(self.tid, pn=-1, rn=0, sort=1)
+                posts = await self.admin.get_posts(self.tid, pn=9999, rn=0, sort=1)
                 if not posts:
                     return False
                 self.parent = posts.thread.share_origin
                 self.at._text = posts.thread.text
 
             else:
-                posts = await self.admin.get_posts(self.tid, pn=-1, rn=10, sort=1)
+                posts = await self.admin.get_posts(self.tid, pn=9999, rn=10, sort=1)
                 if not posts:
                     return False
                 for post in posts:
@@ -278,7 +278,7 @@ class Listener(object):
             self.time_recorder.last_parse_time = ats[0].create_time
             await asyncio.gather(*[asyncio.wait_for(self._execute_cmd(at), timeout=120) for at in ats])
 
-    async def _execute_cmd(self, at: tb.At) -> None:
+    async def _execute_cmd(self, at: At) -> None:
         ctx = Context(at)
         cmd_func = getattr(self, f'cmd_{ctx.cmd_type}', self.cmd_default)
         await cmd_func(ctx)
@@ -680,7 +680,7 @@ class Listener(object):
 
         if len(ctx.args) > 2:
             index = int(ctx.args[0])
-            imgs: List[tb.typedef.FragImage] = imgs[index - 1 : index]
+            imgs: List[tb.FragImage] = imgs[index - 1 : index]
             permission = int(ctx.args[1])
             note = ctx.args[2]
         else:
@@ -692,6 +692,8 @@ class Listener(object):
             if image is None:
                 continue
             img_hash = self.listener.compute_imghash(image)
+            if img_hash == 4412820541203793671:
+                continue
 
             await ctx.admin.db.add_imghash(img_hash, img.hash, permission=permission, note=note)
 
@@ -709,7 +711,7 @@ class Listener(object):
 
         if ctx.args:
             index = int(ctx.args[0])
-            imgs: List[tb.typedef.FragImage] = imgs[index - 1 : index]
+            imgs: List[tb.FragImage] = imgs[index - 1 : index]
 
         for img in imgs:
             image = await self.listener.client.get_image(img.src)

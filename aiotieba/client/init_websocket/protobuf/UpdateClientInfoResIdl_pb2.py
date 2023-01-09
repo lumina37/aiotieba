@@ -11,7 +11,7 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 
-from ...common.protobuf import Error_pb2 as Error__pb2
+from ..._protobuf import Error_pb2 as Error__pb2
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1cUpdateClientInfoResIdl.proto\x1a\x0b\x45rror.proto\"/\n\x16UpdateClientInfoResIdl\x12\x15\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x06.Errorb\x06proto3')
