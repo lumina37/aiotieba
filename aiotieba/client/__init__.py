@@ -445,7 +445,7 @@ class Client(object):
 
         except Exception as err:
             LOG.warning(err)
-            self._tbs = ""
+            self._tbs = ''
             return False
 
         return True
@@ -1180,7 +1180,7 @@ class Client(object):
             fid = fname_or_fid
             fname = await self.get_fname(fid)
 
-        if not isinstance(_id, int)(_id):
+        if not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
         else:
             user = UserInfo(_id)
@@ -1731,7 +1731,7 @@ class Client(object):
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
-        if not isinstance(_id, int)(_id):
+        if not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
         else:
             user = UserInfo(_id)
@@ -1764,7 +1764,7 @@ class Client(object):
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
-        if not isinstance(_id, int)(_id):
+        if not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
         else:
             user = UserInfo(_id)
@@ -2117,7 +2117,7 @@ class Client(object):
             list[UserThread]: 主题帖列表
         """
 
-        if not isinstance(_id, int)(_id):
+        if not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
         else:
             user = UserInfo(_id)
@@ -2150,7 +2150,7 @@ class Client(object):
 
         if _id is None:
             user = await self.get_self_info(ReqUInfo.USER_ID)
-        elif not isinstance(_id, int)(_id):
+        elif not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
         else:
             user = UserInfo(_id)
@@ -2181,7 +2181,7 @@ class Client(object):
 
         if _id is None:
             user = await self.get_self_info(ReqUInfo.USER_ID)
-        elif not isinstance(_id, int)(_id):
+        elif not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
         else:
             user = UserInfo(_id)
@@ -2364,7 +2364,7 @@ class Client(object):
             bool: True成功 False失败
         """
 
-        if not isinstance(_id, int)(_id):
+        if not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
         else:
             user = UserInfo(_id)
@@ -2655,7 +2655,7 @@ class Client(object):
             bool: True成功 False失败
         """
 
-        if not isinstance(_id, int)(_id):
+        if not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
         else:
             user = UserInfo(_id)

@@ -8,6 +8,7 @@ class ReqUInfo(enum.IntEnum):
     Note:
         各bit位的含义由高到低分别为
         OTHER, TIEBA_UID, NICK_NAME, USER_NAME, PORTRAIT, USER_ID
+        其中BASIC = USER_ID | PORTRAIT | USER_NAME
     """
 
     USER_ID = 1 << 0

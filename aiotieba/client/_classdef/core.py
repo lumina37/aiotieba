@@ -68,13 +68,13 @@ class TiebaCore(object):
             return
 
         if not new_BDUSS:
-            self._BDUSS = ""
+            self._BDUSS = ''
             return
 
         legal_length = 192
         if (len_new_BDUSS := len(new_BDUSS)) != legal_length:
             LOG.warning(f"BDUSS的长度应为{legal_length}个字符 而输入的{new_BDUSS}有{len_new_BDUSS}个字符")
-            self._BDUSS = ""
+            self._BDUSS = ''
             return
 
         self._BDUSS = new_BDUSS
@@ -95,13 +95,13 @@ class TiebaCore(object):
             return
 
         if not new_STOKEN:
-            self._STOKEN = ""
+            self._STOKEN = ''
             return
 
         legal_length = 64
         if (len_new_STOKEN := len(new_STOKEN)) != legal_length:
             LOG.warning(f"STOKEN的长度应为{legal_length}个字符 而输入的{new_STOKEN}有{len_new_STOKEN}个字符")
-            self._STOKEN = ""
+            self._STOKEN = ''
             return
 
         self._STOKEN = new_STOKEN

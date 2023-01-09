@@ -55,7 +55,7 @@ class Contents_c(Containers[TypeFragment]):
         def _init_by_type(proto):
             _type = proto.type
             # 0纯文本 9电话号 18话题 27百科词条
-            if _type in [0, 9, 27]:
+            if _type in [0, 9, 18, 27]:
                 fragment = FragText_c(proto)
                 self._texts.append(fragment)
             # 11:tid=5047676428
@@ -1513,6 +1513,7 @@ class Post_c(object):
     Attributes:
         text (str): 文本内容
         contents (Contents_cp): 正文内容碎片列表
+        sign (str): 小尾巴文本内容
 
         fid (int): 所在吧id
         fname (str): 所在贴吧名
@@ -1528,6 +1529,7 @@ class Post_c(object):
     __slots__ = [
         '_text',
         '_contents',
+        '_sign',
         '_fid',
         '_fname',
         '_tid',
@@ -1541,6 +1543,7 @@ class Post_c(object):
     def _init(self, data_proto: TypeMessage) -> "Post_c":
         self._text = None
         self._contents = Contents_cp()._init(data_proto.content)
+        self._sign = "".join(p.text for p in data_proto.signature.content if p.type == 0)
         self._pid = data_proto.id
         self._user = UserInfo_cp()._init(data_proto.author)
         self._author_id = self._user._user_id
@@ -1551,8 +1554,9 @@ class Post_c(object):
     def _init_null(self) -> "Post_c":
         self._text = ""
         self._contents = Contents_cp()._init_null()
+        self._sign = ""
         self._fid = 0
-        self._fname = ""
+        self._fname = ''
         self._tid = 0
         self._pid = 0
         self._user = UserInfo_cp()._init_null()
@@ -1588,8 +1592,8 @@ class Post_c(object):
         """
 
         if self._text is None:
-            if self.sign:
-                self._text = f'{self._contents.text}\n{self.sign}'
+            if self._sign:
+                self._text = f'{self._contents.text}\n{self._sign}'
             else:
                 self._text = self._contents.text
         return self._text

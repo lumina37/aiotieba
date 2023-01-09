@@ -344,7 +344,7 @@ class Contents_pc(Containers[TypeFragment]):
         def _init_by_type(proto):
             _type = proto.type
             # 0纯文本 9电话号 18话题 27百科词条
-            if _type in [0, 9, 27]:
+            if _type in [0, 9, 18, 27]:
                 fragment = FragText_pc(proto)
                 self._texts.append(fragment)
             # 11:tid=5047676428
@@ -908,6 +908,7 @@ class Post(object):
         comments (list[Comment_p]): 楼中楼列表
 
         fid (int): 所在吧id
+        fname (str): 所在贴吧名
         tid (int): 所在主题帖id
         pid (int): 回复id
         user (UserInfo_p): 发布者的用户信息
@@ -927,8 +928,8 @@ class Post(object):
         '_contents',
         '_sign',
         '_comments',
-        '_fname',
         '_fid',
+        '_fname',
         '_tid',
         '_pid',
         '_user',
@@ -985,8 +986,8 @@ class Post(object):
         """
 
         if self._text is None:
-            if self.sign:
-                self._text = f'{self._contents.text}\n{self.sign}'
+            if self._sign:
+                self._text = f'{self._contents.text}\n{self._sign}'
             else:
                 self._text = self._contents.text
         return self._text
@@ -1933,7 +1934,7 @@ class Thread_p(object):
         is_help (bool): 是否为求助帖
 
         vote_info (VoteInfo): 投票信息
-        share_origin (ShareThread): 转发来的原帖内容
+        share_origin (ShareThread_pt): 转发来的原帖内容
         reply_num (int): 回复数
         share_num (int): 分享数
         agree (int): 点赞数
@@ -1998,7 +1999,7 @@ class Thread_p(object):
     def _init_null(self) -> "Thread_p":
         self._text = ""
         self._contents = Contents_pt()._init_null()
-        self._title = ""
+        self._title = ''
         self._fid = 0
         self._fname = ''
         self._tid = 0

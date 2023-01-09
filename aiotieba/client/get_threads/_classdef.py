@@ -886,7 +886,7 @@ class Contents_st(Containers[TypeFragment]):
         return self._texts
 
     @property
-    def emojis(self) -> List[FragEmoji_t]:
+    def emojis(self) -> List[FragEmoji_st]:
         """
         表情碎片列表
         """
@@ -1036,7 +1036,7 @@ class ShareThread(object):
         return self._text
 
     @property
-    def contents(self) -> Contents_t:
+    def contents(self) -> Contents_st:
         """
         正文内容碎片列表
         """
@@ -1200,7 +1200,7 @@ class Thread(object):
         self._contents = Contents_t._init_null()
         self._title = ""
         self._fid = 0
-        self._fname = ""
+        self._fname = ''
         self._tid = 0
         self._pid = 0
         self._user = UserInfo_t()._init_null()
