@@ -466,6 +466,7 @@ class Comment(object):
             {
                 'tid': self._tid,
                 'pid': self._pid,
+                'ppid': self._ppid,
                 'user': self._user.log_name,
                 'text': self._contents.text,
             }
