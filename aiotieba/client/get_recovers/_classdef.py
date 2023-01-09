@@ -10,37 +10,58 @@ class Recover(object):
     待恢复帖子信息
 
     Attributes:
+        text (str): 文本内容
         tid (int): 所在主题帖id
         pid (int): 回复id
         is_hide (bool): 是否为屏蔽
+        oper (bool): 操作人名称
     """
 
     __slots__ = [
+        '_text',
         '_tid',
         '_pid',
         '_is_hide',
+        '_oper',
     ]
 
     def _init(self, data_tag: bs4.element.Tag) -> "Recover":
-        self._tid = int(data_tag['attr-tid'])
-        self._pid = int(data_tag['attr-pid'])
-        self._is_hide = bool(int(data_tag['attr-isfrsmask']))
+        id_tag = data_tag.a
+        self._tid = int(id_tag['attr-tid'])
+        self._pid = int(id_tag['attr-pid'])
+        self._is_hide = bool(int(id_tag['attr-isfrsmask']))
+        text_tag = id_tag.next_sibling.span
+        self._text = text_tag.string
+        oper_tag = id_tag.next_sibling.find('span', class_="recover_list_item_operator")
+        self._oper = oper_tag.string[4:]
         return self
 
     def _init_null(self) -> "Recover":
+        self._text = ""
         self._tid = 0
         self._pid = 0
         self._is_hide = False
+        self._oper = ''
         return self
 
     def __repr__(self) -> str:
         return str(
             {
+                'text': self._text,
                 'tid': self.tid,
                 'pid': self.pid,
                 'is_hide': self.is_hide,
+                'oper': self._oper,
             }
         )
+
+    @property
+    def text(self) -> str:
+        """
+        文本内容
+        """
+
+        return self._text
 
     @property
     def tid(self) -> int:
@@ -65,6 +86,14 @@ class Recover(object):
         """
 
         return self._is_hide
+
+    @property
+    def oper(self) -> str:
+        """
+        操作人名称
+        """
+
+        return self._oper
 
 
 class Page_recover(object):
@@ -149,6 +178,7 @@ class Recovers(Containers[Recover]):
     Attributes:
         _objs (list[Recover]): 待恢复帖子列表
 
+        page (Page_recover): 页信息
         has_more (bool): 是否还有下一页
     """
 
@@ -156,7 +186,7 @@ class Recovers(Containers[Recover]):
 
     def _init(self, data_map: Mapping) -> "Recovers":
         data_soup = bs4.BeautifulSoup(data_map['data']['content'], 'lxml')
-        self._objs = [Recover()._init(_tag) for _tag in data_soup('a', class_='recover_list_item_btn')]
+        self._objs = [Recover()._init(t) for t in data_soup('li')]
         self._page = Page_recover()._init(data_map['data']['page'])
         return self
 

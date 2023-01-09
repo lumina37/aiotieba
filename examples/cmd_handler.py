@@ -13,8 +13,6 @@ with open("cmd_handler.toml", 'rb') as file:
     LISTEN_CONFIG = tomllib.load(file)
 
 
-
-
 class TimerRecorder(object):
     """
     时间记录器

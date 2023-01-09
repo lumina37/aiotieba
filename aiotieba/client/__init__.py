@@ -27,6 +27,7 @@ from . import (
     get_ats,
     get_bawu_info,
     get_blacklist_users,
+    get_blocks,
     get_cid,
     get_comments,
     get_dislike_forums,
@@ -1687,6 +1688,37 @@ class Client(object):
         except Exception as err:
             LOG.warning(f"{err}. forum={fname}")
             recovers = get_recovers.Recovers()._init_null()
+
+        return recovers
+
+    async def get_blocks(self, fname_or_fid: Union[str, int], /, name: str = '', pn: int = 1) -> get_blocks.Blocks:
+        """
+        获取pn页的待解封用户列表
+
+        Args:
+            fname_or_fid (str | int): 目标贴吧的贴吧名或fid
+            name (str, optional): 通过被封禁用户的用户名/昵称查询 默认为空即查询全部. Defaults to ''.
+            pn (int, optional): 页码. Defaults to 1.
+
+        Returns:
+            Blocks: 待解封用户列表
+        """
+
+        if isinstance(fname_or_fid, str):
+            fname = fname_or_fid
+            fid = await self.get_fid(fname)
+        else:
+            fid = fname_or_fid
+            fname = await self.get_fname(fid)
+
+        try:
+            request = get_blocks.pack_request(self.client_web, fname, fid, name, pn)
+            response = await send_request(self.client_web, request)
+            recovers = get_blocks.parse_response(response)
+
+        except Exception as err:
+            LOG.warning(f"{err}. forum={fname}")
+            recovers = get_blocks.Blocks()._init_null()
 
         return recovers
 

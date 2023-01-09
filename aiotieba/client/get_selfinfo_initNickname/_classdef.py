@@ -40,7 +40,7 @@ class UserInfo_selfinit(object):
         return str(
             {
                 'user_name': self._user_name,
-                'show_name': self.show_name,
+                'nick_name_old': self._nick_name_old,
                 'tieba_uid': self._tieba_uid,
             }
         )
@@ -96,14 +96,6 @@ class UserInfo_selfinit(object):
         """
 
         return self._nick_name_old
-
-    @property
-    def show_name(self) -> str:
-        """
-        显示名称
-        """
-
-        return self._nick_name_old or self._user_name
 
     @property
     def log_name(self) -> str:

@@ -1,5 +1,4 @@
 from collections.abc import Mapping
-from typing import List
 
 import bs4
 
