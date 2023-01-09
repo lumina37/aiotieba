@@ -2,134 +2,13 @@ from collections.abc import Iterable
 from typing import List
 
 from .._classdef import Containers, TypeMessage, VoteInfo
-from .._classdef.contents import FragAt, FragEmoji, FragLink, FragmentUnknown, FragText, TypeFragText, TypeFragment
+from .._classdef.contents import FragAt, FragEmoji, FragLink, FragmentUnknown, FragText, TypeFragment, TypeFragText
 
 FragText_up = FragText_ut = FragText
 FragAt_ut = FragAt
 FragEmoji_ut = FragEmoji
 FragLink_up = FragLink_ut = FragLink
 FragmentUnknown_up = FragmentUnknown_ut = FragmentUnknown
-
-
-class FragImage_up(object):
-    """
-    图像碎片
-
-    Attributes:
-        src (str): 小图链接
-        big_src (str): 大图链接
-        origin_src (str): 原图链接
-        origin_size (int): 原图大小
-        show_width (int): 图像在客户端预览显示的宽度
-        show_height (int): 图像在客户端预览显示的高度
-        hash (str): 百度图床hash
-    """
-
-    __slots__ = [
-        '_src',
-        '_big_src',
-        '_origin_src',
-        '_origin_size',
-        '_show_width',
-        '_show_height',
-        '_hash',
-    ]
-
-    def __init__(self, data_proto: TypeMessage) -> None:
-        self._src = data_proto.cdn_src
-        self._big_src = data_proto.big_cdn_src
-        self._origin_src = data_proto.origin_src
-        self._origin_size = data_proto.origin_size
-
-        show_width, _, show_height = data_proto.bsize.partition(',')
-        self._show_width = int(show_width)
-        self._show_height = int(show_height)
-
-        self._hash = None
-
-    def __repr__(self) -> str:
-        return str(
-            {
-                'src': self.src,
-                'show_width': self._show_width,
-                'show_height': self._show_height,
-            }
-        )
-
-    @property
-    def src(self) -> str:
-        """
-        小图链接
-
-        Note:
-            宽720px
-        """
-
-        return self._src
-
-    @property
-    def big_src(self) -> str:
-        """
-        大图链接
-
-        Note:
-            宽960px
-        """
-
-        return self._big_src
-
-    @property
-    def origin_src(self) -> str:
-        """
-        原图链接
-        """
-
-        return self._origin_src
-
-    @property
-    def origin_size(self) -> int:
-        """
-        原图大小
-
-        Note:
-            以字节为单位
-        """
-
-        return self._origin_size
-
-    @property
-    def show_width(self) -> int:
-        """
-        图像在客户端显示的宽度
-        """
-
-        return self._show_width
-
-    @property
-    def show_height(self) -> int:
-        """
-        图像在客户端显示的高度
-        """
-
-        return self._show_height
-
-    @property
-    def hash(self) -> str:
-        """
-        图像的百度图床hash
-        """
-
-        if self._hash is None:
-            first_qmark_idx = self._src.find('?')
-            end_idx = self._src.rfind('.', 0, first_qmark_idx)
-
-            if end_idx == -1:
-                self._hash = ''
-            else:
-                start_idx = self._src.rfind('/', 0, end_idx)
-                self._hash = self._src[start_idx + 1 : end_idx]
-
-        return self._hash
 
 
 class Contents_up(Containers[TypeFragment]):
@@ -524,49 +403,64 @@ class FragImage_ut(object):
     图像碎片
 
     Attributes:
-        src (str): 原图链接
+        src (str): 小图链接
+        big_src (str): 大图链接
         origin_src (str): 原图链接
-        show_width (int): 图像在客户端预览显示的宽度
-        show_height (int): 图像在客户端预览显示的高度
+        width (int): 图像宽度
+        height (int): 图像高度
         hash (str): 百度图床hash
     """
 
     __slots__ = [
         '_src',
+        '_big_src',
         '_origin_src',
         '_origin_size',
-        '_show_width',
-        '_show_height',
+        '_width',
+        '_height',
         '_hash',
     ]
 
     def __init__(self, data_proto: TypeMessage) -> None:
-        self._src = data_proto.src
-        self._origin_src = data_proto.origin_src
+        self._src = data_proto.small_pic
+        self._big_src = data_proto.big_pic
+        self._origin_src = data_proto.origin_pic
         self._origin_size = data_proto.origin_size
-
-        show_width, _, show_height = data_proto.bsize.partition(',')
-        self._show_width = int(show_width)
-        self._show_height = int(show_height)
-
+        self._width = data_proto.width
+        self._height = data_proto.height
         self._hash = None
 
     def __repr__(self) -> str:
         return str(
             {
                 'src': self.src,
-                'show_width': self._show_width,
-                'show_height': self._show_height,
+                'width': self._width,
+                'height': self._height,
             }
         )
 
     @property
     def src(self) -> str:
         """
-        原图链接
+        小图链接
+
+        Note:
+            宽980px
+            一定是静态图
         """
 
         return self._src
+
+    @property
+    def big_src(self) -> str:
+        """
+        大图链接
+
+        Note:
+            宽960px
+        """
+
+        return self._big_src
 
     @property
     def origin_src(self) -> str:
@@ -588,20 +482,20 @@ class FragImage_ut(object):
         return self._origin_size
 
     @property
-    def show_width(self) -> int:
+    def width(self) -> int:
         """
-        图像在客户端显示的宽度
+        图像宽度
         """
 
-        return self._show_width
+        return self._width
 
     @property
-    def show_height(self) -> int:
+    def height(self) -> int:
         """
-        图像在客户端显示的高度
+        图像高度
         """
 
-        return self._show_height
+        return self._height
 
     @property
     def hash(self) -> str:

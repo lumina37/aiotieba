@@ -1,7 +1,7 @@
 import httpx
 
-from .._exception import TiebaServerError
 from .._classdef.core import TiebaCore
+from .._exception import TiebaServerError
 from .._helper import APP_BASE_HOST, pack_form_request, parse_json, raise_for_status, sign, url
 from ._classdef import Follows
 

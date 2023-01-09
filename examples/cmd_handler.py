@@ -7,9 +7,12 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import aiotieba as tb
 from aiotieba._config import tomllib
+from aiotieba.client.get_ats._classdef import At
 
 with open("cmd_handler.toml", 'rb') as file:
     LISTEN_CONFIG = tomllib.load(file)
+
+
 
 
 class TimerRecorder(object):
@@ -64,8 +67,8 @@ class Context(object):
 
     listener_perfix: str = None
 
-    def __init__(self, at: tb.At) -> None:
-        self.at: tb.At = at
+    def __init__(self, at: At) -> None:
+        self.at: At = at
         self.admin: tb.BaseReviewer = None
         self.speaker: tb.Client = None
         self._init_full_success: bool = False
@@ -277,7 +280,7 @@ class Listener(object):
             self.time_recorder.last_parse_time = ats[0].create_time
             await asyncio.gather(*[asyncio.wait_for(self._execute_cmd(at), timeout=120) for at in ats])
 
-    async def _execute_cmd(self, at: tb.At) -> None:
+    async def _execute_cmd(self, at: At) -> None:
         ctx = Context(at)
         cmd_func = getattr(self, f'cmd_{ctx.cmd_type}', self.cmd_default)
         await cmd_func(ctx)

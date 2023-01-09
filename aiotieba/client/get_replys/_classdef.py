@@ -627,7 +627,7 @@ class Replys(Containers[Reply]):
     Attributes:
         objs (list[Reply]): 收到回复列表
 
-        page (Page): 页信息
+        page (Page_reply): 页信息
         has_more (bool): 是否还有下一页
     """
 

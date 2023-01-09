@@ -29,7 +29,8 @@ class FragImage_p(object):
     图像碎片
 
     Attributes:
-        src (str): 原图链接
+        src (str): 小图链接
+        big_src (str): 大图链接
         origin_src (str): 原图链接
         origin_size (int): 原图大小
         show_width (int): 图像在客户端预览显示的宽度
@@ -39,6 +40,7 @@ class FragImage_p(object):
 
     __slots__ = [
         '_src',
+        '_big_src',
         '_origin_src',
         '_origin_size',
         '_show_width',
@@ -47,7 +49,8 @@ class FragImage_p(object):
     ]
 
     def __init__(self, data_proto: TypeMessage) -> None:
-        self._src = data_proto.origin_src
+        self._src = data_proto.cdn_src
+        self._big_src = data_proto.big_cdn_src
         self._origin_src = data_proto.origin_src
         self._origin_size = data_proto.origin_size
 
@@ -69,10 +72,25 @@ class FragImage_p(object):
     @property
     def src(self) -> str:
         """
-        原图链接
+        小图链接
+
+        Note:
+            宽720px
+            一定是静态图
         """
 
         return self._src
+
+    @property
+    def big_src(self) -> str:
+        """
+        大图链接
+
+        Note:
+            宽960px
+        """
+
+        return self._big_src
 
     @property
     def origin_src(self) -> str:
@@ -1133,8 +1151,7 @@ class Post(object):
         self._sign = "".join(p.text for p in data_proto.signature.content if p.type == 0)
         self._comments = [Comment_p()._init(_proto) for _proto in data_proto.sub_post_list.sub_post_list]
         self._pid = data_proto.id
-        self._user = UserInfo_p()._init(data_proto.author)
-        self._author_id = self._user._user_id
+        self._author_id = data_proto.author_id
         self._vimage = VirtualImage_p()._init(data_proto)
         self._floor = data_proto.floor
         self._reply_num = data_proto.sub_post_number
@@ -2415,16 +2432,19 @@ class Posts(Containers[Post]):
         self._thread._fname = self._forum._fname
 
         self._objs = [Post()._init(p) for p in data_proto.post_list]
+        users = {p.id: UserInfo_p()._init(p) for p in data_proto.user_list if p.id}
         for post in self._objs:
             post._fid = self._forum._fid
             post._fname = self._forum._fname
             post._tid = self._thread._tid
+            post._user = users[post._author_id]
             post._is_thread_author = self._thread._author_id == post._author_id
             for comment in post.comments:
                 comment._fid = post._fid
                 comment._fname = post._fname
                 comment._tid = post._tid
                 comment._ppid = post._pid
+                comment._user = users[post._author_id]
 
         return self
 

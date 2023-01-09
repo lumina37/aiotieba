@@ -9,8 +9,8 @@ from .._classdef.contents import (
     FragmentUnknown,
     FragText,
     FragTiebaPlus,
-    TypeFragText,
     TypeFragment,
+    TypeFragText,
 )
 
 Forum_t = Forum
@@ -76,6 +76,7 @@ class FragImage_t(object):
 
         Note:
             宽720px
+            一定是静态图
         """
 
         return self._src

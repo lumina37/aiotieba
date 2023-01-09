@@ -77,7 +77,6 @@ class UserInfo_home(object):
         nick_name_new (str): 新版昵称
         tieba_uid (int): 用户个人主页uid
 
-        level (int): 等级
         glevel (int): 贴吧成长等级
         gender (int): 性别
         age (float): 吧龄
@@ -106,7 +105,6 @@ class UserInfo_home(object):
         '_user_name',
         '_nick_name_new',
         '_tieba_uid',
-        '_level',
         '_glevel',
         '_gender',
         '_age',
@@ -130,7 +128,6 @@ class UserInfo_home(object):
         self._user_name = data_proto.name
         self._nick_name_new = data_proto.name_show
         self._tieba_uid = int(data_proto.tieba_uid)
-        self._level = data_proto.level_id
         self._gender = data_proto.sex
         self._age = float(data_proto.tb_age)
         self._post_num = data_proto.post_num
@@ -160,7 +157,7 @@ class UserInfo_home(object):
         self._fan_num = 0
         self._follow_num = 0
         self._sign = ''
-        self._vimage = VirtualImage_home()
+        self._vimage = VirtualImage_home()._init_null()
         self._ip = ''
         self._is_bawu = False
         self._is_vip = False
@@ -256,14 +253,6 @@ class UserInfo_home(object):
         """
 
         return self._tieba_uid
-
-    @property
-    def level(self) -> int:
-        """
-        等级
-        """
-
-        return self._level
 
     @property
     def glevel(self) -> int:
@@ -435,10 +424,10 @@ class FragImage_home(object):
     图像碎片
 
     Attributes:
-        src (str): 原图链接
+        src (str): 大图链接
         origin_src (str): 原图链接
-        show_width (int): 图像在客户端预览显示的宽度
-        show_height (int): 图像在客户端预览显示的高度
+        width (int): 图像宽度
+        height (int): 图像高度
         hash (str): 百度图床hash
     """
 
@@ -446,28 +435,25 @@ class FragImage_home(object):
         '_src',
         '_origin_src',
         '_origin_size',
-        '_show_width',
-        '_show_height',
+        '_width',
+        '_height',
         '_hash',
     ]
 
     def __init__(self, data_proto: TypeMessage) -> None:
-        self._src = data_proto.src
-        self._origin_src = data_proto.origin_src
+        self._src = data_proto.big_pic
+        self._origin_src = data_proto.origin_pic
         self._origin_size = data_proto.origin_size
-
-        show_width, _, show_height = data_proto.bsize.partition(',')
-        self._show_width = int(show_width)
-        self._show_height = int(show_height)
-
+        self._width = data_proto.width
+        self._height = data_proto.height
         self._hash = None
 
     def __repr__(self) -> str:
         return str(
             {
                 'src': self.src,
-                'show_width': self._show_width,
-                'show_height': self._show_height,
+                'width': self._width,
+                'height': self._height,
             }
         )
 
@@ -499,20 +485,20 @@ class FragImage_home(object):
         return self._origin_size
 
     @property
-    def show_width(self) -> int:
+    def width(self) -> int:
         """
-        图像在客户端显示的宽度
+        图像宽度
         """
 
-        return self._show_width
+        return self._width
 
     @property
-    def show_height(self) -> int:
+    def height(self) -> int:
         """
-        图像在客户端显示的高度
+        图像高度
         """
 
-        return self._show_height
+        return self._height
 
     @property
     def hash(self) -> str:
@@ -574,10 +560,6 @@ class Contents_home(Containers[TypeFragment]):
             elif _type in [2, 11]:
                 fragment = FragEmoji_home(proto)
                 self._emojis.append(fragment)
-            # 20:tid=5470214675
-            elif _type in [3, 20]:
-                fragment = FragImage_home(proto)
-                self._imgs.append(fragment)
             elif _type == 4:
                 fragment = FragAt_home(proto)
                 self._ats.append(fragment)
@@ -742,6 +724,9 @@ class Thread_home(object):
     def _init(self, data_proto: TypeMessage) -> "Thread_home":
         self._text = None
         self._contents = Contents_home()._init(data_proto.first_post_content)
+        img_frags = [FragImage_home(p) for p in data_proto.media]
+        self._contents._objs += img_frags
+        self._contents._imgs = img_frags
         self._title = data_proto.title
         self._fid = data_proto.forum_id
         self._fname = data_proto.forum_name

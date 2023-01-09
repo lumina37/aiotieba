@@ -1,6 +1,7 @@
 // tbclient.PostInfoList
 syntax = "proto3";
 
+import "Media.proto";
 import "PollInfo.proto";
 import "PbContent.proto";
 import "Agree.proto";
@@ -20,6 +21,7 @@ message PostInfoList {
     }
     repeated PostInfoContent content = 8;
     string user_name = 10;
+    repeated Media media = 16;
     uint32 reply_num = 17;
     int64 user_id = 18;
     string user_portrait = 19;

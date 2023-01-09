@@ -140,7 +140,7 @@ class SelfFollowForums(Containers[SelfFollowForum]):
     Attributes:
         _objs (list[SelfFollowForum]): 本账号关注贴吧列表
 
-        page (Page): 页信息
+        page (Page_sforum): 页信息
         has_more (bool): 是否还有下一页
     """
 

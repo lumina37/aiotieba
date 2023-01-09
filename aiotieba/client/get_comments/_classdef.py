@@ -9,8 +9,8 @@ from .._classdef.contents import (
     FragmentUnknown,
     FragText,
     FragTiebaPlus,
-    TypeFragText,
     TypeFragment,
+    TypeFragText,
 )
 
 Forum_c = Forum
@@ -1022,6 +1022,7 @@ class FragImage_cp(object):
 
         Note:
             宽720px
+            一定是静态图
         """
 
         return self._src
@@ -1665,7 +1666,7 @@ class Comments(Containers[Comment]):
     楼中楼列表
 
     Attributes:
-        objs (list[Comment]): 楼中楼列表
+        _objs (list[Comment]): 楼中楼列表
 
         page (Page_c): 页信息
         has_more (bool): 是否还有下一页

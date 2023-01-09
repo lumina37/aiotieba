@@ -225,9 +225,9 @@ class Searches(Containers[Search]):
     搜索结果列表
 
     Attributes:
-        objs (list[Search]): 搜索结果列表
+        _objs (list[Search]): 搜索结果列表
 
-        page (Page): 页信息
+        page (Page_search): 页信息
         has_more (bool): 是否还有下一页
     """
 

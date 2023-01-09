@@ -237,7 +237,7 @@ class Fans(Containers[Fan]):
     Attributes:
         _objs (list[Fan]): 粉丝列表
 
-        page (Page): 页信息
+        page (Page_fan): 页信息
         has_more (bool): 是否还有下一页
     """
 

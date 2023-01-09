@@ -1,8 +1,8 @@
 import httpx
 
-from ._classdef import UserInfo_guinfo_web
 from .._exception import TiebaServerError
 from .._helper import parse_json, raise_for_status, url
+from ._classdef import UserInfo_guinfo_web
 
 
 def pack_request(client: httpx.AsyncClient, user_id: int) -> httpx.Request:

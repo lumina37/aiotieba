@@ -2,8 +2,8 @@ from typing import Dict
 
 import httpx
 
-from .._exception import TiebaServerError
 from .._classdef.core import TiebaCore
+from .._exception import TiebaServerError
 from .._helper import APP_BASE_HOST, pack_proto_request, raise_for_status, url
 from .protobuf import SearchPostForumReqIdl_pb2, SearchPostForumResIdl_pb2
 

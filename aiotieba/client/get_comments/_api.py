@@ -1,7 +1,7 @@
 import httpx
 
-from .._exception import TiebaServerError
 from .._classdef.core import TiebaCore
+from .._exception import TiebaServerError
 from .._helper import APP_BASE_HOST, pack_proto_request, raise_for_status, url
 from ._classdef import Comments
 from .protobuf import PbFloorReqIdl_pb2, PbFloorResIdl_pb2
@@ -9,6 +9,7 @@ from .protobuf import PbFloorReqIdl_pb2, PbFloorResIdl_pb2
 
 def pack_proto(core: TiebaCore, tid: int, pid: int, pn: int, is_floor: bool) -> bytes:
     req_proto = PbFloorReqIdl_pb2.PbFloorReqIdl()
+    req_proto.data.common._client_type = 2
     req_proto.data.common._client_version = core.main_version
     req_proto.data.tid = tid
     if is_floor:

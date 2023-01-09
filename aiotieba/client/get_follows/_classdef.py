@@ -212,7 +212,7 @@ class Follows(Containers[Follow]):
     Attributes:
         _objs (list[Follow]): 粉丝列表
 
-        page (Page): 页信息
+        page (Page_follow): 页信息
         has_more (bool): 是否还有下一页
     """
 

@@ -207,40 +207,9 @@ class TypeFragImage(Protocol):
         ...
 
     @property
-    def big_src(self) -> str:
-        """
-        大图链接
-        """
-        ...
-
-    @property
     def origin_src(self) -> str:
         """
         原图链接
-        """
-        ...
-
-    @property
-    def origin_size(self) -> int:
-        """
-        原图大小
-
-        Note:
-            以字节为单位
-        """
-        ...
-
-    @property
-    def show_width(self) -> int:
-        """
-        图像在客户端显示的宽度
-        """
-        ...
-
-    @property
-    def show_height(self) -> int:
-        """
-        图像在客户端显示的高度
         """
         ...
 

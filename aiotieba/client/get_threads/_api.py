@@ -1,7 +1,7 @@
 import httpx
 
-from .._exception import TiebaServerError
 from .._classdef.core import TiebaCore
+from .._exception import TiebaServerError
 from .._helper import APP_BASE_HOST, pack_proto_request, raise_for_status, url
 from ._classdef import Threads
 from .protobuf import FrsPageReqIdl_pb2, FrsPageResIdl_pb2

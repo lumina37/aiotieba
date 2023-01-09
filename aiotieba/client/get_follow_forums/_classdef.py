@@ -83,7 +83,7 @@ class FollowForums(Containers[FollowForum]):
     用户关注贴吧列表
 
     Attributes:
-        objs (list[Forum]): 用户关注贴吧列表
+        _objs (list[Forum]): 用户关注贴吧列表
 
         has_more (bool): 是否还有下一页
     """

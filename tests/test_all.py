@@ -89,48 +89,41 @@ async def test_Posts_and_Fragments(client: tb.Client):
     assert frag.text != ""
     assert frag.user_id > 0
 
-    # Test FragLink
-    frag = posts[3].contents.links[0]
-    assert isinstance(frag.title, str)
-    assert frag.title != ""
-    assert isinstance(frag.url, httpx.URL)
-    assert isinstance(frag.title, str)
-    assert frag.title != ""
-    assert isinstance(frag.is_external, bool)
-    frag = posts[9].contents.links[0]
-    assert frag.is_external is True
-
     # Test FragVoice
-    assert posts[5].contents.has_voice is True
-    assert posts[4].comments[0].contents.has_voice is True
+    assert post.contents.has_voice is True
 
     # Test FragImage
-    frag = posts[7].contents.imgs[0]
-    assert isinstance(frag.src, str)
+    frag = post.contents.imgs[0]
     assert frag.src != ""
-    assert isinstance(frag.origin_src, str)
+    assert frag.big_src != ""
     assert frag.origin_src != ""
-    assert isinstance(frag.hash, str)
     assert len(frag.hash) == 40
-    assert isinstance(frag.show_width, int)
     assert frag.show_width > 0
-    assert isinstance(frag.show_height, int)
     assert frag.show_height > 0
 
     # Test FragEmoji
-    for frag in posts[8].contents.emojis:
-        assert isinstance(frag.desc, str)
-        assert frag.desc != ""
+    frag = post.contents.emojis[0]
+    assert frag.desc != ""
 
     # Test FragTiebaplus
-    for comment in posts[6].comments:
-        frag = comment.contents.tiebapluses[0]
-        assert isinstance(frag.text, str)
-        assert frag.text != ""
-        assert isinstance(frag.url, str)
+    frag = post.contents.tiebapluses[0]
+    assert frag.text != ""
+    assert frag.url != ""
+    frag = post.contents.tiebapluses[1]
+    assert frag.text != ""
+    assert frag.url != ""
+
+    # Test FragLink
+    post = posts[2]
+    frag = post.contents.links[0]
+    assert frag.title != ""
+    assert frag.url.host != ""
+    assert frag.title != ""
+    frag = post.contents.links[1]
+    assert frag.is_external is True
 
 
-def check_ShareThread(thread: tb.client.get_threads._classdef.ShareThread):
+def check_ShareThread(thread: tb.ShareThread):
     # Test FragText
     frag = thread.contents.texts[0]
     assert isinstance(frag.text, str)

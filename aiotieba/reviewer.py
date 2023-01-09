@@ -668,11 +668,11 @@ class Reviewer(BaseReviewer):
 
         if punish.del_flag == Ops.DELETE:
             LOG.info(
-                f"Del {obj.__class__.__name__}. text={obj.text} user={obj.user} level={obj.user.level} note={punish.note}"
+                f"Del {obj.__class__.__name__}. text={obj.text} user={obj.user!r} note={punish.note}"
             )
         elif punish.del_flag == Ops.HIDE:
             LOG.info(
-                f"Hide {obj.__class__.__name__}. text={obj.text} user={obj.user} level={obj.user.level} note={punish.note}"
+                f"Hide {obj.__class__.__name__}. text={obj.text} user={obj.user!r} note={punish.note}"
             )
 
     async def review_loop(self) -> None:
@@ -820,10 +820,10 @@ class Reviewer(BaseReviewer):
         """
 
         posts = await self.get_posts(thread.tid, pn=99999, sort=1)
-        posts = set(posts.objs)
+        posts = set(posts._objs)
         if thread.reply_num > 30:
             first_posts = await self.get_posts(thread.tid)
-            posts.update(first_posts.objs)
+            posts.update(first_posts._objs)
 
         return posts
 
@@ -1126,7 +1126,7 @@ class Reviewer(BaseReviewer):
 
         if post.reply_num:
             comments = await self.get_comments(post.tid, post.pid, pn=post.reply_num // 30 + 1)
-            return comments.objs
+            return comments._objs
 
         else:
             return []

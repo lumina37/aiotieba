@@ -1,7 +1,7 @@
 import httpx
 
-from .._exception import TiebaServerError
 from .._classdef.core import TiebaCore
+from .._exception import TiebaServerError
 from .._helper import APP_BASE_HOST, pack_proto_request, raise_for_status, url
 from ._classdef import SquareForums
 from .protobuf import GetForumSquareReqIdl_pb2, GetForumSquareResIdl_pb2
