@@ -26,11 +26,9 @@
 
 **aiotieba**使用[**asyncio**](https://docs.python.org/zh-cn/3/library/asyncio.html)和[**httpx**](https://github.com/encode/httpx)封装了大量[百度贴吧核心API](https://github.com/Starry-OvO/aiotieba/blob/master/aiotieba/client)
 
-本框架以提高二次开发速度为首要设计目标，命名规则统一，类型注解和方法注释完全覆盖所有用户接口，让开发者免受贴吧混乱的名称系统与不统一的接口标准的残酷折磨
+本框架以提高二次开发速度为首要设计目标，命名规则统一，类型注解和方法注释完全覆盖所有用户接口，让开发者免受贴吧混乱的名称系统与不统一的接口标准的折磨
 
 ## 安装并使用
-
-+ 检查Python版本 (**>=3.9**)
 
 + 安装
 
