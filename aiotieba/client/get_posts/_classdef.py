@@ -666,6 +666,7 @@ class UserInfo_p(object):
 
         level (int): 等级
         glevel (int): 贴吧成长等级
+        gender (int): 性别
         ip (str): ip归属地
 
         is_bawu (bool): 是否吧务
@@ -686,6 +687,7 @@ class UserInfo_p(object):
         '_nick_name_new',
         '_level',
         '_glevel',
+        '_gender',
         '_ip',
         '_is_bawu',
         '_is_vip',
@@ -701,6 +703,7 @@ class UserInfo_p(object):
         self._nick_name_new = data_proto.name_show
         self._level = data_proto.level_id
         self._glevel = data_proto.user_growth.level_id
+        self._gender = data_proto.gender
         self._ip = data_proto.ip_address
         self._is_bawu = bool(data_proto.is_bawu)
         self._is_vip = bool(data_proto.new_tshow_icon)
@@ -716,6 +719,7 @@ class UserInfo_p(object):
         self._nick_name_new = ''
         self._level = 0
         self._glevel = 0
+        self._gender = 0
         self._ip = ''
         self._is_bawu = False
         self._is_vip = False
@@ -736,6 +740,7 @@ class UserInfo_p(object):
                 'show_name': self.show_name,
                 'level': self._level,
                 'glevel': self._glevel,
+                'gender': self._gender,
                 'ip': self._ip,
                 'priv_like': self._priv_like,
                 'priv_reply': self._priv_reply,
@@ -812,6 +817,17 @@ class UserInfo_p(object):
         """
 
         return self._glevel
+
+    @property
+    def gender(self) -> int:
+        """
+        性别
+
+        Note:
+            0未知 1男 2女
+        """
+
+        return self._gender
 
     @property
     def ip(self) -> str:

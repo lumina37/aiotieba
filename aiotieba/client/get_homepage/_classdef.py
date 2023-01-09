@@ -128,12 +128,12 @@ class UserInfo_home(object):
         self._user_name = data_proto.name
         self._nick_name_new = data_proto.name_show
         self._tieba_uid = int(tieba_uid) if (tieba_uid := data_proto.tieba_uid) else 0
+        self._glevel = data_proto.user_growth.level_id
         self._gender = data_proto.sex
         self._age = float(data_proto.tb_age)
         self._post_num = data_proto.post_num
         self._fan_num = data_proto.fans_num
         self._follow_num = data_proto.concern_num
-        self._glevel = data_proto.user_growth.level_id
         self._sign = data_proto.intro
         self._ip = data_proto.ip_address
         self._vimage = VirtualImage_home()._init(data_proto.virtual_image_info)
