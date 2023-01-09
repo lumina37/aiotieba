@@ -184,6 +184,8 @@ class UserInfo_home(object):
                 'post_num': self._post_num,
                 'sign': self._sign,
                 'vimage': self._vimage._state,
+                'ip': self._ip,
+                'priv_like': self._priv_like,
             }
         )
 
