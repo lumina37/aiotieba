@@ -42,7 +42,7 @@ include = ["aiotieba*"]
 "aiotieba.config_example" = ["*.toml"]
 
 [tool.setuptools.dynamic]
-version = { attr = "aiotieba.__version__" }
+version = { attr = "aiotieba.__version__.__version__" }
 
 [tool.black]
 line-length = 120
