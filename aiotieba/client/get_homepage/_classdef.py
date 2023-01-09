@@ -130,7 +130,7 @@ class UserInfo_home(object):
         self._tieba_uid = int(tieba_uid) if (tieba_uid := data_proto.tieba_uid) else 0
         self._glevel = data_proto.user_growth.level_id
         self._gender = data_proto.sex
-        self._age = float(data_proto.tb_age)
+        self._age = float(age) if (age := data_proto.tb_age) else 0.0
         self._post_num = data_proto.post_num
         self._fan_num = data_proto.fans_num
         self._follow_num = data_proto.concern_num
