@@ -646,14 +646,10 @@ class Reviewer(BaseReviewer):
         """
 
         if punish.del_flag == Ops.DELETE:
-            LOG.info(
-                f"Del {obj.__class__.__name__}. text={obj.text} user={obj.user} level={obj.user.level} note={punish.note}"
-            )
+            LOG.info(f"Del {obj.__class__.__name__}. text={obj.text} user={obj.user!r} note={punish.note}")
             await self.del_post(obj.pid)
         elif punish.del_flag == Ops.HIDE:
-            LOG.info(
-                f"Hide {obj.__class__.__name__}. text={obj.text} user={obj.user} level={obj.user.level} note={punish.note}"
-            )
+            LOG.info(f"Hide {obj.__class__.__name__}. text={obj.text} user={obj.user!r} note={punish.note}")
             await self.hide_thread(obj.tid)
 
     async def _exce_delete_debug(self, obj: Union[Thread, Post, Comment], punish: Punish) -> None:
