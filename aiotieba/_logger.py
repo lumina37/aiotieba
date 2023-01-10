@@ -73,11 +73,7 @@ class TiebaLogger(logging.Logger):
         """
 
         if self._console_hd is None:
-
-            import sys
-
             self._console_hd = logging.StreamHandler(sys.stdout)
-
             self._console_hd.setLevel(self.console_log_level)
             self._console_hd.setFormatter(self.formatter)
 
