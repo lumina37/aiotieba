@@ -1197,7 +1197,7 @@ class Thread(object):
 
     def _init_null(self) -> "Thread":
         self._text = ""
-        self._contents = Contents_t._init_null()
+        self._contents = Contents_t()._init_null()
         self._title = ""
         self._fid = 0
         self._fname = ''

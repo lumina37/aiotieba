@@ -574,8 +574,7 @@ class Client(object):
 
         except Exception as err:
             LOG.warning(f"{err}. user={name_or_portrait}")
-            user = get_uinfo_panel.UserInfo_panel()
-            user._init_null()
+            user = get_uinfo_panel.UserInfo_panel()._init_null()
 
         return user
 
@@ -647,7 +646,7 @@ class Client(object):
 
         except Exception as err:
             LOG.warning(f"{err}. user={user_id}")
-            user = get_uinfo_getUserInfo_web.UserInfo_guinfo_web._init_null()
+            user = get_uinfo_getUserInfo_web.UserInfo_guinfo_web()._init_null()
 
         return user
 
