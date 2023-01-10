@@ -7,13 +7,42 @@ import asyncio
 import datetime
 import sqlite3
 from pathlib import Path
-from typing import Final, List, Optional, Tuple, Union
+from typing import Any, Callable, Final, List, Optional, Tuple, Union
 
 import aiomysql
 
 from ._config import CONFIG
 from ._logger import LOG
 from .client._classdef import UserInfo
+
+
+def exec_handler_MySQL(create_table_func: Callable, default_ret: Any):
+    """
+    处理MySQL异常
+
+    Args:
+        create_table_func (Callable): 在无法连接数据库(2003)或表不存在时(1146)执行自动建表
+        default_ret (Any): 出现错误时的默认返回值
+    """
+
+    def decorator(func):
+        async def wrapper(self: "MySQLDB", *args, **kwargs):
+            try:
+                return await func(self, *args, **kwargs)
+            except aiomysql.Error as err:
+                code = err.args[0]
+                if code == 2003:
+                    LOG.warning("无法连接数据库 将尝试自动建库")
+                    await self.create_database()
+                    await create_table_func(self)
+                elif code == 1146:
+                    LOG.warning("表不存在 将尝试自动建表")
+                    await create_table_func(self)
+            return default_ret
+
+        return wrapper
+
+    return decorator
 
 
 class MySQLDB(object):
@@ -44,11 +73,7 @@ class MySQLDB(object):
         self._pool: aiomysql.Pool = None
 
     async def __aenter__(self) -> "MySQLDB":
-        try:
-            await self._create_pool()
-        except aiomysql.Error as err:
-            LOG.warning(f"{err}. 无法连接数据库 请检查配置文件中的`Database`字段是否填写正确")
-
+        await self._create_pool()
         return self
 
     async def close(self) -> None:
@@ -79,37 +104,40 @@ class MySQLDB(object):
             unix_socket=db_config.get('unix_socket', None),
         )
 
-    async def create_database(self) -> None:
+    async def create_database(self) -> bool:
         """
         创建并初始化数据库
+
+        Returns:
+            bool: 操作是否成功
         """
 
         db_config: dict = CONFIG['Database']
-        conn: aiomysql.Connection = await aiomysql.connect(
-            host=db_config.get('host', 'localhost'),
-            port=db_config.get('port', self._default_port),
-            user=db_config['user'],
-            password=db_config['password'],
-            unix_socket=db_config.get('unix_socket', None),
-            autocommit=True,
-            loop=asyncio.get_running_loop(),
-        )
 
-        async with conn.cursor() as cursor:
-            db_name = db_config.get('db', self._default_db_name)
-            await cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{db_name}`")
+        try:
+            conn: aiomysql.Connection = await aiomysql.connect(
+                host=db_config.get('host', 'localhost'),
+                port=db_config.get('port', self._default_port),
+                user=db_config['user'],
+                password=db_config['password'],
+                unix_socket=db_config.get('unix_socket', None),
+                autocommit=True,
+                loop=asyncio.get_running_loop(),
+            )
 
-        await self._create_pool()
+            async with conn.cursor() as cursor:
+                db_name = db_config.get('db', self._default_db_name)
+                await cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{db_name}`")
 
-        await self._create_table_forum()
-        await self._create_table_user()
+            await self._create_pool()
+            await conn.ensure_closed()
 
-        if self.fname:
-            await self._create_table_user_id()
-            await self._create_table_imghash()
-            await self._create_table_tid()
+        except aiomysql.Error as err:
+            LOG.warning(f"{err}. 请检查配置文件中的`Database`字段是否填写正确")
+            return False
 
-        await conn.ensure_closed()
+        LOG.info(f"成功创建并初始化数据库. db_name={db_name}")
+        return True
 
     async def _create_table_forum(self) -> None:
         """
@@ -122,7 +150,9 @@ class MySQLDB(object):
                     "CREATE TABLE IF NOT EXISTS `forum` \
                     (`fid` INT PRIMARY KEY, `fname` VARCHAR(36) UNIQUE NOT NULL)"
                 )
+                LOG.info("成功创建表forum")
 
+    @exec_handler_MySQL(_create_table_forum, 0)
     async def get_fid(self, fname: str) -> int:
         """
         通过贴吧名获取forum_id
@@ -138,14 +168,16 @@ class MySQLDB(object):
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     await cursor.execute(f"SELECT `fid` FROM `forum` WHERE `fname`='{fname}'")
+
+                if res_tuple := await cursor.fetchone():
+                    return res_tuple[0]
+                return 0
+
         except aiomysql.Error as err:
             LOG.warning(f"{err}. fname={self.fname}")
-            return 0
-        else:
-            if res_tuple := await cursor.fetchone():
-                return int(res_tuple[0])
-            return 0
+            raise
 
+    @exec_handler_MySQL(_create_table_forum, '')
     async def get_fname(self, fid: int) -> str:
         """
         通过forum_id获取贴吧名
@@ -161,14 +193,15 @@ class MySQLDB(object):
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     await cursor.execute(f"SELECT `fname` FROM `forum` WHERE `fid`={fid}")
+                    if res_tuple := await cursor.fetchone():
+                        return res_tuple[0]
+                    return ''
+
         except aiomysql.Error as err:
             LOG.warning(f"{err}. fid={fid}")
-            return ''
-        else:
-            if res_tuple := await cursor.fetchone():
-                return res_tuple[0]
-            return ''
+            raise
 
+    @exec_handler_MySQL(_create_table_forum, False)
     async def add_forum(self, fid: int, fname: str) -> bool:
         """
         向表forum添加forum_id和贴吧名的映射关系
@@ -185,10 +218,11 @@ class MySQLDB(object):
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     await cursor.execute(f"INSERT IGNORE INTO `forum` VALUES ({fid},'{fname}')")
+                    return True
+
         except aiomysql.Error as err:
             LOG.warning(f"{err}. fname={self.fname} fid={fid}")
-            return False
-        return True
+            raise
 
     async def _create_table_user(self) -> None:
         """
@@ -202,7 +236,9 @@ class MySQLDB(object):
                     (`user_id` BIGINT PRIMARY KEY, `user_name` VARCHAR(14) NOT NULL DEFAULT '', `portrait` VARCHAR(36) UNIQUE NOT NULL, \
                     INDEX `user_name`(user_name))"
                 )
+                LOG.info("成功创建表user")
 
+    @exec_handler_MySQL(_create_table_user, UserInfo())
     async def get_userinfo(self, _id: Union[str, int]) -> UserInfo:
         """
         获取用户信息
@@ -227,18 +263,23 @@ class MySQLDB(object):
                         await cursor.execute(f"SELECT * FROM `user` WHERE `user_name`={user.user_name}")
                     else:
                         raise ValueError("Null input")
+
+                    if res_tuple := await cursor.fetchone():
+                        user = UserInfo()
+                        user.user_id = res_tuple[0]
+                        user.user_name = res_tuple[1]
+                        user.portrait = res_tuple[2]
+                        return user
+                    return UserInfo()
+
+        except aiomysql.Error as err:
+            LOG.warning(f"{err}. user={user}")
+            raise
         except Exception as err:
             LOG.warning(f"{err}. user={user}")
             return UserInfo()
-        else:
-            if res_tuple := await cursor.fetchone():
-                user = UserInfo()
-                user.user_id = res_tuple[0]
-                user.user_name = res_tuple[1]
-                user.portrait = res_tuple[2]
-                return user
-            return UserInfo()
 
+    @exec_handler_MySQL(_create_table_user, False)
     async def add_user(self, user: UserInfo) -> bool:
         """
         将用户信息添加到表user
@@ -256,11 +297,13 @@ class MySQLDB(object):
                     await cursor.execute(
                         f"INSERT IGNORE INTO `user` VALUES ({user.user_id}, {user.user_name}, {user.portrait})"
                     )
+                    return True
+
         except aiomysql.Error as err:
             LOG.warning(f"{err}. user={user}")
-            return False
-        return True
+            raise
 
+    @exec_handler_MySQL(_create_table_user, False)
     async def del_user(self, user: UserInfo) -> bool:
         """
         从表user中删除用户信息
@@ -283,12 +326,16 @@ class MySQLDB(object):
                         await cursor.execute(f"DELETE FROM `user` WHERE `user_name`={user.user_name}")
                     else:
                         raise ValueError("Null input")
+
+                    LOG.info(f"Succeeded. user={user}")
+                    return True
+
+        except aiomysql.Error as err:
+            LOG.warning(f"{err}. user={user}")
+            raise
         except Exception as err:
             LOG.warning(f"{err}. user={user}")
             return False
-
-        LOG.info(f"Succeeded. user={user}")
-        return True
 
     async def _create_table_tid(self) -> None:
         """
@@ -307,7 +354,9 @@ class MySQLDB(object):
                     ON SCHEDULE EVERY 1 DAY STARTS '2000-01-01 00:00:00' \
                     DO DELETE FROM `tid_{self.fname}` WHERE `record_time`<(CURRENT_TIMESTAMP() + INTERVAL -15 DAY)"""
                 )
+                LOG.info(f"成功创建表tid_{self.fname}")
 
+    @exec_handler_MySQL(_create_table_tid, False)
     async def add_tid(self, tid: int, *, tag: int = 0) -> bool:
         """
         将tid添加到表tid_{fname}
@@ -324,13 +373,14 @@ class MySQLDB(object):
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     await cursor.execute(f"REPLACE INTO `tid_{self.fname}` VALUES ({tid},{tag},DEFAULT)")
+                    LOG.info(f"Succeeded. forum={self.fname} tid={tid} tag={tag}")
+                    return True
+
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname} tid={tid}")
-            return False
+            raise
 
-        LOG.info(f"Succeeded. forum={self.fname} tid={tid} tag={tag}")
-        return True
-
+    @exec_handler_MySQL(_create_table_tid, None)
     async def get_tid(self, tid: int) -> Optional[int]:
         """
         获取表tid_{fname}中tid对应的tag值
@@ -346,14 +396,16 @@ class MySQLDB(object):
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     await cursor.execute(f"SELECT `tag` FROM `tid_{self.fname}` WHERE `tid`={tid}")
+
+                    if res_tuple := await cursor.fetchone():
+                        return res_tuple[0]
+                    return None
+
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname} tid={tid}")
-            return None
-        else:
-            if res_tuple := await cursor.fetchone():
-                return res_tuple[0]
-            return None
+            raise
 
+    @exec_handler_MySQL(_create_table_tid, False)
     async def del_tid(self, tid: int) -> bool:
         """
         从表tid_{fname}中删除tid
@@ -369,12 +421,15 @@ class MySQLDB(object):
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     await cursor.execute(f"DELETE FROM `tid_{self.fname}` WHERE `tid`={tid}")
+
+                    LOG.info(f"Succeeded. forum={self.fname} tid={tid}")
+                    return True
+
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname} tid={tid}")
-            return False
-        LOG.info(f"Succeeded. forum={self.fname} tid={tid}")
-        return True
+            raise
 
+    @exec_handler_MySQL(_create_table_tid, [])
     async def get_tid_list(self, tag: int = 0, *, limit: int = 128, offset: int = 0) -> List[int]:
         """
         获取表tid_{fname}中对应tag的tid列表
@@ -394,14 +449,14 @@ class MySQLDB(object):
                     await cursor.execute(
                         f"SELECT `tid` FROM `tid_{self.fname}` WHERE `tag`={tag} LIMIT {limit} OFFSET {offset}"
                     )
+
+                    res_tuples = await cursor.fetchall()
+                    res_list = [res_tuple[0] for res_tuple in res_tuples]
+                    return res_list
+
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname}")
-            res_list = []
-        else:
-            res_tuples = await cursor.fetchall()
-            res_list = [res_tuple[0] for res_tuple in res_tuples]
-
-        return res_list
+            raise
 
     async def _create_table_user_id(self) -> None:
         """
@@ -415,7 +470,9 @@ class MySQLDB(object):
                     (`user_id` BIGINT PRIMARY KEY, `permission` TINYINT NOT NULL DEFAULT 0, `note` VARCHAR(64) NOT NULL DEFAULT '', `record_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, \
                     INDEX `permission`(permission), INDEX `record_time`(record_time))"
                 )
+                LOG.info(f"成功创建表user_id_{self.fname}")
 
+    @exec_handler_MySQL(_create_table_user_id, False)
     async def add_user_id(self, user_id: int, /, permission: int = 0, *, note: str = '') -> bool:
         """
         将user_id添加到表user_id_{fname}
@@ -438,12 +495,15 @@ class MySQLDB(object):
                     await cursor.execute(
                         f"REPLACE INTO `user_id_{self.fname}` VALUES ({user_id},{permission},'{note}',DEFAULT)"
                     )
+
+                    LOG.info(f"Succeeded. forum={self.fname} user_id={user_id} permission={permission}")
+                    return True
+
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname} user_id={user_id}")
-            return False
-        LOG.info(f"Succeeded. forum={self.fname} user_id={user_id} permission={permission}")
-        return True
+            raise
 
+    @exec_handler_MySQL(_create_table_user_id, False)
     async def del_user_id(self, user_id: int) -> bool:
         """
         从表user_id_{fname}中删除user_id
@@ -459,12 +519,15 @@ class MySQLDB(object):
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     await cursor.execute(f"DELETE FROM `user_id_{self.fname}` WHERE `user_id`={user_id}")
+
+                    LOG.info(f"Succeeded. forum={self.fname} user_id={user_id}")
+                    return True
+
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname} user_id={user_id}")
-            return False
-        LOG.info(f"Succeeded. forum={self.fname} user_id={user_id}")
-        return True
+            raise
 
+    @exec_handler_MySQL(_create_table_user_id, 0)
     async def get_user_id(self, user_id: int) -> int:
         """
         获取表user_id_{fname}中user_id的权限级别
@@ -480,14 +543,16 @@ class MySQLDB(object):
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     await cursor.execute(f"SELECT `permission` FROM `user_id_{self.fname}` WHERE `user_id`={user_id}")
+
+                    if res_tuple := await cursor.fetchone():
+                        return res_tuple[0]
+                    return 0
+
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname} user_id={user_id}")
-            return 0
-        else:
-            if res_tuple := await cursor.fetchone():
-                return res_tuple[0]
-            return 0
+            raise
 
+    @exec_handler_MySQL(_create_table_user_id, (0, '', datetime.datetime(1970, 1, 1)))
     async def get_user_id_full(self, user_id: int) -> Tuple[int, str, datetime.datetime]:
         """
         获取表user_id_{fname}中user_id的完整信息
@@ -505,14 +570,15 @@ class MySQLDB(object):
                     await cursor.execute(
                         f"SELECT `permission`,`note`,`record_time` FROM `user_id_{self.fname}` WHERE `user_id`={user_id}"
                     )
+                    if res_tuple := await cursor.fetchone():
+                        return res_tuple
+                    return 0, '', datetime.datetime(1970, 1, 1)
+
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname} user_id={user_id}")
-            return 0, '', datetime.datetime(1970, 1, 1)
-        else:
-            if res_tuple := await cursor.fetchone():
-                return res_tuple
-            return 0, '', datetime.datetime(1970, 1, 1)
+            raise
 
+    @exec_handler_MySQL(_create_table_user_id, [])
     async def get_user_id_list(
         self, lower_permission: int = 0, upper_permission: int = 5, *, limit: int = 1, offset: int = 0
     ) -> List[int]:
@@ -535,14 +601,14 @@ class MySQLDB(object):
                     await cursor.execute(
                         f"SELECT `user_id` FROM `user_id_{self.fname}` WHERE `permission`>={lower_permission} AND `permission`<={upper_permission} ORDER BY `record_time` DESC LIMIT {limit} OFFSET {offset}"
                     )
+
+                    res_tuples = await cursor.fetchall()
+                    res_list = [res_tuple[0] for res_tuple in res_tuples]
+                    return res_list
+
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname}")
-            res_list = []
-        else:
-            res_tuples = await cursor.fetchall()
-            res_list = [res_tuple[0] for res_tuple in res_tuples]
-
-        return res_list
+            raise
 
     async def _create_table_imghash(self) -> None:
         """
@@ -556,7 +622,9 @@ class MySQLDB(object):
                     (`img_hash` BIGINT UNSIGNED PRIMARY KEY, `raw_hash` CHAR(40) UNIQUE NOT NULL, `permission` TINYINT NOT NULL DEFAULT 0, `note` VARCHAR(64) NOT NULL DEFAULT '', `record_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, \
                     INDEX `permission`(permission), INDEX `record_time`(record_time))"
                 )
+                LOG.info(f"成功创建表imghash_{self.fname}")
 
+    @exec_handler_MySQL(_create_table_imghash, False)
     async def add_imghash(self, img_hash: int, raw_hash: str, /, permission: int = 0, *, note: str = '') -> bool:
         """
         将img_hash添加到表imghash_{fname}
@@ -577,13 +645,15 @@ class MySQLDB(object):
                     await cursor.execute(
                         f"REPLACE INTO `imghash_{self.fname}` VALUES ({img_hash},'{raw_hash}',{permission},'{note}',DEFAULT)"
                     )
+
+                    LOG.info(f"Succeeded. forum={self.fname} img_hash={img_hash} permission={permission}")
+                    return True
+
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname} img_hash={img_hash}")
-            return False
+            raise
 
-        LOG.info(f"Succeeded. forum={self.fname} img_hash={img_hash} permission={permission}")
-        return True
-
+    @exec_handler_MySQL(_create_table_imghash, False)
     async def del_imghash(self, img_hash: int) -> bool:
         """
         从表imghash_{fname}中删除img_hash
@@ -599,13 +669,15 @@ class MySQLDB(object):
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     await cursor.execute(f"DELETE FROM `imghash_{self.fname}` WHERE `img_hash`={img_hash}")
+
+                    LOG.info(f"Succeeded. forum={self.fname} img_hash={img_hash}")
+                    return True
+
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname} img_hash={img_hash}")
-            return False
+            raise
 
-        LOG.info(f"Succeeded. forum={self.fname} img_hash={img_hash}")
-        return True
-
+    @exec_handler_MySQL(_create_table_imghash, 0)
     async def get_imghash(self, img_hash: int, *, hamming_dist: int = 0) -> int:
         """
         获取表imghash_{fname}中img_hash的封锁级别
@@ -629,14 +701,16 @@ class MySQLDB(object):
                         await cursor.execute(
                             f"SELECT `permission` FROM `imghash_{self.fname}` WHERE `img_hash`={img_hash}"
                         )
+
+                    if res_tuple := await cursor.fetchone():
+                        return res_tuple[0]
+                    return 0
+
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname} img_hash={img_hash}")
-            return False
-        else:
-            if res_tuple := await cursor.fetchone():
-                return res_tuple[0]
-            return 0
+            raise
 
+    @exec_handler_MySQL(_create_table_imghash, (0, ''))
     async def get_imghash_full(self, img_hash: int, *, hamming_dist: int = 0) -> Tuple[int, str]:
         """
         获取表imghash_{fname}中img_hash的完整信息
@@ -660,13 +734,14 @@ class MySQLDB(object):
                         await cursor.execute(
                             f"SELECT `permission`,`note` FROM `imghash_{self.fname}` WHERE `img_hash`={img_hash}"
                         )
+
+                    if res_tuple := await cursor.fetchone():
+                        return res_tuple[:2]
+                    return 0, ''
+
         except aiomysql.Error as err:
             LOG.warning(f"{err}. forum={self.fname} img_hash={img_hash}")
-            return 0, ''
-        else:
-            if res_tuple := await cursor.fetchone():
-                return res_tuple[:2]
-            return 0, ''
+            raise
 
 
 class SQLiteDB(object):
