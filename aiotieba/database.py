@@ -803,7 +803,7 @@ class SQLiteDB(object):
 
         try:
             self._conn.execute(f"REPLACE INTO `id_{self.fname}` VALUES ({_id},{tag},NULL)")
-        except aiomysql.Error as err:
+        except sqlite3.Error as err:
             LOG.warning(f"{err}. forum={self.fname} id={_id}")
             return False
         return True
@@ -821,7 +821,7 @@ class SQLiteDB(object):
 
         try:
             cursor = self._conn.execute(f"SELECT `tag` FROM `id_{self.fname}` WHERE `id`={_id}")
-        except aiomysql.Error as err:
+        except sqlite3.Error as err:
             LOG.warning(f"{err}. forum={self.fname} id={_id}")
             return False
         else:
@@ -842,7 +842,7 @@ class SQLiteDB(object):
 
         try:
             self._conn.execute(f"DELETE FROM `id_{self.fname}` WHERE `id`={_id}")
-        except aiomysql.Error as err:
+        except sqlite3.Error as err:
             LOG.warning(f"{err}. forum={self.fname} id={_id}")
             return False
 
@@ -863,7 +863,7 @@ class SQLiteDB(object):
         try:
             self._conn.execute(f"DELETE FROM `id_{self.fname}` WHERE `record_time` < datetime('now','-{day} day')")
             self._conn.execute("VACUUM")
-        except aiomysql.Error as err:
+        except sqlite3.Error as err:
             LOG.warning(f"{err}. forum={self.fname}")
             return False
 
