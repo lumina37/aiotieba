@@ -184,6 +184,7 @@ class UserInfo_c(object):
         level (int): 等级
         gender (int): 性别
 
+        is_bawu (bool): 是否吧务
         is_vip (bool): 是否超级会员
         is_god (bool): 是否大神
         priv_like (int): 公开关注吧列表的设置状态
@@ -201,6 +202,7 @@ class UserInfo_c(object):
         '_nick_name_new',
         '_level',
         '_gender',
+        '_is_bawu',
         '_is_vip',
         '_is_god',
         '_priv_like',
@@ -214,6 +216,7 @@ class UserInfo_c(object):
         self._nick_name_new = data_proto.name_show
         self._level = data_proto.level_id
         self._gender = data_proto.gender
+        self._is_bawu = bool(data_proto.is_bawu)
         self._is_vip = bool(data_proto.new_tshow_icon)
         self._is_god = bool(data_proto.new_god_data.status)
         self._priv_like = priv_like if (priv_like := data_proto.priv_sets.like) else 1
@@ -227,6 +230,7 @@ class UserInfo_c(object):
         self._nick_name_new = ''
         self._level = 0
         self._gender = 0
+        self._is_bawu = False
         self._is_vip = False
         self._is_god = False
         self._priv_like = 1
@@ -323,6 +327,14 @@ class UserInfo_c(object):
         """
 
         return self._gender
+
+    @property
+    def is_bawu(self) -> bool:
+        """
+        是否吧务
+        """
+
+        return self._is_bawu
 
     @property
     def is_vip(self) -> bool:
