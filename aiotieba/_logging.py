@@ -3,6 +3,7 @@
 
 提供与标准库logging签名一致的六个函数debug/info/warning/error/critical/log
 允许使用set_logger更换日志记录器
+允许使用set_formatter更换日志记录器
 """
 
 import logging
@@ -18,6 +19,9 @@ logging.logMultiprocessing = False
 logging.raiseExceptions = False
 logging.Formatter.default_msec_format = '%s.%03d'
 
+_LOGGER = None
+_FORMATTER = logging.Formatter("<{asctime}> [{levelname}] [{funcName}] {message}", style='{')
+
 
 class TiebaLogger(logging.Logger):
     """
@@ -27,69 +31,40 @@ class TiebaLogger(logging.Logger):
         name (str): 日志文件名(不含扩展名)
     """
 
-    file_log_level = logging.INFO
-    stream_log_level = logging.DEBUG
-    enable_file_log = True
-
-    formatter = logging.Formatter("<{asctime}> [{levelname}] [{funcName}] {message}", style='{')
-
-    __slots__ = [
-        '_file_hd',
-        '_stream_hd',
-    ]
-
-    def __init__(self, name: str) -> None:
+    def __init__(
+        self,
+        name: str,
+        *,
+        file_log_level: int = logging.INFO,
+        stream_log_level: int = logging.DEBUG,
+        backup_count: int = 5,
+    ) -> None:
         super().__init__(name)
 
-        self._file_hd = None
-        self._stream_hd = None
+        file_hd = logging.handlers.TimedRotatingFileHandler(
+            f"log/{self.name}.log", when='MIDNIGHT', backupCount=backup_count, encoding='utf-8'
+        )
+        file_hd.setLevel(file_log_level)
+        file_hd.setFormatter(_FORMATTER)
+        self.addHandler(file_hd)
 
-        if self.enable_file_log:
-            self.addHandler(self.file_hd)
-        self.addHandler(self.stream_hd)
-
-    @property
-    def file_hd(self) -> logging.handlers.TimedRotatingFileHandler:
-        """
-        指向log/xxx.log文件的日志handler
-        """
-
-        if self._file_hd is None:
-            self._file_hd = logging.handlers.TimedRotatingFileHandler(
-                f"log/{self.name}.log", when='MIDNIGHT', backupCount=5, encoding='utf-8'
-            )
-            self._file_hd.setLevel(self.file_log_level)
-            self._file_hd.setFormatter(self.formatter)
-
-        return self._file_hd
-
-    @property
-    def stream_hd(self) -> logging.StreamHandler:
-        """
-        指向标准输出流的日志handler
-        """
-
-        if self._stream_hd is None:
-            self._stream_hd = logging.StreamHandler(sys.stdout)
-            self._stream_hd.setLevel(self.stream_log_level)
-            self._stream_hd.setFormatter(self.formatter)
-
-        return self._stream_hd
-
-_logger = None
+        stream_hd = logging.StreamHandler(sys.stdout)
+        stream_hd.setLevel(stream_log_level)
+        stream_hd.setFormatter(_FORMATTER)
+        self.addHandler(stream_hd)
 
 
 def get_logger() -> TiebaLogger:
-    global _logger
+    global _LOGGER
 
-    if _logger is None:
+    if _LOGGER is None:
         from pathlib import Path
 
         Path("log").mkdir(0o755, exist_ok=True)
         script_name = Path(sys.argv[0]).stem
-        _logger = TiebaLogger(script_name)
+        _LOGGER = TiebaLogger(script_name)
 
-    return _logger
+    return _LOGGER
 
 
 def set_logger(logger: logging.Logger) -> None:
@@ -100,8 +75,8 @@ def set_logger(logger: logging.Logger) -> None:
         logger (logging.Logger)
     """
 
-    global _logger
-    _logger = logger
+    global _LOGGER
+    _LOGGER = logger
 
 
 def set_formatter(formatter: logging.Formatter) -> None:
@@ -112,9 +87,13 @@ def set_formatter(formatter: logging.Formatter) -> None:
         formatter (logging.Formatter)
     """
 
-    logger = get_logger()
-    for hd in logger.handlers:
-        hd.setFormatter(formatter)
+    global _FORMATTER
+    _FORMATTER = formatter
+
+    if _LOGGER is not None:
+        global _LOGGER
+        for hd in _LOGGER.handlers:
+            hd.setFormatter(formatter)
 
 
 def debug(msg, *args, **kwargs):
