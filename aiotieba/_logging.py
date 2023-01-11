@@ -91,7 +91,6 @@ def set_formatter(formatter: logging.Formatter) -> None:
     _FORMATTER = formatter
 
     if _LOGGER is not None:
-        global _LOGGER
         for hd in _LOGGER.handlers:
             hd.setFormatter(formatter)
 
