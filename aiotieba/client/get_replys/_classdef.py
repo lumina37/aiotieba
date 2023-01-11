@@ -30,7 +30,10 @@ class UserInfo_reply(object):
 
     def _init(self, data_proto: TypeMessage) -> "UserInfo_reply":
         self._user_id = data_proto.id
-        self._portrait = data_proto.portrait[:-13]
+        if '?' in (portrait := data_proto.portrait):
+            self._portrait = portrait[:-13]
+        else:
+            self._portrait = portrait
         self._user_name = data_proto.name
         self._nick_name_new = data_proto.name_show
         self._priv_like = priv_like if (priv_like := data_proto.priv_sets.like) else 1

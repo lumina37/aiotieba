@@ -95,7 +95,10 @@ class UserInfo_at(object):
 
     def _init(self, data_map: Mapping) -> "UserInfo_at":
         self._user_id = int(data_map['id'])
-        self._portrait = data_map['portrait'][:-13]
+        if '?' in (portrait := data_map['portrait']):
+            self._portrait = portrait[:-13]
+        else:
+            self._portrait = portrait
         self._user_name = data_map['name']
         self._nick_name_new = data_map['name_show']
         if priv_sets := data_map['priv_sets']:

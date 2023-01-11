@@ -133,7 +133,10 @@ class UserInfo_u(object):
 
     def _init(self, data_proto: TypeMessage):
         self._user_id = data_proto.user_id
-        self._portrait = data_proto.user_portrait[:-13]
+        if '?' in (portrait := data_proto.portrait):
+            self._portrait = portrait[:-13]
+        else:
+            self._portrait = portrait
         self._user_name = data_proto.user_name
         self._nick_name_new = data_proto.name_show
         return self

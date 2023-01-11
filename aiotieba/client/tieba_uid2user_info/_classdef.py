@@ -35,7 +35,10 @@ class UserInfo_TUid(object):
 
     def _init(self, data_proto: TypeMessage) -> "UserInfo_TUid":
         self._user_id = data_proto.id
-        self._portrait = data_proto.portrait[:-13]
+        if '?' in (portrait := data_proto.portrait):
+            self._portrait = portrait[:-13]
+        else:
+            self._portrait = portrait
         self._user_name = data_proto.name
         self._nick_name_old = data_proto.name_show
         self._tieba_uid = int(data_proto.tieba_uid)
