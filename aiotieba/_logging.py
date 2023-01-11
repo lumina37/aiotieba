@@ -33,7 +33,7 @@ class TiebaLogger(logging.Logger):
         file_log_level (int): 文件日志级别. Defaults to logging.INFO.
         stream_log_level (int): 标准输出日志级别. Defaults to logging.DEBUG.
         log_dir (int): 日志输出文件夹. Defaults to 'log'.
-        backup_count (int): 时间轮转文件日志的保留文件数. Defaults to 'log'.
+        backup_count (int): 时间轮转文件日志的保留文件数. Defaults to 5.
     """
 
     def __init__(
