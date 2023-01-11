@@ -580,7 +580,7 @@ class Contents_home(Containers[TypeFragment]):
                 self._has_voice = True
             else:
                 fragment = FragmentUnknown_home(proto)
-                from ..._logger import LOG
+                from ... import _logging as LOG
 
                 LOG.warning(f"Unknown fragment type. type={_type} frag={fragment}")
 

@@ -1,4 +1,3 @@
-__all__ = ['Client']
 import asyncio
 import base64
 from typing import Dict, List, Literal, Optional, Tuple, Union
@@ -10,7 +9,7 @@ import wsproto
 from Crypto.Cipher import PKCS1_v1_5
 from Crypto.PublicKey import RSA
 
-from .._logger import LOG
+from .. import _logging as LOG
 from . import (
     add_post,
     agree,

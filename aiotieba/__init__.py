@@ -8,8 +8,8 @@ Asynchronous I/O Client/Reviewer for Baidu Tieba
 
 import os
 
+from . import _logging as LOG
 from .__version__ import __version__
-from ._logger import LOG
 from .client import Client
 from .client._classdef.enums import ReqUInfo
 from .client._classdef.user import UserInfo
