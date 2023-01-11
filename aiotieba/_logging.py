@@ -9,6 +9,7 @@
 import logging
 import logging.handlers
 import sys
+from pathlib import Path
 
 logging.addLevelName(logging.FATAL, "FATAL")
 logging.addLevelName(logging.WARN, "WARN")
@@ -29,6 +30,10 @@ class TiebaLogger(logging.Logger):
 
     Args:
         name (str): 日志文件名(不含扩展名)
+        file_log_level (int): 文件日志级别. Defaults to logging.INFO.
+        stream_log_level (int): 标准输出日志级别. Defaults to logging.DEBUG.
+        log_dir (int): 日志输出文件夹. Defaults to 'log'.
+        backup_count (int): 时间轮转文件日志的保留文件数. Defaults to 'log'.
     """
 
     def __init__(
@@ -37,10 +42,12 @@ class TiebaLogger(logging.Logger):
         *,
         file_log_level: int = logging.INFO,
         stream_log_level: int = logging.DEBUG,
+        log_dir: str = 'log',
         backup_count: int = 5,
     ) -> None:
         super().__init__(name)
 
+        Path(log_dir).mkdir(0o755, exist_ok=True)
         file_hd = logging.handlers.TimedRotatingFileHandler(
             f"log/{self.name}.log", when='MIDNIGHT', backupCount=backup_count, encoding='utf-8'
         )
@@ -58,9 +65,6 @@ def get_logger() -> TiebaLogger:
     global _LOGGER
 
     if _LOGGER is None:
-        from pathlib import Path
-
-        Path("log").mkdir(0o755, exist_ok=True)
         script_name = Path(sys.argv[0]).stem
         _LOGGER = TiebaLogger(script_name)
 
