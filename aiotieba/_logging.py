@@ -28,25 +28,25 @@ class TiebaLogger(logging.Logger):
     """
 
     file_log_level = logging.INFO
-    console_log_level = logging.DEBUG
+    stream_log_level = logging.DEBUG
     enable_file_log = True
 
     formatter = logging.Formatter("<{asctime}> [{levelname}] [{funcName}] {message}", style='{')
 
     __slots__ = [
         '_file_hd',
-        '_console_hd',
+        '_stream_hd',
     ]
 
     def __init__(self, name: str) -> None:
         super().__init__(name)
 
         self._file_hd = None
-        self._console_hd = None
+        self._stream_hd = None
 
         if self.enable_file_log:
             self.addHandler(self.file_hd)
-        self.addHandler(self.console_hd)
+        self.addHandler(self.stream_hd)
 
     @property
     def file_hd(self) -> logging.handlers.TimedRotatingFileHandler:
@@ -64,23 +64,22 @@ class TiebaLogger(logging.Logger):
         return self._file_hd
 
     @property
-    def console_hd(self) -> logging.StreamHandler:
+    def stream_hd(self) -> logging.StreamHandler:
         """
         指向标准输出流的日志handler
         """
 
-        if self._console_hd is None:
-            self._console_hd = logging.StreamHandler(sys.stdout)
-            self._console_hd.setLevel(self.console_log_level)
-            self._console_hd.setFormatter(self.formatter)
+        if self._stream_hd is None:
+            self._stream_hd = logging.StreamHandler(sys.stdout)
+            self._stream_hd.setLevel(self.stream_log_level)
+            self._stream_hd.setFormatter(self.formatter)
 
-        return self._console_hd
-
+        return self._stream_hd
 
 _logger = None
 
 
-def get_logger() -> logging.Logger:
+def get_logger() -> TiebaLogger:
     global _logger
 
     if _logger is None:
@@ -93,7 +92,7 @@ def get_logger() -> logging.Logger:
     return _logger
 
 
-def set_logger(logger: logging.Logger):
+def set_logger(logger: logging.Logger) -> None:
     """
     更换aiotieba的日志记录器
 
@@ -103,6 +102,19 @@ def set_logger(logger: logging.Logger):
 
     global _logger
     _logger = logger
+
+
+def set_formatter(formatter: logging.Formatter) -> None:
+    """
+    更换aiotieba的日志格式
+
+    Args:
+        formatter (logging.Formatter)
+    """
+
+    logger = get_logger()
+    for hd in logger.handlers:
+        hd.setFormatter(formatter)
 
 
 def debug(msg, *args, **kwargs):
