@@ -29,7 +29,7 @@ class TiebaLogger(logging.Logger):
     日志记录器
 
     Args:
-        name (str): 日志文件名(不含扩展名)
+        name (str): 日志文件名(不含扩展名) 留空则自动设置为sys.argv[0]的文件名. Defaults to ''.
         file_log_level (int): 文件日志级别. Defaults to logging.INFO.
         stream_log_level (int): 标准输出日志级别. Defaults to logging.DEBUG.
         log_dir (int): 日志输出文件夹. Defaults to 'log'.
@@ -38,16 +38,20 @@ class TiebaLogger(logging.Logger):
 
     def __init__(
         self,
-        name: str,
+        name: str = '',
         *,
         file_log_level: int = logging.INFO,
         stream_log_level: int = logging.DEBUG,
         log_dir: str = 'log',
         backup_count: int = 5,
     ) -> None:
+
+        if name == '':
+            name = Path(sys.argv[0]).stem
         super().__init__(name)
 
         Path(log_dir).mkdir(0o755, exist_ok=True)
+
         file_hd = logging.handlers.TimedRotatingFileHandler(
             f"log/{self.name}.log", when='MIDNIGHT', backupCount=backup_count, encoding='utf-8'
         )
@@ -65,8 +69,7 @@ def get_logger() -> TiebaLogger:
     global _LOGGER
 
     if _LOGGER is None:
-        script_name = Path(sys.argv[0]).stem
-        _LOGGER = TiebaLogger(script_name)
+        _LOGGER = TiebaLogger()
 
     return _LOGGER
 
