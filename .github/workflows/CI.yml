@@ -3,6 +3,12 @@ name: CI
 on:
   schedule:
     - cron: '42 */12 * * *'
+  pull_request:
+    branches: [ develop ]
+    paths:
+      - "aiotieba/**"
+      - "tests/**"
+      - ".github/workflows/CI*"
 
 jobs:
   test:
