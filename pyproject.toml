@@ -7,7 +7,7 @@ urls = { Repository = "https://github.com/Starry-OvO/aiotieba/", Documentation =
 name = "aiotieba"
 description = "Asynchronous I/O Client for Baidu Tieba"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.8"
 authors = [{ name = "Starry-OvO", email = "starry.qvq@gmail.com" }]
 keywords = ["tieba", "crawler", "spider"]
 classifiers = [
@@ -16,6 +16,7 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: The Unlicense (Unlicense)",
     "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -48,19 +49,19 @@ version = { attr = "aiotieba.__version__.__version__" }
 line-length = 120
 skip-string-normalization = true
 extend-exclude = ["*_pb2.py"]
-target-version = ["py39"]
+target-version = ["py38"]
 
 [tool.isort]
 profile = "black"
 line_length = 120
-py_version = "39"
+py_version = "38"
 extend_skip_glob = ["*_pb2.py"]
 
 [tool.ruff]
 line-length = 120
 select = ["W", "E", "F", "I"]
 ignore = ["E402", "E501"]
-target-version = "py39"
+target-version = "py38"
 extend-exclude = ["*_pb2.py"]
 
 [tool.pytest.ini_options]

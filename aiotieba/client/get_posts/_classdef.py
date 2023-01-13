@@ -12,6 +12,7 @@ from .._classdef.contents import (
     TypeFragment,
     TypeFragText,
 )
+from .._helper import removeprefix
 
 Forum_p = Forum
 VirtualImage_p = VirtualImage
@@ -516,7 +517,7 @@ class Comment_p(object):
                 contents._texts = contents._texts[2:]
                 if contents.texts:
                     first_text_frag = contents.texts[0]
-                    first_text_frag._text = first_text_frag._text.removeprefix(' :')
+                    first_text_frag._text = removeprefix(first_text_frag._text, ' :')
 
         self._contents = contents
 

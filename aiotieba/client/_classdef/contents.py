@@ -3,7 +3,7 @@ from typing import Optional, Protocol, TypeVar
 
 import httpx
 
-from .._helper import CHECK_URL_PERFIX, WEB_BASE_HOST
+from .._helper import CHECK_URL_PERFIX, removeprefix
 from .common import TypeMessage
 
 TypeFragment = TypeVar('TypeFragment')
@@ -305,7 +305,7 @@ class FragLink(object):
         self._raw_url = data_proto.link
         self._is_external = self._raw_url.startswith(CHECK_URL_PERFIX)
         if self._is_external:
-            self._raw_url = urllib.parse.unquote(self._raw_url.removeprefix(CHECK_URL_PERFIX))
+            self._raw_url = urllib.parse.unquote(removeprefix(self._raw_url, CHECK_URL_PERFIX))
 
         self._url = None
 
