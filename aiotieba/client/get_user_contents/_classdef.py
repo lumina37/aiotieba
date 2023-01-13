@@ -48,9 +48,9 @@ class Contents_up(Containers[TypeFragment]):
                 self._has_voice = True
             else:
                 fragment = FragmentUnknown_up(proto)
-                from ... import _logging as LOG
+                from ..._logging import get_logger as LOG
 
-                LOG.warning(f"Unknown fragment type. type={_type} frag={fragment}")
+                LOG().warning(f"Unknown fragment type. type={_type} frag={fragment}")
 
             return fragment
 
@@ -579,9 +579,9 @@ class Contents_ut(Containers[TypeFragment]):
                 self._has_voice = True
             else:
                 fragment = FragmentUnknown_ut(proto)
-                from ... import _logging as LOG
+                from ..._logging import get_logger as LOG
 
-                LOG.warning(f"Unknown fragment type. type={_type} frag={fragment}")
+                LOG().warning(f"Unknown fragment type. type={_type} frag={fragment}")
 
             return fragment
 

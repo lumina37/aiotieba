@@ -6,8 +6,8 @@ from typing import Any, Callable, Final, List, Optional, Tuple, Union
 
 import aiomysql
 
-from . import _logging as LOG
 from ._config import CONFIG
+from ._logging import get_logger as LOG
 from .client._classdef import UserInfo
 
 
@@ -27,11 +27,11 @@ def exec_handler_MySQL(create_table_func: Callable, default_ret: Any):
             except aiomysql.Error as err:
                 code = err.args[0]
                 if code == 2003:
-                    LOG.warning("无法连接数据库 将尝试自动建库")
+                    LOG().warning("无法连接数据库 将尝试自动建库")
                     await self.create_database()
                     await create_table_func(self)
                 elif code == 1146:
-                    LOG.warning("表不存在 将尝试自动建表")
+                    LOG().warning("表不存在 将尝试自动建表")
                     await create_table_func(self)
             return default_ret
 
@@ -128,10 +128,10 @@ class MySQLDB(object):
             await conn.ensure_closed()
 
         except aiomysql.Error as err:
-            LOG.warning(f"{err}. 请检查配置文件中的`Database`字段是否填写正确")
+            LOG().warning(f"{err}. 请检查配置文件中的`Database`字段是否填写正确")
             return False
 
-        LOG.info(f"成功创建并初始化数据库. db_name={db_name}")
+        LOG().info(f"成功创建并初始化数据库. db_name={db_name}")
         return True
 
     async def _create_table_forum(self) -> None:
@@ -145,7 +145,7 @@ class MySQLDB(object):
                     "CREATE TABLE IF NOT EXISTS `forum` \
                     (`fid` INT PRIMARY KEY, `fname` VARCHAR(36) UNIQUE NOT NULL)"
                 )
-                LOG.info("成功创建表forum")
+                LOG().info("成功创建表forum")
 
     @exec_handler_MySQL(_create_table_forum, 0)
     async def get_fid(self, fname: str) -> int:
@@ -169,7 +169,7 @@ class MySQLDB(object):
                 return 0
 
         except aiomysql.Error as err:
-            LOG.warning(f"{err}. fname={self.fname}")
+            LOG().warning(f"{err}. fname={self.fname}")
             raise
 
     @exec_handler_MySQL(_create_table_forum, '')
@@ -193,7 +193,7 @@ class MySQLDB(object):
                     return ''
 
         except aiomysql.Error as err:
-            LOG.warning(f"{err}. fid={fid}")
+            LOG().warning(f"{err}. fid={fid}")
             raise
 
     @exec_handler_MySQL(_create_table_forum, False)
@@ -216,7 +216,7 @@ class MySQLDB(object):
                     return True
 
         except aiomysql.Error as err:
-            LOG.warning(f"{err}. fname={self.fname} fid={fid}")
+            LOG().warning(f"{err}. fname={self.fname} fid={fid}")
             raise
 
     async def _create_table_user(self) -> None:
@@ -231,7 +231,7 @@ class MySQLDB(object):
                     (`user_id` BIGINT PRIMARY KEY, `user_name` VARCHAR(14) NOT NULL DEFAULT '', `portrait` VARCHAR(36) UNIQUE NOT NULL, \
                     INDEX `user_name`(user_name))"
                 )
-                LOG.info("成功创建表user")
+                LOG().info("成功创建表user")
 
     @exec_handler_MySQL(_create_table_user, UserInfo())
     async def get_userinfo(self, _id: Union[str, int]) -> UserInfo:
@@ -268,10 +268,10 @@ class MySQLDB(object):
                     return UserInfo()
 
         except aiomysql.Error as err:
-            LOG.warning(f"{err}. user={user}")
+            LOG().warning(f"{err}. user={user}")
             raise
         except Exception as err:
-            LOG.warning(f"{err}. user={user}")
+            LOG().warning(f"{err}. user={user}")
             return UserInfo()
 
     @exec_handler_MySQL(_create_table_user, False)
@@ -295,7 +295,7 @@ class MySQLDB(object):
                     return True
 
         except aiomysql.Error as err:
-            LOG.warning(f"{err}. user={user}")
+            LOG().warning(f"{err}. user={user}")
             raise
 
     @exec_handler_MySQL(_create_table_user, False)
@@ -322,14 +322,14 @@ class MySQLDB(object):
                     else:
                         raise ValueError("Null input")
 
-                    LOG.info(f"Succeeded. user={user}")
+                    LOG().info(f"Succeeded. user={user}")
                     return True
 
         except aiomysql.Error as err:
-            LOG.warning(f"{err}. user={user}")
+            LOG().warning(f"{err}. user={user}")
             raise
         except Exception as err:
-            LOG.warning(f"{err}. user={user}")
+            LOG().warning(f"{err}. user={user}")
             return False
 
     async def _create_table_tid(self) -> None:
@@ -349,7 +349,7 @@ class MySQLDB(object):
                     ON SCHEDULE EVERY 1 DAY STARTS '2000-01-01 00:00:00' \
                     DO DELETE FROM `tid_{self.fname}` WHERE `record_time`<(CURRENT_TIMESTAMP() + INTERVAL -15 DAY)"""
                 )
-                LOG.info(f"成功创建表tid_{self.fname}")
+                LOG().info(f"成功创建表tid_{self.fname}")
 
     @exec_handler_MySQL(_create_table_tid, False)
     async def add_tid(self, tid: int, *, tag: int = 0) -> bool:
@@ -368,11 +368,11 @@ class MySQLDB(object):
             async with self._pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     await cursor.execute(f"REPLACE INTO `tid_{self.fname}` VALUES ({tid},{tag},DEFAULT)")
-                    LOG.info(f"Succeeded. forum={self.fname} tid={tid} tag={tag}")
+                    LOG().info(f"Succeeded. forum={self.fname} tid={tid} tag={tag}")
                     return True
 
         except aiomysql.Error as err:
-            LOG.warning(f"{err}. forum={self.fname} tid={tid}")
+            LOG().warning(f"{err}. forum={self.fname} tid={tid}")
             raise
 
     @exec_handler_MySQL(_create_table_tid, None)
@@ -397,7 +397,7 @@ class MySQLDB(object):
                     return None
 
         except aiomysql.Error as err:
-            LOG.warning(f"{err}. forum={self.fname} tid={tid}")
+            LOG().warning(f"{err}. forum={self.fname} tid={tid}")
             raise
 
     @exec_handler_MySQL(_create_table_tid, False)
@@ -417,11 +417,11 @@ class MySQLDB(object):
                 async with conn.cursor() as cursor:
                     await cursor.execute(f"DELETE FROM `tid_{self.fname}` WHERE `tid`={tid}")
 
-                    LOG.info(f"Succeeded. forum={self.fname} tid={tid}")
+                    LOG().info(f"Succeeded. forum={self.fname} tid={tid}")
                     return True
 
         except aiomysql.Error as err:
-            LOG.warning(f"{err}. forum={self.fname} tid={tid}")
+            LOG().warning(f"{err}. forum={self.fname} tid={tid}")
             raise
 
     @exec_handler_MySQL(_create_table_tid, [])
@@ -450,7 +450,7 @@ class MySQLDB(object):
                     return res_list
 
         except aiomysql.Error as err:
-            LOG.warning(f"{err}. forum={self.fname}")
+            LOG().warning(f"{err}. forum={self.fname}")
             raise
 
     async def _create_table_user_id(self) -> None:
@@ -465,7 +465,7 @@ class MySQLDB(object):
                     (`user_id` BIGINT PRIMARY KEY, `permission` TINYINT NOT NULL DEFAULT 0, `note` VARCHAR(64) NOT NULL DEFAULT '', `record_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, \
                     INDEX `permission`(permission), INDEX `record_time`(record_time))"
                 )
-                LOG.info(f"成功创建表user_id_{self.fname}")
+                LOG().info(f"成功创建表user_id_{self.fname}")
 
     @exec_handler_MySQL(_create_table_user_id, False)
     async def add_user_id(self, user_id: int, /, permission: int = 0, *, note: str = '') -> bool:
@@ -491,11 +491,11 @@ class MySQLDB(object):
                         f"REPLACE INTO `user_id_{self.fname}` VALUES ({user_id},{permission},'{note}',DEFAULT)"
                     )
 
-                    LOG.info(f"Succeeded. forum={self.fname} user_id={user_id} permission={permission}")
+                    LOG().info(f"Succeeded. forum={self.fname} user_id={user_id} permission={permission}")
                     return True
 
         except aiomysql.Error as err:
-            LOG.warning(f"{err}. forum={self.fname} user_id={user_id}")
+            LOG().warning(f"{err}. forum={self.fname} user_id={user_id}")
             raise
 
     @exec_handler_MySQL(_create_table_user_id, False)
@@ -515,11 +515,11 @@ class MySQLDB(object):
                 async with conn.cursor() as cursor:
                     await cursor.execute(f"DELETE FROM `user_id_{self.fname}` WHERE `user_id`={user_id}")
 
-                    LOG.info(f"Succeeded. forum={self.fname} user_id={user_id}")
+                    LOG().info(f"Succeeded. forum={self.fname} user_id={user_id}")
                     return True
 
         except aiomysql.Error as err:
-            LOG.warning(f"{err}. forum={self.fname} user_id={user_id}")
+            LOG().warning(f"{err}. forum={self.fname} user_id={user_id}")
             raise
 
     @exec_handler_MySQL(_create_table_user_id, 0)
@@ -544,7 +544,7 @@ class MySQLDB(object):
                     return 0
 
         except aiomysql.Error as err:
-            LOG.warning(f"{err}. forum={self.fname} user_id={user_id}")
+            LOG().warning(f"{err}. forum={self.fname} user_id={user_id}")
             raise
 
     @exec_handler_MySQL(_create_table_user_id, (0, '', datetime.datetime(1970, 1, 1)))
@@ -570,7 +570,7 @@ class MySQLDB(object):
                     return 0, '', datetime.datetime(1970, 1, 1)
 
         except aiomysql.Error as err:
-            LOG.warning(f"{err}. forum={self.fname} user_id={user_id}")
+            LOG().warning(f"{err}. forum={self.fname} user_id={user_id}")
             raise
 
     @exec_handler_MySQL(_create_table_user_id, [])
@@ -602,7 +602,7 @@ class MySQLDB(object):
                     return res_list
 
         except aiomysql.Error as err:
-            LOG.warning(f"{err}. forum={self.fname}")
+            LOG().warning(f"{err}. forum={self.fname}")
             raise
 
     async def _create_table_imghash(self) -> None:
@@ -617,7 +617,7 @@ class MySQLDB(object):
                     (`img_hash` BIGINT UNSIGNED PRIMARY KEY, `raw_hash` CHAR(40) UNIQUE NOT NULL, `permission` TINYINT NOT NULL DEFAULT 0, `note` VARCHAR(64) NOT NULL DEFAULT '', `record_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, \
                     INDEX `permission`(permission), INDEX `record_time`(record_time))"
                 )
-                LOG.info(f"成功创建表imghash_{self.fname}")
+                LOG().info(f"成功创建表imghash_{self.fname}")
 
     @exec_handler_MySQL(_create_table_imghash, False)
     async def add_imghash(self, img_hash: int, raw_hash: str, /, permission: int = 0, *, note: str = '') -> bool:
@@ -641,11 +641,11 @@ class MySQLDB(object):
                         f"REPLACE INTO `imghash_{self.fname}` VALUES ({img_hash},'{raw_hash}',{permission},'{note}',DEFAULT)"
                     )
 
-                    LOG.info(f"Succeeded. forum={self.fname} img_hash={img_hash} permission={permission}")
+                    LOG().info(f"Succeeded. forum={self.fname} img_hash={img_hash} permission={permission}")
                     return True
 
         except aiomysql.Error as err:
-            LOG.warning(f"{err}. forum={self.fname} img_hash={img_hash}")
+            LOG().warning(f"{err}. forum={self.fname} img_hash={img_hash}")
             raise
 
     @exec_handler_MySQL(_create_table_imghash, False)
@@ -665,11 +665,11 @@ class MySQLDB(object):
                 async with conn.cursor() as cursor:
                     await cursor.execute(f"DELETE FROM `imghash_{self.fname}` WHERE `img_hash`={img_hash}")
 
-                    LOG.info(f"Succeeded. forum={self.fname} img_hash={img_hash}")
+                    LOG().info(f"Succeeded. forum={self.fname} img_hash={img_hash}")
                     return True
 
         except aiomysql.Error as err:
-            LOG.warning(f"{err}. forum={self.fname} img_hash={img_hash}")
+            LOG().warning(f"{err}. forum={self.fname} img_hash={img_hash}")
             raise
 
     @exec_handler_MySQL(_create_table_imghash, 0)
@@ -702,7 +702,7 @@ class MySQLDB(object):
                     return 0
 
         except aiomysql.Error as err:
-            LOG.warning(f"{err}. forum={self.fname} img_hash={img_hash}")
+            LOG().warning(f"{err}. forum={self.fname} img_hash={img_hash}")
             raise
 
     @exec_handler_MySQL(_create_table_imghash, (0, ''))
@@ -735,7 +735,7 @@ class MySQLDB(object):
                     return 0, ''
 
         except aiomysql.Error as err:
-            LOG.warning(f"{err}. forum={self.fname} img_hash={img_hash}")
+            LOG().warning(f"{err}. forum={self.fname} img_hash={img_hash}")
             raise
 
 
@@ -799,7 +799,7 @@ class SQLiteDB(object):
         try:
             self._conn.execute(f"REPLACE INTO `id_{self.fname}` VALUES ({_id},{tag},NULL)")
         except sqlite3.Error as err:
-            LOG.warning(f"{err}. forum={self.fname} id={_id}")
+            LOG().warning(f"{err}. forum={self.fname} id={_id}")
             return False
         return True
 
@@ -817,7 +817,7 @@ class SQLiteDB(object):
         try:
             cursor = self._conn.execute(f"SELECT `tag` FROM `id_{self.fname}` WHERE `id`={_id}")
         except sqlite3.Error as err:
-            LOG.warning(f"{err}. forum={self.fname} id={_id}")
+            LOG().warning(f"{err}. forum={self.fname} id={_id}")
             return False
         else:
             if res_tuple := cursor.fetchone():
@@ -838,10 +838,10 @@ class SQLiteDB(object):
         try:
             self._conn.execute(f"DELETE FROM `id_{self.fname}` WHERE `id`={_id}")
         except sqlite3.Error as err:
-            LOG.warning(f"{err}. forum={self.fname} id={_id}")
+            LOG().warning(f"{err}. forum={self.fname} id={_id}")
             return False
 
-        LOG.info(f"Succeeded. forum={self.fname} id={_id}")
+        LOG().info(f"Succeeded. forum={self.fname} id={_id}")
         return True
 
     def truncate(self, day: int) -> bool:
@@ -859,8 +859,8 @@ class SQLiteDB(object):
             self._conn.execute(f"DELETE FROM `id_{self.fname}` WHERE `record_time` < datetime('now','-{day} day')")
             self._conn.execute("VACUUM")
         except sqlite3.Error as err:
-            LOG.warning(f"{err}. forum={self.fname}")
+            LOG().warning(f"{err}. forum={self.fname}")
             return False
 
-        LOG.info(f"Succeeded. forum={self.fname} day={day}")
+        LOG().info(f"Succeeded. forum={self.fname} day={day}")
         return True

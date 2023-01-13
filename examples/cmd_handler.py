@@ -199,7 +199,7 @@ def check_and_log(need_permission: int = 0, need_arg_num: int = 0) -> _TypeComma
                 ctx.admin, ctx.speaker = self.admins[ctx.fname]
 
                 await ctx._init()
-                tb.LOG.info(f"user={ctx.user} type={ctx.cmd_type} args={ctx.args} tid={ctx.tid}")
+                tb.LOG().info(f"user={ctx.user} type={ctx.cmd_type} args={ctx.args} tid={ctx.tid}")
 
                 if len(ctx.args) < need_arg_num:
                     raise ValueError("参数量不足")
@@ -209,7 +209,7 @@ def check_and_log(need_permission: int = 0, need_arg_num: int = 0) -> _TypeComma
                 await func(self, ctx)
 
             except Exception as err:
-                tb.LOG.error(err)
+                tb.LOG().error(err)
 
         return _
 
@@ -257,13 +257,13 @@ class Listener(object):
         while 1:
             try:
                 asyncio.create_task(self._fetch_and_execute_cmds())
-                tb.LOG.debug('heartbeat')
+                tb.LOG().debug('heartbeat')
                 await asyncio.sleep(5)
 
             except asyncio.CancelledError:
                 return
             except Exception:
-                tb.LOG.critical("Unhandled error", exc_info=True)
+                tb.LOG().critical("Unhandled error", exc_info=True)
                 return
 
     async def _fetch_and_execute_cmds(self) -> None:
@@ -320,7 +320,7 @@ class Listener(object):
         if new_permission >= ctx.exec_permission:
             raise ValueError("新权限大于等于操作者权限")
 
-        tb.LOG.info(f"forum={ctx.fname} user={user} old_note={old_note}")
+        tb.LOG().info(f"forum={ctx.fname} user={user} old_note={old_note}")
 
         if new_permission != 0:
             success = await ctx.admin.db.add_user_id(user.user_id, new_permission, note=note)
@@ -465,7 +465,7 @@ class Listener(object):
         coros = []
 
         if ctx.at.is_floor:
-            tb.LOG.info(f"Try to del post. text={ctx.parent.text} user={ctx.parent.user}")
+            tb.LOG().info(f"Try to del post. text={ctx.parent.text} user={ctx.parent.user}")
             coros.append(ctx.admin.del_post(ctx.parent.pid))
 
         else:
@@ -478,11 +478,11 @@ class Listener(object):
                     ctx.parent.contents.ats[0].user_id, tb.ReqUInfo.BASIC
                 )
 
-                tb.LOG.info(f"Try to del thread. text={ctx.parent.text} user={ctx.parent.user}")
+                tb.LOG().info(f"Try to del thread. text={ctx.parent.text} user={ctx.parent.user}")
                 coros.append(ctx.admin.del_thread(ctx.parent.tid))
 
             else:
-                tb.LOG.info(f"Try to del thread. text={ctx.parent.text} user={ctx.parent.user}")
+                tb.LOG().info(f"Try to del thread. text={ctx.parent.text} user={ctx.parent.user}")
                 coros.append(ctx.admin.del_post(ctx.parent.pid))
 
         if day:

@@ -211,9 +211,9 @@ class Contents_p(Containers[TypeFragment]):
                 self._texts.append(fragment)
             else:
                 fragment = FragmentUnknown_p(proto)
-                from ... import _logging as LOG
+                from ..._logging import get_logger as LOG
 
-                LOG.warning(f"Unknown fragment type. type={_type} frag={fragment}")
+                LOG().warning(f"Unknown fragment type. type={_type} frag={fragment}")
 
             return fragment
 
@@ -369,9 +369,9 @@ class Contents_pc(Containers[TypeFragment]):
                 self._texts.append(fragment)
             else:
                 fragment = FragmentUnknown_pc(proto)
-                from ... import _logging as LOG
+                from ..._logging import get_logger as LOG
 
-                LOG.warning(f"Unknown fragment type. type={_type} frag={fragment}")
+                LOG().warning(f"Unknown fragment type. type={_type} frag={fragment}")
 
             return fragment
 
@@ -1420,9 +1420,9 @@ class Contents_pt(Containers[TypeFragment]):
                 self._texts.append(fragment)
             else:
                 fragment = FragmentUnknown_pt(proto)
-                from ... import _logging as LOG
+                from ..._logging import get_logger as LOG
 
-                LOG.warning(f"Unknown fragment type. type={_type} frag={fragment}")
+                LOG().warning(f"Unknown fragment type. type={_type} frag={fragment}")
 
             return fragment
 

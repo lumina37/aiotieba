@@ -13,7 +13,7 @@ import types
 from collections.abc import Callable, Iterator
 from typing import List, Literal, Optional, Tuple, Union
 
-from . import _logging as LOG
+from ._logging import get_logger as LOG
 from .client import Client
 from .client._classdef.enums import ReqUInfo
 from .client._classdef.misc import ForumInfoCache
@@ -26,7 +26,7 @@ def alog_time(func) -> None:
     async def _(*args, **kwargs):
         start_time = time.perf_counter()
         res = await func(*args, **kwargs)
-        LOG.debug(f"{func.__name__} time_cost: {time.perf_counter()-start_time:.4f}")
+        LOG().debug(f"{func.__name__} time_cost: {time.perf_counter()-start_time:.4f}")
         return res
 
     return _
@@ -380,7 +380,7 @@ class BaseReviewer(object):
         try:
             data = self.qrdetector.detectAndDecode(image)[0]
         except Exception as err:
-            LOG.warning(err)
+            LOG().warning(err)
             data = ''
 
         return data
@@ -399,7 +399,7 @@ class BaseReviewer(object):
         try:
             res = self.qrdetector.detect(image)[0]
         except Exception as err:
-            LOG.warning(err)
+            LOG().warning(err)
             res = False
 
         return res
@@ -421,7 +421,7 @@ class BaseReviewer(object):
             for hash_num, shift in zip(img_hash_array, range(56, -1, -8)):
                 img_hash += int(hash_num) << shift
         except Exception as err:
-            LOG.warning(err)
+            LOG().warning(err)
             img_hash = 0
 
         return img_hash
@@ -627,7 +627,7 @@ class Reviewer(BaseReviewer):
             punish (Punish): 待执行的惩罚
         """
         if punish.block_days:
-            LOG.info(f"Block. user={obj.user} note={punish.note}")
+            LOG().info(f"Block. user={obj.user} note={punish.note}")
 
     async def _exce_delete(self, obj: Union[Thread, Post, Comment], punish: Punish) -> None:
         """
@@ -639,10 +639,10 @@ class Reviewer(BaseReviewer):
         """
 
         if punish.del_flag == Ops.DELETE:
-            LOG.info(f"Del {obj.__class__.__name__}. text={obj.text} user={obj.user!r} note={punish.note}")
+            LOG().info(f"Del {obj.__class__.__name__}. text={obj.text} user={obj.user!r} note={punish.note}")
             await self.del_post(obj.pid)
         elif punish.del_flag == Ops.HIDE:
-            LOG.info(f"Hide {obj.__class__.__name__}. text={obj.text} user={obj.user!r} note={punish.note}")
+            LOG().info(f"Hide {obj.__class__.__name__}. text={obj.text} user={obj.user!r} note={punish.note}")
             await self.hide_thread(obj.tid)
 
     async def _exce_delete_debug(self, obj: Union[Thread, Post, Comment], punish: Punish) -> None:
@@ -656,9 +656,9 @@ class Reviewer(BaseReviewer):
         """
 
         if punish.del_flag == Ops.DELETE:
-            LOG.info(f"Del {obj.__class__.__name__}. text={obj.text} user={obj.user!r} note={punish.note}")
+            LOG().info(f"Del {obj.__class__.__name__}. text={obj.text} user={obj.user!r} note={punish.note}")
         elif punish.del_flag == Ops.HIDE:
-            LOG.info(f"Hide {obj.__class__.__name__}. text={obj.text} user={obj.user!r} note={punish.note}")
+            LOG().info(f"Hide {obj.__class__.__name__}. text={obj.text} user={obj.user!r} note={punish.note}")
 
     async def review_loop(self) -> None:
         """
@@ -673,7 +673,7 @@ class Reviewer(BaseReviewer):
                 await asyncio.sleep(self.time_interval_closure())
 
             except Exception:
-                LOG.critical("Unexcepted error", exc_info=True)
+                LOG().critical("Unexcepted error", exc_info=True)
                 return
 
     def prepare_cfg_loop(self) -> None:
@@ -949,7 +949,7 @@ class Reviewer(BaseReviewer):
         async def producer() -> None:
             pn_iterator = self.multi_pn_iterator()
             for pn in pn_iterator:
-                LOG.info(f"Handling thread_pn={pn}")
+                LOG().info(f"Handling thread_pn={pn}")
                 for thread in await self.multi_get_threads(pn):
                     await thread_queue.put(thread)
             nonlocal running_flag
@@ -962,7 +962,7 @@ class Reviewer(BaseReviewer):
                 except asyncio.TimeoutError:
                     nonlocal running_flag
                     if not running_flag:
-                        LOG.info(f"Worker#{i} quit")
+                        LOG().info(f"Worker#{i} quit")
                         return
                 else:
                     await self.multi_handle_thread(thread)
@@ -1057,7 +1057,7 @@ class Reviewer(BaseReviewer):
 
         if (total_page := posts.page.total_page) >= 2:
             for post_pn in range(total_page - 2, 0, -1):
-                LOG.debug(f"Scanning tid={thread.tid} pn={post_pn}")
+                LOG().debug(f"Scanning tid={thread.tid} pn={post_pn}")
                 posts = await self.get_posts(thread.tid, pn=post_pn, with_comments=True)
                 if posts:
                     for post in posts:
@@ -1183,10 +1183,10 @@ class Reviewer(BaseReviewer):
         """
 
         async def check_and_print(checkers, obj):
-            LOG.debug(f"{obj.__class__.__name__}={obj}")
+            LOG().debug(f"{obj.__class__.__name__}={obj}")
             for checker in checkers:
                 punish = await checker(obj)
-                LOG.debug(f"Checker={checker.__name__} punish={punish}")
+                LOG().debug(f"Checker={checker.__name__} punish={punish}")
 
         if pid:
             comments = await self.get_comments(tid, pid, is_floor=is_floor)

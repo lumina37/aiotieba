@@ -6,8 +6,8 @@ from typing import ClassVar, Optional
 
 from Crypto.Cipher import AES
 
-from ... import _logging as LOG
 from ..._config import CONFIG
+from ..._logging import get_logger as LOG
 
 
 class TiebaCore(object):
@@ -66,7 +66,7 @@ class TiebaCore(object):
     def BDUSS(self, new_BDUSS: str) -> None:
 
         if hasattr(self, "_BDUSS"):
-            LOG.warning("BDUSS已初始化 无法修改")
+            LOG().warning("BDUSS已初始化 无法修改")
             return
 
         if not new_BDUSS:
@@ -75,7 +75,7 @@ class TiebaCore(object):
 
         legal_length = 192
         if (len_new_BDUSS := len(new_BDUSS)) != legal_length:
-            LOG.warning(f"BDUSS的长度应为{legal_length}个字符 而输入的{new_BDUSS}有{len_new_BDUSS}个字符")
+            LOG().warning(f"BDUSS的长度应为{legal_length}个字符 而输入的{new_BDUSS}有{len_new_BDUSS}个字符")
             self._BDUSS = ''
             return
 
@@ -93,7 +93,7 @@ class TiebaCore(object):
     def STOKEN(self, new_STOKEN: str) -> None:
 
         if hasattr(self, "_STOKEN"):
-            LOG.warning("STOKEN已初始化 无法修改")
+            LOG().warning("STOKEN已初始化 无法修改")
             return
 
         if not new_STOKEN:
@@ -102,7 +102,7 @@ class TiebaCore(object):
 
         legal_length = 64
         if (len_new_STOKEN := len(new_STOKEN)) != legal_length:
-            LOG.warning(f"STOKEN的长度应为{legal_length}个字符 而输入的{new_STOKEN}有{len_new_STOKEN}个字符")
+            LOG().warning(f"STOKEN的长度应为{legal_length}个字符 而输入的{new_STOKEN}有{len_new_STOKEN}个字符")
             self._STOKEN = ''
             return
 
