@@ -1747,6 +1747,7 @@ class Comments(Containers[Comment]):
         return self
 
     def _init_null(self) -> "Comments":
+        self._objs = []
         self._page = Page_c()._init_null()
         self._forum = Forum_c()._init_null()
         self._thread = Thread_c()._init_null()
