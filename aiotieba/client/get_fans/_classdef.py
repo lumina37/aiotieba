@@ -26,12 +26,12 @@ class Fan(object):
     ]
 
     def _init(self, data_map: Mapping) -> "Fan":
-        self._user_name = int(data_map['id'])
-        self._user_id = data_map['name']
+        self._user_id = int(data_map['id'])
         if '?' in (portrait := data_map['portrait']):
             self._portrait = portrait[:-13]
         else:
             self._portrait = portrait
+        self._user_name = data_map['name']
         self._nick_name_new = data_map['name_show']
         return self
 
