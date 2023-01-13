@@ -9,21 +9,21 @@
 class `UserInfo`(*_id: str | int | None = None*)
 
 <div class="docstring" markdown="1">
-**_id** - 用于快速构造UserInfo的自适应参数 输入[user_id](../tutorial/quickstart.md#user_id)或[portrait](../tutorial/quickstart.md#portrait)或[用户名](../tutorial/quickstart.md#user_name)
+**_id** - 用于快速构造UserInfo的自适应参数 输入[user_id](../tutorial/start.md#user_id)或[portrait](../tutorial/start.md#portrait)或[用户名](../tutorial/start.md#user_name)
 </div>
 
 ### 类属性
 
 <div class="docstring" markdown="1">
-**user_id** - *(int)* [user_id](../tutorial/quickstart.md#user_id)
+**user_id** - *(int)* [user_id](../tutorial/start.md#user_id)
 
-**portrait** - *(str)* [portrait](../tutorial/quickstart.md#portrait)
+**portrait** - *(str)* [portrait](../tutorial/start.md#portrait)
 
-**user_name** - *(str)* [用户名](../tutorial/quickstart.md#user_name)
+**user_name** - *(str)* [用户名](../tutorial/start.md#user_name)
 
 **nick_name** - *(str)* 用户昵称
 
-**tieba_uid** - *(int)* [tieba_uid](../tutorial/quickstart.md#tieba_uid)
+**tieba_uid** - *(int)* [tieba_uid](../tutorial/start.md#tieba_uid)
 
 **level** - *(int)* 等级
 

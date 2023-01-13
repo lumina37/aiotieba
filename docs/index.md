@@ -52,4 +52,4 @@ async def main():
 asyncio.run(main())
 ```
 
-+ 继续阅读[**入门教程**](tutorial/quickstart.md)
++ 继续阅读[**入门教程**](tutorial/start.md)

@@ -52,7 +52,7 @@ async def main():
 asyncio.run(main())
 ```
 
-+ 继续阅读[**入门教程**](https://v-8.top/tutorial/quickstart)
++ 继续阅读[**入门教程**](https://v-8.top/tutorial/start)
 
 ## 友情链接
 
