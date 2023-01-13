@@ -72,8 +72,8 @@ class ForumInfoCache(object):
 
     __slots__ = []
 
-    _fname2fid: OrderedDict[str, int] = OrderedDict()
-    _fid2fname: OrderedDict[int, str] = OrderedDict()
+    _fname2fid = OrderedDict()
+    _fid2fname = OrderedDict()
 
     @classmethod
     def get_fid(cls, fname: str) -> int:
