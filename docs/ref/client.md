@@ -62,7 +62,7 @@ async def `get_fname`(*fid: int*) -> *str*
 </div>
 
 
-async def `get_user_info`(*_id: str | int*, /, *require: [ReqUInfo](enum.md#requinfo) = [ReqUInfo](enum.md#requinfo).ALL*) -> *[UserInfo](typedef.md#userinfo)*
+async def `get_user_info`(*_id: str | int*, /, *require: [ReqUInfo](enum.md#requinfo) = [ReqUInfo](enum.md#requinfo).ALL*) -> *[UserInfo](classdef.md#userinfo)*
 
 <div class="docstring" markdown="1">
 获取用户信息
@@ -75,7 +75,7 @@ async def `get_user_info`(*_id: str | int*, /, *require: [ReqUInfo](enum.md#requ
 **返回**: 用户信息
 </div>
 
-async def `tieba_uid2user_info`(*tieba_uid: int*) -> *[UserInfo](typedef.md#userinfo)*
+async def `tieba_uid2user_info`(*tieba_uid: int*) -> *[UserInfo](classdef.md#userinfo)*
 
 <div class="docstring" markdown="1">
 通过[tieba_uid](../tutorial/quickstart.md#tieba_uid)获取用户信息
@@ -87,7 +87,7 @@ async def `tieba_uid2user_info`(*tieba_uid: int*) -> *[UserInfo](typedef.md#user
 **返回**: 用户信息
 </div>
 
-async def `get_threads`(*fname_or_fid: str | int*, /, *pn: int = 1*, \*, *rn: int = 30*, *sort: int = 5*, *is_good: bool = False*) -> *[Threads](typedef.md#threads)*
+async def `get_threads`(*fname_or_fid: str | int*, /, *pn: int = 1*, \*, *rn: int = 30*, *sort: int = 5*, *is_good: bool = False*) -> *[Threads](classdef.md#threads)*
 
 <div class="docstring" markdown="1">
 获取首页帖子
@@ -105,10 +105,10 @@ async def `get_threads`(*fname_or_fid: str | int*, /, *pn: int = 1*, \*, *rn: in
 **返回**: 帖子列表
 </div>
 
-async def `get_posts`(*tid: int*, /, *pn: int = 1*, \*, *rn: int = 30*, *sort: int = 0*, *only_thread_author: bool = False*, *with_comments: bool = False*, *comment_sort_by_agree: bool = True*, *comment_rn: int = 10*, *is_fold: bool = False*) -> *[Posts](typedef.md#posts)*
+async def `get_posts`(*tid: int*, /, *pn: int = 1*, \*, *rn: int = 30*, *sort: int = 0*, *only_thread_author: bool = False*, *with_comments: bool = False*, *comment_sort_by_agree: bool = True*, *comment_rn: int = 10*, *is_fold: bool = False*) -> *[Posts](classdef.md#posts)*
 
 <div class="docstring" markdown="1">
-获取首页帖子
+获取回复列表
 
 **参数**:
 
@@ -125,10 +125,10 @@ async def `get_posts`(*tid: int*, /, *pn: int = 1*, \*, *rn: int = 30*, *sort: i
 **返回**: 回复列表
 </div>
 
-async def `get_comments`(*tid: int*, *pid: int*, /, *pn: int = 1*, \*, *is_floor: bool = False*) -> *[Comments](typedef.md#comments)*
+async def `get_comments`(*tid: int*, *pid: int*, /, *pn: int = 1*, \*, *is_floor: bool = False*) -> *[Comments](classdef.md#comments)*
 
 <div class="docstring" markdown="1">
-获取首页帖子
+获取楼中楼列表
 
 **参数**:
 
