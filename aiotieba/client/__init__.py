@@ -104,7 +104,7 @@ class Client(object):
         '_ws_dispatcher',
     ]
 
-    _use_env_proxy = True
+    _use_env_proxy = False
 
     def __init__(self, BDUSS_key: Optional[str] = None) -> None:
 
