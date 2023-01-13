@@ -104,7 +104,7 @@ class Client(object):
         '_ws_dispatcher',
     ]
 
-    _use_env_proxy = False
+    _use_env_proxy = True
 
     def __init__(self, BDUSS_key: Optional[str] = None) -> None:
 
@@ -665,7 +665,7 @@ class Client(object):
         """
 
         try:
-            request = tieba_uid2user_info.pack_request(self.client_app_proto, tieba_uid)
+            request = tieba_uid2user_info.pack_request(self.client_app_proto, self.core, tieba_uid)
             response = await send_request(self.client_app_proto, request)
             user = tieba_uid2user_info.parse_response(response)
 

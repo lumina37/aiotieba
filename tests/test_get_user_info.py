@@ -48,3 +48,10 @@ async def test_get_user_info(client: tb.Client):
     assert user.post_num > 0
     assert user.priv_like != 0
     assert user.priv_reply != 0
+
+    user = await client.tieba_uid2user_info(3356245857)
+    assert user.user_id == self_info.user_id
+    assert user.portrait == self_info.portrait
+    assert user.user_name == self_info.user_name
+    assert user.tieba_uid > 0
+    assert user.age > 0
