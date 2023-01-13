@@ -4,8 +4,7 @@ import functools
 import sys
 import time
 import types
-from collections.abc import Callable, Iterator
-from typing import TYPE_CHECKING, List, Literal, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Callable, Iterator, List, Literal, Optional, Tuple, Union
 
 from ._logging import get_logger as LOG
 from .client import Client

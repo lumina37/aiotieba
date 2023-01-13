@@ -1,5 +1,4 @@
-from collections.abc import Iterator
-from typing import Generic, List, SupportsIndex, TypeVar, overload
+from typing import Generic, Iterator, List, SupportsIndex, TypeVar, overload
 
 TypeContainer = TypeVar('TypeContainer')
 

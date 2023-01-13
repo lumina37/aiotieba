@@ -1,8 +1,7 @@
 import argparse
 import asyncio
 import re
-from collections.abc import Callable
-from typing import Optional, Union
+from typing import Callable, Optional, Union
 
 import aiotieba as tb
 

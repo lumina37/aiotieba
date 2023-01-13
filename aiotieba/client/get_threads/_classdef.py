@@ -1,5 +1,4 @@
-from collections.abc import Iterable
-from typing import Dict, List
+from typing import Dict, Iterable, List
 
 from .._classdef import Containers, Forum, TypeMessage, VirtualImage, VoteInfo
 from .._classdef.contents import (

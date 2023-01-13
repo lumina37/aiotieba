@@ -1,5 +1,4 @@
-from collections.abc import Iterable
-from typing import List
+from typing import Iterable, List
 
 from .._classdef import Containers, Forum, TypeMessage
 from .._classdef.contents import (

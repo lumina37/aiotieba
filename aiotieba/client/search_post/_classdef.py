@@ -1,5 +1,4 @@
-from collections.abc import Mapping
-from typing import List
+from typing import List, Mapping
 
 from .._classdef import Containers
 

@@ -2,8 +2,7 @@ import asyncio
 import functools
 import itertools
 import time
-from collections.abc import Callable
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import aiotieba as tb
 from aiotieba._config import tomllib

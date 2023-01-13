@@ -1,5 +1,4 @@
-from collections.abc import Iterable
-from typing import List
+from typing import Iterable, List
 
 from .._classdef import Containers, TypeMessage, VoteInfo
 from .._classdef.contents import FragAt, FragEmoji, FragLink, FragmentUnknown, FragText, TypeFragment, TypeFragText
