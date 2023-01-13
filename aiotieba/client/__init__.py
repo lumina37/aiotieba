@@ -100,7 +100,6 @@ class Client(object):
         '_client_web',
         '_client_ws',
         'websocket',
-        '_ws_aes_chiper',
         '_ws_dispatcher',
     ]
 
@@ -195,7 +194,6 @@ class Client(object):
         )
 
         self.websocket: httpx_ws.AsyncWebSocketSession = None
-        self._ws_aes_chiper = None
         self._ws_dispatcher: asyncio.Task = None
 
     async def __aenter__(self) -> "Client":

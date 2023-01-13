@@ -25,6 +25,7 @@ class TiebaCore(object):
         '_client_id',
         '_cuid',
         '_cuid_galaxy2',
+        '_ws_aes_chiper',
         '_ws_password',
     ]
 
@@ -42,6 +43,7 @@ class TiebaCore(object):
         self._client_id: str = None
         self._cuid: str = None
         self._cuid_galaxy2: str = None
+        self._ws_aes_chiper = None
         self._ws_password: bytes = None
 
     @property
@@ -175,7 +177,7 @@ class TiebaCore(object):
 
         if self._ws_aes_chiper is None:
             salt = b'\xa4\x0b\xc8\x34\xd6\x95\xf3\x13'
-            ws_secret_key = hashlib.pbkdf2_hmac('sha1', self.core.ws_password, salt, 5, 32)
+            ws_secret_key = hashlib.pbkdf2_hmac('sha1', self.ws_password, salt, 5, 32)
             self._ws_aes_chiper = AES.new(ws_secret_key, AES.MODE_ECB)
 
         return self._ws_aes_chiper
