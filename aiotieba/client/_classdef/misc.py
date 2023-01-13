@@ -22,7 +22,7 @@ class WebsocketResponse(object):
         '_data_future',
     ]
 
-    ws_res_wait_dict: weakref.WeakValueDictionary[int, "WebsocketResponse"] = weakref.WeakValueDictionary()
+    ws_res_wait_dict = weakref.WeakValueDictionary()
     _websocket_request_id: int = None
 
     def __init__(self) -> None:
