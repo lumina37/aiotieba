@@ -422,7 +422,7 @@ async def crawler(fname: str):
 
 
 # 执行协程crawler
-asyncio.run(crawler("图拉丁"))
+asyncio.run(crawler("天堂鸡汤"))
 ```
 
 ### 期望结果
