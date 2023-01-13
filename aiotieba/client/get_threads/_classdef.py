@@ -805,7 +805,7 @@ class Contents_st(Containers[TypeFragment]):
         '_has_video',
     ]
 
-    def _init(self, protos: Iterable[TypeMessage]) -> "Contents_t":
+    def _init(self, protos: Iterable[TypeMessage]) -> "Contents_st":
         def _init_by_type(proto) -> TypeFragment:
             _type = proto.type
             # 0纯文本 9电话号 18话题 27百科词条

@@ -271,7 +271,7 @@ class At(object):
         '_create_time',
     ]
 
-    def _init(self, data_map: Mapping) -> None:
+    def _init(self, data_map: Mapping) -> "At":
         self._text = data_map['content']
         self._fname = data_map['fname']
         self._tid = int(data_map['thread_id'])

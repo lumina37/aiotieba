@@ -130,7 +130,7 @@ class UserInfo_u(object):
         '_nick_name_new',
     ]
 
-    def _init(self, data_proto: TypeMessage):
+    def _init(self, data_proto: TypeMessage) -> "UserInfo_u":
         self._user_id = data_proto.user_id
         if '?' in (portrait := data_proto.user_portrait):
             self._portrait = portrait[:-13]

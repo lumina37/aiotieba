@@ -497,7 +497,7 @@ class Comment_p(object):
         '_create_time',
     ]
 
-    def _init(self, data_proto: TypeMessage) -> Contents_pc:
+    def _init(self, data_proto: TypeMessage) -> "Comment_p":
         contents = Contents_pc()._init(data_proto.content)
 
         self._reply_to_id = 0
@@ -1626,7 +1626,7 @@ class UserInfo_pt(object):
             }
         )
 
-    def __eq__(self, obj: "UserInfo_p") -> bool:
+    def __eq__(self, obj: "UserInfo_pt") -> bool:
         return self._user_id == obj._user_id
 
     def __hash__(self) -> int:

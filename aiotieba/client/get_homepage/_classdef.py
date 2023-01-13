@@ -121,7 +121,7 @@ class UserInfo_home(object):
         '_priv_reply',
     ]
 
-    def _init(self, data_proto: TypeMessage):
+    def _init(self, data_proto: TypeMessage) -> "UserInfo_home":
         self._user_id = data_proto.id
         if '?' in (portrait := data_proto.portrait):
             self._portrait = portrait[:-13]

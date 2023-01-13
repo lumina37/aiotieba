@@ -215,7 +215,7 @@ class UserInfo_reply_p(object):
             }
         )
 
-    def __eq__(self, obj: "UserInfo_reply") -> bool:
+    def __eq__(self, obj: "UserInfo_reply_p") -> bool:
         return self._user_id == obj._user_id
 
     def __hash__(self) -> int:
@@ -307,13 +307,13 @@ class UserInfo_reply_t(object):
         '_nick_name_new',
     ]
 
-    def _init(self, data_proto: TypeMessage) -> "UserInfo_reply":
+    def _init(self, data_proto: TypeMessage) -> "UserInfo_reply_t":
         self._user_id = data_proto.id
         self._portrait = data_proto.portrait
         self._nick_name_new = data_proto.name_show
         return self
 
-    def _init_null(self) -> "UserInfo_reply":
+    def _init_null(self) -> "UserInfo_reply_t":
         self._user_id = 0
         self._portrait = ''
         self._nick_name_new = ''
@@ -331,7 +331,7 @@ class UserInfo_reply_t(object):
             }
         )
 
-    def __eq__(self, obj: "UserInfo_reply") -> bool:
+    def __eq__(self, obj: "UserInfo_reply_t") -> bool:
         return self._user_id == obj._user_id
 
     def __hash__(self) -> int:
