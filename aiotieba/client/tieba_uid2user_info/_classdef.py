@@ -9,7 +9,7 @@ class UserInfo_TUid(object):
         user_id (int): user_id
         portrait (str): portrait
         user_name (str): 用户名
-        nick_name_old (str): 旧版昵称
+        nick_name_new (str): 新版昵称
         tieba_uid (int): 用户个人主页uid
 
         age (float): 吧龄
@@ -26,7 +26,7 @@ class UserInfo_TUid(object):
         '_user_id',
         '_portrait',
         '_user_name',
-        '_nick_name_old',
+        '_nick_name_new',
         '_tieba_uid',
         '_age',
         '_sign',
@@ -35,9 +35,12 @@ class UserInfo_TUid(object):
 
     def _init(self, data_proto: TypeMessage) -> "UserInfo_TUid":
         self._user_id = data_proto.id
-        self._portrait = data_proto.portrait[:-13]
+        if '?' in (portrait := data_proto.portrait):
+            self._portrait = portrait[:-13]
+        else:
+            self._portrait = portrait
         self._user_name = data_proto.name
-        self._nick_name_old = data_proto.name_show
+        self._nick_name_new = data_proto.name_show
         self._tieba_uid = int(data_proto.tieba_uid)
         self._age = float(data_proto.tb_age)
         self._sign = data_proto.intro
@@ -48,7 +51,7 @@ class UserInfo_TUid(object):
         self._user_id = 0
         self._portrait = ''
         self._user_name = ''
-        self._nick_name_old = ''
+        self._nick_name_new = ''
         self._tieba_uid = 0
         self._age = 0.0
         self._sign = ''
@@ -64,6 +67,7 @@ class UserInfo_TUid(object):
                 'user_id': self._user_id,
                 'user_name': self._user_name,
                 'portrait': self._portrait,
+                'show_name': self.show_name,
                 'age': self._age,
                 'sign': self._sign,
             }
@@ -87,7 +91,7 @@ class UserInfo_TUid(object):
         用户user_id
 
         Note:
-            该字段具有唯一性且不可变
+            唯一 不可变 不可为空
             请注意与用户个人页的tieba_uid区分
         """
 
@@ -99,7 +103,7 @@ class UserInfo_TUid(object):
         用户portrait
 
         Note:
-            该字段具有唯一性且不可变
+            唯一 不可变 不可为空
         """
 
         return self._portrait
@@ -110,19 +114,19 @@ class UserInfo_TUid(object):
         用户名
 
         Note:
-            该字段具有唯一性但可变
+            唯一 可变 可为空
             请注意与用户昵称区分
         """
 
         return self._user_name
 
     @property
-    def nick_name_old(self) -> str:
+    def nick_name_new(self) -> str:
         """
-        旧版昵称
+        新版昵称
         """
 
-        return self._nick_name_old
+        return self._nick_name_new
 
     @property
     def tieba_uid(self) -> int:
@@ -130,7 +134,7 @@ class UserInfo_TUid(object):
         用户个人主页uid
 
         Note:
-            具有唯一性
+            唯一 不可变 可为空
             请注意与user_id区分
         """
 
@@ -169,7 +173,15 @@ class UserInfo_TUid(object):
         用户昵称
         """
 
-        return self._nick_name_old
+        return self._nick_name_new
+
+    @property
+    def show_name(self) -> str:
+        """
+        显示名称
+        """
+
+        return self._nick_name_new or self._user_name
 
     @property
     def log_name(self) -> str:
@@ -180,6 +192,6 @@ class UserInfo_TUid(object):
         if self._user_name:
             return self._user_name
         elif self._portrait:
-            return f"{self._nick_name_old}/{self._portrait}"
+            return f"{self._nick_name_new}/{self._portrait}"
         else:
             return str(self._user_id)

@@ -32,7 +32,10 @@ class UserInfo_guinfo_app(object):
 
     def _init(self, data_proto: TypeMessage) -> "UserInfo_guinfo_app":
         self._user_id = data_proto.id
-        self._portrait = data_proto.portrait[:-13]
+        if '?' in (portrait := data_proto.portrait):
+            self._portrait = portrait[:-13]
+        else:
+            self._portrait = portrait
         self._user_name = data_proto.name
         self._nick_name_old = data_proto.name_show
         self._gender = data_proto.sex
@@ -80,7 +83,7 @@ class UserInfo_guinfo_app(object):
         用户user_id
 
         Note:
-            该字段具有唯一性且不可变
+            唯一 不可变 不可为空
             请注意与用户个人页的tieba_uid区分
         """
 
@@ -92,7 +95,7 @@ class UserInfo_guinfo_app(object):
         用户portrait
 
         Note:
-            该字段具有唯一性且不可变
+            唯一 不可变 不可为空
         """
 
         return self._portrait
@@ -103,7 +106,7 @@ class UserInfo_guinfo_app(object):
         用户名
 
         Note:
-            该字段具有唯一性但可变
+            唯一 可变 可为空
             请注意与用户昵称区分
         """
 

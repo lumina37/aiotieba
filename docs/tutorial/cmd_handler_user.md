@@ -47,7 +47,7 @@
 
 *如何在app不依赖任何现有发言封禁任意用户十天*
 
-先在目标用户的个人主页复制包含其[`tieba_uid`](quickstart.md#tieba_uid)的字符串
+先在目标用户的个人主页复制包含其[`tieba_uid`](start.md#tieba_uid)的字符串
 
 <img width="40%" alt="2_1" src="https://user-images.githubusercontent.com/48282276/160992857-c4f29b1c-1b46-4074-b1c5-b6f83a62de46.jpg">
 
@@ -56,7 +56,7 @@
 再输入
 
 **指令类型**: [`block`](#block-block3-block1)<br>
-**参数1**: `刚刚复制的那坨东西` (用户id: 包含[tieba_uid](quickstart.md#tieba_uid)的字符串)
+**参数1**: `刚刚复制的那坨东西` (用户id: 包含[tieba_uid](start.md#tieba_uid)的字符串)
 
 点击回复
 
@@ -94,8 +94,8 @@
 
 *网页端如何解封任意用户*
 
-点开用户主页，在链接里找到一串`tb.1.`开头的东西，这个东西叫[`portrait`](quickstart.md#portrait)<br>
-每个用户都有唯一的[`portrait`](quickstart.md#portrait)<br>
+点开用户主页，在链接里找到一串`tb.1.`开头的东西，这个东西叫[`portrait`](start.md#portrait)<br>
+每个用户都有唯一的[`portrait`](start.md#portrait)<br>
 把它复制出来
 
 <img width="80%" alt="4_1" src="https://user-images.githubusercontent.com/48282276/160996223-8afa7be5-1051-4cdd-9d4c-0e05044774e9.png">
@@ -290,16 +290,16 @@ block1: *封禁*`id`对应的用户1天
 
 `reason`: 可选参数，封禁理由
 
-`id`: [`用户名`](quickstart.md#user_name)或[`portrait`](quickstart.md#portrait)或包含[`tieba_uid`](quickstart.md#tieba_uid)的字符串或包含[`user_id`](quickstart.md#user_id)的字符串，它们都可以用来唯一地确定一个贴吧用户
+`id`: [`用户名`](start.md#user_name)或[`portrait`](start.md#portrait)或包含[`tieba_uid`](start.md#tieba_uid)的字符串或包含[`user_id`](start.md#user_id)的字符串，它们都可以用来唯一地确定一个贴吧用户
 
-+ [`用户名`](quickstart.md#user_name): 请注意将其与可重复的`昵称`相区分。每个贴吧用户的用户名都是唯一的，但用户可以没有用户名<br>
-+ [`portrait`](quickstart.md#portrait): 一般是以`tb.1.`开头的一串字符串<br>
-用网页端处理用户时，推荐使用这个[`portrait`](quickstart.md#portrait)方法予以精准定位<br>
-+ 包含[`tieba_uid`](quickstart.md#tieba_uid)的字符串: [`tieba_uid`](quickstart.md#tieba_uid)需要被两个`#`号包围，如`#12345678#`<br>
++ [`用户名`](start.md#user_name): 请注意将其与可重复的`昵称`相区分。每个贴吧用户的用户名都是唯一的，但用户可以没有用户名<br>
++ [`portrait`](start.md#portrait): 一般是以`tb.1.`开头的一串字符串<br>
+用网页端处理用户时，推荐使用这个[`portrait`](start.md#portrait)方法予以精准定位<br>
++ 包含[`tieba_uid`](start.md#tieba_uid)的字符串: [`tieba_uid`](start.md#tieba_uid)需要被两个`#`号包围，如`#12345678#`<br>
 在较新版贴吧app的用户主页的用户头像下方有个长得像`ID:12345678`的东西，点它右侧的那个复制按钮复制出来的一串东西，就能作为这里的参数<br>
-用app处理无用户名的用户，或者用户名很复杂的用户时，推荐使用这个包含[`tieba_uid`](quickstart.md#tieba_uid)的字符串方法予以精准定位<br>
-+ 包含[`user_id`](quickstart.md#user_id)的字符串: 每个贴吧用户都有且仅有一个[`user_id`](quickstart.md#user_id)。[`user_id`](quickstart.md#user_id)需要被两个`/`号包围，如`/12345678/`<br>
-一般仅用于吧务通过后台数据表中记录的[`user_id`](quickstart.md#user_id)反查用户信息，普通用户接触不到<br>
+用app处理无用户名的用户，或者用户名很复杂的用户时，推荐使用这个包含[`tieba_uid`](start.md#tieba_uid)的字符串方法予以精准定位<br>
++ 包含[`user_id`](start.md#user_id)的字符串: 每个贴吧用户都有且仅有一个[`user_id`](start.md#user_id)。[`user_id`](start.md#user_id)需要被两个`/`号包围，如`/12345678/`<br>
+一般仅用于吧务通过后台数据表中记录的[`user_id`](start.md#user_id)反查用户信息，普通用户接触不到<br>
 
 后面还会频繁使用到这个参数`id`的概念，**请记住它**！
 
@@ -339,7 +339,7 @@ block1: *封禁*`id`对应的用户1天
 
 ***参数说明***
 
-`id`: [`用户名`](quickstart.md#user_name)或[`portrait`](quickstart.md#portrait)或包含[`tieba_uid`](quickstart.md#tieba_uid)的字符串或包含[`user_id`](quickstart.md#user_id)的字符串
+`id`: [`用户名`](start.md#user_name)或[`portrait`](start.md#portrait)或包含[`tieba_uid`](start.md#tieba_uid)的字符串或包含[`user_id`](start.md#user_id)的字符串
 
 ***能使用该指令的最低权限级别***
 
@@ -559,7 +559,7 @@ drop1: 对应1天封禁<br>
 
 ***参数说明***
 
-`id`: [`用户名`](quickstart.md#user_name)或[`portrait`](quickstart.md#portrait)或包含[`tieba_uid`](quickstart.md#tieba_uid)的字符串或包含[`user_id`](quickstart.md#user_id)的字符串<br>
+`id`: [`用户名`](start.md#user_name)或[`portrait`](start.md#portrait)或包含[`tieba_uid`](start.md#tieba_uid)的字符串或包含[`user_id`](start.md#user_id)的字符串<br>
 `note`: 可选参数，操作理由，方便日后查阅
 
 ***能使用该指令的最低权限级别***
@@ -588,7 +588,7 @@ drop1: 对应1天封禁<br>
 
 ***参数说明***
 
-`id`: [`用户名`](quickstart.md#user_name)或[`portrait`](quickstart.md#portrait)或包含[`tieba_uid`](quickstart.md#tieba_uid)的字符串或包含[`user_id`](quickstart.md#user_id)的字符串<br>
+`id`: [`用户名`](start.md#user_name)或[`portrait`](start.md#portrait)或包含[`tieba_uid`](start.md#tieba_uid)的字符串或包含[`user_id`](start.md#user_id)的字符串<br>
 `note`: 可选参数，操作理由，方便日后查阅
 
 ***能使用该指令的最低权限级别***
@@ -616,7 +616,7 @@ drop1: 对应1天封禁<br>
 
 ***参数说明***
 
-`id`: [`用户名`](quickstart.md#user_name)或[`portrait`](quickstart.md#portrait)或包含[`tieba_uid`](quickstart.md#tieba_uid)的字符串或包含[`user_id`](quickstart.md#user_id)的字符串
+`id`: [`用户名`](start.md#user_name)或[`portrait`](start.md#portrait)或包含[`tieba_uid`](start.md#tieba_uid)的字符串或包含[`user_id`](start.md#user_id)的字符串
 
 ***能使用该指令的最低权限级别***
 
@@ -664,7 +664,7 @@ drop1: 对应1天封禁<br>
 
 ***参数说明***
 
-`id`: [`用户名`](quickstart.md#user_name)或[`portrait`](quickstart.md#portrait)或包含[`tieba_uid`](quickstart.md#tieba_uid)的字符串或包含[`user_id`](quickstart.md#user_id)的字符串<br>
+`id`: [`用户名`](start.md#user_name)或[`portrait`](start.md#portrait)或包含[`tieba_uid`](start.md#tieba_uid)的字符串或包含[`user_id`](start.md#user_id)的字符串<br>
 `permission`: 目标用户的新权限级别<br>
 `note`: 可选参数，操作理由，方便日后查阅
 
@@ -708,7 +708,7 @@ record_time: 2022-04-13 10:20:22
 
 ***参数说明***
 
-`id`: [`用户名`](quickstart.md#user_name)或[`portrait`](quickstart.md#portrait)或包含[`tieba_uid`](quickstart.md#tieba_uid)的字符串或包含[`user_id`](quickstart.md#user_id)的字符串
+`id`: [`用户名`](start.md#user_name)或[`portrait`](start.md#portrait)或包含[`tieba_uid`](start.md#tieba_uid)的字符串或包含[`user_id`](start.md#user_id)的字符串
 
 ***能使用该指令的最低权限级别***
 
@@ -849,7 +849,7 @@ Used: 15 / 100 = 15.00%
 
 ***参数说明***
 
-`id`: [`用户名`](quickstart.md#user_name)或[`portrait`](quickstart.md#portrait)或包含[`tieba_uid`](quickstart.md#tieba_uid)的字符串或包含[`user_id`](quickstart.md#user_id)的字符串
+`id`: [`用户名`](start.md#user_name)或[`portrait`](start.md#portrait)或包含[`tieba_uid`](start.md#tieba_uid)的字符串或包含[`user_id`](start.md#user_id)的字符串
 
 ***能使用该指令的最低权限级别***
 
@@ -875,7 +875,7 @@ Used: 15 / 100 = 15.00%
 
 ***参数说明***
 
-`id`: [`用户名`](quickstart.md#user_name)或[`portrait`](quickstart.md#portrait)或包含[`tieba_uid`](quickstart.md#tieba_uid)的字符串或包含[`user_id`](quickstart.md#user_id)的字符串
+`id`: [`用户名`](start.md#user_name)或[`portrait`](start.md#portrait)或包含[`tieba_uid`](start.md#tieba_uid)的字符串或包含[`user_id`](start.md#user_id)的字符串
 
 ***能使用该指令的最低权限级别***
 

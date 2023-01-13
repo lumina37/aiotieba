@@ -28,7 +28,10 @@ class Follow(object):
     def _init(self, data_map: Mapping) -> "Follow":
         self._user_name = int(data_map['id'])
         self._user_id = data_map['name']
-        self._portrait = data_map['portrait'][:-13]
+        if '?' in (portrait := data_map['portrait']):
+            self._portrait = portrait[:-13]
+        else:
+            self._portrait = portrait
         self._nick_name_new = data_map['name_show']
         return self
 
@@ -63,7 +66,7 @@ class Follow(object):
         用户user_id
 
         Note:
-            该字段具有唯一性且不可变
+            唯一 不可变 不可为空
             请注意与用户个人页的tieba_uid区分
         """
 
@@ -75,7 +78,7 @@ class Follow(object):
         用户portrait
 
         Note:
-            该字段具有唯一性且不可变
+            唯一 不可变 不可为空
         """
 
         return self._portrait
@@ -86,7 +89,7 @@ class Follow(object):
         用户名
 
         Note:
-            该字段具有唯一性但可变
+            唯一 可变 可为空
             请注意与用户昵称区分
         """
 

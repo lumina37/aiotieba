@@ -6,8 +6,8 @@ from typing import ClassVar, Optional
 
 from Crypto.Cipher import AES
 
+from ... import _logging as LOG
 from ..._config import CONFIG
-from ..._logger import LOG
 
 
 class TiebaCore(object):

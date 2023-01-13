@@ -211,7 +211,7 @@ class Contents_p(Containers[TypeFragment]):
                 self._texts.append(fragment)
             else:
                 fragment = FragmentUnknown_p(proto)
-                from ..._logger import LOG
+                from ... import _logging as LOG
 
                 LOG.warning(f"Unknown fragment type. type={_type} frag={fragment}")
 
@@ -369,7 +369,7 @@ class Contents_pc(Containers[TypeFragment]):
                 self._texts.append(fragment)
             else:
                 fragment = FragmentUnknown_pc(proto)
-                from ..._logger import LOG
+                from ... import _logging as LOG
 
                 LOG.warning(f"Unknown fragment type. type={_type} frag={fragment}")
 
@@ -698,7 +698,10 @@ class UserInfo_p(object):
 
     def _init(self, data_proto: TypeMessage) -> "UserInfo_p":
         self._user_id = data_proto.id
-        self._portrait = data_proto.portrait[:-13]
+        if '?' in (portrait := data_proto.portrait):
+            self._portrait = portrait[:-13]
+        else:
+            self._portrait = portrait
         self._user_name = data_proto.name
         self._nick_name_new = data_proto.name_show
         self._level = data_proto.level_id
@@ -765,7 +768,7 @@ class UserInfo_p(object):
         用户user_id
 
         Note:
-            该字段具有唯一性且不可变
+            唯一 不可变 不可为空
             请注意与用户个人页的tieba_uid区分
         """
 
@@ -777,7 +780,7 @@ class UserInfo_p(object):
         用户portrait
 
         Note:
-            该字段具有唯一性且不可变
+            唯一 不可变 不可为空
         """
 
         return self._portrait
@@ -788,7 +791,7 @@ class UserInfo_p(object):
         用户名
 
         Note:
-            该字段具有唯一性但可变
+            唯一 可变 可为空
             请注意与用户昵称区分
         """
 
@@ -1417,7 +1420,7 @@ class Contents_pt(Containers[TypeFragment]):
                 self._texts.append(fragment)
             else:
                 fragment = FragmentUnknown_pt(proto)
-                from ..._logger import LOG
+                from ... import _logging as LOG
 
                 LOG.warning(f"Unknown fragment type. type={_type} frag={fragment}")
 
@@ -1571,7 +1574,10 @@ class UserInfo_pt(object):
 
     def _init(self, data_proto: TypeMessage) -> "UserInfo_pt":
         self._user_id = data_proto.id
-        self._portrait = data_proto.portrait[:-13]
+        if '?' in (portrait := data_proto.portrait):
+            self._portrait = portrait[:-13]
+        else:
+            self._portrait = portrait
         self._user_name = data_proto.name
         self._nick_name_new = data_proto.name_show
         self._level = data_proto.level_id
@@ -1638,7 +1644,7 @@ class UserInfo_pt(object):
         用户user_id
 
         Note:
-            该字段具有唯一性且不可变
+            唯一 不可变 不可为空
             请注意与用户个人页的tieba_uid区分
         """
 
@@ -1650,7 +1656,7 @@ class UserInfo_pt(object):
         用户portrait
 
         Note:
-            该字段具有唯一性且不可变
+            唯一 不可变 不可为空
         """
 
         return self._portrait
@@ -1661,7 +1667,7 @@ class UserInfo_pt(object):
         用户名
 
         Note:
-            该字段具有唯一性但可变
+            唯一 可变 可为空
             请注意与用户昵称区分
         """
 

@@ -1,4 +1,3 @@
-__all__ = ['Client']
 import asyncio
 import base64
 from typing import Dict, List, Literal, Optional, Tuple, Union
@@ -10,7 +9,7 @@ import wsproto
 from Crypto.Cipher import PKCS1_v1_5
 from Crypto.PublicKey import RSA
 
-from .._logger import LOG
+from .. import _logging as LOG
 from . import (
     add_post,
     agree,
@@ -574,8 +573,7 @@ class Client(object):
 
         except Exception as err:
             LOG.warning(f"{err}. user={name_or_portrait}")
-            user = get_uinfo_panel.UserInfo_panel()
-            user._init_null()
+            user = get_uinfo_panel.UserInfo_panel()._init_null()
 
         return user
 
@@ -647,7 +645,7 @@ class Client(object):
 
         except Exception as err:
             LOG.warning(f"{err}. user={user_id}")
-            user = get_uinfo_getUserInfo_web.UserInfo_guinfo_web._init_null()
+            user = get_uinfo_getUserInfo_web.UserInfo_guinfo_web()._init_null()
 
         return user
 
@@ -667,7 +665,7 @@ class Client(object):
         """
 
         try:
-            request = tieba_uid2user_info.pack_request(self.client_app_proto, tieba_uid)
+            request = tieba_uid2user_info.pack_request(self.client_app_proto, self.core, tieba_uid)
             response = await send_request(self.client_app_proto, request)
             user = tieba_uid2user_info.parse_response(response)
 

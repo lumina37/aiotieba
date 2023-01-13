@@ -1,6 +1,8 @@
 name: CI
 
 on:
+  schedule:
+    - cron: '42 6 * * *'
   push:
     branches: [ develop ]
     paths:
@@ -29,6 +31,8 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
+      with:
+        ref: develop
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
