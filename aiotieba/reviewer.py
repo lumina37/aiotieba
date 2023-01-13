@@ -1,9 +1,3 @@
-try:
-    import cv2 as cv
-    import numpy as np
-except ImportError:
-    pass
-
 import asyncio
 import enum
 import functools
@@ -11,7 +5,7 @@ import sys
 import time
 import types
 from collections.abc import Callable, Iterator
-from typing import List, Literal, Optional, Tuple, Union
+from typing import TYPE_CHECKING, List, Literal, Optional, Tuple, Union
 
 from ._logging import get_logger as LOG
 from .client import Client
@@ -19,6 +13,10 @@ from .client._classdef.enums import ReqUInfo
 from .client._classdef.misc import ForumInfoCache
 from .client._typing import Comment, Comments, Post, Posts, Thread, Threads, TypeUserInfo
 from .database import MySQLDB, SQLiteDB
+
+if TYPE_CHECKING:
+    import cv2 as cv
+    import numpy as np
 
 
 def alog_time(func) -> None:
@@ -56,8 +54,8 @@ class BaseReviewer(object):
         self.client = Client(BDUSS_key)
         self.db = MySQLDB(fname)
         self._db_sqlite: SQLiteDB = None
-        self._img_hasher: "cv.img_hash.AverageHash" = None
-        self._qrdetector: "cv.QRCodeDetector" = None
+        self._img_hasher = None
+        self._qrdetector = None
 
     async def __aenter__(self) -> "BaseReviewer":
         await self.client.__aenter__()
@@ -75,6 +73,8 @@ class BaseReviewer(object):
 
     @property
     def img_hasher(self) -> "cv.img_hash.AverageHash":
+        import cv2 as cv
+
         if self._img_hasher is None:
             self._img_hasher = cv.img_hash.AverageHash.create()
         return self._img_hasher
@@ -87,6 +87,8 @@ class BaseReviewer(object):
 
     @property
     def qrdetector(self) -> "cv.QRCodeDetector":
+        import cv2 as cv
+
         if self._qrdetector is None:
             self._qrdetector = cv.QRCodeDetector()
         return self._qrdetector

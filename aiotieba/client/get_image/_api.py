@@ -1,11 +1,12 @@
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
-import cv2 as cv
 import httpx
-import numpy as np
 
 from .._exception import ContentTypeError
 from .._helper import raise_for_status, url
+
+if TYPE_CHECKING:
+    import numpy as np
 
 
 def _pack_request_without_host(client: httpx.AsyncClient, url: str) -> httpx.Request:
@@ -54,12 +55,15 @@ def pack_request_portrait(client: httpx.AsyncClient, portrait: str, size: Litera
     return request
 
 
-def parse_response(response: httpx.Response) -> np.ndarray:
+def parse_response(response: httpx.Response) -> "np.ndarray":
     raise_for_status(response)
 
     content_type = response.headers["Content-Type"]
     if not content_type.endswith(('jpeg', 'png', 'bmp'), 6):
         raise ContentTypeError(f"Expect jpeg, png or bmp, got {content_type}")
+    
+    import cv2 as cv
+    import numpy as np
 
     image = cv.imdecode(np.frombuffer(response.content, np.uint8), cv.IMREAD_COLOR)
     if image is None:

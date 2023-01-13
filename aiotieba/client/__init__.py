@@ -1,10 +1,9 @@
 import asyncio
 import base64
-from typing import Dict, List, Literal, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Dict, List, Literal, Optional, Tuple, Union
 
 import httpx
 import httpx_ws
-import numpy as np
 import wsproto
 from Crypto.Cipher import PKCS1_v1_5
 from Crypto.PublicKey import RSA
@@ -81,6 +80,9 @@ from ._exception import TiebaServerError
 from ._helper import APP_BASE_HOST, WEB_BASE_HOST, is_portrait, pack_ws_bytes, send_request, unpack_ws_bytes, url
 from ._typing import TypeUserInfo
 from .get_homepage._classdef import UserInfo_home
+
+if TYPE_CHECKING:
+    import numpy as np
 
 
 class Client(object):
@@ -1900,6 +1902,8 @@ class Client(object):
 
         except Exception as err:
             LOG().warning(f"{err}. url={img_url}")
+            import numpy as np
+
             image = np.empty(0, dtype=np.uint8)
 
         return image
@@ -1923,6 +1927,8 @@ class Client(object):
 
         except Exception as err:
             LOG().warning(f"{err}. raw_hash={raw_hash} size={size}")
+            import numpy as np
+
             image = np.empty(0, dtype=np.uint8)
 
         return image
@@ -1951,6 +1957,8 @@ class Client(object):
 
         except Exception as err:
             LOG().warning(f"{err}. user={user}")
+            import numpy as np
+
             image = np.empty(0, dtype=np.uint8)
 
         return image
