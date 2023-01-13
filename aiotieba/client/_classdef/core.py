@@ -2,7 +2,7 @@ import hashlib
 import random
 import time
 import uuid
-from typing import ClassVar, Optional
+from typing import Optional
 
 from Crypto.Cipher import AES
 
@@ -29,9 +29,9 @@ class TiebaCore(object):
         '_ws_password',
     ]
 
-    main_version: ClassVar[str] = "12.34.3.0"  # 最新版本
-    # no_fold_version: ClassVar[str] = "12.12.1.0"  # 最后一个回复列表不发生折叠的版本
-    post_version: ClassVar[str] = "9.1.0.0"  # 极速版
+    main_version: str = "12.34.3.0"  # 最新版本
+    # no_fold_version: str = "12.12.1.0"  # 最后一个回复列表不发生折叠的版本
+    post_version: str = "9.1.0.0"  # 极速版
 
     def __init__(self, BDUSS_key: Optional[str] = None) -> None:
         self._BDUSS_key = BDUSS_key

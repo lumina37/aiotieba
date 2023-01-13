@@ -2,7 +2,6 @@ import asyncio
 import time
 import weakref
 from collections import OrderedDict
-from typing import ClassVar
 
 
 class WebsocketResponse(object):
@@ -73,8 +72,8 @@ class ForumInfoCache(object):
 
     __slots__ = []
 
-    _fname2fid: ClassVar[OrderedDict[str, int]] = OrderedDict()
-    _fid2fname: ClassVar[OrderedDict[int, str]] = OrderedDict()
+    _fname2fid: OrderedDict[str, int] = OrderedDict()
+    _fid2fname: OrderedDict[int, str] = OrderedDict()
 
     @classmethod
     def get_fid(cls, fname: str) -> int:
