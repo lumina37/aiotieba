@@ -20,7 +20,37 @@ CHECK_URL_PERFIX = "http://tieba.baidu.com/mo/q/checkurl?url="
 _JSON_PARSER = jsonlib.Parser()
 parse_json = _JSON_PARSER.parse
 
-if sys.version_info == (3, 8):
+if sys.version_info >= (3, 9):
+
+    def removeprefix(s: str, prefix: str) -> str:
+        """
+        移除字符串前缀
+
+        Args:
+            s (str): 待移除前缀的字符串
+            prefix (str): 待移除的前缀
+
+        Returns:
+            str: 移除前缀后的字符串
+        """
+
+        return s.removeprefix(prefix)
+
+    def removesuffix(s: str, suffix: str) -> str:
+        """
+        移除字符串前缀
+
+        Args:
+            s (str): 待移除前缀的字符串
+            suffix (str): 待移除的前缀
+
+        Returns:
+            str: 移除前缀后的字符串
+        """
+
+        return s.removesuffix(suffix)
+
+else:
 
     def removeprefix(s: str, prefix: str) -> str:
         """
@@ -62,36 +92,6 @@ if sys.version_info == (3, 8):
             return s[: len(suffix)]
         else:
             return s
-
-else:
-
-    def removeprefix(s: str, prefix: str) -> str:
-        """
-        移除字符串前缀
-
-        Args:
-            s (str): 待移除前缀的字符串
-            prefix (str): 待移除的前缀
-
-        Returns:
-            str: 移除前缀后的字符串
-        """
-
-        return s.removeprefix(prefix)
-
-    def removesuffix(s: str, suffix: str) -> str:
-        """
-        移除字符串前缀
-
-        Args:
-            s (str): 待移除前缀的字符串
-            suffix (str): 待移除的前缀
-
-        Returns:
-            str: 移除前缀后的字符串
-        """
-
-        return s.removesuffix(suffix)
 
 
 def is_portrait(portrait: str) -> bool:

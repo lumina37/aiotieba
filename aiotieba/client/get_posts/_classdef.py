@@ -538,7 +538,7 @@ class Comment_p(object):
             }
         )
 
-    def __eq__(self, obj: "Contents_pc") -> bool:
+    def __eq__(self, obj: "Comment_p") -> bool:
         return self._pid == obj._pid
 
     def __hash__(self) -> int:
