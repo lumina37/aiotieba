@@ -14,7 +14,7 @@ repo_url: https://github.com/Starry-OvO/aiotieba
 nav:
     - 介绍: index.md
     - 教程:
-      - 快速入门: tutorial/quickstart.md
+      - 入门教程: tutorial/start.md
       - 配置文件参考: tutorial/config.md
       - 云审查教程: tutorial/reviewer.md
       - 指令管理器使用教程: tutorial/cmd_handler_user.md
