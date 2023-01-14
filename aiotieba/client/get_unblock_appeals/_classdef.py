@@ -11,7 +11,7 @@ class Appeal(object):
         user_id (int): 申诉用户id
         portrait (str): 申诉用户portrait
         user_name (str): 申诉用户名
-        nick_name_old (str): 申诉用户旧版昵称
+        nick_name (str): 申诉用户昵称
 
         appeal_id (int): 申诉id
         appeal_reason (str): 申诉理由
@@ -27,7 +27,7 @@ class Appeal(object):
         '_user_id',
         '_portrait',
         '_user_name',
-        '_nick_name_old',
+        '_nick_name',
         '_appeal_id',
         '_appeal_reason',
         '_appeal_time',
@@ -45,7 +45,7 @@ class Appeal(object):
         else:
             self._portrait = portrait
         self._user_name = user_map['name']
-        self._nick_name_old = user_map['name_show']
+        self._nick_name = user_map['name_show']
         self._appeal_id = int(data_map['appeal_id'])
         self._appeal_reason = data_map['appeal_reason']
         self._appeal_time = int(data_map['appeal_time'])
@@ -61,6 +61,7 @@ class Appeal(object):
                 'user_id': self._user_id,
                 'portrait': self._portrait,
                 'user_name': self._user_name,
+                'nick_name': self._nick_name,
                 'appeal_id': self._appeal_id,
                 'appeal_reason': self._appeal_reason,
                 'punish_reason': self._punish_reason,
@@ -86,12 +87,12 @@ class Appeal(object):
         return self._user_name
 
     @property
-    def nick_name_old(self) -> str:
+    def nick_name(self) -> str:
         """
-        申诉用户旧版昵称
+        申诉用户昵称
         """
 
-        return self._nick_name_old
+        return self._nick_name
 
     @property
     def appeal_id(self) -> int:
