@@ -1456,7 +1456,7 @@ class Thread(object):
         创建时间
 
         Note:
-            10位时间戳
+            10位时间戳 以秒为单位
         """
 
         return self._create_time
@@ -1467,7 +1467,7 @@ class Thread(object):
         最后回复时间
 
         Note:
-            10位时间戳
+            10位时间戳 以秒为单位
         """
 
         return self._last_time

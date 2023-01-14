@@ -597,7 +597,7 @@ class Comment(object):
         创建时间
 
         Note:
-            10位时间戳
+            10位时间戳 以秒为单位
         """
 
         return self._create_time
@@ -1698,7 +1698,7 @@ class Post_c(object):
         创建时间
 
         Note:
-            10位时间戳
+            10位时间戳 以秒为单位
         """
 
         return self._create_time

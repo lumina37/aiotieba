@@ -43,7 +43,7 @@ class WebsocketResponse(object):
         请求时间戳
 
         Note:
-            13位时间戳
+            13位时间戳 以毫秒为单位
         """
 
         return self._timestamp
