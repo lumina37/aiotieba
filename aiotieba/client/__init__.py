@@ -726,7 +726,7 @@ class Client(object):
         only_thread_author: bool = False,
         with_comments: bool = False,
         comment_sort_by_agree: bool = True,
-        comment_rn: int = 30,
+        comment_rn: int = 4,
         is_fold: bool = False,
     ) -> get_posts.Posts:
         """
@@ -740,7 +740,7 @@ class Client(object):
             only_thread_author (bool, optional): True则只看楼主 False则请求全部. Defaults to False.
             with_comments (bool, optional): True则同时请求高赞楼中楼 False则返回的Posts.comments为空. Defaults to False.
             comment_sort_by_agree (bool, optional): True则楼中楼按点赞数顺序 False则楼中楼按时间顺序. Defaults to True.
-            comment_rn (int, optional): 请求的楼中楼数量. Defaults to 30.
+            comment_rn (int, optional): 请求的楼中楼数量. Defaults to 4. Max to 50.
             is_fold (bool, optional): 是否请求被折叠的回复. Defaults to False.
 
         Returns:
@@ -1822,7 +1822,7 @@ class Client(object):
         Args:
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid
             pn (int, optional): 页码. Defaults to 1.
-            rn (int, optional): 请求的条目数. Defaults to 5.
+            rn (int, optional): 请求的条目数. Defaults to 5. Max to 30.
 
         Returns:
             Appeals: 申诉请求列表
