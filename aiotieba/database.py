@@ -253,9 +253,9 @@ class MySQLDB(object):
                     if user.user_id:
                         await cursor.execute(f"SELECT * FROM `user` WHERE `user_id`={user.user_id}")
                     elif user.portrait:
-                        await cursor.execute(f"SELECT * FROM `user` WHERE `portrait`={user.portrait}")
+                        await cursor.execute(f"SELECT * FROM `user` WHERE `portrait`='{user.portrait}'")
                     elif user.user_name:
-                        await cursor.execute(f"SELECT * FROM `user` WHERE `user_name`={user.user_name}")
+                        await cursor.execute(f"SELECT * FROM `user` WHERE `user_name`='{user.user_name}'")
                     else:
                         raise ValueError("Null input")
 
@@ -316,9 +316,9 @@ class MySQLDB(object):
                     if user.user_id:
                         await cursor.execute(f"DELETE FROM `user` WHERE `user_id`={user.user_id}")
                     elif user.portrait:
-                        await cursor.execute(f"DELETE FROM `user` WHERE `portrait`={user.portrait}")
+                        await cursor.execute(f"DELETE FROM `user` WHERE `portrait`='{user.portrait}'")
                     elif user.user_name:
-                        await cursor.execute(f"DELETE FROM `user` WHERE `user_name`={user.user_name}")
+                        await cursor.execute(f"DELETE FROM `user` WHERE `user_name`='{user.user_name}'")
                     else:
                         raise ValueError("Null input")
 
