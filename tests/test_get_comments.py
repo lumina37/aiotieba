@@ -117,6 +117,7 @@ async def test_Comments(client: tb.Client):
     assert comment.ppid > 0
     assert comment.pid > 0
     assert comment.author_id == user.user_id
+    assert comment.floor > 0
     assert comment.create_time > 0
 
     # FragText

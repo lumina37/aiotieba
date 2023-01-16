@@ -287,9 +287,9 @@ def `__bool__`() -> *bool*
 
 **disagree** - *(int)* 点踩数
 
-**create_time** - *(int)* 创建时间 10位时间戳
+**create_time** - *(int)* 创建时间 10位时间戳 以秒为单位
 
-**last_time** - *(int)* 最后回复时间 10位时间戳
+**last_time** - *(int)* 最后回复时间 10位时间戳 以秒为单位
 </div>
 
 ## Threads
@@ -343,7 +343,7 @@ def `__bool__`() -> *bool*
 
 **disagree** - *(int)* 点踩数
 
-**create_time** - *(int)* 创建时间 10位时间戳
+**create_time** - *(int)* 创建时间 10位时间戳 以秒为单位
 
 **is_thread_author** - *(bool)* 是否楼主
 </div>
@@ -393,7 +393,7 @@ def `__bool__`() -> *bool*
 
 **disagree** - *(int)* 点踩数
 
-**create_time** - *(int)* 创建时间 10位时间戳
+**create_time** - *(int)* 创建时间 10位时间戳 以秒为单位
 </div>
 
 ## Comments

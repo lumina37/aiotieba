@@ -3,7 +3,7 @@ from typing import Optional, Protocol, TypeVar
 
 import httpx
 
-from .._helper import CHECK_URL_PERFIX, WEB_BASE_HOST
+from .._helper import CHECK_URL_PERFIX, removeprefix
 from .common import TypeMessage
 
 TypeFragment = TypeVar('TypeFragment')
@@ -40,7 +40,7 @@ class TypeFragText(Protocol):
         """
         文本内容
         """
-        ...
+        pass
 
 
 class FragEmoji(object):
@@ -74,7 +74,7 @@ class TypeFragEmoji(Protocol):
         """
         表情描述
         """
-        ...
+        pass
 
 
 class FragImage(object):
@@ -204,21 +204,21 @@ class TypeFragImage(Protocol):
         """
         小图链接
         """
-        ...
+        pass
 
     @property
     def origin_src(self) -> str:
         """
         原图链接
         """
-        ...
+        pass
 
     @property
     def hash(self) -> str:
         """
         图像的百度图床hash
         """
-        ...
+        pass
 
 
 class FragAt(object):
@@ -270,14 +270,14 @@ class TypeFragAt(Protocol):
         """
         被@用户的昵称 含@
         """
-        ...
+        pass
 
     @property
     def user_id(self) -> int:
         """
         被@用户的user_id
         """
-        ...
+        pass
 
 
 class FragLink(object):
@@ -305,7 +305,7 @@ class FragLink(object):
         self._raw_url = data_proto.link
         self._is_external = self._raw_url.startswith(CHECK_URL_PERFIX)
         if self._is_external:
-            self._raw_url = urllib.parse.unquote(self._raw_url.removeprefix(CHECK_URL_PERFIX))
+            self._raw_url = urllib.parse.unquote(removeprefix(self._raw_url, CHECK_URL_PERFIX))
 
         self._url = None
 
@@ -375,14 +375,14 @@ class TypeFragLink(Protocol):
         """
         原链接
         """
-        ...
+        pass
 
     @property
     def title(self) -> str:
         """
         链接标题
         """
-        ...
+        pass
 
     @property
     def url(self) -> httpx.URL:
@@ -392,21 +392,21 @@ class TypeFragLink(Protocol):
         Note:
             外链会在解析前先去除external_perfix前缀
         """
-        ...
+        pass
 
     @property
     def raw_url(self) -> str:
         """
         原链接
         """
-        ...
+        pass
 
     @property
     def is_external(self) -> bool:
         """
         是否外部链接
         """
-        ...
+        pass
 
 
 class FragTiebaPlus(object):
@@ -458,14 +458,14 @@ class TypeFragTiebaPlus(Protocol):
         """
         贴吧plus广告描述
         """
-        ...
+        pass
 
     @property
     def url(self) -> str:
         """
         贴吧plus广告跳转链接
         """
-        ...
+        pass
 
 
 class FragItem(object):
@@ -499,7 +499,7 @@ class TypeFragItem(Protocol):
         """
         item名称
         """
-        ...
+        pass
 
 
 class FragmentUnknown(object):
@@ -509,7 +509,7 @@ class FragmentUnknown(object):
 
     __slots__ = ['_data']
 
-    def __init__(self, data: Optional[TypeMessage] = None) -> None:
+    def __init__(self, data = None) -> None:
         self._data = data
 
     def __repr__(self) -> str:
@@ -530,4 +530,4 @@ class TypeFragmentUnknown(Protocol):
         """
         原始数据
         """
-        ...
+        pass

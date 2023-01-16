@@ -1,7 +1,6 @@
 """
 日志记录
 
-提供与标准库logging签名一致的六个函数debug/info/warning/error/critical/log
 允许使用set_logger更换日志记录器
 允许使用set_formatter更换日志记录器
 """
@@ -66,6 +65,13 @@ class TiebaLogger(logging.Logger):
 
 
 def get_logger() -> TiebaLogger:
+    """
+    获取日志记录器
+
+    Returns:
+        TiebaLogger
+    """
+
     global _LOGGER
 
     if _LOGGER is None:
@@ -100,87 +106,3 @@ def set_formatter(formatter: logging.Formatter) -> None:
     if _LOGGER is not None:
         for hd in _LOGGER.handlers:
             hd.setFormatter(formatter)
-
-
-def debug(msg, *args, **kwargs):
-    """
-    Log 'msg % args' with severity 'DEBUG'.
-
-    To pass exception information, use the keyword argument exc_info with
-    a true value, e.g.
-
-    logger.debug("Houston, we have a %s", "thorny problem", exc_info=1)
-    """
-
-    logger = get_logger()
-    logger.debug(msg, *args, **kwargs)
-
-
-def info(msg, *args, **kwargs):
-    """
-    Log 'msg % args' with severity 'INFO'.
-
-    To pass exception information, use the keyword argument exc_info with
-    a true value, e.g.
-
-    logger.info("Houston, we have a %s", "interesting problem", exc_info=1)
-    """
-
-    logger = get_logger()
-    logger.info(msg, *args, **kwargs)
-
-
-def warning(msg, *args, **kwargs):
-    """
-    Log 'msg % args' with severity 'WARNING'.
-
-    To pass exception information, use the keyword argument exc_info with
-    a true value, e.g.
-
-    logger.warning("Houston, we have a %s", "bit of a problem", exc_info=1)
-    """
-
-    logger = get_logger()
-    logger.warning(msg, *args, **kwargs)
-
-
-def error(msg, *args, **kwargs):
-    """
-    Log 'msg % args' with severity 'ERROR'.
-
-    To pass exception information, use the keyword argument exc_info with
-    a true value, e.g.
-
-    logger.error("Houston, we have a %s", "major problem", exc_info=1)
-    """
-
-    logger = get_logger()
-    logger.error(msg, *args, **kwargs)
-
-
-def critical(msg, *args, **kwargs):
-    """
-    Log 'msg % args' with severity 'CRITICAL'.
-
-    To pass exception information, use the keyword argument exc_info with
-    a true value, e.g.
-
-    logger.critical("Houston, we have a %s", "major disaster", exc_info=1)
-    """
-
-    logger = get_logger()
-    logger.critical(msg, *args, **kwargs)
-
-
-def log(level, msg, *args, **kwargs):
-    """
-    Log 'msg % args' with the integer severity 'level'.
-
-    To pass exception information, use the keyword argument exc_info with
-    a true value, e.g.
-
-    logger.log(level, "We have a %s", "mysterious problem", exc_info=1)
-    """
-
-    logger = get_logger()
-    logger.log(level, msg, *args, **kwargs)

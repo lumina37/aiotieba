@@ -1,5 +1,4 @@
-from collections.abc import Iterable
-from typing import List
+from typing import Iterable, List
 
 from .._classdef import Containers, Forum, TypeMessage
 from .._classdef.contents import (
@@ -12,6 +11,7 @@ from .._classdef.contents import (
     TypeFragment,
     TypeFragText,
 )
+from .._helper import removeprefix
 
 Forum_c = Forum
 
@@ -80,9 +80,9 @@ class Contents_c(Containers[TypeFragment]):
                 self._texts.append(fragment)
             else:
                 fragment = FragmentUnknown_c(proto)
-                from ... import _logging as LOG
+                from ..._logging import get_logger as LOG
 
-                LOG.warning(f"Unknown fragment type. type={_type} frag={fragment}")
+                LOG().warning(f"Unknown fragment type. type={_type} frag={fragment}")
 
             return fragment
 
@@ -424,6 +424,7 @@ class Comment(object):
         author_id (int): 发布者的user_id
         reply_to_id (int): 被回复者的user_id
 
+        floor (int): 所在楼层数
         agree (int): 点赞数
         disagree (int): 点踩数
         create_time (int): 创建时间
@@ -439,6 +440,7 @@ class Comment(object):
         '_user',
         '_author_id',
         '_reply_to_id',
+        '_floor',
         '_agree',
         '_disagree',
         '_create_time',
@@ -463,7 +465,7 @@ class Comment(object):
                 contents._texts = contents._texts[2:]
                 if contents.texts:
                     first_text_frag = contents.texts[0]
-                    first_text_frag._text = first_text_frag._text.removeprefix(' :')
+                    first_text_frag._text = removeprefix(first_text_frag._text, ' :')
 
         self._contents = contents
 
@@ -480,10 +482,11 @@ class Comment(object):
         return str(
             {
                 'tid': self._tid,
-                'pid': self._pid,
                 'ppid': self._ppid,
+                'pid': self._pid,
                 'user': self._user.log_name,
                 'text': self._contents.text,
+                'floor': self._floor,
             }
         )
 
@@ -539,7 +542,7 @@ class Comment(object):
         所在回复id
         """
 
-        return self._pid
+        return self._ppid
 
     @property
     def pid(self) -> int:
@@ -576,6 +579,14 @@ class Comment(object):
         return self._reply_to_id
 
     @property
+    def floor(self) -> int:
+        """
+        所在楼层数
+        """
+
+        return self._floor
+
+    @property
     def agree(self) -> int:
         """
         点赞数
@@ -597,7 +608,7 @@ class Comment(object):
         创建时间
 
         Note:
-            10位时间戳
+            10位时间戳 以秒为单位
         """
 
         return self._create_time
@@ -1191,9 +1202,9 @@ class Contents_cp(Containers[TypeFragment]):
                 self._texts.append(fragment)
             else:
                 fragment = FragmentUnknown_cp(proto)
-                from ... import _logging as LOG
+                from ..._logging import get_logger as LOG
 
-                LOG.warning(f"Unknown fragment type. type={_type} frag={fragment}")
+                LOG().warning(f"Unknown fragment type. type={_type} frag={fragment}")
 
             return fragment
 
@@ -1698,7 +1709,7 @@ class Post_c(object):
         创建时间
 
         Note:
-            10位时间戳
+            10位时间戳 以秒为单位
         """
 
         return self._create_time
@@ -1743,10 +1754,12 @@ class Comments(Containers[Comment]):
             comment._fname = self.forum._fname
             comment._tid = self.thread._tid
             comment._ppid = self._post._pid
+            comment._floor = self._post._floor
 
         return self
 
     def _init_null(self) -> "Comments":
+        self._objs = []
         self._page = Page_c()._init_null()
         self._forum = Forum_c()._init_null()
         self._thread = Thread_c()._init_null()

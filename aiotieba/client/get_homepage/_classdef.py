@@ -1,5 +1,4 @@
-from collections.abc import Iterable
-from typing import List
+from typing import Iterable, List
 
 from .._classdef import Containers, TypeMessage, VoteInfo
 from .._classdef.contents import FragAt, FragEmoji, FragLink, FragmentUnknown, FragText, TypeFragment, TypeFragText
@@ -122,7 +121,7 @@ class UserInfo_home(object):
         '_priv_reply',
     ]
 
-    def _init(self, data_proto: TypeMessage):
+    def _init(self, data_proto: TypeMessage) -> "UserInfo_home":
         self._user_id = data_proto.id
         if '?' in (portrait := data_proto.portrait):
             self._portrait = portrait[:-13]
@@ -583,9 +582,9 @@ class Contents_home(Containers[TypeFragment]):
                 self._has_voice = True
             else:
                 fragment = FragmentUnknown_home(proto)
-                from ... import _logging as LOG
+                from ..._logging import get_logger as LOG
 
-                LOG.warning(f"Unknown fragment type. type={_type} frag={fragment}")
+                LOG().warning(f"Unknown fragment type. type={_type} frag={fragment}")
 
             return fragment
 
@@ -898,7 +897,7 @@ class Thread_home(object):
         创建时间
 
         Note:
-            10位时间戳
+            10位时间戳 以秒为单位
         """
 
         return self._create_time

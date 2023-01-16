@@ -2,7 +2,6 @@ import asyncio
 import time
 import weakref
 from collections import OrderedDict
-from typing import ClassVar
 
 
 class WebsocketResponse(object):
@@ -22,7 +21,7 @@ class WebsocketResponse(object):
         '_data_future',
     ]
 
-    ws_res_wait_dict: weakref.WeakValueDictionary[int, "WebsocketResponse"] = weakref.WeakValueDictionary()
+    ws_res_wait_dict = weakref.WeakValueDictionary()
     _websocket_request_id: int = None
 
     def __init__(self) -> None:
@@ -35,7 +34,7 @@ class WebsocketResponse(object):
     def __hash__(self) -> int:
         return self.req_id
 
-    def __eq__(self, obj: "WebsocketResponse"):
+    def __eq__(self, obj: "WebsocketResponse") -> bool:
         return self.req_id == obj.req_id
 
     @property
@@ -44,7 +43,7 @@ class WebsocketResponse(object):
         请求时间戳
 
         Note:
-            13位时间戳
+            13位时间戳 以毫秒为单位
         """
 
         return self._timestamp
@@ -73,8 +72,8 @@ class ForumInfoCache(object):
 
     __slots__ = []
 
-    _fname2fid: ClassVar[OrderedDict[str, int]] = OrderedDict()
-    _fid2fname: ClassVar[OrderedDict[int, str]] = OrderedDict()
+    _fname2fid = OrderedDict()
+    _fid2fname = OrderedDict()
 
     @classmethod
     def get_fid(cls, fname: str) -> int:

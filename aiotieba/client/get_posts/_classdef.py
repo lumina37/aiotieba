@@ -1,5 +1,4 @@
-from collections.abc import Iterable
-from typing import List
+from typing import Iterable, List
 
 from .._classdef import Containers, Forum, TypeMessage, VirtualImage, VoteInfo
 from .._classdef.contents import (
@@ -12,6 +11,7 @@ from .._classdef.contents import (
     TypeFragment,
     TypeFragText,
 )
+from .._helper import removeprefix
 
 Forum_p = Forum
 VirtualImage_p = VirtualImage
@@ -211,9 +211,9 @@ class Contents_p(Containers[TypeFragment]):
                 self._texts.append(fragment)
             else:
                 fragment = FragmentUnknown_p(proto)
-                from ... import _logging as LOG
+                from ..._logging import get_logger as LOG
 
-                LOG.warning(f"Unknown fragment type. type={_type} frag={fragment}")
+                LOG().warning(f"Unknown fragment type. type={_type} frag={fragment}")
 
             return fragment
 
@@ -369,9 +369,9 @@ class Contents_pc(Containers[TypeFragment]):
                 self._texts.append(fragment)
             else:
                 fragment = FragmentUnknown_pc(proto)
-                from ... import _logging as LOG
+                from ..._logging import get_logger as LOG
 
-                LOG.warning(f"Unknown fragment type. type={_type} frag={fragment}")
+                LOG().warning(f"Unknown fragment type. type={_type} frag={fragment}")
 
             return fragment
 
@@ -477,6 +477,7 @@ class Comment_p(object):
         author_id (int): 发布者的user_id
         reply_to_id (int): 被回复者的user_id
 
+        floor (int): 所在楼层数
         agree (int): 点赞数
         disagree (int): 点踩数
         create_time (int): 创建时间
@@ -492,12 +493,13 @@ class Comment_p(object):
         '_user',
         '_author_id',
         '_reply_to_id',
+        '_floor',
         '_agree',
         '_disagree',
         '_create_time',
     ]
 
-    def _init(self, data_proto: TypeMessage) -> Contents_pc:
+    def _init(self, data_proto: TypeMessage) -> "Comment_p":
         contents = Contents_pc()._init(data_proto.content)
 
         self._reply_to_id = 0
@@ -516,7 +518,7 @@ class Comment_p(object):
                 contents._texts = contents._texts[2:]
                 if contents.texts:
                     first_text_frag = contents.texts[0]
-                    first_text_frag._text = first_text_frag._text.removeprefix(' :')
+                    first_text_frag._text = removeprefix(first_text_frag._text, ' :')
 
         self._contents = contents
 
@@ -533,12 +535,13 @@ class Comment_p(object):
             {
                 'tid': self._tid,
                 'pid': self._pid,
+                'floor': self._floor,
                 'user': self.user.log_name,
                 'text': self.text,
             }
         )
 
-    def __eq__(self, obj: "Contents_pc") -> bool:
+    def __eq__(self, obj: "Comment_p") -> bool:
         return self._pid == obj._pid
 
     def __hash__(self) -> int:
@@ -627,6 +630,14 @@ class Comment_p(object):
         return self._reply_to_id
 
     @property
+    def floor(self) -> int:
+        """
+        点赞数
+        """
+
+        return self._floor
+
+    @property
     def agree(self) -> int:
         """
         点赞数
@@ -648,7 +659,7 @@ class Comment_p(object):
         创建时间
 
         Note:
-            10位时间戳
+            10位时间戳 以秒为单位
         """
 
         return self._create_time
@@ -981,7 +992,6 @@ class Post(object):
         return str(
             {
                 'tid': self._tid,
-                'pid': self._pid,
                 'user': self._user.log_name,
                 'text': self.text,
                 'vimage': self._vimage._state,
@@ -1132,7 +1142,7 @@ class Post(object):
         创建时间
 
         Note:
-            10位时间戳
+            10位时间戳 以秒为单位
         """
 
         return self._create_time
@@ -1420,9 +1430,9 @@ class Contents_pt(Containers[TypeFragment]):
                 self._texts.append(fragment)
             else:
                 fragment = FragmentUnknown_pt(proto)
-                from ... import _logging as LOG
+                from ..._logging import get_logger as LOG
 
-                LOG.warning(f"Unknown fragment type. type={_type} frag={fragment}")
+                LOG().warning(f"Unknown fragment type. type={_type} frag={fragment}")
 
             return fragment
 
@@ -1626,7 +1636,7 @@ class UserInfo_pt(object):
             }
         )
 
-    def __eq__(self, obj: "UserInfo_p") -> bool:
+    def __eq__(self, obj: "UserInfo_pt") -> bool:
         return self._user_id == obj._user_id
 
     def __hash__(self) -> int:
@@ -2214,7 +2224,7 @@ class Thread_p(object):
         创建时间
 
         Note:
-            10位时间戳
+            10位时间戳 以秒为单位
         """
 
         return self._create_time
@@ -2225,7 +2235,7 @@ class Thread_p(object):
         最后回复时间
 
         Note:
-            10位时间戳
+            10位时间戳 以秒为单位
         """
 
         return self._last_time
@@ -2277,6 +2287,7 @@ class Posts(Containers[Post]):
                 comment._fname = post._fname
                 comment._tid = post._tid
                 comment._ppid = post._pid
+                comment._floor = post._floor
                 comment._user = users[comment._author_id]
 
         return self

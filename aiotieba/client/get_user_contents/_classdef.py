@@ -1,5 +1,4 @@
-from collections.abc import Iterable
-from typing import List
+from typing import Iterable, List
 
 from .._classdef import Containers, TypeMessage, VoteInfo
 from .._classdef.contents import FragAt, FragEmoji, FragLink, FragmentUnknown, FragText, TypeFragment, TypeFragText
@@ -48,9 +47,9 @@ class Contents_up(Containers[TypeFragment]):
                 self._has_voice = True
             else:
                 fragment = FragmentUnknown_up(proto)
-                from ... import _logging as LOG
+                from ..._logging import get_logger as LOG
 
-                LOG.warning(f"Unknown fragment type. type={_type} frag={fragment}")
+                LOG().warning(f"Unknown fragment type. type={_type} frag={fragment}")
 
             return fragment
 
@@ -131,9 +130,9 @@ class UserInfo_u(object):
         '_nick_name_new',
     ]
 
-    def _init(self, data_proto: TypeMessage):
+    def _init(self, data_proto: TypeMessage) -> "UserInfo_u":
         self._user_id = data_proto.user_id
-        if '?' in (portrait := data_proto.portrait):
+        if '?' in (portrait := data_proto.user_portrait):
             self._portrait = portrait[:-13]
         else:
             self._portrait = portrait
@@ -353,7 +352,7 @@ class UserPost(object):
         创建时间
 
         Note:
-            10位时间戳
+            10位时间戳 以秒为单位
         """
 
         return self._create_time
@@ -579,9 +578,9 @@ class Contents_ut(Containers[TypeFragment]):
                 self._has_voice = True
             else:
                 fragment = FragmentUnknown_ut(proto)
-                from ... import _logging as LOG
+                from ..._logging import get_logger as LOG
 
-                LOG.warning(f"Unknown fragment type. type={_type} frag={fragment}")
+                LOG().warning(f"Unknown fragment type. type={_type} frag={fragment}")
 
             return fragment
 
@@ -915,7 +914,7 @@ class UserThread(object):
         创建时间
 
         Note:
-            10位时间戳
+            10位时间戳 以秒为单位
         """
 
         return self._create_time

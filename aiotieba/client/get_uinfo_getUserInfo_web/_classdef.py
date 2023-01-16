@@ -1,4 +1,4 @@
-from collections.abc import Mapping
+from typing import Mapping
 
 
 class UserInfo_guinfo_web(object):
@@ -26,7 +26,7 @@ class UserInfo_guinfo_web(object):
     def _init(self, data_map: Mapping) -> "UserInfo_guinfo_web":
         self._user_id = data_map['uid']
         self._portrait = data_map['portrait']
-        self._user_name = data_map['uname']
+        self._user_name = user_name if (user_name := data_map['uname']) != self._user_id else ''
         self._nick_name_new = data_map['show_nickname']
         return self
 

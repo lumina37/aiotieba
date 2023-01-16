@@ -2,12 +2,12 @@ import hashlib
 import random
 import time
 import uuid
-from typing import ClassVar, Optional
+from typing import Optional
 
 from Crypto.Cipher import AES
 
-from ... import _logging as LOG
 from ..._config import CONFIG
+from ..._logging import get_logger as LOG
 
 
 class TiebaCore(object):
@@ -25,12 +25,13 @@ class TiebaCore(object):
         '_client_id',
         '_cuid',
         '_cuid_galaxy2',
+        '_ws_aes_chiper',
         '_ws_password',
     ]
 
-    main_version: ClassVar[str] = "12.34.3.0"  # 最新版本
-    # no_fold_version: ClassVar[str] = "12.12.1.0"  # 最后一个回复列表不发生折叠的版本
-    post_version: ClassVar[str] = "9.1.0.0"  # 极速版
+    main_version: str = "12.35.1.0"  # 最新版本
+    # no_fold_version: str = "12.12.1.0"  # 最后一个回复列表不发生折叠的版本
+    post_version: str = "9.1.0.0"  # 极速版
 
     def __init__(self, BDUSS_key: Optional[str] = None) -> None:
         self._BDUSS_key = BDUSS_key
@@ -42,6 +43,7 @@ class TiebaCore(object):
         self._client_id: str = None
         self._cuid: str = None
         self._cuid_galaxy2: str = None
+        self._ws_aes_chiper = None
         self._ws_password: bytes = None
 
     @property
@@ -64,7 +66,7 @@ class TiebaCore(object):
     def BDUSS(self, new_BDUSS: str) -> None:
 
         if hasattr(self, "_BDUSS"):
-            LOG.warning("BDUSS已初始化 无法修改")
+            LOG().warning("BDUSS已初始化 无法修改")
             return
 
         if not new_BDUSS:
@@ -73,7 +75,7 @@ class TiebaCore(object):
 
         legal_length = 192
         if (len_new_BDUSS := len(new_BDUSS)) != legal_length:
-            LOG.warning(f"BDUSS的长度应为{legal_length}个字符 而输入的{new_BDUSS}有{len_new_BDUSS}个字符")
+            LOG().warning(f"BDUSS的长度应为{legal_length}个字符 而输入的{new_BDUSS}有{len_new_BDUSS}个字符")
             self._BDUSS = ''
             return
 
@@ -91,7 +93,7 @@ class TiebaCore(object):
     def STOKEN(self, new_STOKEN: str) -> None:
 
         if hasattr(self, "_STOKEN"):
-            LOG.warning("STOKEN已初始化 无法修改")
+            LOG().warning("STOKEN已初始化 无法修改")
             return
 
         if not new_STOKEN:
@@ -100,7 +102,7 @@ class TiebaCore(object):
 
         legal_length = 64
         if (len_new_STOKEN := len(new_STOKEN)) != legal_length:
-            LOG.warning(f"STOKEN的长度应为{legal_length}个字符 而输入的{new_STOKEN}有{len_new_STOKEN}个字符")
+            LOG().warning(f"STOKEN的长度应为{legal_length}个字符 而输入的{new_STOKEN}有{len_new_STOKEN}个字符")
             self._STOKEN = ''
             return
 
@@ -175,7 +177,7 @@ class TiebaCore(object):
 
         if self._ws_aes_chiper is None:
             salt = b'\xa4\x0b\xc8\x34\xd6\x95\xf3\x13'
-            ws_secret_key = hashlib.pbkdf2_hmac('sha1', self.core.ws_password, salt, 5, 32)
+            ws_secret_key = hashlib.pbkdf2_hmac('sha1', self.ws_password, salt, 5, 32)
             self._ws_aes_chiper = AES.new(ws_secret_key, AES.MODE_ECB)
 
         return self._ws_aes_chiper

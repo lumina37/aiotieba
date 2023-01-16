@@ -8,8 +8,8 @@ Asynchronous I/O Client/Reviewer for Baidu Tieba
 
 import os
 
-from . import _logging as LOG
 from .__version__ import __version__
+from ._logging import get_logger as LOG
 from .client import Client
 from .client._classdef.enums import ReqUInfo
 from .client._classdef.user import UserInfo
@@ -33,8 +33,6 @@ from .client._typing import (
     TypeFragTiebaPlus,
     UserInfo_home,
 )
-from .database import MySQLDB, SQLiteDB
-from .reviewer import BaseReviewer, Ops, Punish, Reviewer
 
 if os.name == 'posix':
     import signal

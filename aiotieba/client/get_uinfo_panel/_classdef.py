@@ -1,4 +1,6 @@
-from collections.abc import Mapping
+from typing import Mapping
+
+from .._helper import removesuffix
 
 
 class UserInfo_panel(object):
@@ -241,6 +243,6 @@ class UserInfo_panel(object):
     @staticmethod
     def _num2int(tb_num: str) -> int:
         if isinstance(tb_num, str):
-            return int(float(tb_num.removesuffix('万')) * 1e4)
+            return int(float(removesuffix(tb_num, '万')) * 1e4)
         else:
             return tb_num

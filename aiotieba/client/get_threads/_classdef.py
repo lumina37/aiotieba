@@ -1,5 +1,4 @@
-from collections.abc import Iterable
-from typing import Dict, List
+from typing import Dict, Iterable, List
 
 from .._classdef import Containers, Forum, TypeMessage, VirtualImage, VoteInfo
 from .._classdef.contents import (
@@ -214,9 +213,9 @@ class Contents_t(Containers[TypeFragment]):
                 self._texts.append(fragment)
             else:
                 fragment = FragmentUnknown_t(proto)
-                from ... import _logging as LOG
+                from ..._logging import get_logger as LOG
 
-                LOG.warning(f"Unknown fragment type. type={_type} frag={fragment}")
+                LOG().warning(f"Unknown fragment type. type={_type} frag={fragment}")
 
             return fragment
 
@@ -806,7 +805,7 @@ class Contents_st(Containers[TypeFragment]):
         '_has_video',
     ]
 
-    def _init(self, protos: Iterable[TypeMessage]) -> "Contents_t":
+    def _init(self, protos: Iterable[TypeMessage]) -> "Contents_st":
         def _init_by_type(proto) -> TypeFragment:
             _type = proto.type
             # 0纯文本 9电话号 18话题 27百科词条
@@ -835,9 +834,9 @@ class Contents_st(Containers[TypeFragment]):
                 self._texts.append(fragment)
             else:
                 fragment = FragmentUnknown_st(proto)
-                from ... import _logging as LOG
+                from ..._logging import get_logger as LOG
 
-                LOG.warning(f"Unknown fragment type. type={_type} frag={fragment}")
+                LOG().warning(f"Unknown fragment type. type={_type} frag={fragment}")
 
             return fragment
 
@@ -1457,7 +1456,7 @@ class Thread(object):
         创建时间
 
         Note:
-            10位时间戳
+            10位时间戳 以秒为单位
         """
 
         return self._create_time
@@ -1468,7 +1467,7 @@ class Thread(object):
         最后回复时间
 
         Note:
-            10位时间戳
+            10位时间戳 以秒为单位
         """
 
         return self._last_time

@@ -1,11 +1,11 @@
 import hashlib
 import random
+import sys
 import urllib.parse
 import zlib
 from typing import List, Optional, Tuple
 
 import httpx
-import simdjson as jsonlib
 from Crypto.Cipher import AES
 
 from ._classdef.core import TiebaCore
@@ -15,9 +15,90 @@ APP_BASE_HOST = "tiebac.baidu.com"
 WEB_BASE_HOST = "tieba.baidu.com"
 CHECK_URL_PERFIX = "http://tieba.baidu.com/mo/q/checkurl?url="
 
+try:
+    import simdjson as jsonlib
 
-_JSON_PARSER = jsonlib.Parser()
-parse_json = _JSON_PARSER.parse
+    _JSON_PARSER = jsonlib.Parser()
+    parse_json = _JSON_PARSER.parse
+
+except ImportError:
+    import json as jsonlib
+
+    parse_json = jsonlib.loads
+
+
+if sys.version_info >= (3, 9):
+
+    def removeprefix(s: str, prefix: str) -> str:
+        """
+        移除字符串前缀
+
+        Args:
+            s (str): 待移除前缀的字符串
+            prefix (str): 待移除的前缀
+
+        Returns:
+            str: 移除前缀后的字符串
+        """
+
+        return s.removeprefix(prefix)
+
+    def removesuffix(s: str, suffix: str) -> str:
+        """
+        移除字符串前缀
+
+        Args:
+            s (str): 待移除前缀的字符串
+            suffix (str): 待移除的前缀
+
+        Returns:
+            str: 移除前缀后的字符串
+        """
+
+        return s.removesuffix(suffix)
+
+else:
+
+    def removeprefix(s: str, prefix: str) -> str:
+        """
+        移除字符串前缀
+
+        Args:
+            s (str): 待移除前缀的字符串
+            prefix (str): 待移除的前缀
+
+        Returns:
+            str: 移除前缀后的字符串
+
+        Note:
+            该函数不会拷贝字符串
+        """
+
+        if s.startswith(prefix):
+            return s[len(prefix) :]
+        else:
+            return s
+
+    def removesuffix(s: str, suffix: str) -> str:
+        """
+        移除字符串后缀
+        该函数将不会拷贝字符串
+
+        Args:
+            s (str): 待移除前缀的字符串
+            suffix (str): 待移除的前缀
+
+        Returns:
+            str: 移除前缀后的字符串
+
+        Note:
+            该函数不会拷贝字符串
+        """
+
+        if s.endswith(suffix):
+            return s[: len(suffix)]
+        else:
+            return s
 
 
 def is_portrait(portrait: str) -> bool:
@@ -218,7 +299,7 @@ def unpack_ws_bytes(core: TiebaCore, ws_bytes: bytes) -> Tuple[bytes, int, int]:
     return ws_bytes, cmd, req_id
 
 
-def raise_for_status(response: httpx.Response):
+def raise_for_status(response: httpx.Response) -> None:
     """
     为非200状态码抛出异常
 

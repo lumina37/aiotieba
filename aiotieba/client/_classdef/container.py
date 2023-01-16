@@ -1,5 +1,4 @@
-from collections.abc import Iterator
-from typing import Generic, List, SupportsIndex, TypeVar, overload
+from typing import Generic, Iterator, List, SupportsIndex, TypeVar, overload
 
 TypeContainer = TypeVar('TypeContainer')
 
@@ -23,11 +22,11 @@ class Containers(Generic[TypeContainer]):
 
     @overload
     def __getitem__(self, idx: SupportsIndex) -> TypeContainer:
-        ...
+        pass
 
     @overload
     def __getitem__(self, idx: slice) -> List[TypeContainer]:
-        ...
+        pass
 
     def __getitem__(self, idx):
         return self._objs.__getitem__(idx)
