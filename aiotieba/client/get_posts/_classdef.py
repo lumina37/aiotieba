@@ -981,7 +981,6 @@ class Post(object):
         return str(
             {
                 'tid': self._tid,
-                'pid': self._pid,
                 'user': self._user.log_name,
                 'text': self.text,
                 'vimage': self._vimage._state,
