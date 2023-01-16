@@ -477,6 +477,7 @@ class Comment_p(object):
         author_id (int): 发布者的user_id
         reply_to_id (int): 被回复者的user_id
 
+        floor (int): 所在楼层数
         agree (int): 点赞数
         disagree (int): 点踩数
         create_time (int): 创建时间
@@ -492,6 +493,7 @@ class Comment_p(object):
         '_user',
         '_author_id',
         '_reply_to_id',
+        '_floor',
         '_agree',
         '_disagree',
         '_create_time',
@@ -533,6 +535,7 @@ class Comment_p(object):
             {
                 'tid': self._tid,
                 'pid': self._pid,
+                'floor': self._floor,
                 'user': self.user.log_name,
                 'text': self.text,
             }
@@ -625,6 +628,14 @@ class Comment_p(object):
         """
 
         return self._reply_to_id
+
+    @property
+    def floor(self) -> int:
+        """
+        点赞数
+        """
+
+        return self._floor
 
     @property
     def agree(self) -> int:
@@ -2276,6 +2287,7 @@ class Posts(Containers[Post]):
                 comment._fname = post._fname
                 comment._tid = post._tid
                 comment._ppid = post._pid
+                comment._floor = post._floor
                 comment._user = users[comment._author_id]
 
         return self
