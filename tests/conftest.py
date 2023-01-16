@@ -17,9 +17,3 @@ def event_loop():
 async def client():
     async with tb.Client('starry_xh') as client:
         yield client
-
-
-@pytest_asyncio.fixture(scope="package")
-async def db():
-    async with tb.MySQLDB('starry') as db:
-        yield db

@@ -33,8 +33,6 @@ from .client._typing import (
     TypeFragTiebaPlus,
     UserInfo_home,
 )
-from .database import MySQLDB, SQLiteDB
-from .reviewer import BaseReviewer, Ops, Punish, Reviewer
 
 if os.name == 'posix':
     import signal
