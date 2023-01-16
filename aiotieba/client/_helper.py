@@ -6,7 +6,6 @@ import zlib
 from typing import List, Optional, Tuple
 
 import httpx
-import simdjson as jsonlib
 from Crypto.Cipher import AES
 
 from ._classdef.core import TiebaCore
@@ -16,9 +15,17 @@ APP_BASE_HOST = "tiebac.baidu.com"
 WEB_BASE_HOST = "tieba.baidu.com"
 CHECK_URL_PERFIX = "http://tieba.baidu.com/mo/q/checkurl?url="
 
+try:
+    import simdjson as jsonlib
 
-_JSON_PARSER = jsonlib.Parser()
-parse_json = _JSON_PARSER.parse
+    _JSON_PARSER = jsonlib.Parser()
+    parse_json = _JSON_PARSER.parse
+
+except ImportError:
+    import json as jsonlib
+
+    parse_json = jsonlib.loads
+
 
 if sys.version_info >= (3, 9):
 

@@ -1,4 +1,4 @@
--e .
+-e .[speedup]
 
 # Test Suite
 pytest==7.2.0
