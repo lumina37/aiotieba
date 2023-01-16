@@ -669,7 +669,7 @@ class Client(object):
         Args:
             fname_or_fid (str | int): 贴吧名或fid 优先贴吧名
             pn (int, optional): 页码. Defaults to 1.
-            rn (int, optional): 请求的条目数. Defaults to 30.
+            rn (int, optional): 请求的条目数. Defaults to 30. Max to 100.
             sort (int, optional): 排序方式 对于有热门分区的贴吧 0是热门排序 1是按发布时间 2报错 34都是热门排序 >=5是按回复时间
                 对于无热门分区的贴吧 0是按回复时间 1是按发布时间 2报错 >=3是按回复时间. Defaults to 5.
             is_good (bool, optional): True则获取精品区帖子 False则获取普通区帖子. Defaults to False.
