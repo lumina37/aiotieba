@@ -292,7 +292,7 @@ def unpack_ws_bytes(core: TiebaCore, ws_bytes: bytes) -> Tuple[bytes, int, int]:
     return ws_bytes, cmd, req_id
 
 
-def raise_for_status(response: httpx.Response):
+def raise_for_status(response: httpx.Response) -> None:
     """
     为非200状态码抛出异常
 

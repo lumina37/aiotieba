@@ -34,7 +34,7 @@ class WebsocketResponse(object):
     def __hash__(self) -> int:
         return self.req_id
 
-    def __eq__(self, obj: "WebsocketResponse"):
+    def __eq__(self, obj: "WebsocketResponse") -> bool:
         return self.req_id == obj.req_id
 
     @property

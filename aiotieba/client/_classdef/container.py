@@ -22,11 +22,11 @@ class Containers(Generic[TypeContainer]):
 
     @overload
     def __getitem__(self, idx: SupportsIndex) -> TypeContainer:
-        ...
+        pass
 
     @overload
     def __getitem__(self, idx: slice) -> List[TypeContainer]:
-        ...
+        pass
 
     def __getitem__(self, idx):
         return self._objs.__getitem__(idx)
