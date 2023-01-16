@@ -967,7 +967,7 @@ class Client(object):
         Args:
             cname (str): 类别名
             pn (int, optional): 页码. Defaults to 1.
-            rn (int, optional): 请求的条目数. Defaults to 20.
+            rn (int, optional): 请求的条目数. Defaults to 20. Max to Inf.
 
         Returns:
             SquareForums: 吧广场列表
@@ -1062,7 +1062,7 @@ class Client(object):
         Args:
             _id (str | int): 用户id user_id / user_name / portrait 优先user_id
             pn (int, optional): 页码. Defaults to 1.
-            rn (int, optional): 请求的条目数. Defaults to 50.
+            rn (int, optional): 请求的条目数. Defaults to 50. Max to 50.
 
         Returns:
             FollowForums: 用户关注贴吧列表
@@ -2328,7 +2328,7 @@ class Client(object):
 
         Args:
             pn (int, optional): 页码. Defaults to 1.
-            rn (int, optional): 请求的条目数. Defaults to 20.
+            rn (int, optional): 请求的条目数. Defaults to 20. Max to 20.
 
         Returns:
             DislikeForums: 首页推荐屏蔽的贴吧列表
