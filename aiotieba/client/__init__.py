@@ -8,6 +8,7 @@ import wsproto
 from Crypto.Cipher import PKCS1_v1_5
 from Crypto.PublicKey import RSA
 
+from ..__version__ import __version__
 from .._logging import get_logger as LOG
 from ._classdef.core import TiebaCore
 from ._classdef.enums import Header, ReqUInfo
@@ -73,7 +74,7 @@ class Client(object):
         '_ws_dispatcher',
     ]
 
-    _use_env_proxy = False
+    _use_env_proxy = True
 
     def __init__(self, BDUSS_key: Optional[str] = None) -> None:
 
@@ -111,7 +112,7 @@ class Client(object):
         )
         self._client_app._headers = httpx.Headers(
             {
-                Header.USER_AGENT: f"tieba/{TiebaCore.main_version}",
+                Header.USER_AGENT: f"aiotieba/{__version__}",
                 Header.CONNECTION: "keep-alive",
                 Header.HOST: APP_BASE_HOST,
             }
@@ -125,7 +126,7 @@ class Client(object):
         )
         self._client_app_proto._headers = httpx.Headers(
             {
-                Header.USER_AGENT: f"tieba/{TiebaCore.main_version}",
+                Header.USER_AGENT: f"aiotieba/{__version__}",
                 Header.BAIDU_DATA_TYPE: "protobuf",
                 Header.CONNECTION: "keep-alive",
                 Header.HOST: APP_BASE_HOST,
@@ -134,7 +135,7 @@ class Client(object):
 
         self._client_web = httpx.AsyncClient(
             headers={
-                Header.USER_AGENT: f"tieba/{TiebaCore.main_version}",
+                Header.USER_AGENT: f"aiotieba/{__version__}",
                 Header.ACCEPT_ENCODING: "gzip, deflate",
                 Header.CACHE_CONTROL: "no-cache",
                 Header.CONNECTION: "keep-alive",
