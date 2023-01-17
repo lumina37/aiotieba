@@ -26,7 +26,7 @@ def pack_request(
 ) -> httpx.Request:
     request = pack_proto_request(
         client,
-        url("http", APP_BASE_HOST, "/c/f/frs/page", "cmd=301001"),
+        url("https", APP_BASE_HOST, "/c/f/frs/page", "cmd=301001"),
         pack_proto(core, fname, pn, rn, sort, is_good),
     )
 

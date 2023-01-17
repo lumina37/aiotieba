@@ -17,7 +17,7 @@ def pack_request(client: httpx.AsyncClient, core: TiebaCore, tbs: str, fname: st
 
     request = pack_form_request(
         client,
-        url("http", APP_BASE_HOST, "/c/c/bawu/commitgood"),
+        url("https", APP_BASE_HOST, "/c/c/bawu/commitgood"),
         sign(data),
     )
 

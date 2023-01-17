@@ -15,7 +15,7 @@ def pack_request(client: httpx.AsyncClient, core: TiebaCore, tbs: str, portrait:
 
     request = pack_form_request(
         client,
-        url("http", APP_BASE_HOST, "/c/c/user/follow"),
+        url("https", APP_BASE_HOST, "/c/c/user/follow"),
         sign(data),
     )
 

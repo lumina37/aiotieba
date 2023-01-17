@@ -17,7 +17,7 @@ def pack_request(client: httpx.AsyncClient, core: TiebaCore, fid: int, tid: int,
 
     request = pack_form_request(
         client,
-        url("http", APP_BASE_HOST, "/c/c/thread/setPrivacy"),
+        url("https", APP_BASE_HOST, "/c/c/thread/setPrivacy"),
         sign(data),
     )
 

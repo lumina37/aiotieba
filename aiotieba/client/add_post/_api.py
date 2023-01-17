@@ -42,7 +42,7 @@ def pack_request(
 
     request = pack_form_request(
         client,
-        url("http", APP_BASE_HOST, "/c/c/post/add"),
+        url("https", APP_BASE_HOST, "/c/c/post/add"),
         sign(data),
     )
 

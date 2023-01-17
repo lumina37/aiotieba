@@ -16,7 +16,7 @@ def pack_request(client: httpx.AsyncClient, core: TiebaCore, pn: int) -> httpx.R
 
     request = pack_form_request(
         client,
-        url("http", APP_BASE_HOST, "/c/u/feed/atme"),
+        url("https", APP_BASE_HOST, "/c/u/feed/atme"),
         sign(data),
     )
 

@@ -20,7 +20,7 @@ def pack_proto(core: TiebaCore, fname: str) -> bytes:
 def pack_request(client: httpx.AsyncClient, core: TiebaCore, fname: str) -> httpx.Request:
     request = pack_proto_request(
         client,
-        url("http", APP_BASE_HOST, "/c/f/forum/searchPostForum", "cmd=309466"),
+        url("https", APP_BASE_HOST, "/c/f/forum/searchPostForum", "cmd=309466"),
         pack_proto(core, fname),
     )
 

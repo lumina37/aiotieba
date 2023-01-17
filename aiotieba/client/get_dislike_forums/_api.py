@@ -21,7 +21,7 @@ def pack_request(client: httpx.AsyncClient, core: TiebaCore, pn: int, rn: int) -
 
     request = pack_proto_request(
         client,
-        url("http", APP_BASE_HOST, "/c/u/user/getDislikeList", "cmd=309692"),
+        url("https", APP_BASE_HOST, "/c/u/user/getDislikeList", "cmd=309692"),
         pack_proto(core, pn, rn),
     )
 

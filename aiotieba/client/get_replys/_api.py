@@ -20,7 +20,7 @@ def pack_request(client: httpx.AsyncClient, core: TiebaCore, pn: int) -> httpx.R
 
     request = pack_proto_request(
         client,
-        url("http", APP_BASE_HOST, "/c/u/feed/replyme", "cmd=303007"),
+        url("https", APP_BASE_HOST, "/c/u/feed/replyme", "cmd=303007"),
         pack_proto(core, pn),
     )
 

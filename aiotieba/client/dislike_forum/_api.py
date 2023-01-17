@@ -21,7 +21,7 @@ def pack_request(client: httpx.AsyncClient, core: TiebaCore, fid: int) -> httpx.
 
     request = pack_form_request(
         client,
-        url("http", APP_BASE_HOST, "/c/c/excellent/submitDislike"),
+        url("https", APP_BASE_HOST, "/c/c/excellent/submitDislike"),
         sign(data),
     )
 

@@ -53,7 +53,7 @@ def pack_request(
 
     request = pack_proto_request(
         client,
-        url("http", APP_BASE_HOST, "/c/f/pb/page", "cmd=302001"),
+        url("https", APP_BASE_HOST, "/c/f/pb/page", "cmd=302001"),
         pack_proto(
             core, tid, pn, rn, sort, only_thread_author, with_comments, comment_sort_by_agree, comment_rn, is_fold
         ),

@@ -19,7 +19,7 @@ def pack_request(
 
     request = pack_form_request(
         client,
-        url("http", APP_BASE_HOST, "/c/c/bawu/delthread"),
+        url("https", APP_BASE_HOST, "/c/c/bawu/delthread"),
         sign(data),
     )
 
