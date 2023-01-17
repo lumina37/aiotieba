@@ -192,7 +192,7 @@ class Client(object):
     @property
     def core(self) -> TiebaCore:
         """
-        贴吧核心参数集
+        贴吧核心参数容器
 
         Returns:
             TiebaCore

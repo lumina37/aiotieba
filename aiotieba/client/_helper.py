@@ -235,7 +235,7 @@ def pack_ws_bytes(
     对ws_bytes进行打包 压缩加密并添加9字节头部
 
     Args:
-        core (TiebaCore): 贴吧核心参数集
+        core (TiebaCore): 贴吧核心参数容器
         ws_bytes (bytes): 待发送的websocket数据
         cmd (int): 请求的cmd类型
         req_id (int): 请求的id
@@ -272,7 +272,7 @@ def unpack_ws_bytes(core: TiebaCore, ws_bytes: bytes) -> Tuple[bytes, int, int]:
     对ws_bytes进行解包
 
     Args:
-        core (TiebaCore): 贴吧核心参数集
+        core (TiebaCore): 贴吧核心参数容器
         ws_bytes (bytes): 接收到的websocket数据
 
     Returns:

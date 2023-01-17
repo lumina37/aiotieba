@@ -12,7 +12,7 @@ from ..._logging import get_logger as LOG
 
 class TiebaCore(object):
     """
-    贴吧核心参数集
+    贴吧核心参数容器
 
     Args:
         BDUSS_key (str, optional): 用于快捷调用BDUSS. Defaults to None.
