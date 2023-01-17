@@ -87,6 +87,11 @@ async def sign(BDUSS_key: str, *, retry_times: int = 0) -> None:
                 break
             retry_list = new_retry_list
 
+        # 用户成长等级签到
+        for _ in range(retry_times):
+            if await client.sign_growth():
+                break
+
 
 async def main() -> None:
 

@@ -74,7 +74,7 @@ class Client(object):
         '_ws_dispatcher',
     ]
 
-    _use_env_proxy = True
+    _use_env_proxy = False
 
     def __init__(self, BDUSS_key: Optional[str] = None) -> None:
 
@@ -2731,6 +2731,30 @@ class Client(object):
             return False
 
         LOG().info(f"Succeeded. forum={fname}")
+        return True
+
+    async def sign_growth(self) -> bool:
+        """
+        用户成长等级签到
+
+        Returns:
+            bool: True成功 False失败
+        """
+
+        tbs = await self.get_tbs()
+
+        from . import sign_growth
+
+        try:
+            request = sign_growth.pack_request(self.client_web, tbs)
+            response = await send_request(self.client_web, request)
+            sign_growth.parse_response(response)
+
+        except Exception as err:
+            LOG().warning(f"{err}")
+            return False
+
+        LOG().info("Succeeded")
         return True
 
     async def add_post(self, fname_or_fid: Union[str, int], /, tid: int, content: str) -> bool:
