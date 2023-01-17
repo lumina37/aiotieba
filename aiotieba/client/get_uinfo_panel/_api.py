@@ -1,7 +1,7 @@
 import httpx
 
 from .._exception import TiebaServerError
-from .._helper import is_portrait, parse_json, raise_for_status, url
+from .._helper import WEB_BASE_HOST, is_portrait, parse_json, raise_for_status, url
 from ._classdef import UserInfo_panel
 
 
@@ -11,7 +11,7 @@ def pack_request(client: httpx.AsyncClient, name_or_portrait: str) -> httpx.Requ
 
     request = httpx.Request(
         "GET",
-        url("https", "tieba.baidu.com", "/home/get/panel"),
+        url("https", WEB_BASE_HOST, "/home/get/panel"),
         params=params,
         headers=client.headers,
         cookies=client.cookies,

@@ -1,14 +1,14 @@
 import bs4
 import httpx
 
-from .._helper import raise_for_status, url
+from .._helper import WEB_BASE_HOST, raise_for_status, url
 from ._classdef import RankUsers
 
 
 def pack_request(client: httpx.AsyncClient, fname: str, pn: int) -> httpx.Request:
     request = httpx.Request(
         "GET",
-        url("https", "tieba.baidu.com", "/f/like/furank"),
+        url("https", WEB_BASE_HOST, "/f/like/furank"),
         params={
             'kw': fname,
             'pn': pn,

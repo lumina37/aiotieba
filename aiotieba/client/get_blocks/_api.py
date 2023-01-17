@@ -1,14 +1,14 @@
 import httpx
 
 from .._exception import TiebaServerError
-from .._helper import parse_json, raise_for_status, url
+from .._helper import WEB_BASE_HOST, parse_json, raise_for_status, url
 from ._classdef import Blocks
 
 
 def pack_request(client: httpx.AsyncClient, fname: str, fid: int, name: str, pn: int) -> httpx.Request:
     request = httpx.Request(
         "GET",
-        url("https", "tieba.baidu.com", "/mo/q/bawublock"),
+        url("https", WEB_BASE_HOST, "/mo/q/bawublock"),
         params={
             'fn': fname,
             'fid': fid,

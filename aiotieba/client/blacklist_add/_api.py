@@ -1,7 +1,7 @@
 import httpx
 
 from .._exception import TiebaServerError
-from .._helper import pack_form_request, parse_json, raise_for_status, url
+from .._helper import WEB_BASE_HOST, pack_form_request, parse_json, raise_for_status, url
 
 
 def pack_request(client: httpx.AsyncClient, tbs: str, fname: str, user_id: int) -> httpx.Request:
@@ -15,7 +15,7 @@ def pack_request(client: httpx.AsyncClient, tbs: str, fname: str, user_id: int) 
 
     request = pack_form_request(
         client,
-        url("http", "tieba.baidu.com", "/bawu2/platform/addBlack"),
+        url("http", WEB_BASE_HOST, "/bawu2/platform/addBlack"),
         data,
     )
 

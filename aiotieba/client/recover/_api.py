@@ -1,7 +1,7 @@
 import httpx
 
 from .._exception import TiebaServerError
-from .._helper import pack_form_request, parse_json, raise_for_status, url
+from .._helper import WEB_BASE_HOST, pack_form_request, parse_json, raise_for_status, url
 
 
 def pack_request(
@@ -20,7 +20,7 @@ def pack_request(
 
     request = pack_form_request(
         client,
-        url("https", "tieba.baidu.com", "/mo/q/bawurecoverthread"),
+        url("https", WEB_BASE_HOST, "/mo/q/bawurecoverthread"),
         data,
     )
 
