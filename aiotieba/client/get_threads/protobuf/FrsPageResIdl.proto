@@ -13,9 +13,6 @@ message FrsPageResIdl {
         message ForumInfo {
             int64 id = 1;
             string name = 2;
-            // int32 member_num = 9;
-            // int32 thread_num = 10;
-            // int32 post_num = 11;
         }
         ForumInfo forum = 2;
         Page page = 4;

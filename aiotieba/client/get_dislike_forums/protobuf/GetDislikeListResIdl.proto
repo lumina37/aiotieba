@@ -2,19 +2,14 @@
 syntax = "proto3";
 
 import "Error.proto";
+import "ForumList.proto";
 
 message GetDislikeListResIdl {
     Error error = 1;
     message DataRes {
-        message ForumList {
-            int64 forum_id = 1;
-            string forum_name = 2;
-            uint32 member_count = 4;
-            int64 post_num = 7;
-            int64 thread_num = 8;
-        }
         repeated ForumList forum_list = 1;
         int32 has_more = 2;
+        int32 cur_page = 3;
     }
     DataRes data = 2;
 }

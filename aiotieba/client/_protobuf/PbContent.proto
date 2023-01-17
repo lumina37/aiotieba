@@ -12,7 +12,6 @@ message PbContent {
     string c = 11;
     string voice_md5 = 12;
     int64 uid = 15;
-    string phonetype = 21;
     string origin_src = 25;
     uint32 origin_size = 27;
     message TiebaPlusInfo {
