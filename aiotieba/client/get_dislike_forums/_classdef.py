@@ -1,6 +1,69 @@
 from .._classdef import Containers, TypeMessage
 
 
+class Page_dislikef(object):
+    """
+    页信息
+
+    Attributes:
+        current_page (int): 当前页码
+
+        has_more (bool): 是否有后继页
+        has_prev (bool): 是否有前驱页
+    """
+
+    __slots__ = [
+        '_current_page',
+        '_has_more',
+        '_has_prev',
+    ]
+
+    def _init(self, data_proto: TypeMessage) -> "Page_dislikef":
+        self._current_page = data_proto.cur_page
+        self._has_more = bool(data_proto.has_more)
+        self._has_prev = self._current_page > 1
+        return self
+
+    def _init_null(self) -> "Page_dislikef":
+        self._current_page = 0
+        self._has_more = False
+        self._has_prev = False
+        return self
+
+    def __repr__(self) -> str:
+        return str(
+            {
+                'current_page': self._current_page,
+                'has_more': self._has_more,
+                'has_prev': self._has_prev,
+            }
+        )
+
+    @property
+    def current_page(self) -> int:
+        """
+        当前页码
+        """
+
+        return self._current_page
+
+    @property
+    def has_more(self) -> bool:
+        """
+        是否有后继页
+        """
+
+        return self._has_more
+
+    @property
+    def has_prev(self) -> bool:
+        """
+        是否有前驱页
+        """
+
+        return self._has_prev
+
+
 class DislikeForum(object):
     """
     吧广场贴吧信息
@@ -97,20 +160,28 @@ class DislikeForums(Containers[DislikeForum]):
     Attributes:
         _objs (list[DislikeForum]): 首页推荐屏蔽的贴吧列表
 
-        has_more (bool): 是否还有下一页
+        page (Page_dislikef): 页信息
     """
 
-    __slots__ = ['_has_more']
+    __slots__ = ['_page']
 
     def _init(self, data_proto: TypeMessage) -> "DislikeForums":
         self._objs = [DislikeForum()._init(p) for p in data_proto.forum_list]
-        self._has_more = bool(data_proto.has_more)
+        self._page = Page_dislikef()._init(data_proto)
         return self
 
     def _init_null(self) -> "DislikeForums":
         self._objs = []
-        self._has_more = False
+        self._page = Page_dislikef()._init_null()
         return self
+    
+    @property
+    def page(self) -> Page_dislikef:
+        """
+        页信息
+        """
+
+        return self._page
 
     @property
     def has_more(self) -> bool:
@@ -118,4 +189,4 @@ class DislikeForums(Containers[DislikeForum]):
         是否还有下一页
         """
 
-        return self._has_more
+        return self._page._has_more
