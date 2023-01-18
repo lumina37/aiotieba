@@ -1,17 +1,18 @@
 from typing import List
 
-import httpx
+import aiohttp
+import yarl
 
-from ..._classdef.core import TiebaCore
+from ..._core import APP_BASE_HOST, APP_SECURE_SCHEME, TbCore
 from ..._exception import TiebaServerError
-from ..._helper import APP_BASE_HOST, pack_proto_request, raise_for_status, url
+from ..._helper import pack_proto_request, send_request
 from .._classdef import UserInfo_u, UserThread
 from ..protobuf import UserPostReqIdl_pb2, UserPostResIdl_pb2
 
 
-def pack_proto(core: TiebaCore, user_id: int, pn: int, public_only: bool) -> bytes:
+def pack_proto(core: TbCore, user_id: int, pn: int, public_only: bool) -> bytes:
     req_proto = UserPostReqIdl_pb2.UserPostReqIdl()
-    req_proto.data.common.BDUSS = core.BDUSS
+    req_proto.data.common.BDUSS = core._BDUSS
     req_proto.data.common._client_version = core.main_version
     req_proto.data.user_id = user_id
     req_proto.data.is_thread = 1
@@ -22,19 +23,24 @@ def pack_proto(core: TiebaCore, user_id: int, pn: int, public_only: bool) -> byt
     return req_proto.SerializeToString()
 
 
-def pack_request(client: httpx.AsyncClient, core: TiebaCore, user_id: int, pn: int, public_only: bool) -> httpx.Request:
+async def request_http(connector: aiohttp.TCPConnector, core: TbCore, proto: bytes) -> bytes:
+
     request = pack_proto_request(
-        client,
-        url("https", APP_BASE_HOST, "/c/u/feed/userpost", "cmd=303002"),
-        pack_proto(core, user_id, pn, public_only),
+        core,
+        yarl.URL.build(
+            scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/u/feed/userpost", query_string="cmd=303002"
+        ),
+        proto,
     )
 
-    return request
+    body = await send_request(request, connector, read_bufsize=64 * 1024)
+
+    return body
 
 
-def parse_proto(proto: bytes) -> List[UserThread]:
+def parse_body(body: bytes) -> List[UserThread]:
     res_proto = UserPostResIdl_pb2.UserPostResIdl()
-    res_proto.ParseFromString(proto)
+    res_proto.ParseFromString(body)
 
     if code := res_proto.error.errorno:
         raise TiebaServerError(code, res_proto.error.errmsg)
@@ -48,9 +54,3 @@ def parse_proto(proto: bytes) -> List[UserThread]:
             uthread._author_id = user._user_id
 
     return uthreads
-
-
-def parse_response(response: httpx.Response) -> List[UserThread]:
-    raise_for_status(response)
-
-    return parse_proto(response.content)

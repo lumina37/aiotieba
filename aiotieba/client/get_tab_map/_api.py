@@ -1,35 +1,41 @@
 from typing import Dict
 
-import httpx
+import aiohttp
+import yarl
 
-from .._classdef.core import TiebaCore
+from .._core import APP_BASE_HOST, APP_SECURE_SCHEME, TbCore
 from .._exception import TiebaServerError
-from .._helper import APP_BASE_HOST, pack_proto_request, raise_for_status, url
+from .._helper import pack_proto_request, send_request
 from .protobuf import SearchPostForumReqIdl_pb2, SearchPostForumResIdl_pb2
 
 
-def pack_proto(core: TiebaCore, fname: str) -> bytes:
+def pack_proto(core: TbCore, fname: str) -> bytes:
     req_proto = SearchPostForumReqIdl_pb2.SearchPostForumReqIdl()
-    req_proto.data.common.BDUSS = core.BDUSS
+    req_proto.data.common.BDUSS = core._BDUSS
     req_proto.data.common._client_version = core.main_version
     req_proto.data.fname = fname
 
     return req_proto.SerializeToString()
 
 
-def pack_request(client: httpx.AsyncClient, core: TiebaCore, fname: str) -> httpx.Request:
+async def request_http(connector: aiohttp.TCPConnector, core: TbCore, proto: bytes) -> bytes:
+
     request = pack_proto_request(
-        client,
-        url("https", APP_BASE_HOST, "/c/f/forum/searchPostForum", "cmd=309466"),
-        pack_proto(core, fname),
+        core,
+        yarl.URL.build(
+            scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/forum/searchPostForum", query_string="cmd=309466"
+        ),
+        proto,
     )
 
-    return request
+    body = await send_request(request, connector, read_bufsize=4 * 1024)
+
+    return body
 
 
-def parse_proto(proto: bytes) -> Dict[str, int]:
+def parse_body(body: bytes) -> Dict[str, int]:
     res_proto = SearchPostForumResIdl_pb2.SearchPostForumResIdl()
-    res_proto.ParseFromString(proto)
+    res_proto.ParseFromString(body)
 
     if code := res_proto.error.errorno:
         raise TiebaServerError(code, res_proto.error.errmsg)
@@ -37,9 +43,3 @@ def parse_proto(proto: bytes) -> Dict[str, int]:
     tab_map = {tab_proto.tab_name: tab_proto.tab_id for tab_proto in res_proto.data.exact_match.tab_info}
 
     return tab_map
-
-
-def parse_response(response: httpx.Response) -> Dict[str, int]:
-    raise_for_status(response)
-
-    return parse_proto(response.content)

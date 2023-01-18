@@ -1,29 +1,32 @@
+import aiohttp
 import bs4
-import httpx
+import yarl
 
-from .._helper import WEB_BASE_HOST, raise_for_status, url
+from .._core import WEB_BASE_HOST, TbCore
+from .._helper import pack_web_get_request, send_request
 from ._classdef import BlacklistUsers
 
 
-def pack_request(client: httpx.AsyncClient, fname: str, pn: int) -> httpx.Request:
-    request = httpx.Request(
-        "GET",
-        url("https", WEB_BASE_HOST, "/bawu2/platform/listBlackUser"),
-        params={
-            'word': fname,
-            'pn': pn,
-        },
-        headers=client.headers,
-        cookies=client.cookies,
+async def request(connector: aiohttp.TCPConnector, core: TbCore, fname: str, pn: int) -> bytes:
+
+    params = [
+        ('word', fname),
+        ('pn', pn),
+    ]
+
+    request = pack_web_get_request(
+        core,
+        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/bawu2/platform/listBlackUser"),
+        params,
     )
 
-    return request
+    body = await send_request(request, connector, read_bufsize=64 * 1024)
+
+    return body
 
 
-def parse_response(response: httpx.Response) -> BlacklistUsers:
-    raise_for_status(response)
-
-    soup = bs4.BeautifulSoup(response.text, 'lxml')
+def parse_body(body: bytes) -> BlacklistUsers:
+    soup = bs4.BeautifulSoup(body, 'lxml')
     blacklist_users = BlacklistUsers()._init(soup)
 
     return blacklist_users

@@ -1,18 +1,19 @@
 import time
 
-import httpx
+import aiohttp
+import yarl
 
-from .._classdef.core import TiebaCore
+from .._core import APP_BASE_HOST, APP_SECURE_SCHEME, TbCore
 from .._exception import TiebaServerError
-from .._helper import APP_BASE_HOST, pack_form_request, parse_json, raise_for_status, sign, url
+from .._helper import pack_form_request, parse_json, send_request
 
 
-def pack_request(
-    client: httpx.AsyncClient, core: TiebaCore, tbs: str, fname: str, fid: int, tid: int, content: str
-) -> httpx.Request:
+async def request(
+    connector: aiohttp.TCPConnector, core: TbCore, tbs: str, fname: str, fid: int, tid: int, content: str
+) -> bytes:
 
     data = [
-        ('BDUSS', core.BDUSS),
+        ('BDUSS', core._BDUSS),
         ('_client_id', core.client_id),
         ('_client_type', '2'),
         ('_client_version', core.post_version),
@@ -30,7 +31,7 @@ def pack_request(
         ('new_vcode', '1'),
         ('post_from', '3'),
         ('reply_uid', 'null'),
-        ('stoken', core.STOKEN),
+        ('stoken', core._STOKEN),
         ('subapp_type', 'mini'),
         ('tbs', tbs),
         ('tid', tid),
@@ -41,18 +42,18 @@ def pack_request(
     ]
 
     request = pack_form_request(
-        client,
-        url("https", APP_BASE_HOST, "/c/c/post/add"),
-        sign(data),
+        core,
+        yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/c/post/add"),
+        data,
     )
 
-    return request
+    body = await send_request(request, connector, read_bufsize=2 * 1024)
+
+    return body
 
 
-def parse_response(response: httpx.Response) -> None:
-    raise_for_status(response)
-
-    res_json = parse_json(response.content)
+def parse_body(body: bytes) -> None:
+    res_json = parse_json(body)
     if code := int(res_json['error_code']):
         raise TiebaServerError(code, res_json['error_msg'])
     if int(res_json['info']['need_vcode']):

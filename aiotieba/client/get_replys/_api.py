@@ -1,33 +1,38 @@
-import httpx
+import aiohttp
+import yarl
 
-from .._classdef.core import TiebaCore
+from .._core import APP_BASE_HOST, APP_SECURE_SCHEME, TbCore
 from .._exception import TiebaServerError
-from .._helper import APP_BASE_HOST, pack_proto_request, raise_for_status, url
+from .._helper import pack_proto_request, send_request
 from ._classdef import Replys
 from .protobuf import ReplyMeReqIdl_pb2, ReplyMeResIdl_pb2
 
 
-def pack_proto(core: TiebaCore, pn: int) -> bytes:
+def pack_proto(core: TbCore, pn: int) -> bytes:
     req_proto = ReplyMeReqIdl_pb2.ReplyMeReqIdl()
-    req_proto.data.common.BDUSS = core.BDUSS
+    req_proto.data.common.BDUSS = core._BDUSS
     req_proto.data.common._client_version = core.main_version
     req_proto.data.pn = str(pn)
 
     return req_proto.SerializeToString()
 
 
-def pack_request(client: httpx.AsyncClient, core: TiebaCore, pn: int) -> httpx.Request:
+async def request_http(connector: aiohttp.TCPConnector, core: TbCore, proto: bytes) -> bytes:
 
     request = pack_proto_request(
-        client,
-        url("https", APP_BASE_HOST, "/c/u/feed/replyme", "cmd=303007"),
-        pack_proto(core, pn),
+        core,
+        yarl.URL.build(
+            scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/u/feed/replyme", query_string="cmd=303007"
+        ),
+        proto,
     )
 
-    return request
+    body = await send_request(request, connector, read_bufsize=16 * 1024)
+
+    return body
 
 
-def parse_proto(proto: bytes) -> Replys:
+def parse_body(proto: bytes) -> Replys:
     res_proto = ReplyMeResIdl_pb2.ReplyMeResIdl()
     res_proto.ParseFromString(proto)
 
@@ -38,9 +43,3 @@ def parse_proto(proto: bytes) -> Replys:
     replys = Replys()._init(data_proto)
 
     return replys
-
-
-def parse_response(response: httpx.Response) -> Replys:
-    raise_for_status(response)
-
-    return parse_proto(response.content)

@@ -11,9 +11,9 @@ def pack_proto(user_id: int, content: str) -> bytes:
     return req_proto.SerializeToString()
 
 
-def parse_proto(response: bytes) -> None:
+def parse_body(body: bytes) -> None:
     res_proto = CommitPersonalMsgResIdl_pb2.CommitPersonalMsgResIdl()
-    res_proto.ParseFromString(response)
+    res_proto.ParseFromString(body)
 
     if code := res_proto.error.errorno:
         raise TiebaServerError(code, res_proto.error.errmsg)

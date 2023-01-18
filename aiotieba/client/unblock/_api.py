@@ -1,10 +1,12 @@
-import httpx
+import aiohttp
+import yarl
 
+from .._core import WEB_BASE_HOST, TbCore
 from .._exception import TiebaServerError
-from .._helper import WEB_BASE_HOST, pack_form_request, parse_json, raise_for_status, url
+from .._helper import pack_web_form_request, parse_json, send_request
 
 
-def pack_request(client: httpx.AsyncClient, tbs: str, fname: str, fid: int, user_id: int) -> httpx.Request:
+async def request(connector: aiohttp.TCPConnector, core: TbCore, tbs: str, fname: str, fid: int, user_id: int) -> bytes:
 
     data = [
         ('fn', fname),
@@ -14,18 +16,18 @@ def pack_request(client: httpx.AsyncClient, tbs: str, fname: str, fid: int, user
         ('tbs', tbs),
     ]
 
-    request = pack_form_request(
-        client,
-        url("https", WEB_BASE_HOST, "/mo/q/bawublockclear"),
+    request = pack_web_form_request(
+        core,
+        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mo/q/bawublockclear"),
         data,
     )
 
-    return request
+    body = await send_request(request, connector, read_bufsize=32 * 1024)
+
+    return body
 
 
-def parse_response(response: httpx.Response) -> None:
-    raise_for_status(response)
-
-    res_json = parse_json(response.content)
+def parse_body(body: bytes) -> None:
+    res_json = parse_json(body)
     if code := res_json['no']:
         raise TiebaServerError(code, res_json['error'])

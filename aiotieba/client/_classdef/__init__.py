@@ -1,3 +1,4 @@
+from .._core import TbCore
 from .common import TypeMessage
 from .container import Containers
 from .contents import (
@@ -19,7 +20,6 @@ from .contents import (
     TypeFragText,
     TypeFragTiebaPlus,
 )
-from .core import TiebaCore
 from .enums import Header, ReqUInfo
 from .forum import Forum
 from .misc import ForumInfoCache, WebsocketResponse
