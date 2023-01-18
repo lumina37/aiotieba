@@ -1,26 +1,29 @@
-import httpx
+import aiohttp
+import yarl
 
+from .._core import WEB_BASE_HOST, TbCore
 from .._exception import TiebaServerError
-from .._helper import parse_json, raise_for_status, url
+from .._helper import pack_web_get_request, parse_json, send_request
 from ._classdef import UserInfo_guinfo_web
 
 
-def pack_request(client: httpx.AsyncClient, user_id: int) -> httpx.Request:
-    request = httpx.Request(
-        "GET",
-        url("http", "tieba.baidu.com", "/im/pcmsg/query/getUserInfo"),
-        params={'chatUid': user_id},
-        headers=client.headers,
-        cookies=client.cookies,
+async def request(connector: aiohttp.TCPConnector, core: TbCore, user_id: int) -> bytes:
+
+    params = [('chatUid', user_id)]
+
+    request = pack_web_get_request(
+        core,
+        yarl.URL.build(scheme="http", host=WEB_BASE_HOST, path="/im/pcmsg/query/getUserInfo"),
+        params,
     )
 
-    return request
+    body = await send_request(request, connector, read_bufsize=2 * 1024)
+
+    return body
 
 
-def parse_response(response: httpx.Response) -> UserInfo_guinfo_web:
-    raise_for_status(response)
-
-    res_json = parse_json(response.content)
+def parse_body(body: bytes) -> UserInfo_guinfo_web:
+    res_json = parse_json(body)
     if code := res_json['errno']:
         raise TiebaServerError(code, res_json['errmsg'])
 

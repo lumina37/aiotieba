@@ -1,15 +1,16 @@
 from typing import Dict, List
 
-import httpx
+import aiohttp
+import yarl
 
-from .._classdef.core import TiebaCore
+from .._core import APP_BASE_HOST, APP_NON_SECURE_SCHEME, TbCore
 from .._exception import TiebaServerError
-from .._helper import APP_BASE_HOST, pack_proto_request, raise_for_status, url
+from .._helper import pack_proto_request, send_request
 from ._classdef import UserInfo_bawu
 from .protobuf import GetBawuInfoReqIdl_pb2, GetBawuInfoResIdl_pb2
 
 
-def pack_proto(core: TiebaCore, fid: int) -> bytes:
+def pack_proto(core: TbCore, fid: int) -> bytes:
     req_proto = GetBawuInfoReqIdl_pb2.GetBawuInfoReqIdl()
     req_proto.data.common._client_version = core.main_version
     req_proto.data.fid = fid
@@ -17,20 +18,24 @@ def pack_proto(core: TiebaCore, fid: int) -> bytes:
     return req_proto.SerializeToString()
 
 
-def pack_request(client: httpx.AsyncClient, core: TiebaCore, fid: int) -> httpx.Request:
+async def request_http(connector: aiohttp.TCPConnector, core: TbCore, proto: bytes) -> bytes:
 
     request = pack_proto_request(
-        client,
-        url("http", APP_BASE_HOST, "/c/f/forum/getBawuInfo", "cmd=301007"),
-        pack_proto(core, fid),
+        core,
+        yarl.URL.build(
+            scheme=APP_NON_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/forum/getBawuInfo", query_string="cmd=301007"
+        ),
+        proto,
     )
 
-    return request
+    body = await send_request(request, connector, read_bufsize=8 * 1024)
+
+    return body
 
 
-def parse_proto(proto: bytes) -> Dict[str, List[UserInfo_bawu]]:
+def parse_body(body: bytes) -> Dict[str, List[UserInfo_bawu]]:
     res_proto = GetBawuInfoResIdl_pb2.GetBawuInfoResIdl()
-    res_proto.ParseFromString(proto)
+    res_proto.ParseFromString(body)
 
     if code := res_proto.error.errorno:
         raise TiebaServerError(code, res_proto.error.errmsg)
@@ -41,9 +46,3 @@ def parse_proto(proto: bytes) -> Dict[str, List[UserInfo_bawu]]:
     }
 
     return bawu_dict
-
-
-def parse_response(response: httpx.Response) -> Dict[str, List[UserInfo_bawu]]:
-    raise_for_status(response)
-
-    return parse_proto(response.content)

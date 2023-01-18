@@ -1,18 +1,19 @@
 from typing import List
 
-import httpx
+import aiohttp
+import yarl
 
-from .._classdef.core import TiebaCore
+from .._core import APP_BASE_HOST, APP_SECURE_SCHEME, TbCore
 from .._exception import TiebaServerError
-from .._helper import APP_BASE_HOST, pack_form_request, parse_json, raise_for_status, sign, url
+from .._helper import pack_form_request, parse_json, send_request
 
 
-def pack_request(
-    client: httpx.AsyncClient, core: TiebaCore, tbs: str, fid: int, tids: List[int], block: bool
-) -> httpx.Request:
+async def request(
+    connector: aiohttp.TCPConnector, core: TbCore, tbs: str, fid: int, tids: List[int], block: bool
+) -> bytes:
 
     data = [
-        ('BDUSS', core.BDUSS),
+        ('BDUSS', core._BDUSS),
         ('forum_id', fid),
         ('tbs', tbs),
         ('thread_ids', ','.join(str(tid) for tid in tids)),
@@ -20,17 +21,17 @@ def pack_request(
     ]
 
     request = pack_form_request(
-        client,
-        url("http", APP_BASE_HOST, "/c/c/bawu/multiDelThread"),
-        sign(data),
+        core,
+        yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/c/bawu/multiDelThread"),
+        data,
     )
 
-    return request
+    body = await send_request(request, connector, read_bufsize=1024)
+
+    return body
 
 
-def parse_response(response: httpx.Response) -> None:
-    raise_for_status(response)
-
-    res_json = parse_json(response.content)
+def parse_body(body: bytes) -> None:
+    res_json = parse_json(body)
     if code := int(res_json['error_code']):
         raise TiebaServerError(code, res_json['error_msg'])

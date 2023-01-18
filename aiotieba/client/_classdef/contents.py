@@ -1,7 +1,7 @@
 import urllib.parse
-from typing import Optional, Protocol, TypeVar
+from typing import Protocol, TypeVar
 
-import httpx
+import yarl
 
 from .._helper import CHECK_URL_PERFIX, removeprefix
 from .common import TypeMessage
@@ -288,7 +288,7 @@ class FragLink(object):
         text (str): 原链接
         title (str): 链接标题
         raw_url (str): 原链接
-        url (httpx.URL): 解析后的链接
+        url (yarl.URL): 解析后的链接
         is_external (bool): 是否外部链接
     """
 
@@ -314,6 +314,7 @@ class FragLink(object):
             {
                 'title': self._title,
                 'raw_url': self._raw_url,
+                'is_external': self._is_external,
             }
         )
 
@@ -337,7 +338,7 @@ class FragLink(object):
         return self._title
 
     @property
-    def url(self) -> httpx.URL:
+    def url(self) -> yarl.URL:
         """
         yarl解析后的链接
 
@@ -346,7 +347,7 @@ class FragLink(object):
         """
 
         if self._url is None:
-            self._url = httpx.URL(self._raw_url)
+            self._url = yarl.URL(self._raw_url)
         return self._url
 
     @property
@@ -385,7 +386,7 @@ class TypeFragLink(Protocol):
         pass
 
     @property
-    def url(self) -> httpx.URL:
+    def url(self) -> yarl.URL:
         """
         yarl解析后的链接
 
@@ -509,7 +510,7 @@ class FragmentUnknown(object):
 
     __slots__ = ['_data']
 
-    def __init__(self, data = None) -> None:
+    def __init__(self, data=None) -> None:
         self._data = data
 
     def __repr__(self) -> str:

@@ -24,8 +24,7 @@ classifiers = [
 ]
 dependencies = [
     "beautifulsoup4<5,>=4.0.0",
-    "httpx<0.24,>=0.23.0",
-    "httpx_ws<0.3,>=0.2.2",
+    "aiohttp<4,>=3.8.0,!=3.8.2",
     "lxml<5,>=4.0.0",
     "protobuf<5,>=4.12.0",
     "pycryptodome<4,>=3.0.0",
@@ -35,7 +34,7 @@ dynamic = ["version"]
 
 [project.optional-dependencies]
 img = ["opencv-contrib-python-headless<4.8,>=4.6.0.66"]
-speedup = ["pysimdjson<5.1,>=5.0.0"]
+speedup = ["pysimdjson<5.1,>=5.0.0", "aiodns<4,>=3.0.0"]
 
 [tool.setuptools.packages.find]
 include = ["aiotieba*"]

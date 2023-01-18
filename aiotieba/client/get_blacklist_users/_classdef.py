@@ -124,8 +124,8 @@ class Page_blacklist(object):
         return self
 
     def _init_null(self) -> "Page_blacklist":
-        self._page_size = 0
         self._current_page = 0
+        self._total_page = 0
         self._has_more = False
         self._has_prev = False
         return self

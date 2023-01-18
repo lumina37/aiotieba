@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import random
 import sys
@@ -5,15 +6,17 @@ import urllib.parse
 import zlib
 from typing import List, Optional, Tuple
 
-import httpx
+import aiohttp
+import async_timeout
+import yarl
 from Crypto.Cipher import AES
 
-from ._classdef.core import TiebaCore
+from ._core import TbCore
 from ._exception import HTTPStatusError
 
-APP_BASE_HOST = "tiebac.baidu.com"
-WEB_BASE_HOST = "tieba.baidu.com"
 CHECK_URL_PERFIX = "http://tieba.baidu.com/mo/q/checkurl?url="
+
+DEFAULT_TIMEOUT = aiohttp.ClientTimeout(connect=3.0, sock_read=12.0, sock_connect=4.0)
 
 try:
     import simdjson as jsonlib
@@ -109,40 +112,72 @@ def is_portrait(portrait: str) -> bool:
     return isinstance(portrait, str) and portrait.startswith('tb.')
 
 
-def url(scheme: str, netloc: str, path: Optional[str] = None, query: Optional[str] = None) -> httpx.URL:
-    """
-    简单打包URL
-
-    Returns:
-        httpx.URL
-    """
-
-    url = httpx.URL()
-    url._uri_reference = url._uri_reference.copy_with(scheme=scheme, authority=netloc, path=path, query=query)
-
-    return url
+def timeout(delay: Optional[float], loop: asyncio.AbstractEventLoop) -> async_timeout.Timeout:
+    now = loop.time()
+    when = int(now) + delay
+    return async_timeout.timeout_at(when)
 
 
-async def send_request(client: httpx.AsyncClient, request: httpx.Request) -> httpx.Response:
+async def send_request(
+    request: aiohttp.ClientRequest,
+    connector: aiohttp.TCPConnector,
+    read_bufsize: int = 64 * 1024,
+) -> bytes:
     """
     简单发送http请求
     不包含重定向和身份验证功能
 
     Args:
-        client (httpx.AsyncClient): 客户端
-        request (httpx.Request): 待发送的请求
+        request (aiohttp.ClientRequest): 待发送的请求
+        connector (aiohttp.TCPConnector): 用于生成TCP连接的连接器
+        read_bufsize (int, optional): 读缓冲区大小 以字节为单位. Defaults to 64KiB.
 
     Returns:
-        httpx.Response
+        bytes: body
     """
 
-    response = await client._send_single_request(request)
+    # 获取TCP连接
     try:
-        await response.aread()
-    except BaseException as err:
-        await response.aclose()
-        raise err
-    return response
+        async with timeout(DEFAULT_TIMEOUT.connect, connector._loop):
+            conn = await connector.connect(request, [], DEFAULT_TIMEOUT)
+    except asyncio.TimeoutError as exc:
+        raise aiohttp.ServerTimeoutError(f"Connection timeout to host {request.url}") from exc
+
+    # 设置响应解析流程
+    conn.protocol.set_response_params(
+        read_until_eof=True,
+        auto_decompress=True,
+        read_timeout=DEFAULT_TIMEOUT.sock_read,
+        read_bufsize=read_bufsize,
+    )
+
+    # 发送请求
+    try:
+        response = await request.send(conn)
+    except BaseException:
+        conn.close()
+        raise
+    try:
+        await response.start(conn)
+    except BaseException:
+        response.close()
+        raise
+
+    # 合并cookies
+    # cookie_jar.update_cookies(response.cookies, response._url)
+
+    # 检查状态码
+    if response.status != 200:
+        raise HTTPStatusError(response.status, response.reason)
+
+    # 读取响应
+    response._body = await response.content.read()
+    body = response._body
+
+    # 释放连接
+    response.release()
+
+    return body
 
 
 def sign(data: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
@@ -167,75 +202,145 @@ def sign(data: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
     return data
 
 
-def pack_form_request(client: httpx.AsyncClient, url: str, data: List[Tuple[str, str]]) -> httpx.Request:
+def pack_form_request(core: TbCore, url: yarl.URL, data: List[Tuple[str, str]]) -> aiohttp.ClientRequest:
     """
-    将参数元组列表打包为Request
+    自动签名参数元组列表
+    并将其打包为移动端表单请求
 
     Args:
-        client (httpx.AsyncClient): 客户端
-        url (str): 链接
+        core (TbCore): 贴吧客户端核心容器
+        url (yarl.URL): 链接
         data (list[tuple[str, str]]): 参数元组列表
 
     Returns:
-        httpx.Request
+        aiohttp.ClientRequest
     """
 
-    body = urllib.parse.urlencode(data, doseq=True).encode('utf-8')
-    stream = httpx.ByteStream(body)
-
-    request = httpx.Request("POST", url, stream=stream)
-    request.headers = httpx.Headers(
-        [
-            ("Content-Length", str(len(body))),
-            ("Content-Type", "application/x-www-form-urlencoded"),
-        ]
+    payload = aiohttp.payload.BytesPayload(
+        urllib.parse.urlencode(sign(data), doseq=True).encode('utf-8'),
+        content_type="application/x-www-form-urlencoded",
     )
-    request.headers._list += client.headers._list
-    if client.cookies:
-        client.cookies.set_cookie_header(request)
+
+    request = aiohttp.ClientRequest(
+        aiohttp.hdrs.METH_POST,
+        url,
+        headers=core._app_core.headers,
+        data=payload,
+        loop=core._loop,
+        proxy=core._proxy,
+        proxy_auth=core._proxy_auth,
+        ssl=False,
+    )
 
     return request
 
 
-def pack_proto_request(client: httpx.AsyncClient, url: str, data: bytes) -> httpx.Request:
+def pack_proto_request(core: TbCore, url: yarl.URL, data: bytes) -> aiohttp.ClientRequest:
     """
-    打包protobuf请求
+    打包移动端protobuf请求
 
     Args:
-        client (httpx.AsyncClient): 客户端
-        url (str): 链接
+        core (TbCore): 贴吧客户端核心容器
+        url (yarl.URL): 链接
         data (bytes): protobuf序列化后的二进制数据
 
     Returns:
-        httpx.Request
+        aiohttp.ClientRequest
     """
 
-    files = [('data', ('file', data, ''))]
-    boundary = b"*-672328094--" + str(random.randint(0, 9)).encode('utf-8')
+    writer = aiohttp.MultipartWriter('form-data', boundary=f"*-672328094--{random.randint(0,9)}")
+    payload_headers = {
+        aiohttp.hdrs.CONTENT_DISPOSITION: aiohttp.helpers.content_disposition_header(
+            'form-data', name='data', filename='file'
+        )
+    }
+    payload = aiohttp.BytesPayload(data, content_type='', headers=payload_headers)
+    payload.headers.popone(aiohttp.hdrs.CONTENT_TYPE)
+    writer._parts.append((payload, None, None))
 
-    stream = httpx._content.MultipartStream({}, files, boundary)
-    request = httpx.Request("POST", url, stream=stream)
-    request.headers = httpx.Headers(
-        [
-            ("Content-Length", str(stream.get_content_length())),
-            ("Content-Type", stream.content_type),
-        ]
+    request = aiohttp.ClientRequest(
+        aiohttp.hdrs.METH_POST,
+        url,
+        headers=core._app_proto_core.headers,
+        data=writer,
+        loop=core._loop,
+        proxy=core._proxy,
+        proxy_auth=core._proxy_auth,
+        ssl=False,
     )
-    request.headers._list += client.headers._list
-    if client.cookies:
-        client.cookies.set_cookie_header(request)
+
+    return request
+
+
+def pack_web_get_request(core: TbCore, url: yarl.URL, params: List[Tuple[str, str]]) -> aiohttp.ClientRequest:
+    """
+    打包网页端参数请求
+
+    Args:
+        core (TbCore): 贴吧客户端核心容器
+        url (yarl.URL): 链接
+        params (list[tuple[str, str]]): 参数元组列表
+
+    Returns:
+        aiohttp.ClientRequest
+    """
+
+    url = url.update_query(params)
+    request = aiohttp.ClientRequest(
+        aiohttp.hdrs.METH_GET,
+        url,
+        headers=core._web_core.headers,
+        cookies=core._web_core.cookie_jar.filter_cookies(url),
+        loop=core._loop,
+        proxy=core._proxy,
+        proxy_auth=core._proxy_auth,
+        ssl=False,
+    )
+
+    return request
+
+
+def pack_web_form_request(core: TbCore, url: yarl.URL, data: List[Tuple[str, str]]) -> aiohttp.ClientRequest:
+    """
+    打包网页端表单请求
+
+    Args:
+        core (TbCore): 贴吧客户端核心容器
+        url (yarl.URL): 链接
+        data (list[tuple[str, str]]): 参数元组列表
+
+    Returns:
+        aiohttp.ClientRequest
+    """
+
+    payload = aiohttp.payload.BytesPayload(
+        urllib.parse.urlencode(data, doseq=True).encode('utf-8'),
+        content_type="application/x-www-form-urlencoded",
+    )
+
+    request = aiohttp.ClientRequest(
+        aiohttp.hdrs.METH_POST,
+        url,
+        headers=core._web_core.headers,
+        data=payload,
+        cookies=core._web_core.cookie_jar.filter_cookies(url),
+        loop=core._loop,
+        proxy=core._proxy,
+        proxy_auth=core._proxy_auth,
+        ssl=False,
+    )
 
     return request
 
 
 def pack_ws_bytes(
-    core: TiebaCore, ws_bytes: bytes, /, cmd: int, req_id: int, *, need_gzip: bool = True, need_encrypt: bool = True
+    core: TbCore, ws_bytes: bytes, /, cmd: int, req_id: int, *, need_gzip: bool = True, need_encrypt: bool = True
 ) -> bytes:
     """
     对ws_bytes进行打包 压缩加密并添加9字节头部
 
     Args:
-        core (TiebaCore): 贴吧核心参数集
+        core (TiebaCore): 贴吧核心参数容器
         ws_bytes (bytes): 待发送的websocket数据
         cmd (int): 请求的cmd类型
         req_id (int): 请求的id
@@ -267,12 +372,12 @@ def pack_ws_bytes(
     return ws_bytes
 
 
-def unpack_ws_bytes(core: TiebaCore, ws_bytes: bytes) -> Tuple[bytes, int, int]:
+def unpack_ws_bytes(core: TbCore, ws_bytes: bytes) -> Tuple[bytes, int, int]:
     """
     对ws_bytes进行解包
 
     Args:
-        core (TiebaCore): 贴吧核心参数集
+        core (TiebaCore): 贴吧核心参数容器
         ws_bytes (bytes): 接收到的websocket数据
 
     Returns:
@@ -297,19 +402,3 @@ def unpack_ws_bytes(core: TiebaCore, ws_bytes: bytes) -> Tuple[bytes, int, int]:
         ws_bytes = zlib.decompress(ws_bytes)
 
     return ws_bytes, cmd, req_id
-
-
-def raise_for_status(response: httpx.Response) -> None:
-    """
-    为非200状态码抛出异常
-
-    Args:
-        response (httpx.Response): 响应
-
-    Raises:
-        HTTPStatusError
-    """
-
-    if (status_code := response.status_code) != 200:
-        code = httpx.codes(status_code)
-        raise HTTPStatusError(f"{status_code} {code.phrase}")

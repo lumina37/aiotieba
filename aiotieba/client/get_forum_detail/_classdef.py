@@ -52,6 +52,14 @@ class Forum_detail(object):
         return self._fid
 
     @property
+    def fname(self) -> str:
+        """
+        贴吧名
+        """
+
+        return self._fname
+
+    @property
     def member_num(self) -> int:
         """
         吧会员数

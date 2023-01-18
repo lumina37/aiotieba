@@ -1,14 +1,15 @@
-import httpx
+import aiohttp
+import yarl
 
-from .._classdef.core import TiebaCore
+from .._core import APP_BASE_HOST, APP_SECURE_SCHEME, TbCore
 from .._exception import TiebaServerError
-from .._helper import APP_BASE_HOST, pack_proto_request, raise_for_status, url
+from .._helper import pack_proto_request, send_request
 from ._classdef import Posts
 from .protobuf import PbPageReqIdl_pb2, PbPageResIdl_pb2
 
 
 def pack_proto(
-    core: TiebaCore,
+    core: TbCore,
     tid: int,
     pn: int,
     rn: int,
@@ -29,7 +30,7 @@ def pack_proto(
     req_proto.data.only_thread_author = only_thread_author
     req_proto.data.is_fold = is_fold
     if with_comments:
-        req_proto.data.common.BDUSS = core.BDUSS
+        req_proto.data.common.BDUSS = core._BDUSS
         req_proto.data.with_comments = with_comments
         req_proto.data.comment_sort_by_agree = comment_sort_by_agree
         req_proto.data.comment_rn = comment_rn
@@ -37,29 +38,17 @@ def pack_proto(
     return req_proto.SerializeToString()
 
 
-def pack_request(
-    client: httpx.AsyncClient,
-    core: TiebaCore,
-    tid: int,
-    pn: int,
-    rn: int,
-    sort: int,
-    only_thread_author: bool,
-    with_comments: bool,
-    comment_sort_by_agree: bool,
-    comment_rn: int,
-    is_fold: bool,
-) -> httpx.Request:
+async def request_http(connector: aiohttp.TCPConnector, core: TbCore, proto: bytes) -> bytes:
 
     request = pack_proto_request(
-        client,
-        url("http", APP_BASE_HOST, "/c/f/pb/page", "cmd=302001"),
-        pack_proto(
-            core, tid, pn, rn, sort, only_thread_author, with_comments, comment_sort_by_agree, comment_rn, is_fold
-        ),
+        core,
+        yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/pb/page", query_string="cmd=302001"),
+        proto,
     )
 
-    return request
+    body = await send_request(request, connector, read_bufsize=128 * 1024)
+
+    return body
 
 
 def parse_proto(proto: bytes) -> Posts:
@@ -73,9 +62,3 @@ def parse_proto(proto: bytes) -> Posts:
     posts = Posts()._init(data_proto)
 
     return posts
-
-
-def parse_response(response: httpx.Response) -> Posts:
-    raise_for_status(response)
-
-    return parse_proto(response.content)

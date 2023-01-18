@@ -6,23 +6,17 @@ from .._exception import TiebaServerError
 from .._helper import pack_web_form_request, parse_json, send_request
 
 
-async def request(
-    connector: aiohttp.TCPConnector, core: TbCore, tbs: str, fname: str, fid: int, tid: int, pid: int, is_hide: bool
-) -> bytes:
+async def request(connector: aiohttp.TCPConnector, core: TbCore, tbs: str) -> bytes:
 
     data = [
         ('tbs', tbs),
-        ('fn', fname),
-        ('fid', fid),
-        ('tid_list[]', tid),
-        ('pid_list[]', pid),
-        ('type_list[]', '1' if pid else '0'),
-        ('is_frs_mask_list[]', int(is_hide)),
+        ('act_type', 'page_sign'),
+        ('cuid', ' '),
     ]
 
     request = pack_web_form_request(
         core,
-        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mo/q/bawurecoverthread"),
+        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mo/q/usergrowth/commitUGTaskInfo"),
         data,
     )
 

@@ -217,7 +217,7 @@ def `__bool__`() -> *bool*
 
 **title** - *(str)* 链接标题
 
-**url** - *([httpx.URL](https://www.python-httpx.org/api/#url))* 解析后的链接 外链会在解析前先去除前缀
+**url** - *([yarl.URL](https://yarl.aio-libs.org/en/latest/))* 解析后的链接 外链会在解析前先去除前缀
 
 **raw_url** - *(str)* 原链接 外链会在解析前先去除前缀
 

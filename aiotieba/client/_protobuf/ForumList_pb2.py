@@ -13,7 +13,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0f\x46orumList.proto\"m\n\tForumList\x12\x10\n\x08\x66orum_id\x18\x01 \x01(\x03\x12\x12\n\nforum_name\x18\x02 \x01(\t\x12\x14\n\x0cmember_count\x18\x04 \x01(\r\x12\x10\n\x08post_num\x18\x07 \x01(\x03\x12\x12\n\nthread_num\x18\x08 \x01(\x03\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0f\x46orumList.proto\"m\n\tForumList\x12\x10\n\x08\x66orum_id\x18\x01 \x01(\x03\x12\x12\n\nforum_name\x18\x02 \x01(\t\x12\x14\n\x0cmember_count\x18\x04 \x01(\x05\x12\x10\n\x08post_num\x18\x07 \x01(\x03\x12\x12\n\nthread_num\x18\x08 \x01(\x03\x62\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'ForumList_pb2', globals())

@@ -1,2 +1,2 @@
-from ._api import pack_proto, pack_request, parse_proto, parse_response
+from ._api import pack_proto, parse_body, request_http
 from ._classdef import UserInfo_guinfo_app
