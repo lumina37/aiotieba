@@ -57,4 +57,5 @@ asyncio.run(main())
 ## 友情链接
 
 + [另一个仍在活跃更新的贴吧管理器（有用户界面）](https://github.com/dog194/TiebaManager)
++ [基于aiotieba的高弹性吧务审查框架](https://github.com/Starry-OvO/aiotieba-reviewer)
 + [贴吧protobuf定义文件合集](https://github.com/n0099/tbclient.protobuf)
