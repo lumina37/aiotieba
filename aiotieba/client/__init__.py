@@ -168,7 +168,7 @@ class Client(object):
             aiohttp.WSServerHandshakeError: websocket握手失败
         """
 
-        if self._ws_dispatcher is not None and not self._ws_dispatcher.cancelled():
+        if self._ws_dispatcher is not None and not self._ws_dispatcher.done():
             self._ws_dispatcher.cancel()
 
         self.websocket = await self._client_ws._ws_connect(
