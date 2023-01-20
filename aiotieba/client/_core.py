@@ -16,9 +16,6 @@ from .._logging import get_logger as LOG
 APP_BASE_HOST = "tiebac.baidu.com"
 WEB_BASE_HOST = "tieba.baidu.com"
 
-APP_SECURE_SCHEME = "https"
-APP_NON_SECURE_SCHEME = "http"
-
 
 class SessionCore(object):
     """

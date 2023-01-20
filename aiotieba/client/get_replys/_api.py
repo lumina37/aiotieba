@@ -1,9 +1,9 @@
 import aiohttp
 import yarl
 
-from .._core import APP_BASE_HOST, APP_SECURE_SCHEME, TbCore
+from .._core import APP_BASE_HOST, TbCore
 from .._exception import TiebaServerError
-from .._helper import pack_proto_request, send_request
+from .._helper import APP_SECURE_SCHEME, pack_proto_request, send_request
 from ._classdef import Replys
 from .protobuf import ReplyMeReqIdl_pb2, ReplyMeResIdl_pb2
 

@@ -10,11 +10,10 @@ from Crypto.PublicKey import RSA
 
 from .._logging import get_logger as LOG
 from ._classdef.enums import ReqUInfo
-from ._classdef.misc import ForumInfoCache, WebsocketResponse
 from ._classdef.user import UserInfo
 from ._core import TbCore
 from ._exception import TiebaServerError
-from ._helper import is_portrait, pack_ws_bytes, unpack_ws_bytes
+from ._helper import ForumInfoCache, WebsocketResponse, is_portrait, pack_ws_bytes, parse_ws_bytes
 from ._typing import TypeUserInfo
 from .get_homepage._classdef import UserInfo_home
 
@@ -233,7 +232,7 @@ class Client(object):
 
         try:
             async for msg in self.websocket:
-                res_bytes, _, req_id = unpack_ws_bytes(msg.data)
+                res_bytes, _, req_id = parse_ws_bytes(msg.data)
 
                 ws_res = WebsocketResponse.ws_res_wait_dict.get(req_id, None)
                 if ws_res:

@@ -11,12 +11,9 @@ import async_timeout
 import yarl
 from Crypto.Cipher import AES
 
-from ._core import TbCore
-from ._exception import HTTPStatusError
-
-CHECK_URL_PERFIX = "http://tieba.baidu.com/mo/q/checkurl?url="
-
-DEFAULT_TIMEOUT = aiohttp.ClientTimeout(connect=3.0, sock_read=12.0, sock_connect=4.0)
+from .._core import TbCore
+from .._exception import HTTPStatusError
+from ._const import DEFAULT_TIMEOUT
 
 try:
     import simdjson as jsonlib
@@ -116,68 +113,6 @@ def timeout(delay: Optional[float], loop: asyncio.AbstractEventLoop) -> async_ti
     now = loop.time()
     when = int(now) + delay
     return async_timeout.timeout_at(when)
-
-
-async def send_request(
-    request: aiohttp.ClientRequest,
-    connector: aiohttp.TCPConnector,
-    read_bufsize: int = 64 * 1024,
-) -> bytes:
-    """
-    简单发送http请求
-    不包含重定向和身份验证功能
-
-    Args:
-        request (aiohttp.ClientRequest): 待发送的请求
-        connector (aiohttp.TCPConnector): 用于生成TCP连接的连接器
-        read_bufsize (int, optional): 读缓冲区大小 以字节为单位. Defaults to 64KiB.
-
-    Returns:
-        bytes: body
-    """
-
-    # 获取TCP连接
-    try:
-        async with timeout(DEFAULT_TIMEOUT.connect, connector._loop):
-            conn = await connector.connect(request, [], DEFAULT_TIMEOUT)
-    except asyncio.TimeoutError as exc:
-        raise aiohttp.ServerTimeoutError(f"Connection timeout to host {request.url}") from exc
-
-    # 设置响应解析流程
-    conn.protocol.set_response_params(
-        read_until_eof=True,
-        auto_decompress=True,
-        read_timeout=DEFAULT_TIMEOUT.sock_read,
-        read_bufsize=read_bufsize,
-    )
-
-    # 发送请求
-    try:
-        response = await request.send(conn)
-    except BaseException:
-        conn.close()
-        raise
-    try:
-        await response.start(conn)
-    except BaseException:
-        response.close()
-        raise
-
-    # 合并cookies
-    # cookie_jar.update_cookies(response.cookies, response._url)
-
-    # 检查状态码
-    if response.status != 200:
-        raise HTTPStatusError(response.status, response.reason)
-
-    # 读取响应
-    response._body = await response.content.read()
-    body = response._body
-
-    # 释放连接
-    response.release()
-
-    return body
 
 
 def sign(data: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
@@ -372,7 +307,7 @@ def pack_ws_bytes(
     return ws_bytes
 
 
-def unpack_ws_bytes(core: TbCore, ws_bytes: bytes) -> Tuple[bytes, int, int]:
+def parse_ws_bytes(core: TbCore, ws_bytes: bytes) -> Tuple[bytes, int, int]:
     """
     对ws_bytes进行解包
 
@@ -402,3 +337,65 @@ def unpack_ws_bytes(core: TbCore, ws_bytes: bytes) -> Tuple[bytes, int, int]:
         ws_bytes = zlib.decompress(ws_bytes)
 
     return ws_bytes, cmd, req_id
+
+
+async def send_request(
+    request: aiohttp.ClientRequest,
+    connector: aiohttp.TCPConnector,
+    read_bufsize: int = 64 * 1024,
+) -> bytes:
+    """
+    简单发送http请求
+    不包含重定向和身份验证功能
+
+    Args:
+        request (aiohttp.ClientRequest): 待发送的请求
+        connector (aiohttp.TCPConnector): 用于生成TCP连接的连接器
+        read_bufsize (int, optional): 读缓冲区大小 以字节为单位. Defaults to 64KiB.
+
+    Returns:
+        bytes: body
+    """
+
+    # 获取TCP连接
+    try:
+        async with timeout(DEFAULT_TIMEOUT.connect, connector._loop):
+            conn = await connector.connect(request, [], DEFAULT_TIMEOUT)
+    except asyncio.TimeoutError as exc:
+        raise aiohttp.ServerTimeoutError(f"Connection timeout to host {request.url}") from exc
+
+    # 设置响应解析流程
+    conn.protocol.set_response_params(
+        read_until_eof=True,
+        auto_decompress=True,
+        read_timeout=DEFAULT_TIMEOUT.sock_read,
+        read_bufsize=read_bufsize,
+    )
+
+    # 发送请求
+    try:
+        response = await request.send(conn)
+    except BaseException:
+        conn.close()
+        raise
+    try:
+        await response.start(conn)
+    except BaseException:
+        response.close()
+        raise
+
+    # 合并cookies
+    # cookie_jar.update_cookies(response.cookies, response._url)
+
+    # 检查状态码
+    if response.status != 200:
+        raise HTTPStatusError(response.status, response.reason)
+
+    # 读取响应
+    response._body = await response.content.read()
+    body = response._body
+
+    # 释放连接
+    response.release()
+
+    return body
