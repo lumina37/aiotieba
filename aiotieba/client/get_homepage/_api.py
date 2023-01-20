@@ -3,9 +3,9 @@ from typing import List, Tuple
 import aiohttp
 import yarl
 
-from .._core import APP_BASE_HOST, APP_NON_SECURE_SCHEME, TbCore
+from .._core import APP_BASE_HOST, TbCore
 from .._exception import TiebaServerError
-from .._helper import pack_proto_request, send_request
+from .._helper import APP_NON_SECURE_SCHEME, pack_proto_request, send_request
 from ._classdef import Thread_home, UserInfo_home
 from .protobuf import ProfileReqIdl_pb2, ProfileResIdl_pb2
 
