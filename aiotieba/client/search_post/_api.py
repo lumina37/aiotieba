@@ -5,7 +5,7 @@ import yarl
 
 from .._core import APP_BASE_HOST, TbCore
 from .._exception import TiebaServerError
-from .._helper import APP_NON_SECURE_SCHEME, log_exception, pack_form_request, parse_json, send_request
+from .._helper import APP_INSECURE_SCHEME, log_exception, pack_form_request, parse_json, send_request
 from ._classdef import Searches
 
 
@@ -42,7 +42,7 @@ async def request(
 
     request = pack_form_request(
         core,
-        yarl.URL.build(scheme=APP_NON_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/s/searchpost"),
+        yarl.URL.build(scheme=APP_INSECURE_SCHEME, host=APP_BASE_HOST, path="/c/s/searchpost"),
         data,
     )
 

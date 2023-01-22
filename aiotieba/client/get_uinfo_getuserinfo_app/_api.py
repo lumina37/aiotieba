@@ -5,7 +5,7 @@ import yarl
 
 from .._core import APP_BASE_HOST, TbCore
 from .._exception import TiebaServerError
-from .._helper import APP_NON_SECURE_SCHEME, log_exception, pack_proto_request, send_request
+from .._helper import APP_INSECURE_SCHEME, log_exception, pack_proto_request, send_request
 from ._classdef import UserInfo_guinfo_app
 from .protobuf import GetUserInfoReqIdl_pb2, GetUserInfoResIdl_pb2
 
@@ -35,7 +35,7 @@ async def request_http(connector: aiohttp.TCPConnector, core: TbCore, user_id: i
     request = pack_proto_request(
         core,
         yarl.URL.build(
-            scheme=APP_NON_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/u/user/getuserinfo", query_string="cmd=303024"
+            scheme=APP_INSECURE_SCHEME, host=APP_BASE_HOST, path="/c/u/user/getuserinfo", query_string="cmd=303024"
         ),
         pack_proto(user_id),
     )
