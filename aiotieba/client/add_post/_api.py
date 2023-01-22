@@ -5,7 +5,7 @@ import aiohttp
 import yarl
 
 from .._core import APP_BASE_HOST, TbCore
-from .._exception import TiebaServerError
+from .._exception import TiebaServerError, TiebaValueError
 from .._helper import APP_SECURE_SCHEME, log_exception, log_success, pack_form_request, parse_json, send_request
 
 
@@ -14,7 +14,7 @@ def parse_body(body: bytes) -> None:
     if code := int(res_json['error_code']):
         raise TiebaServerError(code, res_json['error_msg'])
     if int(res_json['info']['need_vcode']):
-        raise TiebaServerError(-1, "need verify code")
+        raise TiebaValueError("need verify code")
 
 
 async def request(

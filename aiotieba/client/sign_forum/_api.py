@@ -4,7 +4,7 @@ import aiohttp
 import yarl
 
 from .._core import APP_BASE_HOST, TbCore
-from .._exception import TiebaServerError
+from .._exception import TiebaServerError, TiebaValueError
 from .._helper import APP_SECURE_SCHEME, log_exception, log_success, pack_form_request, parse_json, send_request
 
 
@@ -13,7 +13,7 @@ def parse_body(body: bytes) -> None:
     if code := int(res_json['error_code']):
         raise TiebaServerError(code, res_json['error_msg'])
     if int(res_json['user_info']['sign_bonus_point']) == 0:
-        raise TiebaServerError(-1, "sign_bonus_point is 0")
+        raise TiebaValueError("sign_bonus_point is 0")
 
 
 async def request(connector: aiohttp.TCPConnector, core: TbCore, tbs: str, fname: str) -> bool:

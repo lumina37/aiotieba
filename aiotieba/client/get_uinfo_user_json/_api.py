@@ -4,14 +4,14 @@ import aiohttp
 import yarl
 
 from .._core import WEB_BASE_HOST, TbCore
-from .._exception import TiebaServerError
+from .._exception import TiebaValueError
 from .._helper import log_exception, pack_web_get_request, parse_json, send_request
 from ._classdef import UserInfo_json
 
 
 def parse_body(body: bytes) -> UserInfo_json:
     if not body:
-        raise TiebaServerError(-1, "empty response")
+        raise TiebaValueError("empty body")
 
     text = body.decode('utf-8', errors='ignore')
     res_json = parse_json(text)

@@ -4,7 +4,7 @@ import aiohttp
 import yarl
 
 from .._core import WEB_BASE_HOST, TbCore
-from .._exception import TiebaServerError
+from .._exception import TiebaServerError, TiebaValueError
 from .._helper import log_exception, pack_web_get_request, parse_json, send_request
 
 
@@ -14,7 +14,7 @@ def parse_body(body: bytes) -> int:
         raise TiebaServerError(code, res_json['error'])
 
     if not (fid := res_json['data']['fid']):
-        raise TiebaServerError(-1, "fid is 0")
+        raise TiebaValueError("fid is 0")
 
     return fid
 
