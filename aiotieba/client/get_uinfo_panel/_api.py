@@ -1,13 +1,26 @@
+import sys
+
 import aiohttp
 import yarl
 
 from .._core import WEB_BASE_HOST, TbCore
 from .._exception import TiebaServerError
-from .._helper import is_portrait, pack_web_get_request, parse_json, send_request
+from .._helper import is_portrait, log_exception, pack_web_get_request, parse_json, send_request
 from ._classdef import UserInfo_panel
 
 
-async def request(connector: aiohttp.TCPConnector, core: TbCore, name_or_portrait: str) -> bytes:
+def parse_body(body: bytes) -> UserInfo_panel:
+    res_json = parse_json(body)
+    if code := res_json['no']:
+        raise TiebaServerError(code, res_json['error'])
+
+    user_dict = res_json['data']
+    user = UserInfo_panel()._init(user_dict)
+
+    return user
+
+
+async def request(connector: aiohttp.TCPConnector, core: TbCore, name_or_portrait: str) -> UserInfo_panel:
 
     if is_portrait(name_or_portrait):
         params = [('id', name_or_portrait)]
@@ -20,17 +33,12 @@ async def request(connector: aiohttp.TCPConnector, core: TbCore, name_or_portrai
         params,
     )
 
-    body = await send_request(request, connector, read_bufsize=64 * 1024)
+    try:
+        body = await send_request(request, connector, read_bufsize=64 * 1024)
+        user = parse_body(body)
 
-    return body
-
-
-def parse_body(body: bytes) -> UserInfo_panel:
-    res_json = parse_json(body)
-    if code := res_json['no']:
-        raise TiebaServerError(code, res_json['error'])
-
-    user_dict = res_json['data']
-    user = UserInfo_panel()._init(user_dict)
+    except Exception as err:
+        log_exception(sys._getframe(1), err, f"user={name_or_portrait}")
+        user = UserInfo_panel()._init_null()
 
     return user

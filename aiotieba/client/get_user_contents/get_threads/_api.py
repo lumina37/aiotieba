@@ -1,11 +1,12 @@
+import sys
 from typing import List
 
 import aiohttp
 import yarl
 
-from ..._core import APP_BASE_HOST, APP_SECURE_SCHEME, TbCore
+from ..._core import APP_BASE_HOST, TbCore
 from ..._exception import TiebaServerError
-from ..._helper import pack_proto_request, send_request
+from ..._helper import APP_SECURE_SCHEME, log_exception, pack_proto_request, send_request
 from .._classdef import UserInfo_u, UserThread
 from ..protobuf import UserPostReqIdl_pb2, UserPostResIdl_pb2
 
@@ -21,21 +22,6 @@ def pack_proto(core: TbCore, user_id: int, pn: int, public_only: bool) -> bytes:
     req_proto.data.is_view_card = 2 if public_only else 1
 
     return req_proto.SerializeToString()
-
-
-async def request_http(connector: aiohttp.TCPConnector, core: TbCore, proto: bytes) -> bytes:
-
-    request = pack_proto_request(
-        core,
-        yarl.URL.build(
-            scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/u/feed/userpost", query_string="cmd=303002"
-        ),
-        proto,
-    )
-
-    body = await send_request(request, connector, read_bufsize=64 * 1024)
-
-    return body
 
 
 def parse_body(body: bytes) -> List[UserThread]:
@@ -54,3 +40,26 @@ def parse_body(body: bytes) -> List[UserThread]:
             uthread._author_id = user._user_id
 
     return uthreads
+
+
+async def request_http(
+    connector: aiohttp.TCPConnector, core: TbCore, user_id: int, pn: int, public_only: bool
+) -> List[UserThread]:
+
+    request = pack_proto_request(
+        core,
+        yarl.URL.build(
+            scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/u/feed/userpost", query_string="cmd=303002"
+        ),
+        pack_proto(core, user_id, pn, public_only),
+    )
+
+    try:
+        body = await send_request(request, connector, read_bufsize=64 * 1024)
+        threads = parse_body(body)
+
+    except Exception as err:
+        log_exception(sys._getframe(1), err, f"user_id={user_id}")
+        threads = []
+
+    return threads

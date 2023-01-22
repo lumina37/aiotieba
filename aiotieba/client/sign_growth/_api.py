@@ -1,12 +1,20 @@
+import sys
+
 import aiohttp
 import yarl
 
 from .._core import WEB_BASE_HOST, TbCore
 from .._exception import TiebaServerError
-from .._helper import pack_web_form_request, parse_json, send_request
+from .._helper import log_exception, log_success, pack_web_form_request, parse_json, send_request
 
 
-async def request(connector: aiohttp.TCPConnector, core: TbCore, tbs: str) -> bytes:
+def parse_body(body: bytes) -> None:
+    res_json = parse_json(body)
+    if code := res_json['no']:
+        raise TiebaServerError(code, res_json['error'])
+
+
+async def request(connector: aiohttp.TCPConnector, core: TbCore, tbs: str) -> bool:
 
     data = [
         ('tbs', tbs),
@@ -20,12 +28,15 @@ async def request(connector: aiohttp.TCPConnector, core: TbCore, tbs: str) -> by
         data,
     )
 
-    body = await send_request(request, connector, read_bufsize=32 * 1024)
+    frame = sys._getframe(1)
 
-    return body
+    try:
+        body = await send_request(request, connector, read_bufsize=32 * 1024)
+        parse_body(body)
 
+    except Exception as err:
+        log_exception(frame, err)
+        return False
 
-def parse_body(body: bytes) -> None:
-    res_json = parse_json(body)
-    if code := res_json['no']:
-        raise TiebaServerError(code, res_json['error'])
+    log_success(frame)
+    return True

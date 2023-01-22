@@ -1,22 +1,22 @@
 import asyncio
 import hashlib
+import logging
 import random
 import sys
 import urllib.parse
 import zlib
-from typing import List, Optional, Tuple
+from types import FrameType
+from typing import Callable, List, Optional, Tuple
 
 import aiohttp
 import async_timeout
 import yarl
 from Crypto.Cipher import AES
 
-from ._core import TbCore
-from ._exception import HTTPStatusError
-
-CHECK_URL_PERFIX = "http://tieba.baidu.com/mo/q/checkurl?url="
-
-DEFAULT_TIMEOUT = aiohttp.ClientTimeout(connect=3.0, sock_read=12.0, sock_connect=4.0)
+from ..._logging import get_logger
+from .._core import TbCore
+from .._exception import HTTPStatusError, exc_handlers
+from ._const import DEFAULT_TIMEOUT
 
 try:
     import simdjson as jsonlib
@@ -116,68 +116,6 @@ def timeout(delay: Optional[float], loop: asyncio.AbstractEventLoop) -> async_ti
     now = loop.time()
     when = int(now) + delay
     return async_timeout.timeout_at(when)
-
-
-async def send_request(
-    request: aiohttp.ClientRequest,
-    connector: aiohttp.TCPConnector,
-    read_bufsize: int = 64 * 1024,
-) -> bytes:
-    """
-    简单发送http请求
-    不包含重定向和身份验证功能
-
-    Args:
-        request (aiohttp.ClientRequest): 待发送的请求
-        connector (aiohttp.TCPConnector): 用于生成TCP连接的连接器
-        read_bufsize (int, optional): 读缓冲区大小 以字节为单位. Defaults to 64KiB.
-
-    Returns:
-        bytes: body
-    """
-
-    # 获取TCP连接
-    try:
-        async with timeout(DEFAULT_TIMEOUT.connect, connector._loop):
-            conn = await connector.connect(request, [], DEFAULT_TIMEOUT)
-    except asyncio.TimeoutError as exc:
-        raise aiohttp.ServerTimeoutError(f"Connection timeout to host {request.url}") from exc
-
-    # 设置响应解析流程
-    conn.protocol.set_response_params(
-        read_until_eof=True,
-        auto_decompress=True,
-        read_timeout=DEFAULT_TIMEOUT.sock_read,
-        read_bufsize=read_bufsize,
-    )
-
-    # 发送请求
-    try:
-        response = await request.send(conn)
-    except BaseException:
-        conn.close()
-        raise
-    try:
-        await response.start(conn)
-    except BaseException:
-        response.close()
-        raise
-
-    # 合并cookies
-    # cookie_jar.update_cookies(response.cookies, response._url)
-
-    # 检查状态码
-    if response.status != 200:
-        raise HTTPStatusError(response.status, response.reason)
-
-    # 读取响应
-    response._body = await response.content.read()
-    body = response._body
-
-    # 释放连接
-    response.release()
-
-    return body
 
 
 def sign(data: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
@@ -372,7 +310,7 @@ def pack_ws_bytes(
     return ws_bytes
 
 
-def unpack_ws_bytes(core: TbCore, ws_bytes: bytes) -> Tuple[bytes, int, int]:
+def parse_ws_bytes(core: TbCore, ws_bytes: bytes) -> Tuple[bytes, int, int]:
     """
     对ws_bytes进行解包
 
@@ -402,3 +340,113 @@ def unpack_ws_bytes(core: TbCore, ws_bytes: bytes) -> Tuple[bytes, int, int]:
         ws_bytes = zlib.decompress(ws_bytes)
 
     return ws_bytes, cmd, req_id
+
+
+def check_status_code(response: aiohttp.ClientResponse) -> None:
+    if response.status != 200:
+        raise HTTPStatusError(response.status, response.reason)
+
+
+TypeHeadersChecker = Callable[[aiohttp.ClientResponse], None]
+
+
+async def send_request(
+    request: aiohttp.ClientRequest,
+    connector: aiohttp.TCPConnector,
+    read_bufsize: int = 64 * 1024,
+    headers_checker: TypeHeadersChecker = check_status_code,
+) -> bytes:
+    """
+    简单发送http请求
+    不包含重定向和身份验证功能
+
+    Args:
+        request (aiohttp.ClientRequest): 待发送的请求
+        connector (aiohttp.TCPConnector): 用于生成TCP连接的连接器
+        read_bufsize (int, optional): 读缓冲区大小 以字节为单位. Defaults to 64KiB.
+        headers_checker (TypeHeadersChecker, optional): headers检查函数. Defaults to check_status_code.
+
+    Returns:
+        bytes: body
+    """
+
+    # 获取TCP连接
+    try:
+        async with timeout(DEFAULT_TIMEOUT.connect, connector._loop):
+            conn = await connector.connect(request, [], DEFAULT_TIMEOUT)
+    except asyncio.TimeoutError as exc:
+        raise aiohttp.ServerTimeoutError(f"Connection timeout to host {request.url}") from exc
+
+    # 设置响应解析流程
+    conn.protocol.set_response_params(
+        read_until_eof=True,
+        auto_decompress=True,
+        read_timeout=DEFAULT_TIMEOUT.sock_read,
+        read_bufsize=read_bufsize,
+    )
+
+    # 发送请求
+    try:
+        response = await request.send(conn)
+    except BaseException:
+        conn.close()
+        raise
+    try:
+        await response.start(conn)
+    except BaseException:
+        response.close()
+        raise
+
+    # 合并cookies
+    # cookie_jar.update_cookies(response.cookies, response._url)
+
+    # 检查headers
+    headers_checker(response)
+
+    # 读取响应
+    response._body = await response.content.read()
+    body = response._body
+
+    # 释放连接
+    response.release()
+
+    return body
+
+
+def log_exception(frame: FrameType, err: Exception, log_str: str = '', log_level: int = logging.WARNING):
+    """
+    异常日志
+
+    Args:
+        frame (FrameType): 帧对象
+        err (Exception): 异常对象
+        log_str (str): 附加日志
+        log_level (int): 日志等级
+    """
+
+    meth_name = frame.f_code.co_name
+    log_str = f"{err}. {log_str}"
+    logger = get_logger()
+    if logger.isEnabledFor(log_level):
+        record = logger.makeRecord(logger.name, log_level, None, frame.f_lineno, log_str, None, None, meth_name)
+        logger.handle(record)
+
+    exc_handlers._handle(meth_name, err)
+
+
+def log_success(frame: FrameType, log_str: str = '', log_level: int = logging.INFO):
+    """
+    成功日志
+
+    Args:
+        frame (FrameType): 帧对象
+        log_str (str): 附加日志
+        log_level (int): 日志等级
+    """
+
+    meth_name = frame.f_code.co_name
+    log_str = "Suceeded. " + log_str
+    logger = get_logger()
+    if logger.isEnabledFor(log_level):
+        record = logger.makeRecord(logger.name, log_level, None, frame.f_lineno, log_str, None, None, meth_name)
+        logger.handle(record)

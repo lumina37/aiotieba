@@ -1,31 +1,12 @@
+import sys
 from typing import Dict, List
 
 import aiohttp
 import yarl
 
-from .._core import APP_BASE_HOST, APP_SECURE_SCHEME, TbCore
+from .._core import APP_BASE_HOST, TbCore
 from .._exception import TiebaServerError
-from .._helper import pack_form_request, parse_json, send_request
-
-
-async def request(connector: aiohttp.TCPConnector, core: TbCore, fid: int) -> bytes:
-
-    data = [
-        ('BDUSS', core._BDUSS),
-        ('_client_version', core.main_version),
-        ('forum_id', fid),
-    ]
-
-    request = pack_form_request(
-        core,
-        yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/forum/getforumdata"),
-        data,
-    )
-
-    body = await send_request(request, connector, read_bufsize=4 * 1024)
-
-    return body
-
+from .._helper import APP_SECURE_SCHEME, log_exception, pack_form_request, parse_json, send_request
 
 field_names = [
     'view',
@@ -49,5 +30,30 @@ def parse_body(body: bytes) -> Dict[str, List[int]]:
         field_name: [int(item['value']) for item in reversed(data_i['group'][1]['values'])]
         for field_name, data_i in zip(field_names, data)
     }
+
+    return stat
+
+
+async def request(connector: aiohttp.TCPConnector, core: TbCore, fid: int) -> Dict[str, List[int]]:
+
+    data = [
+        ('BDUSS', core._BDUSS),
+        ('_client_version', core.main_version),
+        ('forum_id', fid),
+    ]
+
+    request = pack_form_request(
+        core,
+        yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/forum/getforumdata"),
+        data,
+    )
+
+    try:
+        body = await send_request(request, connector, read_bufsize=4 * 1024)
+        stat = parse_body(body)
+
+    except Exception as err:
+        log_exception(sys._getframe(1), err, f"fid={fid}")
+        stat = {field_name: [] for field_name in field_names}
 
     return stat

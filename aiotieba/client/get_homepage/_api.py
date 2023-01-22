@@ -1,11 +1,12 @@
+import sys
 from typing import List, Tuple
 
 import aiohttp
 import yarl
 
-from .._core import APP_BASE_HOST, APP_NON_SECURE_SCHEME, TbCore
+from .._core import APP_BASE_HOST, TbCore
 from .._exception import TiebaServerError
-from .._helper import pack_proto_request, send_request
+from .._helper import APP_INSECURE_SCHEME, log_exception, pack_proto_request, send_request
 from ._classdef import Thread_home, UserInfo_home
 from .protobuf import ProfileReqIdl_pb2, ProfileResIdl_pb2
 
@@ -21,21 +22,6 @@ def pack_proto(core: TbCore, portrait: str, with_threads: bool) -> bytes:
     req_proto.data.rn = 20
 
     return req_proto.SerializeToString()
-
-
-async def request_http(connector: aiohttp.TCPConnector, core: TbCore, proto: bytes) -> bytes:
-
-    request = pack_proto_request(
-        core,
-        yarl.URL.build(
-            scheme=APP_NON_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/u/user/profile", query_string="cmd=303012"
-        ),
-        proto,
-    )
-
-    body = await send_request(request, connector, read_bufsize=64 * 1024)
-
-    return body
 
 
 def parse_body(body: bytes) -> Tuple[UserInfo_home, List[Thread_home]]:
@@ -58,5 +44,29 @@ def parse_body(body: bytes) -> Tuple[UserInfo_home, List[Thread_home]]:
 
     for thread in threads:
         thread._user = user
+
+    return user, threads
+
+
+async def request_http(
+    connector: aiohttp.TCPConnector, core: TbCore, portrait: str, with_threads: bool
+) -> Tuple[UserInfo_home, List[Thread_home]]:
+
+    request = pack_proto_request(
+        core,
+        yarl.URL.build(
+            scheme=APP_INSECURE_SCHEME, host=APP_BASE_HOST, path="/c/u/user/profile", query_string="cmd=303012"
+        ),
+        pack_proto(core, portrait, with_threads),
+    )
+
+    try:
+        body = await send_request(request, connector, read_bufsize=64 * 1024)
+        user, threads = parse_body(body)
+
+    except Exception as err:
+        log_exception(sys._getframe(1), err, f"portrait={portrait}")
+        user = UserInfo_home()._init_null()
+        threads = []
 
     return user, threads
