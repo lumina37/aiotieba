@@ -1,13 +1,25 @@
+import sys
+
 import aiohttp
 import yarl
 
 from .._core import WEB_BASE_HOST, TbCore
 from .._exception import TiebaServerError
-from .._helper import pack_web_get_request, parse_json, send_request
+from .._helper import log_exception, pack_web_get_request, parse_json, send_request
 from ._classdef import Blocks
 
 
-async def request(connector: aiohttp.TCPConnector, core: TbCore, fname: str, fid: int, name: str, pn: int) -> bytes:
+def parse_body(body: bytes) -> Blocks:
+    res_json = parse_json(body)
+    if code := res_json['no']:
+        raise TiebaServerError(code, res_json['error'])
+
+    blocks = Blocks()._init(res_json)
+
+    return blocks
+
+
+async def request(connector: aiohttp.TCPConnector, core: TbCore, fname: str, fid: int, name: str, pn: int) -> Blocks:
 
     params = [
         ('fn', fname),
@@ -23,16 +35,12 @@ async def request(connector: aiohttp.TCPConnector, core: TbCore, fname: str, fid
         params,
     )
 
-    body = await send_request(request, connector, read_bufsize=64 * 1024)
+    try:
+        body = await send_request(request, connector, read_bufsize=64 * 1024)
+        blocks = parse_body(body)
 
-    return body
+    except Exception as err:
+        log_exception(sys._getframe(1), err, f"fname={fname}")
+        blocks = Blocks()._init_null()
 
-
-def parse_body(body: bytes) -> Blocks:
-    res_json = parse_json(body)
-    if code := res_json['no']:
-        raise TiebaServerError(code, res_json['error'])
-
-    recovers = Blocks()._init(res_json)
-
-    return recovers
+    return blocks

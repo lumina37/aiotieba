@@ -1,9 +1,11 @@
+import sys
+
 import aiohttp
 import yarl
 
 from .._core import APP_BASE_HOST, TbCore
 from .._exception import TiebaServerError
-from .._helper import APP_NON_SECURE_SCHEME, pack_proto_request, send_request
+from .._helper import APP_NON_SECURE_SCHEME, log_exception, pack_proto_request, send_request
 from ._classdef import UserInfo_TUid
 from .protobuf import GetUserByTiebaUidReqIdl_pb2, GetUserByTiebaUidResIdl_pb2
 
@@ -16,24 +18,6 @@ def pack_proto(core: TbCore, tieba_uid: int) -> bytes:
     return req_proto.SerializeToString()
 
 
-async def request_http(connector: aiohttp.TCPConnector, core: TbCore, proto: bytes) -> bytes:
-
-    request = pack_proto_request(
-        core,
-        yarl.URL.build(
-            scheme=APP_NON_SECURE_SCHEME,
-            host=APP_BASE_HOST,
-            path="/c/u/user/getUserByTiebaUid",
-            query_string="cmd=309702",
-        ),
-        proto,
-    )
-
-    body = await send_request(request, connector, read_bufsize=1024)
-
-    return body
-
-
 def parse_body(body: bytes) -> UserInfo_TUid:
     res_proto = GetUserByTiebaUidResIdl_pb2.GetUserByTiebaUidResIdl()
     res_proto.ParseFromString(body)
@@ -43,5 +27,29 @@ def parse_body(body: bytes) -> UserInfo_TUid:
 
     user_proto = res_proto.data.user
     user = UserInfo_TUid()._init(user_proto)
+
+    return user
+
+
+async def request_http(connector: aiohttp.TCPConnector, core: TbCore, tieba_uid: int) -> UserInfo_TUid:
+
+    request = pack_proto_request(
+        core,
+        yarl.URL.build(
+            scheme=APP_NON_SECURE_SCHEME,
+            host=APP_BASE_HOST,
+            path="/c/u/user/getUserByTiebaUid",
+            query_string="cmd=309702",
+        ),
+        pack_proto(core, tieba_uid),
+    )
+
+    try:
+        body = await send_request(request, connector, read_bufsize=1024)
+        user = parse_body(body)
+
+    except Exception as err:
+        log_exception(sys._getframe(1), err, f"tieba_uid={tieba_uid}")
+        user = UserInfo_TUid()._init_null()
 
     return user

@@ -1,5 +1,4 @@
 import sys
-from typing import List
 
 import aiohttp
 import yarl
@@ -16,24 +15,24 @@ def parse_body(body: bytes) -> None:
 
 
 async def request(
-    connector: aiohttp.TCPConnector, core: TbCore, tbs: str, fid: int, tids: List[int], block: bool
+    connector: aiohttp.TCPConnector, core: TbCore, fid: int, tid: int, pid: int, is_hide: bool
 ) -> bool:
 
     data = [
         ('BDUSS', core._BDUSS),
         ('forum_id', fid),
-        ('tbs', tbs),
-        ('thread_ids', ','.join(str(tid) for tid in tids)),
-        ('type', '2' if block else '1'),
+        ('is_hide', str(int(is_hide))),
+        ('post_id', pid),
+        ('thread_id', tid),
     ]
 
     request = pack_form_request(
         core,
-        yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/c/bawu/multiDelThread"),
+        yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/c/thread/setPrivacy"),
         data,
     )
 
-    log_str = f"fid={fid} tids={tids}"
+    log_str = f"tid={tid}"
     frame = sys._getframe(1)
 
     try:

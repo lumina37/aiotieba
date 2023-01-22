@@ -277,7 +277,7 @@ class Client(object):
         """
 
         if not self._tbs:
-            await self.login()
+            await self.__login()
 
         return self._tbs
 
@@ -294,39 +294,24 @@ class Client(object):
 
         if not self._user._user_id:
             if require & ReqUInfo.BASIC:
-                await self.login()
+                await self.__login()
         if not self._user._tieba_uid:
             if require & (ReqUInfo.TIEBA_UID | ReqUInfo.NICK_NAME):
-                await self._get_selfinfo_initNickname()
+                await self.__get_selfinfo_initNickname()
 
         return self._user
 
-    async def login(self) -> bool:
-        """
-        登录并获取tbs和当前账号的用户信息
-
-        Returns:
-            bool: True成功 False失败
-        """
+    async def __login(self) -> bool:
 
         from . import login
 
-        try:
-            body = await login.request(self._connector, self._core)
-            user, tbs = login.parse_body(body)
+        user, tbs = await login.request(self._connector, self._core)
 
-            if user.user_id:
-                self._user._user_id = user._user_id
-                self._user._portrait = user._portrait
-                self._user._user_name = user._user_name
-                self._tbs = tbs
-
-        except Exception as err:
-            LOG().warning(err)
-            self._tbs = ''
-            return False
-
-        return True
+        if tbs:
+            self._user._user_id = user._user_id
+            self._user._portrait = user._portrait
+            self._user._user_name = user._user_name
+            self._tbs = tbs
 
     async def get_fid(self, fname: str) -> int:
         """
@@ -344,15 +329,10 @@ class Client(object):
 
         from . import get_fid
 
-        try:
-            body = await get_fid.request(self._connector, self._core, fname)
-            fid = get_fid.parse_body(body)
+        fid = await get_fid.request(self._connector, self._core, fname)
 
+        if fid:
             ForumInfoCache.add_forum(fname, fid)
-
-        except Exception as err:
-            LOG().warning(f"{err}. fname={fname}")
-            fid = 0
 
         return fid
 
@@ -446,15 +426,7 @@ class Client(object):
 
         from . import get_uinfo_panel
 
-        try:
-            body = await get_uinfo_panel.request(self._connector, self._core, name_or_portrait)
-            user = get_uinfo_panel.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. user={name_or_portrait}")
-            user = get_uinfo_panel.UserInfo_panel()._init_null()
-
-        return user
+        return await get_uinfo_panel.request(self._connector, self._core, name_or_portrait)
 
     async def _get_uinfo_user_json(self, user_name: str) -> "get_uinfo_user_json.UserInfo_json":
         """
@@ -469,14 +441,8 @@ class Client(object):
 
         from . import get_uinfo_user_json
 
-        try:
-            body = await get_uinfo_user_json.request(self._connector, self._core, user_name)
-            user = get_uinfo_user_json.parse_response(body)
-            user._user_name = user_name
-
-        except Exception as err:
-            LOG().warning(f"{err}. user={user_name}")
-            user = get_uinfo_user_json.UserInfo_json()._init_null()
+        user = await get_uinfo_user_json.request(self._connector, self._core, user_name)
+        user._user_name = user_name
 
         return user
 
@@ -494,16 +460,7 @@ class Client(object):
 
         from . import get_uinfo_getuserinfo_app
 
-        try:
-            proto = get_uinfo_getuserinfo_app.pack_proto(user_id)
-            body = await get_uinfo_getuserinfo_app.request_http(self._connector, self._core, proto)
-            user = get_uinfo_getuserinfo_app.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. user={user_id}")
-            user = get_uinfo_getuserinfo_app.UserInfo_guinfo_app()._init_null()
-
-        return user
+        return await get_uinfo_getuserinfo_app.request_http(self._connector, self._core, user_id)
 
     async def _get_uinfo_getUserInfo(self, user_id: int) -> "get_uinfo_getUserInfo_web.UserInfo_guinfo_web":
         """
@@ -522,8 +479,7 @@ class Client(object):
         from . import get_uinfo_getUserInfo_web
 
         try:
-            body = await get_uinfo_getUserInfo_web.request(self._connector, self._core, user_id)
-            user = get_uinfo_getUserInfo_web.parse_body(body)
+            user = await get_uinfo_getUserInfo_web.request(self._connector, self._core, user_id)
             user._user_id = user_id
 
         except Exception as err:
@@ -548,16 +504,7 @@ class Client(object):
 
         from . import tieba_uid2user_info
 
-        try:
-            proto = tieba_uid2user_info.pack_proto(self.core, tieba_uid)
-            body = await tieba_uid2user_info.request_http(self._connector, self.core, proto)
-            user = tieba_uid2user_info.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. tieba_uid={tieba_uid}")
-            user = tieba_uid2user_info.UserInfo_TUid()._init_null()
-
-        return user
+        return await tieba_uid2user_info.request_http(self._connector, self.core, tieba_uid)
 
     async def get_threads(
         self, fname_or_fid: Union[str, int], /, pn: int = 1, *, rn: int = 30, sort: int = 5, is_good: bool = False
@@ -581,16 +528,7 @@ class Client(object):
 
         from . import get_threads
 
-        try:
-            proto = get_threads.pack_proto(self._core, fname, pn, rn, sort, is_good)
-            body = await get_threads.request_http(self._connector, self._core, proto)
-            threads = get_threads.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname}")
-            threads = get_threads.Threads()._init_null()
-
-        return threads
+        return await get_threads.request_http(self._connector, self._core, fname, pn, rn, sort, is_good)
 
     async def get_posts(
         self,
@@ -626,27 +564,19 @@ class Client(object):
 
         from . import get_posts
 
-        try:
-            proto = get_posts.pack_proto(
-                self._core,
-                tid,
-                pn,
-                rn,
-                sort,
-                only_thread_author,
-                with_comments,
-                comment_sort_by_agree,
-                comment_rn,
-                is_fold,
-            )
-            body = await get_posts.request_http(self._connector, self._core, proto)
-            posts = get_posts.parse_proto(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. tid={tid}")
-            posts = get_posts.Posts()._init_null()
-
-        return posts
+        return await get_posts.request_http(
+            self._connector,
+            self._core,
+            tid,
+            pn,
+            rn,
+            sort,
+            only_thread_author,
+            with_comments,
+            comment_sort_by_agree,
+            comment_rn,
+            is_fold,
+        )
 
     async def get_comments(
         self, tid: int, pid: int, /, pn: int = 1, *, is_floor: bool = False
@@ -666,16 +596,7 @@ class Client(object):
 
         from . import get_comments
 
-        try:
-            proto = get_comments.pack_proto(self._core, tid, pid, pn, is_floor)
-            body = await get_comments.request_http(self._connector, self._core, proto)
-            comments = get_comments.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. tid={tid} pid={pid}")
-            comments = get_comments.Comments()._init_null()
-
-        return comments
+        return await get_comments.request_http(self._connector, self._core, tid, pid, pn, is_floor)
 
     async def search_post(
         self,
@@ -707,15 +628,7 @@ class Client(object):
 
         from . import search_post
 
-        try:
-            body = await search_post.request(self._connector, self._core, fname, query, pn, rn, query_type, only_thread)
-            searches = search_post.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname}")
-            searches = search_post.Searches()._init_null()
-
-        return searches
+        return await search_post.request(self._connector, self._core, fname, query, pn, rn, query_type, only_thread)
 
     async def get_forum_detail(self, fname_or_fid: Union[str, int]) -> "get_forum_detail.Forum_detail":
         """
@@ -732,15 +645,7 @@ class Client(object):
 
         from . import get_forum_detail
 
-        try:
-            body = await get_forum_detail.request(self._connector, self._core, fid)
-            forum = get_forum_detail.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname_or_fid}")
-            forum = get_forum_detail.Forum_detail()._init_null()
-
-        return forum
+        return await get_forum_detail.request(self._connector, self._core, fid)
 
     async def get_bawu_info(self, fname_or_fid: Union[str, int]) -> Dict[str, List["get_bawu_info.UserInfo_bawu"]]:
         """
@@ -757,16 +662,7 @@ class Client(object):
 
         from . import get_bawu_info
 
-        try:
-            proto = get_bawu_info.pack_proto(self._core, fid)
-            body = await get_bawu_info.request_http(self._connector, self._core, proto)
-            bawu_dict = get_bawu_info.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(err)
-            bawu_dict = {}
-
-        return bawu_dict
+        return await get_bawu_info.request_http(self._connector, self._core, fid)
 
     async def get_tab_map(self, fname_or_fid: Union[str, int]) -> Dict[str, int]:
         """
@@ -783,16 +679,7 @@ class Client(object):
 
         from . import get_tab_map
 
-        try:
-            proto = get_tab_map.pack_proto(self._core, fname)
-            body = await get_tab_map.request_http(self._connector, self._core, proto)
-            tab_map = get_tab_map.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname_or_fid}")
-            tab_map = {}
-
-        return tab_map
+        return await get_tab_map.request_http(self._connector, self._core, fname)
 
     async def get_rank_users(self, fname_or_fid: Union[str, int], /, pn: int = 1) -> "get_rank_users.RankUsers":
         """
@@ -810,15 +697,7 @@ class Client(object):
 
         from . import get_rank_users
 
-        try:
-            body = await get_rank_users.request(self._connector, self._core, fname, pn)
-            rank_users = get_rank_users.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname}")
-            rank_users = get_rank_users.RankUsers()._init_null()
-
-        return rank_users
+        return await get_rank_users.request(self._connector, self._core, fname, pn)
 
     async def get_member_users(self, fname_or_fid: Union[str, int], /, pn: int = 1) -> "get_member_users.MemberUsers":
         """
@@ -836,15 +715,7 @@ class Client(object):
 
         from . import get_member_users
 
-        try:
-            body = await get_member_users.request(self._connector, self._core, fname, pn)
-            member_users = get_member_users.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname}")
-            member_users = get_member_users.MemberUsers()._init_null()
-
-        return member_users
+        return await get_member_users.request(self._connector, self._core, fname, pn)
 
     async def get_square_forums(self, cname: str, /, pn: int = 1, *, rn: int = 20) -> "get_square_forums.SquareForums":
         """
@@ -861,16 +732,7 @@ class Client(object):
 
         from . import get_square_forums
 
-        try:
-            proto = get_square_forums.pack_proto(self._core, cname, pn, rn)
-            body = await get_square_forums.request_http(self._connector, self._core, proto)
-            square_forums = get_square_forums.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(err)
-            square_forums = get_square_forums.SquareForums()._init_null()
-
-        return square_forums
+        return await get_square_forums.request_http(self._connector, self._core, cname, pn, rn)
 
     async def get_homepage(
         self, _id: Union[str, int], *, with_threads: bool = True
@@ -888,22 +750,13 @@ class Client(object):
 
         if not is_portrait(_id):
             user = await self.get_user_info(_id, ReqUInfo.PORTRAIT)
+            portrait = user._portrait
         else:
-            user = UserInfo(_id)
+            portrait = _id
 
         from . import get_homepage
 
-        try:
-            proto = get_homepage.pack_proto(self._core, user.portrait, with_threads)
-            body = await get_homepage.request_http(self._connector, self._core, proto)
-            user, threads = get_homepage.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. user={user}")
-            user = get_homepage.UserInfo_home()._init_null()
-            threads = []
-
-        return user, threads
+        return await get_homepage.request_http(self._connector, self._core, portrait, with_threads)
 
     async def get_statistics(self, fname_or_fid: Union[str, int]) -> Dict[str, List[int]]:
         """
@@ -928,15 +781,7 @@ class Client(object):
 
         from . import get_statistics
 
-        try:
-            body = await get_statistics.request(self._connector, self._core, fid)
-            stat = get_statistics.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname_or_fid}")
-            stat = {field_name: [] for field_name in get_statistics.field_names}
-
-        return stat
+        return await get_statistics.request(self._connector, self._core, fid)
 
     async def get_follow_forums(
         self, _id: Union[str, int], /, pn: int = 1, *, rn: int = 50
@@ -955,20 +800,13 @@ class Client(object):
 
         if not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+            user_id = user.user_id
         else:
-            user = UserInfo(_id)
+            user_id = _id
 
         from . import get_follow_forums
 
-        try:
-            body = await get_follow_forums.request(self._connector, self._core, user.user_id, pn, rn)
-            follow_forums = get_follow_forums.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. user={user}")
-            follow_forums = get_follow_forums.FollowForums()._init_null()
-
-        return follow_forums
+        return await get_follow_forums.request(self._connector, self._core, user_id, pn, rn)
 
     async def get_recom_status(self, fname_or_fid: Union[str, int]) -> "get_recom_status.RecomStatus":
         """
@@ -985,15 +823,7 @@ class Client(object):
 
         from . import get_recom_status
 
-        try:
-            body = await get_recom_status.request(self._connector, self._core, fid)
-            status = get_recom_status.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname_or_fid}")
-            status = get_recom_status.RecomStatus()._init_null()
-
-        return status
+        return await get_recom_status.request(self._connector, self._core, fid)
 
     async def block(
         self, fname_or_fid: Union[str, int], /, _id: Union[str, int], *, day: Literal[1, 3, 10] = 1, reason: str = ''
@@ -1020,23 +850,15 @@ class Client(object):
 
         if not is_portrait(_id):
             user = await self.get_user_info(_id, ReqUInfo.PORTRAIT)
+            portrait = user._portrait
         else:
-            user = UserInfo(_id)
+            portrait = _id
 
         tbs = await self.get_tbs()
 
         from . import block
 
-        try:
-            body = await block.request(self._connector, self._core, tbs, fname, fid, user.portrait, day, reason)
-            block.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname_or_fid} user={user} day={day}")
-            return False
-
-        LOG().info(f"Succeeded. forum={fname_or_fid} user={user} day={day}")
-        return True
+        return await block.request(self._connector, self._core, tbs, fname, fid, portrait, day, reason)
 
     async def unblock(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> bool:
         """
@@ -1059,23 +881,15 @@ class Client(object):
 
         if not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+            user_id = user._user_id
         else:
-            user = UserInfo(_id)
+            user_id = _id
 
         tbs = await self.get_tbs()
 
         from . import unblock
 
-        try:
-            body = await unblock.request(self._connector, self._core, tbs, fname, fid, user.user_id)
-            unblock.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname} user={user}")
-            return False
-
-        LOG().info(f"Succeeded. forum={fname} user={user}")
-        return True
+        return await unblock.request(self._connector, self._core, tbs, fname, fid, user_id)
 
     async def hide_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
@@ -1094,16 +908,7 @@ class Client(object):
 
         from . import del_thread
 
-        try:
-            body = await del_thread.request(self._connector, self._core, tbs, fid, tid, is_hide=True)
-            del_thread.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname_or_fid} tid={tid}")
-            return False
-
-        LOG().info(f"Succeeded. forum={fname_or_fid} tid={tid}")
-        return True
+        return await del_thread.request(self._connector, self._core, tbs, fid, tid, is_hide=True)
 
     async def del_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
@@ -1122,16 +927,7 @@ class Client(object):
 
         from . import del_thread
 
-        try:
-            body = await del_thread.request(self._connector, self._core, tbs, fid, tid, is_hide=False)
-            del_thread.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname_or_fid} tid={tid}")
-            return False
-
-        LOG().info(f"Succeeded. forum={fname_or_fid} tid={tid}")
-        return True
+        return await del_thread.request(self._connector, self._core, tbs, fid, tid, is_hide=False)
 
     async def del_threads(self, fname_or_fid: Union[str, int], /, tids: List[int], *, block: bool = False) -> bool:
         """
@@ -1151,16 +947,7 @@ class Client(object):
 
         from . import del_threads
 
-        try:
-            body = await del_threads.request(self._connector, self._core, tbs, fid, tids, block)
-            del_threads.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname_or_fid} tids={tids}")
-            return False
-
-        LOG().info(f"Succeeded. forum={fname_or_fid} tids={tids}")
-        return True
+        return await del_threads.request(self._connector, self._core, tbs, fid, tids, block)
 
     async def del_post(self, fname_or_fid: Union[str, int], /, pid: int) -> bool:
         """
@@ -1179,16 +966,7 @@ class Client(object):
 
         from . import del_post
 
-        try:
-            body = await del_post.request(self._connector, self._core, tbs, fid, pid)
-            del_post.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname_or_fid} pid={pid}")
-            return False
-
-        LOG().info(f"Succeeded. forum={fname_or_fid} pid={pid}")
-        return True
+        return await del_post.request(self._connector, self._core, tbs, fid, pid)
 
     async def del_posts(self, fname_or_fid: Union[str, int], /, pids: List[int], *, block: bool = False) -> bool:
         """
@@ -1208,16 +986,7 @@ class Client(object):
 
         from . import del_posts
 
-        try:
-            body = await del_posts.request(self._connector, self._core, tbs, fid, pids, block)
-            del_posts.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname_or_fid} pids={pids}")
-            return False
-
-        LOG().info(f"Succeeded. forum={fname_or_fid} pids={pids}")
-        return True
+        return await del_posts.request(self._connector, self._core, tbs, fid, pids, block)
 
     async def unhide_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
@@ -1231,15 +1000,18 @@ class Client(object):
             bool: True成功 False失败
         """
 
-        try:
-            await self.recover(fname_or_fid, tid=tid, is_hide=True)
+        if isinstance(fname_or_fid, str):
+            fname = fname_or_fid
+            fid = await self.get_fid(fname)
+        else:
+            fid = fname_or_fid
+            fname = await self.get_fname(fid)
 
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname_or_fid} tid={tid}")
-            return False
+        tbs = await self.get_tbs()
 
-        LOG().info(f"Succeeded. forum={fname_or_fid} tid={tid}")
-        return True
+        from . import recover
+
+        return await recover.request(self._connector, self._core, tbs, fname, fid, tid, 0, is_hide=True)
 
     async def recover_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
@@ -1253,15 +1025,18 @@ class Client(object):
             bool: True成功 False失败
         """
 
-        try:
-            await self.recover(fname_or_fid, tid=tid, is_hide=False)
+        if isinstance(fname_or_fid, str):
+            fname = fname_or_fid
+            fid = await self.get_fid(fname)
+        else:
+            fid = fname_or_fid
+            fname = await self.get_fname(fid)
 
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname_or_fid} tid={tid}")
-            return False
+        tbs = await self.get_tbs()
 
-        LOG().info(f"Succeeded. forum={fname_or_fid} tid={tid}")
-        return True
+        from . import recover
+
+        return await recover.request(self._connector, self._core, tbs, fname, fid, tid, 0, is_hide=False)
 
     async def recover_post(self, fname_or_fid: Union[str, int], /, pid: int) -> bool:
         """
@@ -1275,19 +1050,22 @@ class Client(object):
             bool: True成功 False失败
         """
 
-        try:
-            await self.recover(fname_or_fid, pid=pid, is_hide=False)
+        if isinstance(fname_or_fid, str):
+            fname = fname_or_fid
+            fid = await self.get_fid(fname)
+        else:
+            fid = fname_or_fid
+            fname = await self.get_fname(fid)
 
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname_or_fid} pid={pid}")
-            return False
+        tbs = await self.get_tbs()
 
-        LOG().info(f"Succeeded. forum={fname_or_fid} pid={pid}")
-        return True
+        from . import recover
+
+        return await recover.request(self._connector, self._core, tbs, fname, fid, 0, pid, is_hide=False)
 
     async def recover(
         self, fname_or_fid: Union[str, int], /, tid: int = 0, pid: int = 0, *, is_hide: bool = False
-    ) -> None:
+    ) -> bool:
         """
         帖子恢复相关操作
 
@@ -1297,8 +1075,8 @@ class Client(object):
             pid (int, optional): 待恢复的回复pid. Defaults to 0.
             is_hide (bool, optional): True则取消屏蔽主题帖 False则恢复删帖. Defaults to False.
 
-        Raises:
-            RuntimeError: 网络请求失败或服务端返回错误
+        Returns:
+            bool: True成功 False失败
         """
 
         if isinstance(fname_or_fid, str):
@@ -1312,8 +1090,7 @@ class Client(object):
 
         from . import recover
 
-        body = await recover.request(self._connector, self._core, tbs, fname, fid, tid, pid, is_hide)
-        recover.parse_body(body)
+        return await recover.request(self._connector, self._core, tbs, fname, fid, tid, pid, is_hide)
 
     async def move(self, fname_or_fid: Union[str, int], /, tid: int, *, to_tab_id: int, from_tab_id: int = 0) -> bool:
         """
@@ -1334,16 +1111,7 @@ class Client(object):
 
         from . import move
 
-        try:
-            body = await move.request(self._connector, self._core, tbs, fid, tid, to_tab_id, from_tab_id)
-            move.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname_or_fid} tid={tid}")
-            return False
-
-        LOG().info(f"Succeeded. forum={fname_or_fid} tid={tid}")
-        return True
+        return await move.request(self._connector, self._core, tbs, fid, tid, to_tab_id, from_tab_id)
 
     async def recommend(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
@@ -1361,16 +1129,7 @@ class Client(object):
 
         from . import recommend
 
-        try:
-            body = await recommend.request(self._connector, self._core, fid, tid)
-            recommend.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname_or_fid} tid={tid}")
-            return False
-
-        LOG().info(f"Succeeded. forum={fname_or_fid} tid={tid}")
-        return True
+        return await recommend.request(self._connector, self._core, fid, tid)
 
     async def good(self, fname_or_fid: Union[str, int], /, tid: int, *, cname: str = '') -> bool:
         """
@@ -1393,20 +1152,11 @@ class Client(object):
             fname = await self.get_fname(fid)
 
         tbs = await self.get_tbs()
+        cid = await self._get_cid(fname_or_fid, cname)
 
         from . import good
 
-        try:
-            cid = await self._get_cid(fname_or_fid, cname)
-            body = await good.request(self._connector, self._core, tbs, fname, fid, tid, cid)
-            good.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname_or_fid} cname={cname}")
-            return False
-
-        LOG().info(f"Succeeded. forum={fname_or_fid} tid={tid}")
-        return True
+        return await good.request(self._connector, self._core, tbs, fname, fid, tid, cid)
 
     async def ungood(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
@@ -1431,16 +1181,7 @@ class Client(object):
 
         from . import ungood
 
-        try:
-            body = await ungood.request(self._connector, self._core, tbs, fname, fid, tid)
-            ungood.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname_or_fid} tid={tid}")
-            return False
-
-        LOG().info(f"Succeeded. forum={fname_or_fid} tid={tid}")
-        return True
+        return await ungood.request(self._connector, self._core, tbs, fname, fid, tid)
 
     async def _get_cid(self, fname_or_fid: Union[str, int], /, cname: str) -> int:
         """
@@ -1461,19 +1202,13 @@ class Client(object):
 
         from . import get_cid
 
-        try:
-            body = await get_cid.request(self._connector, self._core, fname)
-            cates = get_cid.parse_body(body)
+        cates = await get_cid.request(self._connector, self._core, fname)
 
-            cid = 0
-            for item in cates:
-                if cname == item['class_name']:
-                    cid = int(item['class_id'])
-                    break
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname} cname={cname}")
-            cid = 0
+        cid = 0
+        for item in cates:
+            if cname == item['class_name']:
+                cid = int(item['class_id'])
+                break
 
         return cid
 
@@ -1500,16 +1235,7 @@ class Client(object):
 
         from . import top
 
-        try:
-            body = await top.request(self._connector, self._core, tbs, fname, fid, tid)
-            top.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname_or_fid} tid={tid}")
-            return False
-
-        LOG().info(f"Succeeded. forum={fname_or_fid} tid={tid}")
-        return True
+        return await top.request(self._connector, self._core, tbs, fname, fid, tid, is_set=True)
 
     async def untop(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
@@ -1532,18 +1258,9 @@ class Client(object):
 
         tbs = await self.get_tbs()
 
-        from . import untop
+        from . import top
 
-        try:
-            body = await untop.request(self._connector, self._core, tbs, fname, fid, tid)
-            untop.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname_or_fid} tid={tid}")
-            return False
-
-        LOG().info(f"Succeeded. forum={fname_or_fid} tid={tid}")
-        return True
+        return await top.request(self._connector, self._core, tbs, fname, fid, tid, is_set=False)
 
     async def get_recovers(
         self, fname_or_fid: Union[str, int], /, name: str = '', pn: int = 1
@@ -1569,15 +1286,7 @@ class Client(object):
 
         from . import get_recovers
 
-        try:
-            body = await get_recovers.request(self._connector, self._core, fname, fid, name, pn)
-            recovers = get_recovers.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname}")
-            recovers = get_recovers.Recovers()._init_null()
-
-        return recovers
+        return await get_recovers.request(self._connector, self._core, fname, fid, name, pn)
 
     async def get_blocks(self, fname_or_fid: Union[str, int], /, name: str = '', pn: int = 1) -> "get_blocks.Blocks":
         """
@@ -1601,15 +1310,7 @@ class Client(object):
 
         from . import get_blocks
 
-        try:
-            body = await get_blocks.request(self._connector, self._core, fname, fid, name, pn)
-            recovers = get_blocks.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname}")
-            recovers = get_blocks.Blocks()._init_null()
-
-        return recovers
+        return await get_blocks.request(self._connector, self._core, fname, fid, name, pn)
 
     async def get_blacklist_users(
         self, fname_or_fid: Union[str, int], /, pn: int = 1
@@ -1629,15 +1330,7 @@ class Client(object):
 
         from . import get_blacklist_users
 
-        try:
-            body = await get_blacklist_users.request(self._connector, self._core, fname, pn)
-            blacklist_users = get_blacklist_users.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname}")
-            blacklist_users = get_blacklist_users.BlacklistUsers()._init_null()
-
-        return blacklist_users
+        return await get_blacklist_users.request(self._connector, self._core, fname, pn)
 
     async def blacklist_add(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> bool:
         """
@@ -1655,23 +1348,15 @@ class Client(object):
 
         if not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+            user_id = user._user_id
         else:
-            user = UserInfo(_id)
+            user_id = _id
 
         tbs = await self.get_tbs()
 
         from . import blacklist_add
 
-        try:
-            body = await blacklist_add.request(self._connector, self._core, tbs, fname, user.user_id)
-            blacklist_add.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname} user={user.user_id}")
-            return False
-
-        LOG().info(f"Succeeded. forum={fname} user={user.user_id}")
-        return True
+        return await blacklist_add.request(self._connector, self._core, tbs, fname, user_id)
 
     async def blacklist_del(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> bool:
         """
@@ -1689,23 +1374,15 @@ class Client(object):
 
         if not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+            user_id = user._user_id
         else:
-            user = UserInfo(_id)
+            user_id = _id
 
         tbs = await self.get_tbs()
 
         from . import blacklist_del
 
-        try:
-            body = await blacklist_del.request(self._connector, self._core, tbs, fname, user.user_id)
-            blacklist_del.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname} user={user.user_id}")
-            return False
-
-        LOG().info(f"Succeeded. forum={fname} user={user.user_id}")
-        return True
+        return await blacklist_del.request(self._connector, self._core, tbs, fname, user_id)
 
     async def get_unblock_appeals(
         self, fname_or_fid: Union[str, int], /, pn: int = 1, *, rn: int = 5
@@ -1733,15 +1410,7 @@ class Client(object):
 
         from . import get_unblock_appeals
 
-        try:
-            body = await get_unblock_appeals.request(self._connector, self._core, tbs, fname, fid, pn, rn)
-            appeals = get_unblock_appeals.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname}")
-            appeals = get_unblock_appeals.Appeals()._init_null()
-
-        return appeals
+        return await get_unblock_appeals.request(self._connector, self._core, tbs, fname, fid, pn, rn)
 
     async def handle_unblock_appeals(
         self, fname_or_fid: Union[str, int], /, appeal_ids: List[int], *, refuse: bool = True
@@ -1769,18 +1438,7 @@ class Client(object):
 
         from . import handle_unblock_appeals
 
-        try:
-            body = await handle_unblock_appeals.request(
-                self._connector, self._core, tbs, fname, fid, appeal_ids, refuse
-            )
-            handle_unblock_appeals.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname}")
-            return False
-
-        LOG().info(f"Succeeded. forum={fname}")
-        return True
+        return await handle_unblock_appeals.request(self._connector, self._core, tbs, fname, fid, appeal_ids, refuse)
 
     async def get_image(self, img_url: str) -> "np.ndarray":
         """
@@ -1795,17 +1453,7 @@ class Client(object):
 
         from . import get_image
 
-        try:
-            body = await get_image.request(self._connector, self._core, yarl.URL(img_url))
-            image = get_image.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. url={img_url}")
-            import numpy as np
-
-            image = np.empty(0, dtype=np.uint8)
-
-        return image
+        return await get_image.request(self._connector, self._core, yarl.URL(img_url))
 
     async def hash2image(self, raw_hash: str, /, size: Literal['s', 'm', 'l'] = 's') -> "np.ndarray":
         """
@@ -1821,30 +1469,24 @@ class Client(object):
 
         from . import get_image
 
-        try:
-            if size == 's':
-                img_url = yarl.URL.build(
-                    scheme="http", host="imgsrc.baidu.com", path=f"/forum/w=720;q=60;g=0/sign=__/{raw_hash}.jpg"
-                )
-            elif size == 'm':
-                img_url = yarl.URL.build(
-                    scheme="http", host="imgsrc.baidu.com", path=f"/forum/w=960;q=60;g=0/sign=__/{raw_hash}.jpg"
-                )
-            elif size == 'l':
-                img_url = yarl.URL.build(scheme="http", host="imgsrc.baidu.com", path=f"/forum/pic/item/{raw_hash}.jpg")
-            else:
-                raise ValueError(f"Invalid size={size}")
-
-            body = await get_image.request(self._connector, self._core, img_url)
-            image = get_image.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. raw_hash={raw_hash} size={size}")
+        if size == 's':
+            img_url = yarl.URL.build(
+                scheme="http", host="imgsrc.baidu.com", path=f"/forum/w=720;q=60;g=0/sign=__/{raw_hash}.jpg"
+            )
+        elif size == 'm':
+            img_url = yarl.URL.build(
+                scheme="http", host="imgsrc.baidu.com", path=f"/forum/w=960;q=60;g=0/sign=__/{raw_hash}.jpg"
+            )
+        elif size == 'l':
+            img_url = yarl.URL.build(scheme="http", host="imgsrc.baidu.com", path=f"/forum/pic/item/{raw_hash}.jpg")
+        else:
             import numpy as np
 
+            LOG().warning(f"Invalid size={size}")
             image = np.empty(0, dtype=np.uint8)
+            return image
 
-        return image
+        return await get_image.request(self._connector, self._core, img_url)
 
     async def get_portrait(self, _id: Union[str, int], /, size: Literal['s', 'm', 'l'] = 's') -> "np.ndarray":
         """
@@ -1860,36 +1502,30 @@ class Client(object):
 
         if not is_portrait(_id):
             user = await self.get_user_info(_id, ReqUInfo.PORTRAIT)
+            portrait = user._portrait
         else:
-            user = UserInfo(_id)
+            portrait = _id
 
         from . import get_image
 
-        try:
-            if size == 's':
-                path = 'n'
-            elif size == 'm':
-                path = ''
-            elif size == 'l':
-                path = 'h'
-            else:
-                raise ValueError(f"Invalid size={size}")
-            img_url = yarl.URL.build(
-                scheme="http", host="tb.himg.baidu.com", path=f"/sys/portrait{path}/item/{user.portrait}"
-            )
-
-            body = await get_image.request(self._connector, self._core, img_url)
-            image = get_image.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. user={user}")
+        if size == 's':
+            path = 'n'
+        elif size == 'm':
+            path = ''
+        elif size == 'l':
+            path = 'h'
+        else:
             import numpy as np
 
+            LOG().warning(f"Invalid size={size}")
             image = np.empty(0, dtype=np.uint8)
+            return image
 
-        return image
+        img_url = yarl.URL.build(scheme="http", host="tb.himg.baidu.com", path=f"/sys/portrait{path}/item/{portrait}")
 
-    async def _get_selfinfo_initNickname(self) -> bool:
+        return await get_image.request(self._connector, self._core, img_url)
+
+    async def __get_selfinfo_initNickname(self) -> bool:
         """
         获取本账号信息
 
@@ -1899,17 +1535,14 @@ class Client(object):
 
         from . import get_selfinfo_initNickname
 
-        try:
-            body = await get_selfinfo_initNickname.request(self._connector, self._core)
-            user = get_selfinfo_initNickname.parse_body(body)
+        user = await get_selfinfo_initNickname.request(self._connector, self._core)
+
+        if user._tieba_uid:
             self._user._user_name = user._user_name
             self._user._tieba_uid = user._tieba_uid
-
-        except Exception as err:
-            LOG().warning(err)
+            return True
+        else:
             return False
-
-        return True
 
     async def get_newmsg(self) -> Dict[str, bool]:
         """
@@ -1928,23 +1561,7 @@ class Client(object):
 
         from . import get_newmsg
 
-        try:
-            body = await get_newmsg.request(self._connector, self._core)
-            msg = get_newmsg.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(err)
-            msg = {
-                'fans': False,
-                'replyme': False,
-                'atme': False,
-                'agree': False,
-                'pletter': False,
-                'bookmark': False,
-                'count': False,
-            }
-
-        return msg
+        return await get_newmsg.request(self._connector, self._core)
 
     async def get_replys(self, pn: int = 1) -> "get_replys.Replys":
         """
@@ -1959,16 +1576,7 @@ class Client(object):
 
         from . import get_replys
 
-        try:
-            proto = get_replys.pack_proto(self._core, pn)
-            body = await get_replys.request_http(self._connector, self._core, proto)
-            replys = get_replys.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(err)
-            replys = get_replys.Replys()._init_null()
-
-        return replys
+        return await get_replys.request_http(self._connector, self._core, pn)
 
     async def get_ats(self, pn: int = 1) -> "get_ats.Ats":
         """
@@ -1983,15 +1591,7 @@ class Client(object):
 
         from . import get_ats
 
-        try:
-            body = await get_ats.request(self._connector, self._core, pn)
-            ats = get_ats.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(err)
-            ats = get_ats.Ats()._init_null()
-
-        return ats
+        return await get_ats.request(self._connector, self._core, pn)
 
     async def get_self_public_threads(self, pn: int = 1) -> List["get_user_contents.UserThread"]:
         """
@@ -2008,16 +1608,7 @@ class Client(object):
 
         from .get_user_contents import get_threads
 
-        try:
-            proto = get_threads.pack_proto(self._core, user.user_id, pn, public_only=True)
-            body = await get_threads.request_http(self._connector, self._core, proto)
-            threads = get_threads.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. user={user}")
-            threads = []
-
-        return threads
+        return await get_threads.request_http(self._connector, self._core, user.user_id, pn, public_only=True)
 
     async def get_self_threads(self, pn: int = 1) -> List["get_user_contents.UserThread"]:
         """
@@ -2034,16 +1625,7 @@ class Client(object):
 
         from .get_user_contents import get_threads
 
-        try:
-            proto = get_threads.pack_proto(self._core, user.user_id, pn, public_only=False)
-            body = await get_threads.request_http(self._connector, self._core, proto)
-            threads = get_threads.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. user={user}")
-            threads = []
-
-        return threads
+        return await get_threads.request_http(self._connector, self._core, user.user_id, pn, public_only=False)
 
     async def get_self_posts(self, pn: int = 1) -> List["get_user_contents.UserPosts"]:
         """
@@ -2060,16 +1642,7 @@ class Client(object):
 
         from .get_user_contents import get_posts
 
-        try:
-            proto = get_posts.pack_proto(self._core, user.user_id, pn)
-            body = await get_posts.request_http(self._connector, self._core, proto)
-            uposts_list = get_posts.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. user={user}")
-            uposts_list = []
-
-        return uposts_list
+        return await get_posts.request_http(self._connector, self._core, user.user_id, pn)
 
     async def get_user_threads(self, _id: Union[str, int], pn: int = 1) -> List["get_user_contents.UserThread"]:
         """
@@ -2085,21 +1658,13 @@ class Client(object):
 
         if not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+            user_id = user._user_id
         else:
-            user = UserInfo(_id)
+            user_id = _id
 
         from .get_user_contents import get_threads
 
-        try:
-            proto = get_threads.pack_proto(self._core, user.user_id, pn, public_only=True)
-            body = await get_threads.request_http(self._connector, self._core, proto)
-            threads = get_threads.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. user={user}")
-            threads = []
-
-        return threads
+        return await get_threads.request_http(self._connector, self._core, user_id, pn, public_only=True)
 
     async def get_fans(self, _id: Union[str, int, None] = None, /, pn: int = 1) -> "get_fans.Fans":
         """
@@ -2116,22 +1681,16 @@ class Client(object):
 
         if _id is None:
             user = await self.get_self_info(ReqUInfo.USER_ID)
+            user_id = user._user_id
         elif not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+            user_id = user._user_id
         else:
-            user = UserInfo(_id)
+            user_id = _id
 
         from . import get_fans
 
-        try:
-            body = await get_fans.request(self._connector, self._core, user.user_id, pn)
-            fans = get_fans.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(err)
-            fans = get_fans.Fans()._init_null()
-
-        return fans
+        return await get_fans.request(self._connector, self._core, user_id, pn)
 
     async def get_follows(self, _id: Union[str, int, None] = None, /, pn: int = 1) -> "get_follows.Follows":
         """
@@ -2148,22 +1707,16 @@ class Client(object):
 
         if _id is None:
             user = await self.get_self_info(ReqUInfo.USER_ID)
+            user_id = user._user_id
         elif not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+            user_id = user._user_id
         else:
-            user = UserInfo(_id)
+            user_id = _id
 
         from . import get_follows
 
-        try:
-            body = await get_follows.request(self._connector, self._core, user.user_id, pn)
-            follows = get_follows.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(err)
-            follows = get_follows.Follows()._init_null()
-
-        return follows
+        return await get_follows.request(self._connector, self._core, user_id, pn)
 
     async def get_self_follow_forums(self, pn: int = 1) -> "get_self_follow_forums.SelfFollowForums":
         """
@@ -2181,15 +1734,7 @@ class Client(object):
 
         from . import get_self_follow_forums
 
-        try:
-            body = await get_self_follow_forums.request(self._connector, self._core, pn)
-            self_follow_forums = get_self_follow_forums.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(err)
-            self_follow_forums = get_self_follow_forums.SelfFollowForums()._init_null()
-
-        return self_follow_forums
+        return await get_self_follow_forums.request(self._connector, self._core, pn)
 
     async def get_dislike_forums(self, pn: int = 1, /, *, rn: int = 20) -> "get_dislike_forums.DislikeForums":
         """
@@ -2205,16 +1750,7 @@ class Client(object):
 
         from . import get_dislike_forums
 
-        try:
-            proto = get_dislike_forums.pack_proto(self._core, pn, rn)
-            body = await get_dislike_forums.request_http(self._connector, self._core, proto)
-            dislike_forums = get_dislike_forums.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(err)
-            dislike_forums = get_dislike_forums.DislikeForums()._init_null()
-
-        return dislike_forums
+        return await get_dislike_forums.request_http(self._connector, self._core, pn, rn)
 
     async def agree(self, tid: int, pid: int = 0) -> bool:
         """
@@ -2236,16 +1772,7 @@ class Client(object):
 
         from . import agree
 
-        try:
-            body = await agree.request(self._connector, self._core, tbs, tid, pid, is_disagree=False, is_undo=False)
-            agree.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. tid={tid} pid={pid}")
-            return False
-
-        LOG().info(f"Succeeded. tid={tid} pid={pid}")
-        return True
+        return await agree.request(self._connector, self._core, tbs, tid, pid, is_disagree=False, is_undo=False)
 
     async def unagree(self, tid: int, pid: int = 0) -> bool:
         """
@@ -2263,16 +1790,7 @@ class Client(object):
 
         from . import agree
 
-        try:
-            body = await agree.request(self._connector, self._core, tbs, tid, pid, is_disagree=False, is_undo=True)
-            agree.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. tid={tid} pid={pid}")
-            return False
-
-        LOG().info(f"Succeeded. tid={tid} pid={pid}")
-        return True
+        return await agree.request(self._connector, self._core, tbs, tid, pid, is_disagree=False, is_undo=True)
 
     async def disagree(self, tid: int, pid: int = 0) -> bool:
         """
@@ -2290,16 +1808,7 @@ class Client(object):
 
         from . import agree
 
-        try:
-            body = await agree.request(self._connector, self._core, tbs, tid, pid, is_disagree=True, is_undo=False)
-            agree.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. tid={tid} pid={pid}")
-            return False
-
-        LOG().info(f"Succeeded. tid={tid} pid={pid}")
-        return True
+        return await agree.request(self._connector, self._core, tbs, tid, pid, is_disagree=True, is_undo=False)
 
     async def undisagree(self, tid: int, pid: int = 0) -> bool:
         """
@@ -2317,16 +1826,7 @@ class Client(object):
 
         from . import agree
 
-        try:
-            body = await agree.request(self._connector, self._core, tbs, tid, pid, is_disagree=True, is_undo=True)
-            agree.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. tid={tid} pid={pid}")
-            return False
-
-        LOG().info(f"Succeeded. tid={tid} pid={pid}")
-        return True
+        return await agree.request(self._connector, self._core, tbs, tid, pid, is_disagree=True, is_undo=True)
 
     async def remove_fan(self, _id: Union[str, int]) -> bool:
         """
@@ -2341,23 +1841,15 @@ class Client(object):
 
         if not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+            user_id = user._user_id
         else:
-            user = UserInfo(_id)
+            user_id = _id
 
         tbs = await self.get_tbs()
 
         from . import remove_fan
 
-        try:
-            body = await remove_fan.request(self._connector, self._core, tbs, user.user_id)
-            remove_fan.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. user={user}")
-            return False
-
-        LOG().info(f"Succeeded. user={user}")
-        return True
+        return await remove_fan.request(self._connector, self._core, tbs, user_id)
 
     async def follow_user(self, _id: Union[str, int]) -> bool:
         """
@@ -2372,23 +1864,15 @@ class Client(object):
 
         if not is_portrait(_id):
             user = await self.get_user_info(_id, ReqUInfo.PORTRAIT)
+            portrait = user._portrait
         else:
-            user = UserInfo(_id)
+            portrait = _id
 
         tbs = await self.get_tbs()
 
         from . import follow_user
 
-        try:
-            body = await follow_user.request(self._connector, self._core, tbs, user.portrait)
-            follow_user.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. user={user}")
-            return False
-
-        LOG().info(f"Succeeded. user={user}")
-        return True
+        return await follow_user.request(self._connector, self._core, tbs, portrait)
 
     async def unfollow_user(self, _id: Union[str, int]) -> bool:
         """
@@ -2403,23 +1887,15 @@ class Client(object):
 
         if not is_portrait(_id):
             user = await self.get_user_info(_id, ReqUInfo.PORTRAIT)
+            portrait = user._portrait
         else:
-            user = UserInfo(_id)
+            portrait = _id
 
         tbs = await self.get_tbs()
 
         from . import unfollow_user
 
-        try:
-            body = await unfollow_user.request(self._connector, self._core, tbs, user.portrait)
-            unfollow_user.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. user={user}")
-            return False
-
-        LOG().info(f"Succeeded. user={user}")
-        return True
+        return await unfollow_user.request(self._connector, self._core, tbs, portrait)
 
     async def follow_forum(self, fname_or_fid: Union[str, int]) -> bool:
         """
@@ -2437,16 +1913,7 @@ class Client(object):
 
         from . import follow_forum
 
-        try:
-            body = await follow_forum.request(self._connector, self._core, tbs, fid)
-            follow_forum.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname_or_fid}")
-            return False
-
-        LOG().info(f"Succeeded. forum={fname_or_fid}")
-        return True
+        return await follow_forum.request(self._connector, self._core, tbs, fid)
 
     async def unfollow_forum(self, fname_or_fid: Union[str, int]) -> bool:
         """
@@ -2464,16 +1931,7 @@ class Client(object):
 
         from . import unfollow_forum
 
-        try:
-            body = await unfollow_forum.request(self._connector, self._core, tbs, fid)
-            unfollow_forum.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname_or_fid}")
-            return False
-
-        LOG().info(f"Succeeded. forum={fname_or_fid}")
-        return True
+        return await unfollow_forum.request(self._connector, self._core, tbs, fid)
 
     async def dislike_forum(self, fname_or_fid: Union[str, int]) -> bool:
         """
@@ -2490,16 +1948,7 @@ class Client(object):
 
         from . import dislike_forum
 
-        try:
-            body = await dislike_forum.request(self._connector, self._core, fid)
-            dislike_forum.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname_or_fid}")
-            return False
-
-        LOG().info(f"Succeeded. forum={fname_or_fid}")
-        return True
+        return await dislike_forum.request(self._connector, self._core, fid)
 
     async def undislike_forum(self, fname_or_fid: Union[str, int]) -> bool:
         """
@@ -2516,18 +1965,9 @@ class Client(object):
 
         from . import undislike_forum
 
-        try:
-            body = await undislike_forum.request(self._connector, self._core, fid)
-            undislike_forum.parse_body(body)
+        return await undislike_forum.request(self._connector, self._core, fid)
 
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname_or_fid}")
-            return False
-
-        LOG().info(f"Succeeded. forum={fname_or_fid}")
-        return True
-
-    async def set_privacy(self, fname_or_fid: Union[str, int], /, tid: int, pid: int, *, hide: bool = True) -> bool:
+    async def set_thread_privacy(self, fname_or_fid: Union[str, int], /, tid: int, pid: int) -> bool:
         """
         隐藏主题帖
 
@@ -2535,7 +1975,6 @@ class Client(object):
             fname_or_fid (str | int): 主题帖所在贴吧的贴吧名或fid 优先fid
             tid (int): 主题帖tid
             tid (int): 主题帖pid
-            hide (bool, optional): True则设为隐藏 False则取消隐藏. Defaults to True.
 
         Returns:
             bool: True成功 False失败
@@ -2543,18 +1982,28 @@ class Client(object):
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
-        from . import set_privacy
+        from . import set_thread_privacy
 
-        try:
-            body = await set_privacy.request(self._connector, self._core, fid, tid, pid, hide)
-            set_privacy.parse_body(body)
+        return await set_thread_privacy.request(self._connector, self._core, fid, tid, pid, is_hide=True)
 
-        except Exception as err:
-            LOG().warning(f"{err}. tid={tid}")
-            return False
+    async def set_thread_public(self, fname_or_fid: Union[str, int], /, tid: int, pid: int) -> bool:
+        """
+        公开主题帖
 
-        LOG().info(f"Succeeded. tid={tid}")
-        return True
+        Args:
+            fname_or_fid (str | int): 主题帖所在贴吧的贴吧名或fid 优先fid
+            tid (int): 主题帖tid
+            tid (int): 主题帖pid
+
+        Returns:
+            bool: True成功 False失败
+        """
+
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+
+        from . import set_thread_privacy
+
+        return await set_thread_privacy.request(self._connector, self._core, fid, tid, pid, is_hide=False)
 
     async def sign_forum(self, fname_or_fid: Union[str, int]) -> bool:
         """
@@ -2564,7 +2013,7 @@ class Client(object):
             fname_or_fid (str | int): 要签到贴吧的贴吧名或fid 优先贴吧名
 
         Returns:
-            bool: True表示不需要再尝试签到 False表示由于各种原因失败需要重签
+            bool: True成功 False失败
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
@@ -2572,21 +2021,7 @@ class Client(object):
 
         from . import sign_forum
 
-        try:
-            body = await sign_forum.request(self._connector, self._core, tbs, fname)
-            sign_forum.parse_body(body)
-
-        except TiebaServerError as err:
-            LOG().warning(f"{err}. forum={fname}")
-            if err.code in [160002, 340006]:
-                # 已经签过或吧被屏蔽
-                return True
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname}")
-            return False
-
-        LOG().info(f"Succeeded. forum={fname}")
-        return True
+        return await sign_forum.request(self._connector, self._core, tbs, fname)
 
     async def sign_growth(self) -> bool:
         """
@@ -2600,16 +2035,7 @@ class Client(object):
 
         from . import sign_growth
 
-        try:
-            body = await sign_growth.request(self._connector, self._core, tbs)
-            sign_growth.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}")
-            return False
-
-        LOG().info("Succeeded")
-        return True
+        return await sign_growth.request(self._connector, self._core, tbs)
 
     async def add_post(self, fname_or_fid: Union[str, int], /, tid: int, content: str) -> bool:
         """
@@ -2640,16 +2066,7 @@ class Client(object):
 
         from . import add_post
 
-        try:
-            body = add_post.request(self._connector, self._core, tbs, fname, fid, tid, content)
-            add_post.parse_body(body)
-
-        except Exception as err:
-            LOG().warning(f"{err}. forum={fname} tid={tid}")
-            return False
-
-        LOG().info(f"Succeeded. forum={fname} tid={tid}")
-        return True
+        return add_post.request(self._connector, self._core, tbs, fname, fid, tid, content)
 
     async def send_msg(self, _id: Union[str, int], content: str) -> bool:
         """
@@ -2665,8 +2082,9 @@ class Client(object):
 
         if not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+            user_id = user._user_id
         else:
-            user = UserInfo(_id)
+            user_id = _id
 
         try:
             await self._init_websocket()
@@ -2678,8 +2096,8 @@ class Client(object):
             send_msg.parse_body(resp)
 
         except Exception as err:
-            LOG().warning(f"{err}. user={user}")
+            LOG().warning(f"{err}. user_id={user_id}")
             return False
 
-        LOG().info(f"Succeeded. user={user}")
+        LOG().info(f"Succeeded. user_id={user_id}")
         return True
