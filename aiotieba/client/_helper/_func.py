@@ -6,7 +6,7 @@ import sys
 import urllib.parse
 import zlib
 from types import FrameType
-from typing import Any, Awaitable, Callable, List, Optional, Tuple, Union
+from typing import Callable, List, Optional, Tuple
 
 import aiohttp
 import async_timeout
@@ -411,31 +411,6 @@ async def send_request(
     response.release()
 
     return body
-
-
-def create_fstr(names: List[Union[str, Tuple[str, str]]]) -> str:
-    """
-    通过变量名列表生成fstring
-
-    例如:
-        ['a', 'b'] -> "a={a} b={b}"\n
-        ['a', ('b', 'c')] -> "a={a} b={c}"
-
-    Args:
-        names (list[str | tuple[str, str]]): 列表[变量名 | (显示变量名, 绑定变量名)]
-
-    Returns:
-        str: fstring
-    """
-
-    def _generate_log_fstr():
-        for i in names:
-            if isinstance(i, str):
-                yield f"{i}={{{i}}}"
-            else:
-                yield f"{i[0]}={{{i[1]}}}"
-
-    return " ".join(_generate_log_fstr())
 
 
 def log_exception(frame: FrameType, err: Exception, log_str: str = '', log_level: int = logging.WARNING):
