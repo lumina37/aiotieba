@@ -122,17 +122,23 @@ class Client(object):
         return self
 
     async def close(self) -> None:
+        if self.is_ws_aviliable:
+            await self.websocket.close()
+
         if self._ws_dispatcher is not None:
             self._ws_dispatcher.cancel()
-
-        if self.websocket is not None and not self.websocket.closed:
-            await self.websocket.close()
 
         if self._connector is not None:
             await self._connector.close()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.close()
+
+    def __hash__(self) -> int:
+        return hash(self._core._BDUSS_key)
+
+    def __eq__(self, obj: "Client") -> bool:
+        return self._core._BDUSS_key == obj._core._BDUSS_key
 
     @property
     def core(self) -> TbCore:
