@@ -3,7 +3,7 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-urls = { Repository = "https://github.com/Starry-OvO/aiotieba/", Documentation = "https://v-8.top/" }
+urls = { Repository = "https://github.com/Starry-OvO/aiotieba/", Documentation = "https://aiotieba.cc/" }
 name = "aiotieba"
 description = "Asynchronous I/O Client for Baidu Tieba"
 readme = "README.md"

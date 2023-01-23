@@ -3,7 +3,7 @@ Asynchronous I/O Client/Reviewer for Baidu Tieba
 
 @Author: starry.qvq@gmail.com
 @License: Unlicense
-@Documentation: https://v-8.top/
+@Documentation: https://aiotieba.cc/
 """
 
 import os
