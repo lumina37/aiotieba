@@ -20,10 +20,7 @@ def parse_body(body: bytes) -> str:
 
 async def request(connector: aiohttp.TCPConnector, core: TbCore) -> str:
 
-    data = [
-        ('BDUSS', core._BDUSS),
-        ('_client_version', core.main_version),
-    ]
+    data = [('BDUSS', core._BDUSS)]
 
     request = pack_form_request(
         core,
