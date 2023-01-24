@@ -71,6 +71,7 @@ class TbCore(object):
         '_BDUSS_key',
         '_BDUSS',
         '_STOKEN',
+        '_tbs',
         '_client_id',
         '_cuid',
         '_cuid_galaxy2',
@@ -98,6 +99,7 @@ class TbCore(object):
         self._loop = loop
         self._BDUSS_key = BDUSS_key
 
+        self._tbs = None
         self._client_id = None
         self._cuid = None
         self._cuid_galaxy2 = None
@@ -206,17 +208,27 @@ class TbCore(object):
         self._web_core.cookie_jar._cookies["tieba.baidu.com"]['STOKEN'] = STOKEN_morsel
 
     @property
+    def tbs(self) -> str:
+        """
+        返回一个可作为请求参数的反csrf校验码tbs
+        在初始化后该属性便不会再发生变化
+
+        Returns:
+            str: 举例 17634e03cbe25e6e1674526199
+        """
+
+        return self._tbs
+
+    @property
     def client_id(self) -> str:
         """
         返回一个可作为请求参数的client_id
-        在初次生成后该属性便不会再发生变化
+        在初始化后该属性便不会再发生变化
 
         Returns:
             str: 举例 wappc_1653660000000_123
         """
 
-        if self._client_id is None:
-            self._client_id = f"wappc_{int(time.time() * 1000)}_{random.randint(0,999):03d}"
         return self._client_id
 
     @property

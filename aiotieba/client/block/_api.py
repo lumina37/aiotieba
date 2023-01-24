@@ -15,7 +15,7 @@ def parse_body(body: bytes) -> None:
 
 
 async def request(
-    connector: aiohttp.TCPConnector, core: TbCore, tbs: str, fname: str, fid: int, portrait: str, day: int, reason: str
+    connector: aiohttp.TCPConnector, core: TbCore, fname: str, fid: int, portrait: str, day: int, reason: str
 ) -> bool:
 
     data = [
@@ -25,7 +25,7 @@ async def request(
         ('ntn', 'banid'),
         ('portrait', portrait),
         ('reason', reason),
-        ('tbs', tbs),
+        ('tbs', core._tbs),
         ('word', fname),
         ('z', '6'),
     ]

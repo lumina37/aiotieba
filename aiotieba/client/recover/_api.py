@@ -15,11 +15,11 @@ def parse_body(body: bytes) -> None:
 
 
 async def request(
-    connector: aiohttp.TCPConnector, core: TbCore, tbs: str, fname: str, fid: int, tid: int, pid: int, is_hide: bool
+    connector: aiohttp.TCPConnector, core: TbCore, fname: str, fid: int, tid: int, pid: int, is_hide: bool
 ) -> bool:
 
     data = [
-        ('tbs', tbs),
+        ('tbs', core._tbs),
         ('fn', fname),
         ('fid', fid),
         ('tid_list[]', tid),

@@ -16,7 +16,7 @@ def parse_body(body: bytes) -> None:
 
 
 async def request(
-    connector: aiohttp.TCPConnector, core: TbCore, tbs: str, fname: str, fid: int, appeal_ids: List[int], refuse: bool
+    connector: aiohttp.TCPConnector, core: TbCore, fname: str, fid: int, appeal_ids: List[int], refuse: bool
 ) -> bool:
 
     data = (
@@ -28,7 +28,7 @@ async def request(
         + [
             ('refuse_reason', '_'),
             ('status', '2' if refuse else '1'),
-            ('tbs', tbs),
+            ('tbs', core._tbs),
         ]
     )
 

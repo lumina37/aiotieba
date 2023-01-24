@@ -66,7 +66,6 @@ class Client(object):
     __slots__ = [
         '_core',
         '_user',
-        '_tbs',
         '_connector',
         '_client_ws',
         'websocket',
@@ -85,9 +84,7 @@ class Client(object):
             loop = asyncio.get_running_loop()
 
         self._core = TbCore(loop, BDUSS_key, proxy)
-
         self._user = UserInfo_home()._init_null()
-        self._tbs: str = None
 
         timeout = aiohttp.ClientTimeout(connect=3.0, sock_read=12.0, sock_connect=3.2)
 
@@ -162,7 +159,7 @@ class Client(object):
 
         return self._client_ws
 
-    async def _create_websocket(self, heartbeat: Optional[float] = None) -> None:
+    async def __create_websocket(self, heartbeat: Optional[float] = None) -> None:
         """
         建立weboscket连接
 
@@ -184,7 +181,7 @@ class Client(object):
             ssl=False,
         )
 
-        self._ws_dispatcher = asyncio.create_task(self._ws_dispatch(), name="ws_dispatcher")
+        self._ws_dispatcher = asyncio.create_task(self.__ws_dispatch(), name="ws_dispatcher")
 
     @property
     def is_ws_aviliable(self) -> bool:
@@ -231,7 +228,7 @@ class Client(object):
         del WebsocketResponse.ws_res_wait_dict[ws_res.req_id]
         return data
 
-    async def _ws_dispatch(self) -> None:
+    async def __ws_dispatch(self) -> None:
         """
         分发从贴吧websocket接收到的数据
         """
@@ -247,7 +244,7 @@ class Client(object):
         except asyncio.CancelledError:
             return
 
-    async def _init_websocket(self) -> None:
+    async def __init_websocket(self) -> None:
         """
         初始化weboscket连接对象并发送初始化信息
 
@@ -256,7 +253,7 @@ class Client(object):
         """
 
         if not self.is_ws_aviliable:
-            await self._create_websocket()
+            await self.__create_websocket()
 
             from . import init_websocket
 
@@ -274,18 +271,15 @@ class Client(object):
             body = await self.send_ws_bytes(proto, cmd=1001, timeout=5.0, need_gzip=False, need_encrypt=False)
             init_websocket.parse_body(body)
 
-    async def get_tbs(self) -> str:
+    async def __init_tbs(self) -> bool:
         """
-        获取贴吧反csrf校验码tbs
-
-        Returns:
-            str: tbs
+        初始化反csrf校验码tbs
         """
 
-        if not self._tbs:
-            await self.__login()
+        if self._core._tbs:
+            return True
 
-        return self._tbs
+        return await self.__login()
 
     async def get_self_info(self, require: ReqUInfo = ReqUInfo.ALL) -> TypeUserInfo:
         """
@@ -317,7 +311,35 @@ class Client(object):
             self._user._user_id = user._user_id
             self._user._portrait = user._portrait
             self._user._user_name = user._user_name
-            self._tbs = tbs
+            self._core._tbs = tbs
+            return True
+        else:
+            return False
+
+    async def __init_client_id(self) -> str:
+        """
+        初始化client_id
+
+        Returns:
+            str: client_id 例如 wappc_1653660000000_123
+        """
+
+        if self._core._client_id:
+            return True
+
+        return await self.__sync()
+
+    async def __sync(self) -> bool:
+
+        from . import sync
+
+        client_id = await sync.request(self._connector, self._core)
+
+        if client_id:
+            self._core._client_id = client_id
+            return True
+        else:
+            return False
 
     async def get_fid(self, fname: str) -> int:
         """
@@ -860,11 +882,11 @@ class Client(object):
         else:
             portrait = _id
 
-        tbs = await self.get_tbs()
+        await self.__init_tbs()
 
         from . import block
 
-        return await block.request(self._connector, self._core, tbs, fname, fid, portrait, day, reason)
+        return await block.request(self._connector, self._core, fname, fid, portrait, day, reason)
 
     async def unblock(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> bool:
         """
@@ -891,11 +913,11 @@ class Client(object):
         else:
             user_id = _id
 
-        tbs = await self.get_tbs()
+        await self.__init_tbs()
 
         from . import unblock
 
-        return await unblock.request(self._connector, self._core, tbs, fname, fid, user_id)
+        return await unblock.request(self._connector, self._core, fname, fid, user_id)
 
     async def hide_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
@@ -910,11 +932,11 @@ class Client(object):
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
-        tbs = await self.get_tbs()
+        await self.__init_tbs()
 
         from . import del_thread
 
-        return await del_thread.request(self._connector, self._core, tbs, fid, tid, is_hide=True)
+        return await del_thread.request(self._connector, self._core, fid, tid, is_hide=True)
 
     async def del_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
@@ -929,11 +951,11 @@ class Client(object):
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
-        tbs = await self.get_tbs()
+        await self.__init_tbs()
 
         from . import del_thread
 
-        return await del_thread.request(self._connector, self._core, tbs, fid, tid, is_hide=False)
+        return await del_thread.request(self._connector, self._core, fid, tid, is_hide=False)
 
     async def del_threads(self, fname_or_fid: Union[str, int], /, tids: List[int], *, block: bool = False) -> bool:
         """
@@ -949,11 +971,11 @@ class Client(object):
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
-        tbs = await self.get_tbs()
+        await self.__init_tbs()
 
         from . import del_threads
 
-        return await del_threads.request(self._connector, self._core, tbs, fid, tids, block)
+        return await del_threads.request(self._connector, self._core, fid, tids, block)
 
     async def del_post(self, fname_or_fid: Union[str, int], /, pid: int) -> bool:
         """
@@ -968,11 +990,11 @@ class Client(object):
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
-        tbs = await self.get_tbs()
+        await self.__init_tbs()
 
         from . import del_post
 
-        return await del_post.request(self._connector, self._core, tbs, fid, pid)
+        return await del_post.request(self._connector, self._core, fid, pid)
 
     async def del_posts(self, fname_or_fid: Union[str, int], /, pids: List[int], *, block: bool = False) -> bool:
         """
@@ -988,11 +1010,11 @@ class Client(object):
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
-        tbs = await self.get_tbs()
+        await self.__init_tbs()
 
         from . import del_posts
 
-        return await del_posts.request(self._connector, self._core, tbs, fid, pids, block)
+        return await del_posts.request(self._connector, self._core, fid, pids, block)
 
     async def unhide_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
@@ -1013,11 +1035,11 @@ class Client(object):
             fid = fname_or_fid
             fname = await self.get_fname(fid)
 
-        tbs = await self.get_tbs()
+        await self.__init_tbs()
 
         from . import recover
 
-        return await recover.request(self._connector, self._core, tbs, fname, fid, tid, 0, is_hide=True)
+        return await recover.request(self._connector, self._core, fname, fid, tid, 0, is_hide=True)
 
     async def recover_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
@@ -1038,11 +1060,11 @@ class Client(object):
             fid = fname_or_fid
             fname = await self.get_fname(fid)
 
-        tbs = await self.get_tbs()
+        await self.__init_tbs()
 
         from . import recover
 
-        return await recover.request(self._connector, self._core, tbs, fname, fid, tid, 0, is_hide=False)
+        return await recover.request(self._connector, self._core, fname, fid, tid, 0, is_hide=False)
 
     async def recover_post(self, fname_or_fid: Union[str, int], /, pid: int) -> bool:
         """
@@ -1063,11 +1085,11 @@ class Client(object):
             fid = fname_or_fid
             fname = await self.get_fname(fid)
 
-        tbs = await self.get_tbs()
+        await self.__init_tbs()
 
         from . import recover
 
-        return await recover.request(self._connector, self._core, tbs, fname, fid, 0, pid, is_hide=False)
+        return await recover.request(self._connector, self._core, fname, fid, 0, pid, is_hide=False)
 
     async def recover(
         self, fname_or_fid: Union[str, int], /, tid: int = 0, pid: int = 0, *, is_hide: bool = False
@@ -1092,11 +1114,11 @@ class Client(object):
             fid = fname_or_fid
             fname = await self.get_fname(fid)
 
-        tbs = await self.get_tbs()
+        await self.__init_tbs()
 
         from . import recover
 
-        return await recover.request(self._connector, self._core, tbs, fname, fid, tid, pid, is_hide)
+        return await recover.request(self._connector, self._core, fname, fid, tid, pid, is_hide)
 
     async def move(self, fname_or_fid: Union[str, int], /, tid: int, *, to_tab_id: int, from_tab_id: int = 0) -> bool:
         """
@@ -1113,11 +1135,11 @@ class Client(object):
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
-        tbs = await self.get_tbs()
+        await self.__init_tbs()
 
         from . import move
 
-        return await move.request(self._connector, self._core, tbs, fid, tid, to_tab_id, from_tab_id)
+        return await move.request(self._connector, self._core, fid, tid, to_tab_id, from_tab_id)
 
     async def recommend(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
@@ -1157,12 +1179,13 @@ class Client(object):
             fid = fname_or_fid
             fname = await self.get_fname(fid)
 
-        tbs = await self.get_tbs()
+        await self.__init_tbs()
+
         cid = await self._get_cid(fname_or_fid, cname)
 
         from . import good
 
-        return await good.request(self._connector, self._core, tbs, fname, fid, tid, cid)
+        return await good.request(self._connector, self._core, fname, fid, tid, cid)
 
     async def ungood(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
@@ -1183,11 +1206,11 @@ class Client(object):
             fid = fname_or_fid
             fname = await self.get_fname(fid)
 
-        tbs = await self.get_tbs()
+        await self.__init_tbs()
 
         from . import ungood
 
-        return await ungood.request(self._connector, self._core, tbs, fname, fid, tid)
+        return await ungood.request(self._connector, self._core, fname, fid, tid)
 
     async def _get_cid(self, fname_or_fid: Union[str, int], /, cname: str) -> int:
         """
@@ -1237,11 +1260,11 @@ class Client(object):
             fid = fname_or_fid
             fname = await self.get_fname(fid)
 
-        tbs = await self.get_tbs()
+        await self.__init_tbs()
 
         from . import top
 
-        return await top.request(self._connector, self._core, tbs, fname, fid, tid, is_set=True)
+        return await top.request(self._connector, self._core, fname, fid, tid, is_set=True)
 
     async def untop(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
@@ -1262,11 +1285,11 @@ class Client(object):
             fid = fname_or_fid
             fname = await self.get_fname(fid)
 
-        tbs = await self.get_tbs()
+        await self.__init_tbs()
 
         from . import top
 
-        return await top.request(self._connector, self._core, tbs, fname, fid, tid, is_set=False)
+        return await top.request(self._connector, self._core, fname, fid, tid, is_set=False)
 
     async def get_recovers(
         self, fname_or_fid: Union[str, int], /, name: str = '', pn: int = 1
@@ -1358,11 +1381,11 @@ class Client(object):
         else:
             user_id = _id
 
-        tbs = await self.get_tbs()
+        await self.__init_tbs()
 
         from . import blacklist_add
 
-        return await blacklist_add.request(self._connector, self._core, tbs, fname, user_id)
+        return await blacklist_add.request(self._connector, self._core, fname, user_id)
 
     async def blacklist_del(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> bool:
         """
@@ -1384,11 +1407,11 @@ class Client(object):
         else:
             user_id = _id
 
-        tbs = await self.get_tbs()
+        await self.__init_tbs()
 
         from . import blacklist_del
 
-        return await blacklist_del.request(self._connector, self._core, tbs, fname, user_id)
+        return await blacklist_del.request(self._connector, self._core, fname, user_id)
 
     async def get_unblock_appeals(
         self, fname_or_fid: Union[str, int], /, pn: int = 1, *, rn: int = 5
@@ -1412,11 +1435,11 @@ class Client(object):
             fid = fname_or_fid
             fname = await self.get_fname(fid)
 
-        tbs = await self.get_tbs()
+        await self.__init_tbs()
 
         from . import get_unblock_appeals
 
-        return await get_unblock_appeals.request(self._connector, self._core, tbs, fname, fid, pn, rn)
+        return await get_unblock_appeals.request(self._connector, self._core, fname, fid, pn, rn)
 
     async def handle_unblock_appeals(
         self, fname_or_fid: Union[str, int], /, appeal_ids: List[int], *, refuse: bool = True
@@ -1440,11 +1463,11 @@ class Client(object):
             fid = fname_or_fid
             fname = await self.get_fname(fid)
 
-        tbs = await self.get_tbs()
+        await self.__init_tbs()
 
         from . import handle_unblock_appeals
 
-        return await handle_unblock_appeals.request(self._connector, self._core, tbs, fname, fid, appeal_ids, refuse)
+        return await handle_unblock_appeals.request(self._connector, self._core, fname, fid, appeal_ids, refuse)
 
     async def get_image(self, img_url: str) -> "np.ndarray":
         """
@@ -1774,11 +1797,11 @@ class Client(object):
             高频率调用会导致<发帖秒删>！请谨慎使用！
         """
 
-        tbs = await self.get_tbs()
+        await self.__init_tbs()
 
         from . import agree
 
-        return await agree.request(self._connector, self._core, tbs, tid, pid, is_disagree=False, is_undo=False)
+        return await agree.request(self._connector, self._core, tid, pid, is_disagree=False, is_undo=False)
 
     async def unagree(self, tid: int, pid: int = 0) -> bool:
         """
@@ -1792,11 +1815,11 @@ class Client(object):
             bool: True成功 False失败
         """
 
-        tbs = await self.get_tbs()
+        await self.__init_tbs()
 
         from . import agree
 
-        return await agree.request(self._connector, self._core, tbs, tid, pid, is_disagree=False, is_undo=True)
+        return await agree.request(self._connector, self._core, tid, pid, is_disagree=False, is_undo=True)
 
     async def disagree(self, tid: int, pid: int = 0) -> bool:
         """
@@ -1810,11 +1833,11 @@ class Client(object):
             bool: True成功 False失败
         """
 
-        tbs = await self.get_tbs()
+        await self.__init_tbs()
 
         from . import agree
 
-        return await agree.request(self._connector, self._core, tbs, tid, pid, is_disagree=True, is_undo=False)
+        return await agree.request(self._connector, self._core, tid, pid, is_disagree=True, is_undo=False)
 
     async def undisagree(self, tid: int, pid: int = 0) -> bool:
         """
@@ -1828,11 +1851,11 @@ class Client(object):
             bool: True成功 False失败
         """
 
-        tbs = await self.get_tbs()
+        await self.__init_tbs()
 
         from . import agree
 
-        return await agree.request(self._connector, self._core, tbs, tid, pid, is_disagree=True, is_undo=True)
+        return await agree.request(self._connector, self._core, tid, pid, is_disagree=True, is_undo=True)
 
     async def remove_fan(self, _id: Union[str, int]) -> bool:
         """
@@ -1851,11 +1874,11 @@ class Client(object):
         else:
             user_id = _id
 
-        tbs = await self.get_tbs()
+        await self.__init_tbs()
 
         from . import remove_fan
 
-        return await remove_fan.request(self._connector, self._core, tbs, user_id)
+        return await remove_fan.request(self._connector, self._core, user_id)
 
     async def follow_user(self, _id: Union[str, int]) -> bool:
         """
@@ -1874,11 +1897,11 @@ class Client(object):
         else:
             portrait = _id
 
-        tbs = await self.get_tbs()
+        await self.__init_tbs()
 
         from . import follow_user
 
-        return await follow_user.request(self._connector, self._core, tbs, portrait)
+        return await follow_user.request(self._connector, self._core, portrait)
 
     async def unfollow_user(self, _id: Union[str, int]) -> bool:
         """
@@ -1897,11 +1920,11 @@ class Client(object):
         else:
             portrait = _id
 
-        tbs = await self.get_tbs()
+        await self.__init_tbs()
 
         from . import unfollow_user
 
-        return await unfollow_user.request(self._connector, self._core, tbs, portrait)
+        return await unfollow_user.request(self._connector, self._core, portrait)
 
     async def follow_forum(self, fname_or_fid: Union[str, int]) -> bool:
         """
@@ -1915,11 +1938,11 @@ class Client(object):
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
-        tbs = await self.get_tbs()
+        await self.__init_tbs()
 
         from . import follow_forum
 
-        return await follow_forum.request(self._connector, self._core, tbs, fid)
+        return await follow_forum.request(self._connector, self._core, fid)
 
     async def unfollow_forum(self, fname_or_fid: Union[str, int]) -> bool:
         """
@@ -1933,11 +1956,11 @@ class Client(object):
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
-        tbs = await self.get_tbs()
+        await self.__init_tbs()
 
         from . import unfollow_forum
 
-        return await unfollow_forum.request(self._connector, self._core, tbs, fid)
+        return await unfollow_forum.request(self._connector, self._core, fid)
 
     async def dislike_forum(self, fname_or_fid: Union[str, int]) -> bool:
         """
@@ -2023,11 +2046,11 @@ class Client(object):
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
-        tbs = await self.get_tbs()
+        await self.__init_tbs()
 
         from . import sign_forum
 
-        return await sign_forum.request(self._connector, self._core, tbs, fname)
+        return await sign_forum.request(self._connector, self._core, fname)
 
     async def sign_growth(self) -> bool:
         """
@@ -2037,11 +2060,11 @@ class Client(object):
             bool: True成功 False失败
         """
 
-        tbs = await self.get_tbs()
+        await self.__init_tbs()
 
         from . import sign_growth
 
-        return await sign_growth.request(self._connector, self._core, tbs)
+        return await sign_growth.request(self._connector, self._core)
 
     async def add_post(self, fname_or_fid: Union[str, int], /, tid: int, content: str) -> bool:
         """
@@ -2068,11 +2091,12 @@ class Client(object):
             fid = fname_or_fid
             fname = await self.get_fname(fid)
 
-        tbs = await self.get_tbs()
+        await self.__init_tbs()
+        await self.__init_client_id()
 
         from . import add_post
 
-        return add_post.request(self._connector, self._core, tbs, fname, fid, tid, content)
+        return add_post.request(self._connector, self._core, fname, fid, tid, content)
 
     async def send_msg(self, _id: Union[str, int], content: str) -> bool:
         """
@@ -2093,7 +2117,7 @@ class Client(object):
             user_id = _id
 
         try:
-            await self._init_websocket()
+            await self.__init_websocket()
 
             from . import send_msg
 

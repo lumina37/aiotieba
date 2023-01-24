@@ -16,13 +16,13 @@ def parse_body(body: bytes) -> None:
         raise TiebaValueError("sign_bonus_point is 0")
 
 
-async def request(connector: aiohttp.TCPConnector, core: TbCore, tbs: str, fname: str) -> bool:
+async def request(connector: aiohttp.TCPConnector, core: TbCore, fname: str) -> bool:
 
     data = [
         ('BDUSS', core._BDUSS),
         ('_client_version', core.main_version),
         ('kw', fname),
-        ('tbs', tbs),
+        ('tbs', core._tbs),
     ]
 
     request = pack_form_request(

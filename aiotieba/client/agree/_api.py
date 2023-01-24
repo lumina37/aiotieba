@@ -15,7 +15,7 @@ def parse_body(body: bytes) -> None:
 
 
 async def request(
-    connector: aiohttp.TCPConnector, core: TbCore, tbs: str, tid: int, pid: int, is_disagree: bool, is_undo: bool
+    connector: aiohttp.TCPConnector, core: TbCore, tid: int, pid: int, is_disagree: bool, is_undo: bool
 ) -> bool:
 
     data = [
@@ -26,7 +26,7 @@ async def request(
         ('obj_type', '1' if pid else '3'),
         ('op_type', str(int(is_undo))),
         ('post_id', pid),
-        ('tbs', tbs),
+        ('tbs', core._tbs),
         ('thread_id', tid),
     ]
 
