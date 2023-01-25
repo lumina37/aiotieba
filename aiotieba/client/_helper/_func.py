@@ -334,7 +334,7 @@ def parse_ws_bytes(core: TbCore, ws_bytes: bytes) -> Tuple[bytes, int, int]:
     ws_bytes = ws_view[9:].tobytes()
     if flag & 0b10000000:
         ws_bytes = core.ws_aes_chiper.decrypt(ws_bytes)
-        ws_bytes = ws_bytes.rstrip(ws_bytes[-2:-1])
+        ws_bytes = unpad(ws_bytes, AES.block_size)
     if flag & 0b01000000:
         ws_bytes = zlib.decompress(ws_bytes)
 

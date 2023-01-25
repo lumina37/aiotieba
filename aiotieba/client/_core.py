@@ -1,7 +1,7 @@
 import asyncio
+import binascii
 import hashlib
 import random
-import time
 import uuid
 from typing import Dict, Optional, Tuple, Union
 
@@ -75,6 +75,7 @@ class TbCore(object):
         '_client_id',
         '_cuid',
         '_cuid_galaxy2',
+        '_z_id',
         '_ws_password',
         '_ws_aes_chiper',
         '_app_core',
@@ -103,6 +104,7 @@ class TbCore(object):
         self._client_id = None
         self._cuid = None
         self._cuid_galaxy2 = None
+        self._z_id = None
         self._ws_password = None
         self._ws_aes_chiper = None
 
@@ -260,6 +262,26 @@ class TbCore(object):
             self._cuid_galaxy2 = rand_str + "|0"
 
         return self._cuid_galaxy2
+
+    @property
+    def z_id(self) -> str:
+        """
+        返回z_id
+
+        Returns:
+            str
+
+        Note:
+            z_id是`/data/<pkgname>/shared_prefs/leroadcfg.xml`中键`xytk`对应的值
+            尚不清楚该文件是如何生成的
+        """
+
+        if self._z_id is None:
+            z_id = binascii.b2a_base64(random.randbytes(65))
+            z_id = z_id.translate(bytes.maketrans(b'+/', b'-_')).rstrip(b'=\n')
+            self._z_id = z_id.decode('utf-8')
+
+        return self._z_id
 
     @property
     def ws_password(self) -> bytes:
