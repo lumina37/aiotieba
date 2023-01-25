@@ -2082,7 +2082,7 @@ class Client(object):
         虚拟形象点赞
 
         Args:
-            _id (str | int): 用户id user_id / user_name / portrait 优先user_id
+            _id (str | int): 点赞对象的用户id user_id / user_name / portrait 优先user_id
 
         Returns:
             bool: True成功 False失败
