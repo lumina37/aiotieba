@@ -2066,7 +2066,7 @@ class Client(object):
 
         from . import add_post
 
-        return add_post.request(self._connector, self._core, tbs, fname, fid, tid, content)
+        return await add_post.request(self._connector, self._core, tbs, fname, fid, tid, content)
 
     async def send_msg(self, _id: Union[str, int], content: str) -> bool:
         """
