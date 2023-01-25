@@ -273,7 +273,7 @@ class TbCore(object):
 
         Note:
             z_id是`/data/<pkgname>/shared_prefs/leroadcfg.xml`中键`xytk`对应的值
-            尚不清楚该文件是如何生成的
+            这不是一个官方实现 因为我们尚不清楚该文件是如何生成的
         """
 
         if self._z_id is None:
