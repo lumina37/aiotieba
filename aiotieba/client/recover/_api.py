@@ -15,11 +15,11 @@ def parse_body(body: bytes) -> None:
 
 
 async def request(
-    connector: aiohttp.TCPConnector, core: TbCore, tbs: str, fname: str, fid: int, tid: int, pid: int, is_hide: bool
+    connector: aiohttp.TCPConnector, core: TbCore, fname: str, fid: int, tid: int, pid: int, is_hide: bool
 ) -> bool:
 
     data = [
-        ('tbs', tbs),
+        ('tbs', core._tbs),
         ('fn', fname),
         ('fid', fid),
         ('tid_list[]', tid),
@@ -38,7 +38,7 @@ async def request(
     frame = sys._getframe(1)
 
     try:
-        body = await send_request(request, connector, read_bufsize=32 * 1024)
+        body = await send_request(request, connector, read_bufsize=1024)
         parse_body(body)
 
     except Exception as err:

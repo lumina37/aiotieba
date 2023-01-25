@@ -14,13 +14,13 @@ def parse_body(body: bytes) -> None:
         raise TiebaServerError(code, res_json['error_msg'])
 
 
-async def request(connector: aiohttp.TCPConnector, core: TbCore, tbs: str, fid: int, tid: int, is_hide: bool) -> bool:
+async def request(connector: aiohttp.TCPConnector, core: TbCore, fid: int, tid: int, is_hide: bool) -> bool:
 
     data = [
         ('BDUSS', core._BDUSS),
         ('fid', fid),
         ('is_frs_mask', int(is_hide)),
-        ('tbs', tbs),
+        ('tbs', core._tbs),
         ('z', tid),
     ]
 

@@ -15,14 +15,14 @@ def parse_body(body: bytes) -> None:
 
 
 async def request(
-    connector: aiohttp.TCPConnector, core: TbCore, tbs: str, fid: int, tid: int, to_tab_id: int, from_tab_id: int
+    connector: aiohttp.TCPConnector, core: TbCore, fid: int, tid: int, to_tab_id: int, from_tab_id: int
 ) -> bool:
 
     data = [
         ('BDUSS', core._BDUSS),
         ('_client_version', core.main_version),
         ('forum_id', fid),
-        ('tbs', tbs),
+        ('tbs', core._tbs),
         ('threads', f"""[{{"thread_id":{tid},"from_tab_id":{from_tab_id},"to_tab_id":{to_tab_id}}}]"""),
     ]
 

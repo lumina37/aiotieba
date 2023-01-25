@@ -17,13 +17,11 @@ def parse_body(body: bytes) -> None:
         raise TiebaValueError("need verify code")
 
 
-async def request(
-    connector: aiohttp.TCPConnector, core: TbCore, tbs: str, fname: str, fid: int, tid: int, content: str
-) -> bool:
+async def request(connector: aiohttp.TCPConnector, core: TbCore, fname: str, fid: int, tid: int, content: str) -> bool:
 
     data = [
         ('BDUSS', core._BDUSS),
-        ('_client_id', core.client_id),
+        ('_client_id', core._client_id),
         ('_client_type', '2'),
         ('_client_version', core.post_version),
         ('_phone_imei', '000000000000000'),
@@ -42,7 +40,7 @@ async def request(
         ('reply_uid', 'null'),
         ('stoken', core._STOKEN),
         ('subapp_type', 'mini'),
-        ('tbs', tbs),
+        ('tbs', core._tbs),
         ('tid', tid),
         ('timestamp', int(time.time() * 1000)),
         ('v_fid', ''),

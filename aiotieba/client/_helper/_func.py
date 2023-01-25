@@ -12,6 +12,7 @@ import aiohttp
 import async_timeout
 import yarl
 from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
 
 from ..._logging import get_logger
 from .._core import TbCore
@@ -133,9 +134,8 @@ def sign(data: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
     raw_list.append("tiebaclient!!!")
     raw_str = "".join(raw_list)
 
-    md5 = hashlib.md5()
-    md5.update(raw_str.encode('utf-8'))
-    data.append(('sign', md5.hexdigest()))
+    sign = hashlib.md5(raw_str.encode('utf-8')).hexdigest()
+    data.append(('sign', sign))
 
     return data
 
@@ -293,8 +293,7 @@ def pack_ws_bytes(
         ws_bytes = zlib.compress(ws_bytes, 5)
 
     if need_encrypt:
-        pad_num = AES.block_size - (len(ws_bytes) % AES.block_size)
-        ws_bytes += pad_num.to_bytes(1, 'big') * pad_num
+        ws_bytes = pad(ws_bytes, AES.block_size)
         ws_bytes = core.ws_aes_chiper.encrypt(ws_bytes)
 
     flag = 0x08 | (need_gzip << 7) | (need_encrypt << 6)
@@ -335,7 +334,7 @@ def parse_ws_bytes(core: TbCore, ws_bytes: bytes) -> Tuple[bytes, int, int]:
     ws_bytes = ws_view[9:].tobytes()
     if flag & 0b10000000:
         ws_bytes = core.ws_aes_chiper.decrypt(ws_bytes)
-        ws_bytes = ws_bytes.rstrip(ws_bytes[-2:-1])
+        ws_bytes = unpad(ws_bytes, AES.block_size)
     if flag & 0b01000000:
         ws_bytes = zlib.decompress(ws_bytes)
 

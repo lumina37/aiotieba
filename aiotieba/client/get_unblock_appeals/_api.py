@@ -19,16 +19,14 @@ def parse_body(body: bytes) -> Appeals:
     return appeals
 
 
-async def request(
-    connector: aiohttp.TCPConnector, core: TbCore, tbs: str, fname: str, fid: int, pn: int, rn: int
-) -> Appeals:
+async def request(connector: aiohttp.TCPConnector, core: TbCore, fname: str, fid: int, pn: int, rn: int) -> Appeals:
 
     data = [
         ('fn', fname),
         ('fid', fid),
         ('pn', pn),
         ('rn', rn),
-        ('tbs', tbs),
+        ('tbs', core._tbs),
     ]
 
     request = pack_web_form_request(

@@ -14,14 +14,14 @@ def parse_body(body: bytes) -> None:
         raise TiebaServerError(code, res_json['error'])
 
 
-async def request(connector: aiohttp.TCPConnector, core: TbCore, tbs: str, fname: str, fid: int, user_id: int) -> bool:
+async def request(connector: aiohttp.TCPConnector, core: TbCore, fname: str, fid: int, user_id: int) -> bool:
 
     data = [
         ('fn', fname),
         ('fid', fid),
         ('block_un', ' '),
         ('block_uid', user_id),
-        ('tbs', tbs),
+        ('tbs', core._tbs),
     ]
 
     request = pack_web_form_request(
@@ -34,7 +34,7 @@ async def request(connector: aiohttp.TCPConnector, core: TbCore, tbs: str, fname
     frame = sys._getframe(1)
 
     try:
-        body = await send_request(request, connector, read_bufsize=32 * 1024)
+        body = await send_request(request, connector, read_bufsize=1024)
         parse_body(body)
 
     except Exception as err:

@@ -1,7 +1,7 @@
 import asyncio
+import binascii
 import hashlib
 import random
-import time
 import uuid
 from typing import Dict, Optional, Tuple, Union
 
@@ -71,9 +71,11 @@ class TbCore(object):
         '_BDUSS_key',
         '_BDUSS',
         '_STOKEN',
+        '_tbs',
         '_client_id',
         '_cuid',
         '_cuid_galaxy2',
+        '_z_id',
         '_ws_password',
         '_ws_aes_chiper',
         '_app_core',
@@ -98,9 +100,11 @@ class TbCore(object):
         self._loop = loop
         self._BDUSS_key = BDUSS_key
 
+        self._tbs = None
         self._client_id = None
         self._cuid = None
         self._cuid_galaxy2 = None
+        self._z_id = None
         self._ws_password = None
         self._ws_aes_chiper = None
 
@@ -206,17 +210,27 @@ class TbCore(object):
         self._web_core.cookie_jar._cookies["tieba.baidu.com"]['STOKEN'] = STOKEN_morsel
 
     @property
+    def tbs(self) -> str:
+        """
+        返回一个可作为请求参数的反csrf校验码tbs
+        在初始化后该属性便不会再发生变化
+
+        Returns:
+            str: 举例 17634e03cbe25e6e1674526199
+        """
+
+        return self._tbs
+
+    @property
     def client_id(self) -> str:
         """
         返回一个可作为请求参数的client_id
-        在初次生成后该属性便不会再发生变化
+        在初始化后该属性便不会再发生变化
 
         Returns:
             str: 举例 wappc_1653660000000_123
         """
 
-        if self._client_id is None:
-            self._client_id = f"wappc_{int(time.time() * 1000)}_{random.randint(0,999):03d}"
         return self._client_id
 
     @property
@@ -248,6 +262,26 @@ class TbCore(object):
             self._cuid_galaxy2 = rand_str + "|0"
 
         return self._cuid_galaxy2
+
+    @property
+    def z_id(self) -> str:
+        """
+        返回z_id
+
+        Returns:
+            str
+
+        Note:
+            z_id是`/data/<pkgname>/shared_prefs/leroadcfg.xml`中键`xytk`对应的值
+            这不是一个官方实现 因为我们尚不清楚该文件是如何生成的
+        """
+
+        if self._z_id is None:
+            z_id = binascii.b2a_base64(random.randbytes(65))
+            z_id = z_id.translate(bytes.maketrans(b'+/', b'-_')).rstrip(b'=\n')
+            self._z_id = z_id.decode('utf-8')
+
+        return self._z_id
 
     @property
     def ws_password(self) -> bytes:

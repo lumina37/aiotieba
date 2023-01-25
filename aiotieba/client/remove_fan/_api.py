@@ -14,12 +14,12 @@ def parse_body(body: bytes) -> None:
         raise TiebaServerError(code, res_json['error_msg'])
 
 
-async def request(connector: aiohttp.TCPConnector, core: TbCore, tbs: str, user_id: int) -> bool:
+async def request(connector: aiohttp.TCPConnector, core: TbCore, user_id: int) -> bool:
 
     data = [
         ('BDUSS', core._BDUSS),
         ('fans_uid', user_id),
-        ('tbs', tbs),
+        ('tbs', core._tbs),
     ]
 
     request = pack_form_request(

@@ -14,23 +14,22 @@ def parse_body(body: bytes) -> None:
         raise TiebaServerError(code, res_json['error_msg'])
 
 
-async def request(connector: aiohttp.TCPConnector, core: TbCore, fid: int, pid: int) -> bool:
+async def request(connector: aiohttp.TCPConnector, core: TbCore, user_id: int) -> bool:
 
     data = [
         ('BDUSS', core._BDUSS),
-        ('fid', fid),
-        ('pid', pid),
-        ('tbs', core._tbs),
-        ('z', '6'),
+        ('_client_version', core.main_version),
+        ('agreed_user_id', user_id),
+        ('interactive_id', '1'),
     ]
 
     request = pack_form_request(
         core,
-        yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/c/bawu/delpost"),
+        yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/c/agree/agreeVirtualImage"),
         data,
     )
 
-    log_str = f"fid={fid} pid={pid}"
+    log_str = f"user_id={user_id}"
     frame = sys._getframe(1)
 
     try:
