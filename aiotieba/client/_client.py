@@ -2051,7 +2051,21 @@ class Client(object):
 
     async def sign_growth(self) -> bool:
         """
-        用户成长等级签到
+        用户成长等级任务: 签到
+
+        Returns:
+            bool: True成功 False失败
+        """
+
+        await self.__init_tbs()
+
+        from . import sign_growth
+
+        return await sign_growth.request_app(self._connector, self._core, act_type='page_sign')
+
+    async def sign_growth_share(self) -> bool:
+        """
+        用户成长等级任务: 分享主题帖
 
         Returns:
             bool: True成功 False失败
