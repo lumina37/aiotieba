@@ -2061,7 +2061,28 @@ class Client(object):
 
         from . import sign_growth
 
-        return await sign_growth.request(self._connector, self._core)
+        return await sign_growth.request_app(self._connector, self._core, act_type='share_thread')
+
+    async def agree_vimage(self, _id: Union[str, int]) -> bool:
+        """
+        虚拟形象点赞
+
+        Args:
+            _id (str | int): 用户id user_id / user_name / portrait 优先user_id
+
+        Returns:
+            bool: True成功 False失败
+        """
+
+        if not isinstance(_id, int):
+            user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+            user_id = user._user_id
+        else:
+            user_id = _id
+
+        from . import agree_vimage
+
+        return await agree_vimage.request(self._connector, self._core, user_id)
 
     async def add_post(self, fname_or_fid: Union[str, int], /, tid: int, content: str) -> bool:
         """
