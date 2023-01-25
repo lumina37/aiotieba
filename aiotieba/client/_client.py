@@ -1,5 +1,5 @@
 import asyncio
-import base64
+import binascii
 import socket
 from typing import TYPE_CHECKING, Dict, List, Literal, Optional, Tuple, Union
 
@@ -12,7 +12,6 @@ from .._logging import get_logger as LOG
 from ._classdef.enums import ReqUInfo
 from ._classdef.user import UserInfo
 from ._core import TbCore
-from ._exception import TiebaServerError
 from ._helper import ForumInfoCache, WebsocketResponse, is_portrait, pack_ws_bytes, parse_ws_bytes
 from ._typing import TypeUserInfo
 from .get_homepage._classdef import UserInfo_home
@@ -257,10 +256,8 @@ class Client(object):
 
             from . import init_websocket
 
-            pub_key_bytes = base64.b64decode(
-                "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwQpwBZxXJV/JVRF/uNfyMSdu7YWwRNLM8+2xbniGp2iIQHOikPpTYQjlQgMi1uvq1kZpJ32rHo3hkwjy2l0lFwr3u4Hk2Wk7vnsqYQjAlYlK0TCzjpmiI+OiPOUNVtbWHQiLiVqFtzvpvi4AU7C1iKGvc/4IS45WjHxeScHhnZZ7njS4S1UgNP/GflRIbzgbBhyZ9kEW5/OO5YfG1fy6r4KSlDJw4o/mw5XhftyIpL+5ZBVBC6E1EIiP/dd9AbK62VV1PByfPMHMixpxI3GM2qwcmFsXcCcgvUXJBa9k6zP8dDQ3csCM2QNT+CQAOxthjtp/TFWaD7MzOdsIYb3THwIDAQAB".encode(
-                    'ascii'
-                )
+            pub_key_bytes = binascii.a2b_base64(
+                b"MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwQpwBZxXJV/JVRF/uNfyMSdu7YWwRNLM8+2xbniGp2iIQHOikPpTYQjlQgMi1uvq1kZpJ32rHo3hkwjy2l0lFwr3u4Hk2Wk7vnsqYQjAlYlK0TCzjpmiI+OiPOUNVtbWHQiLiVqFtzvpvi4AU7C1iKGvc/4IS45WjHxeScHhnZZ7njS4S1UgNP/GflRIbzgbBhyZ9kEW5/OO5YfG1fy6r4KSlDJw4o/mw5XhftyIpL+5ZBVBC6E1EIiP/dd9AbK62VV1PByfPMHMixpxI3GM2qwcmFsXcCcgvUXJBa9k6zP8dDQ3csCM2QNT+CQAOxthjtp/TFWaD7MzOdsIYb3THwIDAQAB"
             )
             pub_key = RSA.import_key(pub_key_bytes)
             rsa_chiper = PKCS1_v1_5.new(pub_key)
@@ -2096,7 +2093,7 @@ class Client(object):
 
         from . import add_post
 
-        return add_post.request(self._connector, self._core, fname, fid, tid, content)
+        return await add_post.request(self._connector, self._core, fname, fid, tid, content)
 
     async def send_msg(self, _id: Union[str, int], content: str) -> bool:
         """
