@@ -38,7 +38,7 @@ async def request(
     frame = sys._getframe(1)
 
     try:
-        body = await send_request(request, connector, read_bufsize=32 * 1024)
+        body = await send_request(request, connector, read_bufsize=1024)
         parse_body(body)
 
     except Exception as err:
