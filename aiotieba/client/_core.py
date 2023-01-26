@@ -72,6 +72,7 @@ class TbCore(object):
         '_BDUSS',
         '_STOKEN',
         '_tbs',
+        '_android_id',
         '_client_id',
         '_cuid',
         '_cuid_galaxy2',
@@ -101,6 +102,7 @@ class TbCore(object):
         self._BDUSS_key = BDUSS_key
 
         self._tbs = None
+        self._android_id = None
         self._client_id = None
         self._cuid = None
         self._cuid_galaxy2 = None
@@ -208,6 +210,20 @@ class TbCore(object):
         STOKEN_morsel.set('STOKEN', self._STOKEN, self._STOKEN)
         STOKEN_morsel['domain'] = "tieba.baidu.com"
         self._web_core.cookie_jar._cookies["tieba.baidu.com"]['STOKEN'] = STOKEN_morsel
+
+    @property
+    def android_id(self) -> str:
+        """
+        返回一个安卓id
+        在初始化后该属性便不会再发生变化
+
+        Returns:
+            str: 举例 91be894d01799c49
+        """
+
+        if self._android_id is None:
+            self._android_id = random.randbytes(8).hex()
+        return self._android_id
 
     @property
     def tbs(self) -> str:

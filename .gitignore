@@ -10,6 +10,7 @@
 *.md
 *.cmd
 *.jpg
+*.pdb
 
 *.py
 
@@ -23,6 +24,7 @@
 !examples/**
 !tests
 !tests/**
+!setup.py
 
 !README.md
 !requirements.txt
@@ -32,4 +34,5 @@
 *.log
 *.code-workspace
 *.pyc
+*.pyd
 __pycache__
