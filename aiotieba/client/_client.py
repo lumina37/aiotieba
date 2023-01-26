@@ -1854,6 +1854,27 @@ class Client(object):
 
         return await agree.request(self._connector, self._core, tid, pid, is_disagree=True, is_undo=True)
 
+    async def agree_vimage(self, _id: Union[str, int]) -> bool:
+        """
+        虚拟形象点赞
+
+        Args:
+            _id (str | int): 点赞对象的用户id user_id / user_name / portrait 优先user_id
+
+        Returns:
+            bool: True成功 False失败
+        """
+
+        if not isinstance(_id, int):
+            user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+            user_id = user._user_id
+        else:
+            user_id = _id
+
+        from . import agree_vimage
+
+        return await agree_vimage.request(self._connector, self._core, user_id)
+
     async def remove_fan(self, _id: Union[str, int]) -> bool:
         """
         移除粉丝
@@ -2031,6 +2052,38 @@ class Client(object):
 
         return await set_thread_privacy.request(self._connector, self._core, fid, tid, pid, is_hide=False)
 
+    async def set_profile(self, nick_name: str, sign: str = '', gender: int = 0) -> bool:
+        """
+        设置主页信息
+
+        Args:
+            nick_name (str): 昵称
+            sign (str): 个性签名. Defaults to ''.
+            gender (int): 性别 1男 2女. Defaults to 1.
+
+        Returns:
+            bool: True成功 False失败
+        """
+
+        from . import set_profile
+
+        return await set_profile.request(self._connector, self._core, nick_name, sign, gender)
+
+    async def set_nickname_old(self, nick_name: str) -> bool:
+        """
+        设置旧版昵称
+
+        Args:
+            nick_name (str): 昵称
+
+        Returns:
+            bool: True成功 False失败
+        """
+
+        from . import set_nickname_old
+
+        return await set_nickname_old.request(self._connector, self._core, nick_name)
+
     async def sign_forum(self, fname_or_fid: Union[str, int]) -> bool:
         """
         单个贴吧签到
@@ -2076,27 +2129,6 @@ class Client(object):
         from . import sign_growth
 
         return await sign_growth.request_app(self._connector, self._core, act_type='share_thread')
-
-    async def agree_vimage(self, _id: Union[str, int]) -> bool:
-        """
-        虚拟形象点赞
-
-        Args:
-            _id (str | int): 点赞对象的用户id user_id / user_name / portrait 优先user_id
-
-        Returns:
-            bool: True成功 False失败
-        """
-
-        if not isinstance(_id, int):
-            user = await self.get_user_info(_id, ReqUInfo.USER_ID)
-            user_id = user._user_id
-        else:
-            user_id = _id
-
-        from . import agree_vimage
-
-        return await agree_vimage.request(self._connector, self._core, user_id)
 
     async def add_post(self, fname_or_fid: Union[str, int], /, tid: int, content: str) -> bool:
         """
