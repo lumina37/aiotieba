@@ -12,7 +12,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: ["ubuntu-latest", "windows-latest"]
+        os: ["ubuntu-latest"]
 
     steps:
       - uses: actions/checkout@v3
@@ -27,7 +27,8 @@ jobs:
       - name: Build wheels
         run: python -m cibuildwheel --output-dir wheelhouse
         env:
-          CIBW_BUILD: "cp38-* cp39-* cp310-* cp311-*"
+          CIBW_BUILD: "pp38-*"
+          CIBW_SKIP: "*-win32 *_i686 *_s390x *_ppc64le"
 
       - uses: actions/upload-artifact@v3
         with:
