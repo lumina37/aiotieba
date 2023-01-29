@@ -61,10 +61,10 @@ class TbCore(object):
     贴吧客户端核心容器
 
     Args:
-        loop (asyncio.AbstractEventLoop): 事件循环
         BDUSS_key (str, optional): 用于快捷调用BDUSS. Defaults to None.
         proxy (tuple[yarl.URL, aiohttp.BasicAuth] | bool, optional): True则使用环境变量代理 False则禁用代理
             输入一个 (http代理地址, 代理验证) 的元组以手动设置代理. Defaults to False.
+        loop (asyncio.AbstractEventLoop, optional): 事件循环. Defaults to None.
     """
 
     __slots__ = [
