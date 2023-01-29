@@ -79,10 +79,7 @@ class Client(object):
         loop: Optional[asyncio.AbstractEventLoop] = None,
     ) -> None:
 
-        if loop is None:
-            loop = asyncio.get_running_loop()
-
-        self._core = TbCore(loop, BDUSS_key, proxy)
+        self._core = TbCore(BDUSS_key, proxy, loop)
         self._user = UserInfo_home()._init_null()
 
         timeout = aiohttp.ClientTimeout(connect=3.0, sock_read=12.0, sock_connect=3.2)
