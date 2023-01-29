@@ -12,12 +12,14 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: ["ubuntu-latest", "windows-latest"]
+        os: ["ubuntu-latest", "windows-latest", "macos-latest"]
 
     steps:
       - uses: actions/checkout@v3
 
       - uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
 
       - name: Install cibuildwheel
         run: pip install cibuildwheel
@@ -25,7 +27,8 @@ jobs:
       - name: Build wheels
         run: python -m cibuildwheel --output-dir wheelhouse
         env:
-          CIBW_BUILD: "cp38-* cp39-* cp310-* cp311-*"
+          CIBW_BUILD: "cp38-* cp39-* cp310-* cp311-* pp38-*	pp39-*"
+          CIBW_SKIP: "*-win32 *_i686 *_s390x *_ppc64le"
 
       - uses: actions/upload-artifact@v3
         with:
@@ -44,18 +47,6 @@ jobs:
       PYTHON_VER: "3.11"
 
     steps:
-      - name: Checkout master
-        if: github.event_name == "push"
-        uses: actions/checkout@v3
-        with:
-          ref: master
-
-      - name: Checkout develop
-        if: github.event_name == "workflow_dispatch"
-        uses: actions/checkout@v3
-        with:
-          ref: develop
-
       - name: Set up Python ${{ env.PYTHON_VER }}
         uses: actions/setup-python@v4
         with:
@@ -73,9 +64,9 @@ jobs:
           path: dist
 
       - name: Publish to PyPI
-        if: github.event_name == "push"
+        if: ${{ github.event_name == 'push' }}
         run: twine upload dist/* -u __token__ -p ${{ secrets.PYPI_TOKEN }}
 
       - name: Publish to TestPyPI
-        if: github.event_name == "workflow_dispatch"
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         run: twine upload -r testpypi dist/* -u __token__ -p ${{ secrets.TESTPYPI_TOKEN }}

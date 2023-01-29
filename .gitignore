@@ -1,37 +1,30 @@
-*/
+.*/
+build/
+dist/
+log/
+*.egg-info
+
 *.toml
 *.exe
 *.csv
 *.xlsx
-*.txt
-*.bin
-*.zip
-*.rar
 *.md
 *.cmd
 *.jpg
 *.pdb
 
-*.py
+/*.py
 
-!aiotieba
-!aiotieba/**
 !.github
 !.github/**
-!docs
 !docs/**
-!examples
-!examples/**
-!tests
-!tests/**
 !setup.py
 
 !README.md
+!ReadMe.md
 !requirements.txt
 !pyproject.toml
 
-*.pyproj
-*.log
 *.code-workspace
 *.pyc
 *.pyd

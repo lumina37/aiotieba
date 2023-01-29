@@ -2,7 +2,6 @@ import asyncio
 import binascii
 import hashlib
 import random
-import uuid
 from typing import Dict, Optional, Tuple, Union
 
 import aiohttp
@@ -12,6 +11,7 @@ from Crypto.Cipher import AES
 from ..__version__ import __version__
 from .._config import CONFIG
 from .._logging import get_logger as LOG
+from ._hash import c3_aid, cuid_galaxy2
 
 APP_BASE_HOST = "tiebac.baidu.com"
 WEB_BASE_HOST = "tieba.baidu.com"
@@ -73,9 +73,11 @@ class TbCore(object):
         '_STOKEN',
         '_tbs',
         '_android_id',
+        '_uuid',
         '_client_id',
         '_cuid',
         '_cuid_galaxy2',
+        '_c3_aid',
         '_z_id',
         '_ws_password',
         '_ws_aes_chiper',
@@ -94,21 +96,25 @@ class TbCore(object):
 
     def __init__(
         self,
-        loop: asyncio.AbstractEventLoop,
         BDUSS_key: Optional[str] = None,
         proxy: Union[Tuple[yarl.URL, aiohttp.BasicAuth], bool] = False,
+        loop: Optional[asyncio.AbstractEventLoop] = None,
     ) -> None:
-        self._loop = loop
         self._BDUSS_key = BDUSS_key
 
         self._tbs = None
         self._android_id = None
+        self._uuid = None
         self._client_id = None
         self._cuid = None
         self._cuid_galaxy2 = None
+        self._c3_aid = None
         self._z_id = None
         self._ws_password = None
         self._ws_aes_chiper = None
+
+        if loop is None:
+            self._loop = asyncio.get_running_loop()
 
         hdrs = aiohttp.hdrs
 
@@ -214,11 +220,16 @@ class TbCore(object):
     @property
     def android_id(self) -> str:
         """
-        返回一个安卓id
-        在初始化后该属性便不会再发生变化
+        返回一个随机的android_id
 
         Returns:
-            str: 举例 91be894d01799c49
+            str: 长度为16的16进制字符串 包含8字节信息 字母为小写
+
+        Examples:
+            91be894d01799c49
+
+        Note:
+            在初始化后该属性便不会再发生变化
         """
 
         if self._android_id is None:
@@ -226,13 +237,40 @@ class TbCore(object):
         return self._android_id
 
     @property
+    def uuid(self) -> str:
+        """
+        使用uuid.uuid4生成并返回一个随机的uuid
+
+        Returns:
+            str: 包含16字节信息
+
+        Examples:
+            e4200716-58a8-4170-af15-ea7edeb8e513
+
+        Note:
+            在初始化后该属性便不会再发生变化
+        """
+
+        if self._uuid is None:
+            import uuid
+
+            self._uuid = str(uuid.uuid4())
+
+        return self._uuid
+
+    @property
     def tbs(self) -> str:
         """
         返回一个可作为请求参数的反csrf校验码tbs
-        在初始化后该属性便不会再发生变化
 
         Returns:
-            str: 举例 17634e03cbe25e6e1674526199
+            str: 长度为26的16进制字符串 字母为小写
+
+        Examples:
+            17634e03cbe25e6e1674526199
+
+        Note:
+            在初始化后该属性便不会再发生变化
         """
 
         return self._tbs
@@ -241,10 +279,15 @@ class TbCore(object):
     def client_id(self) -> str:
         """
         返回一个可作为请求参数的client_id
-        在初始化后该属性便不会再发生变化
 
         Returns:
-            str: 举例 wappc_1653660000000_123
+            str
+
+        Examples:
+            wappc_1653660000000_123
+
+        Note:
+            在初始化后该属性便不会再发生变化
         """
 
         return self._client_id
@@ -253,41 +296,72 @@ class TbCore(object):
     def cuid(self) -> str:
         """
         返回一个可作为请求参数的cuid
-        在初次生成后该属性便不会再发生变化
 
         Returns:
-            str: 举例 baidutiebaappe4200716-58a8-4170-af15-ea7edeb8e513
+            str
+
+        Examples:
+            baidutiebaappe4200716-58a8-4170-af15-ea7edeb8e513
+
+        Note:
+            在初次生成后该属性便不会再发生变化
+            此实现仅用于9.x等旧版本 11.x后请使用cuid_galaxy2填充对应字段
         """
 
         if self._cuid is None:
-            self._cuid = f"baidutiebaapp{uuid.uuid4()}"
+            self._cuid = f"baidutiebaapp{self.uuid}"
         return self._cuid
 
     @property
     def cuid_galaxy2(self) -> str:
         """
         返回一个可作为请求参数的cuid_galaxy2
-        在初次生成后该属性便不会再发生变化
 
         Returns:
-            str: 举例 159AB36E0E5C55E4AAE340CA046F1303|0
+            str
+
+        Examples:
+            A3ED2D7B9CFC28E8934A3FBD3A9579C7|VZ5FKB5XS
+
+        Note:
+            在初始化后该属性便不会再发生变化
+            此实现与12.x版本及以前的官方实现一致
         """
 
         if self._cuid_galaxy2 is None:
-            rand_str = random.randbytes(16).hex().upper()
-            self._cuid_galaxy2 = rand_str + "|0"
-
+            self._cuid_galaxy2 = cuid_galaxy2(self.android_id)
         return self._cuid_galaxy2
+
+    @property
+    def c3_aid(self) -> str:
+        """
+        返回一个可作为请求参数的c3_aid
+
+        Returns:
+            str
+
+        Examples:
+            A00-ZNU3O3EP74D727LMQY745CZSGZQJQZGP-3JXCKC7X
+
+        Note:
+            在初次生成后该属性便不会再发生变化
+            此实现与12.x版本及以前的官方实现一致
+        """
+
+        if self._c3_aid is None:
+            self._c3_aid = c3_aid(self.android_id, self.uuid)
+        return self._c3_aid
 
     @property
     def z_id(self) -> str:
         """
-        返回z_id
+        返回一个伪z_id
 
         Returns:
             str
 
         Note:
+            在初次生成后该属性便不会再发生变化
             z_id是`/data/<pkgname>/shared_prefs/leroadcfg.xml`中键`xytk`对应的值
             这不是一个官方实现 因为我们尚不清楚该文件是如何生成的
         """
@@ -303,10 +377,12 @@ class TbCore(object):
     def ws_password(self) -> bytes:
         """
         返回一个供贴吧websocket使用的随机密码
-        在初次生成后该属性便不会再发生变化
 
         Returns:
             bytes: 长度为36字节的随机密码
+
+        Note:
+            在初次生成后该属性便不会再发生变化
         """
 
         if self._ws_password is None:
