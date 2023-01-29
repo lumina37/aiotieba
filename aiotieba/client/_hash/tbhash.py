@@ -23,7 +23,7 @@ def cuid_galaxy2(android_id: str) -> str:
 
 def c3_aid(android_id: str, uuid: str) -> str:
     """
-    使用给定的android_id和uuid生成cuid_galaxy2
+    使用给定的android_id和uuid生成c3_aid
 
     Args:
         android_id (str): 长度为16的16进制字符串 包含8字节信息
@@ -33,13 +33,10 @@ def c3_aid(android_id: str, uuid: str) -> str:
         str: c3_aid 长度为45的字符串
 
     Examples:
-        A3ED2D7B9CFC28E8934A3FBD3A9579C7|VZ5FKB5XS
+        A00-ZNU3O3EP74D727LMQY745CZSGZQJQZGP-3JXCKC7X
 
     Note:
         此实现与12.x版本及以前的官方实现一致
     """
 
-    print("before call")
-    c3_aid = _hash.c3_aid((android_id, uuid))
-    print("after call")
-    return c3_aid
+    return _hash.c3_aid((android_id, uuid))

@@ -1,16 +1,24 @@
-#define PY_SSIZE_T_CLEAN
+#define PY_SSIZE_T_CLEAN  // use Py_ssize_t instead of int
 
-#include "Python.h"
+#ifdef _DEBUG
+#undef _DEBUG  // use these steps to avoid linking with python_d.lib
+#define __RESTORE_DEBUG
+#endif
+#include <Python.h> 
+#ifdef __RESTORE_DEBUG
+#define _DEBUG
+#undef __RESTORE_DEBUG
+#endif
 
 #include "_cuid.h"
 
-PyObject *cuid_galaxy2(PyObject *self, PyObject *args)
+static PyObject *cuid_galaxy2(PyObject *self, PyObject *args)
 {
 	char dst[TBH_CUID_GALAXY2_SIZE];
 	const char *androidID;
 	Py_ssize_t androidIDSize;
 
-	if (!PyArg_ParseTuple(args, "s#", &androidID, androidIDSize))
+	if (!PyArg_ParseTuple(args, "s#", &androidID, &androidIDSize))
 	{
 		PyErr_SetString(PyExc_ValueError, "failed to parse args");
 		return NULL;
@@ -25,7 +33,7 @@ PyObject *cuid_galaxy2(PyObject *self, PyObject *args)
 	return Py_BuildValue("s#", dst, TBH_CUID_GALAXY2_SIZE);
 }
 
-PyObject *c3_aid(PyObject *self, PyObject *args)
+static PyObject *c3_aid(PyObject *self, PyObject *args)
 {
 	char dst[TBH_C3_AID_SIZE];
 	const char *androidID;
@@ -33,7 +41,7 @@ PyObject *c3_aid(PyObject *self, PyObject *args)
 	const char *uuid;
 	Py_ssize_t uuidSize;
 
-	if (!PyArg_ParseTuple(args, "s#s#", &androidID, androidIDSize, &uuid, uuidSize))
+	if (!PyArg_ParseTuple(args, "s#s#", &androidID, &androidIDSize, &uuid, &uuidSize))
 	{
 		PyErr_SetString(PyExc_ValueError, "failed to parse args");
 		return NULL;
@@ -57,7 +65,7 @@ static PyMethodDef _hash_methods[] = {
 static PyModuleDef _hash_module = {
 	PyModuleDef_HEAD_INIT,
 	"_hash",
-	"Hashlib for Baidu Tieba",
+	NULL,
 	-1,
 	_hash_methods,
 };
