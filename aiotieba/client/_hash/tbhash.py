@@ -1,8 +1,19 @@
 from . import _hash
 
 
-def _inv_rc4(sec_key: bytes, cuid_md5: bytes) -> bytes:
-    return _hash._inv_rc4((sec_key, cuid_md5))
+def inv_rc4(sec_key: bytes, xyus_md5: bytes) -> bytes:
+    """
+    RC4的变体 颠倒了两个步骤的顺序
+
+    Args:
+        sec_key (bytes): 密钥
+        xyus_md5 (bytes): xyus的MD5
+
+    Returns:
+        bytes
+    """
+
+    return _hash.inv_rc4((sec_key, xyus_md5))
 
 
 def cuid_galaxy2(android_id: str) -> str:

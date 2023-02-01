@@ -13,21 +13,21 @@
 #include "_cuid.h"
 #include "_zid.h"
 
-static PyObject *_inv_rc4(PyObject *self, PyObject *args)
+static PyObject *inv_rc4(PyObject *self, PyObject *args)
 {
 	char dst[TBH_INV_RC4_SIZE];
 	const char *secKey;
 	Py_ssize_t secKeySize;
-	const char *cuidMd5;
-	Py_ssize_t cuidMd5Size;
+	const char *xyusMd5;
+	Py_ssize_t xyusMd5Size;
 
-	if (!PyArg_ParseTuple(args, "y#y#", &secKey, &secKeySize, &cuidMd5, &cuidMd5Size))
+	if (!PyArg_ParseTuple(args, "y#y#", &secKey, &secKeySize, &xyusMd5, &xyusMd5Size))
 	{
 		PyErr_SetString(PyExc_ValueError, "failed to parse args");
 		return NULL;
 	}
 
-	if (!tbh_invRC4(dst, secKey, cuidMd5))
+	if (!tbh_invRC4(dst, secKey, xyusMd5))
 	{
 		PyErr_SetString(PyExc_MemoryError, "arg is too large");
 		return NULL;
@@ -81,7 +81,7 @@ static PyObject *c3_aid(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef _hash_methods[] = {
-	{"_inv_rc4", (PyCFunction)_inv_rc4, METH_O, NULL},
+	{"inv_rc4", (PyCFunction)inv_rc4, METH_O, NULL},
 	{"cuid_galaxy2", (PyCFunction)cuid_galaxy2, METH_O, NULL},
 	{"c3_aid", (PyCFunction)c3_aid, METH_O, NULL},
 	{NULL, NULL, 0, NULL},

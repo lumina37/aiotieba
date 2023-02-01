@@ -14,10 +14,10 @@
  *
  * @param dst 16 bytes. alloc and free by user
  * @param secKey 16 bytes. alloc and free by user
- * @param cuidMd5 32 bytes. alloc and free by user
+ * @param xyusMd5 32 bytes. alloc and free by user
  *
  * @return false if any error
  *
  * @note 9.1 loc: com.baidu.sofire.i.h.a
  */
-bool tbh_invRC4(char *dst, const char *secKey, const char *cuidMd5);
+bool tbh_invRC4(char *dst, const char *secKey, const char *xyusMd5);

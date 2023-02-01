@@ -1,6 +1,6 @@
 #include "_zid.h"
 
-bool tbh_invRC4(char *dst, const char *secKey, const char *cuidMd5)
+bool tbh_invRC4(char *dst, const char *secKey, const char *xyusMd5)
 {
 	char *sBox = malloc(256);
 	if (!sBox)
@@ -16,7 +16,7 @@ bool tbh_invRC4(char *dst, const char *secKey, const char *cuidMd5)
 	int iMd5 = 0;
 	for (int iSBox = 0; iSBox < 256; iSBox++)
 	{
-		iCycle = (iCycle + cuidMd5[iMd5] + sBox[iSBox]) & 255;
+		iCycle = (iCycle + xyusMd5[iMd5] + sBox[iSBox]) & 255;
 		char tmp = sBox[iSBox];
 		sBox[iSBox] = sBox[iCycle];
 		sBox[iCycle] = tmp;
