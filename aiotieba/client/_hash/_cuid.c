@@ -4,6 +4,9 @@
 #define STEP_SIZE 5
 #define HASH_SIZE_IN_BIT 32
 
+static const char CUID2_PERFIX[] = {'c', 'o', 'm', '.', 'b', 'a', 'i', 'd', 'u'};
+static const char CUID3_PERFIX[] = {'c', 'o', 'm', '.', 'h', 'e', 'l', 'i', 'o', 's'};
+
 static const char HEX_TABLE[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
 bool __update(uint64_t *sec, uint64_t hashVal, uint64_t start, bool flag)
@@ -109,17 +112,20 @@ bool tbh_cuid_galaxy2(char *dst, const char *androidID)
 	buffOffset += sizeof(CUID2_PERFIX);
 	memcpy(md5Buffer + buffOffset, androidID, TBH_ANDROID_ID_SIZE);
 
-	MD5_HASH md5;
-	Md5Calculate(md5Buffer, sizeof(md5Buffer), &md5);
+	uint8_t md5[TBH_MD5_HASH_SIZE];
+	if (mbedtls_md5(md5Buffer, sizeof(md5Buffer), md5))
+	{
+		return false;
+	}
 
 	// step 2: assign md5 hex to dst
 	// dst will be [md5 hex, ...]
 	size_t dstOffset = 0;
-	for (size_t imd5 = 0; imd5 < MD5_HASH_SIZE; imd5++)
+	for (size_t imd5 = 0; imd5 < TBH_MD5_HASH_SIZE; imd5++)
 	{
-		dst[dstOffset] = HEX_TABLE[md5.bytes[imd5] >> 4];
+		dst[dstOffset] = HEX_TABLE[md5[imd5] >> 4];
 		dstOffset++;
-		dst[dstOffset] = HEX_TABLE[md5.bytes[imd5] & 0x0F];
+		dst[dstOffset] = HEX_TABLE[md5[imd5] & 0x0F];
 		dstOffset++;
 	}
 
@@ -165,12 +171,12 @@ bool tbh_c3_aid(char *dst, const char *androidID, const char *uuid)
 	sha1BuffOffset += TBH_ANDROID_ID_SIZE;
 	memcpy(sha1Buffer + sha1BuffOffset, uuid, TBH_UUID_SIZE);
 
-	SHA1_HASH sha1;
-	Sha1Calculate(sha1Buffer, sizeof(sha1Buffer), &sha1);
+	uint8_t sha1[TBH_SHA1_HASH_SIZE];
+	mbedtls_sha1(sha1Buffer, sizeof(sha1Buffer), sha1);
 
 	// step 3: compute sha1 base32 and assign
 	// dst will be ['A00-', sha1 base32, ...]
-	base32_encode(sha1.bytes, SHA1_HASH_SIZE, (dst + dstOffset));
+	base32_encode(sha1, TBH_SHA1_HASH_SIZE, (dst + dstOffset));
 	dstOffset += TBH_SHA1_BASE32_SIZE;
 
 	// step 4: add joining char

@@ -4,7 +4,7 @@
 #include <stdbool.h> // bool
 #include <memory.h>  // memset memcpy
 
-#include "_cuid.h"
+#include "_const.h"
 
 #define TBH_SECKEY_SIZE 16
 #define TBH_INV_RC4_SIZE 16

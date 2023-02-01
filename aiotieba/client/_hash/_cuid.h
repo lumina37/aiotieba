@@ -4,24 +4,13 @@
 #include <stdbool.h> // bool
 #include <memory.h>  // memset memcpy
 
-#include "crc32.h"
-#include "xxhash.h"
-#include "base32.h"
-#include "WjCryptLib_Md5.h"
-#include "WjCryptLib_Sha1.h"
+#include "_const.h"
 
-static const char CUID2_PERFIX[] = {'c', 'o', 'm', '.', 'b', 'a', 'i', 'd', 'u'};
-static const char CUID3_PERFIX[] = {'c', 'o', 'm', '.', 'h', 'e', 'l', 'i', 'o', 's'};
-
-#define TBH_UUID_SIZE 36
-#define TBH_ANDROID_ID_SIZE 16
-#define TBH_MD5_STR_SIZE (MD5_HASH_SIZE * 2)
-#define TBH_SHA1_HEX_SIZE (SHA1_HASH_SIZE * 2)
-#define TBH_SHA1_BASE32_SIZE (BASE32_LEN(SHA1_HASH_SIZE))
-#define TBH_HELIOS_HASH_SIZE 5
-#define TBH_HELIOS_BASE32_SIZE (BASE32_LEN(TBH_HELIOS_HASH_SIZE))
-#define TBH_CUID_GALAXY2_SIZE (TBH_MD5_STR_SIZE + 2 + TBH_HELIOS_BASE32_SIZE)
-#define TBH_C3_AID_SIZE (4 + TBH_SHA1_BASE32_SIZE + 1 + TBH_HELIOS_BASE32_SIZE)
+#include "mbedtls/include/mbedtls/md5.h"
+#include "mbedtls/include/mbedtls/sha1.h"
+#include "crc/crc32.h"
+#include "xxHash/xxhash.h"
+#include "base32/base32.h"
 
 /**
  * @brief impl of TiebaLite tieba/post/utils/helios
