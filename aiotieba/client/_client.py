@@ -258,7 +258,7 @@ class Client(object):
             )
             pub_key = RSA.import_key(pub_key_bytes)
             rsa_chiper = PKCS1_v1_5.new(pub_key)
-            secret_key = rsa_chiper.encrypt(self.core.ws_password)
+            secret_key = rsa_chiper.encrypt(self.core.aes_ecb_sec_key)
 
             proto = init_websocket.pack_proto(self.core, secret_key)
 
@@ -331,6 +331,18 @@ class Client(object):
 
         if client_id:
             self._core._client_id = client_id
+            return True
+        else:
+            return False
+
+    async def __init_zid(self) -> bool:
+
+        from . import init_z_id
+
+        z_id = await init_z_id.request(self._connector, self._core)
+
+        if z_id:
+            self._core._z_id = z_id
             return True
         else:
             return False
@@ -2154,6 +2166,7 @@ class Client(object):
 
         await self.__init_tbs()
         await self.__init_client_id()
+        await self.__init_zid()
 
         from . import add_post
 

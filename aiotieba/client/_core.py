@@ -1,5 +1,4 @@
 import asyncio
-import binascii
 import hashlib
 import random
 from typing import Dict, Optional, Tuple, Union
@@ -79,8 +78,10 @@ class TbCore(object):
         '_cuid_galaxy2',
         '_c3_aid',
         '_z_id',
-        '_ws_password',
-        '_ws_aes_chiper',
+        '_aes_ecb_sec_key',
+        '_aes_ecb_chiper',
+        '_aes_cbc_sec_key',
+        '_aes_cbc_chiper',
         '_app_core',
         '_app_proto_core',
         '_web_core',
@@ -90,7 +91,7 @@ class TbCore(object):
         '_loop',
     ]
 
-    main_version: str = "12.35.1.0"  # 最新版本
+    main_version: str = "12.35.1.2"  # 最新版本
     # no_fold_version: str = "12.12.1.0"  # 最后一个回复列表不发生折叠的版本
     post_version: str = "9.1.0.0"  # 极速版
 
@@ -110,8 +111,10 @@ class TbCore(object):
         self._cuid_galaxy2 = None
         self._c3_aid = None
         self._z_id = None
-        self._ws_password = None
-        self._ws_aes_chiper = None
+        self._aes_ecb_sec_key = None
+        self._aes_ecb_chiper = None
+        self._aes_cbc_sec_key = None
+        self._aes_cbc_chiper = None
 
         if loop is None:
             self._loop = asyncio.get_running_loop()
@@ -355,28 +358,22 @@ class TbCore(object):
     @property
     def z_id(self) -> str:
         """
-        返回一个伪z_id
+        返回一个可作为请求参数的z_id
 
         Returns:
             str
 
         Note:
             在初次生成后该属性便不会再发生变化
-            z_id是`/data/<pkgname>/shared_prefs/leroadcfg.xml`中键`xytk`对应的值
-            这不是一个官方实现 因为我们尚不清楚该文件是如何生成的
+            此实现与9.1版本及以前的官方实现一致
         """
-
-        if self._z_id is None:
-            z_id = binascii.b2a_base64(random.randbytes(65))
-            z_id = z_id.translate(bytes.maketrans(b'+/', b'-_')).rstrip(b'=\n')
-            self._z_id = z_id.decode('utf-8')
 
         return self._z_id
 
     @property
-    def ws_password(self) -> bytes:
+    def aes_ecb_sec_key(self) -> bytes:
         """
-        返回一个供贴吧websocket使用的随机密码
+        返回一个供贴吧AES-ECB加密使用的随机密码
 
         Returns:
             bytes: 长度为36字节的随机密码
@@ -385,22 +382,51 @@ class TbCore(object):
             在初次生成后该属性便不会再发生变化
         """
 
-        if self._ws_password is None:
-            self._ws_password = random.randbytes(36)
-        return self._ws_password
+        if self._aes_ecb_sec_key is None:
+            self._aes_ecb_sec_key = random.randbytes(36)
+        return self._aes_ecb_sec_key
 
     @property
-    def ws_aes_chiper(self):
+    def aes_ecb_chiper(self):
         """
-        获取供贴吧websocket使用的AES加密器
+        获取供贴吧websocket使用的AES-ECB加密器
 
         Returns:
             Any: AES chiper
         """
 
-        if self._ws_aes_chiper is None:
+        if self._aes_ecb_chiper is None:
             salt = b'\xa4\x0b\xc8\x34\xd6\x95\xf3\x13'
-            ws_secret_key = hashlib.pbkdf2_hmac('sha1', self.ws_password, salt, 5, 32)
-            self._ws_aes_chiper = AES.new(ws_secret_key, AES.MODE_ECB)
+            ws_secret_key = hashlib.pbkdf2_hmac('sha1', self.aes_ecb_sec_key, salt, 5, 32)
+            self._aes_ecb_chiper = AES.new(ws_secret_key, AES.MODE_ECB)
 
-        return self._ws_aes_chiper
+        return self._aes_ecb_chiper
+
+    @property
+    def aes_cbc_sec_key(self) -> bytes:
+        """
+        返回一个供贴吧AES-CBC加密使用的随机密码
+
+        Returns:
+            bytes: 长度为16字节的随机密码
+
+        Note:
+            在初次生成后该属性便不会再发生变化
+        """
+
+        if self._aes_cbc_sec_key is None:
+            self._aes_cbc_sec_key = random.randbytes(16)
+        return self._aes_cbc_sec_key
+
+    @property
+    def aes_cbc_chiper(self):
+        """
+        获取供贴吧客户端使用的AES-CBC加密器
+
+        Returns:
+            Any: AES chiper
+        """
+
+        if self._aes_cbc_chiper is None:
+            self._aes_cbc_chiper = AES.new(self.aes_cbc_sec_key, AES.MODE_CBC, iv=b'\x00' * 16)
+        return self._aes_cbc_chiper
