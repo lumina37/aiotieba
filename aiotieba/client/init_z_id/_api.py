@@ -1,7 +1,6 @@
 import binascii
 import gzip
 import hashlib
-import json
 import sys
 import time
 
@@ -73,7 +72,7 @@ async def request(connector: aiohttp.TCPConnector, core: TbCore):
         aes_chiper = AES.new(res_aes_sec_key, AES.MODE_CBC, iv=b'\x00' * 16)
         res_data = binascii.a2b_base64(res_json['data'])
         res_data = unpad(aes_chiper.decrypt(res_data)[:-16], AES.block_size)  # [:-16] 用于移除尾部的16字节md5
-        res_data = json.loads(res_data.decode('utf-8'))
+        res_data = jsonlib.loads(res_data.decode('utf-8'))
         zid = res_data['token']
 
     except Exception as err:
