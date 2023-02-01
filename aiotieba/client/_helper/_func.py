@@ -1,10 +1,10 @@
 import asyncio
+import gzip
 import hashlib
 import logging
 import random
 import sys
 import urllib.parse
-import zlib
 from types import FrameType
 from typing import Callable, List, Optional, Tuple
 
@@ -290,11 +290,11 @@ def pack_ws_bytes(
     """
 
     if need_gzip:
-        ws_bytes = zlib.compress(ws_bytes, 5)
+        ws_bytes = gzip.compress(ws_bytes, compresslevel=-1, mtime=0)
 
     if need_encrypt:
         ws_bytes = pad(ws_bytes, AES.block_size)
-        ws_bytes = core.ws_aes_chiper.encrypt(ws_bytes)
+        ws_bytes = core.aes_ecb_chiper.encrypt(ws_bytes)
 
     flag = 0x08 | (need_gzip << 7) | (need_encrypt << 6)
     ws_bytes = b''.join(
@@ -333,10 +333,10 @@ def parse_ws_bytes(core: TbCore, ws_bytes: bytes) -> Tuple[bytes, int, int]:
 
     ws_bytes = ws_view[9:].tobytes()
     if flag & 0b10000000:
-        ws_bytes = core.ws_aes_chiper.decrypt(ws_bytes)
+        ws_bytes = core.aes_ecb_chiper.decrypt(ws_bytes)
         ws_bytes = unpad(ws_bytes, AES.block_size)
     if flag & 0b01000000:
-        ws_bytes = zlib.decompress(ws_bytes)
+        ws_bytes = gzip.decompress(ws_bytes)
 
     return ws_bytes, cmd, req_id
 
