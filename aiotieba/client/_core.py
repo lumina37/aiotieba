@@ -1,6 +1,7 @@
 import asyncio
 import hashlib
 import random
+import secrets
 from typing import Dict, Optional, Tuple, Union
 
 import aiohttp
@@ -236,7 +237,7 @@ class TbCore(object):
         """
 
         if self._android_id is None:
-            self._android_id = random.randbytes(8).hex()
+            self._android_id = secrets.token_hex(16)
         return self._android_id
 
     @property
@@ -383,7 +384,7 @@ class TbCore(object):
         """
 
         if self._aes_ecb_sec_key is None:
-            self._aes_ecb_sec_key = random.randbytes(36)
+            self._aes_ecb_sec_key = secrets.token_bytes(36)
         return self._aes_ecb_sec_key
 
     @property
@@ -415,7 +416,7 @@ class TbCore(object):
         """
 
         if self._aes_cbc_sec_key is None:
-            self._aes_cbc_sec_key = random.randbytes(16)
+            self._aes_cbc_sec_key = secrets.token_bytes(16)
         return self._aes_cbc_sec_key
 
     @property

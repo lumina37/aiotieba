@@ -5,7 +5,7 @@ import aiotieba as tb
 
 @pytest.mark.asyncio
 async def test_clib(client: tb.Client):
-    await client._Client__init_zid()
+    await client._Client__init_z_id()
     assert client.core.z_id != ''
 
     core = client.core

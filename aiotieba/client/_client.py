@@ -335,7 +335,7 @@ class Client(object):
         else:
             return False
 
-    async def __init_zid(self) -> bool:
+    async def __init_z_id(self) -> bool:
 
         from . import init_z_id
 
@@ -2166,7 +2166,7 @@ class Client(object):
 
         await self.__init_tbs()
         await self.__init_client_id()
-        await self.__init_zid()
+        await self.__init_z_id()
 
         from . import add_post
 
