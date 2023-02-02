@@ -52,7 +52,7 @@ async def request(connector: aiohttp.TCPConnector, core: TbCore, fname: str, fid
         ('v_fid', ''),
         ('v_fname', ''),
         ('vcode_tag', '12'),
-        ('z_id', core.z_id),
+        ('z_id', core._z_id),
     ]
 
     request = pack_form_request(

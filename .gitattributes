@@ -1,1 +1,6 @@
-* text=auto
+* text=auto eol=lf
+*.py text eol=lf
+*.pyx text eol=lf
+*.pxd text eol=lf
+*.h text eol=lf
+*.c text eol=lf
