@@ -6,7 +6,7 @@ import random
 import sys
 import urllib.parse
 from types import FrameType
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, List, Optional, Tuple, Union
 
 import aiohttp
 import async_timeout
@@ -119,12 +119,12 @@ def timeout(delay: Optional[float], loop: asyncio.AbstractEventLoop) -> async_ti
     return async_timeout.timeout_at(when)
 
 
-def sign(data: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
+def sign(data: List[Tuple[str, Union[str, int]]]) -> List[Tuple[str, str]]:
     """
     为参数元组列表添加贴吧客户端签名
 
     Args:
-        data (list[tuple[str, str]]): 参数元组列表
+        data (list[tuple[str, str | int]]): 参数元组列表
 
     Returns:
         list[tuple[str, str]]: 签名后的form参数元组列表

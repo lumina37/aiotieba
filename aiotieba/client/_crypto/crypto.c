@@ -42,7 +42,7 @@ static PyObject *inv_rc4(PyObject *self, PyObject *args)
 		}
 	}
 
-	return Py_BuildValue("y#", dst, TBH_INV_RC4_SIZE);
+	return PyBytes_FromStringAndSize(dst, TBH_INV_RC4_SIZE);
 }
 
 static PyObject *cuid_galaxy2(PyObject *self, PyObject *args)
@@ -72,7 +72,7 @@ static PyObject *cuid_galaxy2(PyObject *self, PyObject *args)
 		}
 	}
 
-	return Py_BuildValue("s#", dst, TBH_CUID_GALAXY2_SIZE);
+	return PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, dst, TBH_CUID_GALAXY2_SIZE);
 }
 
 static PyObject *c3_aid(PyObject *self, PyObject *args)
@@ -104,25 +104,25 @@ static PyObject *c3_aid(PyObject *self, PyObject *args)
 		}
 	}
 
-	return Py_BuildValue("s#", dst, TBH_C3_AID_SIZE);
+	return PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, dst, TBH_C3_AID_SIZE);
 }
 
-static PyMethodDef _crypto_methods[] = {
-	{"inv_rc4", (PyCFunction)inv_rc4, METH_O, NULL},
-	{"cuid_galaxy2", (PyCFunction)cuid_galaxy2, METH_O, NULL},
-	{"c3_aid", (PyCFunction)c3_aid, METH_O, NULL},
+static PyMethodDef crypto_methods[] = {
+	{"inv_rc4", (PyCFunction)inv_rc4, METH_VARARGS, NULL},
+	{"cuid_galaxy2", (PyCFunction)cuid_galaxy2, METH_VARARGS, NULL},
+	{"c3_aid", (PyCFunction)c3_aid, METH_VARARGS, NULL},
 	{NULL, NULL, 0, NULL},
 };
 
-static PyModuleDef _crypto_module = {
+static PyModuleDef crypto_module = {
 	PyModuleDef_HEAD_INIT,
-	"_crypto",
+	"crypto",
 	NULL,
 	-1,
-	_crypto_methods,
+	crypto_methods,
 };
 
-PyMODINIT_FUNC PyInit__crypto()
+PyMODINIT_FUNC PyInit_crypto()
 {
-	return PyModule_Create(&_crypto_module);
+	return PyModule_Create(&crypto_module);
 }

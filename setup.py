@@ -26,12 +26,12 @@ def _yield_file() -> str:
 third_party_src_file_in_strs = list(_yield_file())
 
 ext_module = Extension(
-    "aiotieba.client._crypto._crypto",
+    "aiotieba.client._crypto.crypto",
     sources=ext_crypto_src_file_in_strs + third_party_src_file_in_strs,
     include_dirs=third_party_include_dir_in_strs,
 )
 
 setup(
-    name='_crypto',
+    name='crypto',
     ext_modules=[ext_module],
 )
