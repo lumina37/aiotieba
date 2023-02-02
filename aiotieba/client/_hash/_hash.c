@@ -27,10 +27,19 @@ static PyObject *inv_rc4(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-	if (!tbh_invRC4(dst, secKey, xyusMd5))
+	int err = tbh_invRC4(dst, secKey, xyusMd5);
+	if (err)
 	{
-		PyErr_SetString(PyExc_MemoryError, "arg is too large");
-		return NULL;
+		if (err == TBH_MEMORY_ERROR)
+		{
+			PyErr_NoMemory();
+			return NULL;
+		}
+		else
+		{
+			PyErr_Format(PyExc_RuntimeError, "mbedtls err. err_code=%d", err);
+			return NULL;
+		}
 	}
 
 	return Py_BuildValue("y#", dst, TBH_INV_RC4_SIZE);
@@ -48,10 +57,19 @@ static PyObject *cuid_galaxy2(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-	if (!tbh_cuid_galaxy2(dst, androidID))
+	int err = tbh_cuid_galaxy2(dst, androidID);
+	if (err)
 	{
-		PyErr_SetString(PyExc_MemoryError, "arg is too large");
-		return NULL;
+		if (err == TBH_MEMORY_ERROR)
+		{
+			PyErr_NoMemory();
+			return NULL;
+		}
+		else
+		{
+			PyErr_Format(PyExc_RuntimeError, "mbedtls err. err_code=%d", err);
+			return NULL;
+		}
 	}
 
 	return Py_BuildValue("s#", dst, TBH_CUID_GALAXY2_SIZE);
@@ -71,10 +89,19 @@ static PyObject *c3_aid(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-	if (!tbh_c3_aid(dst, androidID, uuid))
+	int err = tbh_c3_aid(dst, androidID, uuid);
+	if (err)
 	{
-		PyErr_SetString(PyExc_MemoryError, "arg is too large");
-		return NULL;
+		if (err == TBH_MEMORY_ERROR)
+		{
+			PyErr_NoMemory();
+			return NULL;
+		}
+		else
+		{
+			PyErr_Format(PyExc_RuntimeError, "mbedtls err. err_code=%d", err);
+			return NULL;
+		}
 	}
 
 	return Py_BuildValue("s#", dst, TBH_C3_AID_SIZE);

@@ -4,6 +4,7 @@
 #include <stdbool.h> // bool
 #include <memory.h>  // memset memcpy
 
+#include "_error.h"
 #include "_const.h"
 
 #define TBH_SECKEY_SIZE 16
@@ -16,8 +17,8 @@
  * @param secKey 16 bytes. alloc and free by user
  * @param xyusMd5 32 bytes. alloc and free by user
  *
- * @return false if any error
+ * @return non 0 if any error
  *
  * @note 9.1 loc: com.baidu.sofire.i.h.a
  */
-bool tbh_invRC4(char *dst, const char *secKey, const char *xyusMd5);
+int tbh_invRC4(char *dst, const char *secKey, const char *xyusMd5);

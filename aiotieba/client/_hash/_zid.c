@@ -1,11 +1,11 @@
 #include "_zid.h"
 
-bool tbh_invRC4(char *dst, const char *secKey, const char *xyusMd5)
+int tbh_invRC4(char *dst, const char *secKey, const char *xyusMd5)
 {
 	char *sBox = malloc(256);
 	if (!sBox)
 	{
-		return false;
+		return TBH_MEMORY_ERROR;
 	}
 	for (int i = 0; i < 256; i++)
 	{
@@ -36,5 +36,5 @@ bool tbh_invRC4(char *dst, const char *secKey, const char *xyusMd5)
 		dst[iSec] = (char)(dst[iSec] ^ 42);
 	}
 
-	return true;
+	return TBH_OK;
 }
