@@ -10,7 +10,7 @@ from Crypto.Cipher import AES
 from ..__version__ import __version__
 from .._config import CONFIG
 from .._logging import get_logger as LOG
-from ._hash import c3_aid, cuid_galaxy2
+from ._crypto import c3_aid, cuid_galaxy2
 
 APP_BASE_HOST = "tiebac.baidu.com"
 WEB_BASE_HOST = "tieba.baidu.com"

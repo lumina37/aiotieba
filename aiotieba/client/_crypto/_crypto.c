@@ -107,22 +107,22 @@ static PyObject *c3_aid(PyObject *self, PyObject *args)
 	return Py_BuildValue("s#", dst, TBH_C3_AID_SIZE);
 }
 
-static PyMethodDef _hash_methods[] = {
+static PyMethodDef _crypto_methods[] = {
 	{"inv_rc4", (PyCFunction)inv_rc4, METH_O, NULL},
 	{"cuid_galaxy2", (PyCFunction)cuid_galaxy2, METH_O, NULL},
 	{"c3_aid", (PyCFunction)c3_aid, METH_O, NULL},
 	{NULL, NULL, 0, NULL},
 };
 
-static PyModuleDef _hash_module = {
+static PyModuleDef _crypto_module = {
 	PyModuleDef_HEAD_INIT,
-	"_hash",
+	"_crypto",
 	NULL,
 	-1,
-	_hash_methods,
+	_crypto_methods,
 };
 
-PyMODINIT_FUNC PyInit__hash()
+PyMODINIT_FUNC PyInit__crypto()
 {
-	return PyModule_Create(&_hash_module);
+	return PyModule_Create(&_crypto_module);
 }

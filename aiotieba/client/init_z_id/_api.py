@@ -10,7 +10,7 @@ from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 
 from .._core import TbCore
-from .._hash import inv_rc4
+from .._crypto import inv_rc4
 from .._helper import jsonlib, log_exception, parse_json, send_request
 
 SOFIRE_HOST = "sofire.baidu.com"
