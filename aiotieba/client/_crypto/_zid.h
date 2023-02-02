@@ -19,6 +19,6 @@
  *
  * @return non 0 if any error
  *
- * @note 9.1 loc: com.baidu.sofire.i.h.a
+ * @note 12.x loc: com.baidu.sofire.x6.oCOCcooCCoC.ocOOCCoOOCcC.CcooOoocOOo
  */
 int tbh_invRC4(char *dst, const char *secKey, const char *xyusMd5);
