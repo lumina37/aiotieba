@@ -1,17 +1,3 @@
-def inv_rc4(sec_key: bytes, xyus_md5: bytes) -> bytes:
-    """
-    RC4的变体 颠倒了两个步骤的顺序
-
-    Args:
-        sec_key (bytes): 密钥
-        xyus_md5 (bytes): xyus的MD5
-
-    Returns:
-        bytes
-    """
-    ...
-
-
 def cuid_galaxy2(android_id: str) -> str:
     """
     使用给定的android_id生成cuid_galaxy2
@@ -30,7 +16,6 @@ def cuid_galaxy2(android_id: str) -> str:
     """
     ...
 
-
 def c3_aid(android_id: str, uuid: str) -> str:
     """
     使用给定的android_id和uuid生成c3_aid
@@ -47,5 +32,18 @@ def c3_aid(android_id: str, uuid: str) -> str:
 
     Note:
         此实现与12.x版本及以前的官方实现一致
+    """
+    ...
+
+def inv_rc4(sec_key: bytes, xyus_md5: bytes) -> bytes:
+    """
+    RC4的变体 颠倒了两个步骤的顺序
+
+    Args:
+        sec_key (bytes): 密钥
+        xyus_md5 (bytes): xyus的MD5
+
+    Returns:
+        bytes
     """
     ...
