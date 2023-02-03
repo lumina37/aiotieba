@@ -7,6 +7,7 @@ def pack_proto(user_id: int, content: str) -> bytes:
     req_proto.data.toUid = user_id
     req_proto.data.content = content
     req_proto.data.msgType = 1
+    req_proto.data.recordId = -1
 
     return req_proto.SerializeToString()
 

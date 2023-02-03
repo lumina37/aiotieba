@@ -1,19 +1,17 @@
 import asyncio
-import binascii
 import socket
 from typing import TYPE_CHECKING, Dict, List, Literal, Optional, Tuple, Union
 
 import aiohttp
 import yarl
-from Crypto.Cipher import PKCS1_v1_5
-from Crypto.PublicKey import RSA
 
 from .._logging import get_logger as LOG
 from ._classdef.enums import ReqUInfo
 from ._classdef.user import UserInfo
 from ._core import TbCore
-from ._helper import ForumInfoCache, WebsocketResponse, is_portrait, pack_ws_bytes, parse_ws_bytes
+from ._helper import ForumInfoCache, is_portrait
 from ._typing import TypeUserInfo
+from ._websocket import Websocket
 from .get_homepage._classdef import UserInfo_home
 
 if TYPE_CHECKING:
@@ -66,9 +64,7 @@ class Client(object):
         '_core',
         '_user',
         '_connector',
-        '_client_ws',
-        'websocket',
-        '_ws_dispatcher',
+        '_websocket',
     ]
 
     def __init__(
@@ -82,8 +78,6 @@ class Client(object):
         self._core = TbCore(BDUSS_key, proxy, loop)
         self._user = UserInfo_home()._init_null()
 
-        timeout = aiohttp.ClientTimeout(connect=3.0, sock_read=12.0, sock_connect=3.2)
-
         connector = aiohttp.TCPConnector(
             ttl_dns_cache=600,
             family=socket.AF_INET,
@@ -93,33 +87,14 @@ class Client(object):
             loop=loop,
         )
         self._connector = connector
-
-        ws_headers = {
-            aiohttp.hdrs.HOST: "im.tieba.baidu.com:8000",
-            aiohttp.hdrs.SEC_WEBSOCKET_EXTENSIONS: "im_version=2.3",
-        }
-        self._client_ws = aiohttp.ClientSession(
-            connector=connector,
-            loop=loop,
-            headers=ws_headers,
-            connector_owner=False,
-            raise_for_status=True,
-            timeout=timeout,
-            read_bufsize=1 << 18,  # 256KiB
-        )
-
-        self.websocket: aiohttp.ClientWebSocketResponse = None
-        self._ws_dispatcher: asyncio.Task = None
+        self._websocket = None
 
     async def __aenter__(self) -> "Client":
         return self
 
     async def close(self) -> None:
-        if self.is_ws_aviliable:
-            await self.websocket.close()
-
-        if self._ws_dispatcher is not None:
-            self._ws_dispatcher.cancel()
+        if self._websocket is not None:
+            await self._websocket.close()
 
         if self._connector is not None:
             await self._connector.close()
@@ -145,125 +120,17 @@ class Client(object):
         return self._core
 
     @property
-    def client_ws(self) -> aiohttp.ClientSession:
+    def websocket(self) -> Websocket:
         """
-        用于websocket请求
+        贴吧websocket请求管理器
 
         Returns:
-            aiohttp.ClientSession
+            Websocket: 贴吧websocket请求管理器
         """
 
-        return self._client_ws
-
-    async def __create_websocket(self, heartbeat: Optional[float] = None) -> None:
-        """
-        建立weboscket连接
-
-        Args:
-            heartbeat (float, optional): 是否定时ping. Defaults to None.
-
-        Raises:
-            aiohttp.WSServerHandshakeError: websocket握手失败
-        """
-
-        if self._ws_dispatcher is not None and not self._ws_dispatcher.done():
-            self._ws_dispatcher.cancel()
-
-        self.websocket = await self._client_ws._ws_connect(
-            yarl.URL.build(scheme="ws", host="im.tieba.baidu.com", port=8000),
-            heartbeat=heartbeat,
-            proxy=self._core._proxy,
-            proxy_auth=self._core._proxy_auth,
-            ssl=False,
-        )
-
-        self._ws_dispatcher = asyncio.create_task(self.__ws_dispatch(), name="ws_dispatcher")
-
-    @property
-    def is_ws_aviliable(self) -> bool:
-        """
-        self.websocket是否可用
-
-        Returns:
-            bool: True则self.websocket可用 反之不可用
-        """
-
-        return not (self.websocket is None or self.websocket.closed or self.websocket._writer.transport.is_closing())
-
-    async def send_ws_bytes(
-        self, ws_bytes: bytes, /, cmd: int, *, timeout: float, need_gzip: bool = True, need_encrypt: bool = True
-    ) -> bytes:
-        """
-        将ws_bytes通过贴吧websocket发送
-
-        Args:
-            ws_bytes (bytes): 待发送的websocket数据
-            cmd (int): 请求的cmd类型
-            timeout (float): 设置超时秒数
-            need_gzip (bool, optional): 是否需要gzip压缩. Defaults to False.
-            need_encrypt (bool, optional): 是否需要aes加密. Defaults to False.
-
-        Returns:
-            bytes: 从websocket接收到的数据
-        """
-
-        ws_res = WebsocketResponse()
-        ws_bytes = pack_ws_bytes(
-            self.core, ws_bytes, cmd, ws_res.req_id, need_gzip=need_gzip, need_encrypt=need_encrypt
-        )
-
-        WebsocketResponse.ws_res_wait_dict[ws_res.req_id] = ws_res
-        await self.websocket.send_bytes(ws_bytes)
-
-        try:
-            data = await asyncio.wait_for(ws_res._data_future, timeout)
-        except asyncio.TimeoutError:
-            del WebsocketResponse.ws_res_wait_dict[ws_res.req_id]
-            raise asyncio.TimeoutError("Timeout to read")
-
-        del WebsocketResponse.ws_res_wait_dict[ws_res.req_id]
-        return data
-
-    async def __ws_dispatch(self) -> None:
-        """
-        分发从贴吧websocket接收到的数据
-        """
-
-        try:
-            async for msg in self.websocket:
-                res_bytes, _, req_id = parse_ws_bytes(msg.data)
-
-                ws_res = WebsocketResponse.ws_res_wait_dict.get(req_id, None)
-                if ws_res:
-                    ws_res._data_future.set_result(res_bytes)
-
-        except asyncio.CancelledError:
-            return
-
-    async def __init_websocket(self) -> None:
-        """
-        初始化weboscket连接对象并发送初始化信息
-
-        Raises:
-            TiebaServerError: 服务端返回错误
-        """
-
-        if not self.is_ws_aviliable:
-            await self.__create_websocket()
-
-            from . import init_websocket
-
-            pub_key_bytes = binascii.a2b_base64(
-                b"MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwQpwBZxXJV/JVRF/uNfyMSdu7YWwRNLM8+2xbniGp2iIQHOikPpTYQjlQgMi1uvq1kZpJ32rHo3hkwjy2l0lFwr3u4Hk2Wk7vnsqYQjAlYlK0TCzjpmiI+OiPOUNVtbWHQiLiVqFtzvpvi4AU7C1iKGvc/4IS45WjHxeScHhnZZ7njS4S1UgNP/GflRIbzgbBhyZ9kEW5/OO5YfG1fy6r4KSlDJw4o/mw5XhftyIpL+5ZBVBC6E1EIiP/dd9AbK62VV1PByfPMHMixpxI3GM2qwcmFsXcCcgvUXJBa9k6zP8dDQ3csCM2QNT+CQAOxthjtp/TFWaD7MzOdsIYb3THwIDAQAB"
-            )
-            pub_key = RSA.import_key(pub_key_bytes)
-            rsa_chiper = PKCS1_v1_5.new(pub_key)
-            secret_key = rsa_chiper.encrypt(self.core.aes_ecb_sec_key)
-
-            proto = init_websocket.pack_proto(self.core, secret_key)
-
-            body = await self.send_ws_bytes(proto, cmd=1001, timeout=5.0, need_gzip=False, need_encrypt=False)
-            init_websocket.parse_body(body)
+        if self._websocket is None:
+            self._websocket = Websocket(self._connector, self._core)
+        return self._websocket
 
     async def __init_tbs(self) -> bool:
         """
@@ -2191,13 +2058,13 @@ class Client(object):
             user_id = _id
 
         try:
-            await self.__init_websocket()
+            await self.websocket.init_websocket()
 
             from . import send_msg
 
-            proto = send_msg.pack_proto(user.user_id, content)
-            resp = await self.send_ws_bytes(proto, cmd=205001, timeout=5.0)
-            send_msg.parse_body(resp)
+            proto = send_msg.pack_proto(user_id, content)
+            body = await self.websocket.send(proto, 205001, timeout=5.0)
+            send_msg.parse_body(body)
 
         except Exception as err:
             LOG().warning(f"{err}. user_id={user_id}")

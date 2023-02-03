@@ -102,6 +102,7 @@ class TbCore(object):
         loop: Optional[asyncio.AbstractEventLoop] = None,
     ) -> None:
         self._BDUSS_key = BDUSS_key
+        self._loop = loop
 
         self._tbs = None
         self._android_id = None
@@ -115,9 +116,6 @@ class TbCore(object):
         self._aes_ecb_chiper = None
         self._aes_cbc_sec_key = None
         self._aes_cbc_chiper = None
-
-        if loop is None:
-            self._loop = asyncio.get_running_loop()
 
         hdrs = aiohttp.hdrs
 
@@ -383,7 +381,7 @@ class TbCore(object):
         """
 
         if self._aes_ecb_sec_key is None:
-            self._aes_ecb_sec_key = secrets.token_bytes(36)
+            self._aes_ecb_sec_key = secrets.token_bytes(31)
         return self._aes_ecb_sec_key
 
     @property
@@ -396,8 +394,8 @@ class TbCore(object):
         """
 
         if self._aes_ecb_chiper is None:
-            salt = b'\xa4\x0b\xc8\x34\xd6\x95\xf3\x13'
-            ws_secret_key = hashlib.pbkdf2_hmac('sha1', self.aes_ecb_sec_key, salt, 5, 32)
+            salt = b'\xa4\x0b\xc84\xd6\x95\xf3\x13'
+            ws_secret_key = hashlib.pbkdf2_hmac('sha1', b"0123456789abcdefghyjklmnopqrstu", salt, 5, 32)
             self._aes_ecb_chiper = AES.new(ws_secret_key, AES.MODE_ECB)
 
         return self._aes_ecb_chiper

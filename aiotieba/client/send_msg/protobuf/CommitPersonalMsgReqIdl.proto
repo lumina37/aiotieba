@@ -6,6 +6,7 @@ message CommitPersonalMsgReqIdl {
         int64 toUid = 2;
         int32 msgType = 3;
         string content = 4;
+        int64 recordId = 6;
     }
     DataReq data = 1;
 }

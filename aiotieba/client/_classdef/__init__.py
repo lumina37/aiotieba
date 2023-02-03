@@ -1,5 +1,5 @@
 from .._core import TbCore
-from .._helper import ForumInfoCache, WebsocketResponse
+from .._helper import ForumInfoCache
 from .common import TypeMessage
 from .container import Containers
 from .contents import (
