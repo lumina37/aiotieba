@@ -191,7 +191,7 @@ class Websocket(object):
         _REQ_ID += 1
         req_id = _REQ_ID
 
-        req_data = pack_ws_bytes(self._core, data, cmd, req_id, compress, encrypt)
+        req_data = pack_ws_bytes(self._core, data, cmd, req_id, compress=compress, encrypt=encrypt)
 
         res_future = asyncio.Future()
         self._res_waiter[req_id] = res_future

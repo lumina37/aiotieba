@@ -395,7 +395,7 @@ class TbCore(object):
 
         if self._aes_ecb_chiper is None:
             salt = b'\xa4\x0b\xc8\x34\xd6\x95\xf3\x13'
-            ws_secret_key = hashlib.pbkdf2_hmac('sha1', b"0123456789abcdefghyjklmnopqrstu", salt, 5, 32)
+            ws_secret_key = hashlib.pbkdf2_hmac('sha1', self.aes_ecb_sec_key, salt, 5, 32)
             self._aes_ecb_chiper = AES.new(ws_secret_key, AES.MODE_ECB)
 
         return self._aes_ecb_chiper

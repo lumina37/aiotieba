@@ -8,7 +8,7 @@ from .._core import TbCore
 
 
 def pack_ws_bytes(
-    core: TbCore, data: bytes, cmd: int, req_id: int, compress: bool = False, encrypt: bool = True
+    core: TbCore, data: bytes, cmd: int, req_id: int, *, compress: bool = False, encrypt: bool = True
 ) -> bytes:
     """
     打包数据并添加9字节头部
