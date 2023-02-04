@@ -2059,11 +2059,12 @@ class Client(object):
 
         try:
             await self.websocket.init_websocket()
+            self.websocket._record_id += 1
 
             from . import send_msg
 
-            proto = send_msg.pack_proto(user_id, content)
-            body = await self.websocket.send(proto, 205001, timeout=5.0)
+            proto = send_msg.pack_proto(user_id, content, self.websocket._record_id)
+            body = await self.websocket.send(proto, send_msg.CMD, encrypt=False, timeout=5.0)
             send_msg.parse_body(body)
 
         except Exception as err:

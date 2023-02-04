@@ -1,13 +1,15 @@
 from .._exception import TiebaServerError
 from .protobuf import CommitPersonalMsgReqIdl_pb2, CommitPersonalMsgResIdl_pb2
 
+CMD = 205001
 
-def pack_proto(user_id: int, content: str) -> bytes:
+
+def pack_proto(user_id: int, content: str, record_id: int) -> bytes:
     req_proto = CommitPersonalMsgReqIdl_pb2.CommitPersonalMsgReqIdl()
     req_proto.data.toUid = user_id
     req_proto.data.content = content
     req_proto.data.msgType = 1
-    req_proto.data.recordId = -1
+    req_proto.data.recordId = record_id
 
     return req_proto.SerializeToString()
 

@@ -8,7 +8,7 @@ from .._core import TbCore
 
 
 def pack_ws_bytes(
-    core: TbCore, data: bytes, cmd: int, req_id: int, compress: bool = True, encrypt: bool = True
+    core: TbCore, data: bytes, cmd: int, req_id: int, compress: bool = False, encrypt: bool = True
 ) -> bytes:
     """
     打包数据并添加9字节头部
@@ -19,7 +19,7 @@ def pack_ws_bytes(
         cmd (int): 请求的cmd类型
         req_id (int): 请求的id
         compress (bool, optional): 是否需要gzip压缩. Defaults to False.
-        encrypt (bool, optional): 是否需要aes加密. Defaults to False.
+        encrypt (bool, optional): 是否需要aes加密. Defaults to True.
 
     Returns:
         bytes: 打包后的websocket数据
@@ -28,10 +28,10 @@ def pack_ws_bytes(
     flag = 0x08
 
     if compress:
-        flag |= 0b10000000
+        flag |= 0b01000000
         data = gzip.compress(data, compresslevel=-1, mtime=0)
     if encrypt:
-        flag |= 0b01000000
+        flag |= 0b10000000
         data = pad(data, AES.block_size)
         data = core.aes_ecb_chiper.encrypt(data)
 
@@ -61,15 +61,12 @@ def parse_ws_bytes(core: TbCore, data: bytes) -> Tuple[bytes, int, int]:
         int: 对应请求的id
     """
 
-    if len(data) < 9:
-        return data, 0, 0
+    data_view = memoryview(data)
+    flag = data_view[0]
+    cmd = int.from_bytes(data_view[1:5], 'big')
+    req_id = int.from_bytes(data_view[5:9], 'big')
 
-    ws_view = memoryview(data)
-    flag = ws_view[0]
-    cmd = int.from_bytes(ws_view[1:5], 'big')
-    req_id = int.from_bytes(ws_view[5:9], 'big')
-
-    data = ws_view[9:].tobytes()
+    data = data_view[9:].tobytes()
     if flag & 0b10000000:
         data = core.aes_ecb_chiper.decrypt(data)
         data = unpad(data, AES.block_size)

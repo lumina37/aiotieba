@@ -91,9 +91,9 @@ class TbCore(object):
         '_loop',
     ]
 
-    main_version: str = "12.35.1.2"  # 最新版本
-    # no_fold_version: str = "12.12.1.0"  # 最后一个回复列表不发生折叠的版本
-    post_version: str = "9.1.0.0"  # 极速版
+    main_version = "12.36.0.1"  # 最新版本
+    # no_fold_version = "12.12.1.0"  # 最后一个回复列表不发生折叠的版本
+    post_version = "9.1.0.0"  # 极速版
 
     def __init__(
         self,
@@ -394,7 +394,7 @@ class TbCore(object):
         """
 
         if self._aes_ecb_chiper is None:
-            salt = b'\xa4\x0b\xc84\xd6\x95\xf3\x13'
+            salt = b'\xa4\x0b\xc8\x34\xd6\x95\xf3\x13'
             ws_secret_key = hashlib.pbkdf2_hmac('sha1', b"0123456789abcdefghyjklmnopqrstu", salt, 5, 32)
             self._aes_ecb_chiper = AES.new(ws_secret_key, AES.MODE_ECB)
 

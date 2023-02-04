@@ -1,9 +1,13 @@
 import time
+from typing import List
 
 from .._core import TbCore
 from .._exception import TiebaServerError
 from .._helper import jsonlib
+from ..get_group_msg import MsgGroup
 from .protobuf import UpdateClientInfoReqIdl_pb2, UpdateClientInfoResIdl_pb2
+
+CMD = 1001
 
 
 def pack_proto(core: TbCore, secret_key: str) -> bytes:
@@ -27,9 +31,13 @@ def pack_proto(core: TbCore, secret_key: str) -> bytes:
     return req_proto.SerializeToString()
 
 
-def parse_body(body: bytes) -> None:
+def parse_body(body: bytes) -> List[MsgGroup]:
     res_proto = UpdateClientInfoResIdl_pb2.UpdateClientInfoResIdl()
     res_proto.ParseFromString(body)
 
     if code := res_proto.error.errorno:
         raise TiebaServerError(code, res_proto.error.errmsg)
+
+    groups = [MsgGroup(g.groupType, g.lastMsgId) for g in res_proto.data.groupInfo]
+
+    return groups

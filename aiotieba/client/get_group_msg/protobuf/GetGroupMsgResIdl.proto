@@ -1,0 +1,8 @@
+// protobuf.CommitPersonalMsg.CommitPersonalMsgResIdl
+syntax = "proto3";
+
+import "Error.proto";
+
+message GetGroupMsgResIdl {
+    Error error = 1;
+}

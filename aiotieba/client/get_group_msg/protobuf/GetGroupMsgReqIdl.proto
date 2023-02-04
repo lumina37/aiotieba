@@ -1,0 +1,15 @@
+// protobuf.CommitPersonalMsg.CommitPersonalMsgReqIdl
+syntax = "proto3";
+
+message GetGroupMsgReqIdl {
+    string cuid = 1;
+    message DataReq {
+        message GroupLastId {
+            int64 groupId = 1;
+            int64 lastMsgId = 2;
+        }
+        repeated GroupLastId groupMids = 6;
+        string gettype = 7;
+    }
+    DataReq data = 2;
+}

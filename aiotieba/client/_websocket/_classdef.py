@@ -40,6 +40,7 @@ class Websocket(object):
 
     __slots__ = [
         '_core',
+        '_record_id',
         '_res_waiter',
         '_callback',
         '_client_ws',
@@ -49,6 +50,7 @@ class Websocket(object):
 
     def __init__(self, connector: aiohttp.TCPConnector, core: TbCore) -> None:
         self._core = core
+        self._record_id = None
         self._res_waiter = weakref.WeakValueDictionary()
         self._callback: Dict[int, TypeWebsocketCallback] = {}
 
@@ -130,7 +132,7 @@ class Websocket(object):
         if not self.is_aviliable:
             await self.__create_websocket(heartbeat=None)
 
-            from ._api import pack_proto, parse_body
+            from . import _api
 
             pub_key = binascii.a2b_base64(
                 b"MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwQpwBZxXJV/JVRF/uNfyMSdu7YWwRNLM8+2xbniGp2iIQHOikPpTYQjlQgMi1uvq1kZpJ32rHo3hkwjy2l0lFwr3u4Hk2Wk7vnsqYQjAlYlK0TCzjpmiI+OiPOUNVtbWHQiLiVqFtzvpvi4AU7C1iKGvc/4IS45WjHxeScHhnZZ7njS4S1UgNP/GflRIbzgbBhyZ9kEW5/OO5YfG1fy6r4KSlDJw4o/mw5XhftyIpL+5ZBVBC6E1EIiP/dd9AbK62VV1PByfPMHMixpxI3GM2qwcmFsXcCcgvUXJBa9k6zP8dDQ3csCM2QNT+CQAOxthjtp/TFWaD7MzOdsIYb3THwIDAQAB"
@@ -139,10 +141,13 @@ class Websocket(object):
             rsa_chiper = PKCS1_v1_5.new(pub_key)
             secret_key = rsa_chiper.encrypt(self._core.aes_ecb_sec_key)
 
-            proto = pack_proto(self._core, secret_key)
+            proto = _api.pack_proto(self._core, secret_key)
+            body = await self.send(proto, cmd=_api.CMD, compress=False, encrypt=False, timeout=5.0)
+            groups = _api.parse_body(body)
 
-            body = await self.send(proto, cmd=1001, compress=False, encrypt=False, timeout=5.0)
-            parse_body(body)
+            for group in groups:
+                if group._group_type == 6:  # 私信组别类型为6
+                    self._record_id = group._last_msg_id * 100
 
     @property
     def is_aviliable(self) -> bool:
@@ -155,8 +160,19 @@ class Websocket(object):
 
         return not (self._websocket is None or self._websocket.closed or self._websocket._writer.transport.is_closing())
 
+    @property
+    def record_id(self) -> int:
+        """
+        用作请求参数的记录id
+
+        Returns:
+            int
+        """
+
+        return self._record_id
+
     async def send(
-        self, data: bytes, cmd: int, *, compress: bool = True, encrypt: bool = True, timeout: float
+        self, data: bytes, cmd: int, *, compress: bool = False, encrypt: bool = True, timeout: float
     ) -> bytes:
         """
         将protobuf序列化结果打包发送
@@ -165,7 +181,7 @@ class Websocket(object):
             data (bytes): 待发送的数据
             cmd (int): 请求的cmd类型
             compress (bool, optional): 是否需要gzip压缩. Defaults to False.
-            encrypt (bool, optional): 是否需要aes加密. Defaults to False.
+            encrypt (bool, optional): 是否需要aes加密. Defaults to True.
 
         Returns:
             bytes: 响应
