@@ -33,6 +33,7 @@ from .client._typing import (
     TypeFragTiebaPlus,
     UserInfo_home,
 )
+from .client.websocket import Websocket
 
 if os.name == 'posix':
     import signal

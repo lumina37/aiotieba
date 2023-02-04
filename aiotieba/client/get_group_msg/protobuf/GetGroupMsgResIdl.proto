@@ -1,8 +1,33 @@
-// protobuf.CommitPersonalMsg.CommitPersonalMsgResIdl
+// protobuf.GetGroupMsg.GetGroupMsgResIdl
 syntax = "proto3";
 
 import "Error.proto";
 
 message GetGroupMsgResIdl {
     Error error = 1;
+    message DataRes {
+        message GroupMsg {
+            message GroupInfo {
+                int64 groupId = 1;
+                int32 groupType = 20;
+            }
+            GroupInfo groupInfo = 1;
+            message MsgInfo {
+                int64 msgId = 1;
+                int32 msgType = 3;
+                string content = 5;
+                int32 createTime = 8;
+                message UserInfo {
+                    int64 userId = 1;
+                    string userName = 2;
+                    string portrait = 4;
+                    // string userNameShow = 18;
+                }
+                UserInfo userInfo = 10;
+            }
+            repeated MsgInfo msgList = 2;
+        }
+        repeated GroupMsg groupInfo = 1;
+    }
+    DataRes data = 2;
 }

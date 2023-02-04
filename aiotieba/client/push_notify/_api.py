@@ -1,14 +1,15 @@
-from ..get_group_msg import MsgGroup
+from typing import List
+
+from ._classdef import WsNotify
 from .protobuf import PushNotifyResIdl_pb2
 
 CMD = 202006
 
 
-def parse_body(body: bytes) -> MsgGroup:
+def parse_body(body: bytes) -> List[WsNotify]:
     res_proto = PushNotifyResIdl_pb2.PushNotifyResIdl()
     res_proto.ParseFromString(body)
 
-    group_proto = res_proto.multiMsg[0].data
-    group = MsgGroup(group_proto.groupId, group_proto.msgId)
+    notifies = [WsNotify()._init(p) for p in res_proto.multiMsg]
 
-    return group
+    return notifies

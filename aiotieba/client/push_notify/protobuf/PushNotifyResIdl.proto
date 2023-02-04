@@ -1,4 +1,4 @@
-// protobuf.CommitPersonalMsg.CommitPersonalMsgResIdl
+// protobuf.PushNotify.PushNotifyResIdl
 syntax = "proto3";
 
 message PushNotifyResIdl {
@@ -6,6 +6,8 @@ message PushNotifyResIdl {
         message PusherMsgInfo {
             int64 groupId = 1;
             int64 msgId = 2;
+            string et = 6;
+            int32 groupType = 7;
         }
         PusherMsgInfo data = 2;
     }

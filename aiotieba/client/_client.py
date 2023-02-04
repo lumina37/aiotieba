@@ -11,8 +11,8 @@ from ._classdef.user import UserInfo
 from ._core import TbCore
 from ._helper import ForumInfoCache, is_portrait
 from ._typing import TypeUserInfo
-from ._websocket import Websocket
 from .get_homepage._classdef import UserInfo_home
+from .websocket import Websocket
 
 if TYPE_CHECKING:
     import numpy as np
@@ -74,6 +74,9 @@ class Client(object):
         proxy: Union[Tuple[yarl.URL, aiohttp.BasicAuth], bool] = False,
         loop: Optional[asyncio.AbstractEventLoop] = None,
     ) -> None:
+
+        if loop is None:
+            loop = asyncio.get_running_loop()
 
         self._core = TbCore(BDUSS_key, proxy, loop)
         self._user = UserInfo_home()._init_null()
@@ -2059,13 +2062,12 @@ class Client(object):
 
         try:
             await self.websocket.init_websocket()
-            self.websocket._record_id += 1
 
             from . import send_msg
 
-            proto = send_msg.pack_proto(user_id, content, self.websocket._record_id)
-            body = await self.websocket.send(proto, send_msg.CMD, timeout=5.0)
-            send_msg.parse_body(body)
+            proto = send_msg.pack_proto(user_id, content, self.websocket.record_id)
+            resp = await self.websocket.send(proto, send_msg.CMD)
+            send_msg.parse_body(await resp.read())
 
         except Exception as err:
             LOG().warning(f"{err}. user_id={user_id}")
