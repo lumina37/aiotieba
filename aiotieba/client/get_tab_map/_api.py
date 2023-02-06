@@ -1,13 +1,14 @@
 import sys
 from typing import Dict
 
-import aiohttp
 import yarl
 
-from .._core import APP_BASE_HOST, TbCore
-from .._exception import TiebaServerError
+from .._core import APP_BASE_HOST, HttpCore, TbCore
 from .._helper import APP_SECURE_SCHEME, log_exception, pack_proto_request, send_request
+from ..exception import TiebaServerError
 from .protobuf import SearchPostForumReqIdl_pb2, SearchPostForumResIdl_pb2
+
+CMD = 309466
 
 
 def pack_proto(core: TbCore, fname: str) -> bytes:
@@ -31,18 +32,18 @@ def parse_body(body: bytes) -> Dict[str, int]:
     return tab_map
 
 
-async def request_http(connector: aiohttp.TCPConnector, core: TbCore, fname: str) -> Dict[str, int]:
+async def request_http(http_core: HttpCore, fname: str) -> Dict[str, int]:
 
     request = pack_proto_request(
-        core,
+        http_core,
         yarl.URL.build(
-            scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/forum/searchPostForum", query_string="cmd=309466"
+            scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/forum/searchPostForum", query_string=f"cmd={CMD}"
         ),
-        pack_proto(core, fname),
+        pack_proto(http_core.core, fname),
     )
 
     try:
-        body = await send_request(request, connector, read_bufsize=4 * 1024)
+        body = await send_request(request, http_core.connector, read_bufsize=4 * 1024)
         tab_map = parse_body(body)
 
     except Exception as err:

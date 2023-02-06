@@ -6,6 +6,7 @@ message PushNotifyResIdl {
         message PusherMsgInfo {
             int64 groupId = 1;
             int64 msgId = 2;
+            int32 type = 4;
             string et = 6;
             int32 groupType = 7;
         }

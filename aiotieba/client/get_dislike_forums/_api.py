@@ -1,13 +1,14 @@
 import sys
 
-import aiohttp
 import yarl
 
-from .._core import APP_BASE_HOST, TbCore
-from .._exception import TiebaServerError
+from .._core import APP_BASE_HOST, HttpCore, TbCore
 from .._helper import APP_SECURE_SCHEME, log_exception, pack_proto_request, send_request
+from ..exception import TiebaServerError
 from ._classdef import DislikeForums
 from .protobuf import GetDislikeListReqIdl_pb2, GetDislikeListResIdl_pb2
+
+CMD = 309692
 
 
 def pack_proto(core: TbCore, pn: int, rn: int) -> bytes:
@@ -33,18 +34,18 @@ def parse_body(body: bytes) -> DislikeForums:
     return dislike_forums
 
 
-async def request_http(connector: aiohttp.TCPConnector, core: TbCore, pn: int, rn: int) -> DislikeForums:
+async def request_http(http_core: HttpCore, pn: int, rn: int) -> DislikeForums:
 
     request = pack_proto_request(
-        core,
+        http_core,
         yarl.URL.build(
-            scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/u/user/getDislikeList", query_string="cmd=309692"
+            scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/u/user/getDislikeList", query_string=f"cmd={CMD}"
         ),
-        pack_proto(core, pn, rn),
+        pack_proto(http_core.core, pn, rn),
     )
 
     try:
-        body = await send_request(request, connector, read_bufsize=8 * 1024)
+        body = await send_request(request, http_core.connector, read_bufsize=8 * 1024)
         dislike_forums = parse_body(body)
 
     except Exception as err:

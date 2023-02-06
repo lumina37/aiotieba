@@ -1,4 +1,3 @@
-import asyncio
 import hashlib
 import secrets
 from typing import Dict, Optional, Tuple, Union
@@ -7,52 +6,9 @@ import aiohttp
 import yarl
 from Crypto.Cipher import AES
 
-from ..__version__ import __version__
-from .._config import CONFIG
-from .._logging import get_logger as LOG
-from ._crypto import c3_aid, cuid_galaxy2
-
-APP_BASE_HOST = "tiebac.baidu.com"
-WEB_BASE_HOST = "tieba.baidu.com"
-
-
-class SessionCore(object):
-    """
-    用于保存客户端的headers与cookies的容器
-    """
-
-    __slots__ = [
-        'headers',
-        'cookie_jar',
-    ]
-
-    def __init__(self, headers: Dict[str, str], cookie_jar: aiohttp.CookieJar) -> None:
-        self.headers = headers
-        self.cookie_jar = cookie_jar
-
-
-def _is_valid_BDUSS(BDUSS: str) -> bool:
-    if not BDUSS:
-        return False
-
-    legal_length = 192
-    if (len_new_BDUSS := len(BDUSS)) != legal_length:
-        LOG().warning(f"BDUSS的长度应为{legal_length}个字符 而输入的{BDUSS}有{len_new_BDUSS}个字符")
-        return False
-
-    return True
-
-
-def _is_valid_STOKEN(STOKEN: str) -> bool:
-    if not STOKEN:
-        return False
-
-    legal_length = 64
-    if (len_new_STOKEN := len(STOKEN)) != legal_length:
-        LOG().warning(f"STOKEN的长度应为{legal_length}个字符 而输入的{STOKEN}有{len_new_STOKEN}个字符")
-        return False
-
-    return True
+from ..._config import CONFIG
+from .._crypto import c3_aid, cuid_galaxy2
+from ._helper import is_valid_BDUSS, is_valid_STOKEN
 
 
 class TbCore(object):
@@ -61,9 +17,7 @@ class TbCore(object):
 
     Args:
         BDUSS_key (str, optional): 用于快捷调用BDUSS. Defaults to None.
-        proxy (tuple[yarl.URL, aiohttp.BasicAuth] | bool, optional): True则使用环境变量代理 False则禁用代理
-            输入一个 (http代理地址, 代理验证) 的元组以手动设置代理. Defaults to False.
-        loop (asyncio.AbstractEventLoop, optional): 事件循环. Defaults to None.
+        proxy (tuple[yarl.URL, aiohttp.BasicAuth], optional): 输入一个 (http代理地址, 代理验证) 的元组以手动设置代理. Defaults to (None, None).
     """
 
     __slots__ = [
@@ -82,13 +36,8 @@ class TbCore(object):
         '_aes_ecb_chiper',
         '_aes_cbc_sec_key',
         '_aes_cbc_chiper',
-        '_app_core',
-        '_app_proto_core',
-        '_web_core',
-        '_ws_core',
         '_proxy',
         '_proxy_auth',
-        '_loop',
     ]
 
     main_version = "12.36.0.1"  # 最新版本
@@ -98,75 +47,27 @@ class TbCore(object):
     def __init__(
         self,
         BDUSS_key: Optional[str] = None,
-        proxy: Union[Tuple[yarl.URL, aiohttp.BasicAuth], bool] = False,
-        loop: Optional[asyncio.AbstractEventLoop] = None,
+        proxy: Union[Tuple[yarl.URL, aiohttp.BasicAuth], Tuple[None, None]] = (None, None),
     ) -> None:
-        self._BDUSS_key = BDUSS_key
-        self._loop = loop
-
-        self._tbs = None
-        self._android_id = None
-        self._uuid = None
-        self._client_id = None
-        self._cuid = None
-        self._cuid_galaxy2 = None
-        self._c3_aid = None
-        self._z_id = None
-        self._aes_ecb_sec_key = None
-        self._aes_ecb_chiper = None
-        self._aes_cbc_sec_key = None
-        self._aes_cbc_chiper = None
-
-        hdrs = aiohttp.hdrs
-
-        app_headers = {
-            hdrs.USER_AGENT: f"aiotieba/{__version__}",
-            hdrs.ACCEPT_ENCODING: "gzip",
-            hdrs.CONNECTION: "keep-alive",
-            hdrs.HOST: APP_BASE_HOST,
-        }
-        self._app_core = SessionCore(app_headers, aiohttp.DummyCookieJar(loop=loop))
-
-        app_proto_headers = {
-            hdrs.USER_AGENT: f"aiotieba/{__version__}",
-            "x_bd_data_type": "protobuf",
-            hdrs.ACCEPT_ENCODING: "gzip",
-            hdrs.CONNECTION: "keep-alive",
-            hdrs.HOST: APP_BASE_HOST,
-        }
-        self._app_proto_core = SessionCore(app_proto_headers, aiohttp.DummyCookieJar(loop=loop))
-
-        web_headers = {
-            hdrs.USER_AGENT: f"aiotieba/{__version__}",
-            hdrs.ACCEPT_ENCODING: "gzip, deflate",
-            hdrs.CACHE_CONTROL: "no-cache",
-            hdrs.CONNECTION: "keep-alive",
-        }
-        self._web_core = SessionCore(web_headers, aiohttp.CookieJar(loop=loop))
-
-        ws_headers = {
-            hdrs.HOST: "im.tieba.baidu.com:8000",
-            hdrs.SEC_WEBSOCKET_EXTENSIONS: "im_version=2.3",
-        }
-        self._ws_core = SessionCore(ws_headers, aiohttp.DummyCookieJar(loop=loop))
-
-        user_cfg = CONFIG['User'].get(BDUSS_key, {})
+        self._BDUSS_key: str = BDUSS_key
+        user_cfg: Dict[str, str] = CONFIG['User'].get(BDUSS_key, {})
         self.BDUSS = user_cfg.get('BDUSS', '')
         self.STOKEN = user_cfg.get('STOKEN', '')
 
-        if proxy is False:
-            self._proxy = None
-            self._proxy_auth = None
-        elif proxy is True:
-            proxy_info = aiohttp.helpers.proxies_from_env().get('http', None)
-            if proxy_info is None:
-                self._proxy = None
-                self._proxy_auth = None
-            else:
-                self._proxy = proxy_info.proxy
-                self._proxy_auth = proxy_info.proxy_auth
-        else:
-            self._proxy, self._proxy_auth = proxy
+        self._tbs: str = None
+        self._android_id: str = None
+        self._uuid: str = None
+        self._client_id: str = None
+        self._cuid: str = None
+        self._cuid_galaxy2: str = None
+        self._c3_aid: str = None
+        self._z_id: str = None
+        self._aes_ecb_sec_key: bytes = None
+        self._aes_ecb_chiper = None
+        self._aes_cbc_sec_key: bytes = None
+        self._aes_cbc_chiper = None
+
+        self._proxy, self._proxy_auth = proxy
 
     @property
     def BDUSS_key(self) -> str:
@@ -186,16 +87,9 @@ class TbCore(object):
 
     @BDUSS.setter
     def BDUSS(self, new_BDUSS: str) -> None:
-
-        if not _is_valid_BDUSS(new_BDUSS):
+        if not is_valid_BDUSS(new_BDUSS):
             self._BDUSS = ''
-
         self._BDUSS = new_BDUSS
-
-        BDUSS_morsel = aiohttp.cookiejar.Morsel()
-        BDUSS_morsel.set('BDUSS', self._BDUSS, self._BDUSS)
-        BDUSS_morsel['domain'] = "baidu.com"
-        self._web_core.cookie_jar._cookies["baidu.com"]['BDUSS'] = BDUSS_morsel
 
     @property
     def STOKEN(self) -> str:
@@ -207,16 +101,9 @@ class TbCore(object):
 
     @STOKEN.setter
     def STOKEN(self, new_STOKEN: str) -> None:
-
-        if not _is_valid_STOKEN(new_STOKEN):
+        if not is_valid_STOKEN(new_STOKEN):
             self._STOKEN = ''
-
         self._STOKEN = new_STOKEN
-
-        STOKEN_morsel = aiohttp.cookiejar.Morsel()
-        STOKEN_morsel.set('STOKEN', self._STOKEN, self._STOKEN)
-        STOKEN_morsel['domain'] = "tieba.baidu.com"
-        self._web_core.cookie_jar._cookies["tieba.baidu.com"]['STOKEN'] = STOKEN_morsel
 
     @property
     def android_id(self) -> str:

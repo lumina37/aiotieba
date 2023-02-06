@@ -40,10 +40,17 @@ class WsResponse(object):
 
         Returns:
             bytes
+
+        Raises:
+            asyncio.TimeoutError: 读取超时
         """
 
-        with async_timeout.timeout(read_timeout):
-            return await self._future
+        try:
+            with async_timeout.timeout(read_timeout):
+                return await self._future
+        except asyncio.TimeoutError as err:
+            self._cancel()
+            raise asyncio.TimeoutError("Timeout to read") from err
 
 
 class WsWaiter(object):
@@ -111,46 +118,27 @@ class Websocket(object):
 
     __slots__ = [
         '_core',
-        '_req_id',
-        '_record_id',
+        '_connector',
         '_waiter',
         'callback',
-        '_client_ws',
         '_websocket',
         '_ws_dispatcher',
+        '_req_id',
+        'uid2rid',
+        '_default_record_id',
+        'gid2mid',
     ]
 
     def __init__(self, connector: aiohttp.TCPConnector, core: TbCore) -> None:
         self._core = core
-        self._req_id = int(time.time())
-        self._record_id = None
-        self._waiter = WsWaiter(core._loop)
-        self.callback: Dict[int, TypeWebsocketCallback] = {}
-
-        timeout = aiohttp.ClientTimeout(connect=3.0, sock_read=12.0, sock_connect=3.2)
-        ws_headers = {
-            aiohttp.hdrs.HOST: "im.tieba.baidu.com:8000",
-            aiohttp.hdrs.SEC_WEBSOCKET_EXTENSIONS: "im_version=2.3",
-            aiohttp.hdrs.SEC_WEBSOCKET_VERSION: "13",
-            'cuid': f"{self._core.cuid}|com.baidu.tieba_mini{self._core.post_version}",
-        }
-        self._client_ws = aiohttp.ClientSession(
-            connector=connector,
-            loop=core._loop,
-            headers=ws_headers,
-            connector_owner=False,
-            raise_for_status=True,
-            timeout=timeout,
-            read_bufsize=64 * 1024,
-        )
+        self._connector = connector
         self._websocket: aiohttp.ClientWebSocketResponse = None
         self._ws_dispatcher: asyncio.Task = None
 
     async def close(self) -> None:
         if self._websocket is not None:
             await self._websocket.close()
-            if not self._ws_dispatcher.done():
-                self._ws_dispatcher.cancel()
+            self._ws_dispatcher.cancel()
 
     def __default_callback(self, req_id: int, data: bytes) -> None:
         self._waiter.set_done(req_id, data)
@@ -182,7 +170,23 @@ class Websocket(object):
         if self._ws_dispatcher is not None and not self._ws_dispatcher.done():
             self._ws_dispatcher.cancel()
 
-        self._websocket = await self._client_ws._ws_connect(
+        timeout = aiohttp.ClientTimeout(connect=3.0, sock_read=12.0, sock_connect=3.2)
+        ws_headers = {
+            aiohttp.hdrs.HOST: "im.tieba.baidu.com:8000",
+            aiohttp.hdrs.SEC_WEBSOCKET_EXTENSIONS: "im_version=2.3",
+            aiohttp.hdrs.SEC_WEBSOCKET_VERSION: "13",
+            'cuid': f"{self._core.cuid}|com.baidu.tieba_mini{self._core.post_version}",
+        }
+        client_ws = aiohttp.ClientSession(
+            connector=self._connector,
+            loop=self._core._loop,
+            headers=ws_headers,
+            connector_owner=False,
+            raise_for_status=True,
+            timeout=timeout,
+            read_bufsize=64 * 1024,
+        )
+        self._websocket = await client_ws._ws_connect(
             yarl.URL.build(scheme="ws", host="im.tieba.baidu.com", port=8000),
             heartbeat=heartbeat,
             proxy=self._core._proxy,
@@ -204,6 +208,11 @@ class Websocket(object):
         if not self.is_aviliable:
             await self._create_websocket(heartbeat=None)
 
+            self._waiter = WsWaiter(self._core._loop)
+            self.callback: Dict[int, TypeWebsocketCallback] = {}
+            self._req_id = int(time.time())
+            self._default_record_id = 0
+
             pub_key = binascii.a2b_base64(
                 b"MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwQpwBZxXJV/JVRF/uNfyMSdu7YWwRNLM8+2xbniGp2iIQHOikPpTYQjlQgMi1uvq1kZpJ32rHo3hkwjy2l0lFwr3u4Hk2Wk7vnsqYQjAlYlK0TCzjpmiI+OiPOUNVtbWHQiLiVqFtzvpvi4AU7C1iKGvc/4IS45WjHxeScHhnZZ7njS4S1UgNP/GflRIbzgbBhyZ9kEW5/OO5YfG1fy6r4KSlDJw4o/mw5XhftyIpL+5ZBVBC6E1EIiP/dd9AbK62VV1PByfPMHMixpxI3GM2qwcmFsXcCcgvUXJBa9k6zP8dDQ3csCM2QNT+CQAOxthjtp/TFWaD7MzOdsIYb3THwIDAQAB"
             )
@@ -216,10 +225,11 @@ class Websocket(object):
             proto = init_websocket.pack_proto(self._core, secret_key)
             resp = await self.send(proto, cmd=init_websocket.CMD, compress=False, encrypt=False, send_timeout=5.0)
             groups = init_websocket.parse_body(await resp.read())
-
             for group in groups:
                 if group._group_type == get_group_msg.GroupType.PRIVATE_MSG:
-                    self._record_id = group._last_msg_id * 100
+                    self._default_record_id = group._last_msg_id * 1e2 + 1
+            self.uid2rid = {}
+            self.gid2mid = {g._group_id: g._last_msg_id for g in groups}
 
     @property
     def is_aviliable(self) -> bool:
@@ -233,18 +243,6 @@ class Websocket(object):
         return not (self._websocket is None or self._websocket.closed or self._websocket._writer.transport.is_closing())
 
     @property
-    def record_id(self) -> int:
-        """
-        用作请求参数的记录id
-
-        Note:
-            每次调用都会使其自增1
-        """
-
-        self._record_id += 1
-        return self._record_id
-
-    @property
     def req_id(self) -> int:
         """
         用作请求参数的id
@@ -256,6 +254,14 @@ class Websocket(object):
 
         self._req_id += 1
         return self._req_id
+
+    @property
+    def record_id(self) -> int:
+        """
+        获取用作请求参数的记录id
+        """
+
+        return self._record_id
 
     async def send(
         self, data: bytes, cmd: int, *, compress: bool = False, encrypt: bool = True, send_timeout: float = 3.0
@@ -286,6 +292,6 @@ class Websocket(object):
                 await self._websocket.send_bytes(req_data)
         except asyncio.TimeoutError as err:
             response._cancel()
-            raise asyncio.TimeoutError("Timeout to read") from err
+            raise asyncio.TimeoutError("Timeout to send") from err
         else:
             return response

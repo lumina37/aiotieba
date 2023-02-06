@@ -1,11 +1,10 @@
 import sys
 
-import aiohttp
 import yarl
 
-from .._core import WEB_BASE_HOST, TbCore
-from .._exception import TiebaServerError
+from .._core import WEB_BASE_HOST, HttpCore
 from .._helper import log_exception, pack_web_get_request, parse_json, send_request
+from ..exception import TiebaServerError
 from ._classdef import SelfFollowForums
 
 
@@ -20,7 +19,7 @@ def parse_body(body: bytes) -> SelfFollowForums:
     return self_follow_forums
 
 
-async def request(connector: aiohttp.TCPConnector, core: TbCore, pn: int) -> SelfFollowForums:
+async def request(http_core: HttpCore, pn: int) -> SelfFollowForums:
 
     params = [
         ('pn', pn),
@@ -28,13 +27,13 @@ async def request(connector: aiohttp.TCPConnector, core: TbCore, pn: int) -> Sel
     ]
 
     request = pack_web_get_request(
-        core,
+        http_core,
         yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mg/o/getForumHome"),
         params,
     )
 
     try:
-        body = await send_request(request, connector, read_bufsize=128 * 1024)
+        body = await send_request(request, http_core.connector, read_bufsize=128 * 1024)
         self_follow_forums = parse_body(body)
 
     except Exception as err:

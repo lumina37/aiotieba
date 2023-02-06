@@ -1,13 +1,14 @@
 import sys
 
-import aiohttp
 import yarl
 
-from .._core import APP_BASE_HOST, TbCore
-from .._exception import TiebaServerError
+from .._core import APP_BASE_HOST, HttpCore, TbCore
 from .._helper import APP_SECURE_SCHEME, log_exception, pack_proto_request, send_request
+from ..exception import TiebaServerError
 from ._classdef import SquareForums
 from .protobuf import GetForumSquareReqIdl_pb2, GetForumSquareResIdl_pb2
+
+CMD = 309653
 
 
 def pack_proto(core: TbCore, cname: str, pn: int, rn: int) -> bytes:
@@ -34,18 +35,18 @@ def parse_body(body: bytes) -> SquareForums:
     return square_forums
 
 
-async def request_http(connector: aiohttp.TCPConnector, core: TbCore, cname: str, pn: int, rn: int) -> SquareForums:
+async def request_http(http_core: HttpCore, cname: str, pn: int, rn: int) -> SquareForums:
 
     request = pack_proto_request(
-        core,
+        http_core,
         yarl.URL.build(
-            scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/forum/getForumSquare", query_string="cmd=309653"
+            scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/forum/getForumSquare", query_string=f"cmd={CMD}"
         ),
-        pack_proto(core, cname, pn, rn),
+        pack_proto(http_core.core, cname, pn, rn),
     )
 
     try:
-        body = await send_request(request, connector, read_bufsize=16 * 1024)
+        body = await send_request(request, http_core.connector, read_bufsize=16 * 1024)
         square_forums = parse_body(body)
 
     except Exception as err:

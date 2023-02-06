@@ -15,8 +15,8 @@ from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 
 from ..._logging import get_logger
-from .._core import TbCore
-from .._exception import HTTPStatusError, exc_handlers
+from .._core import HttpCore, TbCore
+from ..exception import HTTPStatusError, exc_handlers
 from ._const import DEFAULT_TIMEOUT
 
 try:
@@ -140,13 +140,13 @@ def sign(data: List[Tuple[str, Union[str, int]]]) -> List[Tuple[str, str]]:
     return data
 
 
-def pack_form_request(core: TbCore, url: yarl.URL, data: List[Tuple[str, str]]) -> aiohttp.ClientRequest:
+def pack_form_request(http_core: HttpCore, url: yarl.URL, data: List[Tuple[str, str]]) -> aiohttp.ClientRequest:
     """
     自动签名参数元组列表
     并将其打包为移动端表单请求
 
     Args:
-        core (TbCore): 贴吧客户端核心容器
+        http_core (HttpCore): 保存http接口相关信息的核心容器
         url (yarl.URL): 链接
         data (list[tuple[str, str]]): 参数元组列表
 
@@ -162,23 +162,23 @@ def pack_form_request(core: TbCore, url: yarl.URL, data: List[Tuple[str, str]]) 
     request = aiohttp.ClientRequest(
         aiohttp.hdrs.METH_POST,
         url,
-        headers=core._app_core.headers,
+        headers=http_core.app.headers,
         data=payload,
-        loop=core._loop,
-        proxy=core._proxy,
-        proxy_auth=core._proxy_auth,
+        loop=http_core.loop,
+        proxy=http_core.core._proxy,
+        proxy_auth=http_core.core._proxy_auth,
         ssl=False,
     )
 
     return request
 
 
-def pack_proto_request(core: TbCore, url: yarl.URL, data: bytes) -> aiohttp.ClientRequest:
+def pack_proto_request(http_core: HttpCore, url: yarl.URL, data: bytes) -> aiohttp.ClientRequest:
     """
     打包移动端protobuf请求
 
     Args:
-        core (TbCore): 贴吧客户端核心容器
+        http_core (HttpCore): 保存http接口相关信息的核心容器
         url (yarl.URL): 链接
         data (bytes): protobuf序列化后的二进制数据
 
@@ -199,23 +199,23 @@ def pack_proto_request(core: TbCore, url: yarl.URL, data: bytes) -> aiohttp.Clie
     request = aiohttp.ClientRequest(
         aiohttp.hdrs.METH_POST,
         url,
-        headers=core._app_proto_core.headers,
+        headers=http_core.app_proto.headers,
         data=writer,
-        loop=core._loop,
-        proxy=core._proxy,
-        proxy_auth=core._proxy_auth,
+        loop=http_core.loop,
+        proxy=http_core.core._proxy,
+        proxy_auth=http_core.core._proxy_auth,
         ssl=False,
     )
 
     return request
 
 
-def pack_web_get_request(core: TbCore, url: yarl.URL, params: List[Tuple[str, str]]) -> aiohttp.ClientRequest:
+def pack_web_get_request(http_core: HttpCore, url: yarl.URL, params: List[Tuple[str, str]]) -> aiohttp.ClientRequest:
     """
     打包网页端参数请求
 
     Args:
-        core (TbCore): 贴吧客户端核心容器
+        http_core (HttpCore): 保存http接口相关信息的核心容器
         url (yarl.URL): 链接
         params (list[tuple[str, str]]): 参数元组列表
 
@@ -227,23 +227,23 @@ def pack_web_get_request(core: TbCore, url: yarl.URL, params: List[Tuple[str, st
     request = aiohttp.ClientRequest(
         aiohttp.hdrs.METH_GET,
         url,
-        headers=core._web_core.headers,
-        cookies=core._web_core.cookie_jar.filter_cookies(url),
-        loop=core._loop,
-        proxy=core._proxy,
-        proxy_auth=core._proxy_auth,
+        headers=http_core.web.headers,
+        cookies=http_core.web.cookie_jar.filter_cookies(url),
+        loop=http_core.loop,
+        proxy=http_core.core._proxy,
+        proxy_auth=http_core.core._proxy_auth,
         ssl=False,
     )
 
     return request
 
 
-def pack_web_form_request(core: TbCore, url: yarl.URL, data: List[Tuple[str, str]]) -> aiohttp.ClientRequest:
+def pack_web_form_request(http_core: HttpCore, url: yarl.URL, data: List[Tuple[str, str]]) -> aiohttp.ClientRequest:
     """
     打包网页端表单请求
 
     Args:
-        core (TbCore): 贴吧客户端核心容器
+        http_core (HttpCore): 保存http接口相关信息的核心容器
         url (yarl.URL): 链接
         data (list[tuple[str, str]]): 参数元组列表
 
@@ -259,12 +259,12 @@ def pack_web_form_request(core: TbCore, url: yarl.URL, data: List[Tuple[str, str
     request = aiohttp.ClientRequest(
         aiohttp.hdrs.METH_POST,
         url,
-        headers=core._web_core.headers,
+        headers=http_core.web.headers,
         data=payload,
-        cookies=core._web_core.cookie_jar.filter_cookies(url),
-        loop=core._loop,
-        proxy=core._proxy,
-        proxy_auth=core._proxy_auth,
+        cookies=http_core.web.cookie_jar.filter_cookies(url),
+        loop=http_core.loop,
+        proxy=http_core.core._proxy,
+        proxy_auth=http_core.core._proxy_auth,
         ssl=False,
     )
 
@@ -278,7 +278,7 @@ def pack_ws_bytes(
     打包数据并添加9字节头部
 
     Args:
-        core (TiebaCore): 贴吧核心参数容器
+        core (TbCore): 贴吧核心参数容器
         data (bytes): 待发送的websocket数据
         cmd (int): 请求的cmd类型
         req_id (int): 请求的id
@@ -316,7 +316,7 @@ def parse_ws_bytes(core: TbCore, data: bytes) -> Tuple[bytes, int, int]:
     对websocket返回数据进行解包
 
     Args:
-        core (TiebaCore): 贴吧核心参数容器
+        core (TbCore): 贴吧核心参数容器
         data (bytes): 接收到的websocket数据
 
     Returns:

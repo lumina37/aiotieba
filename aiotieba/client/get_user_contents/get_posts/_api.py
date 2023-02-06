@@ -1,14 +1,15 @@
 import sys
 from typing import List
 
-import aiohttp
 import yarl
 
-from ..._core import APP_BASE_HOST, TbCore
-from ..._exception import TiebaServerError
+from ..._core import APP_BASE_HOST, HttpCore, TbCore
 from ..._helper import APP_SECURE_SCHEME, log_exception, pack_proto_request, send_request
+from ...exception import TiebaServerError
 from .._classdef import UserInfo_u, UserPosts
 from ..protobuf import UserPostReqIdl_pb2, UserPostResIdl_pb2
+
+CMD = 303002
 
 
 def pack_proto(core: TbCore, user_id: int, pn: int) -> bytes:
@@ -42,18 +43,18 @@ def parse_body(body: bytes) -> List[UserPosts]:
     return uposts_list
 
 
-async def request_http(connector: aiohttp.TCPConnector, core: TbCore, user_id: int, pn: int) -> List[UserPosts]:
+async def request_http(http_core: HttpCore, user_id: int, pn: int) -> List[UserPosts]:
 
     request = pack_proto_request(
-        core,
+        http_core,
         yarl.URL.build(
-            scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/u/feed/userpost", query_string="cmd=303002"
+            scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/u/feed/userpost", query_string=f"cmd={CMD}"
         ),
-        pack_proto(core, user_id, pn),
+        pack_proto(http_core.core, user_id, pn),
     )
 
     try:
-        body = await send_request(request, connector, read_bufsize=8 * 1024)
+        body = await send_request(request, http_core.connector, read_bufsize=8 * 1024)
         uposts_list = parse_body(body)
 
     except Exception as err:

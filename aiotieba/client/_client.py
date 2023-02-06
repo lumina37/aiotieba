@@ -8,10 +8,10 @@ import yarl
 from .._logging import get_logger as LOG
 from ._classdef.enums import ReqUInfo
 from ._classdef.user import UserInfo
-from ._core import TbCore
+from ._core import HttpCore, TbCore
 from ._helper import ForumInfoCache, is_portrait
-from ._typing import TypeUserInfo
 from .get_homepage._classdef import UserInfo_home
+from .typing import TypeUserInfo
 from .websocket import Websocket
 
 if TYPE_CHECKING:
@@ -44,6 +44,7 @@ if TYPE_CHECKING:
         get_uinfo_user_json,
         get_unblock_appeals,
         get_user_contents,
+        push_notify,
         search_post,
         tieba_uid2user_info,
     )
@@ -61,25 +62,22 @@ class Client(object):
     """
 
     __slots__ = [
-        '_core',
-        '_user',
         '_connector',
-        '_websocket',
+        '_core',
+        '_http_core',
+        '_ws_core',
+        '_user',
     ]
 
     def __init__(
         self,
         BDUSS_key: Optional[str] = None,
-        *,
         proxy: Union[Tuple[yarl.URL, aiohttp.BasicAuth], bool] = False,
         loop: Optional[asyncio.AbstractEventLoop] = None,
     ) -> None:
 
         if loop is None:
             loop = asyncio.get_running_loop()
-
-        self._core = TbCore(BDUSS_key, proxy, loop)
-        self._user = UserInfo_home()._init_null()
 
         connector = aiohttp.TCPConnector(
             ttl_dns_cache=600,
@@ -89,21 +87,32 @@ class Client(object):
             ssl=False,
             loop=loop,
         )
-        self._connector = connector
-        self._websocket = None
+        self._connector: aiohttp.TCPConnector = connector
+
+        if proxy is False:
+            proxy = (None, None)
+        elif proxy is True:
+            proxy_info = aiohttp.helpers.proxies_from_env().get('http', None)
+            if proxy_info is None:
+                proxy = (None, None)
+            else:
+                proxy = (proxy_info.proxy, proxy_info.proxy_auth)
+
+        core = TbCore(BDUSS_key, proxy)
+        self._core: TbCore = core
+        self._http_core: HttpCore = HttpCore(core, connector, loop)
+
+        self._user: UserInfo_home = UserInfo_home()._init_null()
 
     async def __aenter__(self) -> "Client":
         return self
 
-    async def close(self) -> None:
-        if self._websocket is not None:
-            await self._websocket.close()
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        # if self._websocket is not None:
+        #     await self._websocket.close()
 
         if self._connector is not None:
             await self._connector.close()
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
-        await self.close()
 
     def __hash__(self) -> int:
         return hash(self._core._BDUSS_key)
@@ -115,25 +124,22 @@ class Client(object):
     def core(self) -> TbCore:
         """
         贴吧核心参数容器
-
-        Returns:
-            TiebaCore
         """
 
         return self._core
 
-    @property
-    def websocket(self) -> Websocket:
+    async def get_websocket(self) -> Websocket:
         """
-        贴吧websocket请求管理器
+        获取贴吧websocket请求管理器
 
         Returns:
-            Websocket: 贴吧websocket请求管理器
+            Websocket
         """
 
-        if self._websocket is None:
-            self._websocket = Websocket(self._connector, self._core)
-        return self._websocket
+        if self._ws_core is None:
+            self._ws_core = Websocket(self._connector, self._core)
+
+        return self._ws_core
 
     async def __init_tbs(self) -> bool:
         """
@@ -169,7 +175,7 @@ class Client(object):
 
         from . import login
 
-        user, tbs = await login.request(self._connector, self._core)
+        user, tbs = await login.request(self._http_core)
 
         if tbs:
             self._user._user_id = user._user_id
@@ -197,7 +203,7 @@ class Client(object):
 
         from . import sync
 
-        client_id = await sync.request(self._connector, self._core)
+        client_id = await sync.request(self._http_core)
 
         if client_id:
             self._core._client_id = client_id
@@ -209,7 +215,7 @@ class Client(object):
 
         from . import init_z_id
 
-        z_id = await init_z_id.request(self._connector, self._core)
+        z_id = await init_z_id.request(self._http_core)
 
         if z_id:
             self._core._z_id = z_id
@@ -233,7 +239,7 @@ class Client(object):
 
         from . import get_fid
 
-        fid = await get_fid.request(self._connector, self._core, fname)
+        fid = await get_fid.request(self._http_core, fname)
 
         if fid:
             ForumInfoCache.add_forum(fname, fid)
@@ -330,7 +336,7 @@ class Client(object):
 
         from . import get_uinfo_panel
 
-        return await get_uinfo_panel.request(self._connector, self._core, name_or_portrait)
+        return await get_uinfo_panel.request(self._http_core, name_or_portrait)
 
     async def _get_uinfo_user_json(self, user_name: str) -> "get_uinfo_user_json.UserInfo_json":
         """
@@ -345,7 +351,7 @@ class Client(object):
 
         from . import get_uinfo_user_json
 
-        user = await get_uinfo_user_json.request(self._connector, self._core, user_name)
+        user = await get_uinfo_user_json.request(self._http_core, user_name)
         user._user_name = user_name
 
         return user
@@ -364,7 +370,7 @@ class Client(object):
 
         from . import get_uinfo_getuserinfo_app
 
-        return await get_uinfo_getuserinfo_app.request_http(self._connector, self._core, user_id)
+        return await get_uinfo_getuserinfo_app.request_http(self._http_core, user_id)
 
     async def _get_uinfo_getUserInfo(self, user_id: int) -> "get_uinfo_getUserInfo_web.UserInfo_guinfo_web":
         """
@@ -383,7 +389,7 @@ class Client(object):
         from . import get_uinfo_getUserInfo_web
 
         try:
-            user = await get_uinfo_getUserInfo_web.request(self._connector, self._core, user_id)
+            user = await get_uinfo_getUserInfo_web.request(self._http_core, user_id)
             user._user_id = user_id
 
         except Exception as err:
@@ -408,7 +414,7 @@ class Client(object):
 
         from . import tieba_uid2user_info
 
-        return await tieba_uid2user_info.request_http(self._connector, self.core, tieba_uid)
+        return await tieba_uid2user_info.request_http(self._http_core, tieba_uid)
 
     async def get_threads(
         self, fname_or_fid: Union[str, int], /, pn: int = 1, *, rn: int = 30, sort: int = 5, is_good: bool = False
@@ -432,7 +438,7 @@ class Client(object):
 
         from . import get_threads
 
-        return await get_threads.request_http(self._connector, self._core, fname, pn, rn, sort, is_good)
+        return await get_threads.request_http(self._http_core, fname, pn, rn, sort, is_good)
 
     async def get_posts(
         self,
@@ -469,8 +475,7 @@ class Client(object):
         from . import get_posts
 
         return await get_posts.request_http(
-            self._connector,
-            self._core,
+            self._http_core,
             tid,
             pn,
             rn,
@@ -500,7 +505,7 @@ class Client(object):
 
         from . import get_comments
 
-        return await get_comments.request_http(self._connector, self._core, tid, pid, pn, is_floor)
+        return await get_comments.request_http(self._http_core, tid, pid, pn, is_floor)
 
     async def search_post(
         self,
@@ -532,7 +537,7 @@ class Client(object):
 
         from . import search_post
 
-        return await search_post.request(self._connector, self._core, fname, query, pn, rn, query_type, only_thread)
+        return await search_post.request(self._http_core, fname, query, pn, rn, query_type, only_thread)
 
     async def get_forum_detail(self, fname_or_fid: Union[str, int]) -> "get_forum_detail.Forum_detail":
         """
@@ -549,7 +554,7 @@ class Client(object):
 
         from . import get_forum_detail
 
-        return await get_forum_detail.request(self._connector, self._core, fid)
+        return await get_forum_detail.request(self._http_core, fid)
 
     async def get_bawu_info(self, fname_or_fid: Union[str, int]) -> Dict[str, List["get_bawu_info.UserInfo_bawu"]]:
         """
@@ -566,7 +571,7 @@ class Client(object):
 
         from . import get_bawu_info
 
-        return await get_bawu_info.request_http(self._connector, self._core, fid)
+        return await get_bawu_info.request_http(self._http_core, fid)
 
     async def get_tab_map(self, fname_or_fid: Union[str, int]) -> Dict[str, int]:
         """
@@ -583,7 +588,7 @@ class Client(object):
 
         from . import get_tab_map
 
-        return await get_tab_map.request_http(self._connector, self._core, fname)
+        return await get_tab_map.request_http(self._http_core, fname)
 
     async def get_rank_users(self, fname_or_fid: Union[str, int], /, pn: int = 1) -> "get_rank_users.RankUsers":
         """
@@ -601,7 +606,7 @@ class Client(object):
 
         from . import get_rank_users
 
-        return await get_rank_users.request(self._connector, self._core, fname, pn)
+        return await get_rank_users.request(self._http_core, fname, pn)
 
     async def get_member_users(self, fname_or_fid: Union[str, int], /, pn: int = 1) -> "get_member_users.MemberUsers":
         """
@@ -619,7 +624,7 @@ class Client(object):
 
         from . import get_member_users
 
-        return await get_member_users.request(self._connector, self._core, fname, pn)
+        return await get_member_users.request(self._http_core, fname, pn)
 
     async def get_square_forums(self, cname: str, /, pn: int = 1, *, rn: int = 20) -> "get_square_forums.SquareForums":
         """
@@ -636,7 +641,7 @@ class Client(object):
 
         from . import get_square_forums
 
-        return await get_square_forums.request_http(self._connector, self._core, cname, pn, rn)
+        return await get_square_forums.request_http(self._http_core, cname, pn, rn)
 
     async def get_homepage(
         self, _id: Union[str, int], *, with_threads: bool = True
@@ -660,7 +665,7 @@ class Client(object):
 
         from . import get_homepage
 
-        return await get_homepage.request_http(self._connector, self._core, portrait, with_threads)
+        return await get_homepage.request_http(self._http_core, portrait, with_threads)
 
     async def get_statistics(self, fname_or_fid: Union[str, int]) -> Dict[str, List[int]]:
         """
@@ -685,7 +690,7 @@ class Client(object):
 
         from . import get_statistics
 
-        return await get_statistics.request(self._connector, self._core, fid)
+        return await get_statistics.request(self._http_core, fid)
 
     async def get_follow_forums(
         self, _id: Union[str, int], /, pn: int = 1, *, rn: int = 50
@@ -710,7 +715,7 @@ class Client(object):
 
         from . import get_follow_forums
 
-        return await get_follow_forums.request(self._connector, self._core, user_id, pn, rn)
+        return await get_follow_forums.request(self._http_core, user_id, pn, rn)
 
     async def get_recom_status(self, fname_or_fid: Union[str, int]) -> "get_recom_status.RecomStatus":
         """
@@ -727,7 +732,7 @@ class Client(object):
 
         from . import get_recom_status
 
-        return await get_recom_status.request(self._connector, self._core, fid)
+        return await get_recom_status.request(self._http_core, fid)
 
     async def block(
         self, fname_or_fid: Union[str, int], /, _id: Union[str, int], *, day: Literal[1, 3, 10] = 1, reason: str = ''
@@ -762,7 +767,7 @@ class Client(object):
 
         from . import block
 
-        return await block.request(self._connector, self._core, fname, fid, portrait, day, reason)
+        return await block.request(self._http_core, fname, fid, portrait, day, reason)
 
     async def unblock(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> bool:
         """
@@ -793,7 +798,7 @@ class Client(object):
 
         from . import unblock
 
-        return await unblock.request(self._connector, self._core, fname, fid, user_id)
+        return await unblock.request(self._http_core, fname, fid, user_id)
 
     async def hide_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
@@ -812,7 +817,7 @@ class Client(object):
 
         from . import del_thread
 
-        return await del_thread.request(self._connector, self._core, fid, tid, is_hide=True)
+        return await del_thread.request(self._http_core, fid, tid, is_hide=True)
 
     async def del_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
@@ -831,7 +836,7 @@ class Client(object):
 
         from . import del_thread
 
-        return await del_thread.request(self._connector, self._core, fid, tid, is_hide=False)
+        return await del_thread.request(self._http_core, fid, tid, is_hide=False)
 
     async def del_threads(self, fname_or_fid: Union[str, int], /, tids: List[int], *, block: bool = False) -> bool:
         """
@@ -851,7 +856,7 @@ class Client(object):
 
         from . import del_threads
 
-        return await del_threads.request(self._connector, self._core, fid, tids, block)
+        return await del_threads.request(self._http_core, fid, tids, block)
 
     async def del_post(self, fname_or_fid: Union[str, int], /, pid: int) -> bool:
         """
@@ -870,7 +875,7 @@ class Client(object):
 
         from . import del_post
 
-        return await del_post.request(self._connector, self._core, fid, pid)
+        return await del_post.request(self._http_core, fid, pid)
 
     async def del_posts(self, fname_or_fid: Union[str, int], /, pids: List[int], *, block: bool = False) -> bool:
         """
@@ -890,7 +895,7 @@ class Client(object):
 
         from . import del_posts
 
-        return await del_posts.request(self._connector, self._core, fid, pids, block)
+        return await del_posts.request(self._http_core, fid, pids, block)
 
     async def unhide_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
@@ -915,7 +920,7 @@ class Client(object):
 
         from . import recover
 
-        return await recover.request(self._connector, self._core, fname, fid, tid, 0, is_hide=True)
+        return await recover.request(self._http_core, fname, fid, tid, 0, is_hide=True)
 
     async def recover_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
@@ -940,7 +945,7 @@ class Client(object):
 
         from . import recover
 
-        return await recover.request(self._connector, self._core, fname, fid, tid, 0, is_hide=False)
+        return await recover.request(self._http_core, fname, fid, tid, 0, is_hide=False)
 
     async def recover_post(self, fname_or_fid: Union[str, int], /, pid: int) -> bool:
         """
@@ -965,7 +970,7 @@ class Client(object):
 
         from . import recover
 
-        return await recover.request(self._connector, self._core, fname, fid, 0, pid, is_hide=False)
+        return await recover.request(self._http_core, fname, fid, 0, pid, is_hide=False)
 
     async def recover(
         self, fname_or_fid: Union[str, int], /, tid: int = 0, pid: int = 0, *, is_hide: bool = False
@@ -994,7 +999,7 @@ class Client(object):
 
         from . import recover
 
-        return await recover.request(self._connector, self._core, fname, fid, tid, pid, is_hide)
+        return await recover.request(self._http_core, fname, fid, tid, pid, is_hide)
 
     async def move(self, fname_or_fid: Union[str, int], /, tid: int, *, to_tab_id: int, from_tab_id: int = 0) -> bool:
         """
@@ -1015,7 +1020,7 @@ class Client(object):
 
         from . import move
 
-        return await move.request(self._connector, self._core, fid, tid, to_tab_id, from_tab_id)
+        return await move.request(self._http_core, fid, tid, to_tab_id, from_tab_id)
 
     async def recommend(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
@@ -1033,7 +1038,7 @@ class Client(object):
 
         from . import recommend
 
-        return await recommend.request(self._connector, self._core, fid, tid)
+        return await recommend.request(self._http_core, fid, tid)
 
     async def good(self, fname_or_fid: Union[str, int], /, tid: int, *, cname: str = '') -> bool:
         """
@@ -1061,7 +1066,7 @@ class Client(object):
 
         from . import good
 
-        return await good.request(self._connector, self._core, fname, fid, tid, cid)
+        return await good.request(self._http_core, fname, fid, tid, cid)
 
     async def ungood(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
@@ -1086,7 +1091,7 @@ class Client(object):
 
         from . import ungood
 
-        return await ungood.request(self._connector, self._core, fname, fid, tid)
+        return await ungood.request(self._http_core, fname, fid, tid)
 
     async def _get_cid(self, fname_or_fid: Union[str, int], /, cname: str) -> int:
         """
@@ -1107,7 +1112,7 @@ class Client(object):
 
         from . import get_cid
 
-        cates = await get_cid.request(self._connector, self._core, fname)
+        cates = await get_cid.request(self._http_core, fname)
 
         cid = 0
         for item in cates:
@@ -1140,7 +1145,7 @@ class Client(object):
 
         from . import top
 
-        return await top.request(self._connector, self._core, fname, fid, tid, is_set=True)
+        return await top.request(self._http_core, fname, fid, tid, is_set=True)
 
     async def untop(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
@@ -1165,7 +1170,7 @@ class Client(object):
 
         from . import top
 
-        return await top.request(self._connector, self._core, fname, fid, tid, is_set=False)
+        return await top.request(self._http_core, fname, fid, tid, is_set=False)
 
     async def get_recovers(
         self, fname_or_fid: Union[str, int], /, name: str = '', pn: int = 1
@@ -1191,7 +1196,7 @@ class Client(object):
 
         from . import get_recovers
 
-        return await get_recovers.request(self._connector, self._core, fname, fid, name, pn)
+        return await get_recovers.request(self._http_core, fname, fid, name, pn)
 
     async def get_blocks(self, fname_or_fid: Union[str, int], /, name: str = '', pn: int = 1) -> "get_blocks.Blocks":
         """
@@ -1215,7 +1220,7 @@ class Client(object):
 
         from . import get_blocks
 
-        return await get_blocks.request(self._connector, self._core, fname, fid, name, pn)
+        return await get_blocks.request(self._http_core, fname, fid, name, pn)
 
     async def get_blacklist_users(
         self, fname_or_fid: Union[str, int], /, pn: int = 1
@@ -1235,7 +1240,7 @@ class Client(object):
 
         from . import get_blacklist_users
 
-        return await get_blacklist_users.request(self._connector, self._core, fname, pn)
+        return await get_blacklist_users.request(self._http_core, fname, pn)
 
     async def blacklist_add(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> bool:
         """
@@ -1261,7 +1266,7 @@ class Client(object):
 
         from . import blacklist_add
 
-        return await blacklist_add.request(self._connector, self._core, fname, user_id)
+        return await blacklist_add.request(self._http_core, fname, user_id)
 
     async def blacklist_del(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> bool:
         """
@@ -1287,7 +1292,7 @@ class Client(object):
 
         from . import blacklist_del
 
-        return await blacklist_del.request(self._connector, self._core, fname, user_id)
+        return await blacklist_del.request(self._http_core, fname, user_id)
 
     async def get_unblock_appeals(
         self, fname_or_fid: Union[str, int], /, pn: int = 1, *, rn: int = 5
@@ -1315,7 +1320,7 @@ class Client(object):
 
         from . import get_unblock_appeals
 
-        return await get_unblock_appeals.request(self._connector, self._core, fname, fid, pn, rn)
+        return await get_unblock_appeals.request(self._http_core, fname, fid, pn, rn)
 
     async def handle_unblock_appeals(
         self, fname_or_fid: Union[str, int], /, appeal_ids: List[int], *, refuse: bool = True
@@ -1343,7 +1348,7 @@ class Client(object):
 
         from . import handle_unblock_appeals
 
-        return await handle_unblock_appeals.request(self._connector, self._core, fname, fid, appeal_ids, refuse)
+        return await handle_unblock_appeals.request(self._http_core, fname, fid, appeal_ids, refuse)
 
     async def get_image(self, img_url: str) -> "np.ndarray":
         """
@@ -1358,7 +1363,7 @@ class Client(object):
 
         from . import get_image
 
-        return await get_image.request(self._connector, self._core, yarl.URL(img_url))
+        return await get_image.request(self._http_core, yarl.URL(img_url))
 
     async def hash2image(self, raw_hash: str, /, size: Literal['s', 'm', 'l'] = 's') -> "np.ndarray":
         """
@@ -1391,7 +1396,7 @@ class Client(object):
             image = np.empty(0, dtype=np.uint8)
             return image
 
-        return await get_image.request(self._connector, self._core, img_url)
+        return await get_image.request(self._http_core, img_url)
 
     async def get_portrait(self, _id: Union[str, int], /, size: Literal['s', 'm', 'l'] = 's') -> "np.ndarray":
         """
@@ -1428,7 +1433,7 @@ class Client(object):
 
         img_url = yarl.URL.build(scheme="http", host="tb.himg.baidu.com", path=f"/sys/portrait{path}/item/{portrait}")
 
-        return await get_image.request(self._connector, self._core, img_url)
+        return await get_image.request(self._http_core, img_url)
 
     async def __get_selfinfo_initNickname(self) -> bool:
         """
@@ -1440,7 +1445,7 @@ class Client(object):
 
         from . import get_selfinfo_initNickname
 
-        user = await get_selfinfo_initNickname.request(self._connector, self._core)
+        user = await get_selfinfo_initNickname.request(self._http_core)
 
         if user._tieba_uid:
             self._user._user_name = user._user_name
@@ -1448,25 +1453,6 @@ class Client(object):
             return True
         else:
             return False
-
-    async def get_newmsg(self) -> Dict[str, bool]:
-        """
-        获取消息通知
-
-        Returns:
-            dict[str, bool]: msg字典 value=True则表示有新内容
-            {'fans': 新粉丝,
-             'replyme': 新回复,
-             'atme': 新@,
-             'agree': 新赞同,
-             'pletter': 新私信,
-             'bookmark': 新收藏,
-             'count': 新通知}
-        """
-
-        from . import get_newmsg
-
-        return await get_newmsg.request(self._connector, self._core)
 
     async def get_replys(self, pn: int = 1) -> "get_replys.Replys":
         """
@@ -1481,7 +1467,7 @@ class Client(object):
 
         from . import get_replys
 
-        return await get_replys.request_http(self._connector, self._core, pn)
+        return await get_replys.request_http(self._http_core, pn)
 
     async def get_ats(self, pn: int = 1) -> "get_ats.Ats":
         """
@@ -1496,7 +1482,7 @@ class Client(object):
 
         from . import get_ats
 
-        return await get_ats.request(self._connector, self._core, pn)
+        return await get_ats.request(self._http_core, pn)
 
     async def get_self_public_threads(self, pn: int = 1) -> List["get_user_contents.UserThread"]:
         """
@@ -1513,7 +1499,7 @@ class Client(object):
 
         from .get_user_contents import get_threads
 
-        return await get_threads.request_http(self._connector, self._core, user.user_id, pn, public_only=True)
+        return await get_threads.request_http(self._http_core, user.user_id, pn, public_only=True)
 
     async def get_self_threads(self, pn: int = 1) -> List["get_user_contents.UserThread"]:
         """
@@ -1530,7 +1516,7 @@ class Client(object):
 
         from .get_user_contents import get_threads
 
-        return await get_threads.request_http(self._connector, self._core, user.user_id, pn, public_only=False)
+        return await get_threads.request_http(self._http_core, user.user_id, pn, public_only=False)
 
     async def get_self_posts(self, pn: int = 1) -> List["get_user_contents.UserPosts"]:
         """
@@ -1547,7 +1533,7 @@ class Client(object):
 
         from .get_user_contents import get_posts
 
-        return await get_posts.request_http(self._connector, self._core, user.user_id, pn)
+        return await get_posts.request_http(self._http_core, user.user_id, pn)
 
     async def get_user_threads(self, _id: Union[str, int], pn: int = 1) -> List["get_user_contents.UserThread"]:
         """
@@ -1569,7 +1555,7 @@ class Client(object):
 
         from .get_user_contents import get_threads
 
-        return await get_threads.request_http(self._connector, self._core, user_id, pn, public_only=True)
+        return await get_threads.request_http(self._http_core, user_id, pn, public_only=True)
 
     async def get_fans(self, _id: Union[str, int, None] = None, /, pn: int = 1) -> "get_fans.Fans":
         """
@@ -1595,7 +1581,7 @@ class Client(object):
 
         from . import get_fans
 
-        return await get_fans.request(self._connector, self._core, user_id, pn)
+        return await get_fans.request(self._http_core, user_id, pn)
 
     async def get_follows(self, _id: Union[str, int, None] = None, /, pn: int = 1) -> "get_follows.Follows":
         """
@@ -1621,7 +1607,7 @@ class Client(object):
 
         from . import get_follows
 
-        return await get_follows.request(self._connector, self._core, user_id, pn)
+        return await get_follows.request(self._http_core, user_id, pn)
 
     async def get_self_follow_forums(self, pn: int = 1) -> "get_self_follow_forums.SelfFollowForums":
         """
@@ -1639,7 +1625,7 @@ class Client(object):
 
         from . import get_self_follow_forums
 
-        return await get_self_follow_forums.request(self._connector, self._core, pn)
+        return await get_self_follow_forums.request(self._http_core, pn)
 
     async def get_dislike_forums(self, pn: int = 1, /, *, rn: int = 20) -> "get_dislike_forums.DislikeForums":
         """
@@ -1655,7 +1641,7 @@ class Client(object):
 
         from . import get_dislike_forums
 
-        return await get_dislike_forums.request_http(self._connector, self._core, pn, rn)
+        return await get_dislike_forums.request_http(self._http_core, pn, rn)
 
     async def agree(self, tid: int, pid: int = 0) -> bool:
         """
@@ -1677,7 +1663,7 @@ class Client(object):
 
         from . import agree
 
-        return await agree.request(self._connector, self._core, tid, pid, is_disagree=False, is_undo=False)
+        return await agree.request(self._http_core, tid, pid, is_disagree=False, is_undo=False)
 
     async def unagree(self, tid: int, pid: int = 0) -> bool:
         """
@@ -1695,7 +1681,7 @@ class Client(object):
 
         from . import agree
 
-        return await agree.request(self._connector, self._core, tid, pid, is_disagree=False, is_undo=True)
+        return await agree.request(self._http_core, tid, pid, is_disagree=False, is_undo=True)
 
     async def disagree(self, tid: int, pid: int = 0) -> bool:
         """
@@ -1713,7 +1699,7 @@ class Client(object):
 
         from . import agree
 
-        return await agree.request(self._connector, self._core, tid, pid, is_disagree=True, is_undo=False)
+        return await agree.request(self._http_core, tid, pid, is_disagree=True, is_undo=False)
 
     async def undisagree(self, tid: int, pid: int = 0) -> bool:
         """
@@ -1731,7 +1717,7 @@ class Client(object):
 
         from . import agree
 
-        return await agree.request(self._connector, self._core, tid, pid, is_disagree=True, is_undo=True)
+        return await agree.request(self._http_core, tid, pid, is_disagree=True, is_undo=True)
 
     async def agree_vimage(self, _id: Union[str, int]) -> bool:
         """
@@ -1752,7 +1738,7 @@ class Client(object):
 
         from . import agree_vimage
 
-        return await agree_vimage.request(self._connector, self._core, user_id)
+        return await agree_vimage.request(self._http_core, user_id)
 
     async def remove_fan(self, _id: Union[str, int]) -> bool:
         """
@@ -1775,7 +1761,7 @@ class Client(object):
 
         from . import remove_fan
 
-        return await remove_fan.request(self._connector, self._core, user_id)
+        return await remove_fan.request(self._http_core, user_id)
 
     async def follow_user(self, _id: Union[str, int]) -> bool:
         """
@@ -1798,7 +1784,7 @@ class Client(object):
 
         from . import follow_user
 
-        return await follow_user.request(self._connector, self._core, portrait)
+        return await follow_user.request(self._http_core, portrait)
 
     async def unfollow_user(self, _id: Union[str, int]) -> bool:
         """
@@ -1821,7 +1807,7 @@ class Client(object):
 
         from . import unfollow_user
 
-        return await unfollow_user.request(self._connector, self._core, portrait)
+        return await unfollow_user.request(self._http_core, portrait)
 
     async def follow_forum(self, fname_or_fid: Union[str, int]) -> bool:
         """
@@ -1839,7 +1825,7 @@ class Client(object):
 
         from . import follow_forum
 
-        return await follow_forum.request(self._connector, self._core, fid)
+        return await follow_forum.request(self._http_core, fid)
 
     async def unfollow_forum(self, fname_or_fid: Union[str, int]) -> bool:
         """
@@ -1857,7 +1843,7 @@ class Client(object):
 
         from . import unfollow_forum
 
-        return await unfollow_forum.request(self._connector, self._core, fid)
+        return await unfollow_forum.request(self._http_core, fid)
 
     async def dislike_forum(self, fname_or_fid: Union[str, int]) -> bool:
         """
@@ -1874,7 +1860,7 @@ class Client(object):
 
         from . import dislike_forum
 
-        return await dislike_forum.request(self._connector, self._core, fid)
+        return await dislike_forum.request(self._http_core, fid)
 
     async def undislike_forum(self, fname_or_fid: Union[str, int]) -> bool:
         """
@@ -1891,7 +1877,7 @@ class Client(object):
 
         from . import undislike_forum
 
-        return await undislike_forum.request(self._connector, self._core, fid)
+        return await undislike_forum.request(self._http_core, fid)
 
     async def set_thread_privacy(self, fname_or_fid: Union[str, int], /, tid: int, pid: int) -> bool:
         """
@@ -1910,7 +1896,7 @@ class Client(object):
 
         from . import set_thread_privacy
 
-        return await set_thread_privacy.request(self._connector, self._core, fid, tid, pid, is_hide=True)
+        return await set_thread_privacy.request(self._http_core, fid, tid, pid, is_hide=True)
 
     async def set_thread_public(self, fname_or_fid: Union[str, int], /, tid: int, pid: int) -> bool:
         """
@@ -1929,7 +1915,7 @@ class Client(object):
 
         from . import set_thread_privacy
 
-        return await set_thread_privacy.request(self._connector, self._core, fid, tid, pid, is_hide=False)
+        return await set_thread_privacy.request(self._http_core, fid, tid, pid, is_hide=False)
 
     async def set_profile(self, nick_name: str, sign: str = '', gender: int = 0) -> bool:
         """
@@ -1946,7 +1932,7 @@ class Client(object):
 
         from . import set_profile
 
-        return await set_profile.request(self._connector, self._core, nick_name, sign, gender)
+        return await set_profile.request(self._http_core, nick_name, sign, gender)
 
     async def set_nickname_old(self, nick_name: str) -> bool:
         """
@@ -1961,7 +1947,7 @@ class Client(object):
 
         from . import set_nickname_old
 
-        return await set_nickname_old.request(self._connector, self._core, nick_name)
+        return await set_nickname_old.request(self._http_core, nick_name)
 
     async def sign_forum(self, fname_or_fid: Union[str, int]) -> bool:
         """
@@ -1979,7 +1965,7 @@ class Client(object):
 
         from . import sign_forum
 
-        return await sign_forum.request(self._connector, self._core, fname)
+        return await sign_forum.request(self._http_core, fname)
 
     async def sign_growth(self) -> bool:
         """
@@ -1993,7 +1979,7 @@ class Client(object):
 
         from . import sign_growth
 
-        return await sign_growth.request_app(self._connector, self._core, act_type='page_sign')
+        return await sign_growth.request(self._http_core, act_type='page_sign')
 
     async def sign_growth_share(self) -> bool:
         """
@@ -2007,7 +1993,7 @@ class Client(object):
 
         from . import sign_growth
 
-        return await sign_growth.request_app(self._connector, self._core, act_type='share_thread')
+        return await sign_growth.request(self._http_core, act_type='share_thread')
 
     async def add_post(self, fname_or_fid: Union[str, int], /, tid: int, content: str) -> bool:
         """
@@ -2040,7 +2026,7 @@ class Client(object):
 
         from . import add_post
 
-        return await add_post.request(self._connector, self._core, fname, fid, tid, content)
+        return await add_post.request(self._http_core, fname, fid, tid, content)
 
     async def send_msg(self, _id: Union[str, int], content: str) -> bool:
         """
@@ -2065,7 +2051,7 @@ class Client(object):
 
             from . import send_msg
 
-            proto = send_msg.pack_proto(user_id, content, self.websocket.record_id)
+            proto = send_msg.pack_proto(user_id, content, self.websocket.get_record_id())
             resp = await self.websocket.send(proto, send_msg.CMD)
             send_msg.parse_body(await resp.read())
 
@@ -2075,3 +2061,32 @@ class Client(object):
 
         LOG().info(f"Succeeded. user_id={user_id}")
         return True
+
+    async def get_group_msg(self, group_ids: List[int], *, get_type: int = 1) -> bool:
+        """
+        获取分组信息
+
+        Args:
+            group_ids (List[int]): _description_
+            get_type (int, optional): _description_. Defaults to 1.
+
+        Returns:
+            bool: True成功 False失败
+        """
+
+        try:
+            await self.websocket.init_websocket()
+
+            msg_ids = [self.websocket.gid2mid[gid] for gid in group_ids]
+
+            from . import get_group_msg
+
+            proto = get_group_msg.pack_proto(self._core, group_ids, msg_ids, get_type)
+            resp = await self.websocket.send(proto, get_group_msg.CMD)
+            groups = get_group_msg.parse_body(await resp.read())
+
+        except Exception as err:
+            LOG().warning(f"{err}. group_ids={group_ids}")
+            groups = []
+
+        return groups
