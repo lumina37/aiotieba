@@ -29,7 +29,7 @@ def parse_body(body: bytes) -> None:
 
 
 async def request(ws_core: WsCore, user_id: int, content: str) -> bool:
-    data = pack_proto(user_id, content, ws_core.get_record_id(user_id))
+    data = pack_proto(user_id, content, ws_core.mid_manager.get_record_id())
 
     log_str = f"user_id={user_id}"
     frame = sys._getframe(1)

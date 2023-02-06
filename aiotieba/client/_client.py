@@ -126,7 +126,7 @@ class Client(object):
 
         return self._core
 
-    async def __init_websocket(self) -> bool:
+    async def init_websocket(self) -> bool:
         """
         初始化websocket
 
@@ -137,8 +137,10 @@ class Client(object):
         try:
             if not self._ws_core.websocket:
                 await self._ws_core.connect()
+                await self.__init_websocket()
             elif not self._ws_core.is_aviliable:
                 await self._ws_core.reconnect()
+                await self.__init_websocket()
 
         except Exception as err:
             import sys
@@ -147,19 +149,21 @@ class Client(object):
 
             log_exception(sys._getframe(0), err)
             return False
+        
+        return True
 
+    async def __init_websocket(self) -> None:
         from . import get_group_msg, init_websocket
         from ._core._wscore import MsgIDPair
 
         groups = await init_websocket.request(self._ws_core)
+        print(groups)
 
         mid_manager = self._ws_core.mid_manager
         for group in groups:
             if group._group_type == get_group_msg.GroupType.PRIVATE_MSG:
                 mid_manager.priv_gid = group._group_id
         mid_manager.gid2mid = {g._group_id: MsgIDPair(g._last_msg_id, g._last_msg_id) for g in groups}
-
-        return True
 
     async def __init_tbs(self) -> bool:
         if self._core._tbs:
@@ -2053,7 +2057,7 @@ class Client(object):
         else:
             user_id = _id
 
-        if not await self.__init_websocket():
+        if not await self.init_websocket():
             return False
 
         from . import send_msg
@@ -2072,8 +2076,8 @@ class Client(object):
             bool: True成功 False失败
         """
 
-        if not await self.__init_websocket():
-            return False
+        if not await self.init_websocket():
+            return []
 
         from . import get_group_msg
 

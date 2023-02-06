@@ -109,6 +109,7 @@ class WsCore(object):
         'heartbeat',
         'waiter',
         'callbacks',
+        '_client_ws',
         'websocket',
         'ws_dispatcher',
         '_req_id',
@@ -129,25 +130,11 @@ class WsCore(object):
         self.heartbeat: float = heartbeat
 
         self.callbacks: Dict[int, TypeWebsocketCallback] = {}
+        self._client_ws: aiohttp.ClientSession = None
         self.websocket: aiohttp.ClientWebSocketResponse = None
 
     async def __websocket_connect(self) -> None:
-        ws_headers = {
-            aiohttp.hdrs.HOST: "im.tieba.baidu.com:8000",
-            aiohttp.hdrs.SEC_WEBSOCKET_EXTENSIONS: "im_version=2.3",
-            aiohttp.hdrs.SEC_WEBSOCKET_VERSION: "13",
-            'cuid': f"{self.core.cuid}|com.baidu.tieba_mini{self.core.post_version}",
-        }
-        client_ws = aiohttp.ClientSession(
-            connector=self.connector,
-            loop=self.loop,
-            headers=ws_headers,
-            connector_owner=False,
-            raise_for_status=True,
-            timeout=DEFAULT_TIMEOUT,
-            read_bufsize=64 * 1024,
-        )
-        self.websocket = await client_ws._ws_connect(
+        self.websocket = await self._client_ws._ws_connect(
             yarl.URL.build(scheme="ws", host="im.tieba.baidu.com", port=8000),
             heartbeat=self.heartbeat,
             proxy=self.core._proxy,
@@ -167,6 +154,23 @@ class WsCore(object):
         self.waiter: Dict[int, asyncio.Future] = {}
         self._req_id = int(time.time())
         self.mid_manager: MsgIDManager = MsgIDManager()
+
+        ws_headers = {
+            aiohttp.hdrs.HOST: "im.tieba.baidu.com:8000",
+            aiohttp.hdrs.SEC_WEBSOCKET_EXTENSIONS: "im_version=2.3",
+            aiohttp.hdrs.SEC_WEBSOCKET_VERSION: "13",
+            'cuid': f"{self.core.cuid}|com.baidu.tieba_mini{self.core.post_version}",
+        }
+        self._client_ws = aiohttp.ClientSession(
+            connector=self.connector,
+            loop=self.loop,
+            headers=ws_headers,
+            connector_owner=False,
+            raise_for_status=True,
+            timeout=DEFAULT_TIMEOUT,
+            read_bufsize=64 * 1024,
+        )
+
         await self.__websocket_connect()
 
     async def reconnect(self) -> None:
@@ -182,6 +186,9 @@ class WsCore(object):
         await self.__websocket_connect()
 
     async def close(self) -> None:
+        if self._client_ws is None:
+            return
+        await self._client_ws.close()
         if self.is_aviliable:
             await self.websocket.close()
             self.ws_dispatcher.cancel()

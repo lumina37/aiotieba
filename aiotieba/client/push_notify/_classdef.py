@@ -10,7 +10,7 @@ class WsNotify(object):
         '_note_type',
         '_group_type',
         '_group_id',
-        '_last_msg_id',
+        '_msg_id',
         '_create_time',
     ]
 
@@ -19,7 +19,7 @@ class WsNotify(object):
         self._note_type = data_proto.type
         self._group_type = data_proto.groupType
         self._group_id = data_proto.groupId
-        self._last_msg_id = data_proto.msgId
+        self._msg_id = data_proto.msgId
         self._create_time = str(create_time) if (create_time := data_proto.et) else 0
         return self
 
@@ -29,14 +29,14 @@ class WsNotify(object):
                 'note_type': self._note_type,
                 'group_type': self._group_type,
                 'group_id': self._group_id,
-                'last_msg_id': self._last_msg_id,
+                'msg_id': self._msg_id,
             }
         )
 
     @property
     def note_type(self) -> int:
         """
-        消息类别
+        提醒类别
         """
 
         return self._note_type
@@ -58,12 +58,12 @@ class WsNotify(object):
         return self._group_id
 
     @property
-    def last_msg_id(self) -> int:
+    def msg_id(self) -> int:
         """
-        最后一条消息的id
+        消息id
         """
 
-        return self._last_msg_id
+        return self._msg_id
 
     @property
     def create_time(self) -> int:
