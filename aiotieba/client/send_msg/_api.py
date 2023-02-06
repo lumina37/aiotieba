@@ -1,3 +1,7 @@
+import sys
+
+from .._core import WsCore
+from .._helper import log_exception, log_success
 from ..exception import TiebaServerError
 from .protobuf import CommitPersonalMsgReqIdl_pb2, CommitPersonalMsgResIdl_pb2
 
@@ -22,3 +26,21 @@ def parse_body(body: bytes) -> None:
         raise TiebaServerError(code, res_proto.error.errmsg)
     if code := res_proto.data.blockInfo.blockErrno:
         raise TiebaServerError(code, res_proto.data.blockInfo.blockErrmsg)
+
+
+async def request(ws_core: WsCore, user_id: int, content: str) -> bool:
+    data = pack_proto(user_id, content, ws_core.get_record_id(user_id))
+
+    log_str = f"user_id={user_id}"
+    frame = sys._getframe(1)
+
+    try:
+        resq = await ws_core.send(data, CMD)
+        parse_body(await resq.read())
+
+    except Exception as err:
+        log_exception(frame, err, log_str)
+        return False
+
+    log_success(frame, log_str)
+    return True

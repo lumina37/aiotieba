@@ -8,11 +8,10 @@ import yarl
 from .._logging import get_logger as LOG
 from ._classdef.enums import ReqUInfo
 from ._classdef.user import UserInfo
-from ._core import HttpCore, TbCore
+from ._core import HttpCore, TbCore, WsCore
 from ._helper import ForumInfoCache, is_portrait
 from .get_homepage._classdef import UserInfo_home
 from .typing import TypeUserInfo
-from .websocket import Websocket
 
 if TYPE_CHECKING:
     import numpy as np
@@ -28,6 +27,7 @@ if TYPE_CHECKING:
         get_follow_forums,
         get_follows,
         get_forum_detail,
+        get_group_msg,
         get_homepage,
         get_member_users,
         get_posts,
@@ -101,6 +101,7 @@ class Client(object):
         core = TbCore(BDUSS_key, proxy)
         self._core: TbCore = core
         self._http_core: HttpCore = HttpCore(core, connector, loop)
+        self._ws_core: WsCore = WsCore(core, connector, loop, 800.0)
 
         self._user: UserInfo_home = UserInfo_home()._init_null()
 
@@ -108,11 +109,8 @@ class Client(object):
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
-        # if self._websocket is not None:
-        #     await self._websocket.close()
-
-        if self._connector is not None:
-            await self._connector.close()
+        await self._ws_core.close()
+        await self._connector.close()
 
     def __hash__(self) -> int:
         return hash(self._core._BDUSS_key)
@@ -128,27 +126,44 @@ class Client(object):
 
         return self._core
 
-    async def get_websocket(self) -> Websocket:
+    async def __init_websocket(self) -> bool:
         """
-        获取贴吧websocket请求管理器
+        初始化websocket
 
         Returns:
-            Websocket
+            bool: True成功 False失败
         """
 
-        if self._ws_core is None:
-            self._ws_core = Websocket(self._connector, self._core)
+        try:
+            if not self._ws_core.websocket:
+                await self._ws_core.connect()
+            elif not self._ws_core.is_aviliable:
+                await self._ws_core.reconnect()
 
-        return self._ws_core
+        except Exception as err:
+            import sys
+
+            from ._helper import log_exception
+
+            log_exception(sys._getframe(0), err)
+            return False
+
+        from . import get_group_msg, init_websocket
+        from ._core._wscore import MsgIDPair
+
+        groups = await init_websocket.request(self._ws_core)
+
+        mid_manager = self._ws_core.mid_manager
+        for group in groups:
+            if group._group_type == get_group_msg.GroupType.PRIVATE_MSG:
+                mid_manager.priv_gid = group._group_id
+        mid_manager.gid2mid = {g._group_id: MsgIDPair(g._last_msg_id, g._last_msg_id) for g in groups}
+
+        return True
 
     async def __init_tbs(self) -> bool:
-        """
-        初始化反csrf校验码tbs
-        """
-
         if self._core._tbs:
             return True
-
         return await self.__login()
 
     async def get_self_info(self, require: ReqUInfo = ReqUInfo.ALL) -> TypeUserInfo:
@@ -186,17 +201,9 @@ class Client(object):
         else:
             return False
 
-    async def __init_client_id(self) -> str:
-        """
-        初始化client_id
-
-        Returns:
-            str: client_id 例如 wappc_1653660000000_123
-        """
-
+    async def __init_client_id(self) -> bool:
         if self._core._client_id:
             return True
-
         return await self.__sync()
 
     async def __sync(self) -> bool:
@@ -2046,47 +2053,28 @@ class Client(object):
         else:
             user_id = _id
 
-        try:
-            await self.websocket.init_websocket()
-
-            from . import send_msg
-
-            proto = send_msg.pack_proto(user_id, content, self.websocket.get_record_id())
-            resp = await self.websocket.send(proto, send_msg.CMD)
-            send_msg.parse_body(await resp.read())
-
-        except Exception as err:
-            LOG().warning(f"{err}. user_id={user_id}")
+        if not await self.__init_websocket():
             return False
 
-        LOG().info(f"Succeeded. user_id={user_id}")
-        return True
+        from . import send_msg
 
-    async def get_group_msg(self, group_ids: List[int], *, get_type: int = 1) -> bool:
+        return await send_msg.request(self._ws_core, user_id, content)
+
+    async def get_group_msg(self, group_ids: List[int], *, get_type: int = 1) -> List["get_group_msg.WsMsgGroup"]:
         """
         获取分组信息
 
         Args:
-            group_ids (List[int]): _description_
-            get_type (int, optional): _description_. Defaults to 1.
+            group_ids (List[int]): 待获取分组的group_id
+            get_type (int, optional): 获取类型. Defaults to 1.
 
         Returns:
             bool: True成功 False失败
         """
 
-        try:
-            await self.websocket.init_websocket()
+        if not await self.__init_websocket():
+            return False
 
-            msg_ids = [self.websocket.gid2mid[gid] for gid in group_ids]
+        from . import get_group_msg
 
-            from . import get_group_msg
-
-            proto = get_group_msg.pack_proto(self._core, group_ids, msg_ids, get_type)
-            resp = await self.websocket.send(proto, get_group_msg.CMD)
-            groups = get_group_msg.parse_body(await resp.read())
-
-        except Exception as err:
-            LOG().warning(f"{err}. group_ids={group_ids}")
-            groups = []
-
-        return groups
+        return await get_group_msg.request(self._ws_core, group_ids, get_type)

@@ -1,8 +1,13 @@
+import binascii
+import sys
 import time
 from typing import List
 
-from .._core import TbCore
-from .._helper import jsonlib
+from Crypto.Cipher import PKCS1_v1_5
+from Crypto.PublicKey import RSA
+
+from .._core import TbCore, WsCore
+from .._helper import jsonlib, log_exception
 from ..exception import TiebaServerError
 from ._classdef import WsMsgGroupInfo
 from .protobuf import UpdateClientInfoReqIdl_pb2, UpdateClientInfoResIdl_pb2
@@ -10,9 +15,15 @@ from .protobuf import UpdateClientInfoReqIdl_pb2, UpdateClientInfoResIdl_pb2
 CMD = 1001
 
 
-def pack_proto(core: TbCore, secret_key: str) -> bytes:
+PUBLIC_KEY = binascii.a2b_base64(
+    b"MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwQpwBZxXJV/JVRF/uNfyMSdu7YWwRNLM8+2xbniGp2iIQHOikPpTYQjlQgMi1uvq1kZpJ32rHo3hkwjy2l0lFwr3u4Hk2Wk7vnsqYQjAlYlK0TCzjpmiI+OiPOUNVtbWHQiLiVqFtzvpvi4AU7C1iKGvc/4IS45WjHxeScHhnZZ7njS4S1UgNP/GflRIbzgbBhyZ9kEW5/OO5YfG1fy6r4KSlDJw4o/mw5XhftyIpL+5ZBVBC6E1EIiP/dd9AbK62VV1PByfPMHMixpxI3GM2qwcmFsXcCcgvUXJBa9k6zP8dDQ3csCM2QNT+CQAOxthjtp/TFWaD7MzOdsIYb3THwIDAQAB"
+)
+
+
+def pack_proto(core: TbCore) -> bytes:
     req_proto = UpdateClientInfoReqIdl_pb2.UpdateClientInfoReqIdl()
     req_proto.data.bduss = core._BDUSS
+
     device = {
         'subapp_type': 'mini',
         'cuid': core.cuid,
@@ -33,7 +44,11 @@ def pack_proto(core: TbCore, secret_key: str) -> bytes:
         'timestamp': str(int(time.time() * 1e3)),
     }
     req_proto.data.device = jsonlib.dumps(device, separators=(',', ':'))
+
+    rsa_chiper = PKCS1_v1_5.new(RSA.import_key(PUBLIC_KEY))
+    secret_key = rsa_chiper.encrypt(core.aes_ecb_sec_key)
     req_proto.data.secretKey = secret_key
+
     req_proto.data.width = 105
     req_proto.data.height = 105
     req_proto.data.stoken = core._STOKEN
@@ -50,5 +65,19 @@ def parse_body(body: bytes) -> List[WsMsgGroupInfo]:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     groups = [WsMsgGroupInfo()._init(p) for p in res_proto.data.groupInfo]
+
+    return groups
+
+
+async def request(ws_core: WsCore) -> List[WsMsgGroupInfo]:
+    data = pack_proto(ws_core.core)
+
+    try:
+        resq = await ws_core.send(data, CMD, compress=False, encrypt=False)
+        groups = parse_body(await resq.read())
+
+    except Exception as err:
+        log_exception(sys._getframe(1), err)
+        groups = []
 
     return groups

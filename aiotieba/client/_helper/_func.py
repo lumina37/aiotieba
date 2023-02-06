@@ -146,7 +146,7 @@ def pack_form_request(http_core: HttpCore, url: yarl.URL, data: List[Tuple[str, 
     并将其打包为移动端表单请求
 
     Args:
-        http_core (HttpCore): 保存http接口相关信息的核心容器
+        http_core (HttpCore): 保存http接口相关状态的核心容器
         url (yarl.URL): 链接
         data (list[tuple[str, str]]): 参数元组列表
 
@@ -178,7 +178,7 @@ def pack_proto_request(http_core: HttpCore, url: yarl.URL, data: bytes) -> aioht
     打包移动端protobuf请求
 
     Args:
-        http_core (HttpCore): 保存http接口相关信息的核心容器
+        http_core (HttpCore): 保存http接口相关状态的核心容器
         url (yarl.URL): 链接
         data (bytes): protobuf序列化后的二进制数据
 
@@ -215,7 +215,7 @@ def pack_web_get_request(http_core: HttpCore, url: yarl.URL, params: List[Tuple[
     打包网页端参数请求
 
     Args:
-        http_core (HttpCore): 保存http接口相关信息的核心容器
+        http_core (HttpCore): 保存http接口相关状态的核心容器
         url (yarl.URL): 链接
         params (list[tuple[str, str]]): 参数元组列表
 
@@ -243,7 +243,7 @@ def pack_web_form_request(http_core: HttpCore, url: yarl.URL, data: List[Tuple[s
     打包网页端表单请求
 
     Args:
-        http_core (HttpCore): 保存http接口相关信息的核心容器
+        http_core (HttpCore): 保存http接口相关状态的核心容器
         url (yarl.URL): 链接
         data (list[tuple[str, str]]): 参数元组列表
 

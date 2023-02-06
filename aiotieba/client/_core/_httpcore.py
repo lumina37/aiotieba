@@ -10,7 +10,7 @@ APP_BASE_HOST = "tiebac.baidu.com"
 WEB_BASE_HOST = "tieba.baidu.com"
 
 
-class HttpSession(object):
+class HttpContainer(object):
     """
     用于保存会话headers与cookies的容器
     """
@@ -27,7 +27,7 @@ class HttpSession(object):
 
 class HttpCore(object):
     """
-    保存http接口相关信息的核心容器
+    保存http接口相关状态的核心容器
     """
 
     __slots__ = [
@@ -58,7 +58,7 @@ class HttpCore(object):
             hdrs.CONNECTION: "keep-alive",
             hdrs.HOST: APP_BASE_HOST,
         }
-        self.app: HttpSession = HttpSession(app_headers, aiohttp.DummyCookieJar(loop=loop))
+        self.app: HttpContainer = HttpContainer(app_headers, aiohttp.DummyCookieJar(loop=loop))
 
         app_proto_headers = {
             hdrs.USER_AGENT: f"aiotieba/{__version__}",
@@ -67,7 +67,7 @@ class HttpCore(object):
             hdrs.CONNECTION: "keep-alive",
             hdrs.HOST: APP_BASE_HOST,
         }
-        self.app_proto: HttpSession = HttpSession(app_proto_headers, aiohttp.DummyCookieJar(loop=loop))
+        self.app_proto: HttpContainer = HttpContainer(app_proto_headers, aiohttp.DummyCookieJar(loop=loop))
 
         web_headers = {
             hdrs.USER_AGENT: f"aiotieba/{__version__}",
@@ -75,7 +75,7 @@ class HttpCore(object):
             hdrs.CACHE_CONTROL: "no-cache",
             hdrs.CONNECTION: "keep-alive",
         }
-        self.web: HttpSession = HttpSession(web_headers, aiohttp.CookieJar(loop=loop))
+        self.web: HttpContainer = HttpContainer(web_headers, aiohttp.CookieJar(loop=loop))
         BDUSS_morsel = aiohttp.cookiejar.Morsel()
         BDUSS_morsel.set('BDUSS', core._BDUSS, core._BDUSS)
         BDUSS_morsel['domain'] = "baidu.com"

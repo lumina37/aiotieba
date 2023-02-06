@@ -13,6 +13,7 @@ from ._logging import get_logger as LOG
 from .client import Client
 from .client._classdef.enums import ReqUInfo
 from .client._classdef.user import UserInfo
+from .client._core import HttpCore, TbCore, WsCore, WsResponse
 from .client.exception import ContentTypeError, HTTPStatusError, TiebaServerError
 from .client.typing import (
     Appeal,
@@ -33,7 +34,6 @@ from .client.typing import (
     TypeFragTiebaPlus,
     UserInfo_home,
 )
-from .client.websocket import Websocket
 
 if os.name == 'posix':
     import signal
