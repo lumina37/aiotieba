@@ -1,16 +1,6 @@
-import enum
 from typing import List
 
 from .._classdef import TypeMessage
-
-
-class GroupType(enum.IntEnum):
-    """
-    消息组类型
-    """
-
-    PRIVATE_MSG = 6
-    MISC = 8
 
 
 class UserInfo_ws(object):

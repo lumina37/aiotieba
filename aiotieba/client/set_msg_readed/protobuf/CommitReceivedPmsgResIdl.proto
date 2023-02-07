@@ -1,0 +1,8 @@
+// protobuf.CommitReceivedPmsg.CommitReceivedPmsgResIdl
+syntax = "proto3";
+
+import "Error.proto";
+
+message CommitReceivedPmsgResIdl {
+    Error error = 1;
+}

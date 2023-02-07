@@ -1,6 +1,25 @@
 import enum
 
 
+class GroupType(enum.IntEnum):
+    """
+    消息组类型
+    """
+
+    PRIVATE_MSG = 6
+    MISC = 8
+
+
+class MsgType(enum.IntEnum):
+    """
+    消息类型
+    """
+
+    PRIVATE_MSG = 1
+    MISC = 10
+    READED = 22
+
+
 class ReqUInfo(enum.IntEnum):
     """
     使用该枚举类指定待获取的用户信息字段
@@ -19,14 +38,3 @@ class ReqUInfo(enum.IntEnum):
     OTHER = 1 << 5
     BASIC = USER_ID | PORTRAIT | USER_NAME
     ALL = (1 << 6) - 1
-
-
-class Header(object):
-    ACCEPT_ENCODING = "Accept-Encoding"
-    BAIDU_DATA_TYPE = "x_bd_data_type"
-    CACHE_CONTROL = "Cache-Control"
-    CONNECTION = "Connection"
-    HOST = "Host"
-    KEEP_ALIVE = "Keep-Alive"
-    SEC_WEBSOCKET_EXTENSIONS = "Sec-WebSocket-Extensions"
-    USER_AGENT = "User-Agent"

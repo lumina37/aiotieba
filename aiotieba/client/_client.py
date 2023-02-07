@@ -6,7 +6,7 @@ import aiohttp
 import yarl
 
 from .._logging import get_logger as LOG
-from ._classdef.enums import ReqUInfo
+from ._classdef.enums import GroupType, ReqUInfo
 from ._classdef.user import UserInfo
 from ._core import HttpCore, TbCore, WsCore
 from ._helper import ForumInfoCache, is_portrait
@@ -75,7 +75,6 @@ class Client(object):
         proxy: Union[Tuple[yarl.URL, aiohttp.BasicAuth], bool] = False,
         loop: Optional[asyncio.AbstractEventLoop] = None,
     ) -> None:
-
         if loop is None:
             loop = asyncio.get_running_loop()
 
@@ -149,11 +148,11 @@ class Client(object):
 
             log_exception(sys._getframe(0), err)
             return False
-        
+
         return True
 
     async def __init_websocket(self) -> None:
-        from . import get_group_msg, init_websocket
+        from . import init_websocket
         from ._core._wscore import MsgIDPair
 
         groups = await init_websocket.request(self._ws_core)
@@ -161,7 +160,7 @@ class Client(object):
 
         mid_manager = self._ws_core.mid_manager
         for group in groups:
-            if group._group_type == get_group_msg.GroupType.PRIVATE_MSG:
+            if group._group_type == GroupType.PRIVATE_MSG:
                 mid_manager.priv_gid = group._group_id
         mid_manager.gid2mid = {g._group_id: MsgIDPair(g._last_msg_id, g._last_msg_id) for g in groups}
 
@@ -191,7 +190,6 @@ class Client(object):
         return self._user
 
     async def __login(self) -> bool:
-
         from . import login
 
         user, tbs = await login.request(self._http_core)
@@ -211,7 +209,6 @@ class Client(object):
         return await self.__sync()
 
     async def __sync(self) -> bool:
-
         from . import sync
 
         client_id = await sync.request(self._http_core)
@@ -223,7 +220,6 @@ class Client(object):
             return False
 
     async def __init_z_id(self) -> bool:
-
         from . import init_z_id
 
         z_id = await init_z_id.request(self._http_core)
@@ -2063,6 +2059,24 @@ class Client(object):
         from . import send_msg
 
         return await send_msg.request(self._ws_core, user_id, content)
+
+    async def set_msg_readed(self, message: "get_group_msg.WsMessage") -> bool:
+        """
+        发送私信
+
+        Args:
+            message (WsMessage): websocket私信消息
+
+        Returns:
+            bool: True成功 False失败
+        """
+
+        if not await self.init_websocket():
+            return False
+
+        from . import set_msg_readed
+
+        return await set_msg_readed.request(self._ws_core, message)
 
     async def get_group_msg(self, group_ids: List[int], *, get_type: int = 1) -> List["get_group_msg.WsMsgGroup"]:
         """

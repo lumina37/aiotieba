@@ -1,0 +1,12 @@
+// protobuf.CommitReceivedPmsg.CommitReceivedPmsgReqIdl
+syntax = "proto3";
+
+message CommitReceivedPmsgReqIdl {
+    message DataReq {
+        int64 groupId = 1;
+        int64 toUid = 2;
+        int32 msgType = 3;
+        int64 msgId = 4;
+    }
+    DataReq data = 1;
+}
