@@ -1,13 +1,14 @@
 import sys
 
-import aiohttp
 import yarl
 
-from .._core import APP_BASE_HOST, TbCore
-from .._exception import TiebaServerError
+from .._core import APP_BASE_HOST, HttpCore, TbCore
 from .._helper import APP_INSECURE_SCHEME, log_exception, pack_proto_request, send_request
+from ..exception import TiebaServerError
 from ._classdef import Comments
 from .protobuf import PbFloorReqIdl_pb2, PbFloorResIdl_pb2
+
+CMD = 302002
 
 
 def pack_proto(core: TbCore, tid: int, pid: int, pn: int, is_floor: bool) -> bytes:
@@ -37,20 +38,16 @@ def parse_body(body: bytes) -> Comments:
     return comments
 
 
-async def request_http(
-    connector: aiohttp.TCPConnector, core: TbCore, tid: int, pid: int, pn: int, is_floor: bool
-) -> Comments:
+async def request_http(http_core: HttpCore, tid: int, pid: int, pn: int, is_floor: bool) -> Comments:
 
     request = pack_proto_request(
-        core,
-        yarl.URL.build(
-            scheme=APP_INSECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/pb/floor", query_string="cmd=302002"
-        ),
-        pack_proto(core, tid, pid, pn, is_floor),
+        http_core,
+        yarl.URL.build(scheme=APP_INSECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/pb/floor", query_string=f"cmd={CMD}"),
+        pack_proto(http_core.core, tid, pid, pn, is_floor),
     )
 
     try:
-        body = await send_request(request, connector, read_bufsize=8 * 1024)
+        body = await send_request(request, http_core.connector, read_bufsize=8 * 1024)
         comments = parse_body(body)
 
     except Exception as err:

@@ -1,11 +1,10 @@
 import sys
 
-import aiohttp
 import yarl
 
-from .._core import WEB_BASE_HOST, TbCore
-from .._exception import TiebaValueError
+from .._core import WEB_BASE_HOST, HttpCore
 from .._helper import log_exception, pack_web_get_request, parse_json, send_request
+from ..exception import TiebaValueError
 from ._classdef import UserInfo_json
 
 
@@ -22,7 +21,7 @@ def parse_body(body: bytes) -> UserInfo_json:
     return user
 
 
-async def request(connector: aiohttp.TCPConnector, core: TbCore, user_name: str) -> UserInfo_json:
+async def request(http_core: HttpCore, user_name: str) -> UserInfo_json:
 
     params = [
         ('un', user_name),
@@ -30,13 +29,13 @@ async def request(connector: aiohttp.TCPConnector, core: TbCore, user_name: str)
     ]
 
     request = pack_web_get_request(
-        core,
+        http_core,
         yarl.URL.build(scheme="http", host=WEB_BASE_HOST, path="/i/sys/user_json"),
         params,
     )
 
     try:
-        body = await send_request(request, connector, read_bufsize=2 * 1024)
+        body = await send_request(request, http_core.connector, read_bufsize=2 * 1024)
         user = parse_body(body)
 
     except Exception as err:

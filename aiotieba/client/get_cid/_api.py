@@ -5,8 +5,8 @@ import aiohttp
 import yarl
 
 from .._core import APP_BASE_HOST, TbCore
-from .._exception import TiebaServerError
 from .._helper import APP_SECURE_SCHEME, log_exception, pack_form_request, parse_json, send_request
+from ..exception import TiebaServerError
 
 
 def parse_body(body: bytes) -> Dict[str, str]:

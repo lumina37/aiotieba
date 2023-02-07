@@ -33,7 +33,7 @@ dependencies = [
 dynamic = ["version"]
 
 [project.optional-dependencies]
-img = ["opencv-contrib-python-headless<4.8,>=4.6.0.66"]
+img = ["opencv-contrib-python<4.8,>=4.6.0.66"]
 speedup = ["pysimdjson<5.1,>=5.0.0", "aiodns<4,>=3.0.0"]
 
 [tool.setuptools.packages.find]

@@ -32,8 +32,8 @@ jobs:
 
     - name: Install dependencies
       run: |
-        python -m pip install -U pip
-        pip install mkdocs-material
+        python -m pip install -U pip -qq
+        pip install mkdocs-material -qq
 
     - name: Build and Publish
       run: |

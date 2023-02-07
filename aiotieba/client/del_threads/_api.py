@@ -1,12 +1,11 @@
 import sys
 from typing import List
 
-import aiohttp
 import yarl
 
-from .._core import APP_BASE_HOST, TbCore
-from .._exception import TiebaServerError
+from .._core import APP_BASE_HOST, HttpCore
 from .._helper import APP_SECURE_SCHEME, log_exception, log_success, pack_form_request, parse_json, send_request
+from ..exception import TiebaServerError
 
 
 def parse_body(body: bytes) -> None:
@@ -15,18 +14,18 @@ def parse_body(body: bytes) -> None:
         raise TiebaServerError(code, res_json['error_msg'])
 
 
-async def request(connector: aiohttp.TCPConnector, core: TbCore, fid: int, tids: List[int], block: bool) -> bool:
+async def request(http_core: HttpCore, fid: int, tids: List[int], block: bool) -> bool:
 
     data = [
-        ('BDUSS', core._BDUSS),
+        ('BDUSS', http_core.core._BDUSS),
         ('forum_id', fid),
-        ('tbs', core._tbs),
+        ('tbs', http_core.core._tbs),
         ('thread_ids', ','.join(str(tid) for tid in tids)),
         ('type', '2' if block else '1'),
     ]
 
     request = pack_form_request(
-        core,
+        http_core,
         yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/c/bawu/multiDelThread"),
         data,
     )
@@ -35,7 +34,7 @@ async def request(connector: aiohttp.TCPConnector, core: TbCore, fid: int, tids:
     frame = sys._getframe(1)
 
     try:
-        body = await send_request(request, connector, read_bufsize=1024)
+        body = await send_request(request, http_core.connector, read_bufsize=1024)
         parse_body(body)
 
     except Exception as err:

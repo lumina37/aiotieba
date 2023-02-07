@@ -1,13 +1,14 @@
 import sys
 
-import aiohttp
 import yarl
 
-from .._core import APP_BASE_HOST, TbCore
-from .._exception import TiebaServerError
+from .._core import APP_BASE_HOST, HttpCore, TbCore
 from .._helper import APP_SECURE_SCHEME, log_exception, pack_proto_request, send_request
+from ..exception import TiebaServerError
 from ._classdef import Posts
 from .protobuf import PbPageReqIdl_pb2, PbPageResIdl_pb2
+
+CMD = 302001
 
 
 def pack_proto(
@@ -54,8 +55,7 @@ def parse_body(body: bytes) -> Posts:
 
 
 async def request_http(
-    connector: aiohttp.TCPConnector,
-    core: TbCore,
+    http_core: HttpCore,
     tid: int,
     pn: int,
     rn: int,
@@ -68,15 +68,24 @@ async def request_http(
 ) -> Posts:
 
     request = pack_proto_request(
-        core,
-        yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/pb/page", query_string="cmd=302001"),
+        http_core,
+        yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/pb/page", query_string=f"cmd={CMD}"),
         pack_proto(
-            core, tid, pn, rn, sort, only_thread_author, with_comments, comment_sort_by_agree, comment_rn, is_fold
+            http_core.core,
+            tid,
+            pn,
+            rn,
+            sort,
+            only_thread_author,
+            with_comments,
+            comment_sort_by_agree,
+            comment_rn,
+            is_fold,
         ),
     )
 
     try:
-        body = await send_request(request, connector, read_bufsize=128 * 1024)
+        body = await send_request(request, http_core.connector, read_bufsize=128 * 1024)
         posts = parse_body(body)
 
     except Exception as err:

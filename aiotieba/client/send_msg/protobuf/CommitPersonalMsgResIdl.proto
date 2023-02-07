@@ -6,6 +6,7 @@ import "Error.proto";
 message CommitPersonalMsgResIdl {
     Error error = 1;
     message DataRes {
+        int64 msgId = 1;
         message BlockInfo {
             int32 blockErrno = 1;
             string blockErrmsg = 2;

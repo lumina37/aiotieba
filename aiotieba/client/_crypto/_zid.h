@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdlib.h>  // malloc free
+#include <stdint.h>
 #include <stdbool.h> // bool
 #include <memory.h>  // memset memcpy
 

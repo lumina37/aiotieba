@@ -1,11 +1,10 @@
 import sys
 
-import aiohttp
 import yarl
 
-from .._core import WEB_BASE_HOST, TbCore
-from .._exception import TiebaServerError, TiebaValueError
+from .._core import WEB_BASE_HOST, HttpCore
 from .._helper import log_exception, pack_web_get_request, parse_json, send_request
+from ..exception import TiebaServerError, TiebaValueError
 
 
 def parse_body(body: bytes) -> int:
@@ -19,7 +18,7 @@ def parse_body(body: bytes) -> int:
     return fid
 
 
-async def request(connector: aiohttp.TCPConnector, core: TbCore, fname: str) -> int:
+async def request(http_core: HttpCore, fname: str) -> int:
 
     params = [
         ('fname', fname),
@@ -27,13 +26,13 @@ async def request(connector: aiohttp.TCPConnector, core: TbCore, fname: str) -> 
     ]
 
     request = pack_web_get_request(
-        core,
+        http_core,
         yarl.URL.build(scheme="http", host=WEB_BASE_HOST, path="/f/commit/share/fnameShareApi"),
         params,
     )
 
     try:
-        body = await send_request(request, connector, read_bufsize=2 * 1024)
+        body = await send_request(request, http_core.connector, read_bufsize=2 * 1024)
         fid = parse_body(body)
 
     except Exception as err:

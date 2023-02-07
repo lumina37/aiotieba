@@ -1,11 +1,10 @@
 import sys
 
-import aiohttp
 import yarl
 
-from .._core import WEB_BASE_HOST, TbCore
-from .._exception import TiebaServerError
+from .._core import WEB_BASE_HOST, HttpCore
 from .._helper import log_exception, pack_web_get_request, parse_json, send_request
+from ..exception import TiebaServerError
 from ._classdef import Blocks
 
 
@@ -19,7 +18,7 @@ def parse_body(body: bytes) -> Blocks:
     return blocks
 
 
-async def request(connector: aiohttp.TCPConnector, core: TbCore, fname: str, fid: int, name: str, pn: int) -> Blocks:
+async def request(http_core: HttpCore, fname: str, fid: int, name: str, pn: int) -> Blocks:
 
     params = [
         ('fn', fname),
@@ -30,13 +29,13 @@ async def request(connector: aiohttp.TCPConnector, core: TbCore, fname: str, fid
     ]
 
     request = pack_web_get_request(
-        core,
+        http_core,
         yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mo/q/bawublock"),
         params,
     )
 
     try:
-        body = await send_request(request, connector, read_bufsize=64 * 1024)
+        body = await send_request(request, http_core.connector, read_bufsize=64 * 1024)
         blocks = parse_body(body)
 
     except Exception as err:
