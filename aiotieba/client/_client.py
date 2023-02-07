@@ -156,7 +156,6 @@ class Client(object):
         from ._core._wscore import MsgIDPair
 
         groups = await init_websocket.request(self._ws_core)
-        print(groups)
 
         mid_manager = self._ws_core.mid_manager
         for group in groups:
