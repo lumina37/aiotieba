@@ -141,7 +141,7 @@ class WsCore(object):
             proxy_auth=self.core._proxy_auth,
             ssl=False,
         )
-        self.ws_dispatcher = asyncio.create_task(self.__ws_dispatch(), name="ws_dispatcher")
+        self.ws_dispatcher = self.loop.create_task(self.__ws_dispatch(), name="ws_dispatcher")
 
     async def connect(self) -> None:
         """

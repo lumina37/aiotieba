@@ -11,7 +11,7 @@ from Crypto.Util.Padding import pad, unpad
 
 from .._core import HttpCore
 from .._crypto import inv_rc4
-from .._helper import jsonlib, log_exception, parse_json, send_request
+from .._helper import log_exception, pack_json, parse_json, send_request
 
 SOFIRE_HOST = "sofire.baidu.com"
 
@@ -26,7 +26,7 @@ async def request(http_core: HttpCore):
 
     params = {"module_section": [{'zid': xyus}]}
 
-    req_body = jsonlib.dumps(params, separators=(',', ':'))
+    req_body = pack_json(params)
     req_body = gzip.compress(req_body.encode('utf-8'), compresslevel=-1, mtime=0)
     req_body_aes = http_core.core.aes_cbc_chiper.encrypt(pad(req_body, block_size=AES.block_size))
     req_body_md5 = hashlib.md5(req_body).digest()

@@ -7,7 +7,7 @@ from Crypto.Cipher import PKCS1_v1_5
 from Crypto.PublicKey import RSA
 
 from .._core import TbCore, WsCore
-from .._helper import jsonlib, log_exception
+from .._helper import log_exception, pack_json
 from ..exception import TiebaServerError
 from ._classdef import WsMsgGroupInfo
 from .protobuf import UpdateClientInfoReqIdl_pb2, UpdateClientInfoResIdl_pb2
@@ -36,7 +36,7 @@ def pack_proto(core: TbCore) -> bytes:
         '_client_type': '2',
         'timestamp': str(int(time.time() * 1e3)),
     }
-    req_proto.data.device = jsonlib.dumps(device, separators=(',', ':'))
+    req_proto.data.device = pack_json(device)
 
     rsa_chiper = PKCS1_v1_5.new(RSA.import_key(PUBLIC_KEY))
     secret_key = rsa_chiper.encrypt(core.aes_ecb_sec_key)

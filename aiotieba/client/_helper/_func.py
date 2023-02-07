@@ -1,6 +1,6 @@
 import asyncio
+import functools
 import gzip
-import hashlib
 import logging
 import random
 import sys
@@ -16,7 +16,7 @@ from Crypto.Util.Padding import pad, unpad
 
 from ..._logging import get_logger
 from .._core import HttpCore, TbCore
-from .._crypto import sign as csign
+from .._crypto import sign as _sign
 from ..exception import HTTPStatusError, exc_handlers
 from ._const import DEFAULT_TIMEOUT
 
@@ -31,6 +31,7 @@ except ImportError:
 
     parse_json = jsonlib.loads
 
+pack_json = functools.partial(jsonlib.dumps, separators=(',', ':'))
 
 if sys.version_info >= (3, 9):
 
@@ -131,7 +132,7 @@ def sign(data: List[Tuple[str, Union[str, int]]]) -> List[Tuple[str, str]]:
         list[tuple[str, str]]: 签名后的form参数元组列表
     """
 
-    data.append(('sign', csign(data)))
+    data.append(('sign', _sign(data)))
     return data
 
 

@@ -3,7 +3,15 @@ import sys
 import yarl
 
 from .._core import APP_BASE_HOST, HttpCore
-from .._helper import APP_SECURE_SCHEME, log_exception, log_success, pack_form_request, parse_json, send_request
+from .._helper import (
+    APP_SECURE_SCHEME,
+    log_exception,
+    log_success,
+    pack_form_request,
+    pack_json,
+    parse_json,
+    send_request,
+)
 from ..exception import TiebaServerError
 
 
@@ -14,13 +22,12 @@ def parse_body(body: bytes) -> None:
 
 
 async def request(http_core: HttpCore, fid: int, tid: int, to_tab_id: int, from_tab_id: int) -> bool:
-
     data = [
         ('BDUSS', http_core.core._BDUSS),
         ('_client_version', http_core.core.main_version),
         ('forum_id', fid),
         ('tbs', http_core.core._tbs),
-        ('threads', f"""[{{"thread_id":{tid},"from_tab_id":{from_tab_id},"to_tab_id":{to_tab_id}}}]"""),
+        ('threads', pack_json([{"thread_id": tid, "from_tab_id": from_tab_id, "to_tab_id": to_tab_id,}])),
     ]
 
     request = pack_form_request(

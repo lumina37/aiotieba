@@ -4,7 +4,15 @@ import time
 import yarl
 
 from .._core import APP_BASE_HOST, HttpCore
-from .._helper import APP_SECURE_SCHEME, log_exception, log_success, pack_form_request, parse_json, send_request
+from .._helper import (
+    APP_SECURE_SCHEME,
+    log_exception,
+    log_success,
+    pack_form_request,
+    pack_json,
+    parse_json,
+    send_request,
+)
 from ..exception import TiebaServerError
 
 
@@ -15,13 +23,12 @@ def parse_body(body: bytes) -> None:
 
 
 async def request(http_core: HttpCore, fid: int) -> bool:
-
     data = [
         ('BDUSS', http_core.core._BDUSS),
         ('_client_version', http_core.core.main_version),
         (
             'dislike',
-            f"""[{{"tid": 1, "dislike_ids": 7, "fid": {fid}, "click_time": {int(time.time() * 1000)}}}]""",
+            pack_json([{"tid": 1, "dislike_ids": 7, "fid": fid, "click_time": int(time.time() * 1000)}]),
         ),
         ('dislike_from', "homepage"),
     ]
