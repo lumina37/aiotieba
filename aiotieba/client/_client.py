@@ -2058,7 +2058,13 @@ class Client(object):
 
         from . import send_msg
 
-        return await send_msg.request(self._ws_core, user_id, content)
+        msg_id = await send_msg.request(self._ws_core, user_id, content)
+        if msg_id:
+            mid_manager = self._ws_core.mid_manager
+            mid_manager.set_msg_id(mid_manager.priv_gid, msg_id)
+            return True
+        else:
+            return False
 
     async def set_msg_readed(self, message: "get_group_msg.WsMessage") -> bool:
         """

@@ -18,7 +18,7 @@ def pack_proto(user_id: int, content: str, record_id: int) -> bytes:
     return req_proto.SerializeToString()
 
 
-def parse_body(body: bytes) -> None:
+def parse_body(body: bytes) -> int:
     res_proto = CommitPersonalMsgResIdl_pb2.CommitPersonalMsgResIdl()
     res_proto.ParseFromString(body)
 
@@ -27,8 +27,11 @@ def parse_body(body: bytes) -> None:
     if code := res_proto.data.blockInfo.blockErrno:
         raise TiebaServerError(code, res_proto.data.blockInfo.blockErrmsg)
 
+    msg_id = res_proto.data.msgId
+    return msg_id
 
-async def request(ws_core: WsCore, user_id: int, content: str) -> bool:
+
+async def request(ws_core: WsCore, user_id: int, content: str) -> int:
     data = pack_proto(user_id, content, ws_core.mid_manager.get_record_id())
 
     log_str = f"user_id={user_id}"
@@ -36,11 +39,11 @@ async def request(ws_core: WsCore, user_id: int, content: str) -> bool:
 
     try:
         resq = await ws_core.send(data, CMD)
-        parse_body(await resq.read())
+        msg_id = parse_body(await resq.read())
 
     except Exception as err:
         log_exception(frame, err, log_str)
-        return False
+        msg_id = 0
 
     log_success(frame, log_str)
-    return True
+    return msg_id
