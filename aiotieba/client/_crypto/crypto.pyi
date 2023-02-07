@@ -1,3 +1,5 @@
+from typing import List, Tuple, Union
+
 def cuid_galaxy2(android_id: str) -> str:
     """
     使用给定的android_id生成cuid_galaxy2
@@ -45,5 +47,17 @@ def inv_rc4(sec_key: bytes, xyus_md5: bytes) -> bytes:
 
     Returns:
         bytes
+    """
+    ...
+
+def sign(data: List[Tuple[str, Union[str, int]]]) -> str:
+    """
+    为参数元组列表计算贴吧客户端签名
+
+    Args:
+        data (list[tuple[str, str | int]]): 参数元组列表
+
+    Returns:
+        str: 签名
     """
     ...

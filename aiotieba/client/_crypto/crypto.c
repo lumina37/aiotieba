@@ -1,19 +1,12 @@
-#define PY_SSIZE_T_CLEAN // use Py_ssize_t instead of int
+#include "_python.h"
 
-#ifdef _DEBUG
-#undef _DEBUG // use these steps to avoid linking with python_d.lib
-#define __RESTORE_DEBUG
-#endif
-#include <Python.h>
-#ifdef __RESTORE_DEBUG
-#define _DEBUG
-#undef __RESTORE_DEBUG
-#endif
-
+#include "_error.h"
+#include "_const.h"
 #include "_cuid.h"
 #include "_zid.h"
+#include "_sign.h"
 
-static PyObject *cuid_galaxy2(PyObject *self, PyObject *args)
+PyObject *cuid_galaxy2(PyObject *self, PyObject *args)
 {
 	char dst[TBH_CUID_GALAXY2_SIZE];
 	const char *androidID;
@@ -43,7 +36,7 @@ static PyObject *cuid_galaxy2(PyObject *self, PyObject *args)
 	return PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, dst, TBH_CUID_GALAXY2_SIZE);
 }
 
-static PyObject *c3_aid(PyObject *self, PyObject *args)
+PyObject *c3_aid(PyObject *self, PyObject *args)
 {
 	char dst[TBH_C3_AID_SIZE];
 	const char *androidID;
@@ -75,7 +68,7 @@ static PyObject *c3_aid(PyObject *self, PyObject *args)
 	return PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, dst, TBH_C3_AID_SIZE);
 }
 
-static PyObject *inv_rc4(PyObject *self, PyObject *args)
+PyObject *inv_rc4(PyObject *self, PyObject *args)
 {
 	char dst[TBH_INV_RC4_SIZE];
 	const char *secKey;
@@ -111,6 +104,7 @@ static PyMethodDef crypto_methods[] = {
 	{"cuid_galaxy2", (PyCFunction)cuid_galaxy2, METH_VARARGS, NULL},
 	{"c3_aid", (PyCFunction)c3_aid, METH_VARARGS, NULL},
 	{"inv_rc4", (PyCFunction)inv_rc4, METH_VARARGS, NULL},
+	{"sign", (PyCFunction)sign, METH_VARARGS, NULL},
 	{NULL, NULL, 0, NULL},
 };
 

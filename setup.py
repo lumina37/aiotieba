@@ -13,6 +13,7 @@ ext_3rdparty_include_dirs = [
     third_party_path / "base32",
     third_party_path / "crc",
     third_party_path / "xxHash",
+    third_party_path / "rapidjson/internal",
 ]
 ext_3rdparty_include_in_strs = [str(d) for d in ext_3rdparty_include_dirs]
 

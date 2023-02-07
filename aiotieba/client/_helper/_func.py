@@ -16,6 +16,7 @@ from Crypto.Util.Padding import pad, unpad
 
 from ..._logging import get_logger
 from .._core import HttpCore, TbCore
+from .._crypto import sign as csign
 from ..exception import HTTPStatusError, exc_handlers
 from ._const import DEFAULT_TIMEOUT
 
@@ -130,13 +131,7 @@ def sign(data: List[Tuple[str, Union[str, int]]]) -> List[Tuple[str, str]]:
         list[tuple[str, str]]: 签名后的form参数元组列表
     """
 
-    raw_list = [f"{k}={v}" for k, v in data]
-    raw_list.append("tiebaclient!!!")
-    raw_str = "".join(raw_list)
-
-    sign = hashlib.md5(raw_str.encode('utf-8')).hexdigest()
-    data.append(('sign', sign))
-
+    data.append(('sign', csign(data)))
     return data
 
 
