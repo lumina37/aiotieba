@@ -7,7 +7,7 @@
 static const char CUID2_PERFIX[] = {'c', 'o', 'm', '.', 'b', 'a', 'i', 'd', 'u'};
 static const char CUID3_PERFIX[] = {'c', 'o', 'm', '.', 'h', 'e', 'l', 'i', 'o', 's'};
 
-void __update(uint64_t *sec, uint64_t hashVal, uint64_t start, bool flag)
+static void __update(uint64_t *sec, uint64_t hashVal, uint64_t start, bool flag)
 {
 	uint64_t end = start + HASH_SIZE_IN_BIT;
 	uint64_t secTemp = *sec;
@@ -39,7 +39,7 @@ void __update(uint64_t *sec, uint64_t hashVal, uint64_t start, bool flag)
 	*sec = secTemp;
 }
 
-void __writeBuffer(char *buffer, const uint64_t sec)
+static inline void __writeBuffer(char *buffer, const uint64_t sec)
 {
 	uint64_t tmpSec = sec;
 	for (uint64_t i = 0; i < STEP_SIZE; i++)
