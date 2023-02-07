@@ -86,7 +86,7 @@ class TbCore(object):
 
     @BDUSS.setter
     def BDUSS(self, new_BDUSS: str) -> None:
-        if len(new_BDUSS) != 192:
+        if new_BDUSS and len(new_BDUSS) != 192:
             raise ValueError(f"BDUSS的长度应为192个字符 而输入的{new_BDUSS}有{len(new_BDUSS)}个字符")
         self._BDUSS = new_BDUSS
 
@@ -100,7 +100,7 @@ class TbCore(object):
 
     @STOKEN.setter
     def STOKEN(self, new_STOKEN: str) -> None:
-        if len(new_STOKEN) != 64:
+        if new_STOKEN and len(new_STOKEN) != 64:
             raise ValueError(f"STOKEN的长度应为64个字符 而输入的{new_STOKEN}有{len(new_STOKEN)}个字符")
         self._STOKEN = new_STOKEN
 
