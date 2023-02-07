@@ -27,20 +27,13 @@ def pack_proto(core: TbCore) -> bytes:
     device = {
         'subapp_type': 'mini',
         'cuid': core.cuid,
-        '_os_version': '9',
         '_client_version': core.post_version,
-        'net_type': '1',
-        '_phone_screen': '720,1280',
         'pversion': '1.0.3',
         '_msg_status': '1',
-        'cuid_gid': '',
         '_phone_imei': '000000000000000',
         'from': "1021099l",
         'cuid_galaxy2': core.cuid_galaxy2,
-        'model': 'SM-G988N',
-        '_pic_quality': '0',
         '_client_type': '2',
-        #'channel_id': '4609820899808533744',
         'timestamp': str(int(time.time() * 1e3)),
     }
     req_proto.data.device = jsonlib.dumps(device, separators=(',', ':'))

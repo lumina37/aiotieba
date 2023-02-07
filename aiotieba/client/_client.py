@@ -100,7 +100,7 @@ class Client(object):
         core = TbCore(BDUSS_key, proxy)
         self._core: TbCore = core
         self._http_core: HttpCore = HttpCore(core, connector, loop)
-        self._ws_core: WsCore = WsCore(core, connector, loop, 800.0)
+        self._ws_core: WsCore = WsCore(core, connector, loop, heartbeat=12.0)
 
         self._user: UserInfo_home = UserInfo_home()._init_null()
 
