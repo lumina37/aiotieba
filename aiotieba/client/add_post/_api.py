@@ -1,12 +1,11 @@
 import sys
 import time
 
-import aiohttp
 import yarl
 
-from .._core import APP_BASE_HOST, TbCore
-from .._exception import TiebaServerError, TiebaValueError
+from .._core import APP_BASE_HOST, HttpCore
 from .._helper import APP_SECURE_SCHEME, log_exception, log_success, pack_form_request, parse_json, send_request
+from ..exception import TiebaServerError, TiebaValueError
 
 
 def parse_body(body: bytes) -> None:
@@ -17,8 +16,9 @@ def parse_body(body: bytes) -> None:
         raise TiebaValueError("need verify code")
 
 
-async def request(connector: aiohttp.TCPConnector, core: TbCore, fname: str, fid: int, tid: int, content: str) -> bool:
+async def request(http_core: HttpCore, fname: str, fid: int, tid: int, content: str) -> bool:
 
+    core = http_core.core
     data = [
         ('BDUSS', core._BDUSS),
         ('_client_id', core._client_id),
@@ -56,7 +56,7 @@ async def request(connector: aiohttp.TCPConnector, core: TbCore, fname: str, fid
     ]
 
     request = pack_form_request(
-        core,
+        http_core,
         yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/c/post/add"),
         data,
     )
@@ -65,7 +65,7 @@ async def request(connector: aiohttp.TCPConnector, core: TbCore, fname: str, fid
     frame = sys._getframe(1)
 
     try:
-        body = await send_request(request, connector, read_bufsize=2 * 1024)
+        body = await send_request(request, http_core.connector, read_bufsize=2 * 1024)
         parse_body(body)
 
     except Exception as err:

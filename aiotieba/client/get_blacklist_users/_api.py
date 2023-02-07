@@ -1,10 +1,9 @@
 import sys
 
-import aiohttp
 import bs4
 import yarl
 
-from .._core import WEB_BASE_HOST, TbCore
+from .._core import WEB_BASE_HOST, HttpCore
 from .._helper import log_exception, pack_web_get_request, send_request
 from ._classdef import BlacklistUsers
 
@@ -16,7 +15,7 @@ def parse_body(body: bytes) -> BlacklistUsers:
     return blacklist_users
 
 
-async def request(connector: aiohttp.TCPConnector, core: TbCore, fname: str, pn: int) -> BlacklistUsers:
+async def request(http_core: HttpCore, fname: str, pn: int) -> BlacklistUsers:
 
     params = [
         ('word', fname),
@@ -24,13 +23,13 @@ async def request(connector: aiohttp.TCPConnector, core: TbCore, fname: str, pn:
     ]
 
     request = pack_web_get_request(
-        core,
+        http_core,
         yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/bawu2/platform/listBlackUser"),
         params,
     )
 
     try:
-        body = await send_request(request, connector, read_bufsize=64 * 1024)
+        body = await send_request(request, http_core.connector, read_bufsize=64 * 1024)
         blacklist_users = parse_body(body)
 
     except Exception as err:

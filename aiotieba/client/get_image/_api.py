@@ -5,9 +5,9 @@ import cv2 as cv
 import numpy as np
 import yarl
 
-from .._core import TbCore
-from .._exception import ContentTypeError, HTTPStatusError
+from .._core import HttpCore
 from .._helper import log_exception, pack_web_get_request, send_request
+from ..exception import ContentTypeError, HTTPStatusError
 
 
 def headers_checker(response: aiohttp.ClientResponse) -> None:
@@ -26,11 +26,13 @@ def parse_body(body: bytes) -> "np.ndarray":
     return image
 
 
-async def request(connector: aiohttp.TCPConnector, core: TbCore, url: yarl.URL) -> "np.ndarray":
-    request = pack_web_get_request(core, url, [])
+async def request(http_core: HttpCore, url: yarl.URL) -> "np.ndarray":
+    request = pack_web_get_request(http_core, url, [])
 
     try:
-        body = await send_request(request, connector, read_bufsize=512 * 1024, headers_checker=headers_checker)
+        body = await send_request(
+            request, http_core.connector, read_bufsize=512 * 1024, headers_checker=headers_checker
+        )
         image = parse_body(body)
 
     except Exception as err:

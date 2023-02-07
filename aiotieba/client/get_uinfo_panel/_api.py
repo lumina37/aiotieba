@@ -1,11 +1,10 @@
 import sys
 
-import aiohttp
 import yarl
 
-from .._core import WEB_BASE_HOST, TbCore
-from .._exception import TiebaServerError
+from .._core import WEB_BASE_HOST, HttpCore
 from .._helper import is_portrait, log_exception, pack_web_get_request, parse_json, send_request
+from ..exception import TiebaServerError
 from ._classdef import UserInfo_panel
 
 
@@ -20,7 +19,7 @@ def parse_body(body: bytes) -> UserInfo_panel:
     return user
 
 
-async def request(connector: aiohttp.TCPConnector, core: TbCore, name_or_portrait: str) -> UserInfo_panel:
+async def request(http_core: HttpCore, name_or_portrait: str) -> UserInfo_panel:
 
     if is_portrait(name_or_portrait):
         params = [('id', name_or_portrait)]
@@ -28,13 +27,13 @@ async def request(connector: aiohttp.TCPConnector, core: TbCore, name_or_portrai
         params = [('un', name_or_portrait)]
 
     request = pack_web_get_request(
-        core,
+        http_core,
         yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/home/get/panel"),
         params,
     )
 
     try:
-        body = await send_request(request, connector, read_bufsize=64 * 1024)
+        body = await send_request(request, http_core.connector, read_bufsize=64 * 1024)
         user = parse_body(body)
 
     except Exception as err:

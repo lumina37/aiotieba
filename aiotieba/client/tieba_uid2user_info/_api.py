@@ -1,13 +1,14 @@
 import sys
 
-import aiohttp
 import yarl
 
-from .._core import APP_BASE_HOST, TbCore
-from .._exception import TiebaServerError
+from .._core import APP_BASE_HOST, HttpCore, TbCore
 from .._helper import APP_INSECURE_SCHEME, log_exception, pack_proto_request, send_request
+from ..exception import TiebaServerError
 from ._classdef import UserInfo_TUid
 from .protobuf import GetUserByTiebaUidReqIdl_pb2, GetUserByTiebaUidResIdl_pb2
+
+CMD = 309702
 
 
 def pack_proto(core: TbCore, tieba_uid: int) -> bytes:
@@ -31,21 +32,21 @@ def parse_body(body: bytes) -> UserInfo_TUid:
     return user
 
 
-async def request_http(connector: aiohttp.TCPConnector, core: TbCore, tieba_uid: int) -> UserInfo_TUid:
+async def request_http(http_core: HttpCore, tieba_uid: int) -> UserInfo_TUid:
 
     request = pack_proto_request(
-        core,
+        http_core,
         yarl.URL.build(
             scheme=APP_INSECURE_SCHEME,
             host=APP_BASE_HOST,
             path="/c/u/user/getUserByTiebaUid",
-            query_string="cmd=309702",
+            query_string=f"cmd={CMD}",
         ),
-        pack_proto(core, tieba_uid),
+        pack_proto(http_core.core, tieba_uid),
     )
 
     try:
-        body = await send_request(request, connector, read_bufsize=1024)
+        body = await send_request(request, http_core.connector, read_bufsize=1024)
         user = parse_body(body)
 
     except Exception as err:

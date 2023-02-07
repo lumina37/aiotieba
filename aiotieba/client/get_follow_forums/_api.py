@@ -1,11 +1,10 @@
 import sys
 
-import aiohttp
 import yarl
 
-from .._core import APP_BASE_HOST, TbCore
-from .._exception import TiebaServerError
+from .._core import APP_BASE_HOST, HttpCore
 from .._helper import APP_SECURE_SCHEME, log_exception, pack_form_request, parse_json, send_request
+from ..exception import TiebaServerError
 from ._classdef import FollowForums
 
 
@@ -19,24 +18,24 @@ def parse_body(body: bytes) -> FollowForums:
     return follow_forums
 
 
-async def request(connector: aiohttp.TCPConnector, core: TbCore, user_id: int, pn: int, rn: int) -> FollowForums:
+async def request(http_core: HttpCore, user_id: int, pn: int, rn: int) -> FollowForums:
 
     data = [
-        ('BDUSS', core._BDUSS),
-        ('_client_version', core.main_version),
+        ('BDUSS', http_core.core._BDUSS),
+        ('_client_version', http_core.core.main_version),
         ('friend_uid', user_id),
         ('page_no', pn),
         ('page_size', rn),
     ]
 
     request = pack_form_request(
-        core,
+        http_core,
         yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/forum/like"),
         data,
     )
 
     try:
-        body = await send_request(request, connector, read_bufsize=16 * 1024)
+        body = await send_request(request, http_core.connector, read_bufsize=16 * 1024)
         follow_forums = parse_body(body)
 
     except Exception as err:

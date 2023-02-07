@@ -6,7 +6,7 @@ import random
 import sys
 import urllib.parse
 from types import FrameType
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, List, Optional, Tuple, Union
 
 import aiohttp
 import async_timeout
@@ -15,8 +15,8 @@ from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 
 from ..._logging import get_logger
-from .._core import TbCore
-from .._exception import HTTPStatusError, exc_handlers
+from .._core import HttpCore, TbCore
+from ..exception import HTTPStatusError, exc_handlers
 from ._const import DEFAULT_TIMEOUT
 
 try:
@@ -119,12 +119,12 @@ def timeout(delay: Optional[float], loop: asyncio.AbstractEventLoop) -> async_ti
     return async_timeout.timeout_at(when)
 
 
-def sign(data: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
+def sign(data: List[Tuple[str, Union[str, int]]]) -> List[Tuple[str, str]]:
     """
     为参数元组列表添加贴吧客户端签名
 
     Args:
-        data (list[tuple[str, str]]): 参数元组列表
+        data (list[tuple[str, str | int]]): 参数元组列表
 
     Returns:
         list[tuple[str, str]]: 签名后的form参数元组列表
@@ -140,13 +140,13 @@ def sign(data: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
     return data
 
 
-def pack_form_request(core: TbCore, url: yarl.URL, data: List[Tuple[str, str]]) -> aiohttp.ClientRequest:
+def pack_form_request(http_core: HttpCore, url: yarl.URL, data: List[Tuple[str, str]]) -> aiohttp.ClientRequest:
     """
     自动签名参数元组列表
     并将其打包为移动端表单请求
 
     Args:
-        core (TbCore): 贴吧客户端核心容器
+        http_core (HttpCore): 保存http接口相关状态的核心容器
         url (yarl.URL): 链接
         data (list[tuple[str, str]]): 参数元组列表
 
@@ -162,23 +162,23 @@ def pack_form_request(core: TbCore, url: yarl.URL, data: List[Tuple[str, str]]) 
     request = aiohttp.ClientRequest(
         aiohttp.hdrs.METH_POST,
         url,
-        headers=core._app_core.headers,
+        headers=http_core.app.headers,
         data=payload,
-        loop=core._loop,
-        proxy=core._proxy,
-        proxy_auth=core._proxy_auth,
+        loop=http_core.loop,
+        proxy=http_core.core._proxy,
+        proxy_auth=http_core.core._proxy_auth,
         ssl=False,
     )
 
     return request
 
 
-def pack_proto_request(core: TbCore, url: yarl.URL, data: bytes) -> aiohttp.ClientRequest:
+def pack_proto_request(http_core: HttpCore, url: yarl.URL, data: bytes) -> aiohttp.ClientRequest:
     """
     打包移动端protobuf请求
 
     Args:
-        core (TbCore): 贴吧客户端核心容器
+        http_core (HttpCore): 保存http接口相关状态的核心容器
         url (yarl.URL): 链接
         data (bytes): protobuf序列化后的二进制数据
 
@@ -199,23 +199,23 @@ def pack_proto_request(core: TbCore, url: yarl.URL, data: bytes) -> aiohttp.Clie
     request = aiohttp.ClientRequest(
         aiohttp.hdrs.METH_POST,
         url,
-        headers=core._app_proto_core.headers,
+        headers=http_core.app_proto.headers,
         data=writer,
-        loop=core._loop,
-        proxy=core._proxy,
-        proxy_auth=core._proxy_auth,
+        loop=http_core.loop,
+        proxy=http_core.core._proxy,
+        proxy_auth=http_core.core._proxy_auth,
         ssl=False,
     )
 
     return request
 
 
-def pack_web_get_request(core: TbCore, url: yarl.URL, params: List[Tuple[str, str]]) -> aiohttp.ClientRequest:
+def pack_web_get_request(http_core: HttpCore, url: yarl.URL, params: List[Tuple[str, str]]) -> aiohttp.ClientRequest:
     """
     打包网页端参数请求
 
     Args:
-        core (TbCore): 贴吧客户端核心容器
+        http_core (HttpCore): 保存http接口相关状态的核心容器
         url (yarl.URL): 链接
         params (list[tuple[str, str]]): 参数元组列表
 
@@ -227,23 +227,23 @@ def pack_web_get_request(core: TbCore, url: yarl.URL, params: List[Tuple[str, st
     request = aiohttp.ClientRequest(
         aiohttp.hdrs.METH_GET,
         url,
-        headers=core._web_core.headers,
-        cookies=core._web_core.cookie_jar.filter_cookies(url),
-        loop=core._loop,
-        proxy=core._proxy,
-        proxy_auth=core._proxy_auth,
+        headers=http_core.web.headers,
+        cookies=http_core.web.cookie_jar.filter_cookies(url),
+        loop=http_core.loop,
+        proxy=http_core.core._proxy,
+        proxy_auth=http_core.core._proxy_auth,
         ssl=False,
     )
 
     return request
 
 
-def pack_web_form_request(core: TbCore, url: yarl.URL, data: List[Tuple[str, str]]) -> aiohttp.ClientRequest:
+def pack_web_form_request(http_core: HttpCore, url: yarl.URL, data: List[Tuple[str, str]]) -> aiohttp.ClientRequest:
     """
     打包网页端表单请求
 
     Args:
-        core (TbCore): 贴吧客户端核心容器
+        http_core (HttpCore): 保存http接口相关状态的核心容器
         url (yarl.URL): 链接
         data (list[tuple[str, str]]): 参数元组列表
 
@@ -259,12 +259,12 @@ def pack_web_form_request(core: TbCore, url: yarl.URL, data: List[Tuple[str, str
     request = aiohttp.ClientRequest(
         aiohttp.hdrs.METH_POST,
         url,
-        headers=core._web_core.headers,
+        headers=http_core.web.headers,
         data=payload,
-        cookies=core._web_core.cookie_jar.filter_cookies(url),
-        loop=core._loop,
-        proxy=core._proxy,
-        proxy_auth=core._proxy_auth,
+        cookies=http_core.web.cookie_jar.filter_cookies(url),
+        loop=http_core.loop,
+        proxy=http_core.core._proxy,
+        proxy_auth=http_core.core._proxy_auth,
         ssl=False,
     )
 
@@ -272,50 +272,52 @@ def pack_web_form_request(core: TbCore, url: yarl.URL, data: List[Tuple[str, str
 
 
 def pack_ws_bytes(
-    core: TbCore, ws_bytes: bytes, /, cmd: int, req_id: int, *, need_gzip: bool = True, need_encrypt: bool = True
+    core: TbCore, data: bytes, cmd: int, req_id: int, *, compress: bool = False, encrypt: bool = True
 ) -> bytes:
     """
-    对ws_bytes进行打包 压缩加密并添加9字节头部
+    打包数据并添加9字节头部
 
     Args:
-        core (TiebaCore): 贴吧核心参数容器
-        ws_bytes (bytes): 待发送的websocket数据
+        core (TbCore): 贴吧核心参数容器
+        data (bytes): 待发送的websocket数据
         cmd (int): 请求的cmd类型
         req_id (int): 请求的id
-        need_gzip (bool, optional): 是否需要gzip压缩. Defaults to False.
-        need_encrypt (bool, optional): 是否需要aes加密. Defaults to False.
+        compress (bool, optional): 是否需要gzip压缩. Defaults to False.
+        encrypt (bool, optional): 是否需要aes加密. Defaults to True.
 
     Returns:
         bytes: 打包后的websocket数据
     """
 
-    if need_gzip:
-        ws_bytes = gzip.compress(ws_bytes, compresslevel=-1, mtime=0)
+    flag = 0x08
 
-    if need_encrypt:
-        ws_bytes = pad(ws_bytes, AES.block_size)
-        ws_bytes = core.aes_ecb_chiper.encrypt(ws_bytes)
+    if compress:
+        flag |= 0b01000000
+        data = gzip.compress(data, compresslevel=-1, mtime=0)
+    if encrypt:
+        flag |= 0b10000000
+        data = pad(data, AES.block_size)
+        data = core.aes_ecb_chiper.encrypt(data)
 
-    flag = 0x08 | (need_gzip << 7) | (need_encrypt << 6)
-    ws_bytes = b''.join(
+    data = b''.join(
         [
             flag.to_bytes(1, 'big'),
             cmd.to_bytes(4, 'big'),
             req_id.to_bytes(4, 'big'),
-            ws_bytes,
+            data,
         ]
     )
 
-    return ws_bytes
+    return data
 
 
-def parse_ws_bytes(core: TbCore, ws_bytes: bytes) -> Tuple[bytes, int, int]:
+def parse_ws_bytes(core: TbCore, data: bytes) -> Tuple[bytes, int, int]:
     """
-    对ws_bytes进行解包
+    对websocket返回数据进行解包
 
     Args:
-        core (TiebaCore): 贴吧核心参数容器
-        ws_bytes (bytes): 接收到的websocket数据
+        core (TbCore): 贴吧核心参数容器
+        data (bytes): 接收到的websocket数据
 
     Returns:
         bytes: 解包后的websocket数据
@@ -323,22 +325,19 @@ def parse_ws_bytes(core: TbCore, ws_bytes: bytes) -> Tuple[bytes, int, int]:
         int: 对应请求的id
     """
 
-    if len(ws_bytes) < 9:
-        return ws_bytes, 0, 0
+    data_view = memoryview(data)
+    flag = data_view[0]
+    cmd = int.from_bytes(data_view[1:5], 'big')
+    req_id = int.from_bytes(data_view[5:9], 'big')
 
-    ws_view = memoryview(ws_bytes)
-    flag = ws_view[0]
-    cmd = int.from_bytes(ws_view[1:5], 'big')
-    req_id = int.from_bytes(ws_view[5:9], 'big')
-
-    ws_bytes = ws_view[9:].tobytes()
+    data = data_view[9:].tobytes()
     if flag & 0b10000000:
-        ws_bytes = core.aes_ecb_chiper.decrypt(ws_bytes)
-        ws_bytes = unpad(ws_bytes, AES.block_size)
+        data = core.aes_ecb_chiper.decrypt(data)
+        data = unpad(data, AES.block_size)
     if flag & 0b01000000:
-        ws_bytes = gzip.decompress(ws_bytes)
+        data = gzip.decompress(data)
 
-    return ws_bytes, cmd, req_id
+    return data, cmd, req_id
 
 
 def check_status_code(response: aiohttp.ClientResponse) -> None:

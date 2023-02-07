@@ -1,14 +1,15 @@
 import sys
 from typing import Dict, List
 
-import aiohttp
 import yarl
 
-from .._core import APP_BASE_HOST, TbCore
-from .._exception import TiebaServerError
+from .._core import APP_BASE_HOST, HttpCore, TbCore
 from .._helper import APP_INSECURE_SCHEME, log_exception, pack_proto_request, send_request
+from ..exception import TiebaServerError
 from ._classdef import UserInfo_bawu
 from .protobuf import GetBawuInfoReqIdl_pb2, GetBawuInfoResIdl_pb2
+
+CMD = 301007
 
 
 def pack_proto(core: TbCore, fid: int) -> bytes:
@@ -34,18 +35,18 @@ def parse_body(body: bytes) -> Dict[str, List[UserInfo_bawu]]:
     return bawu_dict
 
 
-async def request_http(connector: aiohttp.TCPConnector, core: TbCore, fid: int) -> Dict[str, List[UserInfo_bawu]]:
+async def request_http(http_core: HttpCore, fid: int) -> Dict[str, List[UserInfo_bawu]]:
 
     request = pack_proto_request(
-        core,
+        http_core,
         yarl.URL.build(
-            scheme=APP_INSECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/forum/getBawuInfo", query_string="cmd=301007"
+            scheme=APP_INSECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/forum/getBawuInfo", query_string=f"cmd={CMD}"
         ),
-        pack_proto(core, fid),
+        pack_proto(http_core.core, fid),
     )
 
     try:
-        body = await send_request(request, connector, read_bufsize=8 * 1024)
+        body = await send_request(request, http_core.connector, read_bufsize=8 * 1024)
         bawu_dict = parse_body(body)
 
     except Exception as err:

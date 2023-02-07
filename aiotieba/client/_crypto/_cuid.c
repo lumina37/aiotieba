@@ -7,8 +7,6 @@
 static const char CUID2_PERFIX[] = {'c', 'o', 'm', '.', 'b', 'a', 'i', 'd', 'u'};
 static const char CUID3_PERFIX[] = {'c', 'o', 'm', '.', 'h', 'e', 'l', 'i', 'o', 's'};
 
-static const char HEX_TABLE[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
-
 void __update(uint64_t *sec, uint64_t hashVal, uint64_t start, bool flag)
 {
 	uint64_t end = start + HASH_SIZE_IN_BIT;
@@ -113,20 +111,16 @@ int tbh_cuid_galaxy2(char *dst, const char *androidID)
 	memcpy(md5Buffer + buffOffset, androidID, TBH_ANDROID_ID_SIZE);
 
 	uint8_t md5[TBH_MD5_HASH_SIZE];
-	err = mbedtls_md5(md5Buffer, sizeof(md5Buffer), md5);
-	if (err)
-	{
-		return err;
-	}
+	mbedtls_md5(md5Buffer, sizeof(md5Buffer), md5);
 
 	// step 2: assign md5 hex to dst
 	// dst will be [md5 hex, ...]
 	size_t dstOffset = 0;
 	for (size_t imd5 = 0; imd5 < TBH_MD5_HASH_SIZE; imd5++)
 	{
-		dst[dstOffset] = HEX_TABLE[md5[imd5] >> 4];
+		dst[dstOffset] = HEX_UPCASE_TABLE[md5[imd5] >> 4];
 		dstOffset++;
-		dst[dstOffset] = HEX_TABLE[md5[imd5] & 0x0F];
+		dst[dstOffset] = HEX_UPCASE_TABLE[md5[imd5] & 0x0F];
 		dstOffset++;
 	}
 
@@ -175,11 +169,7 @@ int tbh_c3_aid(char *dst, const char *androidID, const char *uuid)
 	memcpy(sha1Buffer + sha1BuffOffset, uuid, TBH_UUID_SIZE);
 
 	uint8_t sha1[TBH_SHA1_HASH_SIZE];
-	err = mbedtls_sha1(sha1Buffer, sizeof(sha1Buffer), sha1);
-	if (err)
-	{
-		return err;
-	}
+	mbedtls_sha1(sha1Buffer, sizeof(sha1Buffer), sha1);
 
 	// step 3: compute sha1 base32 and assign
 	// dst will be ['A00-', sha1 base32, ...]
@@ -196,7 +186,7 @@ int tbh_c3_aid(char *dst, const char *androidID, const char *uuid)
 	err = tbh_heliosHash(heHash, dst, dstOffset);
 	if (err)
 	{
-		return false;
+		return err;
 	}
 
 	// step 6: assign helios base32 to dst

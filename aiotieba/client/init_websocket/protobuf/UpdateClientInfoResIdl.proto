@@ -5,4 +5,13 @@ import "Error.proto";
 
 message UpdateClientInfoResIdl {
     Error error = 1;
+    message DataRes {
+        message GroupInfo {
+            int64 groupId = 1;
+            int32 groupType = 20;
+            int64 lastMsgId = 21;
+        }
+        repeated GroupInfo groupInfo = 1;
+    }
+    DataRes data = 2;
 }

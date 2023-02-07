@@ -1,11 +1,10 @@
 import sys
 
-import aiohttp
 import yarl
 
-from .._core import APP_BASE_HOST, TbCore
-from .._exception import TiebaServerError
+from .._core import APP_BASE_HOST, HttpCore
 from .._helper import APP_SECURE_SCHEME, log_exception, pack_form_request, parse_json, send_request
+from ..exception import TiebaServerError
 
 
 def parse_body(body: bytes) -> str:
@@ -18,18 +17,18 @@ def parse_body(body: bytes) -> str:
     return client_id
 
 
-async def request(connector: aiohttp.TCPConnector, core: TbCore) -> str:
+async def request(http_core: HttpCore) -> str:
 
-    data = [('BDUSS', core._BDUSS)]
+    data = [('BDUSS', http_core.core._BDUSS)]
 
     request = pack_form_request(
-        core,
+        http_core,
         yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/s/sync"),
         data,
     )
 
     try:
-        body = await send_request(request, connector, read_bufsize=64 * 1024)
+        body = await send_request(request, http_core.connector, read_bufsize=64 * 1024)
         client_id = parse_body(body)
 
     except Exception as err:
