@@ -8,7 +8,6 @@ from Crypto.Cipher import AES
 
 from ..._config import CONFIG
 from .._crypto import c3_aid, cuid_galaxy2
-from ._helper import is_valid_BDUSS, is_valid_STOKEN
 
 
 class TbCore(object):
@@ -87,8 +86,8 @@ class TbCore(object):
 
     @BDUSS.setter
     def BDUSS(self, new_BDUSS: str) -> None:
-        if not is_valid_BDUSS(new_BDUSS):
-            self._BDUSS = ''
+        if len(new_BDUSS) != 192:
+            raise ValueError(f"BDUSS的长度应为192个字符 而输入的{new_BDUSS}有{len(new_BDUSS)}个字符")
         self._BDUSS = new_BDUSS
 
     @property
@@ -101,8 +100,8 @@ class TbCore(object):
 
     @STOKEN.setter
     def STOKEN(self, new_STOKEN: str) -> None:
-        if not is_valid_STOKEN(new_STOKEN):
-            self._STOKEN = ''
+        if len(new_STOKEN) != 64:
+            raise ValueError(f"STOKEN的长度应为64个字符 而输入的{new_STOKEN}有{len(new_STOKEN)}个字符")
         self._STOKEN = new_STOKEN
 
     @property
