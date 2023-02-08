@@ -1,8 +1,10 @@
 # 
 
-<a href="https://socialify.git.ci">
-    <img src="img/aiotieba.svg">
-</a>
+<picture href="https://socialify.git.ci">
+  <source media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/48282276/217528276-e77c74e9-3e5d-4f96-a288-af5fc2ea1282.svg">
+  <source media="(prefers-color-scheme: light)" srcset="https://user-images.githubusercontent.com/48282276/217528290-5e6d6293-1731-4025-8eca-8c4ab49ecebd.svg">
+  <img alt="Shows an illustrated sun in light mode and a moon with stars in dark mode." src="https://user-images.githubusercontent.com/48282276/217528290-5e6d6293-1731-4025-8eca-8c4ab49ecebd.svg">
+</picture>
 
 </p>
 

@@ -13,6 +13,7 @@ log/
 *.jpg
 *.pdb
 *.bin
+*.txt
 
 /*.py
 
