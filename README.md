@@ -1,9 +1,9 @@
 <p align="center">
 
 <picture href="https://socialify.git.ci">
-  <source media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/48282276/217528276-e77c74e9-3e5d-4f96-a288-af5fc2ea1282.svg">
-  <source media="(prefers-color-scheme: light)" srcset="https://user-images.githubusercontent.com/48282276/217528290-5e6d6293-1731-4025-8eca-8c4ab49ecebd.svg">
-  <img alt="Shows an illustrated sun in light mode and a moon with stars in dark mode." src="https://user-images.githubusercontent.com/48282276/217528290-5e6d6293-1731-4025-8eca-8c4ab49ecebd.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/48282276/217530379-1348f7c5-7056-48f4-8c64-1c74caf5497c.svg">
+  <source media="(prefers-color-scheme: light)" srcset="https://user-images.githubusercontent.com/48282276/217530385-98a2fb24-ff6e-4b27-990f-998b66c2ab5e.svg">
+  <img alt="Shows an illustrated sun in light mode and a moon with stars in dark mode." src="https://user-images.githubusercontent.com/48282276/217530385-98a2fb24-ff6e-4b27-990f-998b66c2ab5e.svg">
 </picture>
 
 </p>
