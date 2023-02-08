@@ -23,8 +23,8 @@ classifiers = [
     "Topic :: Internet :: WWW/HTTP :: Session",
 ]
 dependencies = [
-    "beautifulsoup4<5,>=4.0.0",
     "aiohttp<4,>=3.8.0,!=3.8.2",
+    "beautifulsoup4<5,>=4.0.0",
     "lxml<5,>=4.0.0",
     "protobuf<5,>=4.12.0",
     "pycryptodome<4,>=3.0.0",
@@ -34,7 +34,7 @@ dynamic = ["version"]
 
 [project.optional-dependencies]
 img = ["opencv-contrib-python<4.8,>=4.6.0.66"]
-speedup = ["pysimdjson<5.1,>=5.0.0", "aiodns<4,>=3.0.0"]
+speedup = ["aiodns<4,>=3.0.0", "pysimdjson<5.1,>=5.0.0", "uvloop<0.18,>=0.5.3;sys_platform!='win32'"]
 
 [tool.setuptools.packages.find]
 include = ["aiotieba*"]

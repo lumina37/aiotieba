@@ -42,3 +42,14 @@ if os.name == 'posix':
         raise KeyboardInterrupt
 
     signal.signal(signal.SIGTERM, terminate)
+
+    try:
+        import asyncio
+
+        import uvloop
+
+        if not isinstance(asyncio.get_event_loop_policy(), uvloop.EventLoopPolicy):
+            asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+
+    except ImportError:
+        pass
