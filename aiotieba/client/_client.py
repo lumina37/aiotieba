@@ -219,10 +219,9 @@ class Client(object):
         if self._core._z_id:
             return True
 
-        # from . import init_z_id
+        from . import init_z_id
 
-        # z_id = await init_z_id.request(self._http_core)
-        z_id = "74FFB5E615AA72E0B057EE43E3D5A23A8BA34AAC1672FC9B56A7106C57BA03"
+        z_id = await init_z_id.request(self._http_core)
         self._core._z_id = z_id
 
         return bool(z_id)
