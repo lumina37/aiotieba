@@ -1,6 +1,13 @@
+[data-md-color-scheme="slate"] {
+  --md-hue: 210;
+  --md-default-bg-color: hsla(var(--md-hue), 15%, 12%, 1);
+  --md-default-bg-color--light: hsla(var(--md-hue), 15%, 12%, 0.54);
+  --md-default-bg-color--lighter: hsla(var(--md-hue), 15%, 12%, 0.26);
+  --md-default-bg-color--lightest: hsla(var(--md-hue), 15%, 12%, 0.07);
+}
+
 div.docstring {
-    padding-left: 15px;
-    margin-bottom: 30px;
-    border-left: 5px solid rgba(230, 230, 230);
-  }
-  
+  padding-left: 15px;
+  margin-bottom: 30px;
+  border-left: 5px solid rgba(230, 230, 230);
+}
