@@ -21,7 +21,7 @@ from .contents import (
     TypeFragText,
     TypeFragTiebaPlus,
 )
-from .enums import GroupType, MsgType, ReqUInfo
+from .enums import GroupType, MsgType, PostSortType, ReqUInfo, ThreadSortType
 from .forum import Forum
 from .user import UserInfo
 from .vimage import VirtualImage
