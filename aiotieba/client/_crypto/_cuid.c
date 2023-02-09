@@ -52,7 +52,7 @@ static inline void __writeBuffer(char *buffer, const uint64_t sec)
 int tbh_heliosHash(char *dst, const char *src, size_t srcSize)
 {
 	size_t _buffSize = srcSize + ((size_t)HASHER_NUM * STEP_SIZE);
-	char *buffer = (char *)malloc(_buffSize); // internal
+	char *buffer = malloc(_buffSize); // internal
 	if (!buffer)
 	{
 		return TBH_MEMORY_ERROR;
@@ -141,7 +141,7 @@ int tbh_cuid_galaxy2(char *dst, const char *androidID)
 
 	// step 5: assign helios base32 to dst
 	// dst will be [md5 hex, '|V', heliosHash base32]
-	base32_encode((uint8_t *)heHash, TBH_HELIOS_HASH_SIZE, (dst + dstOffset));
+	base32_encode(heHash, TBH_HELIOS_HASH_SIZE, (dst + dstOffset));
 
 	return err;
 }
@@ -191,7 +191,7 @@ int tbh_c3_aid(char *dst, const char *androidID, const char *uuid)
 
 	// step 6: assign helios base32 to dst
 	// dst will be ['A00-', sha1 base32, '-', heliosHash base32]
-	base32_encode((uint8_t *)heHash, TBH_HELIOS_HASH_SIZE, (dst + dstOffset));
+	base32_encode(heHash, TBH_HELIOS_HASH_SIZE, (dst + dstOffset));
 
 	return err;
 }

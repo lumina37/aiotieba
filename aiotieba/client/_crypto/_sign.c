@@ -2,7 +2,7 @@
 
 static const char SIGN_SUFFIX[] = {'t', 'i', 'e', 'b', 'a', 'c', 'l', 'i', 'e', 'n', 't', '!', '!', '!'};
 
-static inline void __pyStr2UTF8(uint8_t **dst, size_t *dstSize, PyObject *pyoStr)
+static inline void __pyStr2UTF8(const uint8_t **dst, size_t *dstSize, PyObject *pyoStr)
 {
     if (PyUnicode_1BYTE_KIND == PyUnicode_KIND(pyoStr))
     {

@@ -136,10 +136,10 @@ class Client(object):
         try:
             if not self._ws_core.websocket:
                 await self._ws_core.connect()
-                await self.__init_websocket()
+                await self.__upload_sec_key()
             elif not self._ws_core.is_aviliable:
                 await self._ws_core.reconnect()
-                await self.__init_websocket()
+                await self.__upload_sec_key()
 
         except Exception as err:
             import sys
@@ -151,7 +151,7 @@ class Client(object):
 
         return True
 
-    async def __init_websocket(self) -> None:
+    async def __upload_sec_key(self) -> None:
         from . import init_websocket
         from ._core._wscore import MsgIDPair
 
