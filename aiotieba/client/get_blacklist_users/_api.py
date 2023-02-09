@@ -16,7 +16,6 @@ def parse_body(body: bytes) -> BlacklistUsers:
 
 
 async def request(http_core: HttpCore, fname: str, pn: int) -> BlacklistUsers:
-
     params = [
         ('word', fname),
         ('pn', pn),

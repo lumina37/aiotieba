@@ -66,7 +66,6 @@ async def request_http(
     comment_rn: int,
     is_fold: bool,
 ) -> Posts:
-
     request = pack_proto_request(
         http_core,
         yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/pb/page", query_string=f"cmd={CMD}"),

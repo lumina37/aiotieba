@@ -17,7 +17,6 @@ SOFIRE_HOST = "sofire.baidu.com"
 
 
 async def request(http_core: HttpCore):
-
     app_key = '740017'  # 通过 p/5/aio 获取
     sec_key = '7aaf37cac7c3aaac3456b22832aabd56'
     xyus = hashlib.md5((http_core.core.android_id + http_core.core.uuid).encode('ascii')).hexdigest().upper() + '|0'

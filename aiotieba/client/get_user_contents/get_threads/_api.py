@@ -44,7 +44,6 @@ def parse_body(body: bytes) -> List[UserThread]:
 
 
 async def request_http(http_core: HttpCore, user_id: int, pn: int, public_only: bool) -> List[UserThread]:
-
     request = pack_proto_request(
         http_core,
         yarl.URL.build(

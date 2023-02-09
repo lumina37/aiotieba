@@ -19,7 +19,6 @@ def parse_body(body: bytes) -> RecomStatus:
 
 
 async def request(http_core: HttpCore, fid: int) -> RecomStatus:
-
     data = [
         ('BDUSS', http_core.core._BDUSS),
         ('_client_version', http_core.core.main_version),

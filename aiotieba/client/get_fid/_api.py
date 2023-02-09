@@ -19,7 +19,6 @@ def parse_body(body: bytes) -> int:
 
 
 async def request(http_core: HttpCore, fname: str) -> int:
-
     params = [
         ('fname', fname),
         ('ie', 'utf-8'),

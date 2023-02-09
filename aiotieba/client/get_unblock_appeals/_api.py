@@ -19,7 +19,6 @@ def parse_body(body: bytes) -> Appeals:
 
 
 async def request(http_core: HttpCore, fname: str, fid: int, pn: int, rn: int) -> Appeals:
-
     data = [
         ('fn', fname),
         ('fid', fid),

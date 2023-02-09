@@ -16,7 +16,6 @@ def parse_body(body: bytes) -> RankUsers:
 
 
 async def request(http_core: HttpCore, fname: str, pn: int) -> RankUsers:
-
     params = [
         ('kw', fname),
         ('pn', pn),

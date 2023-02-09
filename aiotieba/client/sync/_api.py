@@ -18,7 +18,6 @@ def parse_body(body: bytes) -> str:
 
 
 async def request(http_core: HttpCore) -> str:
-
     data = [('BDUSS', http_core.core._BDUSS)]
 
     request = pack_form_request(

@@ -36,7 +36,6 @@ class TiebaLogger(logging.Logger):
         log_dir: str = 'log',
         backup_count: int = 5,
     ) -> None:
-
         if name == '':
             name = Path(sys.argv[0]).stem
         super().__init__(name)

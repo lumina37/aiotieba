@@ -19,7 +19,6 @@ def parse_body(body: bytes) -> Recovers:
 
 
 async def request(http_core: HttpCore, fname: str, fid: int, name: str, pn: int) -> Recovers:
-
     params = [
         ('fn', fname),
         ('fid', fid),

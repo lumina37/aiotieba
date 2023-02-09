@@ -34,7 +34,6 @@ def parse_body(body: bytes) -> Dict[str, List[int]]:
 
 
 async def request(http_core: HttpCore, fid: int) -> Dict[str, List[int]]:
-
     data = [
         ('BDUSS', http_core.core._BDUSS),
         ('_client_version', http_core.core.main_version),

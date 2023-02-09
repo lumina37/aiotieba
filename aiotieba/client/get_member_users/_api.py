@@ -16,7 +16,6 @@ def parse_body(body: bytes) -> MemberUsers:
 
 
 async def request(http_core: HttpCore, fname: str, pn: int) -> MemberUsers:
-
     params = [
         ('word', fname),
         ('pn', pn),

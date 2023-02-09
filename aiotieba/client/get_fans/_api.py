@@ -19,7 +19,6 @@ def parse_body(body: bytes) -> Fans:
 
 
 async def request(http_core: HttpCore, user_id: int, pn: int) -> Fans:
-
     data = [
         ('BDUSS', http_core.core._BDUSS),
         ('_client_version', http_core.core.main_version),

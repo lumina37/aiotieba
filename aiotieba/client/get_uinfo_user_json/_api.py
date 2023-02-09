@@ -22,7 +22,6 @@ def parse_body(body: bytes) -> UserInfo_json:
 
 
 async def request(http_core: HttpCore, user_name: str) -> UserInfo_json:
-
     params = [
         ('un', user_name),
         ('ie', 'utf-8'),

@@ -174,7 +174,7 @@ class DislikeForums(Containers[DislikeForum]):
         self._objs = []
         self._page = Page_dislikef()._init_null()
         return self
-    
+
     @property
     def page(self) -> Page_dislikef:
         """

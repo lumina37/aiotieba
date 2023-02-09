@@ -52,7 +52,6 @@ def parse_body(body: bytes) -> Tuple[UserInfo_home, List[Thread_home]]:
 async def request_http(
     http_core: HttpCore, portrait: str, with_threads: bool
 ) -> Tuple[UserInfo_home, List[Thread_home]]:
-
     request = pack_proto_request(
         http_core,
         yarl.URL.build(

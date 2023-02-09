@@ -20,7 +20,6 @@ def parse_body(body: bytes) -> Forum_detail:
 
 
 async def request(http_core: HttpCore, fid: int) -> Forum_detail:
-
     data = [
         ('_client_version', http_core.core.main_version),
         ('forum_id', fid),

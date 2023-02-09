@@ -45,7 +45,6 @@ class HttpCore(object):
         connector: aiohttp.TCPConnector,
         loop: Optional[asyncio.AbstractEventLoop] = None,
     ) -> None:
-
         self.core: TbCore = core
         self.connector: aiohttp.TCPConnector = connector
         self.loop: asyncio.AbstractEventLoop = loop

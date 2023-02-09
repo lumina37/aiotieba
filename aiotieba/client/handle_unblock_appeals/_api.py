@@ -15,7 +15,6 @@ def parse_body(body: bytes) -> None:
 
 
 async def request(http_core: HttpCore, fname: str, fid: int, appeal_ids: List[int], refuse: bool) -> bool:
-
     data = (
         [
             ('fn', fname),

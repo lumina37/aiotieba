@@ -27,7 +27,18 @@ async def request(http_core: HttpCore, fid: int, tid: int, to_tab_id: int, from_
         ('_client_version', http_core.core.main_version),
         ('forum_id', fid),
         ('tbs', http_core.core._tbs),
-        ('threads', pack_json([{"thread_id": tid, "from_tab_id": from_tab_id, "to_tab_id": to_tab_id,}])),
+        (
+            'threads',
+            pack_json(
+                [
+                    {
+                        "thread_id": tid,
+                        "from_tab_id": from_tab_id,
+                        "to_tab_id": to_tab_id,
+                    }
+                ]
+            ),
+        ),
     ]
 
     request = pack_form_request(
