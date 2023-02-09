@@ -36,11 +36,11 @@ dynamic = ["version"]
 img = ["opencv-contrib-python<4.8,>=4.6.0.66"]
 speedup = ["aiodns<4,>=3.0.0", "pysimdjson<5.1,>=5.0.0", "uvloop<0.18,>=0.5.3;sys_platform!='win32'"]
 
+[tool.setuptools.packages.find]
+where = ["."]
+
 [tool.setuptools.dynamic]
 version = { attr = "aiotieba.__version__.__version__" }
-
-[tool.setuptools.packages.find]
-where = ["aiotieba"]
 
 [tool.setuptools.package-data]
 "*" = ["*.pyi"]
