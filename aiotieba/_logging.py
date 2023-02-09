@@ -1,10 +1,3 @@
-"""
-日志记录
-
-允许使用set_logger更换日志记录器
-允许使用set_formatter更换日志记录器
-"""
-
 import logging
 import logging.handlers
 import sys
@@ -14,7 +7,6 @@ logging.addLevelName(logging.FATAL, "FATAL")
 logging.addLevelName(logging.WARN, "WARN")
 
 logging.logThreads = False
-logging.logProcesses = False
 logging.logMultiprocessing = False
 logging.raiseExceptions = False
 logging.Formatter.default_msec_format = '%s.%03d'
