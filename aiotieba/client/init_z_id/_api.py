@@ -17,7 +17,7 @@ SOFIRE_HOST = "sofire.baidu.com"
 
 
 async def request(http_core: HttpCore):
-    app_key = '740017'  # 通过 p/5/aio 获取
+    app_key = '740017'  # get by p/5/aio
     sec_key = '7aaf37cac7c3aaac3456b22832aabd56'
     xyus = hashlib.md5((http_core.core.android_id + http_core.core.uuid).encode('ascii')).hexdigest().upper() + '|0'
     xyus_md5 = hashlib.md5(xyus.encode('ascii')).digest()
@@ -70,7 +70,7 @@ async def request(http_core: HttpCore):
         res_aes_sec_key = inv_rc4(res_query_skey, xyus_md5)
         aes_chiper = AES.new(res_aes_sec_key, AES.MODE_CBC, iv=b'\x00' * 16)
         res_data = binascii.a2b_base64(res_json['data'])
-        res_data = unpad(aes_chiper.decrypt(res_data)[:-16], AES.block_size)  # [:-16] 用于移除尾部的16字节md5
+        res_data = unpad(aes_chiper.decrypt(res_data)[:-16], AES.block_size)  # [:-16] remove md5
         res_data = parse_json(res_data.decode('utf-8'))
         zid = res_data['token']
 

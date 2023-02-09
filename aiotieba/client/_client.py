@@ -211,23 +211,21 @@ class Client(object):
         from . import sync
 
         client_id = await sync.request(self._http_core)
+        self._core._client_id = client_id
 
-        if client_id:
-            self._core._client_id = client_id
-            return True
-        else:
-            return False
+        return bool(client_id)
 
     async def __init_z_id(self) -> bool:
-        from . import init_z_id
-
-        z_id = await init_z_id.request(self._http_core)
-
-        if z_id:
-            self._core._z_id = z_id
+        if self._core._z_id:
             return True
-        else:
-            return False
+
+        # from . import init_z_id
+
+        # z_id = await init_z_id.request(self._http_core)
+        z_id = "74FFB5E615AA72E0B057EE43E3D5A23A8BA34AAC1672FC9B56A7106C57BA03"
+        self._core._z_id = z_id
+
+        return bool(z_id)
 
     async def get_fid(self, fname: str) -> int:
         """
