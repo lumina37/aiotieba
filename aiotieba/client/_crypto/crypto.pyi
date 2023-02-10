@@ -37,13 +37,13 @@ def c3_aid(android_id: str, uuid: str) -> str:
     """
     ...
 
-def inv_rc4(sec_key: bytes, xyus_md5: bytes) -> bytes:
+def rc4(xyus_md5: bytes, aes_cbc_sec_key: bytes) -> bytes:
     """
-    RC4的变体 颠倒了两个步骤的顺序
+    RC4加密 使用xyus_md5作为密钥加密aes_cbc_sec_key
 
     Args:
-        sec_key (bytes): 密钥
-        xyus_md5 (bytes): xyus的MD5
+        xyus_md5 (bytes): xyus的MD5 作为RC4密钥
+        aes_cbc_sec_key (bytes): 贴吧AES-CBC加密使用的随机密码
 
     Returns:
         bytes

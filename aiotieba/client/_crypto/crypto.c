@@ -68,21 +68,21 @@ PyObject *c3_aid(PyObject *self, PyObject *args)
 	return PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, dst, TBH_C3_AID_SIZE);
 }
 
-PyObject *inv_rc4(PyObject *self, PyObject *args)
+PyObject *rc4(PyObject *self, PyObject *args)
 {
-	char dst[TBH_INV_RC4_SIZE];
-	const char *secKey;
-	Py_ssize_t secKeySize;
+	char dst[TBH_RC4_SIZE];
 	const char *xyusMd5;
 	Py_ssize_t xyusMd5Size;
+	const char *cbcSecKey;
+	Py_ssize_t cbcSecKeySize;
 
-	if (!PyArg_ParseTuple(args, "y#y#", &secKey, &secKeySize, &xyusMd5, &xyusMd5Size))
+	if (!PyArg_ParseTuple(args, "y#y#", &xyusMd5, &xyusMd5Size, &cbcSecKey, &cbcSecKeySize))
 	{
 		PyErr_SetString(PyExc_ValueError, "failed to parse args");
 		return NULL;
 	}
 
-	int err = tbh_invRC4(dst, secKey, xyusMd5);
+	int err = tbh_rc4(dst, xyusMd5, cbcSecKey);
 	if (err)
 	{
 		if (err == TBH_MEMORY_ERROR)
@@ -97,13 +97,13 @@ PyObject *inv_rc4(PyObject *self, PyObject *args)
 		}
 	}
 
-	return PyBytes_FromStringAndSize(dst, TBH_INV_RC4_SIZE);
+	return PyBytes_FromStringAndSize(dst, TBH_RC4_SIZE);
 }
 
 static PyMethodDef crypto_methods[] = {
 	{"cuid_galaxy2", (PyCFunction)cuid_galaxy2, METH_VARARGS, NULL},
 	{"c3_aid", (PyCFunction)c3_aid, METH_VARARGS, NULL},
-	{"inv_rc4", (PyCFunction)inv_rc4, METH_VARARGS, NULL},
+	{"rc4", (PyCFunction)rc4, METH_VARARGS, NULL},
 	{"sign", (PyCFunction)sign, METH_VARARGS, NULL},
 	{NULL, NULL, 0, NULL},
 };
