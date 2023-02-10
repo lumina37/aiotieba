@@ -37,12 +37,12 @@ def c3_aid(android_id: str, uuid: str) -> str:
     """
     ...
 
-def rc4_42(xyus_md5: bytes, aes_cbc_sec_key: bytes) -> bytes:
+def rc4_42(xyus_md5_str: str, aes_cbc_sec_key: bytes) -> bytes:
     """
     RC4加密的变体 一次额外的42异或
 
     Args:
-        xyus_md5 (bytes): xyus的MD5 作为RC4密钥
+        xyus_md5_str (str): 32字节长小写字符串 作为RC4密钥
         aes_cbc_sec_key (bytes): 贴吧AES-CBC加密使用的随机密码
 
     Returns:

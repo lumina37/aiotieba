@@ -71,18 +71,18 @@ PyObject *c3_aid(PyObject *self, PyObject *args)
 PyObject *rc4_42(PyObject *self, PyObject *args)
 {
 	char dst[TBH_RC4_SIZE];
-	const char *xyusMd5;
+	const char *xyusMd5Str;
 	Py_ssize_t xyusMd5Size;
 	const char *cbcSecKey;
 	Py_ssize_t cbcSecKeySize;
 
-	if (!PyArg_ParseTuple(args, "y#y#", &xyusMd5, &xyusMd5Size, &cbcSecKey, &cbcSecKeySize))
+	if (!PyArg_ParseTuple(args, "s#y#", &xyusMd5Str, &xyusMd5Size, &cbcSecKey, &cbcSecKeySize))
 	{
 		PyErr_SetString(PyExc_ValueError, "failed to parse args");
 		return NULL;
 	}
 
-	int err = tbh_rc4_42(dst, xyusMd5, cbcSecKey);
+	int err = tbh_rc4_42(dst, xyusMd5Str, cbcSecKey);
 	if (err)
 	{
 		if (err == TBH_MEMORY_ERROR)
