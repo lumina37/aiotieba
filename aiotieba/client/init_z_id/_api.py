@@ -3,7 +3,6 @@ import gzip
 import hashlib
 import sys
 import time
-from urllib.parse import quote
 
 import aiohttp
 import yarl
