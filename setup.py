@@ -30,6 +30,7 @@ ext_crypto_module = Extension(
     "aiotieba.client._crypto.crypto",
     sources=ext_src_in_strs + ext_3rdparty_src_in_strs,
     include_dirs=ext_3rdparty_include_in_strs,
+    language='c',
 )
 
 setup(
