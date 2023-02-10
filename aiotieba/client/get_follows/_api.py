@@ -19,7 +19,6 @@ def parse_body(body: bytes) -> Follows:
 
 
 async def request(http_core: HttpCore, user_id: int, pn: int) -> Follows:
-
     data = [
         ('BDUSS', http_core.core._BDUSS),
         ('_client_version', http_core.core.main_version),

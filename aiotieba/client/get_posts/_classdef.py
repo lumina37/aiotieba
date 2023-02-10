@@ -2265,7 +2265,6 @@ class Posts(Containers[Post]):
     ]
 
     def _init(self, data_proto: TypeMessage) -> "Posts":
-
         self._page = Page_p()._init(data_proto.page)
         self._forum = Forum_p()._init(data_proto.forum)
         self._thread = Thread_p()._init(data_proto.thread)

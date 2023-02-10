@@ -38,3 +38,31 @@ class ReqUInfo(enum.IntEnum):
     OTHER = 1 << 5
     BASIC = USER_ID | PORTRAIT | USER_NAME
     ALL = (1 << 6) - 1
+
+
+class ThreadSortType(enum.IntEnum):
+    """
+    主题帖排序
+
+    Note:
+        对于有热门分区的贴吧 0热门排序 1按发布时间 2关注的人 34热门排序 >=5是按回复时间
+        对于无热门分区的贴吧 0按回复时间 1按发布时间 2关注的人 >=3按回复时间
+    """
+
+    REPLY = 5
+    CREATE = 1
+    HOT = 3
+    FOLLOW = 2
+
+
+class PostSortType(enum.IntEnum):
+    """
+    回复排序
+
+    Note:
+        0时间顺序 1时间倒序 2热门序
+    """
+
+    ASC = 0
+    DESC = 1
+    HOT = 2

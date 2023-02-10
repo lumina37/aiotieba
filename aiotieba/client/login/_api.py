@@ -22,7 +22,6 @@ def parse_body(body: bytes) -> Tuple[UserInfo_login, str]:
 
 
 async def request(http_core: HttpCore) -> Tuple[UserInfo_login, str]:
-
     data = [
         ('_client_version', http_core.core.main_version),
         ('bdusstoken', http_core.core._BDUSS),

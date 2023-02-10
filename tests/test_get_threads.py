@@ -16,10 +16,8 @@ async def test_Threads(client: tb.Client):
     ##### Thread #####
     assert len(threads) >= 2
     for thread in threads:
-
         # Normal Thread
         if thread.tid == 8211419000:
-
             # UserInfo_t
             user = thread.user
             assert user.user_id > 0

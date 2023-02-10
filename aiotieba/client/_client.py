@@ -6,7 +6,7 @@ import aiohttp
 import yarl
 
 from .._logging import get_logger as LOG
-from ._classdef.enums import GroupType, ReqUInfo
+from ._classdef.enums import GroupType, PostSortType, ReqUInfo, ThreadSortType
 from ._classdef.user import UserInfo
 from ._core import HttpCore, TbCore, WsCore
 from ._helper import ForumInfoCache, is_portrait
@@ -136,10 +136,10 @@ class Client(object):
         try:
             if not self._ws_core.websocket:
                 await self._ws_core.connect()
-                await self.__init_websocket()
+                await self.__upload_sec_key()
             elif not self._ws_core.is_aviliable:
                 await self._ws_core.reconnect()
-                await self.__init_websocket()
+                await self.__upload_sec_key()
 
         except Exception as err:
             import sys
@@ -151,7 +151,7 @@ class Client(object):
 
         return True
 
-    async def __init_websocket(self) -> None:
+    async def __upload_sec_key(self) -> None:
         from . import init_websocket
         from ._core._wscore import MsgIDPair
 
@@ -211,23 +211,20 @@ class Client(object):
         from . import sync
 
         client_id = await sync.request(self._http_core)
+        self._core._client_id = client_id
 
-        if client_id:
-            self._core._client_id = client_id
-            return True
-        else:
-            return False
+        return bool(client_id)
 
     async def __init_z_id(self) -> bool:
+        if self._core._z_id:
+            return True
+
         from . import init_z_id
 
         z_id = await init_z_id.request(self._http_core)
+        self._core._z_id = z_id
 
-        if z_id:
-            self._core._z_id = z_id
-            return True
-        else:
-            return False
+        return bool(z_id)
 
     async def get_fid(self, fname: str) -> int:
         """
@@ -423,7 +420,14 @@ class Client(object):
         return await tieba_uid2user_info.request_http(self._http_core, tieba_uid)
 
     async def get_threads(
-        self, fname_or_fid: Union[str, int], /, pn: int = 1, *, rn: int = 30, sort: int = 5, is_good: bool = False
+        self,
+        fname_or_fid: Union[str, int],
+        /,
+        pn: int = 1,
+        *,
+        rn: int = 30,
+        sort: ThreadSortType = ThreadSortType.REPLY,
+        is_good: bool = False,
     ) -> "get_threads.Threads":
         """
         获取首页帖子
@@ -432,8 +436,8 @@ class Client(object):
             fname_or_fid (str | int): 贴吧名或fid 优先贴吧名
             pn (int, optional): 页码. Defaults to 1.
             rn (int, optional): 请求的条目数. Defaults to 30. Max to 100.
-            sort (int, optional): 排序方式 对于有热门分区的贴吧 0是热门排序 1是按发布时间 2报错 34都是热门排序 >=5是按回复时间
-                对于无热门分区的贴吧 0是按回复时间 1是按发布时间 2报错 >=3是按回复时间. Defaults to 5.
+            sort (ThreadSortType, optional): 排序方式 对于有热门分区的贴吧 0热门排序 1按发布时间 2关注的人 34热门排序 >=5是按回复时间
+                对于无热门分区的贴吧 0按回复时间 1按发布时间 2关注的人 >=3按回复时间. Defaults to ThreadSortType.REPLY.
             is_good (bool, optional): True则获取精品区帖子 False则获取普通区帖子. Defaults to False.
 
         Returns:
@@ -453,7 +457,7 @@ class Client(object):
         pn: int = 1,
         *,
         rn: int = 30,
-        sort: int = 0,
+        sort: PostSortType = PostSortType.ASC,
         only_thread_author: bool = False,
         with_comments: bool = False,
         comment_sort_by_agree: bool = True,
@@ -467,7 +471,7 @@ class Client(object):
             tid (int): 所在主题帖tid
             pn (int, optional): 页码. Defaults to 1.
             rn (int, optional): 请求的条目数. Defaults to 30.
-            sort (int, optional): 0则按时间顺序请求 1则按时间倒序请求 2则按热门序请求. Defaults to 0.
+            sort (PostSortType, optional): 0时间顺序 1时间倒序 2热门序. Defaults to PostSortType.ASC.
             only_thread_author (bool, optional): True则只看楼主 False则请求全部. Defaults to False.
             with_comments (bool, optional): True则同时请求高赞楼中楼 False则返回的Posts.comments为空. Defaults to False.
             comment_sort_by_agree (bool, optional): True则楼中楼按点赞数顺序 False则楼中楼按时间顺序. Defaults to True.

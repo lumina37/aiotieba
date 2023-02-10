@@ -32,7 +32,6 @@ def parse_body(body: bytes) -> UserInfo_guinfo_app:
 
 
 async def request_http(http_core: HttpCore, user_id: int) -> UserInfo_guinfo_app:
-
     request = pack_proto_request(
         http_core,
         yarl.URL.build(

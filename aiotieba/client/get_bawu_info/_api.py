@@ -36,7 +36,6 @@ def parse_body(body: bytes) -> Dict[str, List[UserInfo_bawu]]:
 
 
 async def request_http(http_core: HttpCore, fid: int) -> Dict[str, List[UserInfo_bawu]]:
-
     request = pack_proto_request(
         http_core,
         yarl.URL.build(

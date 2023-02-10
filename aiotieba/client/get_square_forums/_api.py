@@ -36,7 +36,6 @@ def parse_body(body: bytes) -> SquareForums:
 
 
 async def request_http(http_core: HttpCore, cname: str, pn: int, rn: int) -> SquareForums:
-
     request = pack_proto_request(
         http_core,
         yarl.URL.build(

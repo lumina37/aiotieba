@@ -51,7 +51,6 @@ class WsResponse(object):
 
 
 class MsgIDPair(object):
-
     __slots__ = [
         'last_id',
         'curr_id',
@@ -67,7 +66,6 @@ class MsgIDPair(object):
 
 
 class MsgIDManager(object):
-
     __slots__ = [
         'priv_gid',
         'gid2mid',

@@ -34,7 +34,6 @@ def parse_body(proto: bytes) -> Replys:
 
 
 async def request_http(http_core: HttpCore, pn: int) -> Replys:
-
     request = pack_proto_request(
         http_core,
         yarl.URL.build(

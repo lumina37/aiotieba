@@ -21,7 +21,6 @@ def parse_body(body: bytes) -> Searches:
 async def request(
     http_core: HttpCore, fname: str, query: str, pn: int, rn: int, query_type: int, only_thread: bool
 ) -> Searches:
-
     data = [
         ('_client_version', http_core.core.main_version),
         ('kw', fname),

@@ -1,8 +1,10 @@
 # 
 
-<a href="https://socialify.git.ci">
-    <img src="img/aiotieba.svg">
-</a>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/48282276/217530379-1348f7c5-7056-48f4-8c64-1c74caf5497c.svg">
+  <source media="(prefers-color-scheme: light)" srcset="https://user-images.githubusercontent.com/48282276/217530385-98a2fb24-ff6e-4b27-990f-998b66c2ab5e.svg">
+  <img src="https://user-images.githubusercontent.com/48282276/217530385-98a2fb24-ff6e-4b27-990f-998b66c2ab5e.svg">
+</picture>
 
 </p>
 
@@ -52,4 +54,4 @@ async def main():
 asyncio.run(main())
 ```
 
-+ 继续阅读[**入门教程**](tutorial/start.md)
++ 继续阅读[**入门教程**](https://aiotieba.cc/tutorial/start)

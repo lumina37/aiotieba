@@ -14,7 +14,6 @@ def parse_body(body: bytes) -> None:
 
 
 async def request(http_core: HttpCore, fid: int, pid: int) -> bool:
-
     data = [
         ('BDUSS', http_core.core._BDUSS),
         ('fid', fid),

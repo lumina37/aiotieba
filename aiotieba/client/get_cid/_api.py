@@ -20,7 +20,6 @@ def parse_body(body: bytes) -> Dict[str, str]:
 
 
 async def request(connector: aiohttp.TCPConnector, core: TbCore, fname: str) -> Dict[str, str]:
-
     data = [
         ('BDUSS', core._BDUSS),
         ('word', fname),

@@ -20,7 +20,6 @@ def parse_body(body: bytes) -> SelfFollowForums:
 
 
 async def request(http_core: HttpCore, pn: int) -> SelfFollowForums:
-
     params = [
         ('pn', pn),
         ('rn', '200'),

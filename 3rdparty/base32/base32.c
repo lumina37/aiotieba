@@ -133,7 +133,7 @@ static unsigned char shift_left(unsigned char byte, char offset)
  * sequences shorter than 5 octets is supported and padding will be added to the
  * output as per the specification.
  */
-static void encode_sequence(const unsigned char *plain, int len, unsigned char *coded)
+static void encode_sequence(const unsigned char *plain, size_t len, unsigned char *coded)
 {
 	assert(CHAR_BIT == 8);  // not sure this would work otherwise
 	assert(len >= 0 && len <= 5);

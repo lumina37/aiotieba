@@ -20,7 +20,6 @@ def parse_body(body: bytes) -> UserInfo_panel:
 
 
 async def request(http_core: HttpCore, name_or_portrait: str) -> UserInfo_panel:
-
     if is_portrait(name_or_portrait):
         params = [('id', name_or_portrait)]
     else:

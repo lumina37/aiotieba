@@ -35,7 +35,6 @@ def parse_body(body: bytes) -> List[WsMsgGroup]:
 
 
 async def request(ws_core: WsCore, group_ids: List[int], get_type: int) -> List[WsMsgGroup]:
-
     msg_ids = [ws_core.mid_manager.get_msg_id(gid) for gid in group_ids]
     data = pack_proto(ws_core.core, group_ids, msg_ids, get_type)
 

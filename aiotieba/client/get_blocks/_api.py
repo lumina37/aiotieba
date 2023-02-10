@@ -19,7 +19,6 @@ def parse_body(body: bytes) -> Blocks:
 
 
 async def request(http_core: HttpCore, fname: str, fid: int, name: str, pn: int) -> Blocks:
-
     params = [
         ('fn', fname),
         ('fid', fid),

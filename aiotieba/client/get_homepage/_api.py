@@ -15,12 +15,11 @@ CMD = 303012
 def pack_proto(core: TbCore, portrait: str, with_threads: bool) -> bytes:
     req_proto = ProfileReqIdl_pb2.ProfileReqIdl()
     req_proto.data.common._client_version = core.main_version
+    req_proto.data.common._client_type = 2
     req_proto.data.need_post_count = 1
     req_proto.data.friend_uid_portrait = portrait
-    if with_threads:
-        req_proto.data.common._client_type = 2
-    req_proto.data.pn = 1
-    req_proto.data.rn = 20
+    if not with_threads:
+        req_proto.data.pn = 255  # not too large
 
     return req_proto.SerializeToString()
 
@@ -52,7 +51,6 @@ def parse_body(body: bytes) -> Tuple[UserInfo_home, List[Thread_home]]:
 async def request_http(
     http_core: HttpCore, portrait: str, with_threads: bool
 ) -> Tuple[UserInfo_home, List[Thread_home]]:
-
     request = pack_proto_request(
         http_core,
         yarl.URL.build(

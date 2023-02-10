@@ -20,7 +20,6 @@ def parse_body(body: bytes) -> UserInfo_selfinit:
 
 
 async def request(http_core: HttpCore) -> UserInfo_selfinit:
-
     data = [
         ('BDUSS', http_core.core._BDUSS),
         ('_client_version', http_core.core.main_version),

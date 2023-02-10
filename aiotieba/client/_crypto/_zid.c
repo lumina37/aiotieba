@@ -1,40 +1,78 @@
+#include <memory.h> // memset
+
+#include "_error.h"
+#include "_const.h"
+
 #include "_zid.h"
 
-int tbh_invRC4(char *dst, const char *secKey, const char *xyusMd5)
+typedef struct rc4_42_context
 {
-	char *sBox = malloc(256);
-	if (!sBox)
+	int x;
+	int y;
+	unsigned char m[256];
+} rc4_42_context;
+
+static inline void rc4_42_setup(rc4_42_context *ctx, const unsigned char *key, unsigned int keylen)
+{
+	int i, j, a;
+	unsigned int k;
+	unsigned char *m;
+
+	ctx->x = 0;
+	ctx->y = 0;
+	m = ctx->m;
+
+	for (i = 0; i < 256; i++)
+		m[i] = (unsigned char)i;
+
+	j = k = 0;
+
+	for (i = 0; i < 256; i++, k++)
 	{
-		return TBH_MEMORY_ERROR;
+		if (k >= keylen)
+			k = 0;
+
+		a = m[i];
+		j = (j + a + key[k]) & 0xFF;
+		m[i] = m[j];
+		m[j] = (unsigned char)a;
 	}
-	for (int i = 0; i < 256; i++)
+}
+
+static void rc4_42_crypt(rc4_42_context *ctx, size_t length, const unsigned char *input, unsigned char *output)
+{
+	int x, y, a, b;
+	size_t i;
+	unsigned char *m;
+
+	x = ctx->x;
+	y = ctx->y;
+	m = ctx->m;
+
+	for (i = 0; i < length; i++)
 	{
-		sBox[i] = (char)i;
+		x = (x + 1) & 0xFF;
+		a = m[x];
+		y = (y + a) & 0xFF;
+		b = m[y];
+
+		m[x] = (unsigned char)b;
+		m[y] = (unsigned char)a;
+
+		output[i] = (unsigned char)(input[i] ^ m[(unsigned char)(a + b)]);
+		output[i] = output[i] ^ 42;
 	}
 
-	int iCycle = 0;
-	int iMd5 = 0;
-	for (int iSBox = 0; iSBox < 256; iSBox++)
-	{
-		iCycle = (iCycle + xyusMd5[iMd5] + sBox[iSBox]) & 255;
-		char tmp = sBox[iSBox];
-		sBox[iSBox] = sBox[iCycle];
-		sBox[iCycle] = tmp;
-		iMd5 = (iMd5 + 1) % TBH_MD5_STR_SIZE;
-	}
+	ctx->x = x;
+	ctx->y = y;
+}
 
-	int iSwapA = 0;
-	int iSwapB = 0;
-	for (int iSec = 0; iSec < TBH_SECKEY_SIZE; iSec++)
-	{
-		iSwapA++;
-		iSwapB = (iSwapB + sBox[iSwapA]) & 255;
-		char tmp = sBox[iSwapA];
-		sBox[iSwapA] = sBox[iSwapB];
-		sBox[iSwapB] = tmp;
-		dst[iSec] = (char)(sBox[(sBox[iSwapA] + sBox[iSwapB]) & 255] ^ secKey[iSec]);
-		dst[iSec] = (char)(dst[iSec] ^ 42);
-	}
+int tbh_rc4_42(char *dst, const char *xyusMd5Str, const char *cbcSecKey)
+{
+	rc4_42_context rc442Ctx;
+
+	rc4_42_setup(&rc442Ctx, xyusMd5Str, TBH_MD5_STR_SIZE);
+	rc4_42_crypt(&rc442Ctx, TBH_CBC_SECKEY_SIZE, cbcSecKey, dst);
 
 	return TBH_OK;
 }

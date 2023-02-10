@@ -20,7 +20,6 @@ def parse_body(body: bytes) -> UserInfo_guinfo_web:
 
 
 async def request(http_core: HttpCore, user_id: int) -> UserInfo_guinfo_web:
-
     params = [('chatUid', user_id)]
 
     request = pack_web_get_request(

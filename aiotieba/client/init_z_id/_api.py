@@ -10,18 +10,17 @@ from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 
 from .._core import HttpCore
-from .._crypto import inv_rc4
+from .._crypto import rc4_42
 from .._helper import log_exception, pack_json, parse_json, send_request
 
 SOFIRE_HOST = "sofire.baidu.com"
 
 
 async def request(http_core: HttpCore):
-
-    app_key = '740017'  # 通过 p/5/aio 获取
+    app_key = '740017'  # get by p/5/aio
     sec_key = '7aaf37cac7c3aaac3456b22832aabd56'
     xyus = hashlib.md5((http_core.core.android_id + http_core.core.uuid).encode('ascii')).hexdigest().upper() + '|0'
-    xyus_md5 = hashlib.md5(xyus.encode('ascii')).digest()
+    xyus_md5_str = hashlib.md5(xyus.encode('ascii')).hexdigest()
     curr_time = str(int(time.time()))
 
     params = {"module_section": [{'zid': xyus}]}
@@ -37,14 +36,15 @@ async def request(http_core: HttpCore):
     )
 
     headers = {
-        "x-device-id": xyus_md5.hex(),
+        "x-device-id": xyus_md5_str,
+        "User-Agent": 'x6/740017//4.3.0',
         "x-plu-ver": 'x6/4.3.0',
     }
 
     path_combine = ''.join((app_key, curr_time, sec_key))
     path_combine_md5 = hashlib.md5(path_combine.encode('ascii')).hexdigest()
-    req_query_skey = inv_rc4(http_core.core.aes_cbc_sec_key, xyus_md5)
-    req_query_skey = binascii.b2a_base64(req_query_skey).decode('ascii')
+    req_query_skey = rc4_42(xyus_md5_str, http_core.core.aes_cbc_sec_key)
+    req_query_skey = binascii.b2a_base64(req_query_skey).decode('ascii').replace('+', '%2B')
     url = yarl.URL.build(
         scheme="https",
         host=SOFIRE_HOST,
@@ -68,11 +68,13 @@ async def request(http_core: HttpCore):
         res_json = parse_json(body)
 
         res_query_skey = binascii.a2b_base64(res_json['skey'])
-        res_aes_sec_key = inv_rc4(res_query_skey, xyus_md5)
+        res_aes_sec_key = rc4_42(xyus_md5_str, res_query_skey)
         aes_chiper = AES.new(res_aes_sec_key, AES.MODE_CBC, iv=b'\x00' * 16)
         res_data = binascii.a2b_base64(res_json['data'])
-        res_data = unpad(aes_chiper.decrypt(res_data)[:-16], AES.block_size)  # [:-16] 用于移除尾部的16字节md5
-        res_data = parse_json(res_data.decode('utf-8'))
+        res_data = unpad(aes_chiper.decrypt(res_data)[:-16], AES.block_size)  # [:-16] remove md5
+        res_data = res_data.decode('utf-8')
+        del res_json  # enable reuse of json parser
+        res_data = parse_json(res_data)
         zid = res_data['token']
 
     except Exception as err:

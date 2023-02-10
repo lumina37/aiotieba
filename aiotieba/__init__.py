@@ -11,7 +11,7 @@ import os
 from .__version__ import __version__
 from ._logging import get_logger as LOG
 from .client import Client
-from .client._classdef.enums import GroupType, MsgType, ReqUInfo
+from .client._classdef.enums import GroupType, MsgType, PostSortType, ReqUInfo, ThreadSortType
 from .client._classdef.user import UserInfo
 from .client._core import HttpCore, TbCore, WsCore, WsResponse
 from .client.exception import ContentTypeError, HTTPStatusError, TiebaServerError
@@ -42,3 +42,14 @@ if os.name == 'posix':
         raise KeyboardInterrupt
 
     signal.signal(signal.SIGTERM, terminate)
+
+    try:
+        import asyncio
+
+        import uvloop
+
+        if not isinstance(asyncio.get_event_loop_policy(), uvloop.EventLoopPolicy):
+            asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+
+    except ImportError:
+        pass

@@ -15,12 +15,11 @@ def parse_body(body: bytes) -> None:
 
 
 async def request(http_core: HttpCore, fid: int, tids: List[int], block: bool) -> bool:
-
     data = [
         ('BDUSS', http_core.core._BDUSS),
         ('forum_id', fid),
         ('tbs', http_core.core._tbs),
-        ('thread_ids', ','.join(str(tid) for tid in tids)),
+        ('thread_ids', ','.join(map(str, tids))),
         ('type', '2' if block else '1'),
     ]
 

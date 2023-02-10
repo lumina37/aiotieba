@@ -35,7 +35,6 @@ def parse_body(body: bytes) -> DislikeForums:
 
 
 async def request_http(http_core: HttpCore, pn: int, rn: int) -> DislikeForums:
-
     request = pack_proto_request(
         http_core,
         yarl.URL.build(

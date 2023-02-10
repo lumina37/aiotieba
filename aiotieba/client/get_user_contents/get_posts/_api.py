@@ -44,7 +44,6 @@ def parse_body(body: bytes) -> List[UserPosts]:
 
 
 async def request_http(http_core: HttpCore, user_id: int, pn: int) -> List[UserPosts]:
-
     request = pack_proto_request(
         http_core,
         yarl.URL.build(
