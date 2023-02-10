@@ -29,15 +29,7 @@ async def request(http_core: HttpCore, fid: int, tid: int, to_tab_id: int, from_
         ('tbs', http_core.core._tbs),
         (
             'threads',
-            pack_json(
-                [
-                    {
-                        "thread_id": tid,
-                        "from_tab_id": from_tab_id,
-                        "to_tab_id": to_tab_id,
-                    }
-                ]
-            ),
+            pack_json([{"thread_id": tid, "from_tab_id": from_tab_id, "to_tab_id": to_tab_id}]),
         ),
     ]
 
