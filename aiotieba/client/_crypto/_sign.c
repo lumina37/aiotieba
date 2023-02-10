@@ -1,3 +1,12 @@
+#include <stdlib.h> // malloc free
+#include <memory.h> // memset memcpy
+#include <string.h> // strlen
+
+#include "mbedtls/md5.h"
+#include "rapidjson/internal/itoa.h"
+
+#include "_const.h"
+
 #include "_sign.h"
 
 static const char SIGN_SUFFIX[] = {'t', 'i', 'e', 'b', 'a', 'c', 'l', 'i', 'e', 'n', 't', '!', '!', '!'};

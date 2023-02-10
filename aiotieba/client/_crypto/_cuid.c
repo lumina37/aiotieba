@@ -1,3 +1,16 @@
+#include <stdlib.h>  // malloc free
+#include <stdbool.h> // bool
+#include <memory.h>  // memset memcpy
+
+#include "mbedtls/md5.h"
+#include "mbedtls/sha1.h"
+#include "crc/crc32.h"
+#include "xxHash/xxhash.h"
+#include "base32/base32.h"
+
+#include "_error.h"
+#include "_const.h"
+
 #include "_cuid.h"
 
 #define HASHER_NUM 4

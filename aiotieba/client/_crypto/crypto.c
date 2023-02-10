@@ -68,7 +68,7 @@ PyObject *c3_aid(PyObject *self, PyObject *args)
 	return PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, dst, TBH_C3_AID_SIZE);
 }
 
-PyObject *rc4(PyObject *self, PyObject *args)
+PyObject *rc4_42(PyObject *self, PyObject *args)
 {
 	char dst[TBH_RC4_SIZE];
 	const char *xyusMd5;
@@ -82,7 +82,7 @@ PyObject *rc4(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-	int err = tbh_rc4(dst, xyusMd5, cbcSecKey);
+	int err = tbh_rc4_42(dst, xyusMd5, cbcSecKey);
 	if (err)
 	{
 		if (err == TBH_MEMORY_ERROR)
@@ -103,7 +103,7 @@ PyObject *rc4(PyObject *self, PyObject *args)
 static PyMethodDef crypto_methods[] = {
 	{"cuid_galaxy2", (PyCFunction)cuid_galaxy2, METH_VARARGS, NULL},
 	{"c3_aid", (PyCFunction)c3_aid, METH_VARARGS, NULL},
-	{"rc4", (PyCFunction)rc4, METH_VARARGS, NULL},
+	{"rc4_42", (PyCFunction)rc4_42, METH_VARARGS, NULL},
 	{"sign", (PyCFunction)sign, METH_VARARGS, NULL},
 	{NULL, NULL, 0, NULL},
 };

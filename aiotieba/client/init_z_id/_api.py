@@ -10,7 +10,7 @@ from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 
 from .._core import HttpCore
-from .._crypto import rc4
+from .._crypto import rc4_42
 from .._helper import log_exception, pack_json, parse_json, send_request
 
 SOFIRE_HOST = "sofire.baidu.com"
@@ -42,7 +42,7 @@ async def request(http_core: HttpCore):
 
     path_combine = ''.join((app_key, curr_time, sec_key))
     path_combine_md5 = hashlib.md5(path_combine.encode('ascii')).hexdigest()
-    req_query_skey = rc4(xyus_md5, http_core.core.aes_cbc_sec_key)
+    req_query_skey = rc4_42(xyus_md5, http_core.core.aes_cbc_sec_key)
     req_query_skey = binascii.b2a_base64(req_query_skey).decode('ascii')
     url = yarl.URL.build(
         scheme="https",
@@ -67,7 +67,7 @@ async def request(http_core: HttpCore):
         res_json = parse_json(body)
 
         res_query_skey = binascii.a2b_base64(res_json['skey'])
-        res_aes_sec_key = rc4(xyus_md5, res_query_skey)
+        res_aes_sec_key = rc4_42(xyus_md5, res_query_skey)
         aes_chiper = AES.new(res_aes_sec_key, AES.MODE_CBC, iv=b'\x00' * 16)
         res_data = binascii.a2b_base64(res_json['data'])
         res_data = unpad(aes_chiper.decrypt(res_data)[:-16], AES.block_size)  # [:-16] remove md5

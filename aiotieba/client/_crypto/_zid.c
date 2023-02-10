@@ -1,12 +1,78 @@
+#include <memory.h> // memset
+
+#include "_error.h"
+#include "_const.h"
+
 #include "_zid.h"
 
-int tbh_rc4(char *dst, const char *xyusMd5, const char *cbcSecKey)
+typedef struct rc4_42_context
 {
-	mbedtls_arc4_context rc4Ctx;
+	int x;
+	int y;
+	unsigned char m[256];
+} rc4_42_context;
 
-	mbedtls_arc4_init(&rc4Ctx);
-	mbedtls_arc4_setup(&rc4Ctx, xyusMd5, TBH_MD5_HASH_SIZE);
-	mbedtls_arc4_crypt(&rc4Ctx, TBH_CBC_SECKEY_SIZE, cbcSecKey, dst);
+static inline void rc4_42_setup(rc4_42_context *ctx, const unsigned char *key, unsigned int keylen)
+{
+	int i, j, a;
+	unsigned int k;
+	unsigned char *m;
+
+	ctx->x = 0;
+	ctx->y = 0;
+	m = ctx->m;
+
+	for (i = 0; i < 256; i++)
+		m[i] = (unsigned char)i;
+
+	j = k = 0;
+
+	for (i = 0; i < 256; i++, k++)
+	{
+		if (k >= keylen)
+			k = 0;
+
+		a = m[i];
+		j = (j + a + key[k]) & 0xFF;
+		m[i] = m[j];
+		m[j] = (unsigned char)a;
+	}
+}
+
+static void rc4_42_crypt(rc4_42_context *ctx, size_t length, const unsigned char *input, unsigned char *output)
+{
+	int x, y, a, b;
+	size_t i;
+	unsigned char *m;
+
+	x = ctx->x;
+	y = ctx->y;
+	m = ctx->m;
+
+	for (i = 0; i < length; i++)
+	{
+		x = (x + 1) & 0xFF;
+		a = m[x];
+		y = (y + a) & 0xFF;
+		b = m[y];
+
+		m[x] = (unsigned char)b;
+		m[y] = (unsigned char)a;
+
+		output[i] = (unsigned char)(input[i] ^ m[(unsigned char)(a + b)]);
+		output[i] = output[i] ^ 42;
+	}
+
+	ctx->x = x;
+	ctx->y = y;
+}
+
+int tbh_rc4_42(char *dst, const char *xyusMd5, const char *cbcSecKey)
+{
+	rc4_42_context rc442Ctx;
+
+	rc4_42_setup(&rc442Ctx, xyusMd5, TBH_MD5_HASH_SIZE);
+	rc4_42_crypt(&rc442Ctx, TBH_CBC_SECKEY_SIZE, cbcSecKey, dst);
 
 	return TBH_OK;
 }

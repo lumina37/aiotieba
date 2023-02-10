@@ -1,18 +1,6 @@
 #pragma once
 
-#include <stdlib.h>  // malloc free
 #include <stdint.h>
-#include <stdbool.h> // bool
-#include <memory.h>  // memset memcpy
-
-#include "_error.h"
-#include "_const.h"
-
-#include "mbedtls/md5.h"
-#include "mbedtls/sha1.h"
-#include "crc/crc32.h"
-#include "xxHash/xxhash.h"
-#include "base32/base32.h"
 
 /**
  * @brief impl of TiebaLite tieba/post/utils/helios
