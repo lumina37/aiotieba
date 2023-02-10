@@ -49,11 +49,7 @@ version = { attr = "aiotieba.__version__.__version__" }
 line-length = 120
 skip-string-normalization = true
 target-version = ["py38"]
-extend-exclude = '''
-(
-  .*_pb2.py
-)
-'''
+extend-exclude = ".*_pb2.py"
 
 [tool.isort]
 profile = "black"
