@@ -100,7 +100,7 @@ class Client(object):
         core = TbCore(BDUSS_key, proxy)
         self._core: TbCore = core
         self._http_core: HttpCore = HttpCore(core, connector, loop)
-        self._ws_core: WsCore = WsCore(core, connector, loop, heartbeat=12.0)
+        self._ws_core: WsCore = WsCore(core, connector, loop, heartbeat=30.0)
 
         self._user: UserInfo_home = UserInfo_home()._init_null()
 
@@ -2063,7 +2063,7 @@ class Client(object):
         msg_id = await send_msg.request(self._ws_core, user_id, content)
         if msg_id:
             mid_manager = self._ws_core.mid_manager
-            mid_manager.set_msg_id(mid_manager.priv_gid, msg_id)
+            mid_manager.update_msg_id(mid_manager.priv_gid, msg_id)
             return True
         else:
             return False

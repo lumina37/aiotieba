@@ -13,7 +13,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1cUpdateClientInfoReqIdl.proto\"\xc1\x01\n\x16UpdateClientInfoReqIdl\x12\x0c\n\x04\x63uid\x18\x01 \x01(\t\x12-\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x1f.UpdateClientInfoReqIdl.DataReq\x1aj\n\x07\x44\x61taReq\x12\r\n\x05\x62\x64uss\x18\x01 \x01(\t\x12\x0e\n\x06\x64\x65vice\x18\x02 \x01(\t\x12\x11\n\tsecretKey\x18\x03 \x01(\x0c\x12\r\n\x05width\x18\x06 \x01(\x05\x12\x0e\n\x06height\x18\x07 \x01(\x05\x12\x0e\n\x06stoken\x18\x0c \x01(\tb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1cUpdateClientInfoReqIdl.proto\"\xa2\x01\n\x16UpdateClientInfoReqIdl\x12\x0c\n\x04\x63uid\x18\x01 \x01(\t\x12-\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x1f.UpdateClientInfoReqIdl.DataReq\x1aK\n\x07\x44\x61taReq\x12\r\n\x05\x62\x64uss\x18\x01 \x01(\t\x12\x0e\n\x06\x64\x65vice\x18\x02 \x01(\t\x12\x11\n\tsecretKey\x18\x03 \x01(\x0c\x12\x0e\n\x06stoken\x18\x0c \x01(\tb\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'UpdateClientInfoReqIdl_pb2', globals())
@@ -21,7 +21,7 @@ if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
   _UPDATECLIENTINFOREQIDL._serialized_start=33
-  _UPDATECLIENTINFOREQIDL._serialized_end=226
+  _UPDATECLIENTINFOREQIDL._serialized_end=195
   _UPDATECLIENTINFOREQIDL_DATAREQ._serialized_start=120
-  _UPDATECLIENTINFOREQIDL_DATAREQ._serialized_end=226
+  _UPDATECLIENTINFOREQIDL_DATAREQ._serialized_end=195
 # @@protoc_insertion_point(module_scope)

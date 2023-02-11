@@ -49,7 +49,7 @@ class HttpCore(object):
         self.connector: aiohttp.TCPConnector = connector
         self.loop: asyncio.AbstractEventLoop = loop
 
-        hdrs = aiohttp.hdrs
+        from aiohttp import hdrs
 
         app_headers = {
             hdrs.USER_AGENT: f"aiotieba/{__version__}",
