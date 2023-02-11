@@ -26,14 +26,13 @@ nav:
     - 介绍: index.md
     - 教程:
       - 入门教程: tutorial/start.md
+      - 异步编程入门教程: tutorial/async_start.md
       - 配置文件参考: tutorial/config.md
       - 实用微脚本合集: tutorial/many_utils.md
     - 参考文档:
       - client: ref/client.md
       - classdef: ref/classdef.md
       - enum: ref/enum.md
-    - 逆向分析教程:
-      - 贴吧私信接口逆向分析: misc/websocket_reverse_engineering.md
 
 markdown_extensions:
   - md_in_html

@@ -1,9 +1,7 @@
-[data-md-color-scheme="slate"] {
+[data-md-color-scheme=slate] {
   --md-hue: 210;
-  --md-default-bg-color: hsla(var(--md-hue), 15%, 12%, 1);
-  --md-default-bg-color--light: hsla(var(--md-hue), 15%, 12%, 0.54);
-  --md-default-bg-color--lighter: hsla(var(--md-hue), 15%, 12%, 0.26);
-  --md-default-bg-color--lightest: hsla(var(--md-hue), 15%, 12%, 0.07);
+  --md-default-bg-color: hsla(var(--md-hue), 15%, 10%, 1);
+  --md-typeset-a-color: hsla(var(--md-hue), 75%, 50%, 1);
 }
 
 div.docstring {
