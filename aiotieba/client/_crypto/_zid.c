@@ -60,7 +60,7 @@ static void rc4_42_crypt(rc4_42_context *ctx, size_t length, const unsigned char
 		m[y] = (unsigned char)a;
 
 		output[i] = (unsigned char)(input[i] ^ m[(unsigned char)(a + b)]);
-		output[i] = output[i] ^ 42;
+		output[i] = output[i] ^ 42; // different from general RC4
 	}
 
 	ctx->x = x;
