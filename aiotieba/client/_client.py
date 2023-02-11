@@ -2020,7 +2020,6 @@ class Client(object):
         Note:
             本接口仍处于测试阶段
             高频率调用会导致<永久封禁屏蔽>！请谨慎使用！
-            已通过的测试: cookie白板号(无头像无关注吧无发帖记录 2元/个) 通过异地阿里云ip出口以3分钟的发送间隔发15条回复不吞楼不封号
         """
 
         if isinstance(fname_or_fid, str):
