@@ -11,7 +11,7 @@ import os
 from .__version__ import __version__
 from ._logging import get_logger as LOG
 from .client import Client, core, crypto, enums, exception, typing
-from .client.typing import Comment, Comments, Post, Posts, Thread, Threads, TypeUserInfo, UserInfo, UserInfo_home
+from .client.typing import Comment, Comments, Post, Posts, Thread, Threads, TypeUserInfo, UserInfo
 
 if os.name == 'posix':
     import signal
