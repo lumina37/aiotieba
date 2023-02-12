@@ -6,9 +6,13 @@
 #include "_zid.h"
 #include "_sign.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 PyObject *cuid_galaxy2(PyObject *self, PyObject *args)
 {
-	char dst[TBH_CUID_GALAXY2_SIZE];
+	char dst[TBC_CUID_GALAXY2_SIZE];
 	const char *androidID;
 	Py_ssize_t androidIDSize;
 
@@ -18,10 +22,10 @@ PyObject *cuid_galaxy2(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-	int err = tbh_cuid_galaxy2(dst, androidID);
+	int err = tbc_cuid_galaxy2(dst, androidID);
 	if (err)
 	{
-		if (err == TBH_MEMORY_ERROR)
+		if (err == TBC_MEMORY_ERROR)
 		{
 			PyErr_NoMemory();
 			return NULL;
@@ -33,12 +37,12 @@ PyObject *cuid_galaxy2(PyObject *self, PyObject *args)
 		}
 	}
 
-	return PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, dst, TBH_CUID_GALAXY2_SIZE);
+	return PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, dst, TBC_CUID_GALAXY2_SIZE);
 }
 
 PyObject *c3_aid(PyObject *self, PyObject *args)
 {
-	char dst[TBH_C3_AID_SIZE];
+	char dst[TBC_C3_AID_SIZE];
 	const char *androidID;
 	Py_ssize_t androidIDSize;
 	const char *uuid;
@@ -50,10 +54,10 @@ PyObject *c3_aid(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-	int err = tbh_c3_aid(dst, androidID, uuid);
+	int err = tbc_c3_aid(dst, androidID, uuid);
 	if (err)
 	{
-		if (err == TBH_MEMORY_ERROR)
+		if (err == TBC_MEMORY_ERROR)
 		{
 			PyErr_NoMemory();
 			return NULL;
@@ -65,12 +69,12 @@ PyObject *c3_aid(PyObject *self, PyObject *args)
 		}
 	}
 
-	return PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, dst, TBH_C3_AID_SIZE);
+	return PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, dst, TBC_C3_AID_SIZE);
 }
 
 PyObject *rc4_42(PyObject *self, PyObject *args)
 {
-	char dst[TBH_RC4_SIZE];
+	char dst[TBC_RC4_SIZE];
 	const char *xyusMd5Str;
 	Py_ssize_t xyusMd5Size;
 	const char *cbcSecKey;
@@ -82,10 +86,10 @@ PyObject *rc4_42(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-	int err = tbh_rc4_42(dst, xyusMd5Str, cbcSecKey);
+	int err = tbc_rc4_42(dst, xyusMd5Str, cbcSecKey);
 	if (err)
 	{
-		if (err == TBH_MEMORY_ERROR)
+		if (err == TBC_MEMORY_ERROR)
 		{
 			PyErr_NoMemory();
 			return NULL;
@@ -97,7 +101,7 @@ PyObject *rc4_42(PyObject *self, PyObject *args)
 		}
 	}
 
-	return PyBytes_FromStringAndSize(dst, TBH_RC4_SIZE);
+	return PyBytes_FromStringAndSize(dst, TBC_RC4_SIZE);
 }
 
 static PyMethodDef crypto_methods[] = {
@@ -120,3 +124,7 @@ PyMODINIT_FUNC PyInit_crypto()
 {
 	return PyModule_Create(&crypto_module);
 }
+
+#ifdef __cplusplus
+}
+#endif

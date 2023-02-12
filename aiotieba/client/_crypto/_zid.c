@@ -67,12 +67,12 @@ static void rc4_42_crypt(rc4_42_context *ctx, size_t length, const unsigned char
 	ctx->y = y;
 }
 
-int tbh_rc4_42(char *dst, const char *xyusMd5Str, const char *cbcSecKey)
+int tbc_rc4_42(char *dst, const char *xyusMd5Str, const char *cbcSecKey)
 {
 	rc4_42_context rc442Ctx;
 
-	rc4_42_setup(&rc442Ctx, xyusMd5Str, TBH_MD5_STR_SIZE);
-	rc4_42_crypt(&rc442Ctx, TBH_CBC_SECKEY_SIZE, cbcSecKey, dst);
+	rc4_42_setup(&rc442Ctx, xyusMd5Str, TBC_MD5_STR_SIZE);
+	rc4_42_crypt(&rc442Ctx, TBC_CBC_SECKEY_SIZE, cbcSecKey, dst);
 
-	return TBH_OK;
+	return TBC_OK;
 }
