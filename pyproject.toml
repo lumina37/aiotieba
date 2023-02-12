@@ -23,7 +23,7 @@ classifiers = [
   "Topic :: Internet :: WWW/HTTP :: Session",
 ]
 dependencies = [
-  "aiohttp<4,>=3.8.0,!=3.8.2",
+  "aiohttp<4,>=3.8.4",
   "beautifulsoup4<5,>=4.0.0",
   "lxml<5,>=4.0.0",
   "protobuf<5,>=4.12.0",

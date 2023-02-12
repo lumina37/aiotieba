@@ -78,8 +78,8 @@ class HttpCore(object):
         BDUSS_morsel = aiohttp.cookiejar.Morsel()
         BDUSS_morsel.set('BDUSS', core._BDUSS, core._BDUSS)
         BDUSS_morsel['domain'] = "baidu.com"
-        self.web.cookie_jar._cookies["baidu.com"]['BDUSS'] = BDUSS_morsel
+        self.web.cookie_jar._cookies[("baidu.com", "/")]['BDUSS'] = BDUSS_morsel
         STOKEN_morsel = aiohttp.cookiejar.Morsel()
         STOKEN_morsel.set('STOKEN', core._STOKEN, core._STOKEN)
         STOKEN_morsel['domain'] = "tieba.baidu.com"
-        self.web.cookie_jar._cookies["tieba.baidu.com"]['STOKEN'] = STOKEN_morsel
+        self.web.cookie_jar._cookies[("tieba.baidu.com", "/")]['STOKEN'] = STOKEN_morsel
