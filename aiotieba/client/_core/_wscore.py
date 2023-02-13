@@ -8,7 +8,7 @@ import aiohttp
 import async_timeout
 import yarl
 
-from .._helper import DEFAULT_TIMEOUT, pack_ws_bytes, parse_ws_bytes, timeout
+from .._helper import _send_request, pack_ws_bytes, parse_ws_bytes
 from ..exception import HTTPStatusError
 from . import TbCore
 
@@ -162,8 +162,8 @@ class WsCore(object):
     async def __websocket_connect(self) -> None:
         from aiohttp import hdrs
 
+        ws_url = yarl.URL.build(scheme="ws", host="im.tieba.baidu.com", port=8000)
         sec_key_bytes = binascii.b2a_base64(secrets.token_bytes(16), newline=False)
-
         headers = {
             hdrs.UPGRADE: "websocket",
             hdrs.CONNECTION: "upgrade",
@@ -173,9 +173,6 @@ class WsCore(object):
             hdrs.ACCEPT_ENCODING: "gzip",
             hdrs.HOST: "im.tieba.baidu.com:8000",
         }
-
-        ws_url = yarl.URL.build(scheme="ws", host="im.tieba.baidu.com", port=8000)
-
         request = aiohttp.ClientRequest(
             hdrs.METH_GET,
             ws_url,
@@ -186,29 +183,7 @@ class WsCore(object):
             ssl=False,
         )
 
-        try:
-            async with timeout(DEFAULT_TIMEOUT.connect, self.loop):
-                conn = await self.connector.connect(request, [], DEFAULT_TIMEOUT)
-        except asyncio.TimeoutError as exc:
-            raise aiohttp.ServerTimeoutError(f"Connection timeout to host {request.url}") from exc
-
-        conn.protocol.set_response_params(
-            read_until_eof=False,
-            auto_decompress=True,
-            read_timeout=DEFAULT_TIMEOUT.sock_read,
-            read_bufsize=2 * 1024,
-        )
-
-        try:
-            response = await request.send(conn)
-        except BaseException:
-            conn.close()
-            raise
-        try:
-            await response.start(conn)
-        except BaseException:
-            response.close()
-            raise
+        response = await _send_request(request, self.connector, False, 2 * 1024)
 
         if response.status != 101:
             raise HTTPStatusError(response.status, response.reason)
