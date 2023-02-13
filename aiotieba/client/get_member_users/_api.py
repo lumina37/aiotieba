@@ -3,8 +3,9 @@ import sys
 import bs4
 import yarl
 
-from .._core import WEB_BASE_HOST, HttpCore
+from .._core import HttpCore
 from .._helper import log_exception, pack_web_get_request, send_request
+from ..const import WEB_BASE_HOST
 from ._classdef import MemberUsers
 
 

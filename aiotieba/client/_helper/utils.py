@@ -17,8 +17,8 @@ from Crypto.Util.Padding import pad, unpad
 from ..._logging import get_logger
 from .._core import HttpCore, TbCore
 from .._crypto import sign as _sign
+from ..const import TIME_CONFIG
 from ..exception import HTTPStatusError, exc_handlers
-from ._const import DEFAULT_TIMEOUT
 
 try:
     import simdjson as jsonlib
@@ -365,8 +365,8 @@ async def _send_request(
 
     # 获取TCP连接
     try:
-        async with timeout(DEFAULT_TIMEOUT.connect, connector._loop):
-            conn = await connector.connect(request, [], DEFAULT_TIMEOUT)
+        async with timeout(TIME_CONFIG.http_connect, connector._loop):
+            conn = await connector.connect(request, [], TIME_CONFIG.http)
     except asyncio.TimeoutError as exc:
         raise aiohttp.ServerTimeoutError(f"Connection timeout to host {request.url}") from exc
 
@@ -374,7 +374,7 @@ async def _send_request(
     conn.protocol.set_response_params(
         read_until_eof=read_until_eof,
         auto_decompress=True,
-        read_timeout=DEFAULT_TIMEOUT.sock_read,
+        read_timeout=TIME_CONFIG.http_read,
         read_bufsize=read_bufsize,
     )
 

@@ -6,10 +6,11 @@ import aiohttp
 import yarl
 
 from .._logging import get_logger as LOG
-from ._classdef.enums import GroupType, PostSortType, ReqUInfo, ThreadSortType
 from ._classdef.user import UserInfo
 from ._core import HttpCore, TbCore, WsCore
-from ._helper import ForumInfoCache, is_portrait
+from ._helper import GroupType, PostSortType, ReqUInfo, ThreadSortType, is_portrait
+from ._helper.cache import ForumInfoCache
+from .const import TIME_CONFIG
 from .get_homepage._classdef import UserInfo_home
 from .typing import TypeUserInfo
 
@@ -79,14 +80,14 @@ class Client(object):
             loop = asyncio.get_running_loop()
 
         connector = aiohttp.TCPConnector(
-            ttl_dns_cache=600,
+            ttl_dns_cache=TIME_CONFIG.dns_ttl,
             family=socket.AF_INET,
-            keepalive_timeout=15.0,
+            keepalive_timeout=TIME_CONFIG.http_keepalive,
             limit=0,
             ssl=False,
             loop=loop,
         )
-        self._connector: aiohttp.TCPConnector = connector
+        self._connector = connector
 
         if proxy is False:
             proxy = (None, None)
@@ -98,11 +99,11 @@ class Client(object):
                 proxy = (proxy_info.proxy, proxy_info.proxy_auth)
 
         core = TbCore(BDUSS_key, proxy)
-        self._core: TbCore = core
-        self._http_core: HttpCore = HttpCore(core, connector, loop)
-        self._ws_core: WsCore = WsCore(core, connector, loop, heartbeat=30.0)
+        self._core = core
+        self._http_core = HttpCore(core, connector, loop)
+        self._ws_core = WsCore(core, connector, loop)
 
-        self._user: UserInfo_home = UserInfo_home()._init_null()
+        self._user = UserInfo_home()._init_null()
 
     async def __aenter__(self) -> "Client":
         return self

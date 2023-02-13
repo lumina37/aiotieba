@@ -4,10 +4,8 @@ from typing import Dict, Optional
 import aiohttp
 
 from ...__version__ import __version__
+from ..const import APP_BASE_HOST
 from ._core import TbCore
-
-APP_BASE_HOST = "tiebac.baidu.com"
-WEB_BASE_HOST = "tieba.baidu.com"
 
 
 class HttpContainer(object):
@@ -36,6 +34,7 @@ class HttpCore(object):
         'app',
         'app_proto',
         'web',
+        'timecfg',
         'loop',
     ]
 
@@ -45,8 +44,8 @@ class HttpCore(object):
         connector: aiohttp.TCPConnector,
         loop: Optional[asyncio.AbstractEventLoop] = None,
     ) -> None:
-        self.core: TbCore = core
-        self.connector: aiohttp.TCPConnector = connector
+        self.core = core
+        self.connector = connector
         self.loop: asyncio.AbstractEventLoop = loop
 
         from aiohttp import hdrs

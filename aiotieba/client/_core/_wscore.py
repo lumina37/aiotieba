@@ -9,13 +9,9 @@ import async_timeout
 import yarl
 
 from .._helper import _send_request, pack_ws_bytes, parse_ws_bytes
+from ..const import TIME_CONFIG
 from ..exception import HTTPStatusError
 from . import TbCore
-
-DEFAULT_SEND_TIMEOUT = 3.0
-DEFAULT_READ_TIMEOUT = 8.0
-DEFAULT_RESP_TIMEOUT = 12.0
-DEFAULT_ALIVE_TIMEOUT = 30.0
 
 TypeWebsocketCallback = Callable[["WsCore", bytes, int], Awaitable[None]]
 
@@ -26,15 +22,20 @@ class WsResponse(object):
 
     Args:
         data_future (asyncio.Future): 用于等待读事件到来的Future
+        read_timeout (float): 读超时时间
     """
 
-    __slots__ = ['_future']
+    __slots__ = [
+        '_future',
+        'read_timeout',
+    ]
 
-    def __init__(self, data_future: asyncio.Future) -> None:
-        self._future = data_future
+    def __init__(self, data_future: asyncio.Future, read_timeout: float) -> None:
+        self.future = data_future
+        self.read_timeout = read_timeout
 
     def _cancel(self) -> None:
-        self._future.cancel()
+        self.future.cancel()
 
     async def read(self) -> bytes:
         """
@@ -48,8 +49,8 @@ class WsResponse(object):
         """
 
         try:
-            with async_timeout.timeout(DEFAULT_READ_TIMEOUT):
-                return await self._future
+            with async_timeout.timeout(self.read_timeout):
+                return await self.future
         except asyncio.TimeoutError as err:
             self._cancel()
             raise asyncio.TimeoutError("Timeout to read") from err
@@ -149,12 +150,10 @@ class WsCore(object):
         core: TbCore,
         connector: aiohttp.TCPConnector,
         loop: Optional[asyncio.AbstractEventLoop] = None,
-        heartbeat: Optional[float] = None,
     ) -> None:
-        self.core: TbCore = core
-        self.connector: aiohttp.TCPConnector = connector
+        self.core = core
+        self.connector = connector
         self.loop: asyncio.AbstractEventLoop = loop
-        self.heartbeat: float = heartbeat
 
         self.callbacks: Dict[int, TypeWebsocketCallback] = {}
         self.websocket: aiohttp.ClientWebSocketResponse = None
@@ -192,7 +191,7 @@ class WsCore(object):
             conn = response.connection
             conn_proto = conn.protocol
             transport = conn.transport
-            reader = aiohttp.FlowControlDataQueue(conn_proto, 2**16, loop=self.loop)
+            reader = aiohttp.FlowControlDataQueue(conn_proto, 1 << 16, loop=self.loop)
             conn_proto.set_parser(aiohttp.http.WebSocketReader(reader, 4 * 1024 * 1024), reader)
             writer = aiohttp.http.WebSocketWriter(conn_proto, transport, use_mask=True)
         except BaseException:
@@ -204,11 +203,11 @@ class WsCore(object):
                 writer,
                 'chat',
                 response,
-                DEFAULT_ALIVE_TIMEOUT,
+                TIME_CONFIG.ws_keepalive,
                 True,
                 True,
                 self.loop,
-                receive_timeout=DEFAULT_READ_TIMEOUT,
+                receive_timeout=TIME_CONFIG.ws_read,
                 heartbeat=self.heartbeat,
             )
 
@@ -277,7 +276,7 @@ class WsCore(object):
         data_future = self.loop.create_future()
         data_future.add_done_callback(self.__generate_default_callback(req_id))
         self.waiter[req_id] = data_future
-        return WsResponse(data_future)
+        return WsResponse(data_future, TIME_CONFIG.ws_read)
 
     def set_done(self, req_id: int, data: bytes) -> None:
         """
@@ -312,7 +311,7 @@ class WsCore(object):
         websocket是否可用
         """
 
-        return not (self.websocket is None or self.websocket.closed or self.websocket._writer.transport.is_closing())
+        return not (self.websocket is None or self.websocket._writer.transport.is_closing())
 
     @property
     def req_id(self) -> int:
@@ -349,7 +348,7 @@ class WsCore(object):
         response = self.register(req_id)
 
         try:
-            with async_timeout.timeout(DEFAULT_SEND_TIMEOUT):
+            with async_timeout.timeout(TIME_CONFIG.ws_send):
                 await self.websocket.send_bytes(req_data)
         except asyncio.TimeoutError as err:
             response._cancel()
