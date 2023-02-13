@@ -15,8 +15,6 @@ class TimeConfig(object):
     """
     各种时间设置
 
-    Attributes:
-
     Note:
         所有时间均以秒为单位
     """

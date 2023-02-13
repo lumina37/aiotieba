@@ -26,7 +26,7 @@ class WsResponse(object):
     """
 
     __slots__ = [
-        '_future',
+        'future',
         'read_timeout',
     ]
 
