@@ -13,8 +13,3 @@ try:
 
 except FileNotFoundError:
     CONFIG = {}
-
-required_keys = ['User', 'Database']
-for required_key in required_keys:
-    if required_key not in CONFIG or not isinstance(CONFIG[required_key], dict):
-        CONFIG[required_key] = {}
