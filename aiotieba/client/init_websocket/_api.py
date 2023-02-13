@@ -25,9 +25,8 @@ def pack_proto(core: TbCore) -> bytes:
     req_proto.data.bduss = core._BDUSS
 
     device = {
-        'subapp_type': 'mini',
         'cuid': core.cuid,
-        '_client_version': core.post_version,
+        '_client_version': core.main_version,
         '_msg_status': '1',
         'cuid_galaxy2': core.cuid_galaxy2,
         '_client_type': '2',
@@ -39,7 +38,7 @@ def pack_proto(core: TbCore) -> bytes:
     secret_key = rsa_chiper.encrypt(core.aes_ecb_sec_key)
     req_proto.data.secretKey = secret_key
     req_proto.data.stoken = core._STOKEN
-    req_proto.cuid = f"{core.cuid}|com.baidu.tieba_mini{core.post_version}"
+    req_proto.cuid = f"{core.cuid}|com.baidu.tieba{core.main_version}"
 
     return req_proto.SerializeToString()
 

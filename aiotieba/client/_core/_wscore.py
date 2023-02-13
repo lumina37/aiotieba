@@ -208,7 +208,7 @@ class WsCore(object):
                 True,
                 self.loop,
                 receive_timeout=TIME_CONFIG.ws_read,
-                heartbeat=self.heartbeat,
+                heartbeat=TIME_CONFIG.ws_heartbeat,
             )
 
         self.ws_dispatcher = self.loop.create_task(self.__ws_dispatch(), name="ws_dispatcher")

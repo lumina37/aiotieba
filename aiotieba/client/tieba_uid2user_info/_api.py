@@ -1,8 +1,9 @@
 import sys
+import time
 
 import yarl
 
-from .._core import HttpCore, TbCore
+from .._core import HttpCore, TbCore, WsCore
 from .._helper import log_exception, pack_proto_request, send_request
 from ..const import APP_BASE_HOST, APP_INSECURE_SCHEME
 from ..exception import TiebaServerError
@@ -34,6 +35,7 @@ def parse_body(body: bytes) -> UserInfo_TUid:
 
 
 async def request_http(http_core: HttpCore, tieba_uid: int) -> UserInfo_TUid:
+    start = time.perf_counter()
     request = pack_proto_request(
         http_core,
         yarl.URL.build(
@@ -53,4 +55,24 @@ async def request_http(http_core: HttpCore, tieba_uid: int) -> UserInfo_TUid:
         log_exception(sys._getframe(1), err, f"tieba_uid={tieba_uid}")
         user = UserInfo_TUid()._init_null()
 
+    end = time.perf_counter()
+    print(f"http: {end-start}")
+
+    return user
+
+
+async def request_ws(ws_core: WsCore, tieba_uid: int) -> UserInfo_TUid:
+    start = time.perf_counter()
+    req_proto = pack_proto(ws_core.core, tieba_uid)
+
+    try:
+        response = await ws_core.send(req_proto, CMD)
+        user = parse_body(await response.read())
+
+    except Exception as err:
+        log_exception(sys._getframe(1), err, f"tieba_uid={tieba_uid}")
+        user = UserInfo_TUid()._init_null()
+
+    end = time.perf_counter()
+    print(f"ws: {end-start}")
     return user

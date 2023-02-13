@@ -418,7 +418,11 @@ class Client(object):
 
         from . import tieba_uid2user_info
 
+        # if not await self.init_websocket():
+        #     return tieba_uid2user_info.UserInfo_TUid()._init_null()
+
         return await tieba_uid2user_info.request_http(self._http_core, tieba_uid)
+        # return await tieba_uid2user_info.request_ws(self._ws_core, tieba_uid)
 
     async def get_threads(
         self,
