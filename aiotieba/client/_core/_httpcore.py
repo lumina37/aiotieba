@@ -34,7 +34,6 @@ class HttpCore(object):
         'app',
         'app_proto',
         'web',
-        'timecfg',
         'loop',
     ]
 
