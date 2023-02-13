@@ -3,8 +3,9 @@ from typing import Dict
 
 import yarl
 
-from .._core import APP_BASE_HOST, HttpCore, TbCore
-from .._helper import APP_SECURE_SCHEME, log_exception, pack_proto_request, send_request
+from .._core import HttpCore, TbCore
+from .._helper import log_exception, pack_proto_request, send_request
+from ..const import APP_BASE_HOST, APP_SECURE_SCHEME
 from ..exception import TiebaServerError
 from .protobuf import SearchPostForumReqIdl_pb2, SearchPostForumResIdl_pb2
 

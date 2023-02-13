@@ -48,7 +48,7 @@ class TbCore(object):
         BDUSS_key: Optional[str] = None,
         proxy: Union[Tuple[yarl.URL, aiohttp.BasicAuth], Tuple[None, None]] = (None, None),
     ) -> None:
-        self._BDUSS_key: str = BDUSS_key
+        self._BDUSS_key = BDUSS_key
         user_cfg: Dict[str, str] = CONFIG['User'].get(BDUSS_key, {})
         self.BDUSS = user_cfg.get('BDUSS', '')
         self.STOKEN = user_cfg.get('STOKEN', '')

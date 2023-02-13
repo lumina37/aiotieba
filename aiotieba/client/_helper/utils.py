@@ -17,8 +17,8 @@ from Crypto.Util.Padding import pad, unpad
 from ..._logging import get_logger
 from .._core import HttpCore, TbCore
 from .._crypto import sign as _sign
+from ..const import TIME_CONFIG
 from ..exception import HTTPStatusError, exc_handlers
-from ._const import DEFAULT_TIMEOUT
 
 try:
     import simdjson as jsonlib
@@ -344,6 +344,55 @@ def check_status_code(response: aiohttp.ClientResponse) -> None:
 TypeHeadersChecker = Callable[[aiohttp.ClientResponse], None]
 
 
+async def _send_request(
+    request: aiohttp.ClientRequest,
+    connector: aiohttp.TCPConnector,
+    read_until_eof: bool = True,
+    read_bufsize: int = 64 * 1024,
+) -> aiohttp.ClientResponse:
+    """
+    发送http请求并返回ClientResponse
+
+    Args:
+        request (aiohttp.ClientRequest): 待发送的请求
+        connector (aiohttp.TCPConnector): 用于生成TCP连接的连接器
+        read_until_eof (bool, optional): 是否读取到EOF就中止. Defaults to True.
+        read_bufsize (int, optional): 读缓冲区大小 以字节为单位. Defaults to 64KiB.
+
+    Returns:
+        ClientResponse: 响应
+    """
+
+    # 获取TCP连接
+    try:
+        async with timeout(TIME_CONFIG.http_connect, connector._loop):
+            conn = await connector.connect(request, [], TIME_CONFIG.http)
+    except asyncio.TimeoutError as exc:
+        raise aiohttp.ServerTimeoutError(f"Connection timeout to host {request.url}") from exc
+
+    # 设置响应解析流程
+    conn.protocol.set_response_params(
+        read_until_eof=read_until_eof,
+        auto_decompress=True,
+        read_timeout=TIME_CONFIG.http_read,
+        read_bufsize=read_bufsize,
+    )
+
+    # 发送请求
+    try:
+        response = await request.send(conn)
+    except BaseException:
+        conn.close()
+        raise
+    try:
+        await response.start(conn)
+    except BaseException:
+        response.close()
+        raise
+
+    return response
+
+
 async def send_request(
     request: aiohttp.ClientRequest,
     connector: aiohttp.TCPConnector,
@@ -364,32 +413,7 @@ async def send_request(
         bytes: body
     """
 
-    # 获取TCP连接
-    try:
-        async with timeout(DEFAULT_TIMEOUT.connect, connector._loop):
-            conn = await connector.connect(request, [], DEFAULT_TIMEOUT)
-    except asyncio.TimeoutError as exc:
-        raise aiohttp.ServerTimeoutError(f"Connection timeout to host {request.url}") from exc
-
-    # 设置响应解析流程
-    conn.protocol.set_response_params(
-        read_until_eof=True,
-        auto_decompress=True,
-        read_timeout=DEFAULT_TIMEOUT.sock_read,
-        read_bufsize=read_bufsize,
-    )
-
-    # 发送请求
-    try:
-        response = await request.send(conn)
-    except BaseException:
-        conn.close()
-        raise
-    try:
-        await response.start(conn)
-    except BaseException:
-        response.close()
-        raise
+    response = await _send_request(request, connector, True, read_bufsize)
 
     # 合并cookies
     # cookie_jar.update_cookies(response.cookies, response._url)

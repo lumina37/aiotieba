@@ -1,8 +1,7 @@
 import sys
 
-from .._classdef import MsgType
 from .._core import WsCore
-from .._helper import log_exception, log_success
+from .._helper import MsgType, log_exception, log_success
 from ..exception import TiebaServerError
 from ..get_group_msg import WsMessage
 from .protobuf import CommitReceivedPmsgReqIdl_pb2, CommitReceivedPmsgResIdl_pb2

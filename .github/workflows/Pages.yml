@@ -6,15 +6,16 @@ on:
     paths:
       - "mkdocs.yml"
       - "docs/**"
+      - ".github/workflows/Pages*"
   pull_request:
     branches: [develop]
     paths:
       - "mkdocs.yml"
       - "docs/**"
+      - ".github/workflows/Pages*"
 
 jobs:
-  pages:
-    name: Pages
+  build:
     runs-on: ubuntu-latest
 
     env:
@@ -24,19 +25,39 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set up Python ${{ env.PYTHON_VER }}
+      - name: Setup Python ${{ env.PYTHON_VER }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VER }}
 
       - name: Install dependencies
         run: |
-          python -m pip install -U pip -qq
+          pip install -U pip -qq
           pip install mkdocs-material -qq
 
-      - name: Build and Publish
+      - name: Build
         run: |
-          git config --global user.name "${GITHUB_ACTOR}"
-          git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-          mkdocs build --strict
-          mkdocs gh-deploy --force
+          mkdocs build -d _site -s -q
+
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1

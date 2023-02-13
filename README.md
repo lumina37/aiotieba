@@ -1,9 +1,7 @@
 <p align="center">
-
 <a href="https://socialify.git.ci">
     <img src="https://user-images.githubusercontent.com/48282276/217530379-1348f7c5-7056-48f4-8c64-1c74caf5497c.svg">
 </a>
-
 </p>
 
 <div align="center">

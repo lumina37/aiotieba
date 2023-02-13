@@ -28,10 +28,7 @@ def pack_proto(core: TbCore) -> bytes:
         'subapp_type': 'mini',
         'cuid': core.cuid,
         '_client_version': core.post_version,
-        'pversion': '1.0.3',
         '_msg_status': '1',
-        '_phone_imei': '000000000000000',
-        'from': "1021099l",
         'cuid_galaxy2': core.cuid_galaxy2,
         '_client_type': '2',
         'timestamp': str(int(time.time() * 1e3)),
@@ -41,9 +38,6 @@ def pack_proto(core: TbCore) -> bytes:
     rsa_chiper = PKCS1_v1_5.new(RSA.import_key(PUBLIC_KEY))
     secret_key = rsa_chiper.encrypt(core.aes_ecb_sec_key)
     req_proto.data.secretKey = secret_key
-
-    req_proto.data.width = 105
-    req_proto.data.height = 105
     req_proto.data.stoken = core._STOKEN
     req_proto.cuid = f"{core.cuid}|com.baidu.tieba_mini{core.post_version}"
 

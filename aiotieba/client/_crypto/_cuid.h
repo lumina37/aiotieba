@@ -2,6 +2,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief impl of TiebaLite tieba/post/utils/helios
  *
@@ -13,7 +17,7 @@
  *
  * @note 12.x loc: com.baidu.tieba.l40.a / com.baidu.tieba.pz.a
  */
-int tbh_heliosHash(char *dst, const char *src, size_t srcSize);
+int tbc_heliosHash(char *dst, const char *src, size_t srcSize);
 
 /**
  * @brief generate `cuid_galaxy2`
@@ -25,7 +29,7 @@ int tbh_heliosHash(char *dst, const char *src, size_t srcSize);
  *
  * @note 12.x loc: com.baidu.tieba.oz.m
  */
-int tbh_cuid_galaxy2(char *dst, const char *androidID);
+int tbc_cuid_galaxy2(char *dst, const char *androidID);
 
 /**
  * @brief generate `c3_aid`
@@ -38,4 +42,8 @@ int tbh_cuid_galaxy2(char *dst, const char *androidID);
  *
  * @note 12.x loc: com.baidu.tieba.r50.f
  */
-int tbh_c3_aid(char *dst, const char *androidID, const char *uuid);
+int tbc_c3_aid(char *dst, const char *androidID, const char *uuid);
+
+#ifdef __cplusplus
+}
+#endif

@@ -3,8 +3,9 @@ from typing import List, Tuple
 
 import yarl
 
-from .._core import APP_BASE_HOST, HttpCore, TbCore
-from .._helper import APP_INSECURE_SCHEME, log_exception, pack_proto_request, send_request
+from .._core import HttpCore, TbCore
+from .._helper import log_exception, pack_proto_request, send_request
+from ..const import APP_BASE_HOST, APP_INSECURE_SCHEME
 from ..exception import TiebaServerError
 from ._classdef import Thread_home, UserInfo_home
 from .protobuf import ProfileReqIdl_pb2, ProfileResIdl_pb2

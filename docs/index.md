@@ -1,15 +1,14 @@
 # 
 
+<p align="center">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/48282276/217530379-1348f7c5-7056-48f4-8c64-1c74caf5497c.svg">
   <source media="(prefers-color-scheme: light)" srcset="https://user-images.githubusercontent.com/48282276/217530385-98a2fb24-ff6e-4b27-990f-998b66c2ab5e.svg">
   <img src="https://user-images.githubusercontent.com/48282276/217530385-98a2fb24-ff6e-4b27-990f-998b66c2ab5e.svg">
 </picture>
-
 </p>
 
-<div align="center">
-<p>
+<p align="center">
 <a href="https://github.com/Starry-OvO/aiotieba/actions">
     <img src="https://img.shields.io/github/actions/workflow/status/Starry-OvO/aiotieba/CI.yml?branch=develop&label=CI&logo=github&style=flat-square" alt="GitHub Workflow Status">
 </a>
@@ -20,7 +19,6 @@
     <img src="https://img.shields.io/pypi/pyversions/aiotieba?style=flat-square" alt="PyPI - Python Version">
 </a>
 </p>
-</div>
 
 ---
 
@@ -57,7 +55,7 @@ asyncio.run(main())
 
 ## 项目特色
 
-+ 收录72个常用API
++ 收录[**72个常用API**](https://github.com/Starry-OvO/aiotieba/tree/develop/aiotieba/client)
 + 类型注解全覆盖，方法注释全覆盖，类属性注释全覆盖，内部命名统一
 + 请求参数支持protobuf序列化
 + 支持websocket接口

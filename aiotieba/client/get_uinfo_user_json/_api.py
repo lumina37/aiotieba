@@ -2,8 +2,9 @@ import sys
 
 import yarl
 
-from .._core import WEB_BASE_HOST, HttpCore
+from .._core import HttpCore
 from .._helper import log_exception, pack_web_get_request, parse_json, send_request
+from ..const import WEB_BASE_HOST
 from ..exception import TiebaValueError
 from ._classdef import UserInfo_json
 

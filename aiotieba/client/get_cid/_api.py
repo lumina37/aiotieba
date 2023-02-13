@@ -4,8 +4,9 @@ from typing import Dict
 import aiohttp
 import yarl
 
-from .._core import APP_BASE_HOST, TbCore
-from .._helper import APP_SECURE_SCHEME, log_exception, pack_form_request, parse_json, send_request
+from .._core import TbCore
+from .._helper import log_exception, pack_form_request, parse_json, send_request
+from ..const import APP_BASE_HOST, APP_SECURE_SCHEME
 from ..exception import TiebaServerError
 
 

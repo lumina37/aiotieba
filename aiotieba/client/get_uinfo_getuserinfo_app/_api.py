@@ -2,8 +2,9 @@ import sys
 
 import yarl
 
-from .._core import APP_BASE_HOST, HttpCore
-from .._helper import APP_INSECURE_SCHEME, log_exception, pack_proto_request, send_request
+from .._core import HttpCore
+from .._helper import log_exception, pack_proto_request, send_request
+from ..const import APP_BASE_HOST, APP_INSECURE_SCHEME
 from ..exception import TiebaServerError
 from ._classdef import UserInfo_guinfo_app
 from .protobuf import GetUserInfoReqIdl_pb2, GetUserInfoResIdl_pb2

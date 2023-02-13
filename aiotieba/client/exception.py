@@ -65,7 +65,7 @@ class TiebaServerError(RuntimeError):
 
 class HTTPStatusError(RuntimeError):
     """
-    非200状态码
+    错误的状态码
     """
 
     __slots__ = ['code', 'msg']

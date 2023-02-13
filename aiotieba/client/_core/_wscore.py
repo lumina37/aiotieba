@@ -1,4 +1,6 @@
 import asyncio
+import binascii
+import secrets
 import time
 from typing import Any, Awaitable, Callable, Dict, Optional
 
@@ -6,11 +8,10 @@ import aiohttp
 import async_timeout
 import yarl
 
-from .._helper import DEFAULT_TIMEOUT, pack_ws_bytes, parse_ws_bytes
+from .._helper import _send_request, pack_ws_bytes, parse_ws_bytes
+from ..const import TIME_CONFIG
+from ..exception import HTTPStatusError
 from . import TbCore
-
-DEFAULT_SEND_TIMEOUT = 3.0
-DEFAULT_READ_TIMEOUT = 5.0
 
 TypeWebsocketCallback = Callable[["WsCore", bytes, int], Awaitable[None]]
 
@@ -21,15 +22,20 @@ class WsResponse(object):
 
     Args:
         data_future (asyncio.Future): 用于等待读事件到来的Future
+        read_timeout (float): 读超时时间
     """
 
-    __slots__ = ['_future']
+    __slots__ = [
+        'future',
+        'read_timeout',
+    ]
 
-    def __init__(self, data_future: asyncio.Future) -> None:
-        self._future = data_future
+    def __init__(self, data_future: asyncio.Future, read_timeout: float) -> None:
+        self.future = data_future
+        self.read_timeout = read_timeout
 
     def _cancel(self) -> None:
-        self._future.cancel()
+        self.future.cancel()
 
     async def read(self) -> bytes:
         """
@@ -43,8 +49,8 @@ class WsResponse(object):
         """
 
         try:
-            with async_timeout.timeout(DEFAULT_READ_TIMEOUT):
-                return await self._future
+            with async_timeout.timeout(self.read_timeout):
+                return await self.future
         except asyncio.TimeoutError as err:
             self._cancel()
             raise asyncio.TimeoutError("Timeout to read") from err
@@ -60,7 +66,14 @@ class MsgIDPair(object):
         self.last_id = last_id
         self.curr_id = curr_id
 
-    def set_msg_id(self, curr_id: int) -> None:
+    def update_msg_id(self, curr_id: int) -> None:
+        """
+        更新msg_id
+
+        Args:
+            curr_id (int): 当前消息的msg_id
+        """
+
         self.last_id = self.curr_id
         self.curr_id = curr_id
 
@@ -75,14 +88,32 @@ class MsgIDManager(object):
         self.priv_gid: int = None
         self.gid2mid: Dict[int, MsgIDPair] = None
 
-    def set_msg_id(self, group_id: int, msg_id: int) -> None:
+    def update_msg_id(self, group_id: int, msg_id: int) -> None:
+        """
+        更新group_id对应的msg_id
+
+        Args:
+            group_id (int): 消息组id
+            msg_id (int): 当前消息的msg_id
+        """
+
         mid_pair = self.gid2mid.get(group_id, None)
         if mid_pair is not None:
-            mid_pair.set_msg_id(msg_id)
+            mid_pair.update_msg_id(msg_id)
         else:
             mid_pair = MsgIDPair(msg_id, msg_id)
 
     def get_msg_id(self, group_id: int) -> int:
+        """
+        获取group_id对应的msg_id
+
+        Args:
+            group_id (int): 消息组id
+
+        Returns:
+            int: 上一条消息的msg_id
+        """
+
         return self.gid2mid[group_id].last_id
 
     def get_record_id(self) -> int:
@@ -107,7 +138,6 @@ class WsCore(object):
         'heartbeat',
         'waiter',
         'callbacks',
-        '_client_ws',
         'websocket',
         'ws_dispatcher',
         '_req_id',
@@ -120,25 +150,67 @@ class WsCore(object):
         core: TbCore,
         connector: aiohttp.TCPConnector,
         loop: Optional[asyncio.AbstractEventLoop] = None,
-        heartbeat: Optional[float] = None,
     ) -> None:
-        self.core: TbCore = core
-        self.connector: aiohttp.TCPConnector = connector
+        self.core = core
+        self.connector = connector
         self.loop: asyncio.AbstractEventLoop = loop
-        self.heartbeat: float = heartbeat
 
         self.callbacks: Dict[int, TypeWebsocketCallback] = {}
-        self._client_ws: aiohttp.ClientSession = None
         self.websocket: aiohttp.ClientWebSocketResponse = None
 
     async def __websocket_connect(self) -> None:
-        self.websocket = await self._client_ws._ws_connect(
-            yarl.URL.build(scheme="ws", host="im.tieba.baidu.com", port=8000),
-            heartbeat=self.heartbeat,
+        from aiohttp import hdrs
+
+        ws_url = yarl.URL.build(scheme="ws", host="im.tieba.baidu.com", port=8000)
+        sec_key_bytes = binascii.b2a_base64(secrets.token_bytes(16), newline=False)
+        headers = {
+            hdrs.UPGRADE: "websocket",
+            hdrs.CONNECTION: "upgrade",
+            hdrs.SEC_WEBSOCKET_EXTENSIONS: "im_version=2.3",
+            hdrs.SEC_WEBSOCKET_VERSION: "13",
+            hdrs.SEC_WEBSOCKET_KEY: sec_key_bytes.decode('ascii'),
+            hdrs.ACCEPT_ENCODING: "gzip",
+            hdrs.HOST: "im.tieba.baidu.com:8000",
+        }
+        request = aiohttp.ClientRequest(
+            hdrs.METH_GET,
+            ws_url,
+            headers=headers,
+            loop=self.loop,
             proxy=self.core._proxy,
             proxy_auth=self.core._proxy_auth,
             ssl=False,
         )
+
+        response = await _send_request(request, self.connector, False, 2 * 1024)
+
+        if response.status != 101:
+            raise HTTPStatusError(response.status, response.reason)
+
+        try:
+            conn = response.connection
+            conn_proto = conn.protocol
+            transport = conn.transport
+            reader = aiohttp.FlowControlDataQueue(conn_proto, 1 << 16, loop=self.loop)
+            conn_proto.set_parser(aiohttp.http.WebSocketReader(reader, 4 * 1024 * 1024), reader)
+            writer = aiohttp.http.WebSocketWriter(conn_proto, transport, use_mask=True)
+        except BaseException:
+            response.close()
+            raise
+        else:
+            self.websocket = aiohttp.ClientWebSocketResponse(
+                reader,
+                writer,
+                'chat',
+                response,
+                TIME_CONFIG.ws_keepalive,
+                True,
+                True,
+                self.loop,
+                receive_timeout=TIME_CONFIG.ws_read,
+                heartbeat=self.heartbeat,
+            )
+
         self.ws_dispatcher = self.loop.create_task(self.__ws_dispatch(), name="ws_dispatcher")
 
     async def connect(self) -> None:
@@ -152,23 +224,6 @@ class WsCore(object):
         self.waiter: Dict[int, asyncio.Future] = {}
         self._req_id = int(time.time())
         self.mid_manager: MsgIDManager = MsgIDManager()
-
-        ws_headers = {
-            aiohttp.hdrs.HOST: "im.tieba.baidu.com:8000",
-            aiohttp.hdrs.SEC_WEBSOCKET_EXTENSIONS: "im_version=2.3",
-            aiohttp.hdrs.SEC_WEBSOCKET_VERSION: "13",
-            'cuid': f"{self.core.cuid}|com.baidu.tieba_mini{self.core.post_version}",
-        }
-        self._client_ws = aiohttp.ClientSession(
-            connector=self.connector,
-            loop=self.loop,
-            headers=ws_headers,
-            connector_owner=False,
-            raise_for_status=True,
-            timeout=DEFAULT_TIMEOUT,
-            read_bufsize=64 * 1024,
-        )
-
         await self.__websocket_connect()
 
     async def reconnect(self) -> None:
@@ -184,9 +239,6 @@ class WsCore(object):
         await self.__websocket_connect()
 
     async def close(self) -> None:
-        if self._client_ws is None:
-            return
-        await self._client_ws.close()
         if self.is_aviliable:
             await self.websocket.close()
             self.ws_dispatcher.cancel()
@@ -194,7 +246,17 @@ class WsCore(object):
     def __default_callback(self, req_id: int, data: bytes) -> None:
         self.set_done(req_id, data)
 
-    def __generate_callback(self, req_id: int) -> Callable[[asyncio.Future], Any]:
+    def __generate_default_callback(self, req_id: int) -> Callable[[asyncio.Future], Any]:
+        """
+        生成一个req_id对应的默认回调
+
+        Args:
+            req_id (int): 唯一请求id
+
+        Returns:
+            Callable[[asyncio.Future], Any]: 回调
+        """
+
         def done_callback(_):
             del self.waiter[req_id]
 
@@ -212,9 +274,9 @@ class WsCore(object):
         """
 
         data_future = self.loop.create_future()
-        data_future.add_done_callback(self.__generate_callback(req_id))
+        data_future.add_done_callback(self.__generate_default_callback(req_id))
         self.waiter[req_id] = data_future
-        return WsResponse(data_future)
+        return WsResponse(data_future, TIME_CONFIG.ws_read)
 
     def set_done(self, req_id: int, data: bytes) -> None:
         """
@@ -249,7 +311,7 @@ class WsCore(object):
         websocket是否可用
         """
 
-        return not (self.websocket is None or self.websocket.closed or self.websocket._writer.transport.is_closing())
+        return not (self.websocket is None or self.websocket._writer.transport.is_closing())
 
     @property
     def req_id(self) -> int:
@@ -286,7 +348,7 @@ class WsCore(object):
         response = self.register(req_id)
 
         try:
-            with async_timeout.timeout(DEFAULT_SEND_TIMEOUT):
+            with async_timeout.timeout(TIME_CONFIG.ws_send):
                 await self.websocket.send_bytes(req_data)
         except asyncio.TimeoutError as err:
             response._cancel()
