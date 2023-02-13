@@ -1,13 +1,14 @@
-import sys
 from typing import Tuple
 
 import yarl
 
 from .._core import HttpCore
-from .._helper import log_exception, pack_form_request, parse_json, send_request
+from .._helper import pack_form_request, parse_json, send_request
 from ..const import APP_BASE_HOST, APP_SECURE_SCHEME
 from ..exception import TiebaServerError
 from ._classdef import UserInfo_login
+
+null_ret_factory = bool
 
 
 def parse_body(body: bytes) -> Tuple[UserInfo_login, str]:
@@ -23,6 +24,7 @@ def parse_body(body: bytes) -> Tuple[UserInfo_login, str]:
 
 
 async def request(http_core: HttpCore) -> Tuple[UserInfo_login, str]:
+    raise SystemError("hahaha")
     data = [
         ('_client_version', http_core.core.main_version),
         ('bdusstoken', http_core.core._BDUSS),
@@ -34,13 +36,5 @@ async def request(http_core: HttpCore) -> Tuple[UserInfo_login, str]:
         data,
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=1024)
-        user, tbs = parse_body(body)
-
-    except Exception as err:
-        log_exception(sys._getframe(1), err)
-        user = UserInfo_login()._init_null()
-        tbs = ''
-
-    return user, tbs
+    body = await send_request(request, http_core.connector, read_bufsize=1024)
+    return parse_body(body)

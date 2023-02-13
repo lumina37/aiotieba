@@ -1,5 +1,4 @@
 import binascii
-import sys
 import time
 from typing import List
 
@@ -7,7 +6,7 @@ from Crypto.Cipher import PKCS1_v1_5
 from Crypto.PublicKey import RSA
 
 from .._core import TbCore, WsCore
-from .._helper import log_exception, pack_json
+from .._helper import pack_json
 from ..exception import TiebaServerError
 from ._classdef import WsMsgGroupInfo
 from .protobuf import UpdateClientInfoReqIdl_pb2, UpdateClientInfoResIdl_pb2
@@ -58,12 +57,5 @@ def parse_body(body: bytes) -> List[WsMsgGroupInfo]:
 async def request(ws_core: WsCore) -> List[WsMsgGroupInfo]:
     data = pack_proto(ws_core.core)
 
-    try:
-        resq = await ws_core.send(data, CMD, compress=False, encrypt=False)
-        groups = parse_body(await resq.read())
-
-    except Exception as err:
-        log_exception(sys._getframe(1), err)
-        groups = []
-
-    return groups
+    resp = await ws_core.send(data, CMD, compress=False, encrypt=False)
+    return parse_body(await resp.read())

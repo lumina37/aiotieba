@@ -3,6 +3,7 @@ from .utils import (
     TypeHeadersChecker,
     _send_request,
     check_status_code,
+    handle_exception,
     is_portrait,
     jsonlib,
     log_exception,

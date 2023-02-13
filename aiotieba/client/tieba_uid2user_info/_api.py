@@ -1,16 +1,17 @@
-import sys
-import time
-
 import yarl
 
 from .._core import HttpCore, TbCore, WsCore
-from .._helper import log_exception, pack_proto_request, send_request
+from .._helper import pack_proto_request, send_request
 from ..const import APP_BASE_HOST, APP_INSECURE_SCHEME
 from ..exception import TiebaServerError
 from ._classdef import UserInfo_TUid
 from .protobuf import GetUserByTiebaUidReqIdl_pb2, GetUserByTiebaUidResIdl_pb2
 
 CMD = 309702
+
+
+def null_ret_factory() -> UserInfo_TUid:
+    return UserInfo_TUid()._init_null()
 
 
 def pack_proto(core: TbCore, tieba_uid: int) -> bytes:
@@ -35,7 +36,6 @@ def parse_body(body: bytes) -> UserInfo_TUid:
 
 
 async def request_http(http_core: HttpCore, tieba_uid: int) -> UserInfo_TUid:
-    start = time.perf_counter()
     request = pack_proto_request(
         http_core,
         yarl.URL.build(
@@ -47,32 +47,16 @@ async def request_http(http_core: HttpCore, tieba_uid: int) -> UserInfo_TUid:
         pack_proto(http_core.core, tieba_uid),
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=1024)
-        user = parse_body(body)
+    __log__ = "tieba_uid={tieba_uid}"  # noqa: F841
 
-    except Exception as err:
-        log_exception(sys._getframe(1), err, f"tieba_uid={tieba_uid}")
-        user = UserInfo_TUid()._init_null()
-
-    end = time.perf_counter()
-    print(f"http: {end-start}")
-
-    return user
+    body = await send_request(request, http_core.connector, read_bufsize=1024)
+    return parse_body(body)
 
 
 async def request_ws(ws_core: WsCore, tieba_uid: int) -> UserInfo_TUid:
-    start = time.perf_counter()
     req_proto = pack_proto(ws_core.core, tieba_uid)
 
-    try:
-        response = await ws_core.send(req_proto, CMD)
-        user = parse_body(await response.read())
+    __log__ = "tieba_uid={tieba_uid}"  # noqa: F841
 
-    except Exception as err:
-        log_exception(sys._getframe(1), err, f"tieba_uid={tieba_uid}")
-        user = UserInfo_TUid()._init_null()
-
-    end = time.perf_counter()
-    print(f"ws: {end-start}")
-    return user
+    response = await ws_core.send(req_proto, CMD)
+    return parse_body(await response.read())

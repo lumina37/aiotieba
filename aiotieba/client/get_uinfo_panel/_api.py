@@ -1,12 +1,14 @@
-import sys
-
 import yarl
 
 from .._core import HttpCore
-from .._helper import is_portrait, log_exception, pack_web_get_request, parse_json, send_request
+from .._helper import is_portrait, pack_web_get_request, parse_json, send_request
 from ..const import WEB_BASE_HOST
 from ..exception import TiebaServerError
 from ._classdef import UserInfo_panel
+
+
+def null_ret_factory() -> UserInfo_panel:
+    return UserInfo_panel()._init_null()
 
 
 def parse_body(body: bytes) -> UserInfo_panel:
@@ -32,12 +34,7 @@ async def request(http_core: HttpCore, name_or_portrait: str) -> UserInfo_panel:
         params,
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=64 * 1024)
-        user = parse_body(body)
+    __log__ = "user={name_or_portrait}"  # noqa: F841
 
-    except Exception as err:
-        log_exception(sys._getframe(1), err, f"user={name_or_portrait}")
-        user = UserInfo_panel()._init_null()
-
-    return user
+    body = await send_request(request, http_core.connector, read_bufsize=64 * 1024)
+    return parse_body(body)

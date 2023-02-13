@@ -4,7 +4,8 @@ from typing import List
 import yarl
 
 from ..._core import HttpCore, TbCore
-from ..._helper import APP_BASE_HOST, APP_SECURE_SCHEME, log_exception, pack_proto_request, send_request
+from ..._helper import log_exception, pack_proto_request, send_request
+from ...const import APP_BASE_HOST, APP_SECURE_SCHEME
 from ...exception import TiebaServerError
 from .._classdef import UserInfo_u, UserPosts
 from ..protobuf import UserPostReqIdl_pb2, UserPostResIdl_pb2

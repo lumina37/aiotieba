@@ -36,8 +36,8 @@ async def request(ws_core: WsCore, message: WsMessage) -> bool:
     frame = sys._getframe(1)
 
     try:
-        resq = await ws_core.send(data, CMD)
-        parse_body(await resq.read())
+        resp = await ws_core.send(data, CMD)
+        parse_body(await resp.read())
 
     except Exception as err:
         log_exception(frame, err, log_str)

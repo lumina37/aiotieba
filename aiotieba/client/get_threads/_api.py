@@ -1,15 +1,17 @@
-import sys
-
 import yarl
 
 from .._core import HttpCore, TbCore
-from .._helper import log_exception, pack_proto_request, send_request
+from .._helper import pack_proto_request, send_request
 from ..const import APP_BASE_HOST, APP_INSECURE_SCHEME
 from ..exception import TiebaServerError
 from ._classdef import Threads
 from .protobuf import FrsPageReqIdl_pb2, FrsPageResIdl_pb2
 
 CMD = 301001
+
+
+def null_ret_factory() -> Threads:
+    return Threads()._init_null()
 
 
 def pack_proto(core: TbCore, fname: str, pn: int, rn: int, sort: int, is_good: bool) -> bytes:
@@ -46,12 +48,6 @@ async def request_http(http_core: HttpCore, fname: str, pn: int, rn: int, sort: 
         pack_proto(http_core.core, fname, pn, rn, sort, is_good),
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=256 * 1024)
-        threads = parse_body(body)
-
-    except Exception as err:
-        log_exception(sys._getframe(1), err, f"fname={fname}")
-        threads = Threads()._init_null()
-
-    return threads
+    __log__ = "fname={fname}"  # noqa: F841
+    body = await send_request(request, http_core.connector, read_bufsize=256 * 1024)
+    return parse_body(body)

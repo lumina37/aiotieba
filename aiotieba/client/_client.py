@@ -6,9 +6,46 @@ import aiohttp
 import yarl
 
 from .._logging import get_logger as LOG
+from . import (
+    get_ats,
+    get_bawu_info,
+    get_blacklist_users,
+    get_blocks,
+    get_comments,
+    get_dislike_forums,
+    get_fans,
+    get_fid,
+    get_follow_forums,
+    get_follows,
+    get_forum_detail,
+    get_group_msg,
+    get_homepage,
+    get_image,
+    get_member_users,
+    get_posts,
+    get_rank_users,
+    get_recom_status,
+    get_recovers,
+    get_replys,
+    get_self_follow_forums,
+    get_square_forums,
+    get_threads,
+    get_uinfo_getuserinfo_app,
+    get_uinfo_getUserInfo_web,
+    get_uinfo_panel,
+    get_uinfo_user_json,
+    get_unblock_appeals,
+    get_user_contents,
+    init_z_id,
+    login,
+    push_notify,
+    search_post,
+    sync,
+    tieba_uid2user_info,
+)
 from ._classdef.user import UserInfo
 from ._core import HttpCore, TbCore, WsCore
-from ._helper import GroupType, PostSortType, ReqUInfo, ThreadSortType, is_portrait
+from ._helper import GroupType, PostSortType, ReqUInfo, ThreadSortType, handle_exception, is_portrait
 from ._helper.cache import ForumInfoCache
 from .const import TIME_CONFIG
 from .get_homepage._classdef import UserInfo_home
@@ -17,38 +54,16 @@ from .typing import TypeUserInfo
 if TYPE_CHECKING:
     import numpy as np
 
-    from . import (
-        get_ats,
-        get_bawu_info,
-        get_blacklist_users,
-        get_blocks,
-        get_comments,
-        get_dislike_forums,
-        get_fans,
-        get_follow_forums,
-        get_follows,
-        get_forum_detail,
-        get_group_msg,
-        get_homepage,
-        get_member_users,
-        get_posts,
-        get_rank_users,
-        get_recom_status,
-        get_recovers,
-        get_replys,
-        get_self_follow_forums,
-        get_square_forums,
-        get_threads,
-        get_uinfo_getuserinfo_app,
-        get_uinfo_getUserInfo_web,
-        get_uinfo_panel,
-        get_uinfo_user_json,
-        get_unblock_appeals,
-        get_user_contents,
-        push_notify,
-        search_post,
-        tieba_uid2user_info,
-    )
+
+def _try_websocket(func):
+    async def awrapper(self: "Client", *args, **kwargs):
+        if self._prefer_ws:
+            await self._init_websocket()
+        return await func(self, *args, **kwargs)
+
+    awrapper.__name__ = func.__name__
+
+    return awrapper
 
 
 class Client(object):
@@ -57,6 +72,7 @@ class Client(object):
 
     Args:
         BDUSS_key (str, optional): 用于快捷调用BDUSS. Defaults to None.
+        prefer_ws (bool, optional): 用于快捷调用BDUSS. Defaults to None.
         proxy (tuple[yarl.URL, aiohttp.BasicAuth] | bool, optional): True则使用环境变量代理 False则禁用代理
             输入一个 (http代理地址, 代理验证) 的元组以手动设置代理. Defaults to False.
         loop (asyncio.AbstractEventLoop, optional): 事件循环. Defaults to None.
@@ -67,12 +83,14 @@ class Client(object):
         '_core',
         '_http_core',
         '_ws_core',
+        '_prefer_ws',
         '_user',
     ]
 
     def __init__(
         self,
         BDUSS_key: Optional[str] = None,
+        prefer_ws: bool = False,
         proxy: Union[Tuple[yarl.URL, aiohttp.BasicAuth], bool] = False,
         loop: Optional[asyncio.AbstractEventLoop] = None,
     ) -> None:
@@ -102,6 +120,7 @@ class Client(object):
         self._core = core
         self._http_core = HttpCore(core, connector, loop)
         self._ws_core = WsCore(core, connector, loop)
+        self._prefer_ws = prefer_ws
 
         self._user = UserInfo_home()._init_null()
 
@@ -126,31 +145,20 @@ class Client(object):
 
         return self._core
 
-    async def init_websocket(self) -> bool:
+    async def _init_websocket(self) -> None:
         """
         初始化websocket
 
-        Returns:
-            bool: True成功 False失败
+        Raises:
+            aiohttp.WSServerHandshakeError: websocket握手失败
         """
 
-        try:
-            if not self._ws_core.websocket:
-                await self._ws_core.connect()
-                await self.__upload_sec_key()
-            elif not self._ws_core.is_aviliable:
-                await self._ws_core.reconnect()
-                await self.__upload_sec_key()
-
-        except Exception as err:
-            import sys
-
-            from ._helper import log_exception
-
-            log_exception(sys._getframe(0), err)
-            return False
-
-        return True
+        if not self._ws_core.websocket:
+            await self._ws_core.connect()
+            await self.__upload_sec_key()
+        elif not self._ws_core.is_aviliable:
+            await self._ws_core.reconnect()
+            await self.__upload_sec_key()
 
     async def __upload_sec_key(self) -> None:
         from . import init_websocket
@@ -189,44 +197,40 @@ class Client(object):
 
         return self._user
 
+    @handle_exception(bool)
     async def __login(self) -> bool:
-        from . import login
-
         user, tbs = await login.request(self._http_core)
 
-        if tbs:
-            self._user._user_id = user._user_id
-            self._user._portrait = user._portrait
-            self._user._user_name = user._user_name
-            self._core._tbs = tbs
-            return True
-        else:
-            return False
+        self._user._user_id = user._user_id
+        self._user._portrait = user._portrait
+        self._user._user_name = user._user_name
+        self._core._tbs = tbs
+
+        return True
 
     async def __init_client_id(self) -> bool:
         if self._core._client_id:
             return True
         return await self.__sync()
 
+    @handle_exception(bool)
     async def __sync(self) -> bool:
-        from . import sync
-
         client_id = await sync.request(self._http_core)
         self._core._client_id = client_id
 
-        return bool(client_id)
+        return True
 
+    @handle_exception(bool)
     async def __init_z_id(self) -> bool:
         if self._core._z_id:
             return True
 
-        from . import init_z_id
-
         z_id = await init_z_id.request(self._http_core)
         self._core._z_id = z_id
 
-        return bool(z_id)
+        return True
 
+    @handle_exception(int)
     async def get_fid(self, fname: str) -> int:
         """
         通过贴吧名获取forum_id
@@ -241,12 +245,8 @@ class Client(object):
         if fid := ForumInfoCache.get_fid(fname):
             return fid
 
-        from . import get_fid
-
         fid = await get_fid.request(self._http_core, fname)
-
-        if fid:
-            ForumInfoCache.add_forum(fname, fid)
+        ForumInfoCache.add_forum(fname, fid)
 
         return fid
 
@@ -322,7 +322,8 @@ class Client(object):
                 user, _ = await self.get_homepage(user.portrait, with_threads=False)
                 return user
 
-    async def _get_uinfo_panel(self, name_or_portrait: str) -> "get_uinfo_panel.UserInfo_panel":
+    @handle_exception(get_uinfo_panel.null_ret_factory)
+    async def _get_uinfo_panel(self, name_or_portrait: str) -> get_uinfo_panel.UserInfo_panel:
         """
         接口 https://tieba.baidu.com/home/get/panel
 
@@ -338,11 +339,10 @@ class Client(object):
             该接口rps阈值较低
         """
 
-        from . import get_uinfo_panel
-
         return await get_uinfo_panel.request(self._http_core, name_or_portrait)
 
-    async def _get_uinfo_user_json(self, user_name: str) -> "get_uinfo_user_json.UserInfo_json":
+    @handle_exception(get_uinfo_user_json.null_ret_factory)
+    async def _get_uinfo_user_json(self, user_name: str) -> get_uinfo_user_json.UserInfo_json:
         """
         接口 http://tieba.baidu.com/i/sys/user_json
 
@@ -353,14 +353,13 @@ class Client(object):
             UserInfo_json: 包含 user_id / portrait / user_name
         """
 
-        from . import get_uinfo_user_json
-
         user = await get_uinfo_user_json.request(self._http_core, user_name)
         user._user_name = user_name
 
         return user
 
-    async def _get_uinfo_getuserinfo(self, user_id: int) -> "get_uinfo_getuserinfo_app.UserInfo_guinfo_app":
+    @handle_exception(get_uinfo_getuserinfo_app.null_ret_factory)
+    async def _get_uinfo_getuserinfo(self, user_id: int) -> get_uinfo_getuserinfo_app.UserInfo_guinfo_app:
         """
         接口 http://tiebac.baidu.com/c/u/user/getuserinfo
 
@@ -372,11 +371,10 @@ class Client(object):
                 是否大神 / 是否超级会员
         """
 
-        from . import get_uinfo_getuserinfo_app
-
         return await get_uinfo_getuserinfo_app.request_http(self._http_core, user_id)
 
-    async def _get_uinfo_getUserInfo(self, user_id: int) -> "get_uinfo_getUserInfo_web.UserInfo_guinfo_web":
+    @handle_exception(get_uinfo_getUserInfo_web.null_ret_factory)
+    async def _get_uinfo_getUserInfo(self, user_id: int) -> get_uinfo_getUserInfo_web.UserInfo_guinfo_web:
         """
         接口 http://tieba.baidu.com/im/pcmsg/query/getUserInfo
 
@@ -390,19 +388,14 @@ class Client(object):
             该接口需要BDUSS
         """
 
-        from . import get_uinfo_getUserInfo_web
-
-        try:
-            user = await get_uinfo_getUserInfo_web.request(self._http_core, user_id)
-            user._user_id = user_id
-
-        except Exception as err:
-            LOG().warning(f"{err}. user={user_id}")
-            user = get_uinfo_getUserInfo_web.UserInfo_guinfo_web()._init_null()
+        user = await get_uinfo_getUserInfo_web.request(self._http_core, user_id)
+        user._user_id = user_id
 
         return user
 
-    async def tieba_uid2user_info(self, tieba_uid: int) -> "tieba_uid2user_info.UserInfo_TUid":
+    @handle_exception(tieba_uid2user_info.null_ret_factory)
+    @_try_websocket
+    async def tieba_uid2user_info(self, tieba_uid: int) -> tieba_uid2user_info.UserInfo_TUid:
         """
         通过tieba_uid获取用户信息
 
@@ -416,14 +409,13 @@ class Client(object):
             请注意tieba_uid与旧版user_id的区别
         """
 
-        from . import tieba_uid2user_info
-
-        # if not await self.init_websocket():
-        #     return tieba_uid2user_info.UserInfo_TUid()._init_null()
+        if self._prefer_ws:
+            return await tieba_uid2user_info.request_ws(self._ws_core, tieba_uid)
 
         return await tieba_uid2user_info.request_http(self._http_core, tieba_uid)
-        # return await tieba_uid2user_info.request_ws(self._ws_core, tieba_uid)
 
+    @handle_exception(get_threads.null_ret_factory)
+    @_try_websocket
     async def get_threads(
         self,
         fname_or_fid: Union[str, int],
@@ -433,7 +425,7 @@ class Client(object):
         rn: int = 30,
         sort: ThreadSortType = ThreadSortType.REPLY,
         is_good: bool = False,
-    ) -> "get_threads.Threads":
+    ) -> get_threads.Threads:
         """
         获取首页帖子
 
@@ -451,8 +443,6 @@ class Client(object):
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
-        from . import get_threads
-
         return await get_threads.request_http(self._http_core, fname, pn, rn, sort, is_good)
 
     async def get_posts(
@@ -468,7 +458,7 @@ class Client(object):
         comment_sort_by_agree: bool = True,
         comment_rn: int = 4,
         is_fold: bool = False,
-    ) -> "get_posts.Posts":
+    ) -> get_posts.Posts:
         """
         获取主题帖内回复
 
@@ -486,8 +476,6 @@ class Client(object):
         Returns:
             Posts: 回复列表
         """
-
-        from . import get_posts
 
         return await get_posts.request_http(
             self._http_core,
@@ -1365,6 +1353,7 @@ class Client(object):
 
         return await handle_unblock_appeals.request(self._http_core, fname, fid, appeal_ids, refuse)
 
+    @handle_exception(get_image)
     async def get_image(self, img_url: str) -> "np.ndarray":
         """
         从链接获取静态图像
@@ -1375,8 +1364,6 @@ class Client(object):
         Returns:
             np.ndarray: 图像
         """
-
-        from . import get_image
 
         return await get_image.request(self._http_core, yarl.URL(img_url))
 
@@ -2060,7 +2047,7 @@ class Client(object):
         else:
             user_id = _id
 
-        if not await self.init_websocket():
+        if not await self._init_websocket():
             return False
 
         from . import send_msg
@@ -2084,7 +2071,7 @@ class Client(object):
             bool: True成功 False失败
         """
 
-        if not await self.init_websocket():
+        if not await self._init_websocket():
             return False
 
         from . import set_msg_readed
@@ -2103,7 +2090,7 @@ class Client(object):
             bool: True成功 False失败
         """
 
-        if not await self.init_websocket():
+        if not await self._init_websocket():
             return []
 
         from . import get_group_msg

@@ -3,13 +3,17 @@ import sys
 import yarl
 
 from .._core import HttpCore, TbCore
-from .._helper import log_exception, pack_proto_request, send_request
+from .._helper import pack_proto_request, send_request
 from ..const import APP_BASE_HOST, APP_SECURE_SCHEME
 from ..exception import TiebaServerError
 from ._classdef import Posts
 from .protobuf import PbPageReqIdl_pb2, PbPageResIdl_pb2
 
 CMD = 302001
+
+
+def null_ret_factory() -> Posts:
+    return Posts()._init_null()
 
 
 def pack_proto(
@@ -67,29 +71,26 @@ async def request_http(
     comment_rn: int,
     is_fold: bool,
 ) -> Posts:
+    req_proto = pack_proto(
+        http_core.core,
+        tid,
+        pn,
+        rn,
+        sort,
+        only_thread_author,
+        with_comments,
+        comment_sort_by_agree,
+        comment_rn,
+        is_fold,
+    )
+
     request = pack_proto_request(
         http_core,
         yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/pb/page", query_string=f"cmd={CMD}"),
-        pack_proto(
-            http_core.core,
-            tid,
-            pn,
-            rn,
-            sort,
-            only_thread_author,
-            with_comments,
-            comment_sort_by_agree,
-            comment_rn,
-            is_fold,
-        ),
+        req_proto,
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=128 * 1024)
-        posts = parse_body(body)
+    __log__ = "tid={tid}"  # noqa: F841
 
-    except Exception as err:
-        log_exception(sys._getframe(1), err, f"tid={tid}")
-        posts = Posts()._init_null()
-
-    return posts
+    body = await send_request(request, http_core.connector, read_bufsize=128 * 1024)
+    return parse_body(body)

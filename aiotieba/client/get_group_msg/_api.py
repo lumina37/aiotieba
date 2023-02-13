@@ -39,8 +39,8 @@ async def request(ws_core: WsCore, group_ids: List[int], get_type: int) -> List[
     data = pack_proto(ws_core.core, group_ids, msg_ids, get_type)
 
     try:
-        resq = await ws_core.send(data, CMD)
-        groups = parse_body(await resq.read())
+        resp = await ws_core.send(data, CMD)
+        groups = parse_body(await resp.read())
 
     except Exception as err:
         log_exception(sys._getframe(1), err, f"group_ids={group_ids}")

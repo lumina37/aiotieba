@@ -1,15 +1,18 @@
-import sys
 
 import yarl
 
 from .._core import HttpCore
-from .._helper import log_exception, pack_proto_request, send_request
+from .._helper import  pack_proto_request, send_request
 from ..const import APP_BASE_HOST, APP_INSECURE_SCHEME
 from ..exception import TiebaServerError
 from ._classdef import UserInfo_guinfo_app
 from .protobuf import GetUserInfoReqIdl_pb2, GetUserInfoResIdl_pb2
 
 CMD = 303024
+
+
+def null_ret_factory() -> UserInfo_guinfo_app:
+    return UserInfo_guinfo_app()._init_null()
 
 
 def pack_proto(user_id: int) -> bytes:
@@ -41,12 +44,7 @@ async def request_http(http_core: HttpCore, user_id: int) -> UserInfo_guinfo_app
         pack_proto(user_id),
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=1024)
-        user = parse_body(body)
+    __log__ = "user_id={user_id}"  # noqa: F841
 
-    except Exception as err:
-        log_exception(sys._getframe(1), err, f"user_id={user_id}")
-        user = UserInfo_guinfo_app()._init_null()
-
-    return user
+    body = await send_request(request, http_core.connector, read_bufsize=1024)
+    return parse_body(body)

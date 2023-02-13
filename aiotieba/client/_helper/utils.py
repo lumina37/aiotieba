@@ -6,7 +6,7 @@ import random
 import sys
 import urllib.parse
 from types import FrameType
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 import aiohttp
 import async_timeout
@@ -466,5 +466,47 @@ def log_success(frame: FrameType, log_str: str = '', log_level: int = logging.IN
     log_str = "Suceeded. " + log_str
     logger = get_logger()
     if logger.isEnabledFor(log_level):
-        record = logger.makeRecord(logger.name, log_level, None, frame.f_lineno, log_str, None, None, meth_name)
+        record = logger.makeRecord(logger.name, log_level, None, 0, log_str, None, None, meth_name)
         logger.handle(record)
+
+
+TypeNullRetFactory = Callable[[], Any]
+
+
+def handle_exception(null_ret_factory: TypeNullRetFactory, log_success: bool = False, log_level: int = logging.WARNING):
+    def wrapper(func):
+        async def awrapper(*args, **kwargs):
+            try:
+                ret = await func(*args, **kwargs)
+
+            except Exception as err:
+                meth_name = func.__name__
+
+                tb = err.__traceback__
+                while tb := tb.tb_next:
+                    frame = tb.tb_frame
+                    if frame.f_code.co_name == meth_name:
+                        break
+                if tb:
+                    frame = tb.tb_next.tb_frame
+
+                log_str: str = frame.f_locals.get('__log__', '')
+                if not log_success:  # need format
+                    log_str = log_str.format(**frame.f_locals)
+                log_str = f"{err}. {log_str}"
+
+                logger = get_logger()
+                if logger.isEnabledFor(log_level):
+                    record = logger.makeRecord(logger.name, log_level, None, 0, log_str, None, None, meth_name)
+                    logger.handle(record)
+
+                exc_handlers._handle(meth_name, err)
+
+                return null_ret_factory()
+
+            else:
+                return ret
+
+        return awrapper
+
+    return wrapper
