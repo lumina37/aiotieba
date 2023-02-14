@@ -1,9 +1,8 @@
-import sys
-
 import yarl
 
-from .._core import APP_BASE_HOST, HttpCore
-from .._helper import APP_SECURE_SCHEME, log_exception, pack_form_request, parse_json, send_request
+from .._core import HttpCore
+from .._helper import pack_form_request, parse_json, send_request
+from ..const import APP_BASE_HOST, APP_SECURE_SCHEME
 from ..exception import TiebaServerError
 
 
@@ -18,7 +17,6 @@ def parse_body(body: bytes) -> str:
 
 
 async def request(http_core: HttpCore) -> str:
-
     data = [('BDUSS', http_core.core._BDUSS)]
 
     request = pack_form_request(
@@ -27,12 +25,5 @@ async def request(http_core: HttpCore) -> str:
         data,
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=64 * 1024)
-        client_id = parse_body(body)
-
-    except Exception as err:
-        log_exception(sys._getframe(1), err)
-        client_id = ''
-
-    return client_id
+    body = await send_request(request, http_core.connector, read_bufsize=64 * 1024)
+    return parse_body(body)

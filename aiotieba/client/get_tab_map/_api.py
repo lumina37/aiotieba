@@ -1,10 +1,10 @@
-import sys
 from typing import Dict
 
 import yarl
 
-from .._core import APP_BASE_HOST, HttpCore, TbCore
-from .._helper import APP_SECURE_SCHEME, log_exception, pack_proto_request, send_request
+from .._core import HttpCore, TbCore, WsCore
+from .._helper import pack_proto_request, send_request
+from ..const import APP_BASE_HOST, APP_SECURE_SCHEME
 from ..exception import TiebaServerError
 from .protobuf import SearchPostForumReqIdl_pb2, SearchPostForumResIdl_pb2
 
@@ -33,21 +33,26 @@ def parse_body(body: bytes) -> Dict[str, int]:
 
 
 async def request_http(http_core: HttpCore, fname: str) -> Dict[str, int]:
+    data = pack_proto(http_core.core, fname)
 
     request = pack_proto_request(
         http_core,
         yarl.URL.build(
             scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/forum/searchPostForum", query_string=f"cmd={CMD}"
         ),
-        pack_proto(http_core.core, fname),
+        data,
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=4 * 1024)
-        tab_map = parse_body(body)
+    __log__ = "fname={fname}"  # noqa: F841
 
-    except Exception as err:
-        log_exception(sys._getframe(1), err, f"fname={fname}")
-        tab_map = {}
+    body = await send_request(request, http_core.connector, read_bufsize=4 * 1024)
+    return parse_body(body)
 
-    return tab_map
+
+async def request_ws(ws_core: WsCore, fname: str) -> Dict[str, int]:
+    data = pack_proto(ws_core.core, fname)
+
+    __log__ = "fname={fname}"  # noqa: F841
+
+    response = await ws_core.send(data, CMD)
+    return parse_body(await response.read())

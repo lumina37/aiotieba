@@ -1,3 +1,5 @@
+from typing import Optional
+
 from .._classdef import TypeMessage
 
 
@@ -33,30 +35,28 @@ class UserInfo_TUid(object):
         '_is_god',
     ]
 
-    def _init(self, data_proto: TypeMessage) -> "UserInfo_TUid":
-        self._user_id = data_proto.id
-        if '?' in (portrait := data_proto.portrait):
-            self._portrait = portrait[:-13]
+    def __init__(self, data_proto: Optional[TypeMessage]) -> None:
+        if data_proto:
+            self._user_id = data_proto.id
+            if '?' in (portrait := data_proto.portrait):
+                self._portrait = portrait[:-13]
+            else:
+                self._portrait = portrait
+            self._user_name = data_proto.name
+            self._nick_name_new = data_proto.name_show
+            self._tieba_uid = int(data_proto.tieba_uid)
+            self._age = float(data_proto.tb_age)
+            self._sign = data_proto.intro
+            self._is_god = bool(data_proto.new_god_data.status)
         else:
-            self._portrait = portrait
-        self._user_name = data_proto.name
-        self._nick_name_new = data_proto.name_show
-        self._tieba_uid = int(data_proto.tieba_uid)
-        self._age = float(data_proto.tb_age)
-        self._sign = data_proto.intro
-        self._is_god = bool(data_proto.new_god_data.status)
-        return self
-
-    def _init_null(self) -> "UserInfo_TUid":
-        self._user_id = 0
-        self._portrait = ''
-        self._user_name = ''
-        self._nick_name_new = ''
-        self._tieba_uid = 0
-        self._age = 0.0
-        self._sign = ''
-        self._is_god = False
-        return self
+            self._user_id = 0
+            self._portrait = ''
+            self._user_name = ''
+            self._nick_name_new = ''
+            self._tieba_uid = 0
+            self._age = 0.0
+            self._sign = ''
+            self._is_god = False
 
     def __str__(self) -> str:
         return self._user_name or self._portrait or str(self._user_id)

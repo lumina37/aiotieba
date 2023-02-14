@@ -1,6 +1,6 @@
 import hashlib
 import secrets
-from typing import Dict, Optional, Tuple, Union
+from typing import Optional, Tuple, Union
 
 import aiohttp
 import yarl
@@ -39,7 +39,7 @@ class TbCore(object):
         '_proxy_auth',
     ]
 
-    main_version = "12.36.0.1"  # 最新版本
+    main_version = "12.36.3.0"  # 最新版本
     # no_fold_version = "12.12.1.0"  # 最后一个回复列表不发生折叠的版本
     post_version = "9.1.0.0"  # 极速版
 
@@ -48,8 +48,9 @@ class TbCore(object):
         BDUSS_key: Optional[str] = None,
         proxy: Union[Tuple[yarl.URL, aiohttp.BasicAuth], Tuple[None, None]] = (None, None),
     ) -> None:
-        self._BDUSS_key: str = BDUSS_key
-        user_cfg: Dict[str, str] = CONFIG['User'].get(BDUSS_key, {})
+        self._BDUSS_key = BDUSS_key
+        users_cfg = CONFIG.setdefault('User', {})
+        user_cfg = users_cfg.get(BDUSS_key, {})
         self.BDUSS = user_cfg.get('BDUSS', '')
         self.STOKEN = user_cfg.get('STOKEN', '')
 
@@ -86,7 +87,7 @@ class TbCore(object):
 
     @BDUSS.setter
     def BDUSS(self, new_BDUSS: str) -> None:
-        if len(new_BDUSS) != 192:
+        if new_BDUSS and len(new_BDUSS) != 192:
             raise ValueError(f"BDUSS的长度应为192个字符 而输入的{new_BDUSS}有{len(new_BDUSS)}个字符")
         self._BDUSS = new_BDUSS
 
@@ -100,7 +101,7 @@ class TbCore(object):
 
     @STOKEN.setter
     def STOKEN(self, new_STOKEN: str) -> None:
-        if len(new_STOKEN) != 64:
+        if new_STOKEN and len(new_STOKEN) != 64:
             raise ValueError(f"STOKEN的长度应为64个字符 而输入的{new_STOKEN}有{len(new_STOKEN)}个字符")
         self._STOKEN = new_STOKEN
 

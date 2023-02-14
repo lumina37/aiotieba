@@ -1,9 +1,8 @@
-import sys
-
 import yarl
 
-from .._core import WEB_BASE_HOST, HttpCore
-from .._helper import log_exception, pack_web_get_request, parse_json, send_request
+from .._core import HttpCore
+from .._helper import pack_web_get_request, parse_json, send_request
+from ..const import WEB_BASE_HOST
 from ..exception import TiebaServerError
 from ._classdef import Blocks
 
@@ -13,13 +12,12 @@ def parse_body(body: bytes) -> Blocks:
     if code := res_json['no']:
         raise TiebaServerError(code, res_json['error'])
 
-    blocks = Blocks()._init(res_json)
+    blocks = Blocks(res_json)
 
     return blocks
 
 
 async def request(http_core: HttpCore, fname: str, fid: int, name: str, pn: int) -> Blocks:
-
     params = [
         ('fn', fname),
         ('fid', fid),
@@ -34,12 +32,7 @@ async def request(http_core: HttpCore, fname: str, fid: int, name: str, pn: int)
         params,
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=64 * 1024)
-        blocks = parse_body(body)
+    __log__ = "fname={fname}"  # noqa: F841
 
-    except Exception as err:
-        log_exception(sys._getframe(1), err, f"fname={fname}")
-        blocks = Blocks()._init_null()
-
-    return blocks
+    body = await send_request(request, http_core.connector, read_bufsize=64 * 1024)
+    return parse_body(body)

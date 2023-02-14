@@ -1,2 +1,2 @@
 from ._api import parse_body, request
-from ._classdef import Fans
+from ._classdef import Fan, Fans

@@ -6,7 +6,7 @@ import random
 import sys
 import urllib.parse
 from types import FrameType
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 import aiohttp
 import async_timeout
@@ -17,8 +17,8 @@ from Crypto.Util.Padding import pad, unpad
 from ..._logging import get_logger
 from .._core import HttpCore, TbCore
 from .._crypto import sign as _sign
+from ..const import TIME_CONFIG
 from ..exception import HTTPStatusError, exc_handlers
-from ._const import DEFAULT_TIMEOUT
 
 try:
     import simdjson as jsonlib
@@ -344,6 +344,55 @@ def check_status_code(response: aiohttp.ClientResponse) -> None:
 TypeHeadersChecker = Callable[[aiohttp.ClientResponse], None]
 
 
+async def _send_request(
+    request: aiohttp.ClientRequest,
+    connector: aiohttp.TCPConnector,
+    read_until_eof: bool = True,
+    read_bufsize: int = 64 * 1024,
+) -> aiohttp.ClientResponse:
+    """
+    发送http请求并返回ClientResponse
+
+    Args:
+        request (aiohttp.ClientRequest): 待发送的请求
+        connector (aiohttp.TCPConnector): 用于生成TCP连接的连接器
+        read_until_eof (bool, optional): 是否读取到EOF就中止. Defaults to True.
+        read_bufsize (int, optional): 读缓冲区大小 以字节为单位. Defaults to 64KiB.
+
+    Returns:
+        ClientResponse: 响应
+    """
+
+    # 获取TCP连接
+    try:
+        async with timeout(TIME_CONFIG.http_connect, connector._loop):
+            conn = await connector.connect(request, [], TIME_CONFIG.http)
+    except asyncio.TimeoutError as exc:
+        raise aiohttp.ServerTimeoutError(f"Connection timeout to host {request.url}") from exc
+
+    # 设置响应解析流程
+    conn.protocol.set_response_params(
+        read_until_eof=read_until_eof,
+        auto_decompress=True,
+        read_timeout=TIME_CONFIG.http_read,
+        read_bufsize=read_bufsize,
+    )
+
+    # 发送请求
+    try:
+        response = await request.send(conn)
+    except BaseException:
+        conn.close()
+        raise
+    try:
+        await response.start(conn)
+    except BaseException:
+        response.close()
+        raise
+
+    return response
+
+
 async def send_request(
     request: aiohttp.ClientRequest,
     connector: aiohttp.TCPConnector,
@@ -364,32 +413,7 @@ async def send_request(
         bytes: body
     """
 
-    # 获取TCP连接
-    try:
-        async with timeout(DEFAULT_TIMEOUT.connect, connector._loop):
-            conn = await connector.connect(request, [], DEFAULT_TIMEOUT)
-    except asyncio.TimeoutError as exc:
-        raise aiohttp.ServerTimeoutError(f"Connection timeout to host {request.url}") from exc
-
-    # 设置响应解析流程
-    conn.protocol.set_response_params(
-        read_until_eof=True,
-        auto_decompress=True,
-        read_timeout=DEFAULT_TIMEOUT.sock_read,
-        read_bufsize=read_bufsize,
-    )
-
-    # 发送请求
-    try:
-        response = await request.send(conn)
-    except BaseException:
-        conn.close()
-        raise
-    try:
-        await response.start(conn)
-    except BaseException:
-        response.close()
-        raise
+    response = await _send_request(request, connector, True, read_bufsize)
 
     # 合并cookies
     # cookie_jar.update_cookies(response.cookies, response._url)
@@ -407,27 +431,6 @@ async def send_request(
     return body
 
 
-def log_exception(frame: FrameType, err: Exception, log_str: str = '', log_level: int = logging.WARNING):
-    """
-    异常日志
-
-    Args:
-        frame (FrameType): 帧对象
-        err (Exception): 异常对象
-        log_str (str): 附加日志
-        log_level (int): 日志等级
-    """
-
-    meth_name = frame.f_code.co_name
-    log_str = f"{err}. {log_str}"
-    logger = get_logger()
-    if logger.isEnabledFor(log_level):
-        record = logger.makeRecord(logger.name, log_level, None, frame.f_lineno, log_str, None, None, meth_name)
-        logger.handle(record)
-
-    exc_handlers._handle(meth_name, err)
-
-
 def log_success(frame: FrameType, log_str: str = '', log_level: int = logging.INFO):
     """
     成功日志
@@ -442,5 +445,45 @@ def log_success(frame: FrameType, log_str: str = '', log_level: int = logging.IN
     log_str = "Suceeded. " + log_str
     logger = get_logger()
     if logger.isEnabledFor(log_level):
-        record = logger.makeRecord(logger.name, log_level, None, frame.f_lineno, log_str, None, None, meth_name)
+        record = logger.makeRecord(logger.name, log_level, None, 0, log_str, None, None, meth_name)
         logger.handle(record)
+
+
+TypeNullRetFactory = Callable[[], Any]
+
+
+def handle_exception(null_ret_factory: TypeNullRetFactory, log_success: bool = False, log_level: int = logging.WARNING):
+    def wrapper(func):
+        async def awrapper(*args, **kwargs):
+            try:
+                ret = await func(*args, **kwargs)
+
+            except Exception as err:
+                meth_name = func.__name__
+                tb = err.__traceback__
+                while tb := tb.tb_next:
+                    frame = tb.tb_frame
+                    if frame.f_code.co_name == meth_name:
+                        break
+                frame = tb.tb_next.tb_frame
+
+                log_str: str = frame.f_locals.get('__log__', '')
+                if not log_success:  # need format
+                    log_str = log_str.format(**frame.f_locals)
+                log_str = f"{err}. {log_str}"
+
+                logger = get_logger()
+                if logger.isEnabledFor(log_level):
+                    record = logger.makeRecord(logger.name, log_level, None, 0, log_str, None, None, meth_name)
+                    logger.handle(record)
+
+                exc_handlers._handle(meth_name, err)
+
+                return null_ret_factory()
+
+            else:
+                return ret
+
+        return awrapper
+
+    return wrapper

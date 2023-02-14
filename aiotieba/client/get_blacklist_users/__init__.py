@@ -1,2 +1,2 @@
 from ._api import parse_body, request
-from ._classdef import BlacklistUsers
+from ._classdef import BlacklistUser, BlacklistUsers

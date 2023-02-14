@@ -1,4 +1,4 @@
-from typing import Iterable, List
+from typing import Iterable, List, Optional
 
 from .._classdef import Containers, Forum, TypeMessage, VirtualImage, VoteInfo
 from .._classdef.contents import (
@@ -499,7 +499,7 @@ class Comment_p(object):
         '_create_time',
     ]
 
-    def _init(self, data_proto: TypeMessage) -> "Comment_p":
+    def __init__(self, data_proto: TypeMessage) -> None:
         contents = Contents_pc()._init(data_proto.content)
 
         self._reply_to_id = 0
@@ -527,8 +527,6 @@ class Comment_p(object):
         self._agree = data_proto.agree.agree_num
         self._disagree = data_proto.agree.disagree_num
         self._create_time = data_proto.time
-
-        return self
 
     def __repr__(self) -> str:
         return str(
@@ -973,11 +971,11 @@ class Post(object):
         '_is_thread_author',
     ]
 
-    def _init(self, data_proto: TypeMessage) -> "Post":
+    def __init__(self, data_proto: TypeMessage) -> None:
         self._text = None
         self._contents = Contents_p()._init(data_proto.content)
         self._sign = "".join(p.text for p in data_proto.signature.content if p.type == 0)
-        self._comments = [Comment_p()._init(p) for p in data_proto.sub_post_list.sub_post_list]
+        self._comments = [Comment_p(p) for p in data_proto.sub_post_list.sub_post_list]
         self._pid = data_proto.id
         self._author_id = data_proto.author_id
         self._vimage = VirtualImage_p()._init(data_proto)
@@ -986,7 +984,6 @@ class Post(object):
         self._agree = data_proto.agree.agree_num
         self._disagree = data_proto.agree.disagree_num
         self._create_time = data_proto.time
-        return self
 
     def __repr__(self) -> str:
         return str(
@@ -2264,41 +2261,38 @@ class Posts(Containers[Post]):
         '_has_fold',
     ]
 
-    def _init(self, data_proto: TypeMessage) -> "Posts":
+    def __init__(self, data_proto: Optional[TypeMessage] = None) -> None:
+        if data_proto:
+            self._page = Page_p()._init(data_proto.page)
+            self._forum = Forum_p()._init(data_proto.forum)
+            self._thread = Thread_p()._init(data_proto.thread)
+            self._has_fold = bool(data_proto.has_fold_comment)
 
-        self._page = Page_p()._init(data_proto.page)
-        self._forum = Forum_p()._init(data_proto.forum)
-        self._thread = Thread_p()._init(data_proto.thread)
-        self._has_fold = bool(data_proto.has_fold_comment)
+            self._thread._fid = self._forum._fid
+            self._thread._fname = self._forum._fname
 
-        self._thread._fid = self._forum._fid
-        self._thread._fname = self._forum._fname
+            self._objs = [Post(p) for p in data_proto.post_list]
+            users = {p.id: UserInfo_p()._init(p) for p in data_proto.user_list if p.id}
+            for post in self._objs:
+                post._fid = self._forum._fid
+                post._fname = self._forum._fname
+                post._tid = self._thread._tid
+                post._user = users[post._author_id]
+                post._is_thread_author = self._thread._author_id == post._author_id
+                for comment in post.comments:
+                    comment._fid = post._fid
+                    comment._fname = post._fname
+                    comment._tid = post._tid
+                    comment._ppid = post._pid
+                    comment._floor = post._floor
+                    comment._user = users[comment._author_id]
 
-        self._objs = [Post()._init(p) for p in data_proto.post_list]
-        users = {p.id: UserInfo_p()._init(p) for p in data_proto.user_list if p.id}
-        for post in self._objs:
-            post._fid = self._forum._fid
-            post._fname = self._forum._fname
-            post._tid = self._thread._tid
-            post._user = users[post._author_id]
-            post._is_thread_author = self._thread._author_id == post._author_id
-            for comment in post.comments:
-                comment._fid = post._fid
-                comment._fname = post._fname
-                comment._tid = post._tid
-                comment._ppid = post._pid
-                comment._floor = post._floor
-                comment._user = users[comment._author_id]
-
-        return self
-
-    def _init_null(self) -> "Posts":
-        self._objs = []
-        self._page = Page_p()._init_null()
-        self._forum = Forum_p()._init_null()
-        self._thread = Thread_p()._init_null()
-        self._has_fold = False
-        return self
+        else:
+            self._objs = []
+            self._page = Page_p()._init_null()
+            self._forum = Forum_p()._init_null()
+            self._thread = Thread_p()._init_null()
+            self._has_fold = False
 
     @property
     def page(self) -> Page_p:

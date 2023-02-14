@@ -6,9 +6,13 @@
 #include "_zid.h"
 #include "_sign.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 PyObject *cuid_galaxy2(PyObject *self, PyObject *args)
 {
-	char dst[TBH_CUID_GALAXY2_SIZE];
+	char dst[TBC_CUID_GALAXY2_SIZE];
 	const char *androidID;
 	Py_ssize_t androidIDSize;
 
@@ -18,10 +22,10 @@ PyObject *cuid_galaxy2(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-	int err = tbh_cuid_galaxy2(dst, androidID);
+	int err = tbc_cuid_galaxy2(dst, androidID);
 	if (err)
 	{
-		if (err == TBH_MEMORY_ERROR)
+		if (err == TBC_MEMORY_ERROR)
 		{
 			PyErr_NoMemory();
 			return NULL;
@@ -33,12 +37,12 @@ PyObject *cuid_galaxy2(PyObject *self, PyObject *args)
 		}
 	}
 
-	return PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, dst, TBH_CUID_GALAXY2_SIZE);
+	return PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, dst, TBC_CUID_GALAXY2_SIZE);
 }
 
 PyObject *c3_aid(PyObject *self, PyObject *args)
 {
-	char dst[TBH_C3_AID_SIZE];
+	char dst[TBC_C3_AID_SIZE];
 	const char *androidID;
 	Py_ssize_t androidIDSize;
 	const char *uuid;
@@ -50,10 +54,10 @@ PyObject *c3_aid(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-	int err = tbh_c3_aid(dst, androidID, uuid);
+	int err = tbc_c3_aid(dst, androidID, uuid);
 	if (err)
 	{
-		if (err == TBH_MEMORY_ERROR)
+		if (err == TBC_MEMORY_ERROR)
 		{
 			PyErr_NoMemory();
 			return NULL;
@@ -65,27 +69,27 @@ PyObject *c3_aid(PyObject *self, PyObject *args)
 		}
 	}
 
-	return PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, dst, TBH_C3_AID_SIZE);
+	return PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, dst, TBC_C3_AID_SIZE);
 }
 
-PyObject *inv_rc4(PyObject *self, PyObject *args)
+PyObject *rc4_42(PyObject *self, PyObject *args)
 {
-	char dst[TBH_INV_RC4_SIZE];
-	const char *secKey;
-	Py_ssize_t secKeySize;
-	const char *xyusMd5;
+	char dst[TBC_RC4_SIZE];
+	const char *xyusMd5Str;
 	Py_ssize_t xyusMd5Size;
+	const char *cbcSecKey;
+	Py_ssize_t cbcSecKeySize;
 
-	if (!PyArg_ParseTuple(args, "y#y#", &secKey, &secKeySize, &xyusMd5, &xyusMd5Size))
+	if (!PyArg_ParseTuple(args, "s#y#", &xyusMd5Str, &xyusMd5Size, &cbcSecKey, &cbcSecKeySize))
 	{
 		PyErr_SetString(PyExc_ValueError, "failed to parse args");
 		return NULL;
 	}
 
-	int err = tbh_invRC4(dst, secKey, xyusMd5);
+	int err = tbc_rc4_42(dst, xyusMd5Str, cbcSecKey);
 	if (err)
 	{
-		if (err == TBH_MEMORY_ERROR)
+		if (err == TBC_MEMORY_ERROR)
 		{
 			PyErr_NoMemory();
 			return NULL;
@@ -97,13 +101,13 @@ PyObject *inv_rc4(PyObject *self, PyObject *args)
 		}
 	}
 
-	return PyBytes_FromStringAndSize(dst, TBH_INV_RC4_SIZE);
+	return PyBytes_FromStringAndSize(dst, TBC_RC4_SIZE);
 }
 
 static PyMethodDef crypto_methods[] = {
 	{"cuid_galaxy2", (PyCFunction)cuid_galaxy2, METH_VARARGS, NULL},
 	{"c3_aid", (PyCFunction)c3_aid, METH_VARARGS, NULL},
-	{"inv_rc4", (PyCFunction)inv_rc4, METH_VARARGS, NULL},
+	{"rc4_42", (PyCFunction)rc4_42, METH_VARARGS, NULL},
 	{"sign", (PyCFunction)sign, METH_VARARGS, NULL},
 	{NULL, NULL, 0, NULL},
 };
@@ -120,3 +124,7 @@ PyMODINIT_FUNC PyInit_crypto()
 {
 	return PyModule_Create(&crypto_module);
 }
+
+#ifdef __cplusplus
+}
+#endif

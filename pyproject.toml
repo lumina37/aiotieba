@@ -9,50 +9,50 @@ description = "Asynchronous I/O Client for Baidu Tieba"
 readme = "README.md"
 requires-python = ">=3.8"
 authors = [{ name = "Starry-OvO", email = "starry.qvq@gmail.com" }]
-keywords = ["tieba", "crawler", "spider"]
+keywords = ["baidu", "tieba"]
 classifiers = [
-    "Development Status :: 4 - Beta",
-    "Framework :: AsyncIO",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: The Unlicense (Unlicense)",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Topic :: Internet :: WWW/HTTP :: Session",
+  "Development Status :: 4 - Beta",
+  "Framework :: AsyncIO",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: The Unlicense (Unlicense)",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Internet :: WWW/HTTP :: Session",
 ]
 dependencies = [
-    "beautifulsoup4<5,>=4.0.0",
-    "aiohttp<4,>=3.8.0,!=3.8.2",
-    "lxml<5,>=4.0.0",
-    "protobuf<5,>=4.12.0",
-    "pycryptodome<4,>=3.0.0",
-    "tomli<3,>=2.0.0;python_version<'3.11'",
+  "aiohttp<4,>=3.8.4",
+  "beautifulsoup4<5,>=4.0.0",
+  "lxml<5,>=4.0.0",
+  "protobuf<5,>=4.12.0",
+  "pycryptodome<4,>=3.0.0",
+  "tomli<3,>=2.0.0;python_version<'3.11'",
 ]
 dynamic = ["version"]
 
 [project.optional-dependencies]
-img = ["opencv-contrib-python<4.8,>=4.6.0.66"]
-speedup = ["pysimdjson<5.1,>=5.0.0", "aiodns<4,>=3.0.0"]
+img = [
+  "opencv-contrib-python<4.8,>=4.6.0.66;sys_platform=='win32'",
+  "opencv-contrib-python-headless<4.8,>=4.6.0.66;sys_platform!='win32'",
+]
+speedup = ["aiodns<4,>=3.0.0", "pysimdjson<5.1,>=5.0.0", "uvloop<0.18,>=0.5.3;sys_platform!='win32'"]
 
 [tool.setuptools.packages.find]
-include = ["aiotieba*"]
+where = ["."]
 
 [tool.setuptools.dynamic]
 version = { attr = "aiotieba.__version__.__version__" }
 
+[tool.setuptools.package-data]
+"*" = ["*.pyi"]
+
 [tool.black]
 line-length = 120
 skip-string-normalization = true
-extend-exclude = ["*_pb2.py"]
 target-version = ["py38"]
-
-[tool.isort]
-profile = "black"
-line_length = 120
-py_version = "38"
-extend_skip_glob = ["*_pb2.py"]
+extend-exclude = ".*_pb2.py"
 
 [tool.ruff]
 line-length = 120
@@ -60,6 +60,10 @@ select = ["W", "E", "F", "I"]
 ignore = ["E402", "E501"]
 target-version = "py38"
 extend-exclude = ["*_pb2.py"]
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]
+"typing.py" = ["F401"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"

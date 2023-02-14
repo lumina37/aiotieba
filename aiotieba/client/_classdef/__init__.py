@@ -1,5 +1,4 @@
 from .._core import TbCore
-from .._helper import ForumInfoCache
 from .common import TypeMessage
 from .container import Containers
 from .contents import (
@@ -21,7 +20,6 @@ from .contents import (
     TypeFragText,
     TypeFragTiebaPlus,
 )
-from .enums import GroupType, MsgType, ReqUInfo
 from .forum import Forum
 from .user import UserInfo
 from .vimage import VirtualImage

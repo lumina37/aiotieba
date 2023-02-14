@@ -1,4 +1,4 @@
-from typing import Mapping
+from typing import Mapping, Optional
 
 
 class UserInfo_selfinit(object):
@@ -21,17 +21,15 @@ class UserInfo_selfinit(object):
         '_tieba_uid',
     ]
 
-    def _init(self, data_map: Mapping) -> "UserInfo_selfinit":
-        self._user_name = data_map['user_name']
-        self._nick_name_old = data_map['name_show']
-        self._tieba_uid = data_map['tieba_uid']
-        return self
-
-    def _init_null(self) -> "UserInfo_selfinit":
-        self._nick_name_old = ''
-        self._user_name = ''
-        self._tieba_uid = 0
-        return self
+    def __init__(self, data_map: Optional[Mapping] = None) -> None:
+        if data_map:
+            self._user_name = data_map['user_name']
+            self._nick_name_old = data_map['name_show']
+            self._tieba_uid = data_map['tieba_uid']
+        else:
+            self._nick_name_old = ''
+            self._user_name = ''
+            self._tieba_uid = 0
 
     def __str__(self) -> str:
         return self._user_name

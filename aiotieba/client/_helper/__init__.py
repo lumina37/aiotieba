@@ -1,11 +1,11 @@
-from ._cache import ForumInfoCache
-from ._const import APP_INSECURE_SCHEME, APP_SECURE_SCHEME, CHECK_URL_PERFIX, DEFAULT_TIMEOUT
-from ._func import (
+from .enums import GroupType, MsgType, PostSortType, ReqUInfo, ThreadSortType
+from .utils import (
     TypeHeadersChecker,
+    _send_request,
     check_status_code,
+    handle_exception,
     is_portrait,
     jsonlib,
-    log_exception,
     log_success,
     pack_form_request,
     pack_json,

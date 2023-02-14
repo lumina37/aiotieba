@@ -4,10 +4,8 @@ from typing import Dict, Optional
 import aiohttp
 
 from ...__version__ import __version__
+from ..const import APP_BASE_HOST
 from ._core import TbCore
-
-APP_BASE_HOST = "tiebac.baidu.com"
-WEB_BASE_HOST = "tieba.baidu.com"
 
 
 class HttpContainer(object):
@@ -45,12 +43,11 @@ class HttpCore(object):
         connector: aiohttp.TCPConnector,
         loop: Optional[asyncio.AbstractEventLoop] = None,
     ) -> None:
-
-        self.core: TbCore = core
-        self.connector: aiohttp.TCPConnector = connector
+        self.core = core
+        self.connector = connector
         self.loop: asyncio.AbstractEventLoop = loop
 
-        hdrs = aiohttp.hdrs
+        from aiohttp import hdrs
 
         app_headers = {
             hdrs.USER_AGENT: f"aiotieba/{__version__}",
@@ -79,8 +76,8 @@ class HttpCore(object):
         BDUSS_morsel = aiohttp.cookiejar.Morsel()
         BDUSS_morsel.set('BDUSS', core._BDUSS, core._BDUSS)
         BDUSS_morsel['domain'] = "baidu.com"
-        self.web.cookie_jar._cookies["baidu.com"]['BDUSS'] = BDUSS_morsel
+        self.web.cookie_jar._cookies[("baidu.com", "/")]['BDUSS'] = BDUSS_morsel
         STOKEN_morsel = aiohttp.cookiejar.Morsel()
         STOKEN_morsel.set('STOKEN', core._STOKEN, core._STOKEN)
         STOKEN_morsel['domain'] = "tieba.baidu.com"
-        self.web.cookie_jar._cookies["tieba.baidu.com"]['STOKEN'] = STOKEN_morsel
+        self.web.cookie_jar._cookies[("tieba.baidu.com", "/")]['STOKEN'] = STOKEN_morsel

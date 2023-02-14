@@ -1,3 +1,5 @@
+from typing import Optional
+
 import bs4
 
 from .._classdef import Containers
@@ -19,13 +21,12 @@ class MemberUser(object):
         '_level',
     ]
 
-    def _init(self, data_tag: bs4.element.Tag) -> "MemberUser":
+    def __init__(self, data_tag: bs4.element.Tag) -> None:
         user_item = data_tag.a
         self._user_name = user_item['title']
         self._portrait = user_item['href'][14:]
         level_item = data_tag.span
         self._level = int(level_item['class'][1][12:])
-        return self
 
     def __repr__(self) -> str:
         return str(
@@ -160,15 +161,15 @@ class MemberUsers(Containers[MemberUser]):
 
     __slots__ = ['_page']
 
-    def _init(self, data_soup: bs4.BeautifulSoup) -> "MemberUsers":
-        self._objs = [MemberUser()._init(t) for t in data_soup('div', class_='name_wrap')]
-        self._page = Page_member()._init(data_soup.find('div', class_='tbui_pagination').find('li', class_='active'))
-        return self
-
-    def _init_null(self) -> "MemberUsers":
-        self._objs = []
-        self._page = Page_member()._init_null()
-        return self
+    def __init__(self, data_soup: Optional[bs4.BeautifulSoup] = None) -> None:
+        if data_soup:
+            self._objs = [MemberUser(t) for t in data_soup('div', class_='name_wrap')]
+            self._page = Page_member()._init(
+                data_soup.find('div', class_='tbui_pagination').find('li', class_='active')
+            )
+        else:
+            self._objs = []
+            self._page = Page_member()._init_null()
 
     @property
     def page(self) -> Page_member:

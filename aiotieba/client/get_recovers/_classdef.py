@@ -1,4 +1,4 @@
-from typing import Mapping
+from typing import Mapping, Optional
 
 import bs4
 
@@ -25,7 +25,7 @@ class Recover(object):
         '_oper',
     ]
 
-    def _init(self, data_tag: bs4.element.Tag) -> "Recover":
+    def __init__(self, data_tag: bs4.element.Tag) -> None:
         id_tag = data_tag.a
         self._tid = int(id_tag['attr-tid'])
         self._pid = int(id_tag['attr-pid'])
@@ -34,15 +34,6 @@ class Recover(object):
         self._text = text_tag.string
         oper_tag = id_tag.next_sibling.find('span', class_="recover_list_item_operator")
         self._oper = oper_tag.string[4:]
-        return self
-
-    def _init_null(self) -> "Recover":
-        self._text = ""
-        self._tid = 0
-        self._pid = 0
-        self._is_hide = False
-        self._oper = ''
-        return self
 
     def __repr__(self) -> str:
         return str(
@@ -184,16 +175,14 @@ class Recovers(Containers[Recover]):
 
     __slots__ = ['_page']
 
-    def _init(self, data_map: Mapping) -> "Recovers":
-        data_soup = bs4.BeautifulSoup(data_map['data']['content'], 'lxml')
-        self._objs = [Recover()._init(t) for t in data_soup('li')]
-        self._page = Page_recover()._init(data_map['data']['page'])
-        return self
-
-    def _init_null(self) -> "Recovers":
-        self._objs = []
-        self._page = Page_recover()._init_null()
-        return self
+    def __init__(self, data_map: Optional[Mapping] = None) -> None:
+        if data_map:
+            data_soup = bs4.BeautifulSoup(data_map['data']['content'], 'lxml')
+            self._objs = [Recover(t) for t in data_soup('li')]
+            self._page = Page_recover()._init(data_map['data']['page'])
+        else:
+            self._objs = []
+            self._page = Page_recover()._init_null()
 
     @property
     def has_more(self) -> bool:

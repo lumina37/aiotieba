@@ -10,17 +10,17 @@ async def test_get_user_info(client: tb.Client):
     assert self_info.portrait != ''
     assert self_info.user_name != ''
 
-    user = await client.get_user_info(self_info.portrait, tb.ReqUInfo.BASIC)
+    user = await client.get_user_info(self_info.portrait, tb.enums.ReqUInfo.BASIC)
     assert user.user_id == self_info.user_id
     assert user.portrait == self_info.portrait
     assert user.user_name == self_info.user_name
 
-    user = await client.get_user_info(user.user_id, tb.ReqUInfo.BASIC)
+    user = await client.get_user_info(user.user_id, tb.enums.ReqUInfo.BASIC)
     assert user.user_id == self_info.user_id
     assert user.portrait == self_info.portrait
     assert user.user_name == self_info.user_name
 
-    user = await client.get_user_info(user.user_name, tb.ReqUInfo.BASIC)
+    user = await client.get_user_info(user.user_name, tb.enums.ReqUInfo.BASIC)
     assert user.user_id == self_info.user_id
     assert user.portrait == self_info.portrait
     assert user.user_name == self_info.user_name

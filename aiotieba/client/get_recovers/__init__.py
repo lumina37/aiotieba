@@ -1,2 +1,2 @@
 from ._api import parse_body, request
-from ._classdef import Recovers
+from ._classdef import Recover, Recovers

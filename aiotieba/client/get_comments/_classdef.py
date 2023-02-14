@@ -1,4 +1,4 @@
-from typing import Iterable, List
+from typing import Iterable, List, Optional
 
 from .._classdef import Containers, Forum, TypeMessage
 from .._classdef.contents import (
@@ -446,7 +446,7 @@ class Comment(object):
         '_create_time',
     ]
 
-    def _init(self, data_proto: TypeMessage) -> "Comment":
+    def __init__(self, data_proto: TypeMessage) -> None:
         contents = Contents_c()._init(data_proto.content)
 
         self._reply_to_id = 0
@@ -475,8 +475,6 @@ class Comment(object):
         self._agree = data_proto.agree.agree_num
         self._disagree = data_proto.agree.disagree_num
         self._create_time = data_proto.time
-
-        return self
 
     def __repr__(self) -> str:
         return str(
@@ -1737,34 +1735,32 @@ class Comments(Containers[Comment]):
         '_post',
     ]
 
-    def _init(self, data_proto: TypeMessage) -> "Comments":
-        self._page = Page_c()._init(data_proto.page)
-        self._forum = Forum_c()._init(data_proto.forum)
-        self._thread = Thread_c()._init(data_proto.thread)
-        self._thread._fid = self._forum._fid
-        self._thread._fname = self._forum._fname
-        self._post = Post_c()._init(data_proto.post)
-        self._post._fid = self._thread._fid
-        self._post._fname = self._thread._fname
-        self._post._tid = self._thread._tid
+    def __init__(self, data_proto: Optional[TypeMessage] = None) -> None:
+        if data_proto:
+            self._page = Page_c()._init(data_proto.page)
+            self._forum = Forum_c()._init(data_proto.forum)
+            self._thread = Thread_c()._init(data_proto.thread)
+            self._thread._fid = self._forum._fid
+            self._thread._fname = self._forum._fname
+            self._post = Post_c()._init(data_proto.post)
+            self._post._fid = self._thread._fid
+            self._post._fname = self._thread._fname
+            self._post._tid = self._thread._tid
 
-        self._objs = [Comment()._init(p) for p in data_proto.subpost_list]
-        for comment in self._objs:
-            comment._fid = self.forum._fid
-            comment._fname = self.forum._fname
-            comment._tid = self.thread._tid
-            comment._ppid = self._post._pid
-            comment._floor = self._post._floor
+            self._objs = [Comment(p) for p in data_proto.subpost_list]
+            for comment in self._objs:
+                comment._fid = self.forum._fid
+                comment._fname = self.forum._fname
+                comment._tid = self.thread._tid
+                comment._ppid = self._post._pid
+                comment._floor = self._post._floor
 
-        return self
-
-    def _init_null(self) -> "Comments":
-        self._objs = []
-        self._page = Page_c()._init_null()
-        self._forum = Forum_c()._init_null()
-        self._thread = Thread_c()._init_null()
-        self._post = Post_c()._init_null()
-        return self
+        else:
+            self._objs = []
+            self._page = Page_c()._init_null()
+            self._forum = Forum_c()._init_null()
+            self._thread = Thread_c()._init_null()
+            self._post = Post_c()._init_null()
 
     @property
     def page(self) -> Page_c:

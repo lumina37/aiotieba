@@ -14,14 +14,13 @@ class WsNotify(object):
         '_create_time',
     ]
 
-    def _init(self, data_proto: TypeMessage) -> "WsNotify":
+    def __init__(self, data_proto: TypeMessage) -> None:
         data_proto = data_proto.data
         self._note_type = data_proto.type
         self._group_type = data_proto.groupType
         self._group_id = data_proto.groupId
         self._msg_id = data_proto.msgId
         self._create_time = str(create_time) if (create_time := data_proto.et) else 0
-        return self
 
     def __repr__(self) -> str:
         return str(

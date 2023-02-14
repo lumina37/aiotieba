@@ -1,9 +1,8 @@
-import sys
-
 import yarl
 
-from .._core import WEB_BASE_HOST, HttpCore
-from .._helper import log_exception, pack_web_get_request, parse_json, send_request
+from .._core import HttpCore
+from .._helper import pack_web_get_request, parse_json, send_request
+from ..const import WEB_BASE_HOST
 from ..exception import TiebaServerError, TiebaValueError
 
 
@@ -19,7 +18,6 @@ def parse_body(body: bytes) -> int:
 
 
 async def request(http_core: HttpCore, fname: str) -> int:
-
     params = [
         ('fname', fname),
         ('ie', 'utf-8'),
@@ -31,12 +29,7 @@ async def request(http_core: HttpCore, fname: str) -> int:
         params,
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=2 * 1024)
-        fid = parse_body(body)
+    __log__ = "fname={fname}"  # noqa: F841
 
-    except Exception as err:
-        log_exception(sys._getframe(1), err, f"fname={fname}")
-        fid = 0
-
-    return fid
+    body = await send_request(request, http_core.connector, read_bufsize=2 * 1024)
+    return parse_body(body)

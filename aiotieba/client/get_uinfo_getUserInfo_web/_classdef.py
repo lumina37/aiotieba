@@ -1,4 +1,4 @@
-from typing import Mapping
+from typing import Mapping, Optional
 
 
 class UserInfo_guinfo_web(object):
@@ -23,19 +23,17 @@ class UserInfo_guinfo_web(object):
         '_nick_name_new',
     ]
 
-    def _init(self, data_map: Mapping) -> "UserInfo_guinfo_web":
-        self._user_id = data_map['uid']
-        self._portrait = data_map['portrait']
-        self._user_name = user_name if (user_name := data_map['uname']) != self._user_id else ''
-        self._nick_name_new = data_map['show_nickname']
-        return self
-
-    def _init_null(self) -> "UserInfo_guinfo_web":
-        self._user_id = 0
-        self._portrait = ''
-        self._user_name = ''
-        self._nick_name_new = ''
-        return self
+    def __init__(self, data_map: Optional[Mapping] = None) -> None:
+        if data_map:
+            self._user_id = data_map['uid']
+            self._portrait = data_map['portrait']
+            self._user_name = user_name if (user_name := data_map['uname']) != self._user_id else ''
+            self._nick_name_new = data_map['show_nickname']
+        else:
+            self._user_id = 0
+            self._portrait = ''
+            self._user_name = ''
+            self._nick_name_new = ''
 
     def __str__(self) -> str:
         return self._user_name or self._portrait or str(self._user_id)

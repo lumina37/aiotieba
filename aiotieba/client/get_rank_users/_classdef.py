@@ -1,4 +1,4 @@
-from typing import Mapping
+from typing import Mapping, Optional
 
 import bs4
 
@@ -24,7 +24,7 @@ class RankUser(object):
         '_is_vip',
     ]
 
-    def _init(self, data_tag: bs4.element.Tag) -> "RankUser":
+    def __init__(self, data_tag: bs4.element.Tag) -> None:
         user_name_item = data_tag.td.next_sibling
         self._user_name = user_name_item.text
         self._is_vip = 'drl_item_vip' in user_name_item.div['class']
@@ -33,7 +33,6 @@ class RankUser(object):
         self._level = int(level_item.div['class'][0][5:])
         exp_item = level_item.next_sibling
         self._exp = int(exp_item.text)
-        return self
 
     def __repr__(self) -> str:
         return str(
@@ -173,16 +172,15 @@ class RankUsers(Containers[RankUser]):
 
     __slots__ = ['_page']
 
-    def _init(self, data_soup: bs4.BeautifulSoup) -> "RankUsers":
-        self._objs = [RankUser()._init(t) for t in data_soup('tr', class_=['drl_list_item', 'drl_list_item_self'])]
-        page_item = data_soup.find('ul', class_='p_rank_pager')
-        page_dict = parse_json(page_item['data-field'])
-        self._page = Page_rank()._init(page_dict)
-        return self
-
-    def _init_null(self) -> "RankUsers":
-        self._objs = []
-        self._page = Page_rank()._init_null()
+    def __init__(self, data_soup: Optional[bs4.BeautifulSoup] = None) -> None:
+        if data_soup:
+            self._objs = [RankUser(t) for t in data_soup('tr', class_=['drl_list_item', 'drl_list_item_self'])]
+            page_item = data_soup.find('ul', class_='p_rank_pager')
+            page_dict = parse_json(page_item['data-field'])
+            self._page = Page_rank()._init(page_dict)
+        else:
+            self._objs = []
+            self._page = Page_rank()._init_null()
 
     @property
     def page(self) -> Page_rank:

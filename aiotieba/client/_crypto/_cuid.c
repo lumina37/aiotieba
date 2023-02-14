@@ -1,3 +1,16 @@
+#include <stdlib.h>  // malloc free
+#include <stdbool.h> // bool
+#include <memory.h>  // memset memcpy
+
+#include "mbedtls/md5.h"
+#include "mbedtls/sha1.h"
+#include "crc/crc32.h"
+#include "xxHash/xxhash.h"
+#include "base32/base32.h"
+
+#include "_error.h"
+#include "_const.h"
+
 #include "_cuid.h"
 
 #define HASHER_NUM 4
@@ -49,13 +62,13 @@ static inline void __writeBuffer(char *buffer, const uint64_t sec)
 	}
 }
 
-int tbh_heliosHash(char *dst, const char *src, size_t srcSize)
+int tbc_heliosHash(char *dst, const char *src, size_t srcSize)
 {
 	size_t _buffSize = srcSize + ((size_t)HASHER_NUM * STEP_SIZE);
-	char *buffer = (char *)malloc(_buffSize); // internal
+	char *buffer = malloc(_buffSize); // internal
 	if (!buffer)
 	{
-		return TBH_MEMORY_ERROR;
+		return TBC_MEMORY_ERROR;
 	}
 
 	memcpy(buffer, src, srcSize); // Now buffer is [src, ...]
@@ -94,29 +107,29 @@ int tbh_heliosHash(char *dst, const char *src, size_t srcSize)
 
 	// clean up
 	free(buffer);
-	return TBH_OK;
+	return TBC_OK;
 }
 
-int tbh_cuid_galaxy2(char *dst, const char *androidID)
+int tbc_cuid_galaxy2(char *dst, const char *androidID)
 {
-	int err = TBH_OK;
+	int err = TBC_OK;
 
 	// step 1: build src buffer and compute md5
-	const size_t md5BuffSize = sizeof(CUID2_PERFIX) + TBH_ANDROID_ID_SIZE;
-	char md5Buffer[sizeof(CUID2_PERFIX) + TBH_ANDROID_ID_SIZE];
+	const size_t md5BuffSize = sizeof(CUID2_PERFIX) + TBC_ANDROID_ID_SIZE;
+	char md5Buffer[sizeof(CUID2_PERFIX) + TBC_ANDROID_ID_SIZE];
 
 	size_t buffOffset = 0;
 	memcpy(md5Buffer, CUID2_PERFIX, sizeof(CUID2_PERFIX));
 	buffOffset += sizeof(CUID2_PERFIX);
-	memcpy(md5Buffer + buffOffset, androidID, TBH_ANDROID_ID_SIZE);
+	memcpy(md5Buffer + buffOffset, androidID, TBC_ANDROID_ID_SIZE);
 
-	uint8_t md5[TBH_MD5_HASH_SIZE];
+	uint8_t md5[TBC_MD5_HASH_SIZE];
 	mbedtls_md5(md5Buffer, sizeof(md5Buffer), md5);
 
 	// step 2: assign md5 hex to dst
 	// dst will be [md5 hex, ...]
 	size_t dstOffset = 0;
-	for (size_t imd5 = 0; imd5 < TBH_MD5_HASH_SIZE; imd5++)
+	for (size_t imd5 = 0; imd5 < TBC_MD5_HASH_SIZE; imd5++)
 	{
 		dst[dstOffset] = HEX_UPCASE_TABLE[md5[imd5] >> 4];
 		dstOffset++;
@@ -132,8 +145,8 @@ int tbh_cuid_galaxy2(char *dst, const char *androidID)
 	dstOffset++;
 
 	// step 4: build dst buffer and compute helios hash
-	char heHash[TBH_HELIOS_HASH_SIZE];
-	err = tbh_heliosHash(heHash, dst, TBH_MD5_STR_SIZE);
+	char heHash[TBC_HELIOS_HASH_SIZE];
+	err = tbc_heliosHash(heHash, dst, TBC_MD5_STR_SIZE);
 	if (err)
 	{
 		return err;
@@ -141,14 +154,14 @@ int tbh_cuid_galaxy2(char *dst, const char *androidID)
 
 	// step 5: assign helios base32 to dst
 	// dst will be [md5 hex, '|V', heliosHash base32]
-	base32_encode((uint8_t *)heHash, TBH_HELIOS_HASH_SIZE, (dst + dstOffset));
+	base32_encode(heHash, TBC_HELIOS_HASH_SIZE, (dst + dstOffset));
 
 	return err;
 }
 
-int tbh_c3_aid(char *dst, const char *androidID, const char *uuid)
+int tbc_c3_aid(char *dst, const char *androidID, const char *uuid)
 {
-	int err = TBH_OK;
+	int err = TBC_OK;
 
 	// step 1: set perfix
 	// dst will be ['A00-', ...]
@@ -159,22 +172,22 @@ int tbh_c3_aid(char *dst, const char *androidID, const char *uuid)
 	size_t dstOffset = 4;
 
 	// step 2: build src buffer and compute sha1
-	char sha1Buffer[sizeof(CUID3_PERFIX) + TBH_ANDROID_ID_SIZE + TBH_UUID_SIZE];
+	char sha1Buffer[sizeof(CUID3_PERFIX) + TBC_ANDROID_ID_SIZE + TBC_UUID_SIZE];
 
 	size_t sha1BuffOffset = 0;
 	memcpy(sha1Buffer, CUID3_PERFIX, sizeof(CUID3_PERFIX));
 	sha1BuffOffset += sizeof(CUID3_PERFIX);
-	memcpy(sha1Buffer + sha1BuffOffset, androidID, TBH_ANDROID_ID_SIZE);
-	sha1BuffOffset += TBH_ANDROID_ID_SIZE;
-	memcpy(sha1Buffer + sha1BuffOffset, uuid, TBH_UUID_SIZE);
+	memcpy(sha1Buffer + sha1BuffOffset, androidID, TBC_ANDROID_ID_SIZE);
+	sha1BuffOffset += TBC_ANDROID_ID_SIZE;
+	memcpy(sha1Buffer + sha1BuffOffset, uuid, TBC_UUID_SIZE);
 
-	uint8_t sha1[TBH_SHA1_HASH_SIZE];
+	uint8_t sha1[TBC_SHA1_HASH_SIZE];
 	mbedtls_sha1(sha1Buffer, sizeof(sha1Buffer), sha1);
 
 	// step 3: compute sha1 base32 and assign
 	// dst will be ['A00-', sha1 base32, ...]
-	base32_encode(sha1, TBH_SHA1_HASH_SIZE, (dst + dstOffset));
-	dstOffset += TBH_SHA1_BASE32_SIZE;
+	base32_encode(sha1, TBC_SHA1_HASH_SIZE, (dst + dstOffset));
+	dstOffset += TBC_SHA1_BASE32_SIZE;
 
 	// step 4: add joining char
 	// dst will be ['A00-', sha1 base32, '-', ...]
@@ -182,8 +195,8 @@ int tbh_c3_aid(char *dst, const char *androidID, const char *uuid)
 	dstOffset++;
 
 	// step 5: build dst buffer and compute helios hash
-	char heHash[TBH_HELIOS_HASH_SIZE];
-	err = tbh_heliosHash(heHash, dst, dstOffset);
+	char heHash[TBC_HELIOS_HASH_SIZE];
+	err = tbc_heliosHash(heHash, dst, dstOffset);
 	if (err)
 	{
 		return err;
@@ -191,7 +204,7 @@ int tbh_c3_aid(char *dst, const char *androidID, const char *uuid)
 
 	// step 6: assign helios base32 to dst
 	// dst will be ['A00-', sha1 base32, '-', heliosHash base32]
-	base32_encode((uint8_t *)heHash, TBH_HELIOS_HASH_SIZE, (dst + dstOffset));
+	base32_encode(heHash, TBC_HELIOS_HASH_SIZE, (dst + dstOffset));
 
 	return err;
 }
