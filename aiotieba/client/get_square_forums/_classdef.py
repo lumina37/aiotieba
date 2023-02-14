@@ -1,3 +1,5 @@
+from typing import Optional
+
 from .._classdef import Containers, TypeMessage
 
 
@@ -23,13 +25,12 @@ class SquareForum(object):
         '_is_followed',
     ]
 
-    def _init(self, data_proto: TypeMessage) -> "SquareForum":
+    def __init__(self, data_proto: TypeMessage) -> None:
         self._fid = data_proto.forum_id
         self._fname = data_proto.forum_name
         self._member_num = data_proto.member_count
         self._post_num = data_proto.thread_count
         self._is_followed = bool(data_proto.is_like)
-        return self
 
     def __repr__(self) -> str:
         return str(
@@ -201,15 +202,13 @@ class SquareForums(Containers[SquareForum]):
 
     __slots__ = ['_page']
 
-    def _init(self, data_proto: TypeMessage) -> "SquareForums":
-        self._objs = [SquareForum()._init(_proto) for _proto in data_proto.forum_info]
-        self._page = Page_square()._init(data_proto.page)
-        return self
-
-    def _init_null(self) -> "SquareForums":
-        self._objs = []
-        self._page = Page_square()._init_null()
-        return self
+    def __init__(self, data_proto: Optional[TypeMessage] = None) -> None:
+        if data_proto:
+            self._objs = [SquareForum(_proto) for _proto in data_proto.forum_info]
+            self._page = Page_square()._init(data_proto.page)
+        else:
+            self._objs = []
+            self._page = Page_square()._init_null()
 
     @property
     def page(self) -> Page_square:

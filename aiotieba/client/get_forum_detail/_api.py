@@ -1,9 +1,7 @@
-import sys
-
 import yarl
 
 from .._core import HttpCore
-from .._helper import log_exception, pack_form_request, parse_json, send_request
+from .._helper import pack_form_request, parse_json, send_request
 from ..const import APP_BASE_HOST, APP_INSECURE_SCHEME
 from ..exception import TiebaServerError
 from ._classdef import Forum_detail
@@ -15,7 +13,7 @@ def parse_body(body: bytes) -> Forum_detail:
         raise TiebaServerError(code, res_json['error_msg'])
 
     forum_dict = res_json['forum_info']
-    forum = Forum_detail()._init(forum_dict)
+    forum = Forum_detail(forum_dict)
 
     return forum
 
@@ -32,12 +30,7 @@ async def request(http_core: HttpCore, fid: int) -> Forum_detail:
         data,
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=8 * 1024)
-        forum = parse_body(body)
+    __log__ = "fid={fid}"  # noqa: F841
 
-    except Exception as err:
-        log_exception(sys._getframe(1), err, f"fid={fid}")
-        forum = Forum_detail()._init_null()
-
-    return forum
+    body = await send_request(request, http_core.connector, read_bufsize=8 * 1024)
+    return parse_body(body)

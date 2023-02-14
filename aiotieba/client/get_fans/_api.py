@@ -1,9 +1,7 @@
-import sys
-
 import yarl
 
 from .._core import HttpCore
-from .._helper import log_exception, pack_form_request, parse_json, send_request
+from .._helper import pack_form_request, parse_json, send_request
 from ..const import APP_BASE_HOST, APP_SECURE_SCHEME
 from ..exception import TiebaServerError
 from ._classdef import Fans
@@ -14,7 +12,7 @@ def parse_body(body: bytes) -> Fans:
     if code := int(res_json['error_code']):
         raise TiebaServerError(code, res_json['error_msg'])
 
-    fans = Fans()._init(res_json)
+    fans = Fans(res_json)
 
     return fans
 
@@ -33,12 +31,7 @@ async def request(http_core: HttpCore, user_id: int, pn: int) -> Fans:
         data,
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=16 * 1024)
-        fans = parse_body(body)
+    __log__ = "user_id={user_id}"  # noqa: F841
 
-    except Exception as err:
-        log_exception(sys._getframe(1), err, f"user_id={user_id}")
-        fans = Fans()._init_null()
-
-    return fans
+    body = await send_request(request, http_core.connector, read_bufsize=16 * 1024)
+    return parse_body(body)

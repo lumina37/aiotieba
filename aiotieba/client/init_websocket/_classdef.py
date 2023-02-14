@@ -12,11 +12,10 @@ class WsMsgGroupInfo(object):
         '_last_msg_id',
     ]
 
-    def _init(self, data_proto: TypeMessage) -> "WsMsgGroupInfo":
+    def __init__(self, data_proto: TypeMessage) -> None:
         self._group_type = data_proto.groupType
         self._group_id = data_proto.groupId
         self._last_msg_id = data_proto.lastMsgId
-        return self
 
     def __repr__(self) -> str:
         return str(

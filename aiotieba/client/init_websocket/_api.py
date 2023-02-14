@@ -1,5 +1,4 @@
 import binascii
-import sys
 import time
 from typing import List
 
@@ -7,7 +6,7 @@ from Crypto.Cipher import PKCS1_v1_5
 from Crypto.PublicKey import RSA
 
 from .._core import TbCore, WsCore
-from .._helper import log_exception, pack_json
+from .._helper import pack_json
 from ..exception import TiebaServerError
 from ._classdef import WsMsgGroupInfo
 from .protobuf import UpdateClientInfoReqIdl_pb2, UpdateClientInfoResIdl_pb2
@@ -25,9 +24,8 @@ def pack_proto(core: TbCore) -> bytes:
     req_proto.data.bduss = core._BDUSS
 
     device = {
-        'subapp_type': 'mini',
         'cuid': core.cuid,
-        '_client_version': core.post_version,
+        '_client_version': core.main_version,
         '_msg_status': '1',
         'cuid_galaxy2': core.cuid_galaxy2,
         '_client_type': '2',
@@ -39,7 +37,7 @@ def pack_proto(core: TbCore) -> bytes:
     secret_key = rsa_chiper.encrypt(core.aes_ecb_sec_key)
     req_proto.data.secretKey = secret_key
     req_proto.data.stoken = core._STOKEN
-    req_proto.cuid = f"{core.cuid}|com.baidu.tieba_mini{core.post_version}"
+    req_proto.cuid = f"{core.cuid}|com.baidu.tieba{core.main_version}"
 
     return req_proto.SerializeToString()
 
@@ -51,7 +49,7 @@ def parse_body(body: bytes) -> List[WsMsgGroupInfo]:
     if code := res_proto.error.errorno:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
-    groups = [WsMsgGroupInfo()._init(p) for p in res_proto.data.groupInfo]
+    groups = [WsMsgGroupInfo(p) for p in res_proto.data.groupInfo]
 
     return groups
 
@@ -59,12 +57,7 @@ def parse_body(body: bytes) -> List[WsMsgGroupInfo]:
 async def request(ws_core: WsCore) -> List[WsMsgGroupInfo]:
     data = pack_proto(ws_core.core)
 
-    try:
-        resq = await ws_core.send(data, CMD, compress=False, encrypt=False)
-        groups = parse_body(await resq.read())
-
-    except Exception as err:
-        log_exception(sys._getframe(1), err)
-        groups = []
+    resp = await ws_core.send(data, CMD, compress=False, encrypt=False)
+    groups = parse_body(await resp.read())
 
     return groups

@@ -1,10 +1,9 @@
-import sys
 from typing import List
 
 import yarl
 
-from ..._core import HttpCore, TbCore
-from ..._helper import log_exception, pack_proto_request, send_request
+from ..._core import HttpCore, TbCore, WsCore
+from ..._helper import pack_proto_request, send_request
 from ...const import APP_BASE_HOST, APP_SECURE_SCHEME
 from ...exception import TiebaServerError
 from .._classdef import UserInfo_u, UserThread
@@ -34,9 +33,9 @@ def parse_body(body: bytes) -> List[UserThread]:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    uthreads = [UserThread()._init(p) for p in data_proto.post_list]
+    uthreads = [UserThread(p) for p in data_proto.post_list]
     if uthreads:
-        user = UserInfo_u()._init(data_proto.post_list[0])
+        user = UserInfo_u(data_proto.post_list[0])
         for uthread in uthreads:
             uthread._user = user
             uthread._author_id = user._user_id
@@ -45,20 +44,26 @@ def parse_body(body: bytes) -> List[UserThread]:
 
 
 async def request_http(http_core: HttpCore, user_id: int, pn: int, public_only: bool) -> List[UserThread]:
+    data = pack_proto(http_core.core, user_id, pn, public_only)
+
     request = pack_proto_request(
         http_core,
         yarl.URL.build(
             scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/u/feed/userpost", query_string=f"cmd={CMD}"
         ),
-        pack_proto(http_core.core, user_id, pn, public_only),
+        data,
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=64 * 1024)
-        threads = parse_body(body)
+    __log__ = "user_id={user_id}"  # noqa: F841
 
-    except Exception as err:
-        log_exception(sys._getframe(1), err, f"user_id={user_id}")
-        threads = []
+    body = await send_request(request, http_core.connector, read_bufsize=64 * 1024)
+    return parse_body(body)
 
-    return threads
+
+async def request_ws(ws_core: WsCore, user_id: int, pn: int, public_only: bool) -> List[UserThread]:
+    data = pack_proto(ws_core.core, user_id, pn, public_only)
+
+    __log__ = "user_id={user_id}"  # noqa: F841
+
+    response = await ws_core.send(data, CMD)
+    return parse_body(await response.read())

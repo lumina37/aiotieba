@@ -1,4 +1,4 @@
-from typing import Iterable, List
+from typing import Iterable, List, Optional
 
 from .._classdef import Containers, TypeMessage, VoteInfo
 from .._classdef.contents import FragAt, FragEmoji, FragLink, FragmentUnknown, FragText, TypeFragment, TypeFragText
@@ -121,53 +121,52 @@ class UserInfo_home(object):
         '_priv_reply',
     ]
 
-    def _init(self, data_proto: TypeMessage) -> "UserInfo_home":
-        self._user_id = data_proto.id
-        if '?' in (portrait := data_proto.portrait):
-            self._portrait = portrait[:-13]
-        else:
-            self._portrait = portrait
-        self._user_name = data_proto.name
-        self._nick_name_new = data_proto.name_show
-        self._tieba_uid = int(tieba_uid) if (tieba_uid := data_proto.tieba_uid) else 0
-        self._glevel = data_proto.user_growth.level_id
-        self._gender = data_proto.sex
-        self._age = float(age) if (age := data_proto.tb_age) else 0.0
-        self._post_num = data_proto.post_num
-        self._fan_num = data_proto.fans_num
-        self._follow_num = data_proto.concern_num
-        self._sign = data_proto.intro
-        self._ip = data_proto.ip_address
-        self._vimage = VirtualImage_home()._init(data_proto.virtual_image_info)
-        self._is_bawu = bool(data_proto.is_bawu)
-        self._is_vip = bool(data_proto.new_tshow_icon)
-        self._is_god = bool(data_proto.new_god_data.status)
-        self._priv_like = priv_like if (priv_like := data_proto.priv_sets.like) else 1
-        self._priv_reply = priv_reply if (priv_reply := data_proto.priv_sets.reply) else 1
-        return self
+    def __init__(self, data_proto: Optional[TypeMessage] = None) -> None:
+        if data_proto:
+            self._user_id = data_proto.id
+            if '?' in (portrait := data_proto.portrait):
+                self._portrait = portrait[:-13]
+            else:
+                self._portrait = portrait
+            self._user_name = data_proto.name
+            self._nick_name_new = data_proto.name_show
+            self._tieba_uid = int(tieba_uid) if (tieba_uid := data_proto.tieba_uid) else 0
+            self._glevel = data_proto.user_growth.level_id
+            self._gender = data_proto.sex
+            self._age = float(age) if (age := data_proto.tb_age) else 0.0
+            self._post_num = data_proto.post_num
+            self._fan_num = data_proto.fans_num
+            self._follow_num = data_proto.concern_num
+            self._sign = data_proto.intro
+            self._ip = data_proto.ip_address
+            self._vimage = VirtualImage_home()._init(data_proto.virtual_image_info)
+            self._is_bawu = bool(data_proto.is_bawu)
+            self._is_vip = bool(data_proto.new_tshow_icon)
+            self._is_god = bool(data_proto.new_god_data.status)
+            self._priv_like = priv_like if (priv_like := data_proto.priv_sets.like) else 1
+            self._priv_reply = priv_reply if (priv_reply := data_proto.priv_sets.reply) else 1
 
-    def _init_null(self) -> "UserInfo_home":
-        self._user_id = 0
-        self._portrait = ''
-        self._user_name = ''
-        self._nick_name_new = ''
-        self._tieba_uid = 0
-        self._glevel = 0
-        self._gender = 0
-        self._age = 0.0
-        self._post_num = 0
-        self._fan_num = 0
-        self._follow_num = 0
-        self._sign = ''
-        self._vimage = VirtualImage_home()._init_null()
-        self._ip = ''
-        self._is_bawu = False
-        self._is_vip = False
-        self._is_god = False
-        self._is_blocked = False
-        self._priv_like = 1
-        self._priv_reply = 1
-        return self
+        else:
+            self._user_id = 0
+            self._portrait = ''
+            self._user_name = ''
+            self._nick_name_new = ''
+            self._tieba_uid = 0
+            self._glevel = 0
+            self._gender = 0
+            self._age = 0.0
+            self._post_num = 0
+            self._fan_num = 0
+            self._follow_num = 0
+            self._sign = ''
+            self._vimage = VirtualImage_home()._init_null()
+            self._ip = ''
+            self._is_bawu = False
+            self._is_vip = False
+            self._is_god = False
+            self._is_blocked = False
+            self._priv_like = 1
+            self._priv_reply = 1
 
     def __str__(self) -> str:
         return self._user_name or self._portrait or str(self._user_id)
@@ -727,7 +726,7 @@ class Thread_home(object):
         '_create_time',
     ]
 
-    def _init(self, data_proto: TypeMessage) -> "Thread_home":
+    def __init__(self, data_proto: TypeMessage) -> None:
         self._text = None
         self._contents = Contents_home()._init(data_proto.first_post_content)
         img_frags = [FragImage_home(p) for p in data_proto.media]
@@ -745,7 +744,6 @@ class Thread_home(object):
         self._agree = data_proto.agree.agree_num
         self._disagree = data_proto.agree.disagree_num
         self._create_time = data_proto.create_time
-        return self
 
     def __repr__(self) -> str:
         return str(

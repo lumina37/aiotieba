@@ -1,4 +1,4 @@
-from typing import Mapping
+from typing import Mapping, Optional
 
 
 class UserInfo_login(object):
@@ -17,17 +17,15 @@ class UserInfo_login(object):
         '_user_name',
     ]
 
-    def _init(self, data_map: Mapping) -> "UserInfo_login":
-        self._user_id = int(data_map['id'])
-        self._portrait = data_map['portrait']
-        self._user_name = data_map['name']
-        return self
-
-    def _init_null(self) -> "UserInfo_login":
-        self._user_id = 0
-        self._portrait = ''
-        self._user_name = ''
-        return self
+    def __init__(self, data_map: Optional[Mapping] = None) -> None:
+        if data_map:
+            self._user_id = int(data_map['id'])
+            self._portrait = data_map['portrait']
+            self._user_name = data_map['name']
+        else:
+            self._user_id = 0
+            self._portrait = ''
+            self._user_name = ''
 
     def __str__(self) -> str:
         return self._user_name or self._portrait or str(self._user_id)

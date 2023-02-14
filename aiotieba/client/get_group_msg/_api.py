@@ -1,8 +1,6 @@
-import sys
 from typing import List
 
 from .._core import TbCore, WsCore
-from .._helper import log_exception
 from ..exception import TiebaServerError
 from ._classdef import WsMsgGroup
 from .protobuf import GetGroupMsgReqIdl_pb2, GetGroupMsgResIdl_pb2
@@ -29,7 +27,7 @@ def parse_body(body: bytes) -> List[WsMsgGroup]:
     if code := res_proto.error.errorno:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
-    groups = [WsMsgGroup()._init(p) for p in res_proto.data.groupInfo]
+    groups = [WsMsgGroup(p) for p in res_proto.data.groupInfo]
 
     return groups
 
@@ -38,12 +36,7 @@ async def request(ws_core: WsCore, group_ids: List[int], get_type: int) -> List[
     msg_ids = [ws_core.mid_manager.get_msg_id(gid) for gid in group_ids]
     data = pack_proto(ws_core.core, group_ids, msg_ids, get_type)
 
-    try:
-        resq = await ws_core.send(data, CMD)
-        groups = parse_body(await resq.read())
+    __log__ = "group_ids={group_ids}"  # noqa: F841
 
-    except Exception as err:
-        log_exception(sys._getframe(1), err, f"group_ids={group_ids}")
-        groups = []
-
-    return groups
+    resp = await ws_core.send(data, CMD)
+    return parse_body(await resp.read())

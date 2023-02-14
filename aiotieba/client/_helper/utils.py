@@ -6,7 +6,7 @@ import random
 import sys
 import urllib.parse
 from types import FrameType
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 import aiohttp
 import async_timeout
@@ -431,27 +431,6 @@ async def send_request(
     return body
 
 
-def log_exception(frame: FrameType, err: Exception, log_str: str = '', log_level: int = logging.WARNING):
-    """
-    异常日志
-
-    Args:
-        frame (FrameType): 帧对象
-        err (Exception): 异常对象
-        log_str (str): 附加日志
-        log_level (int): 日志等级
-    """
-
-    meth_name = frame.f_code.co_name
-    log_str = f"{err}. {log_str}"
-    logger = get_logger()
-    if logger.isEnabledFor(log_level):
-        record = logger.makeRecord(logger.name, log_level, None, frame.f_lineno, log_str, None, None, meth_name)
-        logger.handle(record)
-
-    exc_handlers._handle(meth_name, err)
-
-
 def log_success(frame: FrameType, log_str: str = '', log_level: int = logging.INFO):
     """
     成功日志
@@ -466,5 +445,51 @@ def log_success(frame: FrameType, log_str: str = '', log_level: int = logging.IN
     log_str = "Suceeded. " + log_str
     logger = get_logger()
     if logger.isEnabledFor(log_level):
-        record = logger.makeRecord(logger.name, log_level, None, frame.f_lineno, log_str, None, None, meth_name)
+        record = logger.makeRecord(logger.name, log_level, None, 0, log_str, None, None, meth_name)
         logger.handle(record)
+
+
+def handle_exception(null_ret_factory: Callable[[], Any], no_format: bool = False, log_level: int = logging.WARNING):
+    """
+    处理request抛出的异常
+
+    Args:
+        null_ret_factory (Callable[[], Any]): 返回值的空构造工厂
+        no_format (bool, optional): 不格式化字符串而是直接记录. Defaults to False.
+        log_level (int, optional): 日志等级. Defaults to logging.WARNING.
+    """
+
+    def wrapper(func):
+        async def awrapper(*args, **kwargs):
+            try:
+                ret = await func(*args, **kwargs)
+
+            except Exception as err:
+                meth_name = func.__name__
+                tb = err.__traceback__
+                while tb := tb.tb_next:
+                    frame = tb.tb_frame
+                    if frame.f_code.co_name == meth_name:
+                        break
+                frame = tb.tb_next.tb_frame
+
+                log_str: str = frame.f_locals.get('__log__', '')
+                if not no_format:  # need format
+                    log_str = log_str.format(**frame.f_locals)
+                log_str = f"{err}. {log_str}"
+
+                logger = get_logger()
+                if logger.isEnabledFor(log_level):
+                    record = logger.makeRecord(logger.name, log_level, None, 0, log_str, None, None, meth_name)
+                    logger.handle(record)
+
+                exc_handlers._handle(meth_name, err)
+
+                return null_ret_factory()
+
+            else:
+                return ret
+
+        return awrapper
+
+    return wrapper

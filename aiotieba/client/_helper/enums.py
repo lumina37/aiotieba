@@ -66,3 +66,16 @@ class PostSortType(enum.IntEnum):
     ASC = 0
     DESC = 1
     HOT = 2
+
+
+class WsStatus(enum.IntEnum):
+    """
+    回复排序
+
+    Note:
+        0已关闭 1正在连接 2可用
+    """
+
+    CLOSED = 0
+    CONNECTING = 1
+    OPEN = 2

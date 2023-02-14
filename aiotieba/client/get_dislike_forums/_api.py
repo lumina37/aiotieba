@@ -1,9 +1,7 @@
-import sys
-
 import yarl
 
-from .._core import HttpCore, TbCore
-from .._helper import log_exception, pack_proto_request, send_request
+from .._core import HttpCore, TbCore, WsCore
+from .._helper import pack_proto_request, send_request
 from ..const import APP_BASE_HOST, APP_SECURE_SCHEME
 from ..exception import TiebaServerError
 from ._classdef import DislikeForums
@@ -30,26 +28,28 @@ def parse_body(body: bytes) -> DislikeForums:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    dislike_forums = DislikeForums()._init(data_proto)
+    dislike_forums = DislikeForums(data_proto)
 
     return dislike_forums
 
 
 async def request_http(http_core: HttpCore, pn: int, rn: int) -> DislikeForums:
+    data = pack_proto(http_core.core, pn, rn)
+
     request = pack_proto_request(
         http_core,
         yarl.URL.build(
             scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/u/user/getDislikeList", query_string=f"cmd={CMD}"
         ),
-        pack_proto(http_core.core, pn, rn),
+        data,
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=8 * 1024)
-        dislike_forums = parse_body(body)
+    body = await send_request(request, http_core.connector, read_bufsize=8 * 1024)
+    return parse_body(body)
 
-    except Exception as err:
-        log_exception(sys._getframe(1), err)
-        dislike_forums = DislikeForums()._init_null()
 
-    return dislike_forums
+async def request_ws(ws_core: WsCore, pn: int, rn: int) -> DislikeForums:
+    data = pack_proto(ws_core.core, pn, rn)
+
+    response = await ws_core.send(data, CMD)
+    return parse_body(await response.read())

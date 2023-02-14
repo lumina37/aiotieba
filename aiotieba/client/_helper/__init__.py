@@ -1,11 +1,11 @@
-from .enums import GroupType, MsgType, PostSortType, ReqUInfo, ThreadSortType
+from .enums import GroupType, MsgType, PostSortType, ReqUInfo, ThreadSortType, WsStatus
 from .utils import (
     TypeHeadersChecker,
     _send_request,
     check_status_code,
+    handle_exception,
     is_portrait,
     jsonlib,
-    log_exception,
     log_success,
     pack_form_request,
     pack_json,

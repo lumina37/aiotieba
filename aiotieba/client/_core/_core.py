@@ -1,6 +1,6 @@
 import hashlib
 import secrets
-from typing import Dict, Optional, Tuple, Union
+from typing import Optional, Tuple, Union
 
 import aiohttp
 import yarl
@@ -49,7 +49,8 @@ class TbCore(object):
         proxy: Union[Tuple[yarl.URL, aiohttp.BasicAuth], Tuple[None, None]] = (None, None),
     ) -> None:
         self._BDUSS_key = BDUSS_key
-        user_cfg: Dict[str, str] = CONFIG['User'].get(BDUSS_key, {})
+        users_cfg = CONFIG.setdefault('User', {})
+        user_cfg = users_cfg.get(BDUSS_key, {})
         self.BDUSS = user_cfg.get('BDUSS', '')
         self.STOKEN = user_cfg.get('STOKEN', '')
 

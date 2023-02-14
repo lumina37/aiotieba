@@ -1,9 +1,7 @@
-import sys
-
 import yarl
 
 from .._core import HttpCore
-from .._helper import log_exception, pack_web_get_request, parse_json, send_request
+from .._helper import pack_web_get_request, parse_json, send_request
 from ..const import WEB_BASE_HOST
 from ..exception import TiebaServerError
 from ._classdef import Recovers
@@ -14,7 +12,7 @@ def parse_body(body: bytes) -> Recovers:
     if code := res_json['no']:
         raise TiebaServerError(code, res_json['error'])
 
-    recovers = Recovers()._init(res_json)
+    recovers = Recovers(res_json)
 
     return recovers
 
@@ -34,12 +32,7 @@ async def request(http_core: HttpCore, fname: str, fid: int, name: str, pn: int)
         params,
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=64 * 1024)
-        recovers = parse_body(body)
+    __log__ = "fname={fname}"  # noqa: F841
 
-    except Exception as err:
-        log_exception(sys._getframe(1), err, f"fname={fname}")
-        recovers = Recovers()._init_null()
-
-    return recovers
+    body = await send_request(request, http_core.connector, read_bufsize=64 * 1024)
+    return parse_body(body)

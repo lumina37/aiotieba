@@ -1,9 +1,7 @@
-import sys
-
 import yarl
 
-from .._core import HttpCore, TbCore
-from .._helper import log_exception, pack_proto_request, send_request
+from .._core import HttpCore, TbCore, WsCore
+from .._helper import pack_proto_request, send_request
 from ..const import APP_BASE_HOST, APP_SECURE_SCHEME
 from ..exception import TiebaServerError
 from ._classdef import SquareForums
@@ -31,26 +29,32 @@ def parse_body(body: bytes) -> SquareForums:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    square_forums = SquareForums()._init(data_proto)
+    square_forums = SquareForums(data_proto)
 
     return square_forums
 
 
 async def request_http(http_core: HttpCore, cname: str, pn: int, rn: int) -> SquareForums:
+    data = pack_proto(http_core.core, cname, pn, rn)
+
     request = pack_proto_request(
         http_core,
         yarl.URL.build(
             scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/forum/getForumSquare", query_string=f"cmd={CMD}"
         ),
-        pack_proto(http_core.core, cname, pn, rn),
+        data,
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=16 * 1024)
-        square_forums = parse_body(body)
+    __log__ = "cname={cname}"  # noqa: F841
 
-    except Exception as err:
-        log_exception(sys._getframe(1), err, f"cname={cname}")
-        square_forums = SquareForums()._init_null()
+    body = await send_request(request, http_core.connector, read_bufsize=16 * 1024)
+    return parse_body(body)
 
-    return square_forums
+
+async def request_ws(ws_core: WsCore, cname: str, pn: int, rn: int) -> SquareForums:
+    data = pack_proto(ws_core.core, cname, pn, rn)
+
+    __log__ = "cname={cname}"  # noqa: F841
+
+    response = await ws_core.send(data, CMD)
+    return parse_body(await response.read())
