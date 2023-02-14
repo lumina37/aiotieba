@@ -1,3 +1,5 @@
+from typing import Optional
+
 import bs4
 
 from .._classdef import Containers
@@ -21,12 +23,11 @@ class BlacklistUser(object):
         '_user_name',
     ]
 
-    def _init(self, data_tag: bs4.element.Tag) -> "BlacklistUser":
+    def __init__(self, data_tag: bs4.element.Tag) -> None:
         user_info_item = data_tag.previous_sibling.input
         self._user_name = user_info_item['data-user-name']
         self._user_id = int(user_info_item['data-user-id'])
         self._portrait = data_tag.a['href'][14:-17]
-        return self
 
     def __str__(self) -> str:
         return self._user_name or self._portrait or str(self._user_id)
@@ -188,16 +189,14 @@ class BlacklistUsers(Containers[BlacklistUser]):
         '_page',
     ]
 
-    def _init(self, data_soup: bs4.BeautifulSoup) -> "BlacklistUsers":
-        self._objs = [BlacklistUser()._init(_tag) for _tag in data_soup('td', class_='left_cell')]
-        page_tag = data_soup.find('div', class_='tbui_pagination').find('li', class_='active')
-        self._page = Page_blacklist()._init(page_tag)
-        return self
-
-    def _init_null(self) -> "BlacklistUsers":
-        self._objs = []
-        self._page = Page_blacklist()._init_null()
-        return self
+    def __init__(self, data_soup: Optional[bs4.BeautifulSoup]) -> None:
+        if data_soup:
+            self._objs = [BlacklistUser(_tag) for _tag in data_soup('td', class_='left_cell')]
+            page_tag = data_soup.find('div', class_='tbui_pagination').find('li', class_='active')
+            self._page = Page_blacklist()._init(page_tag)
+        else:
+            self._objs = []
+            self._page = Page_blacklist()._init_null()
 
     @property
     def page(self) -> Page_blacklist:

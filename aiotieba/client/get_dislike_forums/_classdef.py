@@ -1,3 +1,4 @@
+from typing import Optional
 from .._classdef import Containers, TypeMessage
 
 
@@ -87,13 +88,12 @@ class DislikeForum(object):
         '_thread_num',
     ]
 
-    def _init(self, data_proto: TypeMessage) -> "DislikeForum":
+    def __init__(self, data_proto: TypeMessage) -> None:
         self._fid = data_proto.forum_id
         self._fname = data_proto.forum_name
         self._member_num = data_proto.member_count
         self._post_num = data_proto.post_num
         self._thread_num = data_proto.thread_num
-        return self
 
     def __repr__(self) -> str:
         return str(
@@ -165,15 +165,13 @@ class DislikeForums(Containers[DislikeForum]):
 
     __slots__ = ['_page']
 
-    def _init(self, data_proto: TypeMessage) -> "DislikeForums":
-        self._objs = [DislikeForum()._init(p) for p in data_proto.forum_list]
-        self._page = Page_dislikef()._init(data_proto)
-        return self
-
-    def _init_null(self) -> "DislikeForums":
-        self._objs = []
-        self._page = Page_dislikef()._init_null()
-        return self
+    def __init__(self, data_proto: Optional[TypeMessage]) -> None:
+        if data_proto:
+            self._objs = [DislikeForum(p) for p in data_proto.forum_list]
+            self._page = Page_dislikef()._init(data_proto)
+        else:
+            self._objs = []
+            self._page = Page_dislikef()._init_null()
 
     @property
     def page(self) -> Page_dislikef:

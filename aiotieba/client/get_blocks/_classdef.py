@@ -1,4 +1,4 @@
-from typing import Mapping
+from typing import Mapping, Optional
 
 import bs4
 
@@ -202,16 +202,14 @@ class Blocks(Containers[Block]):
 
     __slots__ = ['_page']
 
-    def _init(self, data_map: Mapping) -> "Blocks":
-        data_soup = bs4.BeautifulSoup(data_map['data']['content'], 'lxml')
-        self._objs = [Block()._init(t) for t in data_soup('li')]
-        self._page = Page_block()._init(data_map['data']['page'])
-        return self
-
-    def _init_null(self) -> "Blocks":
-        self._objs = []
-        self._page = Page_block()._init_null()
-        return self
+    def __init__(self, data_map: Optional[Mapping]) -> None:
+        if data_map:
+            data_soup = bs4.BeautifulSoup(data_map['data']['content'], 'lxml')
+            self._objs = [Block()._init(t) for t in data_soup('li')]
+            self._page = Page_block()._init(data_map['data']['page'])
+        else:
+            self._objs = []
+            self._page = Page_block()._init_null()
 
     @property
     def has_more(self) -> bool:

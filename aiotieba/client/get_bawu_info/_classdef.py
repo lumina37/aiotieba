@@ -26,21 +26,12 @@ class UserInfo_bawu(object):
         '_level',
     ]
 
-    def _init(self, data_proto: TypeMessage) -> "UserInfo_bawu":
+    def __init__(self, data_proto: TypeMessage) -> None:
         self._user_id = data_proto.user_id
         self._portrait = data_proto.portrait
         self._user_name = data_proto.user_name
         self._nick_name_new = data_proto.name_show
         self._level = data_proto.user_level
-        return self
-
-    def _init_null(self) -> "UserInfo_bawu":
-        self._user_id = 0
-        self._portrait = ''
-        self._user_name = ''
-        self._nick_name_new = ''
-        self._level = 0
-        return self
 
     def __str__(self) -> str:
         return self._user_name or self._portrait or str(self._user_id)

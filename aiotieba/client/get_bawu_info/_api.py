@@ -30,7 +30,7 @@ def parse_body(body: bytes) -> Dict[str, List[UserInfo_bawu]]:
 
     rdes_protos = res_proto.data.bawu_team_info.bawu_team_list
     bawu_dict = {
-        rdes_proto.role_name: [UserInfo_bawu()._init(p) for p in rdes_proto.role_info] for rdes_proto in rdes_protos
+        rdes_proto.role_name: [UserInfo_bawu(p) for p in rdes_proto.role_info] for rdes_proto in rdes_protos
     }
 
     return bawu_dict

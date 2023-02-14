@@ -14,7 +14,7 @@ def parse_body(body: bytes) -> Blocks:
     if code := res_json['no']:
         raise TiebaServerError(code, res_json['error'])
 
-    blocks = Blocks()._init(res_json)
+    blocks = Blocks(res_json)
 
     return blocks
 
@@ -40,6 +40,6 @@ async def request(http_core: HttpCore, fname: str, fid: int, name: str, pn: int)
 
     except Exception as err:
         log_exception(sys._getframe(1), err, f"fname={fname}")
-        blocks = Blocks()._init_null()
+        blocks = Blocks()
 
     return blocks

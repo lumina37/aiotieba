@@ -30,7 +30,7 @@ def parse_body(body: bytes) -> DislikeForums:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    dislike_forums = DislikeForums()._init(data_proto)
+    dislike_forums = DislikeForums(data_proto)
 
     return dislike_forums
 
@@ -50,6 +50,6 @@ async def request_http(http_core: HttpCore, pn: int, rn: int) -> DislikeForums:
 
     except Exception as err:
         log_exception(sys._getframe(1), err)
-        dislike_forums = DislikeForums()._init_null()
+        dislike_forums = DislikeForums()
 
     return dislike_forums

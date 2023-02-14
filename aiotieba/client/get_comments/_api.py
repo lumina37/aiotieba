@@ -34,7 +34,7 @@ def parse_body(body: bytes) -> Comments:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    comments = Comments()._init(data_proto)
+    comments = Comments(data_proto)
 
     return comments
 
@@ -52,6 +52,6 @@ async def request_http(http_core: HttpCore, tid: int, pid: int, pn: int, is_floo
 
     except Exception as err:
         log_exception(sys._getframe(1), err, f"tid={tid} pid={pid}")
-        comments = Comments()._init_null()
+        comments = Comments()
 
     return comments

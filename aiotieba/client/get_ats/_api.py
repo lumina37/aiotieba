@@ -14,7 +14,7 @@ def parse_body(body: bytes) -> Ats:
     if code := int(res_json['error_code']):
         raise TiebaServerError(code, res_json['error_msg'])
 
-    ats = Ats()._init(res_json)
+    ats = Ats(res_json)
 
     return ats
 
@@ -38,6 +38,6 @@ async def request(http_core: HttpCore, pn: int) -> Ats:
 
     except Exception as err:
         log_exception(sys._getframe(1), err)
-        ats = Ats()._init_null()
+        ats = Ats()
 
     return ats

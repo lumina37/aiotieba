@@ -11,7 +11,7 @@ from ._classdef import BlacklistUsers
 
 def parse_body(body: bytes) -> BlacklistUsers:
     soup = bs4.BeautifulSoup(body, 'lxml')
-    blacklist_users = BlacklistUsers()._init(soup)
+    blacklist_users = BlacklistUsers(soup)
 
     return blacklist_users
 
@@ -34,6 +34,6 @@ async def request(http_core: HttpCore, fname: str, pn: int) -> BlacklistUsers:
 
     except Exception as err:
         log_exception(sys._getframe(1), err, f"fname={fname}")
-        blacklist_users = BlacklistUsers()._init_null()
+        blacklist_users = BlacklistUsers()
 
     return blacklist_users
