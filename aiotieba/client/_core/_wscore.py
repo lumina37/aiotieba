@@ -49,7 +49,7 @@ class WsResponse(object):
         """
 
         try:
-            with async_timeout.timeout(self.read_timeout):
+            async with async_timeout.timeout(self.read_timeout):
                 return await self.future
         except asyncio.TimeoutError as err:
             self._cancel()
@@ -346,7 +346,7 @@ class WsCore(object):
         response = self.register(req_id)
 
         try:
-            with async_timeout.timeout(TIME_CONFIG.ws_send):
+            async with async_timeout.timeout(TIME_CONFIG.ws_send):
                 await self.websocket.send_bytes(req_data)
         except asyncio.TimeoutError as err:
             response._cancel()
