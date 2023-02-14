@@ -6,7 +6,6 @@ from .utils import (
     handle_exception,
     is_portrait,
     jsonlib,
-    log_exception,
     log_success,
     pack_form_request,
     pack_json,

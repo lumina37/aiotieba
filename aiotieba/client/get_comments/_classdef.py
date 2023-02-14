@@ -1747,7 +1747,7 @@ class Comments(Containers[Comment]):
             self._post._fname = self._thread._fname
             self._post._tid = self._thread._tid
 
-            self._objs = [Comment()._init(p) for p in data_proto.subpost_list]
+            self._objs = [Comment(p) for p in data_proto.subpost_list]
             for comment in self._objs:
                 comment._fid = self.forum._fid
                 comment._fname = self.forum._fname

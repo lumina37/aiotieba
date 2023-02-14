@@ -1,9 +1,7 @@
-import sys
-
 import yarl
 
-from .._core import HttpCore, TbCore
-from .._helper import log_exception, pack_proto_request, send_request
+from .._core import HttpCore, TbCore, WsCore
+from .._helper import pack_proto_request, send_request
 from ..const import APP_BASE_HOST, APP_SECURE_SCHEME
 from ..exception import TiebaServerError
 from ._classdef import Replys
@@ -35,20 +33,22 @@ def parse_body(proto: bytes) -> Replys:
 
 
 async def request_http(http_core: HttpCore, pn: int) -> Replys:
+    data = pack_proto(http_core.core, pn)
+
     request = pack_proto_request(
         http_core,
         yarl.URL.build(
             scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/u/feed/replyme", query_string=f"cmd={CMD}"
         ),
-        pack_proto(http_core.core, pn),
+        data,
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=16 * 1024)
-        replys = parse_body(body)
+    body = await send_request(request, http_core.connector, read_bufsize=16 * 1024)
+    return parse_body(body)
 
-    except Exception as err:
-        log_exception(sys._getframe(1), err)
-        replys = Replys()
 
-    return replys
+async def request_ws(ws_core: WsCore, pn: int) -> Replys:
+    data = pack_proto(ws_core.core, pn)
+
+    response = await ws_core.send(data, CMD)
+    return parse_body(await response.read())

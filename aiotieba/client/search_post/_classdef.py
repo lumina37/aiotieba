@@ -233,7 +233,7 @@ class Searches(Containers[Search]):
 
     def __init__(self, data_map: Optional[Mapping] = None) -> None:
         if data_map:
-            self._objs = [Search()._init(m) for m in data_map.get('post_list', [])]
+            self._objs = [Search(m) for m in data_map.get('post_list', [])]
             self._page = Page_search()._init(data_map['page'])
         else:
             self._objs = []

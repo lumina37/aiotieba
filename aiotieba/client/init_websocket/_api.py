@@ -58,4 +58,6 @@ async def request(ws_core: WsCore) -> List[WsMsgGroupInfo]:
     data = pack_proto(ws_core.core)
 
     resp = await ws_core.send(data, CMD, compress=False, encrypt=False)
-    return parse_body(await resp.read())
+    groups = parse_body(await resp.read())
+
+    return groups

@@ -499,7 +499,7 @@ class Comment_p(object):
         '_create_time',
     ]
 
-    def _init(self, data_proto: TypeMessage) -> "Comment_p":
+    def __init__(self, data_proto: TypeMessage) -> None:
         contents = Contents_pc()._init(data_proto.content)
 
         self._reply_to_id = 0
@@ -527,8 +527,6 @@ class Comment_p(object):
         self._agree = data_proto.agree.agree_num
         self._disagree = data_proto.agree.disagree_num
         self._create_time = data_proto.time
-
-        return self
 
     def __repr__(self) -> str:
         return str(
@@ -977,7 +975,7 @@ class Post(object):
         self._text = None
         self._contents = Contents_p()._init(data_proto.content)
         self._sign = "".join(p.text for p in data_proto.signature.content if p.type == 0)
-        self._comments = [Comment_p()._init(p) for p in data_proto.sub_post_list.sub_post_list]
+        self._comments = [Comment_p(p) for p in data_proto.sub_post_list.sub_post_list]
         self._pid = data_proto.id
         self._author_id = data_proto.author_id
         self._vimage = VirtualImage_p()._init(data_proto)

@@ -1,6 +1,6 @@
 import yarl
 
-from .._core import HttpCore, TbCore
+from .._core import HttpCore, TbCore, WsCore
 from .._helper import pack_proto_request, send_request
 from ..const import APP_BASE_HOST, APP_SECURE_SCHEME
 from ..exception import TiebaServerError
@@ -65,7 +65,7 @@ async def request_http(
     comment_rn: int,
     is_fold: bool,
 ) -> Posts:
-    req_proto = pack_proto(
+    data = pack_proto(
         http_core.core,
         tid,
         pn,
@@ -81,10 +81,41 @@ async def request_http(
     request = pack_proto_request(
         http_core,
         yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/pb/page", query_string=f"cmd={CMD}"),
-        req_proto,
+        data,
     )
 
     __log__ = "tid={tid}"  # noqa: F841
 
     body = await send_request(request, http_core.connector, read_bufsize=128 * 1024)
     return parse_body(body)
+
+
+async def request_ws(
+    ws_core: WsCore,
+    tid: int,
+    pn: int,
+    rn: int,
+    sort: int,
+    only_thread_author: bool,
+    with_comments: bool,
+    comment_sort_by_agree: bool,
+    comment_rn: int,
+    is_fold: bool,
+) -> Posts:
+    data = pack_proto(
+        ws_core.core,
+        tid,
+        pn,
+        rn,
+        sort,
+        only_thread_author,
+        with_comments,
+        comment_sort_by_agree,
+        comment_rn,
+        is_fold,
+    )
+
+    __log__ = "tid={tid}"  # noqa: F841
+
+    response = await ws_core.send(data, CMD)
+    return parse_body(await response.read())

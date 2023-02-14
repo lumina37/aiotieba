@@ -117,7 +117,7 @@ class Client(object):
 
     Args:
         BDUSS_key (str, optional): 用于快捷调用BDUSS. Defaults to None.
-        prefer_ws (bool, optional): 用于快捷调用BDUSS. Defaults to None.
+        prefer_ws (bool, optional): 优先使用websocket接口. Defaults to False.
         proxy (tuple[yarl.URL, aiohttp.BasicAuth] | bool, optional): True则使用环境变量代理 False则禁用代理
             输入一个 (http代理地址, 代理验证) 的元组以手动设置代理. Defaults to False.
         loop (asyncio.AbstractEventLoop, optional): 事件循环. Defaults to None.
@@ -406,6 +406,7 @@ class Client(object):
         return user
 
     @handle_exception(get_uinfo_getuserinfo_app.UserInfo_guinfo_app)
+    @_try_websocket
     async def _get_uinfo_getuserinfo(self, user_id: int) -> get_uinfo_getuserinfo_app.UserInfo_guinfo_app:
         """
         接口 http://tiebac.baidu.com/c/u/user/getuserinfo
@@ -417,6 +418,9 @@ class Client(object):
             UserInfo_guinfo_app: 包含 user_id / portrait / user_name / nick_name_old / 性别 /
                 是否大神 / 是否超级会员
         """
+
+        if self._prefer_ws:
+            return await get_uinfo_getuserinfo_app.request_ws(self._ws_core, user_id)
 
         return await get_uinfo_getuserinfo_app.request_http(self._http_core, user_id)
 
@@ -490,9 +494,13 @@ class Client(object):
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
+        if self._prefer_ws:
+            return await get_threads.request_ws(self._ws_core, fname, pn, rn, sort, is_good)
+
         return await get_threads.request_http(self._http_core, fname, pn, rn, sort, is_good)
 
     @handle_exception(get_posts.Posts)
+    @_try_websocket
     async def get_posts(
         self,
         tid: int,
@@ -525,6 +533,20 @@ class Client(object):
             Posts: 回复列表
         """
 
+        if self._prefer_ws:
+            return await get_posts.request_ws(
+                self._ws_core,
+                tid,
+                pn,
+                rn,
+                sort,
+                only_thread_author,
+                with_comments,
+                comment_sort_by_agree,
+                comment_rn,
+                is_fold,
+            )
+
         return await get_posts.request_http(
             self._http_core,
             tid,
@@ -539,6 +561,7 @@ class Client(object):
         )
 
     @handle_exception(get_comments.Comments)
+    @_try_websocket
     async def get_comments(
         self, tid: int, pid: int, /, pn: int = 1, *, is_floor: bool = False
     ) -> get_comments.Comments:
@@ -554,6 +577,9 @@ class Client(object):
         Returns:
             Comments: 楼中楼列表
         """
+
+        if self._prefer_ws:
+            return await get_comments.request_ws(self._ws_core, tid, pid, pn, is_floor)
 
         return await get_comments.request_http(self._http_core, tid, pid, pn, is_floor)
 
@@ -605,6 +631,7 @@ class Client(object):
         return await get_forum_detail.request(self._http_core, fid)
 
     @handle_exception(dict)
+    @_try_websocket
     async def get_bawu_info(self, fname_or_fid: Union[str, int]) -> Dict[str, List[get_bawu_info.UserInfo_bawu]]:
         """
         获取吧务信息
@@ -618,9 +645,13 @@ class Client(object):
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
+        if self._prefer_ws:
+            return await get_bawu_info.request_ws(self._ws_core, fid)
+
         return await get_bawu_info.request_http(self._http_core, fid)
 
     @handle_exception(dict)
+    @_try_websocket
     async def get_tab_map(self, fname_or_fid: Union[str, int]) -> Dict[str, int]:
         """
         获取分区名到分区id的映射字典
@@ -633,6 +664,9 @@ class Client(object):
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
+
+        if self._prefer_ws:
+            return await get_tab_map.request_ws(self._ws_core, fname)
 
         return await get_tab_map.request_http(self._http_core, fname)
 
@@ -671,6 +705,7 @@ class Client(object):
         return await get_member_users.request(self._http_core, fname, pn)
 
     @handle_exception(get_square_forums.SquareForums)
+    @_try_websocket
     async def get_square_forums(self, cname: str, /, pn: int = 1, *, rn: int = 20) -> get_square_forums.SquareForums:
         """
         获取吧广场列表
@@ -686,9 +721,13 @@ class Client(object):
 
         from . import get_square_forums
 
+        if self._prefer_ws:
+            return await get_square_forums.request_ws(self._ws_core, cname, pn, rn)
+
         return await get_square_forums.request_http(self._http_core, cname, pn, rn)
 
     @handle_exception(get_homepage.null_ret_factory)
+    @_try_websocket
     async def get_homepage(
         self, _id: Union[str, int], *, with_threads: bool = True
     ) -> Tuple[get_homepage.UserInfo_home, List[get_homepage.Thread_home]]:
@@ -708,6 +747,9 @@ class Client(object):
             portrait = user._portrait
         else:
             portrait = _id
+
+        if self._prefer_ws:
+            return await get_homepage.request_ws(self._ws_core, portrait, with_threads)
 
         return await get_homepage.request_http(self._http_core, portrait, with_threads)
 
@@ -1457,6 +1499,7 @@ class Client(object):
         return True
 
     @handle_exception(get_replys.Replys)
+    @_try_websocket
     async def get_replys(self, pn: int = 1) -> get_replys.Replys:
         """
         获取回复信息
@@ -1467,6 +1510,9 @@ class Client(object):
         Returns:
             Replys: 回复列表
         """
+
+        if self._prefer_ws:
+            return await get_replys.request_ws(self._ws_core, pn)
 
         return await get_replys.request_http(self._http_core, pn)
 
@@ -1485,6 +1531,7 @@ class Client(object):
         return await get_ats.request(self._http_core, pn)
 
     @handle_exception(list)
+    @_try_websocket
     async def get_self_public_threads(self, pn: int = 1) -> List[get_user_contents.UserThread]:
         """
         获取本人发布的公开状态的主题帖列表
@@ -1498,9 +1545,13 @@ class Client(object):
 
         user = await self.get_self_info(ReqUInfo.USER_ID)
 
+        if self._prefer_ws:
+            return await get_user_contents.get_threads.request_ws(self._ws_core, user.user_id, pn, public_only=True)
+
         return await get_user_contents.get_threads.request_http(self._http_core, user.user_id, pn, public_only=True)
 
     @handle_exception(list)
+    @_try_websocket
     async def get_self_threads(self, pn: int = 1) -> List[get_user_contents.UserThread]:
         """
         获取本人发布的主题帖列表
@@ -1514,9 +1565,13 @@ class Client(object):
 
         user = await self.get_self_info(ReqUInfo.USER_ID)
 
+        if self._prefer_ws:
+            return await get_user_contents.get_threads.request_ws(self._ws_core, user.user_id, pn, public_only=False)
+
         return await get_user_contents.get_threads.request_http(self._http_core, user.user_id, pn, public_only=False)
 
     @handle_exception(list)
+    @_try_websocket
     async def get_self_posts(self, pn: int = 1) -> List[get_user_contents.UserPosts]:
         """
         获取本人发布的回复列表
@@ -1530,9 +1585,13 @@ class Client(object):
 
         user = await self.get_self_info(ReqUInfo.USER_ID)
 
+        if self._prefer_ws:
+            return await get_user_contents.get_posts.request_ws(self._ws_core, user.user_id, pn)
+
         return await get_user_contents.get_posts.request_http(self._http_core, user.user_id, pn)
 
     @handle_exception(list)
+    @_try_websocket
     async def get_user_threads(self, _id: Union[str, int], pn: int = 1) -> List[get_user_contents.UserThread]:
         """
         获取用户发布的主题帖列表
@@ -1550,6 +1609,9 @@ class Client(object):
             user_id = user._user_id
         else:
             user_id = _id
+
+        if self._prefer_ws:
+            return await get_user_contents.get_threads.request_ws(self._ws_core, user_id, pn, public_only=True)
 
         return await get_user_contents.get_threads.request_http(self._http_core, user_id, pn, public_only=True)
 
@@ -1621,6 +1683,7 @@ class Client(object):
         return await get_self_follow_forums.request(self._http_core, pn)
 
     @handle_exception(get_dislike_forums.DislikeForums)
+    @_try_websocket
     async def get_dislike_forums(self, pn: int = 1, /, *, rn: int = 20) -> get_dislike_forums.DislikeForums:
         """
         获取首页推荐屏蔽的贴吧列表
@@ -1632,6 +1695,9 @@ class Client(object):
         Returns:
             DislikeForums: 首页推荐屏蔽的贴吧列表
         """
+
+        if self._prefer_ws:
+            return await get_dislike_forums.request_ws(self._ws_core, pn, rn)
 
         return await get_dislike_forums.request_http(self._http_core, pn, rn)
 

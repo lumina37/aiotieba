@@ -281,7 +281,6 @@ class At(object):
         self._is_floor = bool(int(data_map['is_floor']))
         self._is_thread = bool(int(data_map['is_first_post']))
         self._create_time = int(data_map['time'])
-        return self
 
     def __repr__(self) -> str:
         return str(

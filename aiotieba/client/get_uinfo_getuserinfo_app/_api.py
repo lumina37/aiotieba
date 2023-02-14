@@ -1,6 +1,6 @@
 import yarl
 
-from .._core import HttpCore
+from .._core import HttpCore, WsCore
 from .._helper import pack_proto_request, send_request
 from ..const import APP_BASE_HOST, APP_INSECURE_SCHEME
 from ..exception import TiebaServerError
@@ -31,15 +31,26 @@ def parse_body(body: bytes) -> UserInfo_guinfo_app:
 
 
 async def request_http(http_core: HttpCore, user_id: int) -> UserInfo_guinfo_app:
+    data = pack_proto(user_id)
+
     request = pack_proto_request(
         http_core,
         yarl.URL.build(
             scheme=APP_INSECURE_SCHEME, host=APP_BASE_HOST, path="/c/u/user/getuserinfo", query_string=f"cmd={CMD}"
         ),
-        pack_proto(user_id),
+        data,
     )
 
     __log__ = "user_id={user_id}"  # noqa: F841
 
     body = await send_request(request, http_core.connector, read_bufsize=1024)
     return parse_body(body)
+
+
+async def request_ws(ws_core: WsCore, user_id: int) -> UserInfo_guinfo_app:
+    data = pack_proto(user_id)
+
+    __log__ = "user_id={user_id}"  # noqa: F841
+
+    response = await ws_core.send(data, CMD)
+    return parse_body(await response.read())

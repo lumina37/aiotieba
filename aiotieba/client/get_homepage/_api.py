@@ -2,7 +2,7 @@ from typing import List, Tuple
 
 import yarl
 
-from .._core import HttpCore, TbCore
+from .._core import HttpCore, TbCore, WsCore
 from .._helper import pack_proto_request, send_request
 from ..const import APP_BASE_HOST, APP_INSECURE_SCHEME
 from ..exception import TiebaServerError
@@ -55,15 +55,26 @@ def parse_body(body: bytes) -> Tuple[UserInfo_home, List[Thread_home]]:
 async def request_http(
     http_core: HttpCore, portrait: str, with_threads: bool
 ) -> Tuple[UserInfo_home, List[Thread_home]]:
+    data = pack_proto(http_core.core, portrait, with_threads)
+
     request = pack_proto_request(
         http_core,
         yarl.URL.build(
             scheme=APP_INSECURE_SCHEME, host=APP_BASE_HOST, path="/c/u/user/profile", query_string=f"cmd={CMD}"
         ),
-        pack_proto(http_core.core, portrait, with_threads),
+        data,
     )
 
     __log__ = "portrait={portrait}"  # noqa: F841
 
     body = await send_request(request, http_core.connector, read_bufsize=64 * 1024)
     return parse_body(body)
+
+
+async def request_ws(ws_core: WsCore, portrait: str, with_threads: bool) -> Tuple[UserInfo_home, List[Thread_home]]:
+    data = pack_proto(ws_core.core, portrait, with_threads)
+
+    __log__ = "portrait={portrait}"  # noqa: F841
+
+    response = await ws_core.send(data, CMD)
+    return parse_body(await response.read())

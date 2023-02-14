@@ -2,7 +2,7 @@ from typing import List
 
 import yarl
 
-from ..._core import HttpCore, TbCore
+from ..._core import HttpCore, TbCore, WsCore
 from ..._helper import pack_proto_request, send_request
 from ...const import APP_BASE_HOST, APP_SECURE_SCHEME
 from ...exception import TiebaServerError
@@ -44,15 +44,26 @@ def parse_body(body: bytes) -> List[UserPosts]:
 
 
 async def request_http(http_core: HttpCore, user_id: int, pn: int) -> List[UserPosts]:
+    data = pack_proto(http_core.core, user_id, pn)
+
     request = pack_proto_request(
         http_core,
         yarl.URL.build(
             scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/u/feed/userpost", query_string=f"cmd={CMD}"
         ),
-        pack_proto(http_core.core, user_id, pn),
+        data,
     )
 
     __log__ = "user_id={user_id}"  # noqa: F841
 
     body = await send_request(request, http_core.connector, read_bufsize=8 * 1024)
     return parse_body(body)
+
+
+async def request_ws(ws_core: WsCore, user_id: int, pn: int) -> List[UserPosts]:
+    data = pack_proto(ws_core.core, user_id, pn)
+
+    __log__ = "user_id={user_id}"  # noqa: F841
+
+    response = await ws_core.send(data, CMD)
+    return parse_body(await response.read())

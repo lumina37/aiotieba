@@ -431,27 +431,6 @@ async def send_request(
     return body
 
 
-def log_exception(frame: FrameType, err: Exception, log_str: str = '', log_level: int = logging.WARNING):
-    """
-    异常日志
-
-    Args:
-        frame (FrameType): 帧对象
-        err (Exception): 异常对象
-        log_str (str): 附加日志
-        log_level (int): 日志等级
-    """
-
-    meth_name = frame.f_code.co_name
-    log_str = f"{err}. {log_str}"
-    logger = get_logger()
-    if logger.isEnabledFor(log_level):
-        record = logger.makeRecord(logger.name, log_level, None, frame.f_lineno, log_str, None, None, meth_name)
-        logger.handle(record)
-
-    exc_handlers._handle(meth_name, err)
-
-
 def log_success(frame: FrameType, log_str: str = '', log_level: int = logging.INFO):
     """
     成功日志
