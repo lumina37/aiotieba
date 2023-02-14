@@ -11,7 +11,7 @@ CMD = 301001
 
 
 def null_ret_factory() -> Threads:
-    return Threads()._init_null()
+    return Threads()
 
 
 def pack_proto(core: TbCore, fname: str, pn: int, rn: int, sort: int, is_good: bool) -> bytes:
@@ -36,7 +36,7 @@ def parse_body(body: bytes) -> Threads:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    threads = Threads()._init(data_proto)
+    threads = Threads(data_proto)
 
     return threads
 

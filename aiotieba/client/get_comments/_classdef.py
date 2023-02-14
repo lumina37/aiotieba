@@ -1735,7 +1735,7 @@ class Comments(Containers[Comment]):
         '_post',
     ]
 
-    def __init__(self, data_proto: Optional[TypeMessage]) -> None:
+    def __init__(self, data_proto: Optional[TypeMessage] = None) -> None:
         if data_proto:
             self._page = Page_c()._init(data_proto.page)
             self._forum = Forum_c()._init(data_proto.forum)

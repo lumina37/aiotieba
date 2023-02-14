@@ -14,7 +14,7 @@ def parse_body(body: bytes) -> Fans:
     if code := int(res_json['error_code']):
         raise TiebaServerError(code, res_json['error_msg'])
 
-    fans = Fans()._init(res_json)
+    fans = Fans(res_json)
 
     return fans
 
@@ -39,6 +39,6 @@ async def request(http_core: HttpCore, user_id: int, pn: int) -> Fans:
 
     except Exception as err:
         log_exception(sys._getframe(1), err, f"user_id={user_id}")
-        fans = Fans()._init_null()
+        fans = Fans()
 
     return fans

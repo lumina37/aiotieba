@@ -14,7 +14,7 @@ def parse_body(body: bytes) -> Searches:
     if code := int(res_json['error_code']):
         raise TiebaServerError(code, res_json['error_msg'])
 
-    searches = Searches()._init(res_json)
+    searches = Searches(res_json)
 
     return searches
 
@@ -44,6 +44,6 @@ async def request(
 
     except Exception as err:
         log_exception(sys._getframe(1), err, f"fname={fname}")
-        searches = Searches()._init_null()
+        searches = Searches()
 
     return searches

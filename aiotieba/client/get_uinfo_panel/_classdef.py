@@ -1,4 +1,4 @@
-from typing import Mapping
+from typing import Mapping, Optional
 
 from .._helper import removesuffix
 
@@ -39,47 +39,45 @@ class UserInfo_panel(object):
         '_is_vip',
     ]
 
-    def _init(self, data_map: Mapping) -> "UserInfo_panel":
-        self._user_name = data_map['name']
-        self._portrait = data_map['portrait']
-        self._nick_name_new = data_map['show_nickname']
-        self._nick_name_old = data_map['name_show']
+    def __init__(self, data_map: Optional[Mapping] = None) -> None:
+        if data_map:
+            self._user_name = data_map['name']
+            self._portrait = data_map['portrait']
+            self._nick_name_new = data_map['show_nickname']
+            self._nick_name_old = data_map['name_show']
 
-        sex = data_map['sex']
-        if sex == 'male':
-            self._gender = 1
-        elif sex == 'female':
-            self._gender = 2
+            sex = data_map['sex']
+            if sex == 'male':
+                self._gender = 1
+            elif sex == 'female':
+                self._gender = 2
+            else:
+                self._gender = 0
+
+            if (tb_age := data_map['tb_age']) != '-':
+                self._age = float(tb_age)
+            else:
+                self._age = 0.0
+
+            self._post_num = self._num2int(data_map['post_num'])
+            self._fan_num = self._num2int(data_map['followed_count'])
+
+            if vip_dict := data_map['vipInfo']:
+                self._is_vip = bool(int(vip_dict['v_status']))
+            else:
+                self._is_vip = False
+
         else:
+            self._user_id = 0
+            self._portrait = ''
+            self._user_name = ''
+            self._nick_name_new = ''
+            self._nick_name_old = ''
             self._gender = 0
-
-        if (tb_age := data_map['tb_age']) != '-':
-            self._age = float(tb_age)
-        else:
             self._age = 0.0
-
-        self._post_num = self._num2int(data_map['post_num'])
-        self._fan_num = self._num2int(data_map['followed_count'])
-
-        if vip_dict := data_map['vipInfo']:
-            self._is_vip = bool(int(vip_dict['v_status']))
-        else:
+            self._post_num = 0
+            self._fan_num = 0
             self._is_vip = False
-
-        return self
-
-    def _init_null(self) -> "UserInfo_panel":
-        self._user_id = 0
-        self._portrait = ''
-        self._user_name = ''
-        self._nick_name_new = ''
-        self._nick_name_old = ''
-        self._gender = 0
-        self._age = 0.0
-        self._post_num = 0
-        self._fan_num = 0
-        self._is_vip = False
-        return self
 
     def __str__(self) -> str:
         return self._user_name or self._portrait or str(self._user_id)

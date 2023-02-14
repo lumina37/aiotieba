@@ -1,3 +1,5 @@
+from typing import Optional
+
 from .._classdef import Containers, TypeMessage
 
 
@@ -435,7 +437,7 @@ class Reply(object):
         '_create_time',
     ]
 
-    def _init(self, data_proto: TypeMessage) -> "Reply":
+    def __init__(self, data_proto: TypeMessage) -> None:
         self._text = data_proto.content
         self._fname = data_proto.fname
         self._tid = data_proto.thread_id
@@ -447,7 +449,6 @@ class Reply(object):
         self._thread_user = UserInfo_reply_t()._init(data_proto.thread_author_user)
         self._is_floor = bool(data_proto.is_floor)
         self._create_time = data_proto.time
-        return self
 
     def __repr__(self) -> str:
         return str(
@@ -636,15 +637,13 @@ class Replys(Containers[Reply]):
 
     __slots__ = ['_page']
 
-    def _init(self, data_proto: TypeMessage) -> "Replys":
-        self._objs = [Reply()._init(p) for p in data_proto.reply_list]
-        self._page = Page_reply()._init(data_proto.page)
-        return self
-
-    def _init_null(self) -> "Replys":
-        self._objs = []
-        self._page = Page_reply()._init_null()
-        return self
+    def __init__(self, data_proto: Optional[TypeMessage] = None) -> None:
+        if data_proto:
+            self._objs = [Reply(p) for p in data_proto.reply_list]
+            self._page = Page_reply()._init(data_proto.page)
+        else:
+            self._objs = []
+            self._page = Page_reply()._init_null()
 
     @property
     def page(self) -> Page_reply:

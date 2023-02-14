@@ -8,7 +8,7 @@ from ._classdef import UserInfo_panel
 
 
 def null_ret_factory() -> UserInfo_panel:
-    return UserInfo_panel()._init_null()
+    return UserInfo_panel()
 
 
 def parse_body(body: bytes) -> UserInfo_panel:
@@ -17,7 +17,7 @@ def parse_body(body: bytes) -> UserInfo_panel:
         raise TiebaServerError(code, res_json['error'])
 
     user_dict = res_json['data']
-    user = UserInfo_panel()._init(user_dict)
+    user = UserInfo_panel(user_dict)
 
     return user
 

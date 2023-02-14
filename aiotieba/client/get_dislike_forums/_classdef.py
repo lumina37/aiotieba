@@ -1,4 +1,5 @@
 from typing import Optional
+
 from .._classdef import Containers, TypeMessage
 
 
@@ -165,7 +166,7 @@ class DislikeForums(Containers[DislikeForum]):
 
     __slots__ = ['_page']
 
-    def __init__(self, data_proto: Optional[TypeMessage]) -> None:
+    def __init__(self, data_proto: Optional[TypeMessage] = None) -> None:
         if data_proto:
             self._objs = [DislikeForum(p) for p in data_proto.forum_list]
             self._page = Page_dislikef()._init(data_proto)

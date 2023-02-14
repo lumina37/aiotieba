@@ -1,4 +1,3 @@
-
 import yarl
 
 from .._core import HttpCore
@@ -9,7 +8,7 @@ from ._classdef import UserInfo_json
 
 
 def null_ret_factory() -> UserInfo_json:
-    return UserInfo_json()._init_null()
+    return UserInfo_json()
 
 
 def parse_body(body: bytes) -> UserInfo_json:
@@ -20,7 +19,7 @@ def parse_body(body: bytes) -> UserInfo_json:
     res_json = parse_json(text)
 
     user_dict = res_json['creator']
-    user = UserInfo_json()._init(user_dict)
+    user = UserInfo_json(user_dict)
 
     return user
 

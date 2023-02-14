@@ -1,4 +1,4 @@
-from typing import Mapping
+from typing import Mapping, Optional
 
 from .._classdef import Containers
 
@@ -37,7 +37,7 @@ class Appeal(object):
         '_op_name',
     ]
 
-    def _init(self, data_map: Mapping) -> "Appeal":
+    def __init__(self, data_map: Mapping) -> None:
         user_map = data_map['user']
         self._user_id = user_map['id']
         if '?' in (portrait := user_map['portrait']):
@@ -53,7 +53,6 @@ class Appeal(object):
         self._punish_time = int(data_map['punish_start_time'])
         self._punish_day = data_map['punish_day_num']
         self._op_name = data_map['operate_man']
-        return self
 
     def __repr__(self) -> str:
         return str(
@@ -169,15 +168,13 @@ class Appeals(Containers[Appeal]):
 
     __slots__ = ['_has_more']
 
-    def _init(self, data_map: Mapping) -> "Appeals":
-        self._objs = [Appeal()._init(m) for m in data_map['data'].get('appeal_list', [])]
-        self._has_more = data_map['data'].get('has_more', False)
-        return self
-
-    def _init_null(self) -> "Appeals":
-        self._objs = []
-        self._has_more = False
-        return self
+    def _init(self, data_map: Optional[Mapping]=None) -> None:
+        if data_map:
+            self._objs = [Appeal()._init(m) for m in data_map['data'].get('appeal_list', [])]
+            self._has_more = data_map['data'].get('has_more', False)
+        else:
+            self._objs = []
+            self._has_more = False
 
     @property
     def has_more(self) -> bool:

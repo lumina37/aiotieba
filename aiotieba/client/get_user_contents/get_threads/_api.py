@@ -34,9 +34,9 @@ def parse_body(body: bytes) -> List[UserThread]:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    uthreads = [UserThread()._init(p) for p in data_proto.post_list]
+    uthreads = [UserThread(p) for p in data_proto.post_list]
     if uthreads:
-        user = UserInfo_u()._init(data_proto.post_list[0])
+        user = UserInfo_u(data_proto.post_list[0])
         for uthread in uthreads:
             uthread._user = user
             uthread._author_id = user._user_id

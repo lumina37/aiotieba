@@ -15,7 +15,7 @@ def parse_body(body: bytes) -> UserInfo_selfinit:
         raise TiebaServerError(code, res_json['error_msg'])
 
     user_dict = res_json['user_info']
-    user = UserInfo_selfinit()._init(user_dict)
+    user = UserInfo_selfinit(user_dict)
 
     return user
 
@@ -38,6 +38,6 @@ async def request(http_core: HttpCore) -> UserInfo_selfinit:
 
     except Exception as err:
         log_exception(sys._getframe(1), err)
-        user = UserInfo_selfinit()._init_null()
+        user = UserInfo_selfinit()
 
     return user

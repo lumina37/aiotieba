@@ -33,7 +33,7 @@ def parse_body(body: bytes) -> Tuple[UserInfo_home, List[Thread_home]]:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    user = UserInfo_home()._init(data_proto.user)
+    user = UserInfo_home(data_proto.user)
 
     anti_proto = data_proto.anti_stat
     if anti_proto.block_stat and anti_proto.hide_stat and anti_proto.days_tofree > 30:
@@ -41,7 +41,7 @@ def parse_body(body: bytes) -> Tuple[UserInfo_home, List[Thread_home]]:
     else:
         user._is_blocked = False
 
-    threads = [Thread_home()._init(p) for p in data_proto.post_list]
+    threads = [Thread_home(p) for p in data_proto.post_list]
 
     for thread in threads:
         thread._user = user
@@ -66,7 +66,7 @@ async def request_http(
 
     except Exception as err:
         log_exception(sys._getframe(1), err, f"portrait={portrait}")
-        user = UserInfo_home()._init_null()
+        user = UserInfo_home()
         threads = []
 
     return user, threads

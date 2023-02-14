@@ -29,7 +29,7 @@ def parse_body(proto: bytes) -> Replys:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    replys = Replys()._init(data_proto)
+    replys = Replys(data_proto)
 
     return replys
 
@@ -49,6 +49,6 @@ async def request_http(http_core: HttpCore, pn: int) -> Replys:
 
     except Exception as err:
         log_exception(sys._getframe(1), err)
-        replys = Replys()._init_null()
+        replys = Replys()
 
     return replys

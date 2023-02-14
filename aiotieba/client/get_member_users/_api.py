@@ -11,7 +11,7 @@ from ._classdef import MemberUsers
 
 def parse_body(body: bytes) -> MemberUsers:
     soup = bs4.BeautifulSoup(body, 'lxml')
-    member_users = MemberUsers()._init(soup)
+    member_users = MemberUsers(soup)
 
     return member_users
 
@@ -35,6 +35,6 @@ async def request(http_core: HttpCore, fname: str, pn: int) -> MemberUsers:
 
     except Exception as err:
         log_exception(sys._getframe(1), err, f"fname={fname}")
-        member_users = MemberUsers()._init_null()
+        member_users = MemberUsers()
 
     return member_users

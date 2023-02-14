@@ -1,8 +1,7 @@
-
 import yarl
 
 from .._core import HttpCore
-from .._helper import  pack_proto_request, send_request
+from .._helper import pack_proto_request, send_request
 from ..const import APP_BASE_HOST, APP_INSECURE_SCHEME
 from ..exception import TiebaServerError
 from ._classdef import UserInfo_guinfo_app
@@ -12,7 +11,7 @@ CMD = 303024
 
 
 def null_ret_factory() -> UserInfo_guinfo_app:
-    return UserInfo_guinfo_app()._init_null()
+    return UserInfo_guinfo_app()
 
 
 def pack_proto(user_id: int) -> bytes:
@@ -30,7 +29,7 @@ def parse_body(body: bytes) -> UserInfo_guinfo_app:
         raise TiebaServerError(error_code, res_proto.error.errmsg)
 
     user_proto = res_proto.data.user
-    user = UserInfo_guinfo_app()._init(user_proto)
+    user = UserInfo_guinfo_app(user_proto)
 
     return user
 

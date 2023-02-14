@@ -1,4 +1,4 @@
-from typing import Mapping
+from typing import Mapping, Optional
 
 from .._classdef import Containers
 
@@ -22,12 +22,11 @@ class FollowForum(object):
         '_exp',
     ]
 
-    def _init(self, data_map: Mapping) -> "FollowForum":
+    def __init__(self, data_map: Mapping) -> None:
         self._fid = int(data_map['id'])
         self._fname = data_map['name']
         self._level = int(data_map['level_id'])
         self._exp = int(data_map['cur_score'])
-        return self
 
     def __repr__(self) -> str:
         return str(
@@ -90,22 +89,16 @@ class FollowForums(Containers[FollowForum]):
 
     __slots__ = ['_has_more']
 
-    def _init(self, data_map: Mapping) -> "FollowForums":
-        if forum_list := data_map.get('forum_list', {}):
+    def __init__(self, data_map: Optional[Mapping] = None) -> None:
+        if data_map and (forum_list := data_map.get('forum_list', {})):
             forum_dicts = forum_list.get('non-gconforum', [])
-            self._objs = [FollowForum()._init(m) for m in forum_dicts]
+            self._objs = [FollowForum(m) for m in forum_dicts]
             forum_dicts = forum_list.get('gconforum', [])
-            self._objs += [FollowForum()._init(m) for m in forum_dicts]
+            self._objs += [FollowForum(m) for m in forum_dicts]
             self._has_more = bool(int(data_map['has_more']))
         else:
             self._objs = []
             self._has_more = False
-        return self
-
-    def _init_null(self) -> "FollowForums":
-        self._objs = []
-        self._has_more = False
-        return self
 
     @property
     def has_more(self) -> bool:

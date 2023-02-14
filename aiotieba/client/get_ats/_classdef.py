@@ -390,7 +390,7 @@ class Ats(Containers[At]):
 
     __slots__ = ['_page']
 
-    def __init__(self, data_map: Optional[Mapping]) -> "Ats":
+    def __init__(self, data_map: Optional[Mapping] = None) -> None:
         if data_map:
             self._objs = [At(m) for m in data_map.get('at_list', [])]
             self._page = Page_at()._init(data_map['page'])

@@ -17,14 +17,13 @@ def parse_body(body: bytes) -> Tuple[UserInfo_login, str]:
         raise TiebaServerError(code, res_json['error_msg'])
 
     user_dict = res_json['user']
-    user = UserInfo_login()._init(user_dict)
+    user = UserInfo_login(user_dict)
     tbs = res_json['anti']['tbs']
 
     return user, tbs
 
 
 async def request(http_core: HttpCore) -> Tuple[UserInfo_login, str]:
-    raise SystemError("hahaha")
     data = [
         ('_client_version', http_core.core.main_version),
         ('bdusstoken', http_core.core._BDUSS),

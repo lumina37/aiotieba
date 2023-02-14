@@ -10,7 +10,7 @@ from Crypto.Util.Padding import pad, unpad
 
 from .._core import HttpCore
 from .._crypto import rc4_42
-from .._helper import  pack_json, parse_json, send_request
+from .._helper import pack_json, parse_json, send_request
 
 SOFIRE_HOST = "sofire.baidu.com"
 

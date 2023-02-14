@@ -202,7 +202,7 @@ class Blocks(Containers[Block]):
 
     __slots__ = ['_page']
 
-    def __init__(self, data_map: Optional[Mapping]) -> None:
+    def __init__(self, data_map: Optional[Mapping] = None) -> None:
         if data_map:
             data_soup = bs4.BeautifulSoup(data_map['data']['content'], 'lxml')
             self._objs = [Block()._init(t) for t in data_soup('li')]

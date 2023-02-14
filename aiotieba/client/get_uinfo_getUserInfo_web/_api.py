@@ -8,7 +8,7 @@ from ._classdef import UserInfo_guinfo_web
 
 
 def null_ret_factory() -> UserInfo_guinfo_web:
-    return UserInfo_guinfo_web()._init_null()
+    return UserInfo_guinfo_web()
 
 
 def parse_body(body: bytes) -> UserInfo_guinfo_web:
@@ -17,7 +17,7 @@ def parse_body(body: bytes) -> UserInfo_guinfo_web:
         raise TiebaServerError(code, res_json['errmsg'])
 
     user_dict = res_json['chatUser']
-    user = UserInfo_guinfo_web()._init(user_dict)
+    user = UserInfo_guinfo_web(user_dict)
 
     return user
 

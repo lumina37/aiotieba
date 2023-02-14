@@ -31,7 +31,7 @@ def parse_body(body: bytes) -> SquareForums:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    square_forums = SquareForums()._init(data_proto)
+    square_forums = SquareForums(data_proto)
 
     return square_forums
 
@@ -51,6 +51,6 @@ async def request_http(http_core: HttpCore, cname: str, pn: int, rn: int) -> Squ
 
     except Exception as err:
         log_exception(sys._getframe(1), err, f"cname={cname}")
-        square_forums = SquareForums()._init_null()
+        square_forums = SquareForums()
 
     return square_forums

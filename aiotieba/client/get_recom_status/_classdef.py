@@ -1,4 +1,4 @@
-from typing import Mapping
+from typing import Mapping, Optional
 
 
 class RecomStatus(object):
@@ -15,15 +15,13 @@ class RecomStatus(object):
         '_used_recom_num',
     ]
 
-    def _init(self, data_map: Mapping) -> "RecomStatus":
-        self._total_recom_num = int(data_map['total_recommend_num'])
-        self._used_recom_num = int(data_map['used_recommend_num'])
-        return self
-
-    def _init_null(self) -> "RecomStatus":
-        self._total_recom_num = 0
-        self._used_recom_num = 0
-        return self
+    def __init__(self, data_map: Optional[Mapping] = None) -> None:
+        if data_map:
+            self._total_recom_num = int(data_map['total_recommend_num'])
+            self._used_recom_num = int(data_map['used_recommend_num'])
+        else:
+            self._total_recom_num = 0
+            self._used_recom_num = 0
 
     def __repr__(self) -> str:
         return str(

@@ -11,7 +11,7 @@ from ._classdef import RankUsers
 
 def parse_body(body: bytes) -> RankUsers:
     soup = bs4.BeautifulSoup(body, 'lxml')
-    rank_users = RankUsers()._init(soup)
+    rank_users = RankUsers(soup)
 
     return rank_users
 
@@ -35,6 +35,6 @@ async def request(http_core: HttpCore, fname: str, pn: int) -> RankUsers:
 
     except Exception as err:
         log_exception(sys._getframe(1), err, f"fname={fname}")
-        rank_users = RankUsers()._init_null()
+        rank_users = RankUsers()
 
     return rank_users

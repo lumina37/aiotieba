@@ -15,7 +15,7 @@ def parse_body(body: bytes) -> Forum_detail:
         raise TiebaServerError(code, res_json['error_msg'])
 
     forum_dict = res_json['forum_info']
-    forum = Forum_detail()._init(forum_dict)
+    forum = Forum_detail(forum_dict)
 
     return forum
 
@@ -38,6 +38,6 @@ async def request(http_core: HttpCore, fid: int) -> Forum_detail:
 
     except Exception as err:
         log_exception(sys._getframe(1), err, f"fid={fid}")
-        forum = Forum_detail()._init_null()
+        forum = Forum_detail()
 
     return forum

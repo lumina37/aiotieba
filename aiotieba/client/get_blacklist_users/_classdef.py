@@ -189,7 +189,7 @@ class BlacklistUsers(Containers[BlacklistUser]):
         '_page',
     ]
 
-    def __init__(self, data_soup: Optional[bs4.BeautifulSoup]) -> None:
+    def __init__(self, data_soup: Optional[bs4.BeautifulSoup] = None) -> None:
         if data_soup:
             self._objs = [BlacklistUser(_tag) for _tag in data_soup('td', class_='left_cell')]
             page_tag = data_soup.find('div', class_='tbui_pagination').find('li', class_='active')

@@ -14,7 +14,7 @@ def parse_body(body: bytes) -> RecomStatus:
     if code := int(res_json['error_code']):
         raise TiebaServerError(code, res_json['error_msg'])
 
-    status = RecomStatus()._init(res_json)
+    status = RecomStatus(res_json)
 
     return status
 
@@ -40,6 +40,6 @@ async def request(http_core: HttpCore, fid: int) -> RecomStatus:
 
     except Exception as err:
         log_exception(sys._getframe(1), err, f"fid={fid}")
-        status = RecomStatus()._init_null()
+        status = RecomStatus()
 
     return status

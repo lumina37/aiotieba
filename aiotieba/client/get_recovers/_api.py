@@ -14,7 +14,7 @@ def parse_body(body: bytes) -> Recovers:
     if code := res_json['no']:
         raise TiebaServerError(code, res_json['error'])
 
-    recovers = Recovers()._init(res_json)
+    recovers = Recovers(res_json)
 
     return recovers
 
@@ -40,6 +40,6 @@ async def request(http_core: HttpCore, fname: str, fid: int, name: str, pn: int)
 
     except Exception as err:
         log_exception(sys._getframe(1), err, f"fname={fname}")
-        recovers = Recovers()._init_null()
+        recovers = Recovers()
 
     return recovers

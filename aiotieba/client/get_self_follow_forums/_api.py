@@ -15,7 +15,7 @@ def parse_body(body: bytes) -> SelfFollowForums:
         raise TiebaServerError(code, res_json['errmsg'])
 
     data_dict = res_json['data']['like_forum']
-    self_follow_forums = SelfFollowForums()._init(data_dict)
+    self_follow_forums = SelfFollowForums(data_dict)
 
     return self_follow_forums
 
@@ -38,6 +38,6 @@ async def request(http_core: HttpCore, pn: int) -> SelfFollowForums:
 
     except Exception as err:
         log_exception(sys._getframe(1), err)
-        self_follow_forums = SelfFollowForums()._init_null()
+        self_follow_forums = SelfFollowForums()
 
     return self_follow_forums

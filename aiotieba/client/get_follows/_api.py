@@ -14,7 +14,7 @@ def parse_body(body: bytes) -> Follows:
     if code := int(res_json['error_code']):
         raise TiebaServerError(code, res_json['error_msg'])
 
-    follows = Follows()._init(res_json)
+    follows = Follows(res_json)
 
     return follows
 
@@ -39,6 +39,6 @@ async def request(http_core: HttpCore, user_id: int, pn: int) -> Follows:
 
     except Exception as err:
         log_exception(sys._getframe(1), err, f"user_id={user_id}")
-        follows = Follows()._init_null()
+        follows = Follows()
 
     return follows

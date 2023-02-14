@@ -14,7 +14,7 @@ def parse_body(body: bytes) -> Appeals:
     if code := res_json['no']:
         raise TiebaServerError(code, res_json['error'])
 
-    appeals = Appeals()._init(res_json)
+    appeals = Appeals(res_json)
 
     return appeals
 
@@ -40,6 +40,6 @@ async def request(http_core: HttpCore, fname: str, fid: int, pn: int, rn: int) -
 
     except Exception as err:
         log_exception(sys._getframe(1), err, f"fname={fname}")
-        appeals = Appeals()._init_null()
+        appeals = Appeals()
 
     return appeals
