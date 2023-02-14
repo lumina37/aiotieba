@@ -449,10 +449,16 @@ def log_success(frame: FrameType, log_str: str = '', log_level: int = logging.IN
         logger.handle(record)
 
 
-TypeNullRetFactory = Callable[[], Any]
+def handle_exception(null_ret_factory: Callable[[], Any], no_format: bool = False, log_level: int = logging.WARNING):
+    """
+    处理request抛出的异常
 
+    Args:
+        null_ret_factory (Callable[[], Any]): 返回值的空构造工厂
+        no_format (bool, optional): 不格式化字符串而是直接记录. Defaults to False.
+        log_level (int, optional): 日志等级. Defaults to logging.WARNING.
+    """
 
-def handle_exception(null_ret_factory: TypeNullRetFactory, log_success: bool = False, log_level: int = logging.WARNING):
     def wrapper(func):
         async def awrapper(*args, **kwargs):
             try:
@@ -468,7 +474,7 @@ def handle_exception(null_ret_factory: TypeNullRetFactory, log_success: bool = F
                 frame = tb.tb_next.tb_frame
 
                 log_str: str = frame.f_locals.get('__log__', '')
-                if not log_success:  # need format
+                if not no_format:  # need format
                     log_str = log_str.format(**frame.f_locals)
                 log_str = f"{err}. {log_str}"
 

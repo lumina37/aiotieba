@@ -8,7 +8,7 @@ import aiohttp
 import async_timeout
 import yarl
 
-from .._helper import _send_request, pack_ws_bytes, parse_ws_bytes
+from .._helper import WsStatus, _send_request, pack_ws_bytes, parse_ws_bytes
 from ..const import TIME_CONFIG
 from ..exception import HTTPStatusError
 from . import TbCore
@@ -135,13 +135,13 @@ class WsCore(object):
     __slots__ = [
         'core',
         'connector',
-        'heartbeat',
         'waiter',
         'callbacks',
         'websocket',
         'ws_dispatcher',
-        '_req_id',
         'mid_manager',
+        '_status',
+        '_req_id',
         'loop',
     ]
 
@@ -157,8 +157,24 @@ class WsCore(object):
 
         self.callbacks: Dict[int, TypeWebsocketCallback] = {}
         self.websocket: aiohttp.ClientWebSocketResponse = None
+        self.ws_dispatcher: asyncio.Task = None
 
-    async def __websocket_connect(self) -> None:
+        self._status = WsStatus.CLOSED
+
+    async def connect(self) -> None:
+        """
+        建立weboscket连接
+
+        Raises:
+            aiohttp.WSServerHandshakeError: websocket握手失败
+        """
+
+        self._status = WsStatus.CONNECTING
+
+        self.waiter: Dict[int, asyncio.Future] = {}
+        self._req_id = int(time.time())
+        self.mid_manager = MsgIDManager()
+
         from aiohttp import hdrs
 
         ws_url = yarl.URL.build(scheme="ws", host="im.tieba.baidu.com", port=8000)
@@ -211,37 +227,15 @@ class WsCore(object):
                 heartbeat=TIME_CONFIG.ws_heartbeat,
             )
 
+        if self.ws_dispatcher is not None and not self.ws_dispatcher.done():
+            self.ws_dispatcher.cancel()
         self.ws_dispatcher = self.loop.create_task(self.__ws_dispatch(), name="ws_dispatcher")
 
-    async def connect(self) -> None:
-        """
-        建立weboscket连接
-
-        Raises:
-            aiohttp.WSServerHandshakeError: websocket握手失败
-        """
-
-        self.waiter: Dict[int, asyncio.Future] = {}
-        self._req_id = int(time.time())
-        self.mid_manager: MsgIDManager = MsgIDManager()
-        await self.__websocket_connect()
-
-    async def reconnect(self) -> None:
-        """
-        重新建立weboscket连接
-
-        Raises:
-            aiohttp.WSServerHandshakeError: websocket握手失败
-        """
-
-        if not self.ws_dispatcher.done():
-            self.ws_dispatcher.cancel()
-        await self.__websocket_connect()
-
     async def close(self) -> None:
-        if self.is_aviliable:
+        if self.status:
             await self.websocket.close()
             self.ws_dispatcher.cancel()
+        self._status = WsStatus.CLOSED
 
     def __default_callback(self, req_id: int, data: bytes) -> None:
         self.set_done(req_id, data)
@@ -303,15 +297,19 @@ class WsCore(object):
                     self.loop.create_task(res_callback(self, data, req_id))
 
         except asyncio.CancelledError:
-            return
+            pass
+        except Exception:
+            self._status = WsStatus.CLOSED
 
     @property
-    def is_aviliable(self) -> bool:
+    def status(self) -> WsStatus:
         """
-        websocket是否可用
+        websocket状态
         """
 
-        return not (self.websocket is None or self.websocket._writer.transport.is_closing())
+        if self._status == WsStatus.OPEN and self.websocket._writer.transport.is_closing():
+            self._status = WsStatus.CLOSED
+        return self._status
 
     @property
     def req_id(self) -> int:

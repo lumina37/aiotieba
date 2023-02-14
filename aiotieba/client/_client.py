@@ -80,7 +80,7 @@ from . import (
 )
 from ._classdef.user import UserInfo
 from ._core import HttpCore, TbCore, WsCore
-from ._helper import GroupType, PostSortType, ReqUInfo, ThreadSortType, handle_exception, is_portrait
+from ._helper import GroupType, PostSortType, ReqUInfo, ThreadSortType, WsStatus, handle_exception, is_portrait
 from ._helper.cache import ForumInfoCache
 from .const import TIME_CONFIG
 from .get_homepage._classdef import UserInfo_home
@@ -92,7 +92,7 @@ if TYPE_CHECKING:
 
 def _try_websocket(func):
     async def awrapper(self: "Client", *args, **kwargs):
-        if self._prefer_ws:
+        if self._enable_ws:
             await self.init_websocket()
         return await func(self, *args, **kwargs)
 
@@ -117,7 +117,7 @@ class Client(object):
 
     Args:
         BDUSS_key (str, optional): 用于快捷调用BDUSS. Defaults to None.
-        prefer_ws (bool, optional): 优先使用websocket接口. Defaults to False.
+        enable_ws (bool, optional): 允许使用websocket接口. Defaults to False.
         proxy (tuple[yarl.URL, aiohttp.BasicAuth] | bool, optional): True则使用环境变量代理 False则禁用代理
             输入一个 (http代理地址, 代理验证) 的元组以手动设置代理. Defaults to False.
         loop (asyncio.AbstractEventLoop, optional): 事件循环. Defaults to None.
@@ -128,14 +128,14 @@ class Client(object):
         '_core',
         '_http_core',
         '_ws_core',
-        '_prefer_ws',
+        '_enable_ws',
         '_user',
     ]
 
     def __init__(
         self,
         BDUSS_key: Optional[str] = None,
-        prefer_ws: bool = False,
+        enable_ws: bool = False,
         proxy: Union[Tuple[yarl.URL, aiohttp.BasicAuth], bool] = False,
         loop: Optional[asyncio.AbstractEventLoop] = None,
     ) -> None:
@@ -165,7 +165,7 @@ class Client(object):
         self._core = core
         self._http_core = HttpCore(core, connector, loop)
         self._ws_core = WsCore(core, connector, loop)
-        self._prefer_ws = prefer_ws
+        self._enable_ws = enable_ws
 
         self._user = UserInfo_home()
 
@@ -196,14 +196,11 @@ class Client(object):
         初始化websocket
 
         Returns:
-            bool: True成功 False失败
+            bool: True无须执行 False失败
         """
 
-        if not self._ws_core.websocket:
+        if self._ws_core.status != WsStatus.OPEN:
             await self._ws_core.connect()
-            await self.__upload_sec_key()
-        elif not self._ws_core.is_aviliable:
-            await self._ws_core.reconnect()
             await self.__upload_sec_key()
         return True
 
@@ -218,6 +215,8 @@ class Client(object):
             if group._group_type == GroupType.PRIVATE_MSG:
                 mid_manager.priv_gid = group._group_id
         mid_manager.gid2mid = {g._group_id: MsgIDPair(g._last_msg_id, g._last_msg_id) for g in groups}
+
+        self._ws_core._status = WsStatus.OPEN
 
     async def __init_tbs(self) -> bool:
         if self._core._tbs:
@@ -419,7 +418,7 @@ class Client(object):
                 是否大神 / 是否超级会员
         """
 
-        if self._prefer_ws:
+        if self._ws_core.status == WsStatus.OPEN:
             return await get_uinfo_getuserinfo_app.request_ws(self._ws_core, user_id)
 
         return await get_uinfo_getuserinfo_app.request_http(self._http_core, user_id)
@@ -460,7 +459,7 @@ class Client(object):
             请注意tieba_uid与旧版user_id的区别
         """
 
-        if self._prefer_ws:
+        if self._ws_core.status == WsStatus.OPEN:
             return await tieba_uid2user_info.request_ws(self._ws_core, tieba_uid)
 
         return await tieba_uid2user_info.request_http(self._http_core, tieba_uid)
@@ -494,7 +493,7 @@ class Client(object):
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
-        if self._prefer_ws:
+        if self._ws_core.status == WsStatus.OPEN:
             return await get_threads.request_ws(self._ws_core, fname, pn, rn, sort, is_good)
 
         return await get_threads.request_http(self._http_core, fname, pn, rn, sort, is_good)
@@ -533,7 +532,7 @@ class Client(object):
             Posts: 回复列表
         """
 
-        if self._prefer_ws:
+        if self._ws_core.status == WsStatus.OPEN:
             return await get_posts.request_ws(
                 self._ws_core,
                 tid,
@@ -578,7 +577,7 @@ class Client(object):
             Comments: 楼中楼列表
         """
 
-        if self._prefer_ws:
+        if self._ws_core.status == WsStatus.OPEN:
             return await get_comments.request_ws(self._ws_core, tid, pid, pn, is_floor)
 
         return await get_comments.request_http(self._http_core, tid, pid, pn, is_floor)
@@ -645,7 +644,7 @@ class Client(object):
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
-        if self._prefer_ws:
+        if self._ws_core.status == WsStatus.OPEN:
             return await get_bawu_info.request_ws(self._ws_core, fid)
 
         return await get_bawu_info.request_http(self._http_core, fid)
@@ -665,7 +664,7 @@ class Client(object):
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
-        if self._prefer_ws:
+        if self._ws_core.status == WsStatus.OPEN:
             return await get_tab_map.request_ws(self._ws_core, fname)
 
         return await get_tab_map.request_http(self._http_core, fname)
@@ -721,7 +720,7 @@ class Client(object):
 
         from . import get_square_forums
 
-        if self._prefer_ws:
+        if self._ws_core.status == WsStatus.OPEN:
             return await get_square_forums.request_ws(self._ws_core, cname, pn, rn)
 
         return await get_square_forums.request_http(self._http_core, cname, pn, rn)
@@ -748,7 +747,7 @@ class Client(object):
         else:
             portrait = _id
 
-        if self._prefer_ws:
+        if self._ws_core.status == WsStatus.OPEN:
             return await get_homepage.request_ws(self._ws_core, portrait, with_threads)
 
         return await get_homepage.request_http(self._http_core, portrait, with_threads)
@@ -817,7 +816,7 @@ class Client(object):
 
         return await get_recom_status.request(self._http_core, fid)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def block(
         self, fname_or_fid: Union[str, int], /, _id: Union[str, int], *, day: Literal[1, 3, 10] = 1, reason: str = ''
     ) -> bool:
@@ -851,7 +850,7 @@ class Client(object):
 
         return await block.request(self._http_core, fname, fid, portrait, day, reason)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def unblock(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> bool:
         """
         解封用户
@@ -881,7 +880,7 @@ class Client(object):
 
         return await unblock.request(self._http_core, fname, fid, user_id)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def hide_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
         屏蔽主题帖
@@ -899,7 +898,7 @@ class Client(object):
 
         return await del_thread.request(self._http_core, fid, tid, is_hide=True)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def del_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
         删除主题帖
@@ -917,7 +916,7 @@ class Client(object):
 
         return await del_thread.request(self._http_core, fid, tid, is_hide=False)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def del_threads(self, fname_or_fid: Union[str, int], /, tids: List[int], *, block: bool = False) -> bool:
         """
         批量删除主题帖
@@ -953,7 +952,7 @@ class Client(object):
 
         return await del_post.request(self._http_core, fid, pid)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def del_posts(self, fname_or_fid: Union[str, int], /, pids: List[int], *, block: bool = False) -> bool:
         """
         批量删除回复
@@ -972,7 +971,7 @@ class Client(object):
 
         return await del_posts.request(self._http_core, fid, pids, block)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def unhide_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
         解除主题帖屏蔽
@@ -996,7 +995,7 @@ class Client(object):
 
         return await recover.request(self._http_core, fname, fid, tid, 0, is_hide=True)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def recover_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
         恢复主题帖
@@ -1020,7 +1019,7 @@ class Client(object):
 
         return await recover.request(self._http_core, fname, fid, tid, 0, is_hide=False)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def recover_post(self, fname_or_fid: Union[str, int], /, pid: int) -> bool:
         """
         恢复主题帖
@@ -1044,7 +1043,7 @@ class Client(object):
 
         return await recover.request(self._http_core, fname, fid, 0, pid, is_hide=False)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def recover(
         self, fname_or_fid: Union[str, int], /, tid: int = 0, pid: int = 0, *, is_hide: bool = False
     ) -> bool:
@@ -1072,7 +1071,7 @@ class Client(object):
 
         return await recover.request(self._http_core, fname, fid, tid, pid, is_hide)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def move(self, fname_or_fid: Union[str, int], /, tid: int, *, to_tab_id: int, from_tab_id: int = 0) -> bool:
         """
         将主题帖移动至另一分区
@@ -1092,7 +1091,7 @@ class Client(object):
 
         return await move.request(self._http_core, fid, tid, to_tab_id, from_tab_id)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def recommend(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
         大吧主首页推荐
@@ -1109,7 +1108,7 @@ class Client(object):
 
         return await recommend.request(self._http_core, fid, tid)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def good(self, fname_or_fid: Union[str, int], /, tid: int, *, cname: str = '') -> bool:
         """
         加精主题帖
@@ -1136,7 +1135,7 @@ class Client(object):
 
         return await good.request(self._http_core, fname, fid, tid, cid)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def ungood(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
         撤精主题帖
@@ -1160,7 +1159,7 @@ class Client(object):
 
         return await ungood.request(self._http_core, fname, fid, tid)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def _get_cid(self, fname_or_fid: Union[str, int], /, cname: str) -> int:
         """
         通过加精分区名获取加精分区id
@@ -1188,7 +1187,7 @@ class Client(object):
 
         return cid
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def top(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
         置顶主题帖
@@ -1212,7 +1211,7 @@ class Client(object):
 
         return await top.request(self._http_core, fname, fid, tid, is_set=True)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def untop(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
         """
         撤销置顶主题帖
@@ -1303,7 +1302,7 @@ class Client(object):
 
         return await get_blacklist_users.request(self._http_core, fname, pn)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def blacklist_add(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> bool:
         """
         添加贴吧黑名单
@@ -1328,7 +1327,7 @@ class Client(object):
 
         return await blacklist_add.request(self._http_core, fname, user_id)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def blacklist_del(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> bool:
         """
         移出贴吧黑名单
@@ -1380,7 +1379,7 @@ class Client(object):
 
         return await get_unblock_appeals.request(self._http_core, fname, fid, pn, rn)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def handle_unblock_appeals(
         self, fname_or_fid: Union[str, int], /, appeal_ids: List[int], *, refuse: bool = True
     ) -> bool:
@@ -1511,7 +1510,7 @@ class Client(object):
             Replys: 回复列表
         """
 
-        if self._prefer_ws:
+        if self._ws_core.status == WsStatus.OPEN:
             return await get_replys.request_ws(self._ws_core, pn)
 
         return await get_replys.request_http(self._http_core, pn)
@@ -1545,7 +1544,7 @@ class Client(object):
 
         user = await self.get_self_info(ReqUInfo.USER_ID)
 
-        if self._prefer_ws:
+        if self._ws_core.status == WsStatus.OPEN:
             return await get_user_contents.get_threads.request_ws(self._ws_core, user.user_id, pn, public_only=True)
 
         return await get_user_contents.get_threads.request_http(self._http_core, user.user_id, pn, public_only=True)
@@ -1565,7 +1564,7 @@ class Client(object):
 
         user = await self.get_self_info(ReqUInfo.USER_ID)
 
-        if self._prefer_ws:
+        if self._ws_core.status == WsStatus.OPEN:
             return await get_user_contents.get_threads.request_ws(self._ws_core, user.user_id, pn, public_only=False)
 
         return await get_user_contents.get_threads.request_http(self._http_core, user.user_id, pn, public_only=False)
@@ -1585,7 +1584,7 @@ class Client(object):
 
         user = await self.get_self_info(ReqUInfo.USER_ID)
 
-        if self._prefer_ws:
+        if self._ws_core.status == WsStatus.OPEN:
             return await get_user_contents.get_posts.request_ws(self._ws_core, user.user_id, pn)
 
         return await get_user_contents.get_posts.request_http(self._http_core, user.user_id, pn)
@@ -1610,7 +1609,7 @@ class Client(object):
         else:
             user_id = _id
 
-        if self._prefer_ws:
+        if self._ws_core.status == WsStatus.OPEN:
             return await get_user_contents.get_threads.request_ws(self._ws_core, user_id, pn, public_only=True)
 
         return await get_user_contents.get_threads.request_http(self._http_core, user_id, pn, public_only=True)
@@ -1696,12 +1695,12 @@ class Client(object):
             DislikeForums: 首页推荐屏蔽的贴吧列表
         """
 
-        if self._prefer_ws:
+        if self._ws_core.status == WsStatus.OPEN:
             return await get_dislike_forums.request_ws(self._ws_core, pn, rn)
 
         return await get_dislike_forums.request_http(self._http_core, pn, rn)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def agree(self, tid: int, pid: int = 0) -> bool:
         """
         点赞主题帖或回复
@@ -1722,7 +1721,7 @@ class Client(object):
 
         return await agree.request(self._http_core, tid, pid, is_disagree=False, is_undo=False)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def unagree(self, tid: int, pid: int = 0) -> bool:
         """
         取消点赞主题帖或回复
@@ -1739,7 +1738,7 @@ class Client(object):
 
         return await agree.request(self._http_core, tid, pid, is_disagree=False, is_undo=True)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def disagree(self, tid: int, pid: int = 0) -> bool:
         """
         点踩主题帖或回复
@@ -1756,7 +1755,7 @@ class Client(object):
 
         return await agree.request(self._http_core, tid, pid, is_disagree=True, is_undo=False)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def undisagree(self, tid: int, pid: int = 0) -> bool:
         """
         取消点踩主题帖或回复
@@ -1773,7 +1772,7 @@ class Client(object):
 
         return await agree.request(self._http_core, tid, pid, is_disagree=True, is_undo=True)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def agree_vimage(self, _id: Union[str, int]) -> bool:
         """
         虚拟形象点赞
@@ -1793,7 +1792,7 @@ class Client(object):
 
         return await agree_vimage.request(self._http_core, user_id)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def remove_fan(self, _id: Union[str, int]) -> bool:
         """
         移除粉丝
@@ -1815,7 +1814,7 @@ class Client(object):
 
         return await remove_fan.request(self._http_core, user_id)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def follow_user(self, _id: Union[str, int]) -> bool:
         """
         关注用户
@@ -1837,7 +1836,7 @@ class Client(object):
 
         return await follow_user.request(self._http_core, portrait)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def unfollow_user(self, _id: Union[str, int]) -> bool:
         """
         取关用户
@@ -1859,7 +1858,7 @@ class Client(object):
 
         return await unfollow_user.request(self._http_core, portrait)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def follow_forum(self, fname_or_fid: Union[str, int]) -> bool:
         """
         关注贴吧
@@ -1876,7 +1875,7 @@ class Client(object):
 
         return await follow_forum.request(self._http_core, fid)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def unfollow_forum(self, fname_or_fid: Union[str, int]) -> bool:
         """
         取关贴吧
@@ -1893,7 +1892,7 @@ class Client(object):
 
         return await unfollow_forum.request(self._http_core, fid)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def dislike_forum(self, fname_or_fid: Union[str, int]) -> bool:
         """
         屏蔽贴吧 使其不再出现在首页推荐列表中
@@ -1909,7 +1908,7 @@ class Client(object):
 
         return await dislike_forum.request(self._http_core, fid)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def undislike_forum(self, fname_or_fid: Union[str, int]) -> bool:
         """
         解除贴吧的首页推荐屏蔽
@@ -1925,7 +1924,7 @@ class Client(object):
 
         return await undislike_forum.request(self._http_core, fid)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def set_thread_private(self, fname_or_fid: Union[str, int], /, tid: int, pid: int) -> bool:
         """
         隐藏主题帖
@@ -1943,7 +1942,7 @@ class Client(object):
 
         return await set_thread_privacy.request(self._http_core, fid, tid, pid, is_hide=True)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def set_thread_public(self, fname_or_fid: Union[str, int], /, tid: int, pid: int) -> bool:
         """
         公开主题帖
@@ -1961,7 +1960,7 @@ class Client(object):
 
         return await set_thread_privacy.request(self._http_core, fid, tid, pid, is_hide=False)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def set_profile(self, nick_name: str, sign: str = '', gender: int = 0) -> bool:
         """
         设置主页信息
@@ -1977,7 +1976,7 @@ class Client(object):
 
         return await set_profile.request(self._http_core, nick_name, sign, gender)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def set_nickname_old(self, nick_name: str) -> bool:
         """
         设置旧版昵称
@@ -1991,7 +1990,7 @@ class Client(object):
 
         return await set_nickname_old.request(self._http_core, nick_name)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def sign_forum(self, fname_or_fid: Union[str, int]) -> bool:
         """
         单个贴吧签到
@@ -2008,7 +2007,7 @@ class Client(object):
 
         return await sign_forum.request(self._http_core, fname)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def sign_growth(self) -> bool:
         """
         用户成长等级任务: 签到
@@ -2021,7 +2020,7 @@ class Client(object):
 
         return await sign_growth.request(self._http_core, act_type='page_sign')
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def sign_growth_share(self) -> bool:
         """
         用户成长等级任务: 分享主题帖
@@ -2034,7 +2033,7 @@ class Client(object):
 
         return await sign_growth.request(self._http_core, act_type='share_thread')
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     async def add_post(self, fname_or_fid: Union[str, int], /, tid: int, content: str) -> bool:
         """
         回复主题帖
@@ -2065,7 +2064,7 @@ class Client(object):
 
         return await add_post.request(self._http_core, fname, fid, tid, content)
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     @_force_websocket
     async def send_msg(self, _id: Union[str, int], content: str) -> bool:
         """
@@ -2092,7 +2091,7 @@ class Client(object):
 
         return True
 
-    @handle_exception(bool, log_success=True)
+    @handle_exception(bool, no_format=True)
     @_force_websocket
     async def set_msg_readed(self, message: get_group_msg.WsMessage) -> bool:
         """

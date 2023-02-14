@@ -1,4 +1,4 @@
-from .enums import GroupType, MsgType, PostSortType, ReqUInfo, ThreadSortType
+from .enums import GroupType, MsgType, PostSortType, ReqUInfo, ThreadSortType, WsStatus
 from .utils import (
     TypeHeadersChecker,
     _send_request,
