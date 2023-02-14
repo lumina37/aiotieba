@@ -11,31 +11,26 @@ async with aiotieba.Client() as client:
     ...
 ```
 
-<details markdown="1"><summary>如果你不了解“上下文管理器”或“异步上下文管理器”</summary>
-
-你可以阅读以下文章快速入门
-
-+ [python黑魔法-上下文管理器](https://piaosanlang.gitbooks.io/faq/content/tornado/pythonhei-mo-6cd5-shang-xia-wen-guan-li-qi-ff08-contextor.html) 中文解读上下文管理器
-+ [详解asyncio之异步上下文管理器](https://cloud.tencent.com/developer/article/1488125) 中文解读异步上下文管理器
-+ [PEP-492](https://peps.python.org/pep-0492/#asynchronous-context-managers-and-async-with) 异步上下文管理器的PEP标准
-+ [Why do we need `async for` and `async with`?](https://stackoverflow.com/questions/67092070/why-do-we-need-async-for-and-async-with) 深入解读`async for`和`async with`的作用
-
-</details>
-
 ## Client
 
-class `aiotieba.Client`(*BDUSS_key: str | None = None*)
+class `aiotieba.Client`(*BDUSS_key: str | None = None*, *prefer_ws: bool = False*, *proxy: tuple[[yarl.URL](https://yarl.aio-libs.org/en/latest/api.html#yarl.URL), [aiohttp.BasicAuth](https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.BasicAuth)] | bool = False*, *loop: [asyncio.AbstractEventLoop](https://docs.python.org/zh-cn/3/library/asyncio-eventloop.html#event-loop) | None = None*)
 
 ### 构造参数
 
 <div class="docstring" markdown="1">
 **BDUSS_key** - 用于快捷调用BDUSS
+
+**prefer_ws** - 优先使用websocket接口
+
+**proxy** - True则使用环境变量代理 False则禁用代理 输入一个（http代理地址, 代理验证）的元组以手动设置代理
+
+**loop** - 事件循环
 </div>
 
 ### 类属性
 
 <div class="docstring" markdown="1">
-**is_ws_aviliable** - *(bool)* `Client.websocket`是否可用
+**core** - *(TbCore)* 贴吧核心参数容器
 </div>
 
 ### 类方法
@@ -87,7 +82,7 @@ async def `tieba_uid2user_info`(*tieba_uid: int*) -> *[UserInfo](classdef.md#use
 **返回**: 用户信息
 </div>
 
-async def `get_threads`(*fname_or_fid: str | int*, /, *pn: int = 1*, \*, *rn: int = 30*, *sort: int = 5*, *is_good: bool = False*) -> *[Threads](classdef.md#threads)*
+async def `get_threads`(*fname_or_fid: str | int*, /, *pn: int = 1*, \*, *rn: int = 30*, *sort: ThreadSortType = ThreadSortType.REPLY*, *is_good: bool = False*) -> *[Threads](classdef.md#threads)*
 
 <div class="docstring" markdown="1">
 获取首页帖子
@@ -98,14 +93,14 @@ async def `get_threads`(*fname_or_fid: str | int*, /, *pn: int = 1*, \*, *rn: in
 + pn: 页码
 + rn: 请求的条目数
 + sort: 排序方式<br>
-  对于有热门分区的贴吧 0是热门排序 1是按发布时间 2报错 34都是热门排序 >=5是按回复时间<br>
-  对于无热门分区的贴吧 0是按回复时间 1是按发布时间 2报错 >=3是按回复时间
+  对于有热门分区的贴吧 0热门排序 1按发布时间 2关注的人 34热门排序 >=5是按回复时间<br>
+  对于无热门分区的贴吧 0按回复时间 1按发布时间 2关注的人 >=3按回复时间
 + is_good: True则获取精品区帖子 False则获取普通区帖子
 
 **返回**: 帖子列表
 </div>
 
-async def `get_posts`(*tid: int*, /, *pn: int = 1*, \*, *rn: int = 30*, *sort: int = 0*, *only_thread_author: bool = False*, *with_comments: bool = False*, *comment_sort_by_agree: bool = True*, *comment_rn: int = 10*, *is_fold: bool = False*) -> *[Posts](classdef.md#posts)*
+async def `get_posts`(*tid: int*, /, *pn: int = 1*, \*, *rn: int = 30*, *sort: PostSortType = PostSortType.ASC*, *only_thread_author: bool = False*, *with_comments: bool = False*, *comment_sort_by_agree: bool = True*, *comment_rn: int = 4*, *is_fold: bool = False*) -> *[Posts](classdef.md#posts)*
 
 <div class="docstring" markdown="1">
 获取回复列表
@@ -115,7 +110,7 @@ async def `get_posts`(*tid: int*, /, *pn: int = 1*, \*, *rn: int = 30*, *sort: i
 + tid: 所在主题帖[tid](../tutorial/start.md#thread_id)
 + pn: 页码
 + rn: 请求的条目数
-+ sort: 排序方式 0则按时间顺序请求 1则按时间倒序请求 2则按热门序请求
++ sort: 排序方式 0时间顺序 1时间倒序 2热门序
 + only_thread_author: True则只看楼主 False则请求全部
 + with_comments: True则同时请求高赞楼中楼 False则返回的Posts.comments为空
 + comment_sort_by_agree: True则楼中楼按点赞数顺序 False则楼中楼按时间顺序
