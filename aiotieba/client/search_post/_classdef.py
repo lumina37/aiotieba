@@ -1,4 +1,4 @@
-from typing import List, Mapping
+from typing import List, Mapping, Optional
 
 from .._classdef import Containers
 
@@ -31,7 +31,7 @@ class Search(object):
         '_create_time',
     ]
 
-    def _init(self, data_map: Mapping) -> "Search":
+    def __init__(self, data_map: Mapping) -> None:
         self._text = data_map['content']
         self._title = data_map['title']
         self._fname = data_map['fname']
@@ -40,7 +40,6 @@ class Search(object):
         self._show_name = data_map['author']["name_show"]
         self._is_floor = bool(int(data_map['is_floor']))
         self._create_time = int(data_map['time'])
-        return self
 
     def __repr__(self) -> str:
         return str(
@@ -232,15 +231,13 @@ class Searches(Containers[Search]):
 
     __slots__ = ['_page']
 
-    def _init(self, data_map: Mapping) -> "Searches":
-        self._objs = [Search()._init(m) for m in data_map.get('post_list', [])]
-        self._page = Page_search()._init(data_map['page'])
-        return self
-
-    def _init_null(self) -> "Searches":
-        self._objs = []
-        self._page = Page_search()._init_null()
-        return self
+    def __init__(self, data_map: Optional[Mapping] = None) -> None:
+        if data_map:
+            self._objs = [Search(m) for m in data_map.get('post_list', [])]
+            self._page = Page_search()._init(data_map['page'])
+        else:
+            self._objs = []
+            self._page = Page_search()._init_null()
 
     @property
     def objs(self) -> List[Search]:

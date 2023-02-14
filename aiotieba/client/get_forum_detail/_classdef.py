@@ -1,4 +1,4 @@
-from typing import Mapping
+from typing import Mapping, Optional
 
 
 class Forum_detail(object):
@@ -19,19 +19,17 @@ class Forum_detail(object):
         '_post_num',
     ]
 
-    def _init(self, data_map: Mapping) -> "Forum_detail":
-        self._fid = int(data_map['forum_id'])
-        self._fname = data_map['forum_name']
-        self._member_num = int(data_map['member_count'])
-        self._post_num = int(data_map['thread_count'])
-        return self
-
-    def _init_null(self) -> "Forum_detail":
-        self._fid = 0
-        self._fname = ''
-        self._member_num = 0
-        self._post_num = 0
-        return self
+    def __init__(self, data_map: Optional[Mapping] = None) -> None:
+        if data_map:
+            self._fid = int(data_map['forum_id'])
+            self._fname = data_map['forum_name']
+            self._member_num = int(data_map['member_count'])
+            self._post_num = int(data_map['thread_count'])
+        else:
+            self._fid = 0
+            self._fname = ''
+            self._member_num = 0
+            self._post_num = 0
 
     def __repr__(self) -> str:
         return str(

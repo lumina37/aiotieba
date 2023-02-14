@@ -1,10 +1,10 @@
-import sys
 from typing import List, Tuple
 
 import yarl
 
-from .._core import APP_BASE_HOST, HttpCore, TbCore
-from .._helper import APP_INSECURE_SCHEME, log_exception, pack_proto_request, send_request
+from .._core import HttpCore, TbCore, WsCore
+from .._helper import pack_proto_request, send_request
+from ..const import APP_BASE_HOST, APP_INSECURE_SCHEME
 from ..exception import TiebaServerError
 from ._classdef import Thread_home, UserInfo_home
 from .protobuf import ProfileReqIdl_pb2, ProfileResIdl_pb2
@@ -12,15 +12,18 @@ from .protobuf import ProfileReqIdl_pb2, ProfileResIdl_pb2
 CMD = 303012
 
 
+def null_ret_factory() -> Tuple[UserInfo_home, List[Thread_home]]:
+    return UserInfo_home(), []
+
+
 def pack_proto(core: TbCore, portrait: str, with_threads: bool) -> bytes:
     req_proto = ProfileReqIdl_pb2.ProfileReqIdl()
     req_proto.data.common._client_version = core.main_version
+    req_proto.data.common._client_type = 2
     req_proto.data.need_post_count = 1
     req_proto.data.friend_uid_portrait = portrait
-    if with_threads:
-        req_proto.data.common._client_type = 2
-    req_proto.data.pn = 1
-    req_proto.data.rn = 20
+    if not with_threads:
+        req_proto.data.pn = 255  # not too large
 
     return req_proto.SerializeToString()
 
@@ -33,7 +36,7 @@ def parse_body(body: bytes) -> Tuple[UserInfo_home, List[Thread_home]]:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    user = UserInfo_home()._init(data_proto.user)
+    user = UserInfo_home(data_proto.user)
 
     anti_proto = data_proto.anti_stat
     if anti_proto.block_stat and anti_proto.hide_stat and anti_proto.days_tofree > 30:
@@ -41,7 +44,7 @@ def parse_body(body: bytes) -> Tuple[UserInfo_home, List[Thread_home]]:
     else:
         user._is_blocked = False
 
-    threads = [Thread_home()._init(p) for p in data_proto.post_list]
+    threads = [Thread_home(p) for p in data_proto.post_list]
 
     for thread in threads:
         thread._user = user
@@ -52,22 +55,26 @@ def parse_body(body: bytes) -> Tuple[UserInfo_home, List[Thread_home]]:
 async def request_http(
     http_core: HttpCore, portrait: str, with_threads: bool
 ) -> Tuple[UserInfo_home, List[Thread_home]]:
+    data = pack_proto(http_core.core, portrait, with_threads)
 
     request = pack_proto_request(
         http_core,
         yarl.URL.build(
             scheme=APP_INSECURE_SCHEME, host=APP_BASE_HOST, path="/c/u/user/profile", query_string=f"cmd={CMD}"
         ),
-        pack_proto(http_core.core, portrait, with_threads),
+        data,
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=64 * 1024)
-        user, threads = parse_body(body)
+    __log__ = "portrait={portrait}"  # noqa: F841
 
-    except Exception as err:
-        log_exception(sys._getframe(1), err, f"portrait={portrait}")
-        user = UserInfo_home()._init_null()
-        threads = []
+    body = await send_request(request, http_core.connector, read_bufsize=64 * 1024)
+    return parse_body(body)
 
-    return user, threads
+
+async def request_ws(ws_core: WsCore, portrait: str, with_threads: bool) -> Tuple[UserInfo_home, List[Thread_home]]:
+    data = pack_proto(ws_core.core, portrait, with_threads)
+
+    __log__ = "portrait={portrait}"  # noqa: F841
+
+    response = await ws_core.send(data, CMD)
+    return parse_body(await response.read())

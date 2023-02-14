@@ -1,4 +1,4 @@
-from typing import Dict, Iterable, List
+from typing import Dict, Iterable, List, Optional
 
 from .._classdef import Containers, Forum, TypeMessage, VirtualImage, VoteInfo
 from .._classdef.contents import (
@@ -1168,7 +1168,7 @@ class Thread(object):
         '_last_time',
     ]
 
-    def _init(self, data_proto: TypeMessage) -> "Thread":
+    def __init__(self, data_proto: TypeMessage) -> None:
         self._text = None
         self._contents = Contents_t()._init(data_proto.first_post_content)
         self._title = data_proto.title
@@ -1195,36 +1195,6 @@ class Thread(object):
         self._disagree = data_proto.agree.disagree_num
         self._create_time = data_proto.create_time
         self._last_time = data_proto.last_time_int
-        return self
-
-    def _init_null(self) -> "Thread":
-        self._text = ""
-        self._contents = Contents_t()._init_null()
-        self._title = ""
-        self._fid = 0
-        self._fname = ''
-        self._tid = 0
-        self._pid = 0
-        self._user = UserInfo_t()._init_null()
-        self._author_id = 0
-        self._vimage = VirtualImage_t()._init_null()
-        self._type = 0
-        self._tab_id = 0
-        self._is_good = False
-        self._is_top = False
-        self._is_share = False
-        self._is_hide = False
-        self._is_livepost = False
-        self._vote_info = VoteInfo()._init_null()
-        self._share_origin = ShareThread()._init_null()
-        self._view_num = 0
-        self._reply_num = 0
-        self._share_num = 0
-        self._agree = 0
-        self._disagree = 0
-        self._create_time = 0
-        self._last_time = 0
-        return self
 
     def __repr__(self) -> str:
         return str(
@@ -1493,26 +1463,24 @@ class Threads(Containers[Thread]):
         '_tab_map',
     ]
 
-    def _init(self, data_proto: TypeMessage) -> "Threads":
-        self._page = Page_t()._init(data_proto.page)
-        self._forum = Forum_t()._init(data_proto.forum)
-        self._tab_map = {p.tab_name: p.tab_id for p in data_proto.nav_tab_info.tab}
+    def __init__(self, data_proto: Optional[TypeMessage] = None) -> None:
+        if data_proto:
+            self._page = Page_t()._init(data_proto.page)
+            self._forum = Forum_t()._init(data_proto.forum)
+            self._tab_map = {p.tab_name: p.tab_id for p in data_proto.nav_tab_info.tab}
 
-        self._objs = [Thread()._init(p) for p in data_proto.thread_list]
-        users = {p.id: UserInfo_t()._init(p) for p in data_proto.user_list if p.id}
-        for thread in self._objs:
-            thread._fname = self._forum._fname
-            thread._fid = self._forum._fid
-            thread._user = users[thread._author_id]
+            self._objs = [Thread(p) for p in data_proto.thread_list]
+            users = {p.id: UserInfo_t()._init(p) for p in data_proto.user_list if p.id}
+            for thread in self._objs:
+                thread._fname = self._forum._fname
+                thread._fid = self._forum._fid
+                thread._user = users[thread._author_id]
 
-        return self
-
-    def _init_null(self) -> "Threads":
-        self._objs = []
-        self._page = Page_t()._init_null()
-        self._forum = Forum_t()._init_null()
-        self._tab_map = {}
-        return self
+        else:
+            self._objs = []
+            self._page = Page_t()._init_null()
+            self._forum = Forum_t()._init_null()
+            self._tab_map = {}
 
     @property
     def page(self) -> Page_t:

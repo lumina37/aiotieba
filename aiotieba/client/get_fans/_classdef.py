@@ -1,4 +1,4 @@
-from typing import Mapping
+from typing import Mapping, Optional
 
 from .._classdef import Containers
 
@@ -25,7 +25,7 @@ class Fan(object):
         '_nick_name_new',
     ]
 
-    def _init(self, data_map: Mapping) -> "Fan":
+    def __init__(self, data_map: Mapping) -> None:
         self._user_id = int(data_map['id'])
         if '?' in (portrait := data_map['portrait']):
             self._portrait = portrait[:-13]
@@ -33,7 +33,6 @@ class Fan(object):
             self._portrait = portrait
         self._user_name = data_map['name']
         self._nick_name_new = data_map['name_show']
-        return self
 
     def __str__(self) -> str:
         return self._user_name or self._portrait or str(self._user_id)
@@ -246,15 +245,13 @@ class Fans(Containers[Fan]):
 
     __slots__ = ['_page']
 
-    def _init(self, data_map: Mapping) -> "Fans":
-        self._objs = [Fan()._init(m) for m in data_map['user_list']]
-        self._page = Page_fan()._init(data_map['page'])
-        return self
-
-    def _init_null(self) -> "Fans":
-        self._objs = []
-        self._page = Page_fan()._init_null()
-        return self
+    def __init__(self, data_map: Optional[Mapping] = None) -> None:
+        if data_map:
+            self._objs = [Fan(m) for m in data_map['user_list']]
+            self._page = Page_fan()._init(data_map['page'])
+        else:
+            self._objs = []
+            self._page = Page_fan()._init_null()
 
     @property
     def page(self) -> Page_fan:

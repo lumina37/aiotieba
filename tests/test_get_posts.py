@@ -75,7 +75,7 @@ async def test_Posts(client: tb.Client):
     assert post.fname != ''
     assert post.tid > 0
     assert post.pid > 0
-    assert post.author_id==user.user_id
+    assert post.author_id == user.user_id
     assert post.floor > 0
     assert post.reply_num > 0
     assert post.create_time > 0
@@ -136,7 +136,7 @@ async def test_ShareThread_pt(client: tb.Client):
     assert sthread.author_id > 0
     assert sthread.fid == 24677608
     assert sthread.fname == 'soulknight'
-    assert sthread.tid >0
+    assert sthread.tid > 0
 
     # VoteInfo
     vote_info = sthread.vote_info

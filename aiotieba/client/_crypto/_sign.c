@@ -1,8 +1,17 @@
+#include <stdlib.h> // malloc free
+#include <memory.h> // memset memcpy
+#include <string.h> // strlen
+
+#include "mbedtls/md5.h"
+#include "rapidjson/internal/itoa.h"
+
+#include "_const.h"
+
 #include "_sign.h"
 
 static const char SIGN_SUFFIX[] = {'t', 'i', 'e', 'b', 'a', 'c', 'l', 'i', 'e', 'n', 't', '!', '!', '!'};
 
-static inline void __pyStr2UTF8(uint8_t **dst, size_t *dstSize, PyObject *pyoStr)
+static inline void __pyStr2UTF8(const uint8_t **dst, size_t *dstSize, PyObject *pyoStr)
 {
     if (PyUnicode_1BYTE_KIND == PyUnicode_KIND(pyoStr))
     {
@@ -62,12 +71,12 @@ PyObject *sign(PyObject *self, PyObject *args)
 
     mbedtls_md5_update(&md5Ctx, SIGN_SUFFIX, sizeof(SIGN_SUFFIX));
 
-    uint8_t md5[TBH_MD5_HASH_SIZE];
+    uint8_t md5[TBC_MD5_HASH_SIZE];
     mbedtls_md5_finish(&md5Ctx, md5);
 
-    char dst[TBH_MD5_STR_SIZE];
+    char dst[TBC_MD5_STR_SIZE];
     size_t dstOffset = 0;
-    for (size_t imd5 = 0; imd5 < TBH_MD5_HASH_SIZE; imd5++)
+    for (size_t imd5 = 0; imd5 < TBC_MD5_HASH_SIZE; imd5++)
     {
         dst[dstOffset] = HEX_LOWCASE_TABLE[md5[imd5] >> 4];
         dstOffset++;
@@ -75,5 +84,5 @@ PyObject *sign(PyObject *self, PyObject *args)
         dstOffset++;
     }
 
-    return PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, dst, TBH_MD5_STR_SIZE);
+    return PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, dst, TBC_MD5_STR_SIZE);
 }

@@ -1,9 +1,8 @@
-import sys
-
 import yarl
 
-from .._core import APP_BASE_HOST, HttpCore, TbCore
-from .._helper import APP_INSECURE_SCHEME, log_exception, pack_proto_request, send_request
+from .._core import HttpCore, TbCore, WsCore
+from .._helper import pack_proto_request, send_request
+from ..const import APP_BASE_HOST, APP_INSECURE_SCHEME
 from ..exception import TiebaServerError
 from ._classdef import Comments
 from .protobuf import PbFloorReqIdl_pb2, PbFloorResIdl_pb2
@@ -33,25 +32,30 @@ def parse_body(body: bytes) -> Comments:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    comments = Comments()._init(data_proto)
+    comments = Comments(data_proto)
 
     return comments
 
 
 async def request_http(http_core: HttpCore, tid: int, pid: int, pn: int, is_floor: bool) -> Comments:
+    data = pack_proto(http_core.core, tid, pid, pn, is_floor)
 
     request = pack_proto_request(
         http_core,
         yarl.URL.build(scheme=APP_INSECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/pb/floor", query_string=f"cmd={CMD}"),
-        pack_proto(http_core.core, tid, pid, pn, is_floor),
+        data,
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=8 * 1024)
-        comments = parse_body(body)
+    __log__ = "tid={tid} pid={pid}"  # noqa: F841
 
-    except Exception as err:
-        log_exception(sys._getframe(1), err, f"tid={tid} pid={pid}")
-        comments = Comments()._init_null()
+    body = await send_request(request, http_core.connector, read_bufsize=8 * 1024)
+    return parse_body(body)
 
-    return comments
+
+async def request_ws(ws_core: WsCore, tid: int, pid: int, pn: int, is_floor: bool) -> Comments:
+    data = pack_proto(ws_core.core, tid, pid, pn, is_floor)
+
+    __log__ = "tid={tid} pid={pid}"  # noqa: F841
+
+    response = await ws_core.send(data, CMD)
+    return parse_body(await response.read())

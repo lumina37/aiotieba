@@ -91,9 +91,7 @@ class UserInfo(object):
 
     @portrait.setter
     def portrait(self, new_portrait: str) -> None:
-
         if new_portrait and is_portrait(new_portrait):
-
             beg_start = 33
             q_index = new_portrait.find('?', beg_start)
             and_index = new_portrait.find('&', beg_start)

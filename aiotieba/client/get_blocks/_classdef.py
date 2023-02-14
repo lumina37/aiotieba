@@ -1,4 +1,4 @@
-from typing import Mapping
+from typing import Mapping, Optional
 
 import bs4
 
@@ -23,20 +23,12 @@ class Block(object):
         '_day',
     ]
 
-    def _init(self, data_tag: bs4.element.Tag) -> "Block":
+    def __init__(self, data_tag: bs4.element.Tag) -> None:
         id_tag = data_tag.a
         self._user_id = int(id_tag['attr-uid'])
         self._user_name = id_tag['attr-un']
         self._nick_name_old = id_tag['attr-nn']
         self._day = int(id_tag['attr-blockday'])
-        return self
-
-    def _init_null(self) -> "Block":
-        self._user_id = 0
-        self._user_name = ''
-        self._nick_name_old = ''
-        self._day = 0
-        return self
 
     def __repr__(self) -> str:
         return str(
@@ -202,16 +194,14 @@ class Blocks(Containers[Block]):
 
     __slots__ = ['_page']
 
-    def _init(self, data_map: Mapping) -> "Blocks":
-        data_soup = bs4.BeautifulSoup(data_map['data']['content'], 'lxml')
-        self._objs = [Block()._init(t) for t in data_soup('li')]
-        self._page = Page_block()._init(data_map['data']['page'])
-        return self
-
-    def _init_null(self) -> "Blocks":
-        self._objs = []
-        self._page = Page_block()._init_null()
-        return self
+    def __init__(self, data_map: Optional[Mapping] = None) -> None:
+        if data_map:
+            data_soup = bs4.BeautifulSoup(data_map['data']['content'], 'lxml')
+            self._objs = [Block(t) for t in data_soup('li')]
+            self._page = Page_block()._init(data_map['data']['page'])
+        else:
+            self._objs = []
+            self._page = Page_block()._init_null()
 
     @property
     def has_more(self) -> bool:

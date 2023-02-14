@@ -1,9 +1,8 @@
-import sys
-
 import yarl
 
-from .._core import APP_BASE_HOST, HttpCore, TbCore
-from .._helper import APP_SECURE_SCHEME, log_exception, pack_proto_request, send_request
+from .._core import HttpCore, TbCore, WsCore
+from .._helper import pack_proto_request, send_request
+from ..const import APP_BASE_HOST, APP_SECURE_SCHEME
 from ..exception import TiebaServerError
 from ._classdef import Posts
 from .protobuf import PbPageReqIdl_pb2, PbPageResIdl_pb2
@@ -49,7 +48,7 @@ def parse_body(body: bytes) -> Posts:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    posts = Posts()._init(data_proto)
+    posts = Posts(data_proto)
 
     return posts
 
@@ -66,30 +65,57 @@ async def request_http(
     comment_rn: int,
     is_fold: bool,
 ) -> Posts:
+    data = pack_proto(
+        http_core.core,
+        tid,
+        pn,
+        rn,
+        sort,
+        only_thread_author,
+        with_comments,
+        comment_sort_by_agree,
+        comment_rn,
+        is_fold,
+    )
 
     request = pack_proto_request(
         http_core,
         yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/pb/page", query_string=f"cmd={CMD}"),
-        pack_proto(
-            http_core.core,
-            tid,
-            pn,
-            rn,
-            sort,
-            only_thread_author,
-            with_comments,
-            comment_sort_by_agree,
-            comment_rn,
-            is_fold,
-        ),
+        data,
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=128 * 1024)
-        posts = parse_body(body)
+    __log__ = "tid={tid}"  # noqa: F841
 
-    except Exception as err:
-        log_exception(sys._getframe(1), err, f"tid={tid}")
-        posts = Posts()._init_null()
+    body = await send_request(request, http_core.connector, read_bufsize=128 * 1024)
+    return parse_body(body)
 
-    return posts
+
+async def request_ws(
+    ws_core: WsCore,
+    tid: int,
+    pn: int,
+    rn: int,
+    sort: int,
+    only_thread_author: bool,
+    with_comments: bool,
+    comment_sort_by_agree: bool,
+    comment_rn: int,
+    is_fold: bool,
+) -> Posts:
+    data = pack_proto(
+        ws_core.core,
+        tid,
+        pn,
+        rn,
+        sort,
+        only_thread_author,
+        with_comments,
+        comment_sort_by_agree,
+        comment_rn,
+        is_fold,
+    )
+
+    __log__ = "tid={tid}"  # noqa: F841
+
+    response = await ws_core.send(data, CMD)
+    return parse_body(await response.read())

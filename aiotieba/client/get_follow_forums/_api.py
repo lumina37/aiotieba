@@ -1,9 +1,8 @@
-import sys
-
 import yarl
 
-from .._core import APP_BASE_HOST, HttpCore
-from .._helper import APP_SECURE_SCHEME, log_exception, pack_form_request, parse_json, send_request
+from .._core import HttpCore
+from .._helper import pack_form_request, parse_json, send_request
+from ..const import APP_BASE_HOST, APP_SECURE_SCHEME
 from ..exception import TiebaServerError
 from ._classdef import FollowForums
 
@@ -13,13 +12,12 @@ def parse_body(body: bytes) -> FollowForums:
     if code := int(res_json['error_code']):
         raise TiebaServerError(code, res_json['error_msg'])
 
-    follow_forums = FollowForums()._init(res_json)
+    follow_forums = FollowForums(res_json)
 
     return follow_forums
 
 
 async def request(http_core: HttpCore, user_id: int, pn: int, rn: int) -> FollowForums:
-
     data = [
         ('BDUSS', http_core.core._BDUSS),
         ('_client_version', http_core.core.main_version),
@@ -34,12 +32,7 @@ async def request(http_core: HttpCore, user_id: int, pn: int, rn: int) -> Follow
         data,
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=16 * 1024)
-        follow_forums = parse_body(body)
+    __log__ = "user_id={user_id}"  # noqa: F841
 
-    except Exception as err:
-        log_exception(sys._getframe(1), err, f"user_id={user_id}")
-        follow_forums = FollowForums()._init_null()
-
-    return follow_forums
+    body = await send_request(request, http_core.connector, read_bufsize=16 * 1024)
+    return parse_body(body)

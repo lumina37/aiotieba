@@ -1,10 +1,10 @@
-import sys
 from typing import List
 
 import yarl
 
-from ..._core import APP_BASE_HOST, HttpCore, TbCore
-from ..._helper import APP_SECURE_SCHEME, log_exception, pack_proto_request, send_request
+from ..._core import HttpCore, TbCore, WsCore
+from ..._helper import pack_proto_request, send_request
+from ...const import APP_BASE_HOST, APP_SECURE_SCHEME
 from ...exception import TiebaServerError
 from .._classdef import UserInfo_u, UserPosts
 from ..protobuf import UserPostReqIdl_pb2, UserPostResIdl_pb2
@@ -32,9 +32,9 @@ def parse_body(body: bytes) -> List[UserPosts]:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    uposts_list = [UserPosts()._init(p) for p in data_proto.post_list]
+    uposts_list = [UserPosts(p) for p in data_proto.post_list]
     if uposts_list:
-        user = UserInfo_u()._init(data_proto.post_list[0])
+        user = UserInfo_u(data_proto.post_list[0])
         for uposts in uposts_list:
             for upost in uposts:
                 upost._user = user
@@ -44,21 +44,26 @@ def parse_body(body: bytes) -> List[UserPosts]:
 
 
 async def request_http(http_core: HttpCore, user_id: int, pn: int) -> List[UserPosts]:
+    data = pack_proto(http_core.core, user_id, pn)
 
     request = pack_proto_request(
         http_core,
         yarl.URL.build(
             scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/u/feed/userpost", query_string=f"cmd={CMD}"
         ),
-        pack_proto(http_core.core, user_id, pn),
+        data,
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=8 * 1024)
-        uposts_list = parse_body(body)
+    __log__ = "user_id={user_id}"  # noqa: F841
 
-    except Exception as err:
-        log_exception(sys._getframe(1), err, f"user_id={user_id}")
-        uposts_list = []
+    body = await send_request(request, http_core.connector, read_bufsize=8 * 1024)
+    return parse_body(body)
 
-    return uposts_list
+
+async def request_ws(ws_core: WsCore, user_id: int, pn: int) -> List[UserPosts]:
+    data = pack_proto(ws_core.core, user_id, pn)
+
+    __log__ = "user_id={user_id}"  # noqa: F841
+
+    response = await ws_core.send(data, CMD)
+    return parse_body(await response.read())

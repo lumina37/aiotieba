@@ -1,2 +1,2 @@
 from ._api import parse_body, request
-from ._classdef import MemberUsers
+from ._classdef import MemberUser, MemberUsers

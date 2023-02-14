@@ -2,8 +2,9 @@ import sys
 
 import yarl
 
-from .._core import APP_BASE_HOST, HttpCore
-from .._helper import APP_SECURE_SCHEME, log_exception, log_success, pack_form_request, parse_json, send_request
+from .._core import HttpCore
+from .._helper import log_success, pack_form_request, parse_json, send_request
+from ..const import APP_BASE_HOST, APP_SECURE_SCHEME
 from ..exception import TiebaServerError
 
 
@@ -14,7 +15,6 @@ def parse_body(body: bytes) -> None:
 
 
 async def request(http_core: HttpCore, nick_name: str, sign: str, gender: int) -> bool:
-
     data = [
         ('BDUSS', http_core.core._BDUSS),
         ('intro', sign),
@@ -28,16 +28,10 @@ async def request(http_core: HttpCore, nick_name: str, sign: str, gender: int) -
         data,
     )
 
-    log_str = f"nick_name={nick_name} sign={sign} gender={gender}"
-    frame = sys._getframe(1)
+    __log__ = f"nick_name={nick_name} sign={sign} gender={gender}"
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=1024)
-        parse_body(body)
+    body = await send_request(request, http_core.connector, read_bufsize=1024)
+    parse_body(body)
 
-    except Exception as err:
-        log_exception(frame, err, log_str)
-        return False
-
-    log_success(frame, log_str)
+    log_success(sys._getframe(1), __log__)
     return True

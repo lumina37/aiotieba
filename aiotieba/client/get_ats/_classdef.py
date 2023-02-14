@@ -1,4 +1,4 @@
-from typing import Mapping
+from typing import Mapping, Optional
 
 from .._classdef import Containers
 
@@ -271,7 +271,7 @@ class At(object):
         '_create_time',
     ]
 
-    def _init(self, data_map: Mapping) -> "At":
+    def __init__(self, data_map: Mapping) -> None:
         self._text = data_map['content']
         self._fname = data_map['fname']
         self._tid = int(data_map['thread_id'])
@@ -281,7 +281,6 @@ class At(object):
         self._is_floor = bool(int(data_map['is_floor']))
         self._is_thread = bool(int(data_map['is_first_post']))
         self._create_time = int(data_map['time'])
-        return self
 
     def __repr__(self) -> str:
         return str(
@@ -390,15 +389,13 @@ class Ats(Containers[At]):
 
     __slots__ = ['_page']
 
-    def _init(self, data_map: Mapping) -> "Ats":
-        self._objs = [At()._init(m) for m in data_map.get('at_list', [])]
-        self._page = Page_at()._init(data_map['page'])
-        return self
-
-    def _init_null(self) -> "Ats":
-        self._objs = []
-        self._page = Page_at()._init_null()
-        return self
+    def __init__(self, data_map: Optional[Mapping] = None) -> None:
+        if data_map:
+            self._objs = [At(m) for m in data_map.get('at_list', [])]
+            self._page = Page_at()._init(data_map['page'])
+        else:
+            self._objs = []
+            self._page = Page_at()._init_null()
 
     @property
     def page(self) -> Page_at:

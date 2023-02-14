@@ -1,4 +1,4 @@
-from typing import Mapping
+from typing import Mapping, Optional
 
 from .._classdef import Containers
 
@@ -19,17 +19,10 @@ class SelfFollowForum(object):
         '_level',
     ]
 
-    def _init(self, data_map: Mapping) -> "SelfFollowForum":
+    def __init__(self, data_map: Mapping) -> None:
         self._fid = data_map['forum_id']
         self._fname = data_map['forum_name']
         self._level = data_map['level_id']
-        return self
-
-    def _init_null(self) -> "SelfFollowForum":
-        self._fid = 0
-        self._fname = ''
-        self._level = 0
-        return self
 
     def __repr__(self) -> str:
         return str(
@@ -146,15 +139,13 @@ class SelfFollowForums(Containers[SelfFollowForum]):
 
     __slots__ = ['_page']
 
-    def _init(self, data_map: Mapping) -> "SelfFollowForums":
-        self._objs = [SelfFollowForum()._init(m) for m in data_map['list']]
-        self._page = Page_sforum()._init(data_map['page'])
-        return self
-
-    def _init_null(self) -> "SelfFollowForums":
-        self._objs = []
-        self._page = Page_sforum()._init_null()
-        return self
+    def __init__(self, data_map: Optional[Mapping] = None) -> None:
+        if data_map:
+            self._objs = [SelfFollowForum(m) for m in data_map['list']]
+            self._page = Page_sforum()._init(data_map['page'])
+        else:
+            self._objs = []
+            self._page = Page_sforum()._init_null()
 
     @property
     def page(self) -> Page_sforum:

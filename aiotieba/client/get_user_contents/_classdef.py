@@ -130,7 +130,7 @@ class UserInfo_u(object):
         '_nick_name_new',
     ]
 
-    def _init(self, data_proto: TypeMessage) -> "UserInfo_u":
+    def __init__(self, data_proto: TypeMessage) -> None:
         self._user_id = data_proto.user_id
         if '?' in (portrait := data_proto.user_portrait):
             self._portrait = portrait[:-13]
@@ -138,14 +138,6 @@ class UserInfo_u(object):
             self._portrait = portrait
         self._user_name = data_proto.user_name
         self._nick_name_new = data_proto.name_show
-        return self
-
-    def _init_null(self) -> "UserInfo_u":
-        self._user_id = 0
-        self._portrait = ''
-        self._user_name = ''
-        self._nick_name_new = ''
-        return self
 
     def __str__(self) -> str:
         return self._user_name or self._portrait or str(self._user_id)
@@ -275,12 +267,11 @@ class UserPost(object):
         '_create_time',
     ]
 
-    def _init(self, data_proto: TypeMessage) -> "UserPost":
+    def __init__(self, data_proto: TypeMessage) -> None:
         self._contents = Contents_up()._init(data_proto.post_content)
         self._pid = data_proto.post_id
         self._is_floor = bool(data_proto.post_type)
         self._create_time = data_proto.create_time
-        return self
 
     def __repr__(self) -> str:
         return str(
@@ -374,14 +365,13 @@ class UserPosts(Containers[UserPost]):
         '_tid',
     ]
 
-    def _init(self, data_proto: TypeMessage) -> "UserPosts":
+    def __init__(self, data_proto: TypeMessage) -> None:
         self._fid = data_proto.forum_id
         self._tid = data_proto.thread_id
-        self._objs = [UserPost()._init(p) for p in data_proto.content]
+        self._objs = [UserPost(p) for p in data_proto.content]
         for upost in self._objs:
             upost._fid = self._fid
             upost._tid = self._tid
-        return self
 
     @property
     def fid(self) -> int:
@@ -727,7 +717,7 @@ class UserThread(object):
         '_create_time',
     ]
 
-    def _init(self, data_proto: TypeMessage) -> "UserThread":
+    def __init__(self, data_proto: TypeMessage) -> None:
         self._text = None
         self._contents = Contents_ut()._init(data_proto.first_post_content)
         img_frags = [FragImage_ut(p) for p in data_proto.media]
@@ -746,7 +736,6 @@ class UserThread(object):
         self._agree = data_proto.agree.agree_num
         self._disagree = data_proto.agree.disagree_num
         self._create_time = data_proto.create_time
-        return self
 
     def __repr__(self) -> str:
         return str(

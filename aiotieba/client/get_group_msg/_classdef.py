@@ -117,13 +117,12 @@ class WsMessage(object):
         '_create_time',
     ]
 
-    def _init(self, data_proto: TypeMessage) -> "WsMessage":
+    def __init__(self, data_proto: TypeMessage) -> None:
         self._msg_id = data_proto.msgId
         self._msg_type = data_proto.msgType
         self._text = data_proto.content
         self._user = UserInfo_ws()._init(data_proto.userInfo)
         self._create_time = data_proto.createTime
-        return self
 
     def __repr__(self) -> str:
         return str(
@@ -188,11 +187,10 @@ class WsMsgGroup(object):
         '_messages',
     ]
 
-    def _init(self, data_proto: TypeMessage) -> "WsMsgGroup":
+    def __init__(self, data_proto: TypeMessage) -> None:
         self._group_type = data_proto.groupInfo.groupType
         self._group_id = data_proto.groupInfo.groupId
-        self._messages = [WsMessage()._init(p) for p in data_proto.msgList]
-        return self
+        self._messages = [WsMessage(p) for p in data_proto.msgList]
 
     def __repr__(self) -> str:
         return str(

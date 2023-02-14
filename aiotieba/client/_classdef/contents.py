@@ -3,7 +3,8 @@ from typing import Protocol, TypeVar
 
 import yarl
 
-from .._helper import CHECK_URL_PERFIX, removeprefix
+from .._helper import removeprefix
+from ..const import CHECK_URL_PERFIX
 from .common import TypeMessage
 
 TypeFragment = TypeVar('TypeFragment')

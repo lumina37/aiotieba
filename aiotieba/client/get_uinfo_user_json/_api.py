@@ -1,9 +1,8 @@
-import sys
-
 import yarl
 
-from .._core import WEB_BASE_HOST, HttpCore
-from .._helper import log_exception, pack_web_get_request, parse_json, send_request
+from .._core import HttpCore
+from .._helper import pack_web_get_request, parse_json, send_request
+from ..const import WEB_BASE_HOST
 from ..exception import TiebaValueError
 from ._classdef import UserInfo_json
 
@@ -16,13 +15,12 @@ def parse_body(body: bytes) -> UserInfo_json:
     res_json = parse_json(text)
 
     user_dict = res_json['creator']
-    user = UserInfo_json()._init(user_dict)
+    user = UserInfo_json(user_dict)
 
     return user
 
 
 async def request(http_core: HttpCore, user_name: str) -> UserInfo_json:
-
     params = [
         ('un', user_name),
         ('ie', 'utf-8'),
@@ -34,12 +32,7 @@ async def request(http_core: HttpCore, user_name: str) -> UserInfo_json:
         params,
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=2 * 1024)
-        user = parse_body(body)
+    __log__ = "user_name={user_name}"  # noqa: F841
 
-    except Exception as err:
-        log_exception(sys._getframe(1), err, f"user_name={user_name}")
-        user = UserInfo_json()._init_null()
-
-    return user
+    body = await send_request(request, http_core.connector, read_bufsize=2 * 1024)
+    return parse_body(body)
