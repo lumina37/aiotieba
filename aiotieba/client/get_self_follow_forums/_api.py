@@ -1,9 +1,7 @@
-import sys
-
 import yarl
 
 from .._core import HttpCore
-from .._helper import log_exception, pack_web_get_request, parse_json, send_request
+from .._helper import pack_web_get_request, parse_json, send_request
 from ..const import WEB_BASE_HOST
 from ..exception import TiebaServerError
 from ._classdef import SelfFollowForums
@@ -32,12 +30,5 @@ async def request(http_core: HttpCore, pn: int) -> SelfFollowForums:
         params,
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=128 * 1024)
-        self_follow_forums = parse_body(body)
-
-    except Exception as err:
-        log_exception(sys._getframe(1), err)
-        self_follow_forums = SelfFollowForums()
-
-    return self_follow_forums
+    body = await send_request(request, http_core.connector, read_bufsize=128 * 1024)
+    return parse_body(body)

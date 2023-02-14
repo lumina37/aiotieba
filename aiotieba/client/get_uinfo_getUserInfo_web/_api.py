@@ -7,10 +7,6 @@ from ..exception import TiebaServerError
 from ._classdef import UserInfo_guinfo_web
 
 
-def null_ret_factory() -> UserInfo_guinfo_web:
-    return UserInfo_guinfo_web()
-
-
 def parse_body(body: bytes) -> UserInfo_guinfo_web:
     res_json = parse_json(body)
     if code := res_json['errno']:

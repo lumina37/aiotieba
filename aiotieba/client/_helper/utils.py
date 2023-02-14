@@ -481,14 +481,12 @@ def handle_exception(null_ret_factory: TypeNullRetFactory, log_success: bool = F
 
             except Exception as err:
                 meth_name = func.__name__
-
                 tb = err.__traceback__
                 while tb := tb.tb_next:
                     frame = tb.tb_frame
                     if frame.f_code.co_name == meth_name:
                         break
-                if tb:
-                    frame = tb.tb_next.tb_frame
+                frame = tb.tb_next.tb_frame
 
                 log_str: str = frame.f_locals.get('__log__', '')
                 if not log_success:  # need format

@@ -7,10 +7,6 @@ from ..exception import TiebaServerError
 from ._classdef import UserInfo_panel
 
 
-def null_ret_factory() -> UserInfo_panel:
-    return UserInfo_panel()
-
-
 def parse_body(body: bytes) -> UserInfo_panel:
     res_json = parse_json(body)
     if code := res_json['no']:

@@ -7,10 +7,6 @@ from ..exception import TiebaValueError
 from ._classdef import UserInfo_json
 
 
-def null_ret_factory() -> UserInfo_json:
-    return UserInfo_json()
-
-
 def parse_body(body: bytes) -> UserInfo_json:
     if not body:
         raise TiebaValueError("empty body")

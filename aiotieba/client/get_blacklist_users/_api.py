@@ -1,10 +1,8 @@
-import sys
-
 import bs4
 import yarl
 
 from .._core import HttpCore
-from .._helper import log_exception, pack_web_get_request, send_request
+from .._helper import pack_web_get_request, send_request
 from ..const import WEB_BASE_HOST
 from ._classdef import BlacklistUsers
 
@@ -28,12 +26,7 @@ async def request(http_core: HttpCore, fname: str, pn: int) -> BlacklistUsers:
         params,
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=64 * 1024)
-        blacklist_users = parse_body(body)
+    __log__ = "fname={fname}"  # noqa: F841
 
-    except Exception as err:
-        log_exception(sys._getframe(1), err, f"fname={fname}")
-        blacklist_users = BlacklistUsers()
-
-    return blacklist_users
+    body = await send_request(request, http_core.connector, read_bufsize=64 * 1024)
+    return parse_body(body)

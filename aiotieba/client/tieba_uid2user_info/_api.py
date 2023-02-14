@@ -10,10 +10,6 @@ from .protobuf import GetUserByTiebaUidReqIdl_pb2, GetUserByTiebaUidResIdl_pb2
 CMD = 309702
 
 
-def null_ret_factory() -> UserInfo_TUid:
-    return UserInfo_TUid()._init_null()
-
-
 def pack_proto(core: TbCore, tieba_uid: int) -> bytes:
     req_proto = GetUserByTiebaUidReqIdl_pb2.GetUserByTiebaUidReqIdl()
     req_proto.data.common._client_version = core.main_version

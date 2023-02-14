@@ -1,9 +1,7 @@
-import sys
-
 import yarl
 
 from .._core import HttpCore, TbCore
-from .._helper import log_exception, pack_proto_request, send_request
+from .._helper import pack_proto_request, send_request
 from ..const import APP_BASE_HOST, APP_INSECURE_SCHEME
 from ..exception import TiebaServerError
 from ._classdef import Comments
@@ -46,12 +44,7 @@ async def request_http(http_core: HttpCore, tid: int, pid: int, pn: int, is_floo
         pack_proto(http_core.core, tid, pid, pn, is_floor),
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=8 * 1024)
-        comments = parse_body(body)
+    __log__ = "tid={tid} pid={pid}"  # noqa: F841
 
-    except Exception as err:
-        log_exception(sys._getframe(1), err, f"tid={tid} pid={pid}")
-        comments = Comments()
-
-    return comments
+    body = await send_request(request, http_core.connector, read_bufsize=8 * 1024)
+    return parse_body(body)

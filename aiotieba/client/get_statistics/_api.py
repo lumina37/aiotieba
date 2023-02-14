@@ -1,10 +1,9 @@
-import sys
 from typing import Dict, List
 
 import yarl
 
 from .._core import HttpCore
-from .._helper import log_exception, pack_form_request, parse_json, send_request
+from .._helper import pack_form_request, parse_json, send_request
 from ..const import APP_BASE_HOST, APP_SECURE_SCHEME
 from ..exception import TiebaServerError
 
@@ -18,6 +17,10 @@ field_names = [
     'average_times',
     'recommend',
 ]
+
+
+def null_ret_factory() -> Dict[str, List[int]]:
+    return {field_name: [] for field_name in field_names}
 
 
 def parse_body(body: bytes) -> Dict[str, List[int]]:
@@ -47,12 +50,7 @@ async def request(http_core: HttpCore, fid: int) -> Dict[str, List[int]]:
         data,
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=4 * 1024)
-        stat = parse_body(body)
+    __log__ = "fid={fid}"  # noqa: F841
 
-    except Exception as err:
-        log_exception(sys._getframe(1), err, f"fid={fid}")
-        stat = {field_name: [] for field_name in field_names}
-
-    return stat
+    body = await send_request(request, http_core.connector, read_bufsize=4 * 1024)
+    return parse_body(body)

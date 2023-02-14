@@ -168,7 +168,7 @@ class Appeals(Containers[Appeal]):
 
     __slots__ = ['_has_more']
 
-    def _init(self, data_map: Optional[Mapping]=None) -> None:
+    def __init__(self, data_map: Optional[Mapping] = None) -> None:
         if data_map:
             self._objs = [Appeal()._init(m) for m in data_map['data'].get('appeal_list', [])]
             self._has_more = data_map['data'].get('has_more', False)

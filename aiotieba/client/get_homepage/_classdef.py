@@ -121,7 +121,7 @@ class UserInfo_home(object):
         '_priv_reply',
     ]
 
-    def _init(self, data_proto: Optional[TypeMessage] = None) -> None:
+    def __init__(self, data_proto: Optional[TypeMessage] = None) -> None:
         if data_proto:
             self._user_id = data_proto.id
             if '?' in (portrait := data_proto.portrait):

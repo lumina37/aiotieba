@@ -1,16 +1,19 @@
-import sys
 from typing import List, Tuple
 
 import yarl
 
 from .._core import HttpCore, TbCore
-from .._helper import log_exception, pack_proto_request, send_request
+from .._helper import pack_proto_request, send_request
 from ..const import APP_BASE_HOST, APP_INSECURE_SCHEME
 from ..exception import TiebaServerError
 from ._classdef import Thread_home, UserInfo_home
 from .protobuf import ProfileReqIdl_pb2, ProfileResIdl_pb2
 
 CMD = 303012
+
+
+def null_ret_factory() -> Tuple[UserInfo_home, List[Thread_home]]:
+    return UserInfo_home(), []
 
 
 def pack_proto(core: TbCore, portrait: str, with_threads: bool) -> bytes:
@@ -60,13 +63,7 @@ async def request_http(
         pack_proto(http_core.core, portrait, with_threads),
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=64 * 1024)
-        user, threads = parse_body(body)
+    __log__ = "portrait={portrait}"  # noqa: F841
 
-    except Exception as err:
-        log_exception(sys._getframe(1), err, f"portrait={portrait}")
-        user = UserInfo_home()
-        threads = []
-
-    return user, threads
+    body = await send_request(request, http_core.connector, read_bufsize=64 * 1024)
+    return parse_body(body)

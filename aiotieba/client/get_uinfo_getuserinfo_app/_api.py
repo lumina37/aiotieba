@@ -10,10 +10,6 @@ from .protobuf import GetUserInfoReqIdl_pb2, GetUserInfoResIdl_pb2
 CMD = 303024
 
 
-def null_ret_factory() -> UserInfo_guinfo_app:
-    return UserInfo_guinfo_app()
-
-
 def pack_proto(user_id: int) -> bytes:
     req_proto = GetUserInfoReqIdl_pb2.GetUserInfoReqIdl()
     req_proto.data.user_id = user_id

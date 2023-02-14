@@ -1,10 +1,9 @@
-import sys
 from typing import Dict
 
 import yarl
 
 from .._core import HttpCore, TbCore
-from .._helper import log_exception, pack_proto_request, send_request
+from .._helper import pack_proto_request, send_request
 from ..const import APP_BASE_HOST, APP_SECURE_SCHEME
 from ..exception import TiebaServerError
 from .protobuf import SearchPostForumReqIdl_pb2, SearchPostForumResIdl_pb2
@@ -42,12 +41,7 @@ async def request_http(http_core: HttpCore, fname: str) -> Dict[str, int]:
         pack_proto(http_core.core, fname),
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=4 * 1024)
-        tab_map = parse_body(body)
+    __log__ = "fname={fname}"  # noqa: F841
 
-    except Exception as err:
-        log_exception(sys._getframe(1), err, f"fname={fname}")
-        tab_map = {}
-
-    return tab_map
+    body = await send_request(request, http_core.connector, read_bufsize=4 * 1024)
+    return parse_body(body)

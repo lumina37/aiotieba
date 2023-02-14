@@ -19,7 +19,7 @@ class UserInfo_json(object):
         '_user_name',
     ]
 
-    def _init(self, data_map: Optional[Mapping] = None) -> None:
+    def __init__(self, data_map: Optional[Mapping] = None) -> None:
         if data_map:
             self._user_id = data_map['id']
             self._portrait = data_map['portrait']

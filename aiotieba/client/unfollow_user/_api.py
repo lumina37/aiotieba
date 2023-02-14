@@ -3,7 +3,7 @@ import sys
 import yarl
 
 from .._core import HttpCore
-from .._helper import log_exception, log_success, pack_form_request, parse_json, send_request
+from .._helper import log_success, pack_form_request, parse_json, send_request
 from ..const import APP_BASE_HOST, APP_SECURE_SCHEME
 from ..exception import TiebaServerError
 
@@ -27,16 +27,10 @@ async def request(http_core: HttpCore, portrait: str) -> bool:
         data,
     )
 
-    log_str = f"portrait={portrait}"
-    frame = sys._getframe(1)
+    __log__ = f"portrait={portrait}"
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=1024)
-        parse_body(body)
+    body = await send_request(request, http_core.connector, read_bufsize=1024)
+    parse_body(body)
 
-    except Exception as err:
-        log_exception(frame, err, log_str)
-        return False
-
-    log_success(frame, log_str)
+    log_success(sys._getframe(1), __log__)
     return True

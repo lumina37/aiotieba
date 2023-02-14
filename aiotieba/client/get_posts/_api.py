@@ -1,5 +1,3 @@
-import sys
-
 import yarl
 
 from .._core import HttpCore, TbCore
@@ -10,10 +8,6 @@ from ._classdef import Posts
 from .protobuf import PbPageReqIdl_pb2, PbPageResIdl_pb2
 
 CMD = 302001
-
-
-def null_ret_factory() -> Posts:
-    return Posts()._init_null()
 
 
 def pack_proto(

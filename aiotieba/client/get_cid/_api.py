@@ -1,11 +1,10 @@
-import sys
 from typing import Dict
 
 import aiohttp
 import yarl
 
 from .._core import TbCore
-from .._helper import log_exception, pack_form_request, parse_json, send_request
+from .._helper import pack_form_request, parse_json, send_request
 from ..const import APP_BASE_HOST, APP_SECURE_SCHEME
 from ..exception import TiebaServerError
 
@@ -32,12 +31,7 @@ async def request(connector: aiohttp.TCPConnector, core: TbCore, fname: str) -> 
         data,
     )
 
-    try:
-        body = await send_request(request, connector, read_bufsize=1024)
-        cates = parse_body(body)
+    __log__ = "fname={fname}"  # noqa: F841
 
-    except Exception as err:
-        log_exception(sys._getframe(1), err, f"fname={fname}")
-        cates = {}
-
-    return cates
+    body = await send_request(request, connector, read_bufsize=1024)
+    return parse_body(body)

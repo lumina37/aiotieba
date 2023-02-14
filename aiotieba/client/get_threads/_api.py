@@ -10,10 +10,6 @@ from .protobuf import FrsPageReqIdl_pb2, FrsPageResIdl_pb2
 CMD = 301001
 
 
-def null_ret_factory() -> Threads:
-    return Threads()
-
-
 def pack_proto(core: TbCore, fname: str, pn: int, rn: int, sort: int, is_good: bool) -> bytes:
     req_proto = FrsPageReqIdl_pb2.FrsPageReqIdl()
     req_proto.data.common._client_type = 2

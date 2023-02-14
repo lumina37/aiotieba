@@ -1,9 +1,7 @@
-import sys
-
 import yarl
 
 from .._core import HttpCore
-from .._helper import log_exception, pack_form_request, parse_json, send_request
+from .._helper import pack_form_request, parse_json, send_request
 from ..const import APP_BASE_HOST, APP_INSECURE_SCHEME
 from ..exception import TiebaServerError
 from ._classdef import Searches
@@ -38,12 +36,7 @@ async def request(
         data,
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=8 * 1024)
-        searches = parse_body(body)
+    __log__ = "fname={fname}"  # noqa: F841
 
-    except Exception as err:
-        log_exception(sys._getframe(1), err, f"fname={fname}")
-        searches = Searches()
-
-    return searches
+    body = await send_request(request, http_core.connector, read_bufsize=8 * 1024)
+    return parse_body(body)

@@ -1,9 +1,7 @@
-import sys
-
 import yarl
 
 from .._core import HttpCore
-from .._helper import log_exception, pack_form_request, parse_json, send_request
+from .._helper import pack_form_request, parse_json, send_request
 from ..const import APP_BASE_HOST, APP_SECURE_SCHEME
 from ..exception import TiebaServerError
 from ._classdef import Follows
@@ -33,12 +31,7 @@ async def request(http_core: HttpCore, user_id: int, pn: int) -> Follows:
         data,
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=8 * 1024)
-        follows = parse_body(body)
+    __log__ = "user_id={user_id}"  # noqa: F841
 
-    except Exception as err:
-        log_exception(sys._getframe(1), err, f"user_id={user_id}")
-        follows = Follows()
-
-    return follows
+    body = await send_request(request, http_core.connector, read_bufsize=8 * 1024)
+    return parse_body(body)

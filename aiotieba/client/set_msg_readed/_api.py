@@ -1,7 +1,7 @@
 import sys
 
 from .._core import WsCore
-from .._helper import MsgType, log_exception, log_success
+from .._helper import MsgType, log_success
 from ..exception import TiebaServerError
 from ..get_group_msg import WsMessage
 from .protobuf import CommitReceivedPmsgReqIdl_pb2, CommitReceivedPmsgResIdl_pb2
@@ -32,16 +32,10 @@ async def request(ws_core: WsCore, message: WsMessage) -> bool:
     msg_id = message._msg_id
     data = pack_proto(user_id, ws_core.mid_manager.priv_gid, msg_id)
 
-    log_str = f"user_id={user_id} msg_id={msg_id}"
-    frame = sys._getframe(1)
+    __log__ = f"user_id={user_id} msg_id={msg_id}"
 
-    try:
-        resp = await ws_core.send(data, CMD)
-        parse_body(await resp.read())
+    resp = await ws_core.send(data, CMD)
+    parse_body(await resp.read())
 
-    except Exception as err:
-        log_exception(frame, err, log_str)
-        return False
-
-    log_success(frame, log_str)
+    log_success(sys._getframe(1), __log__)
     return True

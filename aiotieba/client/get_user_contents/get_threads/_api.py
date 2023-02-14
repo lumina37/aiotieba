@@ -1,10 +1,9 @@
-import sys
 from typing import List
 
 import yarl
 
 from ..._core import HttpCore, TbCore
-from ..._helper import log_exception, pack_proto_request, send_request
+from ..._helper import pack_proto_request, send_request
 from ...const import APP_BASE_HOST, APP_SECURE_SCHEME
 from ...exception import TiebaServerError
 from .._classdef import UserInfo_u, UserThread
@@ -53,12 +52,7 @@ async def request_http(http_core: HttpCore, user_id: int, pn: int, public_only: 
         pack_proto(http_core.core, user_id, pn, public_only),
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=64 * 1024)
-        threads = parse_body(body)
+    __log__ = "user_id={user_id}"  # noqa: F841
 
-    except Exception as err:
-        log_exception(sys._getframe(1), err, f"user_id={user_id}")
-        threads = []
-
-    return threads
+    body = await send_request(request, http_core.connector, read_bufsize=64 * 1024)
+    return parse_body(body)

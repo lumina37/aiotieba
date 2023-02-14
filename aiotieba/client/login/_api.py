@@ -8,8 +8,6 @@ from ..const import APP_BASE_HOST, APP_SECURE_SCHEME
 from ..exception import TiebaServerError
 from ._classdef import UserInfo_login
 
-null_ret_factory = bool
-
 
 def parse_body(body: bytes) -> Tuple[UserInfo_login, str]:
     res_json = parse_json(body)

@@ -1,6 +1,6 @@
 import hashlib
 import secrets
-from typing import Dict, Optional, Tuple, Union
+from typing import Optional, Tuple, Union
 
 import aiohttp
 import yarl

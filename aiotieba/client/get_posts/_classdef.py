@@ -2288,7 +2288,7 @@ class Posts(Containers[Post]):
                     comment._ppid = post._pid
                     comment._floor = post._floor
                     comment._user = users[comment._author_id]
-        
+
         else:
             self._objs = []
             self._page = Page_p()._init_null()

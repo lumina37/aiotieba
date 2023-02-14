@@ -8,8 +8,6 @@ from .._helper import log_success, pack_form_request, parse_json, send_request
 from ..const import APP_BASE_HOST, APP_SECURE_SCHEME
 from ..exception import TiebaServerError, TiebaValueError
 
-null_ret_factory = bool
-
 
 def parse_body(body: bytes) -> None:
     res_json = parse_json(body)

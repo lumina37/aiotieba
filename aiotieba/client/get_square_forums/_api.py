@@ -1,9 +1,7 @@
-import sys
-
 import yarl
 
 from .._core import HttpCore, TbCore
-from .._helper import log_exception, pack_proto_request, send_request
+from .._helper import pack_proto_request, send_request
 from ..const import APP_BASE_HOST, APP_SECURE_SCHEME
 from ..exception import TiebaServerError
 from ._classdef import SquareForums
@@ -45,12 +43,7 @@ async def request_http(http_core: HttpCore, cname: str, pn: int, rn: int) -> Squ
         pack_proto(http_core.core, cname, pn, rn),
     )
 
-    try:
-        body = await send_request(request, http_core.connector, read_bufsize=16 * 1024)
-        square_forums = parse_body(body)
+    __log__ = "cname={cname}"  # noqa: F841
 
-    except Exception as err:
-        log_exception(sys._getframe(1), err, f"cname={cname}")
-        square_forums = SquareForums()
-
-    return square_forums
+    body = await send_request(request, http_core.connector, read_bufsize=16 * 1024)
+    return parse_body(body)
