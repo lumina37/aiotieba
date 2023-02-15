@@ -43,7 +43,7 @@ async def request_http(http_core: HttpCore, user_id: int) -> UserInfo_guinfo_app
 
     __log__ = "user_id={user_id}"  # noqa: F841
 
-    body = await send_request(request, http_core.connector, read_bufsize=1024)
+    body = await send_request(request, http_core.network, read_bufsize=1024)
     return parse_body(body)
 
 

@@ -31,5 +31,5 @@ async def request(http_core: HttpCore, pn: int) -> SelfFollowForums:
         params,
     )
 
-    body = await send_request(request, http_core.connector, read_bufsize=128 * 1024)
+    body = await send_request(request, http_core.network, read_bufsize=128 * 1024)
     return parse_body(body)

@@ -34,8 +34,8 @@ def pack_form_request(http_core: HttpCore, url: yarl.URL, data: List[Tuple[str, 
         headers=http_core.app.headers,
         data=payload,
         loop=http_core.loop,
-        proxy=http_core.core._proxy,
-        proxy_auth=http_core.core._proxy_auth,
+        proxy=http_core.network.proxy,
+        proxy_auth=http_core.network.proxy_auth,
         ssl=False,
     )
 
@@ -71,8 +71,8 @@ def pack_proto_request(http_core: HttpCore, url: yarl.URL, data: bytes) -> aioht
         headers=http_core.app_proto.headers,
         data=writer,
         loop=http_core.loop,
-        proxy=http_core.core._proxy,
-        proxy_auth=http_core.core._proxy_auth,
+        proxy=http_core.network.proxy,
+        proxy_auth=http_core.network.proxy_auth,
         ssl=False,
     )
 
@@ -99,8 +99,8 @@ def pack_web_get_request(http_core: HttpCore, url: yarl.URL, params: List[Tuple[
         headers=http_core.web.headers,
         cookies=http_core.web.cookie_jar.filter_cookies(url),
         loop=http_core.loop,
-        proxy=http_core.core._proxy,
-        proxy_auth=http_core.core._proxy_auth,
+        proxy=http_core.network.proxy,
+        proxy_auth=http_core.network.proxy_auth,
         ssl=False,
     )
 
@@ -132,8 +132,8 @@ def pack_web_form_request(http_core: HttpCore, url: yarl.URL, data: List[Tuple[s
         data=payload,
         cookies=http_core.web.cookie_jar.filter_cookies(url),
         loop=http_core.loop,
-        proxy=http_core.core._proxy,
-        proxy_auth=http_core.core._proxy_auth,
+        proxy=http_core.network.proxy,
+        proxy_auth=http_core.network.proxy_auth,
         ssl=False,
     )
 

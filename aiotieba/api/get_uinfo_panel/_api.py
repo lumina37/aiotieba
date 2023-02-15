@@ -33,5 +33,5 @@ async def request(http_core: HttpCore, name_or_portrait: str) -> UserInfo_panel:
 
     __log__ = "user={name_or_portrait}"  # noqa: F841
 
-    body = await send_request(request, http_core.connector, read_bufsize=64 * 1024)
+    body = await send_request(request, http_core.network, read_bufsize=64 * 1024)
     return parse_body(body)

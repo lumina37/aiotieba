@@ -2,7 +2,7 @@ from typing import Dict, List
 
 import yarl
 
-from ...const import APP_BASE_HOST, APP_SECURE_SCHEME
+from ...const import APP_BASE_HOST, APP_SECURE_SCHEME, MAIN_VERSION
 from ...core import HttpCore
 from ...exception import TiebaServerError
 from ...helper import parse_json
@@ -40,8 +40,8 @@ def parse_body(body: bytes) -> Dict[str, List[int]]:
 
 async def request(http_core: HttpCore, fid: int) -> Dict[str, List[int]]:
     data = [
-        ('BDUSS', http_core.core._BDUSS),
-        ('_client_version', http_core.core.main_version),
+        ('BDUSS', http_core.account._BDUSS),
+        ('_client_version', MAIN_VERSION),
         ('forum_id', fid),
     ]
 
@@ -53,5 +53,5 @@ async def request(http_core: HttpCore, fid: int) -> Dict[str, List[int]]:
 
     __log__ = "fid={fid}"  # noqa: F841
 
-    body = await send_request(request, http_core.connector, read_bufsize=4 * 1024)
+    body = await send_request(request, http_core.network, read_bufsize=4 * 1024)
     return parse_body(body)

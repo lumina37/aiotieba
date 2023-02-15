@@ -79,8 +79,7 @@ from .api import (
 )
 from .api._classdef import UserInfo
 from .api.get_homepage import UserInfo_home
-from .const import TIME_CONFIG
-from .core import HttpCore, TbCore, WsCore
+from .core import Account, HttpCore, Network, TimeConfig, WsCore
 from .helper import GroupType, PostSortType, ReqUInfo, ThreadSortType, WsStatus, handle_exception, is_portrait
 from .helper.cache import ForumInfoCache
 from .logging import get_logger as LOG
@@ -120,12 +119,13 @@ class Client(object):
         enable_ws (bool, optional): 允许使用websocket接口. Defaults to False.
         proxy (tuple[yarl.URL, aiohttp.BasicAuth] | bool, optional): True则使用环境变量代理 False则禁用代理
             输入一个 (http代理地址, 代理验证) 的元组以手动设置代理. Defaults to False.
+        time_cfg (TimeConfig, optional): 各种时间设置. Defaults to TimeConfig().
         loop (asyncio.AbstractEventLoop, optional): 事件循环. Defaults to None.
     """
 
     __slots__ = [
         '_connector',
-        '_core',
+        '_account',
         '_http_core',
         '_ws_core',
         '_enable_ws',
@@ -137,15 +137,16 @@ class Client(object):
         BDUSS_key: Optional[str] = None,
         enable_ws: bool = False,
         proxy: Union[Tuple[yarl.URL, aiohttp.BasicAuth], bool] = False,
+        time_cfg: TimeConfig = TimeConfig(),
         loop: Optional[asyncio.AbstractEventLoop] = None,
     ) -> None:
         if loop is None:
             loop = asyncio.get_running_loop()
 
         connector = aiohttp.TCPConnector(
-            ttl_dns_cache=TIME_CONFIG.dns_ttl,
+            ttl_dns_cache=time_cfg.dns_ttl,
             family=socket.AF_INET,
-            keepalive_timeout=TIME_CONFIG.http_keepalive,
+            keepalive_timeout=time_cfg.http_keepalive,
             limit=0,
             ssl=False,
             loop=loop,
@@ -161,10 +162,12 @@ class Client(object):
             else:
                 proxy = (proxy_info.proxy, proxy_info.proxy_auth)
 
-        core = TbCore(BDUSS_key, proxy)
-        self._core = core
-        self._http_core = HttpCore(core, connector, loop)
-        self._ws_core = WsCore(core, connector, loop)
+        core = Account(BDUSS_key)
+        self._account = core
+        network = Network(connector, time_cfg, proxy)
+        self._http_core = HttpCore(core, network, loop)
+        self._ws_core = WsCore(core, network, loop)
+
         self._enable_ws = enable_ws
 
         self._user = UserInfo_home()
@@ -177,18 +180,18 @@ class Client(object):
         await self._connector.close()
 
     def __hash__(self) -> int:
-        return hash(self._core._BDUSS_key)
+        return hash(self._account._BDUSS_key)
 
     def __eq__(self, obj: "Client") -> bool:
-        return self._core._BDUSS_key == obj._core._BDUSS_key
+        return self._account._BDUSS_key == obj._account._BDUSS_key
 
     @property
-    def core(self) -> TbCore:
+    def account(self) -> Account:
         """
-        贴吧核心参数容器
+        贴吧的用户信息容器
         """
 
-        return self._core
+        return self._account
 
     @handle_exception(bool)
     async def init_websocket(self) -> bool:
@@ -205,7 +208,7 @@ class Client(object):
         return True
 
     async def __upload_sec_key(self) -> None:
-        from . import init_websocket
+        from .api import init_websocket
         from .core.websocket import MsgIDPair
 
         groups = await init_websocket.request(self._ws_core)
@@ -219,7 +222,7 @@ class Client(object):
         self._ws_core._status = WsStatus.OPEN
 
     async def __init_tbs(self) -> bool:
-        if self._core._tbs:
+        if self._account._tbs:
             return True
         return await self.__login()
 
@@ -250,29 +253,29 @@ class Client(object):
         self._user._user_id = user._user_id
         self._user._portrait = user._portrait
         self._user._user_name = user._user_name
-        self._core._tbs = tbs
+        self._account._tbs = tbs
 
         return True
 
     async def __init_client_id(self) -> bool:
-        if self._core._client_id:
+        if self._account._client_id:
             return True
         return await self.__sync()
 
     @handle_exception(bool)
     async def __sync(self) -> bool:
         client_id = await sync.request(self._http_core)
-        self._core._client_id = client_id
+        self._account._client_id = client_id
 
         return True
 
     @handle_exception(bool)
     async def __init_z_id(self) -> bool:
-        if self._core._z_id:
+        if self._account._z_id:
             return True
 
         z_id = await init_z_id.request(self._http_core)
-        self._core._z_id = z_id
+        self._account._z_id = z_id
 
         return True
 
@@ -717,8 +720,6 @@ class Client(object):
         Returns:
             SquareForums: 吧广场列表
         """
-
-        from . import get_square_forums
 
         if self._ws_core.status == WsStatus.OPEN:
             return await get_square_forums.request_ws(self._ws_core, cname, pn, rn)

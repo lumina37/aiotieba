@@ -4,17 +4,17 @@ from typing import Tuple
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 
-from ..core import TbCore
+from ..core import Account
 
 
 def pack_ws_bytes(
-    core: TbCore, data: bytes, cmd: int, req_id: int, *, compress: bool = False, encrypt: bool = True
+    account: Account, data: bytes, cmd: int, req_id: int, *, compress: bool = False, encrypt: bool = True
 ) -> bytes:
     """
     打包数据并添加9字节头部
 
     Args:
-        core (TbCore): 贴吧核心参数容器
+        account (Account): 贴吧的用户信息容器
         data (bytes): 待发送的websocket数据
         cmd (int): 请求的cmd类型
         req_id (int): 请求的id
@@ -33,7 +33,7 @@ def pack_ws_bytes(
     if encrypt:
         flag |= 0b10000000
         data = pad(data, AES.block_size)
-        data = core.aes_ecb_chiper.encrypt(data)
+        data = account.aes_ecb_chiper.encrypt(data)
 
     data = b''.join(
         [
@@ -47,12 +47,12 @@ def pack_ws_bytes(
     return data
 
 
-def parse_ws_bytes(core: TbCore, data: bytes) -> Tuple[bytes, int, int]:
+def parse_ws_bytes(account: Account, data: bytes) -> Tuple[bytes, int, int]:
     """
     对websocket返回数据进行解包
 
     Args:
-        core (TbCore): 贴吧核心参数容器
+        account (Account): 贴吧的用户信息容器
         data (bytes): 接收到的websocket数据
 
     Returns:
@@ -68,7 +68,7 @@ def parse_ws_bytes(core: TbCore, data: bytes) -> Tuple[bytes, int, int]:
 
     data = data_view[9:].tobytes()
     if flag & 0b10000000:
-        data = core.aes_ecb_chiper.decrypt(data)
+        data = account.aes_ecb_chiper.decrypt(data)
         data = unpad(data, AES.block_size)
     if flag & 0b01000000:
         data = gzip.decompress(data)

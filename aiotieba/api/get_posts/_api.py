@@ -1,7 +1,7 @@
 import yarl
 
-from ...const import APP_BASE_HOST, APP_SECURE_SCHEME
-from ...core import HttpCore, TbCore, WsCore
+from ...const import APP_BASE_HOST, APP_SECURE_SCHEME, MAIN_VERSION
+from ...core import Account, HttpCore, WsCore
 from ...exception import TiebaServerError
 from ...request import pack_proto_request, send_request
 from ._classdef import Posts
@@ -11,7 +11,7 @@ CMD = 302001
 
 
 def pack_proto(
-    core: TbCore,
+    core: Account,
     tid: int,
     pn: int,
     rn: int,
@@ -24,7 +24,7 @@ def pack_proto(
 ) -> bytes:
     req_proto = PbPageReqIdl_pb2.PbPageReqIdl()
     req_proto.data.common._client_type = 2
-    req_proto.data.common._client_version = core.main_version
+    req_proto.data.common._client_version = MAIN_VERSION
     req_proto.data.tid = tid
     req_proto.data.pn = pn
     req_proto.data.rn = rn if rn > 1 else 2
@@ -66,7 +66,7 @@ async def request_http(
     is_fold: bool,
 ) -> Posts:
     data = pack_proto(
-        http_core.core,
+        http_core.account,
         tid,
         pn,
         rn,
@@ -86,7 +86,7 @@ async def request_http(
 
     __log__ = "tid={tid}"  # noqa: F841
 
-    body = await send_request(request, http_core.connector, read_bufsize=128 * 1024)
+    body = await send_request(request, http_core.network, read_bufsize=128 * 1024)
     return parse_body(body)
 
 
@@ -103,7 +103,7 @@ async def request_ws(
     is_fold: bool,
 ) -> Posts:
     data = pack_proto(
-        ws_core.core,
+        ws_core.account,
         tid,
         pn,
         rn,

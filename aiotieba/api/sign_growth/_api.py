@@ -17,10 +17,10 @@ def parse_body(body: bytes) -> None:
 
 async def request(http_core: HttpCore, act_type: str) -> bool:
     data = [
-        ('BDUSS', http_core.core._BDUSS),
+        ('BDUSS', http_core.account._BDUSS),
         ('act_type', act_type),
         ('cuid', ' '),
-        ('tbs', http_core.core._tbs),
+        ('tbs', http_core.account._tbs),
     ]
 
     request = pack_form_request(
@@ -29,7 +29,7 @@ async def request(http_core: HttpCore, act_type: str) -> bool:
         data,
     )
 
-    body = await send_request(request, http_core.connector, read_bufsize=1024)
+    body = await send_request(request, http_core.network, read_bufsize=1024)
     parse_body(body)
 
     log_success(sys._getframe(1))

@@ -3,7 +3,7 @@ from typing import Callable
 
 import aiohttp
 
-from ..const import TIME_CONFIG
+from ..core import Network
 from ..exception import HTTPStatusError
 from ..helper import timeout
 
@@ -16,9 +16,9 @@ def check_status_code(response: aiohttp.ClientResponse) -> None:
 TypeHeadersChecker = Callable[[aiohttp.ClientResponse], None]
 
 
-async def _send_request(
+async def req2res(
     request: aiohttp.ClientRequest,
-    connector: aiohttp.TCPConnector,
+    network: Network,
     read_until_eof: bool = True,
     read_bufsize: int = 64 * 1024,
 ) -> aiohttp.ClientResponse:
@@ -27,7 +27,7 @@ async def _send_request(
 
     Args:
         request (aiohttp.ClientRequest): 待发送的请求
-        connector (aiohttp.TCPConnector): 用于生成TCP连接的连接器
+        network (Network): 网络请求相关容器
         read_until_eof (bool, optional): 是否读取到EOF就中止. Defaults to True.
         read_bufsize (int, optional): 读缓冲区大小 以字节为单位. Defaults to 64KiB.
 
@@ -37,8 +37,8 @@ async def _send_request(
 
     # 获取TCP连接
     try:
-        async with timeout(TIME_CONFIG.http_connect, connector._loop):
-            conn = await connector.connect(request, [], TIME_CONFIG.http)
+        async with timeout(network.time.http_connect, network.connector._loop):
+            conn = await network.connector.connect(request, [], network.time.http)
     except asyncio.TimeoutError as exc:
         raise aiohttp.ServerTimeoutError(f"Connection timeout to host {request.url}") from exc
 
@@ -46,7 +46,7 @@ async def _send_request(
     conn.protocol.set_response_params(
         read_until_eof=read_until_eof,
         auto_decompress=True,
-        read_timeout=TIME_CONFIG.http_read,
+        read_timeout=network.time.http_read,
         read_bufsize=read_bufsize,
     )
 
@@ -67,7 +67,7 @@ async def _send_request(
 
 async def send_request(
     request: aiohttp.ClientRequest,
-    connector: aiohttp.TCPConnector,
+    network: Network,
     read_bufsize: int = 64 * 1024,
     headers_checker: TypeHeadersChecker = check_status_code,
 ) -> bytes:
@@ -77,7 +77,7 @@ async def send_request(
 
     Args:
         request (aiohttp.ClientRequest): 待发送的请求
-        connector (aiohttp.TCPConnector): 用于生成TCP连接的连接器
+        network (Network): 网络请求相关容器
         read_bufsize (int, optional): 读缓冲区大小 以字节为单位. Defaults to 64KiB.
         headers_checker (TypeHeadersChecker, optional): headers检查函数. Defaults to check_status_code.
 
@@ -85,7 +85,7 @@ async def send_request(
         bytes: body
     """
 
-    response = await _send_request(request, connector, True, read_bufsize)
+    response = await req2res(request, network, True, read_bufsize)
 
     # 合并cookies
     # cookie_jar.update_cookies(response.cookies, response._url)

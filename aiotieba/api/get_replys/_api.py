@@ -1,7 +1,7 @@
 import yarl
 
-from ...const import APP_BASE_HOST, APP_SECURE_SCHEME
-from ...core import HttpCore, TbCore, WsCore
+from ...const import APP_BASE_HOST, APP_SECURE_SCHEME, MAIN_VERSION
+from ...core import Account, HttpCore, WsCore
 from ...exception import TiebaServerError
 from ...request import pack_proto_request, send_request
 from ._classdef import Replys
@@ -10,10 +10,10 @@ from .protobuf import ReplyMeReqIdl_pb2, ReplyMeResIdl_pb2
 CMD = 303007
 
 
-def pack_proto(core: TbCore, pn: int) -> bytes:
+def pack_proto(core: Account, pn: int) -> bytes:
     req_proto = ReplyMeReqIdl_pb2.ReplyMeReqIdl()
     req_proto.data.common.BDUSS = core._BDUSS
-    req_proto.data.common._client_version = core.main_version
+    req_proto.data.common._client_version = MAIN_VERSION
     req_proto.data.pn = str(pn)
 
     return req_proto.SerializeToString()
@@ -33,7 +33,7 @@ def parse_body(proto: bytes) -> Replys:
 
 
 async def request_http(http_core: HttpCore, pn: int) -> Replys:
-    data = pack_proto(http_core.core, pn)
+    data = pack_proto(http_core.account, pn)
 
     request = pack_proto_request(
         http_core,
@@ -43,12 +43,12 @@ async def request_http(http_core: HttpCore, pn: int) -> Replys:
         data,
     )
 
-    body = await send_request(request, http_core.connector, read_bufsize=16 * 1024)
+    body = await send_request(request, http_core.network, read_bufsize=16 * 1024)
     return parse_body(body)
 
 
 async def request_ws(ws_core: WsCore, pn: int) -> Replys:
-    data = pack_proto(ws_core.core, pn)
+    data = pack_proto(ws_core.account, pn)
 
     response = await ws_core.send(data, CMD)
     return parse_body(await response.read())

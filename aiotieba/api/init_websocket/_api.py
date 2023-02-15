@@ -5,7 +5,8 @@ from typing import List
 from Crypto.Cipher import PKCS1_v1_5
 from Crypto.PublicKey import RSA
 
-from ...core import TbCore, WsCore
+from ...const import MAIN_VERSION
+from ...core import Account, WsCore
 from ...exception import TiebaServerError
 from ...helper import pack_json
 from ._classdef import WsMsgGroupInfo
@@ -19,13 +20,13 @@ PUBLIC_KEY = binascii.a2b_base64(
 )
 
 
-def pack_proto(core: TbCore) -> bytes:
+def pack_proto(core: Account) -> bytes:
     req_proto = UpdateClientInfoReqIdl_pb2.UpdateClientInfoReqIdl()
     req_proto.data.bduss = core._BDUSS
 
     device = {
         'cuid': core.cuid,
-        '_client_version': core.main_version,
+        '_client_version': MAIN_VERSION,
         '_msg_status': '1',
         'cuid_galaxy2': core.cuid_galaxy2,
         '_client_type': '2',
@@ -37,7 +38,7 @@ def pack_proto(core: TbCore) -> bytes:
     secret_key = rsa_chiper.encrypt(core.aes_ecb_sec_key)
     req_proto.data.secretKey = secret_key
     req_proto.data.stoken = core._STOKEN
-    req_proto.cuid = f"{core.cuid}|com.baidu.tieba{core.main_version}"
+    req_proto.cuid = f"{core.cuid}|com.baidu.tieba{MAIN_VERSION}"
 
     return req_proto.SerializeToString()
 
@@ -55,7 +56,7 @@ def parse_body(body: bytes) -> List[WsMsgGroupInfo]:
 
 
 async def request(ws_core: WsCore) -> List[WsMsgGroupInfo]:
-    data = pack_proto(ws_core.core)
+    data = pack_proto(ws_core.account)
 
     resp = await ws_core.send(data, CMD, compress=False, encrypt=False)
     groups = parse_body(await resp.read())

@@ -17,7 +17,7 @@ def parse_body(body: bytes) -> None:
 
 async def request(http_core: HttpCore, nick_name: str, sign: str, gender: int) -> bool:
     data = [
-        ('BDUSS', http_core.core._BDUSS),
+        ('BDUSS', http_core.account._BDUSS),
         ('intro', sign),
         ('nick_name', nick_name),
         ('sex', gender),
@@ -31,7 +31,7 @@ async def request(http_core: HttpCore, nick_name: str, sign: str, gender: int) -
 
     __log__ = f"nick_name={nick_name} sign={sign} gender={gender}"
 
-    body = await send_request(request, http_core.connector, read_bufsize=1024)
+    body = await send_request(request, http_core.network, read_bufsize=1024)
     parse_body(body)
 
     log_success(sys._getframe(1), __log__)

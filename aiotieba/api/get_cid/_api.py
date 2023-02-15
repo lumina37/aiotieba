@@ -4,7 +4,7 @@ import aiohttp
 import yarl
 
 from ...const import APP_BASE_HOST, APP_SECURE_SCHEME
-from ...core import TbCore
+from ...core import Account
 from ...exception import TiebaServerError
 from ...helper import parse_json
 from ...request import pack_form_request, send_request
@@ -20,7 +20,7 @@ def parse_body(body: bytes) -> Dict[str, str]:
     return cates
 
 
-async def request(connector: aiohttp.TCPConnector, core: TbCore, fname: str) -> Dict[str, str]:
+async def request(connector: aiohttp.TCPConnector, core: Account, fname: str) -> Dict[str, str]:
     data = [
         ('BDUSS', core._BDUSS),
         ('word', fname),

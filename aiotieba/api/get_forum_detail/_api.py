@@ -1,6 +1,6 @@
 import yarl
 
-from ...const import APP_BASE_HOST, APP_INSECURE_SCHEME
+from ...const import APP_BASE_HOST, APP_INSECURE_SCHEME, MAIN_VERSION
 from ...core import HttpCore
 from ...exception import TiebaServerError
 from ...helper import parse_json
@@ -21,7 +21,7 @@ def parse_body(body: bytes) -> Forum_detail:
 
 async def request(http_core: HttpCore, fid: int) -> Forum_detail:
     data = [
-        ('_client_version', http_core.core.main_version),
+        ('_client_version', MAIN_VERSION),
         ('forum_id', fid),
     ]
 
@@ -33,5 +33,5 @@ async def request(http_core: HttpCore, fid: int) -> Forum_detail:
 
     __log__ = "fid={fid}"  # noqa: F841
 
-    body = await send_request(request, http_core.connector, read_bufsize=8 * 1024)
+    body = await send_request(request, http_core.network, read_bufsize=8 * 1024)
     return parse_body(body)

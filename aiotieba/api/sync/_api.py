@@ -18,7 +18,7 @@ def parse_body(body: bytes) -> str:
 
 
 async def request(http_core: HttpCore) -> str:
-    data = [('BDUSS', http_core.core._BDUSS)]
+    data = [('BDUSS', http_core.account._BDUSS)]
 
     request = pack_form_request(
         http_core,
@@ -26,5 +26,5 @@ async def request(http_core: HttpCore) -> str:
         data,
     )
 
-    body = await send_request(request, http_core.connector, read_bufsize=64 * 1024)
+    body = await send_request(request, http_core.network, read_bufsize=64 * 1024)
     return parse_body(body)

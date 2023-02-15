@@ -1,22 +1,19 @@
 import hashlib
 import secrets
-from typing import Optional, Tuple, Union
+from typing import Optional
 
-import aiohttp
-import yarl
 from Crypto.Cipher import AES
 
 from ..config import CONFIG
 from ..helper.crypto import c3_aid, cuid_galaxy2
 
 
-class TbCore(object):
+class Account(object):
     """
-    贴吧客户端核心容器
+    贴吧的用户信息容器
 
     Args:
         BDUSS_key (str, optional): 用于快捷调用BDUSS. Defaults to None.
-        proxy (tuple[yarl.URL, aiohttp.BasicAuth], optional): 输入一个 (http代理地址, 代理验证) 的元组以手动设置代理. Defaults to (None, None).
     """
 
     __slots__ = [
@@ -35,18 +32,11 @@ class TbCore(object):
         '_aes_ecb_chiper',
         '_aes_cbc_sec_key',
         '_aes_cbc_chiper',
-        '_proxy',
-        '_proxy_auth',
     ]
-
-    main_version = "12.36.3.1"
-    # no_fold_version = "12.12.1.0"
-    post_version = "9.1.0.0"
 
     def __init__(
         self,
         BDUSS_key: Optional[str] = None,
-        proxy: Union[Tuple[yarl.URL, aiohttp.BasicAuth], Tuple[None, None]] = (None, None),
     ) -> None:
         self._BDUSS_key = BDUSS_key
         users_cfg = CONFIG.setdefault('User', {})
@@ -66,8 +56,6 @@ class TbCore(object):
         self._aes_ecb_chiper = None
         self._aes_cbc_sec_key: bytes = None
         self._aes_cbc_chiper = None
-
-        self._proxy, self._proxy_auth = proxy
 
     @property
     def BDUSS_key(self) -> str:

@@ -8,12 +8,12 @@ import aiohttp
 import async_timeout
 import yarl
 
-from ..const import TIME_CONFIG
 from ..exception import HTTPStatusError
 from ..helper import WsStatus
-from ..request.common import _send_request
+from ..request.common import req2res
 from ..request.websocket import pack_ws_bytes, parse_ws_bytes
-from . import TbCore
+from .account import Account
+from .network import Network
 
 TypeWebsocketCallback = Callable[["WsCore", bytes, int], Awaitable[None]]
 
@@ -135,8 +135,8 @@ class WsCore(object):
     """
 
     __slots__ = [
-        'core',
-        'connector',
+        'account',
+        'network',
         'waiter',
         'callbacks',
         'websocket',
@@ -149,12 +149,12 @@ class WsCore(object):
 
     def __init__(
         self,
-        core: TbCore,
-        connector: aiohttp.TCPConnector,
+        account: Account,
+        network: Network,
         loop: Optional[asyncio.AbstractEventLoop] = None,
     ) -> None:
-        self.core = core
-        self.connector = connector
+        self.account = account
+        self.network = network
         self.loop: asyncio.AbstractEventLoop = loop
 
         self.callbacks: Dict[int, TypeWebsocketCallback] = {}
@@ -195,12 +195,12 @@ class WsCore(object):
             ws_url,
             headers=headers,
             loop=self.loop,
-            proxy=self.core._proxy,
-            proxy_auth=self.core._proxy_auth,
+            proxy=self.network.proxy,
+            proxy_auth=self.network.proxy_auth,
             ssl=False,
         )
 
-        response = await _send_request(request, self.connector, False, 2 * 1024)
+        response = await req2res(request, self.network, False, 2 * 1024)
 
         if response.status != 101:
             raise HTTPStatusError(response.status, response.reason)
@@ -221,12 +221,12 @@ class WsCore(object):
                 writer,
                 'chat',
                 response,
-                TIME_CONFIG.ws_keepalive,
+                self.network.time.ws_keepalive,
                 True,
                 True,
                 self.loop,
-                receive_timeout=TIME_CONFIG.ws_read,
-                heartbeat=TIME_CONFIG.ws_heartbeat,
+                receive_timeout=self.network.time.ws_read,
+                heartbeat=self.network.time.ws_heartbeat,
             )
 
         if self.ws_dispatcher is not None and not self.ws_dispatcher.done():
@@ -272,7 +272,7 @@ class WsCore(object):
         data_future = self.loop.create_future()
         data_future.add_done_callback(self.__generate_default_callback(req_id))
         self.waiter[req_id] = data_future
-        return WsResponse(data_future, TIME_CONFIG.ws_read)
+        return WsResponse(data_future, self.network.time.ws_read)
 
     def set_done(self, req_id: int, data: bytes) -> None:
         """
@@ -291,7 +291,7 @@ class WsCore(object):
     async def __ws_dispatch(self) -> None:
         try:
             async for msg in self.websocket:
-                data, cmd, req_id = parse_ws_bytes(self.core, msg.data)
+                data, cmd, req_id = parse_ws_bytes(self.account, msg.data)
                 res_callback = self.callbacks.get(cmd, None)
                 if res_callback is None:
                     self.__default_callback(req_id, data)
@@ -344,11 +344,11 @@ class WsCore(object):
         """
 
         req_id = self.req_id
-        req_data = pack_ws_bytes(self.core, data, cmd, req_id, compress=compress, encrypt=encrypt)
+        req_data = pack_ws_bytes(self.account, data, cmd, req_id, compress=compress, encrypt=encrypt)
         response = self.register(req_id)
 
         try:
-            async with async_timeout.timeout(TIME_CONFIG.ws_send):
+            async with async_timeout.timeout(self.network.time.ws_send):
                 await self.websocket.send_bytes(req_data)
         except asyncio.TimeoutError as err:
             response._cancel()

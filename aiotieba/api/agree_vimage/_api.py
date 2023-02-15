@@ -2,7 +2,7 @@ import sys
 
 import yarl
 
-from ...const import APP_BASE_HOST, APP_SECURE_SCHEME
+from ...const import APP_BASE_HOST, APP_SECURE_SCHEME, MAIN_VERSION
 from ...core import HttpCore
 from ...exception import TiebaServerError
 from ...helper import log_success, parse_json
@@ -17,8 +17,8 @@ def parse_body(body: bytes) -> None:
 
 async def request(http_core: HttpCore, user_id: int) -> bool:
     data = [
-        ('BDUSS', http_core.core._BDUSS),
-        ('_client_version', http_core.core.main_version),
+        ('BDUSS', http_core.account._BDUSS),
+        ('_client_version', MAIN_VERSION),
         ('agreed_user_id', user_id),
         ('interactive_id', '1'),
     ]
@@ -31,7 +31,7 @@ async def request(http_core: HttpCore, user_id: int) -> bool:
 
     __log__ = f"user_id={user_id}"
 
-    body = await send_request(request, http_core.connector, read_bufsize=1024)
+    body = await send_request(request, http_core.network, read_bufsize=1024)
     parse_body(body)
 
     log_success(sys._getframe(1), __log__)

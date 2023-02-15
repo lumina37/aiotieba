@@ -24,7 +24,7 @@ async def request(http_core: HttpCore, fname: str, fid: int, pn: int, rn: int) -
         ('fid', fid),
         ('pn', pn),
         ('rn', rn),
-        ('tbs', http_core.core._tbs),
+        ('tbs', http_core.account._tbs),
     ]
 
     request = pack_web_form_request(
@@ -35,5 +35,5 @@ async def request(http_core: HttpCore, fname: str, fid: int, pn: int, rn: int) -
 
     __log__ = "fname={fname}"  # noqa: F841
 
-    body = await send_request(request, http_core.connector, read_bufsize=64 * 1024)
+    body = await send_request(request, http_core.network, read_bufsize=64 * 1024)
     return parse_body(body)

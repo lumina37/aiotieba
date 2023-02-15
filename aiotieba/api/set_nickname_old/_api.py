@@ -29,7 +29,7 @@ async def request(http_core: HttpCore, nick_name: str) -> bool:
 
     __log__ = f"nick_name={nick_name}"
 
-    body = await send_request(request, http_core.connector, read_bufsize=1024)
+    body = await send_request(request, http_core.network, read_bufsize=1024)
     parse_body(body)
 
     log_success(sys._getframe(1), __log__)

@@ -41,5 +41,5 @@ async def request(http_core: HttpCore, url: yarl.URL) -> "np.ndarray":
 
     __log__ = "url={url}"  # noqa: F841
 
-    body = await send_request(request, http_core.connector, read_bufsize=512 * 1024, headers_checker=headers_checker)
+    body = await send_request(request, http_core.network, read_bufsize=512 * 1024, headers_checker=headers_checker)
     return parse_body(body)

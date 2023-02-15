@@ -29,5 +29,5 @@ async def request(http_core: HttpCore, fname: str, pn: int) -> MemberUsers:
 
     __log__ = "fname={fname}"  # noqa: F841
 
-    body = await send_request(request, http_core.connector, read_bufsize=64 * 1024)
+    body = await send_request(request, http_core.network, read_bufsize=64 * 1024)
     return parse_body(body)

@@ -1,6 +1,6 @@
 import yarl
 
-from ...const import APP_BASE_HOST, APP_SECURE_SCHEME
+from ...const import APP_BASE_HOST, APP_SECURE_SCHEME, MAIN_VERSION
 from ...core import HttpCore
 from ...exception import TiebaServerError
 from ...helper import parse_json
@@ -20,8 +20,8 @@ def parse_body(body: bytes) -> Ats:
 
 async def request(http_core: HttpCore, pn: int) -> Ats:
     data = [
-        ('BDUSS', http_core.core._BDUSS),
-        ('_client_version', http_core.core.main_version),
+        ('BDUSS', http_core.account._BDUSS),
+        ('_client_version', MAIN_VERSION),
         ('pn', pn),
     ]
 
@@ -31,5 +31,5 @@ async def request(http_core: HttpCore, pn: int) -> Ats:
         data,
     )
 
-    body = await send_request(request, http_core.connector, read_bufsize=1024)
+    body = await send_request(request, http_core.network, read_bufsize=1024)
     return parse_body(body)

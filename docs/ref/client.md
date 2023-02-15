@@ -13,7 +13,7 @@ async with aiotieba.Client() as client:
 
 ## Client
 
-class `aiotieba.Client`(*BDUSS_key: str | None = None*, *enable_ws: bool = False*, *proxy: tuple[[yarl.URL](https://yarl.aio-libs.org/en/latest/api.html#yarl.URL), [aiohttp.BasicAuth](https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.BasicAuth)] | bool = False*, *loop: [asyncio.AbstractEventLoop](https://docs.python.org/zh-cn/3/library/asyncio-eventloop.html#event-loop) | None = None*)
+class `aiotieba.Client`(*BDUSS_key: str | None = None*, *enable_ws: bool = False*, *proxy: tuple[[yarl.URL](https://yarl.aio-libs.org/en/latest/api.html#yarl.URL), [aiohttp.BasicAuth](https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.BasicAuth)] | bool = False*, *time_cfg: TimeConfig = TimeConfig()*, *loop: [asyncio.AbstractEventLoop](https://docs.python.org/zh-cn/3/library/asyncio-eventloop.html#event-loop) | None = None*)
 
 ### 构造参数
 
@@ -23,6 +23,8 @@ class `aiotieba.Client`(*BDUSS_key: str | None = None*, *enable_ws: bool = False
 **enable_ws** - 允许使用websocket接口
 
 **proxy** - True则使用环境变量代理 False则禁用代理 输入一个（http代理地址, 代理验证）的元组以手动设置代理
+
+**time_cfg** - 各种时间设置
 
 **loop** - 事件循环
 </div>

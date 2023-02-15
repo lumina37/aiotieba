@@ -1,6 +1,6 @@
 import yarl
 
-from ...const import APP_BASE_HOST, APP_INSECURE_SCHEME
+from ...const import APP_BASE_HOST, APP_INSECURE_SCHEME, MAIN_VERSION
 from ...core import HttpCore
 from ...exception import TiebaServerError
 from ...helper import parse_json
@@ -22,7 +22,7 @@ async def request(
     http_core: HttpCore, fname: str, query: str, pn: int, rn: int, query_type: int, only_thread: bool
 ) -> Searches:
     data = [
-        ('_client_version', http_core.core.main_version),
+        ('_client_version', MAIN_VERSION),
         ('kw', fname),
         ('only_thread', int(only_thread)),
         ('pn', pn),
@@ -39,5 +39,5 @@ async def request(
 
     __log__ = "fname={fname}"  # noqa: F841
 
-    body = await send_request(request, http_core.connector, read_bufsize=8 * 1024)
+    body = await send_request(request, http_core.network, read_bufsize=8 * 1024)
     return parse_body(body)

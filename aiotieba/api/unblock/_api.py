@@ -21,7 +21,7 @@ async def request(http_core: HttpCore, fname: str, fid: int, user_id: int) -> bo
         ('fid', fid),
         ('block_un', ' '),
         ('block_uid', user_id),
-        ('tbs', http_core.core._tbs),
+        ('tbs', http_core.account._tbs),
     ]
 
     request = pack_web_form_request(
@@ -32,7 +32,7 @@ async def request(http_core: HttpCore, fname: str, fid: int, user_id: int) -> bo
 
     __log__ = f"fname={fname} user_id={user_id}"
 
-    body = await send_request(request, http_core.connector, read_bufsize=1024)
+    body = await send_request(request, http_core.network, read_bufsize=1024)
     parse_body(body)
 
     log_success(sys._getframe(1), __log__)

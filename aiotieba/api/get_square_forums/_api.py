@@ -1,7 +1,7 @@
 import yarl
 
-from ...const import APP_BASE_HOST, APP_SECURE_SCHEME
-from ...core import HttpCore, TbCore, WsCore
+from ...const import APP_BASE_HOST, APP_SECURE_SCHEME, MAIN_VERSION
+from ...core import Account, HttpCore, WsCore
 from ...exception import TiebaServerError
 from ...request import pack_proto_request, send_request
 from ._classdef import SquareForums
@@ -10,10 +10,10 @@ from .protobuf import GetForumSquareReqIdl_pb2, GetForumSquareResIdl_pb2
 CMD = 309653
 
 
-def pack_proto(core: TbCore, cname: str, pn: int, rn: int) -> bytes:
+def pack_proto(core: Account, cname: str, pn: int, rn: int) -> bytes:
     req_proto = GetForumSquareReqIdl_pb2.GetForumSquareReqIdl()
     req_proto.data.common.BDUSS = core._BDUSS
-    req_proto.data.common._client_version = core.main_version
+    req_proto.data.common._client_version = MAIN_VERSION
     req_proto.data.class_name = cname
     req_proto.data.pn = pn
     req_proto.data.rn = rn
@@ -35,7 +35,7 @@ def parse_body(body: bytes) -> SquareForums:
 
 
 async def request_http(http_core: HttpCore, cname: str, pn: int, rn: int) -> SquareForums:
-    data = pack_proto(http_core.core, cname, pn, rn)
+    data = pack_proto(http_core.account, cname, pn, rn)
 
     request = pack_proto_request(
         http_core,
@@ -47,12 +47,12 @@ async def request_http(http_core: HttpCore, cname: str, pn: int, rn: int) -> Squ
 
     __log__ = "cname={cname}"  # noqa: F841
 
-    body = await send_request(request, http_core.connector, read_bufsize=16 * 1024)
+    body = await send_request(request, http_core.network, read_bufsize=16 * 1024)
     return parse_body(body)
 
 
 async def request_ws(ws_core: WsCore, cname: str, pn: int, rn: int) -> SquareForums:
-    data = pack_proto(ws_core.core, cname, pn, rn)
+    data = pack_proto(ws_core.account, cname, pn, rn)
 
     __log__ = "cname={cname}"  # noqa: F841
 

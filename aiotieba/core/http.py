@@ -5,7 +5,8 @@ import aiohttp
 
 from ..__version__ import __version__
 from ..const import APP_BASE_HOST
-from .account import TbCore
+from .account import Account
+from .network import Network
 
 
 class HttpContainer(object):
@@ -29,8 +30,8 @@ class HttpCore(object):
     """
 
     __slots__ = [
-        'core',
-        'connector',
+        'account',
+        'network',
         'app',
         'app_proto',
         'web',
@@ -39,12 +40,12 @@ class HttpCore(object):
 
     def __init__(
         self,
-        core: TbCore,
-        connector: aiohttp.TCPConnector,
+        account: Account,
+        network: Network,
         loop: Optional[asyncio.AbstractEventLoop] = None,
     ) -> None:
-        self.core = core
-        self.connector = connector
+        self.account = account
+        self.network = network
         self.loop: asyncio.AbstractEventLoop = loop
 
         from aiohttp import hdrs
@@ -74,10 +75,10 @@ class HttpCore(object):
         }
         self.web: HttpContainer = HttpContainer(web_headers, aiohttp.CookieJar(loop=loop))
         BDUSS_morsel = aiohttp.cookiejar.Morsel()
-        BDUSS_morsel.set('BDUSS', core._BDUSS, core._BDUSS)
+        BDUSS_morsel.set('BDUSS', account._BDUSS, account._BDUSS)
         BDUSS_morsel['domain'] = "baidu.com"
         self.web.cookie_jar._cookies[("baidu.com", "/")]['BDUSS'] = BDUSS_morsel
         STOKEN_morsel = aiohttp.cookiejar.Morsel()
-        STOKEN_morsel.set('STOKEN', core._STOKEN, core._STOKEN)
+        STOKEN_morsel.set('STOKEN', account._STOKEN, account._STOKEN)
         STOKEN_morsel['domain'] = "tieba.baidu.com"
         self.web.cookie_jar._cookies[("tieba.baidu.com", "/")]['STOKEN'] = STOKEN_morsel

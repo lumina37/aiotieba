@@ -26,7 +26,7 @@ async def request(http_core: HttpCore, fname: str, fid: int, appeal_ids: List[in
         + [
             ('refuse_reason', '_'),
             ('status', '2' if refuse else '1'),
-            ('tbs', http_core.core._tbs),
+            ('tbs', http_core.account._tbs),
         ]
     )
 
@@ -38,7 +38,7 @@ async def request(http_core: HttpCore, fname: str, fid: int, appeal_ids: List[in
 
     __log__ = f"fname={fname}"
 
-    body = await send_request(request, http_core.connector, read_bufsize=1024)
+    body = await send_request(request, http_core.network, read_bufsize=1024)
     parse_body(body)
 
     log_success(sys._getframe(1), __log__)

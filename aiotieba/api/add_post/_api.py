@@ -3,7 +3,7 @@ import time
 
 import yarl
 
-from ...const import APP_BASE_HOST, APP_SECURE_SCHEME
+from ...const import APP_BASE_HOST, APP_SECURE_SCHEME, POST_VERSION
 from ...core import HttpCore
 from ...exception import TiebaServerError, TiebaValueError
 from ...helper import log_success, parse_json
@@ -19,12 +19,12 @@ def parse_body(body: bytes) -> None:
 
 
 async def request(http_core: HttpCore, fname: str, fid: int, tid: int, content: str) -> bool:
-    core = http_core.core
+    core = http_core.account
     data = [
         ('BDUSS', core._BDUSS),
         ('_client_id', core._client_id),
         ('_client_type', '2'),
-        ('_client_version', core.post_version),
+        ('_client_version', POST_VERSION),
         ('_phone_imei', '000000000000000'),
         ('anonymous', '1'),
         ('barrage_time', '0'),
@@ -64,7 +64,7 @@ async def request(http_core: HttpCore, fname: str, fid: int, tid: int, content: 
 
     __log__ = f"fname={fname} tid={tid}"
 
-    body = await send_request(request, http_core.connector, read_bufsize=2 * 1024)
+    body = await send_request(request, http_core.network, read_bufsize=2 * 1024)
     parse_body(body)
 
     log_success(sys._getframe(1), __log__)
