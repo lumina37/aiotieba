@@ -39,9 +39,9 @@ class TbCore(object):
         '_proxy_auth',
     ]
 
-    main_version = "12.36.3.0"  # 最新版本
-    # no_fold_version = "12.12.1.0"  # 最后一个回复列表不发生折叠的版本
-    post_version = "9.1.0.0"  # 极速版
+    main_version = "12.36.3.1"
+    # no_fold_version = "12.12.1.0"
+    post_version = "9.1.0.0"
 
     def __init__(
         self,
