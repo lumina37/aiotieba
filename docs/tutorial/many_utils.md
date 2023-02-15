@@ -10,7 +10,6 @@ import aiotieba as tb
 
 
 class WaterTask(object):
-
     __slots__ = ['fname', 'tid', 'times']
 
     def __init__(self, fname: str, tid: int, times: int = 6) -> None:
@@ -46,9 +45,7 @@ async def agree(BDUSS_key: str, tids: List[int], *, times: int = 3):
     """
 
     async with tb.Client(BDUSS_key) as client:
-
         for tid in tids:
-
             posts = await client.get_posts(tid, 0xFFFF, rn=0, sort=1)
             tid = posts[-1].tid
             pid = posts[-1].pid
@@ -70,7 +67,6 @@ async def sign(BDUSS_key: str, *, retry_times: int = 0) -> None:
     """
 
     async with tb.Client(BDUSS_key) as client:
-
         retry_list: List[str] = []
         for pn in range(1, 9999):
             forums = await client.get_self_follow_forums(pn)
@@ -94,7 +90,6 @@ async def sign(BDUSS_key: str, *, retry_times: int = 0) -> None:
 
 
 async def main() -> None:
-
     agree_tids = [2986143112, 3611123694, 7689322018, 7966279046]
 
     await asyncio.gather(
@@ -128,12 +123,11 @@ import aiotieba as tb
 
 
 async def main() -> None:
-
     async with tb.Client("default") as client:
         # 海象运算符(:=)会在创建threads变量并赋值的同时返回该值，方便while语句检查其是否为空
         # 更多信息请搜索“Python海象运算符”
         while threads := await client.get_self_public_threads():
-            await asyncio.gather(*[client.set_privacy(thread.fid, thread.tid, thread.pid) for thread in threads])
+            await asyncio.gather(*[client.set_thread_private(thread.fid, thread.tid, thread.pid) for thread in threads])
 
 
 asyncio.run(main())
@@ -205,7 +199,7 @@ async def main() -> None:
     async with tb.Client("default") as client:
         fname = "待拒绝申诉的贴吧名"
         while appeals := await client.get_unblock_appeals(fname, rn=30):
-            await client.handle_unblock_appeals(fname, [a.aid for a in appeals])
+            await client.handle_unblock_appeals(fname, [a.appeal_id for a in appeals])
 
 
 asyncio.run(main())
@@ -239,10 +233,9 @@ import aiotieba as tb
 async def main() -> None:
     async with tb.Client('default') as client:
         while posts_list := await client.get_self_posts():
-            await asyncio.gather(
-                *[client.del_post(post.fid, post.pid) for posts in posts_list for post in posts]
-            )
+            await asyncio.gather(*[client.del_post(post.fid, post.pid) for posts in posts_list for post in posts])
 
 
 asyncio.run(main())
+
 ```
