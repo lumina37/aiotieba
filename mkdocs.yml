@@ -20,7 +20,7 @@ theme:
   language: zh
 
 repo_name: Starry-OvO/aiotieba
-repo_url: https://github.com/Starry-OvO/aiotieba
+repo_url: https://github.com/Starry-OvO/aiotieba/
 
 nav:
     - 介绍: index.md
