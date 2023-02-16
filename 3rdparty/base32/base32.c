@@ -158,11 +158,11 @@ static void encode_sequence(const unsigned char *plain, size_t len, unsigned cha
 	}
 }
 
-void base32_encode(const unsigned char *plain, size_t len, unsigned char *coded)
+void base32_encode(const unsigned char *plain, int len, unsigned char *coded)
 {
 	// All the hard work is done in encode_sequence(),
 	// here we just need to feed it the data sequence by sequence.
-	for (size_t i = 0, j = 0; i < len; i += 5, j += 8) {
+	for (int i = 0, j = 0; i < len; i += 5, j += 8) {
 		encode_sequence(&plain[i], min(len - i, 5), &coded[j]);
 	}
 }

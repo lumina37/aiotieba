@@ -6,14 +6,10 @@
 #include "_zid.h"
 #include "_sign.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 PyObject *cuid_galaxy2(PyObject *self, PyObject *args)
 {
-	char dst[TBC_CUID_GALAXY2_SIZE];
-	const char *androidID;
+	unsigned char dst[TBC_CUID_GALAXY2_SIZE];
+	const unsigned char *androidID;
 	Py_ssize_t androidIDSize;
 
 	if (!PyArg_ParseTuple(args, "s#", &androidID, &androidIDSize))
@@ -42,10 +38,10 @@ PyObject *cuid_galaxy2(PyObject *self, PyObject *args)
 
 PyObject *c3_aid(PyObject *self, PyObject *args)
 {
-	char dst[TBC_C3_AID_SIZE];
-	const char *androidID;
+	unsigned char dst[TBC_C3_AID_SIZE];
+	const unsigned char *androidID;
 	Py_ssize_t androidIDSize;
-	const char *uuid;
+	const unsigned char *uuid;
 	Py_ssize_t uuidSize;
 
 	if (!PyArg_ParseTuple(args, "s#s#", &androidID, &androidIDSize, &uuid, &uuidSize))
@@ -74,10 +70,10 @@ PyObject *c3_aid(PyObject *self, PyObject *args)
 
 PyObject *rc4_42(PyObject *self, PyObject *args)
 {
-	char dst[TBC_RC4_SIZE];
-	const char *xyusMd5Str;
+	unsigned char dst[TBC_RC4_SIZE];
+	const unsigned char *xyusMd5Str;
 	Py_ssize_t xyusMd5Size;
-	const char *cbcSecKey;
+	const unsigned char *cbcSecKey;
 	Py_ssize_t cbcSecKeySize;
 
 	if (!PyArg_ParseTuple(args, "s#y#", &xyusMd5Str, &xyusMd5Size, &cbcSecKey, &cbcSecKeySize))
@@ -124,7 +120,3 @@ PyMODINIT_FUNC PyInit_crypto()
 {
 	return PyModule_Create(&crypto_module);
 }
-
-#ifdef __cplusplus
-}
-#endif

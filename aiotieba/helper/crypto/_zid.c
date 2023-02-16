@@ -67,7 +67,7 @@ static void rc4_42_crypt(rc4_42_context *ctx, size_t length, const unsigned char
 	ctx->y = y;
 }
 
-int tbc_rc4_42(char *dst, const char *xyusMd5Str, const char *cbcSecKey)
+int tbc_rc4_42(unsigned char *dst, const unsigned char *xyusMd5Str, const unsigned char *cbcSecKey)
 {
 	rc4_42_context rc442Ctx;
 
