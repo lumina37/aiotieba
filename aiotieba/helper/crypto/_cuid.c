@@ -57,7 +57,7 @@ static inline void __writeBuffer(unsigned char *buffer, const uint64_t sec)
 	uint64_t tmpSec = sec;
 	for (uint64_t i = 0; i < STEP_SIZE; i++)
 	{
-		buffer[i] = (char)((uint64_t)UINT8_MAX & tmpSec);
+		buffer[i] = (unsigned char)((uint64_t)UINT8_MAX & tmpSec);
 		tmpSec >>= 8;
 	}
 }
@@ -81,7 +81,7 @@ int tbc_heliosHash(unsigned char *dst, const unsigned char *src, size_t srcSize)
 
 	// 1st hash with CRC32
 	buffOffset += STEP_SIZE;
-	crc32Val = (uint64_t)crc32(buffer, buffOffset);
+	crc32Val = (uint64_t)crc32((char *)buffer, buffOffset);
 	__update(&sec, crc32Val, 8, false);
 	__writeBuffer(buffer + buffOffset, sec); // Now buffer is [src, -1 * 5, crcrc, ...]
 
@@ -99,7 +99,7 @@ int tbc_heliosHash(unsigned char *dst, const unsigned char *src, size_t srcSize)
 
 	// 4th hash with CRC32
 	buffOffset += STEP_SIZE;
-	crc32Val = (uint64_t)crc32(buffer, buffOffset);
+	crc32Val = (uint64_t)crc32((char *)buffer, buffOffset);
 	__update(&sec, crc32Val, 7, true);
 
 	// fill dst
@@ -115,7 +115,6 @@ int tbc_cuid_galaxy2(unsigned char *dst, const unsigned char *androidID)
 	int err = TBC_OK;
 
 	// step 1: build src buffer and compute md5
-	const size_t md5BuffSize = sizeof(CUID2_PERFIX) + TBC_ANDROID_ID_SIZE;
 	unsigned char md5Buffer[sizeof(CUID2_PERFIX) + TBC_ANDROID_ID_SIZE];
 
 	size_t buffOffset = 0;

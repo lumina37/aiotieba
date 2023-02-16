@@ -48,25 +48,26 @@ PyObject *sign(PyObject *self, PyObject *args)
         size_t keySize;
         PyObject *pyoKey = PyTuple_GET_ITEM(item, 0);
         __pyStr2UTF8(&key, &keySize, pyoKey);
-        mbedtls_md5_update(&md5Ctx, key, keySize);
+        mbedtls_md5_update(&md5Ctx, (unsigned char *)key, keySize);
 
         mbedtls_md5_update(&md5Ctx, &equal, sizeof(equal));
 
-        char *val;
-        size_t valSize;
         PyObject *pyoVal = PyTuple_GET_ITEM(item, 1);
         if (PyUnicode_Check(pyoVal))
         {
+            const char *val;
+            size_t valSize;
             __pyStr2UTF8(&val, &valSize, pyoVal);
+            mbedtls_md5_update(&md5Ctx, (unsigned char *)val, valSize);
         }
         else
         {
             int64_t ival = PyLong_AsLongLong(pyoVal);
-            val = itoaBuffer;
+            char *val = itoaBuffer;
             char *valEnd = i64toa(ival, val);
-            valSize = valEnd - val;
+            size_t valSize = valEnd - val;
+            mbedtls_md5_update(&md5Ctx, (unsigned char *)val, valSize);
         }
-        mbedtls_md5_update(&md5Ctx, (unsigned char *)val, valSize);
     }
 
     mbedtls_md5_update(&md5Ctx, SIGN_SUFFIX, sizeof(SIGN_SUFFIX));

@@ -97,7 +97,7 @@ PyObject *rc4_42(PyObject *self, PyObject *args)
 		}
 	}
 
-	return PyBytes_FromStringAndSize(dst, TBC_RC4_SIZE);
+	return PyBytes_FromStringAndSize((char *)dst, TBC_RC4_SIZE);
 }
 
 static PyMethodDef crypto_methods[] = {
