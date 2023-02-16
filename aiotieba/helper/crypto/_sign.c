@@ -44,7 +44,7 @@ PyObject *sign(PyObject *self, PyObject *args)
     {
         PyObject *item = PyList_GET_ITEM(items, iList);
 
-        char *key;
+        const char *key;
         size_t keySize;
         PyObject *pyoKey = PyTuple_GET_ITEM(item, 0);
         __pyStr2UTF8(&key, &keySize, pyoKey);
