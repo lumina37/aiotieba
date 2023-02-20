@@ -2,7 +2,8 @@ import asyncio
 import binascii
 import secrets
 import time
-from typing import Any, Awaitable, Callable, Dict, Optional
+import weakref
+from typing import Any, Awaitable, Callable, Dict
 
 import aiohttp
 import async_timeout
@@ -16,46 +17,6 @@ from .account import Account
 from .network import Network
 
 TypeWebsocketCallback = Callable[["WsCore", bytes, int], Awaitable[None]]
-
-
-class WsResponse(object):
-    """
-    websocket响应
-
-    Args:
-        data_future (asyncio.Future): 用于等待读事件到来的Future
-        read_timeout (float): 读超时时间
-    """
-
-    __slots__ = [
-        'future',
-        'read_timeout',
-    ]
-
-    def __init__(self, data_future: asyncio.Future, read_timeout: float) -> None:
-        self.future = data_future
-        self.read_timeout = read_timeout
-
-    def _cancel(self) -> None:
-        self.future.cancel()
-
-    async def read(self) -> bytes:
-        """
-        读取websocket响应
-
-        Returns:
-            bytes
-
-        Raises:
-            asyncio.TimeoutError: 读取超时
-        """
-
-        try:
-            async with async_timeout.timeout(self.read_timeout):
-                return await self.future
-        except asyncio.TimeoutError as err:
-            self._cancel()
-            raise asyncio.TimeoutError("Timeout to read") from err
 
 
 class MsgIDPair(object):
@@ -129,6 +90,116 @@ class MsgIDManager(object):
         return self.get_msg_id(self.priv_gid) * 100 + 1
 
 
+class WsResponse(object):
+    """
+    websocket响应
+
+    Args:
+        data_future (asyncio.Future): 用于等待读事件到来的Future
+        req_id (int): 请求id
+        read_timeout (float): 读超时时间
+    """
+
+    __slots__ = [
+        'future',
+        'req_id',
+        'read_timeout',
+    ]
+
+    def __init__(self, data_future: asyncio.Future, req_id: int, read_timeout: float) -> None:
+        self.future = data_future
+        self.req_id = req_id
+        self.read_timeout = read_timeout
+
+    def _cancel(self) -> None:
+        self.future.cancel()
+
+    async def read(self) -> bytes:
+        """
+        读取websocket响应
+
+        Returns:
+            bytes
+
+        Raises:
+            asyncio.TimeoutError: 读取超时
+        """
+
+        try:
+            async with async_timeout.timeout(self.read_timeout):
+                return await self.future
+        except asyncio.TimeoutError as err:
+            self._cancel()
+            raise asyncio.TimeoutError("Timeout to read") from err
+        except BaseException:
+            self._cancel()
+            raise
+
+
+class WsWaiter(object):
+    """
+    websocket等待映射
+    """
+
+    def __init__(self, loop: asyncio.AbstractEventLoop, read_timeout: float) -> None:
+        self.loop = loop
+        self.read_timeout = read_timeout
+        self.waiter: Dict[int, asyncio.Future] = {}
+        self.req_id = int(time.time())
+        weakref.finalize(self, self.__remove_all_futures)
+
+    def __remove_all_futures(self) -> None:
+        for future in self.waiter.values():
+            future.cancel()
+
+    def __generate_default_callback(self, req_id: int) -> Callable[[asyncio.Future], Any]:
+        """
+        生成一个req_id对应的默认回调
+
+        Args:
+            req_id (int): 唯一请求id
+
+        Returns:
+            Callable[[asyncio.Future], Any]: 回调
+        """
+
+        def done_callback(_):
+            del self.waiter[req_id]
+
+        return done_callback
+
+    def new(self) -> WsResponse:
+        """
+        创建一个可用于等待数据的响应对象
+
+        Args:
+            req_id (int): 请求id
+
+        Returns:
+            WsResponse: websocket响应
+        """
+
+        self.req_id += 1
+        data_future = self.loop.create_future()
+        data_future.add_done_callback(self.__generate_default_callback(self.req_id))
+        self.waiter[self.req_id] = data_future
+        return WsResponse(data_future, self.req_id, self.read_timeout)
+
+    def set_done(self, req_id: int, data: bytes) -> None:
+        """
+        将req_id对应的Future设置为已完成
+
+        Args:
+            req_id (int): 请求id
+            data (bytes): 填入的数据
+        """
+
+        data_future = self.waiter.get(req_id, None)
+        if data_future is None:
+            return
+        data_future.set_result(data)
+
+
 class WsCore(object):
     """
     保存websocket接口相关状态的核心容器
@@ -147,15 +218,10 @@ class WsCore(object):
         'loop',
     ]
 
-    def __init__(
-        self,
-        account: Account,
-        network: Network,
-        loop: Optional[asyncio.AbstractEventLoop] = None,
-    ) -> None:
+    def __init__(self, account: Account, network: Network, loop: asyncio.AbstractEventLoop) -> None:
         self.account = account
         self.network = network
-        self.loop: asyncio.AbstractEventLoop = loop
+        self.loop = loop
 
         self.callbacks: Dict[int, TypeWebsocketCallback] = {}
         self.websocket: aiohttp.ClientWebSocketResponse = None
@@ -173,8 +239,7 @@ class WsCore(object):
 
         self._status = WsStatus.CONNECTING
 
-        self.waiter: Dict[int, asyncio.Future] = {}
-        self._req_id = int(time.time())
+        self.waiter = WsWaiter(self.loop, self.network.time.ws_read)
         self.mid_manager = MsgIDManager()
 
         from aiohttp import hdrs
@@ -240,53 +305,7 @@ class WsCore(object):
         self._status = WsStatus.CLOSED
 
     def __default_callback(self, req_id: int, data: bytes) -> None:
-        self.set_done(req_id, data)
-
-    def __generate_default_callback(self, req_id: int) -> Callable[[asyncio.Future], Any]:
-        """
-        生成一个req_id对应的默认回调
-
-        Args:
-            req_id (int): 唯一请求id
-
-        Returns:
-            Callable[[asyncio.Future], Any]: 回调
-        """
-
-        def done_callback(_):
-            del self.waiter[req_id]
-
-        return done_callback
-
-    def register(self, req_id: int) -> WsResponse:
-        """
-        将一个req_id注册到等待器 此方法会创建Future对象
-
-        Args:
-            req_id (int): 请求id
-
-        Returns:
-            WsResponse: websocket响应
-        """
-
-        data_future = self.loop.create_future()
-        data_future.add_done_callback(self.__generate_default_callback(req_id))
-        self.waiter[req_id] = data_future
-        return WsResponse(data_future, self.network.time.ws_read)
-
-    def set_done(self, req_id: int, data: bytes) -> None:
-        """
-        将req_id对应的Future设置为已完成
-
-        Args:
-            req_id (int): 请求id
-            data (bytes): 填入的数据
-        """
-
-        data_future = self.waiter.get(req_id, None)
-        if data_future is None:
-            return
-        data_future.set_result(data)
+        self.waiter.set_done(req_id, data)
 
     async def __ws_dispatch(self) -> None:
         try:
@@ -313,19 +332,6 @@ class WsCore(object):
             self._status = WsStatus.CLOSED
         return self._status
 
-    @property
-    def req_id(self) -> int:
-        """
-        用作请求参数的id
-
-        Note:
-            每个websocket请求都有一个唯一的req_id
-            每次调用都会使其自增1
-        """
-
-        self._req_id += 1
-        return self._req_id
-
     async def send(self, data: bytes, cmd: int, *, compress: bool = False, encrypt: bool = True) -> WsResponse:
         """
         将protobuf序列化结果打包发送
@@ -343,9 +349,8 @@ class WsCore(object):
             asyncio.TimeoutError: 发送超时
         """
 
-        req_id = self.req_id
-        req_data = pack_ws_bytes(self.account, data, cmd, req_id, compress=compress, encrypt=encrypt)
-        response = self.register(req_id)
+        response = self.waiter.new()
+        req_data = pack_ws_bytes(self.account, data, cmd, response.req_id, compress=compress, encrypt=encrypt)
 
         try:
             async with async_timeout.timeout(self.network.time.ws_send):
@@ -353,5 +358,7 @@ class WsCore(object):
         except asyncio.TimeoutError as err:
             response._cancel()
             raise asyncio.TimeoutError("Timeout to send") from err
+        except BaseException:
+            response._cancel()
         else:
             return response

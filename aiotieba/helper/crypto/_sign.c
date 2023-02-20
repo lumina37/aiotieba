@@ -9,9 +9,9 @@
 
 #include "_sign.h"
 
-static const char SIGN_SUFFIX[] = {'t', 'i', 'e', 'b', 'a', 'c', 'l', 'i', 'e', 'n', 't', '!', '!', '!'};
+static const unsigned char SIGN_SUFFIX[] = {'t', 'i', 'e', 'b', 'a', 'c', 'l', 'i', 'e', 'n', 't', '!', '!', '!'};
 
-static inline void __pyStr2UTF8(const uint8_t **dst, size_t *dstSize, PyObject *pyoStr)
+static inline void __pyStr2UTF8(const char **dst, size_t *dstSize, PyObject *pyoStr)
 {
     if (PyUnicode_1BYTE_KIND == PyUnicode_KIND(pyoStr))
     {
@@ -39,42 +39,43 @@ PyObject *sign(PyObject *self, PyObject *args)
     mbedtls_md5_init(&md5Ctx);
     mbedtls_md5_starts(&md5Ctx);
     char itoaBuffer[20];
-    char equal = '=';
+    unsigned char equal = '=';
     for (Py_ssize_t iList = 0; iList < listSize; iList++)
     {
         PyObject *item = PyList_GET_ITEM(items, iList);
 
-        uint8_t *key;
+        const char *key;
         size_t keySize;
         PyObject *pyoKey = PyTuple_GET_ITEM(item, 0);
         __pyStr2UTF8(&key, &keySize, pyoKey);
-        mbedtls_md5_update(&md5Ctx, key, keySize);
+        mbedtls_md5_update(&md5Ctx, (unsigned char *)key, keySize);
 
         mbedtls_md5_update(&md5Ctx, &equal, sizeof(equal));
 
-        uint8_t *val;
-        size_t valSize;
         PyObject *pyoVal = PyTuple_GET_ITEM(item, 1);
         if (PyUnicode_Check(pyoVal))
         {
+            const char *val;
+            size_t valSize;
             __pyStr2UTF8(&val, &valSize, pyoVal);
+            mbedtls_md5_update(&md5Ctx, (unsigned char *)val, valSize);
         }
         else
         {
             int64_t ival = PyLong_AsLongLong(pyoVal);
-            val = itoaBuffer;
-            uint8_t *valEnd = i64toa(ival, val);
-            valSize = valEnd - val;
+            char *val = itoaBuffer;
+            char *valEnd = i64toa(ival, val);
+            size_t valSize = valEnd - val;
+            mbedtls_md5_update(&md5Ctx, (unsigned char *)val, valSize);
         }
-        mbedtls_md5_update(&md5Ctx, val, valSize);
     }
 
     mbedtls_md5_update(&md5Ctx, SIGN_SUFFIX, sizeof(SIGN_SUFFIX));
 
-    uint8_t md5[TBC_MD5_HASH_SIZE];
+    unsigned char md5[TBC_MD5_HASH_SIZE];
     mbedtls_md5_finish(&md5Ctx, md5);
 
-    char dst[TBC_MD5_STR_SIZE];
+    unsigned char dst[TBC_MD5_STR_SIZE];
     size_t dstOffset = 0;
     for (size_t imd5 = 0; imd5 < TBC_MD5_HASH_SIZE; imd5++)
     {

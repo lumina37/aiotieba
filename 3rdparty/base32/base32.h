@@ -42,6 +42,6 @@
 	* contain characters from the [A-Z2-7=] set. The "len" arguments
 	* define how many bytes will be read from the "plain" buffer.
 	**/
-void base32_encode(const unsigned char* plain, size_t len, unsigned char* coded);
+void base32_encode(const unsigned char* plain, int len, unsigned char* coded);
 
 #endif

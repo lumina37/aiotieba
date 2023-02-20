@@ -170,7 +170,7 @@ class Appeals(Containers[Appeal]):
 
     def __init__(self, data_map: Optional[Mapping] = None) -> None:
         if data_map:
-            self._objs = [Appeal()._init(m) for m in data_map['data'].get('appeal_list', [])]
+            self._objs = [Appeal(m) for m in data_map['data'].get('appeal_list', [])]
             self._has_more = data_map['data'].get('has_more', False)
         else:
             self._objs = []
