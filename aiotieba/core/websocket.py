@@ -3,7 +3,7 @@ import binascii
 import secrets
 import time
 import weakref
-from typing import Any, Awaitable, Callable, Dict
+from typing import Awaitable, Callable, Dict
 
 import aiohttp
 import async_timeout
@@ -144,29 +144,13 @@ class WsWaiter(object):
     def __init__(self, loop: asyncio.AbstractEventLoop, read_timeout: float) -> None:
         self.loop = loop
         self.read_timeout = read_timeout
-        self.waiter: Dict[int, asyncio.Future] = {}
+        self.waiter = weakref.WeakValueDictionary()
         self.req_id = int(time.time())
-        weakref.finalize(self, self.__remove_all_futures)
+        weakref.finalize(self, self.__cancel_all_futures)
 
-    def __remove_all_futures(self) -> None:
+    def __cancel_all_futures(self) -> None:
         for future in self.waiter.values():
             future.cancel()
-
-    def __generate_default_callback(self, req_id: int) -> Callable[[asyncio.Future], Any]:
-        """
-        生成一个req_id对应的默认回调
-
-        Args:
-            req_id (int): 唯一请求id
-
-        Returns:
-            Callable[[asyncio.Future], Any]: 回调
-        """
-
-        def done_callback(_):
-            del self.waiter[req_id]
-
-        return done_callback
 
     def new(self) -> WsResponse:
         """
@@ -181,7 +165,6 @@ class WsWaiter(object):
 
         self.req_id += 1
         data_future = self.loop.create_future()
-        data_future.add_done_callback(self.__generate_default_callback(self.req_id))
         self.waiter[self.req_id] = data_future
         return WsResponse(data_future, self.req_id, self.read_timeout)
 
@@ -194,7 +177,7 @@ class WsWaiter(object):
             data (bytes): 填入的数据
         """
 
-        data_future = self.waiter.get(req_id, None)
+        data_future: asyncio.Future = self.waiter.get(req_id, None)
         if data_future is None:
             return
         data_future.set_result(data)

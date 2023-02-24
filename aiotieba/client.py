@@ -91,7 +91,7 @@ if TYPE_CHECKING:
 
 def _try_websocket(func):
     async def awrapper(self: "Client", *args, **kwargs):
-        if self._enable_ws:
+        if self._try_ws:
             await self.init_websocket()
         return await func(self, *args, **kwargs)
 
@@ -116,7 +116,7 @@ class Client(object):
 
     Args:
         BDUSS_key (str, optional): 用于快捷调用BDUSS. Defaults to None.
-        enable_ws (bool, optional): 允许使用websocket接口. Defaults to False.
+        try_ws (bool, optional): 尝试使用websocket接口. Defaults to False.
         proxy (tuple[yarl.URL, aiohttp.BasicAuth] | bool, optional): True则使用环境变量代理 False则禁用代理
             输入一个 (http代理地址, 代理验证) 的元组以手动设置代理. Defaults to False.
         time_cfg (TimeConfig, optional): 各种时间设置. Defaults to TimeConfig().
@@ -128,14 +128,14 @@ class Client(object):
         '_account',
         '_http_core',
         '_ws_core',
-        '_enable_ws',
+        '_try_ws',
         '_user',
     ]
 
     def __init__(
         self,
         BDUSS_key: Optional[str] = None,
-        enable_ws: bool = False,
+        try_ws: bool = False,
         proxy: Union[Tuple[yarl.URL, aiohttp.BasicAuth], bool] = False,
         time_cfg: TimeConfig = TimeConfig(),
         loop: Optional[asyncio.AbstractEventLoop] = None,
@@ -168,7 +168,7 @@ class Client(object):
         self._http_core = HttpCore(core, network, loop)
         self._ws_core = WsCore(core, network, loop)
 
-        self._enable_ws = enable_ws
+        self._try_ws = try_ws
 
         self._user = UserInfo_home()
 

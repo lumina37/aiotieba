@@ -15,5 +15,5 @@ def event_loop():
 
 @pytest_asyncio.fixture(scope="package")
 async def client():
-    async with tb.Client('starry_xh', enable_ws=True) as client:
+    async with tb.Client('starry_xh', try_ws=True) as client:
         yield client
