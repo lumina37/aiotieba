@@ -21,16 +21,8 @@ PyObject *cuid_galaxy2(PyObject *self, PyObject *args)
 	int err = tbc_cuid_galaxy2(dst, androidID);
 	if (err)
 	{
-		if (err == TBC_MEMORY_ERROR)
-		{
-			PyErr_NoMemory();
-			return NULL;
-		}
-		else
-		{
-			PyErr_Format(PyExc_RuntimeError, "mbedtls err. err_code=%d", err);
-			return NULL;
-		}
+		PyErr_NoMemory();
+		return NULL;
 	}
 
 	return PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, dst, TBC_CUID_GALAXY2_SIZE);
@@ -53,16 +45,8 @@ PyObject *c3_aid(PyObject *self, PyObject *args)
 	int err = tbc_c3_aid(dst, androidID, uuid);
 	if (err)
 	{
-		if (err == TBC_MEMORY_ERROR)
-		{
-			PyErr_NoMemory();
-			return NULL;
-		}
-		else
-		{
-			PyErr_Format(PyExc_RuntimeError, "mbedtls err. err_code=%d", err);
-			return NULL;
-		}
+		PyErr_NoMemory();
+		return NULL;
 	}
 
 	return PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, dst, TBC_C3_AID_SIZE);
@@ -82,20 +66,7 @@ PyObject *rc4_42(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-	int err = tbc_rc4_42(dst, xyusMd5Str, cbcSecKey);
-	if (err)
-	{
-		if (err == TBC_MEMORY_ERROR)
-		{
-			PyErr_NoMemory();
-			return NULL;
-		}
-		else
-		{
-			PyErr_Format(PyExc_RuntimeError, "mbedtls err. err_code=%d", err);
-			return NULL;
-		}
-	}
+	tbc_rc4_42(dst, xyusMd5Str, cbcSecKey);
 
 	return PyBytes_FromStringAndSize((char *)dst, TBC_RC4_SIZE);
 }
