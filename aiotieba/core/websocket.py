@@ -162,9 +162,9 @@ class WsWaiter(object):
         self.read_timeout = read_timeout
         self.waiter = weakref.WeakValueDictionary()
         self.req_id = int(time.time())
-        weakref.finalize(self, self.__cancel_all_futures)
+        weakref.finalize(self, self.__cancel_all)
 
-    def __cancel_all_futures(self) -> None:
+    def __cancel_all(self) -> None:
         for ws_resp in self.waiter.values():
             ws_resp.future.cancel()
 
