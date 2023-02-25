@@ -428,6 +428,7 @@ class Comment(object):
         agree (int): 点赞数
         disagree (int): 点踩数
         create_time (int): 创建时间
+        is_thread_author (bool): 是否楼主
     """
 
     __slots__ = [
@@ -444,6 +445,7 @@ class Comment(object):
         '_agree',
         '_disagree',
         '_create_time',
+        '_is_thread_author',
     ]
 
     def __init__(self, data_proto: TypeMessage) -> None:
@@ -610,6 +612,14 @@ class Comment(object):
         """
 
         return self._create_time
+    
+    @property
+    def is_thread_author(self) -> bool:
+        """
+        是否楼主
+        """
+
+        return self._is_thread_author
 
 
 class Page_c(object):
@@ -1754,6 +1764,7 @@ class Comments(Containers[Comment]):
                 comment._tid = self.thread._tid
                 comment._ppid = self._post._pid
                 comment._floor = self._post._floor
+                comment._is_thread_author = self._thread._author_id == comment._author_id
 
         else:
             self._objs = []
