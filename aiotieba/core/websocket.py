@@ -122,9 +122,6 @@ class WsResponse(object):
         self.read_timeout = read_timeout
         self.loop = loop
 
-    def cancel(self) -> None:
-        self.future.cancel()
-
     async def read(self) -> bytes:
         """
         读取websocket响应
@@ -140,10 +137,10 @@ class WsResponse(object):
             async with timeout(self.read_timeout, self.loop):
                 return await self.future
         except asyncio.TimeoutError as err:
-            self.cancel()
+            self.future.cancel()
             raise asyncio.TimeoutError("Timeout to read") from err
         except BaseException:
-            self.cancel()
+            self.future.cancel()
             raise
 
 
@@ -358,9 +355,9 @@ class WsCore(object):
             async with timeout(self.network.time.ws_send, self.loop):
                 await self.websocket.send_bytes(req_data)
         except asyncio.TimeoutError as err:
-            response.cancel()
+            response.future.cancel()
             raise asyncio.TimeoutError("Timeout to send") from err
         except BaseException:
-            response.cancel()
+            response.future.cancel()
         else:
             return response
