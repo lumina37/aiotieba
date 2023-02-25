@@ -3,7 +3,7 @@ import functools
 import logging
 import sys
 from types import FrameType
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 import async_timeout
 

@@ -612,7 +612,7 @@ class Comment(object):
         """
 
         return self._create_time
-    
+
     @property
     def is_thread_author(self) -> bool:
         """
