@@ -166,7 +166,7 @@ class WsWaiter(object):
 
     def __cancel_all_futures(self) -> None:
         for ws_resp in self.waiter.values():
-            ws_resp.cancel()
+            ws_resp.future.cancel()
 
     def new(self) -> WsResponse:
         """
