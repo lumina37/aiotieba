@@ -1,12 +1,10 @@
-from typing import Dict, List
-
 import yarl
 
 from ...const import APP_BASE_HOST, APP_INSECURE_SCHEME, MAIN_VERSION
 from ...core import Account, HttpCore, WsCore
 from ...exception import TiebaServerError
 from ...request import pack_proto_request, send_request
-from ._classdef import UserInfo_bawu
+from ._classdef import BawuInfo
 from .protobuf import GetBawuInfoReqIdl_pb2, GetBawuInfoResIdl_pb2
 
 CMD = 301007
@@ -20,20 +18,20 @@ def pack_proto(core: Account, fid: int) -> bytes:
     return req_proto.SerializeToString()
 
 
-def parse_body(body: bytes) -> Dict[str, List[UserInfo_bawu]]:
+def parse_body(body: bytes) -> BawuInfo:
     res_proto = GetBawuInfoResIdl_pb2.GetBawuInfoResIdl()
     res_proto.ParseFromString(body)
 
     if code := res_proto.error.errorno:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
-    rdes_protos = res_proto.data.bawu_team_info.bawu_team_list
-    bawu_dict = {rdes_proto.role_name: [UserInfo_bawu(p) for p in rdes_proto.role_info] for rdes_proto in rdes_protos}
+    data_proto = res_proto.data
+    bawu_info = BawuInfo(data_proto)
 
-    return bawu_dict
+    return bawu_info
 
 
-async def request_http(http_core: HttpCore, fid: int) -> Dict[str, List[UserInfo_bawu]]:
+async def request_http(http_core: HttpCore, fid: int) -> BawuInfo:
     data = pack_proto(http_core.account, fid)
 
     request = pack_proto_request(
@@ -50,7 +48,7 @@ async def request_http(http_core: HttpCore, fid: int) -> Dict[str, List[UserInfo
     return parse_body(body)
 
 
-async def request_ws(ws_core: WsCore, fid: int) -> Dict[str, List[UserInfo_bawu]]:
+async def request_ws(ws_core: WsCore, fid: int) -> BawuInfo:
     data = pack_proto(ws_core.account, fid)
 
     __log__ = "fid={fid}"  # noqa: F841

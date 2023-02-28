@@ -632,17 +632,17 @@ class Client(object):
 
         return await get_forum_detail.request(self._http_core, fid)
 
-    @handle_exception(dict)
+    @handle_exception(get_bawu_info.BawuInfo)
     @_try_websocket
-    async def get_bawu_info(self, fname_or_fid: Union[str, int]) -> Dict[str, List[get_bawu_info.UserInfo_bawu]]:
+    async def get_bawu_info(self, fname_or_fid: Union[str, int]) -> get_bawu_info.BawuInfo:
         """
-        获取吧务信息
+        获取吧务团队信息
 
         Args:
             fname_or_fid (str | int): 目标贴吧名或fid 优先fid
 
         Returns:
-            dict[str, list[UserInfo_bawu]]: {吧务类型: list[吧务用户信息]}
+            BawuInfo: 吧务团队信息
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
