@@ -753,24 +753,16 @@ class Client(object):
 
         return await get_homepage.request_http(self._http_core, portrait, with_threads)
 
-    @handle_exception(get_statistics.null_ret_factory)
-    async def get_statistics(self, fname_or_fid: Union[str, int]) -> Dict[str, List[int]]:
+    @handle_exception(get_statistics.Statistics)
+    async def get_statistics(self, fname_or_fid: Union[str, int]) -> get_statistics.Statistics:
         """
-        获取吧务后台中最近29天的统计数据
+        获取吧务后台中最近24天的统计数据
 
         Args:
             fname_or_fid (str | int): 目标贴吧名或fid 优先fid
 
         Returns:
-            dict[str, list[int]]: {字段名:按时间顺序排列的统计数据}
-            {'view': 浏览量,
-             'thread': 主题帖数,
-             'new_member': 新增关注数,
-             'post': 回复数,
-             'sign_ratio': 签到率,
-             'average_time': 人均浏览时长,
-             'average_times': 人均进吧次数,
-             'recommend': 首页推荐数}
+            Statistics: 吧务后台统计信息
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
