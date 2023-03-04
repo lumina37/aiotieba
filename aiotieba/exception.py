@@ -81,8 +81,6 @@ class TiebaValueError(RuntimeError):
     意外的字段值
     """
 
-    pass
-
 
 class ContentTypeError(RuntimeError):
     """

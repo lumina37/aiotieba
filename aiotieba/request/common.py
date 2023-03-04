@@ -87,9 +87,6 @@ async def send_request(
 
     response = await req2res(request, network, True, read_bufsize)
 
-    # 合并cookies
-    # cookie_jar.update_cookies(response.cookies, response._url)
-
     # 检查headers
     headers_checker(response)
 

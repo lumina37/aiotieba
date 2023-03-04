@@ -549,7 +549,7 @@ class Contents_ut(Containers[TypeFragment]):
             elif _type in [2, 11]:
                 fragment = FragEmoji_ut(proto)
                 self._emojis.append(fragment)
-            # 20:tid=5470214675
+            # img will init otherwhere
             elif _type in [3, 20]:
                 fragment = FragmentUnknown_ut()
             elif _type == 4:

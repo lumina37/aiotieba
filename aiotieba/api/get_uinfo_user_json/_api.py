@@ -10,7 +10,7 @@ from ._classdef import UserInfo_json
 
 def parse_body(body: bytes) -> UserInfo_json:
     if not body:
-        raise TiebaValueError("empty body")
+        raise TiebaValueError("Empty body")
 
     text = body.decode('utf-8', errors='ignore')
     res_json = parse_json(text)

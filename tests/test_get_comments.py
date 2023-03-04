@@ -119,6 +119,7 @@ async def test_Comments(client: tb.Client):
     assert comment.author_id == user.user_id
     assert comment.floor > 0
     assert comment.create_time > 0
+    assert comment.is_thread_author == (comment.author_id == thread.author_id)
 
     # FragText
     frag = comment.contents.texts[0]

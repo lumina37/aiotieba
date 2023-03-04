@@ -6,11 +6,10 @@ import weakref
 from typing import Awaitable, Callable, Dict
 
 import aiohttp
-import async_timeout
 import yarl
 
 from ..exception import HTTPStatusError
-from ..helper import WsStatus
+from ..helper import WsStatus, timeout
 from ..request.common import req2res
 from ..request.websocket import pack_ws_bytes, parse_ws_bytes
 from .account import Account
@@ -20,6 +19,10 @@ TypeWebsocketCallback = Callable[["WsCore", bytes, int], Awaitable[None]]
 
 
 class MsgIDPair(object):
+    """
+    长度为2的msg_id队列 记录新旧msg_id
+    """
+
     __slots__ = [
         'last_id',
         'curr_id',
@@ -42,6 +45,10 @@ class MsgIDPair(object):
 
 
 class MsgIDManager(object):
+    """
+    msg_id管理器
+    """
+
     __slots__ = [
         'priv_gid',
         'gid2mid',
@@ -98,21 +105,22 @@ class WsResponse(object):
         data_future (asyncio.Future): 用于等待读事件到来的Future
         req_id (int): 请求id
         read_timeout (float): 读超时时间
+        loop (asyncio.AbstractEventLoop): 事件循环
     """
 
     __slots__ = [
+        '__weakref__',
         'future',
         'req_id',
         'read_timeout',
+        'loop',
     ]
 
-    def __init__(self, data_future: asyncio.Future, req_id: int, read_timeout: float) -> None:
-        self.future = data_future
+    def __init__(self, req_id: int, read_timeout: float, loop: asyncio.AbstractEventLoop) -> None:
+        self.future = loop.create_future()
         self.req_id = req_id
         self.read_timeout = read_timeout
-
-    def _cancel(self) -> None:
-        self.future.cancel()
+        self.loop = loop
 
     async def read(self) -> bytes:
         """
@@ -126,13 +134,13 @@ class WsResponse(object):
         """
 
         try:
-            async with async_timeout.timeout(self.read_timeout):
+            async with timeout(self.read_timeout, self.loop):
                 return await self.future
         except asyncio.TimeoutError as err:
-            self._cancel()
+            self.future.cancel()
             raise asyncio.TimeoutError("Timeout to read") from err
         except BaseException:
-            self._cancel()
+            self.future.cancel()
             raise
 
 
@@ -141,16 +149,24 @@ class WsWaiter(object):
     websocket等待映射
     """
 
+    __slots__ = [
+        '__weakref__',
+        'waiter',
+        'req_id',
+        'read_timeout',
+        'loop',
+    ]
+
     def __init__(self, loop: asyncio.AbstractEventLoop, read_timeout: float) -> None:
         self.loop = loop
         self.read_timeout = read_timeout
         self.waiter = weakref.WeakValueDictionary()
         self.req_id = int(time.time())
-        weakref.finalize(self, self.__cancel_all_futures)
+        weakref.finalize(self, self.__cancel_all)
 
-    def __cancel_all_futures(self) -> None:
-        for future in self.waiter.values():
-            future.cancel()
+    def __cancel_all(self) -> None:
+        for ws_resp in self.waiter.values():
+            ws_resp.future.cancel()
 
     def new(self) -> WsResponse:
         """
@@ -164,23 +180,23 @@ class WsWaiter(object):
         """
 
         self.req_id += 1
-        data_future = self.loop.create_future()
-        self.waiter[self.req_id] = data_future
-        return WsResponse(data_future, self.req_id, self.read_timeout)
+        ws_resp = WsResponse(self.req_id, self.read_timeout, self.loop)
+        self.waiter[self.req_id] = ws_resp
+        return ws_resp
 
     def set_done(self, req_id: int, data: bytes) -> None:
         """
-        将req_id对应的Future设置为已完成
+        将req_id对应的响应Future设置为已完成
 
         Args:
             req_id (int): 请求id
             data (bytes): 填入的数据
         """
 
-        data_future: asyncio.Future = self.waiter.get(req_id, None)
-        if data_future is None:
+        ws_resp: WsResponse = self.waiter.get(req_id, None)
+        if ws_resp is None:
             return
-        data_future.set_result(data)
+        ws_resp.future.set_result(data)
 
 
 class WsCore(object):
@@ -282,7 +298,7 @@ class WsCore(object):
         self.ws_dispatcher = self.loop.create_task(self.__ws_dispatch(), name="ws_dispatcher")
 
     async def close(self) -> None:
-        if self.status:
+        if self.status == WsStatus.OPEN:
             await self.websocket.close()
             self.ws_dispatcher.cancel()
         self._status = WsStatus.CLOSED
@@ -336,12 +352,12 @@ class WsCore(object):
         req_data = pack_ws_bytes(self.account, data, cmd, response.req_id, compress=compress, encrypt=encrypt)
 
         try:
-            async with async_timeout.timeout(self.network.time.ws_send):
+            async with timeout(self.network.time.ws_send, self.loop):
                 await self.websocket.send_bytes(req_data)
         except asyncio.TimeoutError as err:
-            response._cancel()
+            response.future.cancel()
             raise asyncio.TimeoutError("Timeout to send") from err
         except BaseException:
-            response._cancel()
+            response.future.cancel()
         else:
             return response

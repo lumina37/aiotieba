@@ -15,7 +15,7 @@ def parse_body(body: bytes) -> None:
     if code := int(res_json['error_code']):
         raise TiebaServerError(code, res_json['error_msg'])
     if int(res_json['info']['need_vcode']):
-        raise TiebaValueError("need verify code")
+        raise TiebaValueError("Need verify code")
 
 
 async def request(http_core: HttpCore, fname: str, fid: int, tid: int, content: str) -> bool:

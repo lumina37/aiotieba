@@ -563,7 +563,7 @@ class Contents_home(Containers[TypeFragment]):
             elif _type in [2, 11]:
                 fragment = FragEmoji_home(proto)
                 self._emojis.append(fragment)
-            elif _type == 3:
+            elif _type in [3, 20]:
                 fragment = FragmentUnknown_home()
             elif _type == 4:
                 fragment = FragAt_home(proto)

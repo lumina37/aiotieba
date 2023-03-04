@@ -1,3 +1,5 @@
+from typing import List, Optional
+
 from .._classdef import TypeMessage
 
 
@@ -138,3 +140,177 @@ class UserInfo_bawu(object):
             return f"{self._nick_name_new}/{self._portrait}"
         else:
             return str(self._user_id)
+
+
+class BawuInfo(object):
+    """
+    吧务团队信息
+
+    Attributes:
+        all (list[UserInfo_bawu]): 所有吧务
+
+        admin (list[UserInfo_bawu]): 大吧主
+        manager (list[UserInfo_bawu]): 小吧主
+        voice_editor (list[UserInfo_bawu]): 语音小编
+        image_editor (list[UserInfo_bawu]): 图片小编
+        video_editor (list[UserInfo_bawu]): 视频小编
+        broadcast_editor (list[UserInfo_bawu]): 广播小编
+        journal_chief_editor (list[UserInfo_bawu]): 吧刊主编
+        journal_editor (list[UserInfo_bawu]): 吧刊小编
+        profess_admin (list[UserInfo_bawu]): 职业吧主
+        fourth_admin (list[UserInfo_bawu]): 第四吧主
+    """
+
+    __slots__ = [
+        '_all',
+        '_admin',
+        '_manager',
+        '_voice_editor',
+        '_image_editor',
+        '_video_editor',
+        '_broadcast_editor',
+        '_journal_chief_editor',
+        '_journal_editor',
+        '_profess_admin',
+        '_fourth_admin',
+    ]
+
+    def __init__(self, data_proto: Optional[TypeMessage] = None) -> None:
+        self._all = []
+        if data_proto:
+            r_protos = data_proto.bawu_team_info.bawu_team_list
+            _dict = {r_proto.role_name: [UserInfo_bawu(p) for p in r_proto.role_info] for r_proto in r_protos}
+
+            def extract(role_name: str) -> List[UserInfo_bawu]:
+                if users := _dict.get(role_name):
+                    self._all.extend(users)
+                else:
+                    users = []
+                return users
+
+            self._admin = extract('吧主')
+            self._manager = extract('小吧主')
+            self._voice_editor = extract('语音小编')
+            self._image_editor = extract('图片小编')
+            self._video_editor = extract('视频小编')
+            self._broadcast_editor = extract('广播小编')
+            self._journal_chief_editor = extract('吧刊主编')
+            self._journal_editor = extract('吧刊小编')
+            self._profess_admin = extract('职业吧主')
+            self._fourth_admin = extract('第四吧主')
+
+        else:
+            self._admin = []
+            self._manager = []
+            self._voice_editor = []
+            self._image_editor = []
+            self._video_editor = []
+            self._broadcast_editor = []
+            self._journal_chief_editor = []
+            self._journal_editor = []
+            self._profess_admin = []
+            self._fourth_admin = []
+
+    def __repr__(self) -> str:
+        return str(
+            {
+                'admin': self._admin,
+                'manager': self._manager,
+                'voice_editor': self._voice_editor,
+                'image_editor': self._image_editor,
+                'video_editor': self._video_editor,
+                'broadcast_editor': self._broadcast_editor,
+                'journal_chief_editor': self._journal_chief_editor,
+                'journal_editor': self._journal_editor,
+                'profess_admin': self._profess_admin,
+                'fourth_admin': self._fourth_admin,
+            }
+        )
+
+    @property
+    def all(self) -> List[UserInfo_bawu]:
+        """
+        所有吧务
+        """
+
+        return self._all
+
+    @property
+    def admin(self) -> List[UserInfo_bawu]:
+        """
+        大吧主
+        """
+
+        return self._admin
+
+    @property
+    def manager(self) -> List[UserInfo_bawu]:
+        """
+        小吧主
+        """
+
+        return self._manager
+
+    @property
+    def voice_editor(self) -> List[UserInfo_bawu]:
+        """
+        语音小编
+        """
+
+        return self._voice_editor
+
+    @property
+    def video_editor(self) -> List[UserInfo_bawu]:
+        """
+        视频小编
+        """
+
+        return self._video_editor
+
+    @property
+    def image_editor(self) -> List[UserInfo_bawu]:
+        """
+        图片小编
+        """
+
+        return self._image_editor
+
+    @property
+    def broadcast_editor(self) -> List[UserInfo_bawu]:
+        """
+        广播小编
+        """
+
+        return self._broadcast_editor
+
+    @property
+    def journal_chief_editor(self) -> List[UserInfo_bawu]:
+        """
+        吧刊主编
+        """
+
+        return self._journal_chief_editor
+
+    @property
+    def journal_editor(self) -> List[UserInfo_bawu]:
+        """
+        吧刊小编
+        """
+
+        return self._journal_editor
+
+    @property
+    def profess_admin(self) -> List[UserInfo_bawu]:
+        """
+        职业吧主
+        """
+
+        return self._profess_admin
+
+    @property
+    def fourth_admin(self) -> List[UserInfo_bawu]:
+        """
+        第四吧主
+        """
+
+        return self._fourth_admin

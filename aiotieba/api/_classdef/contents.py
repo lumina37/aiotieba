@@ -41,7 +41,7 @@ class TypeFragText(Protocol):
         """
         文本内容
         """
-        pass
+        ...
 
 
 class FragEmoji(object):
@@ -75,7 +75,7 @@ class TypeFragEmoji(Protocol):
         """
         表情描述
         """
-        pass
+        ...
 
 
 class FragImage(object):
@@ -205,21 +205,21 @@ class TypeFragImage(Protocol):
         """
         小图链接
         """
-        pass
+        ...
 
     @property
     def origin_src(self) -> str:
         """
         原图链接
         """
-        pass
+        ...
 
     @property
     def hash(self) -> str:
         """
         图像的百度图床hash
         """
-        pass
+        ...
 
 
 class FragAt(object):
@@ -271,14 +271,14 @@ class TypeFragAt(Protocol):
         """
         被@用户的昵称 含@
         """
-        pass
+        ...
 
     @property
     def user_id(self) -> int:
         """
         被@用户的user_id
         """
-        pass
+        ...
 
 
 class FragLink(object):
@@ -377,14 +377,14 @@ class TypeFragLink(Protocol):
         """
         原链接
         """
-        pass
+        ...
 
     @property
     def title(self) -> str:
         """
         链接标题
         """
-        pass
+        ...
 
     @property
     def url(self) -> yarl.URL:
@@ -394,21 +394,21 @@ class TypeFragLink(Protocol):
         Note:
             外链会在解析前先去除external_perfix前缀
         """
-        pass
+        ...
 
     @property
     def raw_url(self) -> str:
         """
         原链接
         """
-        pass
+        ...
 
     @property
     def is_external(self) -> bool:
         """
         是否外部链接
         """
-        pass
+        ...
 
 
 class FragTiebaPlus(object):
@@ -460,14 +460,14 @@ class TypeFragTiebaPlus(Protocol):
         """
         贴吧plus广告描述
         """
-        pass
+        ...
 
     @property
     def url(self) -> str:
         """
         贴吧plus广告跳转链接
         """
-        pass
+        ...
 
 
 class FragItem(object):
@@ -501,7 +501,7 @@ class TypeFragItem(Protocol):
         """
         item名称
         """
-        pass
+        ...
 
 
 class FragmentUnknown(object):
@@ -532,4 +532,4 @@ class TypeFragmentUnknown(Protocol):
         """
         原始数据
         """
-        pass
+        ...

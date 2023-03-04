@@ -3,7 +3,7 @@ import functools
 import logging
 import sys
 from types import FrameType
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 import async_timeout
 
@@ -105,9 +105,9 @@ def is_portrait(portrait: str) -> bool:
     return isinstance(portrait, str) and portrait.startswith('tb.')
 
 
-def timeout(delay: Optional[float], loop: asyncio.AbstractEventLoop) -> async_timeout.Timeout:
+def timeout(delay: float, loop: asyncio.AbstractEventLoop) -> async_timeout.Timeout:
     now = loop.time()
-    when = int(now) + delay
+    when = round(now) + delay
     return async_timeout.timeout_at(when)
 
 
@@ -134,7 +134,7 @@ def handle_exception(null_ret_factory: Callable[[], Any], no_format: bool = Fals
     处理request抛出的异常
 
     Args:
-        null_ret_factory (Callable[[], Any]): 返回值的空构造工厂
+        null_ret_factory (Callable[[], Any]): 空构造工厂 用于返回一个默认值
         no_format (bool, optional): 不格式化字符串而是直接记录. Defaults to False.
         log_level (int, optional): 日志等级. Defaults to logging.WARNING.
     """
