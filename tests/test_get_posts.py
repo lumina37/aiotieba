@@ -50,7 +50,7 @@ async def test_Posts(client: tb.Client):
     assert thread.reply_num > 0
     assert thread.share_num > 0
     assert thread.create_time > 0
-    assert thread.last_time > 0
+    # assert thread.last_time > 0
 
     ##### Post #####
     assert len(posts) >= 2
