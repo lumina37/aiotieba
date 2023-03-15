@@ -1,6 +1,6 @@
 # 实用工具
 
-## 签到水经验
+## 签到
 
 ```python
 import asyncio
@@ -9,57 +9,22 @@ from typing import List
 import aiotieba as tb
 
 
-class WaterTask(object):
-    __slots__ = ['fname', 'tid', 'times']
-
-    def __init__(self, fname: str, tid: int, times: int = 6) -> None:
-        self.fname = fname
-        self.tid = tid
-        self.times = times
+class NeedRetry(RuntimeError):
+    pass
 
 
-async def water(BDUSS_key: str, tasks: List[WaterTask]) -> None:
-    """
-    水帖
+def handle_exce(err: tb.exception.TiebaServerError) -> None:
+    if isinstance(err, tb.exception.TiebaServerError):
+        if err.code in [160002, 340006]:
+            # 已经签过或吧被屏蔽
+            return
 
-    Args:
-        BDUSS_key (str): 用于创建客户端
-        tasks (List[WaterTask]): 水帖任务列表
-    """
-
-    async with tb.Client(BDUSS_key) as client:
-        for task in tasks:
-            for i in range(task.times):
-                await client.add_post(task.fname, task.tid, str(i))
-                await asyncio.sleep(120)
-
-
-async def agree(BDUSS_key: str, tids: List[int], *, times: int = 3):
-    """
-    点赞楼层刷经验
-
-    Args:
-        BDUSS_key (str): 用于创建客户端
-        tids (list[int]): tid列表 对每个tid的最后一楼执行点赞操作
-        times (int, optional): 点赞轮数 每轮包含一次点赞和一次取消赞. Defaults to 3.
-    """
-
-    async with tb.Client(BDUSS_key) as client:
-        for tid in tids:
-            posts = await client.get_posts(tid, 0xFFFF, rn=0, sort=1)
-            tid = posts[-1].tid
-            pid = posts[-1].pid
-
-            for _ in range(times):
-                await client.agree(tid, pid)
-                await asyncio.sleep(6)
-                await client.unagree(tid, pid)
-                await asyncio.sleep(6)
+    raise NeedRetry()
 
 
 async def sign(BDUSS_key: str, *, retry_times: int = 0) -> None:
     """
-    签到
+    各种签到
 
     Args:
         BDUSS_key (str): 用于创建客户端
@@ -67,48 +32,56 @@ async def sign(BDUSS_key: str, *, retry_times: int = 0) -> None:
     """
 
     async with tb.Client(BDUSS_key) as client:
+        # 成长等级签到
+        for _ in range(retry_times):
+            await asyncio.sleep(1.0)
+            if await client.sign_growth():
+                break
+        # 分享任务
+        for _ in range(retry_times):
+            await asyncio.sleep(1.0)
+            if await client.sign_growth_share():
+                break
+        # 虚拟形象点赞
+        for _ in range(retry_times):
+            await asyncio.sleep(1.0)
+            if await client.agree_vimage(6050811555):
+                break
+        # 互关任务
+        for _ in range(retry_times):
+            await asyncio.sleep(1.0)
+            success = False
+            success = await client.unfollow_user('tb.1.2fc1394a.ukuFqA26BTuAeXqYr1Nmwg')
+            if not success:
+                continue
+            success = await client.follow_user('tb.1.2fc1394a.ukuFqA26BTuAeXqYr1Nmwg')
+            if not success:
+                continue
+            if success:
+                break
+        # 签到
         retry_list: List[str] = []
         for pn in range(1, 9999):
             forums = await client.get_self_follow_forums(pn)
             retry_list += [forum.fname for forum in forums]
             if not forums.has_more:
                 break
-
         for _ in range(retry_times + 1):
             new_retry_list: List[str] = []
             for fname in retry_list:
-                if not await client.sign_forum(fname):
+                try:
+                    await client.sign_forum(fname)
+                except NeedRetry:
                     new_retry_list.append(fname)
+                await asyncio.sleep(1.0)
             if not new_retry_list:
                 break
             retry_list = new_retry_list
 
-        # 用户成长等级签到
-        for _ in range(retry_times):
-            if await client.sign_growth():
-                break
-
 
 async def main() -> None:
-    agree_tids = [2986143112, 3611123694, 7689322018, 7966279046]
-
-    await asyncio.gather(
-        # 大号每天在lol半价吧和v吧水6帖 在个人吧水1帖以保证吧主不掉
-        water(
-            "default",
-            [
-                WaterTask("lol半价", 2986143112),
-                WaterTask("v", 3611123694),
-                WaterTask("starry", 6154402005, 1),
-            ],
-        ),
-        # 大小号每天签到 大号每次签到重试3轮 确保连签不断 小号只重试1轮
-        sign("default", retry_times=3),
-        sign("backup", retry_times=1),
-        # 大小号每天点赞刷经验
-        agree("default", agree_tids, max_times=1),
-        agree("backup", agree_tids, max_times=1),
-    )
+    await sign("default", retry_times=3)
+    await sign("backup", retry_times=3)
 
 
 asyncio.run(main())
@@ -237,5 +210,4 @@ async def main() -> None:
 
 
 asyncio.run(main())
-
 ```
