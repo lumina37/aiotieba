@@ -32,6 +32,8 @@ async def sign(BDUSS_key: str, *, retry_times: int = 0) -> None:
     """
 
     async with tb.Client(BDUSS_key) as client:
+        tb.exception.exc_handlers[client.sign_forum] = handle_exce
+
         # 成长等级签到
         for _ in range(retry_times):
             await asyncio.sleep(1.0)
