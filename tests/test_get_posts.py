@@ -25,7 +25,6 @@ async def test_Posts(client: tb.Client):
     assert user.show_name == user.nick_name_new
     assert user.level > 0
     assert user.glevel > 0
-    # assert user.fan_num > 0
     assert user.ip != ''
     assert user.priv_like != 0
     assert user.priv_reply != 0
@@ -50,7 +49,6 @@ async def test_Posts(client: tb.Client):
     assert thread.reply_num > 0
     assert thread.share_num > 0
     assert thread.create_time > 0
-    # assert thread.last_time > 0
 
     ##### Post #####
     assert len(posts) >= 2

@@ -1559,7 +1559,6 @@ class UserInfo_pt(object):
 
         level (int): 等级
         glevel (int): 贴吧成长等级
-        fan_num (int): 粉丝数
         ip (str): ip归属地
 
         is_bawu (bool): 是否吧务
@@ -1580,7 +1579,6 @@ class UserInfo_pt(object):
         '_nick_name_new',
         '_level',
         '_glevel',
-        '_fan_num',
         '_ip',
         '_is_bawu',
         '_is_vip',
@@ -1599,7 +1597,6 @@ class UserInfo_pt(object):
         self._nick_name_new = data_proto.name_show
         self._level = data_proto.level_id
         self._glevel = data_proto.user_growth.level_id
-        self._fan_num = data_proto.fans_num
         self._ip = data_proto.ip_address
         self._is_bawu = bool(data_proto.is_bawu)
         self._is_vip = bool(data_proto.new_tshow_icon)
@@ -1615,7 +1612,6 @@ class UserInfo_pt(object):
         self._nick_name_new = ''
         self._level = 0
         self._glevel = 0
-        self._fan_num = 0
         self._ip = ''
         self._is_bawu = False
         self._is_vip = False
@@ -1636,7 +1632,6 @@ class UserInfo_pt(object):
                 'show_name': self.show_name,
                 'level': self._level,
                 'glevel': self._glevel,
-                'fan_num': self._fan_num,
                 'ip': self._ip,
                 'priv_like': self._priv_like,
                 'priv_reply': self._priv_reply,
@@ -1713,14 +1708,6 @@ class UserInfo_pt(object):
         """
 
         return self._glevel
-
-    @property
-    def fan_num(self) -> int:
-        """
-        粉丝数
-        """
-
-        return self._fan_num
 
     @property
     def ip(self) -> str:
@@ -1979,7 +1966,6 @@ class Thread_p(object):
         agree (int): 点赞数
         disagree (int): 点踩数
         create_time (int): 创建时间
-        last_time (int): 最后回复时间
     """
 
     __slots__ = [
@@ -2001,7 +1987,6 @@ class Thread_p(object):
         '_agree',
         '_disagree',
         '_create_time',
-        '_last_time',
     ]
 
     def _init(self, data_proto: TypeMessage) -> "Thread_p":
@@ -2018,7 +2003,6 @@ class Thread_p(object):
         self._agree = data_proto.agree.agree_num
         self._disagree = data_proto.agree.disagree_num
         self._create_time = data_proto.create_time
-        self._last_time = data_proto.last_time_int
 
         if not self._is_share:
             self._contents = Contents_pt()._init(data_proto.origin_thread_info.content)
@@ -2054,7 +2038,6 @@ class Thread_p(object):
         self._agree = 0
         self._disagree = 0
         self._create_time = 0
-        self._last_time = 0
         return self
 
     def __repr__(self) -> str:
@@ -2235,17 +2218,6 @@ class Thread_p(object):
         """
 
         return self._create_time
-
-    @property
-    def last_time(self) -> int:
-        """
-        最后回复时间
-
-        Note:
-            10位时间戳 以秒为单位
-        """
-
-        return self._last_time
 
 
 class Posts(Containers[Post]):
