@@ -313,8 +313,6 @@ int mbedtls_md5_finish(mbedtls_md5_context *ctx,
     return 0;
 }
 
-
-
 /*
  * output = MD5( input buffer )
  */
