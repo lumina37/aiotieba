@@ -15,13 +15,18 @@ def parse_body(body: bytes) -> None:
         raise TiebaServerError(code, res_json['error_msg'])
 
 
-async def request(http_core: HttpCore, tid: int, pid: int, is_disagree: bool, is_undo: bool) -> bool:
+async def request(http_core: HttpCore, tid: int, pid: int, is_floor: bool, is_disagree: bool, is_undo: bool) -> bool:
+    if pid:
+        obj_type = '2' if is_floor else '1'
+    else:
+        obj_type = '3'
+
     data = [
         ('BDUSS', http_core.account._BDUSS),
         ('_client_version', MAIN_VERSION),
         ('agree_type', '5' if is_disagree else '2'),
         ('cuid', http_core.account.cuid_galaxy2),
-        ('obj_type', '1' if pid else '3'),
+        ('obj_type', obj_type),
         ('op_type', str(int(is_undo))),
         ('post_id', pid),
         ('tbs', http_core.account._tbs),
