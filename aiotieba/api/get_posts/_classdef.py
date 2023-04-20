@@ -590,7 +590,7 @@ class Comment_p(object):
     @property
     def ppid(self) -> int:
         """
-        所在回复id
+        所在楼层id
         """
 
         return self._ppid
