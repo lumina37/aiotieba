@@ -130,9 +130,9 @@ async def `get_comments`(*tid: int*, *pid: int*, /, *pn: int = 1*, \*, *is_comme
 **参数**:
 
 + tid: 所在主题帖[tid](../tutorial/start.md#thread_id)
-+ pid: 所在回复[pid](../tutorial/start.md#post_id)或楼中楼[pid](../tutorial/start.md#post_id)
++ pid: 所在楼层的[pid](../tutorial/start.md#post_id)或楼中楼的[pid](../tutorial/start.md#post_id)
 + pn: 页码
-+ is_comment: pid是否指向楼中楼
++ is_comment: pid是否指向楼中楼 若指向楼中楼则获取其附近的楼中楼列表
 
 **返回**: 楼中楼列表
 </div>

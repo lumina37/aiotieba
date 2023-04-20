@@ -471,7 +471,7 @@ class Comment_p(object):
         fid (int): 所在吧id
         fname (str): 所在贴吧名
         tid (int): 所在主题帖id
-        ppid (int): 所在回复id
+        ppid (int): 所在楼层id
         pid (int): 楼中楼id
         user (UserInfo_p): 发布者的用户信息
         author_id (int): 发布者的user_id

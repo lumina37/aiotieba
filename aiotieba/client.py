@@ -572,9 +572,9 @@ class Client(object):
 
         Args:
             tid (int): 所在主题帖tid
-            pid (int): 所在回复pid或楼中楼pid
+            pid (int): 所在楼层的pid或楼中楼的pid
             pn (int, optional): 页码. Defaults to 1.
-            is_comment (bool, optional): pid是否指向楼中楼. Defaults to False.
+            is_comment (bool, optional): pid是否指向楼中楼 若指向楼中楼则获取其附近的楼中楼列表. Defaults to False.
 
         Returns:
             Comments: 楼中楼列表
