@@ -593,7 +593,7 @@ class Comment_p(object):
         所在回复id
         """
 
-        return self._pid
+        return self._ppid
 
     @property
     def pid(self) -> int:

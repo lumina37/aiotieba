@@ -122,7 +122,7 @@ async def `get_posts`(*tid: int*, /, *pn: int = 1*, \*, *rn: int = 30*, *sort: P
 **返回**: 回复列表
 </div>
 
-async def `get_comments`(*tid: int*, *pid: int*, /, *pn: int = 1*, \*, *is_floor: bool = False*) -> *[Comments](classdef.md#comments)*
+async def `get_comments`(*tid: int*, *pid: int*, /, *pn: int = 1*, \*, *is_comment: bool = False*) -> *[Comments](classdef.md#comments)*
 
 <div class="docstring" markdown="1">
 获取楼中楼列表
@@ -132,7 +132,7 @@ async def `get_comments`(*tid: int*, *pid: int*, /, *pn: int = 1*, \*, *is_floor
 + tid: 所在主题帖[tid](../tutorial/start.md#thread_id)
 + pid: 所在回复[pid](../tutorial/start.md#post_id)或楼中楼[pid](../tutorial/start.md#post_id)
 + pn: 页码
-+ is_floor: pid是否指向楼中楼
++ is_comment: pid是否指向楼中楼
 
 **返回**: 楼中楼列表
 </div>

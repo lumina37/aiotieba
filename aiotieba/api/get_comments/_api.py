@@ -10,12 +10,12 @@ from .protobuf import PbFloorReqIdl_pb2, PbFloorResIdl_pb2
 CMD = 302002
 
 
-def pack_proto(core: Account, tid: int, pid: int, pn: int, is_floor: bool) -> bytes:
+def pack_proto(core: Account, tid: int, pid: int, pn: int, is_comment: bool) -> bytes:
     req_proto = PbFloorReqIdl_pb2.PbFloorReqIdl()
     req_proto.data.common._client_type = 2
     req_proto.data.common._client_version = MAIN_VERSION
     req_proto.data.tid = tid
-    if is_floor:
+    if is_comment:
         req_proto.data.spid = pid
     else:
         req_proto.data.pid = pid
@@ -37,8 +37,8 @@ def parse_body(body: bytes) -> Comments:
     return comments
 
 
-async def request_http(http_core: HttpCore, tid: int, pid: int, pn: int, is_floor: bool) -> Comments:
-    data = pack_proto(http_core.account, tid, pid, pn, is_floor)
+async def request_http(http_core: HttpCore, tid: int, pid: int, pn: int, is_comment: bool) -> Comments:
+    data = pack_proto(http_core.account, tid, pid, pn, is_comment)
 
     request = pack_proto_request(
         http_core,
@@ -52,8 +52,8 @@ async def request_http(http_core: HttpCore, tid: int, pid: int, pn: int, is_floo
     return parse_body(body)
 
 
-async def request_ws(ws_core: WsCore, tid: int, pid: int, pn: int, is_floor: bool) -> Comments:
-    data = pack_proto(ws_core.account, tid, pid, pn, is_floor)
+async def request_ws(ws_core: WsCore, tid: int, pid: int, pn: int, is_comment: bool) -> Comments:
+    data = pack_proto(ws_core.account, tid, pid, pn, is_comment)
 
     __log__ = "tid={tid} pid={pid}"  # noqa: F841
 

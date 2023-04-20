@@ -15,9 +15,9 @@ def parse_body(body: bytes) -> None:
         raise TiebaServerError(code, res_json['error_msg'])
 
 
-async def request(http_core: HttpCore, tid: int, pid: int, is_floor: bool, is_disagree: bool, is_undo: bool) -> bool:
+async def request(http_core: HttpCore, tid: int, pid: int, is_comment: bool, is_disagree: bool, is_undo: bool) -> bool:
     if pid:
-        obj_type = '2' if is_floor else '1'
+        obj_type = '2' if is_comment else '1'
     else:
         obj_type = '3'
 

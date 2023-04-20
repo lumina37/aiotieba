@@ -565,7 +565,7 @@ class Client(object):
     @handle_exception(get_comments.Comments)
     @_try_websocket
     async def get_comments(
-        self, tid: int, pid: int, /, pn: int = 1, *, is_floor: bool = False
+        self, tid: int, pid: int, /, pn: int = 1, *, is_comment: bool = False
     ) -> get_comments.Comments:
         """
         获取楼中楼回复
@@ -574,16 +574,16 @@ class Client(object):
             tid (int): 所在主题帖tid
             pid (int): 所在回复pid或楼中楼pid
             pn (int, optional): 页码. Defaults to 1.
-            is_floor (bool, optional): pid是否指向楼中楼. Defaults to False.
+            is_comment (bool, optional): pid是否指向楼中楼. Defaults to False.
 
         Returns:
             Comments: 楼中楼列表
         """
 
         if self._ws_core.status == WsStatus.OPEN:
-            return await get_comments.request_ws(self._ws_core, tid, pid, pn, is_floor)
+            return await get_comments.request_ws(self._ws_core, tid, pid, pn, is_comment)
 
-        return await get_comments.request_http(self._http_core, tid, pid, pn, is_floor)
+        return await get_comments.request_http(self._http_core, tid, pid, pn, is_comment)
 
     @handle_exception(search_post.Searches)
     async def search_post(
@@ -1694,14 +1694,14 @@ class Client(object):
         return await get_dislike_forums.request_http(self._http_core, pn, rn)
 
     @handle_exception(bool, no_format=True)
-    async def agree(self, tid: int, pid: int = 0, is_floor: bool = False) -> bool:
+    async def agree(self, tid: int, pid: int = 0, is_comment: bool = False) -> bool:
         """
         点赞主题帖或回复
 
         Args:
             tid (int): 待点赞的主题帖或回复所在的主题帖的tid
             pid (int, optional): 待点赞的回复pid. Defaults to 0.
-            is_floor (bool, optional): pid是否指向楼中楼. Defaults to False.
+            is_comment (bool, optional): pid是否指向楼中楼. Defaults to False.
 
         Returns:
             bool: True成功 False失败
@@ -1713,17 +1713,17 @@ class Client(object):
 
         await self.__init_tbs()
 
-        return await agree.request(self._http_core, tid, pid, is_floor, is_disagree=False, is_undo=False)
+        return await agree.request(self._http_core, tid, pid, is_comment, is_disagree=False, is_undo=False)
 
     @handle_exception(bool, no_format=True)
-    async def unagree(self, tid: int, pid: int = 0, is_floor: bool = False) -> bool:
+    async def unagree(self, tid: int, pid: int = 0, is_comment: bool = False) -> bool:
         """
         取消点赞主题帖或回复
 
         Args:
             tid (int): 待取消点赞的主题帖或回复所在的主题帖的tid
             pid (int, optional): 待取消点赞的回复pid. Defaults to 0.
-            is_floor (bool, optional): pid是否指向楼中楼. Defaults to False.
+            is_comment (bool, optional): pid是否指向楼中楼. Defaults to False.
 
         Returns:
             bool: True成功 False失败
@@ -1731,17 +1731,17 @@ class Client(object):
 
         await self.__init_tbs()
 
-        return await agree.request(self._http_core, tid, pid, is_floor, is_disagree=False, is_undo=True)
+        return await agree.request(self._http_core, tid, pid, is_comment, is_disagree=False, is_undo=True)
 
     @handle_exception(bool, no_format=True)
-    async def disagree(self, tid: int, pid: int = 0, is_floor: bool = False) -> bool:
+    async def disagree(self, tid: int, pid: int = 0, is_comment: bool = False) -> bool:
         """
         点踩主题帖或回复
 
         Args:
             tid (int): 待点踩的主题帖或回复所在的主题帖的tid
             pid (int, optional): 待点踩的回复pid. Defaults to 0.
-            is_floor (bool, optional): pid是否指向楼中楼. Defaults to False.
+            is_comment (bool, optional): pid是否指向楼中楼. Defaults to False.
 
         Returns:
             bool: True成功 False失败
@@ -1749,17 +1749,17 @@ class Client(object):
 
         await self.__init_tbs()
 
-        return await agree.request(self._http_core, tid, pid, is_floor, is_disagree=True, is_undo=False)
+        return await agree.request(self._http_core, tid, pid, is_comment, is_disagree=True, is_undo=False)
 
     @handle_exception(bool, no_format=True)
-    async def undisagree(self, tid: int, pid: int = 0, is_floor: bool = False) -> bool:
+    async def undisagree(self, tid: int, pid: int = 0, is_comment: bool = False) -> bool:
         """
         取消点踩主题帖或回复
 
         Args:
             tid (int): 待取消点踩的主题帖或回复所在的主题帖的tid
             pid (int, optional): 待取消点踩的回复pid. Defaults to 0.
-            is_floor (bool, optional): pid是否指向楼中楼. Defaults to False.
+            is_comment (bool, optional): pid是否指向楼中楼. Defaults to False.
 
         Returns:
             bool: True成功 False失败
@@ -1767,7 +1767,7 @@ class Client(object):
 
         await self.__init_tbs()
 
-        return await agree.request(self._http_core, tid, pid, is_floor, is_disagree=True, is_undo=True)
+        return await agree.request(self._http_core, tid, pid, is_comment, is_disagree=True, is_undo=True)
 
     @handle_exception(bool, no_format=True)
     async def agree_vimage(self, _id: Union[str, int]) -> bool:

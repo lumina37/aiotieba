@@ -16,7 +16,7 @@ class Search(object):
         pid (int): 回复id
         show_name (str): 发布者的显示名称
 
-        is_floor (bool): 是否楼中楼
+        is_comment (bool): 是否楼中楼
         create_time (int): 创建时间
     """
 
@@ -27,7 +27,7 @@ class Search(object):
         '_tid',
         '_pid',
         '_show_name',
-        '_is_floor',
+        '_is_comment',
         '_create_time',
     ]
 
@@ -38,7 +38,7 @@ class Search(object):
         self._tid = int(data_map['tid'])
         self._pid = int(data_map['pid'])
         self._show_name = data_map['author']["name_show"]
-        self._is_floor = bool(int(data_map['is_floor']))
+        self._is_comment = bool(int(data_map['is_floor']))
         self._create_time = int(data_map['time'])
 
     def __repr__(self) -> str:
@@ -48,7 +48,7 @@ class Search(object):
                 'pid': self._pid,
                 'show_name': self._show_name,
                 'text': self._text,
-                'is_floor': self._is_floor,
+                'is_comment': self._is_comment,
             }
         )
 
@@ -99,12 +99,12 @@ class Search(object):
         return self._pid
 
     @property
-    def is_floor(self) -> bool:
+    def is_comment(self) -> bool:
         """
         是否楼中楼
         """
 
-        return self._is_floor
+        return self._is_comment
 
     @property
     def create_time(self) -> int:

@@ -251,7 +251,7 @@ class UserPost(object):
         user (UserInfo_u): 发布者的用户信息
         author_id (int): 发布者的user_id
 
-        is_floor (bool): 是否为楼中楼
+        is_comment (bool): 是否为楼中楼
 
         create_time (int): 创建时间
     """
@@ -263,14 +263,14 @@ class UserPost(object):
         '_pid',
         '_user',
         '_author_id',
-        '_is_floor',
+        '_is_comment',
         '_create_time',
     ]
 
     def __init__(self, data_proto: TypeMessage) -> None:
         self._contents = Contents_up()._init(data_proto.post_content)
         self._pid = data_proto.post_id
-        self._is_floor = bool(data_proto.post_type)
+        self._is_comment = bool(data_proto.post_type)
         self._create_time = data_proto.create_time
 
     def __repr__(self) -> str:
