@@ -202,7 +202,7 @@ class Client(object):
             bool: True无须执行 False失败
         """
 
-        if self._ws_core.status != WsStatus.OPEN:
+        if self._ws_core.status == WsStatus.CLOSED:
             await self._ws_core.connect()
             await self.__upload_sec_key()
         return True
