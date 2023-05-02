@@ -18,9 +18,9 @@ def parse_body(body: bytes) -> Recovers:
     return recovers
 
 
-async def request(http_core: HttpCore, fname: str, fid: int, name: str, pn: int) -> Recovers:
+async def request(http_core: HttpCore, fid: int, name: str, pn: int) -> Recovers:
     params = [
-        ('fn', fname),
+        ('fn', '-'),
         ('fid', fid),
         ('word', name),
         ('is_ajax', '1'),
@@ -33,7 +33,7 @@ async def request(http_core: HttpCore, fname: str, fid: int, name: str, pn: int)
         params,
     )
 
-    __log__ = "fname={fname}"  # noqa: F841
+    __log__ = "fid={fid}"  # noqa: F841
 
     body = await send_request(request, http_core.network, read_bufsize=64 * 1024)
     return parse_body(body)

@@ -16,10 +16,10 @@ def parse_body(body: bytes) -> None:
         raise TiebaServerError(code, res_json['error'])
 
 
-async def request(http_core: HttpCore, fname: str, fid: int, appeal_ids: List[int], refuse: bool) -> bool:
+async def request(http_core: HttpCore, fid: int, appeal_ids: List[int], refuse: bool) -> bool:
     data = (
         [
-            ('fn', fname),
+            ('fn', '-'),
             ('fid', fid),
         ]
         + [(f'appeal_list[{i}]', appeal_id) for i, appeal_id in enumerate(appeal_ids)]
@@ -36,7 +36,7 @@ async def request(http_core: HttpCore, fname: str, fid: int, appeal_ids: List[in
         data,
     )
 
-    __log__ = f"fname={fname}"
+    __log__ = f"fid={fid}"
 
     body = await send_request(request, http_core.network, read_bufsize=1024)
     parse_body(body)

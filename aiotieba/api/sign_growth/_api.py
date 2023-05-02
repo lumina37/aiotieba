@@ -19,7 +19,7 @@ async def request(http_core: HttpCore, act_type: str) -> bool:
     data = [
         ('BDUSS', http_core.account._BDUSS),
         ('act_type', act_type),
-        ('cuid', ' '),
+        ('cuid', '-'),
         ('tbs', http_core.account._tbs),
     ]
 
