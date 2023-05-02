@@ -317,7 +317,7 @@ class WsCore(object):
                     self.loop.create_task(res_callback(self, data, req_id))
 
         except asyncio.CancelledError:
-            pass
+            self._status = WsStatus.CLOSED
         except Exception:
             self._status = WsStatus.CLOSED
 
@@ -327,7 +327,7 @@ class WsCore(object):
         websocket状态
         """
 
-        if self._status == WsStatus.OPEN and self.websocket._writer.transport.is_closing():
+        if self._status != WsStatus.CLOSED and self.websocket._writer.transport.is_closing():
             self._status = WsStatus.CLOSED
         return self._status
 

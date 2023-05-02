@@ -203,8 +203,15 @@ class Client(object):
         """
 
         if self._ws_core.status == WsStatus.CLOSED:
-            await self._ws_core.connect()
-            await self.__upload_sec_key()
+            try:
+                await self._ws_core.connect()
+                await self.__upload_sec_key()
+            except BaseException:
+                self._ws_core._status = WsStatus.CLOSED
+                raise
+            else:
+                self._ws_core._status = WsStatus.OPEN
+
         return True
 
     async def __upload_sec_key(self) -> None:
@@ -218,8 +225,6 @@ class Client(object):
             if group._group_type == GroupType.PRIVATE_MSG:
                 mid_manager.priv_gid = group._group_id
         mid_manager.gid2mid = {g._group_id: MsgIDPair(g._last_msg_id, g._last_msg_id) for g in groups}
-
-        self._ws_core._status = WsStatus.OPEN
 
     async def __init_tbs(self) -> bool:
         if self._account._tbs:
