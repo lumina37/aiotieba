@@ -7,7 +7,7 @@ from aiotieba.helper.crypto import _sign, rc4_42
 @pytest.mark.asyncio
 async def test_clib(client: tb.Client):
     # assert (await client._Client__init_z_id()) is True
-    # assert client.core.z_id != ''
+    # assert client.account.z_id != ''
 
     core = client.account
     core._android_id = "6723280942424242"

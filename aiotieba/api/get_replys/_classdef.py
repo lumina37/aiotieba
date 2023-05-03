@@ -419,7 +419,7 @@ class Reply(object):
         post_user (UserInfo_reply_p): 楼层用户信息
         thread_user (UserInfo_reply_t): 楼主用户信息
 
-        is_floor (bool): 是否楼中楼
+        is_comment (bool): 是否楼中楼
         create_time (int): 创建时间
     """
 
@@ -433,7 +433,7 @@ class Reply(object):
         '_author_id',
         '_post_user',
         '_thread_user',
-        '_is_floor',
+        '_is_comment',
         '_create_time',
     ]
 
@@ -447,7 +447,7 @@ class Reply(object):
         self._author_id = self._user._user_id
         self._post_user = UserInfo_reply_p()._init(data_proto.quote_user)
         self._thread_user = UserInfo_reply_t()._init(data_proto.thread_author_user)
-        self._is_floor = bool(data_proto.is_floor)
+        self._is_comment = bool(data_proto.is_floor)
         self._create_time = data_proto.time
 
     def __repr__(self) -> str:
@@ -459,7 +459,7 @@ class Reply(object):
                 'text': self.text,
                 'post_user': self._post_user.log_name,
                 'thread_user': self._thread_user.log_name,
-                'is_floor': self._is_floor,
+                'is_comment': self._is_comment,
             }
         )
 
@@ -542,12 +542,12 @@ class Reply(object):
         return self._thread_user
 
     @property
-    def is_floor(self) -> bool:
+    def is_comment(self) -> bool:
         """
         是否楼中楼
         """
 
-        return self._is_floor
+        return self._is_comment
 
     @property
     def create_time(self) -> int:

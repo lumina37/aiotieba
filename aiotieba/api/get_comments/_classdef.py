@@ -418,7 +418,7 @@ class Comment(object):
         fid (int): 所在吧id
         fname (str): 所在贴吧名
         tid (int): 所在主题帖id
-        ppid (int): 所在回复id
+        ppid (int): 所在楼层id
         pid (int): 楼中楼id
         user (UserInfo_c): 发布者的用户信息
         author_id (int): 发布者的user_id
@@ -539,7 +539,7 @@ class Comment(object):
     @property
     def ppid(self) -> int:
         """
-        所在回复id
+        所在楼层id
         """
 
         return self._ppid
@@ -1735,7 +1735,7 @@ class Comments(Containers[Comment]):
 
         forum (Forum_c): 所在吧信息
         thread (Thread_c): 所在主题帖信息
-        post (Post_c): 所在回复信息
+        post (Post_c): 所在楼层信息
     """
 
     __slots__ = [
@@ -1808,7 +1808,7 @@ class Comments(Containers[Comment]):
     @property
     def post(self) -> Post_c:
         """
-        所在回复信息
+        所在楼层信息
         """
 
         return self._post

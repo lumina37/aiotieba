@@ -434,6 +434,7 @@ class UserInfo_t(object):
         user_name (str): 用户名
         nick_name_new (str): 新版昵称
 
+        level (int): 等级
         glevel (int): 贴吧成长等级
         gender (int): 性别
 
@@ -453,6 +454,7 @@ class UserInfo_t(object):
         '_portrait',
         '_user_name',
         '_nick_name_new',
+        '_level',
         '_glevel',
         '_gender',
         '_is_bawu',
@@ -470,6 +472,7 @@ class UserInfo_t(object):
             self._portrait = portrait
         self._user_name = data_proto.name
         self._nick_name_new = data_proto.name_show
+        self._level = data_proto.level_id
         self._glevel = data_proto.user_growth.level_id
         self._gender = data_proto.gender
         self._is_bawu = bool(data_proto.is_bawu)
@@ -564,6 +567,14 @@ class UserInfo_t(object):
         """
 
         return self._nick_name_new
+
+    @property
+    def level(self) -> int:
+        """
+        等级
+        """
+
+        return self._level
 
     @property
     def glevel(self) -> int:

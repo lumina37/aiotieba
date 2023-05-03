@@ -15,11 +15,11 @@ def parse_body(body: bytes) -> None:
         raise TiebaServerError(code, res_json['error'])
 
 
-async def request(http_core: HttpCore, fname: str, fid: int, user_id: int) -> bool:
+async def request(http_core: HttpCore, fid: int, user_id: int) -> bool:
     data = [
-        ('fn', fname),
+        ('fn', '-'),
         ('fid', fid),
-        ('block_un', ' '),
+        ('block_un', '-'),
         ('block_uid', user_id),
         ('tbs', http_core.account._tbs),
     ]
@@ -30,7 +30,7 @@ async def request(http_core: HttpCore, fname: str, fid: int, user_id: int) -> bo
         data,
     )
 
-    __log__ = f"fname={fname} user_id={user_id}"
+    __log__ = f"fid={fid} user_id={user_id}"
 
     body = await send_request(request, http_core.network, read_bufsize=1024)
     parse_body(body)

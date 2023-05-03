@@ -18,9 +18,9 @@ def parse_body(body: bytes) -> Appeals:
     return appeals
 
 
-async def request(http_core: HttpCore, fname: str, fid: int, pn: int, rn: int) -> Appeals:
+async def request(http_core: HttpCore, fid: int, pn: int, rn: int) -> Appeals:
     data = [
-        ('fn', fname),
+        ('fn', '-'),
         ('fid', fid),
         ('pn', pn),
         ('rn', rn),
@@ -33,7 +33,7 @@ async def request(http_core: HttpCore, fname: str, fid: int, pn: int, rn: int) -
         data,
     )
 
-    __log__ = "fname={fname}"  # noqa: F841
+    __log__ = "fid={fid}"  # noqa: F841
 
     body = await send_request(request, http_core.network, read_bufsize=64 * 1024)
     return parse_body(body)

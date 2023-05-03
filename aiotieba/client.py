@@ -202,9 +202,16 @@ class Client(object):
             bool: True无须执行 False失败
         """
 
-        if self._ws_core.status != WsStatus.OPEN:
-            await self._ws_core.connect()
-            await self.__upload_sec_key()
+        if self._ws_core.status == WsStatus.CLOSED:
+            try:
+                await self._ws_core.connect()
+                await self.__upload_sec_key()
+            except BaseException:
+                self._ws_core._status = WsStatus.CLOSED
+                raise
+            else:
+                self._ws_core._status = WsStatus.OPEN
+
         return True
 
     async def __upload_sec_key(self) -> None:
@@ -218,8 +225,6 @@ class Client(object):
             if group._group_type == GroupType.PRIVATE_MSG:
                 mid_manager.priv_gid = group._group_id
         mid_manager.gid2mid = {g._group_id: MsgIDPair(g._last_msg_id, g._last_msg_id) for g in groups}
-
-        self._ws_core._status = WsStatus.OPEN
 
     async def __init_tbs(self) -> bool:
         if self._account._tbs:
@@ -565,25 +570,25 @@ class Client(object):
     @handle_exception(get_comments.Comments)
     @_try_websocket
     async def get_comments(
-        self, tid: int, pid: int, /, pn: int = 1, *, is_floor: bool = False
+        self, tid: int, pid: int, /, pn: int = 1, *, is_comment: bool = False
     ) -> get_comments.Comments:
         """
         获取楼中楼回复
 
         Args:
             tid (int): 所在主题帖tid
-            pid (int): 所在回复pid或楼中楼pid
+            pid (int): 所在楼层的pid或楼中楼的pid
             pn (int, optional): 页码. Defaults to 1.
-            is_floor (bool, optional): pid是否指向楼中楼. Defaults to False.
+            is_comment (bool, optional): pid是否指向楼中楼 若指向楼中楼则获取其附近的楼中楼列表. Defaults to False.
 
         Returns:
             Comments: 楼中楼列表
         """
 
         if self._ws_core.status == WsStatus.OPEN:
-            return await get_comments.request_ws(self._ws_core, tid, pid, pn, is_floor)
+            return await get_comments.request_ws(self._ws_core, tid, pid, pn, is_comment)
 
-        return await get_comments.request_http(self._http_core, tid, pid, pn, is_floor)
+        return await get_comments.request_http(self._http_core, tid, pid, pn, is_comment)
 
     @handle_exception(search_post.Searches)
     async def search_post(
@@ -817,7 +822,7 @@ class Client(object):
         封禁用户
 
         Args:
-            fname_or_fid (str | int): 所在贴吧的贴吧名或fid
+            fname_or_fid (str | int): 所在贴吧的贴吧名或fid 优先fid
             _id (str | int): 用户id user_id / user_name / portrait 优先portrait
             day (Literal[1, 3, 10], optional): 封禁天数. Defaults to 1.
             reason (str, optional): 封禁理由. Defaults to ''.
@@ -826,12 +831,7 @@ class Client(object):
             bool: True成功 False失败
         """
 
-        if isinstance(fname_or_fid, str):
-            fname = fname_or_fid
-            fid = await self.get_fid(fname)
-        else:
-            fid = fname_or_fid
-            fname = await self.get_fname(fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         if not is_portrait(_id):
             user = await self.get_user_info(_id, ReqUInfo.PORTRAIT)
@@ -841,7 +841,7 @@ class Client(object):
 
         await self.__init_tbs()
 
-        return await block.request(self._http_core, fname, fid, portrait, day, reason)
+        return await block.request(self._http_core, fid, portrait, day, reason)
 
     @handle_exception(bool, no_format=True)
     async def unblock(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> bool:
@@ -849,19 +849,14 @@ class Client(object):
         解封用户
 
         Args:
-            fname_or_fid (str | int): 所在贴吧的贴吧名或fid
+            fname_or_fid (str | int): 所在贴吧的贴吧名或fid 优先fid
             _id (str | int): 用户id user_id / user_name / portrait 优先user_id
 
         Returns:
             bool: True成功 False失败
         """
 
-        if isinstance(fname_or_fid, str):
-            fname = fname_or_fid
-            fid = await self.get_fid(fname)
-        else:
-            fid = fname_or_fid
-            fname = await self.get_fname(fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         if not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
@@ -871,7 +866,7 @@ class Client(object):
 
         await self.__init_tbs()
 
-        return await unblock.request(self._http_core, fname, fid, user_id)
+        return await unblock.request(self._http_core, fid, user_id)
 
     @handle_exception(bool, no_format=True)
     async def hide_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
@@ -970,23 +965,17 @@ class Client(object):
         解除主题帖屏蔽
 
         Args:
-            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
+            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid 优先fid
             tid (int, optional): 待解除屏蔽的主题帖tid
 
         Returns:
             bool: True成功 False失败
         """
 
-        if isinstance(fname_or_fid, str):
-            fname = fname_or_fid
-            fid = await self.get_fid(fname)
-        else:
-            fid = fname_or_fid
-            fname = await self.get_fname(fid)
-
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
         await self.__init_tbs()
 
-        return await recover.request(self._http_core, fname, fid, tid, 0, is_hide=True)
+        return await recover.request(self._http_core, fid, tid, 0, is_hide=True)
 
     @handle_exception(bool, no_format=True)
     async def recover_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
@@ -994,23 +983,17 @@ class Client(object):
         恢复主题帖
 
         Args:
-            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
+            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid 优先fid
             tid (int, optional): 待恢复的主题帖tid
 
         Returns:
             bool: True成功 False失败
         """
 
-        if isinstance(fname_or_fid, str):
-            fname = fname_or_fid
-            fid = await self.get_fid(fname)
-        else:
-            fid = fname_or_fid
-            fname = await self.get_fname(fid)
-
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
         await self.__init_tbs()
 
-        return await recover.request(self._http_core, fname, fid, tid, 0, is_hide=False)
+        return await recover.request(self._http_core, fid, tid, 0, is_hide=False)
 
     @handle_exception(bool, no_format=True)
     async def recover_post(self, fname_or_fid: Union[str, int], /, pid: int) -> bool:
@@ -1018,23 +1001,17 @@ class Client(object):
         恢复主题帖
 
         Args:
-            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
+            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid 优先fid
             pid (int, optional): 待恢复的回复pid
 
         Returns:
             bool: True成功 False失败
         """
 
-        if isinstance(fname_or_fid, str):
-            fname = fname_or_fid
-            fid = await self.get_fid(fname)
-        else:
-            fid = fname_or_fid
-            fname = await self.get_fname(fid)
-
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
         await self.__init_tbs()
 
-        return await recover.request(self._http_core, fname, fid, 0, pid, is_hide=False)
+        return await recover.request(self._http_core, fid, 0, pid, is_hide=False)
 
     @handle_exception(bool, no_format=True)
     async def recover(
@@ -1044,7 +1021,7 @@ class Client(object):
         帖子恢复相关操作
 
         Args:
-            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
+            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid 优先fid
             tid (int, optional): 待恢复的主题帖tid. Defaults to 0.
             pid (int, optional): 待恢复的回复pid. Defaults to 0.
             is_hide (bool, optional): True则取消屏蔽主题帖 False则恢复删帖. Defaults to False.
@@ -1053,16 +1030,10 @@ class Client(object):
             bool: True成功 False失败
         """
 
-        if isinstance(fname_or_fid, str):
-            fname = fname_or_fid
-            fid = await self.get_fid(fname)
-        else:
-            fid = fname_or_fid
-            fname = await self.get_fname(fid)
-
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
         await self.__init_tbs()
 
-        return await recover.request(self._http_core, fname, fid, tid, pid, is_hide)
+        return await recover.request(self._http_core, fid, tid, pid, is_hide)
 
     @handle_exception(bool, no_format=True)
     async def move(self, fname_or_fid: Union[str, int], /, tid: int, *, to_tab_id: int, from_tab_id: int = 0) -> bool:
@@ -1236,7 +1207,7 @@ class Client(object):
         获取pn页的待恢复帖子列表
 
         Args:
-            fname_or_fid (str | int): 目标贴吧的贴吧名或fid
+            fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先fid
             name (str, optional): 通过被删帖作者的用户名/昵称查询 默认为空即查询全部. Defaults to ''.
             pn (int, optional): 页码. Defaults to 1.
 
@@ -1244,14 +1215,9 @@ class Client(object):
             Recovers: 待恢复帖子列表
         """
 
-        if isinstance(fname_or_fid, str):
-            fname = fname_or_fid
-            fid = await self.get_fid(fname)
-        else:
-            fid = fname_or_fid
-            fname = await self.get_fname(fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
-        return await get_recovers.request(self._http_core, fname, fid, name, pn)
+        return await get_recovers.request(self._http_core, fid, name, pn)
 
     @handle_exception(get_blocks.Blocks)
     async def get_blocks(self, fname_or_fid: Union[str, int], /, name: str = '', pn: int = 1) -> get_blocks.Blocks:
@@ -1259,7 +1225,7 @@ class Client(object):
         获取pn页的待解封用户列表
 
         Args:
-            fname_or_fid (str | int): 目标贴吧的贴吧名或fid
+            fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先fid
             name (str, optional): 通过被封禁用户的用户名/昵称查询 默认为空即查询全部. Defaults to ''.
             pn (int, optional): 页码. Defaults to 1.
 
@@ -1267,14 +1233,9 @@ class Client(object):
             Blocks: 待解封用户列表
         """
 
-        if isinstance(fname_or_fid, str):
-            fname = fname_or_fid
-            fid = await self.get_fid(fname)
-        else:
-            fid = fname_or_fid
-            fname = await self.get_fname(fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
-        return await get_blocks.request(self._http_core, fname, fid, name, pn)
+        return await get_blocks.request(self._http_core, fid, name, pn)
 
     @handle_exception(get_blacklist_users.BlacklistUsers)
     async def get_blacklist_users(
@@ -1353,7 +1314,7 @@ class Client(object):
         获取申诉请求列表
 
         Args:
-            fname_or_fid (str | int): 目标贴吧的贴吧名或fid
+            fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先fid
             pn (int, optional): 页码. Defaults to 1.
             rn (int, optional): 请求的条目数. Defaults to 5. Max to 50.
 
@@ -1361,16 +1322,10 @@ class Client(object):
             Appeals: 申诉请求列表
         """
 
-        if isinstance(fname_or_fid, str):
-            fname = fname_or_fid
-            fid = await self.get_fid(fname)
-        else:
-            fid = fname_or_fid
-            fname = await self.get_fname(fid)
-
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
         await self.__init_tbs()
 
-        return await get_unblock_appeals.request(self._http_core, fname, fid, pn, rn)
+        return await get_unblock_appeals.request(self._http_core, fid, pn, rn)
 
     @handle_exception(bool, no_format=True)
     async def handle_unblock_appeals(
@@ -1380,7 +1335,7 @@ class Client(object):
         拒绝或通过解封申诉
 
         Args:
-            fname_or_fid (str | int): 申诉所在贴吧的贴吧名或fid
+            fname_or_fid (str | int): 申诉所在贴吧的贴吧名或fid 优先fid
             appeal_ids (list[int]): 申诉请求的appeal_id列表. Length Max to 30.
             refuse (bool, optional): True则拒绝申诉 False则接受申诉. Defaults to True.
 
@@ -1388,16 +1343,10 @@ class Client(object):
             bool: True成功 False失败
         """
 
-        if isinstance(fname_or_fid, str):
-            fname = fname_or_fid
-            fid = await self.get_fid(fname)
-        else:
-            fid = fname_or_fid
-            fname = await self.get_fname(fid)
-
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
         await self.__init_tbs()
 
-        return await handle_unblock_appeals.request(self._http_core, fname, fid, appeal_ids, refuse)
+        return await handle_unblock_appeals.request(self._http_core, fid, appeal_ids, refuse)
 
     @handle_exception(get_images.null_ret_factory)
     async def get_image(self, img_url: str) -> "np.ndarray":
@@ -1694,14 +1643,14 @@ class Client(object):
         return await get_dislike_forums.request_http(self._http_core, pn, rn)
 
     @handle_exception(bool, no_format=True)
-    async def agree(self, tid: int, pid: int = 0, is_floor: bool = False) -> bool:
+    async def agree(self, tid: int, pid: int = 0, is_comment: bool = False) -> bool:
         """
         点赞主题帖或回复
 
         Args:
             tid (int): 待点赞的主题帖或回复所在的主题帖的tid
             pid (int, optional): 待点赞的回复pid. Defaults to 0.
-            is_floor (bool, optional): pid是否指向楼中楼. Defaults to False.
+            is_comment (bool, optional): pid是否指向楼中楼. Defaults to False.
 
         Returns:
             bool: True成功 False失败
@@ -1713,17 +1662,17 @@ class Client(object):
 
         await self.__init_tbs()
 
-        return await agree.request(self._http_core, tid, pid, is_floor, is_disagree=False, is_undo=False)
+        return await agree.request(self._http_core, tid, pid, is_comment, is_disagree=False, is_undo=False)
 
     @handle_exception(bool, no_format=True)
-    async def unagree(self, tid: int, pid: int = 0, is_floor: bool = False) -> bool:
+    async def unagree(self, tid: int, pid: int = 0, is_comment: bool = False) -> bool:
         """
         取消点赞主题帖或回复
 
         Args:
             tid (int): 待取消点赞的主题帖或回复所在的主题帖的tid
             pid (int, optional): 待取消点赞的回复pid. Defaults to 0.
-            is_floor (bool, optional): pid是否指向楼中楼. Defaults to False.
+            is_comment (bool, optional): pid是否指向楼中楼. Defaults to False.
 
         Returns:
             bool: True成功 False失败
@@ -1731,17 +1680,17 @@ class Client(object):
 
         await self.__init_tbs()
 
-        return await agree.request(self._http_core, tid, pid, is_floor, is_disagree=False, is_undo=True)
+        return await agree.request(self._http_core, tid, pid, is_comment, is_disagree=False, is_undo=True)
 
     @handle_exception(bool, no_format=True)
-    async def disagree(self, tid: int, pid: int = 0, is_floor: bool = False) -> bool:
+    async def disagree(self, tid: int, pid: int = 0, is_comment: bool = False) -> bool:
         """
         点踩主题帖或回复
 
         Args:
             tid (int): 待点踩的主题帖或回复所在的主题帖的tid
             pid (int, optional): 待点踩的回复pid. Defaults to 0.
-            is_floor (bool, optional): pid是否指向楼中楼. Defaults to False.
+            is_comment (bool, optional): pid是否指向楼中楼. Defaults to False.
 
         Returns:
             bool: True成功 False失败
@@ -1749,17 +1698,17 @@ class Client(object):
 
         await self.__init_tbs()
 
-        return await agree.request(self._http_core, tid, pid, is_floor, is_disagree=True, is_undo=False)
+        return await agree.request(self._http_core, tid, pid, is_comment, is_disagree=True, is_undo=False)
 
     @handle_exception(bool, no_format=True)
-    async def undisagree(self, tid: int, pid: int = 0, is_floor: bool = False) -> bool:
+    async def undisagree(self, tid: int, pid: int = 0, is_comment: bool = False) -> bool:
         """
         取消点踩主题帖或回复
 
         Args:
             tid (int): 待取消点踩的主题帖或回复所在的主题帖的tid
             pid (int, optional): 待取消点踩的回复pid. Defaults to 0.
-            is_floor (bool, optional): pid是否指向楼中楼. Defaults to False.
+            is_comment (bool, optional): pid是否指向楼中楼. Defaults to False.
 
         Returns:
             bool: True成功 False失败
@@ -1767,7 +1716,7 @@ class Client(object):
 
         await self.__init_tbs()
 
-        return await agree.request(self._http_core, tid, pid, is_floor, is_disagree=True, is_undo=True)
+        return await agree.request(self._http_core, tid, pid, is_comment, is_disagree=True, is_undo=True)
 
     @handle_exception(bool, no_format=True)
     async def agree_vimage(self, _id: Union[str, int]) -> bool:

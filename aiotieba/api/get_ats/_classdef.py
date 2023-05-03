@@ -253,7 +253,7 @@ class At(object):
         user (UserInfo_at): 发布者的用户信息
         author_id (int): 发布者的user_id
 
-        is_floor (bool): 是否楼中楼
+        is_comment (bool): 是否楼中楼
         is_thread (bool): 是否主题帖
 
         create_time (int): 创建时间
@@ -266,7 +266,7 @@ class At(object):
         '_pid',
         '_user',
         '_author_id',
-        '_is_floor',
+        '_is_comment',
         '_is_thread',
         '_create_time',
     ]
@@ -278,7 +278,7 @@ class At(object):
         self._pid = int(data_map['post_id'])
         self._user = UserInfo_at()._init(data_map['replyer'])
         self._author_id = self._user._user_id
-        self._is_floor = bool(int(data_map['is_floor']))
+        self._is_comment = bool(int(data_map['is_floor']))
         self._is_thread = bool(int(data_map['is_first_post']))
         self._create_time = int(data_map['time'])
 
@@ -289,7 +289,7 @@ class At(object):
                 'pid': self._pid,
                 'user': self._user.log_name,
                 'text': self._text,
-                'is_floor': self._is_floor,
+                'is_comment': self._is_comment,
                 'is_thread': self._is_thread,
             }
         )
@@ -349,12 +349,12 @@ class At(object):
         return self._author_id
 
     @property
-    def is_floor(self) -> bool:
+    def is_comment(self) -> bool:
         """
         是否楼中楼
         """
 
-        return self._is_floor
+        return self._is_comment
 
     @property
     def is_thread(self) -> bool:

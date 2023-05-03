@@ -15,7 +15,7 @@ def parse_body(body: bytes) -> None:
         raise TiebaServerError(code, res_json['error_msg'])
 
 
-async def request(http_core: HttpCore, fname: str, fid: int, portrait: str, day: int, reason: str) -> bool:
+async def request(http_core: HttpCore, fid: int, portrait: str, day: int, reason: str) -> bool:
     data = [
         ('BDUSS', http_core.account._BDUSS),
         ('day', day),
@@ -24,7 +24,7 @@ async def request(http_core: HttpCore, fname: str, fid: int, portrait: str, day:
         ('portrait', portrait),
         ('reason', reason),
         ('tbs', http_core.account._tbs),
-        ('word', fname),
+        ('word', '-'),
         ('z', '6'),
     ]
 
@@ -34,7 +34,7 @@ async def request(http_core: HttpCore, fname: str, fid: int, portrait: str, day:
         data,
     )
 
-    __log__ = f"fname={fname} portrait={portrait} day={day}"
+    __log__ = f"fid={fid} portrait={portrait} day={day}"
 
     body = await send_request(request, http_core.network, read_bufsize=1024)
     parse_body(body)
