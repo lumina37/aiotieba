@@ -1482,7 +1482,7 @@ class Threads(Containers[Thread]):
             self._tab_map = {p.tab_name: p.tab_id for p in data_proto.nav_tab_info.tab}
 
             self._objs = [Thread(p) for p in data_proto.thread_list]
-            users = {p.id: UserInfo_t()._init(p) for p in data_proto.user_list if p.id}
+            users = {i: UserInfo_t()._init(p) for p in data_proto.user_list if (i := p.id)}
             for thread in self._objs:
                 thread._fname = self._forum._fname
                 thread._fid = self._forum._fid

@@ -85,6 +85,7 @@ class UserInfo_home(object):
         forum_num (int): 关注贴吧数
         sign (str): 个性签名
         ip (str): ip归属地
+        icons (list[str]): 印记信息
         vimage (VirtualImage_home): 虚拟形象信息
 
         is_bawu (bool): 是否吧务
@@ -113,6 +114,7 @@ class UserInfo_home(object):
         '_follow_num',
         '_forum_num',
         '_sign',
+        '_icons',
         '_vimage',
         '_ip',
         '_is_bawu',
@@ -142,6 +144,7 @@ class UserInfo_home(object):
             self._forum_num = data_proto.my_like_num
             self._sign = data_proto.intro
             self._ip = data_proto.ip_address
+            self._icons = [name for i in data_proto.iconinfo if (name := i.name)]
             self._vimage = VirtualImage_home()._init(data_proto.virtual_image_info)
             self._is_bawu = bool(data_proto.is_bawu)
             self._is_vip = bool(data_proto.new_tshow_icon)
@@ -163,6 +166,7 @@ class UserInfo_home(object):
             self._follow_num = 0
             self._forum_num = 0
             self._sign = ''
+            self._icons = []
             self._vimage = VirtualImage_home()._init_null()
             self._ip = ''
             self._is_bawu = False
@@ -341,6 +345,14 @@ class UserInfo_home(object):
         """
 
         return self._ip
+
+    @property
+    def icons(self) -> List[str]:
+        """
+        印记信息
+        """
+
+        return self._icons
 
     @property
     def vimage(self) -> VirtualImage_home:

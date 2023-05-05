@@ -2254,7 +2254,7 @@ class Posts(Containers[Post]):
             self._thread._fname = self._forum._fname
 
             self._objs = [Post(p) for p in data_proto.post_list]
-            users = {p.id: UserInfo_p()._init(p) for p in data_proto.user_list if p.id}
+            users = {i: UserInfo_p()._init(p) for p in data_proto.user_list if (i := p.id)}
             for post in self._objs:
                 post._fid = self._forum._fid
                 post._fname = self._forum._fname

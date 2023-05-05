@@ -6,6 +6,10 @@ message User {
     string name = 3;
     string name_show = 4;
     string portrait = 5;
+    message Icon {
+        string name = 1;
+    }
+    repeated Icon iconinfo = 17;
     int32 is_coreuser = 20;
     int32 level_id = 23;
     int32 is_bawu = 25;
