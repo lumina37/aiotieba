@@ -82,6 +82,7 @@ class UserInfo_home(object):
         post_num (int): 发帖数
         fan_num (int): 粉丝数
         follow_num (int): 关注数
+        forum_num (int): 关注贴吧数
         sign (str): 个性签名
         ip (str): ip归属地
         vimage (VirtualImage_home): 虚拟形象信息
@@ -110,6 +111,7 @@ class UserInfo_home(object):
         '_post_num',
         '_fan_num',
         '_follow_num',
+        '_forum_num',
         '_sign',
         '_vimage',
         '_ip',
@@ -137,6 +139,7 @@ class UserInfo_home(object):
             self._post_num = data_proto.post_num
             self._fan_num = data_proto.fans_num
             self._follow_num = data_proto.concern_num
+            self._forum_num = data_proto.my_like_num
             self._sign = data_proto.intro
             self._ip = data_proto.ip_address
             self._vimage = VirtualImage_home()._init(data_proto.virtual_image_info)
@@ -158,6 +161,7 @@ class UserInfo_home(object):
             self._post_num = 0
             self._fan_num = 0
             self._follow_num = 0
+            self._forum_num = 0
             self._sign = ''
             self._vimage = VirtualImage_home()._init_null()
             self._ip = ''
@@ -313,6 +317,14 @@ class UserInfo_home(object):
         """
 
         return self._follow_num
+
+    @property
+    def forum_num(self) -> int:
+        """
+        关注贴吧数
+        """
+
+        return self._forum_num
 
     @property
     def sign(self) -> str:

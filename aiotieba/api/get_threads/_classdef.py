@@ -487,6 +487,7 @@ class UserInfo_t(object):
         self._portrait = ''
         self._user_name = ''
         self._nick_name_new = ''
+        self._level = 0
         self._glevel = 0
         self._gender = 0
         self._is_bawu = False

@@ -14,6 +14,7 @@ message User {
     int32 fans_num = 30;
     int32 concern_num = 31;
     int32 sex = 32;
+    int32 my_like_num = 33;
     string intro = 34;
     int32 post_num = 37;
     string tb_age = 38;
