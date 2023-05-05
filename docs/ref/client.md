@@ -32,7 +32,7 @@ class `aiotieba.Client`(*BDUSS_key: str | None = None*, *try_ws: bool = False*, 
 ### 类属性
 
 <div class="docstring" markdown="1">
-**core** - *(TbCore)* 贴吧核心参数容器
+**account** - *(Account)* 贴吧用户信息容器
 </div>
 
 ### 类方法
