@@ -687,6 +687,7 @@ class UserInfo_p(object):
         glevel (int): 贴吧成长等级
         gender (int): 性别
         ip (str): ip归属地
+        icons (list[str]): 印记信息
 
         is_bawu (bool): 是否吧务
         is_vip (bool): 是否超级会员
@@ -708,6 +709,7 @@ class UserInfo_p(object):
         '_glevel',
         '_gender',
         '_ip',
+        '_icons',
         '_is_bawu',
         '_is_vip',
         '_is_god',
@@ -727,6 +729,7 @@ class UserInfo_p(object):
         self._glevel = data_proto.user_growth.level_id
         self._gender = data_proto.gender
         self._ip = data_proto.ip_address
+        self._icons = [name for i in data_proto.iconinfo if (name := i.name)]
         self._is_bawu = bool(data_proto.is_bawu)
         self._is_vip = bool(data_proto.new_tshow_icon)
         self._is_god = bool(data_proto.new_god_data.status)
@@ -743,6 +746,7 @@ class UserInfo_p(object):
         self._glevel = 0
         self._gender = 0
         self._ip = ''
+        self._icons = []
         self._is_bawu = False
         self._is_vip = False
         self._is_god = False
@@ -858,6 +862,14 @@ class UserInfo_p(object):
         """
 
         return self._ip
+
+    @property
+    def icons(self) -> List[str]:
+        """
+        印记信息
+        """
+
+        return self._icons
 
     @property
     def is_bawu(self) -> bool:
@@ -1560,6 +1572,7 @@ class UserInfo_pt(object):
         level (int): 等级
         glevel (int): 贴吧成长等级
         ip (str): ip归属地
+        icons (list[str]): 印记信息
 
         is_bawu (bool): 是否吧务
         is_vip (bool): 是否超级会员
@@ -1580,6 +1593,7 @@ class UserInfo_pt(object):
         '_level',
         '_glevel',
         '_ip',
+        '_icons',
         '_is_bawu',
         '_is_vip',
         '_is_god',
@@ -1598,6 +1612,7 @@ class UserInfo_pt(object):
         self._level = data_proto.level_id
         self._glevel = data_proto.user_growth.level_id
         self._ip = data_proto.ip_address
+        self._icons = [name for i in data_proto.iconinfo if (name := i.name)]
         self._is_bawu = bool(data_proto.is_bawu)
         self._is_vip = bool(data_proto.new_tshow_icon)
         self._is_god = bool(data_proto.new_god_data.status)
@@ -1613,6 +1628,7 @@ class UserInfo_pt(object):
         self._level = 0
         self._glevel = 0
         self._ip = ''
+        self._icons = []
         self._is_bawu = False
         self._is_vip = False
         self._is_god = False
@@ -1716,6 +1732,14 @@ class UserInfo_pt(object):
         """
 
         return self._ip
+
+    @property
+    def icons(self) -> List[str]:
+        """
+        印记信息
+        """
+
+        return self._icons
 
     @property
     def is_bawu(self) -> bool:
