@@ -26,7 +26,7 @@ BDUSS是一串由纯ascii字符组成的，长度为192的字符串
 
 搜索 你的浏览器型号+如何查看网站的Cookie 就能知道如何获取你的贴吧账号的BDUSS了
 
-以Chorme为例，在任何一个贴吧网页下按<kbd>F12</kbd>调出开发者选项，然后你就能在下图的位置找到它
+以Chrome为例，在任何一个贴吧网页下按<kbd>F12</kbd>调出开发者选项，然后你就能在下图的位置找到它
 
 ![Chrome Cookie](https://user-images.githubusercontent.com/48282276/179938990-77139ea2-2d94-4d38-8d7d-9c6a3d99b69e.png)
 
