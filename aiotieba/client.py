@@ -2041,7 +2041,7 @@ class Client(object):
     @_force_websocket
     async def set_msg_readed(self, message: get_group_msg.WsMessage) -> bool:
         """
-        发送私信
+        将一条私信设为已读
 
         Args:
             message (WsMessage): websocket私信消息
