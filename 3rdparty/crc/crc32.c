@@ -46,12 +46,12 @@ static uint32_t crc32_table[] = {
     0x24b4a3a6L, 0xbad03605L, 0xcdd70693L, 0x54de5729L, 0x23d967bfL, 0xb3667a2eL, 0xc4614ab8L, 0x5d681b02L, 0x2a6f2b94L,
     0xb40bbe37L, 0xc30c8ea1L, 0x5a05df1bL, 0x2d02ef8dL};
 
-uint32_t crc32(const char* s, size_t len)
+uint32_t crc32(const unsigned char* data, size_t length)
 {
     uint32_t crc32_val = 0xFFFFFFFF;
 
-    unsigned char* cursor = (unsigned char*)s;
-    while (len--) {
+    unsigned char* cursor = data;
+    while (length--) {
         crc32_val = (crc32_val >> 8) ^ crc32_table[(crc32_val & 0xFF) ^ *cursor++];
     }
 

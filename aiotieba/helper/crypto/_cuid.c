@@ -72,7 +72,7 @@ int tbc_heliosHash(unsigned char* dst, const unsigned char* src, size_t srcSize)
 
     // 1st hash with CRC32
     buffOffset += STEP_SIZE;
-    crc32Val = (uint64_t)crc32((char*)buffer, buffOffset);
+    crc32Val = (uint64_t)crc32(buffer, buffOffset);
     __update(&sec, crc32Val, 8, false);
     __writeBuffer(buffer + buffOffset, sec); // Now buffer is [src, -1 * 5, crcrc, ...]
 
@@ -90,7 +90,7 @@ int tbc_heliosHash(unsigned char* dst, const unsigned char* src, size_t srcSize)
 
     // 4th hash with CRC32
     buffOffset += STEP_SIZE;
-    crc32Val = (uint64_t)crc32((char*)buffer, buffOffset);
+    crc32Val = (uint64_t)crc32(buffer, buffOffset);
     __update(&sec, crc32Val, 7, true);
 
     // fill dst
