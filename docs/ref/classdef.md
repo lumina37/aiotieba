@@ -361,7 +361,7 @@ def `__bool__`() -> *bool*
 
 **forum** - *([BasicForum](#basicforum))* 所在吧信息
 
-**thread** - *([Thread](#thread))* 所在吧信息
+**thread** - *([Thread](#thread))* 所在主题帖信息
 
 **has_fold** - *(bool)* 是否存在折叠楼层
 </div>
@@ -409,7 +409,7 @@ def `__bool__`() -> *bool*
 
 **forum** - *([BasicForum](#basicforum))* 所在吧信息
 
-**thread** - *([Thread](#thread))* 所在吧信息
+**thread** - *([Thread](#thread))* 所在主题帖信息
 
 **post** - *([Post](#post))* 所在吧信息
 </div>
