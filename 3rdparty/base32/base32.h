@@ -25,23 +25,23 @@
 #ifndef __BASE32_H_
 #define __BASE32_H_
 
-#include <stddef.h>   // size_t
+#include <stddef.h> // size_t
 
- /**
-  * Returns the length of the output buffer required to encode len bytes of
-  * data into base32. This is a macro to allow users to define buffer size at
-  * compilation time.
-  */
-#define BASE32_LEN(len)  (((len)/5)*8 + ((len) % 5 ? 8 : 0))
+/**
+ * Returns the length of the output buffer required to encode len bytes of
+ * data into base32. This is a macro to allow users to define buffer size at
+ * compilation time.
+ */
+#define BASE32_LEN(len) (((len) / 5) * 8 + ((len) % 5 ? 8 : 0))
 
-   /**
-	* Encode the data pointed to by plain into base32 and store the
-	* result at the address pointed to by coded. The "coded" argument
-	* must point to a location that has enough available space
-	* to store the whole coded string. The resulting string will only
-	* contain characters from the [A-Z2-7=] set. The "len" arguments
-	* define how many bytes will be read from the "plain" buffer.
-	**/
+/**
+ * Encode the data pointed to by plain into base32 and store the
+ * result at the address pointed to by coded. The "coded" argument
+ * must point to a location that has enough available space
+ * to store the whole coded string. The resulting string will only
+ * contain characters from the [A-Z2-7=] set. The "len" arguments
+ * define how many bytes will be read from the "plain" buffer.
+ **/
 void base32_encode(const unsigned char* plain, int len, unsigned char* coded);
 
 #endif

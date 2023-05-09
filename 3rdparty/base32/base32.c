@@ -44,20 +44,17 @@
  * systems that don't have exactly 8 bits per (unsigned) char.
  **/
 
-static inline int min(int x, int y)
-{
-	return x < y ? x : y;
-}
+static inline int min(int x, int y) { return x < y ? x : y; }
 
 static const unsigned char PADDING_CHAR = '=';
 
 /**
  * Pad the given buffer with len padding characters.
  */
-static inline void pad(unsigned char *buf, int len)
+static inline void pad(unsigned char* buf, int len)
 {
-	for (int i = 0; i < len; i++)
-		buf[i] = PADDING_CHAR;
+    for (int i = 0; i < len; i++)
+        buf[i] = PADDING_CHAR;
 }
 
 /**
@@ -66,8 +63,8 @@ static inline void pad(unsigned char *buf, int len)
  */
 static inline unsigned char encode_char(unsigned char c)
 {
-	static unsigned char base32[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-	return base32[c & 0x1F]; // 0001 1111
+    static unsigned char base32[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+    return base32[c & 0x1F]; // 0001 1111
 }
 
 /**
@@ -82,8 +79,8 @@ static inline unsigned char encode_char(unsigned char c)
  */
 static inline int get_octet(int block)
 {
-	assert(block >= 0 && block < 8);
-	return (block * 5) / 8;
+    assert(block >= 0 && block < 8);
+    return (block * 5) / 8;
 }
 
 /**
@@ -105,8 +102,8 @@ static inline int get_octet(int block)
  **/
 static inline int get_offset(int block)
 {
-	assert(block >= 0 && block < 8);
-	return (8 - 5 - (5 * block) % 8);
+    assert(block >= 0 && block < 8);
+    return (8 - 5 - (5 * block) % 8);
 }
 
 /**
@@ -116,10 +113,10 @@ static inline int get_offset(int block)
  */
 static inline unsigned char shift_right(unsigned char byte, char offset)
 {
-	if (offset > 0)
-		return byte >> offset;
-	else
-		return byte << -offset;
+    if (offset > 0)
+        return byte >> offset;
+    else
+        return byte << -offset;
 }
 
 /**
@@ -128,39 +125,36 @@ static inline unsigned char shift_right(unsigned char byte, char offset)
  * sequences shorter than 5 octets is supported and padding will be added to the
  * output as per the specification.
  */
-static void encode_sequence(const unsigned char *plain, int len, unsigned char *coded)
+static void encode_sequence(const unsigned char* plain, int len, unsigned char* coded)
 {
-	assert(CHAR_BIT == 8); // not sure this would work otherwise
-	assert(len >= 0 && len <= 5);
+    assert(CHAR_BIT == 8); // not sure this would work otherwise
+    assert(len >= 0 && len <= 5);
 
-	for (int block = 0; block < 8; block++)
-	{
-		int octet = get_octet(block); // figure out which octet this block starts in
-		int junk = get_offset(block); // how many bits do we drop from this octet?
+    for (int block = 0; block < 8; block++) {
+        int octet = get_octet(block); // figure out which octet this block starts in
+        int junk = get_offset(block); // how many bits do we drop from this octet?
 
-		if (octet >= len)
-		{ // we hit the end of the buffer
-			pad(&coded[block], 8 - block);
-			return;
-		}
+        if (octet >= len) { // we hit the end of the buffer
+            pad(&coded[block], 8 - block);
+            return;
+        }
 
-		unsigned char c = shift_right(plain[octet], junk); // first part
+        unsigned char c = shift_right(plain[octet], junk); // first part
 
-		if (junk < 0			// is there a second part?
-			&& octet < len - 1) // is there still something to read?
-		{
-			c |= shift_right(plain[octet + 1], 8 + junk);
-		}
-		coded[block] = encode_char(c);
-	}
+        if (junk < 0            // is there a second part?
+            && octet < len - 1) // is there still something to read?
+        {
+            c |= shift_right(plain[octet + 1], 8 + junk);
+        }
+        coded[block] = encode_char(c);
+    }
 }
 
-void base32_encode(const unsigned char *plain, int len, unsigned char *coded)
+void base32_encode(const unsigned char* plain, int len, unsigned char* coded)
 {
-	// All the hard work is done in encode_sequence(),
-	// here we just need to feed it the data sequence by sequence.
-	for (int i = 0, j = 0; i < len; i += 5, j += 8)
-	{
-		encode_sequence(&plain[i], min(len - i, 5), &coded[j]);
-	}
+    // All the hard work is done in encode_sequence(),
+    // here we just need to feed it the data sequence by sequence.
+    for (int i = 0, j = 0; i < len; i += 5, j += 8) {
+        encode_sequence(&plain[i], min(len - i, 5), &coded[j]);
+    }
 }
