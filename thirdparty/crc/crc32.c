@@ -50,7 +50,7 @@ uint32_t crc32(const unsigned char* data, size_t length)
 {
     uint32_t crc32_val = 0xFFFFFFFF;
 
-    unsigned char* cursor = data;
+    unsigned char* cursor = (unsigned char*)data;
     while (length--) {
         crc32_val = (crc32_val >> 8) ^ crc32_table[(crc32_val & 0xFF) ^ *cursor++];
     }
