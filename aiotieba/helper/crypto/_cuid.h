@@ -13,7 +13,7 @@
  *
  * @note 12.x loc: com.baidu.tieba.l40.a / com.baidu.tieba.pz.a
  */
-int tbc_heliosHash(unsigned char *dst, const unsigned char *src, size_t srcSize);
+int tbc_heliosHash(unsigned char* dst, const unsigned char* src, size_t srcSize);
 
 /**
  * @brief generate `cuid_galaxy2`
@@ -25,7 +25,7 @@ int tbc_heliosHash(unsigned char *dst, const unsigned char *src, size_t srcSize)
  *
  * @note 12.x loc: com.baidu.tieba.oz.m
  */
-int tbc_cuid_galaxy2(unsigned char *dst, const unsigned char *androidID);
+int tbc_cuid_galaxy2(unsigned char* dst, const unsigned char* androidID);
 
 /**
  * @brief generate `c3_aid`
@@ -38,4 +38,4 @@ int tbc_cuid_galaxy2(unsigned char *dst, const unsigned char *androidID);
  *
  * @note 12.x loc: com.baidu.tieba.r50.f
  */
-int tbc_c3_aid(unsigned char *dst, const unsigned char *androidID, const unsigned char *uuid);
+int tbc_c3_aid(unsigned char* dst, const unsigned char* androidID, const unsigned char* uuid);

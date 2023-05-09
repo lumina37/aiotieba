@@ -2,4 +2,4 @@
 
 #include "_python.h"
 
-PyObject *sign(PyObject *self, PyObject *args);
+PyObject* sign(PyObject* self, PyObject* args);

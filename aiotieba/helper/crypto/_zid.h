@@ -14,4 +14,4 @@
  *
  * @note 12.x loc: com.baidu.sofire.x6.oCOCcooCCoC.ocOOCCoOOCcC.CcooOoocOOo
  */
-int tbc_rc4_42(unsigned char *dst, const unsigned char *xyusMd5Str, const unsigned char *cbcSecKey);
+int tbc_rc4_42(unsigned char* dst, const unsigned char* xyusMd5Str, const unsigned char* cbcSecKey);
