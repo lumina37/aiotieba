@@ -11,7 +11,7 @@ typedef struct rc4_42_context {
     unsigned char m[256];
 } rc4_42_context;
 
-static inline void rc4_42_setup(rc4_42_context* ctx, const unsigned char* key, unsigned int keylen)
+static inline void rc4_42_setup(rc4_42_context* ctx, const unsigned char* key, unsigned int keyLen)
 {
     int i, j, a;
     unsigned int k;
@@ -27,7 +27,7 @@ static inline void rc4_42_setup(rc4_42_context* ctx, const unsigned char* key, u
     j = k = 0;
 
     for (i = 0; i < 256; i++, k++) {
-        if (k >= keylen)
+        if (k >= keyLen)
             k = 0;
 
         a = m[i];
@@ -37,7 +37,7 @@ static inline void rc4_42_setup(rc4_42_context* ctx, const unsigned char* key, u
     }
 }
 
-static void rc4_42_crypt(rc4_42_context* ctx, size_t length, const unsigned char* input, unsigned char* output)
+static void rc4_42_crypt(rc4_42_context* ctx, const unsigned char* src, size_t srcLen, unsigned char* dst)
 {
     int x, y, a, b;
     size_t i;
@@ -47,7 +47,7 @@ static void rc4_42_crypt(rc4_42_context* ctx, size_t length, const unsigned char
     y = ctx->y;
     m = ctx->m;
 
-    for (i = 0; i < length; i++) {
+    for (i = 0; i < srcLen; i++) {
         x = (x + 1) & 0xFF;
         a = m[x];
         y = (y + a) & 0xFF;
@@ -56,20 +56,20 @@ static void rc4_42_crypt(rc4_42_context* ctx, size_t length, const unsigned char
         m[x] = (unsigned char)b;
         m[y] = (unsigned char)a;
 
-        output[i] = (unsigned char)(input[i] ^ m[(unsigned char)(a + b)]);
-        output[i] = output[i] ^ 42; // different from general RC4
+        dst[i] = (unsigned char)(src[i] ^ m[(unsigned char)(a + b)]);
+        dst[i] = dst[i] ^ 42; // different from general RC4
     }
 
     ctx->x = x;
     ctx->y = y;
 }
 
-int tbc_rc4_42(unsigned char* dst, const unsigned char* xyusMd5Str, const unsigned char* cbcSecKey)
+int tbc_rc4_42(const unsigned char* xyusMd5Str, const unsigned char* cbcSecKey, unsigned char* dst)
 {
     rc4_42_context rc442Ctx;
 
     rc4_42_setup(&rc442Ctx, xyusMd5Str, TBC_MD5_STR_SIZE);
-    rc4_42_crypt(&rc442Ctx, TBC_CBC_SECKEY_SIZE, cbcSecKey, dst);
+    rc4_42_crypt(&rc442Ctx, cbcSecKey, TBC_CBC_SECKEY_SIZE, dst);
 
     return TBC_OK;
 }

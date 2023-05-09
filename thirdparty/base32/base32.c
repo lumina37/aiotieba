@@ -15,24 +15,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string.h>
-
-#include "base32.h"
+#include "base32/base32.h"
 
 static unsigned char base32_table[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
                                        'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '2', '3', '4', '5', '6', '7'};
 
-void base32_encode(const unsigned char* data, int length, unsigned char* result)
+void base32_encode(const unsigned char* src, int srcLen, unsigned char* dst)
 {
     int count = 0;
-    int buffer = data[0];
+    int buffer = src[0];
     int next = 1;
     int bitsLeft = 8;
-    while (bitsLeft > 0 || next < length) {
+    while (bitsLeft > 0 || next < srcLen) {
         if (bitsLeft < 5) {
-            if (next < length) {
+            if (next < srcLen) {
                 buffer <<= 8;
-                buffer |= data[next++] & 0xFF;
+                buffer |= src[next++] & 0xFF;
                 bitsLeft += 8;
             } else {
                 int pad = 5 - bitsLeft;
@@ -42,6 +40,6 @@ void base32_encode(const unsigned char* data, int length, unsigned char* result)
         }
         int index = 0x1F & (buffer >> (bitsLeft - 5));
         bitsLeft -= 5;
-        result[count++] = base32_table[index];
+        dst[count++] = base32_table[index];
     }
 }

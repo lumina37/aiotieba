@@ -54,7 +54,7 @@ static inline void __writeBuffer(unsigned char* buffer, const uint64_t sec)
     }
 }
 
-int tbc_heliosHash(unsigned char* dst, const unsigned char* src, size_t srcSize)
+int tbc_heliosHash(const unsigned char* src, size_t srcSize, unsigned char* dst)
 {
     size_t _buffSize = srcSize + ((size_t)HASHER_NUM * STEP_SIZE);
     unsigned char* buffer = malloc(_buffSize); // internal
@@ -101,7 +101,7 @@ int tbc_heliosHash(unsigned char* dst, const unsigned char* src, size_t srcSize)
     return TBC_OK;
 }
 
-int tbc_cuid_galaxy2(unsigned char* dst, const unsigned char* androidID)
+int tbc_cuid_galaxy2(const unsigned char* androidID, unsigned char* dst)
 {
     int err = TBC_OK;
 
@@ -135,7 +135,7 @@ int tbc_cuid_galaxy2(unsigned char* dst, const unsigned char* androidID)
 
     // step 4: build dst buffer and compute helios hash
     unsigned char heHash[TBC_HELIOS_HASH_SIZE];
-    err = tbc_heliosHash(heHash, dst, TBC_MD5_STR_SIZE);
+    err = tbc_heliosHash(dst, TBC_MD5_STR_SIZE, heHash);
     if (err) {
         return err;
     }
@@ -147,7 +147,7 @@ int tbc_cuid_galaxy2(unsigned char* dst, const unsigned char* androidID)
     return err;
 }
 
-int tbc_c3_aid(unsigned char* dst, const unsigned char* androidID, const unsigned char* uuid)
+int tbc_c3_aid(const unsigned char* androidID, const unsigned char* uuid, unsigned char* dst)
 {
     int err = TBC_OK;
 
@@ -184,7 +184,7 @@ int tbc_c3_aid(unsigned char* dst, const unsigned char* androidID, const unsigne
 
     // step 5: build dst buffer and compute helios hash
     unsigned char heHash[TBC_HELIOS_HASH_SIZE];
-    err = tbc_heliosHash(heHash, dst, dstOffset);
+    err = tbc_heliosHash(dst, dstOffset, heHash);
     if (err) {
         return err;
     }

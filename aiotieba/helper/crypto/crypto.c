@@ -17,7 +17,7 @@ PyObject* cuid_galaxy2(PyObject* self, PyObject* args)
         return NULL;
     }
 
-    int err = tbc_cuid_galaxy2(dst, androidID);
+    int err = tbc_cuid_galaxy2(androidID, dst);
     if (err) {
         PyErr_NoMemory();
         return NULL;
@@ -39,7 +39,7 @@ PyObject* c3_aid(PyObject* self, PyObject* args)
         return NULL;
     }
 
-    int err = tbc_c3_aid(dst, androidID, uuid);
+    int err = tbc_c3_aid(androidID, uuid, dst);
     if (err) {
         PyErr_NoMemory();
         return NULL;
@@ -61,7 +61,7 @@ PyObject* rc4_42(PyObject* self, PyObject* args)
         return NULL;
     }
 
-    tbc_rc4_42(dst, xyusMd5Str, cbcSecKey);
+    tbc_rc4_42(xyusMd5Str, cbcSecKey, dst);
 
     return PyBytes_FromStringAndSize((char*)dst, TBC_RC4_SIZE);
 }
