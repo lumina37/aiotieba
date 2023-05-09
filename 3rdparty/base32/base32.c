@@ -46,7 +46,7 @@
 
 static inline int min(int x, int y) { return x < y ? x : y; }
 
-static const unsigned char PADDING_CHAR = '=';
+#define PADDING_CHAR '='
 
 /**
  * Pad the given buffer with len padding characters.
@@ -63,7 +63,8 @@ static inline void pad(unsigned char* buf, int len)
  */
 static inline unsigned char encode_char(unsigned char c)
 {
-    static unsigned char base32[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+    static unsigned char base32[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
+                                     'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '2', '3', '4', '5', '6', '7'};
     return base32[c & 0x1F]; // 0001 1111
 }
 
