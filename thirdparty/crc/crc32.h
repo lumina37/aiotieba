@@ -13,6 +13,10 @@
 
 #pragma once
 
+#ifndef _MSC_VER
+#include <stddef.h>
+#endif
+
 #include <stdint.h>
 
 uint32_t crc32(const unsigned char* src, size_t srcLen);
