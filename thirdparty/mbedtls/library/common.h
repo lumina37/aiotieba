@@ -23,11 +23,8 @@
 #ifndef MBEDTLS_LIBRARY_COMMON_H
 #define MBEDTLS_LIBRARY_COMMON_H
 
-#include "mbedtls/build_info.h"
 #include "alignment.h"
 
-#include <stddef.h>
-#include <stdint.h>
 #include <stddef.h>
 
 /** Helper to define a function as static except when building invasive tests.
@@ -52,13 +49,12 @@
 #endif
 
 #if defined(MBEDTLS_TEST_HOOKS)
-extern void (*mbedtls_test_hook_test_fail)(const char *test, int line, const char *file);
-#define MBEDTLS_TEST_HOOK_TEST_ASSERT(TEST) \
-    do { \
-        if ((!(TEST)) && ((*mbedtls_test_hook_test_fail) != NULL)) \
-        { \
-            (*mbedtls_test_hook_test_fail)( #TEST, __LINE__, __FILE__); \
-        } \
+extern void (*mbedtls_test_hook_test_fail)(const char* test, int line, const char* file);
+#define MBEDTLS_TEST_HOOK_TEST_ASSERT(TEST)                                                                            \
+    do {                                                                                                               \
+        if ((!(TEST)) && ((*mbedtls_test_hook_test_fail) != NULL)) {                                                   \
+            (*mbedtls_test_hook_test_fail)(#TEST, __LINE__, __FILE__);                                                 \
+        }                                                                                                              \
     } while (0)
 #else
 #define MBEDTLS_TEST_HOOK_TEST_ASSERT(TEST)
@@ -86,11 +82,7 @@ extern void (*mbedtls_test_hook_test_fail)(const char *test, int line, const cha
  *              Note that this is only a valid pointer if the size of the
  *              buffer is at least \p n + 1.
  */
-static inline unsigned char *mbedtls_buffer_offset(
-    unsigned char *p, size_t n)
-{
-    return p == NULL ? NULL : p + n;
-}
+static inline unsigned char* mbedtls_buffer_offset(unsigned char* p, size_t n) { return p == NULL ? NULL : p + n; }
 
 /** Return an offset into a read-only buffer.
  *
@@ -103,8 +95,7 @@ static inline unsigned char *mbedtls_buffer_offset(
  *              Note that this is only a valid pointer if the size of the
  *              buffer is at least \p n + 1.
  */
-static inline const unsigned char *mbedtls_buffer_offset_const(
-    const unsigned char *p, size_t n)
+static inline const unsigned char* mbedtls_buffer_offset_const(const unsigned char* p, size_t n)
 {
     return p == NULL ? NULL : p + n;
 }
@@ -120,7 +111,7 @@ static inline const unsigned char *mbedtls_buffer_offset_const(
  * \param   b Pointer to input (buffer of at least \p n bytes)
  * \param   n Number of bytes to process.
  */
-inline void mbedtls_xor(unsigned char *r, const unsigned char *a, const unsigned char *b, size_t n)
+inline void mbedtls_xor(unsigned char* r, const unsigned char* a, const unsigned char* b, size_t n)
 {
     size_t i = 0;
 #if defined(MBEDTLS_EFFICIENT_UNALIGNED_ACCESS)

@@ -25,37 +25,16 @@
 #include "common.h"
 
 #include "mbedtls/md5.h"
-#include "mbedtls/platform_util.h"
-#include "mbedtls/error.h"
-
-#include <string.h>
-
-#include "mbedtls/platform.h"
 
 void mbedtls_md5_init(mbedtls_md5_context *ctx)
 {
     memset(ctx, 0, sizeof(mbedtls_md5_context));
 }
 
-void mbedtls_md5_free(mbedtls_md5_context *ctx)
-{
-    if (ctx == NULL) {
-        return;
-    }
-
-    mbedtls_platform_zeroize(ctx, sizeof(mbedtls_md5_context));
-}
-
-void mbedtls_md5_clone(mbedtls_md5_context *dst,
-                       const mbedtls_md5_context *src)
-{
-    *dst = *src;
-}
-
 /*
  * MD5 context setup
  */
-int mbedtls_md5_starts(mbedtls_md5_context *ctx)
+void mbedtls_md5_starts(mbedtls_md5_context *ctx)
 {
     ctx->total[0] = 0;
     ctx->total[1] = 0;
@@ -68,8 +47,7 @@ int mbedtls_md5_starts(mbedtls_md5_context *ctx)
     return 0;
 }
 
-#if !defined(MBEDTLS_MD5_PROCESS_ALT)
-int mbedtls_internal_md5_process(mbedtls_md5_context *ctx,
+void mbedtls_internal_md5_process(mbedtls_md5_context *ctx,
                                  const unsigned char data[64])
 {
     struct {
@@ -196,23 +174,15 @@ int mbedtls_internal_md5_process(mbedtls_md5_context *ctx,
     ctx->state[1] += local.B;
     ctx->state[2] += local.C;
     ctx->state[3] += local.D;
-
-    /* Zeroise variables to clear sensitive data from memory. */
-    mbedtls_platform_zeroize(&local, sizeof(local));
-
-    return 0;
 }
-
-#endif /* !MBEDTLS_MD5_PROCESS_ALT */
 
 /*
  * MD5 process buffer
  */
-int mbedtls_md5_update(mbedtls_md5_context *ctx,
+void mbedtls_md5_update(mbedtls_md5_context *ctx,
                        const unsigned char *input,
                        size_t ilen)
 {
-    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     size_t fill;
     uint32_t left;
 
@@ -232,20 +202,14 @@ int mbedtls_md5_update(mbedtls_md5_context *ctx,
 
     if (left && ilen >= fill) {
         memcpy((void *) (ctx->buffer + left), input, fill);
-        if ((ret = mbedtls_internal_md5_process(ctx, ctx->buffer)) != 0) {
-            return ret;
-        }
-
+        mbedtls_internal_md5_process(ctx, ctx->buffer);
         input += fill;
         ilen  -= fill;
         left = 0;
     }
 
     while (ilen >= 64) {
-        if ((ret = mbedtls_internal_md5_process(ctx, input)) != 0) {
-            return ret;
-        }
-
+        mbedtls_internal_md5_process(ctx, input);
         input += 64;
         ilen  -= 64;
     }
@@ -260,10 +224,9 @@ int mbedtls_md5_update(mbedtls_md5_context *ctx,
 /*
  * MD5 final digest
  */
-int mbedtls_md5_finish(mbedtls_md5_context *ctx,
+void mbedtls_md5_finish(mbedtls_md5_context *ctx,
                        unsigned char output[16])
 {
-    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     uint32_t used;
     uint32_t high, low;
 
@@ -280,11 +243,7 @@ int mbedtls_md5_finish(mbedtls_md5_context *ctx,
     } else {
         /* We'll need an extra block */
         memset(ctx->buffer + used, 0, 64 - used);
-
-        if ((ret = mbedtls_internal_md5_process(ctx, ctx->buffer)) != 0) {
-            return ret;
-        }
-
+        mbedtls_internal_md5_process(ctx, ctx->buffer);
         memset(ctx->buffer, 0, 56);
     }
 
@@ -298,9 +257,7 @@ int mbedtls_md5_finish(mbedtls_md5_context *ctx,
     MBEDTLS_PUT_UINT32_LE(low,  ctx->buffer, 56);
     MBEDTLS_PUT_UINT32_LE(high, ctx->buffer, 60);
 
-    if ((ret = mbedtls_internal_md5_process(ctx, ctx->buffer)) != 0) {
-        return ret;
-    }
+    mbedtls_internal_md5_process(ctx, ctx->buffer);
 
     /*
      * Output final state
@@ -309,36 +266,18 @@ int mbedtls_md5_finish(mbedtls_md5_context *ctx,
     MBEDTLS_PUT_UINT32_LE(ctx->state[1], output,  4);
     MBEDTLS_PUT_UINT32_LE(ctx->state[2], output,  8);
     MBEDTLS_PUT_UINT32_LE(ctx->state[3], output, 12);
-
-    return 0;
 }
 
 /*
  * output = MD5( input buffer )
  */
-int mbedtls_md5(const unsigned char *input,
+void mbedtls_md5(const unsigned char *input,
                 size_t ilen,
                 unsigned char output[16])
 {
-    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     mbedtls_md5_context ctx;
-
     mbedtls_md5_init(&ctx);
-
-    if ((ret = mbedtls_md5_starts(&ctx)) != 0) {
-        goto exit;
-    }
-
-    if ((ret = mbedtls_md5_update(&ctx, input, ilen)) != 0) {
-        goto exit;
-    }
-
-    if ((ret = mbedtls_md5_finish(&ctx, output)) != 0) {
-        goto exit;
-    }
-
-exit:
-    mbedtls_md5_free(&ctx);
-
-    return ret;
+    mbedtls_md5_starts(&ctx);
+    mbedtls_md5_update(&ctx, input, ilen);
+    mbedtls_md5_finish(&ctx, output);
 }

@@ -25,39 +25,16 @@
 #include "common.h"
 
 #include "mbedtls/sha1.h"
-#include "mbedtls/platform_util.h"
-#include "mbedtls/error.h"
-
-#include <string.h>
-
-#include "mbedtls/platform.h"
-
-#if !defined(MBEDTLS_SHA1_ALT)
 
 void mbedtls_sha1_init(mbedtls_sha1_context *ctx)
 {
     memset(ctx, 0, sizeof(mbedtls_sha1_context));
 }
 
-void mbedtls_sha1_free(mbedtls_sha1_context *ctx)
-{
-    if (ctx == NULL) {
-        return;
-    }
-
-    mbedtls_platform_zeroize(ctx, sizeof(mbedtls_sha1_context));
-}
-
-void mbedtls_sha1_clone(mbedtls_sha1_context *dst,
-                        const mbedtls_sha1_context *src)
-{
-    *dst = *src;
-}
-
 /*
  * SHA-1 context setup
  */
-int mbedtls_sha1_starts(mbedtls_sha1_context *ctx)
+void mbedtls_sha1_starts(mbedtls_sha1_context *ctx)
 {
     ctx->total[0] = 0;
     ctx->total[1] = 0;
@@ -67,12 +44,9 @@ int mbedtls_sha1_starts(mbedtls_sha1_context *ctx)
     ctx->state[2] = 0x98BADCFE;
     ctx->state[3] = 0x10325476;
     ctx->state[4] = 0xC3D2E1F0;
-
-    return 0;
 }
 
-#if !defined(MBEDTLS_SHA1_PROCESS_ALT)
-int mbedtls_internal_sha1_process(mbedtls_sha1_context *ctx,
+void mbedtls_internal_sha1_process(mbedtls_sha1_context *ctx,
                                   const unsigned char data[64])
 {
     struct {
@@ -233,23 +207,15 @@ int mbedtls_internal_sha1_process(mbedtls_sha1_context *ctx,
     ctx->state[2] += local.C;
     ctx->state[3] += local.D;
     ctx->state[4] += local.E;
-
-    /* Zeroise buffers and variables to clear sensitive data from memory. */
-    mbedtls_platform_zeroize(&local, sizeof(local));
-
-    return 0;
 }
-
-#endif /* !MBEDTLS_SHA1_PROCESS_ALT */
 
 /*
  * SHA-1 process buffer
  */
-int mbedtls_sha1_update(mbedtls_sha1_context *ctx,
+void mbedtls_sha1_update(mbedtls_sha1_context *ctx,
                         const unsigned char *input,
                         size_t ilen)
 {
-    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     size_t fill;
     uint32_t left;
 
@@ -270,9 +236,7 @@ int mbedtls_sha1_update(mbedtls_sha1_context *ctx,
     if (left && ilen >= fill) {
         memcpy((void *) (ctx->buffer + left), input, fill);
 
-        if ((ret = mbedtls_internal_sha1_process(ctx, ctx->buffer)) != 0) {
-            return ret;
-        }
+        mbedtls_internal_sha1_process(ctx, ctx->buffer);
 
         input += fill;
         ilen  -= fill;
@@ -280,10 +244,7 @@ int mbedtls_sha1_update(mbedtls_sha1_context *ctx,
     }
 
     while (ilen >= 64) {
-        if ((ret = mbedtls_internal_sha1_process(ctx, input)) != 0) {
-            return ret;
-        }
-
+        mbedtls_internal_sha1_process(ctx, input);
         input += 64;
         ilen  -= 64;
     }
@@ -291,17 +252,14 @@ int mbedtls_sha1_update(mbedtls_sha1_context *ctx,
     if (ilen > 0) {
         memcpy((void *) (ctx->buffer + left), input, ilen);
     }
-
-    return 0;
 }
 
 /*
  * SHA-1 final digest
  */
-int mbedtls_sha1_finish(mbedtls_sha1_context *ctx,
+void mbedtls_sha1_finish(mbedtls_sha1_context *ctx,
                         unsigned char output[20])
 {
-    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     uint32_t used;
     uint32_t high, low;
 
@@ -318,11 +276,7 @@ int mbedtls_sha1_finish(mbedtls_sha1_context *ctx,
     } else {
         /* We'll need an extra block */
         memset(ctx->buffer + used, 0, 64 - used);
-
-        if ((ret = mbedtls_internal_sha1_process(ctx, ctx->buffer)) != 0) {
-            return ret;
-        }
-
+        mbedtls_internal_sha1_process(ctx, ctx->buffer);
         memset(ctx->buffer, 0, 56);
     }
 
@@ -336,9 +290,7 @@ int mbedtls_sha1_finish(mbedtls_sha1_context *ctx,
     MBEDTLS_PUT_UINT32_BE(high, ctx->buffer, 56);
     MBEDTLS_PUT_UINT32_BE(low,  ctx->buffer, 60);
 
-    if ((ret = mbedtls_internal_sha1_process(ctx, ctx->buffer)) != 0) {
-        return ret;
-    }
+    mbedtls_internal_sha1_process(ctx, ctx->buffer);
 
     /*
      * Output final state
@@ -348,38 +300,18 @@ int mbedtls_sha1_finish(mbedtls_sha1_context *ctx,
     MBEDTLS_PUT_UINT32_BE(ctx->state[2], output,  8);
     MBEDTLS_PUT_UINT32_BE(ctx->state[3], output, 12);
     MBEDTLS_PUT_UINT32_BE(ctx->state[4], output, 16);
-
-    return 0;
 }
-
-#endif /* !MBEDTLS_SHA1_ALT */
 
 /*
  * output = SHA-1( input buffer )
  */
-int mbedtls_sha1(const unsigned char *input,
+void mbedtls_sha1(const unsigned char *input,
                  size_t ilen,
                  unsigned char output[20])
 {
-    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     mbedtls_sha1_context ctx;
-
     mbedtls_sha1_init(&ctx);
-
-    if ((ret = mbedtls_sha1_starts(&ctx)) != 0) {
-        goto exit;
-    }
-
-    if ((ret = mbedtls_sha1_update(&ctx, input, ilen)) != 0) {
-        goto exit;
-    }
-
-    if ((ret = mbedtls_sha1_finish(&ctx, output)) != 0) {
-        goto exit;
-    }
-
-exit:
-    mbedtls_sha1_free(&ctx);
-
-    return ret;
+    mbedtls_sha1_starts(&ctx);
+    mbedtls_sha1_update(&ctx, input, ilen);
+    mbedtls_sha1_finish(&ctx, output);
 }
