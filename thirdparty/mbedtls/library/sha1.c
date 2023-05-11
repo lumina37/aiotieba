@@ -220,7 +220,7 @@ void mbedtls_sha1_update(mbedtls_sha1_context *ctx,
     uint32_t left;
 
     if (ilen == 0) {
-        return 0;
+        return;
     }
 
     left = ctx->total[0] & 0x3F;

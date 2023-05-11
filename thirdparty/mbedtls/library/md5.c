@@ -43,8 +43,6 @@ void mbedtls_md5_starts(mbedtls_md5_context *ctx)
     ctx->state[1] = 0xEFCDAB89;
     ctx->state[2] = 0x98BADCFE;
     ctx->state[3] = 0x10325476;
-
-    return 0;
 }
 
 void mbedtls_internal_md5_process(mbedtls_md5_context *ctx,
@@ -187,7 +185,7 @@ void mbedtls_md5_update(mbedtls_md5_context *ctx,
     uint32_t left;
 
     if (ilen == 0) {
-        return 0;
+        return;
     }
 
     left = ctx->total[0] & 0x3F;
@@ -217,8 +215,6 @@ void mbedtls_md5_update(mbedtls_md5_context *ctx,
     if (ilen > 0) {
         memcpy((void *) (ctx->buffer + left), input, ilen);
     }
-
-    return 0;
 }
 
 /*
