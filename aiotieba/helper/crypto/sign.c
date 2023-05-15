@@ -25,7 +25,7 @@ PyObject* sign(PyObject* self, PyObject* args)
 {
     PyObject* items;
     if (!PyArg_ParseTuple(args, "O", &items)) {
-        PyErr_SetString(PyExc_ValueError, "failed to parse args");
+        PyErr_SetString(PyExc_ValueError, "Failed to parse args");
         return NULL;
     }
     Py_ssize_t listSize = PyList_GET_SIZE(items);

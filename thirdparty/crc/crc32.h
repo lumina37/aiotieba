@@ -19,4 +19,4 @@
 
 #include <stdint.h>
 
-uint32_t crc32(const unsigned char* src, size_t srcLen);
+uint32_t crc32(const unsigned char* src, size_t srcLen, uint32_t prev_val);

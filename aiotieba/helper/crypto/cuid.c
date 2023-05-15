@@ -1,11 +1,12 @@
 #include <memory.h>  // memset memcpy
 #include <stdbool.h> // bool
-#include <stdlib.h>  // malloc free
 
 #include "base32/base32.h"
 #include "crc/crc32.h"
 #include "mbedtls/md5.h"
 #include "mbedtls/sha1.h"
+
+#define XXH_INLINE_ALL
 #include "xxHash/xxhash.h"
 
 #include "const.h"
@@ -54,57 +55,47 @@ static inline void __tbc_writeBuffer(unsigned char* buffer, const uint64_t sec)
     }
 }
 
-int tbc_heliosHash(const unsigned char* src, size_t srcSize, unsigned char* dst)
+void tbc_heliosHash(const unsigned char* src, size_t srcSize, unsigned char* dst)
 {
-    size_t _buffSize = srcSize + ((size_t)HASHER_NUM * STEP_SIZE);
-    unsigned char* buffer = malloc(_buffSize); // internal
-    if (!buffer) {
-        return TBC_MEMORY_ERROR;
-    }
-
-    memcpy(buffer, src, srcSize); // Now buffer is [src, ...]
-
     // init
-    size_t buffOffset = srcSize;
-    memset(buffer + buffOffset, -1, STEP_SIZE); // Now buffer is [src, -1 * 5, ...]
-    uint64_t sec = ((uint64_t)1 << 40) - 1;     // equals to `-1L>>>-40L` in java
-    uint64_t crc32Val, xxhash32Val;
+    uint32_t crc32Val;
+    uint32_t xxhash32Val;
+    uint64_t sec = ((uint64_t)1 << 40) - 1; // equals to `-1L>>>-40L` in java
+    unsigned char buffer[HASHER_NUM * STEP_SIZE];
+    memset(buffer, -1, STEP_SIZE); // Now buffer is [-1 * 5, ...]
 
     // 1st hash with CRC32
-    buffOffset += STEP_SIZE;
-    crc32Val = (uint64_t)crc32(buffer, buffOffset);
-    __tbc_update(&sec, crc32Val, 8, false);
-    __tbc_writeBuffer(buffer + buffOffset, sec); // Now buffer is [src, -1 * 5, crcrc, ...]
+    crc32Val = crc32(src, srcSize, 0);
+    crc32Val = crc32(buffer, STEP_SIZE, crc32Val);
+    __tbc_update(&sec, (uint64_t)crc32Val, 8, false);
+    __tbc_writeBuffer(buffer + STEP_SIZE, sec); // Now buffer is [-1 * 5, crcrc, ...]
 
     // 2nd hash with xxHash32
-    buffOffset += STEP_SIZE;
-    xxhash32Val = (uint64_t)XXH32(buffer, buffOffset, 0);
+    XXH32_state_t xxState4StepTwo, xxState4StepThree;
+    XXH32_reset(&xxState4StepTwo, 0);
+    XXH32_update(&xxState4StepTwo, src, srcSize);
+    XXH32_update(&xxState4StepTwo, buffer, STEP_SIZE * 2);
+    XXH32_copyState(&xxState4StepThree, &xxState4StepTwo);
+    xxhash32Val = XXH32_digest(&xxState4StepTwo);
     __tbc_update(&sec, xxhash32Val, 0, true);
-    __tbc_writeBuffer(buffer + buffOffset, sec); // Now buffer is [src, -1[5], crc[5], xxxxx, ...]
+    __tbc_writeBuffer(buffer + STEP_SIZE * 2, sec); // Now buffer is [-1[5], crc[5], xxxxx, ...]
 
     // 3rd hash with xxHash32
-    buffOffset += STEP_SIZE;
-    xxhash32Val = (uint64_t)XXH32(buffer, buffOffset, 0);
+    XXH32_update(&xxState4StepThree, buffer + STEP_SIZE * 2, STEP_SIZE);
+    xxhash32Val = XXH32_digest(&xxState4StepThree);
     __tbc_update(&sec, xxhash32Val, 1, true);
-    __tbc_writeBuffer(buffer + buffOffset, sec); // Now buffer is [src, -1[5], crc[5], xx[5], ...]
+    __tbc_writeBuffer(buffer + STEP_SIZE * 3, sec); // Now buffer is [-1[5], crc[5], xx[5], xx[5]]
 
     // 4th hash with CRC32
-    buffOffset += STEP_SIZE;
-    crc32Val = (uint64_t)crc32(buffer, buffOffset);
+    crc32Val = crc32(buffer + STEP_SIZE, STEP_SIZE * 3, crc32Val);
     __tbc_update(&sec, crc32Val, 7, true);
 
-    // fill dst
+    // write to dst
     __tbc_writeBuffer(dst, sec);
-
-    // clean up
-    free(buffer);
-    return TBC_OK;
 }
 
-int tbc_cuid_galaxy2(const unsigned char* androidID, unsigned char* dst)
+void tbc_cuid_galaxy2(const unsigned char* androidID, unsigned char* dst)
 {
-    int err = TBC_OK;
-
     // step 1: build src buffer and compute md5
     unsigned char md5Buffer[sizeof(CUID2_PERFIX) + TBC_ANDROID_ID_SIZE];
 
@@ -135,22 +126,15 @@ int tbc_cuid_galaxy2(const unsigned char* androidID, unsigned char* dst)
 
     // step 4: build dst buffer and compute helios hash
     unsigned char heHash[TBC_HELIOS_HASH_SIZE];
-    err = tbc_heliosHash(dst, TBC_MD5_STR_SIZE, heHash);
-    if (err) {
-        return err;
-    }
+    tbc_heliosHash(dst, TBC_MD5_STR_SIZE, heHash);
 
     // step 5: assign helios base32 to dst
     // dst will be [md5 hex, '|V', heliosHash base32]
     base32_encode(heHash, TBC_HELIOS_HASH_SIZE, (dst + dstOffset));
-
-    return err;
 }
 
-int tbc_c3_aid(const unsigned char* androidID, const unsigned char* uuid, unsigned char* dst)
+void tbc_c3_aid(const unsigned char* androidID, const unsigned char* uuid, unsigned char* dst)
 {
-    int err = TBC_OK;
-
     // step 1: set perfix
     // dst will be ['A00-', ...]
     dst[0] = 'A';
@@ -184,14 +168,9 @@ int tbc_c3_aid(const unsigned char* androidID, const unsigned char* uuid, unsign
 
     // step 5: build dst buffer and compute helios hash
     unsigned char heHash[TBC_HELIOS_HASH_SIZE];
-    err = tbc_heliosHash(dst, dstOffset, heHash);
-    if (err) {
-        return err;
-    }
+    tbc_heliosHash(dst, dstOffset, heHash);
 
     // step 6: assign helios base32 to dst
     // dst will be ['A00-', sha1 base32, '-', heliosHash base32]
     base32_encode(heHash, TBC_HELIOS_HASH_SIZE, (dst + dstOffset));
-
-    return err;
 }

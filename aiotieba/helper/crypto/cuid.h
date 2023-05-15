@@ -9,11 +9,9 @@
  * @param srcSize size of src. must >= 1
  * @param dst 5 bytes. alloc and free by user
  *
- * @return non 0 if any error
- *
  * @note 12.x loc: com.baidu.tieba.l40.a / com.baidu.tieba.pz.a
  */
-int tbc_heliosHash(const unsigned char* src, size_t srcSize, unsigned char* dst);
+void tbc_heliosHash(const unsigned char* src, size_t srcSize, unsigned char* dst);
 
 /**
  * @brief generate `cuid_galaxy2`
@@ -21,11 +19,9 @@ int tbc_heliosHash(const unsigned char* src, size_t srcSize, unsigned char* dst)
  * @param androidID 16 bytes. alloc and free by user
  * @param dst 42 bytes. alloc and free by user
  *
- * @return non 0 if any error
- *
  * @note 12.x loc: com.baidu.tieba.oz.m
  */
-int tbc_cuid_galaxy2(const unsigned char* androidID, unsigned char* dst);
+void tbc_cuid_galaxy2(const unsigned char* androidID, unsigned char* dst);
 
 /**
  * @brief generate `c3_aid`
@@ -34,8 +30,6 @@ int tbc_cuid_galaxy2(const unsigned char* androidID, unsigned char* dst);
  * @param uuid 36 bytes. alloc and free by user
  * @param dst 45 bytes. alloc and free by user
  *
- * @return non 0 if any error
- *
  * @note 12.x loc: com.baidu.tieba.r50.f
  */
-int tbc_c3_aid(const unsigned char* androidID, const unsigned char* uuid, unsigned char* dst);
+void tbc_c3_aid(const unsigned char* androidID, const unsigned char* uuid, unsigned char* dst);

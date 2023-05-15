@@ -13,15 +13,16 @@ PyObject* cuid_galaxy2(PyObject* self, PyObject* args)
     Py_ssize_t androidIDSize;
 
     if (!PyArg_ParseTuple(args, "s#", &androidID, &androidIDSize)) {
-        PyErr_SetString(PyExc_ValueError, "failed to parse args");
+        PyErr_SetString(PyExc_ValueError, "Failed to parse args");
         return NULL;
     }
 
-    int err = tbc_cuid_galaxy2(androidID, dst);
-    if (err) {
-        PyErr_NoMemory();
+    if (androidIDSize != 16) {
+        PyErr_Format(PyExc_AssertionError, "Invalid size of android_id. Expect 16, got %d", androidIDSize);
         return NULL;
     }
+
+    tbc_cuid_galaxy2(androidID, dst);
 
     return PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, dst, TBC_CUID_GALAXY2_SIZE);
 }
@@ -35,15 +36,20 @@ PyObject* c3_aid(PyObject* self, PyObject* args)
     Py_ssize_t uuidSize;
 
     if (!PyArg_ParseTuple(args, "s#s#", &androidID, &androidIDSize, &uuid, &uuidSize)) {
-        PyErr_SetString(PyExc_ValueError, "failed to parse args");
+        PyErr_SetString(PyExc_ValueError, "Failed to parse args");
         return NULL;
     }
 
-    int err = tbc_c3_aid(androidID, uuid, dst);
-    if (err) {
-        PyErr_NoMemory();
+    if (androidIDSize != 16) {
+        PyErr_Format(PyExc_AssertionError, "Invalid size of android_id. Expect 16, got %d", androidIDSize);
         return NULL;
     }
+    if (uuidSize != 36) {
+        PyErr_Format(PyExc_AssertionError, "Invalid size of uuid. Expect 36, got %d", androidIDSize);
+        return NULL;
+    }
+
+    tbc_c3_aid(androidID, uuid, dst);
 
     return PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, dst, TBC_C3_AID_SIZE);
 }
@@ -57,7 +63,7 @@ PyObject* rc4_42(PyObject* self, PyObject* args)
     Py_ssize_t cbcSecKeySize;
 
     if (!PyArg_ParseTuple(args, "s#y#", &xyusMd5Str, &xyusMd5Size, &cbcSecKey, &cbcSecKeySize)) {
-        PyErr_SetString(PyExc_ValueError, "failed to parse args");
+        PyErr_SetString(PyExc_ValueError, "Failed to parse args");
         return NULL;
     }
 
