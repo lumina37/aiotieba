@@ -8,10 +8,10 @@
 #include "mbedtls/sha1.h"
 #include "xxHash/xxhash.h"
 
-#include "_const.h"
-#include "_error.h"
+#include "const.h"
+#include "error.h"
 
-#include "_cuid.h"
+#include "cuid.h"
 
 #define HASHER_NUM 4
 #define STEP_SIZE 5
@@ -20,7 +20,7 @@
 static const char CUID2_PERFIX[] = {'c', 'o', 'm', '.', 'b', 'a', 'i', 'd', 'u'};
 static const char CUID3_PERFIX[] = {'c', 'o', 'm', '.', 'h', 'e', 'l', 'i', 'o', 's'};
 
-static void __update(uint64_t* sec, uint64_t hashVal, uint64_t start, bool flag)
+static void __tbc_update(uint64_t* sec, uint64_t hashVal, uint64_t start, bool flag)
 {
     uint64_t end = start + HASH_SIZE_IN_BIT;
     uint64_t secTemp = *sec;
@@ -45,7 +45,7 @@ static void __update(uint64_t* sec, uint64_t hashVal, uint64_t start, bool flag)
     *sec = secTemp;
 }
 
-static inline void __writeBuffer(unsigned char* buffer, const uint64_t sec)
+static inline void __tbc_writeBuffer(unsigned char* buffer, const uint64_t sec)
 {
     uint64_t tmpSec = sec;
     for (uint64_t i = 0; i < STEP_SIZE; i++) {
@@ -73,28 +73,28 @@ int tbc_heliosHash(const unsigned char* src, size_t srcSize, unsigned char* dst)
     // 1st hash with CRC32
     buffOffset += STEP_SIZE;
     crc32Val = (uint64_t)crc32(buffer, buffOffset);
-    __update(&sec, crc32Val, 8, false);
-    __writeBuffer(buffer + buffOffset, sec); // Now buffer is [src, -1 * 5, crcrc, ...]
+    __tbc_update(&sec, crc32Val, 8, false);
+    __tbc_writeBuffer(buffer + buffOffset, sec); // Now buffer is [src, -1 * 5, crcrc, ...]
 
     // 2nd hash with xxHash32
     buffOffset += STEP_SIZE;
     xxhash32Val = (uint64_t)XXH32(buffer, buffOffset, 0);
-    __update(&sec, xxhash32Val, 0, true);
-    __writeBuffer(buffer + buffOffset, sec); // Now buffer is [src, -1[5], crc[5], xxxxx, ...]
+    __tbc_update(&sec, xxhash32Val, 0, true);
+    __tbc_writeBuffer(buffer + buffOffset, sec); // Now buffer is [src, -1[5], crc[5], xxxxx, ...]
 
     // 3rd hash with xxHash32
     buffOffset += STEP_SIZE;
     xxhash32Val = (uint64_t)XXH32(buffer, buffOffset, 0);
-    __update(&sec, xxhash32Val, 1, true);
-    __writeBuffer(buffer + buffOffset, sec); // Now buffer is [src, -1[5], crc[5], xx[5], ...]
+    __tbc_update(&sec, xxhash32Val, 1, true);
+    __tbc_writeBuffer(buffer + buffOffset, sec); // Now buffer is [src, -1[5], crc[5], xx[5], ...]
 
     // 4th hash with CRC32
     buffOffset += STEP_SIZE;
     crc32Val = (uint64_t)crc32(buffer, buffOffset);
-    __update(&sec, crc32Val, 7, true);
+    __tbc_update(&sec, crc32Val, 7, true);
 
     // fill dst
-    __writeBuffer(dst, sec);
+    __tbc_writeBuffer(dst, sec);
 
     // clean up
     free(buffer);

@@ -1,5 +1,5 @@
 #pragma once
 
-#include "_python.h"
+#include "pythonph.h"
 
 PyObject* sign(PyObject* self, PyObject* args);

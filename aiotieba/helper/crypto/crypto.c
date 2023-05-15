@@ -1,10 +1,10 @@
-#include "_python.h"
+#include "pythonph.h"
 
-#include "_const.h"
-#include "_cuid.h"
-#include "_error.h"
-#include "_sign.h"
-#include "_zid.h"
+#include "const.h"
+#include "cuid.h"
+#include "error.h"
+#include "sign.h"
+#include "zid.h"
 
 PyObject* cuid_galaxy2(PyObject* self, PyObject* args)
 {

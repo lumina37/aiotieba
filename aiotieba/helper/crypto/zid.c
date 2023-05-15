@@ -1,9 +1,9 @@
 #include <memory.h> // memset
 
-#include "_const.h"
-#include "_error.h"
+#include "const.h"
+#include "error.h"
 
-#include "_zid.h"
+#include "zid.h"
 
 typedef struct rc4_42_context {
     int x;

@@ -4,9 +4,9 @@
 #include "mbedtls/md5.h"
 #include "rapidjson/internal/itoa.h"
 
-#include "_const.h"
+#include "const.h"
 
-#include "_sign.h"
+#include "sign.h"
 
 static const unsigned char SIGN_SUFFIX[] = {'t', 'i', 'e', 'b', 'a', 'c', 'l', 'i', 'e', 'n', 't', '!', '!', '!'};
 
