@@ -1,11 +1,3 @@
-#if defined(__GNUC__)
-#define TBC_PURE_FN __attribute__((pure))
-#define TBC_MALLOC_FN __attribute__((malloc))
-#else
-#define TBC_PURE_FN
-#define TBC_MALLOC_FN
-#endif
-
 #ifdef __has_attribute
 #define TBC_HAS_ATTRIBUTE(x) __has_attribute(x)
 #else

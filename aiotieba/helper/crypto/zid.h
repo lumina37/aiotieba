@@ -16,5 +16,5 @@
  *
  * @note 12.x loc: com.baidu.sofire.x6.oCOCcooCCoC.ocOOCCoOOCcC.CcooOoocOOo
  */
-TBC_PURE_FN void tbc_rc4_42(TBC_NOESCAPE const unsigned char* xyusMd5Str, TBC_NOESCAPE const unsigned char* cbcSecKey,
-                            TBC_NOESCAPE unsigned char* dst);
+void tbc_rc4_42(TBC_NOESCAPE const unsigned char* xyusMd5Str, TBC_NOESCAPE const unsigned char* cbcSecKey,
+                TBC_NOESCAPE unsigned char* dst);

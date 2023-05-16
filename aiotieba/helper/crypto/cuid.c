@@ -22,7 +22,7 @@
 static const char CUID2_PERFIX[] = {'c', 'o', 'm', '.', 'b', 'a', 'i', 'd', 'u'};
 static const char CUID3_PERFIX[] = {'c', 'o', 'm', '.', 'h', 'e', 'l', 'i', 'o', 's'};
 
-TBC_PURE_FN static inline void __tbc_update(TBC_NOESCAPE uint64_t* sec, uint64_t hashVal, uint64_t start, bool flag)
+static inline void __tbc_update(TBC_NOESCAPE uint64_t* sec, uint64_t hashVal, uint64_t start, bool flag)
 {
     uint64_t end = start + HASH_SIZE_IN_BIT;
     uint64_t secTemp = *sec;
@@ -47,7 +47,7 @@ TBC_PURE_FN static inline void __tbc_update(TBC_NOESCAPE uint64_t* sec, uint64_t
     *sec = secTemp;
 }
 
-TBC_PURE_FN static inline void __tbc_writeBuffer(TBC_NOESCAPE unsigned char* buffer, const uint64_t sec)
+static inline void __tbc_writeBuffer(TBC_NOESCAPE unsigned char* buffer, const uint64_t sec)
 {
     uint64_t tmpSec = sec;
     for (uint64_t i = 0; i < STEP_SIZE; i++) {
@@ -56,7 +56,7 @@ TBC_PURE_FN static inline void __tbc_writeBuffer(TBC_NOESCAPE unsigned char* buf
     }
 }
 
-TBC_PURE_FN void tbc_heliosHash(TBC_NOESCAPE const unsigned char* src, size_t srcSize, TBC_NOESCAPE unsigned char* dst)
+void tbc_heliosHash(TBC_NOESCAPE const unsigned char* src, size_t srcSize, TBC_NOESCAPE unsigned char* dst)
 {
     // init
     uint32_t crc32Val;
@@ -95,7 +95,7 @@ TBC_PURE_FN void tbc_heliosHash(TBC_NOESCAPE const unsigned char* src, size_t sr
     __tbc_writeBuffer(dst, sec);
 }
 
-TBC_PURE_FN void tbc_cuid_galaxy2(TBC_NOESCAPE const unsigned char* androidID, TBC_NOESCAPE unsigned char* dst)
+void tbc_cuid_galaxy2(TBC_NOESCAPE const unsigned char* androidID, TBC_NOESCAPE unsigned char* dst)
 {
     // step 1: build src buffer and compute md5
     unsigned char md5Buffer[sizeof(CUID2_PERFIX) + TBC_ANDROID_ID_SIZE];
@@ -134,8 +134,8 @@ TBC_PURE_FN void tbc_cuid_galaxy2(TBC_NOESCAPE const unsigned char* androidID, T
     base32_encode(heHash, TBC_HELIOS_HASH_SIZE, (dst + dstOffset));
 }
 
-TBC_PURE_FN void tbc_c3_aid(TBC_NOESCAPE const unsigned char* androidID, TBC_NOESCAPE const unsigned char* uuid,
-                            TBC_NOESCAPE unsigned char* dst)
+void tbc_c3_aid(TBC_NOESCAPE const unsigned char* androidID, TBC_NOESCAPE const unsigned char* uuid,
+                TBC_NOESCAPE unsigned char* dst)
 {
     // step 1: set perfix
     // dst will be ['A00-', ...]

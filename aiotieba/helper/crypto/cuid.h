@@ -13,7 +13,7 @@
  *
  * @note 12.x loc: com.baidu.tieba.l40.a / com.baidu.tieba.pz.a
  */
-TBC_PURE_FN void tbc_heliosHash(TBC_NOESCAPE const unsigned char* src, size_t srcSize, TBC_NOESCAPE unsigned char* dst);
+void tbc_heliosHash(TBC_NOESCAPE const unsigned char* src, size_t srcSize, TBC_NOESCAPE unsigned char* dst);
 
 /**
  * @brief generate `cuid_galaxy2`
@@ -23,7 +23,7 @@ TBC_PURE_FN void tbc_heliosHash(TBC_NOESCAPE const unsigned char* src, size_t sr
  *
  * @note 12.x loc: com.baidu.tieba.oz.m
  */
-TBC_PURE_FN void tbc_cuid_galaxy2(TBC_NOESCAPE const unsigned char* androidID, TBC_NOESCAPE unsigned char* dst);
+void tbc_cuid_galaxy2(TBC_NOESCAPE const unsigned char* androidID, TBC_NOESCAPE unsigned char* dst);
 
 /**
  * @brief generate `c3_aid`
@@ -34,5 +34,5 @@ TBC_PURE_FN void tbc_cuid_galaxy2(TBC_NOESCAPE const unsigned char* androidID, T
  *
  * @note 12.x loc: com.baidu.tieba.r50.f
  */
-TBC_PURE_FN void tbc_c3_aid(TBC_NOESCAPE const unsigned char* androidID, TBC_NOESCAPE const unsigned char* uuid,
-                            TBC_NOESCAPE unsigned char* dst);
+void tbc_c3_aid(TBC_NOESCAPE const unsigned char* androidID, TBC_NOESCAPE const unsigned char* uuid,
+                TBC_NOESCAPE unsigned char* dst);
