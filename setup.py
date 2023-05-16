@@ -1,17 +1,18 @@
 from pathlib import Path
 
 from setuptools import Extension, setup
+from setuptools.command.build_ext import build_ext
 
-third_party_path = Path("3rdparty")
+third_party_path = Path("thirdparty")
 ext_path = Path("aiotieba/helper/crypto")
 ext_src_in_strs = [str(f) for f in ext_path.glob('*.c')]
 
-ext_3rdparty_include_dirs = [
+ext_thirdparty_include_dirs = [
     third_party_path,
     third_party_path / "mbedtls/include",
 ]
-ext_3rdparty_include_in_strs = [str(d) for d in ext_3rdparty_include_dirs]
-ext_3rdparty_src_dirs = [
+ext_thirdparty_include_in_strs = [str(d) for d in ext_thirdparty_include_dirs]
+ext_thirdparty_src_dirs = [
     third_party_path,
     third_party_path / "mbedtls/library",
     third_party_path / "base32",
@@ -21,22 +22,35 @@ ext_3rdparty_src_dirs = [
 
 
 def _yield_file() -> str:
-    for src_dir in ext_3rdparty_src_dirs:
+    for src_dir in ext_thirdparty_src_dirs:
         for f in src_dir.glob('*.c'):
             yield str(f)
 
 
-ext_3rdparty_src_in_strs = list(_yield_file())
+ext_thirdparty_src_in_strs = list(_yield_file())
+
+
+class BuildExtension(build_ext):
+    def build_extensions(self):
+        opts = []
+        if self.compiler.compiler_type == 'msvc':
+            opts += ['/Wall']
+        else:
+            opts += ['-Wextra', '-Wpedantic']
+        for ext in self.extensions:
+            ext.extra_compile_args = opts
+        build_ext.build_extensions(self)
+
 
 ext_crypto_module = Extension(
     "aiotieba.helper.crypto.crypto",
-    sources=ext_src_in_strs + ext_3rdparty_src_in_strs,
-    include_dirs=ext_3rdparty_include_in_strs,
-    define_macros=[('XXH_INLINE_ALL', None)],
+    sources=ext_src_in_strs + ext_thirdparty_src_in_strs,
+    include_dirs=ext_thirdparty_include_in_strs,
     language='c',
 )
 
 setup(
     name='crypto',
     ext_modules=[ext_crypto_module],
+    cmdclass={'build_ext': BuildExtension},
 )

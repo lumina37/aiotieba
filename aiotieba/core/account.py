@@ -109,7 +109,7 @@ class Account(object):
         """
 
         if self._android_id is None:
-            self._android_id = secrets.token_hex(16)
+            self._android_id = secrets.token_hex(8)
         return self._android_id
 
     @property

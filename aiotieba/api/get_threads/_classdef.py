@@ -437,6 +437,7 @@ class UserInfo_t(object):
         level (int): 等级
         glevel (int): 贴吧成长等级
         gender (int): 性别
+        icons (list[str]): 印记信息
 
         is_bawu (bool): 是否吧务
         is_vip (bool): 是否超级会员
@@ -457,6 +458,7 @@ class UserInfo_t(object):
         '_level',
         '_glevel',
         '_gender',
+        '_icons',
         '_is_bawu',
         '_is_vip',
         '_is_god',
@@ -475,6 +477,7 @@ class UserInfo_t(object):
         self._level = data_proto.level_id
         self._glevel = data_proto.user_growth.level_id
         self._gender = data_proto.gender
+        self._icons = [name for i in data_proto.iconinfo if (name := i.name)]
         self._is_bawu = bool(data_proto.is_bawu)
         self._is_vip = bool(data_proto.new_tshow_icon)
         self._is_god = bool(data_proto.new_god_data.status)
@@ -487,8 +490,10 @@ class UserInfo_t(object):
         self._portrait = ''
         self._user_name = ''
         self._nick_name_new = ''
+        self._level = 0
         self._glevel = 0
         self._gender = 0
+        self._icons = []
         self._is_bawu = False
         self._is_vip = False
         self._is_god = False
@@ -594,6 +599,14 @@ class UserInfo_t(object):
         """
 
         return self._gender
+
+    @property
+    def icons(self) -> List[str]:
+        """
+        印记信息
+        """
+
+        return self._icons
 
     @property
     def is_bawu(self) -> bool:
@@ -1481,7 +1494,7 @@ class Threads(Containers[Thread]):
             self._tab_map = {p.tab_name: p.tab_id for p in data_proto.nav_tab_info.tab}
 
             self._objs = [Thread(p) for p in data_proto.thread_list]
-            users = {p.id: UserInfo_t()._init(p) for p in data_proto.user_list if p.id}
+            users = {i: UserInfo_t()._init(p) for p in data_proto.user_list if (i := p.id)}
             for thread in self._objs:
                 thread._fname = self._forum._fname
                 thread._fid = self._forum._fid

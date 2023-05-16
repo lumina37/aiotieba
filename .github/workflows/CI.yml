@@ -7,12 +7,14 @@ on:
     branches: [develop]
     paths:
       - "aiotieba/**"
+      - "thirdparty/**"
       - "tests/**"
       - ".github/workflows/CI*"
   pull_request:
     branches: [develop]
     paths:
       - "aiotieba/**"
+      - "thirdparty/**"
       - "tests/**"
       - ".github/workflows/CI*"
 
