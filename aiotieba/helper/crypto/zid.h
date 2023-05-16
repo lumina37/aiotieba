@@ -1,5 +1,7 @@
 #pragma once
 
+#include "utils.h"
+
 #define TBC_CBC_SECKEY_SIZE 16
 #define TBC_RC4_SIZE 16
 
@@ -14,4 +16,5 @@
  *
  * @note 12.x loc: com.baidu.sofire.x6.oCOCcooCCoC.ocOOCCoOOCcC.CcooOoocOOo
  */
-int tbc_rc4_42(const unsigned char* xyusMd5Str, const unsigned char* cbcSecKey, unsigned char* dst);
+TBC_PURE_FN void tbc_rc4_42(TBC_NOESCAPE const unsigned char* xyusMd5Str, TBC_NOESCAPE const unsigned char* cbcSecKey,
+                            TBC_NOESCAPE unsigned char* dst);

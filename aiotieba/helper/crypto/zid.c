@@ -1,7 +1,8 @@
-#include <memory.h> // memset
+#include <stddef.h> // size_t
 
 #include "const.h"
 #include "error.h"
+#include "utils.h"
 
 #include "zid.h"
 
@@ -11,7 +12,8 @@ typedef struct rc4_42_context {
     unsigned char m[256];
 } rc4_42_context;
 
-static inline void rc4_42_setup(rc4_42_context* ctx, const unsigned char* key, unsigned int keyLen)
+TBC_PURE_FN static inline void rc4_42_setup(TBC_NOESCAPE rc4_42_context* ctx, TBC_NOESCAPE const unsigned char* key,
+                                            unsigned int keyLen)
 {
     int i, j, a;
     unsigned int k;
@@ -37,7 +39,8 @@ static inline void rc4_42_setup(rc4_42_context* ctx, const unsigned char* key, u
     }
 }
 
-static void rc4_42_crypt(rc4_42_context* ctx, const unsigned char* src, size_t srcLen, unsigned char* dst)
+TBC_PURE_FN static inline void rc4_42_crypt(TBC_NOESCAPE rc4_42_context* ctx, TBC_NOESCAPE const unsigned char* src, size_t srcLen,
+                              TBC_NOESCAPE unsigned char* dst)
 {
     int x, y, a, b;
     size_t i;
@@ -64,12 +67,11 @@ static void rc4_42_crypt(rc4_42_context* ctx, const unsigned char* src, size_t s
     ctx->y = y;
 }
 
-int tbc_rc4_42(const unsigned char* xyusMd5Str, const unsigned char* cbcSecKey, unsigned char* dst)
+TBC_PURE_FN void tbc_rc4_42(TBC_NOESCAPE const unsigned char* xyusMd5Str, TBC_NOESCAPE const unsigned char* cbcSecKey,
+                            TBC_NOESCAPE unsigned char* dst)
 {
     rc4_42_context rc442Ctx;
 
     rc4_42_setup(&rc442Ctx, xyusMd5Str, TBC_MD5_STR_SIZE);
     rc4_42_crypt(&rc442Ctx, cbcSecKey, TBC_CBC_SECKEY_SIZE, dst);
-
-    return TBC_OK;
 }

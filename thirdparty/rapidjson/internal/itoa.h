@@ -210,7 +210,7 @@ inline char *u64toa(uint64_t value, char *buffer)
     return buffer;
 }
 
-inline char *i64toa(int64_t value, char *buffer)
+char *i64toa(int64_t value, char *buffer)
 {
 
     uint64_t u = (uint64_t)value;
