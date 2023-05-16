@@ -36,7 +36,7 @@ class BuildExtension(build_ext):
         if self.compiler.compiler_type == 'msvc':
             opts += ['/Wall']
         else:
-            opts += ['-Wall', '-Wextra', '-Wpedantic']
+            opts += ['-Wextra', '-Wpedantic']
         for ext in self.extensions:
             ext.extra_compile_args = opts
         build_ext.build_extensions(self)
