@@ -3,6 +3,7 @@ import pytest
 import aiotieba as tb
 
 
+@pytest.mark.flaky(reruns=3, reruns_delay=2.0)
 @pytest.mark.asyncio
 async def test_Comments(client: tb.Client):
     comments = await client.get_comments(8211419000, 146544112004)
@@ -148,7 +149,7 @@ async def test_Comments(client: tb.Client):
     comment = comments[1]
     assert comment.reply_to_id != 0
 
-
+@pytest.mark.flaky(reruns=3, reruns_delay=2.0)
 @pytest.mark.asyncio
 async def test_FragLink(client: tb.Client):
     comments = await client.get_comments(8211419000, 146546137439)

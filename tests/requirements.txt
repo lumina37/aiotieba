@@ -3,3 +3,4 @@
 # Test Suite
 pytest==7.3.1
 pytest-asyncio==0.21.0
+pytest-rerunfailures==11.1.2
