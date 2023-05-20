@@ -25,9 +25,14 @@ PyObject* sign(PyObject* self, PyObject* args)
 {
     PyObject* items;
     if (!PyArg_ParseTuple(args, "O", &items)) {
-        PyErr_SetString(PyExc_ValueError, "Failed to parse args");
+        PyErr_SetString(PyExc_TypeError, "Failed to parse args");
         return NULL;
     }
+    if (!PyList_Check(items)) {
+        PyErr_SetString(PyExc_TypeError, "Input should be List[Tuple[str, str | int]]]");
+        return NULL;
+    }
+
     Py_ssize_t listSize = PyList_GET_SIZE(items);
 
     mbedtls_md5_context md5Ctx;
@@ -35,29 +40,46 @@ PyObject* sign(PyObject* self, PyObject* args)
     mbedtls_md5_starts(&md5Ctx);
     char itoaBuffer[20];
     const unsigned char equal = '=';
+
     for (Py_ssize_t iList = 0; iList < listSize; iList++) {
         PyObject* item = PyList_GET_ITEM(items, iList);
 
+        if (!PyTuple_Check(item)) {
+            PyErr_SetString(PyExc_TypeError, "List item should be Tuple[str, str | int]");
+            return NULL;
+        }
+
+        PyObject* pyoKey = PyTuple_GetItem(item, 0);
+        if (!pyoKey) {
+            return NULL; // IndexError
+        }
+
         const char* key;
         size_t keySize;
-        PyObject* pyoKey = PyTuple_GET_ITEM(item, 0);
         __tbc_pyStr2UTF8(&key, &keySize, pyoKey);
         mbedtls_md5_update(&md5Ctx, (unsigned char*)key, keySize);
 
         mbedtls_md5_update(&md5Ctx, &equal, sizeof(equal));
 
         PyObject* pyoVal = PyTuple_GET_ITEM(item, 1);
+        if (!pyoVal) {
+            return NULL; // IndexError
+        }
+
         if (PyUnicode_Check(pyoVal)) {
             const char* val;
             size_t valSize;
             __tbc_pyStr2UTF8(&val, &valSize, pyoVal);
             mbedtls_md5_update(&md5Ctx, (unsigned char*)val, valSize);
-        } else {
+        } else if (PyLong_Check(pyoVal)) {
             int64_t ival = PyLong_AsLongLong(pyoVal);
             char* val = itoaBuffer;
             char* valEnd = i64toa(ival, val);
             size_t valSize = valEnd - val;
             mbedtls_md5_update(&md5Ctx, (unsigned char*)val, valSize);
+        } else {
+            PyErr_SetString(PyExc_TypeError, "item[1] should be str or int");
+            return NULL;
         }
     }
 

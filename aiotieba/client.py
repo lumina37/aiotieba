@@ -432,7 +432,7 @@ class Client(object):
         else:
             user = await get_uinfo_getuserinfo_app.request_http(self._http_core, user_id)
             if (user_id := user._user_id) < 0:
-                user._user_id = 0xFFFFFFFF + user._user_id
+                user._user_id = 0xFFFFFFFF + user_id
 
         return user
 
