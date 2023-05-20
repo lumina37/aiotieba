@@ -175,7 +175,7 @@ class Client(object):
     async def __aenter__(self) -> "Client":
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+    async def __aexit__(self, exc_type=None, exc_val=None, exc_tb=None) -> None:
         await self._ws_core.close()
         await self._connector.close()
 
