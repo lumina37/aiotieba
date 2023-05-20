@@ -427,9 +427,14 @@ class Client(object):
         """
 
         if self._ws_core.status == WsStatus.OPEN:
-            return await get_uinfo_getuserinfo_app.request_ws(self._ws_core, user_id)
+            user = await get_uinfo_getuserinfo_app.request_ws(self._ws_core, user_id)
 
-        return await get_uinfo_getuserinfo_app.request_http(self._http_core, user_id)
+        else:
+            user = await get_uinfo_getuserinfo_app.request_http(self._http_core, user_id)
+            if (user_id := user._user_id) < 0:
+                user._user_id = 0xFFFFFFFF + user._user_id
+
+        return user
 
     @handle_exception(get_uinfo_getUserInfo_web.UserInfo_guinfo_web)
     async def _get_uinfo_getUserInfo(self, user_id: int) -> get_uinfo_getUserInfo_web.UserInfo_guinfo_web:
