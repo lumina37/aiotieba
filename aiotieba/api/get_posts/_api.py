@@ -20,7 +20,6 @@ def pack_proto(
     with_comments: bool,
     comment_sort_by_agree: bool,
     comment_rn: int,
-    is_fold: bool,
 ) -> bytes:
     req_proto = PbPageReqIdl_pb2.PbPageReqIdl()
     req_proto.data.common._client_type = 2
@@ -30,7 +29,6 @@ def pack_proto(
     req_proto.data.rn = rn if rn > 1 else 2
     req_proto.data.sort = sort
     req_proto.data.only_thread_author = only_thread_author
-    req_proto.data.is_fold = is_fold
     if with_comments:
         req_proto.data.common.BDUSS = core._BDUSS
         req_proto.data.with_comments = with_comments
@@ -63,7 +61,6 @@ async def request_http(
     with_comments: bool,
     comment_sort_by_agree: bool,
     comment_rn: int,
-    is_fold: bool,
 ) -> Posts:
     data = pack_proto(
         http_core.account,
@@ -75,7 +72,6 @@ async def request_http(
         with_comments,
         comment_sort_by_agree,
         comment_rn,
-        is_fold,
     )
 
     request = pack_proto_request(
@@ -100,7 +96,6 @@ async def request_ws(
     with_comments: bool,
     comment_sort_by_agree: bool,
     comment_rn: int,
-    is_fold: bool,
 ) -> Posts:
     data = pack_proto(
         ws_core.account,
@@ -112,7 +107,6 @@ async def request_ws(
         with_comments,
         comment_sort_by_agree,
         comment_rn,
-        is_fold,
     )
 
     __log__ = "tid={tid}"  # noqa: F841

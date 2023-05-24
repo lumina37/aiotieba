@@ -525,7 +525,6 @@ class Client(object):
         with_comments: bool = False,
         comment_sort_by_agree: bool = True,
         comment_rn: int = 4,
-        is_fold: bool = False,
     ) -> get_posts.Posts:
         """
         获取主题帖内回复
@@ -539,7 +538,6 @@ class Client(object):
             with_comments (bool, optional): True则同时请求高赞楼中楼 False则返回的Posts.comments为空. Defaults to False.
             comment_sort_by_agree (bool, optional): True则楼中楼按点赞数顺序 False则楼中楼按时间顺序. Defaults to True.
             comment_rn (int, optional): 请求的楼中楼数量. Defaults to 4. Max to 50.
-            is_fold (bool, optional): 是否请求被折叠的回复. Defaults to False.
 
         Returns:
             Posts: 回复列表
@@ -547,29 +545,11 @@ class Client(object):
 
         if self._ws_core.status == WsStatus.OPEN:
             return await get_posts.request_ws(
-                self._ws_core,
-                tid,
-                pn,
-                rn,
-                sort,
-                only_thread_author,
-                with_comments,
-                comment_sort_by_agree,
-                comment_rn,
-                is_fold,
+                self._ws_core, tid, pn, rn, sort, only_thread_author, with_comments, comment_sort_by_agree, comment_rn
             )
 
         return await get_posts.request_http(
-            self._http_core,
-            tid,
-            pn,
-            rn,
-            sort,
-            only_thread_author,
-            with_comments,
-            comment_sort_by_agree,
-            comment_rn,
-            is_fold,
+            self._http_core, tid, pn, rn, sort, only_thread_author, with_comments, comment_sort_by_agree, comment_rn
         )
 
     @handle_exception(get_comments.Comments)

@@ -16,7 +16,6 @@ message PbPageResIdl {
         repeated Post post_list = 6;
         ThreadInfo thread = 8;
         repeated User user_list = 13;
-        int32 has_fold_comment = 68;
     }
     DataRes data = 2;
 }
