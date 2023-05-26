@@ -61,7 +61,7 @@ PyObject* sign(PyObject* self, PyObject* args)
 
         mbedtls_md5_update(&md5Ctx, &equal, sizeof(equal));
 
-        PyObject* pyoVal = PyTuple_GET_ITEM(item, 1);
+        PyObject* pyoVal = PyTuple_GetItem(item, 1);
         if (!pyoVal) {
             return NULL; // IndexError
         }
