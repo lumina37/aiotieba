@@ -29,7 +29,7 @@ def pack_ws_bytes(
 
     if compress:
         flag |= 0b01000000
-        data = gzip.compress(data, compresslevel=-1, mtime=0)
+        data = gzip.compress(data, compresslevel=6, mtime=0)
     if encrypt:
         flag |= 0b10000000
         data = pad(data, AES.block_size)
