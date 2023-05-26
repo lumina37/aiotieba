@@ -1949,7 +1949,7 @@ class Client(object):
 
         await self.__init_tbs()
 
-        return await sign_growth.request(self._http_core, act_type='page_sign')
+        return await sign_growth.request_web(self._http_core, act_type='page_sign')
 
     @handle_exception(bool, no_format=True)
     async def sign_growth_share(self) -> bool:
@@ -1962,7 +1962,7 @@ class Client(object):
 
         await self.__init_tbs()
 
-        return await sign_growth.request(self._http_core, act_type='share_thread')
+        return await sign_growth.request_app(self._http_core, act_type='share_thread')
 
     @handle_exception(bool, no_format=True)
     async def add_post(self, fname_or_fid: Union[str, int], /, tid: int, content: str) -> bool:
