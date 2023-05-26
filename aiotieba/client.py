@@ -175,7 +175,7 @@ class Client(object):
     async def __aenter__(self) -> "Client":
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+    async def __aexit__(self, exc_type=None, exc_val=None, exc_tb=None) -> None:
         await self._ws_core.close()
         await self._connector.close()
 
@@ -427,9 +427,14 @@ class Client(object):
         """
 
         if self._ws_core.status == WsStatus.OPEN:
-            return await get_uinfo_getuserinfo_app.request_ws(self._ws_core, user_id)
+            user = await get_uinfo_getuserinfo_app.request_ws(self._ws_core, user_id)
 
-        return await get_uinfo_getuserinfo_app.request_http(self._http_core, user_id)
+        else:
+            user = await get_uinfo_getuserinfo_app.request_http(self._http_core, user_id)
+            if (user_id := user._user_id) < 0:
+                user._user_id = 0xFFFFFFFF + user_id
+
+        return user
 
     @handle_exception(get_uinfo_getUserInfo_web.UserInfo_guinfo_web)
     async def _get_uinfo_getUserInfo(self, user_id: int) -> get_uinfo_getUserInfo_web.UserInfo_guinfo_web:
@@ -520,7 +525,6 @@ class Client(object):
         with_comments: bool = False,
         comment_sort_by_agree: bool = True,
         comment_rn: int = 4,
-        is_fold: bool = False,
     ) -> get_posts.Posts:
         """
         获取主题帖内回复
@@ -534,7 +538,6 @@ class Client(object):
             with_comments (bool, optional): True则同时请求高赞楼中楼 False则返回的Posts.comments为空. Defaults to False.
             comment_sort_by_agree (bool, optional): True则楼中楼按点赞数顺序 False则楼中楼按时间顺序. Defaults to True.
             comment_rn (int, optional): 请求的楼中楼数量. Defaults to 4. Max to 50.
-            is_fold (bool, optional): 是否请求被折叠的回复. Defaults to False.
 
         Returns:
             Posts: 回复列表
@@ -542,29 +545,11 @@ class Client(object):
 
         if self._ws_core.status == WsStatus.OPEN:
             return await get_posts.request_ws(
-                self._ws_core,
-                tid,
-                pn,
-                rn,
-                sort,
-                only_thread_author,
-                with_comments,
-                comment_sort_by_agree,
-                comment_rn,
-                is_fold,
+                self._ws_core, tid, pn, rn, sort, only_thread_author, with_comments, comment_sort_by_agree, comment_rn
             )
 
         return await get_posts.request_http(
-            self._http_core,
-            tid,
-            pn,
-            rn,
-            sort,
-            only_thread_author,
-            with_comments,
-            comment_sort_by_agree,
-            comment_rn,
-            is_fold,
+            self._http_core, tid, pn, rn, sort, only_thread_author, with_comments, comment_sort_by_agree, comment_rn
         )
 
     @handle_exception(get_comments.Comments)
@@ -1964,7 +1949,7 @@ class Client(object):
 
         await self.__init_tbs()
 
-        return await sign_growth.request(self._http_core, act_type='page_sign')
+        return await sign_growth.request_web(self._http_core, act_type='page_sign')
 
     @handle_exception(bool, no_format=True)
     async def sign_growth_share(self) -> bool:
@@ -1977,7 +1962,7 @@ class Client(object):
 
         await self.__init_tbs()
 
-        return await sign_growth.request(self._http_core, act_type='share_thread')
+        return await sign_growth.request_app(self._http_core, act_type='share_thread')
 
     @handle_exception(bool, no_format=True)
     async def add_post(self, fname_or_fid: Union[str, int], /, tid: int, content: str) -> bool:

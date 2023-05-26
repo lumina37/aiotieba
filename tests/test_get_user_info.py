@@ -3,6 +3,7 @@ import pytest
 import aiotieba as tb
 
 
+@pytest.mark.flaky(reruns=3, reruns_delay=2.0)
 @pytest.mark.asyncio
 async def test_get_user_info(client: tb.Client):
     self_info = await client.get_self_info()

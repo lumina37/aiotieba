@@ -12,12 +12,11 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-#ifndef RAPIDJSON_ITOA_
-#define RAPIDJSON_ITOA_
+#pragma once
 
 #include <stdint.h>
 
-inline const char *GetDigitsLut()
+inline const char *GetDigitsLut(void)
 {
     static const char cDigitsLut[200] = {
         '0', '0', '0', '1', '0', '2', '0', '3', '0', '4', '0', '5', '0', '6', '0', '7', '0', '8', '0', '9',
@@ -222,5 +221,3 @@ char *i64toa(int64_t value, char *buffer)
 
     return u64toa(u, buffer);
 }
-
-#endif // RAPIDJSON_ITOA_

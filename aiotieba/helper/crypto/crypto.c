@@ -13,12 +13,12 @@ PyObject* cuid_galaxy2(PyObject* self, PyObject* args)
     Py_ssize_t androidIDSize;
 
     if (!PyArg_ParseTuple(args, "s#", &androidID, &androidIDSize)) {
-        PyErr_SetString(PyExc_ValueError, "Failed to parse args");
+        PyErr_SetString(PyExc_TypeError, "Failed to parse args");
         return NULL;
     }
 
     if (androidIDSize != 16) {
-        PyErr_Format(PyExc_AssertionError, "Invalid size of android_id. Expect 16, got %d", androidIDSize);
+        PyErr_Format(PyExc_ValueError, "Invalid size of android_id. Expect 16, got %zu", androidIDSize);
         return NULL;
     }
 
@@ -36,16 +36,16 @@ PyObject* c3_aid(PyObject* self, PyObject* args)
     Py_ssize_t uuidSize;
 
     if (!PyArg_ParseTuple(args, "s#s#", &androidID, &androidIDSize, &uuid, &uuidSize)) {
-        PyErr_SetString(PyExc_ValueError, "Failed to parse args");
+        PyErr_SetString(PyExc_TypeError, "Failed to parse args");
         return NULL;
     }
 
     if (androidIDSize != 16) {
-        PyErr_Format(PyExc_AssertionError, "Invalid size of android_id. Expect 16, got %d", androidIDSize);
+        PyErr_Format(PyExc_ValueError, "Invalid size of android_id. Expect 16, got %zu", androidIDSize);
         return NULL;
     }
     if (uuidSize != 36) {
-        PyErr_Format(PyExc_AssertionError, "Invalid size of uuid. Expect 36, got %d", androidIDSize);
+        PyErr_Format(PyExc_ValueError, "Invalid size of uuid. Expect 36, got %zu", androidIDSize);
         return NULL;
     }
 
@@ -63,7 +63,16 @@ PyObject* rc4_42(PyObject* self, PyObject* args)
     Py_ssize_t cbcSecKeySize;
 
     if (!PyArg_ParseTuple(args, "s#y#", &xyusMd5Str, &xyusMd5Size, &cbcSecKey, &cbcSecKeySize)) {
-        PyErr_SetString(PyExc_ValueError, "Failed to parse args");
+        PyErr_SetString(PyExc_TypeError, "Failed to parse args");
+        return NULL;
+    }
+
+    if (xyusMd5Size != 32) {
+        PyErr_Format(PyExc_ValueError, "Invalid size of xyus_md5. Expect 32, got %zu", xyusMd5Size);
+        return NULL;
+    }
+    if (cbcSecKeySize != 16) {
+        PyErr_Format(PyExc_ValueError, "Invalid size of cbc_sec_key. Expect 16, got %zu", cbcSecKeySize);
         return NULL;
     }
 
@@ -84,4 +93,4 @@ static PyModuleDef crypto_module = {
     PyModuleDef_HEAD_INIT, "crypto", NULL, -1, crypto_methods,
 };
 
-PyMODINIT_FUNC PyInit_crypto() { return PyModule_Create(&crypto_module); }
+PyMODINIT_FUNC PyInit_crypto(void) { return PyModule_Create(&crypto_module); }

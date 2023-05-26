@@ -32,11 +32,10 @@ ext_thirdparty_src_in_strs = list(_yield_file())
 
 class BuildExtension(build_ext):
     def build_extensions(self):
-        opts = []
         if self.compiler.compiler_type == 'msvc':
-            opts += ['/Wall']
+            opts = ['/Wall']
         else:
-            opts += ['-Wextra', '-Wpedantic']
+            opts = ['-Wextra', '-Wpedantic']
         for ext in self.extensions:
             ext.extra_compile_args = opts
         build_ext.build_extensions(self)

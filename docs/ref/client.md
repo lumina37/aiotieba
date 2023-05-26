@@ -102,7 +102,7 @@ async def `get_threads`(*fname_or_fid: str | int*, /, *pn: int = 1*, \*, *rn: in
 **返回**: 帖子列表
 </div>
 
-async def `get_posts`(*tid: int*, /, *pn: int = 1*, \*, *rn: int = 30*, *sort: PostSortType = PostSortType.ASC*, *only_thread_author: bool = False*, *with_comments: bool = False*, *comment_sort_by_agree: bool = True*, *comment_rn: int = 4*, *is_fold: bool = False*) -> *[Posts](classdef.md#posts)*
+async def `get_posts`(*tid: int*, /, *pn: int = 1*, \*, *rn: int = 30*, *sort: PostSortType = PostSortType.ASC*, *only_thread_author: bool = False*, *with_comments: bool = False*, *comment_sort_by_agree: bool = True*, *comment_rn: int = 4*) -> *[Posts](classdef.md#posts)*
 
 <div class="docstring" markdown="1">
 获取回复列表
@@ -117,7 +117,6 @@ async def `get_posts`(*tid: int*, /, *pn: int = 1*, \*, *rn: int = 30*, *sort: P
 + with_comments: True则同时请求高赞楼中楼 False则返回的Posts.comments为空
 + comment_sort_by_agree: True则楼中楼按点赞数顺序 False则楼中楼按时间顺序
 + comment_rn: 请求的楼中楼数量
-+ is_fold: 是否请求被折叠的回复
 
 **返回**: 回复列表
 </div>

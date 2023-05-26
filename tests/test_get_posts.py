@@ -3,6 +3,7 @@ import pytest
 import aiotieba as tb
 
 
+@pytest.mark.flaky(reruns=3, reruns_delay=2.0)
 @pytest.mark.asyncio
 async def test_Posts(client: tb.Client):
     posts = await client.get_posts(8211419000)
@@ -123,6 +124,7 @@ async def test_Posts(client: tb.Client):
     assert frag.is_external is True
 
 
+@pytest.mark.flaky(reruns=3, reruns_delay=2.0)
 @pytest.mark.asyncio
 async def test_ShareThread_pt(client: tb.Client):
     posts = await client.get_posts(7905926315)

@@ -2256,15 +2256,12 @@ class Posts(Containers[Post]):
 
         forum (Forum_p): 所在吧信息
         thread (Thread_p): 所在主题帖信息
-
-        has_fold (bool): 是否存在折叠楼层
     """
 
     __slots__ = [
         '_page',
         '_forum',
         '_thread',
-        '_has_fold',
     ]
 
     def __init__(self, data_proto: Optional[TypeMessage] = None) -> None:
@@ -2272,7 +2269,6 @@ class Posts(Containers[Post]):
             self._page = Page_p()._init(data_proto.page)
             self._forum = Forum_p()._init(data_proto.forum)
             self._thread = Thread_p()._init(data_proto.thread)
-            self._has_fold = bool(data_proto.has_fold_comment)
 
             self._thread._fid = self._forum._fid
             self._thread._fname = self._forum._fname
@@ -2299,7 +2295,6 @@ class Posts(Containers[Post]):
             self._page = Page_p()._init_null()
             self._forum = Forum_p()._init_null()
             self._thread = Thread_p()._init_null()
-            self._has_fold = False
 
     @property
     def page(self) -> Page_p:
@@ -2332,11 +2327,3 @@ class Posts(Containers[Post]):
         """
 
         return self._thread
-
-    @property
-    def has_fold(self) -> bool:
-        """
-        是否存在折叠楼层
-        """
-
-        return self._has_fold
