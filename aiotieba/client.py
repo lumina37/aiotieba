@@ -304,6 +304,7 @@ class Client(object):
 
         return fid
 
+    @handle_exception(str)
     async def get_fname(self, fid: int) -> str:
         """
         通过forum_id获取贴吧名
@@ -908,6 +909,7 @@ class Client(object):
 
         return await del_threads.request(self._http_core, fid, tids, block)
 
+    @handle_exception(bool, no_format=True)
     async def del_post(self, fname_or_fid: Union[str, int], /, pid: int) -> bool:
         """
         删除回复
