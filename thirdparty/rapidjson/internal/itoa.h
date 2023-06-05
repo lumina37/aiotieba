@@ -32,7 +32,7 @@ inline const char *GetDigitsLut(void)
     return cDigitsLut;
 }
 
-inline char *u64toa(uint64_t value, char *buffer)
+static inline char *u64toa(uint64_t value, char *buffer)
 {
 
     const char *cDigitsLut = GetDigitsLut();
