@@ -9,11 +9,11 @@
 #define XXH_INLINE_ALL
 #include "xxHash/xxhash.h"
 
-#include "const.h"
-#include "error.h"
-#include "utils.h"
+#include "tbcrypto/const.h"
+#include "tbcrypto/error.h"
+#include "tbcrypto/utils.h"
 
-#include "cuid.h"
+#include "tbcrypto/cuid.h"
 
 #define HASHER_NUM 4
 #define STEP_SIZE 5

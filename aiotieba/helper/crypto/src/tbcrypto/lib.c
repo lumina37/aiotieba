@@ -1,10 +1,10 @@
-#include "_python.h"
+#include "tbcrypto/_python.h"
 
-#include "const.h"
-#include "cuid.h"
-#include "error.h"
-#include "sign.h"
-#include "zid.h"
+#include "tbcrypto/const.h"
+#include "tbcrypto/cuid.h"
+#include "tbcrypto/error.h"
+#include "tbcrypto/sign.h"
+#include "tbcrypto/zid.h"
 
 PyObject* cuid_galaxy2(PyObject* self, PyObject* args)
 {

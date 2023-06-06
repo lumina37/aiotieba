@@ -1,10 +1,10 @@
 #include <stddef.h> // size_t
 
-#include "const.h"
-#include "error.h"
-#include "utils.h"
+#include "tbcrypto/const.h"
+#include "tbcrypto/error.h"
+#include "tbcrypto/utils.h"
 
-#include "zid.h"
+#include "tbcrypto/zid.h"
 
 typedef struct rc4_42_context {
     int x;

@@ -22,8 +22,7 @@
  *  http://www.itl.nist.gov/fipspubs/fip180-1.htm
  */
 
-#include "common.h"
-
+#include "mbedtls/common.h"
 #include "mbedtls/sha1.h"
 
 void mbedtls_sha1_init(mbedtls_sha1_context *ctx)
