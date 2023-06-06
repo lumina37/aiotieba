@@ -16,16 +16,11 @@ class BuildExtension(build_ext):
         build_ext.build_extensions(self)
 
 
-extension_dir_str = "./aiotieba/helper/crypto"
-extension_dir = Path(extension_dir_str)
+extension_dir = Path("./aiotieba/helper/crypto")
 include_dir = extension_dir / "include"
 source_dir = extension_dir / "src"
 
-print(source_dir)
-
 source_files = glob.glob(str(extension_dir) + '/**/*.c', recursive=True)
-print(source_files)
-
 
 ext_crypto_module = Extension(
     "aiotieba.helper.crypto.crypto",
