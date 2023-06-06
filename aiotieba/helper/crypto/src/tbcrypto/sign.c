@@ -2,11 +2,11 @@
 #include <string.h> // strlen
 
 #include "mbedtls/md5.h"
-#include "rapidjson/internal/itoa.h"
+#include "rapidjson/itoa.h"
 
-#include "const.h"
+#include "tbcrypto/const.h"
 
-#include "sign.h"
+#include "tbcrypto/sign.h"
 
 static const unsigned char SIGN_SUFFIX[] = {'t', 'i', 'e', 'b', 'a', 'c', 'l', 'i', 'e', 'n', 't', '!', '!', '!'};
 

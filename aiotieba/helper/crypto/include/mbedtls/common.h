@@ -23,7 +23,7 @@
 #ifndef MBEDTLS_LIBRARY_COMMON_H
 #define MBEDTLS_LIBRARY_COMMON_H
 
-#include "alignment.h"
+#include "mbedtls/alignment.h"
 
 #include <stddef.h>
 

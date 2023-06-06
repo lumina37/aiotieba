@@ -13,7 +13,7 @@
 
 #include "crc/crc32.h"
 
-static uint32_t crc32_table[] = {
+static uint32_t tbc_crc32Table[] = {
     0x00000000L, 0x77073096L, 0xEE0E612CL, 0x990951BAL, 0x076DC419L, 0x706AF48FL, 0xE963A535L, 0x9E6495A3L, 0x0EDB8832L,
     0x79DCB8A4L, 0xE0D5E91EL, 0x97D2D988L, 0x09B64C2BL, 0x7EB17CBDL, 0xE7B82D07L, 0x90BF1D91L, 0x1DB71064L, 0x6AB020F2L,
     0xF3B97148L, 0x84BE41DEL, 0x1ADAD47DL, 0x6DDDE4EBL, 0xF4D4B551L, 0x83D385C7L, 0x136C9856L, 0x646BA8C0L, 0xFD62F97AL,
@@ -44,13 +44,13 @@ static uint32_t crc32_table[] = {
     0x24B4A3A6L, 0xBAD03605L, 0xCDD70693L, 0x54DE5729L, 0x23D967BFL, 0xB3667A2EL, 0xC4614AB8L, 0x5D681B02L, 0x2A6F2B94L,
     0xB40BBE37L, 0xC30C8EA1L, 0x5A05DF1BL, 0x2D02EF8DL};
 
-uint32_t crc32(const unsigned char* src, size_t srcLen, uint32_t prev_val)
+uint32_t tbc_crc32(const unsigned char* src, size_t srcLen, uint32_t prev_val)
 {
     uint32_t crc32_val = ~prev_val;
 
     unsigned char* cursor = (unsigned char*)src;
     while (srcLen--) {
-        crc32_val = (crc32_val >> 8) ^ crc32_table[(crc32_val & 0xFF) ^ *cursor++];
+        crc32_val = (crc32_val >> 8) ^ tbc_crc32Table[(crc32_val & 0xFF) ^ *cursor++];
     }
 
     return ~crc32_val;

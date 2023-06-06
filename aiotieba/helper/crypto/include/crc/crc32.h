@@ -16,4 +16,4 @@
 #include <stddef.h> // size_t
 #include <stdint.h> // uint32_t
 
-uint32_t crc32(const unsigned char* src, size_t srcLen, uint32_t prev_val);
+uint32_t tbc_crc32(const unsigned char* src, size_t srcLen, uint32_t prev_val);

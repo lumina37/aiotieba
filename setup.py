@@ -1,33 +1,8 @@
+import glob
 from pathlib import Path
 
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
-
-third_party_path = Path("thirdparty")
-ext_path = Path("aiotieba/helper/crypto")
-ext_src_in_strs = [str(f) for f in ext_path.glob('*.c')]
-
-ext_thirdparty_include_dirs = [
-    third_party_path,
-    third_party_path / "mbedtls/include",
-]
-ext_thirdparty_include_in_strs = [str(d) for d in ext_thirdparty_include_dirs]
-ext_thirdparty_src_dirs = [
-    third_party_path,
-    third_party_path / "mbedtls/library",
-    third_party_path / "base32",
-    third_party_path / "crc",
-    third_party_path / "xxHash",
-]
-
-
-def _yield_file() -> str:
-    for src_dir in ext_thirdparty_src_dirs:
-        for f in src_dir.glob('*.c'):
-            yield str(f)
-
-
-ext_thirdparty_src_in_strs = list(_yield_file())
 
 
 class BuildExtension(build_ext):
@@ -41,10 +16,16 @@ class BuildExtension(build_ext):
         build_ext.build_extensions(self)
 
 
+extension_dir = Path("./aiotieba/helper/crypto")
+include_dir = extension_dir / "include"
+source_dir = extension_dir / "src"
+
+source_files = glob.glob(str(extension_dir) + '/**/*.c', recursive=True)
+
 ext_crypto_module = Extension(
     "aiotieba.helper.crypto.crypto",
-    sources=ext_src_in_strs + ext_thirdparty_src_in_strs,
-    include_dirs=ext_thirdparty_include_in_strs,
+    sources=source_files,
+    include_dirs=[str(include_dir)],
     language='c',
 )
 

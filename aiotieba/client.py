@@ -209,8 +209,6 @@ class Client(object):
             except BaseException:
                 self._ws_core._status = WsStatus.CLOSED
                 raise
-            else:
-                self._ws_core._status = WsStatus.OPEN
 
         return True
 
@@ -226,10 +224,12 @@ class Client(object):
                 mid_manager.priv_gid = group._group_id
         mid_manager.gid2mid = {g._group_id: MsgIDPair(g._last_msg_id, g._last_msg_id) for g in groups}
 
-    async def __init_tbs(self) -> bool:
+        self._ws_core._status = WsStatus.OPEN
+
+    async def __init_tbs(self) -> None:
         if self._account._tbs:
-            return True
-        return await self.__login()
+            return
+        await self.__login()
 
     async def get_self_info(self, require: ReqUInfo = ReqUInfo.ALL) -> TypeUserInfo:
         """
@@ -251,8 +251,7 @@ class Client(object):
 
         return self._user
 
-    @handle_exception(bool)
-    async def __login(self) -> bool:
+    async def __login(self) -> None:
         user, tbs = await login.request(self._http_core)
 
         self._user._user_id = user._user_id
@@ -260,29 +259,21 @@ class Client(object):
         self._user._user_name = user._user_name
         self._account._tbs = tbs
 
-        return True
-
-    async def __init_client_id(self) -> bool:
+    async def __init_client_id(self) -> None:
         if self._account._client_id:
-            return True
-        return await self.__sync()
+            return
+        await self.__sync()
 
-    @handle_exception(bool)
-    async def __sync(self) -> bool:
+    async def __sync(self) -> None:
         client_id = await sync.request(self._http_core)
         self._account._client_id = client_id
 
-        return True
-
-    @handle_exception(bool)
-    async def __init_z_id(self) -> bool:
+    async def __init_z_id(self) -> None:
         if self._account._z_id:
-            return True
+            return
 
         z_id = await init_z_id.request(self._http_core)
         self._account._z_id = z_id
-
-        return True
 
     @handle_exception(int)
     async def get_fid(self, fname: str) -> int:
@@ -304,6 +295,7 @@ class Client(object):
 
         return fid
 
+    @handle_exception(str)
     async def get_fname(self, fid: int) -> str:
         """
         通过forum_id获取贴吧名
@@ -343,28 +335,21 @@ class Client(object):
             return UserInfo(_id)
 
         if isinstance(_id, int):
-            if (require | ReqUInfo.BASIC) == ReqUInfo.BASIC:
-                # 仅有BASIC需求
-                return await self._get_uinfo_getUserInfo(_id)
-            elif require & ReqUInfo.TIEBA_UID:
-                # 有TIEBA_UID需求
-                user = await self._get_uinfo_getUserInfo(_id)
+            if require <= ReqUInfo.NICK_NAME:
+                # 仅有NICK_NAME以下的需求
+                return await self._get_uinfo_getuserinfo(_id)
+            else:
+                user = await self._get_uinfo_getuserinfo(_id)
                 user, _ = await self.get_homepage(user.portrait, with_threads=False)
                 return user
-            else:
-                # 有除TIEBA_UID外的其他非BASIC需求
-                return await self._get_uinfo_getuserinfo(_id)
         elif is_portrait(_id):
             if (require | ReqUInfo.BASIC) == ReqUInfo.BASIC:
+                # 仅有BASIC需求
                 if not require & ReqUInfo.USER_ID:
                     # 无USER_ID需求
                     return await self._get_uinfo_panel(_id)
-                else:
-                    user, _ = await self.get_homepage(_id, with_threads=False)
-                    return user
-            else:
-                user, _ = await self.get_homepage(_id, with_threads=False)
-                return user
+            user, _ = await self.get_homepage(_id, with_threads=False)
+            return user
         else:
             if (require | ReqUInfo.BASIC) == ReqUInfo.BASIC:
                 return await self._get_uinfo_user_json(_id)
@@ -908,6 +893,7 @@ class Client(object):
 
         return await del_threads.request(self._http_core, fid, tids, block)
 
+    @handle_exception(bool, no_format=True)
     async def del_post(self, fname_or_fid: Union[str, int], /, pid: int) -> bool:
         """
         删除回复

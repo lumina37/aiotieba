@@ -29,4 +29,4 @@
 
 #define BASE32_LEN(len) (((len) / 5) * 8 + ((len) % 5 ? 8 : 0))
 
-void base32_encode(const unsigned char* src, int srcLen, unsigned char* dst);
+void tbc_base32_encode(const unsigned char* src, int srcLen, unsigned char* dst);

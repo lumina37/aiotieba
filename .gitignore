@@ -11,8 +11,6 @@
 
 !.github
 !.github/**
-!thirdparty
-!thirdparty/**
 !aiotieba
 !aiotieba/**
 !docs

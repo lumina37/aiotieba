@@ -22,8 +22,7 @@
  *  http://www.ietf.org/rfc/rfc1321.txt
  */
 
-#include "common.h"
-
+#include "mbedtls/common.h"
 #include "mbedtls/md5.h"
 
 void mbedtls_md5_init(mbedtls_md5_context *ctx)
