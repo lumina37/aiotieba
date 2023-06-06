@@ -66,8 +66,8 @@ void tbc_heliosHash(TBC_NOESCAPE const unsigned char* src, size_t srcSize, TBC_N
     memset(buffer, -1, STEP_SIZE); // Now buffer is [-1 * 5, ...]
 
     // 1st hash with CRC32
-    crc32Val = crc32(src, srcSize, 0);
-    crc32Val = crc32(buffer, STEP_SIZE, crc32Val);
+    crc32Val = tbc_crc32(src, srcSize, 0);
+    crc32Val = tbc_crc32(buffer, STEP_SIZE, crc32Val);
     __tbc_update(&sec, (uint64_t)crc32Val, 8, false);
     __tbc_writeBuffer(buffer + STEP_SIZE, sec); // Now buffer is [-1 * 5, crcrc, ...]
 
@@ -88,7 +88,7 @@ void tbc_heliosHash(TBC_NOESCAPE const unsigned char* src, size_t srcSize, TBC_N
     __tbc_writeBuffer(buffer + STEP_SIZE * 3, sec); // Now buffer is [-1[5], crc[5], xx[5], xx[5]]
 
     // 4th hash with CRC32
-    crc32Val = crc32(buffer + STEP_SIZE, STEP_SIZE * 3, crc32Val);
+    crc32Val = tbc_crc32(buffer + STEP_SIZE, STEP_SIZE * 3, crc32Val);
     __tbc_update(&sec, crc32Val, 7, true);
 
     // write to dst
@@ -131,7 +131,7 @@ void tbc_cuid_galaxy2(TBC_NOESCAPE const unsigned char* androidID, TBC_NOESCAPE 
 
     // step 5: assign helios base32 to dst
     // dst will be [md5 hex, '|V', heliosHash base32]
-    base32_encode(heHash, TBC_HELIOS_HASH_SIZE, (dst + dstOffset));
+    tbc_base32_encode(heHash, TBC_HELIOS_HASH_SIZE, (dst + dstOffset));
 }
 
 void tbc_c3_aid(TBC_NOESCAPE const unsigned char* androidID, TBC_NOESCAPE const unsigned char* uuid,
@@ -160,7 +160,7 @@ void tbc_c3_aid(TBC_NOESCAPE const unsigned char* androidID, TBC_NOESCAPE const 
 
     // step 3: compute sha1 base32 and assign
     // dst will be ['A00-', sha1 base32, ...]
-    base32_encode(sha1, TBC_SHA1_HASH_SIZE, (dst + dstOffset));
+    tbc_base32_encode(sha1, TBC_SHA1_HASH_SIZE, (dst + dstOffset));
     dstOffset += TBC_SHA1_BASE32_SIZE;
 
     // step 4: add joining char
@@ -174,5 +174,5 @@ void tbc_c3_aid(TBC_NOESCAPE const unsigned char* androidID, TBC_NOESCAPE const 
 
     // step 6: assign helios base32 to dst
     // dst will be ['A00-', sha1 base32, '-', heliosHash base32]
-    base32_encode(heHash, TBC_HELIOS_HASH_SIZE, (dst + dstOffset));
+    tbc_base32_encode(heHash, TBC_HELIOS_HASH_SIZE, (dst + dstOffset));
 }
