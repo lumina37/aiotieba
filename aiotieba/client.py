@@ -335,28 +335,21 @@ class Client(object):
             return UserInfo(_id)
 
         if isinstance(_id, int):
-            if (require | ReqUInfo.BASIC) == ReqUInfo.BASIC:
-                # 仅有BASIC需求
-                return await self._get_uinfo_getUserInfo(_id)
-            elif require & ReqUInfo.TIEBA_UID:
-                # 有TIEBA_UID需求
-                user = await self._get_uinfo_getUserInfo(_id)
+            if require <= ReqUInfo.NICK_NAME:
+                # 仅有NICK_NAME以下的需求
+                return await self._get_uinfo_getuserinfo(_id)
+            else:
+                user = await self._get_uinfo_getuserinfo(_id)
                 user, _ = await self.get_homepage(user.portrait, with_threads=False)
                 return user
-            else:
-                # 有除TIEBA_UID外的其他非BASIC需求
-                return await self._get_uinfo_getuserinfo(_id)
         elif is_portrait(_id):
             if (require | ReqUInfo.BASIC) == ReqUInfo.BASIC:
+                # 仅有BASIC需求
                 if not require & ReqUInfo.USER_ID:
                     # 无USER_ID需求
                     return await self._get_uinfo_panel(_id)
-                else:
-                    user, _ = await self.get_homepage(_id, with_threads=False)
-                    return user
-            else:
-                user, _ = await self.get_homepage(_id, with_threads=False)
-                return user
+            user, _ = await self.get_homepage(_id, with_threads=False)
+            return user
         else:
             if (require | ReqUInfo.BASIC) == ReqUInfo.BASIC:
                 return await self._get_uinfo_user_json(_id)
