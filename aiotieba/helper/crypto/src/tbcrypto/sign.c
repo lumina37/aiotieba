@@ -22,7 +22,7 @@ static inline void __tbc_pyStr2UTF8(const char** dst, size_t* dstSize, PyObject*
     }
 }
 
-PyObject* sign(PyObject* TBC_UNUSED self, PyObject* args)
+PyObject* sign(TBC_UNUSED PyObject* self, PyObject* args)
 {
     PyObject* items;
     if (!PyArg_ParseTuple(args, "O", &items)) {
