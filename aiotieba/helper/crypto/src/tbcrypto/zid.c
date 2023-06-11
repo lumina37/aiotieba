@@ -12,8 +12,7 @@ typedef struct rc4_42_context {
     unsigned char m[256];
 } rc4_42_context;
 
-static inline void rc4_42_setup(TBC_NOESCAPE rc4_42_context* ctx, TBC_NOESCAPE const unsigned char* key,
-                                unsigned int keyLen)
+static inline void rc4_42_setup(rc4_42_context* ctx, const unsigned char* key, unsigned int keyLen)
 {
     int i, j, a;
     unsigned int k;
@@ -39,8 +38,7 @@ static inline void rc4_42_setup(TBC_NOESCAPE rc4_42_context* ctx, TBC_NOESCAPE c
     }
 }
 
-static inline void rc4_42_crypt(TBC_NOESCAPE rc4_42_context* ctx, TBC_NOESCAPE const unsigned char* src, size_t srcLen,
-                                TBC_NOESCAPE unsigned char* dst)
+static inline void rc4_42_crypt(rc4_42_context* ctx, const unsigned char* src, size_t srcLen, unsigned char* dst)
 {
     int x, y, a, b;
     size_t i;
@@ -67,8 +65,7 @@ static inline void rc4_42_crypt(TBC_NOESCAPE rc4_42_context* ctx, TBC_NOESCAPE c
     ctx->y = y;
 }
 
-void tbc_rc4_42(TBC_NOESCAPE const unsigned char* xyusMd5Str, TBC_NOESCAPE const unsigned char* cbcSecKey,
-                TBC_NOESCAPE unsigned char* dst)
+void tbc_rc4_42(const unsigned char* xyusMd5Str, const unsigned char* cbcSecKey, unsigned char* dst)
 {
     rc4_42_context rc442Ctx;
 
