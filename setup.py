@@ -20,7 +20,7 @@ extension_dir = Path("./aiotieba/helper/crypto")
 include_dir = extension_dir / "include"
 source_dir = extension_dir / "src"
 
-source_files = glob.glob(str(extension_dir) + '/**/*.c', recursive=True)
+source_files = glob.glob(f"{extension_dir}/**/*.c", recursive=True)
 
 ext_crypto_module = Extension(
     "aiotieba.helper.crypto.crypto",
