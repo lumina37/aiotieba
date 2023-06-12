@@ -478,7 +478,7 @@ class FragImage_home(object):
     def __repr__(self) -> str:
         return str(
             {
-                'src': self.src,
+                'src': self._src,
                 'width': self._width,
                 'height': self._height,
             }
@@ -487,7 +487,10 @@ class FragImage_home(object):
     @property
     def src(self) -> str:
         """
-        原图链接
+        大图链接
+
+        Note:
+            宽960px
         """
 
         return self._src
