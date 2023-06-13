@@ -1,102 +1,27 @@
 import datetime
-import re
-from typing import List, Optional
+from typing import Optional
 
 import bs4
 
 from .._classdef import Containers
 
 
-class Media_postlog(object):
+class Userlog(object):
     """
-    媒体信息
+    吧务用户管理日志
 
     Attributes:
-        src (str): 小图链接
-        origin_src (str): 原图链接
-        hash (str): 百度图床hash
-    """
-
-    __slots__ = [
-        '_src',
-        '_origin_src',
-        '_hash',
-    ]
-
-    def __init__(self, data_tag: bs4.element.Tag) -> None:
-        self._src = data_tag.img['original']
-        self._origin_src = data_tag['href']
-
-        self._hash = None
-
-    def __repr__(self) -> str:
-        return str({'src': self._src})
-
-    @property
-    def src(self) -> str:
-        """
-        小图链接
-
-        Note:
-            宽720px
-        """
-
-        return self._src
-
-    @property
-    def origin_src(self) -> str:
-        """
-        原图链接
-        """
-
-        return self._origin_src
-
-    @property
-    def hash(self) -> str:
-        """
-        图像的百度图床hash
-        """
-
-        if self._hash is None:
-            end_idx = self._src.rfind('.')
-
-            if end_idx == -1:
-                self._hash = ''
-            else:
-                start_idx = self._src.rfind('/', 0, end_idx)
-                self._hash = self._src[start_idx + 1 : end_idx]
-
-        return self._hash
-
-
-class Postlog(object):
-    """
-    吧务帖子管理日志
-
-    Attributes:
-        text (str): 文本内容
-        title (str): 所在主题帖标题
-        medias (list[Media_postlog]): 媒体列表
-
-        tid (int): 所在主题帖id
-        pid (int): 回复id
-
         op_type (str): 操作类型
-        post_portrait (str): 发帖用户的portrait
-        post_time (datetime.datetime): 发帖时间
+        op_duration (int): 操作作用时长
+        user_portrait (str): 被操作用户的portrait
         op_user_name (str): 操作人用户名
         op_time (datetime.datetime): 操作时间
     """
 
     __slots__ = [
-        '_text',
-        '_title',
-        '_medias',
-        '_tid',
-        '_pid',
         '_op_type',
-        '_post_portrait',
-        '_post_time',
+        '_op_duration',
+        '_user_portrait',
         '_op_user_name',
         '_op_time',
     ]
@@ -104,83 +29,30 @@ class Postlog(object):
     def __init__(self, data_tag: bs4.element.Tag) -> None:
         left_cell_item = data_tag.td
 
-        post_meta_item = left_cell_item.find('div', class_='post_meta')
-        post_user_item = post_meta_item.div
-        self._post_portrait = post_user_item.a['href'][14:-17]
-        post_time_item = post_meta_item.time
-        self._post_time = datetime.datetime.strptime(post_time_item.text, '%m月%d日 %H:%M')
+        post_user_item = left_cell_item.a
+        self._user_portrait = post_user_item['href'][14:-17]
 
-        post_content_item = post_meta_item.next_sibling
-        title_item = post_content_item.h1.a
-        url = title_item['href']
-        self._tid = int(re.search(r'/(\d+)', url).group(1))
-        pid = int(re.search(r'#(\d+)', url).group(1))
-        self._pid = pid if pid != self._tid else 0
-        self._title = title_item.string
-
-        text_item = post_content_item.div
-        self._text = text_item.string[12:]
-        self._medias = [Media_postlog(tag) for tag in text_item.next_sibling('a')]
-
-        op_type_item = left_cell_item.next_sibling
+        op_type_item = left_cell_item.next_sibling.next_sibling
         self._op_type = op_type_item.string
 
-        op_user_name_item = op_type_item.next_sibling
+        op_duration_item = op_type_item.next_sibling
+        op_duration = op_duration_item.string.replace(' ', '')
+        self._op_duration = 0 if '天' not in op_duration else int(op_duration[:-1])
+
+        op_user_name_item = op_duration_item.next_sibling
         self._op_user_name = op_user_name_item.string
 
         op_time_item = op_user_name_item.next_sibling
-        self._op_time = datetime.datetime.strptime(op_time_item.text, '%Y-%m-%d%H:%M')
+        self._op_time = datetime.datetime.strptime(op_time_item.text, '%Y-%m-%d %H:%M')
 
     def __repr__(self) -> str:
         return str(
             {
-                'tid': self._tid,
-                'pid': self._pid,
-                'title': self._title,
-                'text': self._text,
                 'op_type': self._op_type,
+                'op_duration': self._op_duration,
+                'user': self._user_portrait,
             }
         )
-
-    @property
-    def text(self) -> str:
-        """
-        文本内容
-        """
-
-        return self._text
-
-    @property
-    def title(self) -> str:
-        """
-        所在主题帖标题
-        """
-
-        return self._title
-
-    @property
-    def medias(self) -> List[Media_postlog]:
-        """
-        媒体列表
-        """
-
-        return self._medias
-
-    @property
-    def tid(self) -> int:
-        """
-        所在主题帖id
-        """
-
-        return self._tid
-
-    @property
-    def pid(self) -> int:
-        """
-        回复id
-        """
-
-        return self._pid
 
     @property
     def op_type(self) -> str:
@@ -191,23 +63,20 @@ class Postlog(object):
         return self._op_type
 
     @property
-    def post_portrait(self) -> str:
+    def op_duration(self) -> int:
         """
-        发帖用户的portrait
+        操作类型
         """
 
-        return self._post_portrait
+        return self._op_duration
 
     @property
-    def post_time(self) -> datetime.datetime:
+    def user_portrait(self) -> str:
         """
-        发帖时间
-
-        Note:
-            不包含年份信息
+        被操作用户的portrait
         """
 
-        return self._post_time
+        return self._user_portrait
 
     @property
     def op_user_name(self) -> str:
@@ -318,12 +187,12 @@ class Page_postlog(object):
         return self._has_prev
 
 
-class Postlogs(Containers[Postlog]):
+class Userlogs(Containers[Userlog]):
     """
-    吧务帖子管理日志表
+    吧务用户管理日志表
 
     Attributes:
-        _objs (list[Postlog]): 吧务帖子管理日志表
+        _objs (list[Postlog]): 吧务用户管理日志表
 
         page (Page_postlog): 页信息
         has_more (bool): 是否还有下一页
@@ -336,7 +205,7 @@ class Postlogs(Containers[Postlog]):
 
     def __init__(self, data_soup: Optional[bs4.BeautifulSoup] = None) -> None:
         if data_soup:
-            self._objs = [Postlog(_tag) for _tag in data_soup.find('tbody').find_all('tr')]
+            self._objs = [Userlog(_tag) for _tag in data_soup.find('tbody').find_all('tr')]
             self._page = Page_postlog()._init(data_soup)
         else:
             self._objs = []

@@ -21,6 +21,8 @@ from .api import (
     follow_user,
     get_ats,
     get_bawu_info,
+    get_bawu_postlogs,
+    get_bawu_userlogs,
     get_blacklist_users,
     get_blocks,
     get_cid,
@@ -52,7 +54,6 @@ from .api import (
     get_uinfo_user_json,
     get_unblock_appeals,
     get_user_contents,
-    get_bawu_postlogs,
     good,
     handle_unblock_appeals,
     init_z_id,
@@ -644,6 +645,23 @@ class Client(object):
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
         return await get_bawu_postlogs.request(self._http_core, fname, pn)
+
+    @handle_exception(get_bawu_userlogs.Userlogs)
+    async def get_bawu_userlogs(self, fname_or_fid: Union[str, int], pn: int = 1) -> get_bawu_userlogs.Userlogs:
+        """
+        获取吧务用户管理日志表
+
+        Args:
+            fname_or_fid (str | int): 目标贴吧名或fid 优先贴吧名
+            pn (int, optional): 页码. Defaults to 1.
+
+        Returns:
+            Userlogs: 吧务用户管理日志表
+        """
+
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
+
+        return await get_bawu_userlogs.request(self._http_core, fname, pn)
 
     @handle_exception(dict)
     @_try_websocket
