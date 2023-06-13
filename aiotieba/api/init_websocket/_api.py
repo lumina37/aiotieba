@@ -20,25 +20,25 @@ PUBLIC_KEY = binascii.a2b_base64(
 )
 
 
-def pack_proto(core: Account) -> bytes:
+def pack_proto(account: Account) -> bytes:
     req_proto = UpdateClientInfoReqIdl_pb2.UpdateClientInfoReqIdl()
-    req_proto.data.bduss = core._BDUSS
+    req_proto.data.bduss = account._BDUSS
 
     device = {
-        'cuid': core.cuid,
+        'cuid': account.cuid,
         '_client_version': MAIN_VERSION,
         '_msg_status': '1',
-        'cuid_galaxy2': core.cuid_galaxy2,
+        'cuid_galaxy2': account.cuid_galaxy2,
         '_client_type': '2',
         'timestamp': str(int(time.time() * 1e3)),
     }
     req_proto.data.device = pack_json(device)
 
     rsa_chiper = PKCS1_v1_5.new(RSA.import_key(PUBLIC_KEY))
-    secret_key = rsa_chiper.encrypt(core.aes_ecb_sec_key)
+    secret_key = rsa_chiper.encrypt(account.aes_ecb_sec_key)
     req_proto.data.secretKey = secret_key
-    req_proto.data.stoken = core._STOKEN
-    req_proto.cuid = f"{core.cuid}|com.baidu.tieba{MAIN_VERSION}"
+    req_proto.data.stoken = account._STOKEN
+    req_proto.cuid = f"{account.cuid}|com.baidu.tieba{MAIN_VERSION}"
 
     return req_proto.SerializeToString()
 

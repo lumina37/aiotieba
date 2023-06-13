@@ -1131,16 +1131,16 @@ class Client(object):
         return await ungood.request(self._http_core, fname, fid, tid)
 
     @handle_exception(bool, no_format=True)
-    async def _get_cid(self, fname_or_fid: Union[str, int], /, cname: str) -> int:
+    async def _get_cid(self, fname_or_fid: Union[str, int], /, cname: str = '') -> int:
         """
-        通过加精分区名获取加精分区id
+        通过精华分区名获取精华分区id
 
         Args:
             fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
-            cname (str): 加精分区名
+            cname (str, optional): 精华分区名. Defaults to ''.
 
         Returns:
-            int: 加精分区id
+            int: 精华分区id
         """
 
         if cname == '':

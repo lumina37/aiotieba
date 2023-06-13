@@ -10,9 +10,9 @@ from .protobuf import GetDislikeListReqIdl_pb2, GetDislikeListResIdl_pb2
 CMD = 309692
 
 
-def pack_proto(core: Account, pn: int, rn: int) -> bytes:
+def pack_proto(account: Account, pn: int, rn: int) -> bytes:
     req_proto = GetDislikeListReqIdl_pb2.GetDislikeListReqIdl()
-    req_proto.data.common.BDUSS = core._BDUSS
+    req_proto.data.common.BDUSS = account._BDUSS
     req_proto.data.common._client_version = MAIN_VERSION
     req_proto.data.pn = pn
     req_proto.data.rn = rn

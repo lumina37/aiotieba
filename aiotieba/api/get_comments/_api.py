@@ -1,7 +1,7 @@
 import yarl
 
 from ...const import APP_BASE_HOST, APP_INSECURE_SCHEME, MAIN_VERSION
-from ...core import Account, HttpCore, WsCore
+from ...core import HttpCore, WsCore
 from ...exception import TiebaServerError
 from ...request import pack_proto_request, send_request
 from ._classdef import Comments
@@ -10,7 +10,7 @@ from .protobuf import PbFloorReqIdl_pb2, PbFloorResIdl_pb2
 CMD = 302002
 
 
-def pack_proto(core: Account, tid: int, pid: int, pn: int, is_comment: bool) -> bytes:
+def pack_proto(tid: int, pid: int, pn: int, is_comment: bool) -> bytes:
     req_proto = PbFloorReqIdl_pb2.PbFloorReqIdl()
     req_proto.data.common._client_type = 2
     req_proto.data.common._client_version = MAIN_VERSION
@@ -38,7 +38,7 @@ def parse_body(body: bytes) -> Comments:
 
 
 async def request_http(http_core: HttpCore, tid: int, pid: int, pn: int, is_comment: bool) -> Comments:
-    data = pack_proto(http_core.account, tid, pid, pn, is_comment)
+    data = pack_proto(tid, pid, pn, is_comment)
 
     request = pack_proto_request(
         http_core,
@@ -53,7 +53,7 @@ async def request_http(http_core: HttpCore, tid: int, pid: int, pn: int, is_comm
 
 
 async def request_ws(ws_core: WsCore, tid: int, pid: int, pn: int, is_comment: bool) -> Comments:
-    data = pack_proto(ws_core.account, tid, pid, pn, is_comment)
+    data = pack_proto(tid, pid, pn, is_comment)
 
     __log__ = "tid={tid} pid={pid}"  # noqa: F841
 

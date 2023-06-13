@@ -10,9 +10,9 @@ from .protobuf import GetForumSquareReqIdl_pb2, GetForumSquareResIdl_pb2
 CMD = 309653
 
 
-def pack_proto(core: Account, cname: str, pn: int, rn: int) -> bytes:
+def pack_proto(account: Account, cname: str, pn: int, rn: int) -> bytes:
     req_proto = GetForumSquareReqIdl_pb2.GetForumSquareReqIdl()
-    req_proto.data.common.BDUSS = core._BDUSS
+    req_proto.data.common.BDUSS = account._BDUSS
     req_proto.data.common._client_version = MAIN_VERSION
     req_proto.data.class_name = cname
     req_proto.data.pn = pn
