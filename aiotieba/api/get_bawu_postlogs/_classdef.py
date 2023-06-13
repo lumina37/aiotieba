@@ -1,5 +1,4 @@
 import datetime
-import re
 from typing import List, Optional
 
 import bs4
@@ -112,9 +111,9 @@ class Postlog(object):
 
         post_content_item = post_meta_item.next_sibling
         title_item = post_content_item.h1.a
-        url = title_item['href']
-        self._tid = int(re.search(r'/(\d+)', url).group(1))
-        pid = int(re.search(r'#(\d+)', url).group(1))
+        url: str = title_item['href']
+        self._tid = int(url[3 : url.find('?')])
+        pid = int(url[url.rfind('#') + 1 :])
         self._pid = pid if pid != self._tid else 0
         self._title = title_item.string
 
