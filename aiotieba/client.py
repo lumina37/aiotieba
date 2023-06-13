@@ -82,12 +82,15 @@ from .api import (
 from .api._classdef import UserInfo
 from .api.get_homepage import UserInfo_home
 from .core import Account, HttpCore, Network, TimeConfig, WsCore
-from .helper import GroupType, PostSortType, ReqUInfo, ThreadSortType, WsStatus, handle_exception, is_portrait
+from .enums import BawuSearchType, GroupType, PostSortType, ReqUInfo, ThreadSortType, WsStatus
+from .helper import handle_exception, is_portrait
 from .helper.cache import ForumInfoCache
 from .logging import get_logger as LOG
 from .typing import TypeUserInfo
 
 if TYPE_CHECKING:
+    import datetime
+
     import numpy as np
 
 
@@ -630,13 +633,29 @@ class Client(object):
         return await get_bawu_info.request_http(self._http_core, fid)
 
     @handle_exception(get_bawu_postlogs.Postlogs)
-    async def get_bawu_postlogs(self, fname_or_fid: Union[str, int], pn: int = 1) -> get_bawu_postlogs.Postlogs:
+    async def get_bawu_postlogs(
+        self,
+        fname_or_fid: Union[str, int],
+        /,
+        pn: int = 1,
+        *,
+        op_type: int = 0,
+        search_value: str = '',
+        search_type: BawuSearchType = BawuSearchType.USER,
+        start_dt: Optional["datetime.datetime"] = None,
+        end_dt: Optional["datetime.datetime"] = None,
+    ) -> get_bawu_postlogs.Postlogs:
         """
         获取吧务帖子管理日志表
 
         Args:
             fname_or_fid (str | int): 目标贴吧名或fid 优先贴吧名
             pn (int, optional): 页码. Defaults to 1.
+            op_type (int, optional): 搜索操作类型. Defaults to 0.
+            search_value (str, optional): 搜索关键字. Defaults to ''.
+            search_type (BawuSearchType, optional): 搜索类型. Defaults to BawuSearchType.USER.
+            start_dt (datetime.datetime, optional): 搜索的起始时间(含). Defaults to None.
+            end_dt (datetime.datetime, optional): 搜索的结束时间(含). Defaults to None.
 
         Returns:
             Postlogs: 吧务帖子管理日志表
@@ -644,10 +663,12 @@ class Client(object):
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
-        return await get_bawu_postlogs.request(self._http_core, fname, pn)
+        return await get_bawu_postlogs.request(
+            self._http_core, fname, pn, op_type, search_value, search_type, start_dt, end_dt
+        )
 
     @handle_exception(get_bawu_userlogs.Userlogs)
-    async def get_bawu_userlogs(self, fname_or_fid: Union[str, int], pn: int = 1) -> get_bawu_userlogs.Userlogs:
+    async def get_bawu_userlogs(self, fname_or_fid: Union[str, int], /, pn: int = 1) -> get_bawu_userlogs.Userlogs:
         """
         获取吧务用户管理日志表
 

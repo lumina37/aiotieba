@@ -135,7 +135,7 @@ def handle_exception(null_ret_factory: Callable[[], Any], no_format: bool = Fals
 
     Args:
         null_ret_factory (Callable[[], Any]): 空构造工厂 用于返回一个默认值
-        no_format (bool, optional): 不格式化字符串而是直接记录. Defaults to False.
+        no_format (bool, optional): 不需要再次格式化日志字符串 常见于不论成功与否都会记录日志的api. Defaults to False.
         log_level (int, optional): 日志等级. Defaults to logging.WARNING.
     """
 
