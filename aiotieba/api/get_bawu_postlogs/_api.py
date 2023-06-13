@@ -22,11 +22,11 @@ async def request(
     http_core: HttpCore,
     fname: str,
     pn: int,
-    op_type: int,
     search_value: str,
     search_type: BawuSearchType,
     start_dt: Optional[datetime.datetime],
     end_dt: Optional[datetime.datetime],
+    op_type: int,
 ) -> Postlogs:
     params = [
         ('word', fname),
