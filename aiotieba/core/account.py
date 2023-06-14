@@ -180,7 +180,7 @@ class Account(object):
             baidutiebaappe4200716-58a8-4170-af15-ea7edeb8e513
 
         Note:
-            在初次生成后该属性便不会再发生变化
+            在初始化后该属性便不会再发生变化
             此实现仅用于9.x等旧版本 11.x后请使用cuid_galaxy2填充对应字段
         """
 
@@ -220,7 +220,7 @@ class Account(object):
             A00-ZNU3O3EP74D727LMQY745CZSGZQJQZGP-3JXCKC7X
 
         Note:
-            在初次生成后该属性便不会再发生变化
+            在初始化后该属性便不会再发生变化
             此实现与12.x版本及以前的官方实现一致
         """
 
@@ -237,7 +237,7 @@ class Account(object):
             str
 
         Note:
-            在初次生成后该属性便不会再发生变化
+            在初始化后该属性便不会再发生变化
             此实现与12.x版本及以前的官方实现一致
         """
 
@@ -249,10 +249,10 @@ class Account(object):
         返回一个供贴吧AES-ECB加密使用的随机密码
 
         Returns:
-            bytes: 长度为36字节的随机密码
+            bytes: 长度为31字节的随机密码
 
         Note:
-            在初次生成后该属性便不会再发生变化
+            在初始化后该属性便不会再发生变化
         """
 
         if self._aes_ecb_sec_key is None:
@@ -284,7 +284,7 @@ class Account(object):
             bytes: 长度为16字节的随机密码
 
         Note:
-            在初次生成后该属性便不会再发生变化
+            在初始化后该属性便不会再发生变化
         """
 
         if self._aes_cbc_sec_key is None:

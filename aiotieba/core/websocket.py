@@ -8,8 +8,9 @@ from typing import Awaitable, Callable, Dict
 import aiohttp
 import yarl
 
+from ..enums import WsStatus
 from ..exception import HTTPStatusError
-from ..helper import WsStatus, timeout
+from ..helper import timeout
 from ..request.common import req2res
 from ..request.websocket import pack_ws_bytes, parse_ws_bytes
 from .account import Account

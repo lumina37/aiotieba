@@ -11,7 +11,7 @@ CMD = 302001
 
 
 def pack_proto(
-    core: Account,
+    account: Account,
     tid: int,
     pn: int,
     rn: int,
@@ -30,7 +30,7 @@ def pack_proto(
     req_proto.data.sort = sort
     req_proto.data.only_thread_author = only_thread_author
     if with_comments:
-        req_proto.data.common.BDUSS = core._BDUSS
+        req_proto.data.common.BDUSS = account._BDUSS
         req_proto.data.with_comments = with_comments
         req_proto.data.comment_sort_by_agree = comment_sort_by_agree
         req_proto.data.comment_rn = comment_rn

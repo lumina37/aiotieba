@@ -3,7 +3,7 @@ from typing import List, Tuple
 import yarl
 
 from ...const import APP_BASE_HOST, APP_INSECURE_SCHEME, MAIN_VERSION
-from ...core import Account, HttpCore, WsCore
+from ...core import HttpCore, WsCore
 from ...exception import TiebaServerError
 from ...request import pack_proto_request, send_request
 from ._classdef import Thread_home, UserInfo_home
@@ -16,7 +16,7 @@ def null_ret_factory() -> Tuple[UserInfo_home, List[Thread_home]]:
     return UserInfo_home(), []
 
 
-def pack_proto(core: Account, portrait: str, with_threads: bool) -> bytes:
+def pack_proto(portrait: str, with_threads: bool) -> bytes:
     req_proto = ProfileReqIdl_pb2.ProfileReqIdl()
     req_proto.data.common._client_version = MAIN_VERSION
     req_proto.data.common._client_type = 2
@@ -55,7 +55,7 @@ def parse_body(body: bytes) -> Tuple[UserInfo_home, List[Thread_home]]:
 async def request_http(
     http_core: HttpCore, portrait: str, with_threads: bool
 ) -> Tuple[UserInfo_home, List[Thread_home]]:
-    data = pack_proto(http_core.account, portrait, with_threads)
+    data = pack_proto(portrait, with_threads)
 
     request = pack_proto_request(
         http_core,
@@ -72,7 +72,7 @@ async def request_http(
 
 
 async def request_ws(ws_core: WsCore, portrait: str, with_threads: bool) -> Tuple[UserInfo_home, List[Thread_home]]:
-    data = pack_proto(ws_core.account, portrait, with_threads)
+    data = pack_proto(portrait, with_threads)
 
     __log__ = "portrait={portrait}"  # noqa: F841
 

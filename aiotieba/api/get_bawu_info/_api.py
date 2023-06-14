@@ -1,7 +1,7 @@
 import yarl
 
 from ...const import APP_BASE_HOST, APP_INSECURE_SCHEME, MAIN_VERSION
-from ...core import Account, HttpCore, WsCore
+from ...core import HttpCore, WsCore
 from ...exception import TiebaServerError
 from ...request import pack_proto_request, send_request
 from ._classdef import BawuInfo
@@ -10,7 +10,7 @@ from .protobuf import GetBawuInfoReqIdl_pb2, GetBawuInfoResIdl_pb2
 CMD = 301007
 
 
-def pack_proto(core: Account, fid: int) -> bytes:
+def pack_proto(fid: int) -> bytes:
     req_proto = GetBawuInfoReqIdl_pb2.GetBawuInfoReqIdl()
     req_proto.data.common._client_version = MAIN_VERSION
     req_proto.data.fid = fid
@@ -32,7 +32,7 @@ def parse_body(body: bytes) -> BawuInfo:
 
 
 async def request_http(http_core: HttpCore, fid: int) -> BawuInfo:
-    data = pack_proto(http_core.account, fid)
+    data = pack_proto(fid)
 
     request = pack_proto_request(
         http_core,

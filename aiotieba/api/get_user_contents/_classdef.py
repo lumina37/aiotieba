@@ -425,7 +425,7 @@ class FragImage_ut(object):
     def __repr__(self) -> str:
         return str(
             {
-                'src': self.src,
+                'src': self._src,
                 'width': self._width,
                 'height': self._height,
             }

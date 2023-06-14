@@ -1,23 +1,17 @@
 import enum
 
 
-class GroupType(enum.IntEnum):
+class WsStatus(enum.IntEnum):
     """
-    消息组类型
-    """
+    回复排序
 
-    PRIVATE_MSG = 6
-    MISC = 8
-
-
-class MsgType(enum.IntEnum):
-    """
-    消息类型
+    Note:
+        CLOSED已关闭 CONNECTING正在连接 OPEN可用
     """
 
-    PRIVATE_MSG = 1
-    MISC = 10
-    READED = 22
+    CLOSED = 0
+    CONNECTING = 1
+    OPEN = 2
 
 
 class ReqUInfo(enum.IntEnum):
@@ -45,8 +39,8 @@ class ThreadSortType(enum.IntEnum):
     主题帖排序
 
     Note:
-        对于有热门分区的贴吧 0热门排序 1按发布时间 2关注的人 34热门排序 >=5是按回复时间
-        对于无热门分区的贴吧 0按回复时间 1按发布时间 2关注的人 >=3按回复时间
+        对于有热门分区的贴吧 0热门排序(HOT) 1按发布时间(CREATE) 2关注的人(FOLLOW) 34热门排序(HOT) >=5是按回复时间(REPLY)
+        对于无热门分区的贴吧 0按回复时间(REPLY) 1按发布时间(CREATE) 2关注的人(FOLLOW) >=3按回复时间(REPLY)
     """
 
     REPLY = 5
@@ -60,7 +54,7 @@ class PostSortType(enum.IntEnum):
     回复排序
 
     Note:
-        0时间顺序 1时间倒序 2热门序
+        ASC时间顺序 DESC时间倒序 HOT热门序
     """
 
     ASC = 0
@@ -68,14 +62,32 @@ class PostSortType(enum.IntEnum):
     HOT = 2
 
 
-class WsStatus(enum.IntEnum):
+class BawuSearchType(enum.IntEnum):
     """
-    回复排序
+    吧务后台搜索类型
 
     Note:
-        0已关闭 1正在连接 2可用
+        USER搜索用户 OP搜索操作者
     """
 
-    CLOSED = 0
-    CONNECTING = 1
-    OPEN = 2
+    USER = 0
+    OP = 1
+
+
+class GroupType(enum.IntEnum):
+    """
+    消息组类型
+    """
+
+    PRIVATE_MSG = 6
+    MISC = 8
+
+
+class MsgType(enum.IntEnum):
+    """
+    消息类型
+    """
+
+    PRIVATE_MSG = 1
+    MISC = 10
+    READED = 22

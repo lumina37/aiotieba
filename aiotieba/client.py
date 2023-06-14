@@ -21,6 +21,8 @@ from .api import (
     follow_user,
     get_ats,
     get_bawu_info,
+    get_bawu_postlogs,
+    get_bawu_userlogs,
     get_blacklist_users,
     get_blocks,
     get_cid,
@@ -80,12 +82,15 @@ from .api import (
 from .api._classdef import UserInfo
 from .api.get_homepage import UserInfo_home
 from .core import Account, HttpCore, Network, TimeConfig, WsCore
-from .helper import GroupType, PostSortType, ReqUInfo, ThreadSortType, WsStatus, handle_exception, is_portrait
+from .enums import BawuSearchType, GroupType, PostSortType, ReqUInfo, ThreadSortType, WsStatus
+from .helper import handle_exception, is_portrait
 from .helper.cache import ForumInfoCache
 from .logging import get_logger as LOG
 from .typing import TypeUserInfo
 
 if TYPE_CHECKING:
+    import datetime
+
     import numpy as np
 
 
@@ -627,6 +632,76 @@ class Client(object):
 
         return await get_bawu_info.request_http(self._http_core, fid)
 
+    @handle_exception(get_bawu_postlogs.Postlogs)
+    async def get_bawu_postlogs(
+        self,
+        fname_or_fid: Union[str, int],
+        /,
+        pn: int = 1,
+        *,
+        search_value: str = '',
+        search_type: BawuSearchType = BawuSearchType.USER,
+        start_dt: Optional["datetime.datetime"] = None,
+        end_dt: Optional["datetime.datetime"] = None,
+        op_type: int = 0,
+    ) -> get_bawu_postlogs.Postlogs:
+        """
+        获取吧务帖子管理日志表
+
+        Args:
+            fname_or_fid (str | int): 目标贴吧名或fid 优先贴吧名
+            pn (int, optional): 页码. Defaults to 1.
+            search_value (str, optional): 搜索关键字. Defaults to ''.
+            search_type (BawuSearchType, optional): 搜索类型. Defaults to BawuSearchType.USER.
+            start_dt (datetime.datetime, optional): 搜索的起始时间(含). Defaults to None.
+            end_dt (datetime.datetime, optional): 搜索的结束时间(含). Defaults to None.
+            op_type (int, optional): 搜索操作类型. Defaults to 0.
+
+        Returns:
+            Postlogs: 吧务帖子管理日志表
+        """
+
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
+
+        return await get_bawu_postlogs.request(
+            self._http_core, fname, pn, search_value, search_type, start_dt, end_dt, op_type
+        )
+
+    @handle_exception(get_bawu_userlogs.Userlogs)
+    async def get_bawu_userlogs(
+        self,
+        fname_or_fid: Union[str, int],
+        /,
+        pn: int = 1,
+        *,
+        search_value: str = '',
+        search_type: BawuSearchType = BawuSearchType.USER,
+        start_dt: Optional["datetime.datetime"] = None,
+        end_dt: Optional["datetime.datetime"] = None,
+        op_type: int = 0,
+    ) -> get_bawu_userlogs.Userlogs:
+        """
+        获取吧务用户管理日志表
+
+        Args:
+            fname_or_fid (str | int): 目标贴吧名或fid 优先贴吧名
+            pn (int, optional): 页码. Defaults to 1.
+            search_value (str, optional): 搜索关键字. Defaults to ''.
+            search_type (BawuSearchType, optional): 搜索类型. Defaults to BawuSearchType.USER.
+            start_dt (datetime.datetime, optional): 搜索的起始时间(含). Defaults to None.
+            end_dt (datetime.datetime, optional): 搜索的结束时间(含). Defaults to None.
+            op_type (int, optional): 搜索操作类型. Defaults to 0.
+
+        Returns:
+            Userlogs: 吧务用户管理日志表
+        """
+
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
+
+        return await get_bawu_userlogs.request(
+            self._http_core, fname, pn, search_value, search_type, start_dt, end_dt, op_type
+        )
+
     @handle_exception(dict)
     @_try_websocket
     async def get_tab_map(self, fname_or_fid: Union[str, int]) -> Dict[str, int]:
@@ -1095,16 +1170,16 @@ class Client(object):
         return await ungood.request(self._http_core, fname, fid, tid)
 
     @handle_exception(bool, no_format=True)
-    async def _get_cid(self, fname_or_fid: Union[str, int], /, cname: str) -> int:
+    async def _get_cid(self, fname_or_fid: Union[str, int], /, cname: str = '') -> int:
         """
-        通过加精分区名获取加精分区id
+        通过精华分区名获取精华分区id
 
         Args:
             fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
-            cname (str): 加精分区名
+            cname (str, optional): 精华分区名. Defaults to ''.
 
         Returns:
-            int: 加精分区id
+            int: 精华分区id
         """
 
         if cname == '':

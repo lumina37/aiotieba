@@ -63,7 +63,7 @@ class FragImage_p(object):
     def __repr__(self) -> str:
         return str(
             {
-                'src': self.src,
+                'src': self._src,
                 'show_width': self._show_width,
                 'show_height': self._show_height,
             }
@@ -1309,7 +1309,7 @@ class FragImage_pt(object):
     def __repr__(self) -> str:
         return str(
             {
-                'src': self.src,
+                'src': self._src,
                 'show_width': self._show_width,
                 'show_height': self._show_height,
             }

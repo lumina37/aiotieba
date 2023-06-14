@@ -20,9 +20,9 @@ class TiebaLogger(logging.Logger):
     日志记录器
 
     Args:
-        name (str): 日志文件名(不含扩展名) 留空则自动设置为sys.argv[0]的文件名. Defaults to ''.
-        file_log_level (int): 文件日志级别. Defaults to logging.INFO.
-        stream_log_level (int): 标准输出日志级别. Defaults to logging.DEBUG.
+        name (str): 日志文件名(不含扩展名) 留空则自动设置为`sys.argv[0]`的文件名. Defaults to ''.
+        file_log_level (int): 文件日志级别. Defaults to `logging.INFO`.
+        stream_log_level (int): 标准输出日志级别. Defaults to `logging.DEBUG`.
         log_dir (int): 日志输出文件夹. Defaults to 'log'.
         backup_count (int): 时间轮转文件日志的保留文件数. Defaults to 5.
     """
