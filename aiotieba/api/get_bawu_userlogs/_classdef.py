@@ -65,7 +65,10 @@ class Userlog(object):
     @property
     def op_duration(self) -> int:
         """
-        操作类型
+        操作持续时间
+
+        Note:
+            单位为天
         """
 
         return self._op_duration
