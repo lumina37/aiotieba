@@ -5,7 +5,6 @@ import yarl
 from ...const import APP_BASE_HOST, APP_INSECURE_SCHEME, MAIN_VERSION
 from ...core import HttpCore, WsCore
 from ...exception import TiebaServerError
-from ...request import pack_proto_request, send_request
 from ._classdef import Thread_home, UserInfo_home
 from .protobuf import ProfileReqIdl_pb2, ProfileResIdl_pb2
 
@@ -57,8 +56,7 @@ async def request_http(
 ) -> Tuple[UserInfo_home, List[Thread_home]]:
     data = pack_proto(portrait, with_threads)
 
-    request = pack_proto_request(
-        http_core,
+    request = http_core.pack_proto_request(
         yarl.URL.build(
             scheme=APP_INSECURE_SCHEME, host=APP_BASE_HOST, path="/c/u/user/profile", query_string=f"cmd={CMD}"
         ),
@@ -67,7 +65,7 @@ async def request_http(
 
     __log__ = "portrait={portrait}"  # noqa: F841
 
-    body = await send_request(request, http_core.network, read_bufsize=64 * 1024)
+    body = await http_core.net_core.send_request(request, read_bufsize=64 * 1024)
     return parse_body(body)
 
 

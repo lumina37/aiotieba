@@ -81,7 +81,7 @@ from .api import (
 )
 from .api._classdef import UserInfo
 from .api.get_homepage import UserInfo_home
-from .core import Account, HttpCore, Network, TimeConfig, WsCore
+from .core import Account, HttpCore, NetCore, TimeConfig, WsCore
 from .enums import BawuSearchType, GroupType, PostSortType, ReqUInfo, ThreadSortType, WsStatus
 from .helper import handle_exception, is_portrait
 from .helper.cache import ForumInfoCache
@@ -169,9 +169,9 @@ class Client(object):
 
         core = Account(BDUSS_key)
         self._account = core
-        network = Network(connector, time_cfg, proxy)
-        self._http_core = HttpCore(core, network, loop)
-        self._ws_core = WsCore(core, network, loop)
+        net_core = NetCore(connector, time_cfg, proxy)
+        self._http_core = HttpCore(core, net_core, loop)
+        self._ws_core = WsCore(core, net_core, loop)
 
         self._try_ws = try_ws
 

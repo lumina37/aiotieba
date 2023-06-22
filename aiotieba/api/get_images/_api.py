@@ -5,7 +5,6 @@ import yarl
 
 from ...core import HttpCore
 from ...exception import ContentTypeError, HTTPStatusError
-from ...request import pack_web_get_request, send_request
 
 if TYPE_CHECKING:
     import numpy as np
@@ -37,9 +36,9 @@ def parse_body(body: bytes) -> "np.ndarray":
 
 
 async def request(http_core: HttpCore, url: yarl.URL) -> "np.ndarray":
-    request = pack_web_get_request(http_core, url, [])
+    request = http_core.pack_web_get_request(url, [])
 
     __log__ = "url={url}"  # noqa: F841
 
-    body = await send_request(request, http_core.network, read_bufsize=512 * 1024, headers_checker=headers_checker)
+    body = await http_core.net_core.send_request(request, read_bufsize=512 * 1024, headers_checker=headers_checker)
     return parse_body(body)

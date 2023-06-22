@@ -6,7 +6,6 @@ from ...const import WEB_BASE_HOST
 from ...core import HttpCore
 from ...exception import TiebaServerError
 from ...helper import log_success, parse_json
-from ...request import pack_web_form_request, send_request
 
 
 def parse_body(body: bytes) -> None:
@@ -23,15 +22,13 @@ async def request(http_core: HttpCore, fname: str, user_id: int) -> bool:
         ('ie', 'utf-8'),
     ]
 
-    request = pack_web_form_request(
-        http_core,
-        yarl.URL.build(scheme="http", host=WEB_BASE_HOST, path="/bawu2/platform/addBlack"),
-        data,
+    request = http_core.pack_web_form_request(
+        yarl.URL.build(scheme="http", host=WEB_BASE_HOST, path="/bawu2/platform/addBlack"), data
     )
 
     __log__ = f"fname={fname} user_id={user_id}"
 
-    body = await send_request(request, http_core.network, read_bufsize=2 * 1024)
+    body = await http_core.net_core.send_request(request, read_bufsize=2 * 1024)
     parse_body(body)
 
     log_success(sys._getframe(1), __log__)

@@ -4,7 +4,6 @@ from ...const import WEB_BASE_HOST
 from ...core import HttpCore
 from ...exception import TiebaValueError
 from ...helper import parse_json
-from ...request import pack_web_get_request, send_request
 from ._classdef import UserInfo_json
 
 
@@ -27,13 +26,11 @@ async def request(http_core: HttpCore, user_name: str) -> UserInfo_json:
         ('ie', 'utf-8'),
     ]
 
-    request = pack_web_get_request(
-        http_core,
-        yarl.URL.build(scheme="http", host=WEB_BASE_HOST, path="/i/sys/user_json"),
-        params,
+    request = http_core.pack_web_get_request(
+        yarl.URL.build(scheme="http", host=WEB_BASE_HOST, path="/i/sys/user_json"), params
     )
 
     __log__ = "user_name={user_name}"  # noqa: F841
 
-    body = await send_request(request, http_core.network, read_bufsize=2 * 1024)
+    body = await http_core.net_core.send_request(request, read_bufsize=2 * 1024)
     return parse_body(body)

@@ -4,7 +4,6 @@ from ...const import WEB_BASE_HOST
 from ...core import HttpCore
 from ...exception import TiebaServerError
 from ...helper import parse_json
-from ...request import pack_web_get_request, send_request
 from ._classdef import SelfFollowForums
 
 
@@ -25,11 +24,9 @@ async def request(http_core: HttpCore, pn: int) -> SelfFollowForums:
         ('rn', '200'),
     ]
 
-    request = pack_web_get_request(
-        http_core,
-        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mg/o/getForumHome"),
-        params,
+    request = http_core.pack_web_get_request(
+        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mg/o/getForumHome"), params
     )
 
-    body = await send_request(request, http_core.network, read_bufsize=128 * 1024)
+    body = await http_core.net_core.send_request(request, read_bufsize=128 * 1024)
     return parse_body(body)

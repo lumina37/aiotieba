@@ -11,7 +11,6 @@ from Crypto.Util.Padding import pad, unpad
 from ...core import HttpCore
 from ...helper import pack_json, parse_json
 from ...helper.crypto import rc4_42
-from ...request import send_request
 
 SOFIRE_HOST = "sofire.baidu.com"
 
@@ -60,12 +59,12 @@ async def request(http_core: HttpCore):
         headers=headers,
         data=payload,
         loop=http_core.loop,
-        proxy=http_core.network.proxy,
-        proxy_auth=http_core.network.proxy,
+        proxy=http_core.net_core.proxy,
+        proxy_auth=http_core.net_core.proxy,
         ssl=False,
     )
 
-    body = await send_request(request, http_core.network, read_bufsize=1024)
+    body = await http_core.net_core.send_request(request, read_bufsize=1024)
     res_json = parse_json(body)
 
     res_query_skey = binascii.a2b_base64(res_json['skey'])

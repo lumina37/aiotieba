@@ -3,7 +3,6 @@ import yarl
 
 from ...const import WEB_BASE_HOST
 from ...core import HttpCore
-from ...request import pack_web_get_request, send_request
 from ._classdef import RankUsers
 
 
@@ -21,13 +20,11 @@ async def request(http_core: HttpCore, fname: str, pn: int) -> RankUsers:
         ('ie', 'utf-8'),
     ]
 
-    request = pack_web_get_request(
-        http_core,
-        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/f/like/furank"),
-        params,
+    request = http_core.pack_web_get_request(
+        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/f/like/furank"), params
     )
 
     __log__ = "fname={fname}"  # noqa: F841
 
-    body = await send_request(request, http_core.network, read_bufsize=64 * 1024)
+    body = await http_core.net_core.send_request(request, read_bufsize=64 * 1024)
     return parse_body(body)

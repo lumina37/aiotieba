@@ -3,7 +3,6 @@ import yarl
 from ...const import APP_BASE_HOST, APP_INSECURE_SCHEME, MAIN_VERSION
 from ...core import HttpCore, WsCore
 from ...exception import TiebaServerError
-from ...request import pack_proto_request, send_request
 from ._classdef import UserInfo_TUid
 from .protobuf import GetUserByTiebaUidReqIdl_pb2, GetUserByTiebaUidResIdl_pb2
 
@@ -34,8 +33,7 @@ def parse_body(body: bytes) -> UserInfo_TUid:
 async def request_http(http_core: HttpCore, tieba_uid: int) -> UserInfo_TUid:
     data = pack_proto(tieba_uid)
 
-    request = pack_proto_request(
-        http_core,
+    request = http_core.pack_proto_request(
         yarl.URL.build(
             scheme=APP_INSECURE_SCHEME,
             host=APP_BASE_HOST,
@@ -47,7 +45,7 @@ async def request_http(http_core: HttpCore, tieba_uid: int) -> UserInfo_TUid:
 
     __log__ = "tieba_uid={tieba_uid}"  # noqa: F841
 
-    body = await send_request(request, http_core.network, read_bufsize=1024)
+    body = await http_core.net_core.send_request(request, read_bufsize=1024)
     return parse_body(body)
 
 

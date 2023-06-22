@@ -1,22 +1,92 @@
 import asyncio
 import binascii
+import gzip
 import secrets
 import time
 import weakref
-from typing import Awaitable, Callable, Dict
+from typing import Awaitable, Callable, Dict, Tuple
 
 import aiohttp
 import yarl
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
 
 from ..enums import WsStatus
 from ..exception import HTTPStatusError
 from ..helper import timeout
-from ..request.common import req2res
-from ..request.websocket import pack_ws_bytes, parse_ws_bytes
 from .account import Account
-from .network import Network
+from .net import NetCore
 
 TypeWebsocketCallback = Callable[["WsCore", bytes, int], Awaitable[None]]
+
+
+def pack_ws_bytes(
+    account: Account, data: bytes, cmd: int, req_id: int, *, compress: bool = False, encrypt: bool = True
+) -> bytes:
+    """
+    打包数据并添加9字节头部
+
+    Args:
+        account (Account): 贴吧的用户信息容器
+        data (bytes): 待发送的websocket数据
+        cmd (int): 请求的cmd类型
+        req_id (int): 请求的id
+        compress (bool, optional): 是否需要gzip压缩. Defaults to False.
+        encrypt (bool, optional): 是否需要aes加密. Defaults to True.
+
+    Returns:
+        bytes: 打包后的websocket数据
+    """
+
+    flag = 0x08
+
+    if compress:
+        flag |= 0b01000000
+        data = gzip.compress(data, compresslevel=6, mtime=0)
+    if encrypt:
+        flag |= 0b10000000
+        data = pad(data, AES.block_size)
+        data = account.aes_ecb_chiper.encrypt(data)
+
+    data = b''.join(
+        [
+            flag.to_bytes(1, 'big'),
+            cmd.to_bytes(4, 'big'),
+            req_id.to_bytes(4, 'big'),
+            data,
+        ]
+    )
+
+    return data
+
+
+def parse_ws_bytes(account: Account, data: bytes) -> Tuple[bytes, int, int]:
+    """
+    对websocket返回数据进行解包
+
+    Args:
+        account (Account): 贴吧的用户信息容器
+        data (bytes): 接收到的websocket数据
+
+    Returns:
+        bytes: 解包后的websocket数据
+        int: 对应请求的cmd类型
+        int: 对应请求的id
+    """
+
+    data_view = memoryview(data)
+    flag = data_view[0]
+    cmd = int.from_bytes(data_view[1:5], 'big')
+    req_id = int.from_bytes(data_view[5:9], 'big')
+
+    data = data_view[9:].tobytes()
+    if flag & 0b10000000:
+        data = account.aes_ecb_chiper.decrypt(data)
+        data = unpad(data, AES.block_size)
+    if flag & 0b01000000:
+        data = gzip.decompress(data)
+
+    return data, cmd, req_id
 
 
 class MsgIDPair(object):
@@ -207,7 +277,7 @@ class WsCore(object):
 
     __slots__ = [
         'account',
-        'network',
+        'net_core',
         'waiter',
         'callbacks',
         'websocket',
@@ -218,9 +288,9 @@ class WsCore(object):
         'loop',
     ]
 
-    def __init__(self, account: Account, network: Network, loop: asyncio.AbstractEventLoop) -> None:
+    def __init__(self, account: Account, net_core: NetCore, loop: asyncio.AbstractEventLoop) -> None:
         self.account = account
-        self.network = network
+        self.net_core = net_core
         self.loop = loop
 
         self.callbacks: Dict[int, TypeWebsocketCallback] = {}
@@ -239,7 +309,7 @@ class WsCore(object):
 
         self._status = WsStatus.CONNECTING
 
-        self.waiter = WsWaiter(self.loop, self.network.time.ws_read)
+        self.waiter = WsWaiter(self.loop, self.net_core.time_cfg.ws_read)
         self.mid_manager = MsgIDManager()
 
         from aiohttp import hdrs
@@ -260,12 +330,12 @@ class WsCore(object):
             ws_url,
             headers=headers,
             loop=self.loop,
-            proxy=self.network.proxy,
-            proxy_auth=self.network.proxy_auth,
+            proxy=self.net_core.proxy,
+            proxy_auth=self.net_core.proxy_auth,
             ssl=False,
         )
 
-        response = await req2res(request, self.network, False, 2 * 1024)
+        response = await self.net_core.req2res(request, False, 2 * 1024)
 
         if response.status != 101:
             raise HTTPStatusError(response.status, response.reason)
@@ -286,12 +356,12 @@ class WsCore(object):
                 writer,
                 'chat',
                 response,
-                self.network.time.ws_keepalive,
+                self.net_core.time_cfg.ws_keepalive,
                 True,
                 True,
                 self.loop,
-                receive_timeout=self.network.time.ws_read,
-                heartbeat=self.network.time.ws_heartbeat,
+                receive_timeout=self.net_core.time_cfg.ws_read,
+                heartbeat=self.net_core.time_cfg.ws_heartbeat,
             )
 
         if self.ws_dispatcher is not None and not self.ws_dispatcher.done():
@@ -353,7 +423,7 @@ class WsCore(object):
         req_data = pack_ws_bytes(self.account, data, cmd, response.req_id, compress=compress, encrypt=encrypt)
 
         try:
-            async with timeout(self.network.time.ws_send, self.loop):
+            async with timeout(self.net_core.time_cfg.ws_send, self.loop):
                 await self.websocket.send_bytes(req_data)
         except asyncio.TimeoutError as err:
             response.future.cancel()
