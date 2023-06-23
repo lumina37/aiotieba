@@ -20,7 +20,6 @@ from .contents import (
     TypeFragText,
     TypeFragTiebaPlus,
 )
-from .forum import Forum
 from .user import UserInfo
 from .vimage import VirtualImage
 from .vote import VoteInfo
