@@ -1,7 +1,7 @@
 from typing import Iterable, List, Optional
 
 from ...helper import removeprefix
-from .._classdef import Containers, Forum, TypeMessage, VirtualImage, VoteInfo
+from .._classdef import Containers, TypeMessage, VirtualImage, VoteInfo
 from .._classdef.contents import (
     FragAt,
     FragEmoji,
@@ -13,7 +13,6 @@ from .._classdef.contents import (
     TypeFragText,
 )
 
-Forum_p = Forum
 VirtualImage_p = VirtualImage
 
 FragAt_p = FragAt_pt = FragAt_pc = FragAt
@@ -1275,6 +1274,80 @@ class Page_p(object):
         return self._has_prev
 
 
+class Forum_p(object):
+    """
+    吧信息
+
+    Attributes:
+        fid (int): 贴吧id
+        fname (str): 贴吧名
+
+        member_num (int): 吧会员数
+        post_num (int): 发帖量
+    """
+
+    __slots__ = [
+        '_fid',
+        '_fname',
+        '_member_num',
+        '_post_num',
+    ]
+
+    def _init(self, data_proto: TypeMessage) -> "Forum_p":
+        self._fid = data_proto.id
+        self._fname = data_proto.name
+        self._member_num = data_proto.member_num
+        self._post_num = data_proto.post_num
+        return self
+
+    def _init_null(self) -> "Forum_p":
+        self._fid = 0
+        self._fname = ''
+        self._member_num = 0
+        self._post_num = 0
+        return self
+
+    def __repr__(self) -> str:
+        return str(
+            {
+                'fid': self._fid,
+                'fname': self._fname,
+            }
+        )
+
+    @property
+    def fid(self) -> int:
+        """
+        贴吧id
+        """
+
+        return self._fid
+
+    @property
+    def fname(self) -> str:
+        """
+        贴吧名
+        """
+
+        return self._fname
+
+    @property
+    def member_num(self) -> int:
+        """
+        吧会员数
+        """
+
+        return self._member_num
+
+    @property
+    def post_num(self) -> int:
+        """
+        发帖量
+        """
+
+        return self._post_num
+
+
 class FragImage_pt(object):
     """
     图像碎片
@@ -2016,32 +2089,34 @@ class Thread_p(object):
     ]
 
     def _init(self, data_proto: TypeMessage) -> "Thread_p":
+        thread_proto = data_proto.thread
         self._text = None
-        self._title = data_proto.title
-        self._tid = data_proto.id
-        self._pid = data_proto.post_id
-        self._user = UserInfo_pt()._init(data_proto.author)
+        self._title = thread_proto.title
+        self._tid = thread_proto.id
+        self._pid = thread_proto.post_id
+        self._user = UserInfo_pt()._init(thread_proto.author)
         self._author_id = self._user._user_id
-        self._type = data_proto.thread_type
-        self._is_share = bool(data_proto.is_share_thread)
-        self._reply_num = data_proto.reply_num
-        self._share_num = data_proto.share_num
-        self._agree = data_proto.agree.agree_num
-        self._disagree = data_proto.agree.disagree_num
-        self._create_time = data_proto.create_time
+        self._type = thread_proto.thread_type
+        self._is_share = bool(thread_proto.is_share_thread)
+        self._view_num = data_proto.thread_freq_num
+        self._reply_num = thread_proto.reply_num
+        self._share_num = thread_proto.share_num
+        self._agree = thread_proto.agree.agree_num
+        self._disagree = thread_proto.agree.disagree_num
+        self._create_time = thread_proto.create_time
 
         if not self._is_share:
-            self._contents = Contents_pt()._init(data_proto.origin_thread_info.content)
-            img_frags = [FragImage_pt(p) for p in data_proto.origin_thread_info.media]
+            self._contents = Contents_pt()._init(thread_proto.origin_thread_info.content)
+            img_frags = [FragImage_pt(p) for p in thread_proto.origin_thread_info.media]
             self._contents._objs += img_frags
             self._contents._imgs = img_frags
-            self._contents._has_voice = bool(data_proto.origin_thread_info.voice_info)
-            self._vote_info = VoteInfo()._init(data_proto.origin_thread_info.poll_info)
+            self._contents._has_voice = bool(thread_proto.origin_thread_info.voice_info)
+            self._vote_info = VoteInfo()._init(thread_proto.origin_thread_info.poll_info)
             self._share_origin = ShareThread_pt()._init_null()
         else:
             self._contents = Contents_pt()._init_null()
             self._vote_info = VoteInfo()._init_null()
-            self._share_origin = ShareThread_pt()._init(data_proto.origin_thread_info)
+            self._share_origin = ShareThread_pt()._init(thread_proto.origin_thread_info)
 
         return self
 
@@ -2279,7 +2354,7 @@ class Posts(Containers[Post]):
         if data_proto:
             self._page = Page_p()._init(data_proto.page)
             self._forum = Forum_p()._init(data_proto.forum)
-            self._thread = Thread_p()._init(data_proto.thread)
+            self._thread = Thread_p()._init(data_proto)
 
             self._thread._fid = self._forum._fid
             self._thread._fname = self._forum._fname

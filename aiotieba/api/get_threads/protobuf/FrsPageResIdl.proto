@@ -13,6 +13,11 @@ message FrsPageResIdl {
         message ForumInfo {
             int64 id = 1;
             string name = 2;
+            int32 member_num = 9;
+            int32 thread_num = 10;
+            int32 post_num = 11;
+            message Manager {}
+            repeated Manager managers = 17;
         }
         ForumInfo forum = 2;
         Page page = 4;
@@ -22,6 +27,10 @@ message FrsPageResIdl {
             repeated FrsTabInfo tab = 1;
         }
         NavTabInfo nav_tab_info = 37;
+        message ForumRuleStatus {
+            int32 has_forum_rule = 4;
+        }
+        ForumRuleStatus forum_rule = 105;
     }
     DataRes data = 2;
 }
