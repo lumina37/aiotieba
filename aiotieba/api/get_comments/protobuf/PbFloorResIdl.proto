@@ -2,7 +2,6 @@
 syntax = "proto3";
 
 import "Error.proto";
-import "SimpleForum.proto";
 import "Page.proto";
 import "Post.proto";
 import "ThreadInfo.proto";
@@ -15,6 +14,10 @@ message PbFloorResIdl {
         Post post = 3;
         repeated SubPostList subpost_list = 4;
         ThreadInfo thread = 5;
+        message SimpleForum {
+            int64 id = 1;
+            string name = 2;
+        }
         SimpleForum forum = 6;
     }
     DataRes data = 2;
