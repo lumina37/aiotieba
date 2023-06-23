@@ -1985,6 +1985,7 @@ class Thread_p(object):
 
         vote_info (VoteInfo): 投票信息
         share_origin (ShareThread_pt): 转发来的原帖内容
+        view_num (int): 浏览量
         reply_num (int): 回复数
         share_num (int): 分享数
         agree (int): 点赞数
@@ -2006,6 +2007,7 @@ class Thread_p(object):
         '_is_share',
         '_vote_info',
         '_share_origin',
+        '_view_num',
         '_reply_num',
         '_share_num',
         '_agree',
@@ -2057,6 +2059,7 @@ class Thread_p(object):
         self._is_share = False
         self._vote_info = VoteInfo()._init_null()
         self._share_origin = ShareThread_pt()._init_null()
+        self._view_num = 0
         self._reply_num = 0
         self._share_num = 0
         self._agree = 0
@@ -2199,6 +2202,14 @@ class Thread_p(object):
         """
 
         return self._share_origin
+
+    @property
+    def view_num(self) -> int:
+        """
+        浏览量
+        """
+
+        return self._view_num
 
     @property
     def reply_num(self) -> int:

@@ -47,6 +47,8 @@ def parse_body(body: bytes) -> Posts:
     data_proto = res_proto.data
     posts = Posts(data_proto)
 
+    posts._thread._view_num = data_proto.thread_freq_num
+
     return posts
 
 
