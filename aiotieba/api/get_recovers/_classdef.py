@@ -14,7 +14,7 @@ class Recover(object):
         tid (int): 所在主题帖id
         pid (int): 回复id
         is_hide (bool): 是否为屏蔽
-        oper (bool): 操作人名称
+        op_user_name (bool): 操作人名称
     """
 
     __slots__ = [
@@ -22,7 +22,7 @@ class Recover(object):
         '_tid',
         '_pid',
         '_is_hide',
-        '_oper',
+        '_op_user_name',
     ]
 
     def __init__(self, data_tag: bs4.element.Tag) -> None:
@@ -33,7 +33,7 @@ class Recover(object):
         text_tag = id_tag.next_sibling.span
         self._text = text_tag.string
         oper_tag = id_tag.next_sibling.find('span', class_="recover_list_item_operator")
-        self._oper = oper_tag.string[4:]
+        self._op_user_name = oper_tag.string[4:]
 
     def __repr__(self) -> str:
         return str(
@@ -42,7 +42,7 @@ class Recover(object):
                 'tid': self.tid,
                 'pid': self.pid,
                 'is_hide': self.is_hide,
-                'oper': self._oper,
+                'op_user_name': self._op_user_name,
             }
         )
 
@@ -79,12 +79,12 @@ class Recover(object):
         return self._is_hide
 
     @property
-    def oper(self) -> str:
+    def op_user_name(self) -> str:
         """
         操作人名称
         """
 
-        return self._oper
+        return self._op_user_name
 
 
 class Page_recover(object):
