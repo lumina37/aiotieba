@@ -24,8 +24,8 @@ def parse_body(body: bytes) -> Forum_detail:
     if code := res_proto.error.errorno:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
-    forum_proto = res_proto.data.forum_info
-    forum = Forum_detail(forum_proto)
+    data_proto = res_proto.data
+    forum = Forum_detail(data_proto)
 
     return forum
 

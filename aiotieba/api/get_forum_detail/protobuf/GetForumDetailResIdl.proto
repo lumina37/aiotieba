@@ -13,6 +13,10 @@ message GetForumDetailResIdl {
             uint32 thread_count = 6;
         }
         RecommendForumInfo forum_info = 1;
+        message ManagerElectionTab {
+            uint32 new_manager_status = 4;
+        }
+        ManagerElectionTab election_tab = 8;
     }
     DataRes data = 2;
 }
