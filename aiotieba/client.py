@@ -598,6 +598,7 @@ class Client(object):
         return await search_post.request(self._http_core, fname, query, pn, rn, query_type, only_thread)
 
     @handle_exception(get_forum_detail.Forum_detail)
+    @_try_websocket
     async def get_forum_detail(self, fname_or_fid: Union[str, int]) -> get_forum_detail.Forum_detail:
         """
         通过forum_id获取贴吧信息
@@ -611,7 +612,10 @@ class Client(object):
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
-        return await get_forum_detail.request(self._http_core, fid)
+        if self._ws_core.status == WsStatus.OPEN:
+            return await get_forum_detail.request_ws(self._ws_core, fid)
+
+        return await get_forum_detail.request_http(self._http_core, fid)
 
     @handle_exception(get_bawu_info.BawuInfo)
     @_try_websocket

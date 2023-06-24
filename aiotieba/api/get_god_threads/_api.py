@@ -12,9 +12,9 @@ def parse_body(body: bytes) -> GodThreads:
     if code := res_json['no']:
         raise TiebaServerError(code, res_json['error'])
 
-    recovers = GodThreads(res_json)
+    god_threads = GodThreads(res_json)
 
-    return recovers
+    return god_threads
 
 
 async def request(http_core: HttpCore, pn: int, rn: int) -> GodThreads:

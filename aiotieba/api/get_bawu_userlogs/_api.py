@@ -51,5 +51,5 @@ async def request(
 
     __log__ = "fname={fname}"  # noqa: F841
 
-    body = await http_core.net_core.send_request(request, read_bufsize=64 * 1024)
+    body = await http_core.net_core.send_request(request, read_bufsize=16 * 1024)
     return parse_body(body)

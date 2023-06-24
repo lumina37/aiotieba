@@ -1,0 +1,12 @@
+// tbclient.GetForumDetail.GetForumDetailReqIdl
+syntax = "proto3";
+
+import "CommonReq.proto";
+
+message GetForumDetailReqIdl {
+    message DataReq {
+        int64 forum_id = 1;
+        CommonReq common = 2;
+    }
+    DataReq data = 1;
+}

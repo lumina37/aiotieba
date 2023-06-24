@@ -1,34 +1,55 @@
 import yarl
 
 from ...const import APP_BASE_HOST, APP_INSECURE_SCHEME, MAIN_VERSION
-from ...core import HttpCore
+from ...core import HttpCore, WsCore
 from ...exception import TiebaServerError
-from ...helper import parse_json
 from ._classdef import Forum_detail
+from .protobuf import GetForumDetailReqIdl_pb2, GetForumDetailResIdl_pb2
+
+CMD = 303021
+
+
+def pack_proto(fid: int) -> bytes:
+    req_proto = GetForumDetailReqIdl_pb2.GetForumDetailReqIdl()
+    req_proto.data.common._client_version = MAIN_VERSION
+    req_proto.data.forum_id = fid
+
+    return req_proto.SerializeToString()
 
 
 def parse_body(body: bytes) -> Forum_detail:
-    res_json = parse_json(body)
-    if code := int(res_json['error_code']):
-        raise TiebaServerError(code, res_json['error_msg'])
+    res_proto = GetForumDetailResIdl_pb2.GetForumDetailResIdl()
+    res_proto.ParseFromString(body)
 
-    forum_dict = res_json['forum_info']
-    forum = Forum_detail(forum_dict)
+    if code := res_proto.error.errorno:
+        raise TiebaServerError(code, res_proto.error.errmsg)
+
+    forum_proto = res_proto.data.forum_info
+    forum = Forum_detail(forum_proto)
 
     return forum
 
 
-async def request(http_core: HttpCore, fid: int) -> Forum_detail:
-    data = [
-        ('_client_version', MAIN_VERSION),
-        ('forum_id', fid),
-    ]
+async def request_http(http_core: HttpCore, fid: int) -> Forum_detail:
+    data = pack_proto(fid)
 
-    request = http_core.pack_form_request(
-        yarl.URL.build(scheme=APP_INSECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/forum/getforumdetail"), data
+    request = http_core.pack_proto_request(
+        yarl.URL.build(
+            scheme=APP_INSECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/forum/getforumdetail", query_string=f"cmd={CMD}"
+        ),
+        data,
     )
 
     __log__ = "fid={fid}"  # noqa: F841
 
-    body = await http_core.net_core.send_request(request, read_bufsize=8 * 1024)
+    body = await http_core.net_core.send_request(request, read_bufsize=4 * 1024)
     return parse_body(body)
+
+
+async def request_ws(ws_core: WsCore, fid: int) -> Forum_detail:
+    data = pack_proto(fid)
+
+    __log__ = "fid={fid}"  # noqa: F841
+
+    response = await ws_core.send(data, CMD)
+    return parse_body(await response.read())

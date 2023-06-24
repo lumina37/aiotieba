@@ -1,4 +1,6 @@
-from typing import Mapping, Optional
+from typing import Optional
+
+from .._classdef import TypeMessage
 
 
 class Forum_detail(object):
@@ -20,12 +22,12 @@ class Forum_detail(object):
         '_post_num',
     ]
 
-    def __init__(self, data_map: Optional[Mapping] = None) -> None:
-        if data_map:
-            self._fid = int(data_map['forum_id'])
-            self._fname = data_map['forum_name']
-            self._member_num = int(data_map['member_count'])
-            self._post_num = int(data_map['thread_count'])
+    def __init__(self, data_proto: Optional[TypeMessage] = None) -> None:
+        if data_proto:
+            self._fid = data_proto.forum_id
+            self._fname = data_proto.forum_name
+            self._member_num = data_proto.member_count
+            self._post_num = data_proto.thread_count
         else:
             self._fid = 0
             self._fname = ''
