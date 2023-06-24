@@ -27,7 +27,5 @@ async def request(http_core: HttpCore, pn: int, rn: int) -> GodThreads:
         yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mo/q/activity/getActivityThreadList"), params
     )
 
-    __log__ = "fid={fid}"  # noqa: F841
-
     body = await http_core.net_core.send_request(request, read_bufsize=128 * 1024)
     return parse_body(body)
