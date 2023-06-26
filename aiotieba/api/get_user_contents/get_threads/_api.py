@@ -5,7 +5,6 @@ import yarl
 from ....const import APP_BASE_HOST, APP_SECURE_SCHEME, MAIN_VERSION
 from ....core import Account, HttpCore, WsCore
 from ....exception import TiebaServerError
-from ....request import pack_proto_request, send_request
 from .._classdef import UserInfo_u, UserThread
 from .._const import CMD
 from ..protobuf import UserPostReqIdl_pb2, UserPostResIdl_pb2
@@ -45,8 +44,7 @@ def parse_body(body: bytes) -> List[UserThread]:
 async def request_http(http_core: HttpCore, user_id: int, pn: int, public_only: bool) -> List[UserThread]:
     data = pack_proto(http_core.account, user_id, pn, public_only)
 
-    request = pack_proto_request(
-        http_core,
+    request = http_core.pack_proto_request(
         yarl.URL.build(
             scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/u/feed/userpost", query_string=f"cmd={CMD}"
         ),
@@ -55,7 +53,7 @@ async def request_http(http_core: HttpCore, user_id: int, pn: int, public_only: 
 
     __log__ = "user_id={user_id}"  # noqa: F841
 
-    body = await send_request(request, http_core.network, read_bufsize=64 * 1024)
+    body = await http_core.net_core.send_request(request, read_bufsize=64 * 1024)
     return parse_body(body)
 
 

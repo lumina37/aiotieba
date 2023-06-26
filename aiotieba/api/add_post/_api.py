@@ -7,7 +7,6 @@ from ...const import APP_BASE_HOST, APP_SECURE_SCHEME, POST_VERSION
 from ...core import HttpCore
 from ...exception import TiebaServerError, TiebaValueError
 from ...helper import log_success, parse_json
-from ...request import pack_form_request, send_request
 
 
 def parse_body(body: bytes) -> None:
@@ -56,15 +55,13 @@ async def request(http_core: HttpCore, fname: str, fid: int, tid: int, content: 
         ('z_id', core._z_id),
     ]
 
-    request = pack_form_request(
-        http_core,
-        yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/c/post/add"),
-        data,
+    request = http_core.pack_form_request(
+        yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/c/post/add"), data
     )
 
     __log__ = f"fname={fname} tid={tid}"
 
-    body = await send_request(request, http_core.network, read_bufsize=2 * 1024)
+    body = await http_core.net_core.send_request(request, read_bufsize=2 * 1024)
     parse_body(body)
 
     log_success(sys._getframe(1), __log__)

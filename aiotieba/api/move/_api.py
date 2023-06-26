@@ -6,7 +6,6 @@ from ...const import APP_BASE_HOST, APP_SECURE_SCHEME, MAIN_VERSION
 from ...core import HttpCore
 from ...exception import TiebaServerError
 from ...helper import log_success, pack_json, parse_json
-from ...request import pack_form_request, send_request
 
 
 def parse_body(body: bytes) -> None:
@@ -24,15 +23,13 @@ async def request(http_core: HttpCore, fid: int, tid: int, to_tab_id: int, from_
         ('threads', pack_json([{"thread_id": tid, "from_tab_id": from_tab_id, "to_tab_id": to_tab_id}])),
     ]
 
-    request = pack_form_request(
-        http_core,
-        yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/c/bawu/moveTabThread"),
-        data,
+    request = http_core.pack_form_request(
+        yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/c/bawu/moveTabThread"), data
     )
 
     __log__ = f"fid={fid} tid={tid}"
 
-    body = await send_request(request, http_core.network, read_bufsize=1024)
+    body = await http_core.net_core.send_request(request, read_bufsize=1024)
     parse_body(body)
 
     log_success(sys._getframe(1), __log__)

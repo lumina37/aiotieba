@@ -1,7 +1,7 @@
 from typing import Iterable, List, Optional
 
 from ...helper import removeprefix
-from .._classdef import Containers, Forum, TypeMessage
+from .._classdef import Containers, TypeMessage
 from .._classdef.contents import (
     FragAt,
     FragEmoji,
@@ -12,8 +12,6 @@ from .._classdef.contents import (
     TypeFragment,
     TypeFragText,
 )
-
-Forum_c = Forum
 
 FragAt_c = FragAt_cp = FragAt
 FragEmoji_c = FragEmoji_cp = FragEmoji
@@ -732,6 +730,55 @@ class Page_c(object):
         """
 
         return self._has_prev
+
+
+class Forum_c(object):
+    """
+    吧信息
+
+    Attributes:
+        fid (int): 贴吧id
+        fname (str): 贴吧名
+    """
+
+    __slots__ = [
+        '_fid',
+        '_fname',
+    ]
+
+    def _init(self, data_proto: TypeMessage) -> "Forum_c":
+        self._fid = data_proto.id
+        self._fname = data_proto.name
+        return self
+
+    def _init_null(self) -> "Forum_c":
+        self._fid = 0
+        self._fname = ''
+        return self
+
+    def __repr__(self) -> str:
+        return str(
+            {
+                'fid': self._fid,
+                'fname': self._fname,
+            }
+        )
+
+    @property
+    def fid(self) -> int:
+        """
+        贴吧id
+        """
+
+        return self._fid
+
+    @property
+    def fname(self) -> str:
+        """
+        贴吧名
+        """
+
+        return self._fname
 
 
 class UserInfo_ct(object):

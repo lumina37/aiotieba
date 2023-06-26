@@ -3,7 +3,6 @@ import yarl
 from ...const import APP_BASE_HOST, APP_INSECURE_SCHEME, MAIN_VERSION
 from ...core import HttpCore, WsCore
 from ...exception import TiebaServerError
-from ...request import pack_proto_request, send_request
 from ._classdef import Threads
 from .protobuf import FrsPageReqIdl_pb2, FrsPageResIdl_pb2
 
@@ -40,15 +39,14 @@ def parse_body(body: bytes) -> Threads:
 async def request_http(http_core: HttpCore, fname: str, pn: int, rn: int, sort: int, is_good: bool) -> Threads:
     data = pack_proto(fname, pn, rn, sort, is_good)
 
-    request = pack_proto_request(
-        http_core,
+    request = http_core.pack_proto_request(
         yarl.URL.build(scheme=APP_INSECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/frs/page", query_string=f"cmd={CMD}"),
         data,
     )
 
     __log__ = "fname={fname}"  # noqa: F841
 
-    body = await send_request(request, http_core.network, read_bufsize=256 * 1024)
+    body = await http_core.net_core.send_request(request, read_bufsize=256 * 1024)
     return parse_body(body)
 
 

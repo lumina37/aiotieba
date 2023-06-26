@@ -1,12 +1,16 @@
 import asyncio
-from typing import Dict, Optional
+import random
+import urllib.parse
+from typing import Dict, List, Optional, Tuple
 
 import aiohttp
+import yarl
 
 from ..__version__ import __version__
 from ..const import APP_BASE_HOST
+from ..helper.crypto import sign
 from .account import Account
-from .network import Network
+from .net import NetCore
 
 
 class HttpContainer(object):
@@ -31,7 +35,7 @@ class HttpCore(object):
 
     __slots__ = [
         'account',
-        'network',
+        'net_core',
         'app',
         'app_proto',
         'web',
@@ -41,11 +45,11 @@ class HttpCore(object):
     def __init__(
         self,
         account: Account,
-        network: Network,
+        net_core: NetCore,
         loop: Optional[asyncio.AbstractEventLoop] = None,
     ) -> None:
         self.account = account
-        self.network = network
+        self.net_core = net_core
         self.loop: asyncio.AbstractEventLoop = loop
 
         from aiohttp import hdrs
@@ -82,3 +86,126 @@ class HttpCore(object):
         STOKEN_morsel.set('STOKEN', account._STOKEN, account._STOKEN)
         STOKEN_morsel['domain'] = "tieba.baidu.com"
         self.web.cookie_jar._cookies[("tieba.baidu.com", "/")]['STOKEN'] = STOKEN_morsel
+
+    def pack_form_request(self, url: yarl.URL, data: List[Tuple[str, str]]) -> aiohttp.ClientRequest:
+        """
+        自动签名参数元组列表
+        并将其打包为移动端表单请求
+
+        Args:
+            url (yarl.URL): 链接
+            data (list[tuple[str, str]]): 参数元组列表
+
+        Returns:
+            aiohttp.ClientRequest
+        """
+
+        payload = aiohttp.payload.BytesPayload(
+            urllib.parse.urlencode(sign(data), doseq=True).encode('utf-8'),
+            content_type="application/x-www-form-urlencoded",
+        )
+
+        request = aiohttp.ClientRequest(
+            aiohttp.hdrs.METH_POST,
+            url,
+            headers=self.app.headers,
+            data=payload,
+            loop=self.loop,
+            proxy=self.net_core.proxy,
+            proxy_auth=self.net_core.proxy_auth,
+            ssl=False,
+        )
+
+        return request
+
+    def pack_proto_request(self, url: yarl.URL, data: bytes) -> aiohttp.ClientRequest:
+        """
+        打包移动端protobuf请求
+
+        Args:
+            url (yarl.URL): 链接
+            data (bytes): protobuf序列化后的二进制数据
+
+        Returns:
+            aiohttp.ClientRequest
+        """
+
+        writer = aiohttp.MultipartWriter('form-data', boundary=f"*-672328094--{random.randint(0,9)}")
+        payload_headers = {
+            aiohttp.hdrs.CONTENT_DISPOSITION: aiohttp.helpers.content_disposition_header(
+                'form-data', name='data', filename='file'
+            )
+        }
+        payload = aiohttp.BytesPayload(data, content_type='', headers=payload_headers)
+        payload.headers.popone(aiohttp.hdrs.CONTENT_TYPE)
+        writer._parts.append((payload, None, None))
+
+        request = aiohttp.ClientRequest(
+            aiohttp.hdrs.METH_POST,
+            url,
+            headers=self.app_proto.headers,
+            data=writer,
+            loop=self.loop,
+            proxy=self.net_core.proxy,
+            proxy_auth=self.net_core.proxy_auth,
+            ssl=False,
+        )
+
+        return request
+
+    def pack_web_get_request(self, url: yarl.URL, params: List[Tuple[str, str]]) -> aiohttp.ClientRequest:
+        """
+        打包网页端参数请求
+
+        Args:
+            url (yarl.URL): 链接
+            params (list[tuple[str, str]]): 参数元组列表
+
+        Returns:
+            aiohttp.ClientRequest
+        """
+
+        url = url.update_query(params)
+        request = aiohttp.ClientRequest(
+            aiohttp.hdrs.METH_GET,
+            url,
+            headers=self.web.headers,
+            cookies=self.web.cookie_jar.filter_cookies(url),
+            loop=self.loop,
+            proxy=self.net_core.proxy,
+            proxy_auth=self.net_core.proxy_auth,
+            ssl=False,
+        )
+
+        return request
+
+    def pack_web_form_request(self, url: yarl.URL, data: List[Tuple[str, str]]) -> aiohttp.ClientRequest:
+        """
+        打包网页端表单请求
+
+        Args:
+            url (yarl.URL): 链接
+            data (list[tuple[str, str]]): 参数元组列表
+
+        Returns:
+            aiohttp.ClientRequest
+        """
+
+        payload = aiohttp.payload.BytesPayload(
+            urllib.parse.urlencode(data, doseq=True).encode('utf-8'),
+            content_type="application/x-www-form-urlencoded",
+        )
+
+        request = aiohttp.ClientRequest(
+            aiohttp.hdrs.METH_POST,
+            url,
+            headers=self.web.headers,
+            data=payload,
+            cookies=self.web.cookie_jar.filter_cookies(url),
+            loop=self.loop,
+            proxy=self.net_core.proxy,
+            proxy_auth=self.net_core.proxy_auth,
+            ssl=False,
+        )
+
+        return request

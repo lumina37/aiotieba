@@ -4,7 +4,6 @@ from ...const import WEB_BASE_HOST
 from ...core import HttpCore
 from ...exception import TiebaServerError
 from ...helper import parse_json
-from ...request import pack_web_form_request, send_request
 from ._classdef import Appeals
 
 
@@ -27,13 +26,11 @@ async def request(http_core: HttpCore, fid: int, pn: int, rn: int) -> Appeals:
         ('tbs', http_core.account._tbs),
     ]
 
-    request = pack_web_form_request(
-        http_core,
-        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mo/q/getBawuAppealList"),
-        data,
+    request = http_core.pack_web_form_request(
+        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mo/q/getBawuAppealList"), data
     )
 
     __log__ = "fid={fid}"  # noqa: F841
 
-    body = await send_request(request, http_core.network, read_bufsize=64 * 1024)
+    body = await http_core.net_core.send_request(request, read_bufsize=64 * 1024)
     return parse_body(body)

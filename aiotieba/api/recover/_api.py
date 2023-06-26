@@ -6,7 +6,6 @@ from ...const import WEB_BASE_HOST
 from ...core import HttpCore
 from ...exception import TiebaServerError
 from ...helper import log_success, parse_json
-from ...request import pack_web_form_request, send_request
 
 
 def parse_body(body: bytes) -> None:
@@ -26,15 +25,13 @@ async def request(http_core: HttpCore, fid: int, tid: int, pid: int, is_hide: bo
         ('is_frs_mask_list[]', int(is_hide)),
     ]
 
-    request = pack_web_form_request(
-        http_core,
-        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mo/q/bawurecoverthread"),
-        data,
+    request = http_core.pack_web_form_request(
+        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mo/q/bawurecoverthread"), data
     )
 
     __log__ = f"fid={fid} tid={tid} pid={pid}"
 
-    body = await send_request(request, http_core.network, read_bufsize=1024)
+    body = await http_core.net_core.send_request(request, read_bufsize=1024)
     parse_body(body)
 
     log_success(sys._getframe(1), __log__)

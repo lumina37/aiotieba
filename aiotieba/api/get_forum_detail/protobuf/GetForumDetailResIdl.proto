@@ -1,0 +1,22 @@
+// tbclient.GetForumDetail.GetForumDetailResIdl
+syntax = "proto3";
+
+import "Error.proto";
+
+message GetForumDetailResIdl {
+    Error error = 1;
+    message DataRes {
+        message RecommendForumInfo {
+            uint64 forum_id = 2;
+            string forum_name = 3;
+            uint32 member_count = 5;
+            uint32 thread_count = 6;
+        }
+        RecommendForumInfo forum_info = 1;
+        message ManagerElectionTab {
+            uint32 new_manager_status = 4;
+        }
+        ManagerElectionTab election_tab = 8;
+    }
+    DataRes data = 2;
+}

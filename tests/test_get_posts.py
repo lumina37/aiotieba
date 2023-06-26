@@ -12,6 +12,8 @@ async def test_Posts(client: tb.Client):
     forum = posts.forum
     assert forum.fid == 37574
     assert forum.fname == 'starry'
+    assert forum.member_num > 0
+    assert forum.post_num > 0
 
     ##### Thread_p #####
     thread = posts.thread
@@ -47,6 +49,7 @@ async def test_Posts(client: tb.Client):
     assert thread.tid > 0
     assert thread.pid == posts[0].pid
     assert thread.author_id == posts[0].user.user_id
+    assert thread.view_num > 0
     assert thread.reply_num > 0
     assert thread.share_num > 0
     assert thread.create_time > 0

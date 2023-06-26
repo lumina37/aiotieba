@@ -7,7 +7,6 @@ import yarl
 from ...const import WEB_BASE_HOST
 from ...core import HttpCore
 from ...enums import BawuSearchType
-from ...request import pack_web_get_request, send_request
 from ._classdef import Userlogs
 
 
@@ -46,13 +45,11 @@ async def request(
         ]
         params += extend_params
 
-    request = pack_web_get_request(
-        http_core,
-        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/bawu2/platform/listUserLog"),
-        params,
+    request = http_core.pack_web_get_request(
+        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/bawu2/platform/listUserLog"), params
     )
 
     __log__ = "fname={fname}"  # noqa: F841
 
-    body = await send_request(request, http_core.network, read_bufsize=64 * 1024)
+    body = await http_core.net_core.send_request(request, read_bufsize=16 * 1024)
     return parse_body(body)

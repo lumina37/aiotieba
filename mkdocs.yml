@@ -23,16 +23,45 @@ repo_name: Starry-OvO/aiotieba
 repo_url: https://github.com/Starry-OvO/aiotieba/
 
 nav:
-    - 介绍: index.md
-    - 教程:
+  - 介绍: index.md
+  - 教程:
       - 入门教程: tutorial/start.md
       - 异步编程入门教程: tutorial/async_start.md
       - 配置文件参考: tutorial/config.md
       - 实用微脚本合集: tutorial/many_utils.md
-    - 参考文档:
-      - client: ref/client.md
-      - classdef: ref/classdef.md
-      - enum: ref/enum.md
+  - 参考文档:
+      - 客户端 (Client): ref/client.md
+      - 枚举定义: ref/enums.md
+      - 类型定义:
+          - forum_detail: ref/classdef/forum_detail.md
+          - threads: ref/classdef/threads.md
+          - posts: ref/classdef/posts.md
+          - comments: ref/classdef/comments.md
+          - searches: ref/classdef/searches.md
+          - user_info: ref/classdef/user_info.md
+          - homepage: ref/classdef/homepage.md
+          - follows: ref/classdef/follows.md
+          - fans: ref/classdef/fans.md
+          - follow_forums: ref/classdef/follow_forums.md
+          - self_follow_forums: ref/classdef/self_follow_forums.md
+          - dislike_forums: ref/classdef/dislike_forums.md
+          - user_contents: ref/classdef/user_contents.md
+          - replys: ref/classdef/replys.md
+          - ats: ref/classdef/ats.md
+          - square_forums: ref/classdef/square_forums.md
+          - bawu_info: ref/classdef/bawu_info.md
+          - god_threads: ref/classdef/god_threads.md
+          - rank_users: ref/classdef/rank_users.md
+          - member_users: ref/classdef/member_users.md
+          - blocks: ref/classdef/blocks.md
+          - recovers: ref/classdef/recovers.md
+          - bawu_userlogs: ref/classdef/bawu_userlogs.md
+          - bawu_postlogs: ref/classdef/bawu_postlogs.md
+          - unblock_appeals: ref/classdef/unblock_appeals.md
+          - blacklist_users: ref/classdef/blacklist_users.md
+          - statistics: ref/classdef/statistics.md
+          - recom_status: ref/classdef/recom_status.md
+          - group_msg: ref/classdef/group_msg.md
 
 markdown_extensions:
   - md_in_html
@@ -40,5 +69,14 @@ markdown_extensions:
   - codehilite:
       css_class: highlight
 
+plugins:
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_bases: false
+            show_source: false
+            members_order: source
+
 extra_css:
-    - css/custom.css
+  - css/custom.css

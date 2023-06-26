@@ -6,7 +6,6 @@ from ...const import APP_BASE_HOST, APP_SECURE_SCHEME, WEB_BASE_HOST
 from ...core import HttpCore
 from ...exception import TiebaServerError
 from ...helper import log_success, parse_json
-from ...request import pack_form_request, pack_web_form_request, send_request
 
 
 def parse_body_web(body: bytes) -> None:
@@ -22,13 +21,11 @@ async def request_web(http_core: HttpCore, act_type: str) -> bool:
         ('cuid', '-'),
     ]
 
-    request = pack_web_form_request(
-        http_core,
-        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mo/q/usergrowth/commitUGTaskInfo"),
-        data,
+    request = http_core.pack_web_form_request(
+        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mo/q/usergrowth/commitUGTaskInfo"), data
     )
 
-    body = await send_request(request, http_core.network, read_bufsize=1024)
+    body = await http_core.net_core.send_request(request, read_bufsize=1024)
     parse_body_web(body)
 
     log_success(sys._getframe(1))
@@ -49,13 +46,11 @@ async def request_app(http_core: HttpCore, act_type: str) -> bool:
         ('tbs', http_core.account._tbs),
     ]
 
-    request = pack_form_request(
-        http_core,
-        yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/c/user/commitUGTaskInfo"),
-        data,
+    request = http_core.pack_form_request(
+        yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/c/user/commitUGTaskInfo"), data
     )
 
-    body = await send_request(request, http_core.network, read_bufsize=1024)
+    body = await http_core.net_core.send_request(request, read_bufsize=1024)
     parse_body_app(body)
 
     log_success(sys._getframe(1))

@@ -13,6 +13,11 @@ async def test_Threads(client: tb.Client):
     forum = threads.forum
     assert forum.fid == 37574
     assert forum.fname == fname
+    assert forum.member_num > 0
+    assert forum.post_num > 0
+    assert forum.thread_num > 0
+    assert forum.has_bawu is True
+    assert forum.has_rule is False
 
     ##### Thread #####
     assert len(threads) >= 2

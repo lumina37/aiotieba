@@ -5,7 +5,6 @@ import yarl
 from ...const import APP_BASE_HOST, APP_SECURE_SCHEME, MAIN_VERSION
 from ...core import Account, HttpCore, WsCore
 from ...exception import TiebaServerError
-from ...request import pack_proto_request, send_request
 from .protobuf import SearchPostForumReqIdl_pb2, SearchPostForumResIdl_pb2
 
 CMD = 309466
@@ -35,8 +34,7 @@ def parse_body(body: bytes) -> Dict[str, int]:
 async def request_http(http_core: HttpCore, fname: str) -> Dict[str, int]:
     data = pack_proto(http_core.account, fname)
 
-    request = pack_proto_request(
-        http_core,
+    request = http_core.pack_proto_request(
         yarl.URL.build(
             scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/forum/searchPostForum", query_string=f"cmd={CMD}"
         ),
@@ -45,7 +43,7 @@ async def request_http(http_core: HttpCore, fname: str) -> Dict[str, int]:
 
     __log__ = "fname={fname}"  # noqa: F841
 
-    body = await send_request(request, http_core.network, read_bufsize=4 * 1024)
+    body = await http_core.net_core.send_request(request, read_bufsize=4 * 1024)
     return parse_body(body)
 
 

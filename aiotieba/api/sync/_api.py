@@ -4,7 +4,6 @@ from ...const import APP_BASE_HOST, APP_SECURE_SCHEME
 from ...core import HttpCore
 from ...exception import TiebaServerError
 from ...helper import parse_json
-from ...request import pack_form_request, send_request
 
 
 def parse_body(body: bytes) -> str:
@@ -20,11 +19,9 @@ def parse_body(body: bytes) -> str:
 async def request(http_core: HttpCore) -> str:
     data = [('BDUSS', http_core.account._BDUSS)]
 
-    request = pack_form_request(
-        http_core,
-        yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/s/sync"),
-        data,
+    request = http_core.pack_form_request(
+        yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/s/sync"), data
     )
 
-    body = await send_request(request, http_core.network, read_bufsize=64 * 1024)
+    body = await http_core.net_core.send_request(request, read_bufsize=64 * 1024)
     return parse_body(body)

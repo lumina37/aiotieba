@@ -3,7 +3,6 @@ import yarl
 from ...const import APP_BASE_HOST, APP_SECURE_SCHEME, MAIN_VERSION
 from ...core import Account, HttpCore, WsCore
 from ...exception import TiebaServerError
-from ...request import pack_proto_request, send_request
 from ._classdef import Posts
 from .protobuf import PbPageReqIdl_pb2, PbPageResIdl_pb2
 
@@ -74,15 +73,14 @@ async def request_http(
         comment_rn,
     )
 
-    request = pack_proto_request(
-        http_core,
+    request = http_core.pack_proto_request(
         yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/pb/page", query_string=f"cmd={CMD}"),
         data,
     )
 
     __log__ = "tid={tid}"  # noqa: F841
 
-    body = await send_request(request, http_core.network, read_bufsize=128 * 1024)
+    body = await http_core.net_core.send_request(request, read_bufsize=128 * 1024)
     return parse_body(body)
 
 

@@ -55,13 +55,13 @@ asyncio.run(main())
 
 + 收录[**74个常用API**](https://github.com/Starry-OvO/aiotieba/tree/develop/aiotieba/api)
 + 类型注解全覆盖，方法注释全覆盖，类属性注释全覆盖，内部命名统一
-+ 支持请求参数的protobuf序列化
++ 支持protobuf序列化请求参数
 + 支持websocket接口
-+ 高一致性的密码学实现
++ 与官方版本高度一致的密码学实现
 
 ## 友情链接
 
 + [TiebaManager（吧务管理器 有用户界面）](https://github.com/dog194/TiebaManager)
 + [TiebaLite（第三方安卓客户端）](https://github.com/HuanCheng65/TiebaLite/tree/4.0-dev)
 + [基于aiotieba的高弹性吧务审查框架](https://github.com/Starry-OvO/aiotieba-reviewer)
-+ [贴吧protobuf定义文件合集](https://github.com/n0099/tbclient.protobuf)
++ [贴吧protobuf定义文件合集（更新至12.35.1.0）](https://github.com/n0099/tbclient.protobuf)

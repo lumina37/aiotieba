@@ -33,11 +33,11 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -U pip -qq
-          pip install mkdocs-material -qq
+          pip install mkdocs-material mkdocstrings[python] -qq
 
       - name: Build
         run: |
-          mkdocs build -d site -s -q
+          mkdocs build -d site -s
 
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v1

@@ -1,6 +1,6 @@
 from typing import Dict, Iterable, List, Optional
 
-from .._classdef import Containers, Forum, TypeMessage, VirtualImage, VoteInfo
+from .._classdef import Containers, TypeMessage, VirtualImage, VoteInfo
 from .._classdef.contents import (
     FragAt,
     FragEmoji,
@@ -12,7 +12,6 @@ from .._classdef.contents import (
     TypeFragText,
 )
 
-Forum_t = Forum
 VirtualImage_t = VirtualImage
 
 FragAt_t = FragAt_st = FragAt
@@ -1467,6 +1466,118 @@ class Thread(object):
         return self._last_time
 
 
+class Forum_t(object):
+    """
+    吧信息
+
+    Attributes:
+        fid (int): 贴吧id
+        fname (str): 贴吧名
+
+        member_num (int): 吧会员数
+        post_num (int): 发帖量
+        thread_num (int): 主题帖数
+
+        has_bawu (bool): 是否有吧务
+        has_rule (bool): 是否有吧规
+    """
+
+    __slots__ = [
+        '_fid',
+        '_fname',
+        '_member_num',
+        '_post_num',
+        '_thread_num',
+        '_has_bawu',
+        '_has_rule',
+    ]
+
+    def _init(self, data_proto: TypeMessage) -> "Forum_t":
+        forum_proto = data_proto.forum
+        self._fid = forum_proto.id
+        self._fname = forum_proto.name
+        self._member_num = forum_proto.member_num
+        self._post_num = forum_proto.post_num
+        self._thread_num = forum_proto.thread_num
+        self._has_bawu = bool(forum_proto.managers)
+        self._has_rule = bool(data_proto.forum_rule.has_forum_rule)
+        return self
+
+    def _init_null(self) -> "Forum_t":
+        self._fid = 0
+        self._fname = ''
+        self._member_num = 0
+        self._post_num = 0
+        self._thread_num = 0
+        self._has_bawu = False
+        self._has_rule = False
+        return self
+
+    def __repr__(self) -> str:
+        return str(
+            {
+                'fid': self._fid,
+                'fname': self._fname,
+            }
+        )
+
+    @property
+    def fid(self) -> int:
+        """
+        贴吧id
+        """
+
+        return self._fid
+
+    @property
+    def fname(self) -> str:
+        """
+        贴吧名
+        """
+
+        return self._fname
+
+    @property
+    def member_num(self) -> int:
+        """
+        吧会员数
+        """
+
+        return self._member_num
+
+    @property
+    def post_num(self) -> int:
+        """
+        发帖量
+        """
+
+        return self._post_num
+
+    @property
+    def thread_num(self) -> int:
+        """
+        主题帖数
+        """
+
+        return self._thread_num
+
+    @property
+    def has_bawu(self) -> bool:
+        """
+        是否有吧务
+        """
+
+        return self._has_bawu
+
+    @property
+    def has_rule(self) -> bool:
+        """
+        是否有吧规
+        """
+
+        return self._has_rule
+
+
 class Threads(Containers[Thread]):
     """
     主题帖列表
@@ -1490,7 +1601,7 @@ class Threads(Containers[Thread]):
     def __init__(self, data_proto: Optional[TypeMessage] = None) -> None:
         if data_proto:
             self._page = Page_t()._init(data_proto.page)
-            self._forum = Forum_t()._init(data_proto.forum)
+            self._forum = Forum_t()._init(data_proto)
             self._tab_map = {p.tab_name: p.tab_id for p in data_proto.nav_tab_info.tab}
 
             self._objs = [Thread(p) for p in data_proto.thread_list]
