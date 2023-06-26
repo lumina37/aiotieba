@@ -33,7 +33,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -U pip -qq
-          pip install mkdocs-material -qq
+          pip install mkdocs-material mkdocstrings[python] -qq
 
       - name: Build
         run: |
