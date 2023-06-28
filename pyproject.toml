@@ -46,18 +46,18 @@ img = [
 ]
 speedup = [
   "aiodns<4,>=3.0.0",
-  "pysimdjson<5.1,>=2.1.0;python_version=='3.8';sys_platform=='linux'",
-  "pysimdjson<5.1,>=2.0.10;python_version=='3.8';sys_platform=='darwin'",
+  "pysimdjson<5.1,>=2.1.0;python_version=='3.8' and sys_platform=='linux'",
+  "pysimdjson<5.1,>=2.0.10;python_version=='3.8' and sys_platform=='darwin'",
   "pysimdjson<5.1,>=2.0.10;python_version=='3.8'",
-  "pysimdjson<6,>=3.2.0;python_version=='3.9';sys_platform=='linux'",
-  "pysimdjson<6,>=3.1.1;python_version=='3.9';sys_platform=='darwin'",
+  "pysimdjson<6,>=3.2.0;python_version=='3.9' and sys_platform=='linux'",
+  "pysimdjson<6,>=3.1.1;python_version=='3.9' and sys_platform=='darwin'",
   "pysimdjson<6,>=3.1.1;python_version=='3.9'",
   "pysimdjson<6,>=4.0.3;python_version=='3.10'",
   "pysimdjson<6,>=5.0.1;python_version>='3.11'",
-  "uvloop<0.18,>=0.14.0;python_version=='3.8';sys_platform!='win32'",
-  "uvloop<0.18,>=0.15.0;python_version=='3.9';sys_platform!='win32'",
-  "uvloop<0.18,>=0.16.0;python_version=='3.10';sys_platform!='win32'",
-  "uvloop<0.18,>=0.17.0;python_version>='3.11';sys_platform!='win32'",
+  "uvloop<0.18,>=0.14.0;python_version=='3.8' and sys_platform!='win32'",
+  "uvloop<0.18,>=0.15.0;python_version=='3.9' and sys_platform!='win32'",
+  "uvloop<0.18,>=0.16.0;python_version=='3.10' and sys_platform!='win32'",
+  "uvloop<0.18,>=0.17.0;python_version>='3.11' and sys_platform!='win32'",
 ]
 
 [tool.setuptools.packages.find]
