@@ -10,6 +10,7 @@ message ProfileReqIdl {
         uint32 pn = 6;
         CommonReq common = 9;
         int32 page = 15;
+        string friend_uid_portrait = 16;
     }
     DataReq data = 1;
 }

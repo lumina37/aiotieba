@@ -50,7 +50,7 @@ class RankUser(object):
         用户名
 
         Note:
-            唯一 可变 可为空
+            唯一 可变 可为空\n
             请注意与用户昵称区分
         """
 

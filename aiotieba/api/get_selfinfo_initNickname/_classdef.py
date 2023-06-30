@@ -61,7 +61,7 @@ class UserInfo_selfinit(object):
         用户名
 
         Note:
-            唯一 可变 可为空
+            唯一 可变 可为空\n
             请注意与用户昵称区分
         """
 
@@ -81,7 +81,7 @@ class UserInfo_selfinit(object):
         用户个人主页uid
 
         Note:
-            唯一 不可变 可为空
+            唯一 不可变 可为空\n
             请注意与user_id区分
         """
 

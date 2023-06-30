@@ -35,7 +35,6 @@ from .api import (
     get_forum_detail,
     get_god_threads,
     get_group_msg,
-    get_homepage,
     get_images,
     get_member_users,
     get_posts,
@@ -60,6 +59,7 @@ from .api import (
     init_z_id,
     login,
     move,
+    profile,
     recommend,
     recover,
     remove_fan,
@@ -81,7 +81,7 @@ from .api import (
     ungood,
 )
 from .api._classdef import UserInfo
-from .api.get_homepage import UserInfo_home
+from .api.profile import UserInfo_pf
 from .core import Account, HttpCore, NetCore, TimeConfig, WsCore
 from .enums import BawuSearchType, GroupType, PostSortType, ReqUInfo, ThreadSortType, WsStatus
 from .helper import handle_exception, is_portrait
@@ -176,7 +176,7 @@ class Client(object):
 
         self._try_ws = try_ws
 
-        self._user = UserInfo_home()
+        self._user = UserInfo_pf()
 
     async def __aenter__(self) -> "Client":
         return self
@@ -472,47 +472,29 @@ class Client(object):
 
         return await search_post.request(self._http_core, fname, query, pn, rn, query_type, only_thread)
 
-    @handle_exception(get_uinfo_panel.UserInfo_panel)
-    async def _get_uinfo_panel(self, name_or_portrait: str) -> get_uinfo_panel.UserInfo_panel:
+    @handle_exception(profile.UserInfo_pf)
+    @_try_websocket
+    async def _get_uinfo_profile(self, uid_or_portrait: Union[str, int]) -> profile.UserInfo_pf:
         """
-        接口 https://tieba.baidu.com/home/get/panel
+        接口 https://tiebac.baidu.com/c/u/user/profile
 
         Args:
-            name_or_portrait (str): 用户id user_name / portrait
+            uid_or_portrait (str | int): 用户id user_id / portrait
 
         Returns:
-            UserInfo_panel: 包含较全面的用户信息
-
-        Note:
-            从2022.08.30开始服务端不再返回user_id字段 请谨慎使用
-            该接口可判断用户是否被屏蔽
-            该接口rps阈值较低
+            UserInfo_pf: 包含最全面的用户信息
         """
 
-        return await get_uinfo_panel.request(self._http_core, name_or_portrait)
+        if self._ws_core.status == WsStatus.OPEN:
+            return await profile.get_uinfo_profile.request_ws(self._ws_core, uid_or_portrait)
 
-    @handle_exception(get_uinfo_user_json.UserInfo_json)
-    async def _get_uinfo_user_json(self, user_name: str) -> get_uinfo_user_json.UserInfo_json:
-        """
-        接口 http://tieba.baidu.com/i/sys/user_json
-
-        Args:
-            user_name (str): 用户id user_name
-
-        Returns:
-            UserInfo_json: 包含 user_id / portrait / user_name
-        """
-
-        user = await get_uinfo_user_json.request(self._http_core, user_name)
-        user._user_name = user_name
-
-        return user
+        return await profile.get_uinfo_profile.request_http(self._http_core, uid_or_portrait)
 
     @handle_exception(get_uinfo_getuserinfo_app.UserInfo_guinfo_app)
     @_try_websocket
     async def _get_uinfo_getuserinfo(self, user_id: int) -> get_uinfo_getuserinfo_app.UserInfo_guinfo_app:
         """
-        接口 http://tiebac.baidu.com/c/u/user/getuserinfo
+        接口 https://tiebac.baidu.com/c/u/user/getuserinfo
 
         Args:
             user_id (int): 用户id user_id
@@ -552,6 +534,42 @@ class Client(object):
 
         return user
 
+    @handle_exception(get_uinfo_user_json.UserInfo_json)
+    async def _get_uinfo_user_json(self, user_name: str) -> get_uinfo_user_json.UserInfo_json:
+        """
+        接口 http://tieba.baidu.com/i/sys/user_json
+
+        Args:
+            user_name (str): 用户id user_name
+
+        Returns:
+            UserInfo_json: 包含 user_id / portrait / user_name
+        """
+
+        user = await get_uinfo_user_json.request(self._http_core, user_name)
+        user._user_name = user_name
+
+        return user
+
+    @handle_exception(get_uinfo_panel.UserInfo_panel)
+    async def _get_uinfo_panel(self, name_or_portrait: str) -> get_uinfo_panel.UserInfo_panel:
+        """
+        接口 https://tieba.baidu.com/home/get/panel
+
+        Args:
+            name_or_portrait (str): 用户id user_name / portrait
+
+        Returns:
+            UserInfo_panel: 包含较全面的用户信息
+
+        Note:
+            从2022.08.30开始服务端不再返回user_id字段 请谨慎使用\n
+            该接口可判断用户是否被屏蔽\n
+            该接口rps阈值较低
+        """
+
+        return await get_uinfo_panel.request(self._http_core, name_or_portrait)
+
     async def get_user_info(self, _id: Union[str, int], /, require: ReqUInfo = ReqUInfo.ALL) -> TypeUserInfo:
         """
         获取用户信息
@@ -573,17 +591,14 @@ class Client(object):
                 # 仅有NICK_NAME以下的需求
                 return await self._get_uinfo_getuserinfo(_id)
             else:
-                user = await self._get_uinfo_getuserinfo(_id)
-                user, _ = await self.get_homepage(user.portrait, with_threads=False)
-                return user
+                return await self._get_uinfo_profile(_id)
         elif is_portrait(_id):
             if (require | ReqUInfo.BASIC) == ReqUInfo.BASIC:
                 # 仅有BASIC需求
                 if not require & ReqUInfo.USER_ID:
                     # 无USER_ID需求
                     return await self._get_uinfo_panel(_id)
-            user, _ = await self.get_homepage(_id, with_threads=False)
-            return user
+            return await self._get_uinfo_profile(_id)
         else:
             if (require | ReqUInfo.BASIC) == ReqUInfo.BASIC:
                 return await self._get_uinfo_user_json(_id)
@@ -592,8 +607,7 @@ class Client(object):
                 return await self._get_uinfo_panel(_id)
             else:
                 user = await self._get_uinfo_user_json(_id)
-                user, _ = await self.get_homepage(user.portrait, with_threads=False)
-                return user
+                return await self._get_uinfo_profile(user.portrait)
 
     @handle_exception(tieba_uid2user_info.UserInfo_TUid)
     @_try_websocket
@@ -616,21 +630,20 @@ class Client(object):
 
         return await tieba_uid2user_info.request_http(self._http_core, tieba_uid)
 
-    @handle_exception(get_homepage.null_ret_factory)
+    @handle_exception(profile.get_homepage.null_ret_factory)
     @_try_websocket
     async def get_homepage(
-        self, _id: Union[str, int], /, pn: int = 1, *, with_threads: bool = True
-    ) -> Tuple[get_homepage.UserInfo_home, List[get_homepage.Thread_home]]:
+        self, _id: Union[str, int], /, pn: int = 1
+    ) -> Tuple[profile.UserInfo_pf, List[profile.Thread_pf]]:
         """
         获取用户个人页信息
 
         Args:
             _id (str | int): 用户id user_id / user_name / portrait 优先user_id
             pn (int, optional): 页码. Defaults to 1.
-            with_threads (bool, optional): True则同时请求主页帖子列表 False则返回的threads为空. Defaults to True.
 
         Returns:
-            tuple[UserInfo_home, list[Thread_home]]: 用户信息, list[帖子信息]
+            tuple[UserInfo_pf, list[Thread_pf]]: 用户信息, list[帖子信息]
         """
 
         if not isinstance(_id, int):
@@ -640,9 +653,9 @@ class Client(object):
             user_id = _id
 
         if self._ws_core.status == WsStatus.OPEN:
-            return await get_homepage.request_ws(self._ws_core, user_id, pn, with_threads)
+            return await profile.get_homepage.request_ws(self._ws_core, user_id, pn)
 
-        return await get_homepage.request_http(self._http_core, user_id, pn, with_threads)
+        return await profile.get_homepage.request_http(self._http_core, user_id, pn)
 
     @handle_exception(get_follows.Follows)
     async def get_follows(self, _id: Union[str, int, None] = None, /, pn: int = 1) -> get_follows.Follows:

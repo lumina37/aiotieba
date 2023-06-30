@@ -2,32 +2,30 @@ from typing import List, Tuple
 
 import yarl
 
-from ...const import APP_BASE_HOST, APP_INSECURE_SCHEME, MAIN_VERSION
-from ...core import HttpCore, WsCore
-from ...exception import TiebaServerError
-from ._classdef import Thread_home, UserInfo_home
-from .protobuf import ProfileReqIdl_pb2, ProfileResIdl_pb2
-
-CMD = 303012
-
-
-def null_ret_factory() -> Tuple[UserInfo_home, List[Thread_home]]:
-    return UserInfo_home(), []
+from ....const import APP_BASE_HOST, APP_INSECURE_SCHEME, MAIN_VERSION
+from ....core import HttpCore, WsCore
+from ....exception import TiebaServerError
+from .._classdef import Thread_pf, UserInfo_pf
+from .._const import CMD
+from ..protobuf import ProfileReqIdl_pb2, ProfileResIdl_pb2
 
 
-def pack_proto(user_id: int, pn: int, with_threads: bool) -> bytes:
+def null_ret_factory() -> Tuple[UserInfo_pf, List[Thread_pf]]:
+    return UserInfo_pf(), []
+
+
+def pack_proto(user_id: int, pn: int) -> bytes:
     req_proto = ProfileReqIdl_pb2.ProfileReqIdl()
     req_proto.data.common._client_version = MAIN_VERSION
     req_proto.data.common._client_type = 2
     req_proto.data.uid = user_id
     req_proto.data.need_post_count = 1
     req_proto.data.pn = pn
-    req_proto.data.page = bool(not with_threads)
 
     return req_proto.SerializeToString()
 
 
-def parse_body(body: bytes) -> Tuple[UserInfo_home, List[Thread_home]]:
+def parse_body(body: bytes) -> Tuple[UserInfo_pf, List[Thread_pf]]:
     res_proto = ProfileResIdl_pb2.ProfileResIdl()
     res_proto.ParseFromString(body)
 
@@ -35,7 +33,7 @@ def parse_body(body: bytes) -> Tuple[UserInfo_home, List[Thread_home]]:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    user = UserInfo_home(data_proto.user)
+    user = UserInfo_pf(data_proto.user)
 
     anti_proto = data_proto.anti_stat
     if anti_proto.block_stat and anti_proto.hide_stat and anti_proto.days_tofree > 30:
@@ -43,7 +41,7 @@ def parse_body(body: bytes) -> Tuple[UserInfo_home, List[Thread_home]]:
     else:
         user._is_blocked = False
 
-    threads = [Thread_home(p) for p in data_proto.post_list]
+    threads = [Thread_pf(p) for p in data_proto.post_list]
 
     for thread in threads:
         thread._user = user
@@ -51,10 +49,8 @@ def parse_body(body: bytes) -> Tuple[UserInfo_home, List[Thread_home]]:
     return user, threads
 
 
-async def request_http(
-    http_core: HttpCore, user_id: int, pn: int, with_threads: bool
-) -> Tuple[UserInfo_home, List[Thread_home]]:
-    data = pack_proto(user_id, with_threads)
+async def request_http(http_core: HttpCore, user_id: int, pn: int) -> Tuple[UserInfo_pf, List[Thread_pf]]:
+    data = pack_proto(user_id, pn)
 
     request = http_core.pack_proto_request(
         yarl.URL.build(
@@ -69,10 +65,8 @@ async def request_http(
     return parse_body(body)
 
 
-async def request_ws(
-    ws_core: WsCore, user_id: int, pn: int, with_threads: bool
-) -> Tuple[UserInfo_home, List[Thread_home]]:
-    data = pack_proto(user_id, with_threads)
+async def request_ws(ws_core: WsCore, user_id: int, pn: int) -> Tuple[UserInfo_pf, List[Thread_pf]]:
+    data = pack_proto(user_id, pn)
 
     __log__ = "user_id={user_id}"  # noqa: F841
 
