@@ -39,7 +39,7 @@ nav:
           - comments: ref/classdef/comments.md
           - searches: ref/classdef/searches.md
           - user_info: ref/classdef/user_info.md
-          - homepage: ref/classdef/homepage.md
+          - profile: ref/classdef/profile.md
           - follows: ref/classdef/follows.md
           - fans: ref/classdef/fans.md
           - follow_forums: ref/classdef/follow_forums.md
