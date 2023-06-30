@@ -1,10 +1,7 @@
-import urllib.parse
 from typing import Protocol, TypeVar
 
 import yarl
 
-from ...const import CHECK_URL_PERFIX
-from ...helper import removeprefix
 from .common import TypeMessage
 
 TypeFragment = TypeVar('TypeFragment')
@@ -304,11 +301,11 @@ class FragLink(object):
         self._title = data_proto.text
 
         self._raw_url = data_proto.link
-        self._is_external = self._raw_url.startswith(CHECK_URL_PERFIX)
+        self._url = yarl.URL(data_proto.link)
+        self._is_external = self._url.path == "/mo/q/checkurl"
         if self._is_external:
-            self._raw_url = urllib.parse.unquote(removeprefix(self._raw_url, CHECK_URL_PERFIX))
-
-        self._url = None
+            self._raw_url = self._url.query['url']
+            self._url = yarl.URL(self._raw_url)
 
     def __repr__(self) -> str:
         return str(
@@ -325,7 +322,7 @@ class FragLink(object):
         原链接
 
         Note:
-            外链会在解析前先去除CHECK_URL_PERFIX前缀
+            外链会在解析前先去除前缀
         """
 
         return self._raw_url
@@ -344,11 +341,9 @@ class FragLink(object):
         yarl解析后的链接
 
         Note:
-            外链会在解析前先去除CHECK_URL_PERFIX前缀
+            外链会在解析前先去除前缀
         """
 
-        if self._url is None:
-            self._url = yarl.URL(self._raw_url)
         return self._url
 
     @property
@@ -357,7 +352,7 @@ class FragLink(object):
         原链接
 
         Note:
-            外链会在解析前先去除CHECK_URL_PERFIX前缀
+            外链会在解析前先去除前缀
         """
 
         return self._raw_url
@@ -392,7 +387,7 @@ class TypeFragLink(Protocol):
         yarl解析后的链接
 
         Note:
-            外链会在解析前先去除external_perfix前缀
+            外链会在解析前先去除前缀
         """
         ...
 
