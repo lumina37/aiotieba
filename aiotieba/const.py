@@ -7,4 +7,4 @@ APP_INSECURE_SCHEME = "http"
 APP_BASE_HOST = "tiebac.baidu.com"
 WEB_BASE_HOST = "tieba.baidu.com"
 
-CHECK_URL_PERFIX = "http://tieba.baidu.com/mo/q/checkurl?url="
+CHECK_URL_PERFIX = "https://tieba.baidu.com/mo/q/checkurl?url="
