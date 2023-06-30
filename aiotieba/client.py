@@ -619,29 +619,30 @@ class Client(object):
     @handle_exception(get_homepage.null_ret_factory)
     @_try_websocket
     async def get_homepage(
-        self, _id: Union[str, int], *, with_threads: bool = True
+        self, _id: Union[str, int], /, pn: int = 1, *, with_threads: bool = True
     ) -> Tuple[get_homepage.UserInfo_home, List[get_homepage.Thread_home]]:
         """
         获取用户个人页信息
 
         Args:
-            _id (str | int): 用户id user_id / user_name / portrait 优先portrait
+            _id (str | int): 用户id user_id / user_name / portrait 优先user_id
+            pn (int, optional): 页码. Defaults to 1.
             with_threads (bool, optional): True则同时请求主页帖子列表 False则返回的threads为空. Defaults to True.
 
         Returns:
             tuple[UserInfo_home, list[Thread_home]]: 用户信息, list[帖子信息]
         """
 
-        if not is_portrait(_id):
-            user = await self.get_user_info(_id, ReqUInfo.PORTRAIT)
-            portrait = user._portrait
+        if not isinstance(_id, int):
+            user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+            user_id = user._user_id
         else:
-            portrait = _id
+            user_id = _id
 
         if self._ws_core.status == WsStatus.OPEN:
-            return await get_homepage.request_ws(self._ws_core, portrait, with_threads)
+            return await get_homepage.request_ws(self._ws_core, user_id, pn, with_threads)
 
-        return await get_homepage.request_http(self._http_core, portrait, with_threads)
+        return await get_homepage.request_http(self._http_core, user_id, pn, with_threads)
 
     @handle_exception(get_follows.Follows)
     async def get_follows(self, _id: Union[str, int, None] = None, /, pn: int = 1) -> get_follows.Follows:
