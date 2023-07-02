@@ -3,17 +3,17 @@ import yarl
 
 from ...const import WEB_BASE_HOST
 from ...core import HttpCore
-from ._classdef import BlacklistUsers
+from ._classdef import BawuBlacklists
 
 
-def parse_body(body: bytes) -> BlacklistUsers:
+def parse_body(body: bytes) -> BawuBlacklists:
     soup = bs4.BeautifulSoup(body, 'lxml')
-    blacklist_users = BlacklistUsers(soup)
+    bawu_blacklists = BawuBlacklists(soup)
 
-    return blacklist_users
+    return bawu_blacklists
 
 
-async def request(http_core: HttpCore, fname: str, pn: int) -> BlacklistUsers:
+async def request(http_core: HttpCore, fname: str, pn: int) -> BawuBlacklists:
     params = [
         ('word', fname),
         ('pn', pn),

@@ -6,12 +6,12 @@ import aiohttp
 import yarl
 
 from .api import (
+    add_bawu_blacklist,
     add_post,
     agree,
     agree_vimage,
-    blacklist_add,
-    blacklist_del,
     block,
+    del_bawu_blacklist,
     del_post,
     del_posts,
     del_thread,
@@ -20,10 +20,11 @@ from .api import (
     follow_forum,
     follow_user,
     get_ats,
+    get_bawu_blacklist,
     get_bawu_info,
     get_bawu_postlogs,
     get_bawu_userlogs,
-    get_blacklist_users,
+    get_blacklist,
     get_blocks,
     get_cid,
     get_comments,
@@ -65,6 +66,7 @@ from .api import (
     remove_fan,
     search_post,
     send_msg,
+    set_blacklist,
     set_msg_readed,
     set_nickname_old,
     set_profile,
@@ -83,7 +85,7 @@ from .api import (
 from .api._classdef import UserInfo
 from .api.profile import UserInfo_pf
 from .core import Account, HttpCore, NetCore, TimeConfig, WsCore
-from .enums import BawuSearchType, GroupType, PostSortType, ReqUInfo, ThreadSortType, WsStatus
+from .enums import BawuSearchType, BlacklistType, GroupType, PostSortType, ReqUInfo, ThreadSortType, WsStatus
 from .helper import handle_exception, is_portrait
 from .helper.cache import ForumInfoCache
 from .logging import get_logger as LOG
@@ -707,6 +709,20 @@ class Client(object):
 
         return await get_fans.request(self._http_core, user_id, pn)
 
+    @handle_exception(get_blacklist.BlacklistUsers)
+    async def get_blacklist(self, pn: int = 1) -> get_blacklist.BlacklistUsers:
+        """
+        获取新版用户黑名单列表
+
+        Args:
+            pn (int, optional): 页码. Defaults to 1.
+
+        Returns:
+            BlacklistUsers: 新版用户黑名单列表
+        """
+
+        return await get_blacklist.request(self._http_core, pn)
+
     @handle_exception(get_follow_forums.FollowForums)
     async def get_follow_forums(
         self, _id: Union[str, int], /, pn: int = 1, *, rn: int = 50
@@ -871,7 +887,7 @@ class Client(object):
         return await get_replys.request_http(self._http_core, pn)
 
     @handle_exception(get_ats.Ats)
-    async def get_ats(self, pn: int = 1) -> get_ats._classdef.Ats:
+    async def get_ats(self, pn: int = 1) -> get_ats.Ats:
         """
         获取@信息
 
@@ -1203,24 +1219,24 @@ class Client(object):
 
         return await get_unblock_appeals.request(self._http_core, fid, pn, rn)
 
-    @handle_exception(get_blacklist_users.BlacklistUsers)
-    async def get_blacklist_users(
+    @handle_exception(get_bawu_blacklist.BawuBlacklists)
+    async def get_bawu_blacklist(
         self, fname_or_fid: Union[str, int], /, pn: int = 1
-    ) -> get_blacklist_users.BlacklistUsers:
+    ) -> get_bawu_blacklist.BawuBlacklists:
         """
-        获取pn页的黑名单用户列表
+        获取pn页的吧务黑名单列表
 
         Args:
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先贴吧名
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
-            BlacklistUsers: 黑名单用户列表
+            BlacklistUsers: 吧务黑名单列表
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
-        return await get_blacklist_users.request(self._http_core, fname, pn)
+        return await get_bawu_blacklist.request(self._http_core, fname, pn)
 
     @handle_exception(get_statistics.Statistics)
     async def get_statistics(self, fname_or_fid: Union[str, int]) -> get_statistics.Statistics:
@@ -1309,7 +1325,7 @@ class Client(object):
         return await unblock.request(self._http_core, fid, user_id)
 
     @handle_exception(bool, no_format=True)
-    async def blacklist_add(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> bool:
+    async def add_bawu_blacklist(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> bool:
         """
         添加贴吧黑名单
 
@@ -1331,10 +1347,10 @@ class Client(object):
 
         await self.__init_tbs()
 
-        return await blacklist_add.request(self._http_core, fname, user_id)
+        return await add_bawu_blacklist.request(self._http_core, fname, user_id)
 
     @handle_exception(bool, no_format=True)
-    async def blacklist_del(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> bool:
+    async def del_bawu_blacklist(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> bool:
         """
         移出贴吧黑名单
 
@@ -1356,7 +1372,7 @@ class Client(object):
 
         await self.__init_tbs()
 
-        return await blacklist_del.request(self._http_core, fname, user_id)
+        return await del_bawu_blacklist.request(self._http_core, fname, user_id)
 
     @handle_exception(bool, no_format=True)
     async def hide_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
@@ -1808,28 +1824,6 @@ class Client(object):
         return await agree_vimage.request(self._http_core, user_id)
 
     @handle_exception(bool, no_format=True)
-    async def remove_fan(self, _id: Union[str, int]) -> bool:
-        """
-        移除粉丝
-
-        Args:
-            _id (str | int): 待移除粉丝的id user_id / user_name / portrait 优先user_id
-
-        Returns:
-            bool: True成功 False失败
-        """
-
-        if not isinstance(_id, int):
-            user = await self.get_user_info(_id, ReqUInfo.USER_ID)
-            user_id = user._user_id
-        else:
-            user_id = _id
-
-        await self.__init_tbs()
-
-        return await remove_fan.request(self._http_core, user_id)
-
-    @handle_exception(bool, no_format=True)
     async def follow_user(self, _id: Union[str, int]) -> bool:
         """
         关注用户
@@ -1872,6 +1866,53 @@ class Client(object):
         await self.__init_tbs()
 
         return await unfollow_user.request(self._http_core, portrait)
+
+    @handle_exception(bool, no_format=True)
+    async def remove_fan(self, _id: Union[str, int]) -> bool:
+        """
+        移除粉丝
+
+        Args:
+            _id (str | int): 待移除粉丝的id user_id / user_name / portrait 优先user_id
+
+        Returns:
+            bool: True成功 False失败
+        """
+
+        if not isinstance(_id, int):
+            user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+            user_id = user._user_id
+        else:
+            user_id = _id
+
+        await self.__init_tbs()
+
+        return await remove_fan.request(self._http_core, user_id)
+
+    @handle_exception(bool, no_format=True)
+    @_try_websocket
+    async def set_blacklist(self, _id: Union[str, int], *, btype: BlacklistType = BlacklistType.ALL) -> bool:
+        """
+        设置新版用户黑名单
+
+        Args:
+            _id (str | int): 待设置黑名单的用户id user_id / user_name / portrait 优先user_id
+            btype (BlacklistType): 黑名单类型. 默认全屏蔽. Defaults to BlacklistType.ALL.
+
+        Returns:
+            bool: True成功 False失败
+        """
+
+        if not isinstance(_id, int):
+            user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+            user_id = user._user_id
+        else:
+            user_id = _id
+
+        if self._ws_core.status == WsStatus.OPEN:
+            return await set_blacklist.request_ws(self._ws_core, user_id, btype)
+
+        return await set_blacklist.request_http(self._http_core, user_id, btype)
 
     @handle_exception(bool, no_format=True)
     async def follow_forum(self, fname_or_fid: Union[str, int]) -> bool:

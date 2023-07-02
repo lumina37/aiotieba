@@ -5,7 +5,7 @@ import bs4
 from .._classdef import Containers
 
 
-class BlacklistUser(object):
+class BawuBlacklist(object):
     """
     用户信息
 
@@ -41,7 +41,7 @@ class BlacklistUser(object):
             }
         )
 
-    def __eq__(self, obj: "BlacklistUser") -> bool:
+    def __eq__(self, obj: "BawuBlacklist") -> bool:
         return self._user_id == obj._user_id
 
     def __hash__(self) -> int:
@@ -97,7 +97,7 @@ class BlacklistUser(object):
         return self.__str__()
 
 
-class Page_blacklist(object):
+class Page_bwblacklist(object):
     """
     页信息
 
@@ -116,7 +116,7 @@ class Page_blacklist(object):
         '_has_prev',
     ]
 
-    def _init(self, data_tag: bs4.element.Tag) -> "Page_blacklist":
+    def _init(self, data_tag: bs4.element.Tag) -> "Page_bwblacklist":
         self._current_page = int(data_tag.text)
         total_page_item = data_tag.parent.next_sibling
         self._total_page = int(total_page_item.text[1:-1])
@@ -124,7 +124,7 @@ class Page_blacklist(object):
         self._has_prev = self._current_page > 1
         return self
 
-    def _init_null(self) -> "Page_blacklist":
+    def _init_null(self) -> "Page_bwblacklist":
         self._current_page = 0
         self._total_page = 0
         self._has_more = False
@@ -173,14 +173,14 @@ class Page_blacklist(object):
         return self._has_prev
 
 
-class BlacklistUsers(Containers[BlacklistUser]):
+class BawuBlacklists(Containers[BawuBlacklist]):
     """
-    黑名单用户列表
+    吧务黑名单列表
 
     Attributes:
-        _objs (list[BlacklistUser]): 黑名单用户列表
+        _objs (list[BawuBlacklist]): 吧务黑名单列表
 
-        page (Page_blacklist): 页信息
+        page (Page_bwblacklist): 页信息
         has_more (bool): 是否还有下一页
     """
 
@@ -191,15 +191,15 @@ class BlacklistUsers(Containers[BlacklistUser]):
 
     def __init__(self, data_soup: Optional[bs4.BeautifulSoup] = None) -> None:
         if data_soup:
-            self._objs = [BlacklistUser(_tag) for _tag in data_soup('td', class_='left_cell')]
+            self._objs = [BawuBlacklist(_tag) for _tag in data_soup('td', class_='left_cell')]
             page_tag = data_soup.find('div', class_='tbui_pagination').find('li', class_='active')
-            self._page = Page_blacklist()._init(page_tag)
+            self._page = Page_bwblacklist()._init(page_tag)
         else:
             self._objs = []
-            self._page = Page_blacklist()._init_null()
+            self._page = Page_bwblacklist()._init_null()
 
     @property
-    def page(self) -> Page_blacklist:
+    def page(self) -> Page_bwblacklist:
         """
         页信息
         """

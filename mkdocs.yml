@@ -42,6 +42,7 @@ nav:
           - profile: ref/classdef/profile.md
           - follows: ref/classdef/follows.md
           - fans: ref/classdef/fans.md
+          - blacklist: ref/classdef/blacklist.md
           - follow_forums: ref/classdef/follow_forums.md
           - self_follow_forums: ref/classdef/self_follow_forums.md
           - dislike_forums: ref/classdef/dislike_forums.md
@@ -58,7 +59,7 @@ nav:
           - bawu_userlogs: ref/classdef/bawu_userlogs.md
           - bawu_postlogs: ref/classdef/bawu_postlogs.md
           - unblock_appeals: ref/classdef/unblock_appeals.md
-          - blacklist_users: ref/classdef/blacklist_users.md
+          - bawu_blacklist: ref/classdef/bawu_blacklist.md
           - statistics: ref/classdef/statistics.md
           - recom_status: ref/classdef/recom_status.md
           - group_msg: ref/classdef/group_msg.md
