@@ -43,6 +43,7 @@ nav:
           - follows: ref/classdef/follows.md
           - fans: ref/classdef/fans.md
           - blacklist: ref/classdef/blacklist.md
+          - blacklist_old: ref/classdef/blacklist_old.md
           - follow_forums: ref/classdef/follow_forums.md
           - self_follow_forums: ref/classdef/self_follow_forums.md
           - dislike_forums: ref/classdef/dislike_forums.md

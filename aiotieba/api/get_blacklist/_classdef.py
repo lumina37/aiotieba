@@ -27,13 +27,12 @@ class BlacklistUser(object):
         '_user_name',
         '_nick_name_new',
         '_btype',
-        '_priv_reply',
     ]
 
     def __init__(self, data_map: Mapping) -> None:
         self._user_id = int(data_map['uid'])
         if '?' in (portrait := data_map['portrait']):
-            self._portrait = data_map['portrait'][:-13]
+            self._portrait = portrait[:-13]
         else:
             self._portrait = portrait
         self._user_name = data_map['user_name']
@@ -164,25 +163,12 @@ class BlacklistUsers(Containers[BlacklistUser]):
 
     Attributes:
         _objs (list[BlacklistUser]): 新版用户黑名单列表
-
-        page (Page_at): 页信息
-        has_more (bool): 是否还有下一页
     """
 
-    __slots__ = ['_has_more']
+    __slots__ = []
 
     def __init__(self, data_map: Optional[Mapping] = None) -> None:
         if data_map:
             self._objs = [BlacklistUser(m) for m in data_map.get('user_perm_list', [])]
-            self._has_more = data_map['is_has_more']
         else:
             self._objs = []
-            self._has_more = False
-
-    @property
-    def has_more(self) -> bool:
-        """
-        是否还有下一页
-        """
-
-        return self._has_more

@@ -1,11 +1,9 @@
 from typing import Optional
 
-import bs4
-
-from .._classdef import Containers
+from .._classdef import Containers, TypeMessage
 
 
-class BawuBlacklistUser(object):
+class BlacklistOldUser(object):
     """
     用户信息
 
@@ -13,7 +11,12 @@ class BawuBlacklistUser(object):
         user_id (int): user_id
         portrait (str): portrait
         user_name (str): 用户名
+        nick_name_old (str): 旧版昵称
 
+        until_time (int): 解禁时间
+
+        nick_name (str): 用户昵称
+        show_name (str): 显示名称
         log_name (str): 用于在日志中记录用户信息
     """
 
@@ -21,13 +24,18 @@ class BawuBlacklistUser(object):
         '_user_id',
         '_portrait',
         '_user_name',
+        '_nick_name_old',
+        '_until_time',
     ]
 
-    def __init__(self, data_tag: bs4.element.Tag) -> None:
-        user_info_item = data_tag.previous_sibling.input
-        self._user_name = user_info_item['data-user-name']
-        self._user_id = int(user_info_item['data-user-id'])
-        self._portrait = data_tag.a['href'][14:-17]
+    def __init__(self, data_proto: TypeMessage) -> None:
+        self._user_id = data_proto.user_id
+        if '?' in (portrait := data_proto.portrait):
+            self._portrait = portrait[:-13]
+        else:
+            self._portrait = portrait
+        self._user_name = data_proto.user_name
+        self._nick_name_old = data_proto.name_show
 
     def __str__(self) -> str:
         return self._user_name or self._portrait or str(self._user_id)
@@ -41,7 +49,7 @@ class BawuBlacklistUser(object):
             }
         )
 
-    def __eq__(self, obj: "BawuBlacklistUser") -> bool:
+    def __eq__(self, obj: "BlacklistOldUser") -> bool:
         return self._user_id == obj._user_id
 
     def __hash__(self) -> int:
@@ -89,21 +97,52 @@ class BawuBlacklistUser(object):
         return self._user_name
 
     @property
+    def nick_name_old(self) -> str:
+        """
+        旧版昵称
+        """
+
+        return self._nick_name_old
+
+    @property
+    def until_time(self) -> int:
+        """
+        解禁时间
+
+        Note:
+            10位时间戳 以秒为单位
+        """
+
+        return self._until_time
+
+    @property
+    def nick_name(self) -> str:
+        """
+        用户昵称
+        """
+
+        return self._nick_name_old
+
+    @property
     def log_name(self) -> str:
         """
         用于在日志中记录用户信息
         """
 
-        return self.__str__()
+        if self._user_name:
+            return self._user_name
+        elif self._portrait:
+            return f"{self._nick_name_old}/{self._portrait}"
+        else:
+            return str(self._user_id)
 
 
-class Page_bwblacklist(object):
+class Page_blacklist(object):
     """
     页信息
 
     Attributes:
         current_page (int): 当前页码
-        total_page (int): 总页码
 
         has_more (bool): 是否有后继页
         has_prev (bool): 是否有前驱页
@@ -111,22 +150,18 @@ class Page_bwblacklist(object):
 
     __slots__ = [
         '_current_page',
-        '_total_page',
         '_has_more',
         '_has_prev',
     ]
 
-    def _init(self, data_tag: bs4.element.Tag) -> "Page_bwblacklist":
-        self._current_page = int(data_tag.text)
-        total_page_item = data_tag.parent.next_sibling
-        self._total_page = int(total_page_item.text[1:-1])
-        self._has_more = self._current_page < self._total_page
-        self._has_prev = self._current_page > 1
+    def _init(self, data_proto: TypeMessage) -> "Page_blacklist":
+        self._current_page = data_proto.current_page
+        self._has_more = bool(data_proto.has_more)
+        self._has_prev = bool(data_proto.has_prev)
         return self
 
-    def _init_null(self) -> "Page_bwblacklist":
+    def _init_null(self) -> "Page_blacklist":
         self._current_page = 0
-        self._total_page = 0
         self._has_more = False
         self._has_prev = False
         return self
@@ -149,14 +184,6 @@ class Page_bwblacklist(object):
         return self._current_page
 
     @property
-    def total_page(self) -> int:
-        """
-        总页码
-        """
-
-        return self._total_page
-
-    @property
     def has_more(self) -> bool:
         """
         是否有后继页
@@ -173,38 +200,26 @@ class Page_bwblacklist(object):
         return self._has_prev
 
 
-class BawuBlacklistUsers(Containers[BawuBlacklistUser]):
+class BlacklistOldUsers(Containers[BlacklistOldUser]):
     """
-    吧务黑名单列表
+    旧版用户黑名单列表
 
     Attributes:
-        _objs (list[BawuBlacklistUser]): 吧务黑名单列表
+        _objs (list[BlacklistOldUser]): 旧版用户黑名单列表
 
-        page (Page_bwblacklist): 页信息
+        page (Page_blacklist): 页信息
         has_more (bool): 是否还有下一页
     """
 
-    __slots__ = [
-        '_raw_objs',
-        '_page',
-    ]
+    __slots__ = ['_page']
 
-    def __init__(self, data_soup: Optional[bs4.BeautifulSoup] = None) -> None:
-        if data_soup:
-            self._objs = [BawuBlacklistUser(_tag) for _tag in data_soup('td', class_='left_cell')]
-            page_tag = data_soup.find('div', class_='tbui_pagination').find('li', class_='active')
-            self._page = Page_bwblacklist()._init(page_tag)
+    def __init__(self, data_proto: Optional[TypeMessage] = None) -> None:
+        if data_proto:
+            self._objs = [BlacklistOldUser(p) for p in data_proto.mute_user]
+            self._page = Page_blacklist()._init(data_proto.page)
         else:
             self._objs = []
-            self._page = Page_bwblacklist()._init_null()
-
-    @property
-    def page(self) -> Page_bwblacklist:
-        """
-        页信息
-        """
-
-        return self._page
+            self._page = Page_blacklist()._init_null()
 
     @property
     def has_more(self) -> bool:

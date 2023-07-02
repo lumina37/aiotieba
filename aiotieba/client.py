@@ -25,6 +25,7 @@ from .api import (
     get_bawu_postlogs,
     get_bawu_userlogs,
     get_blacklist,
+    get_blacklist_old,
     get_blocks,
     get_cid,
     get_comments,
@@ -720,6 +721,25 @@ class Client(object):
 
         return await get_blacklist.request(self._http_core)
 
+    @handle_exception(get_blacklist_old.BlacklistOldUsers)
+    @_try_websocket
+    async def get_blacklist_old(self, pn: int = 1, /, *, rn: int = 10) -> get_blacklist_old.BlacklistOldUsers:
+        """
+        获取旧版用户黑名单列表
+
+        Args:
+            pn (int, optional): 页码. Defaults to 1.
+            rn (int, optional): 请求的条目数. Defaults to 10. Max to 30.
+
+        Returns:
+            BlacklistOldUsers: 旧版用户黑名单列表
+        """
+
+        if self._ws_core.status == WsStatus.OPEN:
+            return await get_blacklist_old.request_ws(self._ws_core, pn, rn)
+
+        return await get_blacklist_old.request_http(self._http_core, pn, rn)
+
     @handle_exception(get_follow_forums.FollowForums)
     async def get_follow_forums(
         self, _id: Union[str, int], /, pn: int = 1, *, rn: int = 50
@@ -1216,10 +1236,10 @@ class Client(object):
 
         return await get_unblock_appeals.request(self._http_core, fid, pn, rn)
 
-    @handle_exception(get_bawu_blacklist.BawuBlacklists)
+    @handle_exception(get_bawu_blacklist.BawuBlacklistUsers)
     async def get_bawu_blacklist(
         self, fname_or_fid: Union[str, int], /, pn: int = 1
-    ) -> get_bawu_blacklist.BawuBlacklists:
+    ) -> get_bawu_blacklist.BawuBlacklistUsers:
         """
         获取pn页的吧务黑名单列表
 

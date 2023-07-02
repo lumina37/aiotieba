@@ -1,0 +1,21 @@
+// tbclient.UserMuteQuery.UserMuteQueryResIdl
+syntax = "proto3";
+
+import "Error.proto";
+import "Page.proto";
+
+message UserMuteQueryResIdl {
+    message DataRes {
+        message MuteUser {
+            int64 user_id = 1;
+            string user_name = 2;
+            int32 mute_time = 3;
+            string portrait = 4;
+            string name_show = 5;
+        }
+        repeated MuteUser mute_user = 1;
+        Page page = 2;
+    }
+    DataRes data = 1;
+    Error error = 2;
+}
