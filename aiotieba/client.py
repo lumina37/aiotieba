@@ -710,18 +710,15 @@ class Client(object):
         return await get_fans.request(self._http_core, user_id, pn)
 
     @handle_exception(get_blacklist.BlacklistUsers)
-    async def get_blacklist(self, pn: int = 1) -> get_blacklist.BlacklistUsers:
+    async def get_blacklist(self) -> get_blacklist.BlacklistUsers:
         """
         获取新版用户黑名单列表
-
-        Args:
-            pn (int, optional): 页码. Defaults to 1.
 
         Returns:
             BlacklistUsers: 新版用户黑名单列表
         """
 
-        return await get_blacklist.request(self._http_core, pn)
+        return await get_blacklist.request(self._http_core)
 
     @handle_exception(get_follow_forums.FollowForums)
     async def get_follow_forums(
