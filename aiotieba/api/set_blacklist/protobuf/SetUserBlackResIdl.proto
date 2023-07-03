@@ -1,0 +1,8 @@
+// tbclient.SetUserBlack.SetUserBlackResIdl
+syntax = "proto3";
+
+import "Error.proto";
+
+message SetUserBlackResIdl {
+    Error error = 1;
+}

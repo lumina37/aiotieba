@@ -63,6 +63,28 @@ class BawuSearchType(enum.IntEnum):
     OP = 1
 
 
+class BlacklistType(enum.IntEnum):
+    """
+    用户黑名单类型
+
+    Note:
+        NULL正常状态\n
+        FOLLOW禁止关注\n
+        INTERACT禁止互动\n
+        CHAT禁止私信\n
+        ALL全屏蔽
+    """
+
+    NULL = 0
+    FOLLOW = 1 << 0
+    INTERACT = 1 << 1
+    CHAT = 1 << 2
+    FOLLOW_AND_INTERACT = FOLLOW | INTERACT
+    FOLLOW_AND_CHAT = FOLLOW | CHAT
+    INTERACT_AND_CHAT = INTERACT | CHAT
+    ALL = FOLLOW | INTERACT | CHAT
+
+
 class WsStatus(enum.IntEnum):
     """
     回复排序

@@ -170,7 +170,7 @@ class UserInfo_u(object):
         用户user_id
 
         Note:
-            唯一 不可变 不可为空
+            唯一 不可变 不可为空\n
             请注意与用户个人页的tieba_uid区分
         """
 
@@ -193,7 +193,7 @@ class UserInfo_u(object):
         用户名
 
         Note:
-            唯一 可变 可为空
+            唯一 可变 可为空\n
             请注意与用户昵称区分
         """
 
@@ -437,7 +437,7 @@ class FragImage_ut(object):
         小图链接
 
         Note:
-            宽980px
+            宽980px\n
             一定是静态图
         """
 

@@ -54,7 +54,7 @@ class UserInfo_login(object):
         用户user_id
 
         Note:
-            唯一 不可变 不可为空
+            唯一 不可变 不可为空\n
             请注意与用户个人页的tieba_uid区分
         """
 
@@ -77,7 +77,7 @@ class UserInfo_login(object):
         用户名
 
         Note:
-            唯一 可变 可为空
+            唯一 可变 可为空\n
             请注意与用户昵称区分
         """
 

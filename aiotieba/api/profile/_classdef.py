@@ -3,14 +3,14 @@ from typing import Iterable, List, Optional
 from .._classdef import Containers, TypeMessage, VoteInfo
 from .._classdef.contents import FragAt, FragEmoji, FragLink, FragmentUnknown, FragText, TypeFragment, TypeFragText
 
-FragAt_home = FragAt
-FragEmoji_home = FragEmoji
-FragLink_home = FragLink
-FragmentUnknown_home = FragmentUnknown
-FragText_home = FragText
+FragAt_pf = FragAt
+FragEmoji_pf = FragEmoji
+FragLink_pf = FragLink
+FragmentUnknown_pf = FragmentUnknown
+FragText_pf = FragText
 
 
-class VirtualImage_home(object):
+class VirtualImage_pf(object):
     """
     虚拟形象信息
 
@@ -24,12 +24,12 @@ class VirtualImage_home(object):
         '_state',
     ]
 
-    def _init(self, data_proto: TypeMessage) -> "VirtualImage_home":
+    def _init(self, data_proto: TypeMessage) -> "VirtualImage_pf":
         self._enabled = bool(data_proto.isset_virtual_image)
         self._state = data_proto.personal_state.text
         return self
 
-    def _init_null(self) -> "VirtualImage_home":
+    def _init_null(self) -> "VirtualImage_pf":
         self._enabled = False
         self._state = ''
         return self
@@ -65,7 +65,7 @@ class VirtualImage_home(object):
         return self._state
 
 
-class UserInfo_home(object):
+class UserInfo_pf(object):
     """
     用户信息
 
@@ -86,7 +86,7 @@ class UserInfo_home(object):
         sign (str): 个性签名
         ip (str): ip归属地
         icons (list[str]): 印记信息
-        vimage (VirtualImage_home): 虚拟形象信息
+        vimage (VirtualImage_pf): 虚拟形象信息
 
         is_bawu (bool): 是否吧务
         is_vip (bool): 是否超级会员
@@ -145,7 +145,7 @@ class UserInfo_home(object):
             self._sign = data_proto.intro
             self._ip = data_proto.ip_address
             self._icons = [name for i in data_proto.iconinfo if (name := i.name)]
-            self._vimage = VirtualImage_home()._init(data_proto.virtual_image_info)
+            self._vimage = VirtualImage_pf()._init(data_proto.virtual_image_info)
             self._is_bawu = bool(data_proto.is_bawu)
             self._is_vip = bool(data_proto.new_tshow_icon)
             self._is_god = bool(data_proto.new_god_data.status)
@@ -167,7 +167,7 @@ class UserInfo_home(object):
             self._forum_num = 0
             self._sign = ''
             self._icons = []
-            self._vimage = VirtualImage_home()._init_null()
+            self._vimage = VirtualImage_pf()._init_null()
             self._ip = ''
             self._is_bawu = False
             self._is_vip = False
@@ -198,7 +198,7 @@ class UserInfo_home(object):
             }
         )
 
-    def __eq__(self, obj: "UserInfo_home") -> bool:
+    def __eq__(self, obj: "UserInfo_pf") -> bool:
         return self._user_id == obj._user_id
 
     def __hash__(self) -> int:
@@ -216,7 +216,7 @@ class UserInfo_home(object):
         用户user_id
 
         Note:
-            唯一 不可变 不可为空
+            唯一 不可变 不可为空\n
             请注意与用户个人页的tieba_uid区分
         """
 
@@ -239,7 +239,7 @@ class UserInfo_home(object):
         用户名
 
         Note:
-            唯一 可变 可为空
+            唯一 可变 可为空\n
             请注意与用户昵称区分
         """
 
@@ -259,7 +259,7 @@ class UserInfo_home(object):
         用户个人主页uid
 
         Note:
-            唯一 不可变 可为空
+            唯一 不可变 可为空\n
             请注意与user_id区分
         """
 
@@ -355,7 +355,7 @@ class UserInfo_home(object):
         return self._icons
 
     @property
-    def vimage(self) -> VirtualImage_home:
+    def vimage(self) -> VirtualImage_pf:
         """
         虚拟形象信息
         """
@@ -446,7 +446,7 @@ class UserInfo_home(object):
             return str(self._user_id)
 
 
-class FragImage_home(object):
+class FragImage_pf(object):
     """
     图像碎片
 
@@ -549,7 +549,7 @@ class FragImage_home(object):
         return self._hash
 
 
-class Contents_home(Containers[TypeFragment]):
+class Contents_pf(Containers[TypeFragment]):
     """
     内容碎片列表
 
@@ -559,10 +559,10 @@ class Contents_home(Containers[TypeFragment]):
         text (str): 文本内容
 
         texts (list[TypeFragText]): 纯文本碎片列表
-        emojis (list[FragEmoji_home]): 表情碎片列表
-        imgs (list[FragImage_home]): 图像碎片列表
-        ats (list[FragAt_home]): @碎片列表
-        links (list[FragLink_home]): 链接碎片列表
+        emojis (list[FragEmoji_pf]): 表情碎片列表
+        imgs (list[FragImage_pf]): 图像碎片列表
+        ats (list[FragAt_pf]): @碎片列表
+        links (list[FragLink_pf]): 链接碎片列表
 
         has_voice (bool): 是否包含音频
         has_video (bool): 是否包含视频
@@ -579,35 +579,35 @@ class Contents_home(Containers[TypeFragment]):
         '_has_video',
     ]
 
-    def _init(self, protos: Iterable[TypeMessage]) -> "Contents_home":
+    def _init(self, protos: Iterable[TypeMessage]) -> "Contents_pf":
         def _init_by_type(proto):
             _type = proto.type
             # 0纯文本 9电话号 18话题 27百科词条
             if _type in [0, 9, 18, 27]:
-                fragment = FragText_home(proto)
+                fragment = FragText_pf(proto)
                 self._texts.append(fragment)
             # 11:tid=5047676428
             elif _type in [2, 11]:
-                fragment = FragEmoji_home(proto)
+                fragment = FragEmoji_pf(proto)
                 self._emojis.append(fragment)
             elif _type in [3, 20]:
-                fragment = FragmentUnknown_home()
+                fragment = FragmentUnknown_pf()
             elif _type == 4:
-                fragment = FragAt_home(proto)
+                fragment = FragAt_pf(proto)
                 self._ats.append(fragment)
                 self._texts.append(fragment)
             elif _type == 1:
-                fragment = FragLink_home(proto)
+                fragment = FragLink_pf(proto)
                 self._links.append(fragment)
                 self._texts.append(fragment)
             elif _type == 5:  # video
-                fragment = FragmentUnknown_home()
+                fragment = FragmentUnknown_pf()
                 self._has_video = True
             elif _type == 10:
-                fragment = FragmentUnknown_home()
+                fragment = FragmentUnknown_pf()
                 self._has_voice = True
             else:
-                fragment = FragmentUnknown_home(proto)
+                fragment = FragmentUnknown_pf(proto)
                 from ...logging import get_logger as LOG
 
                 LOG().warning(f"Unknown fragment type. type={_type} frag={fragment}")
@@ -627,7 +627,7 @@ class Contents_home(Containers[TypeFragment]):
 
         return self
 
-    def _init_null(self) -> "Contents_home":
+    def _init_null(self) -> "Contents_pf":
         self._objs = []
         self._text = ""
         self._texts = []
@@ -661,7 +661,7 @@ class Contents_home(Containers[TypeFragment]):
         return self._texts
 
     @property
-    def emojis(self) -> List[FragEmoji_home]:
+    def emojis(self) -> List[FragEmoji_pf]:
         """
         表情碎片列表
         """
@@ -669,7 +669,7 @@ class Contents_home(Containers[TypeFragment]):
         return self._emojis
 
     @property
-    def imgs(self) -> List[FragImage_home]:
+    def imgs(self) -> List[FragImage_pf]:
         """
         图像碎片列表
         """
@@ -677,7 +677,7 @@ class Contents_home(Containers[TypeFragment]):
         return self._imgs
 
     @property
-    def ats(self) -> List[FragAt_home]:
+    def ats(self) -> List[FragAt_pf]:
         """
         @碎片列表
         """
@@ -685,7 +685,7 @@ class Contents_home(Containers[TypeFragment]):
         return self._ats
 
     @property
-    def links(self) -> List[FragLink_home]:
+    def links(self) -> List[FragLink_pf]:
         """
         链接碎片列表
         """
@@ -709,20 +709,20 @@ class Contents_home(Containers[TypeFragment]):
         return self._has_video
 
 
-class Thread_home(object):
+class Thread_pf(object):
     """
     主题帖信息
 
     Attributes:
         text (str): 文本内容
-        contents (Contents_home): 正文内容碎片列表
+        contents (Contents_pf): 正文内容碎片列表
         title (str): 标题
 
         fid (int): 所在吧id
         fname (str): 所在贴吧名
         tid (int): 主题帖tid
         pid (int): 首楼回复pid
-        user (UserInfo_home): 发布者的用户信息
+        user (UserInfo_pf): 发布者的用户信息
         author_id (int): 发布者的user_id
 
         vote_info (VoteInfo): 投票信息
@@ -755,8 +755,8 @@ class Thread_home(object):
 
     def __init__(self, data_proto: TypeMessage) -> None:
         self._text = None
-        self._contents = Contents_home()._init(data_proto.first_post_content)
-        img_frags = [FragImage_home(p) for p in data_proto.media]
+        self._contents = Contents_pf()._init(data_proto.first_post_content)
+        img_frags = [FragImage_pf(p) for p in data_proto.media]
         self._contents._objs += img_frags
         self._contents._imgs = img_frags
         self._title = data_proto.title
@@ -782,7 +782,7 @@ class Thread_home(object):
             }
         )
 
-    def __eq__(self, obj: "Thread_home") -> bool:
+    def __eq__(self, obj: "Thread_pf") -> bool:
         return self._pid == obj._pid
 
     def __hash__(self) -> int:
@@ -805,7 +805,7 @@ class Thread_home(object):
         return self._text
 
     @property
-    def contents(self) -> Contents_home:
+    def contents(self) -> Contents_pf:
         """
         正文内容碎片列表
         """
@@ -853,7 +853,7 @@ class Thread_home(object):
         return self._pid
 
     @property
-    def user(self) -> UserInfo_home:
+    def user(self) -> UserInfo_pf:
         """
         发布者的用户信息
         """

@@ -180,7 +180,7 @@ class Account(object):
             baidutiebaappe4200716-58a8-4170-af15-ea7edeb8e513
 
         Note:
-            在初始化后该属性便不会再发生变化
+            在初始化后该属性便不会再发生变化\n
             此实现仅用于9.x等旧版本 11.x后请使用cuid_galaxy2填充对应字段
         """
 
@@ -200,7 +200,7 @@ class Account(object):
             A3ED2D7B9CFC28E8934A3FBD3A9579C7|VZ5FKB5XS
 
         Note:
-            在初始化后该属性便不会再发生变化
+            在初始化后该属性便不会再发生变化\n
             此实现与12.x版本及以前的官方实现一致
         """
 
@@ -220,7 +220,7 @@ class Account(object):
             A00-ZNU3O3EP74D727LMQY745CZSGZQJQZGP-3JXCKC7X
 
         Note:
-            在初始化后该属性便不会再发生变化
+            在初始化后该属性便不会再发生变化\n
             此实现与12.x版本及以前的官方实现一致
         """
 
@@ -237,7 +237,7 @@ class Account(object):
             str
 
         Note:
-            在初始化后该属性便不会再发生变化
+            在初始化后该属性便不会再发生变化\n
             此实现与12.x版本及以前的官方实现一致
         """
 

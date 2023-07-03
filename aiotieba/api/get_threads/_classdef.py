@@ -73,7 +73,7 @@ class FragImage_t(object):
         小图链接
 
         Note:
-            宽720px
+            宽720px\n
             一定是静态图
         """
 
@@ -535,7 +535,7 @@ class UserInfo_t(object):
         用户user_id
 
         Note:
-            唯一 不可变 不可为空
+            唯一 不可变 不可为空\n
             请注意与用户个人页的tieba_uid区分
         """
 
@@ -558,7 +558,7 @@ class UserInfo_t(object):
         用户名
 
         Note:
-            唯一 可变 可为空
+            唯一 可变 可为空\n
             请注意与用户昵称区分
         """
 

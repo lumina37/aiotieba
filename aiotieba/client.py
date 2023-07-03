@@ -6,12 +6,14 @@ import aiohttp
 import yarl
 
 from .api import (
+    add_bawu_blacklist,
+    add_blacklist_old,
     add_post,
     agree,
     agree_vimage,
-    blacklist_add,
-    blacklist_del,
     block,
+    del_bawu_blacklist,
+    del_blacklist_old,
     del_post,
     del_posts,
     del_thread,
@@ -20,10 +22,12 @@ from .api import (
     follow_forum,
     follow_user,
     get_ats,
+    get_bawu_blacklist,
     get_bawu_info,
     get_bawu_postlogs,
     get_bawu_userlogs,
-    get_blacklist_users,
+    get_blacklist,
+    get_blacklist_old,
     get_blocks,
     get_cid,
     get_comments,
@@ -35,7 +39,6 @@ from .api import (
     get_forum_detail,
     get_god_threads,
     get_group_msg,
-    get_homepage,
     get_images,
     get_member_users,
     get_posts,
@@ -60,11 +63,13 @@ from .api import (
     init_z_id,
     login,
     move,
+    profile,
     recommend,
     recover,
     remove_fan,
     search_post,
     send_msg,
+    set_blacklist,
     set_msg_readed,
     set_nickname_old,
     set_profile,
@@ -81,9 +86,9 @@ from .api import (
     ungood,
 )
 from .api._classdef import UserInfo
-from .api.get_homepage import UserInfo_home
+from .api.profile import UserInfo_pf
 from .core import Account, HttpCore, NetCore, TimeConfig, WsCore
-from .enums import BawuSearchType, GroupType, PostSortType, ReqUInfo, ThreadSortType, WsStatus
+from .enums import BawuSearchType, BlacklistType, GroupType, PostSortType, ReqUInfo, ThreadSortType, WsStatus
 from .helper import handle_exception, is_portrait
 from .helper.cache import ForumInfoCache
 from .logging import get_logger as LOG
@@ -176,7 +181,7 @@ class Client(object):
 
         self._try_ws = try_ws
 
-        self._user = UserInfo_home()
+        self._user = UserInfo_pf()
 
     async def __aenter__(self) -> "Client":
         return self
@@ -472,47 +477,29 @@ class Client(object):
 
         return await search_post.request(self._http_core, fname, query, pn, rn, query_type, only_thread)
 
-    @handle_exception(get_uinfo_panel.UserInfo_panel)
-    async def _get_uinfo_panel(self, name_or_portrait: str) -> get_uinfo_panel.UserInfo_panel:
+    @handle_exception(profile.UserInfo_pf)
+    @_try_websocket
+    async def _get_uinfo_profile(self, uid_or_portrait: Union[str, int]) -> profile.UserInfo_pf:
         """
-        接口 https://tieba.baidu.com/home/get/panel
+        接口 https://tiebac.baidu.com/c/u/user/profile
 
         Args:
-            name_or_portrait (str): 用户id user_name / portrait
+            uid_or_portrait (str | int): 用户id user_id / portrait
 
         Returns:
-            UserInfo_panel: 包含较全面的用户信息
-
-        Note:
-            从2022.08.30开始服务端不再返回user_id字段 请谨慎使用
-            该接口可判断用户是否被屏蔽
-            该接口rps阈值较低
+            UserInfo_pf: 包含最全面的用户信息
         """
 
-        return await get_uinfo_panel.request(self._http_core, name_or_portrait)
+        if self._ws_core.status == WsStatus.OPEN:
+            return await profile.get_uinfo_profile.request_ws(self._ws_core, uid_or_portrait)
 
-    @handle_exception(get_uinfo_user_json.UserInfo_json)
-    async def _get_uinfo_user_json(self, user_name: str) -> get_uinfo_user_json.UserInfo_json:
-        """
-        接口 http://tieba.baidu.com/i/sys/user_json
-
-        Args:
-            user_name (str): 用户id user_name
-
-        Returns:
-            UserInfo_json: 包含 user_id / portrait / user_name
-        """
-
-        user = await get_uinfo_user_json.request(self._http_core, user_name)
-        user._user_name = user_name
-
-        return user
+        return await profile.get_uinfo_profile.request_http(self._http_core, uid_or_portrait)
 
     @handle_exception(get_uinfo_getuserinfo_app.UserInfo_guinfo_app)
     @_try_websocket
     async def _get_uinfo_getuserinfo(self, user_id: int) -> get_uinfo_getuserinfo_app.UserInfo_guinfo_app:
         """
-        接口 http://tiebac.baidu.com/c/u/user/getuserinfo
+        接口 https://tiebac.baidu.com/c/u/user/getuserinfo
 
         Args:
             user_id (int): 用户id user_id
@@ -552,6 +539,42 @@ class Client(object):
 
         return user
 
+    @handle_exception(get_uinfo_user_json.UserInfo_json)
+    async def _get_uinfo_user_json(self, user_name: str) -> get_uinfo_user_json.UserInfo_json:
+        """
+        接口 http://tieba.baidu.com/i/sys/user_json
+
+        Args:
+            user_name (str): 用户id user_name
+
+        Returns:
+            UserInfo_json: 包含 user_id / portrait / user_name
+        """
+
+        user = await get_uinfo_user_json.request(self._http_core, user_name)
+        user._user_name = user_name
+
+        return user
+
+    @handle_exception(get_uinfo_panel.UserInfo_panel)
+    async def _get_uinfo_panel(self, name_or_portrait: str) -> get_uinfo_panel.UserInfo_panel:
+        """
+        接口 https://tieba.baidu.com/home/get/panel
+
+        Args:
+            name_or_portrait (str): 用户id user_name / portrait
+
+        Returns:
+            UserInfo_panel: 包含较全面的用户信息
+
+        Note:
+            从2022.08.30开始服务端不再返回user_id字段 请谨慎使用\n
+            该接口可判断用户是否被屏蔽\n
+            该接口rps阈值较低
+        """
+
+        return await get_uinfo_panel.request(self._http_core, name_or_portrait)
+
     async def get_user_info(self, _id: Union[str, int], /, require: ReqUInfo = ReqUInfo.ALL) -> TypeUserInfo:
         """
         获取用户信息
@@ -573,17 +596,14 @@ class Client(object):
                 # 仅有NICK_NAME以下的需求
                 return await self._get_uinfo_getuserinfo(_id)
             else:
-                user = await self._get_uinfo_getuserinfo(_id)
-                user, _ = await self.get_homepage(user.portrait, with_threads=False)
-                return user
+                return await self._get_uinfo_profile(_id)
         elif is_portrait(_id):
             if (require | ReqUInfo.BASIC) == ReqUInfo.BASIC:
                 # 仅有BASIC需求
                 if not require & ReqUInfo.USER_ID:
                     # 无USER_ID需求
                     return await self._get_uinfo_panel(_id)
-            user, _ = await self.get_homepage(_id, with_threads=False)
-            return user
+            return await self._get_uinfo_profile(_id)
         else:
             if (require | ReqUInfo.BASIC) == ReqUInfo.BASIC:
                 return await self._get_uinfo_user_json(_id)
@@ -592,8 +612,7 @@ class Client(object):
                 return await self._get_uinfo_panel(_id)
             else:
                 user = await self._get_uinfo_user_json(_id)
-                user, _ = await self.get_homepage(user.portrait, with_threads=False)
-                return user
+                return await self._get_uinfo_profile(user.portrait)
 
     @handle_exception(tieba_uid2user_info.UserInfo_TUid)
     @_try_websocket
@@ -616,32 +635,32 @@ class Client(object):
 
         return await tieba_uid2user_info.request_http(self._http_core, tieba_uid)
 
-    @handle_exception(get_homepage.null_ret_factory)
+    @handle_exception(profile.get_homepage.null_ret_factory)
     @_try_websocket
     async def get_homepage(
-        self, _id: Union[str, int], *, with_threads: bool = True
-    ) -> Tuple[get_homepage.UserInfo_home, List[get_homepage.Thread_home]]:
+        self, _id: Union[str, int], /, pn: int = 1
+    ) -> Tuple[profile.UserInfo_pf, List[profile.Thread_pf]]:
         """
         获取用户个人页信息
 
         Args:
-            _id (str | int): 用户id user_id / user_name / portrait 优先portrait
-            with_threads (bool, optional): True则同时请求主页帖子列表 False则返回的threads为空. Defaults to True.
+            _id (str | int): 用户id user_id / user_name / portrait 优先user_id
+            pn (int, optional): 页码. Defaults to 1.
 
         Returns:
-            tuple[UserInfo_home, list[Thread_home]]: 用户信息, list[帖子信息]
+            tuple[UserInfo_pf, list[Thread_pf]]: 用户信息, list[帖子信息]
         """
 
-        if not is_portrait(_id):
-            user = await self.get_user_info(_id, ReqUInfo.PORTRAIT)
-            portrait = user._portrait
+        if not isinstance(_id, int):
+            user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+            user_id = user._user_id
         else:
-            portrait = _id
+            user_id = _id
 
         if self._ws_core.status == WsStatus.OPEN:
-            return await get_homepage.request_ws(self._ws_core, portrait, with_threads)
+            return await profile.get_homepage.request_ws(self._ws_core, user_id, pn)
 
-        return await get_homepage.request_http(self._http_core, portrait, with_threads)
+        return await profile.get_homepage.request_http(self._http_core, user_id, pn)
 
     @handle_exception(get_follows.Follows)
     async def get_follows(self, _id: Union[str, int, None] = None, /, pn: int = 1) -> get_follows.Follows:
@@ -692,6 +711,36 @@ class Client(object):
             user_id = _id
 
         return await get_fans.request(self._http_core, user_id, pn)
+
+    @handle_exception(get_blacklist.BlacklistUsers)
+    async def get_blacklist(self) -> get_blacklist.BlacklistUsers:
+        """
+        获取新版用户黑名单列表
+
+        Returns:
+            BlacklistUsers: 新版用户黑名单列表
+        """
+
+        return await get_blacklist.request(self._http_core)
+
+    @handle_exception(get_blacklist_old.BlacklistOldUsers)
+    @_try_websocket
+    async def get_blacklist_old(self, pn: int = 1, /, *, rn: int = 10) -> get_blacklist_old.BlacklistOldUsers:
+        """
+        获取旧版用户黑名单列表
+
+        Args:
+            pn (int, optional): 页码. Defaults to 1.
+            rn (int, optional): 请求的条目数. Defaults to 10. Max to Inf.
+
+        Returns:
+            BlacklistOldUsers: 旧版用户黑名单列表
+        """
+
+        if self._ws_core.status == WsStatus.OPEN:
+            return await get_blacklist_old.request_ws(self._ws_core, pn, rn)
+
+        return await get_blacklist_old.request_http(self._http_core, pn, rn)
 
     @handle_exception(get_follow_forums.FollowForums)
     async def get_follow_forums(
@@ -857,7 +906,7 @@ class Client(object):
         return await get_replys.request_http(self._http_core, pn)
 
     @handle_exception(get_ats.Ats)
-    async def get_ats(self, pn: int = 1) -> get_ats._classdef.Ats:
+    async def get_ats(self, pn: int = 1) -> get_ats.Ats:
         """
         获取@信息
 
@@ -1189,24 +1238,24 @@ class Client(object):
 
         return await get_unblock_appeals.request(self._http_core, fid, pn, rn)
 
-    @handle_exception(get_blacklist_users.BlacklistUsers)
-    async def get_blacklist_users(
+    @handle_exception(get_bawu_blacklist.BawuBlacklistUsers)
+    async def get_bawu_blacklist(
         self, fname_or_fid: Union[str, int], /, pn: int = 1
-    ) -> get_blacklist_users.BlacklistUsers:
+    ) -> get_bawu_blacklist.BawuBlacklistUsers:
         """
-        获取pn页的黑名单用户列表
+        获取pn页的吧务黑名单列表
 
         Args:
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先贴吧名
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
-            BlacklistUsers: 黑名单用户列表
+            BlacklistUsers: 吧务黑名单列表
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
 
-        return await get_blacklist_users.request(self._http_core, fname, pn)
+        return await get_bawu_blacklist.request(self._http_core, fname, pn)
 
     @handle_exception(get_statistics.Statistics)
     async def get_statistics(self, fname_or_fid: Union[str, int]) -> get_statistics.Statistics:
@@ -1295,7 +1344,7 @@ class Client(object):
         return await unblock.request(self._http_core, fid, user_id)
 
     @handle_exception(bool, no_format=True)
-    async def blacklist_add(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> bool:
+    async def add_bawu_blacklist(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> bool:
         """
         添加贴吧黑名单
 
@@ -1317,10 +1366,10 @@ class Client(object):
 
         await self.__init_tbs()
 
-        return await blacklist_add.request(self._http_core, fname, user_id)
+        return await add_bawu_blacklist.request(self._http_core, fname, user_id)
 
     @handle_exception(bool, no_format=True)
-    async def blacklist_del(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> bool:
+    async def del_bawu_blacklist(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> bool:
         """
         移出贴吧黑名单
 
@@ -1342,7 +1391,7 @@ class Client(object):
 
         await self.__init_tbs()
 
-        return await blacklist_del.request(self._http_core, fname, user_id)
+        return await del_bawu_blacklist.request(self._http_core, fname, user_id)
 
     @handle_exception(bool, no_format=True)
     async def hide_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
@@ -1794,28 +1843,6 @@ class Client(object):
         return await agree_vimage.request(self._http_core, user_id)
 
     @handle_exception(bool, no_format=True)
-    async def remove_fan(self, _id: Union[str, int]) -> bool:
-        """
-        移除粉丝
-
-        Args:
-            _id (str | int): 待移除粉丝的id user_id / user_name / portrait 优先user_id
-
-        Returns:
-            bool: True成功 False失败
-        """
-
-        if not isinstance(_id, int):
-            user = await self.get_user_info(_id, ReqUInfo.USER_ID)
-            user_id = user._user_id
-        else:
-            user_id = _id
-
-        await self.__init_tbs()
-
-        return await remove_fan.request(self._http_core, user_id)
-
-    @handle_exception(bool, no_format=True)
     async def follow_user(self, _id: Union[str, int]) -> bool:
         """
         关注用户
@@ -1858,6 +1885,93 @@ class Client(object):
         await self.__init_tbs()
 
         return await unfollow_user.request(self._http_core, portrait)
+
+    @handle_exception(bool, no_format=True)
+    async def remove_fan(self, _id: Union[str, int]) -> bool:
+        """
+        移除粉丝
+
+        Args:
+            _id (str | int): 待移除粉丝的id user_id / user_name / portrait 优先user_id
+
+        Returns:
+            bool: True成功 False失败
+        """
+
+        if not isinstance(_id, int):
+            user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+            user_id = user._user_id
+        else:
+            user_id = _id
+
+        await self.__init_tbs()
+
+        return await remove_fan.request(self._http_core, user_id)
+
+    @handle_exception(bool, no_format=True)
+    @_try_websocket
+    async def set_blacklist(self, _id: Union[str, int], *, btype: BlacklistType = BlacklistType.ALL) -> bool:
+        """
+        设置新版用户黑名单
+
+        Args:
+            _id (str | int): 待设置黑名单的用户id user_id / user_name / portrait 优先user_id
+            btype (BlacklistType): 黑名单类型. 默认全屏蔽. Defaults to BlacklistType.ALL.
+
+        Returns:
+            bool: True成功 False失败
+        """
+
+        if not isinstance(_id, int):
+            user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+            user_id = user._user_id
+        else:
+            user_id = _id
+
+        if self._ws_core.status == WsStatus.OPEN:
+            return await set_blacklist.request_ws(self._ws_core, user_id, btype)
+
+        return await set_blacklist.request_http(self._http_core, user_id, btype)
+
+    @handle_exception(bool, no_format=True)
+    async def add_blacklist_old(self, _id: Union[str, int]) -> bool:
+        """
+        添加旧版用户黑名单
+
+        Args:
+            _id (str | int): 待添加黑名单的用户id user_id / user_name / portrait 优先user_id
+
+        Returns:
+            bool: True成功 False失败
+        """
+
+        if not isinstance(_id, int):
+            user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+            user_id = user._user_id
+        else:
+            user_id = _id
+
+        return await add_blacklist_old.request(self._http_core, user_id)
+
+    @handle_exception(bool, no_format=True)
+    async def del_blacklist_old(self, _id: Union[str, int]) -> bool:
+        """
+        移除旧版用户黑名单
+
+        Args:
+            _id (str | int): 待移除黑名单的用户id user_id / user_name / portrait 优先user_id
+
+        Returns:
+            bool: True成功 False失败
+        """
+
+        if not isinstance(_id, int):
+            user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+            user_id = user._user_id
+        else:
+            user_id = _id
+
+        return await del_blacklist_old.request(self._http_core, user_id)
 
     @handle_exception(bool, no_format=True)
     async def follow_forum(self, fname_or_fid: Union[str, int]) -> bool:
