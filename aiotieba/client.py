@@ -7,11 +7,13 @@ import yarl
 
 from .api import (
     add_bawu_blacklist,
+    add_blacklist_old,
     add_post,
     agree,
     agree_vimage,
     block,
     del_bawu_blacklist,
+    del_blacklist_old,
     del_post,
     del_posts,
     del_thread,
@@ -729,7 +731,7 @@ class Client(object):
 
         Args:
             pn (int, optional): 页码. Defaults to 1.
-            rn (int, optional): 请求的条目数. Defaults to 10. Max to 30.
+            rn (int, optional): 请求的条目数. Defaults to 10. Max to Inf.
 
         Returns:
             BlacklistOldUsers: 旧版用户黑名单列表
@@ -1930,6 +1932,46 @@ class Client(object):
             return await set_blacklist.request_ws(self._ws_core, user_id, btype)
 
         return await set_blacklist.request_http(self._http_core, user_id, btype)
+
+    @handle_exception(bool, no_format=True)
+    async def add_blacklist_old(self, _id: Union[str, int]) -> bool:
+        """
+        添加旧版用户黑名单
+
+        Args:
+            _id (str | int): 待添加黑名单的用户id user_id / user_name / portrait 优先user_id
+
+        Returns:
+            bool: True成功 False失败
+        """
+
+        if not isinstance(_id, int):
+            user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+            user_id = user._user_id
+        else:
+            user_id = _id
+
+        return await add_blacklist_old.request(self._http_core, user_id)
+
+    @handle_exception(bool, no_format=True)
+    async def del_blacklist_old(self, _id: Union[str, int]) -> bool:
+        """
+        移除旧版用户黑名单
+
+        Args:
+            _id (str | int): 待移除黑名单的用户id user_id / user_name / portrait 优先user_id
+
+        Returns:
+            bool: True成功 False失败
+        """
+
+        if not isinstance(_id, int):
+            user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+            user_id = user._user_id
+        else:
+            user_id = _id
+
+        return await del_blacklist_old.request(self._http_core, user_id)
 
     @handle_exception(bool, no_format=True)
     async def follow_forum(self, fname_or_fid: Union[str, int]) -> bool:

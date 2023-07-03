@@ -5,9 +5,7 @@ import "CommonReq.proto";
 
 message UserMuteQueryReqIdl {
     message DataReq {
-        int64 user_id = 1;
         CommonReq common = 2;
-        int32 mute_type = 3;
         uint32 pn = 4;
         uint32 rn = 5;
     }
