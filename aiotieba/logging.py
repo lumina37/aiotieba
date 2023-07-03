@@ -34,7 +34,7 @@ class TiebaLogger(logging.Logger):
         self.addHandler(stream_hd)
 
 
-_LOGGER = TiebaLogger()
+LOGGER = TiebaLogger()
 
 
 def get_logger() -> TiebaLogger:
@@ -45,12 +45,12 @@ def get_logger() -> TiebaLogger:
         TiebaLogger
     """
 
-    global _LOGGER
+    global LOGGER
 
-    if _LOGGER is None:
-        _LOGGER = TiebaLogger()
+    if LOGGER is None:
+        LOGGER = TiebaLogger()
 
-    return _LOGGER
+    return LOGGER
 
 
 def set_logger(new_logger: logging.Logger) -> None:
@@ -61,8 +61,8 @@ def set_logger(new_logger: logging.Logger) -> None:
         new_logger (logging.Logger): 新日志记录器
     """
 
-    global _LOGGER
-    _LOGGER = new_logger
+    global LOGGER
+    LOGGER = new_logger
 
 
 def set_formatter(formatter: logging.Formatter) -> None:
@@ -76,12 +76,12 @@ def set_formatter(formatter: logging.Formatter) -> None:
     global _FORMATTER
     _FORMATTER = formatter
 
-    if _LOGGER is not None:
-        for hd in _LOGGER.handlers:
+    if LOGGER is not None:
+        for hd in LOGGER.handlers:
             hd.setFormatter(formatter)
 
 
-def enableFileLog(log_level: int = logging.INFO, log_dir: Path = Path('log'), backup_count: int = 5) -> None:
+def enable_filelog(log_level: int = logging.INFO, log_dir: Path = Path('log'), backup_count: int = 5) -> None:
     """
     启用文件日志
 
@@ -94,8 +94,8 @@ def enableFileLog(log_level: int = logging.INFO, log_dir: Path = Path('log'), ba
     Path(log_dir).mkdir(0o755, exist_ok=True)
 
     file_hd = logging.handlers.TimedRotatingFileHandler(
-        f"log/{_LOGGER.name}.log", when='MIDNIGHT', backupCount=backup_count, encoding='utf-8'
+        f"log/{LOGGER.name}.log", when='MIDNIGHT', backupCount=backup_count, encoding='utf-8'
     )
     file_hd.setLevel(log_level)
     file_hd.setFormatter(_FORMATTER)
-    _LOGGER.addHandler(file_hd)
+    LOGGER.addHandler(file_hd)
