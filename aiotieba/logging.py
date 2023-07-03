@@ -70,7 +70,7 @@ def set_formatter(formatter: logging.Formatter) -> None:
     更换aiotieba的日志格式
 
     Args:
-        formatter (logging.Formatter)
+        formatter (logging.Formatter): 新格式
     """
 
     global _FORMATTER
