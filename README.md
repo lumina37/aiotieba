@@ -53,7 +53,7 @@ asyncio.run(main())
 
 ## 项目特色
 
-+ 收录[**74个常用API**](https://github.com/Starry-OvO/aiotieba/tree/develop/aiotieba/api)
++ 收录[**数十个常用API**](https://github.com/Starry-OvO/aiotieba/tree/develop/aiotieba/api)
 + 类型注解全覆盖，方法注释全覆盖，类属性注释全覆盖，内部命名统一
 + 支持protobuf序列化请求参数
 + 支持websocket接口
