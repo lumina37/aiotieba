@@ -81,6 +81,9 @@ def set_formatter(formatter: logging.Formatter) -> None:
             hd.setFormatter(formatter)
 
 
+_FILELOG_ENABLED = False
+
+
 def enable_filelog(log_level: int = logging.INFO, log_dir: Path = Path('log'), backup_count: int = 5) -> None:
     """
     启用文件日志
@@ -91,6 +94,11 @@ def enable_filelog(log_level: int = logging.INFO, log_dir: Path = Path('log'), b
         backup_count (int): 时间轮转文件日志的保留文件数. Defaults to 5.
     """
 
+    global _FILELOG_ENABLED
+
+    if _FILELOG_ENABLED:
+        return
+
     Path(log_dir).mkdir(0o755, exist_ok=True)
 
     file_hd = logging.handlers.TimedRotatingFileHandler(
@@ -99,3 +107,5 @@ def enable_filelog(log_level: int = logging.INFO, log_dir: Path = Path('log'), b
     file_hd.setLevel(log_level)
     file_hd.setFormatter(_FORMATTER)
     LOGGER.addHandler(file_hd)
+
+    _FILELOG_ENABLED = True
