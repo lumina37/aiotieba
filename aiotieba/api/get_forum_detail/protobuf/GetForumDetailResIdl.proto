@@ -11,6 +11,8 @@ message GetForumDetailResIdl {
             string forum_name = 3;
             uint32 member_count = 5;
             uint32 thread_count = 6;
+            string slogan = 7;
+            string avatar_origin = 20;
         }
         RecommendForumInfo forum_info = 1;
         message ManagerElectionTab {
