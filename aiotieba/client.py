@@ -275,9 +275,15 @@ class Client(object):
             return
         await self.__sync()
 
+    async def __init_sample_id(self) -> None:
+        if self._account._sample_id:
+            return
+        await self.__sync()
+
     async def __sync(self) -> None:
-        client_id = await sync.request(self._http_core)
+        client_id, sample_id = await sync.request(self._http_core)
         self._account._client_id = client_id
+        self._account._sample_id = sample_id
 
     async def __init_z_id(self) -> None:
         if self._account._z_id:
@@ -2177,12 +2183,15 @@ class Client(object):
         await self.__init_z_id()
         await self.__init_tbs()
         await self.__init_client_id()
+        await self.__init_sample_id()
         await self.__get_selfinfo_initNickname()
 
-        if self._ws_core.status == WsStatus.OPEN:
-            return await add_post.request_ws(self._ws_core, fname, fid, tid, self._user.show_name, content)
+        show_name = self._user.show_name
 
-        return await add_post.request_http(self._http_core, fname, fid, tid, self._user.show_name, content)
+        if self._ws_core.status == WsStatus.OPEN:
+            return await add_post.request_ws(self._ws_core, fname, fid, tid, show_name, content)
+
+        return await add_post.request_http(self._http_core, fname, fid, tid, show_name, content)
 
     @handle_exception(bool, no_format=True)
     @_force_websocket

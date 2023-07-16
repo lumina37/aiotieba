@@ -4,6 +4,7 @@ import time
 
 import yarl
 
+from ...__version__ import __version__
 from ...const import APP_BASE_HOST, APP_SECURE_SCHEME, POST_VERSION
 from ...core import Account, HttpCore, WsCore
 from ...exception import TiebaServerError, TiebaValueError
@@ -49,10 +50,10 @@ def pack_proto(account: Account, fname: str, fid: int, tid: int, show_name: str,
     req_proto.data.common.cuid_galaxy2 = account._cuid_galaxy2
     req_proto.data.common.cuid_gid = ''
     req_proto.data.common.c3_aid = account.c3_aid
-    req_proto.data.common.sample_id = '1090_8-15378_3-15384_5-104505_2-104763_1-105324_2-106131_3-106385_2-106459_1-106475_1-106503_1-106821_1-106867_2-106926_2-107012_1-107020_2-107058_2-107071_1-107129_1-107205_2-107211_1-107262_2-107268_1'
+    req_proto.data.common.sample_id = account._sample_id
     req_proto.data.common.scr_w = 720
     req_proto.data.common.scr_w = 1280
-    req_proto.data.common.scr_dip = 0.5
+    req_proto.data.common.scr_dip = 1.5
     req_proto.data.common.q_type = 0
     req_proto.data.common.is_teenager = 0
     req_proto.data.common.sdk_ver = '2.34.0'
@@ -68,7 +69,7 @@ def pack_proto(account: Account, fname: str, fid: int, tid: int, show_name: str,
     req_proto.data.common.start_type = 1
     req_proto.data.common.idfv = '0'
     req_proto.data.common.extra = ''
-    req_proto.data.common.user_agent = 'Mozilla/5.0 (Linux; Android 9; SM-G988N Build/NRD90M; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/92.0.4515.131 Mobile Safari/537.36 tieba/12.35.1.0'
+    req_proto.data.common.user_agent = f'aiotieba/{__version__}'
     req_proto.data.common.personalized_rec_switch = 1
     req_proto.data.common.device_score = '0.4'
 

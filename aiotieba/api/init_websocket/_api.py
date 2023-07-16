@@ -30,7 +30,7 @@ def pack_proto(account: Account) -> bytes:
         '_msg_status': '1',
         'cuid_galaxy2': account.cuid_galaxy2,
         '_client_type': '2',
-        'timestamp': str(int(time.time() * 1e3)),
+        'timestamp': str(int(time.time() * 1000)),
     }
     req_proto.data.device = pack_json(device)
 
