@@ -2,7 +2,7 @@ import binascii
 import gzip
 import hashlib
 import time
-import urllib.parse
+
 import aiohttp
 import yarl
 from Crypto.Cipher import AES
