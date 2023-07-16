@@ -1,0 +1,19 @@
+// tbclient.AddPost.AddPostResIdl
+syntax = "proto3";
+
+import "Error.proto";
+
+message AddPostResIdl {
+    Error error = 1;
+    message DataRes {
+        string video_id = 4;
+        string msg = 5;
+        string pre_msg = 6;
+        string color_msg = 7;
+        message PostAntiInfo {
+            string need_vcode = 3;
+        }
+        PostAntiInfo info = 14;
+    }
+    DataRes data = 2;
+}

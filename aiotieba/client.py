@@ -2149,6 +2149,7 @@ class Client(object):
         return await sign_growth.request_app(self._http_core, act_type='share_thread')
 
     @handle_exception(bool, no_format=True)
+    @_try_websocket
     async def add_post(self, fname_or_fid: Union[str, int], /, tid: int, content: str) -> bool:
         """
         回复主题帖
@@ -2173,11 +2174,15 @@ class Client(object):
             fid = fname_or_fid
             fname = await self.get_fname(fid)
 
+        await self.__init_z_id()
         await self.__init_tbs()
         await self.__init_client_id()
-        await self.__init_z_id()
+        await self.__get_selfinfo_initNickname()
 
-        return await add_post.request(self._http_core, fname, fid, tid, content)
+        if self._ws_core.status == WsStatus.OPEN:
+            return await add_post.request_ws(self._ws_core, fname, fid, tid, self._user.show_name, content)
+
+        return await add_post.request_http(self._http_core, fname, fid, tid, self._user.show_name, content)
 
     @handle_exception(bool, no_format=True)
     @_force_websocket

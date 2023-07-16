@@ -60,7 +60,7 @@ async def request(http_core: HttpCore):
         data=payload,
         loop=http_core.loop,
         proxy=http_core.net_core.proxy,
-        proxy_auth=http_core.net_core.proxy,
+        proxy_auth=http_core.net_core.proxy_auth,
         ssl=False,
     )
 
