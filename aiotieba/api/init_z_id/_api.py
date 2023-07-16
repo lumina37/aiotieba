@@ -2,7 +2,7 @@ import binascii
 import gzip
 import hashlib
 import time
-
+import urllib.parse
 import aiohttp
 import yarl
 from Crypto.Cipher import AES
@@ -45,12 +45,12 @@ async def request(http_core: HttpCore):
     path_combine = ''.join((app_key, curr_time, sec_key))
     path_combine_md5 = hashlib.md5(path_combine.encode('ascii')).hexdigest()
     req_query_skey = rc4_42(xyus_md5_str, http_core.account.aes_cbc_sec_key)
-    req_query_skey = binascii.b2a_base64(req_query_skey).decode('ascii').replace('+', '%2B')
+    req_query_skey = binascii.b2a_base64(req_query_skey).decode('ascii')
     url = yarl.URL.build(
         scheme="https",
         host=SOFIRE_HOST,
         path=f"/c/11/z/100/{app_key}/{curr_time}/{path_combine_md5}",
-        query_string=f'skey={req_query_skey}',
+        query=[('skey', req_query_skey)],
     )
 
     request = aiohttp.ClientRequest(
