@@ -173,11 +173,11 @@ class Client(object):
             else:
                 proxy = (proxy_info.proxy, proxy_info.proxy_auth)
 
-        core = Account(BDUSS_key)
-        self._account = core
+        account = Account(BDUSS_key)
+        self._account = account
         net_core = NetCore(connector, time_cfg, proxy)
-        self._http_core = HttpCore(core, net_core, loop)
-        self._ws_core = WsCore(core, net_core, loop)
+        self._http_core = HttpCore(account, net_core, loop)
+        self._ws_core = WsCore(account, net_core, loop)
 
         self._try_ws = try_ws
 
