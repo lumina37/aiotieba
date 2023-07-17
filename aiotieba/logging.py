@@ -99,10 +99,11 @@ def enable_filelog(log_level: int = logging.INFO, log_dir: Path = Path('log'), b
     if _FILELOG_ENABLED:
         return
 
-    Path(log_dir).mkdir(0o755, exist_ok=True)
+    log_dir = Path(log_dir)
+    log_dir.mkdir(0o755, parents=True, exist_ok=True)
 
     file_hd = logging.handlers.TimedRotatingFileHandler(
-        f"log/{LOGGER.name}.log", when='MIDNIGHT', backupCount=backup_count, encoding='utf-8'
+        log_dir / f"{LOGGER.name}.log", when='MIDNIGHT', backupCount=backup_count, encoding='utf-8'
     )
     file_hd.setLevel(log_level)
     file_hd.setFormatter(_FORMATTER)
