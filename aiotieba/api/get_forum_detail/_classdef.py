@@ -11,7 +11,8 @@ class Forum_detail(object):
         fid (int): 贴吧id
         fname (str): 贴吧名
 
-        origin_avatar (str): 吧头像原图
+        small_avatar (str): 吧头像(小)
+        origin_avatar (str): 吧头像(原图)
         slogan (str): 吧标语
         member_num (int): 吧会员数
         post_num (int): 发帖量
@@ -22,6 +23,7 @@ class Forum_detail(object):
     __slots__ = [
         '_fid',
         '_fname',
+        '_small_avatar',
         '_origin_avatar',
         '_slogan',
         '_member_num',
@@ -34,6 +36,7 @@ class Forum_detail(object):
             forum_proto = data_proto.forum_info
             self._fid = forum_proto.forum_id
             self._fname = forum_proto.forum_name
+            self._small_avatar = forum_proto.avatar
             self._origin_avatar = forum_proto.avatar_origin
             self._slogan = forum_proto.slogan
             self._member_num = forum_proto.member_count
@@ -42,6 +45,7 @@ class Forum_detail(object):
         else:
             self._fid = 0
             self._fname = ''
+            self._small_avatar = ''
             self._origin_avatar = ''
             self._slogan = ''
             self._member_num = 0
@@ -75,9 +79,17 @@ class Forum_detail(object):
         return self._fname
 
     @property
+    def small_avatar(self) -> str:
+        """
+        吧头像(小)
+        """
+
+        return self._small_avatar
+
+    @property
     def origin_avatar(self) -> str:
         """
-        吧头像原图
+        吧头像(原图)
         """
 
         return self._origin_avatar
