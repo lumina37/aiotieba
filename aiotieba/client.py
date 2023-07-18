@@ -173,11 +173,11 @@ class Client(object):
             else:
                 proxy = (proxy_info.proxy, proxy_info.proxy_auth)
 
-        core = Account(BDUSS_key)
-        self._account = core
+        account = Account(BDUSS_key)
+        self._account = account
         net_core = NetCore(connector, time_cfg, proxy)
-        self._http_core = HttpCore(core, net_core, loop)
-        self._ws_core = WsCore(core, net_core, loop)
+        self._http_core = HttpCore(account, net_core, loop)
+        self._ws_core = WsCore(account, net_core, loop)
 
         self._try_ws = try_ws
 
@@ -275,9 +275,15 @@ class Client(object):
             return
         await self.__sync()
 
+    async def __init_sample_id(self) -> None:
+        if self._account._sample_id:
+            return
+        await self.__sync()
+
     async def __sync(self) -> None:
-        client_id = await sync.request(self._http_core)
+        client_id, sample_id = await sync.request(self._http_core)
         self._account._client_id = client_id
+        self._account._sample_id = sample_id
 
     async def __init_z_id(self) -> None:
         if self._account._z_id:
@@ -2149,6 +2155,7 @@ class Client(object):
         return await sign_growth.request_app(self._http_core, act_type='share_thread')
 
     @handle_exception(bool, no_format=True)
+    @_try_websocket
     async def add_post(self, fname_or_fid: Union[str, int], /, tid: int, content: str) -> bool:
         """
         回复主题帖
@@ -2173,11 +2180,18 @@ class Client(object):
             fid = fname_or_fid
             fname = await self.get_fname(fid)
 
+        await self.__init_z_id()
         await self.__init_tbs()
         await self.__init_client_id()
-        await self.__init_z_id()
+        await self.__init_sample_id()
+        await self.__get_selfinfo_initNickname()
 
-        return await add_post.request(self._http_core, fname, fid, tid, content)
+        show_name = self._user.show_name
+
+        if self._ws_core.status == WsStatus.OPEN:
+            return await add_post.request_ws(self._ws_core, fname, fid, tid, show_name, content)
+
+        return await add_post.request_http(self._http_core, fname, fid, tid, show_name, content)
 
     @handle_exception(bool, no_format=True)
     @_force_websocket

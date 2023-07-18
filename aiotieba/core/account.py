@@ -24,6 +24,7 @@ class Account(object):
         '_android_id',
         '_uuid',
         '_client_id',
+        '_sample_id',
         '_cuid',
         '_cuid_galaxy2',
         '_c3_aid',
@@ -48,6 +49,7 @@ class Account(object):
         self._android_id: str = None
         self._uuid: str = None
         self._client_id: str = None
+        self._sample_id: str = None
         self._cuid: str = None
         self._cuid_galaxy2: str = None
         self._c3_aid: str = None
@@ -167,6 +169,23 @@ class Account(object):
         """
 
         return self._client_id
+
+    @property
+    def sample_id(self) -> str:
+        """
+        返回一个可作为请求参数的sample_id
+
+        Returns:
+            str
+
+        Examples:
+            104505_3-105324_2-...-107269_1
+
+        Note:
+            在初始化后该属性便不会再发生变化
+        """
+
+        return self._sample_id
 
     @property
     def cuid(self) -> str:
