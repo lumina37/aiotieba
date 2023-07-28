@@ -208,7 +208,7 @@ import aiotieba as tb
 async def main() -> None:
     async with tb.Client('default') as client:
         while posts_list := await client.get_self_posts():
-            await asyncio.gather(*[client.del_post(post.fid, post.pid) for posts in posts_list for post in posts])
+            await asyncio.gather(*[client.del_post(post.fid, post.tid, post.pid) for posts in posts_list for post in posts])
 
 
 asyncio.run(main())
