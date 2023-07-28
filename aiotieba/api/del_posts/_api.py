@@ -29,7 +29,7 @@ async def request(http_core: HttpCore, fid: int, tid: int, pids: List[int], bloc
         yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/c/bawu/multiDelPost"), data
     )
 
-    __log__ = f"fid={fid} pids={pids}"
+    __log__ = f"fid={fid} tid={tid} pids={pids}"
 
     body = await http_core.net_core.send_request(request, read_bufsize=1024)
     parse_body(body)

@@ -27,7 +27,7 @@ async def request(http_core: HttpCore, fid: int, tid: int, pid: int) -> bool:
         yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/c/bawu/delpost"), data
     )
 
-    __log__ = f"fid={fid} pid={pid}"
+    __log__ = f"fid={fid} tid={tid} pid={pid}"
 
     body = await http_core.net_core.send_request(request, read_bufsize=1024)
     parse_body(body)
