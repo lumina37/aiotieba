@@ -1455,12 +1455,13 @@ class Client(object):
         return await del_threads.request(self._http_core, fid, tids, block)
 
     @handle_exception(bool, no_format=True)
-    async def del_post(self, fname_or_fid: Union[str, int], /, pid: int) -> bool:
+    async def del_post(self, fname_or_fid: Union[str, int], /, tid: int, pid: int) -> bool:
         """
         删除回复
 
         Args:
             fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid 优先fid
+            tid (int): 所在主题帖tid
             pid (int): 待删除的回复pid
 
         Returns:
@@ -1470,15 +1471,18 @@ class Client(object):
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
         await self.__init_tbs()
 
-        return await del_post.request(self._http_core, fid, pid)
+        return await del_post.request(self._http_core, fid, tid, pid)
 
     @handle_exception(bool, no_format=True)
-    async def del_posts(self, fname_or_fid: Union[str, int], /, pids: List[int], *, block: bool = False) -> bool:
+    async def del_posts(
+        self, fname_or_fid: Union[str, int], /, tid: int, pids: List[int], *, block: bool = False
+    ) -> bool:
         """
         批量删除回复
 
         Args:
             fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid 优先fid
+            tid (int): 所在主题帖tid
             pids (list[int]): 待删除的回复pid列表. Length Max to 30.
             block (bool, optional): 是否同时封一天. Defaults to False.
 
@@ -1489,7 +1493,7 @@ class Client(object):
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
         await self.__init_tbs()
 
-        return await del_posts.request(self._http_core, fid, pids, block)
+        return await del_posts.request(self._http_core, fid, tid, pids, block)
 
     @handle_exception(bool, no_format=True)
     async def unhide_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:

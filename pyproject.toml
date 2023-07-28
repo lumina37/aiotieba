@@ -41,8 +41,8 @@ dynamic = ["version"]
 
 [project.optional-dependencies]
 img = [
-  "opencv-contrib-python-headless<4.8,>=4.6.0.66;sys_platform=='linux'",
-  "opencv-contrib-python<4.8,>=4.6.0.66;sys_platform!='linux'",
+  "opencv-contrib-python-headless<4.9,>=4.6.0.66;sys_platform=='linux'",
+  "opencv-contrib-python<4.9,>=4.6.0.66;sys_platform!='linux'",
 ]
 speedup = [
   "aiodns<4,>=3.0.0",

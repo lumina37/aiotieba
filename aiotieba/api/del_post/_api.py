@@ -14,13 +14,13 @@ def parse_body(body: bytes) -> None:
         raise TiebaServerError(code, res_json['error_msg'])
 
 
-async def request(http_core: HttpCore, fid: int, pid: int) -> bool:
+async def request(http_core: HttpCore, fid: int, tid: int, pid: int) -> bool:
     data = [
         ('BDUSS', http_core.account._BDUSS),
         ('fid', fid),
         ('pid', pid),
         ('tbs', http_core.account._tbs),
-        ('z', '6'),
+        ('z', tid),
     ]
 
     request = http_core.pack_form_request(

@@ -8,6 +8,7 @@ import yarl
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 
+from ...const import MAIN_VERSION
 from ...core import HttpCore
 from ...helper import pack_json, parse_json
 from ...helper.crypto import rc4_42
@@ -16,13 +17,13 @@ SOFIRE_HOST = "sofire.baidu.com"
 
 
 async def request(http_core: HttpCore):
-    app_key = '740017'  # get by p/5/aio
-    sec_key = '7aaf37cac7c3aaac3456b22832aabd56'
+    app_key = '200033'  # get by p/5/aio
+    sec_key = 'ea737e4f435b53786043369d2e5ace4f'
     xyus = (
         hashlib.md5((http_core.account.android_id + http_core.account.uuid).encode('ascii')).hexdigest().upper() + '|0'
     )
     xyus_md5_str = hashlib.md5(xyus.encode('ascii')).hexdigest()
-    curr_time = str(int(time.time()))
+    current_ts = str(int(time.time()))
 
     params = {"module_section": [{'zid': xyus}]}
 
@@ -38,18 +39,18 @@ async def request(http_core: HttpCore):
 
     headers = {
         "x-device-id": xyus_md5_str,
-        "User-Agent": 'x6/740017//4.3.0',
-        "x-plu-ver": 'x6/4.3.0',
+        "User-Agent": f'x6/{app_key}/{MAIN_VERSION}/4.4.1.3',
+        "x-plu-ver": 'x6/4.4.1.3',
     }
 
-    path_combine = ''.join((app_key, curr_time, sec_key))
+    path_combine = ''.join((app_key, current_ts, sec_key))
     path_combine_md5 = hashlib.md5(path_combine.encode('ascii')).hexdigest()
     req_query_skey = rc4_42(xyus_md5_str, http_core.account.aes_cbc_sec_key)
     req_query_skey = binascii.b2a_base64(req_query_skey).decode('ascii')
     url = yarl.URL.build(
         scheme="https",
         host=SOFIRE_HOST,
-        path=f"/c/11/z/100/{app_key}/{curr_time}/{path_combine_md5}",
+        path=f"/c/11/z/100/{app_key}/{current_ts}/{path_combine_md5}",
         query=[('skey', req_query_skey)],
     )
 
