@@ -183,18 +183,7 @@ class UserInfo_pf(object):
         return str(
             {
                 'user_id': self._user_id,
-                'user_name': self._user_name,
-                'portrait': self._portrait,
                 'show_name': self.show_name,
-                'tieba_uid': self._tieba_uid,
-                'glevel': self._glevel,
-                'gender': self._gender,
-                'age': self._age,
-                'post_num': self._post_num,
-                'sign': self._sign,
-                'vimage': self._vimage._state,
-                'ip': self._ip,
-                'priv_like': self._priv_like,
             }
         )
 
@@ -776,7 +765,6 @@ class Thread_pf(object):
         return str(
             {
                 'tid': self._tid,
-                'pid': self._pid,
                 'user': self._user.log_name,
                 'text': self.text,
             }

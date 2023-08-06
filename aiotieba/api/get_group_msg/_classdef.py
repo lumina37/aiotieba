@@ -40,13 +40,7 @@ class UserInfo_ws(object):
         return self._user_name or self._portrait or str(self._user_id)
 
     def __repr__(self) -> str:
-        return str(
-            {
-                'user_id': self._user_id,
-                'user_name': self._user_name,
-                'portrait': self._portrait,
-            }
-        )
+        return str({'user_id': self._user_id})
 
     def __eq__(self, obj: "UserInfo_ws") -> bool:
         return self._user_id == obj._user_id

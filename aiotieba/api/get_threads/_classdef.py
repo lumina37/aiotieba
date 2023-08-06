@@ -507,13 +507,8 @@ class UserInfo_t(object):
         return str(
             {
                 'user_id': self._user_id,
-                'user_name': self._user_name,
-                'portrait': self._portrait,
                 'show_name': self.show_name,
-                'glevel': self._glevel,
-                'gender': self._gender,
-                'priv_like': self._priv_like,
-                'priv_reply': self._priv_reply,
+                'level': self._level,
             }
         )
 
@@ -1033,7 +1028,6 @@ class ShareThread(object):
         return str(
             {
                 'tid': self._tid,
-                'pid': self._pid,
                 'text': self.text,
             }
         )
@@ -1223,7 +1217,6 @@ class Thread(object):
         return str(
             {
                 'tid': self._tid,
-                'pid': self._pid,
                 'user': self._user.log_name,
                 'text': self.text,
             }

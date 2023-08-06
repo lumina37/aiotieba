@@ -32,7 +32,6 @@ class MemberUser(object):
         return str(
             {
                 'user_name': self._user_name,
-                'portrait': self._portrait,
                 'level': self._level,
             }
         )

@@ -249,13 +249,8 @@ class UserInfo_c(object):
         return str(
             {
                 'user_id': self._user_id,
-                'user_name': self._user_name,
-                'portrait': self._portrait,
                 'show_name': self.show_name,
                 'level': self._level,
-                'gender': self._gender,
-                'priv_like': self._priv_like,
-                'priv_reply': self._priv_reply,
             }
         )
 
@@ -492,7 +487,6 @@ class Comment(object):
         return str(
             {
                 'tid': self._tid,
-                'ppid': self._ppid,
                 'pid': self._pid,
                 'user': self._user.log_name,
                 'text': self._contents.text,
@@ -837,8 +831,6 @@ class UserInfo_ct(object):
         return str(
             {
                 'user_id': self._user_id,
-                'user_name': self._user_name,
-                'portrait': self._portrait,
                 'show_name': self.show_name,
                 'level': self._level,
             }
@@ -1446,13 +1438,8 @@ class UserInfo_cp(object):
         return str(
             {
                 'user_id': self._user_id,
-                'user_name': self._user_name,
-                'portrait': self._portrait,
                 'show_name': self.show_name,
                 'level': self._level,
-                'gender': self._gender,
-                'priv_like': self._priv_like,
-                'priv_reply': self._priv_reply,
             }
         )
 

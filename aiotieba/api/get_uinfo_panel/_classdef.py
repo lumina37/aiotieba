@@ -85,12 +85,8 @@ class UserInfo_panel(object):
     def __repr__(self) -> str:
         return str(
             {
-                'user_name': self._user_name,
                 'portrait': self._portrait,
                 'show_name': self.show_name,
-                'gender': self._gender,
-                'age': self._age,
-                'post_num': self._post_num,
             }
         )
 
