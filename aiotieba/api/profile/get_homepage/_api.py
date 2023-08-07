@@ -41,6 +41,9 @@ def parse_body(body: bytes) -> Tuple[UserInfo_pf, List[Thread_pf]]:
     else:
         user._is_blocked = False
 
+    agree_proto = data_proto.user_agree_info
+    user._agree_num = agree_proto.total_agree_num
+
     threads = [Thread_pf(p) for p in data_proto.post_list]
 
     for thread in threads:

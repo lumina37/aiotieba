@@ -41,6 +41,9 @@ def parse_body(body: bytes) -> UserInfo_pf:
     else:
         user._is_blocked = False
 
+    agree_proto = data_proto.user_agree_info
+    user._agree_num = agree_proto.total_agree_num
+
     return user
 
 
