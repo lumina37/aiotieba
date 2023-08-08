@@ -39,7 +39,7 @@ from .api import (
     get_forum_detail,
     get_god_threads,
     get_group_msg,
-    get_images,
+    get_image,
     get_member_users,
     get_posts,
     get_rank_users,
@@ -925,7 +925,7 @@ class Client(object):
 
         return await get_ats.request(self._http_core, pn)
 
-    @handle_exception(get_images.null_ret_factory)
+    @handle_exception(get_image.null_ret_factory)
     async def get_image(self, img_url: str) -> "np.ndarray":
         """
         从链接获取静态图像
@@ -937,9 +937,9 @@ class Client(object):
             np.ndarray: 图像
         """
 
-        return await get_images.request(self._http_core, yarl.URL(img_url))
+        return await get_image.request(self._http_core, yarl.URL(img_url))
 
-    @handle_exception(get_images.null_ret_factory)
+    @handle_exception(get_image.null_ret_factory)
     async def hash2image(self, raw_hash: str, /, size: Literal['s', 'm', 'l'] = 's') -> "np.ndarray":
         """
         通过百度图库hash获取静态图像
@@ -964,11 +964,11 @@ class Client(object):
             img_url = yarl.URL.build(scheme="http", host="imgsrc.baidu.com", path=f"/forum/pic/item/{raw_hash}.jpg")
         else:
             LOG().warning(f"Invalid size={size}")
-            return get_images.null_ret_factory()
+            return get_image.null_ret_factory()
 
-        return await get_images.request(self._http_core, img_url)
+        return await get_image.request(self._http_core, img_url)
 
-    @handle_exception(get_images.null_ret_factory)
+    @handle_exception(get_image.null_ret_factory)
     async def get_portrait(self, _id: Union[str, int], /, size: Literal['s', 'm', 'l'] = 's') -> "np.ndarray":
         """
         获取用户头像
@@ -995,11 +995,11 @@ class Client(object):
             path = 'h'
         else:
             LOG().warning(f"Invalid size={size}")
-            return get_images.null_ret_factory()
+            return get_image.null_ret_factory()
 
         img_url = yarl.URL.build(scheme="http", host="tb.himg.baidu.com", path=f"/sys/portrait{path}/item/{portrait}")
 
-        return await get_images.request(self._http_core, img_url)
+        return await get_image.request(self._http_core, img_url)
 
     async def __get_selfinfo_initNickname(self) -> None:
         user = await get_selfinfo_initNickname.request(self._http_core)

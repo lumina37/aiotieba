@@ -89,5 +89,5 @@ target-version = "py38"
 minversion = "6.0"
 addopts = "-q"
 testpaths = ["tests"]
-required_plugins = "pytest-asyncio"
+required_plugins = "pytest-asyncio pytest-rerunfailures"
 asyncio_mode = "strict"
