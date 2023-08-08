@@ -33,17 +33,7 @@ def parse_body(body: bytes) -> Tuple[UserInfo_pf, List[Thread_pf]]:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    user = UserInfo_pf(data_proto.user)
-
-    anti_proto = data_proto.anti_stat
-    if anti_proto.block_stat and anti_proto.hide_stat and anti_proto.days_tofree > 30:
-        user._is_blocked = True
-    else:
-        user._is_blocked = False
-
-    agree_proto = data_proto.user_agree_info
-    user._agree_num = agree_proto.total_agree_num
-
+    user = UserInfo_pf(data_proto)
     threads = [Thread_pf(p) for p in data_proto.post_list]
 
     for thread in threads:

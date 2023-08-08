@@ -127,29 +127,36 @@ class UserInfo_pf(object):
 
     def __init__(self, data_proto: Optional[TypeMessage] = None) -> None:
         if data_proto:
-            self._user_id = data_proto.id
-            if '?' in (portrait := data_proto.portrait):
+            user_proto = data_proto.user
+            self._user_id = user_proto.id
+            if '?' in (portrait := user_proto.portrait):
                 self._portrait = portrait[:-13]
             else:
                 self._portrait = portrait
-            self._user_name = data_proto.name
-            self._nick_name_new = data_proto.name_show
-            self._tieba_uid = int(tieba_uid) if (tieba_uid := data_proto.tieba_uid) else 0
-            self._glevel = data_proto.user_growth.level_id
-            self._gender = data_proto.sex
-            self._age = float(age) if (age := data_proto.tb_age) else 0.0
-            self._post_num = data_proto.post_num
-            self._fan_num = data_proto.fans_num
-            self._follow_num = data_proto.concern_num
-            self._forum_num = data_proto.my_like_num
-            self._sign = data_proto.intro
-            self._ip = data_proto.ip_address
-            self._icons = [name for i in data_proto.iconinfo if (name := i.name)]
-            self._vimage = VirtualImage_pf()._init(data_proto.virtual_image_info)
-            self._is_vip = bool(data_proto.new_tshow_icon)
-            self._is_god = bool(data_proto.new_god_data.status)
-            self._priv_like = priv_like if (priv_like := data_proto.priv_sets.like) else 1
-            self._priv_reply = priv_reply if (priv_reply := data_proto.priv_sets.reply) else 1
+            self._user_name = user_proto.name
+            self._nick_name_new = user_proto.name_show
+            self._tieba_uid = int(tieba_uid) if (tieba_uid := user_proto.tieba_uid) else 0
+            self._glevel = user_proto.user_growth.level_id
+            self._gender = user_proto.sex
+            self._age = float(age) if (age := user_proto.tb_age) else 0.0
+            self._post_num = user_proto.post_num
+            self._agree_num = data_proto.user_agree_info.total_agree_num
+            self._fan_num = user_proto.fans_num
+            self._follow_num = user_proto.concern_num
+            self._forum_num = user_proto.my_like_num
+            self._sign = user_proto.intro
+            self._ip = user_proto.ip_address
+            self._icons = [name for i in user_proto.iconinfo if (name := i.name)]
+            self._vimage = VirtualImage_pf()._init(user_proto.virtual_image_info)
+            self._is_vip = bool(user_proto.new_tshow_icon)
+            self._is_god = bool(user_proto.new_god_data.status)
+            anti_proto = data_proto.anti_stat
+            if anti_proto.block_stat and anti_proto.hide_stat and anti_proto.days_tofree > 30:
+                self._is_blocked = True
+            else:
+                self._is_blocked = False
+            self._priv_like = priv_like if (priv_like := user_proto.priv_sets.like) else 1
+            self._priv_reply = priv_reply if (priv_reply := user_proto.priv_sets.reply) else 1
 
         else:
             self._user_id = 0
