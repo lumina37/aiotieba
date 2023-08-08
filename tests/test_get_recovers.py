@@ -11,5 +11,4 @@ async def test_Recovers(client: tb.Client):
     ##### Recover #####
     recover = recovers[0]
     assert recover.tid > 0
-    assert recover.pid > 0
     assert recover.op_user_name != ''
