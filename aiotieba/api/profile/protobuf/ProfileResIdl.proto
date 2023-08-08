@@ -16,6 +16,10 @@ message ProfileResIdl {
         }
         Anti anti_stat = 2;
         repeated PostInfoList post_list = 4;
+        message UserAgreeInfo {
+            int64 total_agree_num = 1;
+        }
+        UserAgreeInfo user_agree_info = 14;
     }
     DataRes data = 2;
 }

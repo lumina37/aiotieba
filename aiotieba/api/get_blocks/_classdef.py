@@ -34,7 +34,6 @@ class Block(object):
         return str(
             {
                 'user_id': self._user_id,
-                'user_name': self._user_name,
                 'nick_name_old': self._nick_name_old,
                 'day': self._day,
             }

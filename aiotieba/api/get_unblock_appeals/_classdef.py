@@ -58,8 +58,6 @@ class Appeal(object):
         return str(
             {
                 'user_id': self._user_id,
-                'portrait': self._portrait,
-                'user_name': self._user_name,
                 'nick_name': self._nick_name,
                 'appeal_id': self._appeal_id,
                 'appeal_reason': self._appeal_reason,

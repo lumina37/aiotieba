@@ -23,16 +23,16 @@ def pack_proto(
     req_proto = PbPageReqIdl_pb2.PbPageReqIdl()
     req_proto.data.common._client_type = 2
     req_proto.data.common._client_version = MAIN_VERSION
-    req_proto.data.tid = tid
+    req_proto.data.kz = tid
     req_proto.data.pn = pn
     req_proto.data.rn = rn if rn > 1 else 2
-    req_proto.data.sort = sort
-    req_proto.data.only_thread_author = only_thread_author
+    req_proto.data.r = sort
+    req_proto.data.lz = only_thread_author
     if with_comments:
         req_proto.data.common.BDUSS = account._BDUSS
-        req_proto.data.with_comments = with_comments
-        req_proto.data.comment_sort_by_agree = comment_sort_by_agree
-        req_proto.data.comment_rn = comment_rn
+        req_proto.data.with_floor = with_comments
+        req_proto.data.floor_sort_type = comment_sort_by_agree
+        req_proto.data.floor_rn = comment_rn
 
     return req_proto.SerializeToString()
 

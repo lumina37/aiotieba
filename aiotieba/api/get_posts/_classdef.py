@@ -534,9 +534,9 @@ class Comment_p(object):
             {
                 'tid': self._tid,
                 'pid': self._pid,
-                'floor': self._floor,
                 'user': self.user.log_name,
                 'text': self.text,
+                'floor': self._floor,
             }
         )
 
@@ -760,15 +760,8 @@ class UserInfo_p(object):
         return str(
             {
                 'user_id': self._user_id,
-                'user_name': self._user_name,
-                'portrait': self._portrait,
                 'show_name': self.show_name,
                 'level': self._level,
-                'glevel': self._glevel,
-                'gender': self._gender,
-                'ip': self._ip,
-                'priv_like': self._priv_like,
-                'priv_reply': self._priv_reply,
             }
         )
 
@@ -1716,14 +1709,8 @@ class UserInfo_pt(object):
         return str(
             {
                 'user_id': self._user_id,
-                'user_name': self._user_name,
-                'portrait': self._portrait,
                 'show_name': self.show_name,
                 'level': self._level,
-                'glevel': self._glevel,
-                'ip': self._ip,
-                'priv_like': self._priv_like,
-                'priv_reply': self._priv_reply,
             }
         )
 
@@ -2146,7 +2133,6 @@ class Thread_p(object):
         return str(
             {
                 'tid': self._tid,
-                'pid': self._pid,
                 'user': self._user.log_name,
                 'text': self.text,
             }

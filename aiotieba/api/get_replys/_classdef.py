@@ -58,11 +58,7 @@ class UserInfo_reply(object):
         return str(
             {
                 'user_id': self._user_id,
-                'user_name': self._user_name,
-                'portrait': self._portrait,
                 'show_name': self.show_name,
-                'priv_like': self._priv_like,
-                'priv_reply': self._priv_reply,
             }
         )
 
@@ -212,7 +208,6 @@ class UserInfo_reply_p(object):
         return str(
             {
                 'user_id': self._user_id,
-                'user_name': self._user_name,
                 'show_name': self.show_name,
             }
         )
@@ -328,7 +323,6 @@ class UserInfo_reply_t(object):
         return str(
             {
                 'user_id': self._user_id,
-                'portrait': self._portrait,
                 'show_name': self._nick_name_new,
             }
         )

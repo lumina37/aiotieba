@@ -31,13 +31,7 @@ class UserInfo_login(object):
         return self._user_name or self._portrait or str(self._user_id)
 
     def __repr__(self) -> str:
-        return str(
-            {
-                'user_id': self._user_id,
-                'user_name': self._user_name,
-                'portrait': self._portrait,
-            }
-        )
+        return str({'user_id': self._user_id})
 
     def __hash__(self) -> int:
         return self._user_id

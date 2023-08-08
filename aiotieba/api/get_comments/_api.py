@@ -13,7 +13,7 @@ def pack_proto(tid: int, pid: int, pn: int, is_comment: bool) -> bytes:
     req_proto = PbFloorReqIdl_pb2.PbFloorReqIdl()
     req_proto.data.common._client_type = 2
     req_proto.data.common._client_version = MAIN_VERSION
-    req_proto.data.tid = tid
+    req_proto.data.kz = tid
     if is_comment:
         req_proto.data.spid = pid
     else:

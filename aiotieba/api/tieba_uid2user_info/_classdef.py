@@ -65,11 +65,7 @@ class UserInfo_TUid(object):
         return str(
             {
                 'user_id': self._user_id,
-                'user_name': self._user_name,
-                'portrait': self._portrait,
                 'show_name': self.show_name,
-                'age': self._age,
-                'sign': self._sign,
             }
         )
 

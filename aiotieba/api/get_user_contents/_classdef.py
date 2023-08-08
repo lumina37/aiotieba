@@ -146,8 +146,6 @@ class UserInfo_u(object):
         return str(
             {
                 'user_id': self._user_id,
-                'user_name': self._user_name,
-                'portrait': self._portrait,
                 'show_name': self.show_name,
             }
         )

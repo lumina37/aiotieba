@@ -96,9 +96,9 @@ tieba_uid是一个uint64值（仅有一些远古时期的ip账号不符合这个
 
 如果你不了解Python异步编程，请先阅读[异步编程入门教程](async_start.md)
 
-## 使用配置文件
+## 添加账号
 
-如果你需要使用账号，那么你必须使用配置文件
+建议将账号添加到配置文件，这可以避免BDUSS随代码泄露
 
 ### 准备工作
 
@@ -137,7 +137,42 @@ asyncio.run(main())
 如果你的`BDUSS`填写无误，你会获得类似下面这样的结果
 
 ```log
-{'user_id': 957339815, 'user_name': 'Starry_OvO', 'portrait': 'tb.1.8277e641.gUE2cTq4A4z5fi2EHn5k3Q', 'show_name': 'Starry_OvO', 'tieba_uid': '316436307', 'glevel': 0, 'gender': 0, 'age': 0.0, 'post_num': 0, 'sign': '', 'vimage': '', 'ip': '', 'priv_like': 1}
+Starry_OvO
+```
+
+## 运行时更改BDUSS
+
+该案例演示了如何在运行时更改BDUSS
+
+建议为每个账号新建`Client`，以避免误用遗留的websocket连接
+
+### 样例代码
+
+本样例将获取并打印当前账号的用户信息
+
+```python
+import asyncio
+
+import aiotieba as tb
+
+
+async def main():
+    async with tb.Client() as client:
+        client.account.BDUSS = '...'
+        user = await client.get_self_info()
+
+    print(user)
+
+
+asyncio.run(main())
+```
+
+### 期望结果
+
+如果你的`BDUSS`填写无误，你会获得类似下面这样的结果
+
+```log
+Starry_OvO
 ```
 
 ## 多账号
@@ -171,13 +206,22 @@ import aiotieba as tb
 async def main():
     async with tb.Client("default") as client:
         user = await client.get_self_info()
-        print(f"默认账号的用户信息: {user!r}")
+        print(f"默认账号: {user}")
     async with tb.Client("anotherKey") as client:
         user = await client.get_self_info()
-        print(f"另一个账号的用户信息: {user!r}")
+        print(f"另一个账号: {user}")
 
 
 asyncio.run(main())
+```
+
+### 期望结果
+
+如果你的`BDUSS`填写无误，你会获得类似下面这样的结果
+
+```log
+默认账号: AAAA
+另一个账号: BBBB
 ```
 
 ## 简单并发爬虫
@@ -200,7 +244,7 @@ async def main():
         user, threads = await asyncio.gather(client.get_self_info(), client.get_threads('天堂鸡汤'))
 
     # 将获取的信息打印到日志
-    print(f"当前用户信息: {user!r}")
+    print(f"当前用户: {user}")
     for thread in threads:
         # Threads支持迭代，因此可以使用for循环逐条打印主题帖信息
         # 当然了，Threads也支持使用下标的随机访问
@@ -224,7 +268,7 @@ asyncio.run(main())
 运行效果如下所示
 
 ```log
-当前用户信息: {'user_id': 957339815, 'user_name': 'Starry_OvO', 'portrait': 'tb.1.8277e641.gUE2cTq4A4z5fi2EHn5k3Q', 'nick_name': 'ºStarry'}
+当前用户: Starry_OvO
 tid: 7595618217 最后回复时间戳: 1672461980 标题: 关于负能量帖子的最新规定
 tid: 8204562074 最后回复时间戳: 1672502281 标题: 外卖超时退单，心理煎熬
 tid: 8165883863 最后回复时间戳: 1672502270 标题: 【记录】我这半醉半醒的人生啊
@@ -268,6 +312,7 @@ import time
 from typing import List
 
 import aiotieba as tb
+from aiotieba.logging import get_logger as LOG
 
 
 async def crawler(fname: str):
@@ -279,14 +324,13 @@ async def crawler(fname: str):
     """
 
     start_time = time.perf_counter()
-    tb.LOG().info("Spider start")
+    LOG().info("Spider start")
 
     # thread_list用来保存主题帖列表
-    thread_list: List[tb.Thread] = []
+    thread_list: List[tb.typing.Thread] = []
 
     # 使用键名"default"对应的BDUSS创建客户端
     async with tb.Client("default") as client:
-
         # asyncio.Queue是一个任务队列
         # maxsize=8意味着缓冲区长度为8
         # 当缓冲区被填满时，调用Queue.put的协程会被阻塞
@@ -322,12 +366,12 @@ async def crawler(fname: str):
                     # timeout=1即把超时时间设为1秒
                     # 如果超过1秒未获取到新的页码pn，asyncio.wait_for(...)将抛出asyncio.TimeoutError
                     pn = await asyncio.wait_for(task_queue.get(), timeout=1)
-                    tb.LOG().debug(f"Worker#{i} handling pn:{pn}")
+                    LOG().debug(f"Worker#{i} handling pn:{pn}")
                 except asyncio.TimeoutError:
                     # 捕获asyncio.TimeoutError以退出协程
                     if is_running is False:
                         # 如果is_running为False，意味着不需要再轮询task_queue获取新任务
-                        tb.LOG().debug(f"Worker#{i} quit")
+                        LOG().debug(f"Worker#{i} quit")
                         # 消费者协程通过return退出
                         return
                 else:
@@ -344,13 +388,13 @@ async def crawler(fname: str):
         # 因为asyncio.gather只接受协程作为参数，不接受协程列表
         await asyncio.gather(*workers, producer())
 
-    tb.LOG().info(f"Spider complete. Time cost: {time.perf_counter()-start_time:.4f} secs")
+    LOG().info(f"Spider complete. Time cost: {time.perf_counter()-start_time:.4f} secs")
 
     # 按主题帖浏览量降序排序
     thread_list.sort(key=lambda thread: thread.view_num, reverse=True)
     # 将浏览量最高的10个主题帖的信息打印到日志
     for i, thread in enumerate(thread_list[0:10], 1):
-        tb.LOG().info(f"Rank#{i} view_num:{thread.view_num} title:{thread.title}")
+        LOG().info(f"Rank#{i} view_num:{thread.view_num} title:{thread.title}")
 
 
 # 执行协程crawler

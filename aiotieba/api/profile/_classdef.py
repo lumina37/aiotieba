@@ -80,6 +80,7 @@ class UserInfo_pf(object):
         gender (int): 性别
         age (float): 吧龄
         post_num (int): 发帖数
+        agree_num (int): 获赞数
         fan_num (int): 粉丝数
         follow_num (int): 关注数
         forum_num (int): 关注贴吧数
@@ -88,7 +89,6 @@ class UserInfo_pf(object):
         icons (list[str]): 印记信息
         vimage (VirtualImage_pf): 虚拟形象信息
 
-        is_bawu (bool): 是否吧务
         is_vip (bool): 是否超级会员
         is_god (bool): 是否大神
         is_blocked (bool): 是否被永久封禁屏蔽
@@ -110,6 +110,7 @@ class UserInfo_pf(object):
         '_gender',
         '_age',
         '_post_num',
+        '_agree_num',
         '_fan_num',
         '_follow_num',
         '_forum_num',
@@ -117,7 +118,6 @@ class UserInfo_pf(object):
         '_icons',
         '_vimage',
         '_ip',
-        '_is_bawu',
         '_is_vip',
         '_is_god',
         '_is_blocked',
@@ -127,30 +127,36 @@ class UserInfo_pf(object):
 
     def __init__(self, data_proto: Optional[TypeMessage] = None) -> None:
         if data_proto:
-            self._user_id = data_proto.id
-            if '?' in (portrait := data_proto.portrait):
+            user_proto = data_proto.user
+            self._user_id = user_proto.id
+            if '?' in (portrait := user_proto.portrait):
                 self._portrait = portrait[:-13]
             else:
                 self._portrait = portrait
-            self._user_name = data_proto.name
-            self._nick_name_new = data_proto.name_show
-            self._tieba_uid = int(tieba_uid) if (tieba_uid := data_proto.tieba_uid) else 0
-            self._glevel = data_proto.user_growth.level_id
-            self._gender = data_proto.sex
-            self._age = float(age) if (age := data_proto.tb_age) else 0.0
-            self._post_num = data_proto.post_num
-            self._fan_num = data_proto.fans_num
-            self._follow_num = data_proto.concern_num
-            self._forum_num = data_proto.my_like_num
-            self._sign = data_proto.intro
-            self._ip = data_proto.ip_address
-            self._icons = [name for i in data_proto.iconinfo if (name := i.name)]
-            self._vimage = VirtualImage_pf()._init(data_proto.virtual_image_info)
-            self._is_bawu = bool(data_proto.is_bawu)
-            self._is_vip = bool(data_proto.new_tshow_icon)
-            self._is_god = bool(data_proto.new_god_data.status)
-            self._priv_like = priv_like if (priv_like := data_proto.priv_sets.like) else 1
-            self._priv_reply = priv_reply if (priv_reply := data_proto.priv_sets.reply) else 1
+            self._user_name = user_proto.name
+            self._nick_name_new = user_proto.name_show
+            self._tieba_uid = int(tieba_uid) if (tieba_uid := user_proto.tieba_uid) else 0
+            self._glevel = user_proto.user_growth.level_id
+            self._gender = user_proto.sex
+            self._age = float(age) if (age := user_proto.tb_age) else 0.0
+            self._post_num = user_proto.post_num
+            self._agree_num = data_proto.user_agree_info.total_agree_num
+            self._fan_num = user_proto.fans_num
+            self._follow_num = user_proto.concern_num
+            self._forum_num = user_proto.my_like_num
+            self._sign = user_proto.intro
+            self._ip = user_proto.ip_address
+            self._icons = [name for i in user_proto.iconinfo if (name := i.name)]
+            self._vimage = VirtualImage_pf()._init(user_proto.virtual_image_info)
+            self._is_vip = bool(user_proto.new_tshow_icon)
+            self._is_god = bool(user_proto.new_god_data.status)
+            anti_proto = data_proto.anti_stat
+            if anti_proto.block_stat and anti_proto.hide_stat and anti_proto.days_tofree > 30:
+                self._is_blocked = True
+            else:
+                self._is_blocked = False
+            self._priv_like = priv_like if (priv_like := user_proto.priv_sets.like) else 1
+            self._priv_reply = priv_reply if (priv_reply := user_proto.priv_sets.reply) else 1
 
         else:
             self._user_id = 0
@@ -162,6 +168,7 @@ class UserInfo_pf(object):
             self._gender = 0
             self._age = 0.0
             self._post_num = 0
+            self._agree_num = 0
             self._fan_num = 0
             self._follow_num = 0
             self._forum_num = 0
@@ -169,7 +176,6 @@ class UserInfo_pf(object):
             self._icons = []
             self._vimage = VirtualImage_pf()._init_null()
             self._ip = ''
-            self._is_bawu = False
             self._is_vip = False
             self._is_god = False
             self._is_blocked = False
@@ -183,18 +189,7 @@ class UserInfo_pf(object):
         return str(
             {
                 'user_id': self._user_id,
-                'user_name': self._user_name,
-                'portrait': self._portrait,
                 'show_name': self.show_name,
-                'tieba_uid': self._tieba_uid,
-                'glevel': self._glevel,
-                'gender': self._gender,
-                'age': self._age,
-                'post_num': self._post_num,
-                'sign': self._sign,
-                'vimage': self._vimage._state,
-                'ip': self._ip,
-                'priv_like': self._priv_like,
             }
         )
 
@@ -307,6 +302,14 @@ class UserInfo_pf(object):
         return self._post_num
 
     @property
+    def agree_num(self) -> int:
+        """
+        获赞数
+        """
+
+        return self._agree_num
+
+    @property
     def fan_num(self) -> int:
         """
         粉丝数
@@ -361,14 +364,6 @@ class UserInfo_pf(object):
         """
 
         return self._vimage
-
-    @property
-    def is_bawu(self) -> bool:
-        """
-        是否吧务
-        """
-
-        return self._is_bawu
 
     @property
     def is_vip(self) -> bool:
@@ -776,7 +771,6 @@ class Thread_pf(object):
         return str(
             {
                 'tid': self._tid,
-                'pid': self._pid,
                 'user': self._user.log_name,
                 'text': self.text,
             }
