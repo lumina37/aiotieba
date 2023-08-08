@@ -86,11 +86,10 @@ from .api import (
     ungood,
 )
 from .api._classdef import UserInfo
-from .api.profile import UserInfo_pf
 from .core import Account, HttpCore, NetCore, TimeConfig, WsCore
 from .enums import BawuSearchType, BlacklistType, GroupType, PostSortType, ReqUInfo, ThreadSortType, WsStatus
-from .helper import handle_exception, is_portrait
 from .helper.cache import ForumInfoCache
+from .helper.utils import handle_exception, is_portrait
 from .logging import get_logger as LOG
 from .typing import TypeUserInfo
 
@@ -181,7 +180,7 @@ class Client(object):
 
         self._try_ws = try_ws
 
-        self._user = UserInfo_pf()
+        self._user = profile.UserInfo_pf()
 
     async def __aenter__(self) -> "Client":
         return self
@@ -238,7 +237,7 @@ class Client(object):
         self._ws_core._status = WsStatus.OPEN
 
     async def __init_tbs(self) -> None:
-        if self._account._tbs:
+        if self._account._tbs is not None:
             return
         await self.__login()
 
@@ -271,12 +270,12 @@ class Client(object):
         self._account._tbs = tbs
 
     async def __init_client_id(self) -> None:
-        if self._account._client_id:
+        if self._account._client_id is not None:
             return
         await self.__sync()
 
     async def __init_sample_id(self) -> None:
-        if self._account._sample_id:
+        if self._account._sample_id is not None:
             return
         await self.__sync()
 
@@ -286,7 +285,7 @@ class Client(object):
         self._account._sample_id = sample_id
 
     async def __init_z_id(self) -> None:
-        if self._account._z_id:
+        if self._account._z_id is not None:
             return
 
         z_id = await init_z_id.request(self._http_core)
