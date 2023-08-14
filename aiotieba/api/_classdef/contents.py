@@ -47,15 +47,19 @@ class FragEmoji(object):
 
     Attributes:
         desc (str): 表情描述
+        src (str): 表情图片链接
+        text (str): 表情图片名称
     """
 
-    __slots__ = ['_desc']
+    __slots__ = ['_desc', '_src', '_text']
 
     def __init__(self, data_proto: TypeMessage) -> None:
         self._desc = data_proto.c
+        self._src = data_proto.src
+        self._text = data_proto.text
 
     def __repr__(self) -> str:
-        return str({'desc': self.desc})
+        return str({'desc': self.desc, 'text': self.text, 'src': self.src})
 
     @property
     def desc(self) -> str:
@@ -65,12 +69,42 @@ class FragEmoji(object):
 
         return self._desc
 
+    @property
+    def src(self) -> str:
+        """
+        表情图片链接
+        """
+
+        return self._src
+
+    @property
+    def text(self) -> str:
+        """
+        表情图片名称
+        """
+
+        return self._text
+
 
 class TypeFragEmoji(Protocol):
     @property
     def desc(self) -> str:
         """
         表情描述
+        """
+        ...
+
+    @property
+    def src(self) -> str:
+        """
+        表情图片链接
+        """
+        ...
+
+    @property
+    def text(self) -> str:
+        """
+        表情图片名称
         """
         ...
 

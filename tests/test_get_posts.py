@@ -107,6 +107,8 @@ async def test_Posts(client: tb.Client):
     # FragEmoji
     frag = post.contents.emojis[0]
     assert frag.desc != ''
+    assert frag.src == ''
+    assert frag.text == 'image_emoticon3'
 
     # FragTiebaplus
     frag = post.contents.tiebapluses[0]

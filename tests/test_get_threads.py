@@ -80,6 +80,8 @@ async def test_Threads(client: tb.Client):
             # FragEmoji
             frag = thread.contents.emojis[0]
             assert frag.desc != ''
+            assert frag.src == ''
+            assert frag.text == 'image_emoticon2'
 
             # FragTiebaplus
             frag = thread.contents.tiebapluses[0]
