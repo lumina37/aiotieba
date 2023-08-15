@@ -72,6 +72,10 @@ async def test_Comments(client: tb.Client):
 
     # FragVoice
     assert post.contents.has_voice is True
+    frag = post.contents.voices[0]
+    assert frag.name != ''
+    assert frag.md5 != ''
+    assert frag.id != ''
 
     # FragImage
     frag = post.contents.imgs[0]
@@ -135,6 +139,10 @@ async def test_Comments(client: tb.Client):
 
     # FragVoice
     assert comment.contents.has_voice is True
+    frag = comment.contents.voices[0]
+    assert frag.name != ''
+    assert frag.md5 != ''
+    assert frag.id != ''
 
     # FragEmoji
     frag = comment.contents.emojis[0]

@@ -5,6 +5,7 @@ from .._classdef import Containers, TypeMessage
 from .._classdef.contents import (
     FragAt,
     FragEmoji,
+    FragVoice,
     FragLink,
     FragmentUnknown,
     FragText,
@@ -15,6 +16,7 @@ from .._classdef.contents import (
 
 FragAt_c = FragAt_cp = FragAt
 FragEmoji_c = FragEmoji_cp = FragEmoji
+FragVoice_c = FragVoice_cp = FragVoice
 FragLink_c = FragLink_cp = FragLink
 FragmentUnknown_c = FragmentUnknown_cp = FragmentUnknown
 FragText_c = FragText_cp = FragText
@@ -32,6 +34,7 @@ class Contents_c(Containers[TypeFragment]):
 
         texts (list[TypeFragText]): 纯文本碎片列表
         emojis (list[FragEmoji_c]): 表情碎片列表
+        voices (list[FragVoice_c]): 音頻碎片列表
         ats (list[FragAt_c]): @碎片列表
         links (list[FragLink_c]): 链接碎片列表
         tiebapluses (list[FragTiebaPlus_c]): 贴吧plus碎片列表
@@ -43,6 +46,7 @@ class Contents_c(Containers[TypeFragment]):
         '_text',
         '_texts',
         '_emojis',
+        '_voices',
         '_ats',
         '_links',
         '_tiebapluses',
@@ -69,7 +73,8 @@ class Contents_c(Containers[TypeFragment]):
                 self._links.append(fragment)
                 self._texts.append(fragment)
             elif _type == 10:
-                fragment = FragmentUnknown_c()
+                fragment = FragVoice_c(proto)
+                self._voices.append(fragment)
                 self._has_voice = True
             # 35|36:tid=7769728331 / 37:tid=7760184147
             elif _type in [35, 36, 37]:
@@ -88,6 +93,7 @@ class Contents_c(Containers[TypeFragment]):
         self._texts = []
         self._links = []
         self._emojis = []
+        self._voices = []
         self._ats = []
         self._tiebapluses = []
         self._has_voice = False
@@ -101,6 +107,7 @@ class Contents_c(Containers[TypeFragment]):
         self._text = ""
         self._texts = []
         self._emojis = []
+        self._voices = []
         self._ats = []
         self._links = []
         self._tiebapluses = []
@@ -135,6 +142,14 @@ class Contents_c(Containers[TypeFragment]):
         """
 
         return self._emojis
+
+    @property
+    def voices(self) -> List[FragVoice_c]:
+        """
+        视频碎片列表
+        """
+
+        return self._voices
 
     @property
     def ats(self) -> List[FragAt_c]:
@@ -1209,6 +1224,7 @@ class Contents_cp(Containers[TypeFragment]):
 
         texts (list[TypeFragText]): 纯文本碎片列表
         emojis (list[FragEmoji_cp]): 表情碎片列表
+        voices (list[FragVoice_cp]): 音頻碎片列表
         imgs (list[FragImage_cp]): 图像碎片列表
         ats (list[FragAt_cp]): @碎片列表
         links (list[FragLink_cp]): 链接碎片列表
@@ -1221,6 +1237,7 @@ class Contents_cp(Containers[TypeFragment]):
         '_text',
         '_texts',
         '_emojis',
+        '_voices',
         '_imgs',
         '_ats',
         '_links',
@@ -1252,7 +1269,8 @@ class Contents_cp(Containers[TypeFragment]):
                 self._links.append(fragment)
                 self._texts.append(fragment)
             elif _type == 10:
-                fragment = FragmentUnknown_cp()
+                fragment = FragVoice_cp(proto)
+                self._voices.append(fragment)
                 self._has_voice = True
             # 35|36:tid=7769728331 / 37:tid=7760184147
             elif _type in [35, 36, 37]:
@@ -1272,6 +1290,7 @@ class Contents_cp(Containers[TypeFragment]):
         self._links = []
         self._imgs = []
         self._emojis = []
+        self._voices = []
         self._ats = []
         self._tiebapluses = []
         self._has_voice = False
@@ -1286,6 +1305,7 @@ class Contents_cp(Containers[TypeFragment]):
         self._texts = []
         self._emojis = []
         self._imgs = []
+        self._voices = []
         self._ats = []
         self._links = []
         self._tiebapluses = []
@@ -1328,6 +1348,14 @@ class Contents_cp(Containers[TypeFragment]):
         """
 
         return self._imgs
+
+    @property
+    def voices(self) -> List[FragVoice_cp]:
+        """
+        视频碎片列表
+        """
+
+        return self._voices
 
     @property
     def ats(self) -> List[FragAt_cp]:

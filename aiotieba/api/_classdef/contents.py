@@ -312,6 +312,81 @@ class TypeFragAt(Protocol):
         ...
 
 
+class FragVoice(object):
+    """
+    视频碎片
+
+    Attributes:
+        md5 (str): 音频 md5
+        id (str): 音频 id
+        name (str): 音频文件名
+    """
+
+    __slots__ = [
+        '_md5',
+        '_id',
+        '_name',
+    ]
+
+    def __init__(self, data_proto: TypeMessage) -> None:
+        self._name = data_proto.voice_md5
+        self._md5, _, self._id = data_proto.voice_md5.partition('_')
+
+    def __repr__(self) -> str:
+        return str(
+            {
+                'name': self._name
+            }
+        )
+
+    @property
+    def name(self) -> str:
+        """
+        音频文件名
+        """
+
+        return self._name
+
+    @property
+    def md5(self) -> str:
+        """
+        音频 md5
+        """
+
+        return self._md5
+
+    @property
+    def id(self) -> str:
+        """
+        音频 id
+        """
+
+        return self._id
+
+
+class TypeFragVoice(Protocol):
+    @property
+    def name(self) -> str:
+        """
+        音频文件名
+        """
+        ...
+
+    @property
+    def md5(self) -> str:
+        """
+        音频 md5
+        """
+        ...
+
+    @property
+    def id(self) -> str:
+        """
+        音频 id
+        """
+        ...
+
+
 class FragVideo(object):
     """
     视频碎片

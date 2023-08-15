@@ -94,6 +94,10 @@ async def test_Posts(client: tb.Client):
 
     # FragVoice
     assert post.contents.has_voice is True
+    frag = post.contents.voices[0]
+    assert frag.name != ''
+    assert frag.md5 != ''
+    assert frag.id != ''
 
     # FragVideo
     assert post.contents.has_video is False
