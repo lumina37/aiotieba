@@ -68,6 +68,9 @@ async def test_Threads(client: tb.Client):
             # FragVoice
             assert thread.contents.has_voice is True
 
+            # FragVideo
+            assert thread.contents.has_video is False
+
             # FragImage
             frag = thread.contents.imgs[0]
             assert frag.src != ''
@@ -122,6 +125,9 @@ async def test_Threads(client: tb.Client):
             # FragVoice
             assert sthread.contents.has_voice is True
 
+            # FragVideo
+            assert thread.contents.has_video is False
+
             # FragImage
             frag = sthread.contents.imgs[0]
             assert frag.src != ''
@@ -137,3 +143,15 @@ async def test_Threads(client: tb.Client):
             option = vote_info.options[0]
             assert option.vote_num > 0
             assert option.text != ''
+
+        elif thread.tid == 972664850:
+
+            # FragVideo
+            assert thread.contents.has_video is True
+            frag = thread.contents.videos[0]
+            assert frag.text != ''
+            assert frag.src == ''
+            assert frag.thumb_src == ''
+            assert frag.width == 0
+            assert frag.height == 0
+            assert frag.size == 0

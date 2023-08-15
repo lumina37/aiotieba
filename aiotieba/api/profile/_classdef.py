@@ -1,10 +1,12 @@
 from typing import Iterable, List, Optional
 
 from .._classdef import Containers, TypeMessage, VoteInfo
-from .._classdef.contents import FragAt, FragEmoji, FragLink, FragmentUnknown, FragText, TypeFragment, TypeFragText
+from .._classdef.contents import FragAt, FragEmoji, FragVideo, FragLink, FragmentUnknown, FragText, TypeFragment, \
+    TypeFragText
 
 FragAt_pf = FragAt
 FragEmoji_pf = FragEmoji
+FragVideo_pf = FragVideo
 FragLink_pf = FragLink
 FragmentUnknown_pf = FragmentUnknown
 FragText_pf = FragText
@@ -556,6 +558,7 @@ class Contents_pf(Containers[TypeFragment]):
         texts (list[TypeFragText]): 纯文本碎片列表
         emojis (list[FragEmoji_pf]): 表情碎片列表
         imgs (list[FragImage_pf]): 图像碎片列表
+        videos (list[FragVideo_pf]): 视频碎片列表
         ats (list[FragAt_pf]): @碎片列表
         links (list[FragLink_pf]): 链接碎片列表
 
@@ -568,6 +571,7 @@ class Contents_pf(Containers[TypeFragment]):
         '_texts',
         '_emojis',
         '_imgs',
+        '_videos',
         '_ats',
         '_links',
         '_has_voice',
@@ -596,7 +600,8 @@ class Contents_pf(Containers[TypeFragment]):
                 self._links.append(fragment)
                 self._texts.append(fragment)
             elif _type == 5:  # video
-                fragment = FragmentUnknown_pf()
+                fragment = FragVideo_pf(proto)
+                self._videos.append(fragment)
                 self._has_video = True
             elif _type == 10:
                 fragment = FragmentUnknown_pf()
@@ -614,6 +619,7 @@ class Contents_pf(Containers[TypeFragment]):
         self._links = []
         self._imgs = []
         self._emojis = []
+        self._videos = []
         self._ats = []
         self._has_voice = False
         self._has_video = False
@@ -627,6 +633,7 @@ class Contents_pf(Containers[TypeFragment]):
         self._text = ""
         self._texts = []
         self._emojis = []
+        self._videos = []
         self._imgs = []
         self._ats = []
         self._links = []
@@ -670,6 +677,14 @@ class Contents_pf(Containers[TypeFragment]):
         """
 
         return self._imgs
+
+    @property
+    def videos(self) -> List[FragVideo_pf]:
+        """
+        视频碎片列表
+        """
+
+        return self._videos
 
     @property
     def ats(self) -> List[FragAt_pf]:

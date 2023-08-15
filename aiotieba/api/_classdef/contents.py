@@ -312,6 +312,148 @@ class TypeFragAt(Protocol):
         ...
 
 
+class FragVideo(object):
+    """
+    视频碎片
+
+    Attributes:
+        text (str): 视频页面链接
+        src (str): 视频链接
+        thumb_src (str): 缩略图链接
+        width (int): 视频画面宽度
+        height (int): 视频画面高度
+        size (int): 视频体积大小
+    """
+
+    __slots__ = [
+        '_text',
+        '_src',
+        '_thumb_src',
+        '_width',
+        '_height',
+        '_size',
+    ]
+
+    def __init__(self, data_proto: TypeMessage) -> None:
+        self._text = data_proto.text
+        self._src = data_proto.link
+        self._thumb_src = data_proto.src
+        self._size = data_proto.origin_size
+
+        _width, _, _height = data_proto.bsize.partition(',')
+        self._width = int(_width if _width else 0)
+        self._height = int(_height if _height else 0)
+
+    def __repr__(self) -> str:
+        return str(
+            {
+                'text': self._text,
+                'src': self._src,
+                'width': self._width,
+                'height': self._height,
+            }
+        )
+
+    @property
+    def text(self) -> str:
+        """
+        视频页面链接
+        """
+
+        return self._text
+
+    @property
+    def src(self) -> str:
+        """
+        视频链接
+        """
+
+        return self._src
+
+    @property
+    def thumb_src(self) -> str:
+        """
+        缩略图链接
+        """
+
+        return self._thumb_src
+
+    @property
+    def width(self) -> int:
+        """
+        视频画面宽度
+        """
+
+        return self._width
+
+    @property
+    def height(self) -> int:
+        """
+        视频画面高度
+        """
+
+        return self._height
+
+    @property
+    def size(self) -> int:
+        """
+        视频体积大小
+
+        Note:
+            以字节为单位
+        """
+
+        return self._size
+
+
+class TypeFragVideo(Protocol):
+    @property
+    def text(self) -> str:
+        """
+        视频页面链接
+        """
+        ...
+
+    @property
+    def src(self) -> str:
+        """
+        视频链接
+        """
+        ...
+
+    @property
+    def thumb_src(self) -> str:
+        """
+        缩略图链接
+        """
+        ...
+
+    @property
+    def width(self) -> int:
+        """
+        视频画面宽度
+        """
+
+        return self._width
+
+    @property
+    def height(self) -> int:
+        """
+        视频画面高度
+        """
+        ...
+
+    @property
+    def size(self) -> int:
+        """
+        视频体积大小
+
+        Note:
+            以字节为单位
+        """
+        ...
+
+
 class FragLink(object):
     """
     链接碎片

@@ -95,6 +95,9 @@ async def test_Posts(client: tb.Client):
     # FragVoice
     assert post.contents.has_voice is True
 
+    # FragVideo
+    assert post.contents.has_video is False
+
     # FragImage
     frag = post.contents.imgs[0]
     assert frag.src != ''
@@ -128,6 +131,61 @@ async def test_Posts(client: tb.Client):
     assert frag.url.host == "stackoverflow.com"
     assert frag.is_external is True
 
+    # Posts with video
+    posts = await client.get_posts(7544266790)
+
+    ##### Forum_p #####
+    forum = posts.forum
+    assert forum.fid == 27738629
+    assert forum.fname == '贴吧视频号'
+    assert forum.member_num > 0
+    assert forum.post_num > 0
+
+    ##### Thread_p #####
+    thread = posts.thread
+
+    ##### Post #####
+    assert len(posts) >= 2
+    post = posts[0]
+
+    # UserInfo_p
+    user = post.user
+    assert user.user_id > 0
+    assert user.portrait != ''
+    assert user.user_name != ''
+    assert user.nick_name_new != ''
+    assert user.show_name == user.nick_name_new
+    assert user.level > 0
+    assert user.glevel > 0
+    assert user.ip != ''
+    assert user.priv_like != 0
+    assert user.priv_reply != 0
+
+    # Post
+    assert post.text != ''
+    assert post.fid > 0
+    assert post.fname != ''
+    assert post.tid > 0
+    assert post.pid > 0
+    assert post.author_id == user.user_id
+    assert post.floor > 0
+    assert post.reply_num == 0
+    assert post.create_time > 0
+    assert post.is_thread_author == (post.author_id == thread.author_id)
+
+    # FragText
+    frag = post.contents.texts[0]
+    assert frag.text != ''
+
+    # FragVideo
+    assert post.contents.has_video is True
+    frag = post.contents.videos[0]
+    assert frag.text != ''
+    assert frag.src != ''
+    assert frag.thumb_src != ''
+    assert frag.width == 1920
+    assert frag.height == 1080
+    assert frag.size > 0
 
 @pytest.mark.flaky(reruns=3, reruns_delay=2.0)
 @pytest.mark.asyncio
