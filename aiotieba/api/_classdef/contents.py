@@ -314,7 +314,7 @@ class TypeFragAt(Protocol):
 
 class FragVoice(object):
     """
-    视频碎片
+    音频碎片
 
     Attributes:
         md5 (str): 音频 md5

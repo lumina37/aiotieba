@@ -148,7 +148,7 @@ async def test_Threads(client: tb.Client):
 
             # FragVideo
             assert thread.contents.has_video is True
-            frag = thread.contents.videos[0]
+            frag = thread.contents.video
             assert frag.text != ''
             assert frag.src == ''
             assert frag.thumb_src == ''

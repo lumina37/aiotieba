@@ -161,8 +161,8 @@ class Contents_p(Containers[TypeFragment]):
         texts (list[TypeFragText]): 纯文本碎片列表
         emojis (list[FragEmoji_p]): 表情碎片列表
         imgs (list[FragImage_p]): 图像碎片列表
-        voices (list[FragVoice_p]): 音頻碎片列表
-        videos (list[FragVideo_p]): 视频碎片列表
+        voice (FragVoice_p): 音频碎片
+        video (FragVideo_p): 视频碎片
         ats (list[FragAt_p]): @碎片列表
         links (list[FragLink_p]): 链接碎片列表
         tiebapluses (list[FragTiebaPlus_p]): 贴吧plus碎片列表
@@ -176,8 +176,8 @@ class Contents_p(Containers[TypeFragment]):
         '_texts',
         '_emojis',
         '_imgs',
-        '_voices',
-        '_videos',
+        '_voice',
+        '_video',
         '_ats',
         '_links',
         '_tiebapluses',
@@ -210,11 +210,11 @@ class Contents_p(Containers[TypeFragment]):
                 self._texts.append(fragment)
             elif _type == 10:
                 fragment = FragVoice_p(proto)
-                self._voices.append(fragment)
+                self._voice = fragment
                 self._has_voice = True
             elif _type == 5:  # video
                 fragment = FragVideo_p(proto)
-                self._videos.append(fragment)
+                self._video = fragment
                 self._has_video = True
             # 35|36:tid=7769728331 / 37:tid=7760184147
             elif _type in [35, 36, 37]:
@@ -234,8 +234,8 @@ class Contents_p(Containers[TypeFragment]):
         self._links = []
         self._imgs = []
         self._emojis = []
-        self._voices = []
-        self._videos = []
+        self._voice = None
+        self._video = None
         self._ats = []
         self._tiebapluses = []
         self._has_voice = False
@@ -251,8 +251,8 @@ class Contents_p(Containers[TypeFragment]):
         self._texts = []
         self._emojis = []
         self._imgs = []
-        self._voices = []
-        self._videos = []
+        self._voice = None
+        self._video = None
         self._ats = []
         self._links = []
         self._tiebapluses = []
@@ -298,20 +298,20 @@ class Contents_p(Containers[TypeFragment]):
         return self._imgs
 
     @property
-    def videos(self) -> List[FragVideo_p]:
+    def video(self) -> FragVideo_p:
         """
-        视频碎片列表
+        视频碎片
         """
 
-        return self._videos
+        return self._video
 
     @property
-    def voices(self) -> List[FragVoice_p]:
+    def voice(self) -> FragVoice_p:
         """
-        视频碎片列表
+        视频碎片
         """
 
-        return self._voices
+        return self._voice
 
     @property
     def ats(self) -> List[FragAt_p]:
@@ -365,7 +365,7 @@ class Contents_pc(Containers[TypeFragment]):
 
         texts (list[TypeFragText]): 纯文本碎片列表
         emojis (list[FragEmoji_pc]): 表情碎片列表
-        voices (list[FragVoice_pc]): 音頻碎片列表
+        voice (FragVoice_pc): 音频碎片
         ats (list[FragAt_pc]): @碎片列表
         links (list[FragLink_pc]): 链接碎片列表
         tiebapluses (list[FragTiebaPlus_pc]): 贴吧plus碎片列表
@@ -377,7 +377,7 @@ class Contents_pc(Containers[TypeFragment]):
         '_text',
         '_texts',
         '_emojis',
-        '_voices',
+        '_voice',
         '_ats',
         '_links',
         '_tiebapluses',
@@ -405,7 +405,7 @@ class Contents_pc(Containers[TypeFragment]):
                 self._texts.append(fragment)
             elif _type == 10:
                 fragment = FragVoice_pc(proto)
-                self._voices.append(fragment)
+                self._voice = fragment
                 self._has_voice = True
             # 35|36:tid=7769728331 / 37:tid=7760184147
             elif _type in [35, 36, 37]:
@@ -424,7 +424,7 @@ class Contents_pc(Containers[TypeFragment]):
         self._texts = []
         self._links = []
         self._emojis = []
-        self._voices = []
+        self._voice = None
         self._ats = []
         self._tiebapluses = []
         self._has_voice = False
@@ -438,7 +438,7 @@ class Contents_pc(Containers[TypeFragment]):
         self._text = ""
         self._texts = []
         self._emojis = []
-        self._voices = []
+        self._voice = None
         self._ats = []
         self._links = []
         self._tiebapluses = []
@@ -475,12 +475,12 @@ class Contents_pc(Containers[TypeFragment]):
         return self._emojis
 
     @property
-    def voices(self) -> List[FragVoice_pc]:
+    def voice(self) -> FragVoice_pc:
         """
-        视频碎片列表
+        音频碎片
         """
 
-        return self._voices
+        return self._voice
 
     @property
     def ats(self) -> List[FragAt_pc]:
@@ -1522,7 +1522,7 @@ class Contents_pt(Containers[TypeFragment]):
         texts (list[TypeFragText]): 纯文本碎片列表
         emojis (list[FragEmoji_pt]): 表情碎片列表
         imgs (list[FragImage_pt]): 图像碎片列表
-        videos (list[FragVideo_pt]): 视频碎片列表
+        video (FragVideo_pt): 视频碎片
         ats (list[FragAt_pt]): @碎片列表
         links (list[FragLink_pt]): 链接碎片列表
         tiebapluses (list[FragTiebaPlus_pt]): 贴吧plus碎片列表
@@ -1536,7 +1536,7 @@ class Contents_pt(Containers[TypeFragment]):
         '_texts',
         '_emojis',
         '_imgs',
-        '_videos',
+        '_video',
         '_ats',
         '_links',
         '_tiebapluses',
@@ -1565,7 +1565,7 @@ class Contents_pt(Containers[TypeFragment]):
                 self._texts.append(fragment)
             elif _type == 5:  # video
                 fragment = FragVideo_pt(proto)
-                self._videos.append(fragment)
+                self._video = fragment
                 self._has_video = True
             # 35|36:tid=7769728331 / 37:tid=7760184147
             elif _type in [35, 36, 37]:
@@ -1584,7 +1584,7 @@ class Contents_pt(Containers[TypeFragment]):
         self._texts = []
         self._links = []
         self._emojis = []
-        self._videos = []
+        self._video = None
         self._ats = []
         self._tiebapluses = []
         self._has_voice = False
@@ -1600,7 +1600,7 @@ class Contents_pt(Containers[TypeFragment]):
         self._texts = []
         self._emojis = []
         self._imgs = []
-        self._videos = []
+        self._video = None
         self._ats = []
         self._links = []
         self._tiebapluses = []
@@ -1646,12 +1646,12 @@ class Contents_pt(Containers[TypeFragment]):
         return self._imgs
 
     @property
-    def videos(self) -> List[FragVideo_pt]:
+    def video(self) -> FragVideo_pt:
         """
-        视频碎片列表
+        视频碎片
         """
 
-        return self._videos
+        return self._video
 
     @property
     def ats(self) -> List[FragAt_pt]:

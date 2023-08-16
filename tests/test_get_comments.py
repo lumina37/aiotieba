@@ -72,7 +72,7 @@ async def test_Comments(client: tb.Client):
 
     # FragVoice
     assert post.contents.has_voice is True
-    frag = post.contents.voices[0]
+    frag = post.contents.voice
     assert frag.name != ''
     assert frag.md5 != ''
     assert frag.id != ''
@@ -139,7 +139,7 @@ async def test_Comments(client: tb.Client):
 
     # FragVoice
     assert comment.contents.has_voice is True
-    frag = comment.contents.voices[0]
+    frag = comment.contents.voice
     assert frag.name != ''
     assert frag.md5 != ''
     assert frag.id != ''

@@ -94,7 +94,7 @@ async def test_Posts(client: tb.Client):
 
     # FragVoice
     assert post.contents.has_voice is True
-    frag = post.contents.voices[0]
+    frag = post.contents.voice
     assert frag.name != ''
     assert frag.md5 != ''
     assert frag.id != ''
@@ -183,7 +183,7 @@ async def test_Posts(client: tb.Client):
 
     # FragVideo
     assert post.contents.has_video is True
-    frag = post.contents.videos[0]
+    frag = post.contents.video
     assert frag.text != ''
     assert frag.src != ''
     assert frag.thumb_src != ''
