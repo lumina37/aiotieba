@@ -450,7 +450,7 @@ class Reply(object):
                 'tid': self._tid,
                 'pid': self._pid,
                 'user': self._user.log_name,
-                'text': self.text,
+                'text': self._text,
                 'post_user': self._post_user.log_name,
                 'thread_user': self._thread_user.log_name,
                 'is_comment': self._is_comment,

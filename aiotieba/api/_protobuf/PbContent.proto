@@ -11,9 +11,13 @@ message PbContent {
     string big_cdn_src = 9;
     string c = 11;
     string voice_md5 = 12;
+    uint32 during_time = 13;
     int64 uid = 15;
+    uint32 width = 18;
+    uint32 height = 19;
     string origin_src = 25;
     uint32 origin_size = 27;
+    int32 count = 28;
     message TiebaPlusInfo {
         string title = 1;
         string desc = 2;

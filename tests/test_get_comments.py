@@ -71,11 +71,9 @@ async def test_Comments(client: tb.Client):
     assert frag.user_id > 0
 
     # FragVoice
-    assert post.contents.has_voice is True
-    frag = post.contents.voices[0]
-    assert frag.name != ''
+    frag = post.contents.voice
     assert frag.md5 != ''
-    assert frag.id != ''
+    assert frag.duration > 0
 
     # FragImage
     frag = post.contents.imgs[0]
@@ -89,8 +87,7 @@ async def test_Comments(client: tb.Client):
     # FragEmoji
     frag = post.contents.emojis[0]
     assert frag.desc != ''
-    assert frag.src == ''
-    assert frag.text == 'image_emoticon3'
+    assert frag.id == 'image_emoticon3'
 
     # FragTiebaplus
     frag = post.contents.tiebapluses[0]
@@ -138,11 +135,9 @@ async def test_Comments(client: tb.Client):
     assert frag.user_id > 0
 
     # FragVoice
-    assert comment.contents.has_voice is True
-    frag = comment.contents.voices[0]
-    assert frag.name != ''
+    frag = comment.contents.voice
     assert frag.md5 != ''
-    assert frag.id != ''
+    assert frag.duration > 0
 
     # FragEmoji
     frag = comment.contents.emojis[0]

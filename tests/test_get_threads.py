@@ -66,10 +66,9 @@ async def test_Threads(client: tb.Client):
             assert frag.user_id > 0
 
             # FragVoice
-            assert thread.contents.has_voice is True
-
-            # FragVideo
-            assert thread.contents.has_video is False
+            frag = thread.contents.voice
+            assert frag.md5 != ''
+            assert frag.duration > 0
 
             # FragImage
             frag = thread.contents.imgs[0]
@@ -82,9 +81,8 @@ async def test_Threads(client: tb.Client):
 
             # FragEmoji
             frag = thread.contents.emojis[0]
+            assert frag.id == 'image_emoticon2'
             assert frag.desc != ''
-            assert frag.src == ''
-            assert frag.text == 'image_emoticon2'
 
             # FragTiebaplus
             frag = thread.contents.tiebapluses[0]
@@ -104,7 +102,7 @@ async def test_Threads(client: tb.Client):
             assert frag.is_external is True
 
         # Share Thread
-        elif thread.tid == 7905926315:
+        elif thread.tid == 8213449397:
             sthread = thread.share_origin
 
             # FragText
@@ -123,10 +121,9 @@ async def test_Threads(client: tb.Client):
             assert frag.is_external is False
 
             # FragVoice
-            assert sthread.contents.has_voice is True
-
-            # FragVideo
-            assert thread.contents.has_video is False
+            frag = sthread.contents.voice
+            assert frag.md5 != ''
+            assert frag.duration > 0
 
             # FragImage
             frag = sthread.contents.imgs[0]
@@ -144,14 +141,15 @@ async def test_Threads(client: tb.Client):
             assert option.vote_num > 0
             assert option.text != ''
 
-        elif thread.tid == 972664850:
+        # Share Video
+        elif thread.tid == 8553772146:
+            sthread = thread.share_origin
 
             # FragVideo
-            assert thread.contents.has_video is True
-            frag = thread.contents.videos[0]
-            assert frag.text != ''
-            assert frag.src == ''
-            assert frag.thumb_src == ''
-            assert frag.width == 0
-            assert frag.height == 0
-            assert frag.size == 0
+            frag = sthread.contents.video
+            assert frag.src != ''
+            assert frag.cover_src != ''
+            assert frag.duration > 0
+            assert frag.width > 0
+            assert frag.height > 0
+            assert frag.view_num > 0

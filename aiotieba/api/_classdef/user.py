@@ -47,9 +47,9 @@ class UserInfo(object):
     def __repr__(self) -> str:
         return str(
             {
-                'user_id': self.user_id,
-                'user_name': self.user_name,
-                'portrait': self.portrait,
+                'user_id': self._user_id,
+                'user_name': self._user_name,
+                'portrait': self._portrait,
             }
         )
 

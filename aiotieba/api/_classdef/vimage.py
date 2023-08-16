@@ -31,8 +31,8 @@ class VirtualImage(object):
     def __repr__(self) -> str:
         return str(
             {
-                'enabled': self.enabled,
-                'state': self.state,
+                'enabled': self._enabled,
+                'state': self._state,
             }
         )
 
