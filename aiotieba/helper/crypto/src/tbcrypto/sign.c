@@ -40,7 +40,6 @@ PyObject* sign(TBC_UNUSED PyObject* self, PyObject* args)
     mbedtls_md5_init(&md5Ctx);
     mbedtls_md5_starts(&md5Ctx);
     char itoaBuffer[20];
-    const unsigned char equal = '=';
 
     for (Py_ssize_t iList = 0; iList < listSize; iList++) {
         PyObject* item = PyList_GET_ITEM(items, iList);
@@ -55,12 +54,15 @@ PyObject* sign(TBC_UNUSED PyObject* self, PyObject* args)
             return NULL; // IndexError
         }
 
-        const char* key;
+        char* key;
         size_t keySize;
         __tbc_pyStr2UTF8(&key, &keySize, pyoKey);
-        mbedtls_md5_update(&md5Ctx, (unsigned char*)key, keySize);
 
-        mbedtls_md5_update(&md5Ctx, &equal, sizeof(equal));
+        // Warn: The last NULL is replaced by '=', DO NOT use `strlen` or similar method over `key` after this operation!
+        key[keySize] = '=';
+        keySize++;
+
+        mbedtls_md5_update(&md5Ctx, (unsigned char*)key, keySize);
 
         PyObject* pyoVal = PyTuple_GetItem(item, 1);
         if (!pyoVal) {
