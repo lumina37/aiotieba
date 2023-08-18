@@ -25,6 +25,10 @@ static inline void __tbc_pyStr2UTF8(const char** dst, size_t* dstSize, PyObject*
 PyObject* sign(TBC_UNUSED PyObject* self, PyObject* args)
 {
     PyObject* items;
+
+#ifdef TBC_NO_CHECK
+    PyArg_ParseTuple(args, "O", &items);
+#else
     if (!PyArg_ParseTuple(args, "O", &items)) {
         PyErr_SetString(PyExc_TypeError, "Failed to parse args");
         return NULL;
@@ -33,6 +37,7 @@ PyObject* sign(TBC_UNUSED PyObject* self, PyObject* args)
         PyErr_SetString(PyExc_TypeError, "Input should be List[Tuple[str, str | int]]]");
         return NULL;
     }
+#endif
 
     Py_ssize_t listSize = PyList_GET_SIZE(items);
 
@@ -44,45 +49,63 @@ PyObject* sign(TBC_UNUSED PyObject* self, PyObject* args)
     for (Py_ssize_t iList = 0; iList < listSize; iList++) {
         PyObject* item = PyList_GET_ITEM(items, iList);
 
+#ifndef TBC_NO_CHECK
         if (!PyTuple_Check(item)) {
             PyErr_SetString(PyExc_TypeError, "List item should be Tuple[str, str | int]");
             return NULL;
         }
+#endif
 
+#ifdef TBC_NO_CHECK
+        PyObject* pyoKey = PyTuple_GET_ITEM(item, 0);
+#else
         PyObject* pyoKey = PyTuple_GetItem(item, 0);
         if (!pyoKey) {
             return NULL; // IndexError
         }
+#endif
 
         char* key;
         size_t keySize;
-        __tbc_pyStr2UTF8(&key, &keySize, pyoKey);
+        __tbc_pyStr2UTF8((const char**)&key, &keySize, pyoKey);
 
-        // Warn: The last NULL is replaced by '=', DO NOT use `strlen` or similar method over `key` after this operation!
+        // Warn: The last NULL is replaced by '=', DO NOT use `strlen` or similar method over `key` afterwards!
         key[keySize] = '=';
         keySize++;
 
         mbedtls_md5_update(&md5Ctx, (unsigned char*)key, keySize);
 
+#ifdef TBC_NO_CHECK
+        PyObject* pyoVal = PyTuple_GET_ITEM(item, 1);
+#else
         PyObject* pyoVal = PyTuple_GetItem(item, 1);
         if (!pyoVal) {
             return NULL; // IndexError
         }
-
+#endif
         if (PyUnicode_Check(pyoVal)) {
             const char* val;
             size_t valSize;
             __tbc_pyStr2UTF8(&val, &valSize, pyoVal);
             mbedtls_md5_update(&md5Ctx, (unsigned char*)val, valSize);
-        } else if (PyLong_Check(pyoVal)) {
-            int64_t ival = PyLong_AsLongLong(pyoVal);
-            char* val = itoaBuffer;
-            char* valEnd = i64toa(ival, val);
-            size_t valSize = valEnd - val;
-            mbedtls_md5_update(&md5Ctx, (unsigned char*)val, valSize);
         } else {
-            PyErr_SetString(PyExc_TypeError, "item[1] should be str or int");
-            return NULL;
+
+#ifndef TBC_NO_CHECK
+            if (PyLong_Check(pyoVal)) {
+#endif
+
+                int64_t ival = PyLong_AsLongLong(pyoVal);
+                char* val = itoaBuffer;
+                char* valEnd = i64toa(ival, val);
+                size_t valSize = valEnd - val;
+                mbedtls_md5_update(&md5Ctx, (unsigned char*)val, valSize);
+
+#ifndef TBC_NO_CHECK
+            } else {
+                PyErr_SetString(PyExc_TypeError, "item[1] should be str or int");
+                return NULL;
+            }
+#endif
         }
     }
 
