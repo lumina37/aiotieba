@@ -74,7 +74,7 @@ async def request(http_core: HttpCore):
     res_data = binascii.a2b_base64(res_json['data'])
     res_data = unpad(aes_chiper.decrypt(res_data)[:-16], AES.block_size)  # [:-16] remove md5
     res_data = res_data.decode('utf-8')
-    del res_json  # enable reuse of json parser
+    del res_json  # to reuse json parser
     res_data = parse_json(res_data)
     zid = res_data['token']
 

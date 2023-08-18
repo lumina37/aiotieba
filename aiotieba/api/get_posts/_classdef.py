@@ -1,30 +1,28 @@
-from typing import Iterable, List, Optional
+from typing import List, Optional
 
 from ...helper import removeprefix
 from .._classdef import Containers, TypeMessage, VirtualImage, VoteInfo
 from .._classdef.contents import (
     FragAt,
     FragEmoji,
-    FragVoice,
-    FragVideo,
     FragLink,
-    FragmentUnknown,
     FragText,
     FragTiebaPlus,
+    FragVideo,
+    FragVoice,
     TypeFragment,
     TypeFragText,
 )
 
 VirtualImage_p = VirtualImage
 
-FragAt_p = FragAt_pt = FragAt_pc = FragAt
-FragEmoji_p = FragEmoji_pt = FragEmoji_pc = FragEmoji
-FragVoice_p = FragVoice_pt = FragVoice_pc = FragVoice
-FragVideo_p = FragVideo_pt = FragVideo
-FragLink_p = FragLink_pt = FragLink_pc = FragLink
-FragmentUnknown_p = FragmentUnknown_pt = FragmentUnknown_pc = FragmentUnknown
 FragText_p = FragText_pt = FragText_pc = FragText
+FragEmoji_p = FragEmoji_pt = FragEmoji_pc = FragEmoji
+FragAt_p = FragAt_pt = FragAt_pc = FragAt
+FragLink_p = FragLink_pt = FragLink_pc = FragLink
 FragTiebaPlus_p = FragTiebaPlus_pt = FragTiebaPlus_pc = FragTiebaPlus
+FragVideo_pt = FragVideo
+FragVoice_p = FragVoice_pt = FragVoice_pc = FragVoice
 
 
 class FragImage_p(object):
@@ -149,6 +147,111 @@ class FragImage_p(object):
         return self._hash
 
 
+class FragVideo_p(object):
+    """
+    视频碎片
+
+    Attributes:
+        src (str): 视频链接
+        cover_src (str): 封面链接
+        player_src (str): 播放页链接
+        duration (int): 视频长度
+        width (int): 视频宽度
+        height (int): 视频高度
+        view_num (int): 浏览次数
+    """
+
+    __slots__ = [
+        '_src',
+        '_cover_src',
+        '_duration',
+        '_width',
+        '_height',
+        '_view_num',
+    ]
+
+    def _init(self, data_proto: TypeMessage) -> "FragVideo_p":
+        self._src = data_proto.link
+        self._cover_src = data_proto.src
+        self._duration = data_proto.during_time
+        self._width = data_proto.width
+        self._height = data_proto.height
+        self._view_num = data_proto.count
+        return self
+
+    def _init_null(self) -> "FragVideo_p":
+        self._src = ''
+        self._cover_src = ''
+        self._duration = 0
+        self._width = 0
+        self._height = 0
+        self._view_num = 0
+        return self
+
+    def __repr__(self) -> str:
+        return str(
+            {
+                'cover_src': self._cover_src,
+                'width': self._width,
+                'height': self._height,
+            }
+        )
+
+    def __bool__(self) -> bool:
+        return bool(self._width)
+
+    @property
+    def src(self) -> str:
+        """
+        视频链接
+        """
+
+        return self._src
+
+    @property
+    def cover_src(self) -> str:
+        """
+        封面链接
+        """
+
+        return self._cover_src
+
+    @property
+    def duration(self) -> int:
+        """
+        视频长度
+
+        Note:
+            以秒为单位
+        """
+
+        return self._duration
+
+    @property
+    def width(self) -> int:
+        """
+        视频宽度
+        """
+
+        return self._width
+
+    @property
+    def height(self) -> int:
+        """
+        视频高度
+        """
+
+        return self._height
+
+    @property
+    def view_num(self) -> int:
+        """
+        浏览次数
+        """
+
+        return self._view_num
+
+
 class Contents_p(Containers[TypeFragment]):
     """
     内容碎片列表
@@ -161,14 +264,11 @@ class Contents_p(Containers[TypeFragment]):
         texts (list[TypeFragText]): 纯文本碎片列表
         emojis (list[FragEmoji_p]): 表情碎片列表
         imgs (list[FragImage_p]): 图像碎片列表
-        voices (list[FragVoice_p]): 音頻碎片列表
-        videos (list[FragVideo_p]): 视频碎片列表
         ats (list[FragAt_p]): @碎片列表
         links (list[FragLink_p]): 链接碎片列表
         tiebapluses (list[FragTiebaPlus_p]): 贴吧plus碎片列表
-
-        has_voice (bool): 是否包含音频
-        has_video (bool): 是否包含视频
+        voice (FragVoice_p): 音频碎片
+        video (FragVideo_p): 视频碎片
     """
 
     __slots__ = [
@@ -176,73 +276,73 @@ class Contents_p(Containers[TypeFragment]):
         '_texts',
         '_emojis',
         '_imgs',
-        '_voices',
-        '_videos',
         '_ats',
         '_links',
         '_tiebapluses',
-        '_has_voice',
-        '_has_video'
+        '_voice',
+        '_video',
     ]
 
-    def _init(self, protos: Iterable[TypeMessage]) -> "Contents_p":
-        def _init_by_type(proto):
-            _type = proto.type
-            # 0纯文本 9电话号 18话题 27百科词条
-            if _type in [0, 9, 18, 27]:
-                fragment = FragText_p(proto)
-                self._texts.append(fragment)
-            # 11:tid=5047676428
-            elif _type in [2, 11]:
-                fragment = FragEmoji_p(proto)
-                self._emojis.append(fragment)
-            # 20:tid=5470214675
-            elif _type in [3, 20]:
-                fragment = FragImage_p(proto)
-                self._imgs.append(fragment)
-            elif _type == 4:
-                fragment = FragAt_p(proto)
-                self._ats.append(fragment)
-                self._texts.append(fragment)
-            elif _type == 1:
-                fragment = FragLink_p(proto)
-                self._links.append(fragment)
-                self._texts.append(fragment)
-            elif _type == 10:
-                fragment = FragVoice_p(proto)
-                self._voices.append(fragment)
-                self._has_voice = True
-            elif _type == 5:  # video
-                fragment = FragVideo_p(proto)
-                self._videos.append(fragment)
-                self._has_video = True
-            # 35|36:tid=7769728331 / 37:tid=7760184147
-            elif _type in [35, 36, 37]:
-                fragment = FragTiebaPlus_p(proto)
-                self._tiebapluses.append(fragment)
-                self._texts.append(fragment)
-            else:
-                fragment = FragmentUnknown_p(proto)
-                from ...logging import get_logger as LOG
+    def _init(self, data_proto: TypeMessage) -> "Contents_p":
+        content_protos = data_proto.content
 
-                LOG().warning(f"Unknown fragment type. type={_type} frag={fragment}")
+        def _frags():
+            for proto in content_protos:
+                _type = proto.type
+                # 0纯文本 9电话号 18话题 27百科词条
+                if _type in [0, 9, 18, 27]:
+                    frag = FragText_p(proto)
+                    self._texts.append(frag)
+                    yield frag
+                # 11:tid=5047676428
+                elif _type in [2, 11]:
+                    frag = FragEmoji_p(proto)
+                    self._emojis.append(frag)
+                    yield frag
+                # 20:tid=5470214675
+                elif _type in [3, 20]:
+                    frag = FragImage_p(proto)
+                    self._imgs.append(frag)
+                    yield frag
+                elif _type == 4:
+                    frag = FragAt_p(proto)
+                    self._ats.append(frag)
+                    self._texts.append(frag)
+                    yield frag
+                elif _type == 1:
+                    frag = FragLink_p(proto)
+                    self._links.append(frag)
+                    self._texts.append(frag)
+                    yield frag
+                elif _type == 10:  # voice
+                    frag = FragVoice_p()._init(proto)
+                    self._voice = frag
+                    yield frag
+                elif _type == 5:  # video
+                    frag = FragVideo_p()._init(proto)
+                    self._video = frag
+                    yield frag
+                # 35|36:tid=7769728331 / 37:tid=7760184147
+                elif _type in [35, 36, 37]:
+                    frag = FragTiebaPlus_p(proto)
+                    self._tiebapluses.append(frag)
+                    self._texts.append(frag)
+                    yield frag
+                else:
+                    from ...logging import get_logger as LOG
 
-            return fragment
+                    LOG().warning(f"Unknown fragment type. type={_type} frag={frag}")
 
         self._text = None
         self._texts = []
-        self._links = []
-        self._imgs = []
         self._emojis = []
-        self._voices = []
-        self._videos = []
+        self._imgs = []
         self._ats = []
+        self._links = []
         self._tiebapluses = []
-        self._has_voice = False
-        self._has_video = False
-
-        self._objs = [_init_by_type(p) for p in protos]
-
+        self._voice = FragVoice_p()._init_null()
+        self._video = FragVideo_p()._init_null()
+        self._objs = list(_frags())
         return self
 
     def _init_null(self) -> "Contents_p":
@@ -251,13 +351,11 @@ class Contents_p(Containers[TypeFragment]):
         self._texts = []
         self._emojis = []
         self._imgs = []
-        self._voices = []
-        self._videos = []
         self._ats = []
         self._links = []
         self._tiebapluses = []
-        self._has_voice = False
-        self._has_video = False
+        self._voice = FragVoice_p()._init_null()
+        self._video = FragVideo_p()._init_null()
         return self
 
     def __repr__(self) -> str:
@@ -298,22 +396,6 @@ class Contents_p(Containers[TypeFragment]):
         return self._imgs
 
     @property
-    def videos(self) -> List[FragVideo_p]:
-        """
-        视频碎片列表
-        """
-
-        return self._videos
-
-    @property
-    def voices(self) -> List[FragVoice_p]:
-        """
-        视频碎片列表
-        """
-
-        return self._voices
-
-    @property
     def ats(self) -> List[FragAt_p]:
         """
         @碎片列表
@@ -338,20 +420,20 @@ class Contents_p(Containers[TypeFragment]):
         return self._tiebapluses
 
     @property
-    def has_voice(self) -> bool:
+    def voice(self) -> FragVoice_p:
         """
-        是否包含音频
+        音频碎片
         """
 
-        return self._has_voice
+        return self._voice
 
     @property
-    def has_video(self) -> bool:
+    def video(self) -> FragVideo_p:
         """
-        是否包含视频
+        视频碎片
         """
 
-        return self._has_video
+        return self._video
 
 
 class Contents_pc(Containers[TypeFragment]):
@@ -365,72 +447,71 @@ class Contents_pc(Containers[TypeFragment]):
 
         texts (list[TypeFragText]): 纯文本碎片列表
         emojis (list[FragEmoji_pc]): 表情碎片列表
-        voices (list[FragVoice_pc]): 音頻碎片列表
         ats (list[FragAt_pc]): @碎片列表
         links (list[FragLink_pc]): 链接碎片列表
         tiebapluses (list[FragTiebaPlus_pc]): 贴吧plus碎片列表
-
-        has_voice (bool): 是否包含音频
+        voice (FragVoice_pc): 音频碎片
     """
 
     __slots__ = [
         '_text',
         '_texts',
         '_emojis',
-        '_voices',
         '_ats',
         '_links',
         '_tiebapluses',
-        '_has_voice',
+        '_voice',
     ]
 
-    def _init(self, protos: Iterable[TypeMessage]) -> "Contents_pc":
-        def _init_by_type(proto):
-            _type = proto.type
-            # 0纯文本 9电话号 18话题 27百科词条
-            if _type in [0, 9, 18, 27]:
-                fragment = FragText_pc(proto)
-                self._texts.append(fragment)
-            # 11:tid=5047676428
-            elif _type in [2, 11]:
-                fragment = FragEmoji_pc(proto)
-                self._emojis.append(fragment)
-            elif _type == 4:
-                fragment = FragAt_pc(proto)
-                self._ats.append(fragment)
-                self._texts.append(fragment)
-            elif _type == 1:
-                fragment = FragLink_pc(proto)
-                self._links.append(fragment)
-                self._texts.append(fragment)
-            elif _type == 10:
-                fragment = FragVoice_pc(proto)
-                self._voices.append(fragment)
-                self._has_voice = True
-            # 35|36:tid=7769728331 / 37:tid=7760184147
-            elif _type in [35, 36, 37]:
-                fragment = FragTiebaPlus_pc(proto)
-                self._tiebapluses.append(fragment)
-                self._texts.append(fragment)
-            else:
-                fragment = FragmentUnknown_pc(proto)
-                from ...logging import get_logger as LOG
+    def _init(self, data_proto: TypeMessage) -> "Contents_pc":
+        content_protos = data_proto.content
 
-                LOG().warning(f"Unknown fragment type. type={_type} frag={fragment}")
+        def _frags():
+            for proto in content_protos:
+                _type = proto.type
+                # 0纯文本 9电话号 18话题 27百科词条
+                if _type in [0, 9, 18, 27]:
+                    frag = FragText_pc(proto)
+                    self._texts.append(frag)
+                    yield frag
+                # 11:tid=5047676428
+                elif _type in [2, 11]:
+                    frag = FragEmoji_pc(proto)
+                    self._emojis.append(frag)
+                    yield frag
+                elif _type == 4:
+                    frag = FragAt_pc(proto)
+                    self._ats.append(frag)
+                    self._texts.append(frag)
+                    yield frag
+                elif _type == 1:
+                    frag = FragLink_pc(proto)
+                    self._links.append(frag)
+                    self._texts.append(frag)
+                    yield frag
+                elif _type == 10:  # voice
+                    frag = FragVoice_pc()._init(proto)
+                    self._voice = frag
+                    yield frag
+                # 35|36:tid=7769728331 / 37:tid=7760184147
+                elif _type in [35, 36, 37]:
+                    frag = FragTiebaPlus_pc(proto)
+                    self._tiebapluses.append(frag)
+                    self._texts.append(frag)
+                    yield frag
+                else:
+                    from ...logging import get_logger as LOG
 
-            return fragment
+                    LOG().warning(f"Unknown fragment type. type={_type} frag={frag}")
 
         self._text = None
         self._texts = []
-        self._links = []
         self._emojis = []
-        self._voices = []
         self._ats = []
+        self._links = []
         self._tiebapluses = []
-        self._has_voice = False
-
-        self._objs = [_init_by_type(p) for p in protos]
-
+        self._voice = FragVoice_pc()._init_null()
+        self._objs = list(_frags())
         return self
 
     def _init_null(self) -> "Contents_pc":
@@ -438,11 +519,10 @@ class Contents_pc(Containers[TypeFragment]):
         self._text = ""
         self._texts = []
         self._emojis = []
-        self._voices = []
         self._ats = []
         self._links = []
         self._tiebapluses = []
-        self._has_voice = False
+        self._voice = FragVoice_pc()._init_null()
         return self
 
     def __repr__(self) -> str:
@@ -475,14 +555,6 @@ class Contents_pc(Containers[TypeFragment]):
         return self._emojis
 
     @property
-    def voices(self) -> List[FragVoice_pc]:
-        """
-        视频碎片列表
-        """
-
-        return self._voices
-
-    @property
     def ats(self) -> List[FragAt_pc]:
         """
         @碎片列表
@@ -507,12 +579,12 @@ class Contents_pc(Containers[TypeFragment]):
         return self._tiebapluses
 
     @property
-    def has_voice(self) -> bool:
+    def voice(self) -> FragVoice_pc:
         """
-        是否包含音频
+        音频碎片列表
         """
 
-        return self._has_voice
+        return self._voice
 
 
 class Comment_p(object):
@@ -557,20 +629,19 @@ class Comment_p(object):
     ]
 
     def __init__(self, data_proto: TypeMessage) -> None:
-        contents = Contents_pc()._init(data_proto.content)
+        contents = Contents_pc()._init(data_proto)
 
         self._reply_to_id = 0
         if contents:
             first_frag = contents[0]
             if (
-                len(contents) > 1
-                and isinstance(first_frag, FragText_p)
+                isinstance(first_frag, FragText_p)
                 and first_frag.text == '回复 '
                 and (reply_to_id := data_proto.content[1].uid)
             ):
                 self._reply_to_id = reply_to_id
                 if isinstance(contents[1], FragAt_p):
-                    contents._ats = contents._ats[1:]
+                    del contents._ats[0]
                 contents._objs = contents._objs[2:]
                 contents._texts = contents._texts[2:]
                 if contents.texts:
@@ -1043,7 +1114,7 @@ class Post(object):
 
     def __init__(self, data_proto: TypeMessage) -> None:
         self._text = None
-        self._contents = Contents_p()._init(data_proto.content)
+        self._contents = Contents_p()._init(data_proto)
         self._sign = "".join(p.text for p in data_proto.signature.content if p.type == 0)
         self._comments = [Comment_p(p) for p in data_proto.sub_post_list.sub_post_list]
         self._pid = data_proto.id
@@ -1522,13 +1593,11 @@ class Contents_pt(Containers[TypeFragment]):
         texts (list[TypeFragText]): 纯文本碎片列表
         emojis (list[FragEmoji_pt]): 表情碎片列表
         imgs (list[FragImage_pt]): 图像碎片列表
-        videos (list[FragVideo_pt]): 视频碎片列表
         ats (list[FragAt_pt]): @碎片列表
         links (list[FragLink_pt]): 链接碎片列表
         tiebapluses (list[FragTiebaPlus_pt]): 贴吧plus碎片列表
-
-        has_voice (bool): 是否包含音频
-        has_video (bool): 是否包含视频
+        video (FragVideo_pt): 视频碎片
+        voice (FragVoice_pt): 视频碎片
     """
 
     __slots__ = [
@@ -1536,61 +1605,74 @@ class Contents_pt(Containers[TypeFragment]):
         '_texts',
         '_emojis',
         '_imgs',
-        '_videos',
         '_ats',
         '_links',
         '_tiebapluses',
-        '_has_voice',
-        '_has_video',
+        '_video',
+        '_voice',
     ]
 
-    def _init(self, protos: Iterable[TypeMessage]) -> "Contents_pt":
-        def _init_by_type(proto) -> TypeFragment:
-            _type = proto.type
-            # 0纯文本 9电话号 18话题 27百科词条
-            if _type in [0, 9, 18, 27]:
-                fragment = FragText_pt(proto)
-                self._texts.append(fragment)
-            # 11:tid=5047676428
-            elif _type in [2, 11]:
-                fragment = FragEmoji_pt(proto)
-                self._emojis.append(fragment)
-            elif _type == 4:
-                fragment = FragAt_pt(proto)
-                self._ats.append(fragment)
-                self._texts.append(fragment)
-            elif _type == 1:
-                fragment = FragLink_pt(proto)
-                self._links.append(fragment)
-                self._texts.append(fragment)
-            elif _type == 5:  # video
-                fragment = FragVideo_pt(proto)
-                self._videos.append(fragment)
-                self._has_video = True
-            # 35|36:tid=7769728331 / 37:tid=7760184147
-            elif _type in [35, 36, 37]:
-                fragment = FragTiebaPlus_pt(proto)
-                self._tiebapluses.append(fragment)
-                self._texts.append(fragment)
-            else:
-                fragment = FragmentUnknown_pt(proto)
-                from ...logging import get_logger as LOG
+    def _init(self, data_proto: TypeMessage) -> "Contents_pt":
+        content_protos = data_proto.content
 
-                LOG().warning(f"Unknown fragment type. type={_type} frag={fragment}")
+        def _frags():
+            for proto in content_protos:
+                _type = proto.type
+                # 0纯文本 9电话号 18话题 27百科词条
+                if _type in [0, 9, 18, 27]:
+                    frag = FragText_pt(proto)
+                    self._texts.append(frag)
+                    yield frag
+                # 11:tid=5047676428
+                elif _type in [2, 11]:
+                    frag = FragEmoji_pt(proto)
+                    self._emojis.append(frag)
+                    yield frag
+                elif _type == 4:
+                    frag = FragAt_pt(proto)
+                    self._ats.append(frag)
+                    self._texts.append(frag)
+                    yield frag
+                elif _type == 1:
+                    frag = FragLink_pt(proto)
+                    self._links.append(frag)
+                    self._texts.append(frag)
+                    yield frag
+                # 35|36:tid=7769728331 / 37:tid=7760184147
+                elif _type in [35, 36, 37]:
+                    frag = FragTiebaPlus_pt(proto)
+                    self._tiebapluses.append(frag)
+                    self._texts.append(frag)
+                    yield frag
+                else:
+                    from ...logging import get_logger as LOG
 
-            return fragment
+                    LOG().warning(f"Unknown fragment type. type={_type} frag={frag}")
 
         self._text = None
         self._texts = []
-        self._links = []
         self._emojis = []
-        self._videos = []
+        self._imgs = [FragImage_pt(p) for p in data_proto.media]
         self._ats = []
+        self._links = []
         self._tiebapluses = []
-        self._has_voice = False
-        self._has_video = False
 
-        self._objs = [_init_by_type(p) for p in protos]
+        self._objs = list(_frags())
+        del self._ats[0]
+        del self._objs[0]
+        self._objs += self._imgs
+
+        if data_proto.video_info.video_width:
+            self._video = FragVideo_pt()._init(data_proto.video_info)
+            self._objs.append(self._video)
+        else:
+            self._video = FragVideo_pt()._init_null()
+
+        if data_proto.voice_info:
+            self._voice = FragVoice_pt()._init(data_proto.voice_info[0])
+            self._objs.append(self._voice)
+        else:
+            self._voice = FragVoice_pt()._init_null()
 
         return self
 
@@ -1600,12 +1682,11 @@ class Contents_pt(Containers[TypeFragment]):
         self._texts = []
         self._emojis = []
         self._imgs = []
-        self._videos = []
         self._ats = []
         self._links = []
         self._tiebapluses = []
-        self._has_voice = False
-        self._has_video = False
+        self._video = FragVideo_pt()._init_null()
+        self._voice = FragVoice_pt()._init_null()
         return self
 
     def __repr__(self) -> str:
@@ -1646,14 +1727,6 @@ class Contents_pt(Containers[TypeFragment]):
         return self._imgs
 
     @property
-    def videos(self) -> List[FragVideo_pt]:
-        """
-        视频碎片列表
-        """
-
-        return self._videos
-
-    @property
     def ats(self) -> List[FragAt_pt]:
         """
         @碎片列表
@@ -1678,20 +1751,20 @@ class Contents_pt(Containers[TypeFragment]):
         return self._tiebapluses
 
     @property
-    def has_voice(self) -> bool:
+    def video(self) -> FragVideo_pt:
         """
-        是否包含音频
+        视频碎片
         """
 
-        return self._has_voice
+        return self._video
 
     @property
-    def has_video(self) -> bool:
+    def voice(self) -> FragVoice_pt:
         """
-        是否包含视频
+        音频碎片
         """
 
-        return self._has_video
+        return self._voice
 
 
 class UserInfo_pt(object):
@@ -1977,15 +2050,8 @@ class ShareThread_pt(object):
 
     def _init(self, data_proto: TypeMessage) -> "ShareThread_pt":
         self._text = None
-        self._contents = Contents_pt()._init(data_proto.content)
-        img_frags = [FragImage_pt(p) for p in data_proto.media]
-        self._contents._objs += img_frags
-        self._contents._imgs = img_frags
-        self._contents._has_voice = bool(data_proto.voice_info)
-        self._author_id = self._contents._ats[0]._user_id
-        del self._contents._ats[0]
-        del self._contents._objs[0]
-
+        self._contents = Contents_pt()._init(data_proto)
+        self._author_id = data_proto.content[0].uid if data_proto.content else 0
         self._title = data_proto.title
         self._fid = data_proto.fid
         self._fname = data_proto.fname
@@ -2162,12 +2228,9 @@ class Thread_p(object):
         self._create_time = thread_proto.create_time
 
         if not self._is_share:
-            self._contents = Contents_pt()._init(thread_proto.origin_thread_info.content)
-            img_frags = [FragImage_pt(p) for p in thread_proto.origin_thread_info.media]
-            self._contents._objs += img_frags
-            self._contents._imgs = img_frags
-            self._contents._has_voice = bool(thread_proto.origin_thread_info.voice_info)
-            self._vote_info = VoteInfo()._init(thread_proto.origin_thread_info.poll_info)
+            real_thread_proto = thread_proto.origin_thread_info
+            self._contents = Contents_pt()._init(real_thread_proto)
+            self._vote_info = VoteInfo()._init(real_thread_proto.poll_info)
             self._share_origin = ShareThread_pt()._init_null()
         else:
             self._contents = Contents_pt()._init_null()

@@ -39,9 +39,9 @@ class Recover(object):
         return str(
             {
                 'text': self._text,
-                'tid': self.tid,
-                'pid': self.pid,
-                'is_hide': self.is_hide,
+                'tid': self._tid,
+                'pid': self._pid,
+                'is_hide': self._is_hide,
                 'op_user_name': self._op_user_name,
             }
         )

@@ -2,7 +2,9 @@
 syntax = "proto3";
 
 import "Media.proto";
+import "Voice.proto";
 import "PollInfo.proto";
+import "VideoInfo.proto";
 import "PbContent.proto";
 import "Agree.proto";
 
@@ -25,8 +27,10 @@ message PostInfoList {
     uint32 reply_num = 17;
     int64 user_id = 18;
     string user_portrait = 19;
+    repeated Voice voice_info = 23;
     uint64 thread_type = 26;
     PollInfo poll_info = 28;
+    VideoInfo video_info = 29;
     int32 freq_num = 33;
     string name_show = 35;
     int32 share_num = 39;

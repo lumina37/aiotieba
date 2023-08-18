@@ -1,0 +1,7 @@
+// tbclient.Voice
+syntax = "proto3";
+
+message Voice {
+    int32 during_time = 2;
+    string voice_md5 = 3;
+}

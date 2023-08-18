@@ -17,7 +17,7 @@ class GodThread(object):
         self._tid = data_map['tid']
 
     def __repr__(self) -> str:
-        return str({'tid': self.tid})
+        return str({'tid': self._tid})
 
     @property
     def tid(self) -> int:

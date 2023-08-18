@@ -3,6 +3,13 @@ from typing import Mapping, Optional
 from ...helper import removesuffix
 
 
+def _tbnum2int(tb_num: str) -> int:
+    if isinstance(tb_num, str):
+        return int(float(removesuffix(tb_num, '万')) * 1e4)
+    else:
+        return tb_num
+
+
 class UserInfo_panel(object):
     """
     用户信息
@@ -59,11 +66,11 @@ class UserInfo_panel(object):
             else:
                 self._age = 0.0
 
-            self._post_num = self._num2int(data_map['post_num'])
-            self._fan_num = self._num2int(data_map['followed_count'])
+            self._post_num = _tbnum2int(data_map['post_num'])
+            self._fan_num = _tbnum2int(data_map['followed_count'])
 
             if vip_dict := data_map['vipInfo']:
-                self._is_vip = bool(int(vip_dict['v_status']))
+                self._is_vip = int(vip_dict['v_status']) == 3
             else:
                 self._is_vip = False
 
@@ -233,10 +240,3 @@ class UserInfo_panel(object):
             return f"{self._nick_name_new}/{self._portrait}"
         else:
             return str(self._user_id)
-
-    @staticmethod
-    def _num2int(tb_num: str) -> int:
-        if isinstance(tb_num, str):
-            return int(float(removesuffix(tb_num, '万')) * 1e4)
-        else:
-            return tb_num

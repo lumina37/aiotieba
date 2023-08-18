@@ -1,13 +1,14 @@
-from typing import Iterable, List
+from typing import List
 
 from .._classdef import Containers, TypeMessage, VoteInfo
-from .._classdef.contents import FragAt, FragEmoji, FragLink, FragmentUnknown, FragText, TypeFragment, TypeFragText
+from .._classdef.contents import FragAt, FragEmoji, FragLink, FragText, FragVideo, FragVoice, TypeFragment, TypeFragText
 
 FragText_up = FragText_ut = FragText
-FragAt_ut = FragAt
 FragEmoji_ut = FragEmoji
+FragAt_ut = FragAt
 FragLink_up = FragLink_ut = FragLink
-FragmentUnknown_up = FragmentUnknown_ut = FragmentUnknown
+FragVideo_ut = FragVideo
+FragVoice_up = FragVoice_ut = FragVoice
 
 
 class Contents_up(Containers[TypeFragment]):
@@ -21,44 +22,48 @@ class Contents_up(Containers[TypeFragment]):
 
         texts (list[TypeFragText]): 纯文本碎片列表
         links (list[FragLink_up]): 链接碎片列表
-
-        has_voice (bool): 是否包含音频
+        voice (FragVoice_up): 音频碎片
     """
 
     __slots__ = [
         '_text',
         '_texts',
         '_links',
-        '_has_voice',
+        '_voice',
     ]
 
-    def _init(self, protos: Iterable[TypeMessage]) -> "Contents_up":
-        def _init_by_type(proto):
-            _type = proto.type
-            if _type in [0, 4]:
-                fragment = FragText_up(proto)
-                self._texts.append(fragment)
-            elif _type == 1:
-                fragment = FragLink_up(proto)
-                self._links.append(fragment)
-                self._texts.append(fragment)
-            elif _type == 10:
-                fragment = FragmentUnknown_up()
-                self._has_voice = True
-            else:
-                fragment = FragmentUnknown_up(proto)
-                from ...logging import get_logger as LOG
+    def _init(self, data_proto: TypeMessage) -> "Contents_up":
+        content_protos = data_proto.post_content
 
-                LOG().warning(f"Unknown fragment type. type={_type} frag={fragment}")
+        def _frags():
+            for proto in content_protos:
+                _type = proto.type
+                if _type in [0, 4]:
+                    frag = FragText_up(proto)
+                    self._texts.append(frag)
+                    yield frag
+                elif _type == 1:
+                    frag = FragLink_up(proto)
+                    self._links.append(frag)
+                    self._texts.append(frag)
+                    yield frag
+                elif _type == 10:  # voice
+                    continue
+                else:
+                    from ...logging import get_logger as LOG
 
-            return fragment
+                    LOG().warning(f"Unknown fragment type. type={_type} frag={frag}")
 
         self._text = None
         self._texts = []
         self._links = []
-        self._has_voice = False
+        self._objs = list(_frags())
 
-        self._objs = [_init_by_type(p) for p in protos]
+        if data_proto.voice_info:
+            self._voice = FragVoice_up()._init(data_proto.voice_info[0])
+            self._objs.append(self._voice)
+        else:
+            self._voice = FragVoice_up()._init_null()
 
         return self
 
@@ -67,7 +72,7 @@ class Contents_up(Containers[TypeFragment]):
         self._text = ""
         self._texts = []
         self._links = []
-        self._has_voice = False
+        self._voice = FragVoice_up()._init_null()
         return self
 
     def __repr__(self) -> str:
@@ -100,12 +105,12 @@ class Contents_up(Containers[TypeFragment]):
         return self._links
 
     @property
-    def has_voice(self) -> bool:
+    def voice(self) -> FragVoice_up:
         """
-        是否包含音频
+        音频碎片
         """
 
-        return self._has_voice
+        return self._voice
 
 
 class UserInfo_u(object):
@@ -266,7 +271,7 @@ class UserPost(object):
     ]
 
     def __init__(self, data_proto: TypeMessage) -> None:
-        self._contents = Contents_up()._init(data_proto.post_content)
+        self._contents = Contents_up()._init(data_proto)
         self._pid = data_proto.post_id
         self._is_comment = bool(data_proto.post_type)
         self._create_time = data_proto.create_time
@@ -520,9 +525,8 @@ class Contents_ut(Containers[TypeFragment]):
         imgs (list[FragImage_ut]): 图像碎片列表
         ats (list[FragAt_ut]): @碎片列表
         links (list[FragLink_ut]): 链接碎片列表
-
-        has_voice (bool): 是否包含音频
-        has_video (bool): 是否包含视频
+        video (FragVideo_ut): 视频碎片
+        voice (FragVoice_ut): 音频碎片
     """
 
     __slots__ = [
@@ -532,56 +536,71 @@ class Contents_ut(Containers[TypeFragment]):
         '_imgs',
         '_ats',
         '_links',
-        '_has_voice',
-        '_has_video',
+        '_video',
+        '_voice',
     ]
 
-    def _init(self, protos: Iterable[TypeMessage]) -> "Contents_ut":
-        def _init_by_type(proto):
-            _type = proto.type
-            # 0纯文本 9电话号 18话题 27百科词条
-            if _type in [0, 9, 18, 27]:
-                fragment = FragText_ut(proto)
-                self._texts.append(fragment)
-            # 11:tid=5047676428
-            elif _type in [2, 11]:
-                fragment = FragEmoji_ut(proto)
-                self._emojis.append(fragment)
-            # img will init otherwhere
-            elif _type in [3, 20]:
-                fragment = FragmentUnknown_ut()
-            elif _type == 4:
-                fragment = FragAt_ut(proto)
-                self._ats.append(fragment)
-                self._texts.append(fragment)
-            elif _type == 1:
-                fragment = FragLink_ut(proto)
-                self._links.append(fragment)
-                self._texts.append(fragment)
-            elif _type == 5:  # video
-                fragment = FragmentUnknown_ut()
-                self._has_video = True
-            elif _type == 10:
-                fragment = FragmentUnknown_ut()
-                self._has_voice = True
-            else:
-                fragment = FragmentUnknown_ut(proto)
-                from ...logging import get_logger as LOG
+    def _init(self, data_proto: TypeMessage) -> "Contents_ut":
+        content_protos = data_proto.first_post_content
 
-                LOG().warning(f"Unknown fragment type. type={_type} frag={fragment}")
+        def _frags():
+            for proto in content_protos:
+                _type = proto.type
+                # 0纯文本 9电话号 18话题 27百科词条
+                if _type in [0, 9, 18, 27]:
+                    frag = FragText_ut(proto)
+                    self._texts.append(frag)
+                    yield frag
+                # 11:tid=5047676428
+                elif _type in [2, 11]:
+                    frag = FragEmoji_ut(proto)
+                    self._emojis.append(frag)
+                    yield frag
+                # img will be init elsewhere
+                elif _type in [3, 20]:
+                    continue
+                elif _type == 4:
+                    frag = FragAt_ut(proto)
+                    self._ats.append(frag)
+                    self._texts.append(frag)
+                    yield frag
+                elif _type == 1:
+                    frag = FragLink_ut(proto)
+                    self._links.append(frag)
+                    self._texts.append(frag)
+                    yield frag
+                elif _type == 5:  # video
+                    continue
+                elif _type == 10:  # voice
+                    continue
+                else:
+                    from ...logging import get_logger as LOG
 
-            return fragment
+                    LOG().warning(f"Unknown fragment type. type={_type} frag={frag}")
 
         self._text = None
         self._texts = []
-        self._links = []
-        self._imgs = []
         self._emojis = []
+        self._imgs = [FragImage_ut(p) for p in data_proto.media if p.type != 5]
         self._ats = []
-        self._has_voice = False
-        self._has_video = False
+        self._links = []
+        self._video = FragVideo_ut()._init_null()
+        self._voice = FragVoice_ut()._init_null()
 
-        self._objs = [_init_by_type(p) for p in protos]
+        self._objs = list(_frags())
+        self._objs += self._imgs
+
+        if data_proto.video_info.video_width:
+            self._video = FragVideo_ut()._init(data_proto.video_info)
+            self._objs.append(self._video)
+        else:
+            self._video = FragVideo_ut()._init_null()
+
+        if data_proto.voice_info:
+            self._voice = FragVoice_ut()._init(data_proto.voice_info[0])
+            self._objs.append(self._voice)
+        else:
+            self._voice = FragVoice_ut()._init_null()
 
         return self
 
@@ -593,8 +612,8 @@ class Contents_ut(Containers[TypeFragment]):
         self._imgs = []
         self._ats = []
         self._links = []
-        self._has_voice = False
-        self._has_video = False
+        self._video = FragVideo_ut()
+        self._voice = FragVoice_ut()
         return self
 
     def __repr__(self) -> str:
@@ -651,20 +670,20 @@ class Contents_ut(Containers[TypeFragment]):
         return self._links
 
     @property
-    def has_voice(self) -> bool:
+    def video(self) -> FragVideo_ut:
         """
-        是否包含音频
+        视频碎片
         """
 
-        return self._has_voice
+        return self._video
 
     @property
-    def has_video(self) -> bool:
+    def voice(self) -> FragVoice_ut:
         """
-        是否包含视频
+        音频碎片
         """
 
-        return self._has_video
+        return self._voice
 
 
 class UserThread(object):
@@ -717,10 +736,7 @@ class UserThread(object):
 
     def __init__(self, data_proto: TypeMessage) -> None:
         self._text = None
-        self._contents = Contents_ut()._init(data_proto.first_post_content)
-        img_frags = [FragImage_ut(p) for p in data_proto.media]
-        self._contents._objs += img_frags
-        self._contents._imgs = img_frags
+        self._contents = Contents_ut()._init(data_proto)
         self._title = data_proto.title
         self._fid = data_proto.forum_id
         self._fname = data_proto.forum_name
