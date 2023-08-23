@@ -11,7 +11,6 @@
 
 #include "tbcrypto/const.h"
 #include "tbcrypto/error.h"
-#include "tbcrypto/utils.h"
 
 #include "tbcrypto/cuid.h"
 

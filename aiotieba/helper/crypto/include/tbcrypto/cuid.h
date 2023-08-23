@@ -2,8 +2,6 @@
 
 #include <stdint.h>
 
-#include "tbcrypto/utils.h"
-
 /**
  * @brief impl of TiebaLite tieba/post/utils/helios
  *

@@ -5,7 +5,6 @@
 #include "rapidjson/itoa.h"
 
 #include "tbcrypto/const.h"
-#include "tbcrypto/utils.h"
 
 #include "tbcrypto/sign.h"
 
@@ -22,7 +21,7 @@ static inline void __tbc_pyStr2UTF8(const char** dst, size_t* dstSize, PyObject*
     }
 }
 
-PyObject* sign(TBC_UNUSED PyObject* self, PyObject* args)
+PyObject* sign(PyObject* Py_UNUSED(self), PyObject* args)
 {
     PyObject* items;
 
