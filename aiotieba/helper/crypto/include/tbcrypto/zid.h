@@ -1,7 +1,5 @@
 #pragma once
 
-#include "tbcrypto/utils.h"
-
 #define TBC_CBC_SECKEY_SIZE 16
 #define TBC_RC4_SIZE 16
 

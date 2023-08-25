@@ -87,7 +87,7 @@ class Contents_c(Containers[TypeFragment]):
                 else:
                     from ...logging import get_logger as LOG
 
-                    LOG().warning(f"Unknown fragment type. type={_type} frag={frag}")
+                    LOG().warning(f"Unknown fragment type. type={_type} proto={proto}")
 
         self._text = None
         self._texts = []
@@ -1273,7 +1273,7 @@ class Contents_cp(Containers[TypeFragment]):
                 else:
                     from ...logging import get_logger as LOG
 
-                    LOG().warning(f"Unknown fragment type. type={_type} frag={frag}")
+                    LOG().warning(f"Unknown fragment type. type={_type} proto={proto}")
 
         self._text = None
         self._texts = []
