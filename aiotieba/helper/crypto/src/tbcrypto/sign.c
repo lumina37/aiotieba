@@ -21,7 +21,7 @@ static inline void __tbc_pyStr2UTF8(const char** dst, size_t* dstSize, PyObject*
     }
 }
 
-static PyObject* sign(PyObject* Py_UNUSED(self), PyObject* args)
+PyObject* sign(PyObject* Py_UNUSED(self), PyObject* args)
 {
     PyObject* items;
 

@@ -6,7 +6,7 @@
 #include "tbcrypto/sign.h"
 #include "tbcrypto/zid.h"
 
-static PyObject* cuid_galaxy2(PyObject* Py_UNUSED(self), PyObject* args)
+PyObject* cuid_galaxy2(PyObject* Py_UNUSED(self), PyObject* args)
 {
     unsigned char dst[TBC_CUID_GALAXY2_SIZE];
     const unsigned char* androidID;
@@ -31,7 +31,7 @@ static PyObject* cuid_galaxy2(PyObject* Py_UNUSED(self), PyObject* args)
     return PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, dst, TBC_CUID_GALAXY2_SIZE);
 }
 
-static PyObject* c3_aid(PyObject* Py_UNUSED(self), PyObject* args)
+PyObject* c3_aid(PyObject* Py_UNUSED(self), PyObject* args)
 {
     unsigned char dst[TBC_C3_AID_SIZE];
     const unsigned char* androidID;
@@ -62,7 +62,7 @@ static PyObject* c3_aid(PyObject* Py_UNUSED(self), PyObject* args)
     return PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, dst, TBC_C3_AID_SIZE);
 }
 
-static PyObject* rc4_42(PyObject* Py_UNUSED(self), PyObject* args)
+PyObject* rc4_42(PyObject* Py_UNUSED(self), PyObject* args)
 {
     unsigned char dst[TBC_RC4_SIZE];
     const unsigned char* xyusMd5Str;
