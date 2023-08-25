@@ -8,7 +8,58 @@ FragEmoji_ut = FragEmoji
 FragAt_ut = FragAt
 FragLink_up = FragLink_ut = FragLink
 FragVideo_ut = FragVideo
-FragVoice_up = FragVoice_ut = FragVoice
+FragVoice_ut = FragVoice
+
+
+class FragVoice_up(object):
+    """
+    音频碎片
+
+    Attributes:
+        md5 (str): 音频md5
+        duration (int): 音频长度
+    """
+
+    __slots__ = [
+        '_md5',
+        '_duration',
+    ]
+
+    def _init(self, data_proto: TypeMessage) -> "FragVoice_up":
+        voice_md5 = data_proto.voice_md5
+        self._md5 = voice_md5[: voice_md5.rfind('_')]
+        self._duration = int(data_proto.during_time) / 1000
+        return self
+
+    def _init_null(self) -> "FragVoice":
+        self._md5 = ''
+        self._duration = 0
+        return self
+
+    def __repr__(self) -> str:
+        return str({'md5': self._md5})
+
+    def __bool__(self) -> bool:
+        return bool(self._md5)
+
+    @property
+    def md5(self) -> str:
+        """
+        音频md5
+        """
+
+        return self._md5
+
+    @property
+    def duration(self) -> int:
+        """
+        音频长度
+
+        Note:
+            以秒为单位
+        """
+
+        return self._duration
 
 
 class Contents_up(Containers[TypeFragment]):
@@ -48,22 +99,18 @@ class Contents_up(Containers[TypeFragment]):
                     self._texts.append(frag)
                     yield frag
                 elif _type == 10:  # voice
+                    self._voice = FragVoice_up()._init(proto)
                     continue
                 else:
                     from ...logging import get_logger as LOG
 
-                    LOG().warning(f"Unknown fragment type. type={_type} frag={frag}")
+                    LOG().warning(f"Unknown fragment type. type={_type} proto={proto}")
 
         self._text = None
         self._texts = []
         self._links = []
+        self._voice = FragVoice_up()._init_null()
         self._objs = list(_frags())
-
-        if data_proto.voice_info:
-            self._voice = FragVoice_up()._init(data_proto.voice_info[0])
-            self._objs.append(self._voice)
-        else:
-            self._voice = FragVoice_up()._init_null()
 
         return self
 
@@ -576,7 +623,7 @@ class Contents_ut(Containers[TypeFragment]):
                 else:
                     from ...logging import get_logger as LOG
 
-                    LOG().warning(f"Unknown fragment type. type={_type} frag={frag}")
+                    LOG().warning(f"Unknown fragment type. type={_type} proto={proto}")
 
         self._text = None
         self._texts = []
