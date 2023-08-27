@@ -25,7 +25,6 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: dist
           path: ./wheelhouse/*.whl
 
   build_sdist:
@@ -48,7 +47,6 @@ jobs:
 
     environment:
       name: pypi
-      url: https://pypi.org/p/aiotieba
 
     permissions:
       id-token: write
