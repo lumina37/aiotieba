@@ -34,12 +34,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -U pip -qq
-          pip install mkdocs-material mkdocstrings[python] -qq
+          pipx install pdm
+          pdm install -G doc
 
       - name: Build
         run: |
-          mkdocs build -d site -s
+          pdm run mkdocs build -d site -s
 
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v2

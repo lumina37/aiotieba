@@ -69,10 +69,14 @@ version = { attr = "aiotieba.__version__.__version__" }
 [tool.setuptools.package-data]
 "*" = ["*.pyi"]
 
+[tool.pdm.dev-dependencies]
+test = ["aiotieba[speedup]", "pytest", "pytest-asyncio", "pytest-rerunfailures"]
+doc = ["mkdocs-material", "mkdocstrings[python]"]
+
 [tool.black]
 line-length = 120
 skip-string-normalization = true
-target-version = ["py38"]
+target-version = ["py38", "py39", "py310", "py311"]
 
 [tool.ruff]
 line-length = 120
@@ -86,7 +90,6 @@ target-version = "py38"
 "*_pb2.py" = ["F401"]
 
 [tool.pytest.ini_options]
-minversion = "6.0"
 addopts = "-q"
 testpaths = ["tests"]
 required_plugins = "pytest-asyncio pytest-rerunfailures"
