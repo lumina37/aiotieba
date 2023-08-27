@@ -20,22 +20,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    env:
-      PYTHON_VER: "3.11"
-
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Setup Python ${{ env.PYTHON_VER }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ env.PYTHON_VER }}
-
       - name: Install dependencies
         run: |
-          pipx install pdm
-          pdm install -G doc
+          pipx install pdm --python
+          pdm install -G doc --no-default
 
       - name: Build
         run: |
