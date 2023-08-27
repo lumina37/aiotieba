@@ -17,6 +17,8 @@
 !docs/**
 !tests
 !tests/**
+!scripts
+!scripts/**
 
 *.py[cd]
 __pycache__
