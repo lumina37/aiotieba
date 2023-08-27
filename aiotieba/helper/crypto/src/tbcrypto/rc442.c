@@ -3,7 +3,7 @@
 #include "tbcrypto/const.h"
 #include "tbcrypto/error.h"
 
-#include "tbcrypto/zid.h"
+#include "tbcrypto/rc442.h"
 
 typedef struct rc4_42_context {
     int x;

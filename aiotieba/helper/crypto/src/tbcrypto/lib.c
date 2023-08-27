@@ -3,8 +3,8 @@
 #include "tbcrypto/const.h"
 #include "tbcrypto/cuid.h"
 #include "tbcrypto/error.h"
+#include "tbcrypto/rc442.h"
 #include "tbcrypto/sign.h"
-#include "tbcrypto/zid.h"
 
 PyObject* cuid_galaxy2(PyObject* Py_UNUSED(self), PyObject* args)
 {
