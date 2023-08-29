@@ -41,7 +41,7 @@ class Forum_detail(object):
             self._slogan = forum_proto.slogan
             self._member_num = forum_proto.member_count
             self._post_num = forum_proto.thread_count
-            self._has_bawu = bool(data_proto.election_tab.new_manager_status)
+            self._has_bawu = data_proto.election_tab.new_manager_status == 5
         else:
             self._fid = 0
             self._fname = ''

@@ -70,6 +70,7 @@ version = { attr = "aiotieba.__version__.__version__" }
 "*" = ["*.pyi"]
 
 [tool.pdm.dev-dependencies]
+lint = ["ruff", "black"]
 test = ["aiotieba[speedup]", "pytest", "pytest-asyncio", "pytest-rerunfailures"]
 doc = ["mkdocs-material", "mkdocstrings[python]"]
 
