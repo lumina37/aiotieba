@@ -119,7 +119,7 @@ class Postlog(object):
 
         text_item = post_content_item.div
         self._text = text_item.string[12:]
-        self._medias = [Media_postlog(tag) for tag in text_item.next_sibling('a')]
+        self._medias = [Media_postlog(tag) for tag in text_item.next_sibling('a', class_=None)]
 
         op_type_item = left_cell_item.next_sibling
         self._op_type = op_type_item.string

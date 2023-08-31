@@ -20,26 +20,18 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    env:
-      PYTHON_VER: "3.11"
-
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Setup Python ${{ env.PYTHON_VER }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ env.PYTHON_VER }}
-
       - name: Install dependencies
         run: |
-          pip install -U pip -qq
-          pip install mkdocs-material mkdocstrings[python] -qq
+          pipx install pdm
+          pdm install -G doc --no-default --no-self
 
       - name: Build
         run: |
-          mkdocs build -d site -s
+          pdm run mkdocs build -d site -s
 
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v2
