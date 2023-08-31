@@ -27,7 +27,7 @@ jobs:
       - name: Install dependencies
         run: |
           pipx install pdm
-          pdm install -G doc --no-default
+          pdm install -G doc --no-default --no-self
 
       - name: Build
         run: |
