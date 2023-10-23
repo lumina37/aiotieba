@@ -924,6 +924,20 @@ class Client(object):
 
         return await get_ats.request(self._http_core, pn)
 
+    @handle_exception(bytes)
+    async def get_image_bytes(self, img_url: str) -> bytes:
+        """
+        从链接获取静态图像的原始字节流
+
+        Args:
+            img_url (str): 图像链接
+
+        Returns:
+            bytes: 未解码的原始字节流
+        """
+
+        return await get_images.request_bytes(self._http_core, yarl.URL(img_url))
+
     @handle_exception(get_images.null_ret_factory)
     async def get_image(self, img_url: str) -> "np.ndarray":
         """

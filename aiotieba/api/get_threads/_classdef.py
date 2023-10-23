@@ -218,6 +218,9 @@ class Contents_t(Containers[TypeFragment]):
                     self._tiebapluses.append(frag)
                     self._texts.append(frag)
                     yield frag
+                # outdated tiebaplus
+                elif _type == 34:
+                    continue
                 else:
                     from ...logging import get_logger as LOG
 
@@ -870,6 +873,9 @@ class Contents_st(Containers[TypeFragment]):
                     self._tiebapluses.append(frag)
                     self._texts.append(frag)
                     yield frag
+                # outdated tiebaplus
+                elif _type == 34:
+                    continue
                 else:
                     from ...logging import get_logger as LOG
 

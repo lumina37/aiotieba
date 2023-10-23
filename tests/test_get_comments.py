@@ -89,14 +89,6 @@ async def test_Comments(client: tb.Client):
     assert frag.desc != ''
     assert frag.id == 'image_emoticon3'
 
-    # FragTiebaplus
-    frag = post.contents.tiebapluses[0]
-    assert frag.text != ''
-    assert frag.url != ''
-    frag = post.contents.tiebapluses[1]
-    assert frag.text != ''
-    assert frag.url != ''
-
     ##### Comment #####
     comment = comments[0]
 

@@ -35,10 +35,15 @@ def parse_body(body: bytes) -> "np.ndarray":
     return image
 
 
-async def request(http_core: HttpCore, url: yarl.URL) -> "np.ndarray":
+async def request_bytes(http_core: HttpCore, url: yarl.URL) -> bytes:
     request = http_core.pack_web_get_request(url, [])
 
     __log__ = "url={url}"  # noqa: F841
 
-    body = await http_core.net_core.send_request(request, read_bufsize=512 * 1024, headers_checker=headers_checker)
+    body = await http_core.net_core.send_request(request, read_bufsize=256 * 1024, headers_checker=headers_checker)
+    return body
+
+
+async def request(http_core: HttpCore, url: yarl.URL) -> "np.ndarray":
+    body = await request_bytes(http_core, url)
     return parse_body(body)
