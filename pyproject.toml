@@ -22,17 +22,19 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Topic :: Internet :: WWW/HTTP :: Session",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.8,<3.13"
 dependencies = [
   "aiohttp<3.10,>=3.8.4;python_version=='3.8'",
-  "aiohttp<4,>=3.8.4;python_version>='3.9'",           # See https://github.com/aio-libs/aiohttp/pull/6638
+  "aiohttp<4,>=3.8.4;python_version>='3.9',<'3.12'",
+  "aiohttp<4,>=3.9.0b0;python_version>='3.12'",
   "beautifulsoup4<4.13,>=4.4.1;python_version=='3.8'",
   "beautifulsoup4<5,>=4.5.2;python_version=='3.9'",
   "beautifulsoup4<5,>=4.7.1;python_version>='3.10'",
   "lxml<4.10,>=4.4.1;python_version=='3.8'",
   "lxml<5,>=4.6.0;python_version=='3.9'",
   "lxml<5,>=4.6.4;python_version=='3.10'",
-  "lxml<5,>=4.9.2;python_version>='3.11'",
+  "lxml<5,>=4.9.2;python_version=='3.11'",
+  "lxml<5,>=4.9.3;python_version>='3.12'",
   "protobuf<5,>=4.21.0",
   "pycryptodome<3.19,>=3.7.1;python_version=='3.8'",
   "pycryptodome<4,>=3.7.1;python_version>='3.8'",
@@ -54,11 +56,12 @@ speedup = [
   "pysimdjson<6,>=3.1.1;python_version=='3.9' and sys_platform=='darwin'",
   "pysimdjson<6,>=3.1.1;python_version=='3.9'",
   "pysimdjson<6,>=4.0.3;python_version=='3.10'",
-  "pysimdjson<6,>=5.0.1;python_version>='3.11'",
+  "pysimdjson<6,>=5.0.1;python_version=='3.11'",                              # pysimdjson does not support 3.12 (2023.11.03)
   "uvloop<0.20.0,>=0.14.0;python_version=='3.8' and sys_platform!='win32'",
   "uvloop<1.0,>=0.15.0;python_version=='3.9' and sys_platform!='win32'",
   "uvloop<1.0,>=0.16.0;python_version=='3.10' and sys_platform!='win32'",
-  "uvloop<1.0,>=0.17.0;python_version>='3.11' and sys_platform!='win32'",
+  "uvloop<1.0,>=0.17.0;python_version=='3.11' and sys_platform!='win32'",
+  "uvloop<1.0,>=0.18.0;python_version>='3.12' and sys_platform!='win32'",
 ]
 
 [tool.setuptools.packages.find]
