@@ -17,6 +17,7 @@ on:
       - "thirdparty/**"
       - "tests/**"
       - ".github/workflows/CI*"
+  workflow_dispatch:
 
 jobs:
   test:
@@ -27,7 +28,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ["3.8", "3.11"]
+        python-version: ["3.8", "3.11", "3.12"]
 
     steps:
       - name: Checkout develop

@@ -1230,10 +1230,14 @@ class Thread(object):
         self._is_hide = bool(data_proto.is_frs_mask)
         self._is_livepost = bool(data_proto.is_livepost)
         self._vote_info = VoteInfo()._init(data_proto.poll_info)
-        if not self._is_share:
-            self._share_origin = ShareThread()._init_null()
+        if self._is_share:
+            if data_proto.origin_thread_info.pid:
+                self._share_origin = ShareThread()._init(data_proto.origin_thread_info)
+            else:
+                self._is_share = False
+                self._share_origin = ShareThread()._init_null()
         else:
-            self._share_origin = ShareThread()._init(data_proto.origin_thread_info)
+            self._share_origin = ShareThread()._init_null()
         self._view_num = data_proto.view_num
         self._reply_num = data_proto.reply_num
         self._share_num = data_proto.share_num
