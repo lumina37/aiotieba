@@ -5,7 +5,10 @@ import sys
 from types import FrameType
 from typing import Any, Callable
 
-import async_timeout
+if sys.version_info >= (3, 11):
+    import asyncio as async_timeout
+else:
+    import async_timeout
 
 from ..exception import exc_handlers
 from ..logging import get_logger

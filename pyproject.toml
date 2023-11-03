@@ -81,6 +81,10 @@ lint = ["ruff", "black"]
 test = ["aiotieba[speedup]", "pytest", "pytest-asyncio", "pytest-rerunfailures"]
 doc = ["mkdocs-material", "mkdocstrings[python]"]
 
+[tool.cibuildwheel]
+build = "cp38-* cp39-* cp310-* cp311-* cp312-* pp38-*	pp39-* pp310-*"
+skip = "*-win32 *_i686 *_s390x *_ppc64le"
+
 [tool.black]
 line-length = 120
 skip-string-normalization = true
