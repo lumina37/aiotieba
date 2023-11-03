@@ -25,7 +25,7 @@ classifiers = [
 requires-python = ">=3.8,<3.13"
 dependencies = [
   "aiohttp<3.10,>=3.8.4;python_version=='3.8'",
-  "aiohttp<4,>=3.8.4;python_version>='3.9',<'3.12'",
+  "aiohttp<4,>=3.8.4;python_version=='3.9' and python_version<'3.12'",
   "aiohttp<4,>=3.9.0b0;python_version>='3.12'",
   "beautifulsoup4<4.13,>=4.4.1;python_version=='3.8'",
   "beautifulsoup4<5,>=4.5.2;python_version=='3.9'",
