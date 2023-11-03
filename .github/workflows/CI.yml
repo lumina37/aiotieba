@@ -17,6 +17,7 @@ on:
       - "thirdparty/**"
       - "tests/**"
       - ".github/workflows/CI*"
+  workflow_dispatch:
 
 jobs:
   test:
