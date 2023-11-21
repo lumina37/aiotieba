@@ -28,11 +28,11 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ["3.8", "3.11", "3.12"]
+        python-version: ["3.8", "3.12"]
 
     steps:
       - name: Checkout develop
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: develop
 
