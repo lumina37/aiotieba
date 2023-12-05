@@ -4,7 +4,7 @@ import aiotieba as tb
 
 
 @pytest.mark.flaky(reruns=3, reruns_delay=2.0)
-@pytest.mark.asyncio
+@pytest.mark.asyncio(scope="session")
 async def test_Forum_detail(client: tb.Client):
     forum = await client.get_forum_detail(21841105)
 

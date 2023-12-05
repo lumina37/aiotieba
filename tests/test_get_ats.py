@@ -4,7 +4,7 @@ import aiotieba as tb
 
 
 @pytest.mark.flaky(reruns=3, reruns_delay=2.0)
-@pytest.mark.asyncio
+@pytest.mark.asyncio(scope="session")
 async def test_Ats(client: tb.Client):
     ats = await client.get_ats()
 
