@@ -17,14 +17,14 @@ def parse_body(body: bytes) -> Recovers:
     return recovers
 
 
-async def request(http_core: HttpCore, fid: int, name: str, pn: int) -> Recovers:
+async def request(http_core: HttpCore, fid: int, name: str, pn: int, rn: int) -> Recovers:
     params = [
-        ('rn', 10),
+        ('rn', rn),
         ('forum_id', fid),
+        ('word', name), # TODO
         ('pn', pn),
         ('type', 1),
         ('sub_type', 1),
-        ('tbs', http_core.account._tbs),
     ]
 
     request = http_core.pack_web_get_request(

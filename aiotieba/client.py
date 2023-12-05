@@ -1148,7 +1148,7 @@ class Client(object):
 
     @handle_exception(get_recovers.Recovers)
     async def get_recovers(
-        self, fname_or_fid: Union[str, int], /, name: str = '', pn: int = 1
+        self, fname_or_fid: Union[str, int], /, name: str = '', pn: int = 1, rn: int = 10
     ) -> get_recovers.Recovers:
         """
         获取pn页的待恢复帖子列表
@@ -1157,15 +1157,15 @@ class Client(object):
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先fid
             name (str, optional): 通过被删帖作者的用户名/昵称查询 默认为空即查询全部. Defaults to ''.
             pn (int, optional): 页码. Defaults to 1.
+            rn (int, optional): 请求的条目数. Defaults to 10. Max to 50.
 
         Returns:
             Recovers: 待恢复帖子列表
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
-        await self.__init_tbs()
 
-        return await get_recovers.request(self._http_core, fid, name, pn)
+        return await get_recovers.request(self._http_core, fid, name, pn, rn)
 
     @handle_exception(get_bawu_userlogs.Userlogs)
     async def get_bawu_userlogs(
