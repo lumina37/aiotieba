@@ -1163,6 +1163,7 @@ class Client(object):
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        await self.__init_tbs()
 
         return await get_recovers.request(self._http_core, fid, name, pn)
 

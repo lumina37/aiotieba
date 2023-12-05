@@ -19,15 +19,16 @@ def parse_body(body: bytes) -> Recovers:
 
 async def request(http_core: HttpCore, fid: int, name: str, pn: int) -> Recovers:
     params = [
-        ('fn', '-'),
-        ('fid', fid),
-        ('word', name),
-        ('is_ajax', '1'),
+        ('rn', 10),
+        ('forum_id', fid),
         ('pn', pn),
+        ('type', 1),
+        ('sub_type', 1),
+        ('tbs', http_core.account._tbs),
     ]
 
     request = http_core.pack_web_get_request(
-        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mo/q/bawurecover"), params
+        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mo/q/manage/getRecoverList"), params
     )
 
     __log__ = "fid={fid}"  # noqa: F841
