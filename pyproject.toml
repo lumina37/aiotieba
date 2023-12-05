@@ -26,7 +26,7 @@ requires-python = ">=3.8,<3.13"
 dependencies = [
   "aiohttp<3.10,>=3.8.4;python_version=='3.8'",
   "aiohttp<4,>=3.8.4;python_version>='3.9' and python_version<'3.12'",
-  "aiohttp<4,>=3.9.0b0;python_version>='3.12'",
+  "aiohttp<4,>=3.9.0;python_version>='3.12'",
   "beautifulsoup4<4.13,>=4.4.1;python_version=='3.8'",
   "beautifulsoup4<5,>=4.5.2;python_version=='3.9'",
   "beautifulsoup4<5,>=4.7.1;python_version>='3.10'",
@@ -73,16 +73,13 @@ version = { attr = "aiotieba.__version__.__version__" }
 [tool.setuptools.package-data]
 "*" = ["*.pyi"]
 
-[tool.pdm]
-allow_prereleases = true
-
 [tool.pdm.dev-dependencies]
 lint = ["ruff", "black"]
 test = ["aiotieba[speedup]", "pytest", "pytest-asyncio", "pytest-rerunfailures"]
 doc = ["mkdocs-material", "mkdocstrings[python]"]
 
 [tool.cibuildwheel]
-build = "cp38-* cp39-* cp310-* cp311-* cp312-* pp38-*	pp39-* pp310-*"
+build = "cp38-* cp39-* cp310-* cp311-* cp312-* pp38-* pp39-* pp310-*"
 skip = "*-win32 *_i686 *_s390x *_ppc64le"
 
 [tool.black]

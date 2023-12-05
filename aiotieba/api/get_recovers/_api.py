@@ -1,3 +1,5 @@
+from typing import Optional
+
 import yarl
 
 from ...const import WEB_BASE_HOST
@@ -17,17 +19,19 @@ def parse_body(body: bytes) -> Recovers:
     return recovers
 
 
-async def request(http_core: HttpCore, fid: int, name: str, pn: int) -> Recovers:
+async def request(http_core: HttpCore, fid: int, user_id: Optional[int], pn: int, rn: int) -> Recovers:
     params = [
-        ('fn', '-'),
-        ('fid', fid),
-        ('word', name),
-        ('is_ajax', '1'),
+        ('rn', rn),
+        ('forum_id', fid),
         ('pn', pn),
+        ('type', 1),
+        ('sub_type', 1),
     ]
+    if user_id:
+        params.append(('uid', user_id))
 
     request = http_core.pack_web_get_request(
-        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mo/q/bawurecover"), params
+        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mo/q/manage/getRecoverList"), params
     )
 
     __log__ = "fid={fid}"  # noqa: F841

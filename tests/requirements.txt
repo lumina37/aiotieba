@@ -1,6 +1,6 @@
 .[speedup]
 
 # Test Suite
-pytest
-pytest-asyncio
-pytest-rerunfailures
+pytest==7.4.3
+pytest-asyncio==0.23.2
+pytest-rerunfailures==13.0
