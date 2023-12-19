@@ -28,7 +28,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ["3.12"]
+        python-version: ["3.8", "3.12"]
 
     steps:
       - name: Checkout develop
@@ -47,7 +47,6 @@ jobs:
         run: |
           pipx install pdm --python python
           pdm install -G test -q
-          pdm run python --version
 
       - name: Prepare config
         run: gpg --quiet --batch --yes --decrypt --passphrase=${{ secrets.PASSPHRASE }} --output aiotieba.toml tests/aiotieba.toml.gpg
