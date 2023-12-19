@@ -39,6 +39,7 @@ dependencies = [
   "pycryptodome<3.19,>=3.7.1;python_version=='3.8'",
   "pycryptodome<4,>=3.7.1;python_version>='3.8'",
   "tomli<3,>=1.1.0;python_version<'3.11'",
+  "async-timeout<5,>=4.0;python_version<'3.11'",
 ]
 dynamic = ["version"]
 
@@ -56,7 +57,7 @@ speedup = [
   "pysimdjson<6,>=3.1.1;python_version=='3.9' and sys_platform=='darwin'",
   "pysimdjson<6,>=3.1.1;python_version=='3.9'",
   "pysimdjson<6,>=4.0.3;python_version=='3.10'",
-  "pysimdjson<6,>=5.0.1;python_version=='3.11'",                              # pysimdjson does not support 3.12 (2023.11.03)
+  "pysimdjson<6,>=5.0.1;python_version=='3.11'",                              # pysimdjson still not support 3.12 (2023.12.18)
   "uvloop<0.20.0,>=0.14.0;python_version=='3.8' and sys_platform!='win32'",
   "uvloop<1.0,>=0.15.0;python_version=='3.9' and sys_platform!='win32'",
   "uvloop<1.0,>=0.16.0;python_version=='3.10' and sys_platform!='win32'",
@@ -75,7 +76,7 @@ version = { attr = "aiotieba.__version__.__version__" }
 
 [tool.pdm.dev-dependencies]
 lint = ["ruff", "black"]
-test = ["aiotieba[speedup]", "pytest", "pytest-asyncio", "pytest-rerunfailures"]
+test = ["aiotieba[speedup]", "pytest==7.4.3", "pytest-asyncio==0.23.2", "pytest-rerunfailures==13.0"]
 doc = ["mkdocs-material", "mkdocstrings[python]"]
 
 [tool.cibuildwheel]

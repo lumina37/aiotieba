@@ -1155,7 +1155,6 @@ class Client(object):
 
         Args:
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先fid
-            name (str, optional): 通过被删帖作者的用户名/昵称查询 默认为空即查询全部. Defaults to ''.
             pn (int, optional): 页码. Defaults to 1.
             rn (int, optional): 请求的条目数. Defaults to 10. Max to 50.
             _id (str | int, optional): 用于查询的被删帖用户的id user_id / user_name / portrait 优先user_id. Defaults to None.
