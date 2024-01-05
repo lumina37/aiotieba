@@ -27,11 +27,11 @@ jobs:
       - name: Install dependencies
         run: |
           pipx install pdm
-          pdm install -G doc --no-default --no-self
+          pdm install -G doc --no-default --no-self -q
 
       - name: Build
         run: |
-          pdm run mkdocs build -d site -s
+          pdm run mkdocs build -d site -s -q
 
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3
