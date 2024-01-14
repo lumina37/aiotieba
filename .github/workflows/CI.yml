@@ -43,7 +43,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pipx install pdm --python python
+          pip -V
+          pip install --user pdm
           pdm install -G test -q
 
       - name: Prepare config
