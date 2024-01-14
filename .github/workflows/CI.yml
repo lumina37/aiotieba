@@ -37,13 +37,13 @@ jobs:
           ref: develop
 
       - name: Setup Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
         run: |
-          pipx install pdm --python python
+          pip install --user pdm -qq
           pdm install -G test -q
 
       - name: Prepare config

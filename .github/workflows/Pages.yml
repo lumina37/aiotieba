@@ -27,14 +27,14 @@ jobs:
       - name: Install dependencies
         run: |
           pipx install pdm
-          pdm install -G doc --no-default --no-self
+          pdm install -G doc --no-default --no-self -q
 
       - name: Build
         run: |
-          pdm run mkdocs build -d site -s
+          pdm run mkdocs build -d site -s -q
 
       - name: Upload Artifact
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v3
         with:
           path: site
 
@@ -54,4 +54,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v4
