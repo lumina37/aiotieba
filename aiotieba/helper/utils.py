@@ -10,19 +10,12 @@ if sys.version_info >= (3, 11):
 else:
     import async_timeout
 
+import json as jsonlib
+
 from ..exception import exc_handlers
 from ..logging import get_logger
 
-try:
-    import simdjson as jsonlib
-
-    _JSON_PARSER = jsonlib.Parser()
-    parse_json = _JSON_PARSER.parse
-
-except ImportError:
-    import json as jsonlib
-
-    parse_json = jsonlib.loads
+parse_json = jsonlib.loads
 
 pack_json = functools.partial(jsonlib.dumps, separators=(',', ':'))
 
