@@ -45,8 +45,8 @@ dynamic = ["version"]
 
 [project.optional-dependencies]
 img = [
-  "opencv-contrib-python-headless<4.10,>=4.6.0.66;sys_platform=='linux'",
-  "opencv-contrib-python<4.10,>=4.6.0.66;sys_platform!='linux'",
+  "opencv-contrib-python-headless<5,>=4.6.0.66;sys_platform=='linux'",
+  "opencv-contrib-python<5,>=4.6.0.66;sys_platform!='linux'",
 ]
 speedup = [
   "aiodns<4,>=3.0.0",
@@ -68,7 +68,7 @@ version = { attr = "aiotieba.__version__.__version__" }
 
 [tool.pdm.dev-dependencies]
 lint = ["ruff", "black"]
-test = ["aiotieba[speedup]", "pytest==7.4.3", "pytest-asyncio==0.23.2", "pytest-rerunfailures==13.0"]
+test = ["aiotieba[speedup]", "pytest==7.4.4", "pytest-asyncio==0.23.4", "pytest-rerunfailures==13.0"]
 doc = ["mkdocs-material", "mkdocstrings[python]"]
 
 [tool.cibuildwheel]
