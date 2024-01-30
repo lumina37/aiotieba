@@ -22,6 +22,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
+          name: artifact-wheels
           path: ./wheelhouse/*.whl
 
   build_sdist:
@@ -35,7 +36,8 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          path: dist/*.tar.gz
+          name: artifact-source
+          path: ./dist/*.tar.gz
 
   publish:
     name: Publish
@@ -49,7 +51,14 @@ jobs:
       id-token: write
 
     steps:
-      - name: Download distributions
+      - name: Merge artifacts
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: artifact
+          pattern: artifact-*
+          delete-merged: true
+
+      - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           name: artifact
