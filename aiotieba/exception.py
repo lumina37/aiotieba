@@ -50,6 +50,14 @@ class ExceptionHandlers(object):
 exc_handlers = ExceptionHandlers()
 
 
+class TbResponse:
+    def __init__(self, err: Exception) -> None:
+        self.err = err
+
+    def __bool__(self) -> bool:
+        return self.err is None
+
+
 class TiebaServerError(RuntimeError):
     """
     贴吧服务器异常

@@ -1,9 +1,11 @@
 from typing import Mapping, Optional
 
+from pydantic import BaseModel
+
 from .._classdef import Containers
 
 
-class Page_at(object):
+class Page_at(BaseModel):
     """
     页信息
 
@@ -14,56 +16,16 @@ class Page_at(object):
         has_prev (bool): 是否有前驱页
     """
 
-    __slots__ = [
-        '_current_page',
-        '_has_more',
-        '_has_prev',
-    ]
+    current_page: int = 0
+    has_more: bool = False
+    has_prev: int = False
 
-    def _init(self, data_map: Mapping) -> "Page_at":
-        self._current_page = int(data_map['current_page'])
-        self._has_more = bool(int(data_map['has_more']))
-        self._has_prev = bool(int(data_map['has_prev']))
-        return self
-
-    def _init_null(self) -> "Page_at":
-        self._current_page = 0
-        self._has_more = False
-        self._has_prev = False
-        return self
-
-    def __repr__(self) -> str:
-        return str(
-            {
-                'current_page': self._current_page,
-                'has_more': self._has_more,
-                'has_prev': self._has_prev,
-            }
-        )
-
-    @property
-    def current_page(self) -> int:
-        """
-        当前页码
-        """
-
-        return self._current_page
-
-    @property
-    def has_more(self) -> bool:
-        """
-        是否有后继页
-        """
-
-        return self._has_more
-
-    @property
-    def has_prev(self) -> bool:
-        """
-        是否有前驱页
-        """
-
-        return self._has_prev
+    @staticmethod
+    def from_dict(data_map: Mapping) -> "Page_at":
+        current_page = int(data_map['current_page'])
+        has_more = bool(int(data_map['has_more']))
+        has_prev = bool(int(data_map['has_prev']))
+        return Page_at(current_page, has_more, has_prev)
 
 
 class UserInfo_at(object):
@@ -388,10 +350,10 @@ class Ats(Containers[At]):
     def __init__(self, data_map: Optional[Mapping] = None) -> None:
         if data_map:
             self._objs = [At(m) for m in data_map.get('at_list', [])]
-            self._page = Page_at()._init(data_map['page'])
+            self._page = Page_at.from_dict(data_map['page'])
         else:
             self._objs = []
-            self._page = Page_at()._init_null()
+            self._page = Page_at()
 
     @property
     def page(self) -> Page_at:
@@ -407,4 +369,4 @@ class Ats(Containers[At]):
         是否还有下一页
         """
 
-        return self._page._has_more
+        return self._page.has_more
