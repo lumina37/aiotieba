@@ -204,10 +204,10 @@ class SquareForums(Containers[SquareForum]):
 
     def __init__(self, data_proto: Optional[TypeMessage] = None) -> None:
         if data_proto:
-            self._objs = [SquareForum(_proto) for _proto in data_proto.forum_info]
+            self.objs = [SquareForum(_proto) for _proto in data_proto.forum_info]
             self._page = Page_square()._init(data_proto.page)
         else:
-            self._objs = []
+            self.objs = []
             self._page = Page_square()._init_null()
 
     @property

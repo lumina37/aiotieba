@@ -174,12 +174,12 @@ class RankUsers(Containers[RankUser]):
 
     def __init__(self, data_soup: Optional[bs4.BeautifulSoup] = None) -> None:
         if data_soup:
-            self._objs = [RankUser(t) for t in data_soup('tr', class_=['drl_list_item', 'drl_list_item_self'])]
+            self.objs = [RankUser(t) for t in data_soup('tr', class_=['drl_list_item', 'drl_list_item_self'])]
             page_item = data_soup.find('ul', class_='p_rank_pager')
             page_dict = parse_json(page_item['data-field'])
             self._page = Page_rank()._init(page_dict)
         else:
-            self._objs = []
+            self.objs = []
             self._page = Page_rank()._init_null()
 
     @property

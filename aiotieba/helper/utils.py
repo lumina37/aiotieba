@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 import functools
 import logging
 import sys
@@ -99,6 +100,10 @@ def is_portrait(portrait: str) -> bool:
     """
 
     return isinstance(portrait, str) and portrait.startswith('tb.')
+
+
+def default_datetime() -> datetime:
+    return datetime(1970, 1, 1)
 
 
 def timeout(delay: float, loop: asyncio.AbstractEventLoop) -> async_timeout.Timeout:

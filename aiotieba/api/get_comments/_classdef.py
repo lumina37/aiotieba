@@ -99,11 +99,11 @@ class Contents_c(Containers[TypeFragment]):
         self._links = []
         self._tiebapluses = []
         self._voice = FragVoice_c()._init_null()
-        self._objs = list(_frags())
+        self.objs = list(_frags())
         return self
 
     def _init_null(self) -> "Contents_c":
-        self._objs = []
+        self.objs = []
         self._text = ""
         self._texts = []
         self._emojis = []
@@ -114,7 +114,7 @@ class Contents_c(Containers[TypeFragment]):
         return self
 
     def __repr__(self) -> str:
-        return str(self._objs)
+        return str(self.objs)
 
     @property
     def text(self) -> str:
@@ -473,7 +473,7 @@ class Comment(object):
                 self._reply_to_id = reply_to_id
                 if isinstance(contents[1], FragAt_c):
                     del contents._ats[0]
-                contents._objs = contents._objs[2:]
+                contents.objs = contents.objs[2:]
                 contents._texts = contents._texts[2:]
                 if contents.texts:
                     first_text_frag = contents.texts[0]
@@ -1289,11 +1289,11 @@ class Contents_cp(Containers[TypeFragment]):
         self._links = []
         self._tiebapluses = []
         self._voice = FragVoice_cp()._init_null()
-        self._objs = list(_frags())
+        self.objs = list(_frags())
         return self
 
     def _init_null(self) -> "Contents_cp":
-        self._objs = []
+        self.objs = []
         self._text = ""
         self._texts = []
         self._emojis = []
@@ -1305,7 +1305,7 @@ class Contents_cp(Containers[TypeFragment]):
         return self
 
     def __repr__(self) -> str:
-        return str(self._objs)
+        return str(self.objs)
 
     @property
     def text(self) -> str:
@@ -1815,8 +1815,8 @@ class Comments(Containers[Comment]):
             self._post._fname = self._thread._fname
             self._post._tid = self._thread._tid
 
-            self._objs = [Comment(p) for p in data_proto.subpost_list]
-            for comment in self._objs:
+            self.objs = [Comment(p) for p in data_proto.subpost_list]
+            for comment in self.objs:
                 comment._fid = self.forum._fid
                 comment._fname = self.forum._fname
                 comment._tid = self.thread._tid
@@ -1825,7 +1825,7 @@ class Comments(Containers[Comment]):
                 comment._is_thread_author = self._thread._author_id == comment._author_id
 
         else:
-            self._objs = []
+            self.objs = []
             self._page = Page_c()._init_null()
             self._forum = Forum_c()._init_null()
             self._thread = Thread_c()._init_null()

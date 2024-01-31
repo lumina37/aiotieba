@@ -8,7 +8,7 @@ from ._classdef import BawuBlacklistUsers
 
 def parse_body(body: bytes) -> BawuBlacklistUsers:
     soup = bs4.BeautifulSoup(body, 'lxml')
-    bawu_blacklist_users = BawuBlacklistUsers(soup)
+    bawu_blacklist_users = BawuBlacklistUsers.from_tbdata(soup)
 
     return bawu_blacklist_users
 

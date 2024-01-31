@@ -618,25 +618,25 @@ class Contents_pf(Containers[TypeFragment]):
         self._ats = []
         self._links = []
 
-        self._objs = list(_frags())
-        self._objs += self._imgs
+        self.objs = list(_frags())
+        self.objs += self._imgs
 
         if data_proto.video_info.video_width:
             self._video = FragVideo_pf()._init(data_proto.video_info)
-            self._objs.append(self._video)
+            self.objs.append(self._video)
         else:
             self._video = FragVideo_pf()._init_null()
 
         if data_proto.voice_info:
             self._voice = FragVoice_pf()._init(data_proto.voice_info[0])
-            self._objs.append(self._voice)
+            self.objs.append(self._voice)
         else:
             self._voice = FragVoice_pf()._init_null()
 
         return self
 
     def _init_null(self) -> "Contents_pf":
-        self._objs = []
+        self.objs = []
         self._text = ""
         self._texts = []
         self._emojis = []
@@ -648,7 +648,7 @@ class Contents_pf(Containers[TypeFragment]):
         return self
 
     def __repr__(self) -> str:
-        return str(self._objs)
+        return str(self.objs)
 
     @property
     def text(self) -> str:

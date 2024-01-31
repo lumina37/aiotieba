@@ -12,7 +12,7 @@ def parse_body(body: bytes) -> Ats:
     if code := int(res_json['error_code']):
         raise TiebaServerError(code, res_json['error_msg'])
 
-    ats = Ats(res_json)
+    ats = Ats.from_tbdata(res_json)
 
     return ats
 

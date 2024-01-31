@@ -233,24 +233,24 @@ class Contents_t(Containers[TypeFragment]):
         self._emojis = []
         self._ats = []
         self._tiebapluses = []
-        self._objs = list(_frags())
+        self.objs = list(_frags())
 
         if data_proto.video_info.video_width:
             self._video = FragVideo_t()._init(data_proto.video_info)
-            self._objs.append(self._video)
+            self.objs.append(self._video)
         else:
             self._video = FragVideo_t()._init_null()
 
         if data_proto.voice_info:
             self._voice = FragVoice_t()._init(data_proto.voice_info[0])
-            self._objs.append(self._voice)
+            self.objs.append(self._voice)
         else:
             self._voice = FragVoice_t()._init_null()
 
         return self
 
     def _init_null(self) -> "Contents_t":
-        self._objs = []
+        self.objs = []
         self._text = ""
         self._texts = []
         self._emojis = []
@@ -263,7 +263,7 @@ class Contents_t(Containers[TypeFragment]):
         return self
 
     def __repr__(self) -> str:
-        return str(self._objs)
+        return str(self.objs)
 
     @property
     def text(self) -> str:
@@ -889,27 +889,27 @@ class Contents_st(Containers[TypeFragment]):
         self._links = []
         self._tiebapluses = []
 
-        self._objs = list(_frags())
+        self.objs = list(_frags())
         del self._ats[0]
-        del self._objs[0]
-        self._objs += self._imgs
+        del self.objs[0]
+        self.objs += self._imgs
 
         if data_proto.video_info.video_width:
             self._video = FragVideo_st()._init(data_proto.video_info)
-            self._objs.append(self._video)
+            self.objs.append(self._video)
         else:
             self._video = FragVideo_st()._init_null()
 
         if data_proto.voice_info:
             self._voice = FragVoice_st()._init(data_proto.voice_info[0])
-            self._objs.append(self._voice)
+            self.objs.append(self._voice)
         else:
             self._voice = FragVoice_st()._init_null()
 
         return self
 
     def _init_null(self) -> "Contents_st":
-        self._objs = []
+        self.objs = []
         self._text = ""
         self._texts = []
         self._emojis = []
@@ -922,7 +922,7 @@ class Contents_st(Containers[TypeFragment]):
         return self
 
     def __repr__(self) -> str:
-        return str(self._objs)
+        return str(self.objs)
 
     @property
     def text(self) -> str:
@@ -1630,15 +1630,15 @@ class Threads(Containers[Thread]):
             self._forum = Forum_t()._init(data_proto)
             self._tab_map = {p.tab_name: p.tab_id for p in data_proto.nav_tab_info.tab}
 
-            self._objs = [Thread(p) for p in data_proto.thread_list]
+            self.objs = [Thread(p) for p in data_proto.thread_list]
             users = {i: UserInfo_t()._init(p) for p in data_proto.user_list if (i := p.id)}
-            for thread in self._objs:
+            for thread in self.objs:
                 thread._fname = self._forum._fname
                 thread._fid = self._forum._fid
                 thread._user = users[thread._author_id]
 
         else:
-            self._objs = []
+            self.objs = []
             self._page = Page_t()._init_null()
             self._forum = Forum_t()._init_null()
             self._tab_map = {}

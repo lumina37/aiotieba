@@ -162,12 +162,12 @@ class MemberUsers(Containers[MemberUser]):
 
     def __init__(self, data_soup: Optional[bs4.BeautifulSoup] = None) -> None:
         if data_soup:
-            self._objs = [MemberUser(t) for t in data_soup('div', class_='name_wrap')]
+            self.objs = [MemberUser(t) for t in data_soup('div', class_='name_wrap')]
             self._page = Page_member()._init(
                 data_soup.find('div', class_='tbui_pagination').find('li', class_='active')
             )
         else:
-            self._objs = []
+            self.objs = []
             self._page = Page_member()._init_null()
 
     @property

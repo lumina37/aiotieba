@@ -326,10 +326,10 @@ class Recovers(Containers[Recover]):
 
     def __init__(self, data_map: Optional[Mapping] = None) -> None:
         if data_map:
-            self._objs = [Recover(t) for t in data_map['data']['thread_list']]
+            self.objs = [Recover(t) for t in data_map['data']['thread_list']]
             self._page = Page_recover()._init(data_map['data']['page'])
         else:
-            self._objs = []
+            self.objs = []
             self._page = Page_recover()._init_null()
 
     @property

@@ -12,7 +12,7 @@ from ._classdef import Userlogs
 
 def parse_body(body: bytes) -> Userlogs:
     soup = bs4.BeautifulSoup(body, 'lxml')
-    bawu_userlogs = Userlogs(soup)
+    bawu_userlogs = Userlogs.from_tbdata(soup)
 
     return bawu_userlogs
 

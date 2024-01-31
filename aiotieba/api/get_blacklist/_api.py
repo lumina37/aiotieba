@@ -12,7 +12,7 @@ def parse_body(body: bytes) -> BlacklistUsers:
     if code := int(res_json['error_code']):
         raise TiebaServerError(code, res_json['error_msg'])
 
-    blacklist_users = BlacklistUsers(res_json)
+    blacklist_users = BlacklistUsers.from_tbdata(res_json)
 
     return blacklist_users
 

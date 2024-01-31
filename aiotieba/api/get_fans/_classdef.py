@@ -245,10 +245,10 @@ class Fans(Containers[Fan]):
 
     def __init__(self, data_map: Optional[Mapping] = None) -> None:
         if data_map:
-            self._objs = [Fan(m) for m in data_map['user_list']]
+            self.objs = [Fan(m) for m in data_map['user_list']]
             self._page = Page_fan()._init(data_map['page'])
         else:
-            self._objs = []
+            self.objs = []
             self._page = Page_fan()._init_null()
 
     @property

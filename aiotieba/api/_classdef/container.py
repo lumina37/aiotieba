@@ -1,24 +1,25 @@
-from typing import Generic, Iterator, List, SupportsIndex, TypeVar, overload
+import dataclasses as dcs
+from typing import Generic, Iterator, List, Optional, SupportsIndex, TypeVar, overload
 
 TypeContainer = TypeVar('TypeContainer')
 
 
+@dcs.dataclass
 class Containers(Generic[TypeContainer]):
     """
     内容列表的泛型基类
     约定取内容的通用接口
 
     Attributes:
-        _objs (list[TypeContainer]): 内容列表
+        objs (list[TypeContainer]): 内容列表
+        err (Exception | None): 捕获的异常
     """
 
-    __slots__ = ['_objs']
-
-    def __repr__(self) -> str:
-        return str(self._objs)
+    objs: List[TypeContainer] = dcs.field(default_factory=list)
+    err: Optional[Exception] = None
 
     def __iter__(self) -> Iterator[TypeContainer]:
-        return self._objs.__iter__()
+        return self.objs.__iter__()
 
     @overload
     def __getitem__(self, idx: SupportsIndex) -> TypeContainer:
@@ -29,7 +30,7 @@ class Containers(Generic[TypeContainer]):
         ...
 
     def __getitem__(self, idx):
-        return self._objs.__getitem__(idx)
+        return self.objs.__getitem__(idx)
 
     def __setitem__(self, idx, val):
         raise NotImplementedError
@@ -38,7 +39,7 @@ class Containers(Generic[TypeContainer]):
         raise NotImplementedError
 
     def __len__(self) -> int:
-        return self._objs.__len__()
+        return self.objs.__len__()
 
     def __bool__(self) -> bool:
-        return bool(self._objs)
+        return bool(self.objs)

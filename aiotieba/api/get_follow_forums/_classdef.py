@@ -92,12 +92,12 @@ class FollowForums(Containers[FollowForum]):
     def __init__(self, data_map: Optional[Mapping] = None) -> None:
         if data_map and (forum_list := data_map.get('forum_list', {})):
             forum_dicts = forum_list.get('non-gconforum', [])
-            self._objs = [FollowForum(m) for m in forum_dicts]
+            self.objs = [FollowForum(m) for m in forum_dicts]
             forum_dicts = forum_list.get('gconforum', [])
-            self._objs += [FollowForum(m) for m in forum_dicts]
+            self.objs += [FollowForum(m) for m in forum_dicts]
             self._has_more = bool(int(data_map['has_more']))
         else:
-            self._objs = []
+            self.objs = []
             self._has_more = False
 
     @property

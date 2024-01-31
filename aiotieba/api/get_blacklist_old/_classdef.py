@@ -1,9 +1,11 @@
+import dataclasses as dcs
 from typing import Optional
 
 from .._classdef import Containers, TypeMessage
 
 
-class BlacklistOldUser(object):
+@dcs.dataclass
+class BlacklistOldUser:
     """
     用户信息
 
@@ -13,125 +15,62 @@ class BlacklistOldUser(object):
         user_name (str): 用户名
         nick_name_old (str): 旧版昵称
 
-        until_time (int): 解禁时间
+        until_time (int): 解禁时间 10位时间戳 以秒为单位
 
         nick_name (str): 用户昵称
         show_name (str): 显示名称
         log_name (str): 用于在日志中记录用户信息
     """
 
-    __slots__ = [
-        '_user_id',
-        '_portrait',
-        '_user_name',
-        '_nick_name_old',
-        '_until_time',
-    ]
+    user_id: int = 0
+    portrait: str = ''
+    user_name: str = ''
+    nick_name_old: str = ''
 
-    def __init__(self, data_proto: TypeMessage) -> None:
-        self._user_id = data_proto.user_id
-        if '?' in (portrait := data_proto.portrait):
-            self._portrait = portrait[:-13]
-        else:
-            self._portrait = portrait
-        self._user_name = data_proto.user_name
-        self._nick_name_old = data_proto.name_show
+    until_time: int = 0
+
+    @staticmethod
+    def from_tbdata(data_proto: TypeMessage) -> "BlacklistOldUser":
+        user_id = data_proto.user_id
+        portrait = data_proto.portrait
+        if '?' in portrait:
+            portrait = portrait[:-13]
+        user_name = data_proto.user_name
+        nick_name_old = data_proto.name_show
+        until_time = data_proto.mute_time
+        return BlacklistOldUser(user_id, portrait, user_name, nick_name_old, until_time)
 
     def __str__(self) -> str:
-        return self._user_name or self._portrait or str(self._user_id)
-
-    def __repr__(self) -> str:
-        return str({'user_id': self._user_id})
+        return self.user_name or self.portrait or str(self.user_id)
 
     def __eq__(self, obj: "BlacklistOldUser") -> bool:
-        return self._user_id == obj._user_id
+        return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
-        return self._user_id
+        return self.user_id
 
     def __int__(self) -> int:
-        return self._user_id
+        return self.user_id
 
     def __bool__(self) -> bool:
-        return bool(self._user_id)
-
-    @property
-    def user_id(self) -> int:
-        """
-        用户user_id
-
-        Note:
-            唯一 不可变 不可为空\n
-            请注意与用户个人页的tieba_uid区分
-        """
-
-        return self._user_id
-
-    @property
-    def portrait(self) -> str:
-        """
-        用户portrait
-
-        Note:
-            唯一 不可变 不可为空
-        """
-
-        return self._portrait
-
-    @property
-    def user_name(self) -> str:
-        """
-        用户名
-
-        Note:
-            唯一 可变 可为空\n
-            请注意与用户昵称区分
-        """
-
-        return self._user_name
-
-    @property
-    def nick_name_old(self) -> str:
-        """
-        旧版昵称
-        """
-
-        return self._nick_name_old
-
-    @property
-    def until_time(self) -> int:
-        """
-        解禁时间
-
-        Note:
-            10位时间戳 以秒为单位
-        """
-
-        return self._until_time
+        return bool(self.user_id)
 
     @property
     def nick_name(self) -> str:
-        """
-        用户昵称
-        """
-
-        return self._nick_name_old
+        return self.nick_name_old
 
     @property
     def log_name(self) -> str:
-        """
-        用于在日志中记录用户信息
-        """
-
-        if self._user_name:
-            return self._user_name
-        elif self._portrait:
-            return f"{self._nick_name_old}/{self._portrait}"
+        if self.user_name:
+            return self.user_name
+        elif self.portrait:
+            return f"{self.nick_name_old}/{self.portrait}"
         else:
-            return str(self._user_id)
+            return str(self.user_id)
 
 
-class Page_blacklist(object):
+@dcs.dataclass
+class Page_blacklist:
     """
     页信息
 
@@ -209,10 +148,10 @@ class BlacklistOldUsers(Containers[BlacklistOldUser]):
 
     def __init__(self, data_proto: Optional[TypeMessage] = None) -> None:
         if data_proto:
-            self._objs = [BlacklistOldUser(p) for p in data_proto.mute_user]
+            self.objs = [BlacklistOldUser(p) for p in data_proto.mute_user]
             self._page = Page_blacklist()._init(data_proto.page)
         else:
-            self._objs = []
+            self.objs = []
             self._page = Page_blacklist()._init_null()
 
     @property

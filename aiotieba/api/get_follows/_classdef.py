@@ -220,10 +220,10 @@ class Follows(Containers[Follow]):
 
     def __init__(self, data_map: Optional[Mapping] = None) -> None:
         if data_map:
-            self._objs = [Follow(m) for m in data_map['follow_list']]
+            self.objs = [Follow(m) for m in data_map['follow_list']]
             self._page = Page_follow()._init(data_map)
         else:
-            self._objs = []
+            self.objs = []
             self._page = Page_follow()._init_null()
 
     @property

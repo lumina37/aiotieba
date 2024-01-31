@@ -345,11 +345,11 @@ class Contents_p(Containers[TypeFragment]):
         self._tiebapluses = []
         self._voice = FragVoice_p()._init_null()
         self._video = FragVideo_p()._init_null()
-        self._objs = list(_frags())
+        self.objs = list(_frags())
         return self
 
     def _init_null(self) -> "Contents_p":
-        self._objs = []
+        self.objs = []
         self._text = ""
         self._texts = []
         self._emojis = []
@@ -362,7 +362,7 @@ class Contents_p(Containers[TypeFragment]):
         return self
 
     def __repr__(self) -> str:
-        return str(self._objs)
+        return str(self.objs)
 
     @property
     def text(self) -> str:
@@ -517,11 +517,11 @@ class Contents_pc(Containers[TypeFragment]):
         self._links = []
         self._tiebapluses = []
         self._voice = FragVoice_pc()._init_null()
-        self._objs = list(_frags())
+        self.objs = list(_frags())
         return self
 
     def _init_null(self) -> "Contents_pc":
-        self._objs = []
+        self.objs = []
         self._text = ""
         self._texts = []
         self._emojis = []
@@ -532,7 +532,7 @@ class Contents_pc(Containers[TypeFragment]):
         return self
 
     def __repr__(self) -> str:
-        return str(self._objs)
+        return str(self.objs)
 
     @property
     def text(self) -> str:
@@ -648,7 +648,7 @@ class Comment_p(object):
                 self._reply_to_id = reply_to_id
                 if isinstance(contents[1], FragAt_p):
                     del contents._ats[0]
-                contents._objs = contents._objs[2:]
+                contents.objs = contents.objs[2:]
                 contents._texts = contents._texts[2:]
                 if contents.texts:
                     first_text_frag = contents.texts[0]
@@ -1666,27 +1666,27 @@ class Contents_pt(Containers[TypeFragment]):
         self._links = []
         self._tiebapluses = []
 
-        self._objs = list(_frags())
+        self.objs = list(_frags())
         del self._ats[0]
-        del self._objs[0]
-        self._objs += self._imgs
+        del self.objs[0]
+        self.objs += self._imgs
 
         if data_proto.video_info.video_width:
             self._video = FragVideo_pt()._init(data_proto.video_info)
-            self._objs.append(self._video)
+            self.objs.append(self._video)
         else:
             self._video = FragVideo_pt()._init_null()
 
         if data_proto.voice_info:
             self._voice = FragVoice_pt()._init(data_proto.voice_info[0])
-            self._objs.append(self._voice)
+            self.objs.append(self._voice)
         else:
             self._voice = FragVoice_pt()._init_null()
 
         return self
 
     def _init_null(self) -> "Contents_pt":
-        self._objs = []
+        self.objs = []
         self._text = ""
         self._texts = []
         self._emojis = []
@@ -1699,7 +1699,7 @@ class Contents_pt(Containers[TypeFragment]):
         return self
 
     def __repr__(self) -> str:
-        return str(self._objs)
+        return str(self.objs)
 
     @property
     def text(self) -> str:
@@ -2486,9 +2486,9 @@ class Posts(Containers[Post]):
             self._thread._fid = self._forum._fid
             self._thread._fname = self._forum._fname
 
-            self._objs = [Post(p) for p in data_proto.post_list]
+            self.objs = [Post(p) for p in data_proto.post_list]
             users = {i: UserInfo_p()._init(p) for p in data_proto.user_list if (i := p.id)}
-            for post in self._objs:
+            for post in self.objs:
                 post._fid = self._forum._fid
                 post._fname = self._forum._fname
                 post._tid = self._thread._tid
@@ -2504,7 +2504,7 @@ class Posts(Containers[Post]):
                     comment._is_thread_author = self._thread._author_id == comment._author_id
 
         else:
-            self._objs = []
+            self.objs = []
             self._page = Page_p()._init_null()
             self._forum = Forum_p()._init_null()
             self._thread = Thread_p()._init_null()

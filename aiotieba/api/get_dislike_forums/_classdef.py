@@ -168,10 +168,10 @@ class DislikeForums(Containers[DislikeForum]):
 
     def __init__(self, data_proto: Optional[TypeMessage] = None) -> None:
         if data_proto:
-            self._objs = [DislikeForum(p) for p in data_proto.forum_list]
+            self.objs = [DislikeForum(p) for p in data_proto.forum_list]
             self._page = Page_dislikef()._init(data_proto)
         else:
-            self._objs = []
+            self.objs = []
             self._page = Page_dislikef()._init_null()
 
     @property

@@ -196,10 +196,10 @@ class Blocks(Containers[Block]):
     def __init__(self, data_map: Optional[Mapping] = None) -> None:
         if data_map:
             data_soup = bs4.BeautifulSoup(data_map['data']['content'], 'lxml')
-            self._objs = [Block(t) for t in data_soup('li')]
+            self.objs = [Block(t) for t in data_soup('li')]
             self._page = Page_block()._init(data_map['data']['page'])
         else:
-            self._objs = []
+            self.objs = []
             self._page = Page_block()._init_null()
 
     @property

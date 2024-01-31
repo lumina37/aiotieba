@@ -1,11 +1,11 @@
-from typing import Mapping, Optional
-
-from pydantic import BaseModel
+import dataclasses as dcs
+from typing import Mapping
 
 from .._classdef import Containers
 
 
-class Page_at(BaseModel):
+@dcs.dataclass
+class Page_at:
     """
     页信息
 
@@ -28,7 +28,8 @@ class Page_at(BaseModel):
         return Page_at(current_page, has_more, has_prev)
 
 
-class UserInfo_at(object):
+@dcs.dataclass
+class UserInfo_at:
     """
     用户信息
 
@@ -46,159 +47,66 @@ class UserInfo_at(object):
         log_name (str): 用于在日志中记录用户信息
     """
 
-    __slots__ = [
-        '_user_id',
-        '_portrait',
-        '_user_name',
-        '_nick_name_new',
-        '_priv_like',
-        '_priv_reply',
-    ]
+    user_id: int = 0
+    portrait: str = ''
+    user_name: str = ''
+    nick_name_new: str = ''
 
-    def _init(self, data_map: Mapping) -> "UserInfo_at":
-        self._user_id = int(data_map['id'])
-        if '?' in (portrait := data_map['portrait']):
-            self._portrait = portrait[:-13]
-        else:
-            self._portrait = portrait
-        self._user_name = data_map['name']
-        self._nick_name_new = data_map['name_show']
+    priv_like: int = 1
+    priv_reply: int = 1
+
+    @staticmethod
+    def from_tbdata(data_map: Mapping) -> "UserInfo_at":
+        user_id = int(data_map['id'])
+        portrait = data_map['portrait']
+        if '?' in portrait:
+            portrait = portrait[:-13]
+        user_name = data_map['name']
+        nick_name_new = data_map['name_show']
         if priv_sets := data_map['priv_sets']:
-            self._priv_like = int(priv_sets.get('like', 1))
-            self._priv_reply = int(priv_sets.get('reply', 1))
+            priv_like = int(priv_sets.get('like', 1))
+            priv_reply = int(priv_sets.get('reply', 1))
         else:
-            self._priv_like = 1
-            self._priv_reply = 1
-        return self
+            priv_like = 1
+            priv_reply = 1
 
-    def _init_null(self) -> "UserInfo_at":
-        self._user_id = 0
-        self._portrait = ''
-        self._user_name = ''
-        self._nick_name_new = ''
-        self._priv_like = 1
-        self._priv_reply = 1
-        return self
+        return UserInfo_at(user_id, portrait, user_name, nick_name_new, priv_like, priv_reply)
 
     def __str__(self) -> str:
-        return self._user_name or self._portrait or str(self._user_id)
-
-    def __repr__(self) -> str:
-        return str(
-            {
-                'user_id': self._user_id,
-                'show_name': self.show_name,
-            }
-        )
+        return self.user_name or self.portrait or str(self.user_id)
 
     def __eq__(self, obj: "UserInfo_at") -> bool:
-        return self._user_id == obj._user_id
+        return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
-        return self._user_id
+        return self.user_id
 
     def __int__(self) -> int:
-        return self._user_id
+        return self.user_id
 
     def __bool__(self) -> bool:
-        return bool(self._user_id)
-
-    @property
-    def user_id(self) -> int:
-        """
-        用户user_id
-
-        Note:
-            唯一 不可变 不可为空\n
-            请注意与用户个人页的tieba_uid区分
-        """
-
-        return self._user_id
-
-    @property
-    def portrait(self) -> str:
-        """
-        用户portrait
-
-        Note:
-            唯一 不可变 不可为空
-        """
-
-        return self._portrait
-
-    @property
-    def user_name(self) -> str:
-        """
-        用户名
-
-        Note:
-            唯一 可变 可为空\n
-            请注意与用户昵称区分
-        """
-
-        return self._user_name
-
-    @property
-    def nick_name_new(self) -> str:
-        """
-        新版昵称
-        """
-
-        return self._nick_name_new
-
-    @property
-    def priv_like(self) -> int:
-        """
-        公开关注吧列表的设置状态
-
-        Note:
-            1完全可见 2好友可见 3完全隐藏
-        """
-
-        return self._priv_like
-
-    @property
-    def priv_reply(self) -> int:
-        """
-        帖子评论权限的设置状态
-
-        Note:
-            1允许所有人 5仅允许我的粉丝 6仅允许我的关注
-        """
-
-        return self._priv_reply
+        return bool(self.user_id)
 
     @property
     def nick_name(self) -> str:
-        """
-        用户昵称
-        """
-
-        return self._nick_name_new
+        return self.nick_name_new
 
     @property
     def show_name(self) -> str:
-        """
-        显示名称
-        """
-
-        return self._nick_name_new or self._user_name
+        return self.nick_name_new or self.user_name
 
     @property
     def log_name(self) -> str:
-        """
-        用于在日志中记录用户信息
-        """
-
-        if self._user_name:
-            return self._user_name
-        elif self._portrait:
-            return f"{self._nick_name_new}/{self._portrait}"
+        if self.user_name:
+            return self.user_name
+        elif self.portrait:
+            return f"{self.nick_name_new}/{self.portrait}"
         else:
-            return str(self._user_id)
+            return str(self.user_id)
 
 
-class At(object):
+@dcs.dataclass
+class At:
     """
     @信息
 
@@ -217,156 +125,60 @@ class At(object):
         create_time (int): 创建时间
     """
 
-    __slots__ = [
-        '_text',
-        '_fname',
-        '_tid',
-        '_pid',
-        '_user',
-        '_author_id',
-        '_is_comment',
-        '_is_thread',
-        '_create_time',
-    ]
+    text: str = ""
 
-    def __init__(self, data_map: Mapping) -> None:
-        self._text = data_map['content']
-        self._fname = data_map['fname']
-        self._tid = int(data_map['thread_id'])
-        self._pid = int(data_map['post_id'])
-        self._user = UserInfo_at()._init(data_map['replyer'])
-        self._author_id = self._user._user_id
-        self._is_comment = bool(int(data_map['is_floor']))
-        self._is_thread = bool(int(data_map['is_first_post']))
-        self._create_time = int(data_map['time'])
+    fname: str = ''
+    tid: int = 0
+    pid: int = 0
+    user: UserInfo_at = dcs.field(default_factory=UserInfo_at)
+    author_id: int = 0
 
-    def __repr__(self) -> str:
-        return str(
-            {
-                'tid': self._tid,
-                'pid': self._pid,
-                'user': self._user.log_name,
-                'text': self._text,
-                'is_comment': self._is_comment,
-                'is_thread': self._is_thread,
-            }
-        )
+    is_comment: bool = False
+    is_thread: bool = False
+
+    create_time: int = 0
+
+    @staticmethod
+    def from_tbdata(data_map: Mapping) -> "At":
+        text = data_map['content']
+        fname = data_map['fname']
+        tid = int(data_map['thread_id'])
+        pid = int(data_map['post_id'])
+        user = UserInfo_at.from_tbdata(data_map['replyer'])
+        author_id = user.user_id
+        is_comment = bool(int(data_map['is_floor']))
+        is_thread = bool(int(data_map['is_first_post']))
+        create_time = int(data_map['time'])
+        return At(text, fname, tid, pid, user, author_id, is_comment, is_thread, create_time)
 
     def __eq__(self, obj: "At") -> bool:
-        return self._pid == obj._pid
+        return self.pid == obj.pid
 
     def __hash__(self) -> int:
-        return self._pid
-
-    @property
-    def text(self) -> str:
-        """
-        文本内容
-        """
-
-        return self._text
-
-    @property
-    def fname(self) -> str:
-        """
-        所在贴吧名
-        """
-
-        return self._fname
-
-    @property
-    def tid(self) -> int:
-        """
-        所在主题帖id
-        """
-
-        return self._tid
-
-    @property
-    def pid(self) -> int:
-        """
-        所在主题帖id
-        """
-
-        return self._pid
-
-    @property
-    def user(self) -> UserInfo_at:
-        """
-        发布者的用户信息
-        """
-
-        return self._user
-
-    @property
-    def author_id(self) -> int:
-        """
-        发布者的user_id
-        """
-
-        return self._author_id
-
-    @property
-    def is_comment(self) -> bool:
-        """
-        是否楼中楼
-        """
-
-        return self._is_comment
-
-    @property
-    def is_thread(self) -> bool:
-        """
-        是否主题帖
-        """
-
-        return self._is_thread
-
-    @property
-    def create_time(self) -> int:
-        """
-        创建时间
-
-        Note:
-            10位时间戳 以秒为单位
-        """
-
-        return self._create_time
+        return self.pid
 
 
+@dcs.dataclass
 class Ats(Containers[At]):
     """
     @信息列表
 
     Attributes:
-        _objs (list[At]): @信息列表
+        objs (list[At]): @信息列表
+        err (Exception | None): 捕获的异常
 
         page (Page_at): 页信息
         has_more (bool): 是否还有下一页
     """
 
-    __slots__ = ['_page']
+    page: Page_at = dcs.field(default_factory=Page_at)
 
-    def __init__(self, data_map: Optional[Mapping] = None) -> None:
-        if data_map:
-            self._objs = [At(m) for m in data_map.get('at_list', [])]
-            self._page = Page_at.from_dict(data_map['page'])
-        else:
-            self._objs = []
-            self._page = Page_at()
-
-    @property
-    def page(self) -> Page_at:
-        """
-        页信息
-        """
-
-        return self._page
+    @staticmethod
+    def from_tbdata(data_map: Mapping) -> "Ats":
+        objs = [At(m) for m in data_map.get('at_list', [])]
+        page = Page_at.from_dict(data_map['page'])
+        return Ats(objs, None, page)
 
     @property
     def has_more(self) -> bool:
-        """
-        是否还有下一页
-        """
-
-        return self._page.has_more
+        return self.page.has_more

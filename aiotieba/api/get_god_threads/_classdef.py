@@ -44,9 +44,9 @@ class GodThreads(Containers[GodThread]):
     def __init__(self, data_map: Optional[Mapping] = None) -> None:
         if data_map:
             self._has_more = data_map['data']['has_more']
-            self._objs = [GodThread(t) for t in data_map['data']['thread_list']]
+            self.objs = [GodThread(t) for t in data_map['data']['thread_list']]
         else:
-            self._objs = []
+            self.objs = []
 
     @property
     def has_more(self) -> bool:

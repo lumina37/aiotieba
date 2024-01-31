@@ -633,10 +633,10 @@ class Replys(Containers[Reply]):
 
     def __init__(self, data_proto: Optional[TypeMessage] = None) -> None:
         if data_proto:
-            self._objs = [Reply(p) for p in data_proto.reply_list]
+            self.objs = [Reply(p) for p in data_proto.reply_list]
             self._page = Page_reply()._init(data_proto.page)
         else:
-            self._objs = []
+            self.objs = []
             self._page = Page_reply()._init_null()
 
     @property

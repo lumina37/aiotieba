@@ -141,10 +141,10 @@ class SelfFollowForums(Containers[SelfFollowForum]):
 
     def __init__(self, data_map: Optional[Mapping] = None) -> None:
         if data_map:
-            self._objs = [SelfFollowForum(m) for m in data_map['list']]
+            self.objs = [SelfFollowForum(m) for m in data_map['list']]
             self._page = Page_sforum()._init(data_map['page'])
         else:
-            self._objs = []
+            self.objs = []
             self._page = Page_sforum()._init_null()
 
     @property
