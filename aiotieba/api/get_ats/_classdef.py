@@ -1,6 +1,7 @@
 import dataclasses as dcs
 from typing import Mapping
 
+from ...exception import TbErrorPlugin
 from .._classdef import Containers
 
 
@@ -131,7 +132,6 @@ class At:
     tid: int = 0
     pid: int = 0
     user: UserInfo_at = dcs.field(default_factory=UserInfo_at)
-    author_id: int = 0
 
     is_comment: bool = False
     is_thread: bool = False
@@ -145,11 +145,10 @@ class At:
         tid = int(data_map['thread_id'])
         pid = int(data_map['post_id'])
         user = UserInfo_at.from_tbdata(data_map['replyer'])
-        author_id = user.user_id
         is_comment = bool(int(data_map['is_floor']))
         is_thread = bool(int(data_map['is_first_post']))
         create_time = int(data_map['time'])
-        return At(text, fname, tid, pid, user, author_id, is_comment, is_thread, create_time)
+        return At(text, fname, tid, pid, user, is_comment, is_thread, create_time)
 
     def __eq__(self, obj: "At") -> bool:
         return self.pid == obj.pid
@@ -157,9 +156,13 @@ class At:
     def __hash__(self) -> int:
         return self.pid
 
+    @property
+    def author_id(self) -> int:
+        return self.user.user_id
+
 
 @dcs.dataclass
-class Ats(Containers[At]):
+class Ats(TbErrorPlugin, Containers[At]):
     """
     @信息列表
 
@@ -175,7 +178,7 @@ class Ats(Containers[At]):
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> "Ats":
-        objs = [At(m) for m in data_map.get('at_list', [])]
+        objs = [At.from_tbdata(m) for m in data_map.get('at_list', [])]
         page = Page_at.from_dict(data_map['page'])
         return Ats(objs, None, page)
 

@@ -1,7 +1,8 @@
 import dataclasses as dcs
 from datetime import datetime
 from functools import cached_property
-from typing import List
+from typing import List, Optional
+from ...exception import TbErrorPlugin
 
 import bs4
 
@@ -104,7 +105,7 @@ class Postlog:
         op_user_name = op_user_name_item.string
 
         op_time_item = op_user_name_item.next_sibling
-        op_time = datetime.datetime.strptime(op_time_item.text, '%Y-%m-%d%H:%M')
+        op_time = datetime.strptime(op_time_item.text, '%Y-%m-%d%H:%M')
 
         return Postlog(text, title, medias, tid, pid, op_type, post_portrait, post_time, op_user_name, op_time)
 
@@ -146,7 +147,7 @@ class Page_postlog:
 
 
 @dcs.dataclass
-class Postlogs(Containers[Postlog]):
+class Postlogs(TbErrorPlugin,Containers[Postlog]):
     """
     吧务帖子管理日志表
 
@@ -162,7 +163,7 @@ class Postlogs(Containers[Postlog]):
 
     @staticmethod
     def from_tbdata(data_soup: bs4.BeautifulSoup) -> "Postlogs":
-        objs = [Postlog(_tag) for _tag in data_soup.find('tbody').find_all('tr')]
+        objs = [Postlog.from_tbdata(t) for t in data_soup.find('tbody').find_all('tr')]
         page = Page_postlog.from_tbdata(data_soup)
         return Postlogs(objs, None, page)
 

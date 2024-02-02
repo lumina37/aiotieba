@@ -1,6 +1,6 @@
 import dataclasses as dcs
-from typing import Optional
 
+from ...exception import TbErrorPlugin
 from .._classdef import Containers, TypeMessage
 
 
@@ -81,83 +81,40 @@ class Page_blacklist:
         has_prev (bool): 是否有前驱页
     """
 
-    __slots__ = [
-        '_current_page',
-        '_has_more',
-        '_has_prev',
-    ]
+    current_page: int = 0
 
-    def _init(self, data_proto: TypeMessage) -> "Page_blacklist":
-        self._current_page = data_proto.current_page
-        self._has_more = bool(data_proto.has_more)
-        self._has_prev = bool(data_proto.has_prev)
-        return self
+    has_more: bool = False
+    has_prev: bool = False
 
-    def _init_null(self) -> "Page_blacklist":
-        self._current_page = 0
-        self._has_more = False
-        self._has_prev = False
-        return self
-
-    def __repr__(self) -> str:
-        return str(
-            {
-                'current_page': self._current_page,
-                'has_more': self._has_more,
-                'has_prev': self._has_prev,
-            }
-        )
-
-    @property
-    def current_page(self) -> int:
-        """
-        当前页码
-        """
-
-        return self._current_page
-
-    @property
-    def has_more(self) -> bool:
-        """
-        是否有后继页
-        """
-
-        return self._has_more
-
-    @property
-    def has_prev(self) -> bool:
-        """
-        是否有前驱页
-        """
-
-        return self._has_prev
+    @staticmethod
+    def from_tbdata(data_proto: TypeMessage) -> "Page_blacklist":
+        current_page = data_proto.current_page
+        has_more = bool(data_proto.has_more)
+        has_prev = bool(data_proto.has_prev)
+        return Page_blacklist(current_page, has_more, has_prev)
 
 
+@dcs.dataclass
 class BlacklistOldUsers(Containers[BlacklistOldUser]):
     """
     旧版用户黑名单列表
 
     Attributes:
-        _objs (list[BlacklistOldUser]): 旧版用户黑名单列表
+        objs (list[BlacklistOldUser]): 旧版用户黑名单列表
+        err (Exception | None): 捕获的异常
 
         page (Page_blacklist): 页信息
         has_more (bool): 是否还有下一页
     """
 
-    __slots__ = ['_page']
+    page: Page_blacklist = dcs.field(default_factory=Page_blacklist)
 
-    def __init__(self, data_proto: Optional[TypeMessage] = None) -> None:
-        if data_proto:
-            self.objs = [BlacklistOldUser(p) for p in data_proto.mute_user]
-            self._page = Page_blacklist()._init(data_proto.page)
-        else:
-            self.objs = []
-            self._page = Page_blacklist()._init_null()
+    @staticmethod
+    def from_tbdata(data_proto: TypeMessage) -> "BlacklistOldUsers":
+        objs = [BlacklistOldUser.from_tbdata(p) for p in data_proto.mute_user]
+        page = Page_blacklist.from_tbdata(data_proto.page)
+        return BlacklistOldUsers(objs, None, page)
 
     @property
     def has_more(self) -> bool:
-        """
-        是否还有下一页
-        """
-
-        return self._page._has_more
+        return self.page.has_more

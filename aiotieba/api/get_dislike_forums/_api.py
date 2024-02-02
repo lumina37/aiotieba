@@ -27,7 +27,7 @@ def parse_body(body: bytes) -> DislikeForums:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    dislike_forums = DislikeForums(data_proto)
+    dislike_forums = DislikeForums.from_tbdata(data_proto)
 
     return dislike_forums
 

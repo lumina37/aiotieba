@@ -1,5 +1,5 @@
 import dataclasses as dcs
-from typing import Generic, Iterator, List, Optional, SupportsIndex, TypeVar, overload
+from typing import Generic, Iterator, List, SupportsIndex, TypeVar, overload
 
 TypeContainer = TypeVar('TypeContainer')
 
@@ -12,11 +12,9 @@ class Containers(Generic[TypeContainer]):
 
     Attributes:
         objs (list[TypeContainer]): 内容列表
-        err (Exception | None): 捕获的异常
     """
 
     objs: List[TypeContainer] = dcs.field(default_factory=list)
-    err: Optional[Exception] = None
 
     def __iter__(self) -> Iterator[TypeContainer]:
         return self.objs.__iter__()

@@ -31,7 +31,7 @@ def parse_body(body: bytes) -> Comments:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    comments = Comments(data_proto)
+    comments = Comments.from_tbdata(data_proto)
 
     return comments
 

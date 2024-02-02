@@ -1,3 +1,4 @@
+import dataclasses as dcs
 from typing import Callable, Optional
 
 TypeExceptionHandler = Callable[[Exception], Optional[Exception]]
@@ -50,9 +51,23 @@ class ExceptionHandlers(object):
 exc_handlers = ExceptionHandlers()
 
 
-class TbResponse:
-    def __init__(self, err: Exception) -> None:
-        self.err = err
+@dcs.dataclass
+class TbErrorPlugin:
+    """
+    为类型添加一个`err`项 用于保存捕获到的异常
+    """
+
+    err: Optional[Exception] = None
+
+
+@dcs.dataclass
+class TbResponse(TbErrorPlugin):
+    """
+    简单响应
+
+    Attributes:
+        err (Exception | None): 捕获的异常
+    """
 
     def __bool__(self) -> bool:
         return self.err is None

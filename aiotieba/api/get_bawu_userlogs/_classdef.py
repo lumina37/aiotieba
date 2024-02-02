@@ -1,5 +1,7 @@
 import dataclasses as dcs
 from datetime import datetime
+from typing import Optional
+from ...exception import TbErrorPlugin
 
 import bs4
 
@@ -86,7 +88,7 @@ class Page_userlog:
 
 
 @dcs.dataclass
-class Userlogs(Containers[Userlog]):
+class Userlogs(TbErrorPlugin,Containers[Userlog]):
     """
     吧务用户管理日志表
 
@@ -102,7 +104,7 @@ class Userlogs(Containers[Userlog]):
 
     @staticmethod
     def from_tbdata(data_soup: bs4.BeautifulSoup) -> "Userlogs":
-        objs = [Userlog(_tag) for _tag in data_soup.find('tbody').find_all('tr')]
+        objs = [Userlog.from_tbdata(t) for t in data_soup.find('tbody').find_all('tr')]
         page = Page_userlog.from_tbdata(data_soup)
         return Userlogs(objs, page)
 

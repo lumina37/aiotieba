@@ -1,9 +1,12 @@
+import dataclasses as dcs
 from typing import Mapping, Optional
 
+from ...exception import TbErrorPlugin
 from .._classdef import Containers
 
 
-class GodThread(object):
+@dcs.dataclass
+class GodThread:
     """
     精选神帖
 
@@ -11,47 +14,30 @@ class GodThread(object):
         tid (int): 主题帖id
     """
 
-    __slots__ = ['_tid']
+    tid: int = 0
 
-    def __init__(self, data_map: Mapping) -> None:
-        self._tid = data_map['tid']
-
-    def __repr__(self) -> str:
-        return str({'tid': self._tid})
-
-    @property
-    def tid(self) -> int:
-        """
-        主题帖id
-        """
-
-        return self._tid
+    @staticmethod
+    def from_tbdata(data_map: Mapping) -> "GodThread":
+        tid = data_map['tid']
+        return GodThread(tid)
 
 
-class GodThreads(Containers[GodThread]):
+@dcs.dataclass
+class GodThreads(TbErrorPlugin, Containers[GodThread]):
     """
     精选神帖列表
 
     Attributes:
-        _objs (list[Recover]): 待恢复帖子列表
+        objs (list[GodThread]): 精选神帖列表
+        err (Exception | None): 捕获的异常
 
-        page (Page_recover): 页信息
         has_more (bool): 是否还有下一页
     """
 
-    __slots__ = ['_has_more']
+    has_more: bool = False
 
-    def __init__(self, data_map: Optional[Mapping] = None) -> None:
-        if data_map:
-            self._has_more = data_map['data']['has_more']
-            self.objs = [GodThread(t) for t in data_map['data']['thread_list']]
-        else:
-            self.objs = []
-
-    @property
-    def has_more(self) -> bool:
-        """
-        是否还有下一页
-        """
-
-        return self._has_more
+    @staticmethod
+    def from_tbdata(data_map: Mapping) -> "GodThreads":
+        objs = [GodThread(t) for t in data_map['data']['thread_list']]
+        has_more = data_map['data']['has_more']
+        return GodThreads(objs, None, has_more)

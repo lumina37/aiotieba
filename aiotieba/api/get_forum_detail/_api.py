@@ -25,7 +25,7 @@ def parse_body(body: bytes) -> Forum_detail:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    forum = Forum_detail(data_proto)
+    forum = Forum_detail.from_tbdata(data_proto)
 
     return forum
 

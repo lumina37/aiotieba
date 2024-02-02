@@ -1,9 +1,12 @@
-from typing import Mapping, Optional
+import dataclasses as dcs
+from typing import Mapping
 
+from ...exception import TbErrorPlugin
 from .._classdef import Containers
 
 
-class Fan(object):
+@dcs.dataclass
+class Fan:
     """
     用户信息
 
@@ -18,87 +21,35 @@ class Fan(object):
         log_name (str): 用于在日志中记录用户信息
     """
 
-    __slots__ = [
-        '_user_id',
-        '_portrait',
-        '_user_name',
-        '_nick_name_new',
-    ]
+    user_id: int = 0
+    portrait: str = ''
+    user_name: str = ''
+    nick_name_new: str = ''
 
-    def __init__(self, data_map: Mapping) -> None:
-        self._user_id = int(data_map['id'])
-        if '?' in (portrait := data_map['portrait']):
-            self._portrait = portrait[:-13]
-        else:
-            self._portrait = portrait
-        self._user_name = data_map['name']
-        self._nick_name_new = data_map['name_show']
+    @staticmethod
+    def from_tbdata(data_map: Mapping) -> "Fan":
+        user_id = int(data_map['id'])
+        portrait = data_map['portrait']
+        if '?' in portrait:
+            portrait = portrait[:-13]
+        user_name = data_map['name']
+        nick_name_new = data_map['name_show']
+        return Fan(user_id, portrait, user_name, nick_name_new)
 
     def __str__(self) -> str:
-        return self._user_name or self._portrait or str(self._user_id)
-
-    def __repr__(self) -> str:
-        return str(
-            {
-                'user_id': self._user_id,
-                'show_name': self.show_name,
-            }
-        )
+        return self.user_name or self.portrait or str(self.user_id)
 
     def __eq__(self, obj: "Fan") -> bool:
-        return self._user_id == obj._user_id
+        return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
-        return self._user_id
+        return self.user_id
 
     def __int__(self) -> int:
-        return self._user_id
+        return self.user_id
 
     def __bool__(self) -> bool:
-        return bool(self._user_id)
-
-    @property
-    def user_id(self) -> int:
-        """
-        用户user_id
-
-        Note:
-            唯一 不可变 不可为空\n
-            请注意与用户个人页的tieba_uid区分
-        """
-
-        return self._user_id
-
-    @property
-    def portrait(self) -> str:
-        """
-        用户portrait
-
-        Note:
-            唯一 不可变 不可为空
-        """
-
-        return self._portrait
-
-    @property
-    def user_name(self) -> str:
-        """
-        用户名
-
-        Note:
-            唯一 可变 可为空\n
-            请注意与用户昵称区分
-        """
-
-        return self._user_name
-
-    @property
-    def nick_name_new(self) -> str:
-        """
-        新版昵称
-        """
-
-        return self._nick_name_new
+        return bool(self.user_id)
 
     @property
     def nick_name(self) -> str:
@@ -106,7 +57,7 @@ class Fan(object):
         用户昵称
         """
 
-        return self._nick_name_new
+        return self.nick_name_new
 
     @property
     def show_name(self) -> str:
@@ -114,7 +65,7 @@ class Fan(object):
         显示名称
         """
 
-        return self._nick_name_new or self._user_name
+        return self.nick_name_new or self.user_name
 
     @property
     def log_name(self) -> str:
@@ -122,15 +73,16 @@ class Fan(object):
         用于在日志中记录用户信息
         """
 
-        if self._user_name:
-            return self._user_name
-        elif self._portrait:
-            return f"{self._nick_name_new}/{self._portrait}"
+        if self.user_name:
+            return self.user_name
+        elif self.portrait:
+            return f"{self.nick_name_new}/{self.portrait}"
         else:
-            return str(self._user_id)
+            return str(self.user_id)
 
 
-class Page_fan(object):
+@dcs.dataclass
+class Page_fan:
     """
     页信息
 
@@ -144,125 +96,46 @@ class Page_fan(object):
         has_prev (bool): 是否有前驱页
     """
 
-    __slots__ = [
-        '_page_size',
-        '_current_page',
-        '_total_page',
-        '_total_count',
-        '_has_more',
-        '_has_prev',
-    ]
+    page_size: int = 0
+    current_page: int = 0
+    total_page: int = 0
+    total_count: int = 0
 
-    def _init(self, data_map: Mapping) -> "Page_fan":
-        self._page_size = int(data_map['page_size'])
-        self._current_page = int(data_map['current_page'])
-        self._total_page = int(data_map['total_page'])
-        self._total_count = int(data_map['total_count'])
-        self._has_more = bool(int(data_map['has_more']))
-        self._has_prev = bool(int(data_map['has_prev']))
-        return self
+    has_more: bool = False
+    has_prev: bool = False
 
-    def _init_null(self) -> "Page_fan":
-        self._page_size = 0
-        self._current_page = 0
-        self._total_page = 0
-        self._total_count = 0
-        self._has_more = False
-        self._has_prev = False
-        return self
-
-    def __repr__(self) -> str:
-        return str(
-            {
-                'current_page': self._current_page,
-                'total_page': self._total_page,
-                'has_more': self._has_more,
-                'has_prev': self._has_prev,
-            }
-        )
-
-    @property
-    def page_size(self) -> int:
-        """
-        页大小
-        """
-
-        return self._page_size
-
-    @property
-    def current_page(self) -> int:
-        """
-        当前页码
-        """
-
-        return self._current_page
-
-    @property
-    def total_page(self) -> int:
-        """
-        总页码
-        """
-
-        return self._total_page
-
-    @property
-    def total_count(self) -> int:
-        """
-        总计数
-        """
-
-        return self._total_count
-
-    @property
-    def has_more(self) -> bool:
-        """
-        是否有后继页
-        """
-
-        return self._has_more
-
-    @property
-    def has_prev(self) -> bool:
-        """
-        是否有前驱页
-        """
-
-        return self._has_prev
+    @staticmethod
+    def from_tbdata(data_map: Mapping) -> "Page_fan":
+        page_size = int(data_map['page_size'])
+        current_page = int(data_map['current_page'])
+        total_page = int(data_map['total_page'])
+        total_count = int(data_map['total_count'])
+        has_more = bool(int(data_map['has_more']))
+        has_prev = bool(int(data_map['has_prev']))
+        return Page_fan(page_size, current_page, total_page, total_count, has_more, has_prev)
 
 
-class Fans(Containers[Fan]):
+@dcs.dataclass
+class Fans(TbErrorPlugin, Containers[Fan]):
     """
     粉丝列表
 
     Attributes:
-        _objs (list[Fan]): 粉丝列表
+        objs (list[Fan]): 粉丝列表
+        err (Exception | None): 捕获的异常
 
         page (Page_fan): 页信息
         has_more (bool): 是否还有下一页
     """
 
-    __slots__ = ['_page']
+    page: Page_fan = dcs.field(default_factory=Page_fan)
 
-    def __init__(self, data_map: Optional[Mapping] = None) -> None:
-        if data_map:
-            self.objs = [Fan(m) for m in data_map['user_list']]
-            self._page = Page_fan()._init(data_map['page'])
-        else:
-            self.objs = []
-            self._page = Page_fan()._init_null()
-
-    @property
-    def page(self) -> Page_fan:
-        """
-        页信息
-        """
-
-        return self._page
+    @staticmethod
+    def from_tbdata(data_map: Mapping) -> "Fans":
+        objs = [Fan.from_tbdata(m) for m in data_map['user_list']]
+        page = Page_fan.from_tbdata(data_map['page'])
+        return Fans(objs, None, page)
 
     @property
     def has_more(self) -> bool:
-        """
-        是否还有下一页
-        """
-
-        return self._page._has_more
+        return self.page.has_more

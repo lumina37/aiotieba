@@ -1,7 +1,9 @@
 import dataclasses as dcs
+from typing import Optional
 
 import bs4
 
+from ...exception import TbErrorPlugin
 from .._classdef import Containers
 
 
@@ -47,7 +49,7 @@ class BawuBlacklistUser:
 
     @property
     def log_name(self) -> str:
-        return self.__str__()
+        return str(self)
 
 
 @dcs.dataclass
@@ -79,12 +81,13 @@ class Page_bwblacklist:
 
 
 @dcs.dataclass
-class BawuBlacklistUsers(Containers[BawuBlacklistUser]):
+class BawuBlacklistUsers(TbErrorPlugin, Containers[BawuBlacklistUser]):
     """
     吧务黑名单列表
 
     Attributes:
         objs (list[BawuBlacklistUser]): 吧务黑名单列表
+        err (Exception | None): 捕获的异常
 
         page (Page_bwblacklist): 页信息
         has_more (bool): 是否还有下一页
@@ -94,7 +97,7 @@ class BawuBlacklistUsers(Containers[BawuBlacklistUser]):
 
     @staticmethod
     def from_tbdata(data_soup: bs4.BeautifulSoup) -> "BawuBlacklistUsers":
-        objs = [BawuBlacklistUser(_tag) for _tag in data_soup('td', class_='left_cell')]
+        objs = [BawuBlacklistUser.from_tbdata(t) for t in data_soup('td', class_='left_cell')]
         page_tag = data_soup.find('div', class_='tbui_pagination').find('li', class_='active')
         page = Page_bwblacklist.from_tbdata(page_tag)
         return BawuBlacklistUsers(objs, None, page)

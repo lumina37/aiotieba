@@ -12,7 +12,7 @@ def parse_body(body: bytes) -> GodThreads:
     if code := res_json['no']:
         raise TiebaServerError(code, res_json['error'])
 
-    god_threads = GodThreads(res_json)
+    god_threads = GodThreads.from_tbdata(res_json)
 
     return god_threads
 

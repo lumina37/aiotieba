@@ -27,7 +27,7 @@ def parse_body(proto: bytes) -> BlacklistOldUsers:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    blacklist_users = BlacklistOldUsers(data_proto)
+    blacklist_users = BlacklistOldUsers.from_tbdata(data_proto)
 
     return blacklist_users
 

@@ -87,4 +87,4 @@ class UserInfo_json(object):
         用于在日志中记录用户信息
         """
 
-        return self.__str__()
+        return str(self)

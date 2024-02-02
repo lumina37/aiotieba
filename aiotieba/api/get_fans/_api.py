@@ -12,7 +12,7 @@ def parse_body(body: bytes) -> Fans:
     if code := int(res_json['error_code']):
         raise TiebaServerError(code, res_json['error_msg'])
 
-    fans = Fans(res_json)
+    fans = Fans.from_tbdata(res_json)
 
     return fans
 

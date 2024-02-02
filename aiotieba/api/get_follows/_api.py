@@ -12,7 +12,7 @@ def parse_body(body: bytes) -> Follows:
     if code := int(res_json['error_code']):
         raise TiebaServerError(code, res_json['error_msg'])
 
-    follows = Follows(res_json)
+    follows = Follows.from_tbdata(res_json)
 
     return follows
 

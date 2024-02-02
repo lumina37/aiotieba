@@ -12,7 +12,7 @@ def parse_body(body: bytes) -> Blocks:
     if code := res_json['no']:
         raise TiebaServerError(code, res_json['error'])
 
-    blocks = Blocks(res_json)
+    blocks = Blocks.from_tbdata(res_json)
 
     return blocks
 

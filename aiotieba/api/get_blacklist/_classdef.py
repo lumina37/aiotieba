@@ -1,7 +1,8 @@
 import dataclasses as dcs
-from typing import Dict, Mapping
+from typing import Dict, Mapping, Optional
 
 from ...enums import BlacklistType
+from ...exception import TbErrorPlugin
 from .._classdef import Containers
 
 
@@ -84,7 +85,7 @@ class BlacklistUser:
 
 
 @dcs.dataclass
-class BlacklistUsers(Containers[BlacklistUser]):
+class BlacklistUsers(TbErrorPlugin, Containers[BlacklistUser]):
     """
     新版用户黑名单列表
 
@@ -95,5 +96,5 @@ class BlacklistUsers(Containers[BlacklistUser]):
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> "BlacklistUsers":
-        objs = [BlacklistUser(m) for m in data_map.get('user_perm_list', [])]
+        objs = [BlacklistUser.from_tbdata(m) for m in data_map.get('user_perm_list', [])]
         return BlacklistUsers(objs, None)
