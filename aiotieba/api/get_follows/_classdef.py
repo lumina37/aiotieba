@@ -1,4 +1,5 @@
 import dataclasses as dcs
+from functools import cached_property
 from typing import Mapping
 
 from ...exception import TbErrorPlugin
@@ -59,7 +60,7 @@ class Follow:
     def show_name(self) -> str:
         return self.nick_name_new or self.user_name
 
-    @property
+    @cached_property
     def log_name(self) -> str:
         if self.user_name:
             return self.user_name

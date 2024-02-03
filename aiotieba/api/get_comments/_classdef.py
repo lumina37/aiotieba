@@ -207,7 +207,7 @@ class UserInfo_c:
     def show_name(self) -> str:
         return self.nick_name_new or self.user_name
 
-    @property
+    @cached_property
     def log_name(self) -> str:
         if self.user_name:
             return self.user_name
@@ -419,7 +419,7 @@ class UserInfo_ct:
     def show_name(self) -> str:
         return self.nick_name_new or self.user_name
 
-    @property
+    @cached_property
     def log_name(self) -> str:
         if self.user_name:
             return self.user_name
@@ -707,7 +707,7 @@ class UserInfo_cp:
     def show_name(self) -> str:
         return self.nick_name_new or self.user_name
 
-    @property
+    @cached_property
     def log_name(self) -> str:
         if self.user_name:
             return self.user_name
@@ -739,7 +739,7 @@ class Post_c:
     """
 
     contents: Contents_cp = dcs.field(default_factory=Contents_cp)
-    sign: str = ''
+    sign: str = ""
 
     fid: int = 0
     fname: str = ''

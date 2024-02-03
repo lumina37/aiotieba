@@ -1,4 +1,5 @@
 import dataclasses as dcs
+from functools import cached_property
 from typing import Mapping
 
 from ...exception import TbErrorPlugin
@@ -53,26 +54,14 @@ class Fan:
 
     @property
     def nick_name(self) -> str:
-        """
-        用户昵称
-        """
-
         return self.nick_name_new
 
     @property
     def show_name(self) -> str:
-        """
-        显示名称
-        """
-
         return self.nick_name_new or self.user_name
 
-    @property
+    @cached_property
     def log_name(self) -> str:
-        """
-        用于在日志中记录用户信息
-        """
-
         if self.user_name:
             return self.user_name
         elif self.portrait:

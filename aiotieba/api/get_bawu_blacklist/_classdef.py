@@ -1,5 +1,4 @@
 import dataclasses as dcs
-from typing import Optional
 
 import bs4
 

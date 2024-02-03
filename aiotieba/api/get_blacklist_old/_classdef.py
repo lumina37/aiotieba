@@ -1,4 +1,5 @@
 import dataclasses as dcs
+from functools import cached_property
 
 from ...exception import TbErrorPlugin
 from .._classdef import Containers, TypeMessage
@@ -59,7 +60,7 @@ class BlacklistOldUser:
     def nick_name(self) -> str:
         return self.nick_name_old
 
-    @property
+    @cached_property
     def log_name(self) -> str:
         if self.user_name:
             return self.user_name

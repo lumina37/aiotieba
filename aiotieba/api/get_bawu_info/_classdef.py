@@ -1,3 +1,4 @@
+from functools import cached_property
 from typing import List, Optional
 
 from .._classdef import TypeMessage
@@ -126,7 +127,7 @@ class UserInfo_bawu(object):
 
         return self._nick_name_new or self._user_name
 
-    @property
+    @cached_property
     def log_name(self) -> str:
         """
         用于在日志中记录用户信息
