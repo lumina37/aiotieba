@@ -19,6 +19,7 @@ class Page_at:
     """
 
     current_page: int = 0
+
     has_more: bool = False
     has_prev: int = False
 

@@ -14,7 +14,7 @@ def parse_body(body: bytes) -> Recovers:
     if code := res_json['no']:
         raise TiebaServerError(code, res_json['error'])
 
-    recovers = Recovers(res_json)
+    recovers = Recovers.from_tbdata(res_json)
 
     return recovers
 

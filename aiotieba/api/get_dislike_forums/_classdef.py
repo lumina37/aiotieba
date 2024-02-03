@@ -17,6 +17,7 @@ class Page_dislikef:
     """
 
     current_page: int = 0
+
     has_more: bool = False
     has_prev: bool = False
 

@@ -457,7 +457,6 @@ class Thread_c:
     user: UserInfo_ct = dcs.field(default_factory=UserInfo_ct)
 
     type: int = 0
-    is_help: bool = False
 
     reply_num: int = 0
 
@@ -479,6 +478,10 @@ class Thread_c:
     @property
     def author_id(self) -> int:
         return self.user.user_id
+
+    @property
+    def is_help(self) -> bool:
+        return self.type == 71
 
 
 @dcs.dataclass
@@ -604,7 +607,7 @@ class Contents_cp(Containers[TypeFragment]):
                     yield frag
                 # 35|36:tid=7769728331 / 37:tid=7760184147
                 elif _type in [35, 36, 37]:
-                    frag = FragTiebaPlus_cp(proto)
+                    frag = FragTiebaPlus_cp.from_tbdata(proto)
                     tiebapluses.append(frag)
                     texts.append(frag)
                     yield frag
@@ -813,7 +816,7 @@ class Comments(TbErrorPlugin, Containers[Comment]):
         post.fname = thread.fname
         post.tid = thread.tid
 
-        objs = [Comment(p) for p in data_proto.subpost_list]
+        objs = [Comment.from_tbdata(p) for p in data_proto.subpost_list]
         for comment in objs:
             comment.fid = forum.fid
             comment.fname = forum.fname

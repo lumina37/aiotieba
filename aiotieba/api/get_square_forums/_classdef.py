@@ -1,9 +1,12 @@
+import dataclasses as dcs
 from typing import Optional
 
+from ...exception import TbErrorPlugin
 from .._classdef import Containers, TypeMessage
 
 
-class SquareForum(object):
+@dcs.dataclass
+class SquareForum:
     """
     吧广场贴吧信息
 
@@ -17,79 +20,32 @@ class SquareForum(object):
         is_followed (bool): 是否已关注
     """
 
-    __slots__ = [
-        '_fid',
-        '_fname',
-        '_member_num',
-        '_post_num',
-        '_is_followed',
-    ]
+    fid: int = 0
+    fname: str = ''
 
-    def __init__(self, data_proto: TypeMessage) -> None:
-        self._fid = data_proto.forum_id
-        self._fname = data_proto.forum_name
-        self._member_num = data_proto.member_count
-        self._post_num = data_proto.thread_count
-        self._is_followed = bool(data_proto.is_like)
+    member_num: int = 0
+    post_num: int = 0
 
-    def __repr__(self) -> str:
-        return str(
-            {
-                'fid': self._fid,
-                'fname': self._fname,
-                'member_num': self._member_num,
-                'post_num': self._post_num,
-            }
-        )
+    is_followed: bool = False
+
+    @staticmethod
+    def from_tbdata(data_proto: TypeMessage) -> "SquareForum":
+        fid = data_proto.forum_id
+        fname = data_proto.forum_name
+        member_num = data_proto.member_count
+        post_num = data_proto.thread_count
+        is_followed = bool(data_proto.is_like)
+        return SquareForum(fid, fname, member_num, post_num, is_followed)
 
     def __eq__(self, obj: "SquareForum") -> bool:
-        return self._fid == obj._fid
+        return self.fid == obj.fid
 
     def __hash__(self) -> int:
-        return self._fid
-
-    @property
-    def fid(self) -> int:
-        """
-        贴吧id
-        """
-
-        return self._fid
-
-    @property
-    def fname(self) -> str:
-        """
-        贴吧名
-        """
-
-        return self._fname
-
-    @property
-    def member_num(self) -> int:
-        """
-        吧会员数
-        """
-
-        return self._member_num
-
-    @property
-    def post_num(self) -> int:
-        """
-        发帖量
-        """
-
-        return self._post_num
-
-    @property
-    def is_followed(self) -> bool:
-        """
-        是否已关注
-        """
-
-        return self._is_followed
+        return self.fid
 
 
-class Page_square(object):
+@dcs.dataclass
+class Page_square:
     """
     页信息
 
@@ -103,125 +59,46 @@ class Page_square(object):
         has_prev (bool): 是否有前驱页
     """
 
-    __slots__ = [
-        '_page_size',
-        '_current_page',
-        '_total_page',
-        '_total_count',
-        '_has_more',
-        '_has_prev',
-    ]
+    page_size: int = 0
+    current_page: int = 0
+    total_page: int = 0
+    total_count: int = 0
 
-    def _init(self, data_proto: TypeMessage) -> "Page_square":
-        self._page_size = data_proto.page_size
-        self._current_page = data_proto.current_page
-        self._total_page = data_proto.total_page
-        self._total_count = data_proto.total_count
-        self._has_more = bool(data_proto.has_more)
-        self._has_prev = bool(data_proto.has_prev)
-        return self
+    has_more: bool = False
+    has_prev: bool = False
 
-    def _init_null(self) -> "Page_square":
-        self._page_size = 0
-        self._current_page = 0
-        self._total_page = 0
-        self._total_count = 0
-        self._has_more = False
-        self._has_prev = False
-        return self
-
-    def __repr__(self) -> str:
-        return str(
-            {
-                'current_page': self._current_page,
-                'total_page': self._total_page,
-                'has_more': self._has_more,
-                'has_prev': self._has_prev,
-            }
-        )
-
-    @property
-    def page_size(self) -> int:
-        """
-        页大小
-        """
-
-        return self._page_size
-
-    @property
-    def current_page(self) -> int:
-        """
-        当前页码
-        """
-
-        return self._current_page
-
-    @property
-    def total_page(self) -> int:
-        """
-        总页码
-        """
-
-        return self._total_page
-
-    @property
-    def total_count(self) -> int:
-        """
-        总计数
-        """
-
-        return self._total_count
-
-    @property
-    def has_more(self) -> bool:
-        """
-        是否有后继页
-        """
-
-        return self._has_more
-
-    @property
-    def has_prev(self) -> bool:
-        """
-        是否有前驱页
-        """
-
-        return self._has_prev
+    @staticmethod
+    def from_tbdata(self, data_proto: TypeMessage) -> "Page_square":
+        page_size = data_proto.page_size
+        current_page = data_proto.current_page
+        total_page = data_proto.total_page
+        total_count = data_proto.total_count
+        has_more = bool(data_proto.has_more)
+        has_prev = bool(data_proto.has_prev)
+        return Page_square(page_size, current_page, total_page, total_count, has_more, has_prev)
 
 
-class SquareForums(Containers[SquareForum]):
+@dcs.dataclass
+class SquareForums(TbErrorPlugin, Containers[SquareForum]):
     """
     吧广场列表
 
     Attributes:
-        _objs (list[SquareForum]): 吧广场列表
+        objs (list[SquareForum]): 吧广场列表
+        err (Exception | None): 捕获的异常
 
         page (Page_square): 页信息
         has_more (bool): 是否还有下一页
     """
 
-    __slots__ = ['_page']
+    page: Page_square = dcs.field(default_factory=Page_square)
 
-    def __init__(self, data_proto: Optional[TypeMessage] = None) -> None:
-        if data_proto:
-            self.objs = [SquareForum(_proto) for _proto in data_proto.forum_info]
-            self._page = Page_square()._init(data_proto.page)
-        else:
-            self.objs = []
-            self._page = Page_square()._init_null()
-
-    @property
-    def page(self) -> Page_square:
-        """
-        页信息
-        """
-
-        return self._page
+    @staticmethod
+    def from_tbdata(data_proto: Optional[TypeMessage] = None) -> None:
+        objs = [SquareForum.from_tbdata(p) for p in data_proto.forum_info]
+        page = Page_square.from_tbdata(data_proto.page)
+        return SquareForums(objs, None, page)
 
     @property
     def has_more(self) -> bool:
-        """
-        是否还有下一页
-        """
-
-        return self._page._has_more
+        return self.page.has_more

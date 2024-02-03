@@ -13,7 +13,7 @@ def parse_body(body: bytes) -> Statistics:
         raise TiebaServerError(code, res_json['error_msg'])
 
     data_seq = res_json['data']
-    stat = Statistics(data_seq)
+    stat = Statistics.from_tbdata(data_seq)
 
     return stat
 

@@ -3,7 +3,7 @@ import pytest
 import aiotieba as tb
 
 
-@pytest.mark.flaky(reruns=3, reruns_delay=2.0)
+@pytest.mark.flaky(reruns=1, reruns_delay=2.0)
 @pytest.mark.asyncio(scope="session")
 async def test_FollowForums(client: tb.Client):
     forums = await client.get_follow_forums(4954297652)

@@ -1,9 +1,12 @@
-from typing import Optional
+import dataclasses as dcs
+from functools import cached_property
 
+from ...exception import TbErrorPlugin
 from .._classdef import Containers, TypeMessage
 
 
-class UserInfo_reply(object):
+@dcs.dataclass
+class UserInfo_reply:
     """
     用户信息
 
@@ -21,155 +24,61 @@ class UserInfo_reply(object):
         log_name (str): 用于在日志中记录用户信息
     """
 
-    __slots__ = [
-        '_user_id',
-        '_portrait',
-        '_user_name',
-        '_nick_name_new',
-        '_priv_like',
-        '_priv_reply',
-    ]
+    user_id: int = 0
+    portrait: str = ''
+    user_name: str = ''
+    nick_name_new: str = ''
 
-    def _init(self, data_proto: TypeMessage) -> "UserInfo_reply":
-        self._user_id = data_proto.id
-        if '?' in (portrait := data_proto.portrait):
-            self._portrait = portrait[:-13]
-        else:
-            self._portrait = portrait
-        self._user_name = data_proto.name
-        self._nick_name_new = data_proto.name_show
-        self._priv_like = priv_like if (priv_like := data_proto.priv_sets.like) else 1
-        self._priv_reply = priv_reply if (priv_reply := data_proto.priv_sets.reply) else 1
-        return self
+    priv_like: int = 1
+    priv_reply: int = 1
 
-    def _init_null(self) -> "UserInfo_reply":
-        self._user_id = 0
-        self._portrait = ''
-        self._user_name = ''
-        self._nick_name_new = ''
-        self._priv_like = 1
-        self._priv_reply = 1
-        return self
+    @staticmethod
+    def from_tbdata(data_proto: TypeMessage) -> "UserInfo_reply":
+        user_id = data_proto.id
+        portrait = data_proto.portrait
+        if '?' in portrait:
+            portrait = portrait[:-13]
+        user_name = data_proto.name
+        nick_name_new = data_proto.name_show
+        priv_like = priv_like if (priv_like := data_proto.priv_sets.like) else 1
+        priv_reply = priv_reply if (priv_reply := data_proto.priv_sets.reply) else 1
+        return UserInfo_reply(user_id, portrait, user_name, nick_name_new, priv_like, priv_reply)
 
     def __str__(self) -> str:
-        return self._user_name or self._portrait or str(self._user_id)
-
-    def __repr__(self) -> str:
-        return str(
-            {
-                'user_id': self._user_id,
-                'show_name': self.show_name,
-            }
-        )
+        return self.user_name or self.portrait or str(self.user_id)
 
     def __eq__(self, obj: "UserInfo_reply") -> bool:
-        return self._user_id == obj._user_id
+        return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
-        return self._user_id
+        return self.user_id
 
     def __int__(self) -> int:
-        return self._user_id
+        return self.user_id
 
     def __bool__(self) -> bool:
-        return bool(self._user_id)
-
-    @property
-    def user_id(self) -> int:
-        """
-        用户user_id
-
-        Note:
-            唯一 不可变 不可为空\n
-            请注意与用户个人页的tieba_uid区分
-        """
-
-        return self._user_id
-
-    @property
-    def portrait(self) -> str:
-        """
-        用户portrait
-
-        Note:
-            唯一 不可变 不可为空
-        """
-
-        return self._portrait
-
-    @property
-    def user_name(self) -> str:
-        """
-        用户名
-
-        Note:
-            唯一 可变 可为空\n
-            请注意与用户昵称区分
-        """
-
-        return self._user_name
-
-    @property
-    def nick_name_new(self) -> str:
-        """
-        新版昵称
-        """
-
-        return self._nick_name_new
-
-    @property
-    def priv_like(self) -> int:
-        """
-        公开关注吧列表的设置状态
-
-        Note:
-            1完全可见 2好友可见 3完全隐藏
-        """
-
-        return self._priv_like
-
-    @property
-    def priv_reply(self) -> int:
-        """
-        帖子评论权限的设置状态
-
-        Note:
-            1允许所有人 5仅允许我的粉丝 6仅允许我的关注
-        """
-
-        return self._priv_reply
+        return bool(self.user_id)
 
     @property
     def nick_name(self) -> str:
-        """
-        用户昵称
-        """
-
-        return self._nick_name_new
+        return self.nick_name_new
 
     @property
     def show_name(self) -> str:
-        """
-        显示名称
-        """
+        return self.nick_name_new or self.user_name
 
-        return self._nick_name_new or self._user_name
-
-    @property
+    @cached_property
     def log_name(self) -> str:
-        """
-        用于在日志中记录用户信息
-        """
-
-        if self._user_name:
-            return self._user_name
-        elif self._portrait:
-            return f"{self._nick_name_new}/{self._portrait}"
+        if self.user_name:
+            return self.user_name
+        elif self.portrait:
+            return f"{self.nick_name_new}/{self.portrait}"
         else:
-            return str(self._user_id)
+            return str(self.user_id)
 
 
-class UserInfo_reply_p(object):
+@dcs.dataclass
+class UserInfo_reply_p:
     """
     用户信息
 
@@ -183,108 +92,47 @@ class UserInfo_reply_p(object):
         log_name (str): 用于在日志中记录用户信息
     """
 
-    __slots__ = [
-        '_user_id',
-        '_user_name',
-        '_nick_name_new',
-    ]
+    user_id: int = 0
+    user_name: str = ''
+    nick_name_new: str = ''
 
-    def _init(self, data_proto: TypeMessage) -> "UserInfo_reply_p":
-        self._user_id = data_proto.id
-        self._user_name = data_proto.name
-        self._nick_name_new = data_proto.name_show
-        return self
-
-    def _init_null(self) -> "UserInfo_reply_p":
-        self._user_id = 0
-        self._user_name = ''
-        self._nick_name_new = ''
-        return self
+    @staticmethod
+    def from_tbdata(data_proto: TypeMessage) -> "UserInfo_reply_p":
+        user_id = data_proto.id
+        user_name = data_proto.name
+        nick_name_new = data_proto.name_show
+        return UserInfo_reply_p(user_id, user_name, nick_name_new)
 
     def __str__(self) -> str:
-        return self._user_name or str(self._user_id)
-
-    def __repr__(self) -> str:
-        return str(
-            {
-                'user_id': self._user_id,
-                'show_name': self.show_name,
-            }
-        )
+        return self.user_name or str(self.user_id)
 
     def __eq__(self, obj: "UserInfo_reply_p") -> bool:
-        return self._user_id == obj._user_id
+        return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
-        return self._user_id
+        return self.user_id
 
     def __int__(self) -> int:
-        return self._user_id
+        return self.user_id
 
     def __bool__(self) -> bool:
-        return bool(self._user_id)
-
-    @property
-    def user_id(self) -> int:
-        """
-        用户user_id
-
-        Note:
-            唯一 不可变 不可为空\n
-            请注意与用户个人页的tieba_uid区分
-        """
-
-        return self._user_id
-
-    @property
-    def user_name(self) -> str:
-        """
-        用户名
-
-        Note:
-            唯一 可变 可为空\n
-            请注意与用户昵称区分
-        """
-
-        return self._user_name
-
-    @property
-    def nick_name_new(self) -> str:
-        """
-        新版昵称
-        """
-
-        return self._nick_name_new
+        return bool(self.user_id)
 
     @property
     def nick_name(self) -> str:
-        """
-        用户昵称
-        """
-
-        return self._nick_name_new
+        return self.nick_name_new
 
     @property
     def show_name(self) -> str:
-        """
-        显示名称
-        """
+        return self.nick_name_new or self.user_name
 
-        return self._nick_name_new or self._user_name
-
-    @property
+    @cached_property
     def log_name(self) -> str:
-        """
-        用于在日志中记录用户信息
-        """
-
-        if self._user_name:
-            return self._user_name
-        else:
-            return f"{self._nick_name_new}/{self._user_id}"
+        return self.user_name if self.user_name else f"{self.nick_name_new}/{self.user_id}"
 
 
-class UserInfo_reply_t(object):
+@dcs.dataclass
+class UserInfo_reply_t:
     """
     用户信息
 
@@ -298,107 +146,47 @@ class UserInfo_reply_t(object):
         log_name (str): 用于在日志中记录用户信息
     """
 
-    __slots__ = [
-        '_user_id',
-        '_portrait',
-        '_nick_name_new',
-    ]
+    user_id: int = 0
+    portrait: str = ''
+    nick_name_new: str = ''
 
-    def _init(self, data_proto: TypeMessage) -> "UserInfo_reply_t":
-        self._user_id = data_proto.id
-        self._portrait = data_proto.portrait
-        self._nick_name_new = data_proto.name_show
-        return self
-
-    def _init_null(self) -> "UserInfo_reply_t":
-        self._user_id = 0
-        self._portrait = ''
-        self._nick_name_new = ''
-        return self
+    @staticmethod
+    def from_tbdata(data_proto: TypeMessage) -> "UserInfo_reply_t":
+        user_id = data_proto.id
+        portrait = data_proto.portrait
+        nick_name_new = data_proto.name_show
+        return UserInfo_reply_t(user_id, portrait, nick_name_new)
 
     def __str__(self) -> str:
-        return self._portrait or str(self._user_id)
-
-    def __repr__(self) -> str:
-        return str(
-            {
-                'user_id': self._user_id,
-                'show_name': self._nick_name_new,
-            }
-        )
+        return self.portrait or str(self.user_id)
 
     def __eq__(self, obj: "UserInfo_reply_t") -> bool:
-        return self._user_id == obj._user_id
+        return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
-        return self._user_id
+        return self.user_id
 
     def __int__(self) -> int:
-        return self._user_id
+        return self.user_id
 
     def __bool__(self) -> bool:
-        return bool(self._user_id)
-
-    @property
-    def user_id(self) -> int:
-        """
-        用户user_id
-
-        Note:
-            唯一 不可变 不可为空\n
-            请注意与用户个人页的tieba_uid区分
-        """
-
-        return self._user_id
-
-    @property
-    def portrait(self) -> str:
-        """
-        用户portrait
-
-        Note:
-            唯一 不可变 不可为空
-        """
-
-        return self._portrait
-
-    @property
-    def nick_name_new(self) -> str:
-        """
-        新版昵称
-        """
-
-        return self._nick_name_new
+        return bool(self.user_id)
 
     @property
     def nick_name(self) -> str:
-        """
-        用户昵称
-        """
-
-        return self._nick_name_new
+        return self.nick_name_new
 
     @property
     def show_name(self) -> str:
-        """
-        显示名称
-        """
+        return self.nick_name_new
 
-        return self._nick_name_new
-
-    @property
+    @cached_property
     def log_name(self) -> str:
-        """
-        用于在日志中记录用户信息
-        """
-
-        if self._portrait:
-            return f"{self._nick_name_new}/{self._portrait}"
-        else:
-            return str(self._user_id)
+        return str(self.user_id) if not self.portrait else f"{self.nick_name_new}/{self.portrait}"
 
 
-class Reply(object):
+@dcs.dataclass
+class Reply:
     """
     回复信息
     Attributes:
@@ -414,148 +202,49 @@ class Reply(object):
         thread_user (UserInfo_reply_t): 楼主用户信息
 
         is_comment (bool): 是否楼中楼
-        create_time (int): 创建时间
+        create_time (int): 创建时间 10位时间戳 以秒为单位
     """
 
-    __slots__ = [
-        '_text',
-        '_fname',
-        '_tid',
-        '_ppid',
-        '_pid',
-        '_user',
-        '_author_id',
-        '_post_user',
-        '_thread_user',
-        '_is_comment',
-        '_create_time',
-    ]
+    text: str = ""
 
-    def __init__(self, data_proto: TypeMessage) -> None:
-        self._text = data_proto.content
-        self._fname = data_proto.fname
-        self._tid = data_proto.thread_id
-        self._ppid = data_proto.quote_pid
-        self._pid = data_proto.post_id
-        self._user = UserInfo_reply()._init(data_proto.replyer)
-        self._author_id = self._user._user_id
-        self._post_user = UserInfo_reply_p()._init(data_proto.quote_user)
-        self._thread_user = UserInfo_reply_t()._init(data_proto.thread_author_user)
-        self._is_comment = bool(data_proto.is_floor)
-        self._create_time = data_proto.time
+    fname: str = ''
+    tid: int = 0
+    ppid: int = 0
+    pid: int = 0
+    user: UserInfo_reply = dcs.field(default_factory=UserInfo_reply)
+    post_user: UserInfo_reply_p = dcs.field(default_factory=UserInfo_reply_p)
+    thread_user: UserInfo_reply_t = dcs.field(default_factory=UserInfo_reply_t)
 
-    def __repr__(self) -> str:
-        return str(
-            {
-                'tid': self._tid,
-                'pid': self._pid,
-                'user': self._user.log_name,
-                'text': self._text,
-                'post_user': self._post_user.log_name,
-                'thread_user': self._thread_user.log_name,
-                'is_comment': self._is_comment,
-            }
-        )
+    is_comment: bool = False
+    create_time: int = 0
+
+    @staticmethod
+    def from_tbdata(data_proto: TypeMessage) -> "Reply":
+        text = data_proto.content
+        fname = data_proto.fname
+        tid = data_proto.thread_id
+        ppid = data_proto.quote_pid
+        pid = data_proto.post_id
+        user = UserInfo_reply.from_tbdata(data_proto.replyer)
+        post_user = UserInfo_reply_p.from_tbdata(data_proto.quote_user)
+        thread_user = UserInfo_reply_t.from_tbdata(data_proto.thread_author_user)
+        is_comment = bool(data_proto.is_floor)
+        create_time = data_proto.time
+        return Reply(text, fname, tid, ppid, pid, user, post_user, thread_user, is_comment, create_time)
 
     def __eq__(self, obj: "Reply") -> bool:
-        return self._pid == obj._pid
+        return self.pid == obj.pid
 
     def __hash__(self) -> int:
-        return self._pid
-
-    @property
-    def text(self) -> str:
-        """
-        文本内容
-        """
-
-        return self._text
-
-    @property
-    def fname(self) -> str:
-        """
-        所在贴吧名
-        """
-
-        return self._fname
-
-    @property
-    def tid(self) -> int:
-        """
-        所在主题帖id
-        """
-
-        return self._tid
-
-    @property
-    def ppid(self) -> int:
-        """
-        所在楼层pid
-        """
-
-        return self._ppid
-
-    @property
-    def pid(self) -> int:
-        """
-        回复id
-        """
-
-        return self._pid
-
-    @property
-    def user(self) -> UserInfo_reply:
-        """
-        发布者的用户信息
-        """
-
-        return self._user
+        return self.pid
 
     @property
     def author_id(self) -> int:
-        """
-        发布者的user_id
-        """
-
-        return self._author_id
-
-    @property
-    def post_user(self) -> UserInfo_reply_p:
-        """
-        楼层用户信息
-        """
-
-        return self._post_user
-
-    @property
-    def thread_user(self) -> UserInfo_reply_t:
-        """
-        楼主用户信息
-        """
-
-        return self._thread_user
-
-    @property
-    def is_comment(self) -> bool:
-        """
-        是否楼中楼
-        """
-
-        return self._is_comment
-
-    @property
-    def create_time(self) -> int:
-        """
-        创建时间
-
-        Note:
-            10位时间戳 以秒为单位
-        """
-
-        return self._create_time
+        return self.user.user_id
 
 
-class Page_reply(object):
+@dcs.dataclass
+class Page_reply:
     """
     页信息
 
@@ -566,91 +255,40 @@ class Page_reply(object):
         has_prev (bool): 是否有前驱页
     """
 
-    __slots__ = [
-        '_current_page',
-        '_has_more',
-        '_has_prev',
-    ]
+    current_page: int = 0
 
-    def _init(self, data_proto: TypeMessage) -> "Page_reply":
-        self._current_page = data_proto.current_page
-        self._has_more = bool(data_proto.has_more)
-        self._has_prev = bool(data_proto.has_prev)
-        return self
+    has_more: bool = False
+    has_prev: bool = False
 
-    def _init_null(self) -> "Page_reply":
-        self._current_page = 0
-        self._has_more = False
-        self._has_prev = False
-        return self
-
-    def __repr__(self) -> str:
-        return str(
-            {
-                'current_page': self._current_page,
-                'has_more': self._has_more,
-                'has_prev': self._has_prev,
-            }
-        )
-
-    @property
-    def current_page(self) -> int:
-        """
-        当前页码
-        """
-
-        return self._current_page
-
-    @property
-    def has_more(self) -> bool:
-        """
-        是否有后继页
-        """
-
-        return self._has_more
-
-    @property
-    def has_prev(self) -> bool:
-        """
-        是否有前驱页
-        """
-
-        return self._has_prev
+    @staticmethod
+    def from_tbdata(data_proto: TypeMessage) -> "Page_reply":
+        current_page = data_proto.current_page
+        has_more = bool(data_proto.has_more)
+        has_prev = bool(data_proto.has_prev)
+        return Page_reply(current_page, has_more, has_prev)
 
 
-class Replys(Containers[Reply]):
+@dcs.dataclass
+class Replys(TbErrorPlugin, Containers[Reply]):
     """
     收到回复列表
 
     Attributes:
         objs (list[Reply]): 收到回复列表
+        err (Exception | None): 捕获的异常
 
         page (Page_reply): 页信息
         has_more (bool): 是否还有下一页
     """
 
-    __slots__ = ['_page']
+    page: Page_reply = dcs.field(default_factory=Page_reply)
 
-    def __init__(self, data_proto: Optional[TypeMessage] = None) -> None:
-        if data_proto:
-            self.objs = [Reply(p) for p in data_proto.reply_list]
-            self._page = Page_reply()._init(data_proto.page)
-        else:
-            self.objs = []
-            self._page = Page_reply()._init_null()
-
-    @property
-    def page(self) -> Page_reply:
-        """
-        页信息
-        """
-
-        return self._page
+    @staticmethod
+    def from_tbdata(data_proto: TypeMessage) -> "Replys":
+        objs = [Reply.from_tbdata(p) for p in data_proto.reply_list]
+        page = Page_reply.from_tbdata(data_proto.page)
+        return Replys(objs, None, page)
 
     @property
     def has_more(self) -> bool:
-        """
-        是否还有下一页
-        """
-
-        return self._page._has_more
+        return self.page.has_more

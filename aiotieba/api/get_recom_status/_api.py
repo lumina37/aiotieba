@@ -12,7 +12,7 @@ def parse_body(body: bytes) -> RecomStatus:
     if code := int(res_json['error_code']):
         raise TiebaServerError(code, res_json['error_msg'])
 
-    status = RecomStatus(res_json)
+    status = RecomStatus.from_tbdata(res_json)
 
     return status
 

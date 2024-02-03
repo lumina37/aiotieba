@@ -46,6 +46,7 @@ class Page_member:
 
     current_page: int = 0
     total_page: int = 0
+
     has_more: bool = False
     has_prev: int = False
 

@@ -1016,8 +1016,8 @@ class Client(object):
 
     async def __get_selfinfo_initNickname(self) -> None:
         user = await get_selfinfo_initNickname.request(self._http_core)
-        self._user._user_name = user._user_name
-        self._user._tieba_uid = user._tieba_uid
+        self._user._user_name = user.user_name
+        self._user._tieba_uid = user.tieba_uid
 
     @handle_exception(get_square_forums.SquareForums)
     @_try_websocket

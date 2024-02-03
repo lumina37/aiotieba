@@ -26,7 +26,7 @@ def parse_body(proto: bytes) -> Replys:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    replys = Replys(data_proto)
+    replys = Replys.from_tbdata(data_proto)
 
     return replys
 

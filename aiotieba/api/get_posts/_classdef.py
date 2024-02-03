@@ -69,14 +69,14 @@ class FragImage_p:
         图像的百度图床hash
         """
 
-        first_qmark_idx = self._src.find('?')
-        end_idx = self._src.rfind('.', 0, first_qmark_idx)
+        first_qmark_idx = self.src.find('?')
+        end_idx = self.src.rfind('.', 0, first_qmark_idx)
 
         if end_idx == -1:
             hash_ = ''
         else:
-            start_idx = self._src.rfind('/', 0, end_idx)
-            hash_ = self._src[start_idx + 1 : end_idx]
+            start_idx = self.src.rfind('/', 0, end_idx)
+            hash_ = self.src[start_idx + 1 : end_idx]
 
         return hash_
 
@@ -198,7 +198,7 @@ class Contents_p(Containers[TypeFragment]):
                     yield frag
                 # 35|36:tid=7769728331 / 37:tid=7760184147
                 elif _type in [35, 36, 37]:
-                    frag = FragTiebaPlus_p(proto)
+                    frag = FragTiebaPlus_p.from_tbdata(proto)
                     tiebapluses.append(frag)
                     texts.append(frag)
                     yield frag
@@ -693,14 +693,14 @@ class FragImage_pt:
 
     @cached_property
     def hash(self) -> str:
-        first_qmark_idx = self._src.find('?')
-        end_idx = self._src.rfind('.', 0, first_qmark_idx)
+        first_qmark_idx = self.src.find('?')
+        end_idx = self.src.rfind('.', 0, first_qmark_idx)
 
         if end_idx == -1:
             hash_ = ''
         else:
-            start_idx = self._src.rfind('/', 0, end_idx)
-            hash_ = self._src[start_idx + 1 : end_idx]
+            start_idx = self.src.rfind('/', 0, end_idx)
+            hash_ = self.src[start_idx + 1 : end_idx]
 
         return hash_
 
@@ -750,27 +750,27 @@ class Contents_pt(Containers[TypeFragment]):
                 _type = proto.type
                 # 0纯文本 9电话号 18话题 27百科词条
                 if _type in [0, 9, 18, 27]:
-                    frag = FragText_pt(proto)
+                    frag = FragText_pt.from_tbdata(proto)
                     texts.append(frag)
                     yield frag
                 # 11:tid=5047676428
                 elif _type in [2, 11]:
-                    frag = FragEmoji_pt(proto)
+                    frag = FragEmoji_pt.from_tbdata(proto)
                     emojis.append(frag)
                     yield frag
                 elif _type == 4:
-                    frag = FragAt_pt(proto)
+                    frag = FragAt_pt.from_tbdata(proto)
                     ats.append(frag)
                     texts.append(frag)
                     yield frag
                 elif _type == 1:
-                    frag = FragLink_pt(proto)
+                    frag = FragLink_pt.from_tbdata(proto)
                     links.append(frag)
                     texts.append(frag)
                     yield frag
                 # 35|36:tid=7769728331 / 37:tid=7760184147
                 elif _type in [35, 36, 37]:
-                    frag = FragTiebaPlus_pt(proto)
+                    frag = FragTiebaPlus_pt.from_tbdata(proto)
                     tiebapluses.append(frag)
                     texts.append(frag)
                     yield frag
@@ -948,7 +948,7 @@ class ShareThread_pt:
 
     @staticmethod
     def from_tbdata(data_proto: TypeMessage) -> "ShareThread_pt":
-        contents = Contents_pt()._init(data_proto)
+        contents = Contents_pt.from_tbdata(data_proto)
         title = data_proto.title
         fid = data_proto.fid
         fname = data_proto.fname
@@ -1030,7 +1030,7 @@ class Thread_p:
         title = thread_proto.title
         tid = thread_proto.id
         pid = thread_proto.post_id
-        user = UserInfo_pt()._init(thread_proto.author)
+        user = UserInfo_pt.from_tbdata(thread_proto.author)
         type = thread_proto.thread_type
         is_share = bool(thread_proto.is_share_thread)
         view_num = data_proto.thread_freq_num
