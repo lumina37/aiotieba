@@ -15,7 +15,7 @@ def parse_body(body: bytes) -> UserInfo_json:
     res_json = parse_json(text)
 
     user_dict = res_json['creator']
-    user = UserInfo_json(user_dict)
+    user = UserInfo_json.from_tbdata(user_dict)
 
     return user
 

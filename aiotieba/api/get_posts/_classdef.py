@@ -936,7 +936,6 @@ class ShareThread_pt:
     """
 
     contents: Contents_pt = dcs.field(default_factory=Contents_pt)
-
     title: str = ""
 
     fid: int = 0

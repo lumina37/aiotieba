@@ -1,4 +1,5 @@
 import dataclasses as dcs
+from functools import cached_property
 from typing import Mapping
 
 
@@ -47,6 +48,6 @@ class UserInfo_selfinit:
     def nick_name(self) -> str:
         return self.nick_name_old
 
-    @property
+    @cached_property
     def log_name(self) -> str:
         self.user_name if self.user_name else f"{self.nick_name_old}/{self.tieba_uid}"

@@ -13,7 +13,7 @@ def parse_body(body: bytes) -> UserInfo_panel:
         raise TiebaServerError(code, res_json['error'])
 
     user_dict = res_json['data']
-    user = UserInfo_panel(user_dict)
+    user = UserInfo_panel.from_tbdata(user_dict)
 
     return user
 

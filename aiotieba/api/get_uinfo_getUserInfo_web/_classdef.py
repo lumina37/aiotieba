@@ -1,7 +1,10 @@
-from typing import Mapping, Optional
+import dataclasses as dcs
+from functools import cached_property
+from typing import Mapping
 
 
-class UserInfo_guinfo_web(object):
+@dcs.dataclass
+class UserInfo_guinfo_web:
     """
     用户信息
 
@@ -16,111 +19,47 @@ class UserInfo_guinfo_web(object):
         log_name (str): 用于在日志中记录用户信息
     """
 
-    __slots__ = [
-        '_user_id',
-        '_portrait',
-        '_user_name',
-        '_nick_name_new',
-    ]
+    user_id: int = 0
+    portrait: str = ''
+    user_name: str = ''
+    nick_name_new: str = ''
 
-    def __init__(self, data_map: Optional[Mapping] = None) -> None:
-        if data_map:
-            self._user_id = data_map['uid']
-            self._portrait = data_map['portrait']
-            self._user_name = user_name if (user_name := data_map['uname']) != self._user_id else ''
-            self._nick_name_new = data_map['show_nickname']
-        else:
-            self._user_id = 0
-            self._portrait = ''
-            self._user_name = ''
-            self._nick_name_new = ''
+    @staticmethod
+    def from_tbdata(data_map: Mapping) -> "UserInfo_guinfo_web":
+        user_id = data_map['uid']
+        portrait = data_map['portrait']
+        user_name = user_name if (user_name := data_map['uname']) != user_id else ''
+        nick_name_new = data_map['show_nickname']
+        return UserInfo_guinfo_web(user_id, portrait, user_name, nick_name_new)
 
     def __str__(self) -> str:
-        return self._user_name or self._portrait or str(self._user_id)
-
-    def __repr__(self) -> str:
-        return str({'user_id': self._user_id})
+        return self.user_name or self.portrait or str(self.user_id)
 
     def __eq__(self, obj: "UserInfo_guinfo_web") -> bool:
-        return self._user_id == obj._user_id
+        return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
-        return self._user_id
+        return self.user_id
 
     def __int__(self) -> int:
-        return self._user_id
+        return self.user_id
 
     def __bool__(self) -> bool:
-        return bool(self._user_id)
-
-    @property
-    def user_id(self) -> int:
-        """
-        用户user_id
-
-        Note:
-            唯一 不可变 不可为空\n
-            请注意与用户个人页的tieba_uid区分
-        """
-
-        return self._user_id
-
-    @property
-    def portrait(self) -> str:
-        """
-        用户portrait
-
-        Note:
-            唯一 不可变 不可为空
-        """
-
-        return self._portrait
-
-    @property
-    def user_name(self) -> str:
-        """
-        用户名
-
-        Note:
-            唯一 可变 可为空\n
-            请注意与用户昵称区分
-        """
-
-        return self._user_name
-
-    @property
-    def nick_name_new(self) -> str:
-        """
-        新版昵称
-        """
-
-        return self._nick_name_new
+        return bool(self.user_id)
 
     @property
     def nick_name(self) -> str:
-        """
-        用户昵称
-        """
-
-        return self._nick_name_new
+        return self.nick_name_new
 
     @property
     def show_name(self) -> str:
-        """
-        显示名称
-        """
+        return self.nick_name_new or self.user_name
 
-        return self._nick_name_new or self._user_name
-
-    @property
+    @cached_property
     def log_name(self) -> str:
-        """
-        用于在日志中记录用户信息
-        """
-
-        if self._user_name:
-            return self._user_name
-        elif self._portrait:
-            return f"{self._nick_name_new}/{self._portrait}"
+        if self.user_name:
+            return self.user_name
+        elif self.portrait:
+            return f"{self.nick_name_new}/{self.portrait}"
         else:
-            return str(self._user_id)
+            return str(self.user_id)

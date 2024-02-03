@@ -25,7 +25,7 @@ def parse_body(body: bytes) -> BawuInfo:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    bawu_info = BawuInfo(data_proto)
+    bawu_info = BawuInfo.from_tbdata(data_proto)
 
     return bawu_info
 

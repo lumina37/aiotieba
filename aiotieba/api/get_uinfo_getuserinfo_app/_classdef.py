@@ -1,9 +1,11 @@
-from typing import Optional
+import dataclasses as dcs
+from functools import cached_property
 
 from .._classdef import TypeMessage
 
 
-class UserInfo_guinfo_app(object):
+@dcs.dataclass
+class UserInfo_guinfo_app:
     """
     用户信息
 
@@ -13,7 +15,7 @@ class UserInfo_guinfo_app(object):
         user_name (str): 用户名
         nick_name_old (str): 旧版昵称
 
-        gender (int): 性别
+        gender (int): 性别 0未知 1男 2女
 
         is_vip (bool): 是否超级会员
         is_god (bool): 是否大神
@@ -22,145 +24,53 @@ class UserInfo_guinfo_app(object):
         log_name (str): 用于在日志中记录用户信息
     """
 
-    __slots__ = [
-        '_user_id',
-        '_portrait',
-        '_user_name',
-        '_nick_name_old',
-        '_gender',
-        '_is_vip',
-        '_is_god',
-    ]
+    user_id: int = 0
+    portrait: str = ''
+    user_name: str = ''
+    nick_name_old: str = ''
 
-    def __init__(self, data_proto: Optional[TypeMessage] = None) -> None:
-        if data_proto:
-            self._user_id = data_proto.id
-            if '?' in (portrait := data_proto.portrait):
-                self._portrait = portrait[:-13]
-            else:
-                self._portrait = portrait
-            self._user_name = data_proto.name
-            self._nick_name_old = data_proto.name_show
-            self._gender = data_proto.sex
-            self._is_vip = bool(data_proto.vipInfo.v_status)
-            self._is_god = bool(data_proto.new_god_data.status)
-        else:
-            self._user_id = 0
-            self._portrait = ''
-            self._user_name = ''
-            self._nick_name_old = ''
-            self._gender = 0
-            self._is_vip = False
-            self._is_god = False
+    gender: int = 0
+
+    is_vip: bool = False
+    is_god: bool = False
+
+    @staticmethod
+    def from_tbdata(data_proto: TypeMessage) -> "UserInfo_guinfo_app":
+        user_id = data_proto.id
+        portrait = data_proto.portrait
+        if '?' in portrait:
+            portrait = portrait[:-13]
+        user_name = data_proto.name
+        nick_name_old = data_proto.name_show
+        gender = data_proto.sex
+        is_vip = bool(data_proto.vipInfo.v_status)
+        is_god = bool(data_proto.new_god_data.status)
+        return UserInfo_guinfo_app(user_id, portrait, user_name, nick_name_old, gender, is_vip, is_god)
 
     def __str__(self) -> str:
-        return self._user_name or self._portrait or str(self._user_id)
-
-    def __repr__(self) -> str:
-        return str({'user_id': self._user_id})
+        return self.user_name or self.portrait or str(self.user_id)
 
     def __eq__(self, obj: "UserInfo_guinfo_app") -> bool:
-        return self._user_id == obj._user_id
+        return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
-        return self._user_id
+        return self.user_id
 
     def __int__(self) -> int:
-        return self._user_id
+        return self.user_id
 
     def __bool__(self) -> bool:
-        return bool(self._user_id)
-
-    @property
-    def user_id(self) -> int:
-        """
-        用户user_id
-
-        Note:
-            唯一 不可变 不可为空\n
-            请注意与用户个人页的tieba_uid区分
-        """
-
-        return self._user_id
-
-    @property
-    def portrait(self) -> str:
-        """
-        用户portrait
-
-        Note:
-            唯一 不可变 不可为空
-        """
-
-        return self._portrait
-
-    @property
-    def user_name(self) -> str:
-        """
-        用户名
-
-        Note:
-            唯一 可变 可为空\n
-            请注意与用户昵称区分
-        """
-
-        return self._user_name
-
-    @property
-    def gender(self) -> int:
-        """
-        性别
-
-        Note:
-            0未知 1男 2女
-        """
-
-        return self._gender
-
-    @property
-    def is_vip(self) -> bool:
-        """
-        是否超级会员
-        """
-
-        return self._is_vip
-
-    @property
-    def is_god(self) -> bool:
-        """
-        是否贴吧大神
-        """
-
-        return self._is_god
-
-    @property
-    def nick_name_old(self) -> str:
-        """
-        旧版昵称
-
-        Note:
-            该字段具有唯一性
-        """
-
-        return self._nick_name_old
+        return bool(self.user_id)
 
     @property
     def nick_name(self) -> str:
-        """
-        用户昵称
-        """
+        return self.nick_name_old
 
-        return self._nick_name_old
-
-    @property
+    @cached_property
     def log_name(self) -> str:
-        """
-        用于在日志中记录用户信息
-        """
-
-        if self._user_name:
-            return self._user_name
-        elif self._portrait:
-            return f"{self._nick_name_old}/{self._portrait}"
+        if self.user_name:
+            return self.user_name
+        elif self.portrait:
+            return f"{self.nick_name_old}/{self.portrait}"
         else:
-            return str(self._user_id)
+            return str(self.user_id)

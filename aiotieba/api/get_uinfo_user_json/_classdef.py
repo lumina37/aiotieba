@@ -1,7 +1,9 @@
-from typing import Mapping, Optional
+import dataclasses as dcs
+from typing import Mapping
 
 
-class UserInfo_json(object):
+@dcs.dataclass
+class UserInfo_json:
     """
     用户信息
 
@@ -13,78 +15,32 @@ class UserInfo_json(object):
         log_name (str): 用于在日志中记录用户信息
     """
 
-    __slots__ = [
-        '_user_id',
-        '_portrait',
-        '_user_name',
-    ]
+    user_id: int = 0
+    portrait: str = ''
+    user_name: str = ''
 
-    def __init__(self, data_map: Optional[Mapping] = None) -> None:
-        if data_map:
-            self._user_id = data_map['id']
-            self._portrait = data_map['portrait']
-        else:
-            self._user_id = 0
-            self._portrait = ''
-            self._user_name = ''
+    @staticmethod
+    def from_tbdata(data_map: Mapping) -> "UserInfo_json":
+        user_id = data_map['id']
+        portrait = data_map['portrait']
+        user_name = ''
+        return UserInfo_json(user_id, portrait, user_name)
 
     def __str__(self) -> str:
-        return self._user_name or self._portrait or str(self._user_id)
-
-    def __repr__(self) -> str:
-        return str({'user_id': self._user_id})
+        return self.user_name or self.portrait or str(self.user_id)
 
     def __eq__(self, obj: "UserInfo_json") -> bool:
-        return self._user_id == obj._user_id
+        return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
-        return self._user_id
+        return self.user_id
 
     def __int__(self) -> int:
-        return self._user_id
+        return self.user_id
 
     def __bool__(self) -> bool:
-        return bool(self._user_id)
-
-    @property
-    def user_id(self) -> int:
-        """
-        用户user_id
-
-        Note:
-            唯一 不可变 不可为空\n
-            请注意与用户个人页的tieba_uid区分
-        """
-
-        return self._user_id
-
-    @property
-    def portrait(self) -> str:
-        """
-        用户portrait
-
-        Note:
-            唯一 不可变 不可为空
-        """
-
-        return self._portrait
-
-    @property
-    def user_name(self) -> str:
-        """
-        用户名
-
-        Note:
-            唯一 可变 可为空\n
-            请注意与用户昵称区分
-        """
-
-        return self._user_name
+        return bool(self.user_id)
 
     @property
     def log_name(self) -> str:
-        """
-        用于在日志中记录用户信息
-        """
-
         return str(self)

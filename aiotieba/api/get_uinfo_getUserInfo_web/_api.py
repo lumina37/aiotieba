@@ -13,7 +13,7 @@ def parse_body(body: bytes) -> UserInfo_guinfo_web:
         raise TiebaServerError(code, res_json['errmsg'])
 
     user_dict = res_json['chatUser']
-    user = UserInfo_guinfo_web(user_dict)
+    user = UserInfo_guinfo_web.from_tbdata(user_dict)
 
     return user
 
