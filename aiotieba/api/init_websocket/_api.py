@@ -50,7 +50,7 @@ def parse_body(body: bytes) -> List[WsMsgGroupInfo]:
     if code := res_proto.error.errorno:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
-    groups = [WsMsgGroupInfo(p) for p in res_proto.data.groupInfo]
+    groups = [WsMsgGroupInfo.from_tbdata(p) for p in res_proto.data.groupInfo]
 
     return groups
 

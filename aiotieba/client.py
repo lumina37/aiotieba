@@ -230,9 +230,9 @@ class Client(object):
 
         mid_manager = self._ws_core.mid_manager
         for group in groups:
-            if group._group_type == GroupType.PRIVATE_MSG:
-                mid_manager.priv_gid = group._group_id
-        mid_manager.gid2mid = {g._group_id: MsgIDPair(g._last_msg_id, g._last_msg_id) for g in groups}
+            if group.group_type == GroupType.PRIVATE_MSG:
+                mid_manager.priv_gid = group.group_id
+        mid_manager.gid2mid = {g.group_id: MsgIDPair(g.last_msg_id, g.last_msg_id) for g in groups}
 
         self._ws_core._status = WsStatus.OPEN
 
@@ -252,10 +252,10 @@ class Client(object):
             TypeUserInfo: 用户信息
         """
 
-        if not self._user._user_id:
+        if not self._user.user_id:
             if require & ReqUInfo.BASIC:
                 await self.__login()
-        if not self._user._tieba_uid:
+        if not self._user.tieba_uid:
             if require & (ReqUInfo.TIEBA_UID | ReqUInfo.NICK_NAME):
                 await self.__get_selfinfo_initNickname()
 
@@ -264,9 +264,9 @@ class Client(object):
     async def __login(self) -> None:
         user, tbs = await login.request(self._http_core)
 
-        self._user._user_id = user._user_id
-        self._user._portrait = user._portrait
-        self._user._user_name = user._user_name
+        self._user.user_id = user.user_id
+        self._user.portrait = user.portrait
+        self._user.user_name = user.user_name
         self._account._tbs = tbs
 
     async def __init_client_id(self) -> None:
@@ -347,7 +347,7 @@ class Client(object):
             return fname
 
         fdetail = await self.get_forum_detail(fid)
-        fname = fdetail._fname
+        fname = fdetail.fname
 
         if fname:
             ForumInfoCache.add_forum(fname, fid)
@@ -519,8 +519,8 @@ class Client(object):
 
         else:
             user = await get_uinfo_getuserinfo_app.request_http(self._http_core, user_id)
-            if (user_id := user._user_id) < 0:
-                user._user_id = 0xFFFFFFFF + user_id
+            if (user_id := user.user_id) < 0:
+                user.user_id = 0xFFFFFFFF + user_id
 
         return user
 
@@ -540,7 +540,7 @@ class Client(object):
         """
 
         user = await get_uinfo_getUserInfo_web.request(self._http_core, user_id)
-        user._user_id = user_id
+        user.user_id = user_id
 
         return user
 
@@ -557,7 +557,7 @@ class Client(object):
         """
 
         user = await get_uinfo_user_json.request(self._http_core, user_name)
-        user._user_name = user_name
+        user.user_name = user_name
 
         return user
 
@@ -640,11 +640,9 @@ class Client(object):
 
         return await tieba_uid2user_info.request_http(self._http_core, tieba_uid)
 
-    @handle_exception(profile.get_homepage.null_ret_factory)
+    @handle_exception(profile.Homepage)
     @_try_websocket
-    async def get_homepage(
-        self, _id: Union[str, int], /, pn: int = 1
-    ) -> Tuple[profile.UserInfo_pf, List[profile.Thread_pf]]:
+    async def get_homepage(self, _id: Union[str, int], /, pn: int = 1) -> profile.Homepage:
         """
         获取用户个人页信息
 
@@ -653,12 +651,12 @@ class Client(object):
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
-            tuple[UserInfo_pf, list[Thread_pf]]: 用户信息, list[帖子信息]
+            Homepage: 用户个人页信息
         """
 
         if not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
-            user_id = user._user_id
+            user_id = user.user_id
         else:
             user_id = _id
 
@@ -683,10 +681,10 @@ class Client(object):
 
         if _id is None:
             user = await self.get_self_info(ReqUInfo.USER_ID)
-            user_id = user._user_id
+            user_id = user.user_id
         elif not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
-            user_id = user._user_id
+            user_id = user.user_id
         else:
             user_id = _id
 
@@ -708,10 +706,10 @@ class Client(object):
 
         if _id is None:
             user = await self.get_self_info(ReqUInfo.USER_ID)
-            user_id = user._user_id
+            user_id = user.user_id
         elif not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
-            user_id = user._user_id
+            user_id = user.user_id
         else:
             user_id = _id
 
@@ -807,9 +805,9 @@ class Client(object):
 
         return await get_dislike_forums.request_http(self._http_core, pn, rn)
 
-    @handle_exception(list)
+    @handle_exception(get_user_contents.UserThreads)
     @_try_websocket
-    async def get_self_public_threads(self, pn: int = 1) -> List[get_user_contents.UserThread]:
+    async def get_self_public_threads(self, pn: int = 1) -> get_user_contents.UserThreads:
         """
         获取本人发布的公开状态的主题帖列表
 
@@ -817,7 +815,7 @@ class Client(object):
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
-            list[UserThread]: 主题帖列表
+            UserThreads: 主题帖列表
         """
 
         user = await self.get_self_info(ReqUInfo.USER_ID)
@@ -827,9 +825,9 @@ class Client(object):
 
         return await get_user_contents.get_threads.request_http(self._http_core, user.user_id, pn, public_only=True)
 
-    @handle_exception(list)
+    @handle_exception(get_user_contents.UserThreads)
     @_try_websocket
-    async def get_self_threads(self, pn: int = 1) -> List[get_user_contents.UserThread]:
+    async def get_self_threads(self, pn: int = 1) -> get_user_contents.UserThreads:
         """
         获取本人发布的主题帖列表
 
@@ -837,7 +835,7 @@ class Client(object):
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
-            list[UserThread]: 主题帖列表
+            UserThreads: 主题帖列表
         """
 
         user = await self.get_self_info(ReqUInfo.USER_ID)
@@ -847,9 +845,9 @@ class Client(object):
 
         return await get_user_contents.get_threads.request_http(self._http_core, user.user_id, pn, public_only=False)
 
-    @handle_exception(list)
+    @handle_exception(get_user_contents.UserPostss)
     @_try_websocket
-    async def get_self_posts(self, pn: int = 1) -> List[get_user_contents.UserPosts]:
+    async def get_self_posts(self, pn: int = 1) -> get_user_contents.UserPostss:
         """
         获取本人发布的回复列表
 
@@ -857,7 +855,7 @@ class Client(object):
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
-            list[UserPosts]: 回复列表
+            UserPostss: 回复列表
         """
 
         user = await self.get_self_info(ReqUInfo.USER_ID)
@@ -867,9 +865,9 @@ class Client(object):
 
         return await get_user_contents.get_posts.request_http(self._http_core, user.user_id, pn)
 
-    @handle_exception(list)
+    @handle_exception(get_user_contents.UserThreads)
     @_try_websocket
-    async def get_user_threads(self, _id: Union[str, int], pn: int = 1) -> List[get_user_contents.UserThread]:
+    async def get_user_threads(self, _id: Union[str, int], pn: int = 1) -> get_user_contents.UserThreads:
         """
         获取用户发布的主题帖列表
 
@@ -878,12 +876,12 @@ class Client(object):
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
-            list[UserThread]: 主题帖列表
+            UserThreads: 主题帖列表
         """
 
         if not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
-            user_id = user._user_id
+            user_id = user.user_id
         else:
             user_id = _id
 
@@ -996,7 +994,7 @@ class Client(object):
 
         if not is_portrait(_id):
             user = await self.get_user_info(_id, ReqUInfo.PORTRAIT)
-            portrait = user._portrait
+            portrait = user.portrait
         else:
             portrait = _id
 
@@ -1016,8 +1014,8 @@ class Client(object):
 
     async def __get_selfinfo_initNickname(self) -> None:
         user = await get_selfinfo_initNickname.request(self._http_core)
-        self._user._user_name = user.user_name
-        self._user._tieba_uid = user.tieba_uid
+        self._user.user_name = user.user_name
+        self._user.tieba_uid = user.tieba_uid
 
     @handle_exception(get_square_forums.SquareForums)
     @_try_websocket
@@ -1167,7 +1165,7 @@ class Client(object):
 
         if _id and not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
-            user_id = user._user_id
+            user_id = user.user_id
         else:
             user_id = _id
 
@@ -1336,7 +1334,7 @@ class Client(object):
 
         if not is_portrait(_id):
             user = await self.get_user_info(_id, ReqUInfo.PORTRAIT)
-            portrait = user._portrait
+            portrait = user.portrait
         else:
             portrait = _id
 
@@ -1361,7 +1359,7 @@ class Client(object):
 
         if not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
-            user_id = user._user_id
+            user_id = user.user_id
         else:
             user_id = _id
 
@@ -1386,7 +1384,7 @@ class Client(object):
 
         if not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
-            user_id = user._user_id
+            user_id = user.user_id
         else:
             user_id = _id
 
@@ -1411,7 +1409,7 @@ class Client(object):
 
         if not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
-            user_id = user._user_id
+            user_id = user.user_id
         else:
             user_id = _id
 
@@ -1866,7 +1864,7 @@ class Client(object):
 
         if not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
-            user_id = user._user_id
+            user_id = user.user_id
         else:
             user_id = _id
 
@@ -1886,7 +1884,7 @@ class Client(object):
 
         if not is_portrait(_id):
             user = await self.get_user_info(_id, ReqUInfo.PORTRAIT)
-            portrait = user._portrait
+            portrait = user.portrait
         else:
             portrait = _id
 
@@ -1908,7 +1906,7 @@ class Client(object):
 
         if not is_portrait(_id):
             user = await self.get_user_info(_id, ReqUInfo.PORTRAIT)
-            portrait = user._portrait
+            portrait = user.portrait
         else:
             portrait = _id
 
@@ -1930,7 +1928,7 @@ class Client(object):
 
         if not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
-            user_id = user._user_id
+            user_id = user.user_id
         else:
             user_id = _id
 
@@ -1954,7 +1952,7 @@ class Client(object):
 
         if not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
-            user_id = user._user_id
+            user_id = user.user_id
         else:
             user_id = _id
 
@@ -1977,7 +1975,7 @@ class Client(object):
 
         if not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
-            user_id = user._user_id
+            user_id = user.user_id
         else:
             user_id = _id
 
@@ -1997,7 +1995,7 @@ class Client(object):
 
         if not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
-            user_id = user._user_id
+            user_id = user.user_id
         else:
             user_id = _id
 
@@ -2233,7 +2231,7 @@ class Client(object):
 
         if not isinstance(_id, int):
             user = await self.get_user_info(_id, ReqUInfo.USER_ID)
-            user_id = user._user_id
+            user_id = user.user_id
         else:
             user_id = _id
 

@@ -4,7 +4,7 @@ from .._classdef import TypeMessage
 
 
 @dcs.dataclass
-class Forum_detail(object):
+class Forum_detail:
     """
     吧基本信息
 

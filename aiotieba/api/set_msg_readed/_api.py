@@ -29,8 +29,8 @@ def parse_body(body: bytes) -> None:
 
 
 async def request(ws_core: WsCore, message: WsMessage) -> bool:
-    user_id = message._user._user_id
-    msg_id = message._msg_id
+    user_id = message.user.user_id
+    msg_id = message.msg_id
     data = pack_proto(user_id, ws_core.mid_manager.priv_gid, msg_id)
 
     __log__ = f"user_id={user_id} msg_id={msg_id}"

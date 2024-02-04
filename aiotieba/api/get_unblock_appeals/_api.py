@@ -12,7 +12,7 @@ def parse_body(body: bytes) -> Appeals:
     if code := res_json['no']:
         raise TiebaServerError(code, res_json['error'])
 
-    appeals = Appeals(res_json)
+    appeals = Appeals.from_tbdata(res_json)
 
     return appeals
 

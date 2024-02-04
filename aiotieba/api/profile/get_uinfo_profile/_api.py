@@ -33,7 +33,7 @@ def parse_body(body: bytes) -> UserInfo_pf:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    user = UserInfo_pf(data_proto)
+    user = UserInfo_pf.from_tbdata(data_proto)
 
     return user
 

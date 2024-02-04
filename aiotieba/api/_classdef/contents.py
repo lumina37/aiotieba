@@ -31,7 +31,7 @@ class TypeFragText(Protocol):
 
 
 @dcs.dataclass
-class FragEmoji(object):
+class FragEmoji:
     """
     表情碎片
 
@@ -146,7 +146,7 @@ class FragVoice:
 
     Attributes:
         md5 (str): 音频md5
-        duration (int): 音频长度
+        duration (int): 音频长度 以秒为单位
     """
 
     md5: str = ""

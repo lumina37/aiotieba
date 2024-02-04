@@ -25,7 +25,7 @@ def parse_body(body: bytes) -> UserInfo_TUid:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     user_proto = res_proto.data.user
-    user = UserInfo_TUid(user_proto)
+    user = UserInfo_TUid.from_tbdata(user_proto)
 
     return user
 
