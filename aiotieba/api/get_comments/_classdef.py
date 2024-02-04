@@ -193,9 +193,6 @@ class UserInfo_c:
     def __hash__(self) -> int:
         return self.user_id
 
-    def __int__(self) -> int:
-        return self.user_id
-
     def __bool__(self) -> bool:
         return bool(self.user_id)
 
@@ -403,9 +400,6 @@ class UserInfo_ct:
         return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
-        return self.user_id
-
-    def __int__(self) -> int:
         return self.user_id
 
     def __bool__(self) -> bool:
@@ -694,9 +688,6 @@ class UserInfo_cp:
         return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
-        return self.user_id
-
-    def __int__(self) -> int:
         return self.user_id
 
     def __bool__(self) -> bool:

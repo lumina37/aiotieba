@@ -1,14 +1,17 @@
 import dataclasses as dcs
 
+from ...exception import TbErrorPlugin
 from .._classdef import TypeMessage
 
 
 @dcs.dataclass
-class Forum_detail:
+class Forum_detail(TbErrorPlugin):
     """
     吧基本信息
 
     Attributes:
+        err (Exception | None): 捕获的异常
+
         fid (int): 贴吧id
         fname (str): 贴吧名
 
@@ -43,4 +46,4 @@ class Forum_detail:
         member_num = forum_proto.member_count
         post_num = forum_proto.thread_count
         has_bawu = data_proto.election_tab.new_manager_status == 5
-        return Forum_detail(fid, fname, small_avatar, origin_avatar, slogan, member_num, post_num, has_bawu)
+        return Forum_detail(None, fid, fname, small_avatar, origin_avatar, slogan, member_num, post_num, has_bawu)

@@ -34,6 +34,7 @@ from .api import (
     get_dislike_forums,
     get_fans,
     get_fid,
+    get_fname,
     get_follow_forums,
     get_follows,
     get_forum_detail,
@@ -96,8 +97,6 @@ from .typing import TypeUserInfo
 
 if TYPE_CHECKING:
     import datetime
-
-    import numpy as np
 
 
 def _try_websocket(func):
@@ -201,12 +200,12 @@ class Client(object):
         return self.account.BDUSS == obj.account.BDUSS
 
     @handle_exception(TbResponse)
-    async def init_websocket(self) -> bool:
+    async def init_websocket(self) -> TbResponse:
         """
         初始化websocket
 
         Returns:
-            bool: True无须执行 False失败
+            TbResponse: True无须执行 False失败
         """
 
         if self._ws_core.status == WsStatus.CLOSED:
@@ -302,25 +301,14 @@ class Client(object):
             Forum_detail: 贴吧信息
         """
 
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
 
         if self._ws_core.status == WsStatus.OPEN:
             return await get_forum_detail.request_ws(self._ws_core, fid)
 
         return await get_forum_detail.request_http(self._http_core, fid)
 
-    @handle_exception(int)
-    async def get_fid(self, fname: str) -> int:
-        """
-        通过贴吧名获取forum_id
-
-        Args:
-            fname (str): 贴吧名
-
-        Returns:
-            int: forum_id
-        """
-
+    async def __get_fid(self, fname: str) -> int:
         if fid := ForumInfoCache.get_fid(fname):
             return fid
 
@@ -329,18 +317,22 @@ class Client(object):
 
         return fid
 
-    @handle_exception(str)
-    async def get_fname(self, fid: int) -> str:
+    @handle_exception(get_fid.Fid)
+    async def get_fid(self, fname: str) -> get_fid.Fid:
         """
-        通过forum_id获取贴吧名
+        通过贴吧名获取forum_id
 
         Args:
-            fid (int): forum_id
+            fname (str): 贴吧名
 
         Returns:
-            str: 贴吧名
+            Fid: forum_id
         """
 
+        fid = await self.__get_fid(fname)
+        return get_fid.Fid(None, fid)
+
+    async def __get_fname(self, fid: int) -> str:
         if fname := ForumInfoCache.get_fname(fid):
             return fname
 
@@ -351,6 +343,21 @@ class Client(object):
             ForumInfoCache.add_forum(fname, fid)
 
         return fname
+
+    @handle_exception(get_fname.Fname)
+    async def get_fname(self, fid: int) -> get_fname.Fname:
+        """
+        通过forum_id获取贴吧名
+
+        Args:
+            fid (int): forum_id
+
+        Returns:
+            str: 贴吧名
+        """
+
+        fname = await self.__get_fname(fid)
+        return get_fname.Fname(None, fname)
 
     @handle_exception(get_threads.Threads)
     @_try_websocket
@@ -378,7 +385,7 @@ class Client(object):
             Threads: 帖子列表
         """
 
-        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
         if self._ws_core.status == WsStatus.OPEN:
             return await get_threads.request_ws(self._ws_core, fname, pn, rn, sort, is_good)
@@ -476,7 +483,7 @@ class Client(object):
             Searches: 搜索结果列表
         """
 
-        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
         return await search_post.request(self._http_core, fname, query, pn, rn, query_type, only_thread)
 
@@ -578,43 +585,43 @@ class Client(object):
 
         return await get_uinfo_panel.request(self._http_core, name_or_portrait)
 
-    async def get_user_info(self, _id: Union[str, int], /, require: ReqUInfo = ReqUInfo.ALL) -> TypeUserInfo:
+    async def get_user_info(self, id_: Union[str, int], /, require: ReqUInfo = ReqUInfo.ALL) -> TypeUserInfo:
         """
         获取用户信息
 
         Args:
-            _id (str | int): 用户id user_id / portrait / user_name
+            id_ (str | int): 用户id user_id / portrait / user_name
             require (ReqUInfo): 指示需要获取的字段
 
         Returns:
             TypeUserInfo: 用户信息
         """
 
-        if not _id:
+        if not id_:
             LOG().warning("Null input")
-            return UserInfo(_id)
+            return UserInfo(id_)
 
-        if isinstance(_id, int):
+        if isinstance(id_, int):
             if require <= ReqUInfo.NICK_NAME:
                 # 仅有NICK_NAME以下的需求
-                return await self._get_uinfo_getuserinfo(_id)
+                return await self._get_uinfo_getuserinfo(id_)
             else:
-                return await self._get_uinfo_profile(_id)
-        elif is_portrait(_id):
+                return await self._get_uinfo_profile(id_)
+        elif is_portrait(id_):
             if (require | ReqUInfo.BASIC) == ReqUInfo.BASIC:
                 # 仅有BASIC需求
                 if not require & ReqUInfo.USER_ID:
                     # 无USER_ID需求
-                    return await self._get_uinfo_panel(_id)
-            return await self._get_uinfo_profile(_id)
+                    return await self._get_uinfo_panel(id_)
+            return await self._get_uinfo_profile(id_)
         else:
             if (require | ReqUInfo.BASIC) == ReqUInfo.BASIC:
-                return await self._get_uinfo_user_json(_id)
+                return await self._get_uinfo_user_json(id_)
             elif require & ReqUInfo.NICK_NAME and not require & ReqUInfo.USER_ID:
                 # 有NICK_NAME需求但无USER_ID需求
-                return await self._get_uinfo_panel(_id)
+                return await self._get_uinfo_panel(id_)
             else:
-                user = await self._get_uinfo_user_json(_id)
+                user = await self._get_uinfo_user_json(id_)
                 return await self._get_uinfo_profile(user.portrait)
 
     @handle_exception(tieba_uid2user_info.UserInfo_TUid)
@@ -640,23 +647,23 @@ class Client(object):
 
     @handle_exception(profile.Homepage)
     @_try_websocket
-    async def get_homepage(self, _id: Union[str, int], /, pn: int = 1) -> profile.Homepage:
+    async def get_homepage(self, id_: Union[str, int], /, pn: int = 1) -> profile.Homepage:
         """
         获取用户个人页信息
 
         Args:
-            _id (str | int): 用户id user_id / user_name / portrait 优先user_id
+            id_ (str | int): 用户id user_id / user_name / portrait 优先user_id
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
             Homepage: 用户个人页信息
         """
 
-        if not isinstance(_id, int):
-            user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+        if not isinstance(id_, int):
+            user = await self.get_user_info(id_, ReqUInfo.USER_ID)
             user_id = user.user_id
         else:
-            user_id = _id
+            user_id = id_
 
         if self._ws_core.status == WsStatus.OPEN:
             return await profile.get_homepage.request_ws(self._ws_core, user_id, pn)
@@ -664,52 +671,52 @@ class Client(object):
         return await profile.get_homepage.request_http(self._http_core, user_id, pn)
 
     @handle_exception(get_follows.Follows)
-    async def get_follows(self, _id: Union[str, int, None] = None, /, pn: int = 1) -> get_follows.Follows:
+    async def get_follows(self, id_: Union[str, int, None] = None, /, pn: int = 1) -> get_follows.Follows:
         """
         获取关注列表
 
         Args:
             pn (int, optional): 页码. Defaults to 1.
-            _id (str | int | None): 用户id user_id / user_name / portrait 优先user_id
+            id_ (str | int | None): 用户id user_id / user_name / portrait 优先user_id
                 默认为None即获取本账号信息. Defaults to None.
 
         Returns:
             Follows: 关注列表
         """
 
-        if _id is None:
+        if id_ is None:
             user = await self.get_self_info(ReqUInfo.USER_ID)
             user_id = user.user_id
-        elif not isinstance(_id, int):
-            user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+        elif not isinstance(id_, int):
+            user = await self.get_user_info(id_, ReqUInfo.USER_ID)
             user_id = user.user_id
         else:
-            user_id = _id
+            user_id = id_
 
         return await get_follows.request(self._http_core, user_id, pn)
 
     @handle_exception(get_fans.Fans)
-    async def get_fans(self, _id: Union[str, int, None] = None, /, pn: int = 1) -> get_fans.Fans:
+    async def get_fans(self, id_: Union[str, int, None] = None, /, pn: int = 1) -> get_fans.Fans:
         """
         获取粉丝列表
 
         Args:
             pn (int, optional): 页码. Defaults to 1.
-            _id (str | int | None): 用户id user_id / user_name / portrait 优先user_id
+            id_ (str | int | None): 用户id user_id / user_name / portrait 优先user_id
                 默认为None即获取本账号信息. Defaults to None.
 
         Returns:
             Fans: 粉丝列表
         """
 
-        if _id is None:
+        if id_ is None:
             user = await self.get_self_info(ReqUInfo.USER_ID)
             user_id = user.user_id
-        elif not isinstance(_id, int):
-            user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+        elif not isinstance(id_, int):
+            user = await self.get_user_info(id_, ReqUInfo.USER_ID)
             user_id = user.user_id
         else:
-            user_id = _id
+            user_id = id_
 
         return await get_fans.request(self._http_core, user_id, pn)
 
@@ -745,13 +752,13 @@ class Client(object):
 
     @handle_exception(get_follow_forums.FollowForums)
     async def get_follow_forums(
-        self, _id: Union[str, int], /, pn: int = 1, *, rn: int = 50
+        self, id_: Union[str, int], /, pn: int = 1, *, rn: int = 50
     ) -> get_follow_forums.FollowForums:
         """
         获取用户关注贴吧列表
 
         Args:
-            _id (str | int): 用户id user_id / user_name / portrait 优先user_id
+            id_ (str | int): 用户id user_id / user_name / portrait 优先user_id
             pn (int, optional): 页码. Defaults to 1.
             rn (int, optional): 请求的条目数. Defaults to 50. Max to Inf.
 
@@ -759,11 +766,11 @@ class Client(object):
             FollowForums: 用户关注贴吧列表
         """
 
-        if not isinstance(_id, int):
-            user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+        if not isinstance(id_, int):
+            user = await self.get_user_info(id_, ReqUInfo.USER_ID)
             user_id = user.user_id
         else:
-            user_id = _id
+            user_id = id_
 
         return await get_follow_forums.request(self._http_core, user_id, pn, rn)
 
@@ -865,23 +872,23 @@ class Client(object):
 
     @handle_exception(get_user_contents.UserThreads)
     @_try_websocket
-    async def get_user_threads(self, _id: Union[str, int], pn: int = 1) -> get_user_contents.UserThreads:
+    async def get_user_threads(self, id_: Union[str, int], pn: int = 1) -> get_user_contents.UserThreads:
         """
         获取用户发布的主题帖列表
 
         Args:
-            _id (str | int): 用户id user_id / user_name / portrait 优先user_id
+            id_ (str | int): 用户id user_id / user_name / portrait 优先user_id
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
             UserThreads: 主题帖列表
         """
 
-        if not isinstance(_id, int):
-            user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+        if not isinstance(id_, int):
+            user = await self.get_user_info(id_, ReqUInfo.USER_ID)
             user_id = user.user_id
         else:
-            user_id = _id
+            user_id = id_
 
         if self._ws_core.status == WsStatus.OPEN:
             return await get_user_contents.get_threads.request_ws(self._ws_core, user_id, pn, public_only=True)
@@ -920,8 +927,8 @@ class Client(object):
 
         return await get_ats.request(self._http_core, pn)
 
-    @handle_exception(bytes)
-    async def get_image_bytes(self, img_url: str) -> bytes:
+    @handle_exception(get_images.ImageBytes)
+    async def get_image_bytes(self, img_url: str) -> get_images.ImageBytes:
         """
         从链接获取静态图像的原始字节流
 
@@ -929,13 +936,13 @@ class Client(object):
             img_url (str): 图像链接
 
         Returns:
-            bytes: 未解码的原始字节流
+            ImageBytes: 未解码的原始字节流
         """
 
         return await get_images.request_bytes(self._http_core, yarl.URL(img_url))
 
-    @handle_exception(get_images.null_ret_factory)
-    async def get_image(self, img_url: str) -> "np.ndarray":
+    @handle_exception(get_images.Image)
+    async def get_image(self, img_url: str) -> get_images.Image:
         """
         从链接获取静态图像
 
@@ -943,13 +950,13 @@ class Client(object):
             img_url (str): 图像链接
 
         Returns:
-            np.ndarray: 图像
+            Image: 图像
         """
 
         return await get_images.request(self._http_core, yarl.URL(img_url))
 
-    @handle_exception(get_images.null_ret_factory)
-    async def hash2image(self, raw_hash: str, /, size: Literal['s', 'm', 'l'] = 's') -> "np.ndarray":
+    @handle_exception(get_images.Image)
+    async def hash2image(self, raw_hash: str, /, size: Literal['s', 'm', 'l'] = 's') -> get_images.Image:
         """
         通过百度图库hash获取静态图像
 
@@ -958,7 +965,7 @@ class Client(object):
             size (Literal['s', 'm', 'l'], optional): 获取图像的大小 s为宽720 m为宽960 l为原图. Defaults to 's'.
 
         Returns:
-            np.ndarray: 图像
+            Image: 图像
         """
 
         if size == 's':
@@ -973,28 +980,28 @@ class Client(object):
             img_url = yarl.URL.build(scheme="http", host="imgsrc.baidu.com", path=f"/forum/pic/item/{raw_hash}.jpg")
         else:
             LOG().warning(f"Invalid size={size}")
-            return get_images.null_ret_factory()
+            return get_images.Image()
 
         return await get_images.request(self._http_core, img_url)
 
-    @handle_exception(get_images.null_ret_factory)
-    async def get_portrait(self, _id: Union[str, int], /, size: Literal['s', 'm', 'l'] = 's') -> "np.ndarray":
+    @handle_exception(get_images.Image)
+    async def get_portrait(self, id_: Union[str, int], /, size: Literal['s', 'm', 'l'] = 's') -> get_images.Image:
         """
         获取用户头像
 
         Args:
-            _id (str | int): 用户id user_id / user_name / portrait 优先portrait
+            id_ (str | int): 用户id user_id / user_name / portrait 优先portrait
             size (Literal['s', 'm', 'l'], optional): 获取头像的大小 s为55x55 m为110x110 l为原图. Defaults to 's'.
 
         Returns:
-            np.ndarray: 头像
+            Image: 头像
         """
 
-        if not is_portrait(_id):
-            user = await self.get_user_info(_id, ReqUInfo.PORTRAIT)
+        if not is_portrait(id_):
+            user = await self.get_user_info(id_, ReqUInfo.PORTRAIT)
             portrait = user.portrait
         else:
-            portrait = _id
+            portrait = id_
 
         if size == 's':
             path = 'n'
@@ -1004,7 +1011,7 @@ class Client(object):
             path = 'h'
         else:
             LOG().warning(f"Invalid size={size}")
-            return get_images.null_ret_factory()
+            return get_images.Image()
 
         img_url = yarl.URL.build(scheme="http", host="tb.himg.baidu.com", path=f"/sys/portrait{path}/item/{portrait}")
 
@@ -1048,7 +1055,7 @@ class Client(object):
             BawuInfo: 吧务团队信息
         """
 
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
 
         if self._ws_core.status == WsStatus.OPEN:
             return await get_bawu_info.request_ws(self._ws_core, fid)
@@ -1068,7 +1075,7 @@ class Client(object):
             dict[str, int]: {分区名:分区id}
         """
 
-        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
         if self._ws_core.status == WsStatus.OPEN:
             return await get_tab_map.request_ws(self._ws_core, fname)
@@ -1103,7 +1110,7 @@ class Client(object):
             RankUsers: 等级排行榜用户列表
         """
 
-        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
         return await get_rank_users.request(self._http_core, fname, pn)
 
@@ -1120,7 +1127,7 @@ class Client(object):
             MemberUsers: 最新关注用户列表
         """
 
-        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
         return await get_member_users.request(self._http_core, fname, pn)
 
@@ -1138,13 +1145,13 @@ class Client(object):
             Blocks: 待解封用户列表
         """
 
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
 
         return await get_blocks.request(self._http_core, fid, name, pn)
 
     @handle_exception(get_recovers.Recovers)
     async def get_recovers(
-        self, fname_or_fid: Union[str, int], /, pn: int = 1, *, rn: int = 10, _id: Union[str, int, None] = None
+        self, fname_or_fid: Union[str, int], /, pn: int = 1, *, rn: int = 10, id_: Union[str, int, None] = None
     ) -> get_recovers.Recovers:
         """
         获取pn页的待恢复帖子列表
@@ -1153,19 +1160,19 @@ class Client(object):
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先fid
             pn (int, optional): 页码. Defaults to 1.
             rn (int, optional): 请求的条目数. Defaults to 10. Max to 50.
-            _id (str | int, optional): 用于查询的被删帖用户的id user_id / user_name / portrait 优先user_id. Defaults to None.
+            id_ (str | int, optional): 用于查询的被删帖用户的id user_id / user_name / portrait 优先user_id. Defaults to None.
 
         Returns:
             Recovers: 待恢复帖子列表
         """
 
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
 
-        if _id and not isinstance(_id, int):
-            user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+        if id_ and not isinstance(id_, int):
+            user = await self.get_user_info(id_, ReqUInfo.USER_ID)
             user_id = user.user_id
         else:
-            user_id = _id
+            user_id = id_
 
         return await get_recovers.request(self._http_core, fid, user_id, pn, rn)
 
@@ -1198,7 +1205,7 @@ class Client(object):
             Userlogs: 吧务用户管理日志表
         """
 
-        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
         return await get_bawu_userlogs.request(
             self._http_core, fname, pn, search_value, search_type, start_dt, end_dt, op_type
@@ -1233,7 +1240,7 @@ class Client(object):
             Postlogs: 吧务帖子管理日志表
         """
 
-        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
         return await get_bawu_postlogs.request(
             self._http_core, fname, pn, search_value, search_type, start_dt, end_dt, op_type
@@ -1255,7 +1262,7 @@ class Client(object):
             Appeals: 申诉请求列表
         """
 
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
         await self.__init_tbs()
 
         return await get_unblock_appeals.request(self._http_core, fid, pn, rn)
@@ -1275,7 +1282,7 @@ class Client(object):
             BlacklistUsers: 吧务黑名单列表
         """
 
-        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
         return await get_bawu_blacklist.request(self._http_core, fname, pn)
 
@@ -1291,7 +1298,7 @@ class Client(object):
             Statistics: 吧务后台统计信息
         """
 
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
 
         return await get_statistics.request(self._http_core, fid)
 
@@ -1307,20 +1314,20 @@ class Client(object):
             RecomStatus: 大吧主推荐功能的月度配额状态
         """
 
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
 
         return await get_recom_status.request(self._http_core, fid)
 
     @handle_exception(TbResponse, no_format=True)
     async def block(
-        self, fname_or_fid: Union[str, int], /, _id: Union[str, int], *, day: Literal[1, 3, 10] = 1, reason: str = ''
+        self, fname_or_fid: Union[str, int], /, id_: Union[str, int], *, day: Literal[1, 3, 10] = 1, reason: str = ''
     ) -> TbResponse:
         """
         封禁用户
 
         Args:
             fname_or_fid (str | int): 所在贴吧的贴吧名或fid 优先fid
-            _id (str | int): 用户id user_id / user_name / portrait 优先portrait
+            id_ (str | int): 用户id user_id / user_name / portrait 优先portrait
             day (Literal[1, 3, 10], optional): 封禁天数. Defaults to 1.
             reason (str, optional): 封禁理由. Defaults to ''.
 
@@ -1328,88 +1335,88 @@ class Client(object):
             TbResponse: True成功 False失败
         """
 
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
 
-        if not is_portrait(_id):
-            user = await self.get_user_info(_id, ReqUInfo.PORTRAIT)
+        if not is_portrait(id_):
+            user = await self.get_user_info(id_, ReqUInfo.PORTRAIT)
             portrait = user.portrait
         else:
-            portrait = _id
+            portrait = id_
 
         await self.__init_tbs()
 
         return await block.request(self._http_core, fid, portrait, day, reason)
 
     @handle_exception(TbResponse, no_format=True)
-    async def unblock(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> TbResponse:
+    async def unblock(self, fname_or_fid: Union[str, int], /, id_: Union[str, int]) -> TbResponse:
         """
         解封用户
 
         Args:
             fname_or_fid (str | int): 所在贴吧的贴吧名或fid 优先fid
-            _id (str | int): 用户id user_id / user_name / portrait 优先user_id
+            id_ (str | int): 用户id user_id / user_name / portrait 优先user_id
 
         Returns:
             TbResponse: True成功 False失败
         """
 
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
 
-        if not isinstance(_id, int):
-            user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+        if not isinstance(id_, int):
+            user = await self.get_user_info(id_, ReqUInfo.USER_ID)
             user_id = user.user_id
         else:
-            user_id = _id
+            user_id = id_
 
         await self.__init_tbs()
 
         return await unblock.request(self._http_core, fid, user_id)
 
     @handle_exception(TbResponse, no_format=True)
-    async def add_bawu_blacklist(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> TbResponse:
+    async def add_bawu_blacklist(self, fname_or_fid: Union[str, int], /, id_: Union[str, int]) -> TbResponse:
         """
         添加贴吧黑名单
 
         Args:
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先贴吧名
-            _id (str | int): 用户id user_id / user_name / portrait 优先user_id
+            id_ (str | int): 用户id user_id / user_name / portrait 优先user_id
 
         Returns:
             TbResponse: True成功 False失败
         """
 
-        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
-        if not isinstance(_id, int):
-            user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+        if not isinstance(id_, int):
+            user = await self.get_user_info(id_, ReqUInfo.USER_ID)
             user_id = user.user_id
         else:
-            user_id = _id
+            user_id = id_
 
         await self.__init_tbs()
 
         return await add_bawu_blacklist.request(self._http_core, fname, user_id)
 
     @handle_exception(TbResponse, no_format=True)
-    async def del_bawu_blacklist(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> TbResponse:
+    async def del_bawu_blacklist(self, fname_or_fid: Union[str, int], /, id_: Union[str, int]) -> TbResponse:
         """
         移出贴吧黑名单
 
         Args:
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先贴吧名
-            _id (str | int): 用户id user_id / user_name / portrait 优先user_id
+            id_ (str | int): 用户id user_id / user_name / portrait 优先user_id
 
         Returns:
             TbResponse: True成功 False失败
         """
 
-        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
-        if not isinstance(_id, int):
-            user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+        if not isinstance(id_, int):
+            user = await self.get_user_info(id_, ReqUInfo.USER_ID)
             user_id = user.user_id
         else:
-            user_id = _id
+            user_id = id_
 
         await self.__init_tbs()
 
@@ -1428,7 +1435,7 @@ class Client(object):
             TbResponse: True成功 False失败
         """
 
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
         await self.__init_tbs()
 
         return await del_thread.request(self._http_core, fid, tid, is_hide=True)
@@ -1446,7 +1453,7 @@ class Client(object):
             TbResponse: True成功 False失败
         """
 
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
         await self.__init_tbs()
 
         return await del_thread.request(self._http_core, fid, tid, is_hide=False)
@@ -1467,7 +1474,7 @@ class Client(object):
             TbResponse: True成功 False失败 部分成功返回True
         """
 
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
         await self.__init_tbs()
 
         return await del_threads.request(self._http_core, fid, tids, block)
@@ -1486,7 +1493,7 @@ class Client(object):
             TbResponse: True成功 False失败
         """
 
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
         await self.__init_tbs()
 
         return await del_post.request(self._http_core, fid, tid, pid)
@@ -1508,7 +1515,7 @@ class Client(object):
             TbResponse: True成功 False失败 部分成功返回True
         """
 
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
         await self.__init_tbs()
 
         return await del_posts.request(self._http_core, fid, tid, pids, block)
@@ -1526,7 +1533,7 @@ class Client(object):
             TbResponse: True成功 False失败
         """
 
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
         await self.__init_tbs()
 
         return await recover.request(self._http_core, fid, tid, 0, is_hide=True)
@@ -1544,7 +1551,7 @@ class Client(object):
             TbResponse: True成功 False失败
         """
 
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
         await self.__init_tbs()
 
         return await recover.request(self._http_core, fid, tid, 0, is_hide=False)
@@ -1562,7 +1569,7 @@ class Client(object):
             TbResponse: True成功 False失败
         """
 
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
         await self.__init_tbs()
 
         return await recover.request(self._http_core, fid, 0, pid, is_hide=False)
@@ -1584,7 +1591,7 @@ class Client(object):
             TbResponse: True成功 False失败
         """
 
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
         await self.__init_tbs()
 
         return await recover.request(self._http_core, fid, tid, pid, is_hide)
@@ -1605,14 +1612,14 @@ class Client(object):
 
         if isinstance(fname_or_fid, str):
             fname = fname_or_fid
-            fid = await self.get_fid(fname)
+            fid = await self.__get_fid(fname)
         else:
             fid = fname_or_fid
-            fname = await self.get_fname(fid)
+            fname = await self.__get_fname(fid)
 
         await self.__init_tbs()
 
-        cid = await self._get_cid(fname_or_fid, cname)
+        cid = await self.__get_cid(fname_or_fid, cname)
 
         return await good.request(self._http_core, fname, fid, tid, cid)
 
@@ -1631,32 +1638,20 @@ class Client(object):
 
         if isinstance(fname_or_fid, str):
             fname = fname_or_fid
-            fid = await self.get_fid(fname)
+            fid = await self.__get_fid(fname)
         else:
             fid = fname_or_fid
-            fname = await self.get_fname(fid)
+            fname = await self.__get_fname(fid)
 
         await self.__init_tbs()
 
         return await ungood.request(self._http_core, fname, fid, tid)
 
-    @handle_exception(int)
-    async def _get_cid(self, fname_or_fid: Union[str, int], /, cname: str = '') -> int:
-        """
-        通过精华分区名获取精华分区id
-
-        Args:
-            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
-            cname (str, optional): 精华分区名. Defaults to ''.
-
-        Returns:
-            int: 精华分区id
-        """
-
+    async def __get_cid(self, fname_or_fid: Union[str, int], /, cname: str = '') -> int:
         if cname == '':
             return 0
 
-        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
         cates = await get_cid.request(self._http_core, fname)
 
@@ -1667,6 +1662,22 @@ class Client(object):
                 break
 
         return cid
+
+    @handle_exception(get_cid.Cid)
+    async def get_cid(self, fname_or_fid: Union[str, int], /, cname: str = '') -> get_cid.Cid:
+        """
+        通过精华分区名获取精华分区id
+
+        Args:
+            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
+            cname (str, optional): 精华分区名. Defaults to ''.
+
+        Returns:
+            Cid: 精华分区id
+        """
+
+        cid = await self.__get_cid(fname_or_fid, cname)
+        return get_cid.Cid(None, cid)
 
     @handle_exception(TbResponse, no_format=True)
     async def top(self, fname_or_fid: Union[str, int], /, tid: int) -> TbResponse:
@@ -1683,10 +1694,10 @@ class Client(object):
 
         if isinstance(fname_or_fid, str):
             fname = fname_or_fid
-            fid = await self.get_fid(fname)
+            fid = await self.__get_fid(fname)
         else:
             fid = fname_or_fid
-            fname = await self.get_fname(fid)
+            fname = await self.__get_fname(fid)
 
         await self.__init_tbs()
 
@@ -1707,10 +1718,10 @@ class Client(object):
 
         if isinstance(fname_or_fid, str):
             fname = fname_or_fid
-            fid = await self.get_fid(fname)
+            fid = await self.__get_fid(fname)
         else:
             fid = fname_or_fid
-            fname = await self.get_fname(fid)
+            fname = await self.__get_fname(fid)
 
         await self.__init_tbs()
 
@@ -1733,7 +1744,7 @@ class Client(object):
             TbResponse: True成功 False失败
         """
 
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
         await self.__init_tbs()
 
         return await move.request(self._http_core, fid, tid, to_tab_id, from_tab_id)
@@ -1751,7 +1762,7 @@ class Client(object):
             TbResponse: True成功 False失败
         """
 
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
 
         return await recommend.request(self._http_core, fid, tid)
 
@@ -1771,7 +1782,7 @@ class Client(object):
             TbResponse: True成功 False失败
         """
 
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
         await self.__init_tbs()
 
         return await handle_unblock_appeals.request(self._http_core, fid, appeal_ids, refuse)
@@ -1853,86 +1864,86 @@ class Client(object):
         return await agree.request(self._http_core, tid, pid, is_comment, is_disagree=True, is_undo=True)
 
     @handle_exception(TbResponse, no_format=True)
-    async def agree_vimage(self, _id: Union[str, int]) -> TbResponse:
+    async def agree_vimage(self, id_: Union[str, int]) -> TbResponse:
         """
         虚拟形象点赞
 
         Args:
-            _id (str | int): 点赞对象的用户id user_id / user_name / portrait 优先user_id
+            id_ (str | int): 点赞对象的用户id user_id / user_name / portrait 优先user_id
 
         Returns:
             TbResponse: True成功 False失败
         """
 
-        if not isinstance(_id, int):
-            user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+        if not isinstance(id_, int):
+            user = await self.get_user_info(id_, ReqUInfo.USER_ID)
             user_id = user.user_id
         else:
-            user_id = _id
+            user_id = id_
 
         return await agree_vimage.request(self._http_core, user_id)
 
     @handle_exception(TbResponse, no_format=True)
-    async def follow_user(self, _id: Union[str, int]) -> TbResponse:
+    async def follow_user(self, id_: Union[str, int]) -> TbResponse:
         """
         关注用户
 
         Args:
-            _id (str | int): 用户id user_id / user_name / portrait 优先portrait
+            id_ (str | int): 用户id user_id / user_name / portrait 优先portrait
 
         Returns:
             TbResponse: True成功 False失败
         """
 
-        if not is_portrait(_id):
-            user = await self.get_user_info(_id, ReqUInfo.PORTRAIT)
+        if not is_portrait(id_):
+            user = await self.get_user_info(id_, ReqUInfo.PORTRAIT)
             portrait = user.portrait
         else:
-            portrait = _id
+            portrait = id_
 
         await self.__init_tbs()
 
         return await follow_user.request(self._http_core, portrait)
 
     @handle_exception(TbResponse, no_format=True)
-    async def unfollow_user(self, _id: Union[str, int]) -> TbResponse:
+    async def unfollow_user(self, id_: Union[str, int]) -> TbResponse:
         """
         取关用户
 
         Args:
-            _id (str | int): 用户id user_id / user_name / portrait 优先portrait
+            id_ (str | int): 用户id user_id / user_name / portrait 优先portrait
 
         Returns:
             TbResponse: True成功 False失败
         """
 
-        if not is_portrait(_id):
-            user = await self.get_user_info(_id, ReqUInfo.PORTRAIT)
+        if not is_portrait(id_):
+            user = await self.get_user_info(id_, ReqUInfo.PORTRAIT)
             portrait = user.portrait
         else:
-            portrait = _id
+            portrait = id_
 
         await self.__init_tbs()
 
         return await unfollow_user.request(self._http_core, portrait)
 
     @handle_exception(TbResponse, no_format=True)
-    async def remove_fan(self, _id: Union[str, int]) -> TbResponse:
+    async def remove_fan(self, id_: Union[str, int]) -> TbResponse:
         """
         移除粉丝
 
         Args:
-            _id (str | int): 待移除粉丝的id user_id / user_name / portrait 优先user_id
+            id_ (str | int): 待移除粉丝的id user_id / user_name / portrait 优先user_id
 
         Returns:
             TbResponse: True成功 False失败
         """
 
-        if not isinstance(_id, int):
-            user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+        if not isinstance(id_, int):
+            user = await self.get_user_info(id_, ReqUInfo.USER_ID)
             user_id = user.user_id
         else:
-            user_id = _id
+            user_id = id_
 
         await self.__init_tbs()
 
@@ -1940,23 +1951,23 @@ class Client(object):
 
     @handle_exception(TbResponse, no_format=True)
     @_try_websocket
-    async def set_blacklist(self, _id: Union[str, int], *, btype: BlacklistType = BlacklistType.ALL) -> TbResponse:
+    async def set_blacklist(self, id_: Union[str, int], *, btype: BlacklistType = BlacklistType.ALL) -> TbResponse:
         """
         设置新版用户黑名单
 
         Args:
-            _id (str | int): 待设置黑名单的用户id user_id / user_name / portrait 优先user_id
+            id_ (str | int): 待设置黑名单的用户id user_id / user_name / portrait 优先user_id
             btype (BlacklistType): 黑名单类型. 默认全屏蔽. Defaults to BlacklistType.ALL.
 
         Returns:
             TbResponse: True成功 False失败
         """
 
-        if not isinstance(_id, int):
-            user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+        if not isinstance(id_, int):
+            user = await self.get_user_info(id_, ReqUInfo.USER_ID)
             user_id = user.user_id
         else:
-            user_id = _id
+            user_id = id_
 
         if self._ws_core.status == WsStatus.OPEN:
             return await set_blacklist.request_ws(self._ws_core, user_id, btype)
@@ -1964,42 +1975,42 @@ class Client(object):
         return await set_blacklist.request_http(self._http_core, user_id, btype)
 
     @handle_exception(TbResponse, no_format=True)
-    async def add_blacklist_old(self, _id: Union[str, int]) -> TbResponse:
+    async def add_blacklist_old(self, id_: Union[str, int]) -> TbResponse:
         """
         添加旧版用户黑名单
 
         Args:
-            _id (str | int): 待添加黑名单的用户id user_id / user_name / portrait 优先user_id
+            id_ (str | int): 待添加黑名单的用户id user_id / user_name / portrait 优先user_id
 
         Returns:
             TbResponse: True成功 False失败
         """
 
-        if not isinstance(_id, int):
-            user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+        if not isinstance(id_, int):
+            user = await self.get_user_info(id_, ReqUInfo.USER_ID)
             user_id = user.user_id
         else:
-            user_id = _id
+            user_id = id_
 
         return await add_blacklist_old.request(self._http_core, user_id)
 
     @handle_exception(TbResponse, no_format=True)
-    async def del_blacklist_old(self, _id: Union[str, int]) -> TbResponse:
+    async def del_blacklist_old(self, id_: Union[str, int]) -> TbResponse:
         """
         移除旧版用户黑名单
 
         Args:
-            _id (str | int): 待移除黑名单的用户id user_id / user_name / portrait 优先user_id
+            id_ (str | int): 待移除黑名单的用户id user_id / user_name / portrait 优先user_id
 
         Returns:
             TbResponse: True成功 False失败
         """
 
-        if not isinstance(_id, int):
-            user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+        if not isinstance(id_, int):
+            user = await self.get_user_info(id_, ReqUInfo.USER_ID)
             user_id = user.user_id
         else:
-            user_id = _id
+            user_id = id_
 
         return await del_blacklist_old.request(self._http_core, user_id)
 
@@ -2015,7 +2026,7 @@ class Client(object):
             TbResponse: True成功 False失败
         """
 
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
         await self.__init_tbs()
 
         return await follow_forum.request(self._http_core, fid)
@@ -2032,7 +2043,7 @@ class Client(object):
             TbResponse: True成功 False失败
         """
 
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
         await self.__init_tbs()
 
         return await unfollow_forum.request(self._http_core, fid)
@@ -2049,7 +2060,7 @@ class Client(object):
             TbResponse: True成功 False失败
         """
 
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
 
         return await dislike_forum.request(self._http_core, fid)
 
@@ -2065,7 +2076,7 @@ class Client(object):
             TbResponse: True成功 False失败
         """
 
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
 
         return await undislike_forum.request(self._http_core, fid)
 
@@ -2083,7 +2094,7 @@ class Client(object):
             TbResponse: True成功 False失败
         """
 
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
 
         return await set_thread_privacy.request(self._http_core, fid, tid, pid, is_hide=True)
 
@@ -2101,7 +2112,7 @@ class Client(object):
             TbResponse: True成功 False失败
         """
 
-        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
 
         return await set_thread_privacy.request(self._http_core, fid, tid, pid, is_hide=False)
 
@@ -2147,7 +2158,7 @@ class Client(object):
             TbResponse: True成功 False失败
         """
 
-        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
         await self.__init_tbs()
 
         return await sign_forum.request(self._http_core, fname)
@@ -2199,10 +2210,10 @@ class Client(object):
 
         if isinstance(fname_or_fid, str):
             fname = fname_or_fid
-            fid = await self.get_fid(fname)
+            fid = await self.__get_fid(fname)
         else:
             fid = fname_or_fid
-            fname = await self.get_fname(fid)
+            fname = await self.__get_fname(fid)
 
         await self.__init_z_id()
         await self.__init_tbs()
@@ -2219,23 +2230,23 @@ class Client(object):
 
     @handle_exception(TbResponse, no_format=True)
     @_force_websocket
-    async def send_msg(self, _id: Union[str, int], content: str) -> TbResponse:
+    async def send_msg(self, id_: Union[str, int], content: str) -> TbResponse:
         """
         发送私信
 
         Args:
-            _id (str | int): 用户id user_id / user_name / portrait 优先user_id
+            id_ (str | int): 用户id user_id / user_name / portrait 优先user_id
             content (str): 发送内容
 
         Returns:
             TbResponse: True成功 False失败
         """
 
-        if not isinstance(_id, int):
-            user = await self.get_user_info(_id, ReqUInfo.USER_ID)
+        if not isinstance(id_, int):
+            user = await self.get_user_info(id_, ReqUInfo.USER_ID)
             user_id = user.user_id
         else:
-            user_id = _id
+            user_id = id_
 
         msg_id = await send_msg.request(self._ws_core, user_id, content)
 

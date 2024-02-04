@@ -39,9 +39,6 @@ class UserInfo_json(TbErrorPlugin):
     def __hash__(self) -> int:
         return self.user_id
 
-    def __int__(self) -> int:
-        return self.user_id
-
     def __bool__(self) -> bool:
         return bool(self.user_id)
 

@@ -38,9 +38,6 @@ class UserInfo_selfinit:
     def __hash__(self) -> int:
         return self.tieba_uid
 
-    def __int__(self) -> int:
-        return self.tieba_uid
-
     def __bool__(self) -> bool:
         return bool(self.tieba_uid)
 

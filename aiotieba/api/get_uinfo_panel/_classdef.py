@@ -91,9 +91,6 @@ class UserInfo_panel(TbErrorPlugin):
     def __hash__(self) -> int:
         return hash(self.portrait)
 
-    def __int__(self) -> int:
-        return hash(self.portrait)
-
     def __bool__(self) -> bool:
         return hash(self.portrait)
 

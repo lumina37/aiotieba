@@ -53,9 +53,6 @@ class UserInfo_reply:
     def __hash__(self) -> int:
         return self.user_id
 
-    def __int__(self) -> int:
-        return self.user_id
-
     def __bool__(self) -> bool:
         return bool(self.user_id)
 
@@ -112,9 +109,6 @@ class UserInfo_reply_p:
     def __hash__(self) -> int:
         return self.user_id
 
-    def __int__(self) -> int:
-        return self.user_id
-
     def __bool__(self) -> bool:
         return bool(self.user_id)
 
@@ -164,9 +158,6 @@ class UserInfo_reply_t:
         return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
-        return self.user_id
-
-    def __int__(self) -> int:
         return self.user_id
 
     def __bool__(self) -> bool:

@@ -43,9 +43,6 @@ class UserInfo_rec:
     def __hash__(self) -> int:
         return hash(self.portrait)
 
-    def __int__(self) -> int:
-        return hash(self.portrait)
-
     def __bool__(self) -> bool:
         return bool(self.portrait)
 
