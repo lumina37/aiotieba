@@ -27,7 +27,7 @@ def pack_ws_bytes(
     打包数据并添加9字节头部
 
     Args:
-        account (Account): 贴吧的用户信息容器
+        account (Account): 贴吧的用户参数容器
         data (bytes): 待发送的websocket数据
         cmd (int): 请求的cmd类型
         req_id (int): 请求的id
@@ -65,7 +65,7 @@ def parse_ws_bytes(account: Account, data: bytes) -> Tuple[bytes, int, int]:
     对websocket返回数据进行解包
 
     Args:
-        account (Account): 贴吧的用户信息容器
+        account (Account): 贴吧的用户参数容器
         data (bytes): 接收到的websocket数据
 
     Returns:

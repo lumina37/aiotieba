@@ -27,7 +27,6 @@ nav:
   - 教程:
       - 入门教程: tutorial/start.md
       - 异步编程入门教程: tutorial/async_start.md
-      - 配置文件参考: tutorial/config.md
       - 实用微脚本合集: tutorial/many_utils.md
   - 参考文档:
       - 客户端 (Client): ref/client.md
