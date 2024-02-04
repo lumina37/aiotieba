@@ -18,14 +18,14 @@ async def request(
     http_core: HttpCore, tid: int, pid: int, is_comment: bool, is_disagree: bool, is_undo: bool
 ) -> TbResponse:
     if pid:
-        obj_type = '2' if is_comment else '1'
+        obj_type = 2 if is_comment else 1
     else:
-        obj_type = '3'
+        obj_type = 3
 
     data = [
         ('BDUSS', http_core.account.BDUSS),
         ('_client_version', MAIN_VERSION),
-        ('agree_type', '5' if is_disagree else '2'),
+        ('agree_type', 5 if is_disagree else 2),
         ('cuid', http_core.account.cuid_galaxy2),
         ('obj_type', obj_type),
         ('op_type', str(int(is_undo))),

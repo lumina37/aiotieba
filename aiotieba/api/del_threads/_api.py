@@ -21,7 +21,7 @@ async def request(http_core: HttpCore, fid: int, tids: List[int], block: bool) -
         ('forum_id', fid),
         ('tbs', http_core.account.tbs),
         ('thread_ids', ','.join(map(str, tids))),
-        ('type', '2' if block else '1'),
+        ('type', 2 if block else 1),
     ]
 
     request = http_core.pack_form_request(

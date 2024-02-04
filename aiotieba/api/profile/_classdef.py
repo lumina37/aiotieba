@@ -2,6 +2,7 @@ import dataclasses as dcs
 from functools import cached_property
 from typing import List
 
+from ...enums import Gender, PrivLike, PrivReply
 from ...exception import TbErrorPlugin
 from .._classdef import Containers, TypeMessage, VoteInfo
 from .._classdef.contents import FragAt, FragEmoji, FragLink, FragText, FragVideo, FragVoice, TypeFragment, TypeFragText
@@ -55,7 +56,7 @@ class UserInfo_pf(TbErrorPlugin):
         tieba_uid (int): 用户个人主页uid
 
         glevel (int): 贴吧成长等级
-        gender (int): 性别 0未知 1男 2女
+        gender (Gender): 性别
         age (float): 吧龄 以年为单位
         post_num (int): 发帖数
         agree_num (int): 获赞数
@@ -70,8 +71,8 @@ class UserInfo_pf(TbErrorPlugin):
         is_vip (bool): 是否超级会员
         is_god (bool): 是否大神
         is_blocked (bool): 是否被永久封禁屏蔽
-        priv_like (int): 公开关注吧列表的设置状态 1完全可见 2好友可见 3完全隐藏
-        priv_reply (int): 帖子评论权限的设置状态 1允许所有人 5仅允许我的粉丝 6仅允许我的关注
+        priv_like (PrivLike): 关注吧列表的公开状态
+        priv_reply (PrivReply): 帖子评论权限
 
         nick_name (str): 用户昵称
         show_name (str): 显示名称
@@ -85,7 +86,7 @@ class UserInfo_pf(TbErrorPlugin):
     tieba_uid: int = 0
 
     glevel: int = 0
-    gender: int = 0
+    gender: Gender = Gender.UNKNOWN
     age: float = 0.0
     post_num: int = 0
     agree_num: int = 0
@@ -100,8 +101,8 @@ class UserInfo_pf(TbErrorPlugin):
     is_vip: bool = False
     is_god: bool = False
     is_blocked: bool = False
-    priv_like: int = 1
-    priv_reply: int = 1
+    priv_like: PrivLike = PrivLike.PUBLIC
+    priv_reply: PrivReply = PrivReply.ALL
 
     @staticmethod
     def from_tbdata(data_proto: TypeMessage) -> "UserInfo_pf":
@@ -114,7 +115,7 @@ class UserInfo_pf(TbErrorPlugin):
         nick_name_new = user_proto.name_show
         tieba_uid = int(tieba_uid) if (tieba_uid := user_proto.tieba_uid) else 0
         glevel = user_proto.user_growth.level_id
-        gender = user_proto.sex
+        gender = Gender(user_proto.sex)
         age = float(age) if (age := user_proto.tb_age) else 0.0
         post_num = user_proto.post_num
         agree_num = data_proto.user_agree_info.total_agree_num
@@ -132,8 +133,8 @@ class UserInfo_pf(TbErrorPlugin):
             is_blocked = True
         else:
             is_blocked = False
-        priv_like = priv_like if (priv_like := user_proto.priv_sets.like) else 1
-        priv_reply = priv_reply if (priv_reply := user_proto.priv_sets.reply) else 1
+        priv_like = PrivLike(priv_like) if (priv_like := user_proto.priv_sets.like) else PrivLike.PUBLIC
+        priv_reply = PrivReply(priv_reply) if (priv_reply := user_proto.priv_sets.reply) else PrivReply.ALL
         return UserInfo_pf(
             None,
             user_id,

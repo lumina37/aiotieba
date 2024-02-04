@@ -1,6 +1,7 @@
 import dataclasses as dcs
 from functools import cached_property
 
+from ...enums import PrivLike, PrivReply
 from ...exception import TbErrorPlugin
 from .._classdef import Containers, TypeMessage
 
@@ -16,8 +17,8 @@ class UserInfo_reply:
         user_name (str): 用户名
         nick_name_new (str): 新版昵称
 
-        priv_like (int): 公开关注吧列表的设置状态
-        priv_reply (int): 帖子评论权限的设置状态
+        priv_like (PrivLike): 关注吧列表的公开状态
+        priv_reply (PrivReply): 帖子评论权限
 
         nick_name (str): 用户昵称
         show_name (str): 显示名称
@@ -29,8 +30,8 @@ class UserInfo_reply:
     user_name: str = ''
     nick_name_new: str = ''
 
-    priv_like: int = 1
-    priv_reply: int = 1
+    priv_like: PrivLike = PrivLike.PUBLIC
+    priv_reply: PrivReply = PrivReply.ALL
 
     @staticmethod
     def from_tbdata(data_proto: TypeMessage) -> "UserInfo_reply":
@@ -40,8 +41,8 @@ class UserInfo_reply:
             portrait = portrait[:-13]
         user_name = data_proto.name
         nick_name_new = data_proto.name_show
-        priv_like = priv_like if (priv_like := data_proto.priv_sets.like) else 1
-        priv_reply = priv_reply if (priv_reply := data_proto.priv_sets.reply) else 1
+        priv_like = PrivLike(priv_like) if (priv_like := data_proto.priv_sets.like) else PrivLike.PUBLIC
+        priv_reply = PrivReply(priv_reply) if (priv_reply := data_proto.priv_sets.reply) else PrivReply.ALL
         return UserInfo_reply(user_id, portrait, user_name, nick_name_new, priv_like, priv_reply)
 
     def __str__(self) -> str:

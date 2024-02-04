@@ -1,6 +1,51 @@
 import enum
 
 
+class Gender(enum.IntEnum):
+    """
+    用户性别
+
+    Note:
+        UNKNOWN 未知\n
+        MALE 男性\n
+        FEMALE 女性
+    """
+
+    UNKNOWN = 0
+    MALE = 1
+    FEMALE = 2
+
+
+class PrivLike(enum.IntEnum):
+    """
+    关注吧列表的公开状态
+
+    Note:
+        PUBLIC 所有人可见\n
+        FRIEND 好友可见\n
+        HIDE 完全隐藏
+    """
+
+    PUBLIC = 1
+    FRIEND = 2
+    HIDE = 3
+
+
+class PrivReply(enum.IntEnum):
+    """
+    帖子评论权限
+
+    Note:
+        ALL 允许所有人\n
+        FANS 仅允许我的粉丝\n
+        FOLLOW 仅允许我的关注
+    """
+
+    ALL = 1
+    FANS = 5
+    FOLLOW = 6
+
+
 class ReqUInfo(enum.IntEnum):
     """
     使用该枚举类指定待获取的用户信息字段
@@ -40,9 +85,9 @@ class PostSortType(enum.IntEnum):
     回复排序
 
     Note:
-        ASC时间顺序\n
-        DESC时间倒序\n
-        HOT热门序
+        ASC 时间顺序\n
+        DESC 时间倒序\n
+        HOT 热门序
     """
 
     ASC = 0
@@ -55,8 +100,8 @@ class BawuSearchType(enum.IntEnum):
     吧务后台搜索类型
 
     Note:
-        USER搜索用户\n
-        OP搜索操作者
+        USER 搜索用户\n
+        OP 搜索操作者
     """
 
     USER = 0
@@ -68,11 +113,11 @@ class BlacklistType(enum.IntEnum):
     用户黑名单类型
 
     Note:
-        NULL正常状态\n
-        FOLLOW禁止关注\n
-        INTERACT禁止互动\n
-        CHAT禁止私信\n
-        ALL全屏蔽
+        NULL 正常状态\n
+        FOLLOW 禁止关注\n
+        INTERACT 禁止互动\n
+        CHAT 禁止私信\n
+        ALL 全屏蔽
     """
 
     NULL = 0
@@ -90,9 +135,9 @@ class WsStatus(enum.IntEnum):
     回复排序
 
     Note:
-        CLOSED已关闭\n
-        CONNECTING正在连接\n
-        OPEN可用
+        CLOSED 已关闭\n
+        CONNECTING 正在连接\n
+        OPEN 可用
     """
 
     CLOSED = 0

@@ -24,7 +24,7 @@ async def request(http_core: HttpCore, fid: int, portrait: str, day: int, reason
         ('reason', reason),
         ('tbs', http_core.account.tbs),
         ('word', '-'),
-        ('z', '6'),
+        ('z', 6),
     ]
 
     request = http_core.pack_form_request(

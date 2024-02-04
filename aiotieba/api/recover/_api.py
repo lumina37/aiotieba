@@ -21,7 +21,7 @@ async def request(http_core: HttpCore, fid: int, tid: int, pid: int, is_hide: bo
         ('fid', fid),
         ('tid_list[]', tid),
         ('pid_list[]', pid),
-        ('type_list[]', '1' if pid else '0'),
+        ('type_list[]', 1 if pid else 0),
         ('is_frs_mask_list[]', int(is_hide)),
     ]
 

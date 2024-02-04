@@ -1,6 +1,7 @@
 import dataclasses as dcs
 from functools import cached_property
 
+from ...enums import Gender
 from ...exception import TbErrorPlugin
 from .._classdef import TypeMessage
 
@@ -18,7 +19,7 @@ class UserInfo_guinfo_app(TbErrorPlugin):
         user_name (str): 用户名
         nick_name_old (str): 旧版昵称
 
-        gender (int): 性别 0未知 1男 2女
+        gender (Gender): 性别
 
         is_vip (bool): 是否超级会员
         is_god (bool): 是否大神
@@ -32,7 +33,7 @@ class UserInfo_guinfo_app(TbErrorPlugin):
     user_name: str = ''
     nick_name_old: str = ''
 
-    gender: int = 0
+    gender: Gender = Gender.UNKNOWN
 
     is_vip: bool = False
     is_god: bool = False
@@ -45,7 +46,7 @@ class UserInfo_guinfo_app(TbErrorPlugin):
             portrait = portrait[:-13]
         user_name = data_proto.name
         nick_name_old = data_proto.name_show
-        gender = data_proto.sex
+        gender = Gender(data_proto.sex)
         is_vip = bool(data_proto.vipInfo.v_status)
         is_god = bool(data_proto.new_god_data.status)
         return UserInfo_guinfo_app(None, user_id, portrait, user_name, nick_name_old, gender, is_vip, is_god)

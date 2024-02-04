@@ -2,6 +2,7 @@ import dataclasses as dcs
 from functools import cached_property
 from typing import List
 
+from ...enums import Gender, PrivLike, PrivReply
 from ...exception import TbErrorPlugin
 from ...helper import removeprefix
 from .._classdef import Containers, TypeMessage
@@ -124,14 +125,14 @@ class UserInfo_c:
         nick_name_new (str): 新版昵称
 
         level (int): 等级
-        gender (int): 性别 0未知 1男 2女
+        gender (Gender): 性别
         icons (list[str]): 印记信息
 
         is_bawu (bool): 是否吧务
         is_vip (bool): 是否超级会员
         is_god (bool): 是否大神
-        priv_like (int): 公开关注吧列表的设置状态 1完全可见 2好友可见 3完全隐藏
-        priv_reply (int): 帖子评论权限的设置状态 1允许所有人 5仅允许我的粉丝 6仅允许我的关注
+        priv_like (PrivLike): 关注吧列表的公开状态
+        priv_reply (PrivReply): 帖子评论权限
 
         nick_name (str): 用户昵称
         show_name (str): 显示名称
@@ -144,14 +145,14 @@ class UserInfo_c:
     nick_name_new: str = ''
 
     level: int = 0
-    gender: int = 0
+    gender: Gender = Gender.UNKNOWN
     icons: List[str] = dcs.field(default_factory=list)
 
     is_bawu: bool = False
     is_vip: bool = False
     is_god: bool = False
-    priv_like: int = 1
-    priv_reply: int = 1
+    priv_like: PrivLike = PrivLike.PUBLIC
+    priv_reply: PrivReply = PrivReply.ALL
 
     @staticmethod
     def from_tbdata(data_proto: TypeMessage) -> "UserInfo_c":
@@ -162,13 +163,13 @@ class UserInfo_c:
         user_name = data_proto.name
         nick_name_new = data_proto.name_show
         level = data_proto.level_id
-        gender = data_proto.gender
+        gender = Gender(data_proto.gender)
         icons = [name for i in data_proto.iconinfo if (name := i.name)]
         is_bawu = bool(data_proto.is_bawu)
         is_vip = bool(data_proto.new_tshow_icon)
         is_god = bool(data_proto.new_god_data.status)
-        priv_like = priv_like if (priv_like := data_proto.priv_sets.like) else 1
-        priv_reply = priv_reply if (priv_reply := data_proto.priv_sets.reply) else 1
+        priv_like = PrivLike(priv_like) if (priv_like := data_proto.priv_sets.like) else PrivLike.PUBLIC
+        priv_reply = PrivReply(priv_reply) if (priv_reply := data_proto.priv_sets.reply) else PrivReply.ALL
         return UserInfo_c(
             user_id,
             portrait,
@@ -635,13 +636,13 @@ class UserInfo_cp:
         nick_name_new (str): 新版昵称
 
         level (int): 等级
-        gender (int): 性别
+        gender (Gender): 性别
 
         is_bawu (bool): 是否吧务
         is_vip (bool): 是否超级会员
         is_god (bool): 是否大神
-        priv_like (int): 公开关注吧列表的设置状态
-        priv_reply (int): 帖子评论权限的设置状态
+        priv_like (PrivLike): 关注吧列表的公开状态
+        priv_reply (PrivReply): 帖子评论权限
 
         nick_name (str): 用户昵称
         show_name (str): 显示名称
@@ -654,13 +655,13 @@ class UserInfo_cp:
     nick_name_new: str = ''
 
     level: int = 0
-    gender: int = 0
+    gender: Gender = Gender.UNKNOWN
 
     is_bawu: bool = False
     is_vip: bool = False
     is_god: bool = False
-    priv_like: int = 1
-    priv_reply: int = 1
+    priv_like: PrivLike = PrivLike.PUBLIC
+    priv_reply: PrivReply = PrivReply.ALL
 
     @staticmethod
     def from_tbdata(data_proto: TypeMessage) -> "UserInfo_cp":
@@ -671,12 +672,12 @@ class UserInfo_cp:
         user_name = data_proto.name
         nick_name_new = data_proto.name_show
         level = data_proto.level_id
-        gender = data_proto.gender
+        gender = Gender(data_proto.gender)
         is_bawu = bool(data_proto.is_bawu)
         is_vip = bool(data_proto.new_tshow_icon)
         is_god = bool(data_proto.new_god_data.status)
-        priv_like = priv_like if (priv_like := data_proto.priv_sets.like) else 1
-        priv_reply = priv_reply if (priv_reply := data_proto.priv_sets.reply) else 1
+        priv_like = PrivLike(priv_like) if (priv_like := data_proto.priv_sets.like) else PrivLike.PUBLIC
+        priv_reply = PrivReply(priv_reply) if (priv_reply := data_proto.priv_sets.reply) else PrivReply.ALL
         return UserInfo_cp(
             user_id, portrait, user_name, nick_name_new, level, gender, is_bawu, is_vip, is_god, priv_like, priv_reply
         )

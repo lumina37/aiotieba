@@ -13,6 +13,7 @@ from .__version__ import __version__
 from .client import Client
 from .config import TimeConfig
 from .core import Account
+from .enums import *  # noqa: F403
 from .logging import enable_filelog, get_logger
 
 if os.name == 'posix':

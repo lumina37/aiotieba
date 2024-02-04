@@ -17,7 +17,7 @@ def parse_body(body: bytes) -> None:
 async def request(http_core: HttpCore, nick_name: str) -> TbResponse:
     params = [
         ('nickname', nick_name),
-        ('tbs', '1'),
+        ('tbs', 1),
     ]
 
     request = http_core.pack_web_form_request(

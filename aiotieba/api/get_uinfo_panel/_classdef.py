@@ -2,6 +2,7 @@ import dataclasses as dcs
 from functools import cached_property
 from typing import Mapping
 
+from ...enums import Gender
 from ...exception import TbErrorPlugin
 from ...helper import removesuffix
 
@@ -26,7 +27,7 @@ class UserInfo_panel(TbErrorPlugin):
         nick_name_new (str): 新版昵称
         nick_name_old (str): 旧版昵称
 
-        gender (int): 性别 0未知 1男 2女
+        gender (Gender): 性别
         age (float): 吧龄
         post_num (int): 发帖数
         fan_num (int): 粉丝数
@@ -43,7 +44,7 @@ class UserInfo_panel(TbErrorPlugin):
     nick_name_new: str = ''
     nick_name_old: str = ''
 
-    gender: int = 0
+    gender: Gender = Gender.UNKNOWN
     age: int = 0.0
     post_num: int = 0
     fan_num: int = 0
@@ -59,11 +60,11 @@ class UserInfo_panel(TbErrorPlugin):
 
         sex = data_map['sex']
         if sex == 'male':
-            gender = 1
+            gender = Gender.MALE
         elif sex == 'female':
-            gender = 2
+            gender = Gender.FEMALE
         else:
-            gender = 0
+            gender = Gender.UNKNOWN
 
         if (tb_age := data_map['tb_age']) != '-':
             age = float(tb_age)

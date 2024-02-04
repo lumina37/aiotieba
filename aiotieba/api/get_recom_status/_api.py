@@ -22,8 +22,8 @@ async def request(http_core: HttpCore, fid: int) -> RecomStatus:
         ('BDUSS', http_core.account.BDUSS),
         ('_client_version', MAIN_VERSION),
         ('forum_id', fid),
-        ('pn', '1'),
-        ('rn', '0'),
+        ('pn', 1),
+        ('rn', 0),
     ]
 
     request = http_core.pack_form_request(

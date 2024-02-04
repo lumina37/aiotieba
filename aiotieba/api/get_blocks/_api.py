@@ -22,7 +22,7 @@ async def request(http_core: HttpCore, fid: int, name: str, pn: int) -> Blocks:
         ('fn', '-'),
         ('fid', fid),
         ('word', name),
-        ('is_ajax', '1'),
+        ('is_ajax', 1),
         ('pn', pn),
     ]
 

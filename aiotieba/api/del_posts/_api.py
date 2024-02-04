@@ -22,7 +22,7 @@ async def request(http_core: HttpCore, fid: int, tid: int, pids: List[int], bloc
         ('post_ids', ','.join(map(str, pids))),
         ('tbs', http_core.account.tbs),
         ('thread_id', tid),
-        ('type', '2' if block else '1'),
+        ('type', 2 if block else 1),
     ]
 
     request = http_core.pack_form_request(

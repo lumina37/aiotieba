@@ -19,7 +19,7 @@ async def request(http_core: HttpCore, user_id: int) -> TbResponse:
         ('BDUSS', http_core.account.BDUSS),
         ('_client_version', MAIN_VERSION),
         ('agreed_user_id', user_id),
-        ('interactive_id', '1'),
+        ('interactive_id', 1),
     ]
 
     request = http_core.pack_form_request(

@@ -89,7 +89,7 @@ from .api import (
 from .api._classdef import UserInfo
 from .config import ProxyConfig, TimeConfig
 from .core import Account, HttpCore, NetCore, WsCore
-from .enums import BawuSearchType, BlacklistType, GroupType, PostSortType, ReqUInfo, ThreadSortType, WsStatus
+from .enums import BawuSearchType, BlacklistType, Gender, GroupType, PostSortType, ReqUInfo, ThreadSortType, WsStatus
 from .exception import TbResponse
 from .helper.cache import ForumInfoCache
 from .helper.utils import handle_exception, is_portrait
@@ -126,7 +126,7 @@ class Client(object):
     贴吧客户端
 
     Args:
-        BDUSSorAccount (str | Account, optional): BDUSS或还包含了其他用户信息的Account实例. Defaults to ''.
+        BDUSSorAccount (str | Account, optional): BDUSS或Account实例. Defaults to ''.
         try_ws (bool, optional): 尝试使用websocket接口. Defaults to False.
         proxy (bool | ProxyConfig, optional): True则使用环境变量代理 False则禁用代理 输入ProxyConfig实例以手动设置代理. Defaults to False.
         time_cfg (TimeConfig, optional): 各种时间设置. Defaults to TimeConfig().
@@ -152,6 +152,9 @@ class Client(object):
     ) -> None:
         if loop is None:
             loop = asyncio.get_running_loop()
+
+        if not isinstance(time_cfg, TimeConfig):
+            time_cfg = TimeConfig()
 
         connector = aiohttp.TCPConnector(
             ttl_dns_cache=time_cfg.dns_ttl,
@@ -2113,14 +2116,14 @@ class Client(object):
         return await set_thread_privacy.request(self._http_core, fid, tid, pid, is_hide=False)
 
     @handle_exception(TbResponse, no_format=True)
-    async def set_profile(self, nick_name: str, sign: str = '', gender: int = 0) -> TbResponse:
+    async def set_profile(self, nick_name: str, sign: str = '', gender: Gender = Gender.UNKNOWN) -> TbResponse:
         """
         设置主页信息
 
         Args:
             nick_name (str): 昵称
             sign (str): 个性签名. Defaults to ''.
-            gender (int): 性别 1男 2女. Defaults to 1.
+            gender (Gender): 性别. Defaults to Gender.UNKNOWN.
 
         Returns:
             TbResponse: True成功 False失败
