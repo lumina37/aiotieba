@@ -35,7 +35,7 @@ class ProxyConfig:
 
 
 @dcs.dataclass
-class TimeConfig:
+class TimeoutConfig:
     """
     各种超时配置
 

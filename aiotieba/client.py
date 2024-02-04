@@ -87,7 +87,7 @@ from .api import (
     ungood,
 )
 from .api._classdef import UserInfo
-from .config import ProxyConfig, TimeConfig
+from .config import ProxyConfig, TimeoutConfig
 from .core import Account, HttpCore, NetCore, WsCore
 from .enums import BawuSearchType, BlacklistType, Gender, GroupType, PostSortType, ReqUInfo, ThreadSortType, WsStatus
 from .exception import TbResponse
@@ -128,8 +128,8 @@ class Client(object):
     Args:
         BDUSSorAccount (str | Account, optional): BDUSS或Account实例. Defaults to ''.
         try_ws (bool, optional): 尝试使用websocket接口. Defaults to False.
-        proxy (bool | ProxyConfig, optional): True则使用环境变量代理 False则禁用代理 输入ProxyConfig实例以手动设置代理. Defaults to False.
-        time_cfg (TimeConfig, optional): 各种时间设置. Defaults to TimeConfig().
+        proxy (bool | ProxyConfig, optional): True则使用环境变量代理 False则禁用代理 输入ProxyConfig实例以手动配置代理. Defaults to False.
+        timeout (TimeoutConfig, optional): 超时配置. Defaults to TimeoutConfig().
         loop (asyncio.AbstractEventLoop, optional): 事件循环. Defaults to None.
     """
 
@@ -147,19 +147,19 @@ class Client(object):
         BDUSSorAccount: Union[str, Account] = '',
         try_ws: bool = False,
         proxy: Union[bool, ProxyConfig] = False,
-        time_cfg: TimeConfig = TimeConfig,
+        timeout: TimeoutConfig = TimeoutConfig,
         loop: Optional[asyncio.AbstractEventLoop] = None,
     ) -> None:
         if loop is None:
             loop = asyncio.get_running_loop()
 
-        if not isinstance(time_cfg, TimeConfig):
-            time_cfg = TimeConfig()
+        if not isinstance(timeout, TimeoutConfig):
+            timeout = TimeoutConfig()
 
         connector = aiohttp.TCPConnector(
-            ttl_dns_cache=time_cfg.dns_ttl,
+            ttl_dns_cache=timeout.dns_ttl,
             family=socket.AF_INET,
-            keepalive_timeout=time_cfg.http_keepalive,
+            keepalive_timeout=timeout.http_keepalive,
             limit=0,
             ssl=False,
             loop=loop,
@@ -177,7 +177,7 @@ class Client(object):
             account = Account(BDUSSorAccount)
 
         self.account = account
-        net_core = NetCore(connector, time_cfg, proxy)
+        net_core = NetCore(connector, timeout, proxy)
         self._http_core = HttpCore(account, net_core, loop)
         self._ws_core = WsCore(account, net_core, loop)
 

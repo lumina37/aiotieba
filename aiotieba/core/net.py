@@ -4,7 +4,7 @@ from typing import Callable
 
 import aiohttp
 
-from ..config import ProxyConfig, TimeConfig
+from ..config import ProxyConfig, TimeoutConfig
 from ..exception import HTTPStatusError
 from ..helper import timeout
 
@@ -24,29 +24,29 @@ class NetCore:
 
     Args:
         connector (aiohttp.TCPConnector): 用于生成TCP连接的连接器
-        time_cfg (TimeConfig, optional): 各种时间设置. Defaults to TimeConfig().
-        proxy_cfg (ProxyConfig, optional): Defaults to ProxyConfig().
+        proxy (ProxyConfig, optional): 代理配置. Defaults to ProxyConfig().
+        timeout (TimeoutConfig, optional): 超时配置. Defaults to TimeoutConfig().
     """
 
     connector: aiohttp.TCPConnector
-    time_cfg: TimeConfig
-    proxy_cfg: ProxyConfig
+    proxy: ProxyConfig
+    timeout: TimeoutConfig
 
     def __init__(
         self,
         connector: aiohttp.TCPConnector,
-        time_cfg: TimeConfig = TimeConfig,
-        proxy_cfg: ProxyConfig = ProxyConfig,
+        proxy: ProxyConfig = ProxyConfig,
+        timeout: TimeoutConfig = TimeoutConfig,
     ) -> None:
         self.connector = connector
 
-        if not isinstance(time_cfg, TimeConfig):
-            time_cfg = TimeConfig()
-        self.time_cfg = time_cfg
+        if not isinstance(proxy, ProxyConfig):
+            proxy = ProxyConfig()
+        self.proxy = proxy
 
-        if not isinstance(proxy_cfg, ProxyConfig):
-            proxy_cfg = TimeConfig()
-        self.proxy_cfg = proxy_cfg
+        if not isinstance(timeout, TimeoutConfig):
+            timeout = TimeoutConfig()
+        self.timeout = timeout
 
     async def req2res(
         self, request: aiohttp.ClientRequest, read_until_eof: bool = True, read_bufsize: int = 64 * 1024
@@ -66,8 +66,8 @@ class NetCore:
 
         # 获取TCP连接
         try:
-            async with timeout(self.time_cfg.http_connect, self.connector._loop):
-                conn = await self.connector.connect(request, [], self.time_cfg.http)
+            async with timeout(self.timeout.http_connect, self.connector._loop):
+                conn = await self.connector.connect(request, [], self.timeout.http)
         except asyncio.TimeoutError as exc:
             raise aiohttp.ServerTimeoutError(f"Connection timeout to host {request.url}") from exc
 
@@ -75,7 +75,7 @@ class NetCore:
         conn.protocol.set_response_params(
             read_until_eof=read_until_eof,
             auto_decompress=True,
-            read_timeout=self.time_cfg.http_read,
+            read_timeout=self.timeout.http_read,
             read_bufsize=read_bufsize,
         )
 

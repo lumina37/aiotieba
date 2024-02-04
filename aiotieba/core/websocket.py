@@ -293,7 +293,7 @@ class WsCore:
 
         self._status = WsStatus.CONNECTING
 
-        self.waiter = WsWaiter(self.net_core.time_cfg.ws_read, self.loop)
+        self.waiter = WsWaiter(self.net_core.timeout.ws_read, self.loop)
         self.mid_manager = MsgIDManager()
 
         from aiohttp import hdrs
@@ -314,8 +314,8 @@ class WsCore:
             ws_url,
             headers=headers,
             loop=self.loop,
-            proxy=self.net_core.proxy_cfg.url,
-            proxy_auth=self.net_core.proxy_cfg.auth,
+            proxy=self.net_core.proxy.url,
+            proxy_auth=self.net_core.proxy.auth,
             ssl=False,
         )
 
@@ -340,12 +340,12 @@ class WsCore:
                 writer,
                 'chat',
                 response,
-                self.net_core.time_cfg.ws_keepalive,
+                self.net_core.timeout.ws_keepalive,
                 True,
                 True,
                 self.loop,
-                receive_timeout=self.net_core.time_cfg.ws_read,
-                heartbeat=self.net_core.time_cfg.ws_heartbeat,
+                receive_timeout=self.net_core.timeout.ws_read,
+                heartbeat=self.net_core.timeout.ws_heartbeat,
             )
 
         if self.ws_dispatcher is not None and not self.ws_dispatcher.done():
@@ -407,7 +407,7 @@ class WsCore:
         req_data = pack_ws_bytes(self.account, data, cmd, response.req_id, compress=compress, encrypt=encrypt)
 
         try:
-            async with timeout(self.net_core.time_cfg.ws_send, self.loop):
+            async with timeout(self.net_core.timeout.ws_send, self.loop):
                 await self.websocket.send_bytes(req_data)
         except asyncio.TimeoutError as err:
             response.future.cancel()
