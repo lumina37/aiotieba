@@ -16,10 +16,10 @@ def parse_body(body: bytes) -> None:
 
 async def request(http_core: HttpCore, fid: int, tid: int, to_tab_id: int, from_tab_id: int) -> bool:
     data = [
-        ('BDUSS', http_core.account._BDUSS),
+        ('BDUSS', http_core.account.BDUSS),
         ('_client_version', MAIN_VERSION),
         ('forum_id', fid),
-        ('tbs', http_core.account._tbs),
+        ('tbs', http_core.account.tbs),
         ('threads', pack_json([{"thread_id": tid, "from_tab_id": from_tab_id, "to_tab_id": to_tab_id}])),
     ]
 

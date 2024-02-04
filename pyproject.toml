@@ -38,7 +38,6 @@ dependencies = [
   "protobuf<5,>=4.21.0",
   "pycryptodome<3.19,>=3.7.1;python_version=='3.8'",
   "pycryptodome<4,>=3.7.1;python_version>='3.8'",
-  "tomli<3,>=1.1.0;python_version<'3.11'",
   "async-timeout<5,>=4.0;python_version<'3.11'",
 ]
 dynamic = ["version"]

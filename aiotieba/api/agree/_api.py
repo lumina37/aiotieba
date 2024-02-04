@@ -21,14 +21,14 @@ async def request(http_core: HttpCore, tid: int, pid: int, is_comment: bool, is_
         obj_type = '3'
 
     data = [
-        ('BDUSS', http_core.account._BDUSS),
+        ('BDUSS', http_core.account.BDUSS),
         ('_client_version', MAIN_VERSION),
         ('agree_type', '5' if is_disagree else '2'),
         ('cuid', http_core.account.cuid_galaxy2),
         ('obj_type', obj_type),
         ('op_type', str(int(is_undo))),
         ('post_id', pid),
-        ('tbs', http_core.account._tbs),
+        ('tbs', http_core.account.tbs),
         ('thread_id', tid),
     ]
 

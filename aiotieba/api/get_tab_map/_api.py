@@ -12,7 +12,7 @@ CMD = 309466
 
 def pack_proto(account: Account, fname: str) -> bytes:
     req_proto = SearchPostForumReqIdl_pb2.SearchPostForumReqIdl()
-    req_proto.data.common.BDUSS = account._BDUSS
+    req_proto.data.common.BDUSS = account.BDUSS
     req_proto.data.common._client_version = MAIN_VERSION
     req_proto.data.fname = fname
 

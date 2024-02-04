@@ -25,7 +25,7 @@ async def request(http_core: HttpCore, fid: int, appeal_ids: List[int], refuse: 
         + [
             ('refuse_reason', '_'),
             ('status', '2' if refuse else '1'),
-            ('tbs', http_core.account._tbs),
+            ('tbs', http_core.account.tbs),
         ]
     )
 

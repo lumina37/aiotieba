@@ -135,7 +135,7 @@ class Client(object):
 
     __slots__ = [
         '_connector',
-        '_account',
+        'account',
         '_http_core',
         '_ws_core',
         '_try_ws',
@@ -144,7 +144,7 @@ class Client(object):
 
     def __init__(
         self,
-        BDUSS_key: Optional[str] = None,
+        BDUSSorAccount: Union[str, Account] = '',
         try_ws: bool = False,
         proxy: Union[Tuple[yarl.URL, aiohttp.BasicAuth], bool] = False,
         time_cfg: TimeConfig = TimeConfig(),
@@ -172,8 +172,12 @@ class Client(object):
             else:
                 proxy = (proxy_info.proxy, proxy_info.proxy_auth)
 
-        account = Account(BDUSS_key)
-        self._account = account
+        if isinstance(BDUSSorAccount, str):
+            account = Account(BDUSSorAccount)
+        else:
+            account = BDUSSorAccount
+
+        self.account = account
         net_core = NetCore(connector, time_cfg, proxy)
         self._http_core = HttpCore(account, net_core, loop)
         self._ws_core = WsCore(account, net_core, loop)
@@ -190,18 +194,10 @@ class Client(object):
         await self._connector.close()
 
     def __hash__(self) -> int:
-        return hash(self._account._BDUSS_key)
+        return hash(self.account.BDUSS)
 
     def __eq__(self, obj: "Client") -> bool:
-        return self._account._BDUSS_key == obj._account._BDUSS_key
-
-    @property
-    def account(self) -> Account:
-        """
-        贴吧的用户信息容器
-        """
-
-        return self._account
+        return self.account.BDUSS == obj.account.BDUSS
 
     @handle_exception(bool)
     async def init_websocket(self) -> bool:
@@ -237,11 +233,12 @@ class Client(object):
         self._ws_core._status = WsStatus.OPEN
 
     async def __init_tbs(self) -> None:
-        if self._account._tbs is not None:
+        if self.account.tbs:
             return
         await self.__login()
 
-    async def get_self_info(self, require: ReqUInfo = ReqUInfo.ALL) -> TypeUserInfo:
+    @handle_exception(profile.UserInfo_pf)
+    async def get_self_info(self, require: ReqUInfo = ReqUInfo.ALL) -> profile.UserInfo_pf:
         """
         获取本账号信息
 
@@ -267,29 +264,29 @@ class Client(object):
         self._user.user_id = user.user_id
         self._user.portrait = user.portrait
         self._user.user_name = user.user_name
-        self._account._tbs = tbs
+        self.account.tbs = tbs
 
     async def __init_client_id(self) -> None:
-        if self._account._client_id is not None:
+        if self.account.client_id:
             return
         await self.__sync()
 
     async def __init_sample_id(self) -> None:
-        if self._account._sample_id is not None:
+        if self.account.sample_id:
             return
         await self.__sync()
 
     async def __sync(self) -> None:
         client_id, sample_id = await sync.request(self._http_core)
-        self._account._client_id = client_id
-        self._account._sample_id = sample_id
+        self.account.client_id = client_id
+        self.account.sample_id = sample_id
 
     async def __init_z_id(self) -> None:
-        if self._account._z_id is not None:
+        if self.account.z_id:
             return
 
         z_id = await init_z_id.request(self._http_core)
-        self._account._z_id = z_id
+        self.account.z_id = z_id
 
     @handle_exception(get_forum_detail.Forum_detail)
     @_try_websocket

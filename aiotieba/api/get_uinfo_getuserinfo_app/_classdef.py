@@ -1,15 +1,18 @@
 import dataclasses as dcs
 from functools import cached_property
 
+from ...exception import TbErrorPlugin
 from .._classdef import TypeMessage
 
 
 @dcs.dataclass
-class UserInfo_guinfo_app:
+class UserInfo_guinfo_app(TbErrorPlugin):
     """
     用户信息
 
     Attributes:
+        err (Exception | None): 捕获的异常
+
         user_id (int): user_id
         portrait (str): portrait
         user_name (str): 用户名
@@ -45,7 +48,7 @@ class UserInfo_guinfo_app:
         gender = data_proto.sex
         is_vip = bool(data_proto.vipInfo.v_status)
         is_god = bool(data_proto.new_god_data.status)
-        return UserInfo_guinfo_app(user_id, portrait, user_name, nick_name_old, gender, is_vip, is_god)
+        return UserInfo_guinfo_app(None, user_id, portrait, user_name, nick_name_old, gender, is_vip, is_god)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)

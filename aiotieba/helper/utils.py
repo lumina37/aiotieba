@@ -16,7 +16,6 @@ import json as jsonlib
 from ..logging import get_logger
 
 parse_json = jsonlib.loads
-
 pack_json = functools.partial(jsonlib.dumps, separators=(',', ':'))
 
 if sys.version_info >= (3, 9):

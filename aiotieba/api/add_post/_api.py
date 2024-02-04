@@ -26,7 +26,7 @@ def parse_body(body: bytes) -> None:
 
 def pack_proto(account: Account, fname: str, fid: int, tid: int, show_name: str, content: str) -> bytes:
     req_proto = AddPostReqIdl_pb2.AddPostReqIdl()
-    req_proto.data.common.BDUSS = account._BDUSS
+    req_proto.data.common.BDUSS = account.BDUSS
     req_proto.data.common._client_type = 2
     req_proto.data.common._client_version = POST_VERSION
     req_proto.data.common._client_id = account.client_id
@@ -38,19 +38,19 @@ def pack_proto(account: Account, fname: str, fid: int, tid: int, show_name: str,
     current_dt = datetime.datetime.fromtimestamp(current_ts)
     req_proto.data.common._timestamp = current_tsms
     req_proto.data.common.model = 'SM-G988N'
-    req_proto.data.common.tbs = account._tbs
+    req_proto.data.common.tbs = account.tbs
     req_proto.data.common.net_type = 1
     req_proto.data.common.pversion = '1.0.3'
     req_proto.data.common._os_version = '9'
     req_proto.data.common.brand = 'samsung'
     req_proto.data.common.lego_lib_version = '3.0.0'
     req_proto.data.common.applist = ''
-    req_proto.data.common.stoken = account._STOKEN
-    req_proto.data.common.z_id = account._z_id
-    req_proto.data.common.cuid_galaxy2 = account._cuid_galaxy2
+    req_proto.data.common.stoken = account.STOKEN
+    req_proto.data.common.z_id = account.z_id
+    req_proto.data.common.cuid_galaxy2 = account.cuid_galaxy2
     req_proto.data.common.cuid_gid = ''
     req_proto.data.common.c3_aid = account.c3_aid
-    req_proto.data.common.sample_id = account._sample_id
+    req_proto.data.common.sample_id = account.sample_id
     req_proto.data.common.scr_w = 720
     req_proto.data.common.scr_w = 1280
     req_proto.data.common.scr_dip = 1.5

@@ -16,7 +16,7 @@ def parse_body_web(body: bytes) -> None:
 
 async def request_web(http_core: HttpCore, act_type: str) -> bool:
     data = [
-        ('tbs', http_core.account._tbs),
+        ('tbs', http_core.account.tbs),
         ('act_type', act_type),
         ('cuid', '-'),
     ]
@@ -40,10 +40,10 @@ def parse_body_app(body: bytes) -> None:
 
 async def request_app(http_core: HttpCore, act_type: str) -> bool:
     data = [
-        ('BDUSS', http_core.account._BDUSS),
+        ('BDUSS', http_core.account.BDUSS),
         ('act_type', act_type),
         ('cuid', '-'),
-        ('tbs', http_core.account._tbs),
+        ('tbs', http_core.account.tbs),
     ]
 
     request = http_core.pack_form_request(

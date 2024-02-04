@@ -19,7 +19,7 @@ def parse_body(body: bytes) -> Follows:
 
 async def request(http_core: HttpCore, user_id: int, pn: int) -> Follows:
     data = [
-        ('BDUSS', http_core.account._BDUSS),
+        ('BDUSS', http_core.account.BDUSS),
         ('_client_version', MAIN_VERSION),
         ('pn', pn),
         ('uid', user_id),

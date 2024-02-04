@@ -23,7 +23,7 @@ async def request(http_core: HttpCore, fid: int, pn: int, rn: int) -> Appeals:
         ('fid', fid),
         ('pn', pn),
         ('rn', rn),
-        ('tbs', http_core.account._tbs),
+        ('tbs', http_core.account.tbs),
     ]
 
     request = http_core.pack_web_form_request(

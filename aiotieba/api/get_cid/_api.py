@@ -20,7 +20,7 @@ def parse_body(body: bytes) -> Dict[str, str]:
 
 async def request(http_core: HttpCore, fname: str) -> Dict[str, str]:
     data = [
-        ('BDUSS', http_core.account._BDUSS),
+        ('BDUSS', http_core.account.BDUSS),
         ('word', fname),
     ]
 

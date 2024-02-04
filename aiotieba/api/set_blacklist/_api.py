@@ -14,7 +14,7 @@ CMD = 309697
 
 def pack_proto(account: Account, user_id: int, btype: BlacklistType) -> bytes:
     req_proto = SetUserBlackReqIdl_pb2.SetUserBlackReqIdl()
-    req_proto.data.common.BDUSS = account._BDUSS
+    req_proto.data.common.BDUSS = account.BDUSS
     req_proto.data.common._client_type = 2
     req_proto.data.common._client_version = MAIN_VERSION
     req_proto.data.black_uid = user_id

@@ -21,7 +21,7 @@ def parse_body(body: bytes) -> Tuple[str, str]:
 
 async def request(http_core: HttpCore) -> Tuple[str, str]:
     data = [
-        ('BDUSS', http_core.account._BDUSS),
+        ('BDUSS', http_core.account.BDUSS),
         ('_client_version', MAIN_VERSION),
         ('cuid', http_core.account.cuid_galaxy2),
     ]

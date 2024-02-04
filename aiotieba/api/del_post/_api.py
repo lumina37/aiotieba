@@ -16,10 +16,10 @@ def parse_body(body: bytes) -> None:
 
 async def request(http_core: HttpCore, fid: int, tid: int, pid: int) -> bool:
     data = [
-        ('BDUSS', http_core.account._BDUSS),
+        ('BDUSS', http_core.account.BDUSS),
         ('fid', fid),
         ('pid', pid),
-        ('tbs', http_core.account._tbs),
+        ('tbs', http_core.account.tbs),
         ('z', tid),
     ]
 

@@ -20,7 +20,7 @@ def parse_body(body: bytes) -> Statistics:
 
 async def request(http_core: HttpCore, fid: int) -> Statistics:
     data = [
-        ('BDUSS', http_core.account._BDUSS),
+        ('BDUSS', http_core.account.BDUSS),
         ('_client_version', MAIN_VERSION),
         ('forum_id', fid),
     ]

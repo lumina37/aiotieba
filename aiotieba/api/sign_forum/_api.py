@@ -18,10 +18,10 @@ def parse_body(body: bytes) -> None:
 
 async def request(http_core: HttpCore, fname: str) -> bool:
     data = [
-        ('BDUSS', http_core.account._BDUSS),
+        ('BDUSS', http_core.account.BDUSS),
         ('_client_version', MAIN_VERSION),
         ('kw', fname),
-        ('tbs', http_core.account._tbs),
+        ('tbs', http_core.account.tbs),
     ]
 
     request = http_core.pack_form_request(

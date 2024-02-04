@@ -10,7 +10,7 @@ from ..protobuf import UserPostReqIdl_pb2, UserPostResIdl_pb2
 
 def pack_proto(account: Account, user_id: int, pn: int, public_only: bool) -> bytes:
     req_proto = UserPostReqIdl_pb2.UserPostReqIdl()
-    req_proto.data.common.BDUSS = account._BDUSS
+    req_proto.data.common.BDUSS = account.BDUSS
     req_proto.data.common._client_version = MAIN_VERSION
     req_proto.data.user_id = user_id
     req_proto.data.is_thread = 1

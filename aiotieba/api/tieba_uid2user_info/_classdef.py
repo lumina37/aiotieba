@@ -1,14 +1,17 @@
 import dataclasses as dcs
 
+from ...exception import TbErrorPlugin
 from .._classdef import TypeMessage
 
 
 @dcs.dataclass
-class UserInfo_TUid:
+class UserInfo_TUid(TbErrorPlugin):
     """
     用户信息
 
     Attributes:
+        err (Exception | None): 捕获的异常
+
         user_id (int): user_id
         portrait (str): portrait
         user_name (str): 用户名
@@ -48,7 +51,7 @@ class UserInfo_TUid:
         age = float(data_proto.tb_age)
         sign = data_proto.intro
         is_god = bool(data_proto.new_god_data.status)
-        return UserInfo_TUid(user_id, portrait, user_name, nick_name_new, tieba_uid, age, sign, is_god)
+        return UserInfo_TUid(None, user_id, portrait, user_name, nick_name_new, tieba_uid, age, sign, is_god)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)

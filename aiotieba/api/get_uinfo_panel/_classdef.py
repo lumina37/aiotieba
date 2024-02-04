@@ -2,6 +2,7 @@ import dataclasses as dcs
 from functools import cached_property
 from typing import Mapping
 
+from ...exception import TbErrorPlugin
 from ...helper import removesuffix
 
 
@@ -13,11 +14,13 @@ def _tbnum2int(tb_num: str) -> int:
 
 
 @dcs.dataclass
-class UserInfo_panel:
+class UserInfo_panel(TbErrorPlugin):
     """
     用户信息
 
     Attributes:
+        err (Exception | None): 捕获的异常
+
         portrait (str): portrait
         user_name (str): 用户名
         nick_name_new (str): 新版昵称
@@ -75,7 +78,9 @@ class UserInfo_panel:
         else:
             is_vip = False
 
-        return UserInfo_panel(portrait, user_name, nick_name_new, nick_name_old, gender, age, post_num, fan_num, is_vip)
+        return UserInfo_panel(
+            None, portrait, user_name, nick_name_new, nick_name_old, gender, age, post_num, fan_num, is_vip
+        )
 
     def __str__(self) -> str:
         return self.user_name or self.portrait

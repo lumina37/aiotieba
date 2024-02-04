@@ -41,11 +41,13 @@ class VirtualImage_pf:
 
 
 @dcs.dataclass
-class UserInfo_pf:
+class UserInfo_pf(TbErrorPlugin):
     """
     用户信息
 
     Attributes:
+        err (Exception | None): 捕获的异常
+
         user_id (int): user_id
         portrait (str): portrait
         user_name (str): 用户名
@@ -133,6 +135,7 @@ class UserInfo_pf:
         priv_like = priv_like if (priv_like := user_proto.priv_sets.like) else 1
         priv_reply = priv_reply if (priv_reply := user_proto.priv_sets.reply) else 1
         return UserInfo_pf(
+            None,
             user_id,
             portrait,
             user_name,

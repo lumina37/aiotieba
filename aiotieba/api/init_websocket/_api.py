@@ -22,7 +22,7 @@ PUBLIC_KEY = binascii.a2b_base64(
 
 def pack_proto(account: Account) -> bytes:
     req_proto = UpdateClientInfoReqIdl_pb2.UpdateClientInfoReqIdl()
-    req_proto.data.bduss = account._BDUSS
+    req_proto.data.bduss = account.BDUSS
 
     device = {
         'cuid': account.cuid,
@@ -37,7 +37,7 @@ def pack_proto(account: Account) -> bytes:
     rsa_chiper = PKCS1_v1_5.new(RSA.import_key(PUBLIC_KEY))
     secret_key = rsa_chiper.encrypt(account.aes_ecb_sec_key)
     req_proto.data.secretKey = secret_key
-    req_proto.data.stoken = account._STOKEN
+    req_proto.data.stoken = account.STOKEN
     req_proto.cuid = f"{account.cuid}|com.baidu.tieba{MAIN_VERSION}"
 
     return req_proto.SerializeToString()

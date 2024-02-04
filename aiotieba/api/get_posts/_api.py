@@ -29,7 +29,7 @@ def pack_proto(
     req_proto.data.r = sort
     req_proto.data.lz = only_thread_author
     if with_comments:
-        req_proto.data.common.BDUSS = account._BDUSS
+        req_proto.data.common.BDUSS = account.BDUSS
         req_proto.data.with_floor = with_comments
         req_proto.data.floor_sort_type = comment_sort_by_agree
         req_proto.data.floor_rn = comment_rn

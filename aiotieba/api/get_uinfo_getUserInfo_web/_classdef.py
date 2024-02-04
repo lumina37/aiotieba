@@ -2,13 +2,17 @@ import dataclasses as dcs
 from functools import cached_property
 from typing import Mapping
 
+from ...exception import TbErrorPlugin
+
 
 @dcs.dataclass
-class UserInfo_guinfo_web:
+class UserInfo_guinfo_web(TbErrorPlugin):
     """
     用户信息
 
     Attributes:
+        err (Exception | None): 捕获的异常
+
         user_id (int): user_id
         portrait (str): portrait
         user_name (str): 用户名
@@ -30,7 +34,7 @@ class UserInfo_guinfo_web:
         portrait = data_map['portrait']
         user_name = user_name if (user_name := data_map['uname']) != user_id else ''
         nick_name_new = data_map['show_nickname']
-        return UserInfo_guinfo_web(user_id, portrait, user_name, nick_name_new)
+        return UserInfo_guinfo_web(None, user_id, portrait, user_name, nick_name_new)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)

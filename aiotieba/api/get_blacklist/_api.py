@@ -19,7 +19,7 @@ def parse_body(body: bytes) -> BlacklistUsers:
 
 async def request(http_core: HttpCore) -> BlacklistUsers:
     data = [
-        ('BDUSS', http_core.account._BDUSS),
+        ('BDUSS', http_core.account.BDUSS),
         ('_client_version', MAIN_VERSION),
     ]
 

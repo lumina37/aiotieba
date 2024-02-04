@@ -20,7 +20,7 @@ async def request(http_core: HttpCore, fid: int, user_id: int) -> bool:
         ('fid', fid),
         ('block_un', '-'),
         ('block_uid', user_id),
-        ('tbs', http_core.account._tbs),
+        ('tbs', http_core.account.tbs),
     ]
 
     request = http_core.pack_web_form_request(
