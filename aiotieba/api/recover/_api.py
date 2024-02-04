@@ -4,7 +4,7 @@ import yarl
 
 from ...const import WEB_BASE_HOST
 from ...core import HttpCore
-from ...exception import TiebaServerError
+from ...exception import TbResponse, TiebaServerError
 from ...helper import log_success, parse_json
 
 
@@ -14,7 +14,7 @@ def parse_body(body: bytes) -> None:
         raise TiebaServerError(code, res_json['error'])
 
 
-async def request(http_core: HttpCore, fid: int, tid: int, pid: int, is_hide: bool) -> bool:
+async def request(http_core: HttpCore, fid: int, tid: int, pid: int, is_hide: bool) -> TbResponse:
     data = [
         ('tbs', http_core.account.tbs),
         ('fn', '-'),
@@ -35,4 +35,4 @@ async def request(http_core: HttpCore, fid: int, tid: int, pid: int, is_hide: bo
     parse_body(body)
 
     log_success(sys._getframe(1), __log__)
-    return True
+    return TbResponse()

@@ -1,7 +1,8 @@
 import dataclasses as dcs
 from typing import List
 
-from .._classdef import TypeMessage
+from ...exception import TbErrorPlugin
+from .._classdef import Containers, TypeMessage
 
 
 @dcs.dataclass
@@ -100,3 +101,19 @@ class WsMsgGroup:
         group_type = data_proto.groupInfo.groupType
         messages = [WsMessage.from_tbdata(p) for p in data_proto.msgList]
         return WsMsgGroup(group_id, group_type, messages)
+
+
+@dcs.dataclass
+class WsMsgGroups(TbErrorPlugin, Containers[WsMsgGroup]):
+    """
+    websocket消息组列表
+
+    Attributes:
+        objs (list[WsMsgGroup]): websocket消息组列表
+        err (Exception | None): 捕获的异常
+    """
+
+    @staticmethod
+    def from_tbdata(data_proto: TypeMessage) -> "WsMsgGroups":
+        objs = [WsMsgGroup.from_tbdata(p) for p in data_proto.groupInfo]
+        return WsMsgGroups(objs, None)

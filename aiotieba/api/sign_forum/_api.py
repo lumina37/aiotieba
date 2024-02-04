@@ -4,7 +4,7 @@ import yarl
 
 from ...const import APP_BASE_HOST, APP_SECURE_SCHEME, MAIN_VERSION
 from ...core import HttpCore
-from ...exception import TiebaServerError, TiebaValueError
+from ...exception import TbResponse, TiebaServerError, TiebaValueError
 from ...helper import log_success, parse_json
 
 
@@ -16,7 +16,7 @@ def parse_body(body: bytes) -> None:
         raise TiebaValueError("sign_bonus_point is 0")
 
 
-async def request(http_core: HttpCore, fname: str) -> bool:
+async def request(http_core: HttpCore, fname: str) -> TbResponse:
     data = [
         ('BDUSS', http_core.account.BDUSS),
         ('_client_version', MAIN_VERSION),
@@ -34,4 +34,4 @@ async def request(http_core: HttpCore, fname: str) -> bool:
     parse_body(body)
 
     log_success(sys._getframe(1), __log__)
-    return True
+    return TbResponse

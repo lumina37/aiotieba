@@ -88,6 +88,7 @@ from .api import (
 from .api._classdef import UserInfo
 from .core import Account, HttpCore, NetCore, TimeConfig, WsCore
 from .enums import BawuSearchType, BlacklistType, GroupType, PostSortType, ReqUInfo, ThreadSortType, WsStatus
+from .exception import TbResponse
 from .helper.cache import ForumInfoCache
 from .helper.utils import handle_exception, is_portrait
 from .logging import get_logger as LOG
@@ -199,7 +200,7 @@ class Client(object):
     def __eq__(self, obj: "Client") -> bool:
         return self.account.BDUSS == obj.account.BDUSS
 
-    @handle_exception(bool)
+    @handle_exception(TbResponse)
     async def init_websocket(self) -> bool:
         """
         初始化websocket
@@ -216,7 +217,7 @@ class Client(object):
                 self._ws_core._status = WsStatus.CLOSED
                 raise
 
-        return True
+        return TbResponse()
 
     async def __upload_sec_key(self) -> None:
         from .api import init_websocket
@@ -1310,10 +1311,10 @@ class Client(object):
 
         return await get_recom_status.request(self._http_core, fid)
 
-    @handle_exception(bool, no_format=True)
+    @handle_exception(TbResponse, no_format=True)
     async def block(
         self, fname_or_fid: Union[str, int], /, _id: Union[str, int], *, day: Literal[1, 3, 10] = 1, reason: str = ''
-    ) -> bool:
+    ) -> TbResponse:
         """
         封禁用户
 
@@ -1324,7 +1325,7 @@ class Client(object):
             reason (str, optional): 封禁理由. Defaults to ''.
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -1339,8 +1340,8 @@ class Client(object):
 
         return await block.request(self._http_core, fid, portrait, day, reason)
 
-    @handle_exception(bool, no_format=True)
-    async def unblock(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def unblock(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> TbResponse:
         """
         解封用户
 
@@ -1349,7 +1350,7 @@ class Client(object):
             _id (str | int): 用户id user_id / user_name / portrait 优先user_id
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -1364,8 +1365,8 @@ class Client(object):
 
         return await unblock.request(self._http_core, fid, user_id)
 
-    @handle_exception(bool, no_format=True)
-    async def add_bawu_blacklist(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def add_bawu_blacklist(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> TbResponse:
         """
         添加贴吧黑名单
 
@@ -1374,7 +1375,7 @@ class Client(object):
             _id (str | int): 用户id user_id / user_name / portrait 优先user_id
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
@@ -1389,8 +1390,8 @@ class Client(object):
 
         return await add_bawu_blacklist.request(self._http_core, fname, user_id)
 
-    @handle_exception(bool, no_format=True)
-    async def del_bawu_blacklist(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def del_bawu_blacklist(self, fname_or_fid: Union[str, int], /, _id: Union[str, int]) -> TbResponse:
         """
         移出贴吧黑名单
 
@@ -1399,7 +1400,7 @@ class Client(object):
             _id (str | int): 用户id user_id / user_name / portrait 优先user_id
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
@@ -1414,8 +1415,8 @@ class Client(object):
 
         return await del_bawu_blacklist.request(self._http_core, fname, user_id)
 
-    @handle_exception(bool, no_format=True)
-    async def hide_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def hide_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> TbResponse:
         """
         屏蔽主题帖
 
@@ -1424,7 +1425,7 @@ class Client(object):
             tid (int): 待屏蔽的主题帖tid
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -1432,8 +1433,8 @@ class Client(object):
 
         return await del_thread.request(self._http_core, fid, tid, is_hide=True)
 
-    @handle_exception(bool, no_format=True)
-    async def del_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def del_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> TbResponse:
         """
         删除主题帖
 
@@ -1442,7 +1443,7 @@ class Client(object):
             tid (int): 待删除的主题帖tid
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -1450,8 +1451,10 @@ class Client(object):
 
         return await del_thread.request(self._http_core, fid, tid, is_hide=False)
 
-    @handle_exception(bool, no_format=True)
-    async def del_threads(self, fname_or_fid: Union[str, int], /, tids: List[int], *, block: bool = False) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def del_threads(
+        self, fname_or_fid: Union[str, int], /, tids: List[int], *, block: bool = False
+    ) -> TbResponse:
         """
         批量删除主题帖
 
@@ -1461,7 +1464,7 @@ class Client(object):
             block (bool, optional): 是否同时封一天. Defaults to False.
 
         Returns:
-            bool: True成功 False失败 部分成功返回True
+            TbResponse: True成功 False失败 部分成功返回True
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -1469,8 +1472,8 @@ class Client(object):
 
         return await del_threads.request(self._http_core, fid, tids, block)
 
-    @handle_exception(bool, no_format=True)
-    async def del_post(self, fname_or_fid: Union[str, int], /, tid: int, pid: int) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def del_post(self, fname_or_fid: Union[str, int], /, tid: int, pid: int) -> TbResponse:
         """
         删除回复
 
@@ -1480,7 +1483,7 @@ class Client(object):
             pid (int): 待删除的回复pid
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -1488,10 +1491,10 @@ class Client(object):
 
         return await del_post.request(self._http_core, fid, tid, pid)
 
-    @handle_exception(bool, no_format=True)
+    @handle_exception(TbResponse, no_format=True)
     async def del_posts(
         self, fname_or_fid: Union[str, int], /, tid: int, pids: List[int], *, block: bool = False
-    ) -> bool:
+    ) -> TbResponse:
         """
         批量删除回复
 
@@ -1502,7 +1505,7 @@ class Client(object):
             block (bool, optional): 是否同时封一天. Defaults to False.
 
         Returns:
-            bool: True成功 False失败 部分成功返回True
+            TbResponse: True成功 False失败 部分成功返回True
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -1510,8 +1513,8 @@ class Client(object):
 
         return await del_posts.request(self._http_core, fid, tid, pids, block)
 
-    @handle_exception(bool, no_format=True)
-    async def unhide_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def unhide_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> TbResponse:
         """
         解除主题帖屏蔽
 
@@ -1520,7 +1523,7 @@ class Client(object):
             tid (int, optional): 待解除屏蔽的主题帖tid
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -1528,8 +1531,8 @@ class Client(object):
 
         return await recover.request(self._http_core, fid, tid, 0, is_hide=True)
 
-    @handle_exception(bool, no_format=True)
-    async def recover_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def recover_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> TbResponse:
         """
         恢复主题帖
 
@@ -1538,7 +1541,7 @@ class Client(object):
             tid (int, optional): 待恢复的主题帖tid
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -1546,8 +1549,8 @@ class Client(object):
 
         return await recover.request(self._http_core, fid, tid, 0, is_hide=False)
 
-    @handle_exception(bool, no_format=True)
-    async def recover_post(self, fname_or_fid: Union[str, int], /, pid: int) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def recover_post(self, fname_or_fid: Union[str, int], /, pid: int) -> TbResponse:
         """
         恢复主题帖
 
@@ -1556,7 +1559,7 @@ class Client(object):
             pid (int, optional): 待恢复的回复pid
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -1564,10 +1567,10 @@ class Client(object):
 
         return await recover.request(self._http_core, fid, 0, pid, is_hide=False)
 
-    @handle_exception(bool, no_format=True)
+    @handle_exception(TbResponse, no_format=True)
     async def recover(
         self, fname_or_fid: Union[str, int], /, tid: int = 0, pid: int = 0, *, is_hide: bool = False
-    ) -> bool:
+    ) -> TbResponse:
         """
         帖子恢复相关操作
 
@@ -1578,7 +1581,7 @@ class Client(object):
             is_hide (bool, optional): True则取消屏蔽主题帖 False则恢复删帖. Defaults to False.
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -1586,8 +1589,8 @@ class Client(object):
 
         return await recover.request(self._http_core, fid, tid, pid, is_hide)
 
-    @handle_exception(bool, no_format=True)
-    async def good(self, fname_or_fid: Union[str, int], /, tid: int, *, cname: str = '') -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def good(self, fname_or_fid: Union[str, int], /, tid: int, *, cname: str = '') -> TbResponse:
         """
         加精主题帖
 
@@ -1597,7 +1600,7 @@ class Client(object):
             cname (str, optional): 待添加的精华分区名称 默认为''即不分区. Defaults to ''.
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         if isinstance(fname_or_fid, str):
@@ -1613,8 +1616,8 @@ class Client(object):
 
         return await good.request(self._http_core, fname, fid, tid, cid)
 
-    @handle_exception(bool, no_format=True)
-    async def ungood(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def ungood(self, fname_or_fid: Union[str, int], /, tid: int) -> TbResponse:
         """
         撤精主题帖
 
@@ -1623,7 +1626,7 @@ class Client(object):
             tid (int): 待撤精的主题帖tid
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         if isinstance(fname_or_fid, str):
@@ -1637,7 +1640,7 @@ class Client(object):
 
         return await ungood.request(self._http_core, fname, fid, tid)
 
-    @handle_exception(bool, no_format=True)
+    @handle_exception(int)
     async def _get_cid(self, fname_or_fid: Union[str, int], /, cname: str = '') -> int:
         """
         通过精华分区名获取精华分区id
@@ -1665,8 +1668,8 @@ class Client(object):
 
         return cid
 
-    @handle_exception(bool, no_format=True)
-    async def top(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def top(self, fname_or_fid: Union[str, int], /, tid: int) -> TbResponse:
         """
         置顶主题帖
 
@@ -1675,7 +1678,7 @@ class Client(object):
             tid (int): 待置顶的主题帖tid
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         if isinstance(fname_or_fid, str):
@@ -1689,8 +1692,8 @@ class Client(object):
 
         return await top.request(self._http_core, fname, fid, tid, is_set=True)
 
-    @handle_exception(bool, no_format=True)
-    async def untop(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def untop(self, fname_or_fid: Union[str, int], /, tid: int) -> TbResponse:
         """
         撤销置顶主题帖
 
@@ -1699,7 +1702,7 @@ class Client(object):
             tid (int): 待撤销置顶的主题帖tid
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         if isinstance(fname_or_fid, str):
@@ -1713,8 +1716,10 @@ class Client(object):
 
         return await top.request(self._http_core, fname, fid, tid, is_set=False)
 
-    @handle_exception(bool, no_format=True)
-    async def move(self, fname_or_fid: Union[str, int], /, tid: int, *, to_tab_id: int, from_tab_id: int = 0) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def move(
+        self, fname_or_fid: Union[str, int], /, tid: int, *, to_tab_id: int, from_tab_id: int = 0
+    ) -> TbResponse:
         """
         将主题帖移动至另一分区
 
@@ -1725,7 +1730,7 @@ class Client(object):
             from_tab_id (int, optional): 来源分区id 默认为0即无分区. Defaults to 0.
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -1733,8 +1738,8 @@ class Client(object):
 
         return await move.request(self._http_core, fid, tid, to_tab_id, from_tab_id)
 
-    @handle_exception(bool, no_format=True)
-    async def recommend(self, fname_or_fid: Union[str, int], /, tid: int) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def recommend(self, fname_or_fid: Union[str, int], /, tid: int) -> TbResponse:
         """
         大吧主首页推荐
 
@@ -1743,17 +1748,17 @@ class Client(object):
             tid (int): 待推荐的主题帖tid
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         return await recommend.request(self._http_core, fid, tid)
 
-    @handle_exception(bool, no_format=True)
+    @handle_exception(TbResponse, no_format=True)
     async def handle_unblock_appeals(
         self, fname_or_fid: Union[str, int], /, appeal_ids: List[int], *, refuse: bool = True
-    ) -> bool:
+    ) -> TbResponse:
         """
         拒绝或通过解封申诉
 
@@ -1763,7 +1768,7 @@ class Client(object):
             refuse (bool, optional): True则拒绝申诉 False则接受申诉. Defaults to True.
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -1771,8 +1776,8 @@ class Client(object):
 
         return await handle_unblock_appeals.request(self._http_core, fid, appeal_ids, refuse)
 
-    @handle_exception(bool, no_format=True)
-    async def agree(self, tid: int, pid: int = 0, is_comment: bool = False) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def agree(self, tid: int, pid: int = 0, is_comment: bool = False) -> TbResponse:
         """
         点赞主题帖或回复
 
@@ -1782,7 +1787,7 @@ class Client(object):
             is_comment (bool, optional): pid是否指向楼中楼. Defaults to False.
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
 
         Note:
             本接口仍处于测试阶段\n
@@ -1793,8 +1798,8 @@ class Client(object):
 
         return await agree.request(self._http_core, tid, pid, is_comment, is_disagree=False, is_undo=False)
 
-    @handle_exception(bool, no_format=True)
-    async def unagree(self, tid: int, pid: int = 0, is_comment: bool = False) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def unagree(self, tid: int, pid: int = 0, is_comment: bool = False) -> TbResponse:
         """
         取消点赞主题帖或回复
 
@@ -1804,15 +1809,15 @@ class Client(object):
             is_comment (bool, optional): pid是否指向楼中楼. Defaults to False.
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         await self.__init_tbs()
 
         return await agree.request(self._http_core, tid, pid, is_comment, is_disagree=False, is_undo=True)
 
-    @handle_exception(bool, no_format=True)
-    async def disagree(self, tid: int, pid: int = 0, is_comment: bool = False) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def disagree(self, tid: int, pid: int = 0, is_comment: bool = False) -> TbResponse:
         """
         点踩主题帖或回复
 
@@ -1822,15 +1827,15 @@ class Client(object):
             is_comment (bool, optional): pid是否指向楼中楼. Defaults to False.
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         await self.__init_tbs()
 
         return await agree.request(self._http_core, tid, pid, is_comment, is_disagree=True, is_undo=False)
 
-    @handle_exception(bool, no_format=True)
-    async def undisagree(self, tid: int, pid: int = 0, is_comment: bool = False) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def undisagree(self, tid: int, pid: int = 0, is_comment: bool = False) -> TbResponse:
         """
         取消点踩主题帖或回复
 
@@ -1840,15 +1845,15 @@ class Client(object):
             is_comment (bool, optional): pid是否指向楼中楼. Defaults to False.
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         await self.__init_tbs()
 
         return await agree.request(self._http_core, tid, pid, is_comment, is_disagree=True, is_undo=True)
 
-    @handle_exception(bool, no_format=True)
-    async def agree_vimage(self, _id: Union[str, int]) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def agree_vimage(self, _id: Union[str, int]) -> TbResponse:
         """
         虚拟形象点赞
 
@@ -1856,7 +1861,7 @@ class Client(object):
             _id (str | int): 点赞对象的用户id user_id / user_name / portrait 优先user_id
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         if not isinstance(_id, int):
@@ -1867,8 +1872,8 @@ class Client(object):
 
         return await agree_vimage.request(self._http_core, user_id)
 
-    @handle_exception(bool, no_format=True)
-    async def follow_user(self, _id: Union[str, int]) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def follow_user(self, _id: Union[str, int]) -> TbResponse:
         """
         关注用户
 
@@ -1876,7 +1881,7 @@ class Client(object):
             _id (str | int): 用户id user_id / user_name / portrait 优先portrait
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         if not is_portrait(_id):
@@ -1889,8 +1894,8 @@ class Client(object):
 
         return await follow_user.request(self._http_core, portrait)
 
-    @handle_exception(bool, no_format=True)
-    async def unfollow_user(self, _id: Union[str, int]) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def unfollow_user(self, _id: Union[str, int]) -> TbResponse:
         """
         取关用户
 
@@ -1898,7 +1903,7 @@ class Client(object):
             _id (str | int): 用户id user_id / user_name / portrait 优先portrait
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         if not is_portrait(_id):
@@ -1911,8 +1916,8 @@ class Client(object):
 
         return await unfollow_user.request(self._http_core, portrait)
 
-    @handle_exception(bool, no_format=True)
-    async def remove_fan(self, _id: Union[str, int]) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def remove_fan(self, _id: Union[str, int]) -> TbResponse:
         """
         移除粉丝
 
@@ -1920,7 +1925,7 @@ class Client(object):
             _id (str | int): 待移除粉丝的id user_id / user_name / portrait 优先user_id
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         if not isinstance(_id, int):
@@ -1933,9 +1938,9 @@ class Client(object):
 
         return await remove_fan.request(self._http_core, user_id)
 
-    @handle_exception(bool, no_format=True)
+    @handle_exception(TbResponse, no_format=True)
     @_try_websocket
-    async def set_blacklist(self, _id: Union[str, int], *, btype: BlacklistType = BlacklistType.ALL) -> bool:
+    async def set_blacklist(self, _id: Union[str, int], *, btype: BlacklistType = BlacklistType.ALL) -> TbResponse:
         """
         设置新版用户黑名单
 
@@ -1944,7 +1949,7 @@ class Client(object):
             btype (BlacklistType): 黑名单类型. 默认全屏蔽. Defaults to BlacklistType.ALL.
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         if not isinstance(_id, int):
@@ -1958,8 +1963,8 @@ class Client(object):
 
         return await set_blacklist.request_http(self._http_core, user_id, btype)
 
-    @handle_exception(bool, no_format=True)
-    async def add_blacklist_old(self, _id: Union[str, int]) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def add_blacklist_old(self, _id: Union[str, int]) -> TbResponse:
         """
         添加旧版用户黑名单
 
@@ -1967,7 +1972,7 @@ class Client(object):
             _id (str | int): 待添加黑名单的用户id user_id / user_name / portrait 优先user_id
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         if not isinstance(_id, int):
@@ -1978,8 +1983,8 @@ class Client(object):
 
         return await add_blacklist_old.request(self._http_core, user_id)
 
-    @handle_exception(bool, no_format=True)
-    async def del_blacklist_old(self, _id: Union[str, int]) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def del_blacklist_old(self, _id: Union[str, int]) -> TbResponse:
         """
         移除旧版用户黑名单
 
@@ -1987,7 +1992,7 @@ class Client(object):
             _id (str | int): 待移除黑名单的用户id user_id / user_name / portrait 优先user_id
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         if not isinstance(_id, int):
@@ -1998,8 +2003,8 @@ class Client(object):
 
         return await del_blacklist_old.request(self._http_core, user_id)
 
-    @handle_exception(bool, no_format=True)
-    async def follow_forum(self, fname_or_fid: Union[str, int]) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def follow_forum(self, fname_or_fid: Union[str, int]) -> TbResponse:
         """
         关注贴吧
 
@@ -2007,7 +2012,7 @@ class Client(object):
             fname_or_fid (str | int): 要关注贴吧的贴吧名或fid 优先fid
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -2015,8 +2020,8 @@ class Client(object):
 
         return await follow_forum.request(self._http_core, fid)
 
-    @handle_exception(bool, no_format=True)
-    async def unfollow_forum(self, fname_or_fid: Union[str, int]) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def unfollow_forum(self, fname_or_fid: Union[str, int]) -> TbResponse:
         """
         取关贴吧
 
@@ -2024,7 +2029,7 @@ class Client(object):
             fname_or_fid (str | int): 要取关贴吧的贴吧名或fid 优先fid
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
@@ -2032,8 +2037,8 @@ class Client(object):
 
         return await unfollow_forum.request(self._http_core, fid)
 
-    @handle_exception(bool, no_format=True)
-    async def dislike_forum(self, fname_or_fid: Union[str, int]) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def dislike_forum(self, fname_or_fid: Union[str, int]) -> TbResponse:
         """
         屏蔽贴吧 使其不再出现在首页推荐列表中
 
@@ -2041,15 +2046,15 @@ class Client(object):
             fname_or_fid (str | int): 待屏蔽贴吧的贴吧名或fid 优先fid
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         return await dislike_forum.request(self._http_core, fid)
 
-    @handle_exception(bool, no_format=True)
-    async def undislike_forum(self, fname_or_fid: Union[str, int]) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def undislike_forum(self, fname_or_fid: Union[str, int]) -> TbResponse:
         """
         解除贴吧的首页推荐屏蔽
 
@@ -2057,15 +2062,15 @@ class Client(object):
             fname_or_fid (str | int): 待屏蔽贴吧的贴吧名或fid 优先fid
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         return await undislike_forum.request(self._http_core, fid)
 
-    @handle_exception(bool, no_format=True)
-    async def set_thread_private(self, fname_or_fid: Union[str, int], /, tid: int, pid: int) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def set_thread_private(self, fname_or_fid: Union[str, int], /, tid: int, pid: int) -> TbResponse:
         """
         隐藏主题帖
 
@@ -2075,15 +2080,15 @@ class Client(object):
             tid (int): 主题帖pid
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         return await set_thread_privacy.request(self._http_core, fid, tid, pid, is_hide=True)
 
-    @handle_exception(bool, no_format=True)
-    async def set_thread_public(self, fname_or_fid: Union[str, int], /, tid: int, pid: int) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def set_thread_public(self, fname_or_fid: Union[str, int], /, tid: int, pid: int) -> TbResponse:
         """
         公开主题帖
 
@@ -2093,15 +2098,15 @@ class Client(object):
             tid (int): 主题帖pid
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.get_fid(fname_or_fid)
 
         return await set_thread_privacy.request(self._http_core, fid, tid, pid, is_hide=False)
 
-    @handle_exception(bool, no_format=True)
-    async def set_profile(self, nick_name: str, sign: str = '', gender: int = 0) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def set_profile(self, nick_name: str, sign: str = '', gender: int = 0) -> TbResponse:
         """
         设置主页信息
 
@@ -2111,13 +2116,13 @@ class Client(object):
             gender (int): 性别 1男 2女. Defaults to 1.
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         return await set_profile.request(self._http_core, nick_name, sign, gender)
 
-    @handle_exception(bool, no_format=True)
-    async def set_nickname_old(self, nick_name: str) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def set_nickname_old(self, nick_name: str) -> TbResponse:
         """
         设置旧版昵称
 
@@ -2125,13 +2130,13 @@ class Client(object):
             nick_name (str): 昵称
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         return await set_nickname_old.request(self._http_core, nick_name)
 
-    @handle_exception(bool, no_format=True)
-    async def sign_forum(self, fname_or_fid: Union[str, int]) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def sign_forum(self, fname_or_fid: Union[str, int]) -> TbResponse:
         """
         单个贴吧签到
 
@@ -2139,7 +2144,7 @@ class Client(object):
             fname_or_fid (str | int): 要签到贴吧的贴吧名或fid 优先贴吧名
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.get_fname(fname_or_fid)
@@ -2147,21 +2152,21 @@ class Client(object):
 
         return await sign_forum.request(self._http_core, fname)
 
-    @handle_exception(bool, no_format=True)
-    async def sign_growth(self) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def sign_growth(self) -> TbResponse:
         """
         用户成长等级任务: 签到
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         await self.__init_tbs()
 
         return await sign_growth.request_web(self._http_core, act_type='page_sign')
 
-    @handle_exception(bool, no_format=True)
-    async def sign_growth_share(self) -> bool:
+    @handle_exception(TbResponse, no_format=True)
+    async def sign_growth_share(self) -> TbResponse:
         """
         用户成长等级任务: 分享主题帖
 
@@ -2173,9 +2178,9 @@ class Client(object):
 
         return await sign_growth.request_app(self._http_core, act_type='share_thread')
 
-    @handle_exception(bool, no_format=True)
+    @handle_exception(TbResponse, no_format=True)
     @_try_websocket
-    async def add_post(self, fname_or_fid: Union[str, int], /, tid: int, content: str) -> bool:
+    async def add_post(self, fname_or_fid: Union[str, int], /, tid: int, content: str) -> TbResponse:
         """
         回复主题帖
 
@@ -2185,7 +2190,7 @@ class Client(object):
             content (str): 回复内容
 
         Returns:
-            bool: 回帖是否成功
+            TbResponse: 回帖是否成功
 
         Note:
             本接口仍处于测试阶段\n
@@ -2212,9 +2217,9 @@ class Client(object):
 
         return await add_post.request_http(self._http_core, fname, fid, tid, show_name, content)
 
-    @handle_exception(bool, no_format=True)
+    @handle_exception(TbResponse, no_format=True)
     @_force_websocket
-    async def send_msg(self, _id: Union[str, int], content: str) -> bool:
+    async def send_msg(self, _id: Union[str, int], content: str) -> TbResponse:
         """
         发送私信
 
@@ -2223,7 +2228,7 @@ class Client(object):
             content (str): 发送内容
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         if not isinstance(_id, int):
@@ -2237,11 +2242,11 @@ class Client(object):
         mid_manager = self._ws_core.mid_manager
         mid_manager.update_msg_id(mid_manager.priv_gid, msg_id)
 
-        return True
+        return TbResponse()
 
-    @handle_exception(bool, no_format=True)
+    @handle_exception(TbResponse, no_format=True)
     @_force_websocket
-    async def set_msg_readed(self, message: get_group_msg.WsMessage) -> bool:
+    async def set_msg_readed(self, message: get_group_msg.WsMessage) -> TbResponse:
         """
         将一条私信设为已读
 
@@ -2249,14 +2254,14 @@ class Client(object):
             message (WsMessage): websocket私信消息
 
         Returns:
-            bool: True成功 False失败
+            TbResponse: True成功 False失败
         """
 
         return await set_msg_readed.request(self._ws_core, message)
 
-    @handle_exception(list)
+    @handle_exception(get_group_msg.WsMsgGroups)
     @_force_websocket
-    async def get_group_msg(self, group_ids: List[int], *, get_type: int = 1) -> List[get_group_msg.WsMsgGroup]:
+    async def get_group_msg(self, group_ids: List[int], *, get_type: int = 1) -> get_group_msg.WsMsgGroups:
         """
         获取分组信息
 
@@ -2265,7 +2270,7 @@ class Client(object):
             get_type (int, optional): 获取类型. Defaults to 1.
 
         Returns:
-            bool: True成功 False失败
+            WsMsgGroups: websocket消息组列表
         """
 
         return await get_group_msg.request(self._ws_core, group_ids, get_type)

@@ -11,6 +11,8 @@ import os
 from . import const, core, enums, exception, logging, typing
 from .__version__ import __version__
 from .client import Client
+from .config import TimeConfig
+from .core import Account
 
 if os.name == 'posix':
     import signal

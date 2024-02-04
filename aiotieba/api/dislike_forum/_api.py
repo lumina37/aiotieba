@@ -5,7 +5,7 @@ import yarl
 
 from ...const import APP_BASE_HOST, APP_SECURE_SCHEME, MAIN_VERSION
 from ...core import HttpCore
-from ...exception import TiebaServerError
+from ...exception import TbResponse, TiebaServerError
 from ...helper import log_success, pack_json, parse_json
 
 
@@ -15,7 +15,7 @@ def parse_body(body: bytes) -> None:
         raise TiebaServerError(code, res_json['error_msg'])
 
 
-async def request(http_core: HttpCore, fid: int) -> bool:
+async def request(http_core: HttpCore, fid: int) -> TbResponse:
     data = [
         ('BDUSS', http_core.account.BDUSS),
         ('_client_version', MAIN_VERSION),
@@ -36,4 +36,4 @@ async def request(http_core: HttpCore, fid: int) -> bool:
     parse_body(body)
 
     log_success(sys._getframe(1), __log__)
-    return True
+    return TbResponse()

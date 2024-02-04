@@ -4,7 +4,7 @@ import yarl
 
 from ...const import APP_BASE_HOST, APP_SECURE_SCHEME, MAIN_VERSION
 from ...core import HttpCore
-from ...exception import TiebaServerError
+from ...exception import TbResponse, TiebaServerError
 from ...helper import log_success, parse_json
 
 
@@ -14,7 +14,9 @@ def parse_body(body: bytes) -> None:
         raise TiebaServerError(code, res_json['error_msg'])
 
 
-async def request(http_core: HttpCore, tid: int, pid: int, is_comment: bool, is_disagree: bool, is_undo: bool) -> bool:
+async def request(
+    http_core: HttpCore, tid: int, pid: int, is_comment: bool, is_disagree: bool, is_undo: bool
+) -> TbResponse:
     if pid:
         obj_type = '2' if is_comment else '1'
     else:
@@ -42,4 +44,4 @@ async def request(http_core: HttpCore, tid: int, pid: int, is_comment: bool, is_
     parse_body(body)
 
     log_success(sys._getframe(1), __log__)
-    return True
+    return TbResponse()
