@@ -1,4 +1,5 @@
 import asyncio
+import dataclasses as dcs
 import random
 import urllib.parse
 from typing import Dict, List, Optional, Tuple
@@ -13,44 +14,37 @@ from .account import Account
 from .net import NetCore
 
 
-class HttpContainer(object):
+@dcs.dataclass
+class HttpContainer:
     """
     用于保存会话headers与cookies的容器
     """
 
-    __slots__ = [
-        'headers',
-        'cookie_jar',
-    ]
+    headers: Dict[str, str]
+    cookie_jar: aiohttp.CookieJar
 
     def __init__(self, headers: Dict[str, str], cookie_jar: aiohttp.CookieJar) -> None:
         self.headers: Dict[str, str] = headers
         self.cookie_jar: aiohttp.CookieJar = cookie_jar
 
 
-class HttpCore(object):
+@dcs.dataclass
+class HttpCore:
     """
     保存http接口相关状态的核心容器
     """
 
-    __slots__ = [
-        'account',
-        'net_core',
-        'app',
-        'app_proto',
-        'web',
-        'loop',
-    ]
+    account: Account
+    net_core: NetCore
+    app: HttpContainer
+    app_proto: HttpContainer
+    web: HttpContainer
+    loop: asyncio.AbstractEventLoop
 
-    def __init__(
-        self,
-        account: Account,
-        net_core: NetCore,
-        loop: Optional[asyncio.AbstractEventLoop] = None,
-    ) -> None:
+    def __init__(self, account: Account, net_core: NetCore, loop: Optional[asyncio.AbstractEventLoop] = None) -> None:
         self.account = account
         self.net_core = net_core
-        self.loop: asyncio.AbstractEventLoop = loop
+        self.loop = loop
 
         from aiohttp import hdrs
 
@@ -60,7 +54,7 @@ class HttpCore(object):
             hdrs.CONNECTION: "keep-alive",
             hdrs.HOST: APP_BASE_HOST,
         }
-        self.app: HttpContainer = HttpContainer(app_headers, aiohttp.DummyCookieJar(loop=loop))
+        self.app = HttpContainer(app_headers, aiohttp.DummyCookieJar(loop=loop))
 
         app_proto_headers = {
             hdrs.USER_AGENT: f"aiotieba/{__version__}",
@@ -69,7 +63,7 @@ class HttpCore(object):
             hdrs.CONNECTION: "keep-alive",
             hdrs.HOST: APP_BASE_HOST,
         }
-        self.app_proto: HttpContainer = HttpContainer(app_proto_headers, aiohttp.DummyCookieJar(loop=loop))
+        self.app_proto = HttpContainer(app_proto_headers, aiohttp.DummyCookieJar(loop=loop))
 
         web_headers = {
             hdrs.USER_AGENT: f"aiotieba/{__version__}",
@@ -77,7 +71,7 @@ class HttpCore(object):
             hdrs.CACHE_CONTROL: "no-cache",
             hdrs.CONNECTION: "keep-alive",
         }
-        self.web: HttpContainer = HttpContainer(web_headers, aiohttp.CookieJar(loop=loop))
+        self.web = HttpContainer(web_headers, aiohttp.CookieJar(loop=loop))
         BDUSS_morsel = aiohttp.cookiejar.Morsel()
         BDUSS_morsel.set('BDUSS', account.BDUSS, account.BDUSS)
         BDUSS_morsel['domain'] = "baidu.com"

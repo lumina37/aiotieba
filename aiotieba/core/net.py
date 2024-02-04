@@ -1,9 +1,8 @@
 import asyncio
 import dataclasses as dcs
-from typing import Callable, Tuple, Union
+from typing import Callable
 
 import aiohttp
-import yarl
 
 from ..config import ProxyConfig, TimeConfig
 from ..exception import HTTPStatusError

@@ -1,12 +1,10 @@
 from collections import OrderedDict
 
 
-class ForumInfoCache(object):
+class ForumInfoCache:
     """
     吧信息缓存
     """
-
-    __slots__ = []
 
     _fname2fid = OrderedDict()
     _fid2fname = OrderedDict()

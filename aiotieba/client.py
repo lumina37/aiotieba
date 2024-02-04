@@ -1,6 +1,6 @@
 import asyncio
 import socket
-from typing import TYPE_CHECKING, Dict, List, Literal, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Dict, List, Literal, Optional, Union
 
 import aiohttp
 import yarl
