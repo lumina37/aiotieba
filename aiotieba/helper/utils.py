@@ -19,6 +19,15 @@ parse_json = jsonlib.loads
 pack_json = functools.partial(jsonlib.dumps, separators=(',', ':'))
 
 if sys.version_info >= (3, 9):
+    import random
+
+    randbytes_nosec = random.randbytes
+else:
+    import secrets
+
+    randbytes_nosec = secrets.token_bytes
+
+if sys.version_info >= (3, 9):
 
     def removeprefix(s: str, prefix: str) -> str:
         """

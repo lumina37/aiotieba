@@ -1,10 +1,10 @@
 import dataclasses as dcs
 import hashlib
-import secrets
 from functools import cached_property
 
 from Crypto.Cipher import AES
 
+from ..helper import randbytes_nosec
 from ..helper.crypto import c3_aid, cuid_galaxy2
 
 
@@ -54,7 +54,7 @@ class Account:
 
     @cached_property
     def android_id(self) -> str:
-        android_id = secrets.token_hex(8)
+        android_id = randbytes_nosec(8).hex()
         return android_id
 
     @cached_property
@@ -81,7 +81,7 @@ class Account:
 
     @cached_property
     def aes_ecb_sec_key(self) -> bytes:
-        aes_ecb_sec_key = secrets.token_bytes(31)
+        aes_ecb_sec_key = randbytes_nosec(31)
         return aes_ecb_sec_key
 
     @cached_property
@@ -93,7 +93,7 @@ class Account:
 
     @cached_property
     def aes_cbc_sec_key(self) -> bytes:
-        aes_cbc_sec_key = secrets.token_bytes(16)
+        aes_cbc_sec_key = randbytes_nosec(16)
         return aes_cbc_sec_key
 
     @cached_property
