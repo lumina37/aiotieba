@@ -87,7 +87,8 @@ from .api import (
     ungood,
 )
 from .api._classdef import UserInfo
-from .core import Account, HttpCore, NetCore, TimeConfig, WsCore
+from .config import ProxyConfig, TimeConfig
+from .core import Account, HttpCore, NetCore, WsCore
 from .enums import BawuSearchType, BlacklistType, GroupType, PostSortType, ReqUInfo, ThreadSortType, WsStatus
 from .exception import TbResponse
 from .helper.cache import ForumInfoCache
@@ -127,8 +128,7 @@ class Client(object):
     Args:
         BDUSSorAccount (str | Account, optional): BDUSS或还包含了其他用户信息的Account实例. Defaults to ''.
         try_ws (bool, optional): 尝试使用websocket接口. Defaults to False.
-        proxy (tuple[yarl.URL, aiohttp.BasicAuth] | bool, optional): True则使用环境变量代理 False则禁用代理
-            输入一个 (http代理地址, 代理验证) 的元组以手动设置代理. Defaults to False.
+        proxy (bool | ProxyConfig, optional): True则使用环境变量代理 False则禁用代理 输入ProxyConfig实例以手动设置代理. Defaults to False.
         time_cfg (TimeConfig, optional): 各种时间设置. Defaults to TimeConfig().
         loop (asyncio.AbstractEventLoop, optional): 事件循环. Defaults to None.
     """
@@ -146,8 +146,8 @@ class Client(object):
         self,
         BDUSSorAccount: Union[str, Account] = '',
         try_ws: bool = False,
-        proxy: Union[Tuple[yarl.URL, aiohttp.BasicAuth], bool] = False,
-        time_cfg: TimeConfig = TimeConfig(),
+        proxy: Union[bool, ProxyConfig] = False,
+        time_cfg: TimeConfig = TimeConfig,
         loop: Optional[asyncio.AbstractEventLoop] = None,
     ) -> None:
         if loop is None:
@@ -163,14 +163,10 @@ class Client(object):
         )
         self._connector = connector
 
-        if proxy is False:
-            proxy = (None, None)
-        elif proxy is True:
-            proxy_info = aiohttp.helpers.proxies_from_env().get('http', None)
-            if proxy_info is None:
-                proxy = (None, None)
-            else:
-                proxy = (proxy_info.proxy, proxy_info.proxy_auth)
+        if proxy is True:
+            proxy = ProxyConfig.from_env()
+        else:
+            proxy = ProxyConfig()
 
         if isinstance(BDUSSorAccount, Account):
             account = BDUSSorAccount

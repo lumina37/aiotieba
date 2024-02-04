@@ -459,9 +459,9 @@ class Thread_c:
         title = data_proto.title
         tid = data_proto.id
         user = UserInfo_ct.from_tbdata(data_proto.author)
-        type = data_proto.thread_type
+        type_ = data_proto.thread_type
         reply_num = data_proto.reply_num
-        return Thread_c(title, 0, '', tid, user, type, reply_num)
+        return Thread_c(title, 0, '', tid, user, type_, reply_num)
 
     def __eq__(self, obj: "Thread_c") -> bool:
         return self.tid == obj.tid

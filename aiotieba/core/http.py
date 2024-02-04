@@ -111,8 +111,8 @@ class HttpCore(object):
             headers=self.app.headers,
             data=payload,
             loop=self.loop,
-            proxy=self.net_core.proxy,
-            proxy_auth=self.net_core.proxy_auth,
+            proxy=self.net_core.proxy_cfg.url,
+            proxy_auth=self.net_core.proxy_cfg.auth,
             ssl=False,
         )
 
@@ -146,8 +146,8 @@ class HttpCore(object):
             headers=self.app_proto.headers,
             data=writer,
             loop=self.loop,
-            proxy=self.net_core.proxy,
-            proxy_auth=self.net_core.proxy_auth,
+            proxy=self.net_core.proxy_cfg.url,
+            proxy_auth=self.net_core.proxy_cfg.auth,
             ssl=False,
         )
 
@@ -172,8 +172,8 @@ class HttpCore(object):
             headers=self.web.headers,
             cookies=self.web.cookie_jar.filter_cookies(url),
             loop=self.loop,
-            proxy=self.net_core.proxy,
-            proxy_auth=self.net_core.proxy_auth,
+            proxy=self.net_core.proxy_cfg.url,
+            proxy_auth=self.net_core.proxy_cfg.auth,
             ssl=False,
         )
 
@@ -203,8 +203,8 @@ class HttpCore(object):
             data=payload,
             cookies=self.web.cookie_jar.filter_cookies(url),
             loop=self.loop,
-            proxy=self.net_core.proxy,
-            proxy_auth=self.net_core.proxy_auth,
+            proxy=self.net_core.proxy_cfg.url,
+            proxy_auth=self.net_core.proxy_cfg.auth,
             ssl=False,
         )
 

@@ -1,10 +1,11 @@
 import asyncio
+import dataclasses as dcs
 from typing import Callable, Tuple, Union
 
 import aiohttp
 import yarl
 
-from ..config import TimeConfig
+from ..config import ProxyConfig, TimeConfig
 from ..exception import HTTPStatusError
 from ..helper import timeout
 
@@ -17,32 +18,36 @@ def check_status_code(response: aiohttp.ClientResponse) -> None:
 TypeHeadersChecker = Callable[[aiohttp.ClientResponse], None]
 
 
-class NetCore(object):
+@dcs.dataclass
+class NetCore:
     """
     网络请求相关容器
 
     Args:
         connector (aiohttp.TCPConnector): 用于生成TCP连接的连接器
         time_cfg (TimeConfig, optional): 各种时间设置. Defaults to TimeConfig().
-        proxy (tuple[yarl.URL, aiohttp.BasicAuth], optional): 输入一个 (http代理地址, 代理验证) 的元组以手动设置代理. Defaults to (None, None).
+        proxy_cfg (ProxyConfig, optional): Defaults to ProxyConfig().
     """
 
-    __slots__ = [
-        'connector',
-        'time_cfg',
-        'proxy',
-        'proxy_auth',
-    ]
+    connector: aiohttp.TCPConnector
+    time_cfg: TimeConfig
+    proxy_cfg: ProxyConfig
 
     def __init__(
         self,
         connector: aiohttp.TCPConnector,
-        time_cfg: TimeConfig = TimeConfig(),
-        proxy: Union[Tuple[yarl.URL, aiohttp.BasicAuth], Tuple[None, None]] = (None, None),
+        time_cfg: TimeConfig = TimeConfig,
+        proxy_cfg: ProxyConfig = ProxyConfig,
     ) -> None:
         self.connector = connector
+
+        if not isinstance(time_cfg, TimeConfig):
+            time_cfg = TimeConfig()
         self.time_cfg = time_cfg
-        self.proxy, self.proxy_auth = proxy
+
+        if not isinstance(proxy_cfg, ProxyConfig):
+            proxy_cfg = TimeConfig()
+        self.proxy_cfg = proxy_cfg
 
     async def req2res(
         self, request: aiohttp.ClientRequest, read_until_eof: bool = True, read_bufsize: int = 64 * 1024

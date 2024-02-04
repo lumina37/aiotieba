@@ -329,8 +329,8 @@ class WsCore(object):
             ws_url,
             headers=headers,
             loop=self.loop,
-            proxy=self.net_core.proxy,
-            proxy_auth=self.net_core.proxy_auth,
+            proxy=self.net_core.proxy_cfg.url,
+            proxy_auth=self.net_core.proxy_cfg.auth,
             ssl=False,
         )
 

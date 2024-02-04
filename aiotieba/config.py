@@ -1,13 +1,43 @@
 import dataclasses as dcs
-from typing import Optional
+from typing import Optional, Union
 
 import aiohttp
+import yarl
+
+
+@dcs.dataclass
+class ProxyConfig:
+    """
+    代理配置
+
+    Args:
+        url (str | yarl.URL, optional): 代理url. Defaults to None.
+        auth (aiohttp.BasicAuth, optional): 代理认证. Defaults to None.
+    """
+
+    url: Optional[yarl.URL] = None
+    auth: Optional[aiohttp.BasicAuth] = None
+
+    def __init__(self, url: Union[str, yarl.URL, None] = None, auth: Optional[aiohttp.BasicAuth] = None) -> None:
+        if isinstance(url, str):
+            url = yarl.URL(url)
+        self.url = url
+        self.auth = auth
+
+    @staticmethod
+    def from_env() -> "ProxyConfig":
+        proxy_info = aiohttp.helpers.proxies_from_env().get('http', None)
+        if proxy_info is None:
+            url, auth = None, None
+        else:
+            url, auth = proxy_info.proxy, proxy_info.proxy_auth
+        return ProxyConfig(url, auth)
 
 
 @dcs.dataclass
 class TimeConfig:
     """
-    各种时间设置
+    各种超时配置
 
     Args:
         http_acquire_conn (float, optional): 从连接池获取一个可用连接的超时时间. Defaults to 4.0.

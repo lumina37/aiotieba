@@ -1024,7 +1024,7 @@ class Thread_p:
         tid = thread_proto.id
         pid = thread_proto.post_id
         user = UserInfo_pt.from_tbdata(thread_proto.author)
-        type = thread_proto.thread_type
+        type_ = thread_proto.thread_type
         is_share = bool(thread_proto.is_share_thread)
         view_num = data_proto.thread_freq_num
         reply_num = thread_proto.reply_num
@@ -1051,7 +1051,7 @@ class Thread_p:
             tid,
             pid,
             user,
-            type,
+            type_,
             is_share,
             vote_info,
             share_origin,

@@ -455,7 +455,7 @@ class UserThread:
         fname = data_proto.forum_name
         tid = data_proto.thread_id
         pid = data_proto.post_id
-        type = data_proto.thread_type
+        type_ = data_proto.thread_type
         vote_info = VoteInfo()._init(data_proto.poll_info)
         view_num = data_proto.freq_num
         reply_num = data_proto.reply_num
@@ -471,7 +471,7 @@ class UserThread:
             tid,
             pid,
             None,
-            type,
+            type_,
             vote_info,
             view_num,
             reply_num,

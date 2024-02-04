@@ -606,7 +606,7 @@ class Thread:
         pid = data_proto.first_post_id
         author_id = data_proto.author_id
         vimage = VirtualImage_t.from_tbdata(data_proto)
-        type = data_proto.thread_type
+        type_ = data_proto.thread_type
         tab_id = data_proto.tab_id
         is_good = bool(data_proto.is_good)
         is_top = bool(data_proto.is_top)
@@ -639,7 +639,7 @@ class Thread:
             None,
             author_id,
             vimage,
-            type,
+            type_,
             tab_id,
             is_good,
             is_top,
