@@ -13,7 +13,6 @@ else:
 
 import json as jsonlib
 
-from ..exception import exc_handlers
 from ..logging import get_logger
 
 parse_json = jsonlib.loads
@@ -130,12 +129,12 @@ def log_success(frame: FrameType, log_str: str = '', log_level: int = logging.IN
         logger.handle(record)
 
 
-def handle_exception(null_ret_factory: Callable[[], Any], no_format: bool = False, log_level: int = logging.WARNING):
+def handle_exception(null_factory: Callable[[], Any], no_format: bool = False, log_level: int = logging.WARNING):
     """
     处理request抛出的异常
 
     Args:
-        null_ret_factory (Callable[[], Any]): 空构造工厂 用于返回一个默认值
+        null_factory (Callable[[], Any]): 空构造工厂 用于返回一个默认值
         no_format (bool, optional): 不需要再次格式化日志字符串 常见于不论成功与否都会记录日志的api. Defaults to False.
         log_level (int, optional): 日志等级. Defaults to logging.WARNING.
     """
@@ -164,9 +163,10 @@ def handle_exception(null_ret_factory: Callable[[], Any], no_format: bool = Fals
                     record = logger.makeRecord(logger.name, log_level, None, 0, log_str, None, None, meth_name)
                     logger.handle(record)
 
-                exc_handlers._handle(meth_name, err)
+                ret = null_factory()
+                ret.err = err
 
-                return null_ret_factory()
+                return ret
 
             else:
                 return ret

@@ -96,7 +96,7 @@ class Page_blacklist:
 
 
 @dcs.dataclass
-class BlacklistOldUsers(Containers[BlacklistOldUser]):
+class BlacklistOldUsers(TbErrorPlugin, Containers[BlacklistOldUser]):
     """
     旧版用户黑名单列表
 

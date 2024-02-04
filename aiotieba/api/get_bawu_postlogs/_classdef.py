@@ -1,11 +1,11 @@
 import dataclasses as dcs
 from datetime import datetime
 from functools import cached_property
-from typing import List, Optional
-from ...exception import TbErrorPlugin
+from typing import List
 
 import bs4
 
+from ...exception import TbErrorPlugin
 from ...helper import default_datetime
 from .._classdef import Containers
 
@@ -147,7 +147,7 @@ class Page_postlog:
 
 
 @dcs.dataclass
-class Postlogs(TbErrorPlugin,Containers[Postlog]):
+class Postlogs(TbErrorPlugin, Containers[Postlog]):
     """
     吧务帖子管理日志表
 

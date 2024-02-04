@@ -1,5 +1,5 @@
 import dataclasses as dcs
-from typing import Mapping, Optional
+from typing import Mapping
 
 from ...exception import TbErrorPlugin
 from .._classdef import Containers

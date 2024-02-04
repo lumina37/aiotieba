@@ -1,6 +1,6 @@
 import dataclasses as dcs
 from functools import cached_property
-from typing import List, Optional
+from typing import List
 
 from .._classdef import TypeMessage
 

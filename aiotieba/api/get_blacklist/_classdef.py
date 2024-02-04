@@ -1,6 +1,6 @@
 import dataclasses as dcs
 from functools import cached_property
-from typing import Dict, Mapping, Optional
+from typing import Dict, Mapping
 
 from ...enums import BlacklistType
 from ...exception import TbErrorPlugin
