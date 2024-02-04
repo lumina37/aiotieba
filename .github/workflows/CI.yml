@@ -46,9 +46,6 @@ jobs:
           pip install --user pdm -qq
           pdm install -G test -q
 
-      - name: Prepare config
-        run: gpg --quiet --batch --yes --decrypt --passphrase=${{ secrets.PASSPHRASE }} --output aiotieba.toml tests/aiotieba.toml.gpg
-
       - name: Run tests
         env:
           TB_BDUSS: ${{ secrets.BDUSS }}
