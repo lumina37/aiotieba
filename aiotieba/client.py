@@ -125,7 +125,7 @@ class Client(object):
     贴吧客户端
 
     Args:
-        BDUSS_key (str, optional): 用于快捷调用BDUSS. Defaults to None.
+        BDUSSorAccount (str | Account, optional): BDUSS或还包含了其他用户信息的Account实例. Defaults to ''.
         try_ws (bool, optional): 尝试使用websocket接口. Defaults to False.
         proxy (tuple[yarl.URL, aiohttp.BasicAuth] | bool, optional): True则使用环境变量代理 False则禁用代理
             输入一个 (http代理地址, 代理验证) 的元组以手动设置代理. Defaults to False.
@@ -172,10 +172,10 @@ class Client(object):
             else:
                 proxy = (proxy_info.proxy, proxy_info.proxy_auth)
 
-        if isinstance(BDUSSorAccount, str):
-            account = Account(BDUSSorAccount)
-        else:
+        if isinstance(BDUSSorAccount, Account):
             account = BDUSSorAccount
+        else:
+            account = Account(BDUSSorAccount)
 
         self.account = account
         net_core = NetCore(connector, time_cfg, proxy)
@@ -1320,7 +1320,7 @@ class Client(object):
 
     @handle_exception(TbResponse, no_format=True)
     async def block(
-        self, fname_or_fid: Union[str, int], /, id_: Union[str, int], *, day: Literal[1, 3, 10] = 1, reason: str = ''
+        self, fname_or_fid: Union[str, int], /, id_: Union[str, int], *, day: int = 1, reason: str = ''
     ) -> TbResponse:
         """
         封禁用户
@@ -1328,7 +1328,7 @@ class Client(object):
         Args:
             fname_or_fid (str | int): 所在贴吧的贴吧名或fid 优先fid
             id_ (str | int): 用户id user_id / user_name / portrait 优先portrait
-            day (Literal[1, 3, 10], optional): 封禁天数. Defaults to 1.
+            day (int, optional): 封禁天数. Defaults to 1.
             reason (str, optional): 封禁理由. Defaults to ''.
 
         Returns:

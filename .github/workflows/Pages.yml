@@ -31,7 +31,7 @@ jobs:
 
       - name: Build
         run: |
-          pdm run mkdocs build -d site -s -q
+          pdm run mkdocs build -d site -s
 
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3
