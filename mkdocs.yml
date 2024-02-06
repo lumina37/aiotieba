@@ -30,8 +30,9 @@ nav:
       - 实用微脚本合集: tutorial/many_utils.md
   - 参考文档:
       - 客户端 (Client): ref/client.md
-      - 枚举定义: ref/enums.md
-      - 超时配置定义: ref/config.md
+      - 枚举: ref/enums.md
+      - 超时配置: ref/config.md
+      - 异常处理: ref/exception.md
       - 类型定义:
           - forum_detail: ref/classdef/forum_detail.md
           - threads: ref/classdef/threads.md

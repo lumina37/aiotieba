@@ -15,6 +15,7 @@ class TbErrorExt:
 class BoolResponse(TbErrorExt):
     """
     bool返回值
+    不是内置bool的子类 可能不支持部分bool操作
 
     Attributes:
         err (Exception | None): 捕获的异常
@@ -37,6 +38,7 @@ class BoolResponse(TbErrorExt):
 class IntResponse(TbErrorExt, int):
     """
     int返回值
+    是内置int的子类
 
     Attributes:
         err (Exception | None): 捕获的异常
@@ -60,6 +62,7 @@ class IntResponse(TbErrorExt, int):
 class StrResponse(TbErrorExt, str):
     """
     str返回值
+    是内置str的子类
 
     Attributes:
         err (Exception | None): 捕获的异常
