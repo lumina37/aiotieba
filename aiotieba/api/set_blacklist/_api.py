@@ -1,12 +1,9 @@
-import sys
-
 import yarl
 
 from ...const import APP_BASE_HOST, APP_SECURE_SCHEME, MAIN_VERSION
 from ...core import Account, HttpCore, WsCore
 from ...enums import BlacklistType
 from ...exception import BoolResponse, TiebaServerError
-from ...helper import log_success
 from .protobuf import SetUserBlackReqIdl_pb2, SetUserBlackResIdl_pb2
 
 CMD = 309697
@@ -43,22 +40,16 @@ async def request_http(http_core: HttpCore, user_id: int, btype: BlacklistType) 
         data,
     )
 
-    __log__ = f"user_id={user_id}"
-
     body = await http_core.net_core.send_request(request, read_bufsize=1024)
     parse_body(body)
 
-    log_success(sys._getframe(1), __log__)
     return BoolResponse()
 
 
 async def request_ws(ws_core: WsCore, user_id: int, btype: BlacklistType) -> BoolResponse:
     data = pack_proto(ws_core.account, user_id, btype)
 
-    __log__ = f"user_id={user_id}"
-
     response = await ws_core.send(data, CMD)
     parse_body(await response.read())
 
-    log_success(sys._getframe(1), __log__)
     return BoolResponse()

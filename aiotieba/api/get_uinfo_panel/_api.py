@@ -28,7 +28,5 @@ async def request(http_core: HttpCore, name_or_portrait: str) -> UserInfo_panel:
         yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/home/get/panel"), params
     )
 
-    __log__ = "user={name_or_portrait}"  # noqa: F841
-
     body = await http_core.net_core.send_request(request, read_bufsize=64 * 1024)
     return parse_body(body)

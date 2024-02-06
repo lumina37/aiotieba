@@ -3,8 +3,7 @@ import functools
 import logging
 import sys
 from datetime import datetime
-from types import FrameType
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
 if sys.version_info >= (3, 11):
     import asyncio as async_timeout
@@ -119,57 +118,39 @@ def timeout(delay: float, loop: asyncio.AbstractEventLoop) -> async_timeout.Time
     return async_timeout.timeout_at(when)
 
 
-def log_success(frame: FrameType, log_str: str = '', log_level: int = logging.INFO):
+def handle_exception(
+    null_factory: Callable[[], Any],
+    ok_log_level: int = logging.NOTSET,
+    err_log_level: int = logging.WARNING,
+):
     """
-    成功日志
-
-    Args:
-        frame (FrameType): 帧对象
-        log_str (str): 附加日志
-        log_level (int): 日志等级
-    """
-
-    meth_name = frame.f_code.co_name
-    log_str = "Suceeded. " + log_str
-    logger = get_logger()
-    if logger.isEnabledFor(log_level):
-        record = logger.makeRecord(logger.name, log_level, None, 0, log_str, None, None, meth_name)
-        logger.handle(record)
-
-
-def handle_exception(null_factory: Callable[[], Any], no_format: bool = False, log_level: int = logging.WARNING):
-    """
-    处理request抛出的异常
+    处理request抛出的异常 只能用于装饰类成员函数
 
     Args:
         null_factory (Callable[[], Any]): 空构造工厂 用于返回一个默认值
-        no_format (bool, optional): 不需要再次格式化日志字符串 常见于不论成功与否都会记录日志的api. Defaults to False.
-        log_level (int, optional): 日志等级. Defaults to logging.WARNING.
+        ok_log_level (int, optional): 正常日志等级. Defaults to logging.NOTSET.
+        err_log_level (int, optional): 异常日志等级. Defaults to logging.WARNING.
     """
 
     def wrapper(func):
         async def awrapper(*args, **kwargs):
+            def _log(log_level: int, err: Optional[Exception] = None) -> None:
+                logger = get_logger()
+                if logger.isEnabledFor(err_log_level):
+                    if err is None:
+                        err = "Suceeded"
+                    log_str = f"{err}. args={args[1:]} kwargs={kwargs}"
+                    record = logger.makeRecord(logger.name, log_level, None, 0, log_str, None, None, func.__name__)
+                    logger.handle(record)
+
             try:
                 ret = await func(*args, **kwargs)
 
+                if ok_log_level:
+                    _log(ok_log_level)
+
             except Exception as err:
-                meth_name = func.__name__
-                tb = err.__traceback__
-                while tb := tb.tb_next:
-                    frame = tb.tb_frame
-                    if frame.f_code.co_name == meth_name:
-                        break
-                frame = tb.tb_next.tb_frame
-
-                log_str: str = frame.f_locals.get('__log__', '')
-                if not no_format:  # need format
-                    log_str = log_str.format(**frame.f_locals)
-                log_str = f"{err}. {log_str}"
-
-                logger = get_logger()
-                if logger.isEnabledFor(log_level):
-                    record = logger.makeRecord(logger.name, log_level, None, 0, log_str, None, None, meth_name)
-                    logger.handle(record)
+                _log(err_log_level, err)
 
                 ret = null_factory()
                 ret.err = err

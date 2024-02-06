@@ -41,16 +41,12 @@ async def request_http(http_core: HttpCore, fname: str) -> Dict[str, int]:
         data,
     )
 
-    __log__ = "fname={fname}"  # noqa: F841
-
     body = await http_core.net_core.send_request(request, read_bufsize=4 * 1024)
     return parse_body(body)
 
 
 async def request_ws(ws_core: WsCore, fname: str) -> Dict[str, int]:
     data = pack_proto(ws_core.account, fname)
-
-    __log__ = "fname={fname}"  # noqa: F841
 
     response = await ws_core.send(data, CMD)
     return parse_body(await response.read())

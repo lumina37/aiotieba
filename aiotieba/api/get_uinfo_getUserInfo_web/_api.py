@@ -25,7 +25,5 @@ async def request(http_core: HttpCore, user_id: int) -> UserInfo_guinfo_web:
         yarl.URL.build(scheme="http", host=WEB_BASE_HOST, path="/im/pcmsg/query/getUserInfo"), params
     )
 
-    __log__ = "user_id={user_id}"  # noqa: F841
-
     body = await http_core.net_core.send_request(request, read_bufsize=2 * 1024)
     return parse_body(body)

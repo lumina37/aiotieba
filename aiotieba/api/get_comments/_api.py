@@ -44,16 +44,12 @@ async def request_http(http_core: HttpCore, tid: int, pid: int, pn: int, is_comm
         data,
     )
 
-    __log__ = "tid={tid} pid={pid}"  # noqa: F841
-
     body = await http_core.net_core.send_request(request, read_bufsize=8 * 1024)
     return parse_body(body)
 
 
 async def request_ws(ws_core: WsCore, tid: int, pid: int, pn: int, is_comment: bool) -> Comments:
     data = pack_proto(tid, pid, pn, is_comment)
-
-    __log__ = "tid={tid} pid={pid}"  # noqa: F841
 
     response = await ws_core.send(data, CMD)
     return parse_body(await response.read())

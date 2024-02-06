@@ -43,16 +43,12 @@ async def request_http(http_core: HttpCore, cname: str, pn: int, rn: int) -> Squ
         data,
     )
 
-    __log__ = "cname={cname}"  # noqa: F841
-
     body = await http_core.net_core.send_request(request, read_bufsize=16 * 1024)
     return parse_body(body)
 
 
 async def request_ws(ws_core: WsCore, cname: str, pn: int, rn: int) -> SquareForums:
     data = pack_proto(ws_core.account, cname, pn, rn)
-
-    __log__ = "cname={cname}"  # noqa: F841
 
     response = await ws_core.send(data, CMD)
     return parse_body(await response.read())

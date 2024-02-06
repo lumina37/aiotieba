@@ -1,5 +1,4 @@
 import datetime
-import sys
 import time
 
 import yarl
@@ -8,7 +7,6 @@ from ...__version__ import __version__
 from ...const import APP_BASE_HOST, APP_SECURE_SCHEME, POST_VERSION
 from ...core import Account, HttpCore, WsCore
 from ...exception import BoolResponse, TiebaServerError, TiebaValueError
-from ...helper import log_success
 from .protobuf import AddPostReqIdl_pb2, AddPostResIdl_pb2
 
 CMD = 309731
@@ -98,7 +96,9 @@ def pack_proto(account: Account, fname: str, fid: int, tid: int, show_name: str,
     return req_proto.SerializeToString()
 
 
-async def request_http(http_core: HttpCore, fname: str, fid: int, tid: int, show_name: str, content: str) -> BoolResponse:
+async def request_http(
+    http_core: HttpCore, fname: str, fid: int, tid: int, show_name: str, content: str
+) -> BoolResponse:
     data = pack_proto(http_core.account, fname, fid, tid, show_name, content)
 
     request = http_core.pack_proto_request(
@@ -106,22 +106,16 @@ async def request_http(http_core: HttpCore, fname: str, fid: int, tid: int, show
         data,
     )
 
-    __log__ = f"fname={fname} tid={tid}"
-
     body = await http_core.net_core.send_request(request, read_bufsize=1024)
     parse_body(body)
 
-    log_success(sys._getframe(1), __log__)
     return BoolResponse()
 
 
 async def request_ws(ws_core: WsCore, fname: str, fid: int, tid: int, show_name: str, content: str) -> BoolResponse:
     data = pack_proto(ws_core.account, fname, fid, tid, show_name, content)
 
-    __log__ = f"fname={fname} tid={tid}"
-
     response = await ws_core.send(data, CMD)
     parse_body(await response.read())
 
-    log_success(sys._getframe(1), __log__)
     return BoolResponse()

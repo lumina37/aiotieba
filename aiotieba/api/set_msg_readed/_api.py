@@ -1,9 +1,6 @@
-import sys
-
 from ...core import WsCore
 from ...enums import MsgType
 from ...exception import BoolResponse, TiebaServerError
-from ...helper import log_success
 from ..get_group_msg import WsMessage
 from .protobuf import CommitReceivedPmsgReqIdl_pb2, CommitReceivedPmsgResIdl_pb2
 
@@ -33,10 +30,7 @@ async def request(ws_core: WsCore, message: WsMessage) -> BoolResponse:
     msg_id = message.msg_id
     data = pack_proto(user_id, ws_core.mid_manager.priv_gid, msg_id)
 
-    __log__ = f"user_id={user_id} msg_id={msg_id}"
-
     resp = await ws_core.send(data, CMD)
     parse_body(await resp.read())
 
-    log_success(sys._getframe(1), __log__)
     return BoolResponse()

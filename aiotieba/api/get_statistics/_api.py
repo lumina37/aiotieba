@@ -29,7 +29,5 @@ async def request(http_core: HttpCore, fid: int) -> Statistics:
         yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/forum/getforumdata"), data
     )
 
-    __log__ = "fid={fid}"  # noqa: F841
-
     body = await http_core.net_core.send_request(request, read_bufsize=4 * 1024)
     return parse_body(body)

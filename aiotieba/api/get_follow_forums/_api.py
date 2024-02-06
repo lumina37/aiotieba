@@ -30,7 +30,5 @@ async def request(http_core: HttpCore, user_id: int, pn: int, rn: int) -> Follow
         yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/forum/like"), data
     )
 
-    __log__ = "user_id={user_id}"  # noqa: F841
-
     body = await http_core.net_core.send_request(request, read_bufsize=16 * 1024)
     return parse_body(body)

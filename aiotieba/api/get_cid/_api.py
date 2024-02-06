@@ -28,7 +28,5 @@ async def request(http_core: HttpCore, fname: str) -> Dict[str, str]:
         yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/c/bawu/goodlist"), data
     )
 
-    __log__ = "fname={fname}"  # noqa: F841
-
     body = await http_core.net_core.send_request(request, read_bufsize=1024)
     return parse_body(body)

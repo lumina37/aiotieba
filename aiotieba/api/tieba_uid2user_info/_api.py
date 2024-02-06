@@ -43,16 +43,12 @@ async def request_http(http_core: HttpCore, tieba_uid: int) -> UserInfo_TUid:
         data,
     )
 
-    __log__ = "tieba_uid={tieba_uid}"  # noqa: F841
-
     body = await http_core.net_core.send_request(request, read_bufsize=1024)
     return parse_body(body)
 
 
 async def request_ws(ws_core: WsCore, tieba_uid: int) -> UserInfo_TUid:
     data = pack_proto(tieba_uid)
-
-    __log__ = "tieba_uid={tieba_uid}"  # noqa: F841
 
     response = await ws_core.send(data, CMD)
     return parse_body(await response.read())

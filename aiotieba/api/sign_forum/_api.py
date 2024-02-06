@@ -1,11 +1,9 @@
-import sys
-
 import yarl
 
 from ...const import APP_BASE_HOST, APP_SECURE_SCHEME, MAIN_VERSION
 from ...core import HttpCore
 from ...exception import BoolResponse, TiebaServerError, TiebaValueError
-from ...helper import log_success, parse_json
+from ...helper import parse_json
 
 
 def parse_body(body: bytes) -> None:
@@ -28,10 +26,7 @@ async def request(http_core: HttpCore, fname: str) -> BoolResponse:
         yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/c/forum/sign"), data
     )
 
-    __log__ = f"fname={fname}"
-
     body = await http_core.net_core.send_request(request, read_bufsize=2 * 1024)
     parse_body(body)
 
-    log_success(sys._getframe(1), __log__)
     return BoolResponse

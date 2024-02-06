@@ -49,7 +49,5 @@ async def request(
         yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/bawu2/platform/listUserLog"), params
     )
 
-    __log__ = "fname={fname}"  # noqa: F841
-
     body = await http_core.net_core.send_request(request, read_bufsize=16 * 1024)
     return parse_body(body)

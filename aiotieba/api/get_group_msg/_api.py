@@ -38,7 +38,5 @@ async def request(ws_core: WsCore, group_ids: List[int], get_type: int) -> WsMsg
     msg_ids = [ws_core.mid_manager.get_msg_id(gid) for gid in group_ids]
     data = pack_proto(ws_core.account, group_ids, msg_ids, get_type)
 
-    __log__ = "group_ids={group_ids}"  # noqa: F841
-
     resp = await ws_core.send(data, CMD)
     return parse_body(await resp.read())

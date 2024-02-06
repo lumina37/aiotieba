@@ -39,16 +39,12 @@ async def request_http(http_core: HttpCore, user_id: int) -> UserInfo_guinfo_app
         data,
     )
 
-    __log__ = "user_id={user_id}"  # noqa: F841
-
     body = await http_core.net_core.send_request(request, read_bufsize=1024)
     return parse_body(body)
 
 
 async def request_ws(ws_core: WsCore, user_id: int) -> UserInfo_guinfo_app:
     data = pack_proto(user_id)
-
-    __log__ = "user_id={user_id}"  # noqa: F841
 
     response = await ws_core.send(data, CMD)
     return parse_body(await response.read())

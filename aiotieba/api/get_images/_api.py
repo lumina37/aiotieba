@@ -28,8 +28,6 @@ def parse_body(body: bytes) -> Image:
 async def request_bytes(http_core: HttpCore, url: yarl.URL) -> ImageBytes:
     request = http_core.pack_web_get_request(url, [])
 
-    __log__ = "url={url}"  # noqa: F841
-
     body = await http_core.net_core.send_request(request, read_bufsize=256 * 1024, headers_checker=_headers_checker)
 
     return ImageBytes(body)

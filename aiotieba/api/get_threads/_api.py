@@ -44,16 +44,12 @@ async def request_http(http_core: HttpCore, fname: str, pn: int, rn: int, sort: 
         data,
     )
 
-    __log__ = "fname={fname}"  # noqa: F841
-
     body = await http_core.net_core.send_request(request, read_bufsize=256 * 1024)
     return parse_body(body)
 
 
 async def request_ws(ws_core: WsCore, fname: str, pn: int, rn: int, sort: int, is_good: bool) -> Threads:
     data = pack_proto(fname, pn, rn, sort, is_good)
-
-    __log__ = "fname={fname}"  # noqa: F841
 
     response = await ws_core.send(data, CMD)
     return parse_body(await response.read())

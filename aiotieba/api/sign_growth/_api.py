@@ -1,11 +1,9 @@
-import sys
-
 import yarl
 
 from ...const import APP_BASE_HOST, APP_SECURE_SCHEME, WEB_BASE_HOST
 from ...core import HttpCore
 from ...exception import BoolResponse, TiebaServerError
-from ...helper import log_success, parse_json
+from ...helper import parse_json
 
 
 def parse_body_web(body: bytes) -> None:
@@ -28,7 +26,6 @@ async def request_web(http_core: HttpCore, act_type: str) -> BoolResponse:
     body = await http_core.net_core.send_request(request, read_bufsize=1024)
     parse_body_web(body)
 
-    log_success(sys._getframe(1))
     return BoolResponse()
 
 
@@ -53,5 +50,4 @@ async def request_app(http_core: HttpCore, act_type: str) -> BoolResponse:
     body = await http_core.net_core.send_request(request, read_bufsize=1024)
     parse_body_app(body)
 
-    log_success(sys._getframe(1))
     return BoolResponse()

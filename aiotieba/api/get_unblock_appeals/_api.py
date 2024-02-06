@@ -30,7 +30,5 @@ async def request(http_core: HttpCore, fid: int, pn: int, rn: int) -> Appeals:
         yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mo/q/getBawuAppealList"), data
     )
 
-    __log__ = "fid={fid}"  # noqa: F841
-
     body = await http_core.net_core.send_request(request, read_bufsize=64 * 1024)
     return parse_body(body)

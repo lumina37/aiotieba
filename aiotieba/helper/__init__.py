@@ -4,7 +4,6 @@ from .utils import (
     handle_exception,
     is_portrait,
     jsonlib,
-    log_success,
     pack_json,
     parse_json,
     randbytes_nosec,

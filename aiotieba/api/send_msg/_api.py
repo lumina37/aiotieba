@@ -1,8 +1,5 @@
-import sys
-
 from ...core import WsCore
 from ...exception import TiebaServerError
-from ...helper import log_success
 from .protobuf import CommitPersonalMsgReqIdl_pb2, CommitPersonalMsgResIdl_pb2
 
 CMD = 205001
@@ -34,10 +31,7 @@ def parse_body(body: bytes) -> int:
 async def request(ws_core: WsCore, user_id: int, content: str) -> int:
     data = pack_proto(user_id, content, ws_core.mid_manager.get_record_id())
 
-    __log__ = f"user_id={user_id}"
-
     resp = await ws_core.send(data, CMD)
     msg_id = parse_body(await resp.read())
 
-    log_success(sys._getframe(1), __log__)
     return msg_id

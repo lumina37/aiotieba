@@ -48,16 +48,12 @@ async def request_http(http_core: HttpCore, uid_or_portrait: Union[str, int]) ->
         data,
     )
 
-    __log__ = "uid_or_portrait={uid_or_portrait}"  # noqa: F841
-
     body = await http_core.net_core.send_request(request, read_bufsize=64 * 1024)
     return parse_body(body)
 
 
 async def request_ws(ws_core: WsCore, uid_or_portrait: Union[str, int]) -> UserInfo_pf:
     data = pack_proto(uid_or_portrait)
-
-    __log__ = "uid_or_portrait={uid_or_portrait}"  # noqa: F841
 
     response = await ws_core.send(data, CMD)
     return parse_body(await response.read())
