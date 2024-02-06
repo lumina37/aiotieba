@@ -126,7 +126,9 @@ class Client(object):
     贴吧客户端
 
     Args:
-        BDUSSorAccount (str | Account, optional): BDUSS或Account实例. Defaults to ''.
+        BDUSS (str, optional): BDUSS. Defaults to ''.
+        STOKEN (str, optional): STOKEN. Defaults to ''.
+        account (Account, optional): Account实例 该字段会覆盖前两个参数. Defaults to None.
         try_ws (bool, optional): 尝试使用websocket接口. Defaults to False.
         proxy (bool | ProxyConfig, optional): True则使用环境变量代理 False则禁用代理 输入ProxyConfig实例以手动配置代理. Defaults to False.
         timeout (TimeoutConfig, optional): 超时配置. Defaults to TimeoutConfig().
@@ -144,7 +146,10 @@ class Client(object):
 
     def __init__(
         self,
-        BDUSSorAccount: Union[str, Account] = '',
+        BDUSS: str = '',
+        STOKEN: str = '',
+        *,
+        account: Optional[Account] = None,
         try_ws: bool = False,
         proxy: Union[bool, ProxyConfig] = False,
         timeout: TimeoutConfig = TimeoutConfig,
@@ -171,10 +176,10 @@ class Client(object):
         else:
             proxy = ProxyConfig()
 
-        if isinstance(BDUSSorAccount, Account):
-            account = BDUSSorAccount
+        if isinstance(account, Account):
+            account = account
         else:
-            account = Account(BDUSSorAccount)
+            account = Account(BDUSS, STOKEN)
 
         self.account = account
         net_core = NetCore(connector, timeout, proxy)
