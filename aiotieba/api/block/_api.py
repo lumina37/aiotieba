@@ -15,10 +15,13 @@ def parse_body(body: bytes) -> None:
 
 
 async def request(http_core: HttpCore, fid: int, portrait: str, day: int, reason: str) -> BoolResponse:
+    is_svip_block = 0 if day in [1, 3, 10] else 1
+
     data = [
         ('BDUSS', http_core.account.BDUSS),
         ('day', day),
         ('fid', fid),
+        ('is_loop_ban', is_svip_block),
         ('ntn', 'banid'),
         ('portrait', portrait),
         ('reason', reason),
