@@ -33,8 +33,6 @@ nav:
       - 枚举定义: ref/enums.md
       - 超时配置定义: ref/config.md
       - 类型定义:
-          - fid: ref/classdef/fid.md
-          - fname: ref/classdef/fname.md
           - forum_detail: ref/classdef/forum_detail.md
           - threads: ref/classdef/threads.md
           - posts: ref/classdef/posts.md
@@ -58,7 +56,6 @@ nav:
           - god_threads: ref/classdef/god_threads.md
           - rank_users: ref/classdef/rank_users.md
           - member_users: ref/classdef/member_users.md
-          - cid: ref/classdef/cid.md
           - blocks: ref/classdef/blocks.md
           - recovers: ref/classdef/recovers.md
           - bawu_userlogs: ref/classdef/bawu_userlogs.md
