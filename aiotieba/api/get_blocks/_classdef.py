@@ -87,7 +87,7 @@ class Blocks(TbErrorExt, Containers[Block]):
         data_soup = bs4.BeautifulSoup(data_map['data']['content'], 'lxml')
         objs = [Block.from_tbdata(t) for t in data_soup('li')]
         page = Page_block.from_tbdata(data_map['data']['page'])
-        return Blocks(objs, None, page)
+        return Blocks(objs, page)
 
     @property
     def has_more(self) -> bool:

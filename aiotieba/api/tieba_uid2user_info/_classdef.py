@@ -51,7 +51,7 @@ class UserInfo_TUid(TbErrorExt):
         age = float(data_proto.tb_age)
         sign = data_proto.intro
         is_god = bool(data_proto.new_god_data.status)
-        return UserInfo_TUid(None, user_id, portrait, user_name, nick_name_new, tieba_uid, age, sign, is_god)
+        return UserInfo_TUid(user_id, portrait, user_name, nick_name_new, tieba_uid, age, sign, is_god)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)

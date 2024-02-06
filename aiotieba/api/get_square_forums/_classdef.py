@@ -97,7 +97,7 @@ class SquareForums(TbErrorExt, Containers[SquareForum]):
     def from_tbdata(data_proto: Optional[TypeMessage] = None) -> None:
         objs = [SquareForum.from_tbdata(p) for p in data_proto.forum_info]
         page = Page_square.from_tbdata(data_proto.page)
-        return SquareForums(objs, None, page)
+        return SquareForums(objs, page)
 
     @property
     def has_more(self) -> bool:

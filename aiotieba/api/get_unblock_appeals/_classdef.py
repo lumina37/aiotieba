@@ -89,4 +89,4 @@ class Appeals(TbErrorExt, Containers[Appeal]):
     def from_tbdata(data_map: Mapping) -> "Appeals":
         objs = [Appeal(m) for m in data_map['data'].get('appeal_list', [])]
         has_more = data_map['data'].get('has_more', False)
-        return Appeals(objs, None, has_more)
+        return Appeals(objs, has_more)

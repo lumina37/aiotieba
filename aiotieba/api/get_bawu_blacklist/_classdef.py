@@ -96,7 +96,7 @@ class BawuBlacklistUsers(TbErrorExt, Containers[BawuBlacklistUser]):
         objs = [BawuBlacklistUser.from_tbdata(t) for t in data_soup('td', class_='left_cell')]
         page_tag = data_soup.find('div', class_='tbui_pagination').find('li', class_='active')
         page = Page_bwblacklist.from_tbdata(page_tag)
-        return BawuBlacklistUsers(objs, None, page)
+        return BawuBlacklistUsers(objs, page)
 
     @property
     def has_more(self) -> bool:

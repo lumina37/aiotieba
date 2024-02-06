@@ -79,9 +79,7 @@ class UserInfo_panel(TbErrorExt):
         else:
             is_vip = False
 
-        return UserInfo_panel(
-            None, portrait, user_name, nick_name_new, nick_name_old, gender, age, post_num, fan_num, is_vip
-        )
+        return UserInfo_panel(portrait, user_name, nick_name_new, nick_name_old, gender, age, post_num, fan_num, is_vip)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait

@@ -152,7 +152,7 @@ class Recovers(TbErrorExt, Containers[Recover]):
     def from_tbdata(data_map: Mapping) -> None:
         objs = [Recover.from_tbdata(t) for t in data_map['data']['thread_list']]
         page = Page_recover.from_tbdata(data_map['data']['page'])
-        return Recovers(objs, None, page)
+        return Recovers(objs, page)
 
     @property
     def has_more(self) -> bool:

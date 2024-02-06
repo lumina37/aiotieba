@@ -5,7 +5,7 @@ import yarl
 from ...const import APP_BASE_HOST, APP_SECURE_SCHEME, MAIN_VERSION
 from ...core import Account, HttpCore, WsCore
 from ...enums import BlacklistType
-from ...exception import TbResponse, TiebaServerError
+from ...exception import BoolResponse, TiebaServerError
 from ...helper import log_success
 from .protobuf import SetUserBlackReqIdl_pb2, SetUserBlackResIdl_pb2
 
@@ -33,7 +33,7 @@ def parse_body(body: bytes) -> None:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
 
-async def request_http(http_core: HttpCore, user_id: int, btype: BlacklistType) -> TbResponse:
+async def request_http(http_core: HttpCore, user_id: int, btype: BlacklistType) -> BoolResponse:
     data = pack_proto(http_core.account, user_id, btype)
 
     request = http_core.pack_proto_request(
@@ -49,10 +49,10 @@ async def request_http(http_core: HttpCore, user_id: int, btype: BlacklistType) 
     parse_body(body)
 
     log_success(sys._getframe(1), __log__)
-    return TbResponse()
+    return BoolResponse()
 
 
-async def request_ws(ws_core: WsCore, user_id: int, btype: BlacklistType) -> TbResponse:
+async def request_ws(ws_core: WsCore, user_id: int, btype: BlacklistType) -> BoolResponse:
     data = pack_proto(ws_core.account, user_id, btype)
 
     __log__ = f"user_id={user_id}"
@@ -61,4 +61,4 @@ async def request_ws(ws_core: WsCore, user_id: int, btype: BlacklistType) -> TbR
     parse_body(await response.read())
 
     log_success(sys._getframe(1), __log__)
-    return TbResponse()
+    return BoolResponse()

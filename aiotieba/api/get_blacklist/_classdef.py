@@ -95,4 +95,4 @@ class BlacklistUsers(TbErrorExt, Containers[BlacklistUser]):
     @staticmethod
     def from_tbdata(data_map: Mapping) -> "BlacklistUsers":
         objs = [BlacklistUser.from_tbdata(m) for m in data_map.get('user_perm_list', [])]
-        return BlacklistUsers(objs, None)
+        return BlacklistUsers(objs)

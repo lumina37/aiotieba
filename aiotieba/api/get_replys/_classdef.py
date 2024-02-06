@@ -279,7 +279,7 @@ class Replys(TbErrorExt, Containers[Reply]):
     def from_tbdata(data_proto: TypeMessage) -> "Replys":
         objs = [Reply.from_tbdata(p) for p in data_proto.reply_list]
         page = Page_reply.from_tbdata(data_proto.page)
-        return Replys(objs, None, page)
+        return Replys(objs, page)
 
     @property
     def has_more(self) -> bool:

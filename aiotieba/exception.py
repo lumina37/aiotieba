@@ -8,11 +8,11 @@ class TbErrorExt:
     为类型添加一个`err`项 用于保存捕获到的异常
     """
 
-    err: Optional[Exception] = None
+    err: Optional[Exception] = dcs.field(default=None, init=False)
 
 
 @dcs.dataclass
-class TbResponse(TbErrorExt):
+class BoolResponse(TbErrorExt):
     """
     bool返回值
 
@@ -25,6 +25,55 @@ class TbResponse(TbErrorExt):
 
     def __int__(self) -> int:
         return int(bool(self))
+
+    def __str__(self) -> int:
+        return str(bool(self))
+
+    def __hash__(self) -> int:
+        return hash(bool(self))
+
+
+@dcs.dataclass
+class IntResponse(TbErrorExt, int):
+    """
+    int返回值
+
+    Attributes:
+        err (Exception | None): 捕获的异常
+    """
+
+    def __new__(cls, i: int = 0) -> "IntResponse":
+        obj = super().__new__(cls, i)
+        return obj
+
+    def __init__(self, i: int = 0) -> None:
+        pass
+
+    def __str__(self) -> str:
+        return str(int(self))
+
+    def __hash__(self) -> int:
+        return hash(int(self))
+
+
+@dcs.dataclass
+class StrResponse(TbErrorExt, str):
+    """
+    str返回值
+
+    Attributes:
+        err (Exception | None): 捕获的异常
+    """
+
+    def __new__(cls, s: str = '') -> "StrResponse":
+        obj = super().__new__(cls, s)
+        return obj
+
+    def __init__(self, s: str = '') -> None:
+        pass
+
+    def __hash__(self) -> int:
+        return hash(str(self))
 
 
 class TiebaServerError(RuntimeError):

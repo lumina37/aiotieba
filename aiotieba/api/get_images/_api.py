@@ -22,7 +22,7 @@ def parse_body(body: bytes) -> Image:
     if image is None:
         raise RuntimeError("Error in cv2.imdecode")
 
-    return Image(None, image)
+    return Image(image)
 
 
 async def request_bytes(http_core: HttpCore, url: yarl.URL) -> ImageBytes:
@@ -32,7 +32,7 @@ async def request_bytes(http_core: HttpCore, url: yarl.URL) -> ImageBytes:
 
     body = await http_core.net_core.send_request(request, read_bufsize=256 * 1024, headers_checker=_headers_checker)
 
-    return ImageBytes(None, body)
+    return ImageBytes(body)
 
 
 async def request(http_core: HttpCore, url: yarl.URL) -> Image:

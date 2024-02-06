@@ -64,4 +64,4 @@ class FollowForums(TbErrorExt, Containers[FollowForum]):
             objs = []
             has_more = False
 
-        return FollowForums(objs, None, has_more)
+        return FollowForums(objs, has_more)

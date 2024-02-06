@@ -88,7 +88,7 @@ class DislikeForums(TbErrorExt, Containers[DislikeForum]):
     def from_tbdata(data_proto: TypeMessage) -> "DislikeForums":
         objs = [DislikeForum.from_tbdata(p) for p in data_proto.forum_list]
         page = Page_dislikef.from_tbdata(data_proto)
-        return DislikeForums(objs, None, page)
+        return DislikeForums(objs, page)
 
     @property
     def has_more(self) -> bool:

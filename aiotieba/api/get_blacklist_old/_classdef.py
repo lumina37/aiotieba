@@ -111,7 +111,7 @@ class BlacklistOldUsers(TbErrorExt, Containers[BlacklistOldUser]):
     def from_tbdata(data_proto: TypeMessage) -> "BlacklistOldUsers":
         objs = [BlacklistOldUser.from_tbdata(p) for p in data_proto.mute_user]
         page = Page_blacklist.from_tbdata(data_proto.page)
-        return BlacklistOldUsers(objs, None, page)
+        return BlacklistOldUsers(objs, page)
 
     @property
     def has_more(self) -> bool:

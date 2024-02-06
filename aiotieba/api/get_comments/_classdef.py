@@ -817,7 +817,7 @@ class Comments(TbErrorExt, Containers[Comment]):
             comment.floor = post.floor
             comment.is_thread_author = thread.author_id == comment.author_id
 
-        return Comments(objs, None, page, forum, thread, post)
+        return Comments(objs, page, forum, thread, post)
 
     @property
     def has_more(self) -> bool:

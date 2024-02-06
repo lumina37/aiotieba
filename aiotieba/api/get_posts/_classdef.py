@@ -1133,7 +1133,7 @@ class Posts(TbErrorExt, Containers[Post]):
                 comment.user = users[comment.author_id]
                 comment.is_thread_author = thread.author_id == comment.author_id
 
-        return Posts(objs, None, page, forum, thread)
+        return Posts(objs, page, forum, thread)
 
     @property
     def has_more(self) -> bool:

@@ -114,7 +114,7 @@ class Follows(TbErrorExt, Containers[Follow]):
     def from_tbdata(data_map: Mapping) -> "Follows":
         objs = [Follow.from_tbdata(m) for m in data_map['follow_list']]
         page = Page_follow.from_tbdata(data_map)
-        return Follows(objs, None, page)
+        return Follows(objs, page)
 
     @property
     def has_more(self) -> bool:

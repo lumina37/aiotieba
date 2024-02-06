@@ -120,7 +120,7 @@ class Fans(TbErrorExt, Containers[Fan]):
     def from_tbdata(data_map: Mapping) -> "Fans":
         objs = [Fan.from_tbdata(m) for m in data_map['user_list']]
         page = Page_fan.from_tbdata(data_map['page'])
-        return Fans(objs, None, page)
+        return Fans(objs, page)
 
     @property
     def has_more(self) -> bool:

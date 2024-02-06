@@ -113,4 +113,4 @@ class WsMsgGroups(TbErrorExt, Containers[WsMsgGroup]):
     @staticmethod
     def from_tbdata(data_proto: TypeMessage) -> "WsMsgGroups":
         objs = [WsMsgGroup.from_tbdata(p) for p in data_proto.groupInfo]
-        return WsMsgGroups(objs, None)
+        return WsMsgGroups(objs)

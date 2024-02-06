@@ -28,7 +28,7 @@ class UserInfo_json(TbErrorExt):
         user_id = data_map['id']
         portrait = data_map['portrait']
         user_name = ''
-        return UserInfo_json(None, user_id, portrait, user_name)
+        return UserInfo_json(user_id, portrait, user_name)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)

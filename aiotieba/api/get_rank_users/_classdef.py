@@ -87,7 +87,7 @@ class RankUsers(TbErrorExt, Containers[RankUser]):
         page_item = data_soup.find('ul', class_='p_rank_pager')
         page_dict = parse_json(page_item['data-field'])
         page = Page_rank.from_tbdata(page_dict)
-        return RankUsers(objs, None, page)
+        return RankUsers(objs, page)
 
     @property
     def has_more(self) -> bool:

@@ -49,7 +49,7 @@ class UserInfo_guinfo_app(TbErrorExt):
         gender = Gender(data_proto.sex)
         is_vip = bool(data_proto.vipInfo.v_status)
         is_god = bool(data_proto.new_god_data.status)
-        return UserInfo_guinfo_app(None, user_id, portrait, user_name, nick_name_old, gender, is_vip, is_god)
+        return UserInfo_guinfo_app(user_id, portrait, user_name, nick_name_old, gender, is_vip, is_god)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)

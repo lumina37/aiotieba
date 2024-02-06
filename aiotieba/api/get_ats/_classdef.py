@@ -180,7 +180,7 @@ class Ats(TbErrorExt, Containers[At]):
     def from_tbdata(data_map: Mapping) -> "Ats":
         objs = [At.from_tbdata(m) for m in data_map.get('at_list', [])]
         page = Page_at.from_dict(data_map['page'])
-        return Ats(objs, None, page)
+        return Ats(objs, page)
 
     @property
     def has_more(self) -> bool:

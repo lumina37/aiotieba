@@ -79,7 +79,7 @@ class MemberUsers(TbErrorExt, Containers[MemberUser]):
     def from_tbdata(data_soup: bs4.BeautifulSoup) -> "MemberUsers":
         objs = [MemberUser.from_tbdata(t) for t in data_soup('div', class_='name_wrap')]
         page = Page_member.from_tbdata(data_soup.find('div', class_='tbui_pagination').find('li', class_='active'))
-        return MemberUsers(objs, None, page)
+        return MemberUsers(objs, page)
 
     @property
     def has_more(self) -> bool:

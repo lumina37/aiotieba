@@ -165,7 +165,7 @@ class Postlogs(TbErrorExt, Containers[Postlog]):
     def from_tbdata(data_soup: bs4.BeautifulSoup) -> "Postlogs":
         objs = [Postlog.from_tbdata(t) for t in data_soup.find('tbody').find_all('tr')]
         page = Page_postlog.from_tbdata(data_soup)
-        return Postlogs(objs, None, page)
+        return Postlogs(objs, page)
 
     @property
     def has_more(self) -> bool:

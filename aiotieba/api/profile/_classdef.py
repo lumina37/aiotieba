@@ -136,7 +136,6 @@ class UserInfo_pf(TbErrorExt):
         priv_like = PrivLike(priv_like) if (priv_like := user_proto.priv_sets.like) else PrivLike.PUBLIC
         priv_reply = PrivReply(priv_reply) if (priv_reply := user_proto.priv_sets.reply) else PrivReply.ALL
         return UserInfo_pf(
-            None,
             user_id,
             portrait,
             user_name,
@@ -443,4 +442,4 @@ class Homepage(TbErrorExt, Containers[Thread_pf]):
         for thread in objs:
             thread.user = user
 
-        return Homepage(objs, None, user)
+        return Homepage(objs, user)

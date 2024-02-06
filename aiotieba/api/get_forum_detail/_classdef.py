@@ -46,4 +46,4 @@ class Forum_detail(TbErrorExt):
         member_num = forum_proto.member_count
         post_num = forum_proto.thread_count
         has_bawu = data_proto.election_tab.new_manager_status == 5
-        return Forum_detail(None, fid, fname, small_avatar, origin_avatar, slogan, member_num, post_num, has_bawu)
+        return Forum_detail(fid, fname, small_avatar, origin_avatar, slogan, member_num, post_num, has_bawu)

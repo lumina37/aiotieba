@@ -34,7 +34,7 @@ class UserInfo_guinfo_web(TbErrorExt):
         portrait = data_map['portrait']
         user_name = user_name if (user_name := data_map['uname']) != user_id else ''
         nick_name_new = data_map['show_nickname']
-        return UserInfo_guinfo_web(None, user_id, portrait, user_name, nick_name_new)
+        return UserInfo_guinfo_web(user_id, portrait, user_name, nick_name_new)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)

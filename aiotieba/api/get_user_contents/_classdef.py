@@ -255,7 +255,7 @@ class UserPostss(TbErrorExt, Containers[UserPosts]):
             for uposts in objs:
                 for upost in uposts:
                     upost.user = user
-        return UserPostss(objs, None)
+        return UserPostss(objs)
 
 
 @dcs.dataclass
@@ -517,4 +517,4 @@ class UserThreads(TbErrorExt, Containers[UserThread]):
             user = UserInfo_u(data_proto.post_list[0])
             for uthread in objs:
                 uthread.user = user
-        return UserPostss(objs, None)
+        return UserPostss(objs)

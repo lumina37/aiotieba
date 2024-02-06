@@ -750,7 +750,7 @@ class Threads(TbErrorExt, Containers[Thread]):
             thread.fid = forum.fid
             thread.user = users[thread.author_id]
 
-        return Threads(objs, None, page, forum, tab_map)
+        return Threads(objs, page, forum, tab_map)
 
     @property
     def has_more(self) -> bool:
