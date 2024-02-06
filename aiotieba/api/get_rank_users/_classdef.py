@@ -3,7 +3,7 @@ from typing import Mapping
 
 import bs4
 
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 from ...helper import parse_json
 from .._classdef import Containers
 
@@ -67,7 +67,7 @@ class Page_rank:
 
 
 @dcs.dataclass
-class RankUsers(TbErrorPlugin, Containers[RankUser]):
+class RankUsers(TbErrorExt, Containers[RankUser]):
     """
     等级排行榜用户列表
 

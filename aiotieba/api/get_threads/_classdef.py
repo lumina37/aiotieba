@@ -3,7 +3,7 @@ from functools import cached_property
 from typing import Dict, List
 
 from ...enums import Gender, PrivLike, PrivReply
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 from .._classdef import Containers, TypeMessage, VirtualImage, VoteInfo
 from .._classdef.contents import (
     FragAt,
@@ -718,7 +718,7 @@ class Forum_t:
 
 
 @dcs.dataclass
-class Threads(TbErrorPlugin, Containers[Thread]):
+class Threads(TbErrorExt, Containers[Thread]):
     """
     主题帖列表
 

@@ -2,12 +2,12 @@ import dataclasses as dcs
 from functools import cached_property
 
 from ...enums import Gender
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 from .._classdef import TypeMessage
 
 
 @dcs.dataclass
-class UserInfo_guinfo_app(TbErrorPlugin):
+class UserInfo_guinfo_app(TbErrorExt):
     """
     用户信息
 

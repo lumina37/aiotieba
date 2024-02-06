@@ -3,7 +3,7 @@ from datetime import datetime
 
 import bs4
 
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 from ...helper import default_datetime
 from .._classdef import Containers
 
@@ -87,7 +87,7 @@ class Page_userlog:
 
 
 @dcs.dataclass
-class Userlogs(TbErrorPlugin, Containers[Userlog]):
+class Userlogs(TbErrorExt, Containers[Userlog]):
     """
     吧务用户管理日志表
 

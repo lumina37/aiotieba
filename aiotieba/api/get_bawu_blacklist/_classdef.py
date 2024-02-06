@@ -2,7 +2,7 @@ import dataclasses as dcs
 
 import bs4
 
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 from .._classdef import Containers
 
 
@@ -77,7 +77,7 @@ class Page_bwblacklist:
 
 
 @dcs.dataclass
-class BawuBlacklistUsers(TbErrorPlugin, Containers[BawuBlacklistUser]):
+class BawuBlacklistUsers(TbErrorExt, Containers[BawuBlacklistUser]):
     """
     吧务黑名单列表
 

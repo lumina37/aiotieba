@@ -1,7 +1,7 @@
 import dataclasses as dcs
 from typing import Mapping
 
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 from .._classdef import Containers
 
 
@@ -23,7 +23,7 @@ class GodThread:
 
 
 @dcs.dataclass
-class GodThreads(TbErrorPlugin, Containers[GodThread]):
+class GodThreads(TbErrorExt, Containers[GodThread]):
     """
     精选神帖列表
 

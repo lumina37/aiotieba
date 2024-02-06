@@ -1,7 +1,7 @@
 import dataclasses as dcs
 from typing import Mapping
 
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 from .._classdef import Containers
 
 
@@ -72,7 +72,7 @@ class Appeal:
 
 
 @dcs.dataclass
-class Appeals(TbErrorPlugin, Containers[Appeal]):
+class Appeals(TbErrorExt, Containers[Appeal]):
     """
     申诉请求列表
 

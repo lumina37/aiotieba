@@ -1,7 +1,7 @@
 import dataclasses as dcs
 from typing import Mapping
 
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 from .._classdef import Containers
 
 
@@ -39,7 +39,7 @@ class FollowForum:
 
 
 @dcs.dataclass
-class FollowForums(TbErrorPlugin, Containers[FollowForum]):
+class FollowForums(TbErrorExt, Containers[FollowForum]):
     """
     用户关注贴吧列表
 

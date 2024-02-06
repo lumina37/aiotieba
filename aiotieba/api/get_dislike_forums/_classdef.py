@@ -1,6 +1,6 @@
 import dataclasses as dcs
 
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 from .._classdef import Containers, TypeMessage
 
 
@@ -71,7 +71,7 @@ class DislikeForum:
 
 
 @dcs.dataclass
-class DislikeForums(TbErrorPlugin, Containers[DislikeForum]):
+class DislikeForums(TbErrorExt, Containers[DislikeForum]):
     """
     首页推荐屏蔽的贴吧列表
 

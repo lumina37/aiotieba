@@ -1,7 +1,7 @@
 import dataclasses as dcs
 from typing import List
 
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 from .._classdef import Containers, TypeMessage
 
 
@@ -101,7 +101,7 @@ class WsMsgGroup:
 
 
 @dcs.dataclass
-class WsMsgGroups(TbErrorPlugin, Containers[WsMsgGroup]):
+class WsMsgGroups(TbErrorExt, Containers[WsMsgGroup]):
     """
     websocket消息组列表
 

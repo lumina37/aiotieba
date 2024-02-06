@@ -3,7 +3,7 @@ from typing import Mapping
 
 import bs4
 
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 from .._classdef import Containers
 
 
@@ -69,7 +69,7 @@ class Page_block:
 
 
 @dcs.dataclass
-class Blocks(TbErrorPlugin, Containers[Block]):
+class Blocks(TbErrorExt, Containers[Block]):
     """
     待恢复帖子列表
 

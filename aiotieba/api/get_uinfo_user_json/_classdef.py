@@ -1,11 +1,11 @@
 import dataclasses as dcs
 from typing import Mapping
 
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 
 
 @dcs.dataclass
-class UserInfo_json(TbErrorPlugin):
+class UserInfo_json(TbErrorExt):
     """
     用户信息
 

@@ -1,7 +1,7 @@
 import dataclasses as dcs
 from typing import TYPE_CHECKING
 
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 
 if TYPE_CHECKING:
     import numpy as np
@@ -14,7 +14,7 @@ def _null_factory() -> "np.ndarray":
 
 
 @dcs.dataclass
-class Image(TbErrorPlugin):
+class Image(TbErrorExt):
     """
     图像
 
@@ -28,7 +28,7 @@ class Image(TbErrorPlugin):
 
 
 @dcs.dataclass
-class ImageBytes(TbErrorPlugin):
+class ImageBytes(TbErrorExt):
     """
     图像原始字节流
 

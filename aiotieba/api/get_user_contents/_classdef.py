@@ -2,7 +2,7 @@ import dataclasses as dcs
 from functools import cached_property
 from typing import List
 
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 from .._classdef import Containers, TypeMessage, VoteInfo
 from .._classdef.contents import FragAt, FragEmoji, FragLink, FragText, FragVideo, FragVoice, TypeFragment, TypeFragText
 
@@ -238,7 +238,7 @@ class UserPosts(Containers[UserPost]):
 
 
 @dcs.dataclass
-class UserPostss(TbErrorPlugin, Containers[UserPosts]):
+class UserPostss(TbErrorExt, Containers[UserPosts]):
     """
     用户历史回复信息列表的列表
 
@@ -501,7 +501,7 @@ class UserThread:
 
 
 @dcs.dataclass
-class UserThreads(TbErrorPlugin, Containers[UserThread]):
+class UserThreads(TbErrorExt, Containers[UserThread]):
     """
     用户发布主题帖列表
 

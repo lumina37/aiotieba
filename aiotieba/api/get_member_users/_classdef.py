@@ -2,7 +2,7 @@ import dataclasses as dcs
 
 import bs4
 
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 from .._classdef import Containers
 
 
@@ -61,7 +61,7 @@ class Page_member:
 
 
 @dcs.dataclass
-class MemberUsers(TbErrorPlugin, Containers[MemberUser]):
+class MemberUsers(TbErrorExt, Containers[MemberUser]):
     """
     最新关注用户列表
 

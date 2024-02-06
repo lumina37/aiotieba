@@ -1,7 +1,7 @@
 import dataclasses as dcs
 from typing import Optional
 
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 from .._classdef import Containers, TypeMessage
 
 
@@ -79,7 +79,7 @@ class Page_square:
 
 
 @dcs.dataclass
-class SquareForums(TbErrorPlugin, Containers[SquareForum]):
+class SquareForums(TbErrorExt, Containers[SquareForum]):
     """
     吧广场列表
 

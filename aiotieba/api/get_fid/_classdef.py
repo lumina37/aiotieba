@@ -1,10 +1,10 @@
 import dataclasses as dcs
 
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 
 
 @dcs.dataclass
-class Fid(TbErrorPlugin):
+class Fid(TbErrorExt):
     """
     forum_id
 

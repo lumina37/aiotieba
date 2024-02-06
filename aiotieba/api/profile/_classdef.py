@@ -3,7 +3,7 @@ from functools import cached_property
 from typing import List
 
 from ...enums import Gender, PrivLike, PrivReply
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 from .._classdef import Containers, TypeMessage, VoteInfo
 from .._classdef.contents import FragAt, FragEmoji, FragLink, FragText, FragVideo, FragVoice, TypeFragment, TypeFragText
 
@@ -42,7 +42,7 @@ class VirtualImage_pf:
 
 
 @dcs.dataclass
-class UserInfo_pf(TbErrorPlugin):
+class UserInfo_pf(TbErrorExt):
     """
     用户信息
 
@@ -422,7 +422,7 @@ class Thread_pf:
 
 
 @dcs.dataclass
-class Homepage(TbErrorPlugin, Containers[Thread_pf]):
+class Homepage(TbErrorExt, Containers[Thread_pf]):
     """
     用户个人页信息
 

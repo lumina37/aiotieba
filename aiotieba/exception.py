@@ -3,7 +3,7 @@ from typing import Optional
 
 
 @dcs.dataclass
-class TbErrorPlugin:
+class TbErrorExt:
     """
     为类型添加一个`err`项 用于保存捕获到的异常
     """
@@ -12,9 +12,9 @@ class TbErrorPlugin:
 
 
 @dcs.dataclass
-class TbResponse(TbErrorPlugin):
+class TbResponse(TbErrorExt):
     """
-    简单响应
+    bool返回值
 
     Attributes:
         err (Exception | None): 捕获的异常
@@ -22,6 +22,9 @@ class TbResponse(TbErrorPlugin):
 
     def __bool__(self) -> bool:
         return self.err is None
+
+    def __int__(self) -> int:
+        return int(bool(self))
 
 
 class TiebaServerError(RuntimeError):

@@ -1,7 +1,7 @@
 import dataclasses as dcs
 from functools import cached_property
 
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 from .._classdef import Containers, TypeMessage
 
 
@@ -93,7 +93,7 @@ class Page_blacklist:
 
 
 @dcs.dataclass
-class BlacklistOldUsers(TbErrorPlugin, Containers[BlacklistOldUser]):
+class BlacklistOldUsers(TbErrorExt, Containers[BlacklistOldUser]):
     """
     旧版用户黑名单列表
 

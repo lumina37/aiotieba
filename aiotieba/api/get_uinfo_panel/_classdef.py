@@ -3,7 +3,7 @@ from functools import cached_property
 from typing import Mapping
 
 from ...enums import Gender
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 from ...helper import removesuffix
 
 
@@ -15,7 +15,7 @@ def _tbnum2int(tb_num: str) -> int:
 
 
 @dcs.dataclass
-class UserInfo_panel(TbErrorPlugin):
+class UserInfo_panel(TbErrorExt):
     """
     用户信息
 

@@ -1,11 +1,11 @@
 import dataclasses as dcs
 
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 from .._classdef import TypeMessage
 
 
 @dcs.dataclass
-class UserInfo_TUid(TbErrorPlugin):
+class UserInfo_TUid(TbErrorExt):
     """
     用户信息
 

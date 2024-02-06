@@ -2,7 +2,7 @@ import dataclasses as dcs
 from functools import cached_property
 from typing import Mapping
 
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 from .._classdef import Containers
 
 
@@ -134,7 +134,7 @@ class Page_recover:
 
 
 @dcs.dataclass
-class Recovers(TbErrorPlugin, Containers[Recover]):
+class Recovers(TbErrorExt, Containers[Recover]):
     """
     待恢复帖子列表
 

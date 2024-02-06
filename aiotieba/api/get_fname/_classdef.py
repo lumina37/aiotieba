@@ -1,10 +1,10 @@
 import dataclasses as dcs
 
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 
 
 @dcs.dataclass
-class Fname(TbErrorPlugin):
+class Fname(TbErrorExt):
     """
     吧名
 

@@ -3,7 +3,7 @@ from functools import cached_property
 from typing import List
 
 from ...enums import Gender, PrivLike, PrivReply
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 from ...helper import removeprefix
 from .._classdef import Containers, TypeMessage
 from .._classdef.contents import (
@@ -775,7 +775,7 @@ class Post_c:
 
 
 @dcs.dataclass
-class Comments(TbErrorPlugin, Containers[Comment]):
+class Comments(TbErrorExt, Containers[Comment]):
     """
     楼中楼列表
 

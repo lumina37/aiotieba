@@ -5,7 +5,7 @@ from typing import List
 
 import bs4
 
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 from ...helper import default_datetime
 from .._classdef import Containers
 
@@ -147,7 +147,7 @@ class Page_postlog:
 
 
 @dcs.dataclass
-class Postlogs(TbErrorPlugin, Containers[Postlog]):
+class Postlogs(TbErrorExt, Containers[Postlog]):
     """
     吧务帖子管理日志表
 

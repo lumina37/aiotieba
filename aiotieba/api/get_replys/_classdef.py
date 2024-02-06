@@ -2,7 +2,7 @@ import dataclasses as dcs
 from functools import cached_property
 
 from ...enums import PrivLike, PrivReply
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 from .._classdef import Containers, TypeMessage
 
 
@@ -261,7 +261,7 @@ class Page_reply:
 
 
 @dcs.dataclass
-class Replys(TbErrorPlugin, Containers[Reply]):
+class Replys(TbErrorExt, Containers[Reply]):
     """
     收到回复列表
 

@@ -2,11 +2,11 @@ import dataclasses as dcs
 from functools import cached_property
 from typing import Mapping
 
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 
 
 @dcs.dataclass
-class UserInfo_guinfo_web(TbErrorPlugin):
+class UserInfo_guinfo_web(TbErrorExt):
     """
     用户信息
 

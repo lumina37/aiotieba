@@ -1,11 +1,11 @@
 import dataclasses as dcs
 
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 from .._classdef import TypeMessage
 
 
 @dcs.dataclass
-class Forum_detail(TbErrorPlugin):
+class Forum_detail(TbErrorExt):
     """
     吧基本信息
 

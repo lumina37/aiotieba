@@ -2,7 +2,7 @@ import dataclasses as dcs
 from functools import cached_property
 from typing import Mapping
 
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 from .._classdef import Containers
 
 
@@ -96,7 +96,7 @@ class Page_follow:
 
 
 @dcs.dataclass
-class Follows(TbErrorPlugin, Containers[Follow]):
+class Follows(TbErrorExt, Containers[Follow]):
     """
     粉丝列表
 

@@ -3,7 +3,7 @@ from functools import cached_property
 from typing import Mapping
 
 from ...enums import PrivLike, PrivReply
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 from .._classdef import Containers
 
 
@@ -162,7 +162,7 @@ class At:
 
 
 @dcs.dataclass
-class Ats(TbErrorPlugin, Containers[At]):
+class Ats(TbErrorExt, Containers[At]):
     """
     @信息列表
 

@@ -1,10 +1,10 @@
 import dataclasses as dcs
 
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 
 
 @dcs.dataclass
-class Cid(TbErrorPlugin):
+class Cid(TbErrorExt):
     """
     精华分区id
 

@@ -3,7 +3,7 @@ from functools import cached_property
 from typing import List
 
 from ...enums import Gender, PrivLike, PrivReply
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 from ...helper import removeprefix
 from .._classdef import Containers, TypeMessage, VirtualImage, VoteInfo
 from .._classdef.contents import (
@@ -1088,7 +1088,7 @@ class Thread_p:
 
 
 @dcs.dataclass
-class Posts(TbErrorPlugin, Containers[Post]):
+class Posts(TbErrorExt, Containers[Post]):
     """
     回复列表
 

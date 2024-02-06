@@ -3,7 +3,7 @@ from functools import cached_property
 from typing import Dict, Mapping
 
 from ...enums import BlacklistType
-from ...exception import TbErrorPlugin
+from ...exception import TbErrorExt
 from .._classdef import Containers
 
 
@@ -83,7 +83,7 @@ class BlacklistUser:
 
 
 @dcs.dataclass
-class BlacklistUsers(TbErrorPlugin, Containers[BlacklistUser]):
+class BlacklistUsers(TbErrorExt, Containers[BlacklistUser]):
     """
     新版用户黑名单列表
 
