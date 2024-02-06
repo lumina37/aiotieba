@@ -54,15 +54,13 @@ class TimeoutConfig:
         所有时间均以秒为单位
     """
 
-    __slots__ = [
-        'http',
-        'http_keepalive',
-        'ws_send',
-        'ws_read',
-        'ws_keepalive',
-        'ws_heartbeat',
-        'dns_ttl',
-    ]
+    http: aiohttp.ClientTimeout = dcs.field(default_factory=aiohttp.ClientTimeout)
+    http_keepalive: float = 30.0
+    ws_send: float = 3.0
+    ws_read: float = 8.0
+    ws_keepalive: float = 300.0
+    ws_heartbeat: Optional[float] = None
+    dns_ttl: 600.0
 
     def __init__(
         self,
