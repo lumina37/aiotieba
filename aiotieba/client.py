@@ -208,7 +208,7 @@ class Client(object):
         初始化websocket
 
         Returns:
-            TbResponse: True无须执行 False失败
+            BoolResponse: True无须执行 False失败
         """
 
         if self._ws_core.status == WsStatus.CLOSED:
@@ -1335,7 +1335,7 @@ class Client(object):
             reason (str, optional): 封禁理由. Defaults to ''.
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
@@ -1360,7 +1360,7 @@ class Client(object):
             id_ (str | int): 用户id user_id / user_name / portrait 优先user_id
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
@@ -1385,7 +1385,7 @@ class Client(object):
             id_ (str | int): 用户id user_id / user_name / portrait 优先user_id
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
@@ -1410,7 +1410,7 @@ class Client(object):
             id_ (str | int): 用户id user_id / user_name / portrait 优先user_id
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
@@ -1435,7 +1435,7 @@ class Client(object):
             tid (int): 待屏蔽的主题帖tid
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
@@ -1453,7 +1453,7 @@ class Client(object):
             tid (int): 待删除的主题帖tid
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
@@ -1474,7 +1474,7 @@ class Client(object):
             block (bool, optional): 是否同时封一天. Defaults to False.
 
         Returns:
-            TbResponse: True成功 False失败 部分成功返回True
+            BoolResponse: True成功 False失败 部分成功返回True
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
@@ -1493,7 +1493,7 @@ class Client(object):
             pid (int): 待删除的回复pid
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
@@ -1515,7 +1515,7 @@ class Client(object):
             block (bool, optional): 是否同时封一天. Defaults to False.
 
         Returns:
-            TbResponse: True成功 False失败 部分成功返回True
+            BoolResponse: True成功 False失败 部分成功返回True
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
@@ -1533,7 +1533,7 @@ class Client(object):
             tid (int, optional): 待解除屏蔽的主题帖tid
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
@@ -1551,7 +1551,7 @@ class Client(object):
             tid (int, optional): 待恢复的主题帖tid
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
@@ -1569,7 +1569,7 @@ class Client(object):
             pid (int, optional): 待恢复的回复pid
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
@@ -1591,7 +1591,7 @@ class Client(object):
             is_hide (bool, optional): True则取消屏蔽主题帖 False则恢复删帖. Defaults to False.
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
@@ -1610,7 +1610,7 @@ class Client(object):
             cname (str, optional): 待添加的精华分区名称 默认为''即不分区. Defaults to ''.
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         if isinstance(fname_or_fid, str):
@@ -1636,7 +1636,7 @@ class Client(object):
             tid (int): 待撤精的主题帖tid
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         if isinstance(fname_or_fid, str):
@@ -1692,7 +1692,7 @@ class Client(object):
             tid (int): 待置顶的主题帖tid
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         if isinstance(fname_or_fid, str):
@@ -1716,7 +1716,7 @@ class Client(object):
             tid (int): 待撤销置顶的主题帖tid
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         if isinstance(fname_or_fid, str):
@@ -1744,7 +1744,7 @@ class Client(object):
             from_tab_id (int, optional): 来源分区id 默认为0即无分区. Defaults to 0.
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
@@ -1762,7 +1762,7 @@ class Client(object):
             tid (int): 待推荐的主题帖tid
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
@@ -1782,7 +1782,7 @@ class Client(object):
             refuse (bool, optional): True则拒绝申诉 False则接受申诉. Defaults to True.
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
@@ -1801,7 +1801,7 @@ class Client(object):
             is_comment (bool, optional): pid是否指向楼中楼. Defaults to False.
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
 
         Note:
             本接口仍处于测试阶段\n
@@ -1823,7 +1823,7 @@ class Client(object):
             is_comment (bool, optional): pid是否指向楼中楼. Defaults to False.
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         await self.__init_tbs()
@@ -1841,7 +1841,7 @@ class Client(object):
             is_comment (bool, optional): pid是否指向楼中楼. Defaults to False.
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         await self.__init_tbs()
@@ -1859,7 +1859,7 @@ class Client(object):
             is_comment (bool, optional): pid是否指向楼中楼. Defaults to False.
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         await self.__init_tbs()
@@ -1875,7 +1875,7 @@ class Client(object):
             id_ (str | int): 点赞对象的用户id user_id / user_name / portrait 优先user_id
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         if not isinstance(id_, int):
@@ -1895,7 +1895,7 @@ class Client(object):
             id_ (str | int): 用户id user_id / user_name / portrait 优先portrait
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         if not is_portrait(id_):
@@ -1917,7 +1917,7 @@ class Client(object):
             id_ (str | int): 用户id user_id / user_name / portrait 优先portrait
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         if not is_portrait(id_):
@@ -1939,7 +1939,7 @@ class Client(object):
             id_ (str | int): 待移除粉丝的id user_id / user_name / portrait 优先user_id
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         if not isinstance(id_, int):
@@ -1963,7 +1963,7 @@ class Client(object):
             btype (BlacklistType): 黑名单类型. 默认全屏蔽. Defaults to BlacklistType.ALL.
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         if not isinstance(id_, int):
@@ -1986,7 +1986,7 @@ class Client(object):
             id_ (str | int): 待添加黑名单的用户id user_id / user_name / portrait 优先user_id
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         if not isinstance(id_, int):
@@ -2006,7 +2006,7 @@ class Client(object):
             id_ (str | int): 待移除黑名单的用户id user_id / user_name / portrait 优先user_id
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         if not isinstance(id_, int):
@@ -2026,7 +2026,7 @@ class Client(object):
             fname_or_fid (str | int): 要关注贴吧的贴吧名或fid 优先fid
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
@@ -2043,7 +2043,7 @@ class Client(object):
             fname_or_fid (str | int): 要取关贴吧的贴吧名或fid 优先fid
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
@@ -2060,7 +2060,7 @@ class Client(object):
             fname_or_fid (str | int): 待屏蔽贴吧的贴吧名或fid 优先fid
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
@@ -2076,7 +2076,7 @@ class Client(object):
             fname_or_fid (str | int): 待屏蔽贴吧的贴吧名或fid 优先fid
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
@@ -2094,7 +2094,7 @@ class Client(object):
             tid (int): 主题帖pid
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
@@ -2112,7 +2112,7 @@ class Client(object):
             tid (int): 主题帖pid
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
@@ -2130,7 +2130,7 @@ class Client(object):
             gender (Gender): 性别. Defaults to Gender.UNKNOWN.
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         return await set_profile.request(self._http_core, nick_name, sign, gender)
@@ -2144,7 +2144,7 @@ class Client(object):
             nick_name (str): 昵称
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         return await set_nickname_old.request(self._http_core, nick_name)
@@ -2158,7 +2158,7 @@ class Client(object):
             fname_or_fid (str | int): 要签到贴吧的贴吧名或fid 优先贴吧名
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
@@ -2172,7 +2172,7 @@ class Client(object):
         用户成长等级任务: 签到
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         await self.__init_tbs()
@@ -2204,7 +2204,7 @@ class Client(object):
             content (str): 回复内容
 
         Returns:
-            TbResponse: 回帖是否成功
+            BoolResponse: 回帖是否成功
 
         Note:
             本接口仍处于测试阶段\n
@@ -2242,7 +2242,7 @@ class Client(object):
             content (str): 发送内容
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         if not isinstance(id_, int):
@@ -2268,7 +2268,7 @@ class Client(object):
             message (WsMessage): websocket私信消息
 
         Returns:
-            TbResponse: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         return await set_msg_readed.request(self._ws_core, message)
