@@ -31,7 +31,7 @@ nav:
   - 参考文档:
       - 客户端 (Client): ref/client.md
       - 枚举: ref/enums.md
-      - 超时配置: ref/config.md
+      - 配置: ref/config.md
       - 异常处理: ref/exception.md
       - 类型定义:
           - forum_detail: ref/classdef/forum_detail.md
