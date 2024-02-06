@@ -1,53 +1,82 @@
-from typing import Callable, Optional
+import dataclasses as dcs
+from typing import Optional
 
-TypeExceptionHandler = Callable[[Exception], Optional[Exception]]
 
-
-class ExceptionHandlers(object):
+@dcs.dataclass
+class TbErrorExt:
     """
-    异常处理
+    为类型添加一个`err`项 用于保存捕获到的异常
     """
 
-    __slots__ = ['_handlers']
-
-    def __init__(self) -> None:
-        self._handlers = {}
-
-    def get(self, meth: Callable, default: Optional[TypeExceptionHandler] = None) -> Optional[TypeExceptionHandler]:
-        """
-        获取用于处理某个特定方法中产生的所有异常的处理函数
-
-        Args:
-            meth (Callable): 类方法
-            handler (TypeExceptionHandler): 处理函数 接收一个异常对象 返回异常对象或None
-        """
-
-        return self._handlers.get(meth.__name__, default)
-
-    def __getitem__(self, meth: Callable) -> Optional[TypeExceptionHandler]:
-        return self._handlers[meth.__name__]
-
-    def __setitem__(self, meth: Callable, handler: TypeExceptionHandler) -> None:
-        """
-        设置用于处理某个特定方法中产生的所有异常的处理函数
-
-        Args:
-            meth (Callable): 类方法
-            handler (TypeExceptionHandler): 处理函数 接收一个异常对象 返回异常对象或None
-        """
-
-        self._handlers[meth.__name__] = handler
-
-    def _handle(self, meth_name: str, err: Exception) -> None:
-        handler = self._handlers.get(meth_name, None)
-        if handler:
-            try:
-                handler(err)
-            except Exception as new_err:
-                raise new_err from err
+    err: Optional[Exception] = dcs.field(default=None, init=False, repr=True)
 
 
-exc_handlers = ExceptionHandlers()
+@dcs.dataclass
+class BoolResponse(TbErrorExt):
+    """
+    bool返回值
+    不是内置bool的子类 可能不支持部分bool操作
+
+    Attributes:
+        err (Exception | None): 捕获的异常
+    """
+
+    def __bool__(self) -> bool:
+        return self.err is None
+
+    def __int__(self) -> int:
+        return int(bool(self))
+
+    def __str__(self) -> int:
+        return str(bool(self))
+
+    def __hash__(self) -> int:
+        return hash(bool(self))
+
+
+@dcs.dataclass
+class IntResponse(TbErrorExt, int):
+    """
+    int返回值
+    是内置int的子类
+
+    Attributes:
+        err (Exception | None): 捕获的异常
+    """
+
+    def __new__(cls, i: int = 0) -> "IntResponse":
+        obj = super().__new__(cls, i)
+        return obj
+
+    def __init__(self, i: int = 0) -> None:
+        pass
+
+    def __str__(self) -> str:
+        return str(int(self))
+
+    def __hash__(self) -> int:
+        return hash(int(self))
+
+
+@dcs.dataclass
+class StrResponse(TbErrorExt, str):
+    """
+    str返回值
+    是内置str的子类
+
+    Attributes:
+        err (Exception | None): 捕获的异常
+    """
+
+    def __new__(cls, s: str = '') -> "StrResponse":
+        obj = super().__new__(cls, s)
+        return obj
+
+    def __init__(self, s: str = '') -> None:
+        pass
+
+    def __hash__(self) -> int:
+        return hash(str(self))
 
 
 class TiebaServerError(RuntimeError):

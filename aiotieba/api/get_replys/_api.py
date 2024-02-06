@@ -11,7 +11,7 @@ CMD = 303007
 
 def pack_proto(account: Account, pn: int) -> bytes:
     req_proto = ReplyMeReqIdl_pb2.ReplyMeReqIdl()
-    req_proto.data.common.BDUSS = account._BDUSS
+    req_proto.data.common.BDUSS = account.BDUSS
     req_proto.data.common._client_version = MAIN_VERSION
     req_proto.data.pn = str(pn)
 
@@ -26,7 +26,7 @@ def parse_body(proto: bytes) -> Replys:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    replys = Replys(data_proto)
+    replys = Replys.from_tbdata(data_proto)
 
     return replys
 

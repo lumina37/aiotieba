@@ -1,11 +1,13 @@
-from typing import Optional
+import dataclasses as dcs
 
 import bs4
 
+from ...exception import TbErrorExt
 from .._classdef import Containers
 
 
-class MemberUser(object):
+@dcs.dataclass
+class MemberUser:
     """
     最新关注用户信息
 
@@ -15,173 +17,70 @@ class MemberUser(object):
         level (int): 等级
     """
 
-    __slots__ = [
-        '_user_name',
-        '_portrait',
-        '_level',
-    ]
+    user_name: str = ''
+    portrait: str = ''
+    level: int = 0
 
-    def __init__(self, data_tag: bs4.element.Tag) -> None:
+    @staticmethod
+    def from_tbdata(data_tag: bs4.element.Tag) -> "MemberUser":
         user_item = data_tag.a
-        self._user_name = user_item['title']
-        self._portrait = user_item['href'][14:]
+        user_name = user_item['title']
+        portrait = user_item['href'][14:]
         level_item = data_tag.span
-        self._level = int(level_item['class'][1][12:])
-
-    def __repr__(self) -> str:
-        return str(
-            {
-                'user_name': self._user_name,
-                'level': self._level,
-            }
-        )
-
-    @property
-    def user_name(self) -> str:
-        """
-        用户名
-
-        Note:
-            唯一 可变 可为空\n
-            请注意与用户昵称区分
-        """
-
-        return self._user_name
-
-    @property
-    def portrait(self) -> str:
-        """
-        用户portrait
-
-        Note:
-            唯一 不可变 不可为空
-        """
-
-        return self._portrait
-
-    @property
-    def level(self) -> int:
-        """
-        等级
-        """
-
-        return self._level
+        level = int(level_item['class'][1][12:])
+        return MemberUser(user_name, portrait, level)
 
 
-class Page_member(object):
+@dcs.dataclass
+class Page_member:
     """
     页信息
 
     Attributes:
-        page_size (int): 页大小
         current_page (int): 当前页码
         total_page (int): 总页码
-        total_count (int): 总计数
 
         has_more (bool): 是否有后继页
         has_prev (bool): 是否有前驱页
     """
 
-    __slots__ = [
-        '_current_page',
-        '_total_page',
-        '_has_more',
-        '_has_prev',
-    ]
+    current_page: int = 0
+    total_page: int = 0
 
-    def _init(self, data_tag: bs4.element.Tag) -> "Page_member":
-        self._current_page = int(data_tag.text)
+    has_more: bool = False
+    has_prev: int = False
+
+    @staticmethod
+    def from_tbdata(data_tag: bs4.element.Tag) -> "Page_member":
+        current_page = int(data_tag.text)
         total_page_item = data_tag.parent.next_sibling
-        self._total_page = int(total_page_item.text[1:-1])
-        self._has_more = self._current_page < self._total_page
-        self._has_prev = self._current_page > 1
-        return self
-
-    def _init_null(self) -> "Page_member":
-        self._current_page = 0
-        self._total_page = 0
-        self._has_more = False
-        self._has_prev = False
-        return self
-
-    def __repr__(self) -> str:
-        return str(
-            {
-                'current_page': self._current_page,
-                'total_page': self._total_page,
-                'has_more': self._has_more,
-                'has_prev': self._has_prev,
-            }
-        )
-
-    @property
-    def current_page(self) -> int:
-        """
-        当前页码
-        """
-
-        return self._current_page
-
-    @property
-    def total_page(self) -> int:
-        """
-        总页码
-        """
-
-        return self._total_page
-
-    @property
-    def has_more(self) -> bool:
-        """
-        是否有后继页
-        """
-
-        return self._has_more
-
-    @property
-    def has_prev(self) -> bool:
-        """
-        是否有前驱页
-        """
-
-        return self._has_prev
+        total_page = int(total_page_item.text[1:-1])
+        has_more = current_page < total_page
+        has_prev = current_page > 1
+        return Page_member(current_page, total_page, has_more, has_prev)
 
 
-class MemberUsers(Containers[MemberUser]):
+@dcs.dataclass
+class MemberUsers(TbErrorExt, Containers[MemberUser]):
     """
     最新关注用户列表
 
     Attributes:
-        _objs (list[MemberUser]): 最新关注用户列表
+        objs (list[MemberUser]): 最新关注用户列表
+        err (Exception | None): 捕获的异常
 
         page (Page_member): 页信息
         has_more (bool): 是否还有下一页
     """
 
-    __slots__ = ['_page']
+    page: Page_member = dcs.field(default_factory=Page_member)
 
-    def __init__(self, data_soup: Optional[bs4.BeautifulSoup] = None) -> None:
-        if data_soup:
-            self._objs = [MemberUser(t) for t in data_soup('div', class_='name_wrap')]
-            self._page = Page_member()._init(
-                data_soup.find('div', class_='tbui_pagination').find('li', class_='active')
-            )
-        else:
-            self._objs = []
-            self._page = Page_member()._init_null()
-
-    @property
-    def page(self) -> Page_member:
-        """
-        页信息
-        """
-
-        return self._page
+    @staticmethod
+    def from_tbdata(data_soup: bs4.BeautifulSoup) -> "MemberUsers":
+        objs = [MemberUser.from_tbdata(t) for t in data_soup('div', class_='name_wrap')]
+        page = Page_member.from_tbdata(data_soup.find('div', class_='tbui_pagination').find('li', class_='active'))
+        return MemberUsers(objs, page)
 
     @property
     def has_more(self) -> bool:
-        """
-        是否还有下一页
-        """
-
-        return self._page._has_more
+        return self.page.has_more

@@ -3,7 +3,7 @@ from typing import List
 from ...const import POST_VERSION
 from ...core import Account, WsCore
 from ...exception import TiebaServerError
-from ._classdef import WsMsgGroup
+from ._classdef import WsMsgGroups
 from .protobuf import GetGroupMsgReqIdl_pb2, GetGroupMsgResIdl_pb2
 
 CMD = 202003
@@ -21,23 +21,22 @@ def pack_proto(account: Account, group_ids: List[int], msg_ids: List[int], get_t
     return req_proto.SerializeToString()
 
 
-def parse_body(body: bytes) -> List[WsMsgGroup]:
+def parse_body(body: bytes) -> WsMsgGroups:
     res_proto = GetGroupMsgResIdl_pb2.GetGroupMsgResIdl()
     res_proto.ParseFromString(body)
 
     if code := res_proto.error.errorno:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
-    groups = [WsMsgGroup(p) for p in res_proto.data.groupInfo]
+    data_proto = res_proto.data
+    groups = WsMsgGroups.from_tbdata(data_proto)
 
     return groups
 
 
-async def request(ws_core: WsCore, group_ids: List[int], get_type: int) -> List[WsMsgGroup]:
+async def request(ws_core: WsCore, group_ids: List[int], get_type: int) -> WsMsgGroups:
     msg_ids = [ws_core.mid_manager.get_msg_id(gid) for gid in group_ids]
     data = pack_proto(ws_core.account, group_ids, msg_ids, get_type)
-
-    __log__ = "group_ids={group_ids}"  # noqa: F841
 
     resp = await ws_core.send(data, CMD)
     return parse_body(await resp.read())

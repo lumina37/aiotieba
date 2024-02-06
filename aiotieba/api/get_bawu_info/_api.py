@@ -25,7 +25,7 @@ def parse_body(body: bytes) -> BawuInfo:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    bawu_info = BawuInfo(data_proto)
+    bawu_info = BawuInfo.from_tbdata(data_proto)
 
     return bawu_info
 
@@ -40,16 +40,12 @@ async def request_http(http_core: HttpCore, fid: int) -> BawuInfo:
         data,
     )
 
-    __log__ = "fid={fid}"  # noqa: F841
-
     body = await http_core.net_core.send_request(request, read_bufsize=8 * 1024)
     return parse_body(body)
 
 
 async def request_ws(ws_core: WsCore, fid: int) -> BawuInfo:
     data = pack_proto(ws_core.account, fid)
-
-    __log__ = "fid={fid}"  # noqa: F841
 
     response = await ws_core.send(data, CMD)
     return parse_body(await response.read())

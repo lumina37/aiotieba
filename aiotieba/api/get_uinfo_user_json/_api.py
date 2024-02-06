@@ -15,7 +15,7 @@ def parse_body(body: bytes) -> UserInfo_json:
     res_json = parse_json(text)
 
     user_dict = res_json['creator']
-    user = UserInfo_json(user_dict)
+    user = UserInfo_json.from_tbdata(user_dict)
 
     return user
 
@@ -29,8 +29,6 @@ async def request(http_core: HttpCore, user_name: str) -> UserInfo_json:
     request = http_core.pack_web_get_request(
         yarl.URL.build(scheme="http", host=WEB_BASE_HOST, path="/i/sys/user_json"), params
     )
-
-    __log__ = "user_name={user_name}"  # noqa: F841
 
     body = await http_core.net_core.send_request(request, read_bufsize=2 * 1024)
     return parse_body(body)

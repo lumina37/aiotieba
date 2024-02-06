@@ -12,14 +12,14 @@ def parse_body(body: bytes) -> Ats:
     if code := int(res_json['error_code']):
         raise TiebaServerError(code, res_json['error_msg'])
 
-    ats = Ats(res_json)
+    ats = Ats.from_tbdata(res_json)
 
     return ats
 
 
 async def request(http_core: HttpCore, pn: int) -> Ats:
     data = [
-        ('BDUSS', http_core.account._BDUSS),
+        ('BDUSS', http_core.account.BDUSS),
         ('_client_version', MAIN_VERSION),
         ('pn', pn),
     ]

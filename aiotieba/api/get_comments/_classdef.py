@@ -1,5 +1,9 @@
-from typing import List, Optional
+import dataclasses as dcs
+from functools import cached_property
+from typing import List
 
+from ...enums import Gender, PrivLike, PrivReply
+from ...exception import TbErrorExt
 from ...helper import removeprefix
 from .._classdef import Containers, TypeMessage
 from .._classdef.contents import (
@@ -21,12 +25,13 @@ FragTiebaPlus_c = FragTiebaPlus_cp = FragTiebaPlus
 FragVoice_c = FragVoice_cp = FragVoice
 
 
+@dcs.dataclass
 class Contents_c(Containers[TypeFragment]):
     """
     内容碎片列表
 
     Attributes:
-        _objs (list[TypeFragment]): 所有内容碎片的混合列表
+        objs (list[TypeFragment]): 所有内容碎片的混合列表
 
         text (str): 文本内容
 
@@ -38,51 +43,57 @@ class Contents_c(Containers[TypeFragment]):
         voice (FragVoice_c): 音频碎片
     """
 
-    __slots__ = [
-        '_text',
-        '_texts',
-        '_emojis',
-        '_ats',
-        '_links',
-        '_tiebapluses',
-        '_voice',
-    ]
+    texts: List[TypeFragText] = dcs.field(default_factory=list, repr=False)
+    emojis: List[FragEmoji_c] = dcs.field(default_factory=list, repr=False)
+    ats: List[FragAt_c] = dcs.field(default_factory=list, repr=False)
+    links: List[FragLink_c] = dcs.field(default_factory=list, repr=False)
+    tiebapluses: List[FragTiebaPlus_c] = dcs.field(default_factory=list, repr=False)
+    voice: FragVoice_c = dcs.field(default_factory=FragVoice_c, repr=False)
 
-    def _init(self, data_proto: TypeMessage) -> "Contents_c":
+    @staticmethod
+    def from_tbdata(data_proto: TypeMessage) -> "Contents_c":
         content_protos = data_proto.content
+
+        texts = []
+        emojis = []
+        ats = []
+        links = []
+        tiebapluses = []
+        voice = FragVoice_c()
 
         def _frags():
             for proto in content_protos:
                 _type = proto.type
                 # 0纯文本 9电话号 18话题 27百科词条
                 if _type in [0, 9, 18, 27]:
-                    frag = FragText_c(proto)
-                    self._texts.append(frag)
+                    frag = FragText_c.from_tbdata(proto)
+                    texts.append(frag)
                     yield frag
                 # 11:tid=5047676428
                 elif _type in [2, 11]:
-                    frag = FragEmoji_c(proto)
-                    self._emojis.append(frag)
+                    frag = FragEmoji_c.from_tbdata(proto)
+                    emojis.append(frag)
                     yield frag
                 elif _type == 4:
-                    frag = FragAt_c(proto)
-                    self._ats.append(frag)
-                    self._texts.append(frag)
+                    frag = FragAt_c.from_tbdata(proto)
+                    ats.append(frag)
+                    texts.append(frag)
                     yield frag
                 elif _type == 1:
-                    frag = FragLink_c(proto)
-                    self._links.append(frag)
-                    self._texts.append(frag)
+                    frag = FragLink_c.from_tbdata(proto)
+                    links.append(frag)
+                    texts.append(frag)
                     yield frag
                 elif _type == 10:  # voice
-                    frag = FragVoice_c()._init(proto)
-                    self._voice = frag
+                    frag = FragVoice_c.from_tbdata(proto)
+                    nonlocal voice
+                    voice = frag
                     yield frag
                 # 35|36:tid=7769728331 / 37:tid=7760184147
                 elif _type in [35, 36, 37]:
-                    frag = FragTiebaPlus_c(proto)
-                    self._tiebapluses.append(frag)
-                    self._texts.append(frag)
+                    frag = FragTiebaPlus_c.from_tbdata(proto)
+                    tiebapluses.append(frag)
+                    texts.append(frag)
                     yield frag
                 # outdated tiebaplus
                 elif _type == 34:
@@ -92,90 +103,18 @@ class Contents_c(Containers[TypeFragment]):
 
                     LOG().warning(f"Unknown fragment type. type={_type} proto={proto}")
 
-        self._text = None
-        self._texts = []
-        self._emojis = []
-        self._ats = []
-        self._links = []
-        self._tiebapluses = []
-        self._voice = FragVoice_c()._init_null()
-        self._objs = list(_frags())
-        return self
+        objs = list(_frags())
 
-    def _init_null(self) -> "Contents_c":
-        self._objs = []
-        self._text = ""
-        self._texts = []
-        self._emojis = []
-        self._ats = []
-        self._links = []
-        self._tiebapluses = []
-        self._voice = FragVoice_c()._init_null()
-        return self
+        return Contents_c(objs, texts, emojis, ats, links, tiebapluses, voice)
 
-    def __repr__(self) -> str:
-        return str(self._objs)
-
-    @property
+    @cached_property
     def text(self) -> str:
-        """
-        文本内容
-        """
-
-        if self._text is None:
-            self._text = "".join(frag.text for frag in self.texts)
-        return self._text
-
-    @property
-    def texts(self) -> List[TypeFragText]:
-        """
-        纯文本碎片列表
-        """
-
-        return self._texts
-
-    @property
-    def emojis(self) -> List[FragEmoji_c]:
-        """
-        表情碎片列表
-        """
-
-        return self._emojis
-
-    @property
-    def ats(self) -> List[FragAt_c]:
-        """
-        @碎片列表
-        """
-
-        return self._ats
-
-    @property
-    def links(self) -> List[FragLink_c]:
-        """
-        链接碎片列表
-        """
-
-        return self._links
-
-    @property
-    def tiebapluses(self) -> List[FragTiebaPlus_c]:
-        """
-        贴吧plus碎片列表
-        """
-
-        return self._tiebapluses
-
-    @property
-    def voice(self) -> FragVoice_c:
-        """
-        音频碎片
-        """
-
-        return self._voice
+        text = "".join(frag.text for frag in self.texts)
+        return text
 
 
-class UserInfo_c(object):
+@dcs.dataclass
+class UserInfo_c:
     """
     用户信息
 
@@ -186,239 +125,98 @@ class UserInfo_c(object):
         nick_name_new (str): 新版昵称
 
         level (int): 等级
-        gender (int): 性别
+        gender (Gender): 性别
         icons (list[str]): 印记信息
 
         is_bawu (bool): 是否吧务
         is_vip (bool): 是否超级会员
         is_god (bool): 是否大神
-        priv_like (int): 公开关注吧列表的设置状态
-        priv_reply (int): 帖子评论权限的设置状态
+        priv_like (PrivLike): 关注吧列表的公开状态
+        priv_reply (PrivReply): 帖子评论权限
 
         nick_name (str): 用户昵称
         show_name (str): 显示名称
         log_name (str): 用于在日志中记录用户信息
     """
 
-    __slots__ = [
-        '_user_id',
-        '_portrait',
-        '_user_name',
-        '_nick_name_new',
-        '_level',
-        '_gender',
-        '_icons',
-        '_is_bawu',
-        '_is_vip',
-        '_is_god',
-        '_priv_like',
-        '_priv_reply',
-    ]
+    user_id: int = 0
+    portrait: str = ''
+    user_name: str = ''
+    nick_name_new: str = ''
 
-    def _init(self, data_proto: TypeMessage) -> "UserInfo_c":
-        self._user_id = data_proto.id
-        if '?' in (portrait := data_proto.portrait):
-            self._portrait = portrait[:-13]
-        else:
-            self._portrait = portrait
-        self._user_name = data_proto.name
-        self._nick_name_new = data_proto.name_show
-        self._level = data_proto.level_id
-        self._gender = data_proto.gender
-        self._icons = [name for i in data_proto.iconinfo if (name := i.name)]
-        self._is_bawu = bool(data_proto.is_bawu)
-        self._is_vip = bool(data_proto.new_tshow_icon)
-        self._is_god = bool(data_proto.new_god_data.status)
-        self._priv_like = priv_like if (priv_like := data_proto.priv_sets.like) else 1
-        self._priv_reply = priv_reply if (priv_reply := data_proto.priv_sets.reply) else 1
-        return self
+    level: int = 0
+    gender: Gender = Gender.UNKNOWN
+    icons: List[str] = dcs.field(default_factory=list)
 
-    def _init_null(self) -> "UserInfo_c":
-        self._user_id = 0
-        self._portrait = ''
-        self._user_name = ''
-        self._nick_name_new = ''
-        self._level = 0
-        self._gender = 0
-        self._icons = []
-        self._is_bawu = False
-        self._is_vip = False
-        self._is_god = False
-        self._priv_like = 1
-        self._priv_reply = 1
-        return self
+    is_bawu: bool = False
+    is_vip: bool = False
+    is_god: bool = False
+    priv_like: PrivLike = PrivLike.PUBLIC
+    priv_reply: PrivReply = PrivReply.ALL
 
-    def __str__(self) -> str:
-        return self._user_name or self._portrait or str(self._user_id)
-
-    def __repr__(self) -> str:
-        return str(
-            {
-                'user_id': self._user_id,
-                'show_name': self.show_name,
-                'level': self._level,
-            }
+    @staticmethod
+    def from_tbdata(data_proto: TypeMessage) -> "UserInfo_c":
+        user_id = data_proto.id
+        portrait = data_proto.portrait
+        if '?' in portrait:
+            portrait = portrait[:-13]
+        user_name = data_proto.name
+        nick_name_new = data_proto.name_show
+        level = data_proto.level_id
+        gender = Gender(data_proto.gender)
+        icons = [name for i in data_proto.iconinfo if (name := i.name)]
+        is_bawu = bool(data_proto.is_bawu)
+        is_vip = bool(data_proto.new_tshow_icon)
+        is_god = bool(data_proto.new_god_data.status)
+        priv_like = PrivLike(priv_like) if (priv_like := data_proto.priv_sets.like) else PrivLike.PUBLIC
+        priv_reply = PrivReply(priv_reply) if (priv_reply := data_proto.priv_sets.reply) else PrivReply.ALL
+        return UserInfo_c(
+            user_id,
+            portrait,
+            user_name,
+            nick_name_new,
+            level,
+            gender,
+            icons,
+            is_bawu,
+            is_vip,
+            is_god,
+            priv_like,
+            priv_reply,
         )
 
+    def __str__(self) -> str:
+        return self.user_name or self.portrait or str(self.user_id)
+
     def __eq__(self, obj: "UserInfo_c") -> bool:
-        return self._user_id == obj._user_id
+        return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
-        return self._user_id
-
-    def __int__(self) -> int:
-        return self._user_id
+        return self.user_id
 
     def __bool__(self) -> bool:
-        return bool(self._user_id)
-
-    @property
-    def user_id(self) -> int:
-        """
-        用户user_id
-
-        Note:
-            唯一 不可变 不可为空\n
-            请注意与用户个人页的tieba_uid区分
-        """
-
-        return self._user_id
-
-    @property
-    def portrait(self) -> str:
-        """
-        用户portrait
-
-        Note:
-            唯一 不可变 不可为空
-        """
-
-        return self._portrait
-
-    @property
-    def user_name(self) -> str:
-        """
-        用户名
-
-        Note:
-            唯一 可变 可为空\n
-            请注意与用户昵称区分
-        """
-
-        return self._user_name
-
-    @property
-    def nick_name_new(self) -> str:
-        """
-        新版昵称
-        """
-
-        return self._nick_name_new
-
-    @property
-    def level(self) -> int:
-        """
-        等级
-        """
-
-        return self._level
-
-    @property
-    def gender(self) -> int:
-        """
-        性别
-
-        Note:
-            0未知 1男 2女
-        """
-
-        return self._gender
-
-    @property
-    def icons(self) -> List[str]:
-        """
-        印记信息
-        """
-
-        return self._icons
-
-    @property
-    def is_bawu(self) -> bool:
-        """
-        是否吧务
-        """
-
-        return self._is_bawu
-
-    @property
-    def is_vip(self) -> bool:
-        """
-        是否超级会员
-        """
-
-        return self._is_vip
-
-    @property
-    def is_god(self) -> bool:
-        """
-        是否贴吧大神
-        """
-
-        return self._is_god
-
-    @property
-    def priv_like(self) -> int:
-        """
-        公开关注吧列表的设置状态
-
-        Note:
-            1完全可见 2好友可见 3完全隐藏
-        """
-
-        return self._priv_like
-
-    @property
-    def priv_reply(self) -> int:
-        """
-        帖子评论权限的设置状态
-
-        Note:
-            1允许所有人 5仅允许我的粉丝 6仅允许我的关注
-        """
-
-        return self._priv_reply
+        return bool(self.user_id)
 
     @property
     def nick_name(self) -> str:
-        """
-        用户昵称
-        """
-
-        return self._nick_name_new
+        return self.nick_name_new
 
     @property
     def show_name(self) -> str:
-        """
-        显示名称
-        """
+        return self.nick_name_new or self.user_name
 
-        return self._nick_name_new or self._user_name
-
-    @property
+    @cached_property
     def log_name(self) -> str:
-        """
-        用于在日志中记录用户信息
-        """
-
-        if self._user_name:
-            return self._user_name
-        elif self._portrait:
-            return f"{self._nick_name_new}/{self._portrait}"
+        if self.user_name:
+            return self.user_name
+        elif self.portrait:
+            return f"{self.nick_name_new}/{self.portrait}"
         else:
-            return str(self._user_id)
+            return str(self.user_id)
 
 
-class Comment(object):
+@dcs.dataclass
+class Comment:
     """
     楼中楼信息
 
@@ -438,31 +236,31 @@ class Comment(object):
         floor (int): 所在楼层数
         agree (int): 点赞数
         disagree (int): 点踩数
-        create_time (int): 创建时间
+        create_time (int): 创建时间 10位时间戳 以秒为单位
         is_thread_author (bool): 是否楼主
     """
 
-    __slots__ = [
-        '_contents',
-        '_fid',
-        '_fname',
-        '_tid',
-        '_ppid',
-        '_pid',
-        '_user',
-        '_author_id',
-        '_reply_to_id',
-        '_floor',
-        '_agree',
-        '_disagree',
-        '_create_time',
-        '_is_thread_author',
-    ]
+    contents: Contents_c = dcs.field(default_factory=Contents_c)
 
-    def __init__(self, data_proto: TypeMessage) -> None:
-        contents = Contents_c()._init(data_proto)
+    fid: int = 0
+    fname: str = ''
+    tid: int = 0
+    ppid: int = 0
+    pid: int = 0
+    user: UserInfo_c = dcs.field(default_factory=UserInfo_c)
+    reply_to_id: int = 0
 
-        self._reply_to_id = 0
+    floor: int = 0
+    agree: int = 0
+    disagree: int = 0
+    create_time: int = 0
+    is_thread_author: bool = False
+
+    @staticmethod
+    def from_tbdata(data_proto: TypeMessage) -> None:
+        contents = Contents_c.from_tbdata(data_proto)
+
+        reply_to_id = 0
         if contents:
             first_frag = contents[0]
             if (
@@ -470,168 +268,40 @@ class Comment(object):
                 and first_frag.text == '回复 '
                 and (reply_to_id := data_proto.content[1].uid)
             ):
-                self._reply_to_id = reply_to_id
+                reply_to_id = reply_to_id
                 if isinstance(contents[1], FragAt_c):
-                    del contents._ats[0]
-                contents._objs = contents._objs[2:]
-                contents._texts = contents._texts[2:]
+                    del contents.ats[0]
+                contents.objs = contents.objs[2:]
+                contents.texts = contents.texts[2:]
                 if contents.texts:
                     first_text_frag = contents.texts[0]
-                    first_text_frag._text = removeprefix(first_text_frag._text, ' :')
+                    first_text_frag.text = removeprefix(first_text_frag.text, ' :')
 
-        self._contents = contents
+        pid = data_proto.id
+        user = UserInfo_c.from_tbdata(data_proto.author)
+        agree = data_proto.agree.agree_num
+        disagree = data_proto.agree.disagree_num
+        create_time = data_proto.time
 
-        self._pid = data_proto.id
-        self._user = UserInfo_c()._init(data_proto.author)
-        self._author_id = self._user._user_id
-        self._agree = data_proto.agree.agree_num
-        self._disagree = data_proto.agree.disagree_num
-        self._create_time = data_proto.time
-
-    def __repr__(self) -> str:
-        return str(
-            {
-                'tid': self._tid,
-                'pid': self._pid,
-                'user': self._user.log_name,
-                'text': self._contents.text,
-                'floor': self._floor,
-            }
-        )
+        return Comment(contents, 0, '', 0, 0, pid, user, reply_to_id, 0, agree, disagree, create_time, False)
 
     def __eq__(self, obj: "Comment") -> bool:
-        return self._pid == obj._pid
+        return self.pid == obj.pid
 
     def __hash__(self) -> int:
-        return self._pid
+        return self.pid
 
     @property
     def text(self) -> str:
-        """
-        文本内容
-        """
-
-        return self._contents.text
-
-    @property
-    def contents(self) -> Contents_c:
-        """
-        正文内容碎片列表
-        """
-
-        return self._contents
-
-    @property
-    def fid(self) -> int:
-        """
-        所在吧id
-        """
-
-        return self._fid
-
-    @property
-    def fname(self) -> str:
-        """
-        所在贴吧名
-        """
-
-        return self._fname
-
-    @property
-    def tid(self) -> int:
-        """
-        所在主题帖id
-        """
-
-        return self._tid
-
-    @property
-    def ppid(self) -> int:
-        """
-        所在楼层id
-        """
-
-        return self._ppid
-
-    @property
-    def pid(self) -> int:
-        """
-        楼中楼id
-        """
-
-        return self._pid
-
-    @property
-    def user(self) -> UserInfo_c:
-        """
-        发布者的用户信息
-        """
-
-        return self._user
+        return self.contents.text
 
     @property
     def author_id(self) -> int:
-        """
-        发布者的user_id
-        """
-
-        if not self._author_id:
-            self._author_id = self.user.user_id
-        return self._author_id
-
-    @property
-    def reply_to_id(self) -> int:
-        """
-        被回复者的user_id
-        """
-
-        return self._reply_to_id
-
-    @property
-    def floor(self) -> int:
-        """
-        所在楼层数
-        """
-
-        return self._floor
-
-    @property
-    def agree(self) -> int:
-        """
-        点赞数
-        """
-
-        return self._agree
-
-    @property
-    def disagree(self) -> int:
-        """
-        点踩数
-        """
-
-        return self._disagree
-
-    @property
-    def create_time(self) -> int:
-        """
-        创建时间
-
-        Note:
-            10位时间戳 以秒为单位
-        """
-
-        return self._create_time
-
-    @property
-    def is_thread_author(self) -> bool:
-        """
-        是否楼主
-        """
-
-        return self._is_thread_author
+        return self.user.user_id
 
 
-class Page_c(object):
+@dcs.dataclass
+class Page_c:
     """
     页信息
 
@@ -645,93 +315,27 @@ class Page_c(object):
         has_prev (bool): 是否有前驱页
     """
 
-    __slots__ = [
-        '_page_size',
-        '_current_page',
-        '_total_page',
-        '_total_count',
-        '_has_more',
-        '_has_prev',
-    ]
+    page_size: int = 0
+    current_page: int = 0
+    total_page: int = 0
+    total_count: int = 0
 
-    def _init(self, data_proto: TypeMessage) -> "Page_c":
-        self._page_size = data_proto.page_size
-        self._current_page = data_proto.current_page
-        self._total_page = data_proto.total_page
-        self._total_count = data_proto.total_count
-        self._has_more = self._current_page < self._total_page
-        self._has_prev = self._current_page > 1
-        return self
+    has_more: bool = False
+    has_prev: bool = False
 
-    def _init_null(self) -> "Page_c":
-        self._page_size = 0
-        self._current_page = 0
-        self._total_page = 0
-        self._total_count = 0
-        self._has_more = False
-        self._has_prev = False
-        return self
-
-    def __repr__(self) -> str:
-        return str(
-            {
-                'current_page': self._current_page,
-                'total_page': self._total_page,
-                'has_more': self._has_more,
-                'has_prev': self._has_prev,
-            }
-        )
-
-    @property
-    def page_size(self) -> int:
-        """
-        页大小
-        """
-
-        return self._page_size
-
-    @property
-    def current_page(self) -> int:
-        """
-        当前页码
-        """
-
-        return self._current_page
-
-    @property
-    def total_page(self) -> int:
-        """
-        总页码
-        """
-
-        return self._total_page
-
-    @property
-    def total_count(self) -> int:
-        """
-        总计数
-        """
-
-        return self._total_count
-
-    @property
-    def has_more(self) -> bool:
-        """
-        是否有后继页
-        """
-
-        return self._has_more
-
-    @property
-    def has_prev(self) -> bool:
-        """
-        是否有前驱页
-        """
-
-        return self._has_prev
+    @staticmethod
+    def from_tbdata(data_proto: TypeMessage) -> "Page_c":
+        page_size = data_proto.page_size
+        current_page = data_proto.current_page
+        total_page = data_proto.total_page
+        total_count = data_proto.total_count
+        has_more = current_page < total_page
+        has_prev = current_page > 1
+        return Page_c(page_size, current_page, total_page, total_count, has_more, has_prev)
 
 
-class Forum_c(object):
+@dcs.dataclass
+class Forum_c:
     """
     吧信息
 
@@ -740,47 +344,18 @@ class Forum_c(object):
         fname (str): 贴吧名
     """
 
-    __slots__ = [
-        '_fid',
-        '_fname',
-    ]
+    fid: int = 0
+    fname: str = ''
 
-    def _init(self, data_proto: TypeMessage) -> "Forum_c":
-        self._fid = data_proto.id
-        self._fname = data_proto.name
-        return self
-
-    def _init_null(self) -> "Forum_c":
-        self._fid = 0
-        self._fname = ''
-        return self
-
-    def __repr__(self) -> str:
-        return str(
-            {
-                'fid': self._fid,
-                'fname': self._fname,
-            }
-        )
-
-    @property
-    def fid(self) -> int:
-        """
-        贴吧id
-        """
-
-        return self._fid
-
-    @property
-    def fname(self) -> str:
-        """
-        贴吧名
-        """
-
-        return self._fname
+    @staticmethod
+    def from_tbdata(data_proto: TypeMessage) -> "Forum_c":
+        fid = data_proto.id
+        fname = data_proto.name
+        return Forum_c(fid, fname)
 
 
-class UserInfo_ct(object):
+@dcs.dataclass
+class UserInfo_ct:
     """
     用户信息
 
@@ -799,150 +374,58 @@ class UserInfo_ct(object):
         log_name (str): 用于在日志中记录用户信息
     """
 
-    __slots__ = [
-        '_user_id',
-        '_portrait',
-        '_user_name',
-        '_nick_name_new',
-        '_level',
-        '_is_god',
-    ]
+    user_id: int = 0
+    portrait: str = ''
+    user_name: str = ''
+    nick_name_new: str = ''
 
-    def _init(self, data_proto: TypeMessage) -> "UserInfo_ct":
-        self._user_id = data_proto.id
-        if '?' in (portrait := data_proto.portrait):
-            self._portrait = portrait[:-13]
-        else:
-            self._portrait = portrait
-        self._user_name = data_proto.name
-        self._nick_name_new = data_proto.name_show
-        self._level = data_proto.level_id
-        self._is_god = bool(data_proto.new_god_data.status)
-        return self
+    level: int = 0
+    is_god: bool = False
 
-    def _init_null(self) -> "UserInfo_ct":
-        self._user_id = 0
-        self._portrait = ''
-        self._user_name = ''
-        self._nick_name_new = ''
-        self._level = 0
-        self._is_god = False
-        return self
+    @staticmethod
+    def from_tbdata(data_proto: TypeMessage) -> "UserInfo_ct":
+        user_id = data_proto.id
+        portrait = data_proto.portrait
+        if '?' in portrait:
+            portrait = portrait[:-13]
+        user_name = data_proto.name
+        nick_name_new = data_proto.name_show
+        level = data_proto.level_id
+        is_god = bool(data_proto.new_god_data.status)
+        return UserInfo_ct(user_id, portrait, user_name, nick_name_new, level, is_god)
 
     def __str__(self) -> str:
-        return self._user_name or self._portrait or str(self._user_id)
-
-    def __repr__(self) -> str:
-        return str(
-            {
-                'user_id': self._user_id,
-                'show_name': self.show_name,
-                'level': self._level,
-            }
-        )
+        return self.user_name or self.portrait or str(self.user_id)
 
     def __eq__(self, obj: "UserInfo_ct") -> bool:
-        return self._user_id == obj._user_id
+        return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
-        return self._user_id
-
-    def __int__(self) -> int:
-        return self._user_id
+        return self.user_id
 
     def __bool__(self) -> bool:
-        return bool(self._user_id)
-
-    @property
-    def user_id(self) -> int:
-        """
-        用户user_id
-
-        Note:
-            唯一 不可变 不可为空\n
-            请注意与用户个人页的tieba_uid区分
-        """
-
-        return self._user_id
-
-    @property
-    def portrait(self) -> str:
-        """
-        用户portrait
-
-        Note:
-            唯一 不可变 不可为空
-        """
-
-        return self._portrait
-
-    @property
-    def user_name(self) -> str:
-        """
-        用户名
-
-        Note:
-            唯一 可变 可为空\n
-            请注意与用户昵称区分
-        """
-
-        return self._user_name
-
-    @property
-    def nick_name_new(self) -> str:
-        """
-        新版昵称
-        """
-
-        return self._nick_name_new
-
-    @property
-    def level(self) -> int:
-        """
-        等级
-        """
-
-        return self._level
-
-    @property
-    def is_god(self) -> bool:
-        """
-        是否贴吧大神
-        """
-
-        return self._is_god
+        return bool(self.user_id)
 
     @property
     def nick_name(self) -> str:
-        """
-        用户昵称
-        """
-
-        return self._nick_name_new
+        return self.nick_name_new
 
     @property
     def show_name(self) -> str:
-        """
-        显示名称
-        """
+        return self.nick_name_new or self.user_name
 
-        return self._nick_name_new or self._user_name
-
-    @property
+    @cached_property
     def log_name(self) -> str:
-        """
-        用于在日志中记录用户信息
-        """
-
-        if self._user_name:
-            return self._user_name
-        elif self._portrait:
-            return f"{self._nick_name_new}/{self._portrait}"
+        if self.user_name:
+            return self.user_name
+        elif self.portrait:
+            return f"{self.nick_name_new}/{self.portrait}"
         else:
-            return str(self._user_id)
+            return str(self.user_id)
 
 
-class Thread_c(object):
+@dcs.dataclass
+class Thread_c:
     """
     主题帖信息
 
@@ -961,133 +444,49 @@ class Thread_c(object):
         reply_num (int): 回复数
     """
 
-    __slots__ = [
-        '_text',
-        '_title',
-        '_fid',
-        '_fname',
-        '_tid',
-        '_user',
-        '_author_id',
-        '_type',
-        '_reply_num',
-    ]
+    title: str = ''
 
-    def _init(self, data_proto: TypeMessage) -> "Thread_c":
-        self._title = data_proto.title
-        self._tid = data_proto.id
-        self._user = UserInfo_ct()._init(data_proto.author)
-        self._author_id = self._user._user_id
-        self._type = data_proto.thread_type
-        self._reply_num = data_proto.reply_num
-        return self
+    fid: int = 0
+    fname: str = ''
+    tid: int = 0
+    user: UserInfo_ct = dcs.field(default_factory=UserInfo_ct)
 
-    def _init_null(self) -> "Thread_c":
-        self._title = ""
-        self._fid = 0
-        self._fname = ''
-        self._tid = 0
-        self._user = UserInfo_ct()._init_null()
-        self._author_id = 0
-        self._type = 0
-        self._reply_num = 0
-        return self
+    type: int = 0
 
-    def __repr__(self) -> str:
-        return str(
-            {
-                'tid': self._tid,
-                'user': self._user.log_name,
-                'title': self._title,
-            }
-        )
+    reply_num: int = 0
+
+    @staticmethod
+    def from_tbdata(data_proto: TypeMessage) -> "Thread_c":
+        title = data_proto.title
+        tid = data_proto.id
+        user = UserInfo_ct.from_tbdata(data_proto.author)
+        type_ = data_proto.thread_type
+        reply_num = data_proto.reply_num
+        return Thread_c(title, 0, '', tid, user, type_, reply_num)
 
     def __eq__(self, obj: "Thread_c") -> bool:
-        return self._tid == obj._tid
+        return self.tid == obj.tid
 
     def __hash__(self) -> int:
-        return self._tid
-
-    @property
-    def title(self) -> str:
-        """
-        标题
-        """
-
-        return self._title
-
-    @property
-    def fid(self) -> int:
-        """
-        所在吧id
-        """
-
-        return self._fid
-
-    @property
-    def fname(self) -> str:
-        """
-        所在贴吧名
-        """
-
-        return self._fname
-
-    @property
-    def tid(self) -> int:
-        """
-        主题帖id
-        """
-
-        return self._tid
-
-    @property
-    def user(self) -> UserInfo_ct:
-        """
-        发布者的用户信息
-        """
-
-        return self._user
+        return self.tid
 
     @property
     def author_id(self) -> int:
-        """
-        发布者的user_id
-        """
-
-        return self._author_id
-
-    @property
-    def type(self) -> int:
-        """
-        帖子类型
-        """
-
-        return self._type
+        return self.user.user_id
 
     @property
     def is_help(self) -> bool:
-        """
-        是否为求助帖
-        """
-
-        return self._type == 71
-
-    @property
-    def reply_num(self) -> int:
-        """
-        回复数
-        """
-
-        return self._reply_num
+        return self.type == 71
 
 
-class FragImage_cp(object):
+@dcs.dataclass
+class FragImage_cp:
     """
     图像碎片
 
     Attributes:
-        src (str): 小图链接
-        big_src (str): 大图链接
+        src (str): 小图链接 宽720px 一定是静态图
+        big_src (str): 大图链接 宽960px
         origin_src (str): 原图链接
         origin_size (int): 原图大小
         show_width (int): 图像在客户端预览显示的宽度
@@ -1095,120 +494,47 @@ class FragImage_cp(object):
         hash (str): 百度图床hash
     """
 
-    __slots__ = [
-        '_src',
-        '_big_src',
-        '_origin_src',
-        '_origin_size',
-        '_show_width',
-        '_show_height',
-        '_hash',
-    ]
+    src: str = ""
+    big_src: str = ""
+    origin_src: str = ""
+    origin_size: int = 0
+    show_width: int = 0
+    show_height: int = 0
 
-    def __init__(self, data_proto: TypeMessage) -> None:
-        self._src = data_proto.cdn_src
-        self._big_src = data_proto.big_cdn_src
-        self._origin_src = data_proto.origin_src
-        self._origin_size = data_proto.origin_size
+    @staticmethod
+    def from_tbdata(data_proto: TypeMessage) -> "FragImage_cp":
+        src = data_proto.cdn_src
+        big_src = data_proto.big_cdn_src
+        origin_src = data_proto.origin_src
+        origin_size = data_proto.origin_size
 
         show_width, _, show_height = data_proto.bsize.partition(',')
-        self._show_width = int(show_width)
-        self._show_height = int(show_height)
+        show_width = int(show_width)
+        show_height = int(show_height)
 
-        self._hash = None
-
-    def __repr__(self) -> str:
-        return str(
-            {
-                'src': self._src,
-                'show_width': self._show_width,
-                'show_height': self._show_height,
-            }
-        )
-
-    @property
-    def src(self) -> str:
-        """
-        小图链接
-
-        Note:
-            宽720px\n
-            一定是静态图
-        """
-
-        return self._src
-
-    @property
-    def big_src(self) -> str:
-        """
-        大图链接
-
-        Note:
-            宽960px
-        """
-
-        return self._big_src
-
-    @property
-    def origin_src(self) -> str:
-        """
-        原图链接
-        """
-
-        return self._origin_src
-
-    @property
-    def origin_size(self) -> int:
-        """
-        原图大小
-
-        Note:
-            以字节为单位
-        """
-
-        return self._origin_size
-
-    @property
-    def show_width(self) -> int:
-        """
-        图像在客户端显示的宽度
-        """
-
-        return self._show_width
-
-    @property
-    def show_height(self) -> int:
-        """
-        图像在客户端显示的高度
-        """
-
-        return self._show_height
+        return FragImage_cp(src, big_src, origin_src, origin_size, show_width, show_height)
 
     @property
     def hash(self) -> str:
-        """
-        图像的百度图床hash
-        """
+        first_qmark_idx = self.src.find('?')
+        end_idx = self.src.rfind('.', 0, first_qmark_idx)
 
-        if self._hash is None:
-            first_qmark_idx = self._src.find('?')
-            end_idx = self._src.rfind('.', 0, first_qmark_idx)
+        if end_idx == -1:
+            hash_ = ''
+        else:
+            start_idx = self.src.rfind('/', 0, end_idx)
+            hash_ = self.src[start_idx + 1 : end_idx]
 
-            if end_idx == -1:
-                self._hash = ''
-            else:
-                start_idx = self._src.rfind('/', 0, end_idx)
-                self._hash = self._src[start_idx + 1 : end_idx]
-
-        return self._hash
+        return hash_
 
 
+@dcs.dataclass
 class Contents_cp(Containers[TypeFragment]):
     """
     内容碎片列表
 
     Attributes:
-        _objs (list[TypeFragment]): 所有内容碎片的混合列表
+        objs (list[TypeFragment]): 所有内容碎片的混合列表
 
         text (str): 文本内容
 
@@ -1221,57 +547,64 @@ class Contents_cp(Containers[TypeFragment]):
         voice (FragVoice_cp): 音频碎片
     """
 
-    __slots__ = [
-        '_text',
-        '_texts',
-        '_emojis',
-        '_imgs',
-        '_ats',
-        '_links',
-        '_tiebapluses',
-        '_voice',
-    ]
+    texts: List[TypeFragText] = dcs.field(default_factory=list, repr=False)
+    emojis: List[FragEmoji_cp] = dcs.field(default_factory=list, repr=False)
+    imgs: List[FragImage_cp] = dcs.field(default_factory=list, repr=False)
+    ats: List[FragAt_cp] = dcs.field(default_factory=list, repr=False)
+    links: List[FragLink_cp] = dcs.field(default_factory=list, repr=False)
+    tiebapluses: List[FragTiebaPlus_cp] = dcs.field(default_factory=list, repr=False)
+    voice: FragVoice_cp = dcs.field(default_factory=FragVoice_cp, repr=False)
 
-    def _init(self, data_proto: TypeMessage) -> "Contents_cp":
+    @staticmethod
+    def from_tbdata(data_proto: TypeMessage) -> "Contents_cp":
         content_protos = data_proto.content
+
+        texts = []
+        emojis = []
+        imgs = []
+        ats = []
+        links = []
+        tiebapluses = []
+        voice = FragVoice_cp()
 
         def _frags():
             for proto in content_protos:
                 _type = proto.type
                 # 0纯文本 9电话号 18话题 27百科词条
                 if _type in [0, 9, 18, 27]:
-                    frag = FragText_cp(proto)
-                    self._texts.append(frag)
+                    frag = FragText_cp.from_tbdata(proto)
+                    texts.append(frag)
                     yield frag
                 # 11:tid=5047676428
                 elif _type in [2, 11]:
-                    frag = FragEmoji_cp(proto)
-                    self._emojis.append(frag)
+                    frag = FragEmoji_cp.from_tbdata(proto)
+                    emojis.append(frag)
                     yield frag
                 # 20:tid=5470214675
                 elif _type in [3, 20]:
-                    frag = FragImage_cp(proto)
-                    self._imgs.append(frag)
+                    frag = FragImage_cp.from_tbdata(proto)
+                    imgs.append(frag)
                     yield frag
                 elif _type == 4:
-                    frag = FragAt_cp(proto)
-                    self._ats.append(frag)
-                    self._texts.append(frag)
+                    frag = FragAt_cp.from_tbdata(proto)
+                    ats.append(frag)
+                    texts.append(frag)
                     yield frag
                 elif _type == 1:
-                    frag = FragLink_cp(proto)
-                    self._links.append(frag)
-                    self._texts.append(frag)
+                    frag = FragLink_cp.from_tbdata(proto)
+                    links.append(frag)
+                    texts.append(frag)
                     yield frag
                 elif _type == 10:  # voice
-                    frag = FragVoice_cp()._init(proto)
-                    self._voice = frag
+                    frag = FragVoice_cp.from_tbdata(proto)
+                    nonlocal voice
+                    voice = frag
                     yield frag
                 # 35|36:tid=7769728331 / 37:tid=7760184147
                 elif _type in [35, 36, 37]:
-                    frag = FragTiebaPlus_cp(proto)
-                    self._tiebapluses.append(frag)
-                    self._texts.append(frag)
+                    frag = FragTiebaPlus_cp.from_tbdata(proto)
+                    tiebapluses.append(frag)
+                    texts.append(frag)
                     yield frag
                 # outdated tiebaplus
                 elif _type == 34:
@@ -1281,100 +614,18 @@ class Contents_cp(Containers[TypeFragment]):
 
                     LOG().warning(f"Unknown fragment type. type={_type} proto={proto}")
 
-        self._text = None
-        self._texts = []
-        self._emojis = []
-        self._imgs = []
-        self._ats = []
-        self._links = []
-        self._tiebapluses = []
-        self._voice = FragVoice_cp()._init_null()
-        self._objs = list(_frags())
-        return self
+        objs = list(_frags())
 
-    def _init_null(self) -> "Contents_cp":
-        self._objs = []
-        self._text = ""
-        self._texts = []
-        self._emojis = []
-        self._imgs = []
-        self._ats = []
-        self._links = []
-        self._tiebapluses = []
-        self._voice = FragVoice_cp()._init_null()
-        return self
+        return Contents_cp(objs, texts, emojis, imgs, ats, links, tiebapluses, voice)
 
-    def __repr__(self) -> str:
-        return str(self._objs)
-
-    @property
+    @cached_property
     def text(self) -> str:
-        """
-        文本内容
-        """
-
-        if self._text is None:
-            self._text = "".join(frag.text for frag in self.texts)
-        return self._text
-
-    @property
-    def texts(self) -> List[TypeFragText]:
-        """
-        纯文本碎片列表
-        """
-
-        return self._texts
-
-    @property
-    def emojis(self) -> List[FragEmoji_cp]:
-        """
-        表情碎片列表
-        """
-
-        return self._emojis
-
-    @property
-    def imgs(self) -> List[FragImage_cp]:
-        """
-        图像碎片列表
-        """
-
-        return self._imgs
-
-    @property
-    def ats(self) -> List[FragAt_cp]:
-        """
-        @碎片列表
-        """
-
-        return self._ats
-
-    @property
-    def links(self) -> List[FragLink_cp]:
-        """
-        链接碎片列表
-        """
-
-        return self._links
-
-    @property
-    def tiebapluses(self) -> List[FragTiebaPlus_cp]:
-        """
-        贴吧plus碎片列表
-        """
-
-        return self._tiebapluses
-
-    @property
-    def voice(self) -> FragVoice_cp:
-        """
-        音频碎片
-        """
-
-        return self._voice
+        text = "".join(frag.text for frag in self.texts)
+        return text
 
 
-class UserInfo_cp(object):
+@dcs.dataclass
+class UserInfo_cp:
     """
     用户信息
 
@@ -1385,227 +636,84 @@ class UserInfo_cp(object):
         nick_name_new (str): 新版昵称
 
         level (int): 等级
-        gender (int): 性别
+        gender (Gender): 性别
 
         is_bawu (bool): 是否吧务
         is_vip (bool): 是否超级会员
         is_god (bool): 是否大神
-        priv_like (int): 公开关注吧列表的设置状态
-        priv_reply (int): 帖子评论权限的设置状态
+        priv_like (PrivLike): 关注吧列表的公开状态
+        priv_reply (PrivReply): 帖子评论权限
 
         nick_name (str): 用户昵称
         show_name (str): 显示名称
         log_name (str): 用于在日志中记录用户信息
     """
 
-    __slots__ = [
-        '_user_id',
-        '_portrait',
-        '_user_name',
-        '_nick_name_new',
-        '_level',
-        '_gender',
-        '_is_bawu',
-        '_is_vip',
-        '_is_god',
-        '_priv_like',
-        '_priv_reply',
-    ]
+    user_id: int = 0
+    portrait: str = ''
+    user_name: str = ''
+    nick_name_new: str = ''
 
-    def _init(self, data_proto: TypeMessage) -> "UserInfo_cp":
-        self._user_id = data_proto.id
-        if '?' in (portrait := data_proto.portrait):
-            self._portrait = portrait[:-13]
-        else:
-            self._portrait = portrait
-        self._user_name = data_proto.name
-        self._nick_name_new = data_proto.name_show
-        self._level = data_proto.level_id
-        self._gender = data_proto.gender
-        self._is_bawu = bool(data_proto.is_bawu)
-        self._is_vip = bool(data_proto.new_tshow_icon)
-        self._is_god = bool(data_proto.new_god_data.status)
-        self._priv_like = priv_like if (priv_like := data_proto.priv_sets.like) else 1
-        self._priv_reply = priv_reply if (priv_reply := data_proto.priv_sets.reply) else 1
-        return self
+    level: int = 0
+    gender: Gender = Gender.UNKNOWN
 
-    def _init_null(self) -> "UserInfo_cp":
-        self._user_id = 0
-        self._portrait = ''
-        self._user_name = ''
-        self._nick_name_new = ''
-        self._level = 0
-        self._gender = 0
-        self._is_bawu = False
-        self._is_vip = False
-        self._is_god = False
-        self._priv_like = 1
-        self._priv_reply = 1
-        return self
+    is_bawu: bool = False
+    is_vip: bool = False
+    is_god: bool = False
+    priv_like: PrivLike = PrivLike.PUBLIC
+    priv_reply: PrivReply = PrivReply.ALL
 
-    def __str__(self) -> str:
-        return self._user_name or self._portrait or str(self._user_id)
-
-    def __repr__(self) -> str:
-        return str(
-            {
-                'user_id': self._user_id,
-                'show_name': self.show_name,
-                'level': self._level,
-            }
+    @staticmethod
+    def from_tbdata(data_proto: TypeMessage) -> "UserInfo_cp":
+        user_id = data_proto.id
+        portrait = data_proto.portrait
+        if '?' in portrait:
+            portrait = portrait[:-13]
+        user_name = data_proto.name
+        nick_name_new = data_proto.name_show
+        level = data_proto.level_id
+        gender = Gender(data_proto.gender)
+        is_bawu = bool(data_proto.is_bawu)
+        is_vip = bool(data_proto.new_tshow_icon)
+        is_god = bool(data_proto.new_god_data.status)
+        priv_like = PrivLike(priv_like) if (priv_like := data_proto.priv_sets.like) else PrivLike.PUBLIC
+        priv_reply = PrivReply(priv_reply) if (priv_reply := data_proto.priv_sets.reply) else PrivReply.ALL
+        return UserInfo_cp(
+            user_id, portrait, user_name, nick_name_new, level, gender, is_bawu, is_vip, is_god, priv_like, priv_reply
         )
 
+    def __str__(self) -> str:
+        return self.user_name or self.portrait or str(self.user_id)
+
     def __eq__(self, obj: "UserInfo_cp") -> bool:
-        return self._user_id == obj._user_id
+        return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
-        return self._user_id
-
-    def __int__(self) -> int:
-        return self._user_id
+        return self.user_id
 
     def __bool__(self) -> bool:
-        return bool(self._user_id)
-
-    @property
-    def user_id(self) -> int:
-        """
-        用户user_id
-
-        Note:
-            唯一 不可变 不可为空\n
-            请注意与用户个人页的tieba_uid区分
-        """
-
-        return self._user_id
-
-    @property
-    def portrait(self) -> str:
-        """
-        用户portrait
-
-        Note:
-            唯一 不可变 不可为空
-        """
-
-        return self._portrait
-
-    @property
-    def user_name(self) -> str:
-        """
-        用户名
-
-        Note:
-            唯一 可变 可为空\n
-            请注意与用户昵称区分
-        """
-
-        return self._user_name
-
-    @property
-    def nick_name_new(self) -> str:
-        """
-        新版昵称
-        """
-
-        return self._nick_name_new
-
-    @property
-    def level(self) -> int:
-        """
-        等级
-        """
-
-        return self._level
-
-    @property
-    def gender(self) -> int:
-        """
-        性别
-
-        Note:
-            0未知 1男 2女
-        """
-
-        return self._gender
-
-    @property
-    def is_bawu(self) -> bool:
-        """
-        是否吧务
-        """
-
-        return self._is_bawu
-
-    @property
-    def is_vip(self) -> bool:
-        """
-        是否超级会员
-        """
-
-        return self._is_vip
-
-    @property
-    def is_god(self) -> bool:
-        """
-        是否贴吧大神
-        """
-
-        return self._is_god
-
-    @property
-    def priv_like(self) -> int:
-        """
-        公开关注吧列表的设置状态
-
-        Note:
-            1完全可见 2好友可见 3完全隐藏
-        """
-
-        return self._priv_like
-
-    @property
-    def priv_reply(self) -> int:
-        """
-        帖子评论权限的设置状态
-
-        Note:
-            1允许所有人 5仅允许我的粉丝 6仅允许我的关注
-        """
-
-        return self._priv_reply
+        return bool(self.user_id)
 
     @property
     def nick_name(self) -> str:
-        """
-        用户昵称
-        """
-
-        return self._nick_name_new
+        return self.nick_name_new
 
     @property
     def show_name(self) -> str:
-        """
-        显示名称
-        """
+        return self.nick_name_new or self.user_name
 
-        return self._nick_name_new or self._user_name
-
-    @property
+    @cached_property
     def log_name(self) -> str:
-        """
-        用于在日志中记录用户信息
-        """
-
-        if self._user_name:
-            return self._user_name
-        elif self._portrait:
-            return f"{self._nick_name_new}/{self._portrait}"
+        if self.user_name:
+            return self.user_name
+        elif self.portrait:
+            return f"{self.nick_name_new}/{self.portrait}"
         else:
-            return str(self._user_id)
+            return str(self.user_id)
 
 
-class Post_c(object):
+@dcs.dataclass
+class Post_c:
     """
     楼层信息
 
@@ -1622,171 +730,58 @@ class Post_c(object):
         author_id (int): 发布者的user_id
 
         floor (int): 楼层数
-        create_time (int): 创建时间
+        create_time (int): 创建时间 10位时间戳 以秒为单位
     """
 
-    __slots__ = [
-        '_text',
-        '_contents',
-        '_sign',
-        '_fid',
-        '_fname',
-        '_tid',
-        '_pid',
-        '_user',
-        '_author_id',
-        '_floor',
-        '_create_time',
-    ]
+    contents: Contents_cp = dcs.field(default_factory=Contents_cp)
+    sign: str = ""
 
-    def _init(self, data_proto: TypeMessage) -> "Post_c":
-        self._text = None
-        self._contents = Contents_cp()._init(data_proto)
-        self._sign = "".join(p.text for p in data_proto.signature.content if p.type == 0)
-        self._pid = data_proto.id
-        self._user = UserInfo_cp()._init(data_proto.author)
-        self._author_id = self._user._user_id
-        self._floor = data_proto.floor
-        self._create_time = data_proto.time
-        return self
+    fid: int = 0
+    fname: str = ''
+    tid: int = 0
+    pid: int = 0
+    user: UserInfo_cp = dcs.field(default_factory=UserInfo_cp)
 
-    def _init_null(self) -> "Post_c":
-        self._text = ""
-        self._contents = Contents_cp()._init_null()
-        self._sign = ""
-        self._fid = 0
-        self._fname = ''
-        self._tid = 0
-        self._pid = 0
-        self._user = UserInfo_cp()._init_null()
-        self._author_id = 0
-        self._floor = 0
-        self._create_time = 0
-        return self
+    floor: int = 0
+    create_time: int = 0
 
-    def __repr__(self) -> str:
-        return str(
-            {
-                'tid': self._tid,
-                'pid': self._pid,
-                'user': self._user.log_name,
-                'text': self.text,
-                'floor': self._floor,
-            }
-        )
+    @staticmethod
+    def from_tbdata(data_proto: TypeMessage) -> "Post_c":
+        contents = Contents_cp.from_tbdata(data_proto)
+        sign = "".join(p.text for p in data_proto.signature.content if p.type == 0)
+        pid = data_proto.id
+        user = UserInfo_cp.from_tbdata(data_proto.author)
+        floor = data_proto.floor
+        create_time = data_proto.time
+        return Post_c(contents, sign, 0, '', 0, pid, user, floor, create_time)
 
     def __eq__(self, obj: "Post_c") -> bool:
-        return self._pid == obj._pid
+        return self.pid == obj.pid
 
     def __hash__(self) -> int:
-        return self._pid
+        return self.pid
 
-    @property
+    @cached_property
     def text(self) -> str:
-        """
-        文本内容
-
-        Note:
-            如果有小尾巴的话还会在正文后附上小尾巴
-        """
-
-        if self._text is None:
-            if self._sign:
-                self._text = f'{self._contents.text}\n{self._sign}'
-            else:
-                self._text = self._contents.text
-        return self._text
-
-    @property
-    def contents(self) -> Contents_cp:
-        """
-        正文内容碎片列表
-        """
-
-        return self._contents
-
-    @property
-    def sign(self) -> str:
-        """
-        小尾巴文本内容
-        """
-
-        return self._sign
-
-    @property
-    def fid(self) -> int:
-        """
-        所在吧id
-        """
-
-        return self._fid
-
-    @property
-    def fname(self) -> str:
-        """
-        所在贴吧名
-        """
-
-        return self._fname
-
-    @property
-    def tid(self) -> int:
-        """
-        所在主题帖id
-        """
-
-        return self._tid
-
-    @property
-    def pid(self) -> int:
-        """
-        回复id
-        """
-
-        return self._pid
-
-    @property
-    def user(self) -> UserInfo_cp:
-        """
-        发布者的用户信息
-        """
-
-        return self._user
+        if self.sign:
+            text = f'{self.contents.text}\n{self.sign}'
+        else:
+            text = self.contents.text
+        return text
 
     @property
     def author_id(self) -> int:
-        """
-        发布者的user_id
-        """
-
-        return self._author_id
-
-    @property
-    def floor(self) -> int:
-        """
-        楼层数
-        """
-
-        return self._floor
-
-    @property
-    def create_time(self) -> int:
-        """
-        创建时间
-
-        Note:
-            10位时间戳 以秒为单位
-        """
-
-        return self._create_time
+        return self.user.user_id
 
 
-class Comments(Containers[Comment]):
+@dcs.dataclass
+class Comments(TbErrorExt, Containers[Comment]):
     """
     楼中楼列表
 
     Attributes:
-        _objs (list[Comment]): 楼中楼列表
+        objs (list[Comment]): 楼中楼列表
+        err (Exception | None): 捕获的异常
 
         page (Page_c): 页信息
         has_more (bool): 是否还有下一页
@@ -1796,77 +791,34 @@ class Comments(Containers[Comment]):
         post (Post_c): 所在楼层信息
     """
 
-    __slots__ = [
-        '_page',
-        '_forum',
-        '_thread',
-        '_post',
-    ]
+    page: Page_c = dcs.field(default_factory=Page_c)
+    forum: Forum_c = dcs.field(default_factory=Forum_c)
+    thread: Thread_c = dcs.field(default_factory=Thread_c)
+    post: Post_c = dcs.field(default_factory=Post_c)
 
-    def __init__(self, data_proto: Optional[TypeMessage] = None) -> None:
-        if data_proto:
-            self._page = Page_c()._init(data_proto.page)
-            self._forum = Forum_c()._init(data_proto.forum)
-            self._thread = Thread_c()._init(data_proto.thread)
-            self._thread._fid = self._forum._fid
-            self._thread._fname = self._forum._fname
-            self._post = Post_c()._init(data_proto.post)
-            self._post._fid = self._thread._fid
-            self._post._fname = self._thread._fname
-            self._post._tid = self._thread._tid
+    @staticmethod
+    def from_tbdata(data_proto: TypeMessage) -> "Comments":
+        page = Page_c.from_tbdata(data_proto.page)
+        forum = Forum_c.from_tbdata(data_proto.forum)
+        thread = Thread_c.from_tbdata(data_proto.thread)
+        thread.fid = forum.fid
+        thread.fname = forum.fname
+        post = Post_c.from_tbdata(data_proto.post)
+        post.fid = thread.fid
+        post.fname = thread.fname
+        post.tid = thread.tid
 
-            self._objs = [Comment(p) for p in data_proto.subpost_list]
-            for comment in self._objs:
-                comment._fid = self.forum._fid
-                comment._fname = self.forum._fname
-                comment._tid = self.thread._tid
-                comment._ppid = self._post._pid
-                comment._floor = self._post._floor
-                comment._is_thread_author = self._thread._author_id == comment._author_id
+        objs = [Comment.from_tbdata(p) for p in data_proto.subpost_list]
+        for comment in objs:
+            comment.fid = forum.fid
+            comment.fname = forum.fname
+            comment.tid = thread.tid
+            comment.ppid = post.pid
+            comment.floor = post.floor
+            comment.is_thread_author = thread.author_id == comment.author_id
 
-        else:
-            self._objs = []
-            self._page = Page_c()._init_null()
-            self._forum = Forum_c()._init_null()
-            self._thread = Thread_c()._init_null()
-            self._post = Post_c()._init_null()
-
-    @property
-    def page(self) -> Page_c:
-        """
-        页信息
-        """
-
-        return self._page
+        return Comments(objs, page, forum, thread, post)
 
     @property
     def has_more(self) -> bool:
-        """
-        是否还有下一页
-        """
-
-        return self._page._has_more
-
-    @property
-    def forum(self) -> Forum_c:
-        """
-        所在吧信息
-        """
-
-        return self._forum
-
-    @property
-    def thread(self) -> Thread_c:
-        """
-        所在主题帖信息
-        """
-
-        return self._thread
-
-    @property
-    def post(self) -> Post_c:
-        """
-        所在楼层信息
-        """
-
-        return self._post
+        return self.page.has_more

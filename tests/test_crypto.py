@@ -10,8 +10,8 @@ async def test_clib(client: tb.Client):
     # assert client.account.z_id != ''
 
     account = client.account
-    account._android_id = "6723280942424242"
-    account._uuid = "67232809-3407-3442-4207-672346917aaa"
+    account.android_id = "6723280942424242"
+    account.uuid = "67232809-3407-3442-4207-672346917aaa"
     assert account.cuid_galaxy2 == '06C7F37D41256F25FABA97B885DB6EFB|VAPUDW7TA'
     assert account.c3_aid == 'A00-OGBA33NRAQASXI6FDZ4YAJFTK75EF4Y5-YVOG764X'
 

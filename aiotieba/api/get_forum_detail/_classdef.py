@@ -1,13 +1,17 @@
-from typing import Optional
+import dataclasses as dcs
 
+from ...exception import TbErrorExt
 from .._classdef import TypeMessage
 
 
-class Forum_detail(object):
+@dcs.dataclass
+class Forum_detail(TbErrorExt):
     """
     吧基本信息
 
     Attributes:
+        err (Exception | None): 捕获的异常
+
         fid (int): 贴吧id
         fname (str): 贴吧名
 
@@ -20,108 +24,26 @@ class Forum_detail(object):
         has_bawu (bool): 是否有吧务
     """
 
-    __slots__ = [
-        '_fid',
-        '_fname',
-        '_small_avatar',
-        '_origin_avatar',
-        '_slogan',
-        '_member_num',
-        '_post_num',
-        '_has_bawu',
-    ]
+    fid: int = 0
+    fname: str = ''
 
-    def __init__(self, data_proto: Optional[TypeMessage] = None) -> None:
-        if data_proto:
-            forum_proto = data_proto.forum_info
-            self._fid = forum_proto.forum_id
-            self._fname = forum_proto.forum_name
-            self._small_avatar = forum_proto.avatar
-            self._origin_avatar = forum_proto.avatar_origin
-            self._slogan = forum_proto.slogan
-            self._member_num = forum_proto.member_count
-            self._post_num = forum_proto.thread_count
-            self._has_bawu = data_proto.election_tab.new_manager_status == 5
-        else:
-            self._fid = 0
-            self._fname = ''
-            self._small_avatar = ''
-            self._origin_avatar = ''
-            self._slogan = ''
-            self._member_num = 0
-            self._post_num = 0
-            self._has_bawu = False
+    small_avatar: str = ""
+    origin_avatar: str = ""
+    slogan: str = ""
+    member_num: int = 0
+    post_num: int = 0
 
-    def __repr__(self) -> str:
-        return str(
-            {
-                'fid': self._fid,
-                'fname': self._fname,
-                'member_num': self._member_num,
-                'post_num': self._post_num,
-            }
-        )
+    has_bawu: bool = False
 
-    @property
-    def fid(self) -> int:
-        """
-        贴吧id
-        """
-
-        return self._fid
-
-    @property
-    def fname(self) -> str:
-        """
-        贴吧名
-        """
-
-        return self._fname
-
-    @property
-    def small_avatar(self) -> str:
-        """
-        吧头像(小)
-        """
-
-        return self._small_avatar
-
-    @property
-    def origin_avatar(self) -> str:
-        """
-        吧头像(原图)
-        """
-
-        return self._origin_avatar
-
-    @property
-    def slogan(self) -> str:
-        """
-        吧标语
-        """
-
-        return self._slogan
-
-    @property
-    def member_num(self) -> int:
-        """
-        吧会员数
-        """
-
-        return self._member_num
-
-    @property
-    def post_num(self) -> int:
-        """
-        发帖量
-        """
-
-        return self._post_num
-
-    @property
-    def has_bawu(self) -> bool:
-        """
-        是否有吧务
-        """
-
-        return self._has_bawu
+    @staticmethod
+    def from_tbdata(data_proto: TypeMessage) -> "Forum_detail":
+        forum_proto = data_proto.forum_info
+        fid = forum_proto.forum_id
+        fname = forum_proto.forum_name
+        small_avatar = forum_proto.avatar
+        origin_avatar = forum_proto.avatar_origin
+        slogan = forum_proto.slogan
+        member_num = forum_proto.member_count
+        post_num = forum_proto.thread_count
+        has_bawu = data_proto.election_tab.new_manager_status == 5
+        return Forum_detail(fid, fname, small_avatar, origin_avatar, slogan, member_num, post_num, has_bawu)

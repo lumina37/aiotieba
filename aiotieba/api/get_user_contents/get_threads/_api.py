@@ -1,18 +1,16 @@
-from typing import List
-
 import yarl
 
 from ....const import APP_BASE_HOST, APP_SECURE_SCHEME, MAIN_VERSION
 from ....core import Account, HttpCore, WsCore
 from ....exception import TiebaServerError
-from .._classdef import UserInfo_u, UserThread
+from .._classdef import UserThreads
 from .._const import CMD
 from ..protobuf import UserPostReqIdl_pb2, UserPostResIdl_pb2
 
 
 def pack_proto(account: Account, user_id: int, pn: int, public_only: bool) -> bytes:
     req_proto = UserPostReqIdl_pb2.UserPostReqIdl()
-    req_proto.data.common.BDUSS = account._BDUSS
+    req_proto.data.common.BDUSS = account.BDUSS
     req_proto.data.common._client_version = MAIN_VERSION
     req_proto.data.user_id = user_id
     req_proto.data.is_thread = 1
@@ -23,7 +21,7 @@ def pack_proto(account: Account, user_id: int, pn: int, public_only: bool) -> by
     return req_proto.SerializeToString()
 
 
-def parse_body(body: bytes) -> List[UserThread]:
+def parse_body(body: bytes) -> UserThreads:
     res_proto = UserPostResIdl_pb2.UserPostResIdl()
     res_proto.ParseFromString(body)
 
@@ -31,17 +29,12 @@ def parse_body(body: bytes) -> List[UserThread]:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    uthreads = [UserThread(p) for p in data_proto.post_list]
-    if uthreads:
-        user = UserInfo_u(data_proto.post_list[0])
-        for uthread in uthreads:
-            uthread._user = user
-            uthread._author_id = user._user_id
+    uthreads = UserThreads.from_tbdata(data_proto)
 
     return uthreads
 
 
-async def request_http(http_core: HttpCore, user_id: int, pn: int, public_only: bool) -> List[UserThread]:
+async def request_http(http_core: HttpCore, user_id: int, pn: int, public_only: bool) -> UserThreads:
     data = pack_proto(http_core.account, user_id, pn, public_only)
 
     request = http_core.pack_proto_request(
@@ -51,16 +44,12 @@ async def request_http(http_core: HttpCore, user_id: int, pn: int, public_only: 
         data,
     )
 
-    __log__ = "user_id={user_id}"  # noqa: F841
-
     body = await http_core.net_core.send_request(request, read_bufsize=64 * 1024)
     return parse_body(body)
 
 
-async def request_ws(ws_core: WsCore, user_id: int, pn: int, public_only: bool) -> List[UserThread]:
+async def request_ws(ws_core: WsCore, user_id: int, pn: int, public_only: bool) -> UserThreads:
     data = pack_proto(ws_core.account, user_id, pn, public_only)
-
-    __log__ = "user_id={user_id}"  # noqa: F841
 
     response = await ws_core.send(data, CMD)
     return parse_body(await response.read())

@@ -20,15 +20,13 @@ def parse_body(body: bytes) -> Dict[str, str]:
 
 async def request(http_core: HttpCore, fname: str) -> Dict[str, str]:
     data = [
-        ('BDUSS', http_core.account._BDUSS),
+        ('BDUSS', http_core.account.BDUSS),
         ('word', fname),
     ]
 
     request = http_core.pack_form_request(
         yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/c/bawu/goodlist"), data
     )
-
-    __log__ = "fname={fname}"  # noqa: F841
 
     body = await http_core.net_core.send_request(request, read_bufsize=1024)
     return parse_body(body)

@@ -27,11 +27,12 @@ nav:
   - 教程:
       - 入门教程: tutorial/start.md
       - 异步编程入门教程: tutorial/async_start.md
-      - 配置文件参考: tutorial/config.md
       - 实用微脚本合集: tutorial/many_utils.md
   - 参考文档:
       - 客户端 (Client): ref/client.md
-      - 枚举定义: ref/enums.md
+      - 枚举: ref/enums.md
+      - 超时配置: ref/config.md
+      - 异常处理: ref/exception.md
       - 类型定义:
           - forum_detail: ref/classdef/forum_detail.md
           - threads: ref/classdef/threads.md
@@ -40,16 +41,17 @@ nav:
           - searches: ref/classdef/searches.md
           - user_info: ref/classdef/user_info.md
           - profile: ref/classdef/profile.md
+          - follow_forums: ref/classdef/follow_forums.md
+          - self_follow_forums: ref/classdef/self_follow_forums.md
+          - user_contents: ref/classdef/user_contents.md
+          - images: ref/classdef/images.md
+          - replys: ref/classdef/replys.md
+          - ats: ref/classdef/ats.md
           - follows: ref/classdef/follows.md
           - fans: ref/classdef/fans.md
           - blacklist: ref/classdef/blacklist.md
           - blacklist_old: ref/classdef/blacklist_old.md
-          - follow_forums: ref/classdef/follow_forums.md
-          - self_follow_forums: ref/classdef/self_follow_forums.md
           - dislike_forums: ref/classdef/dislike_forums.md
-          - user_contents: ref/classdef/user_contents.md
-          - replys: ref/classdef/replys.md
-          - ats: ref/classdef/ats.md
           - square_forums: ref/classdef/square_forums.md
           - bawu_info: ref/classdef/bawu_info.md
           - god_threads: ref/classdef/god_threads.md

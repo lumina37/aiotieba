@@ -13,14 +13,14 @@ def parse_body(body: bytes) -> UserInfo_selfinit:
         raise TiebaServerError(code, res_json['error_msg'])
 
     user_dict = res_json['user_info']
-    user = UserInfo_selfinit(user_dict)
+    user = UserInfo_selfinit.from_tbdata(user_dict)
 
     return user
 
 
 async def request(http_core: HttpCore) -> UserInfo_selfinit:
     data = [
-        ('BDUSS', http_core.account._BDUSS),
+        ('BDUSS', http_core.account.BDUSS),
         ('_client_version', MAIN_VERSION),
     ]
 

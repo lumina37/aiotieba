@@ -14,7 +14,7 @@ def parse_body(body: bytes) -> Recovers:
     if code := res_json['no']:
         raise TiebaServerError(code, res_json['error'])
 
-    recovers = Recovers(res_json)
+    recovers = Recovers.from_tbdata(res_json)
 
     return recovers
 
@@ -33,8 +33,6 @@ async def request(http_core: HttpCore, fid: int, user_id: Optional[int], pn: int
     request = http_core.pack_web_get_request(
         yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mo/q/manage/getRecoverList"), params
     )
-
-    __log__ = "fid={fid}"  # noqa: F841
 
     body = await http_core.net_core.send_request(request, read_bufsize=64 * 1024)
     return parse_body(body)

@@ -25,7 +25,7 @@ def parse_body(body: bytes) -> Forum_detail:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    forum = Forum_detail(data_proto)
+    forum = Forum_detail.from_tbdata(data_proto)
 
     return forum
 
@@ -40,16 +40,12 @@ async def request_http(http_core: HttpCore, fid: int) -> Forum_detail:
         data,
     )
 
-    __log__ = "fid={fid}"  # noqa: F841
-
     body = await http_core.net_core.send_request(request, read_bufsize=4 * 1024)
     return parse_body(body)
 
 
 async def request_ws(ws_core: WsCore, fid: int) -> Forum_detail:
     data = pack_proto(fid)
-
-    __log__ = "fid={fid}"  # noqa: F841
 
     response = await ws_core.send(data, CMD)
     return parse_body(await response.read())

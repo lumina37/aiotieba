@@ -1,5 +1,4 @@
 import datetime
-import sys
 import time
 
 import yarl
@@ -7,8 +6,7 @@ import yarl
 from ...__version__ import __version__
 from ...const import APP_BASE_HOST, APP_SECURE_SCHEME, POST_VERSION
 from ...core import Account, HttpCore, WsCore
-from ...exception import TiebaServerError, TiebaValueError
-from ...helper import log_success
+from ...exception import BoolResponse, TiebaServerError, TiebaValueError
 from .protobuf import AddPostReqIdl_pb2, AddPostResIdl_pb2
 
 CMD = 309731
@@ -26,7 +24,7 @@ def parse_body(body: bytes) -> None:
 
 def pack_proto(account: Account, fname: str, fid: int, tid: int, show_name: str, content: str) -> bytes:
     req_proto = AddPostReqIdl_pb2.AddPostReqIdl()
-    req_proto.data.common.BDUSS = account._BDUSS
+    req_proto.data.common.BDUSS = account.BDUSS
     req_proto.data.common._client_type = 2
     req_proto.data.common._client_version = POST_VERSION
     req_proto.data.common._client_id = account.client_id
@@ -38,19 +36,19 @@ def pack_proto(account: Account, fname: str, fid: int, tid: int, show_name: str,
     current_dt = datetime.datetime.fromtimestamp(current_ts)
     req_proto.data.common._timestamp = current_tsms
     req_proto.data.common.model = 'SM-G988N'
-    req_proto.data.common.tbs = account._tbs
+    req_proto.data.common.tbs = account.tbs
     req_proto.data.common.net_type = 1
     req_proto.data.common.pversion = '1.0.3'
     req_proto.data.common._os_version = '9'
     req_proto.data.common.brand = 'samsung'
     req_proto.data.common.lego_lib_version = '3.0.0'
     req_proto.data.common.applist = ''
-    req_proto.data.common.stoken = account._STOKEN
-    req_proto.data.common.z_id = account._z_id
-    req_proto.data.common.cuid_galaxy2 = account._cuid_galaxy2
+    req_proto.data.common.stoken = account.STOKEN
+    req_proto.data.common.z_id = account.z_id
+    req_proto.data.common.cuid_galaxy2 = account.cuid_galaxy2
     req_proto.data.common.cuid_gid = ''
     req_proto.data.common.c3_aid = account.c3_aid
-    req_proto.data.common.sample_id = account._sample_id
+    req_proto.data.common.sample_id = account.sample_id
     req_proto.data.common.scr_w = 720
     req_proto.data.common.scr_w = 1280
     req_proto.data.common.scr_dip = 1.5
@@ -98,7 +96,9 @@ def pack_proto(account: Account, fname: str, fid: int, tid: int, show_name: str,
     return req_proto.SerializeToString()
 
 
-async def request_http(http_core: HttpCore, fname: str, fid: int, tid: int, show_name: str, content: str) -> bool:
+async def request_http(
+    http_core: HttpCore, fname: str, fid: int, tid: int, show_name: str, content: str
+) -> BoolResponse:
     data = pack_proto(http_core.account, fname, fid, tid, show_name, content)
 
     request = http_core.pack_proto_request(
@@ -106,22 +106,16 @@ async def request_http(http_core: HttpCore, fname: str, fid: int, tid: int, show
         data,
     )
 
-    __log__ = f"fname={fname} tid={tid}"
-
     body = await http_core.net_core.send_request(request, read_bufsize=1024)
     parse_body(body)
 
-    log_success(sys._getframe(1), __log__)
-    return True
+    return BoolResponse()
 
 
-async def request_ws(ws_core: WsCore, fname: str, fid: int, tid: int, show_name: str, content: str) -> bool:
+async def request_ws(ws_core: WsCore, fname: str, fid: int, tid: int, show_name: str, content: str) -> BoolResponse:
     data = pack_proto(ws_core.account, fname, fid, tid, show_name, content)
-
-    __log__ = f"fname={fname} tid={tid}"
 
     response = await ws_core.send(data, CMD)
     parse_body(await response.read())
 
-    log_success(sys._getframe(1), __log__)
-    return True
+    return BoolResponse()

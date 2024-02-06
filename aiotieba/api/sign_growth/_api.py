@@ -1,11 +1,9 @@
-import sys
-
 import yarl
 
 from ...const import APP_BASE_HOST, APP_SECURE_SCHEME, WEB_BASE_HOST
 from ...core import HttpCore
-from ...exception import TiebaServerError
-from ...helper import log_success, parse_json
+from ...exception import BoolResponse, TiebaServerError
+from ...helper import parse_json
 
 
 def parse_body_web(body: bytes) -> None:
@@ -14,9 +12,9 @@ def parse_body_web(body: bytes) -> None:
         raise TiebaServerError(code, res_json['error'])
 
 
-async def request_web(http_core: HttpCore, act_type: str) -> bool:
+async def request_web(http_core: HttpCore, act_type: str) -> BoolResponse:
     data = [
-        ('tbs', http_core.account._tbs),
+        ('tbs', http_core.account.tbs),
         ('act_type', act_type),
         ('cuid', '-'),
     ]
@@ -28,8 +26,7 @@ async def request_web(http_core: HttpCore, act_type: str) -> bool:
     body = await http_core.net_core.send_request(request, read_bufsize=1024)
     parse_body_web(body)
 
-    log_success(sys._getframe(1))
-    return True
+    return BoolResponse()
 
 
 def parse_body_app(body: bytes) -> None:
@@ -38,12 +35,12 @@ def parse_body_app(body: bytes) -> None:
         raise TiebaServerError(code, res_json['error_msg'])
 
 
-async def request_app(http_core: HttpCore, act_type: str) -> bool:
+async def request_app(http_core: HttpCore, act_type: str) -> BoolResponse:
     data = [
-        ('BDUSS', http_core.account._BDUSS),
+        ('BDUSS', http_core.account.BDUSS),
         ('act_type', act_type),
         ('cuid', '-'),
-        ('tbs', http_core.account._tbs),
+        ('tbs', http_core.account.tbs),
     ]
 
     request = http_core.pack_form_request(
@@ -53,5 +50,4 @@ async def request_app(http_core: HttpCore, act_type: str) -> bool:
     body = await http_core.net_core.send_request(request, read_bufsize=1024)
     parse_body_app(body)
 
-    log_success(sys._getframe(1))
-    return True
+    return BoolResponse()

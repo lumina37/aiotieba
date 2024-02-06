@@ -1,9 +1,11 @@
+import dataclasses as dcs
 from typing import List
 
 from .common import TypeMessage
 
 
-class VoteOption(object):
+@dcs.dataclass
+class VoteOption:
     """
     投票选项信息
 
@@ -12,33 +14,18 @@ class VoteOption(object):
         text (str): 选项描述文字
     """
 
-    __slots__ = [
-        '_vote_num',
-        '_text',
-    ]
+    vote_num: int = 0
+    text: str = ""
 
-    def __init__(self, data_proto: TypeMessage) -> None:
-        self._vote_num = data_proto.num
-        self._text = data_proto.text
-
-    @property
-    def vote_num(self) -> int:
-        """
-        得票数
-        """
-
-        return self._vote_num
-
-    @property
-    def text(self) -> str:
-        """
-        选项文字
-        """
-
-        return self._text
+    @staticmethod
+    def from_tbdata(data_proto: TypeMessage) -> "VoteOption":
+        vote_num = data_proto.num
+        text = data_proto.text
+        return VoteOption(vote_num, text)
 
 
-class VoteInfo(object):
+@dcs.dataclass
+class VoteInfo:
     """
     投票信息
 
@@ -50,72 +37,23 @@ class VoteInfo(object):
         total_user (int): 总投票人数
     """
 
-    __slots__ = [
-        '_title',
-        '_is_multi',
-        '_options',
-        '_total_vote',
-        '_total_user',
-    ]
+    title: str = ""
+    is_multi: bool = False
+    options: List[VoteOption] = dcs.field(default_factory=list)
+    total_vote: int = 0
+    total_user: int = 0
 
-    def _init(self, data_proto: TypeMessage) -> "VoteInfo":
-        self._title = data_proto.title
-        self._is_multi = bool(data_proto.is_multi)
-        self._options = [VoteOption(p) for p in data_proto.options]
-        self._total_vote = data_proto.total_poll
-        self._total_user = data_proto.total_num
-        return self
-
-    def _init_null(self) -> "VoteInfo":
-        self._title = ''
-        self._is_multi = False
-        self._options = []
-        self._total_vote = 0
-        self._total_user = 0
-        return self
+    @staticmethod
+    def from_tbdata(data_proto: TypeMessage) -> "VoteInfo":
+        title = data_proto.title
+        is_multi = bool(data_proto.is_multi)
+        options = [VoteOption.from_tbdata(p) for p in data_proto.options]
+        total_vote = data_proto.total_poll
+        total_user = data_proto.total_num
+        return VoteInfo(title, is_multi, options, total_vote, total_user)
 
     def __len__(self) -> int:
-        return self.options.__len__()
+        return len(self.options)
 
     def __bool__(self) -> bool:
         return bool(self.options)
-
-    @property
-    def title(self) -> str:
-        """
-        投票标题
-        """
-
-        return self._title
-
-    @property
-    def is_multi(self) -> bool:
-        """
-        是否多选
-        """
-
-        return self._is_multi
-
-    @property
-    def options(self) -> List[VoteOption]:
-        """
-        选项列表
-        """
-
-        return self._options
-
-    @property
-    def total_vote(self) -> int:
-        """
-        总投票数
-        """
-
-        return self._total_vote
-
-    @property
-    def total_user(self) -> int:
-        """
-        总投票人数
-        """
-
-        return self._total_user

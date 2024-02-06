@@ -12,7 +12,7 @@ def parse_body(body: bytes) -> Appeals:
     if code := res_json['no']:
         raise TiebaServerError(code, res_json['error'])
 
-    appeals = Appeals(res_json)
+    appeals = Appeals.from_tbdata(res_json)
 
     return appeals
 
@@ -23,14 +23,12 @@ async def request(http_core: HttpCore, fid: int, pn: int, rn: int) -> Appeals:
         ('fid', fid),
         ('pn', pn),
         ('rn', rn),
-        ('tbs', http_core.account._tbs),
+        ('tbs', http_core.account.tbs),
     ]
 
     request = http_core.pack_web_form_request(
         yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mo/q/getBawuAppealList"), data
     )
-
-    __log__ = "fid={fid}"  # noqa: F841
 
     body = await http_core.net_core.send_request(request, read_bufsize=64 * 1024)
     return parse_body(body)

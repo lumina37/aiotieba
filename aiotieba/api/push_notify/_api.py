@@ -10,6 +10,6 @@ def parse_body(body: bytes) -> List[WsNotify]:
     res_proto = PushNotifyResIdl_pb2.PushNotifyResIdl()
     res_proto.ParseFromString(body)
 
-    notifies = [WsNotify(p) for p in res_proto.multiMsg]
+    notifies = [WsNotify.from_tbdata(p) for p in res_proto.multiMsg]
 
     return notifies

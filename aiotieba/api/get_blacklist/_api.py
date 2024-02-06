@@ -12,14 +12,14 @@ def parse_body(body: bytes) -> BlacklistUsers:
     if code := int(res_json['error_code']):
         raise TiebaServerError(code, res_json['error_msg'])
 
-    blacklist_users = BlacklistUsers(res_json)
+    blacklist_users = BlacklistUsers.from_tbdata(res_json)
 
     return blacklist_users
 
 
 async def request(http_core: HttpCore) -> BlacklistUsers:
     data = [
-        ('BDUSS', http_core.account._BDUSS),
+        ('BDUSS', http_core.account.BDUSS),
         ('_client_version', MAIN_VERSION),
     ]
 

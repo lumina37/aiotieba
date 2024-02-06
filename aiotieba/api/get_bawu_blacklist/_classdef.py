@@ -1,11 +1,13 @@
-from typing import Optional
+import dataclasses as dcs
 
 import bs4
 
+from ...exception import TbErrorExt
 from .._classdef import Containers
 
 
-class BawuBlacklistUser(object):
+@dcs.dataclass
+class BawuBlacklistUser:
     """
     用户信息
 
@@ -17,81 +19,37 @@ class BawuBlacklistUser(object):
         log_name (str): 用于在日志中记录用户信息
     """
 
-    __slots__ = [
-        '_user_id',
-        '_portrait',
-        '_user_name',
-    ]
+    user_id: int = 0
+    portrait: str = ''
+    user_name: str = ''
 
-    def __init__(self, data_tag: bs4.element.Tag) -> None:
+    @staticmethod
+    def from_tbdata(data_tag: bs4.element.Tag) -> "BawuBlacklistUser":
         user_info_item = data_tag.previous_sibling.input
-        self._user_name = user_info_item['data-user-name']
-        self._user_id = int(user_info_item['data-user-id'])
-        self._portrait = data_tag.a['href'][14:-17]
+        user_name = user_info_item['data-user-name']
+        user_id = int(user_info_item['data-user-id'])
+        portrait = data_tag.a['href'][14:-17]
+        return BawuBlacklistUser(user_id, portrait, user_name)
 
     def __str__(self) -> str:
-        return self._user_name or self._portrait or str(self._user_id)
-
-    def __repr__(self) -> str:
-        return str({'user_id': self._user_id})
+        return self.user_name or self.portrait or str(self.user_id)
 
     def __eq__(self, obj: "BawuBlacklistUser") -> bool:
-        return self._user_id == obj._user_id
+        return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
-        return self._user_id
-
-    def __int__(self) -> int:
-        return self._user_id
+        return self.user_id
 
     def __bool__(self) -> bool:
-        return bool(self._user_id)
-
-    @property
-    def user_id(self) -> int:
-        """
-        用户user_id
-
-        Note:
-            唯一 不可变 不可为空\n
-            请注意与用户个人页的tieba_uid区分
-        """
-
-        return self._user_id
-
-    @property
-    def portrait(self) -> str:
-        """
-        用户portrait
-
-        Note:
-            唯一 不可变 不可为空
-        """
-
-        return self._portrait
-
-    @property
-    def user_name(self) -> str:
-        """
-        用户名
-
-        Note:
-            唯一 可变 可为空\n
-            请注意与用户昵称区分
-        """
-
-        return self._user_name
+        return bool(self.user_id)
 
     @property
     def log_name(self) -> str:
-        """
-        用于在日志中记录用户信息
-        """
-
-        return self.__str__()
+        return str(self)
 
 
-class Page_bwblacklist(object):
+@dcs.dataclass
+class Page_bwblacklist:
     """
     页信息
 
@@ -103,107 +61,43 @@ class Page_bwblacklist(object):
         has_prev (bool): 是否有前驱页
     """
 
-    __slots__ = [
-        '_current_page',
-        '_total_page',
-        '_has_more',
-        '_has_prev',
-    ]
+    current_page: int = 0
+    total_page: int = 0
 
-    def _init(self, data_tag: bs4.element.Tag) -> "Page_bwblacklist":
-        self._current_page = int(data_tag.text)
+    has_more: bool = False
+    has_prev: bool = False
+
+    def from_tbdata(data_tag: bs4.element.Tag) -> "Page_bwblacklist":
+        current_page = int(data_tag.text)
         total_page_item = data_tag.parent.next_sibling
-        self._total_page = int(total_page_item.text[1:-1])
-        self._has_more = self._current_page < self._total_page
-        self._has_prev = self._current_page > 1
-        return self
-
-    def _init_null(self) -> "Page_bwblacklist":
-        self._current_page = 0
-        self._total_page = 0
-        self._has_more = False
-        self._has_prev = False
-        return self
-
-    def __repr__(self) -> str:
-        return str(
-            {
-                'current_page': self._current_page,
-                'has_more': self._has_more,
-                'has_prev': self._has_prev,
-            }
-        )
-
-    @property
-    def current_page(self) -> int:
-        """
-        当前页码
-        """
-
-        return self._current_page
-
-    @property
-    def total_page(self) -> int:
-        """
-        总页码
-        """
-
-        return self._total_page
-
-    @property
-    def has_more(self) -> bool:
-        """
-        是否有后继页
-        """
-
-        return self._has_more
-
-    @property
-    def has_prev(self) -> bool:
-        """
-        是否有前驱页
-        """
-
-        return self._has_prev
+        total_page = int(total_page_item.text[1:-1])
+        has_more = current_page < total_page
+        has_prev = current_page > 1
+        return Page_bwblacklist(current_page, total_page, has_more, has_prev)
 
 
-class BawuBlacklistUsers(Containers[BawuBlacklistUser]):
+@dcs.dataclass
+class BawuBlacklistUsers(TbErrorExt, Containers[BawuBlacklistUser]):
     """
     吧务黑名单列表
 
     Attributes:
-        _objs (list[BawuBlacklistUser]): 吧务黑名单列表
+        objs (list[BawuBlacklistUser]): 吧务黑名单列表
+        err (Exception | None): 捕获的异常
 
         page (Page_bwblacklist): 页信息
         has_more (bool): 是否还有下一页
     """
 
-    __slots__ = [
-        '_raw_objs',
-        '_page',
-    ]
+    page: Page_bwblacklist = dcs.field(default_factory=Page_bwblacklist)
 
-    def __init__(self, data_soup: Optional[bs4.BeautifulSoup] = None) -> None:
-        if data_soup:
-            self._objs = [BawuBlacklistUser(_tag) for _tag in data_soup('td', class_='left_cell')]
-            page_tag = data_soup.find('div', class_='tbui_pagination').find('li', class_='active')
-            self._page = Page_bwblacklist()._init(page_tag)
-        else:
-            self._objs = []
-            self._page = Page_bwblacklist()._init_null()
-
-    @property
-    def page(self) -> Page_bwblacklist:
-        """
-        页信息
-        """
-
-        return self._page
+    @staticmethod
+    def from_tbdata(data_soup: bs4.BeautifulSoup) -> "BawuBlacklistUsers":
+        objs = [BawuBlacklistUser.from_tbdata(t) for t in data_soup('td', class_='left_cell')]
+        page_tag = data_soup.find('div', class_='tbui_pagination').find('li', class_='active')
+        page = Page_bwblacklist.from_tbdata(page_tag)
+        return BawuBlacklistUsers(objs, page)
 
     @property
     def has_more(self) -> bool:
-        """
-        是否还有下一页
-        """
-
-        return self._page._has_more
+        return self.page.has_more

@@ -12,7 +12,7 @@ from ._classdef import Userlogs
 
 def parse_body(body: bytes) -> Userlogs:
     soup = bs4.BeautifulSoup(body, 'lxml')
-    bawu_userlogs = Userlogs(soup)
+    bawu_userlogs = Userlogs.from_tbdata(soup)
 
     return bawu_userlogs
 
@@ -48,8 +48,6 @@ async def request(
     request = http_core.pack_web_get_request(
         yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/bawu2/platform/listUserLog"), params
     )
-
-    __log__ = "fname={fname}"  # noqa: F841
 
     body = await http_core.net_core.send_request(request, read_bufsize=16 * 1024)
     return parse_body(body)

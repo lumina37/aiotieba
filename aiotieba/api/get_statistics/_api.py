@@ -13,14 +13,14 @@ def parse_body(body: bytes) -> Statistics:
         raise TiebaServerError(code, res_json['error_msg'])
 
     data_seq = res_json['data']
-    stat = Statistics(data_seq)
+    stat = Statistics.from_tbdata(data_seq)
 
     return stat
 
 
 async def request(http_core: HttpCore, fid: int) -> Statistics:
     data = [
-        ('BDUSS', http_core.account._BDUSS),
+        ('BDUSS', http_core.account.BDUSS),
         ('_client_version', MAIN_VERSION),
         ('forum_id', fid),
     ]
@@ -28,8 +28,6 @@ async def request(http_core: HttpCore, fid: int) -> Statistics:
     request = http_core.pack_form_request(
         yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/forum/getforumdata"), data
     )
-
-    __log__ = "fid={fid}"  # noqa: F841
 
     body = await http_core.net_core.send_request(request, read_bufsize=4 * 1024)
     return parse_body(body)

@@ -12,7 +12,7 @@ from ._classdef import Postlogs
 
 def parse_body(body: bytes) -> Postlogs:
     soup = bs4.BeautifulSoup(body, 'lxml')
-    bawu_postlogs = Postlogs(soup)
+    bawu_postlogs = Postlogs.from_tbdata(soup)
 
     return bawu_postlogs
 
@@ -48,8 +48,6 @@ async def request(
     request = http_core.pack_web_get_request(
         yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/bawu2/platform/listPostLog"), params
     )
-
-    __log__ = "fname={fname}"  # noqa: F841
 
     body = await http_core.net_core.send_request(request, read_bufsize=64 * 1024)
     return parse_body(body)

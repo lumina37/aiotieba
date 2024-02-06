@@ -1,22 +1,12 @@
-from typing import TYPE_CHECKING
-
 import aiohttp
 import yarl
 
 from ...core import HttpCore
 from ...exception import ContentTypeError, HTTPStatusError
-
-if TYPE_CHECKING:
-    import numpy as np
+from ._classdef import Image, ImageBytes
 
 
-def null_ret_factory() -> "np.ndarray":
-    import numpy as np
-
-    return np.empty(0, dtype=np.uint8)
-
-
-def headers_checker(response: aiohttp.ClientResponse) -> None:
+def _headers_checker(response: aiohttp.ClientResponse) -> None:
     if response.status != 200:
         raise HTTPStatusError(response.status, response.reason)
 
@@ -24,7 +14,7 @@ def headers_checker(response: aiohttp.ClientResponse) -> None:
         raise ContentTypeError(f"Expect jpeg, png or bmp, got {response.content_type}")
 
 
-def parse_body(body: bytes) -> "np.ndarray":
+def parse_body(body: bytes) -> Image:
     import cv2 as cv
     import numpy as np
 
@@ -32,18 +22,17 @@ def parse_body(body: bytes) -> "np.ndarray":
     if image is None:
         raise RuntimeError("Error in cv2.imdecode")
 
-    return image
+    return Image(image)
 
 
-async def request_bytes(http_core: HttpCore, url: yarl.URL) -> bytes:
+async def request_bytes(http_core: HttpCore, url: yarl.URL) -> ImageBytes:
     request = http_core.pack_web_get_request(url, [])
 
-    __log__ = "url={url}"  # noqa: F841
+    body = await http_core.net_core.send_request(request, read_bufsize=256 * 1024, headers_checker=_headers_checker)
 
-    body = await http_core.net_core.send_request(request, read_bufsize=256 * 1024, headers_checker=headers_checker)
-    return body
+    return ImageBytes(body)
 
 
-async def request(http_core: HttpCore, url: yarl.URL) -> "np.ndarray":
+async def request(http_core: HttpCore, url: yarl.URL) -> Image:
     body = await request_bytes(http_core, url)
     return parse_body(body)

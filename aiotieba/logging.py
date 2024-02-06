@@ -6,8 +6,6 @@ from pathlib import Path
 logging.addLevelName(logging.FATAL, "FATAL")
 logging.addLevelName(logging.WARN, "WARN")
 
-logging.logThreads = False
-logging.logMultiprocessing = False
 logging.raiseExceptions = False
 logging.Formatter.default_msec_format = '%s.%03d'
 

@@ -1,11 +1,9 @@
-import sys
-
 import yarl
 
 from ...const import APP_BASE_HOST, APP_SECURE_SCHEME
 from ...core import HttpCore
-from ...exception import TiebaServerError
-from ...helper import log_success, parse_json
+from ...exception import BoolResponse, TiebaServerError
+from ...helper import parse_json
 
 
 def parse_body(body: bytes) -> None:
@@ -14,12 +12,12 @@ def parse_body(body: bytes) -> None:
         raise TiebaServerError(code, res_json['error_msg'])
 
 
-async def request(http_core: HttpCore, fid: int, tid: int, is_hide: bool) -> bool:
+async def request(http_core: HttpCore, fid: int, tid: int, is_hide: bool) -> BoolResponse:
     data = [
-        ('BDUSS', http_core.account._BDUSS),
+        ('BDUSS', http_core.account.BDUSS),
         ('fid', fid),
         ('is_frs_mask', int(is_hide)),
-        ('tbs', http_core.account._tbs),
+        ('tbs', http_core.account.tbs),
         ('z', tid),
     ]
 
@@ -27,10 +25,7 @@ async def request(http_core: HttpCore, fid: int, tid: int, is_hide: bool) -> boo
         yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/c/bawu/delthread"), data
     )
 
-    __log__ = f"fid={fid} tid={tid}"
-
     body = await http_core.net_core.send_request(request, read_bufsize=1024)
     parse_body(body)
 
-    log_success(sys._getframe(1), __log__)
-    return True
+    return BoolResponse()

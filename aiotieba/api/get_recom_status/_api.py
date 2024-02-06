@@ -12,25 +12,23 @@ def parse_body(body: bytes) -> RecomStatus:
     if code := int(res_json['error_code']):
         raise TiebaServerError(code, res_json['error_msg'])
 
-    status = RecomStatus(res_json)
+    status = RecomStatus.from_tbdata(res_json)
 
     return status
 
 
 async def request(http_core: HttpCore, fid: int) -> RecomStatus:
     data = [
-        ('BDUSS', http_core.account._BDUSS),
+        ('BDUSS', http_core.account.BDUSS),
         ('_client_version', MAIN_VERSION),
         ('forum_id', fid),
-        ('pn', '1'),
-        ('rn', '0'),
+        ('pn', 1),
+        ('rn', 0),
     ]
 
     request = http_core.pack_form_request(
         yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/bawu/getRecomThreadList"), data
     )
-
-    __log__ = "fid={fid}"  # noqa: F841
 
     body = await http_core.net_core.send_request(request, read_bufsize=2 * 1024)
     return parse_body(body)

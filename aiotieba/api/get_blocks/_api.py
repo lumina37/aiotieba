@@ -12,7 +12,7 @@ def parse_body(body: bytes) -> Blocks:
     if code := res_json['no']:
         raise TiebaServerError(code, res_json['error'])
 
-    blocks = Blocks(res_json)
+    blocks = Blocks.from_tbdata(res_json)
 
     return blocks
 
@@ -22,15 +22,13 @@ async def request(http_core: HttpCore, fid: int, name: str, pn: int) -> Blocks:
         ('fn', '-'),
         ('fid', fid),
         ('word', name),
-        ('is_ajax', '1'),
+        ('is_ajax', 1),
         ('pn', pn),
     ]
 
     request = http_core.pack_web_get_request(
         yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mo/q/bawublock"), params
     )
-
-    __log__ = "fid={fid}"  # noqa: F841
 
     body = await http_core.net_core.send_request(request, read_bufsize=64 * 1024)
     return parse_body(body)

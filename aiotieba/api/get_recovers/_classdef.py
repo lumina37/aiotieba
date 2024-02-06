@@ -1,9 +1,13 @@
-from typing import Mapping, Optional
+import dataclasses as dcs
+from functools import cached_property
+from typing import Mapping
 
+from ...exception import TbErrorExt
 from .._classdef import Containers
 
 
-class UserInfo_rec(object):
+@dcs.dataclass
+class UserInfo_rec:
     """
     用户信息
 
@@ -17,226 +21,92 @@ class UserInfo_rec(object):
         log_name (str): 用于在日志中记录用户信息
     """
 
-    __slots__ = [
-        '_portrait',
-        '_user_name',
-        '_nick_name_new',
-    ]
+    user_name: str = ''
+    portrait: str = ''
+    nick_name_new: str = ''
 
-    def _init(self, data_map: Mapping) -> "UserInfo_rec":
-        if '?' in (portrait := data_map['portrait']):
-            self._portrait = portrait[:-13]
-        else:
-            self._portrait = portrait
-        self._user_name = data_map['user_name']
-        self._nick_name_new = data_map['user_nickname']
-        return self
-
-    def _init_null(self) -> "UserInfo_rec":
-        self._portrait = ''
-        self._user_name = ''
-        self._nick_name_new = ''
-        return self
+    @staticmethod
+    def from_tbdata(data_map: Mapping) -> "UserInfo_rec":
+        portrait = data_map['portrait']
+        if '?' in portrait:
+            portrait = portrait[:-13]
+        user_name = data_map['user_name']
+        nick_name_new = data_map['user_nickname']
+        return UserInfo_rec(user_name, portrait, nick_name_new)
 
     def __str__(self) -> str:
-        return self._user_name or self._portrait
-
-    def __repr__(self) -> str:
-        return str(
-            {
-                'portrait': self._portrait,
-                'show_name': self.show_name,
-            }
-        )
+        return self.user_name or self.portrait
 
     def __eq__(self, obj: "UserInfo_rec") -> bool:
-        return self._portrait == obj._portrait
+        return self.portrait == obj.portrait
 
     def __hash__(self) -> int:
-        return hash(self._portrait)
-
-    def __int__(self) -> int:
-        return hash(self._portrait)
+        return hash(self.portrait)
 
     def __bool__(self) -> bool:
-        return bool(self._portrait)
-
-    @property
-    def portrait(self) -> str:
-        """
-        用户portrait
-
-        Note:
-            唯一 不可变 不可为空
-        """
-
-        return self._portrait
-
-    @property
-    def user_name(self) -> str:
-        """
-        用户名
-
-        Note:
-            唯一 可变 可为空\n
-            请注意与用户昵称区分
-        """
-
-        return self._user_name
-
-    @property
-    def nick_name_new(self) -> str:
-        """
-        新版昵称
-        """
-
-        return self._nick_name_new
+        return bool(self.portrait)
 
     @property
     def nick_name(self) -> str:
-        """
-        用户昵称
-        """
-
-        return self._nick_name_new
+        return self.nick_name_new
 
     @property
     def show_name(self) -> str:
-        """
-        显示名称
-        """
+        return self.nick_name_new or self.user_name
 
-        return self._nick_name_new or self._user_name
-
-    @property
+    @cached_property
     def log_name(self) -> str:
-        """
-        用于在日志中记录用户信息
-        """
-
-        return self._user_name if self._user_name else f"{self._nick_name_new}/{self._portrait}"
+        return self.user_name if self.user_name else f"{self.nick_name_new}/{self.portrait}"
 
 
-class Recover(object):
+@dcs.dataclass
+class Recover:
     """
     待恢复帖子信息
 
     Attributes:
         text (str): 文本内容
         tid (int): 所在主题帖id
-        pid (int): 回复id
+        pid (int): 回复id 若为主题帖则该字段为0
         user (UserInfo_rec): 发布者的用户信息
         op_show_name (str): 操作人显示名称
-        op_time (int): 操作时间
+        op_time (int): 操作时间 10位时间戳 以秒为单位
 
         is_floor (bool): 是否为楼中楼
         is_hide (bool): 是否为屏蔽
     """
 
-    __slots__ = [
-        '_text',
-        '_tid',
-        '_pid',
-        '_user',
-        '_is_floor',
-        '_is_hide',
-        '_op_show_name',
-        '_op_time',
-    ]
+    text: str = ""
+    tid: int = 0
+    pid: int = 0
+    user: UserInfo_rec = dcs.field(default_factory=UserInfo_rec)
+    op_show_name: str = ''
+    op_time: int = 0
 
-    def __init__(self, data_map: Mapping) -> None:
+    is_floor: bool = False
+    is_hide: bool = False
+
+    @staticmethod
+    def from_tbdata(data_map: Mapping) -> "Recover":
         thread_info = data_map['thread_info']
-        self._tid = int(thread_info['tid'])
+        tid = int(thread_info['tid'])
         if post_info := data_map['post_info']:
-            self._text = post_info['abstract']
-            self._pid = int(post_info['pid'])
-            self._user = UserInfo_rec()._init(post_info)
+            text = post_info['abstract']
+            pid = int(post_info['pid'])
+            user = UserInfo_rec.from_tbdata(post_info)
         else:
-            self._text = thread_info['abstract']
-            self._pid = 0
-            self._user = UserInfo_rec()._init(thread_info)
-        self._is_floor = bool(data_map['is_foor'])  # 百度的Code Review主要起到一个装饰的作用
-        self._is_hide = bool(int(data_map['is_frs_mask']))
-        self._op_show_name = data_map['op_info']['name']
-        self._op_time = int(data_map['op_info']['time'])
-
-    def __repr__(self) -> str:
-        return str(
-            {
-                'text': self._text,
-                'tid': self._tid,
-                'pid': self._pid,
-                'user': self._user.show_name,
-                'is_floor': self._is_floor,
-                'is_hide': self._is_hide,
-                'op_show_name': self._op_show_name,
-            }
-        )
-
-    @property
-    def text(self) -> str:
-        """
-        文本内容
-        """
-
-        return self._text
-
-    @property
-    def tid(self) -> int:
-        """
-        所在主题帖id
-        """
-
-        return self._tid
-
-    @property
-    def pid(self) -> int:
-        """
-        回复id
-
-        Note:
-            若为主题帖则该字段为0
-        """
-
-        return self._pid
-
-    @property
-    def is_floor(self) -> bool:
-        """
-        是否为楼中楼
-        """
-
-        return self._is_floor
-
-    @property
-    def is_hide(self) -> bool:
-        """
-        是否为屏蔽
-        """
-
-        return self._is_hide
-
-    @property
-    def op_show_name(self) -> str:
-        """
-        操作人显示名称
-        """
-
-        return self._op_show_name
-
-    @property
-    def op_time(self) -> int:
-        """
-        操作时间
-
-        Note:
-            10位时间戳 以秒为单位
-        """
-
-        return self._op_time
+            text = thread_info['abstract']
+            pid = 0
+            user = UserInfo_rec.from_tbdata(thread_info)
+        is_floor = bool(data_map['is_foor'])  # 百度的Code Review主要起到一个装饰的作用
+        is_hide = bool(int(data_map['is_frs_mask']))
+        op_show_name = data_map['op_info']['name']
+        op_time = int(data_map['op_info']['time'])
+        return Recover(text, tid, pid, user, op_show_name, op_time, is_floor, is_hide)
 
 
-class Page_recover(object):
+@dcs.dataclass
+class Page_recover:
     """
     页信息
 
@@ -248,94 +118,42 @@ class Page_recover(object):
         has_prev (bool): 是否有前驱页
     """
 
-    __slots__ = [
-        '_page_size',
-        '_current_page',
-        '_has_more',
-        '_has_prev',
-    ]
+    page_size: int = 0
+    current_page: int = 0
 
-    def _init(self, data_map: Mapping) -> "Page_recover":
-        self._page_size = data_map['rn']
-        self._current_page = data_map['pn']
-        self._has_more = data_map['has_more']
-        self._has_prev = self._current_page > 1
-        return self
+    has_more: bool = False
+    has_prev: bool = False
 
-    def _init_null(self) -> "Page_recover":
-        self._page_size = 0
-        self._current_page = 0
-        self._has_more = False
-        self._has_prev = False
-        return self
-
-    def __repr__(self) -> str:
-        return str(
-            {
-                'current_page': self._current_page,
-                'has_more': self._has_more,
-                'has_prev': self._has_prev,
-            }
-        )
-
-    @property
-    def page_size(self) -> int:
-        """
-        页大小
-        """
-
-        return self._page_size
-
-    @property
-    def current_page(self) -> int:
-        """
-        当前页码
-        """
-
-        return self._current_page
-
-    @property
-    def has_more(self) -> bool:
-        """
-        是否有后继页
-        """
-
-        return self._has_more
-
-    @property
-    def has_prev(self) -> bool:
-        """
-        是否有前驱页
-        """
-
-        return self._has_prev
+    @staticmethod
+    def from_tbdata(data_map: Mapping) -> "Page_recover":
+        page_size = data_map['rn']
+        current_page = data_map['pn']
+        has_more = data_map['has_more']
+        has_prev = current_page > 1
+        return Page_recover(page_size, current_page, has_more, has_prev)
 
 
-class Recovers(Containers[Recover]):
+@dcs.dataclass
+class Recovers(TbErrorExt, Containers[Recover]):
     """
     待恢复帖子列表
 
     Attributes:
-        _objs (list[Recover]): 待恢复帖子列表
+        objs (list[Recover]): 待恢复帖子列表
+        err (Exception | None): 捕获的异常
 
         page (Page_recover): 页信息
         has_more (bool): 是否还有下一页
     """
 
-    __slots__ = ['_page']
+    page: Page_recover = dcs.field(default_factory=Page_recover)
 
-    def __init__(self, data_map: Optional[Mapping] = None) -> None:
-        if data_map:
-            self._objs = [Recover(t) for t in data_map['data']['thread_list']]
-            self._page = Page_recover()._init(data_map['data']['page'])
-        else:
-            self._objs = []
-            self._page = Page_recover()._init_null()
+    @staticmethod
+    def from_tbdata(data_map: Mapping) -> None:
+        objs = [Recover.from_tbdata(t) for t in data_map['data']['thread_list']]
+        page = Page_recover.from_tbdata(data_map['data']['page'])
+        return Recovers(objs, page)
 
     @property
     def has_more(self) -> bool:
-        """
-        是否还有下一页
-        """
-
-        return self._page._has_more
+        return self.page.has_more

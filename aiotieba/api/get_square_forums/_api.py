@@ -11,7 +11,7 @@ CMD = 309653
 
 def pack_proto(account: Account, cname: str, pn: int, rn: int) -> bytes:
     req_proto = GetForumSquareReqIdl_pb2.GetForumSquareReqIdl()
-    req_proto.data.common.BDUSS = account._BDUSS
+    req_proto.data.common.BDUSS = account.BDUSS
     req_proto.data.common._client_version = MAIN_VERSION
     req_proto.data.class_name = cname
     req_proto.data.pn = pn
@@ -28,7 +28,7 @@ def parse_body(body: bytes) -> SquareForums:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    square_forums = SquareForums(data_proto)
+    square_forums = SquareForums.from_tbdata(data_proto)
 
     return square_forums
 
@@ -43,16 +43,12 @@ async def request_http(http_core: HttpCore, cname: str, pn: int, rn: int) -> Squ
         data,
     )
 
-    __log__ = "cname={cname}"  # noqa: F841
-
     body = await http_core.net_core.send_request(request, read_bufsize=16 * 1024)
     return parse_body(body)
 
 
 async def request_ws(ws_core: WsCore, cname: str, pn: int, rn: int) -> SquareForums:
     data = pack_proto(ws_core.account, cname, pn, rn)
-
-    __log__ = "cname={cname}"  # noqa: F841
 
     response = await ws_core.send(data, CMD)
     return parse_body(await response.read())

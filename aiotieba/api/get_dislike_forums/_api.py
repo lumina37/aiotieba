@@ -11,7 +11,7 @@ CMD = 309692
 
 def pack_proto(account: Account, pn: int, rn: int) -> bytes:
     req_proto = GetDislikeListReqIdl_pb2.GetDislikeListReqIdl()
-    req_proto.data.common.BDUSS = account._BDUSS
+    req_proto.data.common.BDUSS = account.BDUSS
     req_proto.data.common._client_version = MAIN_VERSION
     req_proto.data.pn = pn
     req_proto.data.rn = rn
@@ -27,7 +27,7 @@ def parse_body(body: bytes) -> DislikeForums:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    dislike_forums = DislikeForums(data_proto)
+    dislike_forums = DislikeForums.from_tbdata(data_proto)
 
     return dislike_forums
 

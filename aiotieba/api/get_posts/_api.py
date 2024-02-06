@@ -29,7 +29,7 @@ def pack_proto(
     req_proto.data.r = sort
     req_proto.data.lz = only_thread_author
     if with_comments:
-        req_proto.data.common.BDUSS = account._BDUSS
+        req_proto.data.common.BDUSS = account.BDUSS
         req_proto.data.with_floor = with_comments
         req_proto.data.floor_sort_type = comment_sort_by_agree
         req_proto.data.floor_rn = comment_rn
@@ -45,7 +45,7 @@ def parse_body(body: bytes) -> Posts:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    posts = Posts(data_proto)
+    posts = Posts.from_tbdata(data_proto)
 
     return posts
 
@@ -78,8 +78,6 @@ async def request_http(
         data,
     )
 
-    __log__ = "tid={tid}"  # noqa: F841
-
     body = await http_core.net_core.send_request(request, read_bufsize=128 * 1024)
     return parse_body(body)
 
@@ -106,8 +104,6 @@ async def request_ws(
         comment_sort_by_agree,
         comment_rn,
     )
-
-    __log__ = "tid={tid}"  # noqa: F841
 
     response = await ws_core.send(data, CMD)
     return parse_body(await response.read())
