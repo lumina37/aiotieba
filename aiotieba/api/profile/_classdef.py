@@ -371,13 +371,13 @@ class Thread_pf:
 
     @staticmethod
     def from_tbdata(data_proto: TypeMessage) -> "Thread_pf":
-        contents = Contents_pf()._init(data_proto)
+        contents = Contents_pf.from_tbdata(data_proto)
         title = data_proto.title
         fid = data_proto.forum_id
         fname = data_proto.forum_name
         tid = data_proto.thread_id
         pid = data_proto.post_id
-        vote_info = VoteInfo()._init(data_proto.poll_info)
+        vote_info = VoteInfo.from_tbdata(data_proto.poll_info)
         view_num = data_proto.freq_num
         reply_num = data_proto.reply_num
         share_num = data_proto.share_num

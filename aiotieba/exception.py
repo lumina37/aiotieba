@@ -8,7 +8,7 @@ class TbErrorExt:
     为类型添加一个`err`项 用于保存捕获到的异常
     """
 
-    err: Optional[Exception] = dcs.field(default=None, init=False)
+    err: Optional[Exception] = dcs.field(default=None, init=False, repr=True)
 
 
 @dcs.dataclass

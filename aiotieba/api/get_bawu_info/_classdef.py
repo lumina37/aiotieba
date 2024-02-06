@@ -106,7 +106,7 @@ class BawuInfo:
     def from_tbdata(data_proto: TypeMessage) -> "BawuInfo":
         all = []
         r_protos = data_proto.bawu_team_info.bawu_team_list
-        _dict = {r_proto.role_name: [UserInfo_bawu(p) for p in r_proto.role_info] for r_proto in r_protos}
+        _dict = {r_proto.role_name: [UserInfo_bawu.from_tbdata(p) for p in r_proto.role_info] for r_proto in r_protos}
 
         def extract(role_name: str) -> List[UserInfo_bawu]:
             if users := _dict.get(role_name):

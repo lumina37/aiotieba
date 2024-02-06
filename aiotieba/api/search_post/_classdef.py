@@ -104,8 +104,8 @@ class Searches(TbErrorExt, Containers[Search]):
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> "Searches":
-        objs = [Search(m) for m in data_map.get('post_list', [])]
-        page = Page_search()._init(data_map['page'])
+        objs = [Search.from_tbdata(m) for m in data_map.get('post_list', [])]
+        page = Page_search.from_tbdata(data_map['page'])
         return Searches(objs, page)
 
     @property

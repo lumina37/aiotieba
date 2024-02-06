@@ -38,6 +38,6 @@ class GodThreads(TbErrorExt, Containers[GodThread]):
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> "GodThreads":
-        objs = [GodThread(t) for t in data_map['data']['thread_list']]
+        objs = [GodThread.from_tbdata(t) for t in data_map['data']['thread_list']]
         has_more = data_map['data']['has_more']
         return GodThreads(objs, has_more)

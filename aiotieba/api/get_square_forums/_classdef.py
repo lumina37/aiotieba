@@ -68,7 +68,7 @@ class Page_square:
     has_prev: bool = False
 
     @staticmethod
-    def from_tbdata(self, data_proto: TypeMessage) -> "Page_square":
+    def from_tbdata(data_proto: TypeMessage) -> "Page_square":
         page_size = data_proto.page_size
         current_page = data_proto.current_page
         total_page = data_proto.total_page

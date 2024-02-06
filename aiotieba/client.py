@@ -1066,17 +1066,17 @@ class Client(object):
 
         return await get_bawu_info.request_http(self._http_core, fid)
 
-    @handle_exception(dict)
+    @handle_exception(get_tab_map.TabMap)
     @_try_websocket
-    async def get_tab_map(self, fname_or_fid: Union[str, int]) -> Dict[str, int]:
+    async def get_tab_map(self, fname_or_fid: Union[str, int]) -> get_tab_map.TabMap:
         """
-        获取分区名到分区id的映射字典
+        获取分区名到分区id的映射
 
         Args:
             fname_or_fid (str | int): 目标贴吧名或fid 优先贴吧名
 
         Returns:
-            dict[str, int]: {分区名:分区id}
+            TabMap: 分区名到分区id的映射
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)

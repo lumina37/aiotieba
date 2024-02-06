@@ -58,7 +58,7 @@ class Contents_up(Containers[TypeFragment]):
     voice: FragVoice_up = dcs.field(default_factory=FragVoice_up, repr=False)
 
     @staticmethod
-    def _init(data_proto: TypeMessage) -> "Contents_up":
+    def from_tbdata(data_proto: TypeMessage) -> "Contents_up":
         content_protos = data_proto.post_content
 
         texts = []
@@ -190,7 +190,7 @@ class UserPost:
 
     @staticmethod
     def from_tbdata(data_proto: TypeMessage) -> "UserPost":
-        contents = Contents_up()._init(data_proto)
+        contents = Contents_up.from_tbdata(data_proto)
         pid = data_proto.post_id
         is_comment = bool(data_proto.post_type)
         create_time = data_proto.create_time
@@ -449,14 +449,14 @@ class UserThread:
 
     @staticmethod
     def from_tbdata(data_proto: TypeMessage) -> "UserThread":
-        contents = Contents_ut()._init(data_proto)
+        contents = Contents_ut.from_tbdata(data_proto)
         title = data_proto.title
         fid = data_proto.forum_id
         fname = data_proto.forum_name
         tid = data_proto.thread_id
         pid = data_proto.post_id
         type_ = data_proto.thread_type
-        vote_info = VoteInfo()._init(data_proto.poll_info)
+        vote_info = VoteInfo.from_tbdata(data_proto.poll_info)
         view_num = data_proto.freq_num
         reply_num = data_proto.reply_num
         share_num = data_proto.share_num
@@ -514,7 +514,7 @@ class UserThreads(TbErrorExt, Containers[UserThread]):
     def from_tbdata(data_proto: TypeMessage) -> "UserThreads":
         objs = [UserThread.from_tbdata(p) for p in data_proto.post_list]
         if objs:
-            user = UserInfo_u(data_proto.post_list[0])
+            user = UserInfo_u.from_tbdata(data_proto.post_list[0])
             for uthread in objs:
                 uthread.user = user
         return UserPostss(objs)

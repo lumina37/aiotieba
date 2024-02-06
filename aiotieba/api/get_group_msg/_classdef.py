@@ -68,7 +68,7 @@ class WsMessage:
     create_time: int = 0
 
     @staticmethod
-    def from_tbdata(self, data_proto: TypeMessage) -> None:
+    def from_tbdata(data_proto: TypeMessage) -> None:
         msg_id = data_proto.msgId
         msg_type = data_proto.msgType
         text = data_proto.content

@@ -5,6 +5,7 @@ import yarl
 from ...const import APP_BASE_HOST, APP_SECURE_SCHEME, MAIN_VERSION
 from ...core import Account, HttpCore, WsCore
 from ...exception import TiebaServerError
+from ._classdef import TabMap
 from .protobuf import SearchPostForumReqIdl_pb2, SearchPostForumResIdl_pb2
 
 CMD = 309466
@@ -26,7 +27,8 @@ def parse_body(body: bytes) -> Dict[str, int]:
     if code := res_proto.error.errorno:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
-    tab_map = {tab_proto.tab_name: tab_proto.tab_id for tab_proto in res_proto.data.exact_match.tab_info}
+    data_proto = res_proto.data
+    tab_map = TabMap.from_tbdata(data_proto)
 
     return tab_map
 
