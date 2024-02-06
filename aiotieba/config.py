@@ -60,7 +60,7 @@ class TimeoutConfig:
     ws_read: float = 8.0
     ws_keepalive: float = 300.0
     ws_heartbeat: Optional[float] = None
-    dns_ttl: 600.0
+    dns_ttl: float = 600.0
 
     def __init__(
         self,
