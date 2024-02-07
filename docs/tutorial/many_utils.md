@@ -9,31 +9,16 @@ from typing import List
 import aiotieba as tb
 
 
-class NeedRetry(RuntimeError):
-    pass
-
-
-def handle_exce(err: tb.exception.TiebaServerError) -> None:
-    if isinstance(err, tb.exception.TiebaServerError):
-        if err.code in [160002, 340006]:
-            # 已经签过或吧被屏蔽
-            return
-
-    raise NeedRetry()
-
-
 async def sign(BDUSS_key: str, *, retry_times: int = 0) -> None:
     """
     各种签到
 
     Args:
-        BDUSS_key (str): 用于创建客户端
+        BDUSS (str): 用于创建客户端
         retry_times (int, optional): 重试次数. Defaults to 0.
     """
 
     async with tb.Client(BDUSS_key) as client:
-        tb.exception.exc_handlers[client.sign_forum] = handle_exce
-
         # 成长等级签到
         for _ in range(retry_times):
             await asyncio.sleep(1.0)
@@ -71,9 +56,8 @@ async def sign(BDUSS_key: str, *, retry_times: int = 0) -> None:
         for _ in range(retry_times + 1):
             new_retry_list: List[str] = []
             for fname in retry_list:
-                try:
-                    await client.sign_forum(fname)
-                except NeedRetry:
+                ret = await client.sign_forum(fname)
+                if ret.err is not None and ret.err.code not in [160002, 340006]:
                     new_retry_list.append(fname)
                 await asyncio.sleep(1.0)
             if not new_retry_list:
@@ -82,8 +66,8 @@ async def sign(BDUSS_key: str, *, retry_times: int = 0) -> None:
 
 
 async def main() -> None:
-    await sign("default", retry_times=3)
-    await sign("backup", retry_times=3)
+    await sign("在此处输入你的BDUSS", retry_times=3)
+    await sign("在此处输入你的BDUSS", retry_times=3)
 
 
 asyncio.run(main())
@@ -98,7 +82,7 @@ import aiotieba as tb
 
 
 async def main() -> None:
-    async with tb.Client("default") as client:
+    async with tb.Client("在此处输入你的BDUSS") as client:
         # 海象运算符(:=)会在创建threads变量并赋值的同时返回该值，方便while语句检查其是否为空
         # 更多信息请搜索“Python海象运算符”
         while threads := await client.get_self_public_threads():
@@ -117,7 +101,7 @@ import aiotieba as tb
 
 
 async def main() -> None:
-    async with tb.Client("default") as client:
+    async with tb.Client("在此处输入你的BDUSS") as client:
         await asyncio.gather(
             *[
                 client.dislike_forum(fname)
@@ -142,7 +126,7 @@ import aiotieba as tb
 
 
 async def main() -> None:
-    async with tb.Client("default") as client:
+    async with tb.Client("在此处输入你的BDUSS") as client:
         # 此列表用于设置例外
         # 将你希望依然保持屏蔽的贴吧名填在这个列表里
         preserve_fnames = [
@@ -171,7 +155,7 @@ import aiotieba as tb
 
 
 async def main() -> None:
-    async with tb.Client("default") as client:
+    async with tb.Client("在此处输入你的BDUSS") as client:
         fname = "待拒绝申诉的贴吧名"
         while appeals := await client.get_unblock_appeals(fname, rn=30):
             await client.handle_unblock_appeals(fname, [a.appeal_id for a in appeals])
@@ -189,7 +173,7 @@ import aiotieba as tb
 
 
 async def main() -> None:
-    async with tb.Client("default") as client:
+    async with tb.Client("在此处输入你的BDUSS") as client:
         while fans := await client.get_fans():
             await asyncio.gather(*[client.remove_fan(fan.user_id) for fan in fans])
 
@@ -206,7 +190,7 @@ import aiotieba as tb
 
 
 async def main() -> None:
-    async with tb.Client('default') as client:
+    async with tb.Client("在此处输入你的BDUSS") as client:
         while posts_list := await client.get_self_posts():
             await asyncio.gather(*[client.del_post(post.fid, post.tid, post.pid) for posts in posts_list for post in posts])
 

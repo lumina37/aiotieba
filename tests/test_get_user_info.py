@@ -11,6 +11,12 @@ async def test_get_user_info(client: tb.Client):
     assert self_info.portrait != ''
     assert self_info.user_name != ''
 
+    homepage = await client.get_homepage(self_info.user_id)
+    user = homepage.user
+    assert user.user_id == self_info.user_id
+    assert user.portrait == self_info.portrait
+    assert user.user_name == self_info.user_name
+
     user = await client.get_user_info(self_info.portrait, tb.enums.ReqUInfo.BASIC)
     assert user.user_id == self_info.user_id
     assert user.portrait == self_info.portrait
