@@ -432,7 +432,7 @@ class Homepage(TbErrorExt, Containers[Thread_pf]):
         user (UserInfo_pf): 用户信息
     """
 
-    vote_info: UserInfo_pf = dcs.field(default_factory=UserInfo_pf)
+    user: UserInfo_pf = dcs.field(default_factory=UserInfo_pf)
 
     @staticmethod
     def from_tbdata(data_proto: TypeMessage) -> "Homepage":
