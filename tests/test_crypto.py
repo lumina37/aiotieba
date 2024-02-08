@@ -16,10 +16,10 @@ async def test_clib(client: tb.Client):
     assert account.c3_aid == 'A00-OGBA33NRAQASXI6FDZ4YAJFTK75EF4Y5-YVOG764X'
 
     data = [
-        ('diana', 672328094),
+        ('reverse', 1999),
         ('hello_cosmic', '你好42'),
     ]
-    assert _sign(data) == 'd0337b3b3d597c5f87a1c0c37139d87b'
+    assert _sign(data) == '248dab3e1fe46aea603cdc45c08f80eb'
 
     query_key = rc4_42('d0337b3b3d597c5f87a1c0c37139d87b', b'6723280942424242')
     assert query_key == b'\x9f\xabU\x14\xa7\x0e\xb6k\xc4wV\xf2HN+.'

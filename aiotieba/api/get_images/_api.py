@@ -25,14 +25,19 @@ def parse_body(body: bytes) -> Image:
     return Image(image)
 
 
-async def request_bytes(http_core: HttpCore, url: yarl.URL) -> ImageBytes:
+async def _request_bytes(http_core: HttpCore, url: yarl.URL) -> bytes:
     request = http_core.pack_web_get_request(url, [])
 
     body = await http_core.net_core.send_request(request, read_bufsize=256 * 1024, headers_checker=_headers_checker)
 
+    return body
+
+
+async def request_bytes(http_core: HttpCore, url: yarl.URL) -> ImageBytes:
+    body = _request_bytes(http_core, url)
     return ImageBytes(body)
 
 
 async def request(http_core: HttpCore, url: yarl.URL) -> Image:
-    body = await request_bytes(http_core, url)
+    body = await _request_bytes(http_core, url)
     return parse_body(body)

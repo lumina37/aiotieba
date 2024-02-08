@@ -25,7 +25,7 @@ class Page_at:
     has_prev: int = False
 
     @staticmethod
-    def from_dict(data_map: Mapping) -> "Page_at":
+    def from_tbdata(data_map: Mapping) -> "Page_at":
         current_page = int(data_map['current_page'])
         has_more = bool(int(data_map['has_more']))
         has_prev = bool(int(data_map['has_prev']))
@@ -179,7 +179,7 @@ class Ats(TbErrorExt, Containers[At]):
     @staticmethod
     def from_tbdata(data_map: Mapping) -> "Ats":
         objs = [At.from_tbdata(m) for m in data_map.get('at_list', [])]
-        page = Page_at.from_dict(data_map['page'])
+        page = Page_at.from_tbdata(data_map['page'])
         return Ats(objs, page)
 
     @property

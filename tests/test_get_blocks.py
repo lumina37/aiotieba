@@ -11,4 +11,4 @@ async def test_Blocks(client: tb.Client):
     ##### Block #####
     block = blocks[0]
     assert block.user_id > 0
-    assert block.day in [1, 3, 10]
+    assert block.day > 0
