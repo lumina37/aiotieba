@@ -30,7 +30,7 @@ async def _request_bytes(http_core: HttpCore, url: yarl.URL) -> bytes:
 
     body = await http_core.net_core.send_request(request, read_bufsize=256 * 1024, headers_checker=_headers_checker)
 
-    return ImageBytes(body)
+    return body
 
 
 async def request_bytes(http_core: HttpCore, url: yarl.URL) -> ImageBytes:
