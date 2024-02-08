@@ -67,7 +67,7 @@ version = { attr = "aiotieba.__version__.__version__" }
 
 [tool.pdm.dev-dependencies]
 lint = ["ruff", "black"]
-test = ["aiotieba[speedup,img]", "pytest==7.4.4", "pytest-asyncio==0.23.4", "pytest-rerunfailures==13.0"]
+test = ["aiotieba[speedup]", "pytest==7.4.4", "pytest-asyncio==0.23.4", "pytest-rerunfailures==13.0"]
 doc = ["mkdocs-material", "mkdocstrings[python]"]
 
 [tool.cibuildwheel]
