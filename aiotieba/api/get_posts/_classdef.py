@@ -515,6 +515,7 @@ class Post:
         contents (Contents_p): 正文内容碎片列表
         sign (str): 小尾巴文本内容
         comments (list[Comment_p]): 楼中楼列表
+        is_aimeme (bool): 是否是AI生成的表情包
 
         fid (int): 所在吧id
         fname (str): 所在贴吧名
@@ -535,6 +536,7 @@ class Post:
     contents: Contents_p = dcs.field(default_factory=Contents_p)
     sign: str = ""
     comments: List[Comment_p] = dcs.field(default_factory=list)
+    is_aimeme: bool = False
 
     fid: int = 0
     fname: str = ''
@@ -556,6 +558,7 @@ class Post:
         contents = Contents_p.from_tbdata(data_proto)
         sign = "".join(p.text for p in data_proto.signature.content if p.type == 0)
         comments = [Comment_p.from_tbdata(p) for p in data_proto.sub_post_list.sub_post_list]
+        is_aimeme = bool(data_proto.sprite_meme_info.meme_id)
         pid = data_proto.id
         author_id = data_proto.author_id
         vimage = VirtualImage_p.from_tbdata(data_proto)
@@ -568,6 +571,7 @@ class Post:
             contents,
             sign,
             comments,
+            is_aimeme,
             0,
             '',
             0,
