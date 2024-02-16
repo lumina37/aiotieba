@@ -182,7 +182,7 @@ class Client(object):
             account = Account(BDUSS, STOKEN)
 
         self.account = account
-        net_core = NetCore(connector, timeout, proxy)
+        net_core = NetCore(connector, proxy, timeout)
         self._http_core = HttpCore(account, net_core, loop)
         self._ws_core = WsCore(account, net_core, loop)
 
