@@ -36,4 +36,8 @@ message Post {
         string content = 2;
     }
     CustomState custom_state = 61;
+    message SpriteMemeInfo {
+        int64 meme_id = 1;
+    }
+    SpriteMemeInfo sprite_meme_info = 79;
 }
