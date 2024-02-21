@@ -77,6 +77,16 @@ tid=8537699088 text=记录一下自己人生第一次当“老师”的经历^_^
 ## 友情链接
 
 + [TiebaManager（吧务管理器 有用户界面）](https://github.com/dog194/TiebaManager)
-+ [TiebaLite（第三方安卓客户端）](https://github.com/HuanCheng65/TiebaLite/tree/4.0-dev)
++ [TiebaLite（第三方安卓客户端 Archived）](https://github.com/HuanCheng65/TiebaLite/tree/4.0-dev)
 + [基于aiotieba的高弹性吧务审查框架](https://github.com/Starry-OvO/aiotieba-reviewer)
 + [贴吧protobuf定义文件合集（更新至12.51.7.1）](https://github.com/n0099/tbclient.protobuf)
+
+## 特别鸣谢
+
+<p align="center">
+<a href="https://jb.gg/OpenSourceSupport">
+    <img src="https://resources.jetbrains.com/storage/products/company/brand/logos/jb_beam.svg">
+</a>
+</p>
+
+为本开源项目提供的免费产品授权
