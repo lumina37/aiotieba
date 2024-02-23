@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Any, Callable, Optional
 
 if sys.version_info >= (3, 11):
-    import asyncio as async_timeout
+    async_timeout = asyncio
 else:
     import async_timeout
 

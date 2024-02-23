@@ -104,13 +104,13 @@ class BawuInfo:
 
     @staticmethod
     def from_tbdata(data_proto: TypeMessage) -> "BawuInfo":
-        all = []
+        all_ = []
         r_protos = data_proto.bawu_team_info.bawu_team_list
         _dict = {r_proto.role_name: [UserInfo_bawu.from_tbdata(p) for p in r_proto.role_info] for r_proto in r_protos}
 
         def extract(role_name: str) -> List[UserInfo_bawu]:
             if users := _dict.get(role_name):
-                all.extend(users)
+                all_.extend(users)
             else:
                 users = []
             return users
@@ -127,7 +127,7 @@ class BawuInfo:
         fourth_admin = extract('第四吧主')
 
         return BawuInfo(
-            all,
+            all_,
             admin,
             manager,
             voice_editor,

@@ -45,9 +45,9 @@ class FragEmoji:
 
     @staticmethod
     def from_tbdata(data_proto: TypeMessage) -> "FragEmoji":
-        id = data_proto.text
+        id_ = data_proto.text
         desc = data_proto.c
-        return FragEmoji(id, desc)
+        return FragEmoji(id_, desc)
 
 
 class TypeFragEmoji(Protocol):
@@ -92,17 +92,16 @@ class FragImage:
 
     @cached_property
     def hash(self) -> str:
-        if self._hash is None:
-            first_qmark_idx = self.src.find('?')
-            end_idx = self.src.rfind('.', 0, first_qmark_idx)
+        first_qmark_idx = self.src.find('?')
+        end_idx = self.src.rfind('.', 0, first_qmark_idx)
 
-            if end_idx == -1:
-                self._hash = ''
-            else:
-                start_idx = self.src.rfind('/', 0, end_idx)
-                self._hash = self.src[start_idx + 1 : end_idx]
+        if end_idx == -1:
+            hash_ = ''
+        else:
+            start_idx = self.src.rfind('/', 0, end_idx)
+            hash_ = self.src[start_idx + 1 : end_idx]
 
-        return self._hash
+        return hash_
 
 
 class TypeFragImage(Protocol):
@@ -110,8 +109,7 @@ class TypeFragImage(Protocol):
     origin_src: str = ""
 
     @property
-    def hash(self) -> str:
-        ...
+    def hash(self) -> str: ...
 
 
 @dcs.dataclass
@@ -255,12 +253,10 @@ class TypeFragLink(Protocol):
     raw_url: yarl.URL
 
     @property
-    def url(self) -> yarl.URL:
-        ...
+    def url(self) -> yarl.URL: ...
 
     @property
-    def is_external(self) -> bool:
-        ...
+    def is_external(self) -> bool: ...
 
 
 @dcs.dataclass

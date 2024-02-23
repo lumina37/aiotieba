@@ -20,12 +20,10 @@ class Containers(Generic[TypeContainer]):
         return self.objs.__iter__()
 
     @overload
-    def __getitem__(self, idx: SupportsIndex) -> TypeContainer:
-        ...
+    def __getitem__(self, idx: SupportsIndex) -> TypeContainer: ...
 
     @overload
-    def __getitem__(self, idx: slice) -> List[TypeContainer]:
-        ...
+    def __getitem__(self, idx: slice) -> List[TypeContainer]: ...
 
     def __getitem__(self, idx):
         return self.objs.__getitem__(idx)
