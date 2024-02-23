@@ -26,7 +26,6 @@ ext_crypto_module = Extension(
     "aiotieba.helper.crypto.crypto",
     sources=source_files,
     include_dirs=[str(include_dir)],
-    define_macros=[('TBC_NO_CHECK', None)],
     language='c',
 )
 
