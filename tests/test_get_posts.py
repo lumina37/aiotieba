@@ -12,6 +12,8 @@ async def test_Posts(client: tb.Client):
     forum = posts.forum
     assert forum.fid == 37574
     assert forum.fname == 'starry'
+    assert forum.category != ''
+    assert forum.subcategory != ''
     assert forum.member_num > 0
     assert forum.post_num > 0
 

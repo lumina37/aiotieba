@@ -342,16 +342,24 @@ class Forum_c:
     Attributes:
         fid (int): 贴吧id
         fname (str): 贴吧名
+
+        category (str): 一级分类
+        subcategory (str): 二级分类
     """
 
     fid: int = 0
     fname: str = ''
 
+    category: str = ''
+    subcategory: str = ''
+
     @staticmethod
     def from_tbdata(data_proto: TypeMessage) -> "Forum_c":
         fid = data_proto.id
         fname = data_proto.name
-        return Forum_c(fid, fname)
+        category = data_proto.first_class
+        subcategory = data_proto.second_class
+        return Forum_c(fid, fname, category, subcategory)
 
 
 @dcs.dataclass

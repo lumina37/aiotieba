@@ -645,12 +645,18 @@ class Forum_p:
         fid (int): 贴吧id
         fname (str): 贴吧名
 
+        category (str): 一级分类
+        subcategory (str): 二级分类
+
         member_num (int): 吧会员数
         post_num (int): 发帖量
     """
 
     fid: int = 0
     fname: str = ''
+
+    category: str = ''
+    subcategory: str = ''
 
     member_num: int = 0
     post_num: int = 0
@@ -659,9 +665,11 @@ class Forum_p:
     def from_tbdata(data_proto: TypeMessage) -> "Forum_p":
         fid = data_proto.id
         fname = data_proto.name
+        category = data_proto.first_class
+        subcategory = data_proto.second_class
         member_num = data_proto.member_num
         post_num = data_proto.post_num
-        return Forum_p(fid, fname, member_num, post_num)
+        return Forum_p(fid, fname, category, subcategory, member_num, post_num)
 
 
 @dcs.dataclass
