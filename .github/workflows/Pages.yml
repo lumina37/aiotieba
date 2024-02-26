@@ -24,9 +24,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup PDM
+        uses: pdm-project/setup-pdm@v4
+
       - name: Install dependencies
         run: |
-          pipx install pdm
           pdm install -G doc --no-default --no-self -q
 
       - name: Build
