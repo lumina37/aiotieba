@@ -13,6 +13,8 @@ async def test_Comments(client: tb.Client):
     forum = comments.forum
     assert forum.fid == 37574
     assert forum.fname == 'starry'
+    assert forum.category != ''
+    assert forum.subcategory != ''
 
     ##### Thread_c #####
     thread = comments.thread

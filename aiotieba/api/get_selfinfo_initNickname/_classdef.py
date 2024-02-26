@@ -47,4 +47,4 @@ class UserInfo_selfinit:
 
     @cached_property
     def log_name(self) -> str:
-        self.user_name if self.user_name else f"{self.nick_name_old}/{self.tieba_uid}"
+        return self.user_name if self.user_name else f"{self.nick_name_old}/{self.tieba_uid}"

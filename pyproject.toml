@@ -81,11 +81,13 @@ target-version = ["py38", "py39", "py310", "py311", "py312"]
 
 [tool.ruff]
 line-length = 120
-select = ["W", "E", "F", "I"]
-ignore = ["E402", "E501"]
 target-version = "py38"
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint]
+select = ["W", "E", "F", "I"]
+ignore = ["E402", "E501"]
+
+[tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
 "typing.py" = ["F401"]
 "*_pb2.py" = ["F401"]

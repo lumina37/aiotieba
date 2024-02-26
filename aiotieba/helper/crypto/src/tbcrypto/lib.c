@@ -12,9 +12,6 @@ PyObject* cuid_galaxy2(PyObject* Py_UNUSED(self), PyObject* args)
     const unsigned char* androidID;
     Py_ssize_t androidIDSize;
 
-#ifdef TBC_NO_CHECK
-    PyArg_ParseTuple(args, "s#", &androidID, &androidIDSize);
-#else
     if (!PyArg_ParseTuple(args, "s#", &androidID, &androidIDSize)) {
         PyErr_SetString(PyExc_TypeError, "Failed to parse args");
         return NULL;
@@ -24,7 +21,6 @@ PyObject* cuid_galaxy2(PyObject* Py_UNUSED(self), PyObject* args)
         PyErr_Format(PyExc_ValueError, "Invalid size of android_id. Expect 16, got %zu", androidIDSize);
         return NULL;
     }
-#endif
 
     tbc_cuid_galaxy2(androidID, dst);
 
@@ -39,9 +35,6 @@ PyObject* c3_aid(PyObject* Py_UNUSED(self), PyObject* args)
     const unsigned char* uuid;
     Py_ssize_t uuidSize;
 
-#ifdef TBC_NO_CHECK
-    PyArg_ParseTuple(args, "s#s#", &androidID, &androidIDSize, &uuid, &uuidSize);
-#else
     if (!PyArg_ParseTuple(args, "s#s#", &androidID, &androidIDSize, &uuid, &uuidSize)) {
         PyErr_SetString(PyExc_TypeError, "Failed to parse args");
         return NULL;
@@ -55,7 +48,6 @@ PyObject* c3_aid(PyObject* Py_UNUSED(self), PyObject* args)
         PyErr_Format(PyExc_ValueError, "Invalid size of uuid. Expect 36, got %zu", androidIDSize);
         return NULL;
     }
-#endif
 
     tbc_c3_aid(androidID, uuid, dst);
 
@@ -70,9 +62,6 @@ PyObject* rc4_42(PyObject* Py_UNUSED(self), PyObject* args)
     const unsigned char* cbcSecKey;
     Py_ssize_t cbcSecKeySize;
 
-#ifdef TBC_NO_CHECK
-    PyArg_ParseTuple(args, "s#y#", &xyusMd5Str, &xyusMd5Size, &cbcSecKey, &cbcSecKeySize);
-#else
     if (!PyArg_ParseTuple(args, "s#y#", &xyusMd5Str, &xyusMd5Size, &cbcSecKey, &cbcSecKeySize)) {
         PyErr_SetString(PyExc_TypeError, "Failed to parse args");
         return NULL;
@@ -86,7 +75,6 @@ PyObject* rc4_42(PyObject* Py_UNUSED(self), PyObject* args)
         PyErr_Format(PyExc_ValueError, "Invalid size of cbc_sec_key. Expect 16, got %zu", cbcSecKeySize);
         return NULL;
     }
-#endif
 
     tbc_rc4_42(xyusMd5Str, cbcSecKey, dst);
 

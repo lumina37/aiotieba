@@ -45,7 +45,7 @@ async def request_http(http_core: HttpCore, fid: int) -> BawuInfo:
 
 
 async def request_ws(ws_core: WsCore, fid: int) -> BawuInfo:
-    data = pack_proto(ws_core.account, fid)
+    data = pack_proto(fid)
 
     response = await ws_core.send(data, CMD)
     return parse_body(await response.read())

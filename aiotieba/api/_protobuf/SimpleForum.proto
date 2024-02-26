@@ -1,0 +1,11 @@
+// tbclient.SimpleForum
+syntax = "proto3";
+
+message SimpleForum {
+    int64 id = 1;
+    string name = 2;
+    string first_class = 7;
+    string second_class = 8;
+    int32 member_num = 12;
+    int32 post_num = 13;
+}

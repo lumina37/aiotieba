@@ -2,6 +2,7 @@
 syntax = "proto3";
 
 import "Error.proto";
+import "SimpleForum.proto";
 import "Page.proto";
 import "Post.proto";
 import "ThreadInfo.proto";
@@ -10,12 +11,6 @@ import "User.proto";
 message PbPageResIdl {
     Error error = 1;
     message DataRes {
-        message SimpleForum {
-            int64 id = 1;
-            string name = 2;
-            int32 member_num = 12;
-            int32 post_num = 13;
-        }
         SimpleForum forum = 2;
         Page page = 3;
         repeated Post post_list = 6;

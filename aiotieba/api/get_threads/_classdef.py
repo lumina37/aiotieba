@@ -686,6 +686,9 @@ class Forum_t:
         fid (int): 贴吧id
         fname (str): 贴吧名
 
+        category (str): 一级分类
+        subcategory (str): 二级分类
+
         member_num (int): 吧会员数
         post_num (int): 发帖量
         thread_num (int): 主题帖数
@@ -696,6 +699,9 @@ class Forum_t:
 
     fid: int = 0
     fname: str = ''
+
+    category: str = ''
+    subcategory: str = ''
 
     member_num: int = 0
     post_num: int = 0
@@ -709,12 +715,14 @@ class Forum_t:
         forum_proto = data_proto.forum
         fid = forum_proto.id
         fname = forum_proto.name
+        category = forum_proto.first_class
+        subcategory = forum_proto.second_class
         member_num = forum_proto.member_num
         post_num = forum_proto.post_num
         thread_num = forum_proto.thread_num
         has_bawu = bool(forum_proto.managers)
         has_rule = bool(data_proto.forum_rule.has_forum_rule)
-        return Forum_t(fid, fname, member_num, post_num, thread_num, has_bawu, has_rule)
+        return Forum_t(fid, fname, category, subcategory, member_num, post_num, thread_num, has_bawu, has_rule)
 
 
 @dcs.dataclass

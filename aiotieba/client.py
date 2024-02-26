@@ -137,7 +137,6 @@ class Client(object):
 
     __slots__ = [
         '_connector',
-        'account',
         '_http_core',
         '_ws_core',
         '_try_ws',
@@ -181,7 +180,6 @@ class Client(object):
         else:
             account = Account(BDUSS, STOKEN)
 
-        self.account = account
         net_core = NetCore(connector, proxy, timeout)
         self._http_core = HttpCore(account, net_core, loop)
         self._ws_core = WsCore(account, net_core, loop)
@@ -202,6 +200,15 @@ class Client(object):
 
     def __eq__(self, obj: "Client") -> bool:
         return self.account.BDUSS == obj.account.BDUSS
+
+    @property
+    def account(self) -> Account:
+        return self._http_core.account
+
+    @account.setter
+    def account(self, new_account: Account) -> None:
+        self._http_core.account = new_account
+        self._ws_core.account = new_account
 
     @handle_exception(BoolResponse)
     async def init_websocket(self) -> BoolResponse:
