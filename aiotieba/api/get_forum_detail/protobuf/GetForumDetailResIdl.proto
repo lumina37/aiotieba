@@ -17,7 +17,7 @@ message GetForumDetailResIdl {
         }
         RecommendForumInfo forum_info = 1;
         message ManagerElectionTab {
-            uint32 new_manager_status = 4;
+            string new_strategy_text = 5;
         }
         ManagerElectionTab election_tab = 8;
     }

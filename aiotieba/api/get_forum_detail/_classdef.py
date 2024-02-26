@@ -45,5 +45,5 @@ class Forum_detail(TbErrorExt):
         slogan = forum_proto.slogan
         member_num = forum_proto.member_count
         post_num = forum_proto.thread_count
-        has_bawu = data_proto.election_tab.new_manager_status == 5
+        has_bawu = data_proto.election_tab.new_strategy_text == "已有吧主"
         return Forum_detail(fid, fname, small_avatar, origin_avatar, slogan, member_num, post_num, has_bawu)
