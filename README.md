@@ -15,6 +15,7 @@
 <a href="https://pypi.org/project/aiotieba">
     <img src="https://img.shields.io/pypi/pyversions/aiotieba?style=flat-square" alt="PyPI - Python Version">
 </a>
+<a href="https://app.fossa.com/projects/git%2Bgithub.com%2FStarry-OvO%2Faiotieba?ref=badge_shield" alt="FOSSA Status"><img src="https://app.fossa.com/api/projects/git%2Bgithub.com%2FStarry-OvO%2Faiotieba.svg?type=shield"/></a>
 </a>
 <a href="https://pdm.fming.dev">
     <img src="https://img.shields.io/badge/pdm-managed-blueviolet?style=flat-square" alt="pdm-managed">
@@ -90,3 +91,7 @@ tid=8537699088 text=记录一下自己人生第一次当“老师”的经历^_^
 </p>
 
 为本开源项目提供的免费产品授权
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FStarry-OvO%2Faiotieba.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FStarry-OvO%2Faiotieba?ref=badge_large)
