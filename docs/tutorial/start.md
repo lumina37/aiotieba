@@ -58,7 +58,7 @@ user_id唯一，不可变，不能为空
 
 请注意将其与用户个人主页的tieba_uid相区分
 
-user_id是一个int64值
+user_id是一个uint64值（仅有一些远古时期的ip账号不符合这个规则）
 
 user_name portrait user_id 都是满足唯一性的用户标识符，并可以通过其中任意一个的值反查其余两个
 
@@ -70,7 +70,7 @@ tieba_uid唯一，不可变，但可以为空
 
 请注意将其与用户的user_id相区分
 
-tieba_uid是一个uint64值（仅有一些远古时期的ip账号不符合这个规则）
+tieba_uid是一个uint64值
 
 可以通过tieba_uid的值反查user_name portrait user_id
 
@@ -126,7 +126,7 @@ asyncio.run(main())
 如果你的[`BDUSS`](#bduss)填写无误，你会获得类似下面这样的结果
 
 ```log
-Starry_OvO
+AAAA（你的用户名）
 ```
 
 ## 运行时更改BDUSS
@@ -134,6 +134,8 @@ Starry_OvO
 该案例演示了如何在运行时更改BDUSS
 
 建议为每个账号新建`Client`，以避免误用遗留的websocket连接
+
+同样地，你也可以直接向`Client.account`赋值以动态变更用户参数
 
 ### 样例代码
 
@@ -161,7 +163,7 @@ asyncio.run(main())
 如果你的[`BDUSS`](#bduss)填写无误，你会获得类似下面这样的结果
 
 ```log
-Starry_OvO
+AAAA（你的用户名）
 ```
 
 ## 多账号
@@ -218,7 +220,7 @@ STOKEN = "在这里输入你账号的网页端STOKEN"
 
 async def main():
     account = tb.Account(BDUSS, STOKEN)
-    async with tb.Client(account) as client:
+    async with tb.Client(account=account) as client:
         forums = await client.get_self_follow_forums()
         print(forums[:3])
 
@@ -257,7 +259,7 @@ async def main():
     account2 = tb.Account.from_dict(dic)
     assert account1.BDUSS == account2.BDUSS
 
-    async with tb.Client(account2) as client:
+    async with tb.Client(account=account2) as client:
         user = await client.get_self_info()
 
     print(user)
@@ -272,7 +274,7 @@ asyncio.run(main())
 
 ```log
 {'BDUSS': '...'}
-Starry_OvO
+AAAA（你的用户名）
 ```
 
 ## 简单并发爬虫
