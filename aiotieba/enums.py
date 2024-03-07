@@ -108,6 +108,21 @@ class BawuSearchType(enum.IntEnum):
     OP = 1
 
 
+class SearchType(enum.IntEnum):
+    """
+    搜索类型
+
+    Note:
+        ALL 搜索全部\n
+        TIME app时间倒序\n
+        RELATION app相关性排序
+    """
+
+    ALL = 0
+    TIME = 1
+    RELATION = 2
+
+
 class RankForumType(enum.IntEnum):
     """
     吧签到排行榜类别

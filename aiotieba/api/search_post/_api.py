@@ -2,6 +2,7 @@ import yarl
 
 from ...const import APP_BASE_HOST, APP_INSECURE_SCHEME, MAIN_VERSION
 from ...core import HttpCore
+from ...enums import SearchType
 from ...exception import TiebaServerError
 from ...helper import parse_json
 from ._classdef import Searches
@@ -18,7 +19,7 @@ def parse_body(body: bytes) -> Searches:
 
 
 async def request(
-    http_core: HttpCore, fname: str, query: str, pn: int, rn: int, query_type: int, only_thread: bool
+    http_core: HttpCore, fname: str, query: str, pn: int, rn: int, search_type: SearchType, only_thread: bool
 ) -> Searches:
     data = [
         ('_client_version', MAIN_VERSION),
@@ -26,7 +27,7 @@ async def request(
         ('only_thread', int(only_thread)),
         ('pn', pn),
         ('rn', rn),
-        ('sm', query_type),
+        ('sm', search_type),
         ('word', query),
     ]
 

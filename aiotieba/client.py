@@ -98,6 +98,7 @@ from .enums import (
     PostSortType,
     RankForumType,
     ReqUInfo,
+    SearchType,
     ThreadSortType,
     WsStatus,
 )
@@ -487,7 +488,7 @@ class Client(object):
         pn: int = 1,
         *,
         rn: int = 30,
-        query_type: int = 0,
+        search_type: SearchType = SearchType.ALL,
         only_thread: bool = False,
     ) -> search_post.Searches:
         """
@@ -498,7 +499,7 @@ class Client(object):
             query (str): 查询文本
             pn (int, optional): 页码. Defaults to 1.
             rn (int, optional): 请求的条目数. Defaults to 30.
-            query_type (int, optional): 查询模式 0为全部搜索结果并且app似乎不提供这一模式 1为app时间倒序 2为app相关性排序. Defaults to 0.
+            search_type (SearchType, optional): 查询模式 默认查询全部. Defaults to SearchType.ALL.
             only_thread (bool, optional): 是否仅查询主题帖. Defaults to False.
 
         Returns:
@@ -507,7 +508,7 @@ class Client(object):
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
-        return await search_post.request(self._http_core, fname, query, pn, rn, query_type, only_thread)
+        return await search_post.request(self._http_core, fname, query, pn, rn, search_type, only_thread)
 
     @handle_exception(profile.UserInfo_pf)
     @_try_websocket
