@@ -133,18 +133,18 @@ def handle_exception(
     """
 
     def wrapper(func):
-        async def awrapper(*args, **kwargs):
+        async def awrapper(self, *args, **kwargs):
             def _log(log_level: int, err: Optional[Exception] = None) -> None:
                 logger = get_logger()
                 if logger.isEnabledFor(err_log_level):
                     if err is None:
                         err = "Suceeded"
-                    log_str = f"{err}. args={args[1:]} kwargs={kwargs}"
+                    log_str = f"{err}. args={args} kwargs={kwargs}"
                     record = logger.makeRecord(logger.name, log_level, None, 0, log_str, None, None, func.__name__)
                     logger.handle(record)
 
             try:
-                ret = await func(*args, **kwargs)
+                ret = await func(self, *args, **kwargs)
 
                 if ok_log_level:
                     _log(ok_log_level)
