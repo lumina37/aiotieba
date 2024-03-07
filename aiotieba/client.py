@@ -43,6 +43,7 @@ from .api import (
     get_images,
     get_member_users,
     get_posts,
+    get_rank_forums,
     get_rank_users,
     get_recom_status,
     get_recovers,
@@ -89,7 +90,17 @@ from .api import (
 from .api._classdef import UserInfo
 from .config import ProxyConfig, TimeoutConfig
 from .core import Account, HttpCore, NetCore, WsCore
-from .enums import BawuSearchType, BlacklistType, Gender, GroupType, PostSortType, ReqUInfo, ThreadSortType, WsStatus
+from .enums import (
+    BawuSearchType,
+    BlacklistType,
+    Gender,
+    GroupType,
+    PostSortType,
+    RankForumType,
+    ReqUInfo,
+    ThreadSortType,
+    WsStatus,
+)
 from .exception import BoolResponse, IntResponse, StrResponse
 from .helper.cache import ForumInfoCache
 from .helper.utils import handle_exception, is_portrait
@@ -1141,6 +1152,26 @@ class Client(object):
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
         return await get_member_users.request(self._http_core, fname, pn)
+
+    @handle_exception(get_rank_forums.RankForums)
+    async def get_rank_forums(
+        self, fname_or_fid: Union[str, int], /, pn: int = 1, *, rank_type: RankForumType = RankForumType.WEEKLY
+    ) -> get_rank_forums.RankForums:
+        """
+        获取pn页的吧签到排行表
+
+        Args:
+            fname_or_fid (str | int): 目标贴吧名或fid 优先贴吧名
+            pn (int, optional): 页码. Defaults to 1.
+            rank_type (RankForumType, optional): 榜单类型 默认为周榜. Defaults to RankForumType.WEEKLY.
+
+        Returns:
+            RankForums: 吧签到排行表
+        """
+
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
+
+        return await get_rank_forums.request(self._http_core, fname, pn, rank_type)
 
     @handle_exception(get_blocks.Blocks)
     async def get_blocks(self, fname_or_fid: Union[str, int], /, name: str = '', pn: int = 1) -> get_blocks.Blocks:

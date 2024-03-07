@@ -108,6 +108,23 @@ class BawuSearchType(enum.IntEnum):
     OP = 1
 
 
+class RankForumType(enum.IntEnum):
+    """
+    吧签到排行榜类别
+
+    Note:
+        TODAY 今日排行\n
+        YESTERDAY 昨日排行\n
+        WEEKLY 周排行\n
+        MONTHLY 月排行
+    """
+
+    TODAY = 0
+    YESTERDAY = 1
+    WEEKLY = 2
+    MONTHLY = 3
+
+
 class BlacklistType(enum.IntEnum):
     """
     用户黑名单类型
