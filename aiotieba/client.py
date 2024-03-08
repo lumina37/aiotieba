@@ -37,6 +37,7 @@ from .api import (
     get_fid,
     get_follow_forums,
     get_follows,
+    get_forum,
     get_forum_detail,
     get_god_threads,
     get_group_msg,
@@ -312,6 +313,23 @@ class Client(object):
 
         z_id = await init_z_id.request(self._http_core)
         self.account.z_id = z_id
+
+    @handle_exception(get_forum.Forum)
+    async def get_forum(self, fname_or_fid: Union[str, int]) -> get_forum.Forum:
+        """
+        通过forum_id获取贴吧信息
+        此接口较`get_forum_detail`更强大
+
+        Args:
+            fname_or_fid (str | int): 目标贴吧名或fid 优先贴吧名
+
+        Returns:
+            Forum: 贴吧信息
+        """
+
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
+
+        return await get_forum.request(self._http_core, fname)
 
     @handle_exception(get_forum_detail.Forum_detail)
     @_try_websocket

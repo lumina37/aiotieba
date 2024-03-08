@@ -7,7 +7,7 @@ from .._classdef import TypeMessage
 @dcs.dataclass
 class Forum_detail(TbErrorExt):
     """
-    吧基本信息
+    贴吧信息
 
     Attributes:
         err (Exception | None): 捕获的异常
