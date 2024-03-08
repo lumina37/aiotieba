@@ -10,9 +10,10 @@ if sys.version_info >= (3, 11):
 else:
     import async_timeout
 
-import json as jsonlib
-
-from ..logging import get_logger
+try:
+    import orjson as jsonlib
+except ImportError:
+    import json as jsonlib
 
 parse_json = jsonlib.loads
 pack_json = functools.partial(jsonlib.dumps, separators=(',', ':'))
@@ -21,10 +22,14 @@ if sys.version_info >= (3, 9):
     import random
 
     randbytes_nosec = random.randbytes
+
 else:
     import secrets
 
     randbytes_nosec = secrets.token_bytes
+
+
+from ..logging import get_logger
 
 if sys.version_info >= (3, 9):
 

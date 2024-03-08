@@ -48,6 +48,11 @@ img = [
 ]
 speedup = [
   "aiodns<4,>=3.0.0",
+  "orjson<3.10,>=2.0.11;python_version=='3.8'",
+  "orjson<4,>=2.2.0;python_version=='3.9'",
+  "orjson<4,>=3.4.7;python_version=='3.10'",
+  "orjson<4,>=3.7.10;python_version=='3.11'",
+  "orjson<4,>=3.9.10;python_version>='3.12'",
   "uvloop<0.20.0,>=0.14.0;python_version=='3.8' and sys_platform!='win32'",
   "uvloop<1.0,>=0.15.0;python_version=='3.9' and sys_platform!='win32'",
   "uvloop<1.0,>=0.16.0;python_version=='3.10' and sys_platform!='win32'",
