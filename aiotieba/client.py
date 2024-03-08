@@ -37,18 +37,21 @@ from .api import (
     get_fid,
     get_follow_forums,
     get_follows,
+    get_forum,
     get_forum_detail,
     get_god_threads,
     get_group_msg,
     get_images,
     get_member_users,
     get_posts,
+    get_rank_forums,
     get_rank_users,
     get_recom_status,
     get_recovers,
     get_replys,
     get_self_follow_forums,
     get_selfinfo_initNickname,
+    get_selfinfo_moindex,
     get_square_forums,
     get_statistics,
     get_tab_map,
@@ -89,7 +92,18 @@ from .api import (
 from .api._classdef import UserInfo
 from .config import ProxyConfig, TimeoutConfig
 from .core import Account, HttpCore, NetCore, WsCore
-from .enums import BawuSearchType, BlacklistType, Gender, GroupType, PostSortType, ReqUInfo, ThreadSortType, WsStatus
+from .enums import (
+    BawuSearchType,
+    BlacklistType,
+    Gender,
+    GroupType,
+    PostSortType,
+    RankForumType,
+    ReqUInfo,
+    SearchType,
+    ThreadSortType,
+    WsStatus,
+)
 from .exception import BoolResponse, IntResponse, StrResponse
 from .helper.cache import ForumInfoCache
 from .helper.utils import handle_exception, is_portrait
@@ -186,7 +200,7 @@ class Client(object):
 
         self._try_ws = try_ws
 
-        self._user = profile.UserInfo_pf()
+        self._user = UserInfo()
 
     async def __aenter__(self) -> "Client":
         return self
@@ -248,8 +262,8 @@ class Client(object):
             return
         await self.__login()
 
-    @handle_exception(profile.UserInfo_pf)
-    async def get_self_info(self, require: ReqUInfo = ReqUInfo.ALL) -> profile.UserInfo_pf:
+    @handle_exception(UserInfo)
+    async def get_self_info(self, require: ReqUInfo = ReqUInfo.ALL) -> UserInfo:
         """
         获取本账号信息
 
@@ -264,7 +278,10 @@ class Client(object):
             if require & ReqUInfo.BASIC:
                 await self.__login()
         if not self._user.tieba_uid:
-            if require & (ReqUInfo.TIEBA_UID | ReqUInfo.NICK_NAME):
+            if require == ReqUInfo.ALL:
+                user = await self._get_uinfo_profile(self._user.user_id)
+                self._user |= user
+            elif require & (ReqUInfo.TIEBA_UID | ReqUInfo.NICK_NAME):
                 await self.__get_selfinfo_initNickname()
 
         return self._user
@@ -272,9 +289,7 @@ class Client(object):
     async def __login(self) -> None:
         user, tbs = await login.request(self._http_core)
 
-        self._user.user_id = user.user_id
-        self._user.portrait = user.portrait
-        self._user.user_name = user.user_name
+        self._user |= user
         self.account.tbs = tbs
 
     async def __init_client_id(self) -> None:
@@ -298,6 +313,23 @@ class Client(object):
 
         z_id = await init_z_id.request(self._http_core)
         self.account.z_id = z_id
+
+    @handle_exception(get_forum.Forum)
+    async def get_forum(self, fname_or_fid: Union[str, int]) -> get_forum.Forum:
+        """
+        通过forum_id获取贴吧信息
+        此接口较`get_forum_detail`更强大
+
+        Args:
+            fname_or_fid (str | int): 目标贴吧名或fid 优先贴吧名
+
+        Returns:
+            Forum: 贴吧信息
+        """
+
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
+
+        return await get_forum.request(self._http_core, fname)
 
     @handle_exception(get_forum_detail.Forum_detail)
     @_try_websocket
@@ -476,7 +508,7 @@ class Client(object):
         pn: int = 1,
         *,
         rn: int = 30,
-        query_type: int = 0,
+        search_type: SearchType = SearchType.ALL,
         only_thread: bool = False,
     ) -> search_post.Searches:
         """
@@ -487,7 +519,7 @@ class Client(object):
             query (str): 查询文本
             pn (int, optional): 页码. Defaults to 1.
             rn (int, optional): 请求的条目数. Defaults to 30.
-            query_type (int, optional): 查询模式 0为全部搜索结果并且app似乎不提供这一模式 1为app时间倒序 2为app相关性排序. Defaults to 0.
+            search_type (SearchType, optional): 查询模式 默认查询全部. Defaults to SearchType.ALL.
             only_thread (bool, optional): 是否仅查询主题帖. Defaults to False.
 
         Returns:
@@ -496,7 +528,7 @@ class Client(object):
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
-        return await search_post.request(self._http_core, fname, query, pn, rn, query_type, only_thread)
+        return await search_post.request(self._http_core, fname, query, pn, rn, search_type, only_thread)
 
     @handle_exception(profile.UserInfo_pf)
     @_try_websocket
@@ -610,7 +642,7 @@ class Client(object):
 
         if not id_:
             LOG().warning("Null input")
-            return UserInfo(id_)
+            return UserInfo()
 
         if isinstance(id_, int):
             if require <= ReqUInfo.NICK_NAME:
@@ -1030,8 +1062,11 @@ class Client(object):
 
     async def __get_selfinfo_initNickname(self) -> None:
         user = await get_selfinfo_initNickname.request(self._http_core)
-        self._user.user_name = user.user_name
-        self._user.tieba_uid = user.tieba_uid
+        self._user |= user
+
+    async def __get_selfinfo_moindex(self) -> None:
+        user = await get_selfinfo_moindex.request(self._http_core)
+        self._user |= user
 
     @handle_exception(get_square_forums.SquareForums)
     @_try_websocket
@@ -1141,6 +1176,26 @@ class Client(object):
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
         return await get_member_users.request(self._http_core, fname, pn)
+
+    @handle_exception(get_rank_forums.RankForums)
+    async def get_rank_forums(
+        self, fname_or_fid: Union[str, int], /, pn: int = 1, *, rank_type: RankForumType = RankForumType.WEEKLY
+    ) -> get_rank_forums.RankForums:
+        """
+        获取pn页的吧签到排行表
+
+        Args:
+            fname_or_fid (str | int): 目标贴吧名或fid 优先贴吧名
+            pn (int, optional): 页码. Defaults to 1.
+            rank_type (RankForumType, optional): 榜单类型 默认为周榜. Defaults to RankForumType.WEEKLY.
+
+        Returns:
+            RankForums: 吧签到排行表
+        """
+
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
+
+        return await get_rank_forums.request(self._http_core, fname, pn, rank_type)
 
     @handle_exception(get_blocks.Blocks)
     async def get_blocks(self, fname_or_fid: Union[str, int], /, name: str = '', pn: int = 1) -> get_blocks.Blocks:

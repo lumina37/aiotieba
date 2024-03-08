@@ -8,7 +8,7 @@ import aiotieba as tb
 async def test_Follows(client: tb.Client):
     follows = await client.get_follows(957339815)
 
-    ##### Fan #####
+    ##### Follow #####
     follow = follows[0]
     assert follow.user_id > 0
     assert follow.portrait != ''

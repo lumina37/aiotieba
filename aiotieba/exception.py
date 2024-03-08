@@ -27,7 +27,7 @@ class BoolResponse(TbErrorExt):
     def __int__(self) -> int:
         return int(bool(self))
 
-    def __str__(self) -> int:
+    def __repr__(self) -> int:
         return str(bool(self))
 
     def __hash__(self) -> int:
@@ -51,7 +51,7 @@ class IntResponse(TbErrorExt, int):
     def __init__(self, i: int = 0) -> None:
         pass
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         return str(int(self))
 
     def __hash__(self) -> int:
