@@ -50,6 +50,7 @@ from .api import (
     get_replys,
     get_self_follow_forums,
     get_selfinfo_initNickname,
+    get_selfinfo_moindex,
     get_square_forums,
     get_statistics,
     get_tab_map,
@@ -198,7 +199,7 @@ class Client(object):
 
         self._try_ws = try_ws
 
-        self._user = profile.UserInfo_pf()
+        self._user = UserInfo()
 
     async def __aenter__(self) -> "Client":
         return self
@@ -260,8 +261,8 @@ class Client(object):
             return
         await self.__login()
 
-    @handle_exception(profile.UserInfo_pf)
-    async def get_self_info(self, require: ReqUInfo = ReqUInfo.ALL) -> profile.UserInfo_pf:
+    @handle_exception(UserInfo)
+    async def get_self_info(self, require: ReqUInfo = ReqUInfo.ALL) -> UserInfo:
         """
         获取本账号信息
 
@@ -276,7 +277,10 @@ class Client(object):
             if require & ReqUInfo.BASIC:
                 await self.__login()
         if not self._user.tieba_uid:
-            if require & (ReqUInfo.TIEBA_UID | ReqUInfo.NICK_NAME):
+            if require == ReqUInfo.ALL:
+                user = await self._get_uinfo_profile(self._user.user_id)
+                self._user |= user
+            elif require & (ReqUInfo.TIEBA_UID | ReqUInfo.NICK_NAME):
                 await self.__get_selfinfo_initNickname()
 
         return self._user
@@ -284,9 +288,7 @@ class Client(object):
     async def __login(self) -> None:
         user, tbs = await login.request(self._http_core)
 
-        self._user.user_id = user.user_id
-        self._user.portrait = user.portrait
-        self._user.user_name = user.user_name
+        self._user |= user
         self.account.tbs = tbs
 
     async def __init_client_id(self) -> None:
@@ -622,7 +624,7 @@ class Client(object):
 
         if not id_:
             LOG().warning("Null input")
-            return UserInfo(id_)
+            return UserInfo()
 
         if isinstance(id_, int):
             if require <= ReqUInfo.NICK_NAME:
@@ -1042,8 +1044,11 @@ class Client(object):
 
     async def __get_selfinfo_initNickname(self) -> None:
         user = await get_selfinfo_initNickname.request(self._http_core)
-        self._user.user_name = user.user_name
-        self._user.tieba_uid = user.tieba_uid
+        self._user |= user
+
+    async def __get_selfinfo_moindex(self) -> None:
+        user = await get_selfinfo_moindex.request(self._http_core)
+        self._user |= user
 
     @handle_exception(get_square_forums.SquareForums)
     @_try_websocket

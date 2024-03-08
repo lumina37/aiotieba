@@ -26,5 +26,5 @@ async def request(http_core: HttpCore, fname: str, pn: int, rank_type: RankForum
         yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/sign/index"), params
     )
 
-    body = await http_core.net_core.send_request(request, read_bufsize=64 * 1024)
+    body = await http_core.net_core.send_request(request, read_bufsize=8 * 1024)
     return parse_body(body)

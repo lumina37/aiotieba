@@ -53,8 +53,8 @@ class UserInfo_panel(TbErrorExt):
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> "UserInfo_panel":
-        user_name = data_map['name']
         portrait = data_map['portrait']
+        user_name = data_map['name']
         nick_name_new = data_map['show_nickname']
         nick_name_old = data_map['name_show']
 
