@@ -5,8 +5,8 @@ import time
 
 import aiohttp
 import yarl
-from Crypto.Cipher import AES
-from Crypto.Util.Padding import pad, unpad
+from cryptography.hazmat.primitives import padding
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from ...const import MAIN_VERSION
 from ...core import HttpCore
@@ -29,7 +29,12 @@ async def request(http_core: HttpCore):
 
     req_body = pack_json(params)
     req_body = gzip.compress(req_body.encode('utf-8'), compresslevel=6, mtime=0)
-    req_body_aes = http_core.account.aes_cbc_chiper.encrypt(pad(req_body, block_size=AES.block_size))
+
+    padder = padding.PKCS7(algorithms.AES.block_size).padder()
+    padded_req_body = padder.update(req_body) + padder.finalize()
+    aes_encryptor = http_core.account.aes_cbc_chiper.encryptor()
+    req_body_aes = aes_encryptor.update(padded_req_body) + aes_encryptor.finalize()
+
     req_body_md5 = hashlib.md5(req_body).digest()
 
     payload = aiohttp.payload.BytesPayload(
@@ -70,11 +75,17 @@ async def request(http_core: HttpCore):
 
     res_query_skey = binascii.a2b_base64(res_json['skey'])
     res_aes_sec_key = rc4_42(xyus_md5_str, res_query_skey)
-    aes_chiper = AES.new(res_aes_sec_key, AES.MODE_CBC, iv=b'\x00' * 16)
     res_data = binascii.a2b_base64(res_json['data'])
-    res_data = unpad(aes_chiper.decrypt(res_data)[:-16], AES.block_size)  # [:-16] remove md5
-    res_data = res_data.decode('utf-8')
-    del res_json  # to reuse json parser
+
+    iv = b'\x00' * 16
+    aes_chiper = Cipher(algorithms.AES(res_aes_sec_key), modes.CBC(iv))
+    aes_decryptor = aes_chiper.decryptor()
+    decrypted_res_data = aes_decryptor.update(res_data) + aes_decryptor.finalize()
+    decrypted_res_data = decrypted_res_data[:-16]  # remove suffix md5
+    unpadder = padding.PKCS7(algorithms.AES.block_size).unpadder()
+    unpadded_data = unpadder.update(decrypted_res_data) + unpadder.finalize()
+
+    res_data = unpadded_data.decode('utf-8')
     res_data = parse_json(res_data)
     zid = res_data['token']
 

@@ -2,8 +2,8 @@ import binascii
 import time
 from typing import List
 
-from Crypto.Cipher import PKCS1_v1_5
-from Crypto.PublicKey import RSA
+from cryptography.hazmat.primitives.asymmetric.padding import PKCS1v15
+from cryptography.hazmat.primitives.serialization import load_der_public_key
 
 from ...const import MAIN_VERSION
 from ...core import Account, WsCore
@@ -34,8 +34,8 @@ def pack_proto(account: Account) -> bytes:
     }
     req_proto.data.device = pack_json(device)
 
-    rsa_chiper = PKCS1_v1_5.new(RSA.import_key(PUBLIC_KEY))
-    secret_key = rsa_chiper.encrypt(account.aes_ecb_sec_key)
+    rsa_chiper = load_der_public_key(PUBLIC_KEY)
+    secret_key = rsa_chiper.encrypt(account.aes_ecb_sec_key, PKCS1v15())
     req_proto.data.secretKey = secret_key
     req_proto.data.stoken = account.STOKEN
     req_proto.cuid = f"{account.cuid}|com.baidu.tieba{MAIN_VERSION}"

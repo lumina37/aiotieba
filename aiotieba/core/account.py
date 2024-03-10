@@ -1,7 +1,8 @@
-import hashlib
 from typing import Dict, Union
 
-from Crypto.Cipher import AES
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from ..helper import randbytes_nosec
 from ..helper.crypto import c3_aid, cuid_galaxy2
@@ -381,18 +382,19 @@ class Account:
         self._aes_ecb_sec_key = new_aes_ecb_sec_key
 
     @property
-    def aes_ecb_chiper(self):
+    def aes_ecb_chiper(self) -> Cipher[modes.ECB]:
         """
         获取供贴吧websocket使用的AES-ECB加密器
 
         Returns:
-            Any: AES chiper
+            Cipher[ECB]: AES-ECB加密器
         """
 
         if self._aes_ecb_chiper is None:
             salt = b'\xa4\x0b\xc8\x34\xd6\x95\xf3\x13'
-            ws_secret_key = hashlib.pbkdf2_hmac('sha1', self.aes_ecb_sec_key, salt, 5, 32)
-            self._aes_ecb_chiper = AES.new(ws_secret_key, AES.MODE_ECB)
+            kdf = PBKDF2HMAC(hashes.SHA1(), 32, salt, 5)
+            ws_secret_key = kdf.derive(self.aes_ecb_sec_key)
+            self._aes_ecb_chiper = Cipher(algorithms.AES(ws_secret_key), modes.ECB())
 
         return self._aes_ecb_chiper
 
@@ -417,14 +419,16 @@ class Account:
         self._aes_ecb_sec_key = new_aes_ecb_sec_key
 
     @property
-    def aes_cbc_chiper(self):
+    def aes_cbc_chiper(self) -> Cipher[modes.CBC]:
         """
         获取供贴吧客户端使用的AES-CBC加密器
 
         Returns:
-            Any: AES chiper
+            Cipher[CBC]: AES-CBC加密器
         """
 
         if self._aes_cbc_chiper is None:
-            self._aes_cbc_chiper = AES.new(self.aes_cbc_sec_key, AES.MODE_CBC, iv=b'\x00' * 16)
+            iv = b'\x00' * 16
+            self._aes_cbc_chiper = Cipher(algorithms.AES(self.aes_cbc_sec_key), modes.CBC(iv))
+
         return self._aes_cbc_chiper

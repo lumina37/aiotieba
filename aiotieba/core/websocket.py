@@ -8,8 +8,8 @@ from typing import Awaitable, Callable, Dict, Optional, Tuple
 
 import aiohttp
 import yarl
-from Crypto.Cipher import AES
-from Crypto.Util.Padding import pad, unpad
+from cryptography.hazmat.primitives import padding
+from cryptography.hazmat.primitives.ciphers import algorithms
 
 from ..enums import WsStatus
 from ..exception import HTTPStatusError
@@ -45,8 +45,10 @@ def pack_ws_bytes(
         data = gzip.compress(data, compresslevel=6, mtime=0)
     if encrypt:
         flag |= 0b10000000
-        data = pad(data, AES.block_size)
-        data = account.aes_ecb_chiper.encrypt(data)
+        padder = padding.PKCS7(algorithms.AES.block_size).padder()
+        data = padder.update(data) + padder.finalize()
+        encryptor = account.aes_ecb_chiper.encryptor()
+        data = encryptor.update(data) + encryptor.finalize()
 
     data = b''.join(
         [
@@ -81,8 +83,10 @@ def parse_ws_bytes(account: Account, data: bytes) -> Tuple[bytes, int, int]:
 
     data = data_view[9:].tobytes()
     if flag & 0b10000000:
-        data = account.aes_ecb_chiper.decrypt(data)
-        data = unpad(data, AES.block_size)
+        decryptor = account.aes_ecb_chiper.decryptor()
+        data = decryptor.update(data) + decryptor.finalize()
+        unpadder = padding.PKCS7(algorithms.AES.block_size).unpadder()
+        data = unpadder.update(data) + unpadder.finalize()
     if flag & 0b01000000:
         data = gzip.decompress(data)
 
