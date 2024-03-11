@@ -13,7 +13,7 @@ def parse_body(body: bytes) -> Searches:
     if code := int(res_json['error_code']):
         raise TiebaServerError(code, res_json['error_msg'])
 
-    searches = Searches(res_json)
+    searches = Searches.from_tbdata(res_json)
 
     return searches
 
