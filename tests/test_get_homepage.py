@@ -3,7 +3,7 @@ import pytest
 import aiotieba as tb
 
 
-@pytest.mark.flaky(reruns=2, reruns_delay=2.0)
+@pytest.mark.flaky(reruns=2, reruns_delay=5.0)
 @pytest.mark.asyncio(scope="session")
 async def test_Homepage(client: tb.Client):
     homepage = await client.get_homepage(957339815)

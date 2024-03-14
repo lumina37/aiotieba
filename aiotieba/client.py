@@ -71,7 +71,7 @@ from .api import (
     recommend,
     recover,
     remove_fan,
-    search_post,
+    search_exact,
     send_msg,
     set_blacklist,
     set_msg_readed,
@@ -499,8 +499,8 @@ class Client(object):
 
         return await get_comments.request_http(self._http_core, tid, pid, pn, is_comment)
 
-    @handle_exception(search_post.Searches)
-    async def search_post(
+    @handle_exception(search_exact.ExactSearches)
+    async def search_exact(
         self,
         fname_or_fid: Union[str, int],
         query: str,
@@ -510,7 +510,7 @@ class Client(object):
         rn: int = 30,
         search_type: SearchType = SearchType.ALL,
         only_thread: bool = False,
-    ) -> search_post.Searches:
+    ) -> search_exact.ExactSearches:
         """
         贴吧搜索
 
@@ -523,12 +523,12 @@ class Client(object):
             only_thread (bool, optional): 是否仅查询主题帖. Defaults to False.
 
         Returns:
-            Searches: 搜索结果列表
+            ExactSearches: 搜索结果列表
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
-        return await search_post.request(self._http_core, fname, query, pn, rn, search_type, only_thread)
+        return await search_exact.request(self._http_core, fname, query, pn, rn, search_type, only_thread)
 
     @handle_exception(profile.UserInfo_pf)
     @_try_websocket

@@ -12,11 +12,18 @@ else:
 
 try:
     import orjson as jsonlib
+
+    def pack_json(obj: Any) -> str:
+        bjson: bytes = jsonlib.dumps(obj)
+        return bjson.decode('utf-8')
+
 except ImportError:
     import json as jsonlib
 
+    pack_json = functools.partial(jsonlib.dumps, separators=(',', ':'))
+
 parse_json = jsonlib.loads
-pack_json = functools.partial(jsonlib.dumps, separators=(',', ':'))
+
 
 if sys.version_info >= (3, 9):
     import random

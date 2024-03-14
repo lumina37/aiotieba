@@ -5,22 +5,22 @@ from ...core import HttpCore
 from ...enums import SearchType
 from ...exception import TiebaServerError
 from ...helper import parse_json
-from ._classdef import Searches
+from ._classdef import ExactSearches
 
 
-def parse_body(body: bytes) -> Searches:
+def parse_body(body: bytes) -> ExactSearches:
     res_json = parse_json(body)
     if code := int(res_json['error_code']):
         raise TiebaServerError(code, res_json['error_msg'])
 
-    searches = Searches(res_json)
+    searches = ExactSearches.from_tbdata(res_json)
 
     return searches
 
 
 async def request(
     http_core: HttpCore, fname: str, query: str, pn: int, rn: int, search_type: SearchType, only_thread: bool
-) -> Searches:
+) -> ExactSearches:
     data = [
         ('_client_version', MAIN_VERSION),
         ('kw', fname),

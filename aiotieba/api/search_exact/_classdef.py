@@ -6,7 +6,7 @@ from .._classdef import Containers
 
 
 @dcs.dataclass
-class Search:
+class ExactSearch:
     """
     搜索结果
 
@@ -35,7 +35,7 @@ class Search:
     create_time: int = 0
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "Search":
+    def from_tbdata(data_map: Mapping) -> "ExactSearch":
         text = data_map['content']
         title = data_map['title']
         fname = data_map['fname']
@@ -44,9 +44,9 @@ class Search:
         show_name = data_map['author']["name_show"]
         is_comment = bool(int(data_map['is_floor']))
         create_time = int(data_map['time'])
-        return Search(text, title, fname, tid, pid, show_name, is_comment, create_time)
+        return ExactSearch(text, title, fname, tid, pid, show_name, is_comment, create_time)
 
-    def __eq__(self, obj: "Search") -> bool:
+    def __eq__(self, obj: "ExactSearch") -> bool:
         return self.pid == obj.pid
 
     def __hash__(self) -> int:
@@ -54,7 +54,7 @@ class Search:
 
 
 @dcs.dataclass
-class Page_search:
+class Page_exsch:
     """
     页信息
 
@@ -77,36 +77,36 @@ class Page_search:
     has_prev: bool = False
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "Page_search":
+    def from_tbdata(data_map: Mapping) -> "Page_exsch":
         page_size = int(data_map["page_size"])
         current_page = int(data_map["current_page"])
         total_page = int(data_map["total_page"])
         total_count = int(data_map["total_count"])
         has_more = bool(int(data_map["has_more"]))
         has_prev = bool(int(data_map["has_prev"]))
-        return Page_search(page_size, current_page, total_page, total_count, has_more, has_prev)
+        return Page_exsch(page_size, current_page, total_page, total_count, has_more, has_prev)
 
 
 @dcs.dataclass
-class Searches(TbErrorExt, Containers[Search]):
+class ExactSearches(TbErrorExt, Containers[ExactSearch]):
     """
     搜索结果列表
 
     Attributes:
-        objs (list[Search]): 搜索结果列表
+        objs (list[ExactSearch]): 搜索结果列表
         err (Exception | None): 捕获的异常
 
-        page (Page_search): 页信息
+        page (Page_exsch): 页信息
         has_more (bool): 是否还有下一页
     """
 
-    page: Page_search = dcs.field(default_factory=Page_search)
+    page: Page_exsch = dcs.field(default_factory=Page_exsch)
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "Searches":
-        objs = [Search.from_tbdata(m) for m in data_map.get('post_list', [])]
-        page = Page_search.from_tbdata(data_map['page'])
-        return Searches(objs, page)
+    def from_tbdata(data_map: Mapping) -> "ExactSearches":
+        objs = [ExactSearch.from_tbdata(m) for m in data_map.get('post_list', [])]
+        page = Page_exsch.from_tbdata(data_map['page'])
+        return ExactSearches(objs, page)
 
     @property
     def has_more(self) -> bool:
