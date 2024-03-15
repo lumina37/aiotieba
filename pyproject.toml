@@ -1,9 +1,10 @@
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["scikit-build-core"]
+build-backend = "scikit_build_core.build"
 
 [project]
 name = "aiotieba"
+version = "4.3.1a0"
 description = "Asynchronous I/O Client for Baidu Tieba"
 authors = [{ name = "Starry-OvO", email = "starry.qvq@gmail.com" }]
 urls = { Repository = "https://github.com/Starry-OvO/aiotieba/", Documentation = "https://aiotieba.cc/" }
@@ -39,7 +40,6 @@ dependencies = [
   "cryptography<43,>=35.0.0",
   "async-timeout<5,>=4.0;python_version<'3.11'",
 ]
-dynamic = ["version"]
 
 [project.optional-dependencies]
 img = [
@@ -60,19 +60,18 @@ speedup = [
   "uvloop<1.0,>=0.18.0;python_version>='3.12' and sys_platform!='win32'",
 ]
 
-[tool.setuptools.packages.find]
-where = ["."]
-
-[tool.setuptools.dynamic]
-version = { attr = "aiotieba.__version__.__version__" }
-
-[tool.setuptools.package-data]
-"*" = ["*.pyi"]
-
 [tool.pdm.dev-dependencies]
 lint = ["ruff", "black"]
 test = ["aiotieba[speedup]", "pytest==8.1.0", "pytest-asyncio==0.23.5", "pytest-rerunfailures==13.0"]
 doc = ["mkdocs-material", "mkdocstrings[python]"]
+
+[tool.scikit-build]
+sdist.exclude = ["*.proto", ".*", "docs", "scripts", "tests", "mkdocs.yml"]
+wheel.exclude = ["*.c", "*.h"]
+
+[[tool.scikit-build.generate]]
+path = "aiotieba/__version__.py"
+template = '''__version__ = "${version}"'''
 
 [tool.cibuildwheel]
 build = "cp38-* cp39-* cp310-* cp311-* cp312-* pp38-* pp39-* pp310-*"
