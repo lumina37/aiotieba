@@ -123,6 +123,27 @@ class SearchType(enum.IntEnum):
     RELATION = 2
 
 
+class BawuPerm(enum.IntEnum):
+    """
+    吧务已分配的权限
+
+    Note:
+        NULL 无权限\n
+        UNBLOCK 解除封禁\n
+        UNBLOCK_APPEAL 封禁申诉处理\n
+        RECOVER 恢复删帖\n
+        RECOVER_APPEAL 删帖申诉处理\n
+        ALL 所有权限
+    """
+
+    NULL = 0
+    UNBLOCK = 1 << 0
+    UNBLOCK_APPEAL = 1 << 1
+    RECOVER = 1 << 2
+    RECOVER_APPEAL = 1 << 3
+    ALL = UNBLOCK | UNBLOCK_APPEAL | RECOVER | RECOVER_APPEAL
+
+
 class RankForumType(enum.IntEnum):
     """
     吧签到排行榜类别

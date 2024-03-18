@@ -25,6 +25,7 @@ from .api import (
     get_ats,
     get_bawu_blacklist,
     get_bawu_info,
+    get_bawu_perm,
     get_bawu_postlogs,
     get_bawu_userlogs,
     get_blacklist,
@@ -93,6 +94,7 @@ from .api._classdef import UserInfo
 from .config import ProxyConfig, TimeoutConfig
 from .core import Account, HttpCore, NetCore, WsCore
 from .enums import (
+    BawuPerm,
     BawuSearchType,
     BlacklistType,
     Gender,
@@ -1107,6 +1109,29 @@ class Client(object):
             return await get_bawu_info.request_ws(self._ws_core, fid)
 
         return await get_bawu_info.request_http(self._http_core, fid)
+
+    @handle_exception(BawuPerm)
+    async def get_bawu_perm(self, fname_or_fid: Union[str, int], /, id_: Union[str, int]) -> BawuPerm:
+        """
+        获取某个吧务已分配的权限
+
+        Args:
+            fname_or_fid (str | int): 目标贴吧名或fid 优先fid
+            id_ (str | int): 用户id user_id / user_name / portrait 优先portrait
+
+        Returns:
+            BawuPerm: 吧务已分配的权限
+        """
+
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
+
+        if not is_portrait(id_):
+            user = await self.get_user_info(id_, ReqUInfo.PORTRAIT)
+            portrait = user.portrait
+        else:
+            portrait = id_
+
+        return await get_bawu_perm.request(self._http_core, fid, portrait)
 
     @handle_exception(get_tab_map.TabMap)
     @_try_websocket
