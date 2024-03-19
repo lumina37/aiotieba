@@ -651,8 +651,8 @@ class Client(object):
             return UserInfo()
 
         if isinstance(id_, int):
-            if require <= ReqUInfo.NICK_NAME:
-                # 仅有NICK_NAME以下的需求
+            if (require | ReqUInfo.BASIC) == ReqUInfo.BASIC:
+                # 仅有BASIC需求
                 return await self._get_uinfo_getuserinfo(id_)
             else:
                 return await self._get_uinfo_profile(id_)
