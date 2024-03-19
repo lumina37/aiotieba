@@ -7,6 +7,7 @@ import aiohttp
 import yarl
 
 from .api import (
+    add_bawu,
     add_bawu_blacklist,
     add_blacklist_old,
     add_post,
@@ -97,6 +98,7 @@ from .core import Account, HttpCore, NetCore, WsCore
 from .enums import (
     BawuPermType,
     BawuSearchType,
+    BawuType,
     BlacklistType,
     Gender,
     GroupType,
@@ -109,7 +111,7 @@ from .enums import (
 )
 from .exception import BoolResponse, IntResponse, StrResponse
 from .helper.cache import ForumInfoCache
-from .helper.utils import handle_exception, is_portrait
+from .helper.utils import handle_exception, is_portrait, is_user_name
 from .logging import get_logger as LOG
 from .typing import TypeUserInfo
 
@@ -1111,6 +1113,34 @@ class Client(object):
 
         return await get_bawu_info.request_http(self._http_core, fid)
 
+    @handle_exception(BoolResponse, ok_log_level=logging.INFO)
+    async def add_bawu(
+        self, fname_or_fid: Union[str, int], /, id_: Union[str, int], *, bawu_type: BawuType = BawuType.MANAGER
+    ) -> BoolResponse:
+        """
+        添加吧务
+
+        Args:
+            fname_or_fid (str | int): 目标贴吧名或fid 优先fid
+            id_ (str | int): 用户id user_id / user_name / portrait 优先user_name
+            bawu_type (BawuType): 吧务类型. Defaults to BawuType.MANAGER.
+
+        Returns:
+            BoolResponse: True成功 False失败
+        """
+
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
+
+        if not is_user_name(id_):
+            user = await self.get_user_info(id_, ReqUInfo.USER_NAME)
+            user_name = user.user_name
+        else:
+            user_name = id_
+
+        await self.__init_tbs()
+
+        return await add_bawu.request(self._http_core, fid, user_name, bawu_type)
+
     @handle_exception(get_bawu_perm.BawuPerm)
     async def get_bawu_perm(self, fname_or_fid: Union[str, int], /, id_: Union[str, int]) -> get_bawu_perm.BawuPerm:
         """
@@ -1136,7 +1166,7 @@ class Client(object):
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def set_bawu_perm(
-        self, fname_or_fid: Union[str, int], /, id_: Union[str, int], perms: BawuPermType = BawuPermType.NULL
+        self, fname_or_fid: Union[str, int], /, id_: Union[str, int], *, perms: BawuPermType = BawuPermType.NULL
     ) -> BoolResponse:
         """
         为指定吧务分配权限
@@ -1144,7 +1174,7 @@ class Client(object):
         Args:
             fname_or_fid (str | int): 目标贴吧名或fid 优先fid
             id_ (str | int): 用户id user_id / user_name / portrait 优先portrait
-            perms (BawuPermType): 待分配的权限
+            perms (BawuPermType): 待分配的权限. Defaults to BawuPermType.NULL.
 
         Returns:
             BoolResponse: True成功 False失败
