@@ -859,90 +859,68 @@ class Client(object):
 
         return await get_dislike_forums.request_http(self._http_core, pn, rn)
 
-    @handle_exception(get_user_contents.UserThreads)
-    @_try_websocket
-    async def get_self_public_threads(self, pn: int = 1) -> get_user_contents.UserThreads:
-        """
-        获取本人发布的公开状态的主题帖列表
-
-        Args:
-            pn (int, optional): 页码. Defaults to 1.
-
-        Returns:
-            UserThreads: 主题帖列表
-        """
-
-        user = await self.get_self_info(ReqUInfo.USER_ID)
-
-        if self._ws_core.status == WsStatus.OPEN:
-            return await get_user_contents.get_threads.request_ws(self._ws_core, user.user_id, pn, public_only=True)
-
-        return await get_user_contents.get_threads.request_http(self._http_core, user.user_id, pn, public_only=True)
-
-    @handle_exception(get_user_contents.UserThreads)
-    @_try_websocket
-    async def get_self_threads(self, pn: int = 1) -> get_user_contents.UserThreads:
-        """
-        获取本人发布的主题帖列表
-
-        Args:
-            pn (int, optional): 页码. Defaults to 1.
-
-        Returns:
-            UserThreads: 主题帖列表
-        """
-
-        user = await self.get_self_info(ReqUInfo.USER_ID)
-
-        if self._ws_core.status == WsStatus.OPEN:
-            return await get_user_contents.get_threads.request_ws(self._ws_core, user.user_id, pn, public_only=False)
-
-        return await get_user_contents.get_threads.request_http(self._http_core, user.user_id, pn, public_only=False)
-
     @handle_exception(get_user_contents.UserPostss)
     @_try_websocket
-    async def get_self_posts(self, pn: int = 1) -> get_user_contents.UserPostss:
+    async def get_user_posts(self, id_: Union[str, int, None] = None, pn: int = 1) -> get_user_contents.UserPostss:
         """
-        获取本人发布的回复列表
+        获取用户发布的回复列表
 
         Args:
+            id_ (str | int | None): 用户id user_id / user_name / portrait 优先user_id
+                默认为None即获取本账号信息. Defaults to None.
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
             UserPostss: 回复列表
         """
 
-        user = await self.get_self_info(ReqUInfo.USER_ID)
-
-        if self._ws_core.status == WsStatus.OPEN:
-            return await get_user_contents.get_posts.request_ws(self._ws_core, user.user_id, pn)
-
-        return await get_user_contents.get_posts.request_http(self._http_core, user.user_id, pn)
-
-    @handle_exception(get_user_contents.UserThreads)
-    @_try_websocket
-    async def get_user_threads(self, id_: Union[str, int], pn: int = 1) -> get_user_contents.UserThreads:
-        """
-        获取用户发布的主题帖列表
-
-        Args:
-            id_ (str | int): 用户id user_id / user_name / portrait 优先user_id
-            pn (int, optional): 页码. Defaults to 1.
-
-        Returns:
-            UserThreads: 主题帖列表
-        """
-
-        if not isinstance(id_, int):
+        is_self = False
+        if id_ is None:
+            user = await self.get_self_info(ReqUInfo.USER_ID)
+            user_id = user.user_id
+            is_self = True
+        elif not isinstance(id_, int):
             user = await self.get_user_info(id_, ReqUInfo.USER_ID)
             user_id = user.user_id
         else:
             user_id = id_
 
         if self._ws_core.status == WsStatus.OPEN:
-            return await get_user_contents.get_threads.request_ws(self._ws_core, user_id, pn, public_only=True)
+            return await get_user_contents.get_posts.request_ws(self._ws_core, user_id, pn, is_self)
 
-        return await get_user_contents.get_threads.request_http(self._http_core, user_id, pn, public_only=True)
+        return await get_user_contents.get_posts.request_http(self._http_core, user_id, pn, is_self)
+
+    @handle_exception(get_user_contents.UserThreads)
+    @_try_websocket
+    async def get_user_threads(
+        self, id_: Union[str, int, None] = None, pn: int = 1, *, public_only: bool = False
+    ) -> get_user_contents.UserThreads:
+        """
+        获取用户发布的主题帖列表
+
+        Args:
+            id_ (str | int | None): 用户id user_id / user_name / portrait 优先user_id
+                默认为None即获取本账号信息. Defaults to None.
+            pn (int, optional): 页码. Defaults to 1.
+            public_only (bool, optional): 是否仅获取公开主题帖 该选项在获取他人主题帖时无效. Defaults to False.
+
+        Returns:
+            UserThreads: 主题帖列表
+        """
+
+        if id_ is None:
+            user = await self.get_self_info(ReqUInfo.USER_ID)
+            user_id = user.user_id
+        elif not isinstance(id_, int):
+            user = await self.get_user_info(id_, ReqUInfo.USER_ID)
+            user_id = user.user_id
+        else:
+            user_id = id_
+
+        if self._ws_core.status == WsStatus.OPEN:
+            return await get_user_contents.get_threads.request_ws(self._ws_core, user_id, pn, public_only)
+
+        return await get_user_contents.get_threads.request_http(self._http_core, user_id, pn, public_only)
 
     @handle_exception(get_replys.Replys)
     @_try_websocket
