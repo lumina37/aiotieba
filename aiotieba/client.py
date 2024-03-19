@@ -14,6 +14,7 @@ from .api import (
     agree,
     agree_vimage,
     block,
+    del_bawu,
     del_bawu_blacklist,
     del_blacklist_old,
     del_post,
@@ -1140,6 +1141,32 @@ class Client(object):
         await self.__init_tbs()
 
         return await add_bawu.request(self._http_core, fid, user_name, bawu_type)
+
+    @handle_exception(BoolResponse, ok_log_level=logging.INFO)
+    async def del_bawu(
+        self, fname_or_fid: Union[str, int], /, id_: Union[str, int], *, bawu_type: BawuType = BawuType.MANAGER
+    ) -> BoolResponse:
+        """
+        删除吧务
+
+        Args:
+            fname_or_fid (str | int): 目标贴吧名或fid 优先fid
+            id_ (str | int): 用户id user_id / user_name / portrait 优先portrait
+            bawu_type (BawuType): 吧务类型. Defaults to BawuType.MANAGER.
+
+        Returns:
+            BoolResponse: True成功 False失败
+        """
+
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
+
+        if not is_portrait(id_):
+            user = await self.get_user_info(id_, ReqUInfo.PORTRAIT)
+            portrait = user.portrait
+        else:
+            portrait = id_
+
+        return await del_bawu.request(self._http_core, fid, portrait, bawu_type)
 
     @handle_exception(get_bawu_perm.BawuPerm)
     async def get_bawu_perm(self, fname_or_fid: Union[str, int], /, id_: Union[str, int]) -> get_bawu_perm.BawuPerm:
