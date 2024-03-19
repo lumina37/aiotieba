@@ -517,4 +517,4 @@ class UserThreads(TbErrorExt, Containers[UserThread]):
             user = UserInfo_u.from_tbdata(data_proto.post_list[0])
             for uthread in objs:
                 uthread.user = user
-        return UserPostss(objs)
+        return UserThreads(objs)
