@@ -1,4 +1,10 @@
 import enum
+import sys
+
+if sys.version_info >= (3, 11):
+    from enum import StrEnum
+else:
+    from strenum import StrEnum
 
 
 class Gender(enum.IntEnum):
@@ -46,7 +52,7 @@ class PrivReply(enum.IntEnum):
     FOLLOW = 6
 
 
-class ReqUInfo(enum.IntEnum):
+class ReqUInfo(enum.Flag):
     """
     使用该枚举类指定待获取的用户信息字段
 
@@ -55,14 +61,14 @@ class ReqUInfo(enum.IntEnum):
         其中BASIC = USER_ID | PORTRAIT | USER_NAME
     """
 
-    USER_ID = 1 << 0
-    PORTRAIT = 1 << 1
-    USER_NAME = 1 << 2
-    NICK_NAME = 1 << 3
-    TIEBA_UID = 1 << 4
-    OTHER = 1 << 5
+    USER_ID = enum.auto()
+    PORTRAIT = enum.auto()
+    USER_NAME = enum.auto()
+    NICK_NAME = enum.auto()
+    TIEBA_UID = enum.auto()
+    OTHER = enum.auto()
     BASIC = USER_ID | PORTRAIT | USER_NAME
-    ALL = (1 << 6) - 1
+    ALL = BASIC | NICK_NAME | TIEBA_UID | OTHER
 
 
 class ThreadSortType(enum.IntEnum):
@@ -123,6 +129,42 @@ class SearchType(enum.IntEnum):
     RELATION = 2
 
 
+class BawuType(StrEnum):
+    """
+    吧务类型
+
+    Note:
+        MANAGER 小吧\n
+        IMAGE_EDITOR 图片小编\n
+        VOICE_EDITOR 语音小编
+    """
+
+    MANAGER = 'assist'
+    IMAGE_EDITOR = 'picadmin'
+    VOICE_EDITOR = 'voiceadmin'
+
+
+class BawuPermType(enum.Flag):
+    """
+    吧务已分配的权限
+
+    Note:
+        NULL 无权限\n
+        UNBLOCK 解除封禁\n
+        UNBLOCK_APPEAL 封禁申诉处理\n
+        RECOVER 恢复删帖\n
+        RECOVER_APPEAL 删帖申诉处理\n
+        ALL 所有权限
+    """
+
+    NULL = 0
+    UNBLOCK = enum.auto()
+    UNBLOCK_APPEAL = enum.auto()
+    RECOVER = enum.auto()
+    RECOVER_APPEAL = enum.auto()
+    ALL = UNBLOCK | UNBLOCK_APPEAL | RECOVER | RECOVER_APPEAL
+
+
 class RankForumType(enum.IntEnum):
     """
     吧签到排行榜类别
@@ -140,7 +182,7 @@ class RankForumType(enum.IntEnum):
     MONTHLY = 3
 
 
-class BlacklistType(enum.IntEnum):
+class BlacklistType(enum.Flag):
     """
     用户黑名单类型
 
@@ -153,12 +195,9 @@ class BlacklistType(enum.IntEnum):
     """
 
     NULL = 0
-    FOLLOW = 1 << 0
-    INTERACT = 1 << 1
-    CHAT = 1 << 2
-    FOLLOW_AND_INTERACT = FOLLOW | INTERACT
-    FOLLOW_AND_CHAT = FOLLOW | CHAT
-    INTERACT_AND_CHAT = INTERACT | CHAT
+    FOLLOW = enum.auto()
+    INTERACT = enum.auto()
+    CHAT = enum.auto()
     ALL = FOLLOW | INTERACT | CHAT
 
 
@@ -173,8 +212,8 @@ class WsStatus(enum.IntEnum):
     """
 
     CLOSED = 0
-    CONNECTING = 1
-    OPEN = 2
+    CONNECTING = enum.auto()
+    OPEN = enum.auto()
 
 
 class GroupType(enum.IntEnum):

@@ -7,12 +7,14 @@ import aiohttp
 import yarl
 
 from .api import (
+    add_bawu,
     add_bawu_blacklist,
     add_blacklist_old,
     add_post,
     agree,
     agree_vimage,
     block,
+    del_bawu,
     del_bawu_blacklist,
     del_blacklist_old,
     del_post,
@@ -25,6 +27,7 @@ from .api import (
     get_ats,
     get_bawu_blacklist,
     get_bawu_info,
+    get_bawu_perm,
     get_bawu_postlogs,
     get_bawu_userlogs,
     get_blacklist,
@@ -73,6 +76,7 @@ from .api import (
     remove_fan,
     search_exact,
     send_msg,
+    set_bawu_perm,
     set_blacklist,
     set_msg_readed,
     set_nickname_old,
@@ -93,7 +97,9 @@ from .api._classdef import UserInfo
 from .config import ProxyConfig, TimeoutConfig
 from .core import Account, HttpCore, NetCore, WsCore
 from .enums import (
+    BawuPermType,
     BawuSearchType,
+    BawuType,
     BlacklistType,
     Gender,
     GroupType,
@@ -106,7 +112,7 @@ from .enums import (
 )
 from .exception import BoolResponse, IntResponse, StrResponse
 from .helper.cache import ForumInfoCache
-from .helper.utils import handle_exception, is_portrait
+from .helper.utils import handle_exception, is_portrait, is_user_name
 from .logging import get_logger as LOG
 from .typing import TypeUserInfo
 
@@ -645,8 +651,8 @@ class Client(object):
             return UserInfo()
 
         if isinstance(id_, int):
-            if require <= ReqUInfo.NICK_NAME:
-                # 仅有NICK_NAME以下的需求
+            if (require | ReqUInfo.BASIC) == ReqUInfo.BASIC:
+                # 仅有BASIC需求
                 return await self._get_uinfo_getuserinfo(id_)
             else:
                 return await self._get_uinfo_profile(id_)
@@ -853,90 +859,68 @@ class Client(object):
 
         return await get_dislike_forums.request_http(self._http_core, pn, rn)
 
-    @handle_exception(get_user_contents.UserThreads)
-    @_try_websocket
-    async def get_self_public_threads(self, pn: int = 1) -> get_user_contents.UserThreads:
-        """
-        获取本人发布的公开状态的主题帖列表
-
-        Args:
-            pn (int, optional): 页码. Defaults to 1.
-
-        Returns:
-            UserThreads: 主题帖列表
-        """
-
-        user = await self.get_self_info(ReqUInfo.USER_ID)
-
-        if self._ws_core.status == WsStatus.OPEN:
-            return await get_user_contents.get_threads.request_ws(self._ws_core, user.user_id, pn, public_only=True)
-
-        return await get_user_contents.get_threads.request_http(self._http_core, user.user_id, pn, public_only=True)
-
-    @handle_exception(get_user_contents.UserThreads)
-    @_try_websocket
-    async def get_self_threads(self, pn: int = 1) -> get_user_contents.UserThreads:
-        """
-        获取本人发布的主题帖列表
-
-        Args:
-            pn (int, optional): 页码. Defaults to 1.
-
-        Returns:
-            UserThreads: 主题帖列表
-        """
-
-        user = await self.get_self_info(ReqUInfo.USER_ID)
-
-        if self._ws_core.status == WsStatus.OPEN:
-            return await get_user_contents.get_threads.request_ws(self._ws_core, user.user_id, pn, public_only=False)
-
-        return await get_user_contents.get_threads.request_http(self._http_core, user.user_id, pn, public_only=False)
-
     @handle_exception(get_user_contents.UserPostss)
     @_try_websocket
-    async def get_self_posts(self, pn: int = 1) -> get_user_contents.UserPostss:
+    async def get_user_posts(self, id_: Union[str, int, None] = None, pn: int = 1) -> get_user_contents.UserPostss:
         """
-        获取本人发布的回复列表
+        获取用户发布的回复列表
 
         Args:
+            id_ (str | int | None): 用户id user_id / user_name / portrait 优先user_id
+                默认为None即获取本账号信息. Defaults to None.
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
             UserPostss: 回复列表
         """
 
-        user = await self.get_self_info(ReqUInfo.USER_ID)
-
-        if self._ws_core.status == WsStatus.OPEN:
-            return await get_user_contents.get_posts.request_ws(self._ws_core, user.user_id, pn)
-
-        return await get_user_contents.get_posts.request_http(self._http_core, user.user_id, pn)
-
-    @handle_exception(get_user_contents.UserThreads)
-    @_try_websocket
-    async def get_user_threads(self, id_: Union[str, int], pn: int = 1) -> get_user_contents.UserThreads:
-        """
-        获取用户发布的主题帖列表
-
-        Args:
-            id_ (str | int): 用户id user_id / user_name / portrait 优先user_id
-            pn (int, optional): 页码. Defaults to 1.
-
-        Returns:
-            UserThreads: 主题帖列表
-        """
-
-        if not isinstance(id_, int):
+        is_self = False
+        if id_ is None:
+            user = await self.get_self_info(ReqUInfo.USER_ID)
+            user_id = user.user_id
+            is_self = True
+        elif not isinstance(id_, int):
             user = await self.get_user_info(id_, ReqUInfo.USER_ID)
             user_id = user.user_id
         else:
             user_id = id_
 
         if self._ws_core.status == WsStatus.OPEN:
-            return await get_user_contents.get_threads.request_ws(self._ws_core, user_id, pn, public_only=True)
+            return await get_user_contents.get_posts.request_ws(self._ws_core, user_id, pn, is_self)
 
-        return await get_user_contents.get_threads.request_http(self._http_core, user_id, pn, public_only=True)
+        return await get_user_contents.get_posts.request_http(self._http_core, user_id, pn, is_self)
+
+    @handle_exception(get_user_contents.UserThreads)
+    @_try_websocket
+    async def get_user_threads(
+        self, id_: Union[str, int, None] = None, pn: int = 1, *, public_only: bool = False
+    ) -> get_user_contents.UserThreads:
+        """
+        获取用户发布的主题帖列表
+
+        Args:
+            id_ (str | int | None): 用户id user_id / user_name / portrait 优先user_id
+                默认为None即获取本账号信息. Defaults to None.
+            pn (int, optional): 页码. Defaults to 1.
+            public_only (bool, optional): 是否仅获取公开主题帖 该选项在获取他人主题帖时无效. Defaults to False.
+
+        Returns:
+            UserThreads: 主题帖列表
+        """
+
+        if id_ is None:
+            user = await self.get_self_info(ReqUInfo.USER_ID)
+            user_id = user.user_id
+        elif not isinstance(id_, int):
+            user = await self.get_user_info(id_, ReqUInfo.USER_ID)
+            user_id = user.user_id
+        else:
+            user_id = id_
+
+        if self._ws_core.status == WsStatus.OPEN:
+            return await get_user_contents.get_threads.request_ws(self._ws_core, user_id, pn, public_only)
+
+        return await get_user_contents.get_threads.request_http(self._http_core, user_id, pn, public_only)
 
     @handle_exception(get_replys.Replys)
     @_try_websocket
@@ -1107,6 +1091,109 @@ class Client(object):
             return await get_bawu_info.request_ws(self._ws_core, fid)
 
         return await get_bawu_info.request_http(self._http_core, fid)
+
+    @handle_exception(BoolResponse, ok_log_level=logging.INFO)
+    async def add_bawu(
+        self, fname_or_fid: Union[str, int], /, id_: Union[str, int], *, bawu_type: BawuType = BawuType.MANAGER
+    ) -> BoolResponse:
+        """
+        添加吧务
+
+        Args:
+            fname_or_fid (str | int): 目标贴吧名或fid 优先fid
+            id_ (str | int): 用户id user_id / user_name / portrait 优先user_name
+            bawu_type (BawuType): 吧务类型. Defaults to BawuType.MANAGER.
+
+        Returns:
+            BoolResponse: True成功 False失败
+        """
+
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
+
+        if not is_user_name(id_):
+            user = await self.get_user_info(id_, ReqUInfo.USER_NAME)
+            user_name = user.user_name
+        else:
+            user_name = id_
+
+        await self.__init_tbs()
+
+        return await add_bawu.request(self._http_core, fid, user_name, bawu_type)
+
+    @handle_exception(BoolResponse, ok_log_level=logging.INFO)
+    async def del_bawu(
+        self, fname_or_fid: Union[str, int], /, id_: Union[str, int], *, bawu_type: BawuType = BawuType.MANAGER
+    ) -> BoolResponse:
+        """
+        删除吧务
+
+        Args:
+            fname_or_fid (str | int): 目标贴吧名或fid 优先fid
+            id_ (str | int): 用户id user_id / user_name / portrait 优先portrait
+            bawu_type (BawuType): 吧务类型. Defaults to BawuType.MANAGER.
+
+        Returns:
+            BoolResponse: True成功 False失败
+        """
+
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
+
+        if not is_portrait(id_):
+            user = await self.get_user_info(id_, ReqUInfo.PORTRAIT)
+            portrait = user.portrait
+        else:
+            portrait = id_
+
+        return await del_bawu.request(self._http_core, fid, portrait, bawu_type)
+
+    @handle_exception(get_bawu_perm.BawuPerm)
+    async def get_bawu_perm(self, fname_or_fid: Union[str, int], /, id_: Union[str, int]) -> get_bawu_perm.BawuPerm:
+        """
+        获取指定吧务已分配的权限
+
+        Args:
+            fname_or_fid (str | int): 目标贴吧名或fid 优先fid
+            id_ (str | int): 用户id user_id / user_name / portrait 优先portrait
+
+        Returns:
+            BawuPerm: 吧务已分配的权限
+        """
+
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
+
+        if not is_portrait(id_):
+            user = await self.get_user_info(id_, ReqUInfo.PORTRAIT)
+            portrait = user.portrait
+        else:
+            portrait = id_
+
+        return await get_bawu_perm.request(self._http_core, fid, portrait)
+
+    @handle_exception(BoolResponse, ok_log_level=logging.INFO)
+    async def set_bawu_perm(
+        self, fname_or_fid: Union[str, int], /, id_: Union[str, int], *, perms: BawuPermType = BawuPermType.NULL
+    ) -> BoolResponse:
+        """
+        为指定吧务分配权限
+
+        Args:
+            fname_or_fid (str | int): 目标贴吧名或fid 优先fid
+            id_ (str | int): 用户id user_id / user_name / portrait 优先portrait
+            perms (BawuPermType): 待分配的权限. Defaults to BawuPermType.NULL.
+
+        Returns:
+            BoolResponse: True成功 False失败
+        """
+
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
+
+        if not is_portrait(id_):
+            user = await self.get_user_info(id_, ReqUInfo.PORTRAIT)
+            portrait = user.portrait
+        else:
+            portrait = id_
+
+        return await set_bawu_perm.request(self._http_core, fid, portrait, perms)
 
     @handle_exception(get_tab_map.TabMap)
     @_try_websocket

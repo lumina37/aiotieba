@@ -1,1 +1,1 @@
-::: aiotieba.api.search_post._classdef
+::: aiotieba.api.search_exact._classdef

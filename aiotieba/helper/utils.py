@@ -120,6 +120,14 @@ def is_portrait(portrait: str) -> bool:
     return isinstance(portrait, str) and portrait.startswith('tb.')
 
 
+def is_user_name(user_name: str) -> bool:
+    """
+    简单判断输入是否符合user_name格式
+    """
+
+    return isinstance(user_name, str) and not user_name.startswith('tb.')
+
+
 def default_datetime() -> datetime:
     return datetime(1970, 1, 1)
 

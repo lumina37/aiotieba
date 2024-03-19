@@ -41,14 +41,14 @@ class BlacklistUser:
         user_name = data_map['user_name']
         nick_name_new = data_map['name_show']
 
-        perm: Dict[str, str] = data_map['perm_list']
         btype = BlacklistType.NULL
-        i = 1
-        for flag in perm.values():
-            if flag != '0':
-                btype |= i
-            i <<= 1
-        btype = BlacklistType(btype)
+        perm: Dict[str, str] = data_map['perm_list']
+        if int(perm['follow']):
+            btype |= BlacklistType.FOLLOW
+        if int(perm['chat']):
+            btype |= BlacklistType.CHAT
+        if int(perm['interact']):
+            btype |= BlacklistType.INTERACT
 
         return BlacklistUser(user_id, portrait, user_name, nick_name_new, btype)
 
