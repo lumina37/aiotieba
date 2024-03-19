@@ -74,6 +74,7 @@ from .api import (
     remove_fan,
     search_exact,
     send_msg,
+    set_bawu_perm,
     set_blacklist,
     set_msg_readed,
     set_nickname_old,
@@ -94,7 +95,7 @@ from .api._classdef import UserInfo
 from .config import ProxyConfig, TimeoutConfig
 from .core import Account, HttpCore, NetCore, WsCore
 from .enums import (
-    BawuPerm,
+    BawuPermType,
     BawuSearchType,
     BlacklistType,
     Gender,
@@ -1110,10 +1111,10 @@ class Client(object):
 
         return await get_bawu_info.request_http(self._http_core, fid)
 
-    @handle_exception(BawuPerm)
-    async def get_bawu_perm(self, fname_or_fid: Union[str, int], /, id_: Union[str, int]) -> BawuPerm:
+    @handle_exception(get_bawu_perm.BawuPerm)
+    async def get_bawu_perm(self, fname_or_fid: Union[str, int], /, id_: Union[str, int]) -> get_bawu_perm.BawuPerm:
         """
-        获取某个吧务已分配的权限
+        获取指定吧务已分配的权限
 
         Args:
             fname_or_fid (str | int): 目标贴吧名或fid 优先fid
@@ -1132,6 +1133,32 @@ class Client(object):
             portrait = id_
 
         return await get_bawu_perm.request(self._http_core, fid, portrait)
+
+    @handle_exception(BoolResponse, ok_log_level=logging.INFO)
+    async def set_bawu_perm(
+        self, fname_or_fid: Union[str, int], /, id_: Union[str, int], perms: BawuPermType = BawuPermType.NULL
+    ) -> BoolResponse:
+        """
+        为指定吧务分配权限
+
+        Args:
+            fname_or_fid (str | int): 目标贴吧名或fid 优先fid
+            id_ (str | int): 用户id user_id / user_name / portrait 优先portrait
+            perms (BawuPermType): 待分配的权限
+
+        Returns:
+            BoolResponse: True成功 False失败
+        """
+
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
+
+        if not is_portrait(id_):
+            user = await self.get_user_info(id_, ReqUInfo.PORTRAIT)
+            portrait = user.portrait
+        else:
+            portrait = id_
+
+        return await set_bawu_perm.request(self._http_core, fid, portrait, perms)
 
     @handle_exception(get_tab_map.TabMap)
     @_try_websocket

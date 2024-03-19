@@ -2,9 +2,9 @@ import yarl
 
 from ...const import WEB_BASE_HOST
 from ...core import HttpCore
-from ...enums import BawuPerm
 from ...exception import TiebaServerError
 from ...helper import parse_json
+from ._classdef import BawuPerm
 
 
 def parse_body(body: bytes) -> BawuPerm:
@@ -13,24 +13,9 @@ def parse_body(body: bytes) -> BawuPerm:
         raise TiebaServerError(code, res_json['error'])
 
     data_dict = res_json['data']
+    perm = BawuPerm.from_tbdata(data_dict)
 
-    perms = 0
-    for cate in ['category_user', 'category_thread']:
-        for unblock_perm_dict in data_dict['perm_setting'][cate]:
-            if not unblock_perm_dict['switch']:
-                continue
-
-            perm_idx: int = unblock_perm_dict['perm'] - 2
-            perm = [
-                BawuPerm.RECOVER_APPEAL,
-                BawuPerm.RECOVER,
-                BawuPerm.UNBLOCK,
-                BawuPerm.UNBLOCK_APPEAL,
-            ][perm_idx]
-
-            perms |= perm
-
-    return BawuPerm(perms)
+    return perm
 
 
 async def request(http_core: HttpCore, fid: int, portrait: str) -> BawuPerm:
@@ -43,5 +28,5 @@ async def request(http_core: HttpCore, fid: int, portrait: str) -> BawuPerm:
         yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mo/q/getAuthToolPerm"), params
     )
 
-    body = await http_core.net_core.send_request(request, read_bufsize=4 * 1024)
+    body = await http_core.net_core.send_request(request, read_bufsize=2 * 1024)
     return parse_body(body)

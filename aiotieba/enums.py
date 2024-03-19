@@ -123,7 +123,7 @@ class SearchType(enum.IntEnum):
     RELATION = 2
 
 
-class BawuPerm(enum.IntEnum):
+class BawuPermType(enum.IntEnum):
     """
     吧务已分配的权限
 
