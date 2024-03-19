@@ -48,8 +48,8 @@ async def request_http(http_core: HttpCore, user_id: int, pn: int, is_self: bool
     return parse_body(body)
 
 
-async def request_ws(ws_core: WsCore, user_id: int, pn: int) -> UserPostss:
-    data = pack_proto(ws_core.account, user_id, pn)
+async def request_ws(ws_core: WsCore, user_id: int, pn: int, is_self: bool) -> UserPostss:
+    data = pack_proto(ws_core.account, user_id, pn, is_self)
 
     response = await ws_core.send(data, CMD)
     return parse_body(await response.read())
