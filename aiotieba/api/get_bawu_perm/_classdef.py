@@ -18,7 +18,7 @@ class BawuPerm(TbErrorExt):
     perms: BawuPermType = BawuPermType.NULL
 
     def from_tbdata(data_map: Mapping) -> "BawuPerm":
-        perms = 0
+        perms = BawuPermType.NULL
 
         for cate in ['category_user', 'category_thread']:
             perm_setting = data_map['perm_setting']
@@ -35,7 +35,5 @@ class BawuPerm(TbErrorExt):
                 ][perm_idx]
 
                 perms |= perm
-
-        perms = BawuPermType(perms)
 
         return BawuPerm(perms)

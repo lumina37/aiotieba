@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "aiotieba"
-version = "4.3.1a2"
+version = "4.3.1a3"
 description = "Asynchronous I/O Client for Baidu Tieba"
 authors = [{ name = "Starry-OvO", email = "starry.qvq@gmail.com" }]
 urls = { Repository = "https://github.com/Starry-OvO/aiotieba/", Documentation = "https://aiotieba.cc/" }
@@ -39,6 +39,7 @@ dependencies = [
   "protobuf<5,>=4.21.0",
   "cryptography<43,>=35.0.0",
   "async-timeout<5,>=4.0;python_version<'3.11'",
+  "StrEnum<0.5,>=0.4.0;python_version<'3.11'",
 ]
 
 [project.optional-dependencies]
