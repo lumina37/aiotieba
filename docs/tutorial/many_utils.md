@@ -85,7 +85,7 @@ async def main() -> None:
     async with tb.Client("在此处输入你的BDUSS") as client:
         # 海象运算符(:=)会在创建threads变量并赋值的同时返回该值，方便while语句检查其是否为空
         # 更多信息请搜索“Python海象运算符”
-        while threads := await client.get_self_public_threads():
+        while threads := await client.get_user_threads():
             await asyncio.gather(*[client.set_thread_private(thread.fid, thread.tid, thread.pid) for thread in threads])
 
 
@@ -191,7 +191,7 @@ import aiotieba as tb
 
 async def main() -> None:
     async with tb.Client("在此处输入你的BDUSS") as client:
-        while posts_list := await client.get_self_posts():
+        while posts_list := await client.get_user_posts():
             await asyncio.gather(*[client.del_post(post.fid, post.tid, post.pid) for posts in posts_list for post in posts])
 
 
