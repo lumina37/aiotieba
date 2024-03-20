@@ -146,25 +146,26 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
-## 拒绝所有解封申诉
+## 清除旧版乱码昵称
 
 ```python
 import asyncio
 
+from aiotieba_reviewer import get_account
+
 import aiotieba as tb
 
 
-async def main() -> None:
+async def main():
     async with tb.Client("在此处输入你的BDUSS") as client:
-        fname = "待拒绝申诉的贴吧名"
-        while appeals := await client.get_unblock_appeals(fname, rn=30):
-            await client.handle_unblock_appeals(fname, [a.appeal_id for a in appeals])
+        user = await client.get_self_info(tb.ReqUInfo.USER_NAME)
+        await client.set_nickname_old(user.user_name)
 
 
 asyncio.run(main())
 ```
 
-## 清空default账号的粉丝列表（无法复原的危险操作，请谨慎使用！）
+## 清空粉丝列表（无法复原的危险操作，请谨慎使用！）
 
 ```python
 import asyncio
@@ -181,7 +182,7 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
-## 清除default账号的所有历史回复（无法复原的危险操作，请谨慎使用！）
+## 清除所有历史回复（无法复原的危险操作，请谨慎使用！）
 
 ```python
 import asyncio
