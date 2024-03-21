@@ -861,7 +861,9 @@ class Client(object):
 
     @handle_exception(get_user_contents.UserPostss)
     @_try_websocket
-    async def get_user_posts(self, id_: Union[str, int, None] = None, pn: int = 1) -> get_user_contents.UserPostss:
+    async def get_user_posts(
+        self, id_: Union[str, int, None] = None, pn: int = 1, *, rn: int = 20
+    ) -> get_user_contents.UserPostss:
         """
         获取用户发布的回复列表
 
@@ -869,6 +871,7 @@ class Client(object):
             id_ (str | int | None): 用户id user_id / user_name / portrait 优先user_id
                 默认为None即获取本账号信息. Defaults to None.
             pn (int, optional): 页码. Defaults to 1.
+            rn (int, optional): 请求的条目数. Defaults to 20. Max to 50.
 
         Returns:
             UserPostss: 回复列表

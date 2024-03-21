@@ -10,13 +10,14 @@ from ..protobuf import UserPostReqIdl_pb2, UserPostResIdl_pb2
 UPOST_VERSION = "8.9.8.5"
 
 
-def pack_proto(account: Account, user_id: int, pn: int, is_self: bool) -> bytes:
+def pack_proto(account: Account, user_id: int, pn: int, rn: int, is_self: bool) -> bytes:
     req_proto = UserPostReqIdl_pb2.UserPostReqIdl()
     req_proto.data.common.BDUSS = account.BDUSS
     req_proto.data.common._client_version = MAIN_VERSION if is_self else UPOST_VERSION
     req_proto.data.user_id = user_id
     req_proto.data.need_content = 1
     req_proto.data.pn = pn
+    req_proto.data.rn = rn
 
     return req_proto.SerializeToString()
 
@@ -34,8 +35,8 @@ def parse_body(body: bytes) -> UserPostss:
     return upostss
 
 
-async def request_http(http_core: HttpCore, user_id: int, pn: int, is_self: bool) -> UserPostss:
-    data = pack_proto(http_core.account, user_id, pn, is_self)
+async def request_http(http_core: HttpCore, user_id: int, pn: int, rn: int, is_self: bool) -> UserPostss:
+    data = pack_proto(http_core.account, user_id, pn, rn, is_self)
 
     request = http_core.pack_proto_request(
         yarl.URL.build(
@@ -48,8 +49,8 @@ async def request_http(http_core: HttpCore, user_id: int, pn: int, is_self: bool
     return parse_body(body)
 
 
-async def request_ws(ws_core: WsCore, user_id: int, pn: int, is_self: bool) -> UserPostss:
-    data = pack_proto(ws_core.account, user_id, pn, is_self)
+async def request_ws(ws_core: WsCore, user_id: int, pn: int, rn: int, is_self: bool) -> UserPostss:
+    data = pack_proto(ws_core.account, user_id, pn, rn, is_self)
 
     response = await ws_core.send(data, CMD)
     return parse_body(await response.read())
