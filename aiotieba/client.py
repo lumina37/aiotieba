@@ -882,7 +882,6 @@ class Client(object):
         return await get_user_contents.get_posts.request_http(self._http_core, user_id, pn, rn, MAIN_VERSION)
 
     @handle_exception(get_user_contents.UserPostss)
-    @_try_websocket
     async def get_user_posts(
         self, id_: Union[str, int, None] = None, pn: int = 1, *, rn: int = 20
     ) -> get_user_contents.UserPostss:
