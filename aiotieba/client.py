@@ -95,6 +95,7 @@ from .api import (
 )
 from .api._classdef import UserInfo
 from .config import ProxyConfig, TimeoutConfig
+from .const import MAIN_VERSION
 from .core import Account, HttpCore, NetCore, WsCore
 from .enums import (
     BawuPermType,
@@ -859,9 +860,31 @@ class Client(object):
 
         return await get_dislike_forums.request_http(self._http_core, pn, rn)
 
-    @handle_exception(get_user_contents.UserPostss)
+    async def __get_user_posts(self, id_: Union[str, int], pn: int, rn: int):
+        if not isinstance(id_, int):
+            user = await self.get_user_info(id_, ReqUInfo.USER_ID)
+            user_id = user.user_id
+        else:
+            user_id = id_
+
+        UPOST_VERSION = "8.9.8.5"
+
+        return await get_user_contents.get_posts.request_http(self._http_core, user_id, pn, rn, UPOST_VERSION)
+
     @_try_websocket
-    async def get_user_posts(self, id_: Union[str, int, None] = None, pn: int = 1) -> get_user_contents.UserPostss:
+    async def __get_self_posts(self, pn: int, rn: int):
+        user = await self.get_self_info(ReqUInfo.USER_ID)
+        user_id = user.user_id
+
+        if self._ws_core.status == WsStatus.OPEN:
+            return await get_user_contents.get_posts.request_ws(self._ws_core, user_id, pn, rn, MAIN_VERSION)
+
+        return await get_user_contents.get_posts.request_http(self._http_core, user_id, pn, rn, MAIN_VERSION)
+
+    @handle_exception(get_user_contents.UserPostss)
+    async def get_user_posts(
+        self, id_: Union[str, int, None] = None, pn: int = 1, *, rn: int = 20
+    ) -> get_user_contents.UserPostss:
         """
         获取用户发布的回复列表
 
@@ -869,26 +892,16 @@ class Client(object):
             id_ (str | int | None): 用户id user_id / user_name / portrait 优先user_id
                 默认为None即获取本账号信息. Defaults to None.
             pn (int, optional): 页码. Defaults to 1.
+            rn (int, optional): 请求的条目数. Defaults to 20. Max to 50.
 
         Returns:
             UserPostss: 回复列表
         """
 
-        is_self = False
         if id_ is None:
-            user = await self.get_self_info(ReqUInfo.USER_ID)
-            user_id = user.user_id
-            is_self = True
-        elif not isinstance(id_, int):
-            user = await self.get_user_info(id_, ReqUInfo.USER_ID)
-            user_id = user.user_id
+            return await self.__get_self_posts(pn, rn)
         else:
-            user_id = id_
-
-        if self._ws_core.status == WsStatus.OPEN:
-            return await get_user_contents.get_posts.request_ws(self._ws_core, user_id, pn, is_self)
-
-        return await get_user_contents.get_posts.request_http(self._http_core, user_id, pn, is_self)
+            return await self.__get_user_posts(id_, pn, rn)
 
     @handle_exception(get_user_contents.UserThreads)
     @_try_websocket

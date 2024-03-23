@@ -69,7 +69,7 @@ tid=8537699088 text=记录一下自己人生第一次当“老师”的经历^_^
 ## 项目特色
 
 + 收录[**数十个常用API**](https://github.com/Starry-OvO/aiotieba/tree/develop/aiotieba/api)
-+ 类型注解全覆盖，方法注释全覆盖，类属性注释全覆盖，内部命名统一
++ 类型注解全覆盖，方法注释全覆盖，内部命名统一
 + 支持protobuf序列化请求参数
 + 支持websocket接口
 + 与官方版本高度一致的密码学实现
@@ -77,9 +77,9 @@ tid=8537699088 text=记录一下自己人生第一次当“老师”的经历^_^
 ## 友情链接
 
 + [TiebaManager（吧务管理器 有用户界面）](https://github.com/dog194/TiebaManager)
-+ [TiebaLite（第三方安卓客户端 Archived）](https://github.com/HuanCheng65/TiebaLite/tree/4.0-dev)
 + [基于aiotieba的高弹性吧务审查框架](https://github.com/Starry-OvO/aiotieba-reviewer)
 + [贴吧protobuf定义文件合集（更新至12.51.7.1）](https://github.com/n0099/tbclient.protobuf)
++ [TiebaLite 第三方安卓客户端（已停更）](https://github.com/HuanCheng65/TiebaLite/tree/4.0-dev)
 
 ## 特别鸣谢
 

@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "aiotieba"
-version = "4.4.0"
+version = "4.4.1"
 description = "Asynchronous I/O Client for Baidu Tieba"
 authors = [{ name = "Starry-OvO", email = "starry.qvq@gmail.com" }]
 urls = { Repository = "https://github.com/Starry-OvO/aiotieba/", Documentation = "https://aiotieba.cc/" }
@@ -63,7 +63,7 @@ speedup = [
 
 [tool.pdm.dev-dependencies]
 lint = ["ruff", "black"]
-test = ["aiotieba[speedup]", "pytest==8.1.0", "pytest-asyncio==0.23.5", "pytest-rerunfailures==13.0"]
+test = ["aiotieba[speedup]", "pytest==8.1.1", "pytest-asyncio==0.23.6", "pytest-rerunfailures==14.0"]
 doc = ["mkdocs-material", "mkdocstrings[python]"]
 
 [tool.scikit-build]
