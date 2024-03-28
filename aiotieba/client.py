@@ -217,10 +217,10 @@ class Client(object):
         await self._connector.close()
 
     def __hash__(self) -> int:
-        return hash(self.account.BDUSS)
+        return hash(self.account)
 
     def __eq__(self, obj: "Client") -> bool:
-        return self.account.BDUSS == obj.account.BDUSS
+        return self.account == obj.account
 
     @property
     def account(self) -> Account:
