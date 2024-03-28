@@ -193,7 +193,7 @@ class Client(object):
 
         if proxy is True:
             proxy = ProxyConfig.from_env()
-        else:
+        elif not proxy:
             proxy = ProxyConfig()
 
         if isinstance(account, Account):
