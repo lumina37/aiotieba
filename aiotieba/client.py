@@ -1846,13 +1846,14 @@ class Client(object):
         return IntResponse(cid)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def top(self, fname_or_fid: Union[str, int], /, tid: int) -> BoolResponse:
+    async def top(self, fname_or_fid: Union[str, int], /, tid: int, *, is_vip: bool = False) -> BoolResponse:
         """
         置顶主题帖
 
         Args:
             fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
             tid (int): 待置顶的主题帖tid
+            is_vip (bool, optional): 是否会员置顶. Defaults to False.
 
         Returns:
             BoolResponse: True成功 False失败
@@ -1867,16 +1868,17 @@ class Client(object):
 
         await self.__init_tbs()
 
-        return await top.request(self._http_core, fname, fid, tid, is_set=True)
+        return await top.request(self._http_core, fname, fid, tid, is_vip, True)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def untop(self, fname_or_fid: Union[str, int], /, tid: int) -> BoolResponse:
+    async def untop(self, fname_or_fid: Union[str, int], /, tid: int, *, is_vip: bool = False) -> BoolResponse:
         """
         撤销置顶主题帖
 
         Args:
             fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
             tid (int): 待撤销置顶的主题帖tid
+            is_vip (bool, optional): 是否会员置顶. Defaults to False.
 
         Returns:
             BoolResponse: True成功 False失败
@@ -1891,7 +1893,7 @@ class Client(object):
 
         await self.__init_tbs()
 
-        return await top.request(self._http_core, fname, fid, tid, is_set=False)
+        return await top.request(self._http_core, fname, fid, tid, is_vip, False)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def move(
