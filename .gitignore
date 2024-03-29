@@ -7,8 +7,8 @@ __pycache__
 dist/
 build/
 
-.pdm-python
-pdm.lock
+.python-version
+*.lock
 
 account.toml
 database.toml

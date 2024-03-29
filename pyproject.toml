@@ -1,10 +1,6 @@
-[build-system]
-requires = ["scikit-build-core<0.9,>=0.8"]
-build-backend = "scikit_build_core.build"
-
 [project]
 name = "aiotieba"
-version = "4.4.2a5"
+version = "4.4.2a6"
 description = "Asynchronous I/O Client for Baidu Tieba"
 authors = [{ name = "Starry-OvO", email = "starry.qvq@gmail.com" }]
 urls = { Repository = "https://github.com/Starry-OvO/aiotieba/", Documentation = "https://aiotieba.cc/" }
@@ -61,10 +57,20 @@ speedup = [
   "uvloop>=0.18.0,<1.0;python_version>='3.12' and sys_platform!='win32'",
 ]
 
-[tool.pdm.dev-dependencies]
-lint = ["ruff", "black"]
-test = ["aiotieba[speedup]", "pytest==8.1.1", "pytest-asyncio==0.23.6", "pytest-rerunfailures==14.0"]
-doc = ["mkdocs-material", "mkdocstrings[python]"]
+[build-system]
+requires = ["scikit-build-core<0.9,>=0.8"]
+build-backend = "scikit_build_core.build"
+
+[tool.rye]
+dev-dependencies = [
+  "black",
+  "aiotieba[speedup]",
+  "pytest==8.1.1",
+  "pytest-asyncio==0.23.6",
+  "pytest-rerunfailures==14.0",
+  "mkdocs-material",
+  "mkdocstrings[python]",
+]
 
 [tool.scikit-build]
 sdist.exclude = ["*.proto", ".*", "docs", "scripts", "tests", "mkdocs.yml"]

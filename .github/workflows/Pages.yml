@@ -24,16 +24,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup PDM
-        uses: pdm-project/setup-pdm@v4
+      - name: Setup Rye
+        uses: eifinger/setup-rye@v2
 
       - name: Install dependencies
         run: |
-          pdm install -G doc --no-default --no-self -q
+          rye sync -q
 
       - name: Build
         run: |
-          pdm run mkdocs build -d site -s
+          rye run mkdocs build -d site -s
 
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3

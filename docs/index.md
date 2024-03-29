@@ -18,10 +18,6 @@
 <a href="https://pypi.org/project/aiotieba">
     <img src="https://img.shields.io/pypi/pyversions/aiotieba?style=flat-square" alt="PyPI - Python Version">
 </a>
-</a>
-<a href="https://pdm.fming.dev">
-    <img src="https://img.shields.io/badge/pdm-managed-blueviolet?style=flat-square" alt="pdm-managed">
-</a>
 </p>
 
 ---
