@@ -84,14 +84,12 @@ template = '''__version__ = "${version}"'''
 build = "cp38-* cp39-* cp310-* cp311-* cp312-* pp38-* pp39-* pp310-*"
 skip = "*-win32 *_i686 *_s390x *_ppc64le"
 
-[tool.black]
-line-length = 120
-skip-string-normalization = true
-target-version = ["py38", "py39", "py310", "py311", "py312"]
-
 [tool.ruff]
 line-length = 120
 target-version = "py38"
+
+[tool.ruff.format]
+quote-style = "preserve"
 
 [tool.ruff.lint]
 select = ["W", "E", "F", "I", "UP", "YTT", "A", "B", "C4", "PIE", "PT", "PERF", "FURB"]
