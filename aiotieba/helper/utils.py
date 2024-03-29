@@ -87,8 +87,7 @@ else:
 
         if s.startswith(prefix):
             return s[len(prefix) :]
-        else:
-            return s
+        return s
 
     def removesuffix(s: str, suffix: str) -> str:
         """
@@ -108,8 +107,7 @@ else:
 
         if s.endswith(suffix):
             return s[: len(suffix)]
-        else:
-            return s
+        return s
 
 
 def is_portrait(portrait: str) -> bool:

@@ -142,7 +142,7 @@ def _force_websocket(func):
     return awrapper
 
 
-class Client(object):
+class Client:
     """
     贴吧客户端
 
@@ -196,9 +196,7 @@ class Client(object):
         elif not proxy:
             proxy = ProxyConfig()
 
-        if isinstance(account, Account):
-            account = account
-        else:
+        if not isinstance(account, Account):
             account = Account(BDUSS, STOKEN)
 
         net_core = NetCore(connector, proxy, timeout)
@@ -1970,7 +1968,7 @@ class Client(object):
 
         Note:
             本接口仍处于测试阶段\n
-            高频率调用会导致<发帖秒删>！请谨慎使用！
+            高频率调用会导致<发帖秒删>! 请谨慎使用!
         """
 
         await self.__init_tbs()
@@ -2373,7 +2371,7 @@ class Client(object):
 
         Note:
             本接口仍处于测试阶段\n
-            高频率调用会导致<永久封禁屏蔽>！请谨慎使用！
+            高频率调用会导致<永久封禁屏蔽>! 请谨慎使用!
         """
 
         if isinstance(fname_or_fid, str):
