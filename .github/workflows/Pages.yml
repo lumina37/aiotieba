@@ -28,12 +28,10 @@ jobs:
         uses: eifinger/setup-rye@v2
 
       - name: Install dependencies
-        run: |
-          rye sync -q
+        run: rye sync -q
 
       - name: Build
-        run: |
-          rye run mkdocs build -d site -s
+        run: rye run mkdocs build -d site -s
 
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3
