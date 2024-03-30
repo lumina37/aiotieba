@@ -73,8 +73,8 @@ dev-dependencies = [
 ]
 
 [tool.scikit-build]
-sdist.exclude = ["*.proto", ".*", "docs", "scripts", "tests", "mkdocs.yml"]
-wheel.exclude = ["*.c", "*.h"]
+sdist.exclude = ["*.proto", "*.md", ".*", "docs", "scripts", "tests", "mkdocs.yml"]
+wheel.exclude = ["*.c", "*.h", "*.txt"]
 
 [[tool.scikit-build.generate]]
 path = "aiotieba/__version__.py"
