@@ -89,6 +89,12 @@ class Account:
     def __repr__(self) -> str:
         return str(self.to_dict())
 
+    def __hash__(self) -> int:
+        return hash(self.BDUSS)
+
+    def __eq__(self, obj: "Account") -> bool:
+        return self.BDUSS == obj.BDUSS
+
     def to_dict(self) -> Dict[str, Union[str, bytes]]:
         """
         将Account转换为字典

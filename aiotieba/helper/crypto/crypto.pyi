@@ -16,7 +16,6 @@ def cuid_galaxy2(android_id: str) -> str:
     Note:
         此实现与12.x版本及以前的官方实现一致
     """
-    ...
 
 def c3_aid(android_id: str, uuid: str) -> str:
     """
@@ -35,7 +34,6 @@ def c3_aid(android_id: str, uuid: str) -> str:
     Note:
         此实现与12.x版本及以前的官方实现一致
     """
-    ...
 
 def rc4_42(xyus_md5_str: str, aes_cbc_sec_key: bytes) -> bytes:
     """
@@ -48,7 +46,6 @@ def rc4_42(xyus_md5_str: str, aes_cbc_sec_key: bytes) -> bytes:
     Returns:
         bytes
     """
-    ...
 
 def sign(data: List[Tuple[str, Union[str, int]]]) -> str:
     """
@@ -60,4 +57,3 @@ def sign(data: List[Tuple[str, Union[str, int]]]) -> str:
     Returns:
         str: 签名
     """
-    ...

@@ -1,10 +1,6 @@
-[build-system]
-requires = ["scikit-build-core<0.9,>=0.8"]
-build-backend = "scikit_build_core.build"
-
 [project]
 name = "aiotieba"
-version = "4.4.1"
+version = "4.4.2a6"
 description = "Asynchronous I/O Client for Baidu Tieba"
 authors = [{ name = "Starry-OvO", email = "starry.qvq@gmail.com" }]
 urls = { Repository = "https://github.com/Starry-OvO/aiotieba/", Documentation = "https://aiotieba.cc/" }
@@ -25,50 +21,60 @@ classifiers = [
 ]
 requires-python = ">=3.8,<3.13"
 dependencies = [
-  "aiohttp<3.10,>=3.8.4;python_version=='3.8'",
-  "aiohttp<4,>=3.8.4;python_version>='3.9' and python_version<'3.12'",
-  "aiohttp<4,>=3.9.0;python_version>='3.12'",
-  "beautifulsoup4<4.13,>=4.4.1;python_version=='3.8'",
-  "beautifulsoup4<5,>=4.5.2;python_version=='3.9'",
-  "beautifulsoup4<5,>=4.7.1;python_version>='3.10'",
-  "lxml<5.2,>=4.4.1;python_version=='3.8'",
-  "lxml<6,>=4.6.0;python_version=='3.9'",
-  "lxml<6,>=4.6.4;python_version=='3.10'",
-  "lxml<6,>=4.9.2;python_version=='3.11'",
-  "lxml<6,>=4.9.3;python_version>='3.12'",
-  "protobuf<5,>=4.21.0",
-  "cryptography<43,>=35.0.0",
-  "async-timeout<5,>=4.0;python_version<'3.11'",
-  "StrEnum<0.5,>=0.4.0;python_version<'3.11'",
+  "aiohttp>=3.8.4,<3.10;python_version=='3.8'",
+  "aiohttp>=3.8.4,<4;python_version>='3.9' and python_version<'3.12'",
+  "aiohttp>=3.9.0,<4;python_version>='3.12'",
+  "beautifulsoup4>=4.4.1,<4.13;python_version=='3.8'",
+  "beautifulsoup4>=4.5.2,<5;python_version=='3.9'",
+  "beautifulsoup4>=4.7.1,<5;python_version>='3.10'",
+  "lxml>=4.4.1,<5.2;python_version=='3.8'",
+  "lxml>=4.6.0,<6;python_version=='3.9'",
+  "lxml>=4.6.4,<6;python_version=='3.10'",
+  "lxml>=4.9.2,<6;python_version=='3.11'",
+  "lxml>=4.9.3,<6;python_version>='3.12'",
+  "protobuf>=4.21.0,<5",
+  "cryptography>=35.0.0,<43",
+  "async-timeout>=4.0,<5;python_version<'3.11'",
+  "StrEnum>=0.4.0,<0.5;python_version<'3.11'",
 ]
 
 [project.optional-dependencies]
 img = [
-  "opencv-contrib-python-headless<5,>=4.6.0.66;sys_platform=='linux'",
-  "opencv-contrib-python<5,>=4.6.0.66;sys_platform!='linux'",
+  "opencv-contrib-python-headless>=4.6.0.66,<5;sys_platform=='linux'",
+  "opencv-contrib-python>=4.6.0.66,<5;sys_platform!='linux'",
 ]
 speedup = [
-  "aiodns<4,>=3.0.0",
-  "orjson<3.10,>=2.0.11;python_version=='3.8'",
-  "orjson<4,>=2.2.0;python_version=='3.9'",
-  "orjson<4,>=3.4.7;python_version=='3.10'",
-  "orjson<4,>=3.7.10;python_version=='3.11'",
-  "orjson<4,>=3.9.10;python_version>='3.12'",
-  "uvloop<0.20.0,>=0.14.0;python_version=='3.8' and sys_platform!='win32'",
-  "uvloop<1.0,>=0.15.0;python_version=='3.9' and sys_platform!='win32'",
-  "uvloop<1.0,>=0.16.0;python_version=='3.10' and sys_platform!='win32'",
-  "uvloop<1.0,>=0.17.0;python_version=='3.11' and sys_platform!='win32'",
-  "uvloop<1.0,>=0.18.0;python_version>='3.12' and sys_platform!='win32'",
+  "aiodns>=3.0.0,<4",
+  "orjson>=2.0.11,<3.11;python_version=='3.8'",
+  "orjson>=2.2.0,<4;python_version=='3.9'",
+  "orjson>=3.4.7,<4;python_version=='3.10'",
+  "orjson>=3.7.10,<4;python_version=='3.11'",
+  "orjson>=3.9.10,<4;python_version>='3.12'",
+  "uvloop>=0.14.0,<0.20.0;python_version=='3.8' and sys_platform!='win32'",
+  "uvloop>=0.15.0,<1.0;python_version=='3.9' and sys_platform!='win32'",
+  "uvloop>=0.16.0,<1.0;python_version=='3.10' and sys_platform!='win32'",
+  "uvloop>=0.17.0,<1.0;python_version=='3.11' and sys_platform!='win32'",
+  "uvloop>=0.18.0,<1.0;python_version>='3.12' and sys_platform!='win32'",
 ]
 
-[tool.pdm.dev-dependencies]
-lint = ["ruff", "black"]
-test = ["aiotieba[speedup]", "pytest==8.1.1", "pytest-asyncio==0.23.6", "pytest-rerunfailures==14.0"]
-doc = ["mkdocs-material", "mkdocstrings[python]"]
+[build-system]
+requires = ["scikit-build-core<0.9,>=0.8"]
+build-backend = "scikit_build_core.build"
+
+[tool.rye]
+managed = true
+dev-dependencies = [
+  "aiotieba[speedup]",
+  "pytest==8.1.1",
+  "pytest-asyncio==0.23.6",
+  "pytest-rerunfailures==14.0",
+  "mkdocs-material",
+  "mkdocstrings[python]",
+]
 
 [tool.scikit-build]
-sdist.exclude = ["*.proto", ".*", "docs", "scripts", "tests", "mkdocs.yml"]
-wheel.exclude = ["*.c", "*.h"]
+sdist.exclude = ["*.proto", "*.md", ".*", "docs", "scripts", "tests", "mkdocs.yml"]
+wheel.exclude = ["*.c", "*.h", "*.txt"]
 
 [[tool.scikit-build.generate]]
 path = "aiotieba/__version__.py"
@@ -78,17 +84,15 @@ template = '''__version__ = "${version}"'''
 build = "cp38-* cp39-* cp310-* cp311-* cp312-* pp38-* pp39-* pp310-*"
 skip = "*-win32 *_i686 *_s390x *_ppc64le"
 
-[tool.black]
-line-length = 120
-skip-string-normalization = true
-target-version = ["py38", "py39", "py310", "py311", "py312"]
-
 [tool.ruff]
 line-length = 120
 target-version = "py38"
 
+[tool.ruff.format]
+quote-style = "preserve"
+
 [tool.ruff.lint]
-select = ["W", "E", "F", "I"]
+select = ["W", "E", "F", "I", "UP", "YTT", "A", "B", "C4", "PIE", "PT", "PERF", "FURB"]
 ignore = ["E402", "E501"]
 
 [tool.ruff.lint.per-file-ignores]

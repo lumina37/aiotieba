@@ -135,7 +135,7 @@ void tbc_cuid_galaxy2(const unsigned char* androidID, unsigned char* dst)
 
 void tbc_c3_aid(const unsigned char* androidID, const unsigned char* uuid, unsigned char* dst)
 {
-    // step 1: set perfix
+    // step 1: set prefix
     // dst will be ['A00-', ...]
     dst[0] = 'A';
     dst[1] = '0';

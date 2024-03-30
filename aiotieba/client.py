@@ -142,7 +142,7 @@ def _force_websocket(func):
     return awrapper
 
 
-class Client(object):
+class Client:
     """
     贴吧客户端
 
@@ -193,12 +193,10 @@ class Client(object):
 
         if proxy is True:
             proxy = ProxyConfig.from_env()
-        else:
+        elif not proxy:
             proxy = ProxyConfig()
 
-        if isinstance(account, Account):
-            account = account
-        else:
+        if not isinstance(account, Account):
             account = Account(BDUSS, STOKEN)
 
         net_core = NetCore(connector, proxy, timeout)
@@ -217,10 +215,10 @@ class Client(object):
         await self._connector.close()
 
     def __hash__(self) -> int:
-        return hash(self.account.BDUSS)
+        return hash(self.account)
 
     def __eq__(self, obj: "Client") -> bool:
-        return self.account.BDUSS == obj.account.BDUSS
+        return self.account == obj.account
 
     @property
     def account(self) -> Account:
@@ -1846,13 +1844,14 @@ class Client(object):
         return IntResponse(cid)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def top(self, fname_or_fid: Union[str, int], /, tid: int) -> BoolResponse:
+    async def top(self, fname_or_fid: Union[str, int], /, tid: int, *, is_vip: bool = False) -> BoolResponse:
         """
         置顶主题帖
 
         Args:
             fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
             tid (int): 待置顶的主题帖tid
+            is_vip (bool, optional): 是否会员置顶. Defaults to False.
 
         Returns:
             BoolResponse: True成功 False失败
@@ -1867,16 +1866,17 @@ class Client(object):
 
         await self.__init_tbs()
 
-        return await top.request(self._http_core, fname, fid, tid, is_set=True)
+        return await top.request(self._http_core, fname, fid, tid, is_vip, True)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def untop(self, fname_or_fid: Union[str, int], /, tid: int) -> BoolResponse:
+    async def untop(self, fname_or_fid: Union[str, int], /, tid: int, *, is_vip: bool = False) -> BoolResponse:
         """
         撤销置顶主题帖
 
         Args:
             fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
             tid (int): 待撤销置顶的主题帖tid
+            is_vip (bool, optional): 是否会员置顶. Defaults to False.
 
         Returns:
             BoolResponse: True成功 False失败
@@ -1891,7 +1891,7 @@ class Client(object):
 
         await self.__init_tbs()
 
-        return await top.request(self._http_core, fname, fid, tid, is_set=False)
+        return await top.request(self._http_core, fname, fid, tid, is_vip, False)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def move(
@@ -1968,7 +1968,7 @@ class Client(object):
 
         Note:
             本接口仍处于测试阶段\n
-            高频率调用会导致<发帖秒删>！请谨慎使用！
+            高频率调用会导致<发帖秒删>! 请谨慎使用!
         """
 
         await self.__init_tbs()
@@ -2371,7 +2371,7 @@ class Client(object):
 
         Note:
             本接口仍处于测试阶段\n
-            高频率调用会导致<永久封禁屏蔽>！请谨慎使用！
+            高频率调用会导致<永久封禁屏蔽>! 请谨慎使用!
         """
 
         if isinstance(fname_or_fid, str):

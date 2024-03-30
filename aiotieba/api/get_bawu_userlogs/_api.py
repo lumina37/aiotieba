@@ -40,6 +40,11 @@ async def request(
         extend_params = [
             ('svalue', search_value),
             ('stype', 'post_uname' if search_type == BawuSearchType.USER else 'op_uname'),
+        ]
+        params += extend_params
+
+    if start_dt or end_dt:
+        extend_params = [
             ('begin', int(start_dt.timestamp())),
             ('end', int(end_dt.timestamp())),
         ]

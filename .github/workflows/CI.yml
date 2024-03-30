@@ -36,17 +36,16 @@ jobs:
         with:
           ref: develop
 
-      - name: Setup PDM for Py${{ matrix.python-version }}
-        uses: pdm-project/setup-pdm@v4
-        with:
-          python-version: ${{ matrix.python-version }}
+      - name: Setup Rye
+        uses: eifinger/setup-rye@v2
 
-      - name: Install dependencies
+      - name: Pin Py${{ matrix.python-version }}
         run: |
-          pdm install -G test -q
+          rye pin ${{ matrix.python-version }}
+          rye sync --features=speedup -q
 
       - name: Run tests
         env:
           TB_BDUSS: ${{ secrets.BDUSS }}
           TB_STOKEN: ${{ secrets.STOKEN }}
-        run: pdm run pytest tests
+        run: rye test

@@ -12,10 +12,11 @@ def parse_body(body: bytes) -> None:
         raise TiebaServerError(code, res_json['error_msg'])
 
 
-async def request(http_core: HttpCore, fname: str, fid: int, tid: int, is_set: bool) -> BoolResponse:
+async def request(http_core: HttpCore, fname: str, fid: int, tid: int, is_vip: bool, is_set: bool) -> BoolResponse:
     data = [
         ('BDUSS', http_core.account.BDUSS),
         ('fid', fid),
+        ('is_member_top', int(is_vip)),
         ('ntn', 'set' if is_set else ''),
         ('tbs', http_core.account.tbs),
         ('word', fname),
