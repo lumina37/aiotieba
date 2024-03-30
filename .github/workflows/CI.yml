@@ -42,7 +42,7 @@ jobs:
       - name: Pin Py${{ matrix.python-version }}
         run: |
           rye pin ${{ matrix.python-version }}
-          rye sync -q
+          rye sync --features=speedup -q
 
       - name: Run tests
         env:
