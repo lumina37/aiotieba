@@ -6,7 +6,7 @@ from typing import List
 import bs4
 
 from ...exception import TbErrorExt
-from ...helper import default_datetime
+from ...helper import default_datetime, removeprefix
 from .._classdef import Containers
 
 
@@ -96,11 +96,18 @@ class Postlog:
         url: str = title_item['href']
         tid = int(url[3 : url.find('?')])
         pid = int(url[url.rfind('#') + 1 :])
-        pid = pid if pid != tid else 0
-        title = title_item.string
+        title: str = title_item['title']
 
         text_item = post_content_item.div
         text = text_item.string[12:]
+
+        if pid == tid or not title.startswith('回复：'):
+            # is thread
+            pid = 0
+            text = f"{title}\n{text}"
+        else:
+            title = removeprefix(title, '回复：')
+
         medias = [Media_postlog(tag) for tag in text_item.next_sibling('a', class_=None)]
 
         op_type_item = left_cell_item.next_sibling
