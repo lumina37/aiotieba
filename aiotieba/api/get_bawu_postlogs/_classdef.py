@@ -6,7 +6,7 @@ from typing import List
 import bs4
 
 from ...exception import TbErrorExt
-from ...helper import default_datetime
+from ...helper import default_datetime, removeprefix
 from .._classdef import Containers
 
 
@@ -84,18 +84,30 @@ class Postlog:
         post_user_item = post_meta_item.div
         post_portrait = post_user_item.a['href'][14:-17]
         post_time_item = post_meta_item.time
-        post_time = datetime.strptime(post_time_item.text, '%m月%d日 %H:%M')
+        post_time_str = post_time_item.text
+        post_time_month = int(post_time_str[:2])
+        post_time_day = int(post_time_str[3:5])
+        post_time_hour = int(post_time_str[7:9])
+        post_time_minute = int(post_time_str[10:])
+        post_time = datetime(1904, post_time_month, post_time_day, post_time_hour, post_time_minute)
 
         post_content_item = post_meta_item.next_sibling
         title_item = post_content_item.h1.a
         url: str = title_item['href']
         tid = int(url[3 : url.find('?')])
         pid = int(url[url.rfind('#') + 1 :])
-        pid = pid if pid != tid else 0
-        title = title_item.string
+        title: str = title_item['title']
 
         text_item = post_content_item.div
         text = text_item.string[12:]
+
+        if pid == tid or not title.startswith('回复：'):
+            # is thread
+            pid = 0
+            text = f"{title}\n{text}"
+        else:
+            title = removeprefix(title, '回复：')
+
         medias = [Media_postlog(tag) for tag in text_item.next_sibling('a', class_=None)]
 
         op_type_item = left_cell_item.next_sibling
