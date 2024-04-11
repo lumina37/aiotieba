@@ -7,6 +7,7 @@ from ...exception import TbErrorExt
 from ...helper import removeprefix
 from .._classdef import Containers, TypeMessage
 from .._classdef.contents import (
+    _IMAGEHASH_EXP,
     FragAt,
     FragEmoji,
     FragLink,
@@ -502,12 +503,13 @@ class FragImage_cp:
         hash (str): 百度图床hash
     """
 
-    src: str = ""
-    big_src: str = ""
-    origin_src: str = ""
+    src: str = dcs.field(default="", repr=False)
+    big_src: str = dcs.field(default="", repr=False)
+    origin_src: str = dcs.field(default="", repr=False)
     origin_size: int = 0
     show_width: int = 0
     show_height: int = 0
+    hash: str = ""
 
     @staticmethod
     def from_tbdata(data_proto: TypeMessage) -> "FragImage_cp":
@@ -520,20 +522,9 @@ class FragImage_cp:
         show_width = int(show_width)
         show_height = int(show_height)
 
-        return FragImage_cp(src, big_src, origin_src, origin_size, show_width, show_height)
+        hash_ = _IMAGEHASH_EXP.search(src).group(1)
 
-    @property
-    def hash(self) -> str:
-        first_qmark_idx = self.src.find('?')
-        end_idx = self.src.rfind('.', 0, first_qmark_idx)
-
-        if end_idx == -1:
-            hash_ = ''
-        else:
-            start_idx = self.src.rfind('/', 0, end_idx)
-            hash_ = self.src[start_idx + 1 : end_idx]
-
-        return hash_
+        return FragImage_cp(src, big_src, origin_src, origin_size, show_width, show_height, hash_)
 
 
 @dcs.dataclass

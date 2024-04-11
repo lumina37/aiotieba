@@ -30,18 +30,6 @@ class Media_postlog:
         origin_src = data_tag['href']
         return Media_postlog(src, origin_src)
 
-    @cached_property
-    def hash(self) -> str:
-        end_idx = self.src.rfind('.')
-
-        if end_idx == -1:
-            hash_ = ''
-        else:
-            start_idx = self.src.rfind('/', 0, end_idx)
-            hash_ = self.src[start_idx + 1 : end_idx]
-
-        return hash_
-
 
 @dcs.dataclass
 class Postlog:
@@ -145,15 +133,24 @@ class Page_postlog:
 
     @staticmethod
     def from_tbdata(data_soup: bs4.BeautifulSoup) -> "Page_postlog":
-        page_tag = data_soup.find('div', class_='tbui_pagination').find('li', class_='active')
-        current_page = int(page_tag.text)
-        total_page_item = page_tag.parent.next_sibling
-        total_page = int(total_page_item.text[1:-1])
-        has_more = current_page < total_page
-        has_prev = current_page > 1
-
         total_count_tag = data_soup.find('div', class_='breadcrumbs')
         total_count = int(total_count_tag.em.text)
+
+        page_tag = data_soup.find('div', class_='tbui_pagination').find('li', class_='active')
+        if page_tag is None:
+            if total_count != 0:
+                current_page = 1
+                total_page = 1
+            else:
+                current_page = 0
+                total_page = 0
+        else:
+            current_page = int(page_tag.text)
+            total_page_item = page_tag.parent.next_sibling
+            total_page = int(total_page_item.text[1:-1])
+
+        has_more = current_page < total_page
+        has_prev = current_page > 1
 
         return Page_postlog(current_page, total_page, total_count, has_more, has_prev)
 
