@@ -1,4 +1,5 @@
 import dataclasses as dcs
+import re
 from functools import cached_property
 from typing import Protocol, TypeVar
 
@@ -55,6 +56,9 @@ class TypeFragEmoji(Protocol):
     desc: str
 
 
+_IMAGEHASH_EXP = re.compile(r'/([a-z0-9]{32,})\.')
+
+
 @dcs.dataclass
 class FragImage:
     """
@@ -70,12 +74,13 @@ class FragImage:
         hash (str): 百度图床hash
     """
 
-    src: str = ""
-    big_src: str = ""
-    origin_src: str = ""
+    src: str = dcs.field(default="", repr=False)
+    big_src: str = dcs.field(default="", repr=False)
+    origin_src: str = dcs.field(default="", repr=False)
     origin_size: int = 0
     show_width: int = 0
     show_height: int = 0
+    hash: str = ""
 
     @staticmethod
     def from_tbdata(data_proto: TypeMessage) -> "FragImage":
@@ -88,28 +93,16 @@ class FragImage:
         show_width = int(show_width)
         show_height = int(show_height)
 
-        return FragImage(src, big_src, origin_src, origin_size, show_width, show_height)
+        hash_ = _IMAGEHASH_EXP.search(src).group(1)
 
-    @cached_property
-    def hash(self) -> str:
-        first_qmark_idx = self.src.find('?')
-        end_idx = self.src.rfind('.', 0, first_qmark_idx)
-
-        if end_idx == -1:
-            hash_ = ''
-        else:
-            start_idx = self.src.rfind('/', 0, end_idx)
-            hash_ = self.src[start_idx + 1 : end_idx]
-
-        return hash_
+        return FragImage(src, big_src, origin_src, origin_size, show_width, show_height, hash_)
 
 
+@dcs.dataclass
 class TypeFragImage(Protocol):
-    src: str = ""
-    origin_src: str = ""
-
-    @property
-    def hash(self) -> str: ...
+    src: str
+    origin_src: str
+    hash: str
 
 
 @dcs.dataclass

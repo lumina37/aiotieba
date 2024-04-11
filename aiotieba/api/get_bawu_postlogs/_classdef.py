@@ -30,18 +30,6 @@ class Media_postlog:
         origin_src = data_tag['href']
         return Media_postlog(src, origin_src)
 
-    @cached_property
-    def hash(self) -> str:
-        end_idx = self.src.rfind('.')
-
-        if end_idx == -1:
-            hash_ = ''
-        else:
-            start_idx = self.src.rfind('/', 0, end_idx)
-            hash_ = self.src[start_idx + 1 : end_idx]
-
-        return hash_
-
 
 @dcs.dataclass
 class Postlog:

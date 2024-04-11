@@ -4,7 +4,17 @@ from typing import List
 
 from ...exception import TbErrorExt
 from .._classdef import Containers, TypeMessage, VoteInfo
-from .._classdef.contents import FragAt, FragEmoji, FragLink, FragText, FragVideo, FragVoice, TypeFragment, TypeFragText
+from .._classdef.contents import (
+    _IMAGEHASH_EXP,
+    FragAt,
+    FragEmoji,
+    FragLink,
+    FragText,
+    FragVideo,
+    FragVoice,
+    TypeFragment,
+    TypeFragText,
+)
 
 FragText_up = FragText_ut = FragText
 FragEmoji_ut = FragEmoji
@@ -273,12 +283,13 @@ class FragImage_ut:
         hash (str): 百度图床hash
     """
 
-    src: str = ""
-    big_src: str = ""
-    origin_src: str = ""
+    src: str = dcs.field(default="", repr=False)
+    big_src: str = dcs.field(default="", repr=False)
+    origin_src: str = dcs.field(default="", repr=False)
     origin_size: int = 0
     width: int = 0
     height: int = 0
+    hash: str = ""
 
     @staticmethod
     def from_tbdata(data_proto: TypeMessage) -> "FragImage_ut":
@@ -286,22 +297,13 @@ class FragImage_ut:
         big_src = data_proto.big_pic
         origin_src = data_proto.origin_pic
         origin_size = data_proto.origin_size
+
         width = data_proto.width
         height = data_proto.height
-        return FragImage_ut(src, big_src, origin_src, origin_size, width, height)
 
-    @cached_property
-    def hash(self) -> str:
-        first_qmark_idx = self.src.find('?')
-        end_idx = self.src.rfind('.', 0, first_qmark_idx)
+        hash_ = _IMAGEHASH_EXP.search(src).group(1)
 
-        if end_idx == -1:
-            hash_ = ''
-        else:
-            start_idx = self.src.rfind('/', 0, end_idx)
-            hash_ = self.src[start_idx + 1 : end_idx]
-
-        return hash_
+        return FragImage_ut(src, big_src, origin_src, origin_size, width, height, hash_)
 
 
 @dcs.dataclass
