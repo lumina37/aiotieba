@@ -1,6 +1,5 @@
 import dataclasses as dcs
 from datetime import datetime
-from functools import cached_property
 from typing import List
 
 import bs4
