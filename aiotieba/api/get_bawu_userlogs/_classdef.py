@@ -73,15 +73,24 @@ class Page_userlog:
 
     @staticmethod
     def from_tbdata(data_soup: bs4.BeautifulSoup) -> "Page_userlog":
-        page_tag = data_soup.find('div', class_='tbui_pagination').find('li', class_='active')
-        current_page = int(page_tag.text)
-        total_page_item = page_tag.parent.next_sibling
-        total_page = int(total_page_item.text[1:-1])
-        has_more = current_page < total_page
-        has_prev = current_page > 1
-
         total_count_tag = data_soup.find('div', class_='breadcrumbs')
         total_count = int(total_count_tag.em.text)
+
+        page_tag = data_soup.find('div', class_='tbui_pagination').find('li', class_='active')
+        if page_tag is None:
+            if total_count != 0:
+                current_page = 1
+                total_page = 1
+            else:
+                current_page = 0
+                total_page = 0
+        else:
+            current_page = int(page_tag.text)
+            total_page_item = page_tag.parent.next_sibling
+            total_page = int(total_page_item.text[1:-1])
+
+        has_more = current_page < total_page
+        has_prev = current_page > 1
 
         return Page_userlog(current_page, total_page, total_count, has_more, has_prev)
 

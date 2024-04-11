@@ -56,6 +56,7 @@ class Page_bwblacklist:
     Attributes:
         current_page (int): 当前页码
         total_page (int): 总页码
+        total_count (int): 总计数
 
         has_more (bool): 是否有后继页
         has_prev (bool): 是否有前驱页
@@ -63,17 +64,32 @@ class Page_bwblacklist:
 
     current_page: int = 0
     total_page: int = 0
+    total_count: int = 0
 
     has_more: bool = False
     has_prev: bool = False
 
-    def from_tbdata(data_tag: bs4.element.Tag) -> "Page_bwblacklist":
-        current_page = int(data_tag.text)
-        total_page_item = data_tag.parent.next_sibling
-        total_page = int(total_page_item.text[1:-1])
+    def from_tbdata(data_soup: bs4.BeautifulSoup) -> "Page_bwblacklist":
+        total_count_tag = data_soup.find('div', class_='breadcrumbs')
+        total_count = int(total_count_tag.em.text)
+
+        page_tag = data_soup.find('div', class_='tbui_pagination').find('li', class_='active')
+        if page_tag is None:
+            if total_count != 0:
+                current_page = 1
+                total_page = 1
+            else:
+                current_page = 0
+                total_page = 0
+        else:
+            current_page = int(page_tag.text)
+            total_page_item = page_tag.parent.next_sibling
+            total_page = int(total_page_item.text[1:-1])
+
         has_more = current_page < total_page
         has_prev = current_page > 1
-        return Page_bwblacklist(current_page, total_page, has_more, has_prev)
+
+        return Page_bwblacklist(current_page, total_page, total_count, has_more, has_prev)
 
 
 @dcs.dataclass
@@ -94,8 +110,7 @@ class BawuBlacklistUsers(TbErrorExt, Containers[BawuBlacklistUser]):
     @staticmethod
     def from_tbdata(data_soup: bs4.BeautifulSoup) -> "BawuBlacklistUsers":
         objs = [BawuBlacklistUser.from_tbdata(t) for t in data_soup('td', class_='left_cell')]
-        page_tag = data_soup.find('div', class_='tbui_pagination').find('li', class_='active')
-        page = Page_bwblacklist.from_tbdata(page_tag)
+        page = Page_bwblacklist.from_tbdata(data_soup)
         return BawuBlacklistUsers(objs, page)
 
     @property
