@@ -29,4 +29,4 @@ async def request(http_core: HttpCore, fname: str) -> BoolResponse:
     body = await http_core.net_core.send_request(request, read_bufsize=2 * 1024)
     parse_body(body)
 
-    return BoolResponse
+    return BoolResponse()
