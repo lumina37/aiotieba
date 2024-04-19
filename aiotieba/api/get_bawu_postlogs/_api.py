@@ -1,5 +1,6 @@
 import datetime
 from typing import Optional
+from urllib.parse import quote
 
 import bs4
 import yarl
@@ -37,6 +38,7 @@ async def request(
         params.append(('op_type', op_type))
 
     if search_value:
+        search_value = quote(search_value)
         extend_params = [
             ('svalue', search_value),
             ('stype', 'post_uname' if search_type == BawuSearchType.USER else 'op_uname'),
