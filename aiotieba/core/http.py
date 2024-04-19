@@ -42,7 +42,6 @@ class HttpCore:
     loop: asyncio.AbstractEventLoop
 
     def __init__(self, account: Account, net_core: NetCore, loop: Optional[asyncio.AbstractEventLoop] = None) -> None:
-        self.account = account
         self.net_core = net_core
         self.loop = loop
 
@@ -72,12 +71,18 @@ class HttpCore:
             hdrs.CONNECTION: "keep-alive",
         }
         self.web = HttpContainer(web_headers, aiohttp.CookieJar(loop=loop))
+
+        self.set_account(account)
+
+    def set_account(self, new_account: Account) -> None:
+        self.account = new_account
+
         BDUSS_morsel = aiohttp.cookiejar.Morsel()
-        BDUSS_morsel.set('BDUSS', account.BDUSS, account.BDUSS)
+        BDUSS_morsel.set('BDUSS', new_account.BDUSS, new_account.BDUSS)
         BDUSS_morsel['domain'] = "baidu.com"
         self.web.cookie_jar._cookies[("baidu.com", "/")]['BDUSS'] = BDUSS_morsel
         STOKEN_morsel = aiohttp.cookiejar.Morsel()
-        STOKEN_morsel.set('STOKEN', account.STOKEN, account.STOKEN)
+        STOKEN_morsel.set('STOKEN', new_account.STOKEN, new_account.STOKEN)
         STOKEN_morsel['domain'] = "tieba.baidu.com"
         self.web.cookie_jar._cookies[("tieba.baidu.com", "/")]['STOKEN'] = STOKEN_morsel
 

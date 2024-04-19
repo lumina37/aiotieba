@@ -226,8 +226,8 @@ class Client:
 
     @account.setter
     def account(self, new_account: Account) -> None:
-        self._http_core.account = new_account
-        self._ws_core.account = new_account
+        self._http_core.set_account(new_account)
+        self._ws_core.set_account(new_account)
 
     @handle_exception(BoolResponse)
     async def init_websocket(self) -> BoolResponse:
