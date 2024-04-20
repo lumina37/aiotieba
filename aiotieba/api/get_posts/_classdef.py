@@ -149,8 +149,8 @@ class Contents_p(Containers[TypeFragment]):
         def _frags():
             for proto in content_protos:
                 _type = proto.type
-                # 0纯文本 9电话号 18话题 27百科词条
-                if _type in [0, 9, 18, 27]:
+                # 0纯文本 9电话号 18话题 27百科词条 40梗百科
+                if _type in [0, 9, 18, 27, 40]:
                     frag = FragText_p.from_tbdata(proto)
                     texts.append(frag)
                     yield frag

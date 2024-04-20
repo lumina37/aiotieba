@@ -277,7 +277,7 @@ class WsCore:
     loop: asyncio.AbstractEventLoop
 
     def __init__(self, account: Account, net_core: NetCore, loop: asyncio.AbstractEventLoop) -> None:
-        self.account = account
+        self.set_account(account)
         self.net_core = net_core
         self.loop = loop
 
@@ -286,6 +286,9 @@ class WsCore:
         self.ws_dispatcher: asyncio.Task = None
 
         self._status = WsStatus.CLOSED
+
+    def set_account(self, new_account: Account) -> None:
+        self.account = new_account
 
     async def connect(self) -> None:
         """

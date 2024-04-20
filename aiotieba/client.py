@@ -226,8 +226,8 @@ class Client:
 
     @account.setter
     def account(self, new_account: Account) -> None:
-        self._http_core.account = new_account
-        self._ws_core.account = new_account
+        self._http_core.set_account(new_account)
+        self._ws_core.set_account(new_account)
 
     @handle_exception(BoolResponse)
     async def init_websocket(self) -> BoolResponse:
@@ -1269,6 +1269,9 @@ class Client:
 
         Returns:
             MemberUsers: 最新关注用户列表
+
+        Note:
+            本接口需要STOKEN
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
@@ -1367,6 +1370,9 @@ class Client:
 
         Returns:
             Userlogs: 吧务用户管理日志表
+
+        Note:
+            本接口需要STOKEN
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
@@ -1402,6 +1408,9 @@ class Client:
 
         Returns:
             Postlogs: 吧务帖子管理日志表
+
+        Note:
+            本接口需要STOKEN
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
@@ -1444,6 +1453,9 @@ class Client:
 
         Returns:
             BlacklistUsers: 吧务黑名单列表
+
+        Note:
+            本接口需要STOKEN
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)

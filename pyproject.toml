@@ -1,6 +1,6 @@
 [project]
 name = "aiotieba"
-version = "4.4.3"
+version = "4.4.4"
 description = "Asynchronous I/O Client for Baidu Tieba"
 authors = [{ name = "Starry-OvO", email = "starry.qvq@gmail.com" }]
 urls = { Repository = "https://github.com/Starry-OvO/aiotieba/", Documentation = "https://aiotieba.cc/" }
@@ -58,7 +58,7 @@ speedup = [
 ]
 
 [build-system]
-requires = ["scikit-build-core<0.9,>=0.8"]
+requires = ["scikit-build-core<0.10,>=0.8"]
 build-backend = "scikit_build_core.build"
 
 [tool.rye]
