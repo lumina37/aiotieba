@@ -87,13 +87,14 @@ skip = "*-win32 *_i686 *_s390x *_ppc64le"
 [tool.ruff]
 line-length = 120
 target-version = "py38"
+preview = true
 
 [tool.ruff.format]
 quote-style = "preserve"
 
 [tool.ruff.lint]
 select = ["W", "E", "F", "I", "UP", "YTT", "A", "B", "C4", "PIE", "PT", "PERF", "FURB"]
-ignore = ["E402", "E501"]
+ignore = ["E402", "E501", "E266"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]

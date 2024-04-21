@@ -1,4 +1,3 @@
-
 def cuid_galaxy2(android_id: str) -> str:
     """
     使用给定的android_id生成cuid_galaxy2

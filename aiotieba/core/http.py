@@ -130,7 +130,7 @@ class HttpCore:
             aiohttp.ClientRequest
         """
 
-        writer = aiohttp.MultipartWriter('form-data', boundary=f"*-reverse1999-{random.randint(0,9)}")
+        writer = aiohttp.MultipartWriter('form-data', boundary=f"*-reverse1999-{random.randint(0, 9)}")
         payload_headers = {
             aiohttp.hdrs.CONTENT_DISPOSITION: aiohttp.helpers.content_disposition_header(
                 'form-data', name='data', filename='file'
