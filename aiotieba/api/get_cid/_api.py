@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List, Union
 
 import yarl
 
@@ -7,8 +7,10 @@ from ...core import HttpCore
 from ...exception import TiebaServerError
 from ...helper import parse_json
 
+TypeCates = List[Dict[str, Union[str, int]]]
 
-def parse_body(body: bytes) -> Dict[str, str]:
+
+def parse_body(body: bytes) -> TypeCates:
     res_json = parse_json(body)
     if code := int(res_json['error_code']):
         raise TiebaServerError(code, res_json['error_msg'])
@@ -18,7 +20,7 @@ def parse_body(body: bytes) -> Dict[str, str]:
     return cates
 
 
-async def request(http_core: HttpCore, fname: str) -> Dict[str, str]:
+async def request(http_core: HttpCore, fname: str) -> TypeCates:
     data = [
         ('BDUSS', http_core.account.BDUSS),
         ('word', fname),

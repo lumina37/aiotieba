@@ -1,5 +1,3 @@
-from typing import Dict
-
 import yarl
 
 from ...const import APP_BASE_HOST, APP_SECURE_SCHEME, MAIN_VERSION
@@ -20,7 +18,7 @@ def pack_proto(account: Account, fname: str) -> bytes:
     return req_proto.SerializeToString()
 
 
-def parse_body(body: bytes) -> Dict[str, int]:
+def parse_body(body: bytes) -> TabMap:
     res_proto = SearchPostForumResIdl_pb2.SearchPostForumResIdl()
     res_proto.ParseFromString(body)
 
@@ -33,7 +31,7 @@ def parse_body(body: bytes) -> Dict[str, int]:
     return tab_map
 
 
-async def request_http(http_core: HttpCore, fname: str) -> Dict[str, int]:
+async def request_http(http_core: HttpCore, fname: str) -> TabMap:
     data = pack_proto(http_core.account, fname)
 
     request = http_core.pack_proto_request(
@@ -47,7 +45,7 @@ async def request_http(http_core: HttpCore, fname: str) -> Dict[str, int]:
     return parse_body(body)
 
 
-async def request_ws(ws_core: WsCore, fname: str) -> Dict[str, int]:
+async def request_ws(ws_core: WsCore, fname: str) -> TabMap:
     data = pack_proto(ws_core.account, fname)
 
     response = await ws_core.send(data, CMD)

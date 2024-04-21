@@ -172,7 +172,7 @@ class Client:
         account: Optional[Account] = None,
         try_ws: bool = False,
         proxy: Union[bool, ProxyConfig] = False,
-        timeout: TimeoutConfig = TimeoutConfig,
+        timeout: Optional[TimeoutConfig] = None,
         loop: Optional[asyncio.AbstractEventLoop] = None,
     ) -> None:
         if loop is None:
@@ -633,7 +633,7 @@ class Client:
 
         return await get_uinfo_panel.request(self._http_core, name_or_portrait)
 
-    async def get_user_info(self, id_: Union[str, int], /, require: ReqUInfo = ReqUInfo.ALL) -> TypeUserInfo:
+    async def get_user_info(self, id_: Union[str, int], /, require: ReqUInfo = ReqUInfo.ALL) -> UserInfo:
         """
         获取用户信息
 
@@ -642,7 +642,7 @@ class Client:
             require (ReqUInfo): 指示需要获取的字段
 
         Returns:
-            TypeUserInfo: 用户信息
+            UserInfo: 用户信息
         """
 
         if not id_:
@@ -1834,7 +1834,7 @@ class Client:
         cid = 0
         for item in cates:
             if cname == item['class_name']:
-                cid = int(item['class_id'])
+                cid = item['class_id']
                 break
 
         return cid
