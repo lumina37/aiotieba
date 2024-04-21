@@ -1,6 +1,6 @@
 import asyncio
 import dataclasses as dcs
-from typing import Callable
+from typing import Callable, Optional
 
 import aiohttp
 
@@ -24,8 +24,8 @@ class NetCore:
 
     Args:
         connector (aiohttp.TCPConnector): 用于生成TCP连接的连接器
-        proxy (ProxyConfig, optional): 代理配置. Defaults to ProxyConfig().
-        timeout (TimeoutConfig, optional): 超时配置. Defaults to TimeoutConfig().
+        proxy (ProxyConfig, optional): 代理配置. Defaults to None.
+        timeout (TimeoutConfig, optional): 超时配置. Defaults to None.
     """
 
     connector: aiohttp.TCPConnector
@@ -35,8 +35,8 @@ class NetCore:
     def __init__(
         self,
         connector: aiohttp.TCPConnector,
-        proxy: ProxyConfig = ProxyConfig,
-        timeout: TimeoutConfig = TimeoutConfig,
+        proxy: Optional[ProxyConfig] = None,
+        timeout: Optional[TimeoutConfig] = None,
     ) -> None:
         self.connector = connector
 
