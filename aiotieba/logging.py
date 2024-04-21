@@ -32,7 +32,7 @@ class TiebaLogger(logging.Logger):
         self.addHandler(stream_hd)
 
 
-LOGGER = TiebaLogger()
+LOGGER = None
 
 
 def get_logger() -> TiebaLogger:
