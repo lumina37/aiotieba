@@ -4,6 +4,7 @@
 *.py[cd]
 __pycache__
 
+log/
 dist/
 build/
 
