@@ -37,7 +37,7 @@ jobs:
           ref: develop
 
       - name: Setup Rye
-        uses: eifinger/setup-rye@v2
+        uses: eifinger/setup-rye@v3
 
       - name: Pin Py${{ matrix.python-version }}
         run: |
