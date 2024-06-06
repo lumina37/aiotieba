@@ -110,7 +110,7 @@ else:
         return s
 
 
-def is_portrait(portrait: str) -> bool:
+def is_portrait(portrait: Any) -> bool:
     """
     简单判断输入是否符合portrait格式
     """
@@ -118,7 +118,7 @@ def is_portrait(portrait: str) -> bool:
     return isinstance(portrait, str) and portrait.startswith('tb.')
 
 
-def is_user_name(user_name: str) -> bool:
+def is_user_name(user_name: Any) -> bool:
     """
     简单判断输入是否符合user_name格式
     """

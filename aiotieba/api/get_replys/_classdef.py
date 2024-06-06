@@ -123,7 +123,7 @@ class UserInfo_reply_p:
 
     @cached_property
     def log_name(self) -> str:
-        return self.user_name if self.user_name else f"{self.nick_name_new}/{self.user_id}"
+        return self.user_name or f"{self.nick_name_new}/{self.user_id}"
 
 
 @dcs.dataclass

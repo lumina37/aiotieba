@@ -2,6 +2,7 @@ import asyncio
 import dataclasses as dcs
 import random
 import urllib.parse
+from http.cookies import Morsel
 from typing import Dict, List, Optional, Tuple
 
 import aiohttp
@@ -77,11 +78,11 @@ class HttpCore:
     def set_account(self, new_account: Account) -> None:
         self.account = new_account
 
-        BDUSS_morsel = aiohttp.cookiejar.Morsel()
+        BDUSS_morsel = Morsel()
         BDUSS_morsel.set('BDUSS', new_account.BDUSS, new_account.BDUSS)
         BDUSS_morsel['domain'] = "baidu.com"
         self.web.cookie_jar._cookies[("baidu.com", "/")]['BDUSS'] = BDUSS_morsel
-        STOKEN_morsel = aiohttp.cookiejar.Morsel()
+        STOKEN_morsel = Morsel()
         STOKEN_morsel.set('STOKEN', new_account.STOKEN, new_account.STOKEN)
         STOKEN_morsel['domain'] = "tieba.baidu.com"
         self.web.cookie_jar._cookies[("tieba.baidu.com", "/")]['STOKEN'] = STOKEN_morsel
@@ -129,7 +130,7 @@ class HttpCore:
             aiohttp.ClientRequest
         """
 
-        writer = aiohttp.MultipartWriter('form-data', boundary=f"*-reverse1999-{random.randint(0,9)}")
+        writer = aiohttp.MultipartWriter('form-data', boundary=f"*-reverse1999-{random.randint(0, 9)}")
         payload_headers = {
             aiohttp.hdrs.CONTENT_DISPOSITION: aiohttp.helpers.content_disposition_header(
                 'form-data', name='data', filename='file'

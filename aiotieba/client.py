@@ -115,7 +115,6 @@ from .exception import BoolResponse, IntResponse, StrResponse
 from .helper.cache import ForumInfoCache
 from .helper.utils import handle_exception, is_portrait, is_user_name
 from .logging import get_logger as LOG
-from .typing import TypeUserInfo
 
 if TYPE_CHECKING:
     import datetime
@@ -152,7 +151,7 @@ class Client:
         account (Account, optional): Account实例 该字段会覆盖前两个参数. Defaults to None.
         try_ws (bool, optional): 尝试使用websocket接口. Defaults to False.
         proxy (bool | ProxyConfig, optional): True则使用环境变量代理 False则禁用代理 输入ProxyConfig实例以手动配置代理. Defaults to False.
-        timeout (TimeoutConfig, optional): 超时配置. Defaults to TimeoutConfig().
+        timeout (TimeoutConfig, optional): 超时配置. Defaults to None.
         loop (asyncio.AbstractEventLoop, optional): 事件循环. Defaults to None.
     """
 
@@ -172,7 +171,7 @@ class Client:
         account: Optional[Account] = None,
         try_ws: bool = False,
         proxy: Union[bool, ProxyConfig] = False,
-        timeout: TimeoutConfig = TimeoutConfig,
+        timeout: Optional[TimeoutConfig] = None,
         loop: Optional[asyncio.AbstractEventLoop] = None,
     ) -> None:
         if loop is None:
@@ -633,7 +632,7 @@ class Client:
 
         return await get_uinfo_panel.request(self._http_core, name_or_portrait)
 
-    async def get_user_info(self, id_: Union[str, int], /, require: ReqUInfo = ReqUInfo.ALL) -> TypeUserInfo:
+    async def get_user_info(self, id_: Union[str, int], /, require: ReqUInfo = ReqUInfo.ALL) -> UserInfo:
         """
         获取用户信息
 
@@ -642,7 +641,7 @@ class Client:
             require (ReqUInfo): 指示需要获取的字段
 
         Returns:
-            TypeUserInfo: 用户信息
+            UserInfo: 用户信息
         """
 
         if not id_:
@@ -1834,7 +1833,7 @@ class Client:
         cid = 0
         for item in cates:
             if cname == item['class_name']:
-                cid = int(item['class_id'])
+                cid = item['class_id']
                 break
 
         return cid

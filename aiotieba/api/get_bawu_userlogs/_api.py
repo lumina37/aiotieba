@@ -1,4 +1,5 @@
 import datetime
+import time
 from typing import Optional
 from urllib.parse import quote
 
@@ -38,17 +39,28 @@ async def request(
         params.append(('op_type', op_type))
 
     if search_value:
-        search_value = quote(search_value)
-        extend_params = [
-            ('svalue', search_value),
-            ('stype', 'post_uname' if search_type == BawuSearchType.USER else 'op_uname'),
-        ]
+        if search_type == BawuSearchType.USER:
+            search_value = quote(search_value)
+            extend_params = [
+                ('svalue', search_value),
+                ('stype', 'post_uname'),
+            ]
+        else:
+            extend_params = [
+                ('svalue', search_value),
+                ('stype', 'op_uname'),
+            ]
         params += extend_params
 
-    if start_dt or end_dt:
+    if start_dt:
+        begin = int(start_dt.timestamp())
+        if end_dt is None:
+            end = int(time.time())
+        else:
+            end = int(end_dt.timestamp())
         extend_params = [
-            ('begin', int(start_dt.timestamp())),
-            ('end', int(end_dt.timestamp())),
+            ('end', end),
+            ('begin', begin),
         ]
         params += extend_params
 

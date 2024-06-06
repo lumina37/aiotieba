@@ -56,7 +56,7 @@ class UserInfo_rec:
 
     @cached_property
     def log_name(self) -> str:
-        return self.user_name if self.user_name else f"{self.nick_name_new}/{self.portrait}"
+        return self.user_name or f"{self.nick_name_new}/{self.portrait}"
 
 
 @dcs.dataclass

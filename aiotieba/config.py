@@ -48,7 +48,7 @@ class TimeoutConfig:
         ws_read (float, optional): 从发送websocket数据到结束等待响应的超时时间. Defaults to 8.0.
         ws_keepalive (float, optional): websocket在长达ws_keepalive的时间内未发生IO则发送close信号关闭连接. Defaults to 300.0.
         ws_heartbeat (float, optional): websocket心跳间隔. 为None则不发送心跳. Defaults to None.
-        dns_ttl (float, optional): dns的本地缓存超时时间. Defaults to 600.0.
+        dns_ttl (int, optional): dns的本地缓存超时时间. Defaults to 600.
 
     Note:
         所有时间均以秒为单位
@@ -60,7 +60,7 @@ class TimeoutConfig:
     ws_read: float = 8.0
     ws_keepalive: float = 300.0
     ws_heartbeat: Optional[float] = None
-    dns_ttl: float = 600.0
+    dns_ttl: int = 600
 
     def __init__(
         self,
@@ -72,7 +72,7 @@ class TimeoutConfig:
         ws_read: float = 8.0,
         ws_keepalive: float = 300.0,
         ws_heartbeat: Optional[float] = None,
-        dns_ttl: float = 600.0,
+        dns_ttl: int = 600,
     ) -> None:
         self.http = aiohttp.ClientTimeout(connect=http_acquire_conn, sock_read=http_read, sock_connect=http_connect)
         self.http_keepalive = http_keepalive

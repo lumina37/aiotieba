@@ -80,7 +80,7 @@ class UserInfo:
     def __bool__(self) -> bool:
         return bool(self.user_id)
 
-    def __ior__(self, obj: "UserInfo") -> "UserInfo":
+    def __ior__(self, obj) -> "UserInfo":
         for field in dcs.fields(obj):
             if hasattr(self, field.name):
                 val = getattr(obj, field.name)

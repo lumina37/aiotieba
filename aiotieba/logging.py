@@ -32,7 +32,7 @@ class TiebaLogger(logging.Logger):
         self.addHandler(stream_hd)
 
 
-LOGGER = TiebaLogger()
+LOGGER = None
 
 
 def get_logger() -> TiebaLogger:
@@ -100,11 +100,13 @@ def enable_filelog(log_level: int = logging.INFO, log_dir: Path = Path('log'), b
     log_dir = Path(log_dir)
     log_dir.mkdir(0o755, parents=True, exist_ok=True)
 
+    logger = get_logger()
+
     file_hd = logging.handlers.TimedRotatingFileHandler(
-        log_dir / f"{LOGGER.name}.log", when='MIDNIGHT', backupCount=backup_count, encoding='utf-8'
+        log_dir / f"{logger.name}.log", when='MIDNIGHT', backupCount=backup_count, encoding='utf-8'
     )
     file_hd.setLevel(log_level)
     file_hd.setFormatter(_FORMATTER)
-    LOGGER.addHandler(file_hd)
+    logger.addHandler(file_hd)
 
     _FILELOG_ENABLED = True
