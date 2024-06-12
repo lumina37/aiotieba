@@ -39,8 +39,7 @@ class FragVoice_up:
 
     @staticmethod
     def from_tbdata(data_proto: TypeMessage) -> "FragVoice_up":
-        voice_md5 = data_proto.voice_md5
-        md5 = voice_md5[: voice_md5.rfind('_')]
+        md5 = data_proto.voice_md5
         duration = int(data_proto.during_time) / 1000
         return FragVoice_up(md5, duration)
 
