@@ -34,7 +34,7 @@ async def _request_bytes(http_core: HttpCore, url: yarl.URL) -> bytes:
 
 
 async def request_bytes(http_core: HttpCore, url: yarl.URL) -> ImageBytes:
-    body = _request_bytes(http_core, url)
+    body = await _request_bytes(http_core, url)
     return ImageBytes(body)
 
 
