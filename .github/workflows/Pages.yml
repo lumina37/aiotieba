@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Rye
-        uses: eifinger/setup-rye@v3
+        uses: eifinger/setup-rye@v4
 
       - name: Install dependencies
         run: rye sync -q
