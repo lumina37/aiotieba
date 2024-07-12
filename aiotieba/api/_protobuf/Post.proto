@@ -36,6 +36,10 @@ message Post {
         string content = 2;
     }
     CustomState custom_state = 61;
+    message ChatContent {
+        string bot_uk = 1;
+    }
+    ChatContent chat_content = 78;
     message SpriteMemeInfo {
         int64 meme_id = 1;
     }
