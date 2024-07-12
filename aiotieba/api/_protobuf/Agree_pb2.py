@@ -9,7 +9,7 @@ _sym_db = _symbol_database.Default()
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\x0b\x41gree.proto\"0\n\x05\x41gree\x12\x11\n\tagree_num\x18\x01 \x01(\x03\x12\x14\n\x0c\x64isagree_num\x18\x04 \x01(\x03\x62\x06proto3'
+    b'\n\x0b\x41gree.proto"0\n\x05\x41gree\x12\x11\n\tagree_num\x18\x01 \x01(\x03\x12\x14\n\x0c\x64isagree_num\x18\x04 \x01(\x03\x62\x06proto3'
 )
 
 _globals = globals()

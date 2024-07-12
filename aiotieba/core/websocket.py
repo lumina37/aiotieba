@@ -50,14 +50,12 @@ def pack_ws_bytes(
         encryptor = account.aes_ecb_chiper.encryptor()
         data = encryptor.update(data) + encryptor.finalize()
 
-    data = b''.join(
-        [
-            flag.to_bytes(1, 'big'),
-            cmd.to_bytes(4, 'big'),
-            req_id.to_bytes(4, 'big'),
-            data,
-        ]
-    )
+    data = b''.join([
+        flag.to_bytes(1, 'big'),
+        cmd.to_bytes(4, 'big'),
+        req_id.to_bytes(4, 'big'),
+        data,
+    ])
 
     return data
 
