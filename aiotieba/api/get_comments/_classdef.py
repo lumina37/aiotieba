@@ -522,7 +522,10 @@ class FragImage_cp:
         show_width = int(show_width)
         show_height = int(show_height)
 
-        hash_ = _IMAGEHASH_EXP.search(src).group(1)
+        if hash_obj := _IMAGEHASH_EXP.search(src):
+            hash_ = hash_obj.group(1)
+        else:
+            hash_ = ""
 
         return FragImage_cp(src, big_src, origin_src, origin_size, show_width, show_height, hash_)
 

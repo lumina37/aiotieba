@@ -64,7 +64,10 @@ class FragImage_p:
         show_width = int(show_width)
         show_height = int(show_height)
 
-        hash_ = _IMAGEHASH_EXP.search(src).group(1)
+        if hash_obj := _IMAGEHASH_EXP.search(src):
+            hash_ = hash_obj.group(1)
+        else:
+            hash_ = ""
 
         return FragImage_p(src, big_src, origin_src, origin_size, show_width, show_height, hash_)
 
@@ -689,7 +692,10 @@ class FragImage_pt:
         show_width = data_proto.width
         show_height = data_proto.height
 
-        hash_ = _IMAGEHASH_EXP.search(src).group(1)
+        if hash_obj := _IMAGEHASH_EXP.search(src):
+            hash_ = hash_obj.group(1)
+        else:
+            hash_ = ""
 
         return FragImage_pt(src, big_src, origin_src, show_width, show_height, hash_)
 
