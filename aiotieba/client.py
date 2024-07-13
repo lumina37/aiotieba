@@ -1636,9 +1636,7 @@ class Client:
         return await del_thread.request(self._http_core, fid, tid, is_hide=False)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def del_threads(
-        self, fname_or_fid: str | int, /, tids: list[int], *, block: bool = False
-    ) -> BoolResponse:
+    async def del_threads(self, fname_or_fid: str | int, /, tids: list[int], *, block: bool = False) -> BoolResponse:
         """
         批量删除主题帖
 
@@ -1907,9 +1905,7 @@ class Client:
         return await top.request(self._http_core, fname, fid, tid, is_vip, False)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def move(
-        self, fname_or_fid: str | int, /, tid: int, *, to_tab_id: int, from_tab_id: int = 0
-    ) -> BoolResponse:
+    async def move(self, fname_or_fid: str | int, /, tid: int, *, to_tab_id: int, from_tab_id: int = 0) -> BoolResponse:
         """
         将主题帖移动至另一分区
 
