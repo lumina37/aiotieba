@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 import dataclasses as dcs
-from typing import Callable, Optional
+from typing import Callable
 
 import aiohttp
 
@@ -35,8 +37,8 @@ class NetCore:
     def __init__(
         self,
         connector: aiohttp.TCPConnector,
-        proxy: Optional[ProxyConfig] = None,
-        timeout: Optional[TimeoutConfig] = None,
+        proxy: ProxyConfig | None = None,
+        timeout: TimeoutConfig | None = None,
     ) -> None:
         self.connector = connector
 

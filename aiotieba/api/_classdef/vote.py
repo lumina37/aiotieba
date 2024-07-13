@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import dataclasses as dcs
-from typing import List
 
 from .common import TypeMessage
 
@@ -18,7 +19,7 @@ class VoteOption:
     text: str = ""
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "VoteOption":
+    def from_tbdata(data_proto: TypeMessage) -> VoteOption:
         vote_num = data_proto.num
         text = data_proto.text
         return VoteOption(vote_num, text)
@@ -39,12 +40,12 @@ class VoteInfo:
 
     title: str = ""
     is_multi: bool = False
-    options: List[VoteOption] = dcs.field(default_factory=list)
+    options: list[VoteOption] = dcs.field(default_factory=list)
     total_vote: int = 0
     total_user: int = 0
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "VoteInfo":
+    def from_tbdata(data_proto: TypeMessage) -> VoteInfo:
         title = data_proto.title
         is_multi = bool(data_proto.is_multi)
         options = [VoteOption.from_tbdata(p) for p in data_proto.options]

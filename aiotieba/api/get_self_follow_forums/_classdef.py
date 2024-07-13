@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses as dcs
 from typing import Mapping
 
@@ -21,7 +23,7 @@ class SelfFollowForum:
     level: int = 0
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "SelfFollowForum":
+    def from_tbdata(data_map: Mapping) -> SelfFollowForum:
         fid = data_map['forum_id']
         fname = data_map['forum_name']
         level = data_map['level_id']
@@ -48,7 +50,7 @@ class Page_sforum:
     has_prev: bool = False
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "Page_sforum":
+    def from_tbdata(data_map: Mapping) -> Page_sforum:
         current_page = data_map['cur_page']
         total_page = data_map['total_page']
         has_more = current_page < total_page
@@ -72,7 +74,7 @@ class SelfFollowForums(TbErrorExt, Containers[SelfFollowForum]):
     page: Page_sforum = dcs.field(default_factory=Page_sforum)
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "SelfFollowForums":
+    def from_tbdata(data_map: Mapping) -> SelfFollowForums:
         objs = [SelfFollowForum.from_tbdata(m) for m in data_map['list']]
         page = Page_sforum.from_tbdata(data_map['page'])
         return SelfFollowForums(objs, page)

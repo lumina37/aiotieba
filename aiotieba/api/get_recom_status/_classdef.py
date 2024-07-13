@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses as dcs
 from typing import Mapping
 
@@ -20,7 +22,7 @@ class RecomStatus(TbErrorExt):
     used_recom_num: int = 0
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "RecomStatus":
+    def from_tbdata(data_map: Mapping) -> RecomStatus:
         total_recom_num = int(data_map['total_recommend_num'])
         used_recom_num = int(data_map['used_recommend_num'])
         return RecomStatus(total_recom_num, used_recom_num)

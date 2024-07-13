@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses as dcs
 from typing import Mapping
 
@@ -24,14 +26,14 @@ class FollowForum:
     exp: int = 0
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "FollowForum":
+    def from_tbdata(data_map: Mapping) -> FollowForum:
         fid = int(data_map['id'])
         fname = data_map['name']
         level = int(data_map['level_id'])
         exp = int(data_map['cur_score'])
         return FollowForum(fid, fname, level, exp)
 
-    def __eq__(self, obj: "FollowForum") -> bool:
+    def __eq__(self, obj: FollowForum) -> bool:
         return self.fid == obj.fid
 
     def __hash__(self) -> int:
@@ -53,7 +55,7 @@ class FollowForums(TbErrorExt, Containers[FollowForum]):
     has_more: bool = False
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "FollowForums":
+    def from_tbdata(data_map: Mapping) -> FollowForums:
         if forum_list := data_map.get('forum_list', {}):
             forum_dicts = forum_list.get('non-gconforum', [])
             objs = [FollowForum.from_tbdata(m) for m in forum_dicts]

@@ -4,6 +4,7 @@
 
 ```python
 import asyncio
+from __future__ import annotations
 from typing import List
 
 import aiotieba as tb

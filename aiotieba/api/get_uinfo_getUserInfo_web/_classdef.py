@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses as dcs
 from functools import cached_property
 from typing import Mapping
@@ -29,7 +31,7 @@ class UserInfo_guinfo_web(TbErrorExt):
     nick_name_new: str = ''
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "UserInfo_guinfo_web":
+    def from_tbdata(data_map: Mapping) -> UserInfo_guinfo_web:
         user_id = data_map['uid']
         portrait = data_map['portrait']
         user_name = user_name if (user_name := data_map['uname']) != user_id else ''
@@ -39,7 +41,7 @@ class UserInfo_guinfo_web(TbErrorExt):
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
 
-    def __eq__(self, obj: "UserInfo_guinfo_web") -> bool:
+    def __eq__(self, obj: UserInfo_guinfo_web) -> bool:
         return self.user_id == obj.user_id
 
     def __hash__(self) -> int:

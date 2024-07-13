@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses as dcs
 from typing import Mapping
 
@@ -35,7 +37,7 @@ class ExactSearch:
     create_time: int = 0
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "ExactSearch":
+    def from_tbdata(data_map: Mapping) -> ExactSearch:
         text = data_map['content']
         title = data_map['title']
         fname = data_map['fname']
@@ -46,7 +48,7 @@ class ExactSearch:
         create_time = int(data_map['time'])
         return ExactSearch(text, title, fname, tid, pid, show_name, is_comment, create_time)
 
-    def __eq__(self, obj: "ExactSearch") -> bool:
+    def __eq__(self, obj: ExactSearch) -> bool:
         return self.pid == obj.pid
 
     def __hash__(self) -> int:
@@ -77,7 +79,7 @@ class Page_exsch:
     has_prev: bool = False
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "Page_exsch":
+    def from_tbdata(data_map: Mapping) -> Page_exsch:
         page_size = int(data_map["page_size"])
         current_page = int(data_map["current_page"])
         total_page = int(data_map["total_page"])
@@ -103,7 +105,7 @@ class ExactSearches(TbErrorExt, Containers[ExactSearch]):
     page: Page_exsch = dcs.field(default_factory=Page_exsch)
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "ExactSearches":
+    def from_tbdata(data_map: Mapping) -> ExactSearches:
         objs = [ExactSearch.from_tbdata(m) for m in data_map.get('post_list', [])]
         page = Page_exsch.from_tbdata(data_map['page'])
         return ExactSearches(objs, page)

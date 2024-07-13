@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses as dcs
 from functools import cached_property
 from typing import Mapping
@@ -23,7 +25,7 @@ class UserInfo_selfinit:
     tieba_uid: int = 0
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "UserInfo_selfinit":
+    def from_tbdata(data_map: Mapping) -> UserInfo_selfinit:
         user_name = data_map['user_name']
         nick_name_old = data_map['name_show']
         tieba_uid = data_map['tieba_uid']
@@ -32,7 +34,7 @@ class UserInfo_selfinit:
     def __str__(self) -> str:
         return self.user_name
 
-    def __eq__(self, obj: "UserInfo_selfinit") -> bool:
+    def __eq__(self, obj: UserInfo_selfinit) -> bool:
         return self.tieba_uid == obj.tieba_uid
 
     def __hash__(self) -> int:

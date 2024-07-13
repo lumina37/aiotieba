@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import dataclasses as dcs
-from typing import List
 
 from ...enums import Gender, PrivLike, PrivReply
 from .vimage import VirtualImage
@@ -59,7 +60,7 @@ class UserInfo:
     forum_num: int = 0
     sign: str = ""
     ip: str = ''
-    icons: List[str] = dcs.field(default_factory=list)
+    icons: list[str] = dcs.field(default_factory=list)
     vimage: VirtualImage = dcs.field(default_factory=VirtualImage)
 
     is_vip: bool = False
@@ -71,7 +72,7 @@ class UserInfo:
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
 
-    def __eq__(self, obj: "UserInfo") -> bool:
+    def __eq__(self, obj: UserInfo) -> bool:
         return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
@@ -80,7 +81,7 @@ class UserInfo:
     def __bool__(self) -> bool:
         return bool(self.user_id)
 
-    def __ior__(self, obj) -> "UserInfo":
+    def __ior__(self, obj) -> UserInfo:
         for field in dcs.fields(obj):
             if hasattr(self, field.name):
                 val = getattr(obj, field.name)

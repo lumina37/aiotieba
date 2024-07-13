@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import dataclasses as dcs
 from datetime import datetime
-from typing import List
 
 import bs4
 
@@ -20,11 +21,11 @@ class Media_postlog:
         hash (str): 百度图床hash
     """
 
-    src: str = ''
-    origin_src: str = ''
+    src: str = dcs.field(default="", repr=False)
+    origin_src: str = ""
 
     @staticmethod
-    def from_tbdata(data_tag: bs4.element.Tag) -> "Media_postlog":
+    def from_tbdata(data_tag: bs4.element.Tag) -> Media_postlog:
         src = data_tag.img['original']
         origin_src = data_tag['href']
         return Media_postlog(src, origin_src)
@@ -52,7 +53,7 @@ class Postlog:
 
     text: str = ""
     title: str = ""
-    medias: List[Media_postlog] = dcs.field(default_factory=list)
+    medias: list[Media_postlog] = dcs.field(default_factory=list)
 
     tid: int = 0
     pid: int = 0
@@ -64,7 +65,7 @@ class Postlog:
     op_time: datetime = dcs.field(default_factory=default_datetime)
 
     @staticmethod
-    def from_tbdata(data_tag: bs4.element.Tag) -> "Postlog":
+    def from_tbdata(data_tag: bs4.element.Tag) -> Postlog:
         left_cell_item = data_tag.td
 
         post_meta_item = left_cell_item.find('div', class_='post_meta')
@@ -131,7 +132,7 @@ class Page_postlog:
     has_prev: bool = False
 
     @staticmethod
-    def from_tbdata(data_soup: bs4.BeautifulSoup) -> "Page_postlog":
+    def from_tbdata(data_soup: bs4.BeautifulSoup) -> Page_postlog:
         total_count_tag = data_soup.find('div', class_='breadcrumbs')
         total_count = int(total_count_tag.em.text)
 
@@ -170,7 +171,7 @@ class Postlogs(TbErrorExt, Containers[Postlog]):
     page: Page_postlog = dcs.field(default_factory=Page_postlog)
 
     @staticmethod
-    def from_tbdata(data_soup: bs4.BeautifulSoup) -> "Postlogs":
+    def from_tbdata(data_soup: bs4.BeautifulSoup) -> Postlogs:
         objs = [Postlog.from_tbdata(t) for t in data_soup.find('tbody').find_all('tr')]
         page = Page_postlog.from_tbdata(data_soup)
         return Postlogs(objs, page)

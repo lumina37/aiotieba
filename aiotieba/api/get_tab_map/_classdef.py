@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import dataclasses as dcs
-from typing import Dict
 
 from ...exception import TbErrorExt
 from .._classdef import TypeMessage
@@ -16,10 +17,10 @@ class TabMap(TbErrorExt):
         map (dict[str, int]): 分区名到分区id的映射
     """
 
-    map: Dict[str, int] = dcs.field(default_factory=dict)
+    map: dict[str, int] = dcs.field(default_factory=dict)
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "TabMap":
+    def from_tbdata(data_proto: TypeMessage) -> TabMap:
         map_ = {tab_proto.tab_name: tab_proto.tab_id for tab_proto in data_proto.exact_match.tab_info}
         return TabMap(map_)
 

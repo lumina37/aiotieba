@@ -11,7 +11,7 @@ _sym_db = _symbol_database.Default()
 from ..._protobuf import CommonReq_pb2 as CommonReq__pb2
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\x1dGetUserByTiebaUidReqIdl.proto\x1a\x0f\x43ommonReq.proto\"\x83\x01\n\x17GetUserByTiebaUidReqIdl\x12.\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32 .GetUserByTiebaUidReqIdl.DataReq\x1a\x38\n\x07\x44\x61taReq\x12\x1a\n\x06\x63ommon\x18\x01 \x01(\x0b\x32\n.CommonReq\x12\x11\n\ttieba_uid\x18\x02 \x01(\tb\x06proto3'
+    b'\n\x1dGetUserByTiebaUidReqIdl.proto\x1a\x0f\x43ommonReq.proto"\x83\x01\n\x17GetUserByTiebaUidReqIdl\x12.\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32 .GetUserByTiebaUidReqIdl.DataReq\x1a\x38\n\x07\x44\x61taReq\x12\x1a\n\x06\x63ommon\x18\x01 \x01(\x0b\x32\n.CommonReq\x12\x11\n\ttieba_uid\x18\x02 \x01(\tb\x06proto3'
 )
 
 _globals = globals()

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses as dcs
 from functools import cached_property
 from typing import Mapping
@@ -28,7 +30,7 @@ class Follow:
     nick_name_new: str = ''
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "Follow":
+    def from_tbdata(data_map: Mapping) -> Follow:
         user_id = int(data_map['id'])
         portrait = data_map['portrait']
         if '?' in portrait:
@@ -40,7 +42,7 @@ class Follow:
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
 
-    def __eq__(self, obj: "Follow") -> bool:
+    def __eq__(self, obj: Follow) -> bool:
         return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
@@ -87,7 +89,7 @@ class Page_follow:
     has_prev: bool = False
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "Page_follow":
+    def from_tbdata(data_map: Mapping) -> Page_follow:
         current_page = int(data_map['pn'])
         total_count = int(data_map['total_follow_num'])
         has_more = bool(int(data_map['has_more']))
@@ -111,7 +113,7 @@ class Follows(TbErrorExt, Containers[Follow]):
     page: Page_follow = dcs.field(default_factory=Page_follow)
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "Follows":
+    def from_tbdata(data_map: Mapping) -> Follows:
         objs = [Follow.from_tbdata(m) for m in data_map['follow_list']]
         page = Page_follow.from_tbdata(data_map)
         return Follows(objs, page)

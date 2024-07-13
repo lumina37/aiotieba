@@ -11,7 +11,7 @@ _sym_db = _symbol_database.Default()
 from ..._protobuf import Error_pb2 as Error__pb2
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\x18SetUserBlackResIdl.proto\x1a\x0b\x45rror.proto\"+\n\x12SetUserBlackResIdl\x12\x15\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x06.Errorb\x06proto3'
+    b'\n\x18SetUserBlackResIdl.proto\x1a\x0b\x45rror.proto"+\n\x12SetUserBlackResIdl\x12\x15\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x06.Errorb\x06proto3'
 )
 
 _globals = globals()

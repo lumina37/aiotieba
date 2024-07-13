@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses as dcs
 from functools import cached_property
 from typing import Mapping
@@ -26,7 +28,7 @@ class UserInfo_rec:
     nick_name_new: str = ''
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "UserInfo_rec":
+    def from_tbdata(data_map: Mapping) -> UserInfo_rec:
         portrait = data_map['portrait']
         if '?' in portrait:
             portrait = portrait[:-13]
@@ -37,7 +39,7 @@ class UserInfo_rec:
     def __str__(self) -> str:
         return self.user_name or self.portrait
 
-    def __eq__(self, obj: "UserInfo_rec") -> bool:
+    def __eq__(self, obj: UserInfo_rec) -> bool:
         return self.portrait == obj.portrait
 
     def __hash__(self) -> int:
@@ -87,7 +89,7 @@ class Recover:
     is_hide: bool = False
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "Recover":
+    def from_tbdata(data_map: Mapping) -> Recover:
         thread_info = data_map['thread_info']
         tid = int(thread_info['tid'])
         if post_info := data_map['post_info']:
@@ -125,7 +127,7 @@ class Page_recover:
     has_prev: bool = False
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "Page_recover":
+    def from_tbdata(data_map: Mapping) -> Page_recover:
         page_size = data_map['rn']
         current_page = data_map['pn']
         has_more = data_map['has_more']

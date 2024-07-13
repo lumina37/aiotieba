@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import dataclasses as dcs
-from typing import Optional
 
 from ...exception import TbErrorExt
 from .._classdef import Containers, TypeMessage
@@ -29,7 +30,7 @@ class SquareForum:
     is_followed: bool = False
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "SquareForum":
+    def from_tbdata(data_proto: TypeMessage) -> SquareForum:
         fid = data_proto.forum_id
         fname = data_proto.forum_name
         member_num = data_proto.member_count
@@ -37,7 +38,7 @@ class SquareForum:
         is_followed = bool(data_proto.is_like)
         return SquareForum(fid, fname, member_num, post_num, is_followed)
 
-    def __eq__(self, obj: "SquareForum") -> bool:
+    def __eq__(self, obj: SquareForum) -> bool:
         return self.fid == obj.fid
 
     def __hash__(self) -> int:
@@ -68,7 +69,7 @@ class Page_square:
     has_prev: bool = False
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "Page_square":
+    def from_tbdata(data_proto: TypeMessage) -> Page_square:
         page_size = data_proto.page_size
         current_page = data_proto.current_page
         total_page = data_proto.total_page
@@ -94,7 +95,7 @@ class SquareForums(TbErrorExt, Containers[SquareForum]):
     page: Page_square = dcs.field(default_factory=Page_square)
 
     @staticmethod
-    def from_tbdata(data_proto: Optional[TypeMessage] = None) -> None:
+    def from_tbdata(data_proto: TypeMessage | None = None) -> None:
         objs = [SquareForum.from_tbdata(p) for p in data_proto.forum_info]
         page = Page_square.from_tbdata(data_proto.page)
         return SquareForums(objs, page)

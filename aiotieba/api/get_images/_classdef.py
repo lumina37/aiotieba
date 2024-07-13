@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses as dcs
 from typing import TYPE_CHECKING
 
@@ -7,7 +9,7 @@ if TYPE_CHECKING:
     import numpy as np
 
 
-def _null_factory() -> "np.ndarray":
+def _null_factory() -> np.ndarray:
     import numpy as np
 
     return np.empty(0, dtype=np.uint8)
@@ -24,7 +26,7 @@ class Image(TbErrorExt):
         img (np.ndarray): 图像
     """
 
-    img: "np.ndarray" = dcs.field(default_factory=_null_factory)
+    img: np.ndarray = dcs.field(default_factory=_null_factory)
 
 
 @dcs.dataclass

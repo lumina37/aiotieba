@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 import logging
 import socket
-from typing import TYPE_CHECKING, List, Literal, Optional, Union
+from typing import TYPE_CHECKING, Literal
 
 import aiohttp
 import yarl
@@ -121,7 +123,7 @@ if TYPE_CHECKING:
 
 
 def _try_websocket(func):
-    async def awrapper(self: "Client", *args, **kwargs):
+    async def awrapper(self: Client, *args, **kwargs):
         if self._try_ws:
             await self.init_websocket()
         return await func(self, *args, **kwargs)
@@ -132,7 +134,7 @@ def _try_websocket(func):
 
 
 def _force_websocket(func):
-    async def awrapper(self: "Client", *args, **kwargs):
+    async def awrapper(self: Client, *args, **kwargs):
         await self.init_websocket()
         return await func(self, *args, **kwargs)
 
@@ -168,11 +170,11 @@ class Client:
         BDUSS: str = '',
         STOKEN: str = '',
         *,
-        account: Optional[Account] = None,
+        account: Account | None = None,
         try_ws: bool = False,
-        proxy: Union[bool, ProxyConfig] = False,
-        timeout: Optional[TimeoutConfig] = None,
-        loop: Optional[asyncio.AbstractEventLoop] = None,
+        proxy: bool | ProxyConfig = False,
+        timeout: TimeoutConfig | None = None,
+        loop: asyncio.AbstractEventLoop | None = None,
     ) -> None:
         if loop is None:
             loop = asyncio.get_running_loop()
@@ -206,7 +208,7 @@ class Client:
 
         self._user = UserInfo()
 
-    async def __aenter__(self) -> "Client":
+    async def __aenter__(self) -> Client:
         return self
 
     async def __aexit__(self, exc_type=None, exc_val=None, exc_tb=None) -> None:
@@ -216,7 +218,7 @@ class Client:
     def __hash__(self) -> int:
         return hash(self.account)
 
-    def __eq__(self, obj: "Client") -> bool:
+    def __eq__(self, obj: Client) -> bool:
         return self.account == obj.account
 
     @property
@@ -319,7 +321,7 @@ class Client:
         self.account.z_id = z_id
 
     @handle_exception(get_forum.Forum)
-    async def get_forum(self, fname_or_fid: Union[str, int]) -> get_forum.Forum:
+    async def get_forum(self, fname_or_fid: str | int) -> get_forum.Forum:
         """
         通过forum_id获取贴吧信息
         此接口较`get_forum_detail`更强大
@@ -337,7 +339,7 @@ class Client:
 
     @handle_exception(get_forum_detail.Forum_detail)
     @_try_websocket
-    async def get_forum_detail(self, fname_or_fid: Union[str, int]) -> get_forum_detail.Forum_detail:
+    async def get_forum_detail(self, fname_or_fid: str | int) -> get_forum_detail.Forum_detail:
         """
         通过forum_id获取贴吧信息
 
@@ -410,7 +412,7 @@ class Client:
     @_try_websocket
     async def get_threads(
         self,
-        fname_or_fid: Union[str, int],
+        fname_or_fid: str | int,
         /,
         pn: int = 1,
         *,
@@ -506,7 +508,7 @@ class Client:
     @handle_exception(search_exact.ExactSearches)
     async def search_exact(
         self,
-        fname_or_fid: Union[str, int],
+        fname_or_fid: str | int,
         query: str,
         /,
         pn: int = 1,
@@ -536,7 +538,7 @@ class Client:
 
     @handle_exception(profile.UserInfo_pf)
     @_try_websocket
-    async def _get_uinfo_profile(self, uid_or_portrait: Union[str, int]) -> profile.UserInfo_pf:
+    async def _get_uinfo_profile(self, uid_or_portrait: str | int) -> profile.UserInfo_pf:
         """
         接口 https://tiebac.baidu.com/c/u/user/profile
 
@@ -632,7 +634,7 @@ class Client:
 
         return await get_uinfo_panel.request(self._http_core, name_or_portrait)
 
-    async def get_user_info(self, id_: Union[str, int], /, require: ReqUInfo = ReqUInfo.ALL) -> UserInfo:
+    async def get_user_info(self, id_: str | int, /, require: ReqUInfo = ReqUInfo.ALL) -> UserInfo:
         """
         获取用户信息
 
@@ -694,7 +696,7 @@ class Client:
 
     @handle_exception(profile.Homepage)
     @_try_websocket
-    async def get_homepage(self, id_: Union[str, int], /, pn: int = 1) -> profile.Homepage:
+    async def get_homepage(self, id_: str | int, /, pn: int = 1) -> profile.Homepage:
         """
         获取用户个人页信息
 
@@ -718,7 +720,7 @@ class Client:
         return await profile.get_homepage.request_http(self._http_core, user_id, pn)
 
     @handle_exception(get_follows.Follows)
-    async def get_follows(self, id_: Union[str, int, None] = None, /, pn: int = 1) -> get_follows.Follows:
+    async def get_follows(self, id_: str | int | None = None, /, pn: int = 1) -> get_follows.Follows:
         """
         获取关注列表
 
@@ -743,7 +745,7 @@ class Client:
         return await get_follows.request(self._http_core, user_id, pn)
 
     @handle_exception(get_fans.Fans)
-    async def get_fans(self, id_: Union[str, int, None] = None, /, pn: int = 1) -> get_fans.Fans:
+    async def get_fans(self, id_: str | int | None = None, /, pn: int = 1) -> get_fans.Fans:
         """
         获取粉丝列表
 
@@ -799,7 +801,7 @@ class Client:
 
     @handle_exception(get_follow_forums.FollowForums)
     async def get_follow_forums(
-        self, id_: Union[str, int], /, pn: int = 1, *, rn: int = 50
+        self, id_: str | int, /, pn: int = 1, *, rn: int = 50
     ) -> get_follow_forums.FollowForums:
         """
         获取用户关注贴吧列表
@@ -857,7 +859,7 @@ class Client:
 
         return await get_dislike_forums.request_http(self._http_core, pn, rn)
 
-    async def __get_user_posts(self, id_: Union[str, int], pn: int, rn: int):
+    async def __get_user_posts(self, id_: str | int, pn: int, rn: int):
         if not isinstance(id_, int):
             user = await self.get_user_info(id_, ReqUInfo.USER_ID)
             user_id = user.user_id
@@ -880,7 +882,7 @@ class Client:
 
     @handle_exception(get_user_contents.UserPostss)
     async def get_user_posts(
-        self, id_: Union[str, int, None] = None, pn: int = 1, *, rn: int = 20
+        self, id_: str | int | None = None, pn: int = 1, *, rn: int = 20
     ) -> get_user_contents.UserPostss:
         """
         获取用户发布的回复列表
@@ -903,7 +905,7 @@ class Client:
     @handle_exception(get_user_contents.UserThreads)
     @_try_websocket
     async def get_user_threads(
-        self, id_: Union[str, int, None] = None, pn: int = 1, *, public_only: bool = False
+        self, id_: str | int | None = None, pn: int = 1, *, public_only: bool = False
     ) -> get_user_contents.UserThreads:
         """
         获取用户发布的主题帖列表
@@ -1022,7 +1024,7 @@ class Client:
         return await get_images.request(self._http_core, img_url)
 
     @handle_exception(get_images.Image)
-    async def get_portrait(self, id_: Union[str, int], /, size: Literal['s', 'm', 'l'] = 's') -> get_images.Image:
+    async def get_portrait(self, id_: str | int, /, size: Literal['s', 'm', 'l'] = 's') -> get_images.Image:
         """
         获取用户头像
 
@@ -1084,7 +1086,7 @@ class Client:
 
     @handle_exception(get_bawu_info.BawuInfo)
     @_try_websocket
-    async def get_bawu_info(self, fname_or_fid: Union[str, int]) -> get_bawu_info.BawuInfo:
+    async def get_bawu_info(self, fname_or_fid: str | int) -> get_bawu_info.BawuInfo:
         """
         获取吧务团队信息
 
@@ -1104,7 +1106,7 @@ class Client:
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def add_bawu(
-        self, fname_or_fid: Union[str, int], /, id_: Union[str, int], *, bawu_type: BawuType = BawuType.MANAGER
+        self, fname_or_fid: str | int, /, id_: str | int, *, bawu_type: BawuType = BawuType.MANAGER
     ) -> BoolResponse:
         """
         添加吧务
@@ -1132,7 +1134,7 @@ class Client:
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def del_bawu(
-        self, fname_or_fid: Union[str, int], /, id_: Union[str, int], *, bawu_type: BawuType = BawuType.MANAGER
+        self, fname_or_fid: str | int, /, id_: str | int, *, bawu_type: BawuType = BawuType.MANAGER
     ) -> BoolResponse:
         """
         删除吧务
@@ -1157,7 +1159,7 @@ class Client:
         return await del_bawu.request(self._http_core, fid, portrait, bawu_type)
 
     @handle_exception(get_bawu_perm.BawuPerm)
-    async def get_bawu_perm(self, fname_or_fid: Union[str, int], /, id_: Union[str, int]) -> get_bawu_perm.BawuPerm:
+    async def get_bawu_perm(self, fname_or_fid: str | int, /, id_: str | int) -> get_bawu_perm.BawuPerm:
         """
         获取指定吧务已分配的权限
 
@@ -1181,7 +1183,7 @@ class Client:
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def set_bawu_perm(
-        self, fname_or_fid: Union[str, int], /, id_: Union[str, int], *, perms: BawuPermType = BawuPermType.NULL
+        self, fname_or_fid: str | int, /, id_: str | int, *, perms: BawuPermType = BawuPermType.NULL
     ) -> BoolResponse:
         """
         为指定吧务分配权限
@@ -1207,7 +1209,7 @@ class Client:
 
     @handle_exception(get_tab_map.TabMap)
     @_try_websocket
-    async def get_tab_map(self, fname_or_fid: Union[str, int]) -> get_tab_map.TabMap:
+    async def get_tab_map(self, fname_or_fid: str | int) -> get_tab_map.TabMap:
         """
         获取分区名到分区id的映射
 
@@ -1241,7 +1243,7 @@ class Client:
         return await get_god_threads.request(self._http_core, pn, rn)
 
     @handle_exception(get_rank_users.RankUsers)
-    async def get_rank_users(self, fname_or_fid: Union[str, int], /, pn: int = 1) -> get_rank_users.RankUsers:
+    async def get_rank_users(self, fname_or_fid: str | int, /, pn: int = 1) -> get_rank_users.RankUsers:
         """
         获取pn页的等级排行榜用户列表
 
@@ -1258,7 +1260,7 @@ class Client:
         return await get_rank_users.request(self._http_core, fname, pn)
 
     @handle_exception(get_member_users.MemberUsers)
-    async def get_member_users(self, fname_or_fid: Union[str, int], /, pn: int = 1) -> get_member_users.MemberUsers:
+    async def get_member_users(self, fname_or_fid: str | int, /, pn: int = 1) -> get_member_users.MemberUsers:
         """
         获取pn页的最新关注用户列表
 
@@ -1279,7 +1281,7 @@ class Client:
 
     @handle_exception(get_rank_forums.RankForums)
     async def get_rank_forums(
-        self, fname_or_fid: Union[str, int], /, pn: int = 1, *, rank_type: RankForumType = RankForumType.WEEKLY
+        self, fname_or_fid: str | int, /, pn: int = 1, *, rank_type: RankForumType = RankForumType.WEEKLY
     ) -> get_rank_forums.RankForums:
         """
         获取pn页的吧签到排行表
@@ -1298,7 +1300,7 @@ class Client:
         return await get_rank_forums.request(self._http_core, fname, pn, rank_type)
 
     @handle_exception(get_blocks.Blocks)
-    async def get_blocks(self, fname_or_fid: Union[str, int], /, name: str = '', pn: int = 1) -> get_blocks.Blocks:
+    async def get_blocks(self, fname_or_fid: str | int, /, name: str = '', pn: int = 1) -> get_blocks.Blocks:
         """
         获取pn页的待解封用户列表
 
@@ -1317,7 +1319,7 @@ class Client:
 
     @handle_exception(get_recovers.Recovers)
     async def get_recovers(
-        self, fname_or_fid: Union[str, int], /, pn: int = 1, *, rn: int = 10, id_: Union[str, int, None] = None
+        self, fname_or_fid: str | int, /, pn: int = 1, *, rn: int = 10, id_: str | int | None = None
     ) -> get_recovers.Recovers:
         """
         获取pn页的待恢复帖子列表
@@ -1345,14 +1347,14 @@ class Client:
     @handle_exception(get_bawu_userlogs.Userlogs)
     async def get_bawu_userlogs(
         self,
-        fname_or_fid: Union[str, int],
+        fname_or_fid: str | int,
         /,
         pn: int = 1,
         *,
         search_value: str = '',
         search_type: BawuSearchType = BawuSearchType.USER,
-        start_dt: Optional["datetime.datetime"] = None,
-        end_dt: Optional["datetime.datetime"] = None,
+        start_dt: datetime.datetime | None = None,
+        end_dt: datetime.datetime | None = None,
         op_type: int = 0,
     ) -> get_bawu_userlogs.Userlogs:
         """
@@ -1383,14 +1385,14 @@ class Client:
     @handle_exception(get_bawu_postlogs.Postlogs)
     async def get_bawu_postlogs(
         self,
-        fname_or_fid: Union[str, int],
+        fname_or_fid: str | int,
         /,
         pn: int = 1,
         *,
         search_value: str = '',
         search_type: BawuSearchType = BawuSearchType.USER,
-        start_dt: Optional["datetime.datetime"] = None,
-        end_dt: Optional["datetime.datetime"] = None,
+        start_dt: datetime.datetime | None = None,
+        end_dt: datetime.datetime | None = None,
         op_type: int = 0,
     ) -> get_bawu_postlogs.Postlogs:
         """
@@ -1420,7 +1422,7 @@ class Client:
 
     @handle_exception(get_unblock_appeals.Appeals)
     async def get_unblock_appeals(
-        self, fname_or_fid: Union[str, int], /, pn: int = 1, *, rn: int = 5
+        self, fname_or_fid: str | int, /, pn: int = 1, *, rn: int = 5
     ) -> get_unblock_appeals.Appeals:
         """
         获取申诉请求列表
@@ -1441,7 +1443,7 @@ class Client:
 
     @handle_exception(get_bawu_blacklist.BawuBlacklistUsers)
     async def get_bawu_blacklist(
-        self, fname_or_fid: Union[str, int], /, pn: int = 1
+        self, fname_or_fid: str | int, /, pn: int = 1
     ) -> get_bawu_blacklist.BawuBlacklistUsers:
         """
         获取pn页的吧务黑名单列表
@@ -1462,7 +1464,7 @@ class Client:
         return await get_bawu_blacklist.request(self._http_core, fname, pn)
 
     @handle_exception(get_statistics.Statistics)
-    async def get_statistics(self, fname_or_fid: Union[str, int]) -> get_statistics.Statistics:
+    async def get_statistics(self, fname_or_fid: str | int) -> get_statistics.Statistics:
         """
         获取吧务后台中最近24天的统计数据
 
@@ -1478,7 +1480,7 @@ class Client:
         return await get_statistics.request(self._http_core, fid)
 
     @handle_exception(get_recom_status.RecomStatus)
-    async def get_recom_status(self, fname_or_fid: Union[str, int]) -> get_recom_status.RecomStatus:
+    async def get_recom_status(self, fname_or_fid: str | int) -> get_recom_status.RecomStatus:
         """
         获取大吧主推荐功能的月度配额状态
 
@@ -1495,7 +1497,7 @@ class Client:
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def block(
-        self, fname_or_fid: Union[str, int], /, id_: Union[str, int], *, day: int = 1, reason: str = ''
+        self, fname_or_fid: str | int, /, id_: str | int, *, day: int = 1, reason: str = ''
     ) -> BoolResponse:
         """
         封禁用户
@@ -1523,7 +1525,7 @@ class Client:
         return await block.request(self._http_core, fid, portrait, day, reason)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def unblock(self, fname_or_fid: Union[str, int], /, id_: Union[str, int]) -> BoolResponse:
+    async def unblock(self, fname_or_fid: str | int, /, id_: str | int) -> BoolResponse:
         """
         解封用户
 
@@ -1548,7 +1550,7 @@ class Client:
         return await unblock.request(self._http_core, fid, user_id)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def add_bawu_blacklist(self, fname_or_fid: Union[str, int], /, id_: Union[str, int]) -> BoolResponse:
+    async def add_bawu_blacklist(self, fname_or_fid: str | int, /, id_: str | int) -> BoolResponse:
         """
         添加贴吧黑名单
 
@@ -1573,7 +1575,7 @@ class Client:
         return await add_bawu_blacklist.request(self._http_core, fname, user_id)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def del_bawu_blacklist(self, fname_or_fid: Union[str, int], /, id_: Union[str, int]) -> BoolResponse:
+    async def del_bawu_blacklist(self, fname_or_fid: str | int, /, id_: str | int) -> BoolResponse:
         """
         移出贴吧黑名单
 
@@ -1598,7 +1600,7 @@ class Client:
         return await del_bawu_blacklist.request(self._http_core, fname, user_id)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def hide_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> BoolResponse:
+    async def hide_thread(self, fname_or_fid: str | int, /, tid: int) -> BoolResponse:
         """
         屏蔽主题帖
 
@@ -1616,7 +1618,7 @@ class Client:
         return await del_thread.request(self._http_core, fid, tid, is_hide=True)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def del_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> BoolResponse:
+    async def del_thread(self, fname_or_fid: str | int, /, tid: int) -> BoolResponse:
         """
         删除主题帖
 
@@ -1634,9 +1636,7 @@ class Client:
         return await del_thread.request(self._http_core, fid, tid, is_hide=False)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def del_threads(
-        self, fname_or_fid: Union[str, int], /, tids: List[int], *, block: bool = False
-    ) -> BoolResponse:
+    async def del_threads(self, fname_or_fid: str | int, /, tids: list[int], *, block: bool = False) -> BoolResponse:
         """
         批量删除主题帖
 
@@ -1655,7 +1655,7 @@ class Client:
         return await del_threads.request(self._http_core, fid, tids, block)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def del_post(self, fname_or_fid: Union[str, int], /, tid: int, pid: int) -> BoolResponse:
+    async def del_post(self, fname_or_fid: str | int, /, tid: int, pid: int) -> BoolResponse:
         """
         删除回复
 
@@ -1675,7 +1675,7 @@ class Client:
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def del_posts(
-        self, fname_or_fid: Union[str, int], /, tid: int, pids: List[int], *, block: bool = False
+        self, fname_or_fid: str | int, /, tid: int, pids: list[int], *, block: bool = False
     ) -> BoolResponse:
         """
         批量删除回复
@@ -1696,7 +1696,7 @@ class Client:
         return await del_posts.request(self._http_core, fid, tid, pids, block)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def unhide_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> BoolResponse:
+    async def unhide_thread(self, fname_or_fid: str | int, /, tid: int) -> BoolResponse:
         """
         解除主题帖屏蔽
 
@@ -1714,7 +1714,7 @@ class Client:
         return await recover.request(self._http_core, fid, tid, 0, is_hide=True)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def recover_thread(self, fname_or_fid: Union[str, int], /, tid: int) -> BoolResponse:
+    async def recover_thread(self, fname_or_fid: str | int, /, tid: int) -> BoolResponse:
         """
         恢复主题帖
 
@@ -1732,7 +1732,7 @@ class Client:
         return await recover.request(self._http_core, fid, tid, 0, is_hide=False)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def recover_post(self, fname_or_fid: Union[str, int], /, pid: int) -> BoolResponse:
+    async def recover_post(self, fname_or_fid: str | int, /, pid: int) -> BoolResponse:
         """
         恢复主题帖
 
@@ -1751,7 +1751,7 @@ class Client:
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def recover(
-        self, fname_or_fid: Union[str, int], /, tid: int = 0, pid: int = 0, *, is_hide: bool = False
+        self, fname_or_fid: str | int, /, tid: int = 0, pid: int = 0, *, is_hide: bool = False
     ) -> BoolResponse:
         """
         帖子恢复相关操作
@@ -1772,7 +1772,7 @@ class Client:
         return await recover.request(self._http_core, fid, tid, pid, is_hide)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def good(self, fname_or_fid: Union[str, int], /, tid: int, *, cname: str = '') -> BoolResponse:
+    async def good(self, fname_or_fid: str | int, /, tid: int, *, cname: str = '') -> BoolResponse:
         """
         加精主题帖
 
@@ -1799,7 +1799,7 @@ class Client:
         return await good.request(self._http_core, fname, fid, tid, cid)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def ungood(self, fname_or_fid: Union[str, int], /, tid: int) -> BoolResponse:
+    async def ungood(self, fname_or_fid: str | int, /, tid: int) -> BoolResponse:
         """
         撤精主题帖
 
@@ -1822,7 +1822,7 @@ class Client:
 
         return await ungood.request(self._http_core, fname, fid, tid)
 
-    async def __get_cid(self, fname_or_fid: Union[str, int], /, cname: str = '') -> int:
+    async def __get_cid(self, fname_or_fid: str | int, /, cname: str = '') -> int:
         if cname == '':
             return 0
 
@@ -1839,7 +1839,7 @@ class Client:
         return cid
 
     @handle_exception(IntResponse)
-    async def get_cid(self, fname_or_fid: Union[str, int], /, cname: str = '') -> IntResponse:
+    async def get_cid(self, fname_or_fid: str | int, /, cname: str = '') -> IntResponse:
         """
         通过精华分区名获取精华分区id
 
@@ -1855,7 +1855,7 @@ class Client:
         return IntResponse(cid)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def top(self, fname_or_fid: Union[str, int], /, tid: int, *, is_vip: bool = False) -> BoolResponse:
+    async def top(self, fname_or_fid: str | int, /, tid: int, *, is_vip: bool = False) -> BoolResponse:
         """
         置顶主题帖
 
@@ -1880,7 +1880,7 @@ class Client:
         return await top.request(self._http_core, fname, fid, tid, is_vip, True)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def untop(self, fname_or_fid: Union[str, int], /, tid: int, *, is_vip: bool = False) -> BoolResponse:
+    async def untop(self, fname_or_fid: str | int, /, tid: int, *, is_vip: bool = False) -> BoolResponse:
         """
         撤销置顶主题帖
 
@@ -1905,9 +1905,7 @@ class Client:
         return await top.request(self._http_core, fname, fid, tid, is_vip, False)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def move(
-        self, fname_or_fid: Union[str, int], /, tid: int, *, to_tab_id: int, from_tab_id: int = 0
-    ) -> BoolResponse:
+    async def move(self, fname_or_fid: str | int, /, tid: int, *, to_tab_id: int, from_tab_id: int = 0) -> BoolResponse:
         """
         将主题帖移动至另一分区
 
@@ -1927,7 +1925,7 @@ class Client:
         return await move.request(self._http_core, fid, tid, to_tab_id, from_tab_id)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def recommend(self, fname_or_fid: Union[str, int], /, tid: int) -> BoolResponse:
+    async def recommend(self, fname_or_fid: str | int, /, tid: int) -> BoolResponse:
         """
         大吧主首页推荐
 
@@ -1945,7 +1943,7 @@ class Client:
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def handle_unblock_appeals(
-        self, fname_or_fid: Union[str, int], /, appeal_ids: List[int], *, refuse: bool = True
+        self, fname_or_fid: str | int, /, appeal_ids: list[int], *, refuse: bool = True
     ) -> BoolResponse:
         """
         拒绝或通过解封申诉
@@ -2041,7 +2039,7 @@ class Client:
         return await agree.request(self._http_core, tid, pid, is_comment, is_disagree=True, is_undo=True)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def agree_vimage(self, id_: Union[str, int]) -> BoolResponse:
+    async def agree_vimage(self, id_: str | int) -> BoolResponse:
         """
         虚拟形象点赞
 
@@ -2061,7 +2059,7 @@ class Client:
         return await agree_vimage.request(self._http_core, user_id)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def follow_user(self, id_: Union[str, int]) -> BoolResponse:
+    async def follow_user(self, id_: str | int) -> BoolResponse:
         """
         关注用户
 
@@ -2083,7 +2081,7 @@ class Client:
         return await follow_user.request(self._http_core, portrait)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def unfollow_user(self, id_: Union[str, int]) -> BoolResponse:
+    async def unfollow_user(self, id_: str | int) -> BoolResponse:
         """
         取关用户
 
@@ -2105,7 +2103,7 @@ class Client:
         return await unfollow_user.request(self._http_core, portrait)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def remove_fan(self, id_: Union[str, int]) -> BoolResponse:
+    async def remove_fan(self, id_: str | int) -> BoolResponse:
         """
         移除粉丝
 
@@ -2128,7 +2126,7 @@ class Client:
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     @_try_websocket
-    async def set_blacklist(self, id_: Union[str, int], *, btype: BlacklistType = BlacklistType.ALL) -> BoolResponse:
+    async def set_blacklist(self, id_: str | int, *, btype: BlacklistType = BlacklistType.ALL) -> BoolResponse:
         """
         设置新版用户黑名单
 
@@ -2152,7 +2150,7 @@ class Client:
         return await set_blacklist.request_http(self._http_core, user_id, btype)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def add_blacklist_old(self, id_: Union[str, int]) -> BoolResponse:
+    async def add_blacklist_old(self, id_: str | int) -> BoolResponse:
         """
         添加旧版用户黑名单
 
@@ -2172,7 +2170,7 @@ class Client:
         return await add_blacklist_old.request(self._http_core, user_id)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def del_blacklist_old(self, id_: Union[str, int]) -> BoolResponse:
+    async def del_blacklist_old(self, id_: str | int) -> BoolResponse:
         """
         移除旧版用户黑名单
 
@@ -2192,7 +2190,7 @@ class Client:
         return await del_blacklist_old.request(self._http_core, user_id)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def follow_forum(self, fname_or_fid: Union[str, int]) -> BoolResponse:
+    async def follow_forum(self, fname_or_fid: str | int) -> BoolResponse:
         """
         关注贴吧
 
@@ -2209,7 +2207,7 @@ class Client:
         return await follow_forum.request(self._http_core, fid)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def unfollow_forum(self, fname_or_fid: Union[str, int]) -> BoolResponse:
+    async def unfollow_forum(self, fname_or_fid: str | int) -> BoolResponse:
         """
         取关贴吧
 
@@ -2226,7 +2224,7 @@ class Client:
         return await unfollow_forum.request(self._http_core, fid)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def dislike_forum(self, fname_or_fid: Union[str, int]) -> BoolResponse:
+    async def dislike_forum(self, fname_or_fid: str | int) -> BoolResponse:
         """
         屏蔽贴吧 使其不再出现在首页推荐列表中
 
@@ -2242,7 +2240,7 @@ class Client:
         return await dislike_forum.request(self._http_core, fid)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def undislike_forum(self, fname_or_fid: Union[str, int]) -> BoolResponse:
+    async def undislike_forum(self, fname_or_fid: str | int) -> BoolResponse:
         """
         解除贴吧的首页推荐屏蔽
 
@@ -2258,7 +2256,7 @@ class Client:
         return await undislike_forum.request(self._http_core, fid)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def set_thread_private(self, fname_or_fid: Union[str, int], /, tid: int, pid: int) -> BoolResponse:
+    async def set_thread_private(self, fname_or_fid: str | int, /, tid: int, pid: int) -> BoolResponse:
         """
         隐藏主题帖
 
@@ -2276,7 +2274,7 @@ class Client:
         return await set_thread_privacy.request(self._http_core, fid, tid, pid, is_hide=True)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def set_thread_public(self, fname_or_fid: Union[str, int], /, tid: int, pid: int) -> BoolResponse:
+    async def set_thread_public(self, fname_or_fid: str | int, /, tid: int, pid: int) -> BoolResponse:
         """
         公开主题帖
 
@@ -2324,7 +2322,7 @@ class Client:
         return await set_nickname_old.request(self._http_core, nick_name)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def sign_forum(self, fname_or_fid: Union[str, int]) -> BoolResponse:
+    async def sign_forum(self, fname_or_fid: str | int) -> BoolResponse:
         """
         单个贴吧签到
 
@@ -2368,7 +2366,7 @@ class Client:
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     @_try_websocket
-    async def add_post(self, fname_or_fid: Union[str, int], /, tid: int, content: str) -> BoolResponse:
+    async def add_post(self, fname_or_fid: str | int, /, tid: int, content: str) -> BoolResponse:
         """
         回复主题帖
 
@@ -2407,7 +2405,7 @@ class Client:
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     @_force_websocket
-    async def send_msg(self, id_: Union[str, int], content: str) -> BoolResponse:
+    async def send_msg(self, id_: str | int, content: str) -> BoolResponse:
         """
         发送私信
 
@@ -2449,12 +2447,12 @@ class Client:
 
     @handle_exception(get_group_msg.WsMsgGroups)
     @_force_websocket
-    async def get_group_msg(self, group_ids: List[int], *, get_type: int = 1) -> get_group_msg.WsMsgGroups:
+    async def get_group_msg(self, group_ids: list[int], *, get_type: int = 1) -> get_group_msg.WsMsgGroups:
         """
         获取分组信息
 
         Args:
-            group_ids (List[int]): 待获取分组的group_id
+            group_ids (list[int]): 待获取分组的group_id
             get_type (int, optional): 获取类型. Defaults to 1.
 
         Returns:

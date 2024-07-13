@@ -11,8 +11,7 @@ build/
 .python-version
 *.lock
 
+/*.py
 account.toml
 database.toml
-debug.py
-test.py
 update.md

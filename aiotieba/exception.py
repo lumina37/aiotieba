@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import dataclasses as dcs
-from typing import Optional
 
 
 @dcs.dataclass
@@ -8,7 +9,7 @@ class TbErrorExt:
     为类型添加一个`err`项 用于保存捕获到的异常
     """
 
-    err: Optional[Exception] = dcs.field(default=None, init=False, repr=False)
+    err: Exception | None = dcs.field(default=None, init=False, repr=False)
 
 
 @dcs.dataclass
@@ -44,7 +45,7 @@ class IntResponse(TbErrorExt, int):
         err (Exception | None): 捕获的异常
     """
 
-    def __new__(cls, i: int = 0) -> "IntResponse":
+    def __new__(cls, i: int = 0) -> IntResponse:
         obj = super().__new__(cls, i)
         return obj
 
@@ -68,7 +69,7 @@ class StrResponse(TbErrorExt, str):
         err (Exception | None): 捕获的异常
     """
 
-    def __new__(cls, s: str = '') -> "StrResponse":
+    def __new__(cls, s: str = '') -> StrResponse:
         obj = super().__new__(cls, s)
         return obj
 

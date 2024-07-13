@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import datetime
 import time
-from typing import Optional
 from urllib.parse import quote
 
 import bs4
@@ -25,8 +26,8 @@ async def request(
     pn: int,
     search_value: str,
     search_type: BawuSearchType,
-    start_dt: Optional[datetime.datetime],
-    end_dt: Optional[datetime.datetime],
+    start_dt: datetime.datetime | None,
+    end_dt: datetime.datetime | None,
     op_type: int,
 ) -> Userlogs:
     params = [

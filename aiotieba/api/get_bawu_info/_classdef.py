@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import dataclasses as dcs
 from functools import cached_property
-from typing import List
 
 from .._classdef import TypeMessage
 
@@ -31,7 +32,7 @@ class UserInfo_bawu:
     level: int = 0
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "UserInfo_bawu":
+    def from_tbdata(data_proto: TypeMessage) -> UserInfo_bawu:
         user_id = data_proto.user_id
         portrait = data_proto.portrait
         user_name = data_proto.user_name
@@ -42,7 +43,7 @@ class UserInfo_bawu:
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
 
-    def __eq__(self, obj: "UserInfo_bawu") -> bool:
+    def __eq__(self, obj: UserInfo_bawu) -> bool:
         return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
@@ -89,26 +90,26 @@ class BawuInfo:
         fourth_admin (list[UserInfo_bawu]): 第四吧主
     """
 
-    all: List[UserInfo_bawu] = dcs.field(default_factory=list, repr=False)
+    all: list[UserInfo_bawu] = dcs.field(default_factory=list, repr=False)
 
-    admin: List[UserInfo_bawu] = dcs.field(default_factory=list)
-    manager: List[UserInfo_bawu] = dcs.field(default_factory=list)
-    voice_editor: List[UserInfo_bawu] = dcs.field(default_factory=list)
-    image_editor: List[UserInfo_bawu] = dcs.field(default_factory=list)
-    video_editor: List[UserInfo_bawu] = dcs.field(default_factory=list)
-    broadcast_editor: List[UserInfo_bawu] = dcs.field(default_factory=list)
-    journal_chief_editor: List[UserInfo_bawu] = dcs.field(default_factory=list)
-    journal_editor: List[UserInfo_bawu] = dcs.field(default_factory=list)
-    profess_admin: List[UserInfo_bawu] = dcs.field(default_factory=list)
-    fourth_admin: List[UserInfo_bawu] = dcs.field(default_factory=list)
+    admin: list[UserInfo_bawu] = dcs.field(default_factory=list)
+    manager: list[UserInfo_bawu] = dcs.field(default_factory=list)
+    voice_editor: list[UserInfo_bawu] = dcs.field(default_factory=list)
+    image_editor: list[UserInfo_bawu] = dcs.field(default_factory=list)
+    video_editor: list[UserInfo_bawu] = dcs.field(default_factory=list)
+    broadcast_editor: list[UserInfo_bawu] = dcs.field(default_factory=list)
+    journal_chief_editor: list[UserInfo_bawu] = dcs.field(default_factory=list)
+    journal_editor: list[UserInfo_bawu] = dcs.field(default_factory=list)
+    profess_admin: list[UserInfo_bawu] = dcs.field(default_factory=list)
+    fourth_admin: list[UserInfo_bawu] = dcs.field(default_factory=list)
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "BawuInfo":
+    def from_tbdata(data_proto: TypeMessage) -> BawuInfo:
         all_ = []
         r_protos = data_proto.bawu_team_info.bawu_team_list
         _dict = {r_proto.role_name: [UserInfo_bawu.from_tbdata(p) for p in r_proto.role_info] for r_proto in r_protos}
 
-        def extract(role_name: str) -> List[UserInfo_bawu]:
+        def extract(role_name: str) -> list[UserInfo_bawu]:
             if users := _dict.get(role_name):
                 all_.extend(users)
             else:

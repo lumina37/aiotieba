@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import dataclasses as dcs
 from functools import cached_property
-from typing import List
 
 from ...enums import Gender, PrivLike, PrivReply
 from ...exception import TbErrorExt
@@ -44,15 +45,15 @@ class Contents_c(Containers[TypeFragment]):
         voice (FragVoice_c): 音频碎片
     """
 
-    texts: List[TypeFragText] = dcs.field(default_factory=list, repr=False)
-    emojis: List[FragEmoji_c] = dcs.field(default_factory=list, repr=False)
-    ats: List[FragAt_c] = dcs.field(default_factory=list, repr=False)
-    links: List[FragLink_c] = dcs.field(default_factory=list, repr=False)
-    tiebapluses: List[FragTiebaPlus_c] = dcs.field(default_factory=list, repr=False)
+    texts: list[TypeFragText] = dcs.field(default_factory=list, repr=False)
+    emojis: list[FragEmoji_c] = dcs.field(default_factory=list, repr=False)
+    ats: list[FragAt_c] = dcs.field(default_factory=list, repr=False)
+    links: list[FragLink_c] = dcs.field(default_factory=list, repr=False)
+    tiebapluses: list[FragTiebaPlus_c] = dcs.field(default_factory=list, repr=False)
     voice: FragVoice_c = dcs.field(default_factory=FragVoice_c, repr=False)
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "Contents_c":
+    def from_tbdata(data_proto: TypeMessage) -> Contents_c:
         content_protos = data_proto.content
 
         texts = []
@@ -147,7 +148,7 @@ class UserInfo_c:
 
     level: int = 0
     gender: Gender = Gender.UNKNOWN
-    icons: List[str] = dcs.field(default_factory=list)
+    icons: list[str] = dcs.field(default_factory=list)
 
     is_bawu: bool = False
     is_vip: bool = False
@@ -156,7 +157,7 @@ class UserInfo_c:
     priv_reply: PrivReply = PrivReply.ALL
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "UserInfo_c":
+    def from_tbdata(data_proto: TypeMessage) -> UserInfo_c:
         user_id = data_proto.id
         portrait = data_proto.portrait
         if '?' in portrait:
@@ -189,7 +190,7 @@ class UserInfo_c:
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
 
-    def __eq__(self, obj: "UserInfo_c") -> bool:
+    def __eq__(self, obj: UserInfo_c) -> bool:
         return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
@@ -286,7 +287,7 @@ class Comment:
 
         return Comment(contents, 0, '', 0, 0, pid, user, reply_to_id, 0, agree, disagree, create_time, False)
 
-    def __eq__(self, obj: "Comment") -> bool:
+    def __eq__(self, obj: Comment) -> bool:
         return self.pid == obj.pid
 
     def __hash__(self) -> int:
@@ -325,7 +326,7 @@ class Page_c:
     has_prev: bool = False
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "Page_c":
+    def from_tbdata(data_proto: TypeMessage) -> Page_c:
         page_size = data_proto.page_size
         current_page = data_proto.current_page
         total_page = data_proto.total_page
@@ -355,7 +356,7 @@ class Forum_c:
     subcategory: str = ''
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "Forum_c":
+    def from_tbdata(data_proto: TypeMessage) -> Forum_c:
         fid = data_proto.id
         fname = data_proto.name
         category = data_proto.first_class
@@ -392,7 +393,7 @@ class UserInfo_ct:
     is_god: bool = False
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "UserInfo_ct":
+    def from_tbdata(data_proto: TypeMessage) -> UserInfo_ct:
         user_id = data_proto.id
         portrait = data_proto.portrait
         if '?' in portrait:
@@ -406,7 +407,7 @@ class UserInfo_ct:
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
 
-    def __eq__(self, obj: "UserInfo_ct") -> bool:
+    def __eq__(self, obj: UserInfo_ct) -> bool:
         return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
@@ -465,7 +466,7 @@ class Thread_c:
     reply_num: int = 0
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "Thread_c":
+    def from_tbdata(data_proto: TypeMessage) -> Thread_c:
         title = data_proto.title
         tid = data_proto.id
         user = UserInfo_ct.from_tbdata(data_proto.author)
@@ -473,7 +474,7 @@ class Thread_c:
         reply_num = data_proto.reply_num
         return Thread_c(title, 0, '', tid, user, type_, reply_num)
 
-    def __eq__(self, obj: "Thread_c") -> bool:
+    def __eq__(self, obj: Thread_c) -> bool:
         return self.tid == obj.tid
 
     def __hash__(self) -> int:
@@ -512,7 +513,7 @@ class FragImage_cp:
     hash: str = ""
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "FragImage_cp":
+    def from_tbdata(data_proto: TypeMessage) -> FragImage_cp:
         src = data_proto.cdn_src
         big_src = data_proto.big_cdn_src
         origin_src = data_proto.origin_src
@@ -522,7 +523,10 @@ class FragImage_cp:
         show_width = int(show_width)
         show_height = int(show_height)
 
-        hash_ = _IMAGEHASH_EXP.search(src).group(1)
+        if hash_obj := _IMAGEHASH_EXP.search(src):
+            hash_ = hash_obj.group(1)
+        else:
+            hash_ = ""
 
         return FragImage_cp(src, big_src, origin_src, origin_size, show_width, show_height, hash_)
 
@@ -546,16 +550,16 @@ class Contents_cp(Containers[TypeFragment]):
         voice (FragVoice_cp): 音频碎片
     """
 
-    texts: List[TypeFragText] = dcs.field(default_factory=list, repr=False)
-    emojis: List[FragEmoji_cp] = dcs.field(default_factory=list, repr=False)
-    imgs: List[FragImage_cp] = dcs.field(default_factory=list, repr=False)
-    ats: List[FragAt_cp] = dcs.field(default_factory=list, repr=False)
-    links: List[FragLink_cp] = dcs.field(default_factory=list, repr=False)
-    tiebapluses: List[FragTiebaPlus_cp] = dcs.field(default_factory=list, repr=False)
+    texts: list[TypeFragText] = dcs.field(default_factory=list, repr=False)
+    emojis: list[FragEmoji_cp] = dcs.field(default_factory=list, repr=False)
+    imgs: list[FragImage_cp] = dcs.field(default_factory=list, repr=False)
+    ats: list[FragAt_cp] = dcs.field(default_factory=list, repr=False)
+    links: list[FragLink_cp] = dcs.field(default_factory=list, repr=False)
+    tiebapluses: list[FragTiebaPlus_cp] = dcs.field(default_factory=list, repr=False)
     voice: FragVoice_cp = dcs.field(default_factory=FragVoice_cp, repr=False)
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "Contents_cp":
+    def from_tbdata(data_proto: TypeMessage) -> Contents_cp:
         content_protos = data_proto.content
 
         texts = []
@@ -663,7 +667,7 @@ class UserInfo_cp:
     priv_reply: PrivReply = PrivReply.ALL
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "UserInfo_cp":
+    def from_tbdata(data_proto: TypeMessage) -> UserInfo_cp:
         user_id = data_proto.id
         portrait = data_proto.portrait
         if '?' in portrait:
@@ -684,7 +688,7 @@ class UserInfo_cp:
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
 
-    def __eq__(self, obj: "UserInfo_cp") -> bool:
+    def __eq__(self, obj: UserInfo_cp) -> bool:
         return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
@@ -745,7 +749,7 @@ class Post_c:
     create_time: int = 0
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "Post_c":
+    def from_tbdata(data_proto: TypeMessage) -> Post_c:
         contents = Contents_cp.from_tbdata(data_proto)
         sign = "".join(p.text for p in data_proto.signature.content if p.type == 0)
         pid = data_proto.id
@@ -754,7 +758,7 @@ class Post_c:
         create_time = data_proto.time
         return Post_c(contents, sign, 0, '', 0, pid, user, floor, create_time)
 
-    def __eq__(self, obj: "Post_c") -> bool:
+    def __eq__(self, obj: Post_c) -> bool:
         return self.pid == obj.pid
 
     def __hash__(self) -> int:
@@ -796,7 +800,7 @@ class Comments(TbErrorExt, Containers[Comment]):
     post: Post_c = dcs.field(default_factory=Post_c)
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "Comments":
+    def from_tbdata(data_proto: TypeMessage) -> Comments:
         page = Page_c.from_tbdata(data_proto.page)
         forum = Forum_c.from_tbdata(data_proto.forum)
         thread = Thread_c.from_tbdata(data_proto.thread)

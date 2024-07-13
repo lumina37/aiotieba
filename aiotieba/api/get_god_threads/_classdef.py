@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses as dcs
 from typing import Mapping
 
@@ -17,7 +19,7 @@ class GodThread:
     tid: int = 0
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "GodThread":
+    def from_tbdata(data_map: Mapping) -> GodThread:
         tid = data_map['tid']
         return GodThread(tid)
 
@@ -37,7 +39,7 @@ class GodThreads(TbErrorExt, Containers[GodThread]):
     has_more: bool = False
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "GodThreads":
+    def from_tbdata(data_map: Mapping) -> GodThreads:
         objs = [GodThread.from_tbdata(t) for t in data_map['data']['thread_list']]
         has_more = data_map['data']['has_more']
         return GodThreads(objs, has_more)

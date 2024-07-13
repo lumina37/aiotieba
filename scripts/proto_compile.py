@@ -44,5 +44,5 @@ for mod_pth in Path("aiotieba/api").glob('*/protobuf'):
         fpth.unlink()
         bak_fpth.rename(fpth)
 
-subprocess.run("ruff check . --fix --unsafe-fixes", cwd='.', check=False, timeout=10.0)
-subprocess.run("black .", cwd='.', check=False, timeout=30.0)
+subprocess.run("rye lint . --fix -- --unsafe-fixes", cwd='.', check=False, timeout=10.0)
+subprocess.run("rye fmt .", cwd='.', check=False, timeout=30.0)

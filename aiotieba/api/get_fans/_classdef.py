@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses as dcs
 from functools import cached_property
 from typing import Mapping
@@ -28,7 +30,7 @@ class Fan:
     nick_name_new: str = ''
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "Fan":
+    def from_tbdata(data_map: Mapping) -> Fan:
         user_id = int(data_map['id'])
         portrait = data_map['portrait']
         if '?' in portrait:
@@ -40,7 +42,7 @@ class Fan:
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
 
-    def __eq__(self, obj: "Fan") -> bool:
+    def __eq__(self, obj: Fan) -> bool:
         return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
@@ -91,7 +93,7 @@ class Page_fan:
     has_prev: bool = False
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "Page_fan":
+    def from_tbdata(data_map: Mapping) -> Page_fan:
         page_size = int(data_map['page_size'])
         current_page = int(data_map['current_page'])
         total_page = int(data_map['total_page'])
@@ -117,7 +119,7 @@ class Fans(TbErrorExt, Containers[Fan]):
     page: Page_fan = dcs.field(default_factory=Page_fan)
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "Fans":
+    def from_tbdata(data_map: Mapping) -> Fans:
         objs = [Fan.from_tbdata(m) for m in data_map['user_list']]
         page = Page_fan.from_tbdata(data_map['page'])
         return Fans(objs, page)

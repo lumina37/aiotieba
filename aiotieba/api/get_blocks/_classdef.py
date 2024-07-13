@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses as dcs
 from typing import Mapping
 
@@ -25,7 +27,7 @@ class Block:
     day: int = 0
 
     @staticmethod
-    def from_tbdata(data_tag: bs4.element.Tag) -> "Block":
+    def from_tbdata(data_tag: bs4.element.Tag) -> Block:
         id_tag = data_tag.a
         user_id = int(id_tag['attr-uid'])
         user_name = id_tag['attr-un']
@@ -58,7 +60,7 @@ class Page_block:
     has_prev: bool = False
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "Page_block":
+    def from_tbdata(data_map: Mapping) -> Page_block:
         page_size = data_map['size']
         current_page = data_map['pn']
         total_page = data_map['total_page']
@@ -83,7 +85,7 @@ class Blocks(TbErrorExt, Containers[Block]):
 
     page: Page_block = dcs.field(default_factory=Page_block)
 
-    def from_tbdata(data_map: Mapping) -> "Blocks":
+    def from_tbdata(data_map: Mapping) -> Blocks:
         data_soup = bs4.BeautifulSoup(data_map['data']['content'], 'lxml')
         objs = [Block.from_tbdata(t) for t in data_soup('li')]
         page = Page_block.from_tbdata(data_map['data']['page'])
