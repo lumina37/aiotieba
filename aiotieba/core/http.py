@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import dataclasses as dcs
-import random
 import urllib.parse
 from http.cookies import Morsel
 
@@ -131,7 +130,7 @@ class HttpCore:
             aiohttp.ClientRequest
         """
 
-        writer = aiohttp.MultipartWriter('form-data', boundary=f"*-reverse1999-{random.randint(0, 9)}")
+        writer = aiohttp.MultipartWriter('form-data', boundary="-*_r1999")
         payload_headers = {
             aiohttp.hdrs.CONTENT_DISPOSITION: aiohttp.helpers.content_disposition_header(
                 'form-data', name='data', filename='file'
