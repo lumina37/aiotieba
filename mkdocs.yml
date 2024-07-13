@@ -17,6 +17,8 @@ theme:
         name: Switch to light mode
   features:
     - navigation.sections
+    - search.suggest
+    - search.highlight
   language: zh
 
 repo_name: Starry-OvO/aiotieba
@@ -75,6 +77,7 @@ markdown_extensions:
       css_class: highlight
 
 plugins:
+  - search
   - mkdocstrings:
       handlers:
         python:
