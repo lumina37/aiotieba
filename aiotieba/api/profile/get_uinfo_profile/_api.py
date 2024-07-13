@@ -1,4 +1,4 @@
-from typing import Union
+from __future__ import annotations
 
 import yarl
 
@@ -10,7 +10,7 @@ from .._const import CMD
 from ..protobuf import ProfileReqIdl_pb2, ProfileResIdl_pb2
 
 
-def pack_proto(uid_or_portrait: Union[str, int]) -> bytes:
+def pack_proto(uid_or_portrait: str | int) -> bytes:
     req_proto = ProfileReqIdl_pb2.ProfileReqIdl()
     req_proto.data.common._client_version = MAIN_VERSION
     req_proto.data.common._client_type = 2
@@ -38,7 +38,7 @@ def parse_body(body: bytes) -> UserInfo_pf:
     return user
 
 
-async def request_http(http_core: HttpCore, uid_or_portrait: Union[str, int]) -> UserInfo_pf:
+async def request_http(http_core: HttpCore, uid_or_portrait: str | int) -> UserInfo_pf:
     data = pack_proto(uid_or_portrait)
 
     request = http_core.pack_proto_request(
@@ -52,7 +52,7 @@ async def request_http(http_core: HttpCore, uid_or_portrait: Union[str, int]) ->
     return parse_body(body)
 
 
-async def request_ws(ws_core: WsCore, uid_or_portrait: Union[str, int]) -> UserInfo_pf:
+async def request_ws(ws_core: WsCore, uid_or_portrait: str | int) -> UserInfo_pf:
     data = pack_proto(uid_or_portrait)
 
     response = await ws_core.send(data, CMD)

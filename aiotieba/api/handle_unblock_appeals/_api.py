@@ -1,4 +1,4 @@
-from typing import List
+from __future__ import annotations
 
 import yarl
 
@@ -14,7 +14,7 @@ def parse_body(body: bytes) -> None:
         raise TiebaServerError(code, res_json['error'])
 
 
-async def request(http_core: HttpCore, fid: int, appeal_ids: List[int], refuse: bool) -> BoolResponse:
+async def request(http_core: HttpCore, fid: int, appeal_ids: list[int], refuse: bool) -> BoolResponse:
     data = (
         [
             ('fn', '-'),

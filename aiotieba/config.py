@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import dataclasses as dcs
-from typing import Optional, Union
 
 import aiohttp
 import yarl
@@ -15,17 +16,17 @@ class ProxyConfig:
         auth (aiohttp.BasicAuth, optional): 代理认证. Defaults to None.
     """
 
-    url: Optional[yarl.URL] = None
-    auth: Optional[aiohttp.BasicAuth] = None
+    url: yarl.URL | None = None
+    auth: aiohttp.BasicAuth | None = None
 
-    def __init__(self, url: Union[str, yarl.URL, None] = None, auth: Optional[aiohttp.BasicAuth] = None) -> None:
+    def __init__(self, url: str | yarl.URL | None = None, auth: aiohttp.BasicAuth | None = None) -> None:
         if isinstance(url, str):
             url = yarl.URL(url)
         self.url = url
         self.auth = auth
 
     @staticmethod
-    def from_env() -> "ProxyConfig":
+    def from_env() -> ProxyConfig:
         proxy_info = aiohttp.helpers.proxies_from_env().get('http', None)
         if proxy_info is None:
             url, auth = None, None
@@ -59,7 +60,7 @@ class TimeoutConfig:
     ws_send: float = 3.0
     ws_read: float = 8.0
     ws_keepalive: float = 300.0
-    ws_heartbeat: Optional[float] = None
+    ws_heartbeat: float | None = None
     dns_ttl: int = 600
 
     def __init__(
@@ -71,7 +72,7 @@ class TimeoutConfig:
         ws_send: float = 3.0,
         ws_read: float = 8.0,
         ws_keepalive: float = 300.0,
-        ws_heartbeat: Optional[float] = None,
+        ws_heartbeat: float | None = None,
         dns_ttl: int = 600,
     ) -> None:
         self.http = aiohttp.ClientTimeout(connect=http_acquire_conn, sock_read=http_read, sock_connect=http_connect)

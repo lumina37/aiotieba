@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 import dataclasses as dcs
 import random
 import urllib.parse
 from http.cookies import Morsel
-from typing import Dict, List, Optional, Tuple
 
 import aiohttp
 import yarl
@@ -21,11 +22,11 @@ class HttpContainer:
     用于保存会话headers与cookies的容器
     """
 
-    headers: Dict[str, str]
+    headers: dict[str, str]
     cookie_jar: aiohttp.CookieJar
 
-    def __init__(self, headers: Dict[str, str], cookie_jar: aiohttp.CookieJar) -> None:
-        self.headers: Dict[str, str] = headers
+    def __init__(self, headers: dict[str, str], cookie_jar: aiohttp.CookieJar) -> None:
+        self.headers: dict[str, str] = headers
         self.cookie_jar: aiohttp.CookieJar = cookie_jar
 
 
@@ -42,7 +43,7 @@ class HttpCore:
     web: HttpContainer
     loop: asyncio.AbstractEventLoop
 
-    def __init__(self, account: Account, net_core: NetCore, loop: Optional[asyncio.AbstractEventLoop] = None) -> None:
+    def __init__(self, account: Account, net_core: NetCore, loop: asyncio.AbstractEventLoop | None = None) -> None:
         self.net_core = net_core
         self.loop = loop
 
@@ -87,7 +88,7 @@ class HttpCore:
         STOKEN_morsel['domain'] = "tieba.baidu.com"
         self.web.cookie_jar._cookies[("tieba.baidu.com", "/")]['STOKEN'] = STOKEN_morsel
 
-    def pack_form_request(self, url: yarl.URL, data: List[Tuple[str, str]]) -> aiohttp.ClientRequest:
+    def pack_form_request(self, url: yarl.URL, data: list[tuple[str, str]]) -> aiohttp.ClientRequest:
         """
         自动签名参数元组列表
         并将其打包为移动端表单请求
@@ -153,7 +154,7 @@ class HttpCore:
 
         return request
 
-    def pack_web_get_request(self, url: yarl.URL, params: List[Tuple[str, str]]) -> aiohttp.ClientRequest:
+    def pack_web_get_request(self, url: yarl.URL, params: list[tuple[str, str]]) -> aiohttp.ClientRequest:
         """
         打包网页端参数请求
 
@@ -179,7 +180,7 @@ class HttpCore:
 
         return request
 
-    def pack_web_form_request(self, url: yarl.URL, data: List[Tuple[str, str]]) -> aiohttp.ClientRequest:
+    def pack_web_form_request(self, url: yarl.URL, data: list[tuple[str, str]]) -> aiohttp.ClientRequest:
         """
         打包网页端表单请求
 

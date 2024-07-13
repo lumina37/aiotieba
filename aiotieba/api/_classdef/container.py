@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import dataclasses as dcs
-from typing import Generic, Iterator, List, SupportsIndex, TypeVar, overload
+from typing import Generic, Iterator, SupportsIndex, TypeVar, overload
 
 TypeContainer = TypeVar('TypeContainer')
 
@@ -14,7 +16,7 @@ class Containers(Generic[TypeContainer]):
         objs (list[TypeContainer]): 内容列表
     """
 
-    objs: List[TypeContainer] = dcs.field(default_factory=list)
+    objs: list[TypeContainer] = dcs.field(default_factory=list)
 
     def __iter__(self) -> Iterator[TypeContainer]:
         return self.objs.__iter__()
@@ -23,7 +25,7 @@ class Containers(Generic[TypeContainer]):
     def __getitem__(self, idx: SupportsIndex) -> TypeContainer: ...
 
     @overload
-    def __getitem__(self, idx: slice) -> List[TypeContainer]: ...
+    def __getitem__(self, idx: slice) -> list[TypeContainer]: ...
 
     def __getitem__(self, idx):
         return self.objs.__getitem__(idx)

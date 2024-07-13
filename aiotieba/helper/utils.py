@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import asyncio
 import functools
 import logging
 import sys
 from datetime import datetime
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 if sys.version_info >= (3, 11):
     async_timeout = asyncio
@@ -152,7 +154,7 @@ def handle_exception(
 
     def wrapper(func):
         async def awrapper(self, *args, **kwargs):
-            def _log(log_level: int, err: Optional[Exception] = None) -> None:
+            def _log(log_level: int, err: Exception | None = None) -> None:
                 logger = get_logger()
                 if logger.isEnabledFor(err_log_level):
                     if err is None:

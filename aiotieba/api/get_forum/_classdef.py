@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses as dcs
 from typing import Mapping
 
@@ -42,7 +44,7 @@ class Forum(TbErrorExt):
     has_bawu: bool = False
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "Forum":
+    def from_tbdata(data_map: Mapping) -> Forum:
         fid = data_map['id']
         fname = data_map['name']
         category = data_map['first_class']

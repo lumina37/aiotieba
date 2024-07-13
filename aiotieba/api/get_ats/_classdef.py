@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses as dcs
 from functools import cached_property
 from typing import Mapping
@@ -25,7 +27,7 @@ class Page_at:
     has_prev: int = False
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "Page_at":
+    def from_tbdata(data_map: Mapping) -> Page_at:
         current_page = int(data_map['current_page'])
         has_more = bool(int(data_map['has_more']))
         has_prev = bool(int(data_map['has_prev']))
@@ -60,7 +62,7 @@ class UserInfo_at:
     priv_reply: PrivReply = PrivReply.ALL
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "UserInfo_at":
+    def from_tbdata(data_map: Mapping) -> UserInfo_at:
         user_id = int(data_map['id'])
         portrait = data_map['portrait']
         if '?' in portrait:
@@ -79,7 +81,7 @@ class UserInfo_at:
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
 
-    def __eq__(self, obj: "UserInfo_at") -> bool:
+    def __eq__(self, obj: UserInfo_at) -> bool:
         return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
@@ -139,7 +141,7 @@ class At:
     create_time: int = 0
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "At":
+    def from_tbdata(data_map: Mapping) -> At:
         text = data_map['content']
         fname = data_map['fname']
         tid = int(data_map['thread_id'])
@@ -150,7 +152,7 @@ class At:
         create_time = int(data_map['time'])
         return At(text, fname, tid, pid, user, is_comment, is_thread, create_time)
 
-    def __eq__(self, obj: "At") -> bool:
+    def __eq__(self, obj: At) -> bool:
         return self.pid == obj.pid
 
     def __hash__(self) -> int:
@@ -177,7 +179,7 @@ class Ats(TbErrorExt, Containers[At]):
     page: Page_at = dcs.field(default_factory=Page_at)
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "Ats":
+    def from_tbdata(data_map: Mapping) -> Ats:
         objs = [At.from_tbdata(m) for m in data_map.get('at_list', [])]
         page = Page_at.from_tbdata(data_map['page'])
         return Ats(objs, page)

@@ -1,4 +1,4 @@
-from typing import List
+from __future__ import annotations
 
 import yarl
 
@@ -14,7 +14,7 @@ def parse_body(body: bytes) -> None:
         raise TiebaServerError(code, res_json['error_msg'])
 
 
-async def request(http_core: HttpCore, fid: int, tid: int, pids: List[int], block: bool) -> BoolResponse:
+async def request(http_core: HttpCore, fid: int, tid: int, pids: list[int], block: bool) -> BoolResponse:
     data = [
         ('BDUSS', http_core.account.BDUSS),
         ('forum_id', fid),

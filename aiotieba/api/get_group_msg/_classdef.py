@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import dataclasses as dcs
-from typing import List
 
 from ...exception import TbErrorExt
 from .._classdef import Containers, TypeMessage
@@ -23,7 +24,7 @@ class UserInfo_ws:
     user_name: str = ''
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "UserInfo_ws":
+    def from_tbdata(data_proto: TypeMessage) -> UserInfo_ws:
         user_id = data_proto.userId
         portrait = data_proto.portrait
         if '?' in portrait:
@@ -34,7 +35,7 @@ class UserInfo_ws:
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
 
-    def __eq__(self, obj: "UserInfo_ws") -> bool:
+    def __eq__(self, obj: UserInfo_ws) -> bool:
         return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
@@ -90,10 +91,10 @@ class WsMsgGroup:
 
     group_id: int = 0
     group_type: int = 0
-    messages: List[WsMessage] = dcs.field(default_factory=list)
+    messages: list[WsMessage] = dcs.field(default_factory=list)
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "WsMsgGroup":
+    def from_tbdata(data_proto: TypeMessage) -> WsMsgGroup:
         group_id = data_proto.groupInfo.groupId
         group_type = data_proto.groupInfo.groupType
         messages = [WsMessage.from_tbdata(p) for p in data_proto.msgList]
@@ -111,6 +112,6 @@ class WsMsgGroups(TbErrorExt, Containers[WsMsgGroup]):
     """
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "WsMsgGroups":
+    def from_tbdata(data_proto: TypeMessage) -> WsMsgGroups:
         objs = [WsMsgGroup.from_tbdata(p) for p in data_proto.groupInfo]
         return WsMsgGroups(objs)

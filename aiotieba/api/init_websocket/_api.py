@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import binascii
 import time
-from typing import List
 
 from cryptography.hazmat.primitives.asymmetric.padding import PKCS1v15
 from cryptography.hazmat.primitives.serialization import load_der_public_key
@@ -43,7 +44,7 @@ def pack_proto(account: Account) -> bytes:
     return req_proto.SerializeToString()
 
 
-def parse_body(body: bytes) -> List[WsMsgGroupInfo]:
+def parse_body(body: bytes) -> list[WsMsgGroupInfo]:
     res_proto = UpdateClientInfoResIdl_pb2.UpdateClientInfoResIdl()
     res_proto.ParseFromString(body)
 
@@ -55,7 +56,7 @@ def parse_body(body: bytes) -> List[WsMsgGroupInfo]:
     return groups
 
 
-async def request(ws_core: WsCore) -> List[WsMsgGroupInfo]:
+async def request(ws_core: WsCore) -> list[WsMsgGroupInfo]:
     data = pack_proto(ws_core.account)
 
     resp = await ws_core.send(data, CMD, compress=False, encrypt=False)

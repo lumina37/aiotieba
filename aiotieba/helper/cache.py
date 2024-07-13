@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from collections import OrderedDict
+from typing import ClassVar
 
 
 class ForumInfoCache:
@@ -6,8 +9,8 @@ class ForumInfoCache:
     吧信息缓存
     """
 
-    _fname2fid = OrderedDict()
-    _fid2fname = OrderedDict()
+    _fname2fid: ClassVar[OrderedDict] = OrderedDict()
+    _fid2fname: ClassVar[OrderedDict] = OrderedDict()
 
     @classmethod
     def get_fid(cls, fname: str) -> int:

@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import dataclasses as dcs
 from functools import cached_property
-from typing import Dict, List
 
 from ...enums import Gender, PrivLike, PrivReply
 from ...exception import TbErrorExt
@@ -53,7 +54,7 @@ class FragImage_t:
     hash: str = ""
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "FragImage_t":
+    def from_tbdata(data_proto: TypeMessage) -> FragImage_t:
         src = data_proto.cdn_src
         big_src = data_proto.big_cdn_src
         origin_src = data_proto.origin_src
@@ -91,17 +92,17 @@ class Contents_t(Containers[TypeFragment]):
         voice (FragVoice_t): 音频碎片
     """
 
-    texts: List[TypeFragText] = dcs.field(default_factory=list, repr=False)
-    emojis: List[FragEmoji_t] = dcs.field(default_factory=list, repr=False)
-    imgs: List[FragImage_t] = dcs.field(default_factory=list, repr=False)
-    ats: List[FragAt_t] = dcs.field(default_factory=list, repr=False)
-    links: List[FragLink_t] = dcs.field(default_factory=list, repr=False)
-    tiebapluses: List[FragTiebaPlus_t] = dcs.field(default_factory=list, repr=False)
+    texts: list[TypeFragText] = dcs.field(default_factory=list, repr=False)
+    emojis: list[FragEmoji_t] = dcs.field(default_factory=list, repr=False)
+    imgs: list[FragImage_t] = dcs.field(default_factory=list, repr=False)
+    ats: list[FragAt_t] = dcs.field(default_factory=list, repr=False)
+    links: list[FragLink_t] = dcs.field(default_factory=list, repr=False)
+    tiebapluses: list[FragTiebaPlus_t] = dcs.field(default_factory=list, repr=False)
     video: FragVideo_t = dcs.field(default_factory=FragVideo_t, repr=False)
     voice: FragVoice_t = dcs.field(default_factory=FragVoice_t, repr=False)
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "Contents_t":
+    def from_tbdata(data_proto: TypeMessage) -> Contents_t:
         content_protos = data_proto.first_post_content
 
         texts = []
@@ -203,7 +204,7 @@ class Page_t:
     has_prev: bool = False
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "Page_t":
+    def from_tbdata(data_proto: TypeMessage) -> Page_t:
         page_size = data_proto.page_size
         current_page = data_proto.current_page
         total_page = data_proto.total_page
@@ -248,7 +249,7 @@ class UserInfo_t:
     level: int = 0
     glevel: int = 0
     gender: Gender = Gender.UNKNOWN
-    icons: List[str] = dcs.field(default_factory=list)
+    icons: list[str] = dcs.field(default_factory=list)
 
     is_bawu: bool = False
     is_vip: bool = False
@@ -257,7 +258,7 @@ class UserInfo_t:
     priv_reply: PrivReply = PrivReply.ALL
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "UserInfo_t":
+    def from_tbdata(data_proto: TypeMessage) -> UserInfo_t:
         user_id = data_proto.id
         portrait = data_proto.portrait
         if '?' in portrait:
@@ -292,7 +293,7 @@ class UserInfo_t:
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
 
-    def __eq__(self, obj: "UserInfo_t") -> bool:
+    def __eq__(self, obj: UserInfo_t) -> bool:
         return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
@@ -341,7 +342,7 @@ class FragImage_st:
     hash: str = ""
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "FragImage_st":
+    def from_tbdata(data_proto: TypeMessage) -> FragImage_st:
         src = data_proto.water_pic
         big_src = data_proto.small_pic
         origin_src = data_proto.big_pic
@@ -377,17 +378,17 @@ class Contents_st(Containers[TypeFragment]):
         voice (FragVoice_st): 视频碎片
     """
 
-    texts: List[TypeFragText] = dcs.field(default_factory=list, repr=False)
-    emojis: List[FragEmoji_st] = dcs.field(default_factory=list, repr=False)
-    imgs: List[FragImage_st] = dcs.field(default_factory=list, repr=False)
-    ats: List[FragAt_st] = dcs.field(default_factory=list, repr=False)
-    links: List[FragLink_st] = dcs.field(default_factory=list, repr=False)
-    tiebapluses: List[FragTiebaPlus_st] = dcs.field(default_factory=list, repr=False)
+    texts: list[TypeFragText] = dcs.field(default_factory=list, repr=False)
+    emojis: list[FragEmoji_st] = dcs.field(default_factory=list, repr=False)
+    imgs: list[FragImage_st] = dcs.field(default_factory=list, repr=False)
+    ats: list[FragAt_st] = dcs.field(default_factory=list, repr=False)
+    links: list[FragLink_st] = dcs.field(default_factory=list, repr=False)
+    tiebapluses: list[FragTiebaPlus_st] = dcs.field(default_factory=list, repr=False)
     video: FragVideo_st = dcs.field(default_factory=FragVideo_st, repr=False)
     voice: FragVoice_st = dcs.field(default_factory=FragVoice_st, repr=False)
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "Contents_st":
+    def from_tbdata(data_proto: TypeMessage) -> Contents_st:
         content_protos = data_proto.content
 
         texts = []
@@ -495,7 +496,7 @@ class ShareThread:
     vote_info: VoteInfo = dcs.field(default_factory=VoteInfo)
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "ShareThread":
+    def from_tbdata(data_proto: TypeMessage) -> ShareThread:
         contents = Contents_st.from_tbdata(data_proto)
         author_id = data_proto.content[0].uid if data_proto.content else 0
         title = data_proto.title
@@ -506,7 +507,7 @@ class ShareThread:
         vote_info = VoteInfo.from_tbdata(data_proto.poll_info)
         return ShareThread(contents, title, author_id, fid, fname, tid, pid, vote_info)
 
-    def __eq__(self, obj: "ShareThread") -> bool:
+    def __eq__(self, obj: ShareThread) -> bool:
         return self.pid == obj.pid
 
     def __hash__(self) -> int:
@@ -647,7 +648,7 @@ class Thread:
             last_time,
         )
 
-    def __eq__(self, obj: "Thread") -> bool:
+    def __eq__(self, obj: Thread) -> bool:
         return self.pid == obj.pid
 
     def __hash__(self) -> int:
@@ -700,7 +701,7 @@ class Forum_t:
     has_rule: bool = False
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "Forum_t":
+    def from_tbdata(data_proto: TypeMessage) -> Forum_t:
         forum_proto = data_proto.forum
         fid = forum_proto.id
         fname = forum_proto.name
@@ -732,10 +733,10 @@ class Threads(TbErrorExt, Containers[Thread]):
 
     page: Page_t = dcs.field(default_factory=Page_t)
     forum: Forum_t = dcs.field(default_factory=Forum_t)
-    tab_map: Dict[str, int] = dcs.field(default_factory=dict)
+    tab_map: dict[str, int] = dcs.field(default_factory=dict)
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "Threads":
+    def from_tbdata(data_proto: TypeMessage) -> Threads:
         page = Page_t.from_tbdata(data_proto.page)
         forum = Forum_t.from_tbdata(data_proto)
         tab_map = {p.tab_name: p.tab_id for p in data_proto.nav_tab_info.tab}

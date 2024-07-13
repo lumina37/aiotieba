@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import dataclasses as dcs
 from functools import cached_property
-from typing import List
 
 from ...exception import TbErrorExt
 from .._classdef import Containers, TypeMessage, VoteInfo
@@ -38,7 +39,7 @@ class FragVoice_up:
     duration: int = 0
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "FragVoice_up":
+    def from_tbdata(data_proto: TypeMessage) -> FragVoice_up:
         md5 = data_proto.voice_md5
         duration = int(data_proto.during_time) / 1000
         return FragVoice_up(md5, duration)
@@ -62,12 +63,12 @@ class Contents_up(Containers[TypeFragment]):
         voice (FragVoice_up): 音频碎片
     """
 
-    texts: List[TypeFragText] = dcs.field(default_factory=list, repr=False)
-    links: List[FragLink_up] = dcs.field(default_factory=list, repr=False)
+    texts: list[TypeFragText] = dcs.field(default_factory=list, repr=False)
+    links: list[FragLink_up] = dcs.field(default_factory=list, repr=False)
     voice: FragVoice_up = dcs.field(default_factory=FragVoice_up, repr=False)
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "Contents_up":
+    def from_tbdata(data_proto: TypeMessage) -> Contents_up:
         content_protos = data_proto.post_content
 
         texts = []
@@ -127,7 +128,7 @@ class UserInfo_u:
     nick_name_new: str = ''
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "UserInfo_u":
+    def from_tbdata(data_proto: TypeMessage) -> UserInfo_u:
         user_id = data_proto.user_id
         portrait = data_proto.user_portrait
         if '?' in portrait:
@@ -139,7 +140,7 @@ class UserInfo_u:
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
 
-    def __eq__(self, obj: "UserInfo_u") -> bool:
+    def __eq__(self, obj: UserInfo_u) -> bool:
         return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
@@ -198,14 +199,14 @@ class UserPost:
     create_time: int = 0
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "UserPost":
+    def from_tbdata(data_proto: TypeMessage) -> UserPost:
         contents = Contents_up.from_tbdata(data_proto)
         pid = data_proto.post_id
         is_comment = bool(data_proto.post_type)
         create_time = data_proto.create_time
         return UserPost(contents, 0, 0, pid, None, is_comment, create_time)
 
-    def __eq__(self, obj: "UserPost") -> bool:
+    def __eq__(self, obj: UserPost) -> bool:
         return self.pid == obj.pid
 
     def __hash__(self) -> int:
@@ -236,7 +237,7 @@ class UserPosts(Containers[UserPost]):
     tid: int = 0
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "UserPosts":
+    def from_tbdata(data_proto: TypeMessage) -> UserPosts:
         fid = data_proto.forum_id
         tid = data_proto.thread_id
         objs = [UserPost.from_tbdata(p) for p in data_proto.content]
@@ -257,7 +258,7 @@ class UserPostss(TbErrorExt, Containers[UserPosts]):
     """
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "UserPostss":
+    def from_tbdata(data_proto: TypeMessage) -> UserPostss:
         objs = [UserPosts.from_tbdata(p) for p in data_proto.post_list]
         if objs:
             user = UserInfo_u.from_tbdata(data_proto.post_list[0])
@@ -291,7 +292,7 @@ class FragImage_ut:
     hash: str = ""
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "FragImage_ut":
+    def from_tbdata(data_proto: TypeMessage) -> FragImage_ut:
         src = data_proto.small_pic
         big_src = data_proto.big_pic
         origin_src = data_proto.origin_pic
@@ -324,16 +325,16 @@ class Contents_ut(Containers[TypeFragment]):
         voice (FragVoice_ut): 音频碎片
     """
 
-    texts: List[TypeFragText] = dcs.field(default_factory=list, repr=False)
-    emojis: List[FragEmoji_ut] = dcs.field(default_factory=list, repr=False)
-    imgs: List[FragImage_ut] = dcs.field(default_factory=list, repr=False)
-    ats: List[FragAt_ut] = dcs.field(default_factory=list, repr=False)
-    links: List[FragLink_ut] = dcs.field(default_factory=list, repr=False)
+    texts: list[TypeFragText] = dcs.field(default_factory=list, repr=False)
+    emojis: list[FragEmoji_ut] = dcs.field(default_factory=list, repr=False)
+    imgs: list[FragImage_ut] = dcs.field(default_factory=list, repr=False)
+    ats: list[FragAt_ut] = dcs.field(default_factory=list, repr=False)
+    links: list[FragLink_ut] = dcs.field(default_factory=list, repr=False)
     video: FragVideo_ut = dcs.field(default_factory=FragVideo_ut, repr=False)
     voice: FragVoice_ut = dcs.field(default_factory=FragVoice_ut, repr=False)
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "Contents_ut":
+    def from_tbdata(data_proto: TypeMessage) -> Contents_ut:
         content_protos = data_proto.first_post_content
 
         texts = []
@@ -449,7 +450,7 @@ class UserThread:
     create_time: int = 0
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "UserThread":
+    def from_tbdata(data_proto: TypeMessage) -> UserThread:
         contents = Contents_ut.from_tbdata(data_proto)
         title = data_proto.title
         fid = data_proto.forum_id
@@ -482,7 +483,7 @@ class UserThread:
             create_time,
         )
 
-    def __eq__(self, obj: "UserThread") -> bool:
+    def __eq__(self, obj: UserThread) -> bool:
         return self.pid == obj.pid
 
     def __hash__(self) -> int:
@@ -512,7 +513,7 @@ class UserThreads(TbErrorExt, Containers[UserThread]):
     """
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "UserThreads":
+    def from_tbdata(data_proto: TypeMessage) -> UserThreads:
         objs = [UserThread.from_tbdata(p) for p in data_proto.post_list]
         if objs:
             user = UserInfo_u.from_tbdata(data_proto.post_list[0])

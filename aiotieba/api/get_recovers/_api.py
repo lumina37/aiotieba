@@ -1,4 +1,4 @@
-from typing import Optional
+from __future__ import annotations
 
 import yarl
 
@@ -19,7 +19,7 @@ def parse_body(body: bytes) -> Recovers:
     return recovers
 
 
-async def request(http_core: HttpCore, fid: int, user_id: Optional[int], pn: int, rn: int) -> Recovers:
+async def request(http_core: HttpCore, fid: int, user_id: int | None, pn: int, rn: int) -> Recovers:
     params = [
         ('rn', rn),
         ('forum_id', fid),

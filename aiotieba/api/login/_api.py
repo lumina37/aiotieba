@@ -1,4 +1,4 @@
-from typing import Tuple
+from __future__ import annotations
 
 import yarl
 
@@ -9,7 +9,7 @@ from ...helper import parse_json
 from ._classdef import UserInfo_login
 
 
-def parse_body(body: bytes) -> Tuple[UserInfo_login, str]:
+def parse_body(body: bytes) -> tuple[UserInfo_login, str]:
     res_json = parse_json(body)
     if code := int(res_json['error_code']):
         raise TiebaServerError(code, res_json['error_msg'])
@@ -21,7 +21,7 @@ def parse_body(body: bytes) -> Tuple[UserInfo_login, str]:
     return user, tbs
 
 
-async def request(http_core: HttpCore) -> Tuple[UserInfo_login, str]:
+async def request(http_core: HttpCore) -> tuple[UserInfo_login, str]:
     data = [
         ('_client_version', MAIN_VERSION),
         ('bdusstoken', http_core.account.BDUSS),

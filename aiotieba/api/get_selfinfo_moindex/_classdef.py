@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses as dcs
 from functools import cached_property
 from typing import Mapping
@@ -41,7 +43,7 @@ class UserInfo_moindex:
     is_vip: bool = False
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "UserInfo_moindex":
+    def from_tbdata(data_map: Mapping) -> UserInfo_moindex:
         user_id = data_map['id']
         portrait = data_map['portrait']
         user_name = data_map['name']
@@ -65,7 +67,7 @@ class UserInfo_moindex:
     def __str__(self) -> str:
         return self.user_name or self.portrait
 
-    def __eq__(self, obj: "UserInfo_moindex") -> bool:
+    def __eq__(self, obj: UserInfo_moindex) -> bool:
         return self.user_id == obj.user_id
 
     def __hash__(self) -> int:

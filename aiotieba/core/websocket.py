@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import asyncio
 import binascii
 import dataclasses as dcs
 import gzip
 import time
 import weakref
-from typing import Awaitable, Callable, Dict, Optional, Tuple
+from typing import Awaitable, Callable
 
 import aiohttp
 import yarl
@@ -60,7 +62,7 @@ def pack_ws_bytes(
     return data
 
 
-def parse_ws_bytes(account: Account, data: bytes) -> Tuple[bytes, int, int]:
+def parse_ws_bytes(account: Account, data: bytes) -> tuple[bytes, int, int]:
     """
     对websocket返回数据进行解包
 
@@ -118,8 +120,8 @@ class MsgIDManager:
     msg_id管理器
     """
 
-    priv_gid: Optional[int] = None
-    gid2mid: Optional[Dict[int, MsgIDPair]] = None
+    priv_gid: int | None = None
+    gid2mid: dict[int, MsgIDPair] | None = None
 
     def update_msg_id(self, group_id: int, msg_id: int) -> None:
         """
@@ -267,7 +269,7 @@ class WsCore:
     account: Account
     net_core: NetCore
     waiter: WsWaiter
-    callbacks: Dict[int, TypeWebsocketCallback]
+    callbacks: dict[int, TypeWebsocketCallback]
     websocket: aiohttp.ClientWebSocketResponse
     ws_dispatcher: asyncio.Task
     mid_manager: MsgIDManager
@@ -279,7 +281,7 @@ class WsCore:
         self.net_core = net_core
         self.loop = loop
 
-        self.callbacks: Dict[int, TypeWebsocketCallback] = {}
+        self.callbacks: dict[int, TypeWebsocketCallback] = {}
         self.websocket: aiohttp.ClientWebSocketResponse = None
         self.ws_dispatcher: asyncio.Task = None
 

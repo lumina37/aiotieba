@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses as dcs
 from functools import cached_property
 from typing import Mapping
@@ -52,7 +54,7 @@ class UserInfo_panel(TbErrorExt):
     is_vip: bool = False
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "UserInfo_panel":
+    def from_tbdata(data_map: Mapping) -> UserInfo_panel:
         portrait = data_map['portrait']
         user_name = data_map['name']
         nick_name_new = data_map['show_nickname']
@@ -84,7 +86,7 @@ class UserInfo_panel(TbErrorExt):
     def __str__(self) -> str:
         return self.user_name or self.portrait
 
-    def __eq__(self, obj: "UserInfo_panel") -> bool:
+    def __eq__(self, obj: UserInfo_panel) -> bool:
         return self.portrait == obj.portrait
 
     def __hash__(self) -> int:

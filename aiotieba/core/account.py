@@ -1,4 +1,4 @@
-from typing import Dict, Union
+from __future__ import annotations
 
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -92,10 +92,10 @@ class Account:
     def __hash__(self) -> int:
         return hash(self.BDUSS)
 
-    def __eq__(self, obj: "Account") -> bool:
+    def __eq__(self, obj: Account) -> bool:
         return self.BDUSS == obj.BDUSS
 
-    def to_dict(self) -> Dict[str, Union[str, bytes]]:
+    def to_dict(self) -> dict[str, str | bytes]:
         """
         将Account转换为字典
 
@@ -115,7 +115,7 @@ class Account:
         return dic
 
     @staticmethod
-    def from_dict(dic: Dict[str, Union[str, bytes]]) -> "Account":
+    def from_dict(dic: dict[str, str | bytes]) -> Account:
         """
         将字典转换为Account
 

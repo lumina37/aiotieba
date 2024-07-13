@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import dataclasses as dcs
-from typing import List, Sequence
+from typing import Sequence
 
 
 @dcs.dataclass
@@ -19,18 +21,18 @@ class Statistics:
         recommend (list[int]): 首页推荐数
     """
 
-    view: List[int] = dcs.field(default_factory=list)
-    thread: List[int] = dcs.field(default_factory=list)
-    new_member: List[int] = dcs.field(default_factory=list)
-    post: List[int] = dcs.field(default_factory=list)
-    sign_ratio: List[int] = dcs.field(default_factory=list)
-    avg_time: List[int] = dcs.field(default_factory=list)
-    avg_times: List[int] = dcs.field(default_factory=list)
-    recommend: List[int] = dcs.field(default_factory=list)
+    view: list[int] = dcs.field(default_factory=list)
+    thread: list[int] = dcs.field(default_factory=list)
+    new_member: list[int] = dcs.field(default_factory=list)
+    post: list[int] = dcs.field(default_factory=list)
+    sign_ratio: list[int] = dcs.field(default_factory=list)
+    avg_time: list[int] = dcs.field(default_factory=list)
+    avg_times: list[int] = dcs.field(default_factory=list)
+    recommend: list[int] = dcs.field(default_factory=list)
 
     @staticmethod
-    def from_tbdata(data_seq: Sequence) -> "Statistics":
-        def extract(i: int) -> List[int]:
+    def from_tbdata(data_seq: Sequence) -> Statistics:
+        def extract(i: int) -> list[int]:
             seq: list = data_seq[i]['group'][1]['values']
             seq = [int(item['value']) for item in seq]
             return seq

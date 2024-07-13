@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import dataclasses as dcs
 from functools import cached_property
-from typing import Dict, Mapping
+from typing import Mapping
 
 from ...enums import BlacklistType
 from ...exception import TbErrorExt
@@ -33,7 +35,7 @@ class BlacklistUser:
     btype: BlacklistType = BlacklistType.NULL
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "BlacklistUser":
+    def from_tbdata(data_map: Mapping) -> BlacklistUser:
         user_id = int(data_map['uid'])
         portrait = data_map['portrait']
         if '?' in portrait:
@@ -42,7 +44,7 @@ class BlacklistUser:
         nick_name_new = data_map['name_show']
 
         btype = BlacklistType.NULL
-        perm: Dict[str, str] = data_map['perm_list']
+        perm: dict[str, str] = data_map['perm_list']
         if int(perm['follow']):
             btype |= BlacklistType.FOLLOW
         if int(perm['chat']):
@@ -55,7 +57,7 @@ class BlacklistUser:
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
 
-    def __eq__(self, obj: "BlacklistUser") -> bool:
+    def __eq__(self, obj: BlacklistUser) -> bool:
         return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
@@ -93,6 +95,6 @@ class BlacklistUsers(TbErrorExt, Containers[BlacklistUser]):
     """
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> "BlacklistUsers":
+    def from_tbdata(data_map: Mapping) -> BlacklistUsers:
         objs = [BlacklistUser.from_tbdata(m) for m in data_map.get('user_perm_list', [])]
         return BlacklistUsers(objs)
