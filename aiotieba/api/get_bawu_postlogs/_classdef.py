@@ -21,8 +21,8 @@ class Media_postlog:
         hash (str): 百度图床hash
     """
 
-    src: str = ''
-    origin_src: str = ''
+    src: str = dcs.field(default="", repr=False)
+    origin_src: str = ""
 
     @staticmethod
     def from_tbdata(data_tag: bs4.element.Tag) -> Media_postlog:
