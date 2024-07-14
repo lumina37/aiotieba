@@ -32,8 +32,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libxml2-dev libxslt1-dev
           uv venv
-          uv pip install . --prerelease=allow
-          uv pip install pytest pytest-asyncio pytest-rerunfailures --prerelease=allow
+          uv pip install .[speedup]
+          uv pip install pytest pytest-asyncio pytest-rerunfailures
 
       - name: Run tests
         env:
