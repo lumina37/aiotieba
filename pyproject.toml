@@ -36,6 +36,7 @@ dependencies = [
   "protobuf>=4.21.0,<6",
   "cryptography>=35.0.0,<41;python_version>='3.8' and python_version<'3.12'",
   "cryptography>=35.0.0,<43;python_version>='3.12'",
+  "cffi>=1.17.0rc1,<2;python_version>='3.13b1'",
   "async-timeout>=4.0,<5;python_version<'3.11'",
   "StrEnum>=0.4.0,<0.5;python_version<'3.11'",
 ]
