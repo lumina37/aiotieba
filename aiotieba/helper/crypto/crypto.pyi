@@ -1,3 +1,5 @@
+TypePayload = list[tuple[str, str | int]]
+
 def cuid_galaxy2(android_id: str) -> str:
     """
     使用给定的android_id生成cuid_galaxy2
@@ -45,7 +47,7 @@ def rc4_42(xyus_md5_str: str, aes_cbc_sec_key: bytes) -> bytes:
         bytes
     """
 
-def sign(data: list[tuple[str, str | int]]) -> str:
+def sign(data: TypePayload) -> str:
     """
     为参数元组列表计算贴吧客户端签名
 

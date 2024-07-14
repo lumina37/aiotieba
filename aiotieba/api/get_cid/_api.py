@@ -1,4 +1,4 @@
-from typing import Dict, List, Union
+from __future__ import annotations
 
 import yarl
 
@@ -7,7 +7,7 @@ from ...core import HttpCore
 from ...exception import TiebaServerError
 from ...helper import parse_json
 
-TypeCates = List[Dict[str, Union[str, int]]]
+TypeCates = list[dict[str, str | int]]
 
 
 def parse_body(body: bytes) -> TypeCates:

@@ -361,9 +361,10 @@ tid: 8204273523 最后回复时间戳: 1672500829 标题: 你如初待我模样
 本样例将通过任务队列实现一个多协程爬虫，快速爬取天堂鸡汤吧的前32页共960条主题帖，并打印其中浏览量最高的10条
 
 ```python
+from __future__ import annotations
+
 import asyncio
 import time
-from typing import List
 
 import aiotieba as tb
 from aiotieba.logging import get_logger as LOG
@@ -383,7 +384,7 @@ async def crawler(fname: str):
     LOG().info("Spider start")
 
     # thread_list用来保存主题帖列表
-    thread_list: List[tb.typing.Thread] = []
+    thread_list: list[tb.typing.Thread] = []
 
     # 使用键名"default"对应的BDUSS创建客户端
     async with tb.Client(BDUSS) as client:
@@ -444,7 +445,7 @@ async def crawler(fname: str):
         # 因为asyncio.gather只接受协程作为参数，不接受协程列表
         await asyncio.gather(*workers, producer())
 
-    LOG().info(f"Spider complete. Time cost: {time.perf_counter()-start_time:.4f} secs")
+    LOG().info(f"Spider complete. Time cost: {time.perf_counter() - start_time:.4f} secs")
 
     # 按主题帖浏览量降序排序
     thread_list.sort(key=lambda thread: thread.view_num, reverse=True)
