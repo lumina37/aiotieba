@@ -1,0 +1,51 @@
+name: CI-beta
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - "aiotieba/**"
+      - "tests/**"
+      - ".github/workflows/CI-beta.yml"
+  pull_request:
+    branches: [develop]
+    paths:
+      - "aiotieba/**"
+      - "tests/**"
+      - ".github/workflows/CI-beta.yml"
+  workflow_dispatch:
+
+jobs:
+  test-beta:
+    name: Test-beta
+    runs-on: ubuntu-latest
+
+    environment: develop
+
+    env:
+      PYTHON_VERSION: "3.13-dev"
+
+    steps:
+      - name: Checkout develop
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+
+      - name: Setup Python${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxml2-dev libxslt1-dev
+          pip install --user .[speedup]
+          pip install --user pytest pytest-asyncio pytest-rerunfailures
+
+      - name: Run tests
+        env:
+          TB_BDUSS: ${{ secrets.BDUSS }}
+          TB_STOKEN: ${{ secrets.STOKEN }}
+        run: pytest

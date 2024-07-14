@@ -100,7 +100,7 @@ class Account:
         将Account转换为字典
 
         Returns:
-            Dict[str, Union[str, bytes]]: 包含用户参数的字典
+            dict[str, str | bytes]: 包含用户参数的字典
         """
 
         dic = {}
@@ -120,7 +120,7 @@ class Account:
         将字典转换为Account
 
         Args:
-            dic (Dict[str, Union[str, bytes]]): 包含用户参数的字典
+            dic (Dict[str, str | bytes]): 包含用户参数的字典
 
         Returns:
             Account: 用户参数容器

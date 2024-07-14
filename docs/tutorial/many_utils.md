@@ -3,9 +3,9 @@
 ## 签到
 
 ```python
-import asyncio
 from __future__ import annotations
-from typing import List
+
+import asyncio
 
 import aiotieba as tb
 
@@ -48,14 +48,14 @@ async def sign(BDUSS_key: str, *, retry_times: int = 0) -> None:
             if success:
                 break
         # 签到
-        retry_list: List[str] = []
+        retry_list: list[str] = []
         for pn in range(1, 9999):
             forums = await client.get_self_follow_forums(pn)
             retry_list += [forum.fname for forum in forums]
             if not forums.has_more:
                 break
         for _ in range(retry_times + 1):
-            new_retry_list: List[str] = []
+            new_retry_list: list[str] = []
             for fname in retry_list:
                 ret = await client.sign_forum(fname)
                 if ret.err is not None and ret.err.code not in [160002, 340006]:
@@ -151,8 +151,6 @@ asyncio.run(main())
 
 ```python
 import asyncio
-
-from aiotieba_reviewer import get_account
 
 import aiotieba as tb
 

@@ -1,6 +1,6 @@
 [project]
 name = "aiotieba"
-version = "4.4.6"
+version = "4.4.7a0"
 description = "Asynchronous I/O Client for Baidu Tieba"
 authors = [{ name = "Starry-OvO", email = "starry.qvq@gmail.com" }]
 urls = { Repository = "https://github.com/Starry-OvO/aiotieba/", Documentation = "https://aiotieba.cc/" }
@@ -19,7 +19,7 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Topic :: Internet :: WWW/HTTP :: Session",
 ]
-requires-python = ">=3.8,<3.13"
+requires-python = ">=3.8,<3.14"
 dependencies = [
   "aiohttp>=3.8.4,<3.10;python_version=='3.8'",
   "aiohttp>=3.8.4,<4;python_version>='3.9' and python_version<'3.12'",
@@ -66,7 +66,7 @@ build-backend = "scikit_build_core.build"
 managed = true
 dev-dependencies = [
   "aiotieba[speedup]",
-  "pytest==8.2.1",
+  "pytest==8.2.2",
   "pytest-asyncio==0.23.7",
   "pytest-rerunfailures==14.0",
   "mkdocs-material",
