@@ -1,4 +1,4 @@
-name: CI
+name: CI-beta
 
 on:
   push:
@@ -23,7 +23,7 @@ jobs:
     environment: develop
 
     env:
-      python-version: "3.13-dev"
+      PYTHON_VERSION: "3.13-dev"
 
     steps:
       - name: Checkout develop
@@ -31,10 +31,10 @@ jobs:
         with:
           ref: develop
 
-      - name: Setup Python${{ python-version }}
+      - name: Setup Python${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ python-version }}
+          python-version: ${{ env.PYTHON_VERSION }}
           cache: "pip"
 
       - name: Install dependencies
