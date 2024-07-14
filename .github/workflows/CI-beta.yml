@@ -1,8 +1,6 @@
 name: CI
 
 on:
-  schedule:
-    - cron: "42 6 * * *"
   push:
     branches: [develop]
     paths:
@@ -18,15 +16,14 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
-    name: Test
+  test-beta:
+    name: Test-beta
     runs-on: ubuntu-latest
 
     environment: develop
 
-    strategy:
-      matrix:
-        python-version: ["3.8", "3.12"]
+    env:
+      python-version: "3.13-dev"
 
     steps:
       - name: Checkout develop
@@ -34,16 +31,19 @@ jobs:
         with:
           ref: develop
 
-      - name: Setup Rye
-        uses: eifinger/setup-rye@v4
+      - name: Setup Python${{ python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ python-version }}
+          cache: "pip"
 
-      - name: Pin Py${{ matrix.python-version }}
+      - name: Install dependencies
         run: |
-          rye pin ${{ matrix.python-version }}
-          rye sync --features=speedup
+          pip install --user .[speedup]
+          pip install --user pytest pytest-asyncio pytest-rerunfailures
 
       - name: Run tests
         env:
           TB_BDUSS: ${{ secrets.BDUSS }}
           TB_STOKEN: ${{ secrets.STOKEN }}
-        run: rye test
+        run: pytest

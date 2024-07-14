@@ -66,7 +66,7 @@ build-backend = "scikit_build_core.build"
 managed = true
 dev-dependencies = [
   "aiotieba[speedup]",
-  "pytest==8.2.1",
+  "pytest==8.2.2",
   "pytest-asyncio==0.23.7",
   "pytest-rerunfailures==14.0",
   "mkdocs-material",
