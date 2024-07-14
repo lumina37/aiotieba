@@ -7,10 +7,8 @@ from ...core import HttpCore
 from ...exception import TiebaServerError
 from ...helper import parse_json
 
-TypeCates = list[dict[str, str | int]]
 
-
-def parse_body(body: bytes) -> TypeCates:
+def parse_body(body: bytes) -> list[dict[str, str | int]]:
     res_json = parse_json(body)
     if code := int(res_json['error_code']):
         raise TiebaServerError(code, res_json['error_msg'])
@@ -20,7 +18,7 @@ def parse_body(body: bytes) -> TypeCates:
     return cates
 
 
-async def request(http_core: HttpCore, fname: str) -> TypeCates:
+async def request(http_core: HttpCore, fname: str) -> list[dict[str, str | int]]:
     data = [
         ('BDUSS', http_core.account.BDUSS),
         ('word', fname),
