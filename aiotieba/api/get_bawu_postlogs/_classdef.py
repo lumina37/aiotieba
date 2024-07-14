@@ -8,6 +8,7 @@ import bs4
 from ...exception import TbErrorExt
 from ...helper import default_datetime, removeprefix
 from .._classdef import Containers
+from .._classdef.contents import _IMAGEHASH_EXP
 
 
 @dcs.dataclass
@@ -22,13 +23,19 @@ class Media_postlog:
     """
 
     src: str = dcs.field(default="", repr=False)
-    origin_src: str = ""
+    origin_src: str = dcs.field(default="", repr=False)
+    hash: str = ""
 
     @staticmethod
     def from_tbdata(data_tag: bs4.element.Tag) -> Media_postlog:
-        src = data_tag.img['original']
+        if img_item := data_tag.img:
+            src = img_item['original']
+            hash_ = _IMAGEHASH_EXP.search(src).group(1)
+        else:
+            src = ""
+            hash_ = ""
         origin_src = data_tag['href']
-        return Media_postlog(src, origin_src)
+        return Media_postlog(src, origin_src, hash_)
 
 
 @dcs.dataclass
@@ -96,7 +103,10 @@ class Postlog:
         else:
             title = removeprefix(title, '回复：')
 
-        medias = [Media_postlog(tag) for tag in text_item.next_sibling('a', class_=None)]
+        if media_list_item := text_item.next_sibling:
+            medias = [Media_postlog.from_tbdata(tag) for tag in media_list_item.find_all('a')]
+        else:
+            medias = []
 
         op_type_item = left_cell_item.next_sibling
         op_type = op_type_item.string
