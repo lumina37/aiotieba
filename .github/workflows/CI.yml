@@ -8,13 +8,13 @@ on:
     paths:
       - "aiotieba/**"
       - "tests/**"
-      - ".github/workflows/CI*"
+      - ".github/workflows/CI.yml"
   pull_request:
     branches: [develop]
     paths:
       - "aiotieba/**"
       - "tests/**"
-      - ".github/workflows/CI*"
+      - ".github/workflows/CI.yml"
   workflow_dispatch:
 
 jobs:

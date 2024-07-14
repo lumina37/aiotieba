@@ -6,13 +6,13 @@ on:
     paths:
       - "aiotieba/**"
       - "tests/**"
-      - ".github/workflows/CI*"
+      - ".github/workflows/CI-beta.yml"
   pull_request:
     branches: [develop]
     paths:
       - "aiotieba/**"
       - "tests/**"
-      - ".github/workflows/CI*"
+      - ".github/workflows/CI-beta.yml"
   workflow_dispatch:
 
 jobs:
@@ -39,6 +39,8 @@ jobs:
 
       - name: Install dependencies
         run: |
+          sudo apt-get update
+          sudo apt-get install -y libxml2-dev libxslt1-dev
           pip install --user .[speedup]
           pip install --user pytest pytest-asyncio pytest-rerunfailures
 
