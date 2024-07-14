@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-from .crypto import TypePayload, c3_aid, cuid_galaxy2, rc4_42
+from .crypto import c3_aid, cuid_galaxy2, rc4_42
 from .crypto import sign as _sign
+
+TypePayload = list[tuple[str, str | int]]
 
 
 def sign(data: TypePayload) -> TypePayload:
