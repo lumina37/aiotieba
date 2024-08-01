@@ -1,6 +1,6 @@
 [project]
 name = "aiotieba"
-version = "4.4.7a0"
+version = "4.4.7"
 description = "Asynchronous I/O Client for Baidu Tieba"
 authors = [{ name = "Starry-OvO", email = "starry.qvq@gmail.com" }]
 urls = { Repository = "https://github.com/Starry-OvO/aiotieba/", Documentation = "https://aiotieba.cc/" }
@@ -17,13 +17,14 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Topic :: Internet :: WWW/HTTP :: Session",
 ]
 requires-python = ">=3.8,<3.14"
 dependencies = [
-  "aiohttp>=3.8.4,<3.10;python_version=='3.8'",
-  "aiohttp>=3.8.4,<4;python_version>='3.9' and python_version<'3.12'",
-  "aiohttp>=3.9.0,<4;python_version>='3.12'",
+  "aiohttp>=3.10.0,<3.11;python_version=='3.8'",
+  "aiohttp>=3.10.0,<4;python_version>='3.9' and python_version<'3.12'",
+  "aiohttp>=3.10.0,<4;python_version>='3.12'",
   "beautifulsoup4>=4.4.1,<4.13;python_version=='3.8'",
   "beautifulsoup4>=4.5.2,<5;python_version=='3.9'",
   "beautifulsoup4>=4.7.1,<5;python_version>='3.10'",
@@ -34,7 +35,8 @@ dependencies = [
   "lxml>=4.9.3,<6;python_version>='3.12'",
   "protobuf>=4.21.0,<6",
   "cryptography>=35.0.0,<41;python_version>='3.8' and python_version<'3.12'",
-  "cryptography>=35.0.0,<43;python_version>='3.12'",
+  "cryptography>=35.0.0,<44;python_version>='3.12'",
+  "cffi>=1.17.0rc1,<2;python_version>='3.13b1'",
   "async-timeout>=4.0,<5;python_version<'3.11'",
   "StrEnum>=0.4.0,<0.5;python_version<'3.11'",
 ]
@@ -45,7 +47,6 @@ img = [
   "opencv-contrib-python>=4.6.0.66,<5;sys_platform!='linux'",
 ]
 speedup = [
-  "aiodns>=3.0.0,<4",
   "orjson>=2.0.11,<3.11;python_version=='3.8'",
   "orjson>=2.2.0,<4;python_version=='3.9'",
   "orjson>=3.4.7,<4;python_version=='3.10'",

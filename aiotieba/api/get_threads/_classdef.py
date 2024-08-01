@@ -742,7 +742,7 @@ class Threads(TbErrorExt, Containers[Thread]):
         tab_map = {p.tab_name: p.tab_id for p in data_proto.nav_tab_info.tab}
 
         objs = [Thread.from_tbdata(p) for p in data_proto.thread_list]
-        users = {i: UserInfo_t.from_tbdata(p) for p in data_proto.user_list if (i := p.id)}
+        users = {p.id: UserInfo_t.from_tbdata(p) for p in data_proto.user_list}
         for thread in objs:
             thread.fname = forum.fname
             thread.fid = forum.fid

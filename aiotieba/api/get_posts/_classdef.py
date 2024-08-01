@@ -1115,7 +1115,7 @@ class Posts(TbErrorExt, Containers[Post]):
         thread.fname = forum.fname
 
         objs = [Post.from_tbdata(p) for p in data_proto.post_list if not p.chat_content.bot_uk]
-        users = {i: UserInfo_p.from_tbdata(p) for p in data_proto.user_list if (i := p.id)}
+        users = {p.id: UserInfo_p.from_tbdata(p) for p in data_proto.user_list}
         for post in objs:
             post.fid = forum.fid
             post.fname = forum.fname

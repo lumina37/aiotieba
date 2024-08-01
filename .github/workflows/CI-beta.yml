@@ -1,18 +1,6 @@
 name: CI-beta
 
 on:
-  push:
-    branches: [develop]
-    paths:
-      - "aiotieba/**"
-      - "tests/**"
-      - ".github/workflows/CI-beta.yml"
-  pull_request:
-    branches: [develop]
-    paths:
-      - "aiotieba/**"
-      - "tests/**"
-      - ".github/workflows/CI-beta.yml"
   workflow_dispatch:
 
 jobs:
@@ -35,17 +23,22 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: "pip"
+
+      - name: Setup UV
+        uses: yezz123/setup-uv@v4
 
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libxml2-dev libxslt1-dev
-          pip install --user .[speedup]
-          pip install --user pytest pytest-asyncio pytest-rerunfailures
+          uv venv
+          uv pip install .
+          uv pip install pytest pytest-asyncio pytest-rerunfailures
 
       - name: Run tests
         env:
           TB_BDUSS: ${{ secrets.BDUSS }}
           TB_STOKEN: ${{ secrets.STOKEN }}
-        run: pytest
+        run: |
+          source .venv/bin/activate
+          pytest
