@@ -91,4 +91,16 @@ static PyMethodDef crypto_methods[] = {
 
 static PyModuleDef crypto_module = {PyModuleDef_HEAD_INIT, "crypto", NULL, -1, crypto_methods};
 
-PyMODINIT_FUNC PyInit_crypto(void) { return PyModule_Create(&crypto_module); }
+PyMODINIT_FUNC PyInit_crypto(void)
+{
+    PyObject* mod = PyModule_Create(&crypto_module);
+    if (mod == NULL) {
+        return NULL;
+    }
+
+#ifdef Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(mod, Py_MOD_GIL_NOT_USED);
+#endif
+
+    return mod;
+}
