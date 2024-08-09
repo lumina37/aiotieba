@@ -1,6 +1,4 @@
-.venv/
-.idea/
-.vscode/
+.*/
 *_cache/
 *.py[cd]
 __pycache__
