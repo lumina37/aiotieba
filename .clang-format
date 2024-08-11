@@ -5,6 +5,8 @@ ColumnLimit: 120
 Language: Cpp
 AccessModifierOffset: -4
 PointerAlignment: Left
+IndentPPDirectives: AfterHash
+RequiresExpressionIndentation: OuterScope
 BreakBeforeBraces: Custom
 BraceWrapping:
   AfterClass: true

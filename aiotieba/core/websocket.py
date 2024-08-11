@@ -4,9 +4,11 @@ import asyncio
 import binascii
 import dataclasses as dcs
 import gzip
+import random
 import time
 import weakref
-from typing import Awaitable, Callable
+from collections.abc import Awaitable
+from typing import Callable
 
 import aiohttp
 import yarl
@@ -15,7 +17,7 @@ from cryptography.hazmat.primitives.ciphers import algorithms
 
 from ..enums import WsStatus
 from ..exception import HTTPStatusError
-from ..helper import randbytes_nosec, timeout
+from ..helper import timeout
 from .account import Account
 from .net import NetCore
 
@@ -306,7 +308,7 @@ class WsCore:
         from aiohttp import hdrs
 
         ws_url = yarl.URL.build(scheme="ws", host="im.tieba.baidu.com", port=8000)
-        sec_key_bytes = binascii.b2a_base64(randbytes_nosec(16), newline=False)
+        sec_key_bytes = binascii.b2a_base64(random.randbytes(16), newline=False)
         headers = {
             hdrs.UPGRADE: "websocket",
             hdrs.CONNECTION: "upgrade",

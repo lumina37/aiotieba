@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from typing import Mapping
+from collections.abc import Mapping
 
 
 @dcs.dataclass

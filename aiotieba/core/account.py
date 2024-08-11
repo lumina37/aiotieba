@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import random
+
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
-from ..helper import randbytes_nosec
 from ..helper.crypto import c3_aid, cuid_galaxy2
 
 
@@ -180,7 +181,7 @@ class Account:
         """
 
         if self._android_id is None:
-            self._android_id = randbytes_nosec(8).hex()
+            self._android_id = random.randbytes(8).hex()
         return self._android_id
 
     @android_id.setter
@@ -380,7 +381,7 @@ class Account:
         """
 
         if self._aes_ecb_sec_key is None:
-            self._aes_ecb_sec_key = randbytes_nosec(31)
+            self._aes_ecb_sec_key = random.randbytes(31)
         return self._aes_ecb_sec_key
 
     @aes_ecb_sec_key.setter
@@ -417,7 +418,7 @@ class Account:
         """
 
         if self._aes_cbc_sec_key is None:
-            self._aes_cbc_sec_key = randbytes_nosec(16)
+            self._aes_cbc_sec_key = random.randbytes(16)
         return self._aes_cbc_sec_key
 
     @aes_ecb_sec_key.setter

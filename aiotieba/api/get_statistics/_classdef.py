@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from typing import Sequence
+from collections.abc import Sequence
 
 
 @dcs.dataclass

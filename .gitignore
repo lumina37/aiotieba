@@ -1,12 +1,12 @@
-.venv/
-.vscode/
+.*/
+!.github/
 *_cache/
 *.py[cd]
 __pycache__
 
 log/
 dist/
-build/
+*build*/
 
 .python-version
 *.lock

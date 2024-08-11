@@ -1,17 +1,16 @@
 from __future__ import annotations
 
 import dataclasses as dcs
+from collections.abc import Mapping
 from functools import cached_property
-from typing import Mapping
 
 from ...enums import Gender
 from ...exception import TbErrorExt
-from ...helper import removesuffix
 
 
 def _tbnum2int(tb_num: str) -> int:
     if isinstance(tb_num, str):
-        return int(float(removesuffix(tb_num, '万')) * 1e4)
+        return int(float(tb_num.removesuffix('万')) * 1e4)
     else:
         return tb_num
 

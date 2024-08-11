@@ -5,7 +5,6 @@ from functools import cached_property
 
 from ...enums import Gender, PrivLike, PrivReply
 from ...exception import TbErrorExt
-from ...helper import removeprefix
 from .._classdef import Containers, TypeMessage
 from .._classdef.contents import (
     _IMAGEHASH_EXP,
@@ -277,7 +276,7 @@ class Comment:
                 contents.texts = contents.texts[2:]
                 if contents.texts:
                     first_text_frag = contents.texts[0]
-                    first_text_frag.text = removeprefix(first_text_frag.text, ' :')
+                    first_text_frag.text = first_text_frag.text.removeprefix(' :')
 
         pid = data_proto.id
         user = UserInfo_c.from_tbdata(data_proto.author)
