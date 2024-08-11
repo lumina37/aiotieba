@@ -6,7 +6,7 @@ from datetime import datetime
 import bs4
 
 from ...exception import TbErrorExt
-from ...helper import default_datetime, removeprefix
+from ...helper import default_datetime
 from .._classdef import Containers
 from .._classdef.contents import _IMAGEHASH_EXP
 
@@ -101,7 +101,7 @@ class Postlog:
             pid = 0
             text = f"{title}\n{text}"
         else:
-            title = removeprefix(title, '回复：')
+            title = title.removeprefix('回复：')
 
         if media_list_item := text_item.next_sibling:
             medias = [Media_postlog.from_tbdata(tag) for tag in media_list_item.find_all('a')]

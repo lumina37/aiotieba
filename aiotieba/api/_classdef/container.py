@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from typing import Generic, Iterator, SupportsIndex, TypeVar, overload
+from collections.abc import Iterator
+from typing import Generic, SupportsIndex, TypeVar, overload
 
 TypeContainer = TypeVar('TypeContainer')
 

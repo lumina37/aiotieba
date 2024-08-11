@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import dataclasses as dcs
+from collections.abc import Mapping
 from functools import cached_property
-from typing import Mapping
 
 from ...enums import Gender
 
