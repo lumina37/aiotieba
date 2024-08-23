@@ -1,6 +1,6 @@
 [project]
 name = "aiotieba"
-version = "4.4.9a0"
+version = "4.4.9a1"
 description = "Asynchronous I/O Client for Baidu Tieba"
 authors = [{ name = "Starry-OvO", email = "starry.qvq@gmail.com" }]
 urls = { Repository = "https://github.com/Starry-OvO/aiotieba/", Documentation = "https://aiotieba.cc/" }
@@ -29,7 +29,7 @@ dependencies = [
   "lxml>=4.6.4,<6;python_version=='3.10'",
   "lxml>=4.9.2,<6;python_version=='3.11'",
   "lxml>=4.9.3,<6;python_version>='3.12'",
-  "protobuf>=4.21.0,<6",
+  "protobuf>=5.27.0,<6",
   "cryptography>=35.0.0,<41;python_version>='3.9' and python_version<'3.12'",
   "cryptography>=35.0.0,<44;python_version>='3.12'",
   "cffi>=1.17.0rc1,<2;python_version>='3.13rc1'",

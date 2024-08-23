@@ -2,8 +2,13 @@
 
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import descriptor_pool as _descriptor_pool
+from google.protobuf import runtime_version as _runtime_version
 from google.protobuf import symbol_database as _symbol_database
 from google.protobuf.internal import builder as _builder
+
+_runtime_version.ValidateProtobufRuntimeVersion(
+    _runtime_version.Domain.PUBLIC, 5, 27, 0, '', 'SetUserBlackReqIdl.proto'
+)
 
 _sym_db = _symbol_database.Default()
 
@@ -17,8 +22,8 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'SetUserBlackReqIdl_pb2', _globals)
-if _descriptor._USE_C_DESCRIPTORS is False:
-    DESCRIPTOR._options = None
+if not _descriptor._USE_C_DESCRIPTORS:
+    DESCRIPTOR._loaded_options = None
     _globals['_SETUSERBLACKREQIDL']._serialized_start = 46
     _globals['_SETUSERBLACKREQIDL']._serialized_end = 297
     _globals['_SETUSERBLACKREQIDL_DATAREQ']._serialized_start = 112
