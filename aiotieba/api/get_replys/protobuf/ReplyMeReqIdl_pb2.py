@@ -17,8 +17,8 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'ReplyMeReqIdl_pb2', _globals)
-if _descriptor._USE_C_DESCRIPTORS is False:
-    DESCRIPTOR._options = None
+if not _descriptor._USE_C_DESCRIPTORS:
+    DESCRIPTOR._loaded_options = None
     _globals['_REPLYMEREQIDL']._serialized_start = 40
     _globals['_REPLYMEREQIDL']._serialized_end = 144
     _globals['_REPLYMEREQIDL_DATAREQ']._serialized_start = 95

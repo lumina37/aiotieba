@@ -10,7 +10,7 @@ import asyncio
 import aiotieba as tb
 
 
-async def sign(BDUSS_key: str, *, retry_times: int = 0) -> None:
+async def sign(BDUSS_key: str, *, retry_times: int = 0):
     """
     各种签到
 
@@ -38,11 +38,12 @@ async def sign(BDUSS_key: str, *, retry_times: int = 0) -> None:
         # 互关任务
         for _ in range(retry_times):
             await asyncio.sleep(1.0)
+            someone = 'tb.1.2fc1394a.ukuFqA26BTuAeXqYr1Nmwg'
             success = False
-            success = await client.unfollow_user('tb.1.2fc1394a.ukuFqA26BTuAeXqYr1Nmwg')
+            success = await client.unfollow_user(someone)
             if not success:
                 continue
-            success = await client.follow_user('tb.1.2fc1394a.ukuFqA26BTuAeXqYr1Nmwg')
+            success = await client.follow_user(someone)
             if not success:
                 continue
             if success:
@@ -66,9 +67,9 @@ async def sign(BDUSS_key: str, *, retry_times: int = 0) -> None:
             retry_list = new_retry_list
 
 
-async def main() -> None:
-    await sign("在此处输入你的BDUSS", retry_times=3)
-    await sign("在此处输入你的BDUSS", retry_times=3)
+async def main():
+    await sign("在此处输入待签到账号的BDUSS", retry_times=3)
+    await sign("在此处输入另一个待签到账号的BDUSS", retry_times=3)
 
 
 asyncio.run(main())
@@ -82,7 +83,7 @@ import asyncio
 import aiotieba as tb
 
 
-async def main() -> None:
+async def main():
     async with tb.Client("在此处输入你的BDUSS") as client:
         # 海象运算符(:=)会在创建threads变量并赋值的同时返回该值，方便while语句检查其是否为空
         # 更多信息请搜索“Python海象运算符”
@@ -101,7 +102,7 @@ import asyncio
 import aiotieba as tb
 
 
-async def main() -> None:
+async def main():
     async with tb.Client("在此处输入你的BDUSS") as client:
         await asyncio.gather(
             *[
@@ -126,7 +127,7 @@ import asyncio
 import aiotieba as tb
 
 
-async def main() -> None:
+async def main():
     async with tb.Client("在此处输入你的BDUSS") as client:
         # 此列表用于设置例外
         # 将你希望依然保持屏蔽的贴吧名填在这个列表里
@@ -172,7 +173,7 @@ import asyncio
 import aiotieba as tb
 
 
-async def main() -> None:
+async def main():
     async with tb.Client("在此处输入你的BDUSS") as client:
         while fans := await client.get_fans():
             await asyncio.gather(*[client.remove_fan(fan.user_id) for fan in fans])
@@ -189,7 +190,7 @@ import asyncio
 import aiotieba as tb
 
 
-async def main() -> None:
+async def main():
     async with tb.Client("在此处输入你的BDUSS") as client:
         while posts_list := await client.get_user_posts():
             await asyncio.gather(*[client.del_post(post.fid, post.tid, post.pid) for posts in posts_list for post in posts])

@@ -19,8 +19,8 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'SubPostList_pb2', _globals)
-if _descriptor._USE_C_DESCRIPTORS is False:
-    DESCRIPTOR._options = None
+if not _descriptor._USE_C_DESCRIPTORS:
+    DESCRIPTOR._loaded_options = None
     _globals['_SUBPOSTLIST']._serialized_start = 64
     _globals['_SUBPOSTLIST']._serialized_end = 227
     _globals['_SUBPOST']._serialized_start = 229

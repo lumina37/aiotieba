@@ -18,8 +18,8 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'GetUserInfoResIdl_pb2', _globals)
-if _descriptor._USE_C_DESCRIPTORS is False:
-    DESCRIPTOR._options = None
+if not _descriptor._USE_C_DESCRIPTORS:
+    DESCRIPTOR._loaded_options = None
     _globals['_GETUSERINFORESIDL']._serialized_start = 52
     _globals['_GETUSERINFORESIDL']._serialized_end = 168
     _globals['_GETUSERINFORESIDL_DATARES']._serialized_start = 138

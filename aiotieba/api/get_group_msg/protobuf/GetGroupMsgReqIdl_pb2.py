@@ -15,8 +15,8 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'GetGroupMsgReqIdl_pb2', _globals)
-if _descriptor._USE_C_DESCRIPTORS is False:
-    DESCRIPTOR._options = None
+if not _descriptor._USE_C_DESCRIPTORS:
+    DESCRIPTOR._loaded_options = None
     _globals['_GETGROUPMSGREQIDL']._serialized_start = 28
     _globals['_GETGROUPMSGREQIDL']._serialized_end = 242
     _globals['_GETGROUPMSGREQIDL_DATAREQ']._serialized_start = 106

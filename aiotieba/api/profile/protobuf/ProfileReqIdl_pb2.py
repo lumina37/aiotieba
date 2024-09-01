@@ -17,8 +17,8 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'ProfileReqIdl_pb2', _globals)
-if _descriptor._USE_C_DESCRIPTORS is False:
-    DESCRIPTOR._options = None
+if not _descriptor._USE_C_DESCRIPTORS:
+    DESCRIPTOR._loaded_options = None
     _globals['_PROFILEREQIDL']._serialized_start = 41
     _globals['_PROFILEREQIDL']._serialized_end = 227
     _globals['_PROFILEREQIDL_DATAREQ']._serialized_start = 97

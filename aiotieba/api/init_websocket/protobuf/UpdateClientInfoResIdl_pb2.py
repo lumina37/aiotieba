@@ -17,8 +17,8 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'UpdateClientInfoResIdl_pb2', _globals)
-if _descriptor._USE_C_DESCRIPTORS is False:
-    DESCRIPTOR._options = None
+if not _descriptor._USE_C_DESCRIPTORS:
+    DESCRIPTOR._loaded_options = None
     _globals['_UPDATECLIENTINFORESIDL']._serialized_start = 46
     _globals['_UPDATECLIENTINFORESIDL']._serialized_end = 282
     _globals['_UPDATECLIENTINFORESIDL_DATARES']._serialized_start = 143

@@ -259,7 +259,7 @@ class Client:
         for group in groups:
             if group.group_type == GroupType.PRIVATE_MSG:
                 mid_manager.priv_gid = group.group_id
-        mid_manager.gid2mid = {g.group_id: MsgIDPair(g.last_msg_id, g.last_msg_id) for g in groups}
+        mid_manager.gid2mid |= {g.group_id: MsgIDPair(g.last_msg_id, g.last_msg_id) for g in groups}
 
         self._ws_core._status = WsStatus.OPEN
 

@@ -101,8 +101,8 @@ class MsgIDPair:
     长度为2的msg_id队列 记录新旧msg_id
     """
 
-    last_id: int
-    curr_id: int
+    last_id: int = 0
+    curr_id: int = 0
 
     def update_msg_id(self, curr_id: int) -> None:
         """
@@ -122,8 +122,8 @@ class MsgIDManager:
     msg_id管理器
     """
 
-    priv_gid: int | None = None
-    gid2mid: dict[int, MsgIDPair] | None = None
+    priv_gid: int = 0
+    gid2mid: dict[int, MsgIDPair] = dcs.field(default_factory=lambda: {0: MsgIDPair()})
 
     def update_msg_id(self, group_id: int, msg_id: int) -> None:
         """
