@@ -2,8 +2,8 @@
 name = "aiotieba"
 version = "4.4.9"
 description = "Asynchronous I/O Client for Baidu Tieba"
-authors = [{ name = "Starry-OvO", email = "starry.qvq@gmail.com" }]
-urls = { Repository = "https://github.com/Starry-OvO/aiotieba/", Documentation = "https://aiotieba.cc/" }
+authors = [{ name = "lumina37", email = "starry.qvq@gmail.com" }]
+urls = { Repository = "https://github.com/lumina37/aiotieba/", Documentation = "https://aiotieba.cc/" }
 readme = "README.md"
 keywords = ["baidu", "tieba"]
 classifiers = [

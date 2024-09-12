@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-<a href="https://github.com/Starry-OvO/aiotieba/actions">
-    <img src="https://img.shields.io/github/actions/workflow/status/Starry-OvO/aiotieba/CI.yml?branch=develop&label=CI&logo=github&style=flat-square" alt="GitHub Workflow Status">
+<a href="https://github.com/lumina37/aiotieba/actions">
+    <img src="https://img.shields.io/github/actions/workflow/status/lumina37/aiotieba/CI.yml?branch=develop&label=CI&logo=github&style=flat-square" alt="GitHub Workflow Status">
 </a>
 <a href="https://pypi.org/project/aiotieba">
     <img src="https://img.shields.io/pypi/v/aiotieba?color=g&style=flat-square" alt="PyPI - Version">
@@ -66,7 +66,7 @@ tid=8537699088 text=记录一下自己人生第一次当“老师”的经历^_^
 
 ## 项目特色
 
-+ 收录[**数十个常用API**](https://github.com/Starry-OvO/aiotieba/tree/develop/aiotieba/api)
++ 收录[**数十个常用API**](https://github.com/lumina37/aiotieba/tree/develop/aiotieba/api)
 + 类型注解全覆盖，方法注释全覆盖，类属性注释全覆盖，内部命名统一
 + 请求参数支持protobuf序列化
 + 支持websocket接口

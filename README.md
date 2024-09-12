@@ -6,8 +6,8 @@
 
 <div align="center">
 <p>
-<a href="https://github.com/Starry-OvO/aiotieba/actions">
-    <img src="https://img.shields.io/github/actions/workflow/status/Starry-OvO/aiotieba/CI.yml?branch=develop&label=CI&logo=github&style=flat-square" alt="GitHub Workflow Status">
+<a href="https://github.com/lumina37/aiotieba/actions">
+    <img src="https://img.shields.io/github/actions/workflow/status/lumina37/aiotieba/CI.yml?branch=develop&label=CI&logo=github&style=flat-square" alt="GitHub Workflow Status">
 </a>
 <a href="https://pypi.org/project/aiotieba">
     <img src="https://img.shields.io/pypi/v/aiotieba?color=g&style=flat-square" alt="PyPI - Version">
@@ -64,7 +64,7 @@ tid=8537699088 text=记录一下自己人生第一次当“老师”的经历^_^
 
 ## 项目特色
 
-+ 收录[**数十个常用API**](https://github.com/Starry-OvO/aiotieba/tree/develop/aiotieba/api)
++ 收录[**数十个常用API**](https://github.com/lumina37/aiotieba/tree/develop/aiotieba/api)
 + 类型注解全覆盖，方法注释全覆盖，内部命名统一
 + 支持protobuf序列化请求参数
 + 支持websocket接口
@@ -73,7 +73,7 @@ tid=8537699088 text=记录一下自己人生第一次当“老师”的经历^_^
 ## 友情链接
 
 + [TiebaManager（吧务管理器 有用户界面）](https://github.com/dog194/TiebaManager)
-+ [基于aiotieba的高弹性吧务审查框架](https://github.com/Starry-OvO/aiotieba-reviewer)
++ [基于aiotieba的高弹性吧务审查框架](https://github.com/lumina37/aiotieba-reviewer)
 + [贴吧protobuf定义文件合集（更新至12.51.7.1）](https://github.com/n0099/tbclient.protobuf)
 + [TiebaLite 第三方安卓客户端（已停更）](https://github.com/HuanCheng65/TiebaLite/tree/4.0-dev)
 
