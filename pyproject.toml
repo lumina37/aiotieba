@@ -122,3 +122,4 @@ addopts = "-q"
 testpaths = ["tests"]
 required_plugins = "pytest-asyncio pytest-rerunfailures"
 asyncio_mode = "strict"
+asyncio_default_fixture_loop_scope="function"

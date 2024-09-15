@@ -4,7 +4,7 @@ import aiotieba as tb
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=5.0)
-@pytest.mark.asyncio(scope="session")
+@pytest.mark.asyncio(loop_scope="session")
 async def test_Fans(client: tb.Client):
     fans = await client.get_fans(957339815)
 

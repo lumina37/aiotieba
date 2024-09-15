@@ -4,7 +4,7 @@ import aiotieba as tb
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=5.0)
-@pytest.mark.asyncio(scope="session")
+@pytest.mark.asyncio(loop_scope="session")
 async def test_get_user_info(client: tb.Client):
     self_info = await client.get_self_info(tb.ReqUInfo.BASIC)
     assert self_info.user_id > 0

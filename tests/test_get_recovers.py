@@ -4,7 +4,7 @@ import aiotieba as tb
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=5.0)
-@pytest.mark.asyncio(scope="session")
+@pytest.mark.asyncio(loop_scope="session")
 async def test_Recovers(client: tb.Client):
     recovers = await client.get_recovers(21841105)
 
