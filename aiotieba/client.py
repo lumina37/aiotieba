@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import logging
 import socket
 from typing import TYPE_CHECKING, Literal
@@ -154,14 +153,16 @@ class Client:
         try_ws (bool, optional): 尝试使用websocket接口. Defaults to False.
         proxy (bool | ProxyConfig, optional): True则使用环境变量代理 False则禁用代理 输入ProxyConfig实例以手动配置代理. Defaults to False.
         timeout (TimeoutConfig, optional): 超时配置. Defaults to None.
-        loop (asyncio.AbstractEventLoop, optional): 事件循环. Defaults to None.
     """
 
     __slots__ = [
+        '_account',
+        '_timeout',
+        '_proxy',
+        '_try_ws',
         '_connector',
         '_http_core',
         '_ws_core',
-        '_try_ws',
         '_user',
     ]
 
@@ -174,41 +175,39 @@ class Client:
         try_ws: bool = False,
         proxy: bool | ProxyConfig = False,
         timeout: TimeoutConfig | None = None,
-        loop: asyncio.AbstractEventLoop | None = None,
     ) -> None:
-        if loop is None:
-            loop = asyncio.get_running_loop()
+        if not isinstance(account, Account):
+            account = Account(BDUSS, STOKEN)
+        self._account = account
 
         if not isinstance(timeout, TimeoutConfig):
             timeout = TimeoutConfig()
-
-        connector = aiohttp.TCPConnector(
-            ttl_dns_cache=timeout.dns_ttl,
-            family=socket.AF_INET,
-            keepalive_timeout=timeout.http_keepalive,
-            limit=0,
-            ssl=False,
-            loop=loop,
-        )
-        self._connector = connector
+        self._timeout = timeout
 
         if proxy is True:
             proxy = ProxyConfig.from_env()
         elif not proxy:
             proxy = ProxyConfig()
-
-        if not isinstance(account, Account):
-            account = Account(BDUSS, STOKEN)
-
-        net_core = NetCore(connector, proxy, timeout)
-        self._http_core = HttpCore(account, net_core, loop)
-        self._ws_core = WsCore(account, net_core, loop)
+        self._proxy = proxy
 
         self._try_ws = try_ws
 
         self._user = UserInfo()
 
     async def __aenter__(self) -> Client:
+        connector = aiohttp.TCPConnector(
+            ttl_dns_cache=self._timeout.dns_ttl,
+            family=socket.AF_INET,
+            keepalive_timeout=self._timeout.http_keepalive,
+            limit=0,
+            ssl=False,
+        )
+        self._connector = connector
+
+        net_core = NetCore(connector, self._proxy, self._timeout)
+        self._http_core = HttpCore(self._account, net_core)
+        self._ws_core = WsCore(self._account, net_core)
+
         return self
 
     async def __aexit__(self, exc_type=None, exc_val=None, exc_tb=None) -> None:
