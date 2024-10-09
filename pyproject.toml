@@ -22,17 +22,18 @@ classifiers = [
 requires-python = ">=3.9,<3.14"
 dependencies = [
   "aiohttp>=3.10.0,<4;python_version>='3.9' and python_version<'3.12'",
-  "aiohttp>=3.10.0,<4;python_version>='3.12'",
+  "aiohttp>=3.10.0,<4;python_version=='3.12'",
+  "aiohttp>=3.10.5,<4;python_version>='3.13'",
   "beautifulsoup4>=4.5.2,<5;python_version=='3.9'",
   "beautifulsoup4>=4.7.1,<5;python_version>='3.10'",
   "lxml>=4.6.0,<6;python_version=='3.9'",
   "lxml>=4.6.4,<6;python_version=='3.10'",
   "lxml>=4.9.2,<6;python_version=='3.11'",
-  "lxml>=4.9.3,<6;python_version>='3.12'",
+  "lxml>=4.9.3,<6;python_version=='3.12'",
+  "lxml>=5.3.0,<6;python_version>='3.13'",
   "protobuf>=4.21.1,<6",
   "cryptography>=35.0.0,<41;python_version>='3.9' and python_version<'3.12'",
   "cryptography>=35.0.0,<44;python_version>='3.12'",
-  "cffi>=1.17.0rc1,<2;python_version>='3.13rc1'",
   "async-timeout>=4.0,<5;python_version<'3.11'",
   "StrEnum>=0.4.0,<0.5;python_version<'3.11'",
 ]
@@ -46,11 +47,13 @@ speedup = [
   "orjson>=2.2.0,<4;python_version=='3.9'",
   "orjson>=3.4.7,<4;python_version=='3.10'",
   "orjson>=3.7.10,<4;python_version=='3.11'",
-  "orjson>=3.9.10,<4;python_version>='3.12'",
+  "orjson>=3.9.10,<4;python_version=='3.12'",
+  "orjson>=3.10.7,<4;python_version>='3.13'",
   "uvloop>=0.15.0,<1.0;python_version=='3.9' and sys_platform!='win32'",
   "uvloop>=0.16.0,<1.0;python_version=='3.10' and sys_platform!='win32'",
   "uvloop>=0.17.0,<1.0;python_version=='3.11' and sys_platform!='win32'",
-  "uvloop>=0.18.0,<1.0;python_version>='3.12' and sys_platform!='win32'",
+  "uvloop>=0.18.0,<1.0;python_version=='3.12' and sys_platform!='win32'",
+  "uvloop>=0.21.0b1,<1.0;python_version>='3.13' and sys_platform!='win32'",
 ]
 
 [build-system]
