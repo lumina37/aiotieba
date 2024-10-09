@@ -19,24 +19,21 @@ jobs:
         with:
           ref: develop
 
-      - name: Setup Python${{ env.PYTHON_VERSION }}
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Setup UV
-        uses: yezz123/setup-uv@v4
+        uses: astral-sh/setup-uv@v3
 
       - name: Install dependencies
         run: |
-          uv venv
-          uv pip install .
-          uv pip install pytest pytest-asyncio pytest-rerunfailures
+          uv sync
 
       - name: Run tests
         env:
           TB_BDUSS: ${{ secrets.BDUSS }}
           TB_STOKEN: ${{ secrets.STOKEN }}
         run: |
-          source .venv/bin/activate
-          pytest
+          uv run pytest
