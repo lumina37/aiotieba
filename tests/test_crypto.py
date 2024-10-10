@@ -4,7 +4,7 @@ import aiotieba as tb
 from aiotieba.helper.crypto import _sign, rc4_42
 
 
-@pytest.mark.asyncio(scope="session")
+@pytest.mark.asyncio(loop_scope="session")
 async def test_clib(client: tb.Client):
     # await client._Client__init_z_id()
     # assert client.account.z_id != ''

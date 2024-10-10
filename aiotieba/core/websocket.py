@@ -173,19 +173,18 @@ class WsResponse:
         future (asyncio.Future): 用于等待读事件到来的Future
         req_id (int): 请求id
         read_timeout (float): 读超时时间
-        loop (asyncio.AbstractEventLoop): 事件循环
     """
 
+    loop: asyncio.AbstractEventLoop
     future: asyncio.Future
     req_id: int
     read_timeout: float
-    loop: asyncio.AbstractEventLoop
 
-    def __init__(self, req_id: int, read_timeout: float, loop: asyncio.AbstractEventLoop) -> None:
-        self.future = loop.create_future()
+    def __init__(self, req_id: int, read_timeout: float) -> None:
+        self.loop = asyncio.get_running_loop()
+        self.future = self.loop.create_future()
         self.req_id = req_id
         self.read_timeout = read_timeout
-        self.loop = loop
 
     async def read(self) -> bytes:
         """
@@ -215,16 +214,16 @@ class WsWaiter:
     websocket等待映射
     """
 
+    loop: asyncio.AbstractEventLoop
     waiter: weakref.WeakValueDictionary
     req_id: int
     read_timeout: float
-    loop: asyncio.AbstractEventLoop
 
-    def __init__(self, read_timeout: float, loop: asyncio.AbstractEventLoop) -> None:
+    def __init__(self, read_timeout: float) -> None:
+        self.loop = asyncio.get_running_loop()
         self.waiter = weakref.WeakValueDictionary()
         self.req_id = int(time.time())
         self.read_timeout = read_timeout
-        self.loop = loop
         weakref.finalize(self, self.__cancel_all)
 
     def __cancel_all(self) -> None:
@@ -243,7 +242,7 @@ class WsWaiter:
         """
 
         self.req_id += 1
-        ws_resp = WsResponse(self.req_id, self.read_timeout, self.loop)
+        ws_resp = WsResponse(self.req_id, self.read_timeout)
         self.waiter[self.req_id] = ws_resp
         return ws_resp
 
@@ -278,16 +277,17 @@ class WsCore:
     _status: WsStatus
     loop: asyncio.AbstractEventLoop
 
-    def __init__(self, account: Account, net_core: NetCore, loop: asyncio.AbstractEventLoop) -> None:
+    def __init__(self, account: Account, net_core: NetCore) -> None:
         self.set_account(account)
         self.net_core = net_core
-        self.loop = loop
 
         self.callbacks: dict[int, TypeWebsocketCallback] = {}
         self.websocket: aiohttp.ClientWebSocketResponse = None
         self.ws_dispatcher: asyncio.Task = None
 
         self._status = WsStatus.CLOSED
+
+        self.loop = asyncio.get_running_loop()
 
     def set_account(self, new_account: Account) -> None:
         self.account = new_account
@@ -302,7 +302,7 @@ class WsCore:
 
         self._status = WsStatus.CONNECTING
 
-        self.waiter = WsWaiter(self.net_core.timeout.ws_read, self.loop)
+        self.waiter = WsWaiter(self.net_core.timeout.ws_read)
         self.mid_manager = MsgIDManager()
 
         from aiohttp import hdrs
@@ -322,7 +322,6 @@ class WsCore:
             hdrs.METH_GET,
             ws_url,
             headers=headers,
-            loop=self.loop,
             proxy=self.net_core.proxy.url,
             proxy_auth=self.net_core.proxy.auth,
             ssl=False,

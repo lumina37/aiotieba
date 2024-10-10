@@ -11,7 +11,7 @@ jobs:
     environment: develop
 
     env:
-      PYTHON_VERSION: "3.13-dev"
+      PYTHON_VERSION: "3.13"
 
     steps:
       - name: Checkout develop
@@ -19,26 +19,21 @@ jobs:
         with:
           ref: develop
 
-      - name: Setup Python${{ env.PYTHON_VERSION }}
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Setup UV
-        uses: yezz123/setup-uv@v4
+        uses: astral-sh/setup-uv@v3
 
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libxml2-dev libxslt1-dev
-          uv venv
-          uv pip install .
-          uv pip install pytest pytest-asyncio pytest-rerunfailures
+          uv sync
 
       - name: Run tests
         env:
           TB_BDUSS: ${{ secrets.BDUSS }}
           TB_STOKEN: ${{ secrets.STOKEN }}
         run: |
-          source .venv/bin/activate
-          pytest
+          uv run pytest

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import dataclasses as dcs
 import urllib.parse
 from http.cookies import Morsel
@@ -40,11 +39,9 @@ class HttpCore:
     app: HttpContainer
     app_proto: HttpContainer
     web: HttpContainer
-    loop: asyncio.AbstractEventLoop
 
-    def __init__(self, account: Account, net_core: NetCore, loop: asyncio.AbstractEventLoop | None = None) -> None:
+    def __init__(self, account: Account, net_core: NetCore) -> None:
         self.net_core = net_core
-        self.loop = loop
 
         from aiohttp import hdrs
 
@@ -54,7 +51,7 @@ class HttpCore:
             hdrs.CONNECTION: "keep-alive",
             hdrs.HOST: APP_BASE_HOST,
         }
-        self.app = HttpContainer(app_headers, aiohttp.DummyCookieJar(loop=loop))
+        self.app = HttpContainer(app_headers, aiohttp.DummyCookieJar())
 
         app_proto_headers = {
             hdrs.USER_AGENT: f"aiotieba/{__version__}",
@@ -63,7 +60,7 @@ class HttpCore:
             hdrs.CONNECTION: "keep-alive",
             hdrs.HOST: APP_BASE_HOST,
         }
-        self.app_proto = HttpContainer(app_proto_headers, aiohttp.DummyCookieJar(loop=loop))
+        self.app_proto = HttpContainer(app_proto_headers, aiohttp.DummyCookieJar())
 
         web_headers = {
             hdrs.USER_AGENT: f"aiotieba/{__version__}",
@@ -71,7 +68,7 @@ class HttpCore:
             hdrs.CACHE_CONTROL: "no-cache",
             hdrs.CONNECTION: "keep-alive",
         }
-        self.web = HttpContainer(web_headers, aiohttp.CookieJar(loop=loop))
+        self.web = HttpContainer(web_headers, aiohttp.CookieJar())
 
         self.set_account(account)
 
@@ -110,7 +107,6 @@ class HttpCore:
             url,
             headers=self.app.headers,
             data=payload,
-            loop=self.loop,
             proxy=self.net_core.proxy.url,
             proxy_auth=self.net_core.proxy.auth,
             ssl=False,
@@ -145,7 +141,6 @@ class HttpCore:
             url,
             headers=self.app_proto.headers,
             data=writer,
-            loop=self.loop,
             proxy=self.net_core.proxy.url,
             proxy_auth=self.net_core.proxy.auth,
             ssl=False,
@@ -171,7 +166,6 @@ class HttpCore:
             url,
             headers=self.web.headers,
             cookies=self.web.cookie_jar.filter_cookies(url),
-            loop=self.loop,
             proxy=self.net_core.proxy.url,
             proxy_auth=self.net_core.proxy.auth,
             ssl=False,
@@ -202,7 +196,6 @@ class HttpCore:
             headers=self.web.headers,
             data=payload,
             cookies=self.web.cookie_jar.filter_cookies(url),
-            loop=self.loop,
             proxy=self.net_core.proxy.url,
             proxy_auth=self.net_core.proxy.auth,
             ssl=False,
