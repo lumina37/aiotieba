@@ -60,10 +60,8 @@ speedup = [
 requires = ["scikit-build-core<0.11,>=0.8"]
 build-backend = "scikit_build_core.build"
 
-[tool.rye]
-managed = true
-
 [tool.uv]
+managed = true
 dev-dependencies = [
   "aiotieba[speedup]",
   "pytest==8.3.3",
