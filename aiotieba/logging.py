@@ -7,7 +7,6 @@ logging.addLevelName(logging.FATAL, "FATAL")
 logging.addLevelName(logging.WARN, "WARN")
 
 logging.raiseExceptions = False
-logging.Formatter.default_msec_format = '%s.%03d'
 
 _FORMATTER = logging.Formatter("<{asctime}> [{levelname}] [{funcName}] {message}", style='{')
 
