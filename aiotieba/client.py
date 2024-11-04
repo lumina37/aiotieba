@@ -201,6 +201,7 @@ class Client:
             keepalive_timeout=self._timeout.http_keepalive,
             limit=0,
             ssl=False,
+            happy_eyeballs_delay=None,
         )
         self._connector = connector
 
