@@ -8,7 +8,7 @@ logging.addLevelName(logging.WARN, "WARN")
 
 logging.raiseExceptions = False
 
-_FORMATTER = logging.Formatter("<{asctime}> [{levelname}] [{funcName}] {message}", style='{')
+_FORMATTER = logging.Formatter("<{asctime}> [{levelname}] [{funcName}] {message}", "%Y-%m-%d %H:%M:%S", style='{')
 
 
 class TiebaLogger(logging.Logger):
