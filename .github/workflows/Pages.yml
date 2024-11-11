@@ -23,15 +23,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: develop
 
-      - name: Setup Rye
-        uses: eifinger/setup-rye@v4
+      - name: Setup UV
+        uses: astral-sh/setup-uv@v3
 
       - name: Install dependencies
-        run: rye sync -q
+        run: uv sync --only-dev
 
       - name: Build
-        run: rye run mkdocs build -d site -s
+        run: uv run mkdocs build -d site -s
 
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3

@@ -201,6 +201,7 @@ class Client:
             keepalive_timeout=self._timeout.http_keepalive,
             limit=0,
             ssl=False,
+            happy_eyeballs_delay=None,
         )
         self._connector = connector
 
@@ -415,7 +416,7 @@ class Client:
         /,
         pn: int = 1,
         *,
-        rn: int = 30,
+        rn: int = 13,
         sort: ThreadSortType = ThreadSortType.REPLY,
         is_good: bool = False,
     ) -> get_threads.Threads:
@@ -425,7 +426,7 @@ class Client:
         Args:
             fname_or_fid (str | int): 贴吧名或fid 优先贴吧名
             pn (int, optional): 页码. Defaults to 1.
-            rn (int, optional): 请求的条目数. Defaults to 30. Max to 100.
+            rn (int, optional): 请求的条目数. Defaults to 13. Max to 13.
             sort (ThreadSortType, optional): HOT热门排序 REPLY按回复时间 CREATE按发布时间 FOLLOW关注的人. Defaults to ThreadSortType.REPLY.
             is_good (bool, optional): True则获取精品区帖子 False则获取普通区帖子. Defaults to False.
 
