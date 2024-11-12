@@ -67,6 +67,7 @@ class HttpCore:
             hdrs.ACCEPT_ENCODING: "gzip, deflate",
             hdrs.CACHE_CONTROL: "no-cache",
             hdrs.CONNECTION: "keep-alive",
+            hdrs.REFERER: "tieba.baidu.com",
         }
         self.web = HttpContainer(web_headers, aiohttp.CookieJar())
 
