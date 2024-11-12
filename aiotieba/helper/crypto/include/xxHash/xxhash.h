@@ -1,7 +1,7 @@
 /*
  * xxHash - Extremely Fast Hash algorithm
  * Header File
- * Copyright (C) 2012-2021 Yann Collet
+ * Copyright (C) 2012-2023 Yann Collet
  *
  * BSD 2-Clause License (https://www.opensource.org/licenses/bsd-license.php)
  *
@@ -130,6 +130,7 @@
  *   }
  * @endcode
  *
+ *
  * @anchor streaming_example
  * **Streaming**
  *
@@ -164,6 +165,77 @@
  *       return result;
  *   }
  * @endcode
+ *
+ * Streaming functions generate the xxHash value from an incremental input.
+ * This method is slower than single-call functions, due to state management.
+ * For small inputs, prefer `XXH32()` and `XXH64()`, which are better optimized.
+ *
+ * An XXH state must first be allocated using `XXH*_createState()`.
+ *
+ * Start a new hash by initializing the state with a seed using `XXH*_reset()`.
+ *
+ * Then, feed the hash state by calling `XXH*_update()` as many times as necessary.
+ *
+ * The function returns an error code, with 0 meaning OK, and any other value
+ * meaning there is an error.
+ *
+ * Finally, a hash value can be produced anytime, by using `XXH*_digest()`.
+ * This function returns the nn-bits hash as an int or long long.
+ *
+ * It's still possible to continue inserting input into the hash state after a
+ * digest, and generate new hash values later on by invoking `XXH*_digest()`.
+ *
+ * When done, release the state using `XXH*_freeState()`.
+ *
+ *
+ * @anchor canonical_representation_example
+ * **Canonical Representation**
+ *
+ * The default return values from XXH functions are unsigned 32, 64 and 128 bit
+ * integers.
+ * This the simplest and fastest format for further post-processing.
+ *
+ * However, this leaves open the question of what is the order on the byte level,
+ * since little and big endian conventions will store the same number differently.
+ *
+ * The canonical representation settles this issue by mandating big-endian
+ * convention, the same convention as human-readable numbers (large digits first).
+ *
+ * When writing hash values to storage, sending them over a network, or printing
+ * them, it's highly recommended to use the canonical representation to ensure
+ * portability across a wider range of systems, present and future.
+ *
+ * The following functions allow transformation of hash values to and from
+ * canonical format.
+ *
+ * XXH32_canonicalFromHash(), XXH32_hashFromCanonical(),
+ * XXH64_canonicalFromHash(), XXH64_hashFromCanonical(),
+ * XXH128_canonicalFromHash(), XXH128_hashFromCanonical(),
+ *
+ * @code{.c}
+ *   #include <stdio.h>
+ *   #include "xxhash.h"
+ *
+ *   // Example for a function which prints XXH32_hash_t in human readable format
+ *   void printXxh32(XXH32_hash_t hash)
+ *   {
+ *       XXH32_canonical_t cano;
+ *       XXH32_canonicalFromHash(&cano, hash);
+ *       size_t i;
+ *       for(i = 0; i < sizeof(cano.digest); ++i) {
+ *           printf("%02x", cano.digest[i]);
+ *       }
+ *       printf("\n");
+ *   }
+ *
+ *   // Example for a function which converts XXH32_canonical_t to XXH32_hash_t
+ *   XXH32_hash_t convertCanonicalToXxh32(XXH32_canonical_t cano)
+ *   {
+ *       XXH32_hash_t hash = XXH32_hashFromCanonical(&cano);
+ *       return hash;
+ *   }
+ * @endcode
+ *
  *
  * @file xxhash.h
  * xxHash prototypes and implementation
@@ -261,7 +333,7 @@ extern "C" {
    /* make all functions private */
 #  undef XXH_PUBLIC_API
 #  if defined(__GNUC__)
-#    define XXH_PUBLIC_API static __inline __attribute__((unused))
+#    define XXH_PUBLIC_API static __inline __attribute__((__unused__))
 #  elif defined (__cplusplus) || (defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) /* C99 */)
 #    define XXH_PUBLIC_API static inline
 #  elif defined(_MSC_VER)
@@ -373,7 +445,7 @@ extern "C" {
 
 /*! @brief Marks a global symbol. */
 #if !defined(XXH_INLINE_ALL) && !defined(XXH_PRIVATE_API)
-#  if defined(WIN32) && defined(_MSC_VER) && (defined(XXH_IMPORT) || defined(XXH_EXPORT))
+#  if defined(_WIN32) && defined(_MSC_VER) && (defined(XXH_IMPORT) || defined(XXH_EXPORT))
 #    ifdef XXH_EXPORT
 #      define XXH_PUBLIC_API __declspec(dllexport)
 #    elif XXH_IMPORT
@@ -449,7 +521,7 @@ extern "C" {
 
 /* specific declaration modes for Windows */
 #if !defined(XXH_INLINE_ALL) && !defined(XXH_PRIVATE_API)
-#  if defined(WIN32) && defined(_MSC_VER) && (defined(XXH_IMPORT) || defined(XXH_EXPORT))
+#  if defined(_WIN32) && defined(_MSC_VER) && (defined(XXH_IMPORT) || defined(XXH_EXPORT))
 #    ifdef XXH_EXPORT
 #      define XXH_PUBLIC_API __declspec(dllexport)
 #    elif XXH_IMPORT
@@ -461,9 +533,9 @@ extern "C" {
 #endif
 
 #if defined (__GNUC__)
-# define XXH_CONSTF  __attribute__((const))
-# define XXH_PUREF   __attribute__((pure))
-# define XXH_MALLOCF __attribute__((malloc))
+# define XXH_CONSTF  __attribute__((__const__))
+# define XXH_PUREF   __attribute__((__pure__))
+# define XXH_MALLOCF __attribute__((__malloc__))
 #else
 # define XXH_CONSTF  /* disable */
 # define XXH_PUREF
@@ -475,7 +547,7 @@ extern "C" {
 ***************************************/
 #define XXH_VERSION_MAJOR    0
 #define XXH_VERSION_MINOR    8
-#define XXH_VERSION_RELEASE  2
+#define XXH_VERSION_RELEASE  3
 /*! @brief Version number, encoded as two digits each */
 #define XXH_VERSION_NUMBER  (XXH_VERSION_MAJOR *100*100 + XXH_VERSION_MINOR *100 + XXH_VERSION_RELEASE)
 
@@ -517,7 +589,11 @@ typedef uint32_t XXH32_hash_t;
 #elif !defined (__VMS) \
   && (defined (__cplusplus) \
   || (defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) /* C99 */) )
-#   include <stdint.h>
+#   ifdef _AIX
+#     include <inttypes.h>
+#   else
+#     include <stdint.h>
+#   endif
     typedef uint32_t XXH32_hash_t;
 
 #else
@@ -551,10 +627,6 @@ typedef uint32_t XXH32_hash_t;
 /*!
  * @brief Calculates the 32-bit hash of @p input using xxHash32.
  *
- * Speed on Core 2 Duo @ 3 GHz (single thread, SMHasher benchmark): 5.4 GB/s
- *
- * See @ref single_shot_example "Single Shot Example" for an example.
- *
  * @param input The block of data to be hashed, at least @p length bytes in size.
  * @param length The length of @p input, in bytes.
  * @param seed The 32-bit seed to alter the hash's output predictably.
@@ -564,63 +636,44 @@ typedef uint32_t XXH32_hash_t;
  *   readable, contiguous memory. However, if @p length is `0`, @p input may be
  *   `NULL`. In C++, this also must be *TriviallyCopyable*.
  *
- * @return The calculated 32-bit hash value.
+ * @return The calculated 32-bit xxHash32 value.
  *
- * @see
- *    XXH64(), XXH3_64bits_withSeed(), XXH3_128bits_withSeed(), XXH128():
- *    Direct equivalents for the other variants of xxHash.
- * @see
- *    XXH32_createState(), XXH32_update(), XXH32_digest(): Streaming version.
+ * @see @ref single_shot_example "Single Shot Example" for an example.
  */
 XXH_PUBLIC_API XXH_PUREF XXH32_hash_t XXH32 (const void* input, size_t length, XXH32_hash_t seed);
 
 #ifndef XXH_NO_STREAM
 /*!
- * Streaming functions generate the xxHash value from an incremental input.
- * This method is slower than single-call functions, due to state management.
- * For small inputs, prefer `XXH32()` and `XXH64()`, which are better optimized.
- *
- * An XXH state must first be allocated using `XXH*_createState()`.
- *
- * Start a new hash by initializing the state with a seed using `XXH*_reset()`.
- *
- * Then, feed the hash state by calling `XXH*_update()` as many times as necessary.
- *
- * The function returns an error code, with 0 meaning OK, and any other value
- * meaning there is an error.
- *
- * Finally, a hash value can be produced anytime, by using `XXH*_digest()`.
- * This function returns the nn-bits hash as an int or long long.
- *
- * It's still possible to continue inserting input into the hash state after a
- * digest, and generate new hash values later on by invoking `XXH*_digest()`.
- *
- * When done, release the state using `XXH*_freeState()`.
- *
- * @see streaming_example at the top of @ref xxhash.h for an example.
- */
-
-/*!
  * @typedef struct XXH32_state_s XXH32_state_t
  * @brief The opaque state struct for the XXH32 streaming API.
  *
  * @see XXH32_state_s for details.
+ * @see @ref streaming_example "Streaming Example"
  */
 typedef struct XXH32_state_s XXH32_state_t;
 
 /*!
  * @brief Allocates an @ref XXH32_state_t.
  *
- * Must be freed with XXH32_freeState().
- * @return An allocated XXH32_state_t on success, `NULL` on failure.
+ * @return An allocated pointer of @ref XXH32_state_t on success.
+ * @return `NULL` on failure.
+ *
+ * @note Must be freed with XXH32_freeState().
+ *
+ * @see @ref streaming_example "Streaming Example"
  */
 XXH_PUBLIC_API XXH_MALLOCF XXH32_state_t* XXH32_createState(void);
 /*!
  * @brief Frees an @ref XXH32_state_t.
  *
- * Must be allocated with XXH32_createState().
  * @param statePtr A pointer to an @ref XXH32_state_t allocated with @ref XXH32_createState().
- * @return XXH_OK.
+ *
+ * @return @ref XXH_OK.
+ *
+ * @note @p statePtr must be allocated with XXH32_createState().
+ *
+ * @see @ref streaming_example "Streaming Example"
+ *
  */
 XXH_PUBLIC_API XXH_errorcode  XXH32_freeState(XXH32_state_t* statePtr);
 /*!
@@ -636,22 +689,23 @@ XXH_PUBLIC_API void XXH32_copyState(XXH32_state_t* dst_state, const XXH32_state_
 /*!
  * @brief Resets an @ref XXH32_state_t to begin a new hash.
  *
- * This function resets and seeds a state. Call it before @ref XXH32_update().
- *
  * @param statePtr The state struct to reset.
  * @param seed The 32-bit seed to alter the hash result predictably.
  *
  * @pre
  *   @p statePtr must not be `NULL`.
  *
- * @return @ref XXH_OK on success, @ref XXH_ERROR on failure.
+ * @return @ref XXH_OK on success.
+ * @return @ref XXH_ERROR on failure.
+ *
+ * @note This function resets and seeds a state. Call it before @ref XXH32_update().
+ *
+ * @see @ref streaming_example "Streaming Example"
  */
 XXH_PUBLIC_API XXH_errorcode XXH32_reset  (XXH32_state_t* statePtr, XXH32_hash_t seed);
 
 /*!
  * @brief Consumes a block of @p input to an @ref XXH32_state_t.
- *
- * Call this to incrementally consume blocks of data.
  *
  * @param statePtr The state struct to update.
  * @param input The block of data to be hashed, at least @p length bytes in size.
@@ -664,47 +718,35 @@ XXH_PUBLIC_API XXH_errorcode XXH32_reset  (XXH32_state_t* statePtr, XXH32_hash_t
  *   readable, contiguous memory. However, if @p length is `0`, @p input may be
  *   `NULL`. In C++, this also must be *TriviallyCopyable*.
  *
- * @return @ref XXH_OK on success, @ref XXH_ERROR on failure.
+ * @return @ref XXH_OK on success.
+ * @return @ref XXH_ERROR on failure.
+ *
+ * @note Call this to incrementally consume blocks of data.
+ *
+ * @see @ref streaming_example "Streaming Example"
  */
 XXH_PUBLIC_API XXH_errorcode XXH32_update (XXH32_state_t* statePtr, const void* input, size_t length);
 
 /*!
  * @brief Returns the calculated hash value from an @ref XXH32_state_t.
  *
- * @note
- *   Calling XXH32_digest() will not affect @p statePtr, so you can update,
- *   digest, and update again.
- *
  * @param statePtr The state struct to calculate the hash from.
  *
  * @pre
  *  @p statePtr must not be `NULL`.
  *
- * @return The calculated xxHash32 value from that state.
+ * @return The calculated 32-bit xxHash32 value from that state.
+ *
+ * @note
+ *   Calling XXH32_digest() will not affect @p statePtr, so you can update,
+ *   digest, and update again.
+ *
+ * @see @ref streaming_example "Streaming Example"
  */
 XXH_PUBLIC_API XXH_PUREF XXH32_hash_t XXH32_digest (const XXH32_state_t* statePtr);
 #endif /* !XXH_NO_STREAM */
 
 /*******   Canonical representation   *******/
-
-/*
- * The default return values from XXH functions are unsigned 32 and 64 bit
- * integers.
- * This the simplest and fastest format for further post-processing.
- *
- * However, this leaves open the question of what is the order on the byte level,
- * since little and big endian conventions will store the same number differently.
- *
- * The canonical representation settles this issue by mandating big-endian
- * convention, the same convention as human-readable numbers (large digits first).
- *
- * When writing hash values to storage, sending them over a network, or printing
- * them, it's highly recommended to use the canonical representation to ensure
- * portability across a wider range of systems, present and future.
- *
- * The following functions allow transformation of hash values to and from
- * canonical format.
- */
 
 /*!
  * @brief Canonical (big endian) representation of @ref XXH32_hash_t.
@@ -716,11 +758,13 @@ typedef struct {
 /*!
  * @brief Converts an @ref XXH32_hash_t to a big endian @ref XXH32_canonical_t.
  *
- * @param dst The @ref XXH32_canonical_t pointer to be stored to.
+ * @param dst  The @ref XXH32_canonical_t pointer to be stored to.
  * @param hash The @ref XXH32_hash_t to be converted.
  *
  * @pre
  *   @p dst must not be `NULL`.
+ *
+ * @see @ref canonical_representation_example "Canonical Representation Example"
  */
 XXH_PUBLIC_API void XXH32_canonicalFromHash(XXH32_canonical_t* dst, XXH32_hash_t hash);
 
@@ -733,6 +777,8 @@ XXH_PUBLIC_API void XXH32_canonicalFromHash(XXH32_canonical_t* dst, XXH32_hash_t
  *   @p src must not be `NULL`.
  *
  * @return The converted hash.
+ *
+ * @see @ref canonical_representation_example "Canonical Representation Example"
  */
 XXH_PUBLIC_API XXH_PUREF XXH32_hash_t XXH32_hashFromCanonical(const XXH32_canonical_t* src);
 
@@ -794,7 +840,7 @@ XXH_PUBLIC_API XXH_PUREF XXH32_hash_t XXH32_hashFromCanonical(const XXH32_canoni
  * As of writing this, only supported by clang.
  */
 #if XXH_HAS_ATTRIBUTE(noescape)
-# define XXH_NOESCAPE __attribute__((noescape))
+# define XXH_NOESCAPE __attribute__((__noescape__))
 #else
 # define XXH_NOESCAPE
 #endif
@@ -821,7 +867,11 @@ typedef uint64_t XXH64_hash_t;
 #elif !defined (__VMS) \
   && (defined (__cplusplus) \
   || (defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) /* C99 */) )
-#  include <stdint.h>
+#   ifdef _AIX
+#     include <inttypes.h>
+#   else
+#     include <stdint.h>
+#   endif
    typedef uint64_t XXH64_hash_t;
 #else
 #  include <limits.h>
@@ -851,9 +901,6 @@ typedef uint64_t XXH64_hash_t;
 /*!
  * @brief Calculates the 64-bit hash of @p input using xxHash64.
  *
- * This function usually runs faster on 64-bit systems, but slower on 32-bit
- * systems (see benchmark).
- *
  * @param input The block of data to be hashed, at least @p length bytes in size.
  * @param length The length of @p input, in bytes.
  * @param seed The 64-bit seed to alter the hash's output predictably.
@@ -863,13 +910,9 @@ typedef uint64_t XXH64_hash_t;
  *   readable, contiguous memory. However, if @p length is `0`, @p input may be
  *   `NULL`. In C++, this also must be *TriviallyCopyable*.
  *
- * @return The calculated 64-bit hash.
+ * @return The calculated 64-bit xxHash64 value.
  *
- * @see
- *    XXH32(), XXH3_64bits_withSeed(), XXH3_128bits_withSeed(), XXH128():
- *    Direct equivalents for the other variants of xxHash.
- * @see
- *    XXH64_createState(), XXH64_update(), XXH64_digest(): Streaming version.
+ * @see @ref single_shot_example "Single Shot Example" for an example.
  */
 XXH_PUBLIC_API XXH_PUREF XXH64_hash_t XXH64(XXH_NOESCAPE const void* input, size_t length, XXH64_hash_t seed);
 
@@ -879,23 +922,32 @@ XXH_PUBLIC_API XXH_PUREF XXH64_hash_t XXH64(XXH_NOESCAPE const void* input, size
  * @brief The opaque state struct for the XXH64 streaming API.
  *
  * @see XXH64_state_s for details.
+ * @see @ref streaming_example "Streaming Example"
  */
 typedef struct XXH64_state_s XXH64_state_t;   /* incomplete type */
 
 /*!
  * @brief Allocates an @ref XXH64_state_t.
  *
- * Must be freed with XXH64_freeState().
- * @return An allocated XXH64_state_t on success, `NULL` on failure.
+ * @return An allocated pointer of @ref XXH64_state_t on success.
+ * @return `NULL` on failure.
+ *
+ * @note Must be freed with XXH64_freeState().
+ *
+ * @see @ref streaming_example "Streaming Example"
  */
 XXH_PUBLIC_API XXH_MALLOCF XXH64_state_t* XXH64_createState(void);
 
 /*!
  * @brief Frees an @ref XXH64_state_t.
  *
- * Must be allocated with XXH64_createState().
  * @param statePtr A pointer to an @ref XXH64_state_t allocated with @ref XXH64_createState().
- * @return XXH_OK.
+ *
+ * @return @ref XXH_OK.
+ *
+ * @note @p statePtr must be allocated with XXH64_createState().
+ *
+ * @see @ref streaming_example "Streaming Example"
  */
 XXH_PUBLIC_API XXH_errorcode  XXH64_freeState(XXH64_state_t* statePtr);
 
@@ -912,22 +964,23 @@ XXH_PUBLIC_API void XXH64_copyState(XXH_NOESCAPE XXH64_state_t* dst_state, const
 /*!
  * @brief Resets an @ref XXH64_state_t to begin a new hash.
  *
- * This function resets and seeds a state. Call it before @ref XXH64_update().
- *
  * @param statePtr The state struct to reset.
  * @param seed The 64-bit seed to alter the hash result predictably.
  *
  * @pre
  *   @p statePtr must not be `NULL`.
  *
- * @return @ref XXH_OK on success, @ref XXH_ERROR on failure.
+ * @return @ref XXH_OK on success.
+ * @return @ref XXH_ERROR on failure.
+ *
+ * @note This function resets and seeds a state. Call it before @ref XXH64_update().
+ *
+ * @see @ref streaming_example "Streaming Example"
  */
 XXH_PUBLIC_API XXH_errorcode XXH64_reset  (XXH_NOESCAPE XXH64_state_t* statePtr, XXH64_hash_t seed);
 
 /*!
  * @brief Consumes a block of @p input to an @ref XXH64_state_t.
- *
- * Call this to incrementally consume blocks of data.
  *
  * @param statePtr The state struct to update.
  * @param input The block of data to be hashed, at least @p length bytes in size.
@@ -940,23 +993,30 @@ XXH_PUBLIC_API XXH_errorcode XXH64_reset  (XXH_NOESCAPE XXH64_state_t* statePtr,
  *   readable, contiguous memory. However, if @p length is `0`, @p input may be
  *   `NULL`. In C++, this also must be *TriviallyCopyable*.
  *
- * @return @ref XXH_OK on success, @ref XXH_ERROR on failure.
+ * @return @ref XXH_OK on success.
+ * @return @ref XXH_ERROR on failure.
+ *
+ * @note Call this to incrementally consume blocks of data.
+ *
+ * @see @ref streaming_example "Streaming Example"
  */
 XXH_PUBLIC_API XXH_errorcode XXH64_update (XXH_NOESCAPE XXH64_state_t* statePtr, XXH_NOESCAPE const void* input, size_t length);
 
 /*!
  * @brief Returns the calculated hash value from an @ref XXH64_state_t.
  *
- * @note
- *   Calling XXH64_digest() will not affect @p statePtr, so you can update,
- *   digest, and update again.
- *
  * @param statePtr The state struct to calculate the hash from.
  *
  * @pre
  *  @p statePtr must not be `NULL`.
  *
- * @return The calculated xxHash64 value from that state.
+ * @return The calculated 64-bit xxHash64 value from that state.
+ *
+ * @note
+ *   Calling XXH64_digest() will not affect @p statePtr, so you can update,
+ *   digest, and update again.
+ *
+ * @see @ref streaming_example "Streaming Example"
  */
 XXH_PUBLIC_API XXH_PUREF XXH64_hash_t XXH64_digest (XXH_NOESCAPE const XXH64_state_t* statePtr);
 #endif /* !XXH_NO_STREAM */
@@ -975,6 +1035,8 @@ typedef struct { unsigned char digest[sizeof(XXH64_hash_t)]; } XXH64_canonical_t
  *
  * @pre
  *   @p dst must not be `NULL`.
+ *
+ * @see @ref canonical_representation_example "Canonical Representation Example"
  */
 XXH_PUBLIC_API void XXH64_canonicalFromHash(XXH_NOESCAPE XXH64_canonical_t* dst, XXH64_hash_t hash);
 
@@ -987,6 +1049,8 @@ XXH_PUBLIC_API void XXH64_canonicalFromHash(XXH_NOESCAPE XXH64_canonical_t* dst,
  *   @p src must not be `NULL`.
  *
  * @return The converted hash.
+ *
+ * @see @ref canonical_representation_example "Canonical Representation Example"
  */
 XXH_PUBLIC_API XXH_PUREF XXH64_hash_t XXH64_hashFromCanonical(XXH_NOESCAPE const XXH64_canonical_t* src);
 
@@ -1051,35 +1115,52 @@ XXH_PUBLIC_API XXH_PUREF XXH64_hash_t XXH64_hashFromCanonical(XXH_NOESCAPE const
 ************************************************************************/
 
 /*!
- * @brief 64-bit unseeded variant of XXH3.
+ * @brief Calculates 64-bit unseeded variant of XXH3 hash of @p input.
  *
- * This is equivalent to @ref XXH3_64bits_withSeed() with a seed of 0, however
- * it may have slightly better performance due to constant propagation of the
- * defaults.
+ * @param input  The block of data to be hashed, at least @p length bytes in size.
+ * @param length The length of @p input, in bytes.
  *
- * @see
- *    XXH32(), XXH64(), XXH3_128bits(): equivalent for the other xxHash algorithms
+ * @pre
+ *   The memory between @p input and @p input + @p length must be valid,
+ *   readable, contiguous memory. However, if @p length is `0`, @p input may be
+ *   `NULL`. In C++, this also must be *TriviallyCopyable*.
+ *
+ * @return The calculated 64-bit XXH3 hash value.
+ *
+ * @note
+ *   This is equivalent to @ref XXH3_64bits_withSeed() with a seed of `0`, however
+ *   it may have slightly better performance due to constant propagation of the
+ *   defaults.
+ *
  * @see
  *    XXH3_64bits_withSeed(), XXH3_64bits_withSecret(): other seeding variants
- * @see
- *    XXH3_64bits_reset(), XXH3_64bits_update(), XXH3_64bits_digest(): Streaming version.
+ * @see @ref single_shot_example "Single Shot Example" for an example.
  */
 XXH_PUBLIC_API XXH_PUREF XXH64_hash_t XXH3_64bits(XXH_NOESCAPE const void* input, size_t length);
 
 /*!
- * @brief 64-bit seeded variant of XXH3
+ * @brief Calculates 64-bit seeded variant of XXH3 hash of @p input.
  *
- * This variant generates a custom secret on the fly based on default secret
- * altered using the `seed` value.
+ * @param input  The block of data to be hashed, at least @p length bytes in size.
+ * @param length The length of @p input, in bytes.
+ * @param seed   The 64-bit seed to alter the hash result predictably.
  *
- * While this operation is decently fast, note that it's not completely free.
+ * @pre
+ *   The memory between @p input and @p input + @p length must be valid,
+ *   readable, contiguous memory. However, if @p length is `0`, @p input may be
+ *   `NULL`. In C++, this also must be *TriviallyCopyable*.
+ *
+ * @return The calculated 64-bit XXH3 hash value.
  *
  * @note
  *    seed == 0 produces the same results as @ref XXH3_64bits().
  *
- * @param input The data to hash
- * @param length The length
- * @param seed The 64-bit seed to alter the state.
+ * This variant generates a custom secret on the fly based on default secret
+ * altered using the @p seed value.
+ *
+ * While this operation is decently fast, note that it's not completely free.
+ *
+ * @see @ref single_shot_example "Single Shot Example" for an example.
  */
 XXH_PUBLIC_API XXH_PUREF XXH64_hash_t XXH3_64bits_withSeed(XXH_NOESCAPE const void* input, size_t length, XXH64_hash_t seed);
 
@@ -1093,22 +1174,36 @@ XXH_PUBLIC_API XXH_PUREF XXH64_hash_t XXH3_64bits_withSeed(XXH_NOESCAPE const vo
 #define XXH3_SECRET_SIZE_MIN 136
 
 /*!
- * @brief 64-bit variant of XXH3 with a custom "secret".
+ * @brief Calculates 64-bit variant of XXH3 with a custom "secret".
+ *
+ * @param data       The block of data to be hashed, at least @p len bytes in size.
+ * @param len        The length of @p data, in bytes.
+ * @param secret     The secret data.
+ * @param secretSize The length of @p secret, in bytes.
+ *
+ * @return The calculated 64-bit XXH3 hash value.
+ *
+ * @pre
+ *   The memory between @p data and @p data + @p len must be valid,
+ *   readable, contiguous memory. However, if @p length is `0`, @p data may be
+ *   `NULL`. In C++, this also must be *TriviallyCopyable*.
  *
  * It's possible to provide any blob of bytes as a "secret" to generate the hash.
  * This makes it more difficult for an external actor to prepare an intentional collision.
- * The main condition is that secretSize *must* be large enough (>= XXH3_SECRET_SIZE_MIN).
+ * The main condition is that @p secretSize *must* be large enough (>= @ref XXH3_SECRET_SIZE_MIN).
  * However, the quality of the secret impacts the dispersion of the hash algorithm.
  * Therefore, the secret _must_ look like a bunch of random bytes.
  * Avoid "trivial" or structured data such as repeated sequences or a text document.
  * Whenever in doubt about the "randomness" of the blob of bytes,
- * consider employing "XXH3_generateSecret()" instead (see below).
+ * consider employing @ref XXH3_generateSecret() instead (see below).
  * It will generate a proper high entropy secret derived from the blob of bytes.
  * Another advantage of using XXH3_generateSecret() is that
  * it guarantees that all bits within the initial blob of bytes
  * will impact every bit of the output.
  * This is not necessarily the case when using the blob of bytes directly
  * because, when hashing _small_ inputs, only a portion of the secret is employed.
+ *
+ * @see @ref single_shot_example "Single Shot Example" for an example.
  */
 XXH_PUBLIC_API XXH_PUREF XXH64_hash_t XXH3_64bits_withSecret(XXH_NOESCAPE const void* data, size_t len, XXH_NOESCAPE const void* secret, size_t secretSize);
 
@@ -1123,9 +1218,10 @@ XXH_PUBLIC_API XXH_PUREF XXH64_hash_t XXH3_64bits_withSecret(XXH_NOESCAPE const 
  */
 
 /*!
- * @brief The state struct for the XXH3 streaming API.
+ * @brief The opaque state struct for the XXH3 streaming API.
  *
  * @see XXH3_state_s for details.
+ * @see @ref streaming_example "Streaming Example"
  */
 typedef struct XXH3_state_s XXH3_state_t;
 XXH_PUBLIC_API XXH_MALLOCF XXH3_state_t* XXH3_createState(void);
@@ -1144,15 +1240,20 @@ XXH_PUBLIC_API void XXH3_copyState(XXH_NOESCAPE XXH3_state_t* dst_state, XXH_NOE
 /*!
  * @brief Resets an @ref XXH3_state_t to begin a new hash.
  *
- * This function resets `statePtr` and generate a secret with default parameters. Call it before @ref XXH3_64bits_update().
- * Digest will be equivalent to `XXH3_64bits()`.
- *
  * @param statePtr The state struct to reset.
  *
  * @pre
  *   @p statePtr must not be `NULL`.
  *
- * @return @ref XXH_OK on success, @ref XXH_ERROR on failure.
+ * @return @ref XXH_OK on success.
+ * @return @ref XXH_ERROR on failure.
+ *
+ * @note
+ *   - This function resets `statePtr` and generate a secret with default parameters.
+ *   - Call this function before @ref XXH3_64bits_update().
+ *   - Digest will be equivalent to `XXH3_64bits()`.
+ *
+ * @see @ref streaming_example "Streaming Example"
  *
  */
 XXH_PUBLIC_API XXH_errorcode XXH3_64bits_reset(XXH_NOESCAPE XXH3_state_t* statePtr);
@@ -1160,35 +1261,53 @@ XXH_PUBLIC_API XXH_errorcode XXH3_64bits_reset(XXH_NOESCAPE XXH3_state_t* stateP
 /*!
  * @brief Resets an @ref XXH3_state_t with 64-bit seed to begin a new hash.
  *
- * This function resets `statePtr` and generate a secret from `seed`. Call it before @ref XXH3_64bits_update().
- * Digest will be equivalent to `XXH3_64bits_withSeed()`.
- *
  * @param statePtr The state struct to reset.
- * @param seed     The 64-bit seed to alter the state.
+ * @param seed     The 64-bit seed to alter the hash result predictably.
  *
  * @pre
  *   @p statePtr must not be `NULL`.
  *
- * @return @ref XXH_OK on success, @ref XXH_ERROR on failure.
+ * @return @ref XXH_OK on success.
+ * @return @ref XXH_ERROR on failure.
+ *
+ * @note
+ *   - This function resets `statePtr` and generate a secret from `seed`.
+ *   - Call this function before @ref XXH3_64bits_update().
+ *   - Digest will be equivalent to `XXH3_64bits_withSeed()`.
+ *
+ * @see @ref streaming_example "Streaming Example"
  *
  */
 XXH_PUBLIC_API XXH_errorcode XXH3_64bits_reset_withSeed(XXH_NOESCAPE XXH3_state_t* statePtr, XXH64_hash_t seed);
 
 /*!
- * XXH3_64bits_reset_withSecret():
- * `secret` is referenced, it _must outlive_ the hash streaming session.
- * Similar to one-shot API, `secretSize` must be >= `XXH3_SECRET_SIZE_MIN`,
+ * @brief Resets an @ref XXH3_state_t with secret data to begin a new hash.
+ *
+ * @param statePtr The state struct to reset.
+ * @param secret     The secret data.
+ * @param secretSize The length of @p secret, in bytes.
+ *
+ * @pre
+ *   @p statePtr must not be `NULL`.
+ *
+ * @return @ref XXH_OK on success.
+ * @return @ref XXH_ERROR on failure.
+ *
+ * @note
+ *   `secret` is referenced, it _must outlive_ the hash streaming session.
+ *
+ * Similar to one-shot API, `secretSize` must be >= @ref XXH3_SECRET_SIZE_MIN,
  * and the quality of produced hash values depends on secret's entropy
  * (secret's content should look like a bunch of random bytes).
  * When in doubt about the randomness of a candidate `secret`,
  * consider employing `XXH3_generateSecret()` instead (see below).
+ *
+ * @see @ref streaming_example "Streaming Example"
  */
 XXH_PUBLIC_API XXH_errorcode XXH3_64bits_reset_withSecret(XXH_NOESCAPE XXH3_state_t* statePtr, XXH_NOESCAPE const void* secret, size_t secretSize);
 
 /*!
  * @brief Consumes a block of @p input to an @ref XXH3_state_t.
- *
- * Call this to incrementally consume blocks of data.
  *
  * @param statePtr The state struct to update.
  * @param input The block of data to be hashed, at least @p length bytes in size.
@@ -1201,16 +1320,17 @@ XXH_PUBLIC_API XXH_errorcode XXH3_64bits_reset_withSecret(XXH_NOESCAPE XXH3_stat
  *   readable, contiguous memory. However, if @p length is `0`, @p input may be
  *   `NULL`. In C++, this also must be *TriviallyCopyable*.
  *
- * @return @ref XXH_OK on success, @ref XXH_ERROR on failure.
+ * @return @ref XXH_OK on success.
+ * @return @ref XXH_ERROR on failure.
+ *
+ * @note Call this to incrementally consume blocks of data.
+ *
+ * @see @ref streaming_example "Streaming Example"
  */
 XXH_PUBLIC_API XXH_errorcode XXH3_64bits_update (XXH_NOESCAPE XXH3_state_t* statePtr, XXH_NOESCAPE const void* input, size_t length);
 
 /*!
  * @brief Returns the calculated XXH3 64-bit hash value from an @ref XXH3_state_t.
- *
- * @note
- *   Calling XXH3_64bits_digest() will not affect @p statePtr, so you can update,
- *   digest, and update again.
  *
  * @param statePtr The state struct to calculate the hash from.
  *
@@ -1218,6 +1338,12 @@ XXH_PUBLIC_API XXH_errorcode XXH3_64bits_update (XXH_NOESCAPE XXH3_state_t* stat
  *  @p statePtr must not be `NULL`.
  *
  * @return The calculated XXH3 64-bit hash value from that state.
+ *
+ * @note
+ *   Calling XXH3_64bits_digest() will not affect @p statePtr, so you can update,
+ *   digest, and update again.
+ *
+ * @see @ref streaming_example "Streaming Example"
  */
 XXH_PUBLIC_API XXH_PUREF XXH64_hash_t  XXH3_64bits_digest (XXH_NOESCAPE const XXH3_state_t* statePtr);
 #endif /* !XXH_NO_STREAM */
@@ -1242,26 +1368,71 @@ typedef struct {
 } XXH128_hash_t;
 
 /*!
- * @brief Unseeded 128-bit variant of XXH3
+ * @brief Calculates 128-bit unseeded variant of XXH3 of @p data.
+ *
+ * @param data The block of data to be hashed, at least @p length bytes in size.
+ * @param len  The length of @p data, in bytes.
+ *
+ * @return The calculated 128-bit variant of XXH3 value.
  *
  * The 128-bit variant of XXH3 has more strength, but it has a bit of overhead
  * for shorter inputs.
  *
- * This is equivalent to @ref XXH3_128bits_withSeed() with a seed of 0, however
+ * This is equivalent to @ref XXH3_128bits_withSeed() with a seed of `0`, however
  * it may have slightly better performance due to constant propagation of the
  * defaults.
  *
- * @see
- *    XXH32(), XXH64(), XXH3_64bits(): equivalent for the other xxHash algorithms
- * @see
- *    XXH3_128bits_withSeed(), XXH3_128bits_withSecret(): other seeding variants
- * @see
- *    XXH3_128bits_reset(), XXH3_128bits_update(), XXH3_128bits_digest(): Streaming version.
+ * @see XXH3_128bits_withSeed(), XXH3_128bits_withSecret(): other seeding variants
+ * @see @ref single_shot_example "Single Shot Example" for an example.
  */
 XXH_PUBLIC_API XXH_PUREF XXH128_hash_t XXH3_128bits(XXH_NOESCAPE const void* data, size_t len);
-/*! @brief Seeded 128-bit variant of XXH3. @see XXH3_64bits_withSeed(). */
+/*! @brief Calculates 128-bit seeded variant of XXH3 hash of @p data.
+ *
+ * @param data The block of data to be hashed, at least @p length bytes in size.
+ * @param len  The length of @p data, in bytes.
+ * @param seed The 64-bit seed to alter the hash result predictably.
+ *
+ * @return The calculated 128-bit variant of XXH3 value.
+ *
+ * @note
+ *    seed == 0 produces the same results as @ref XXH3_64bits().
+ *
+ * This variant generates a custom secret on the fly based on default secret
+ * altered using the @p seed value.
+ *
+ * While this operation is decently fast, note that it's not completely free.
+ *
+ * @see XXH3_128bits(), XXH3_128bits_withSecret(): other seeding variants
+ * @see @ref single_shot_example "Single Shot Example" for an example.
+ */
 XXH_PUBLIC_API XXH_PUREF XXH128_hash_t XXH3_128bits_withSeed(XXH_NOESCAPE const void* data, size_t len, XXH64_hash_t seed);
-/*! @brief Custom secret 128-bit variant of XXH3. @see XXH3_64bits_withSecret(). */
+/*!
+ * @brief Calculates 128-bit variant of XXH3 with a custom "secret".
+ *
+ * @param data       The block of data to be hashed, at least @p len bytes in size.
+ * @param len        The length of @p data, in bytes.
+ * @param secret     The secret data.
+ * @param secretSize The length of @p secret, in bytes.
+ *
+ * @return The calculated 128-bit variant of XXH3 value.
+ *
+ * It's possible to provide any blob of bytes as a "secret" to generate the hash.
+ * This makes it more difficult for an external actor to prepare an intentional collision.
+ * The main condition is that @p secretSize *must* be large enough (>= @ref XXH3_SECRET_SIZE_MIN).
+ * However, the quality of the secret impacts the dispersion of the hash algorithm.
+ * Therefore, the secret _must_ look like a bunch of random bytes.
+ * Avoid "trivial" or structured data such as repeated sequences or a text document.
+ * Whenever in doubt about the "randomness" of the blob of bytes,
+ * consider employing @ref XXH3_generateSecret() instead (see below).
+ * It will generate a proper high entropy secret derived from the blob of bytes.
+ * Another advantage of using XXH3_generateSecret() is that
+ * it guarantees that all bits within the initial blob of bytes
+ * will impact every bit of the output.
+ * This is not necessarily the case when using the blob of bytes directly
+ * because, when hashing _small_ inputs, only a portion of the secret is employed.
+ *
+ * @see @ref single_shot_example "Single Shot Example" for an example.
+ */
 XXH_PUBLIC_API XXH_PUREF XXH128_hash_t XXH3_128bits_withSecret(XXH_NOESCAPE const void* data, size_t len, XXH_NOESCAPE const void* secret, size_t secretSize);
 
 /*******   Streaming   *******/
@@ -1281,36 +1452,65 @@ XXH_PUBLIC_API XXH_PUREF XXH128_hash_t XXH3_128bits_withSecret(XXH_NOESCAPE cons
 /*!
  * @brief Resets an @ref XXH3_state_t to begin a new hash.
  *
- * This function resets `statePtr` and generate a secret with default parameters. Call it before @ref XXH3_128bits_update().
- * Digest will be equivalent to `XXH3_128bits()`.
- *
  * @param statePtr The state struct to reset.
  *
  * @pre
  *   @p statePtr must not be `NULL`.
  *
- * @return @ref XXH_OK on success, @ref XXH_ERROR on failure.
+ * @return @ref XXH_OK on success.
+ * @return @ref XXH_ERROR on failure.
  *
+ * @note
+ *   - This function resets `statePtr` and generate a secret with default parameters.
+ *   - Call it before @ref XXH3_128bits_update().
+ *   - Digest will be equivalent to `XXH3_128bits()`.
+ *
+ * @see @ref streaming_example "Streaming Example"
  */
 XXH_PUBLIC_API XXH_errorcode XXH3_128bits_reset(XXH_NOESCAPE XXH3_state_t* statePtr);
 
 /*!
  * @brief Resets an @ref XXH3_state_t with 64-bit seed to begin a new hash.
  *
- * This function resets `statePtr` and generate a secret from `seed`. Call it before @ref XXH3_128bits_update().
- * Digest will be equivalent to `XXH3_128bits_withSeed()`.
- *
  * @param statePtr The state struct to reset.
- * @param seed     The 64-bit seed to alter the state.
+ * @param seed     The 64-bit seed to alter the hash result predictably.
  *
  * @pre
  *   @p statePtr must not be `NULL`.
  *
- * @return @ref XXH_OK on success, @ref XXH_ERROR on failure.
+ * @return @ref XXH_OK on success.
+ * @return @ref XXH_ERROR on failure.
  *
+ * @note
+ *   - This function resets `statePtr` and generate a secret from `seed`.
+ *   - Call it before @ref XXH3_128bits_update().
+ *   - Digest will be equivalent to `XXH3_128bits_withSeed()`.
+ *
+ * @see @ref streaming_example "Streaming Example"
  */
 XXH_PUBLIC_API XXH_errorcode XXH3_128bits_reset_withSeed(XXH_NOESCAPE XXH3_state_t* statePtr, XXH64_hash_t seed);
-/*! @brief Custom secret 128-bit variant of XXH3. @see XXH_64bits_reset_withSecret(). */
+/*!
+ * @brief Resets an @ref XXH3_state_t with secret data to begin a new hash.
+ *
+ * @param statePtr   The state struct to reset.
+ * @param secret     The secret data.
+ * @param secretSize The length of @p secret, in bytes.
+ *
+ * @pre
+ *   @p statePtr must not be `NULL`.
+ *
+ * @return @ref XXH_OK on success.
+ * @return @ref XXH_ERROR on failure.
+ *
+ * `secret` is referenced, it _must outlive_ the hash streaming session.
+ * Similar to one-shot API, `secretSize` must be >= @ref XXH3_SECRET_SIZE_MIN,
+ * and the quality of produced hash values depends on secret's entropy
+ * (secret's content should look like a bunch of random bytes).
+ * When in doubt about the randomness of a candidate `secret`,
+ * consider employing `XXH3_generateSecret()` instead (see below).
+ *
+ * @see @ref streaming_example "Streaming Example"
+ */
 XXH_PUBLIC_API XXH_errorcode XXH3_128bits_reset_withSecret(XXH_NOESCAPE XXH3_state_t* statePtr, XXH_NOESCAPE const void* secret, size_t secretSize);
 
 /*!
@@ -1324,21 +1524,20 @@ XXH_PUBLIC_API XXH_errorcode XXH3_128bits_reset_withSecret(XXH_NOESCAPE XXH3_sta
  *
  * @pre
  *   @p statePtr must not be `NULL`.
- * @pre
+ *
+ * @return @ref XXH_OK on success.
+ * @return @ref XXH_ERROR on failure.
+ *
+ * @note
  *   The memory between @p input and @p input + @p length must be valid,
  *   readable, contiguous memory. However, if @p length is `0`, @p input may be
  *   `NULL`. In C++, this also must be *TriviallyCopyable*.
  *
- * @return @ref XXH_OK on success, @ref XXH_ERROR on failure.
  */
 XXH_PUBLIC_API XXH_errorcode XXH3_128bits_update (XXH_NOESCAPE XXH3_state_t* statePtr, XXH_NOESCAPE const void* input, size_t length);
 
 /*!
  * @brief Returns the calculated XXH3 128-bit hash value from an @ref XXH3_state_t.
- *
- * @note
- *   Calling XXH3_128bits_digest() will not affect @p statePtr, so you can update,
- *   digest, and update again.
  *
  * @param statePtr The state struct to calculate the hash from.
  *
@@ -1346,6 +1545,11 @@ XXH_PUBLIC_API XXH_errorcode XXH3_128bits_update (XXH_NOESCAPE XXH3_state_t* sta
  *  @p statePtr must not be `NULL`.
  *
  * @return The calculated XXH3 128-bit hash value from that state.
+ *
+ * @note
+ *   Calling XXH3_128bits_digest() will not affect @p statePtr, so you can update,
+ *   digest, and update again.
+ *
  */
 XXH_PUBLIC_API XXH_PUREF XXH128_hash_t XXH3_128bits_digest (XXH_NOESCAPE const XXH3_state_t* statePtr);
 #endif /* !XXH_NO_STREAM */
@@ -1355,18 +1559,27 @@ XXH_PUBLIC_API XXH_PUREF XXH128_hash_t XXH3_128bits_digest (XXH_NOESCAPE const X
  * Note: For better performance, these functions can be inlined using XXH_INLINE_ALL */
 
 /*!
- * XXH128_isEqual():
- * Return: 1 if `h1` and `h2` are equal, 0 if they are not.
+ * @brief Check equality of two XXH128_hash_t values
+ *
+ * @param h1 The 128-bit hash value.
+ * @param h2 Another 128-bit hash value.
+ *
+ * @return `1` if `h1` and `h2` are equal.
+ * @return `0` if they are not.
  */
 XXH_PUBLIC_API XXH_PUREF int XXH128_isEqual(XXH128_hash_t h1, XXH128_hash_t h2);
 
 /*!
  * @brief Compares two @ref XXH128_hash_t
+ *
  * This comparator is compatible with stdlib's `qsort()`/`bsearch()`.
  *
- * @return: >0 if *h128_1  > *h128_2
- *          =0 if *h128_1 == *h128_2
- *          <0 if *h128_1  < *h128_2
+ * @param h128_1 Left-hand side value
+ * @param h128_2 Right-hand side value
+ *
+ * @return >0 if @p h128_1  > @p h128_2
+ * @return =0 if @p h128_1 == @p h128_2
+ * @return <0 if @p h128_1  < @p h128_2
  */
 XXH_PUBLIC_API XXH_PUREF int XXH128_cmp(XXH_NOESCAPE const void* h128_1, XXH_NOESCAPE const void* h128_2);
 
@@ -1378,11 +1591,12 @@ typedef struct { unsigned char digest[sizeof(XXH128_hash_t)]; } XXH128_canonical
 /*!
  * @brief Converts an @ref XXH128_hash_t to a big endian @ref XXH128_canonical_t.
  *
- * @param dst The @ref XXH128_canonical_t pointer to be stored to.
+ * @param dst  The @ref XXH128_canonical_t pointer to be stored to.
  * @param hash The @ref XXH128_hash_t to be converted.
  *
  * @pre
  *   @p dst must not be `NULL`.
+ * @see @ref canonical_representation_example "Canonical Representation Example"
  */
 XXH_PUBLIC_API void XXH128_canonicalFromHash(XXH_NOESCAPE XXH128_canonical_t* dst, XXH128_hash_t hash);
 
@@ -1395,6 +1609,7 @@ XXH_PUBLIC_API void XXH128_canonicalFromHash(XXH_NOESCAPE XXH128_canonical_t* ds
  *   @p src must not be `NULL`.
  *
  * @return The converted hash.
+ * @see @ref canonical_representation_example "Canonical Representation Example"
  */
 XXH_PUBLIC_API XXH_PUREF XXH128_hash_t XXH128_hashFromCanonical(XXH_NOESCAPE const XXH128_canonical_t* src);
 
@@ -1473,8 +1688,7 @@ struct XXH64_state_s {
 #ifndef XXH_NO_XXH3
 
 #if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L) /* >= C11 */
-#  include <stdalign.h>
-#  define XXH_ALIGN(n)      alignas(n)
+#  define XXH_ALIGN(n)      _Alignas(n)
 #elif defined(__cplusplus) && (__cplusplus >= 201103L) /* >= C++11 */
 /* In C++ alignas() is a keyword */
 #  define XXH_ALIGN(n)      alignas(n)
@@ -1587,7 +1801,20 @@ struct XXH3_state_s {
 
 
 /*!
- * simple alias to pre-selected XXH3_128bits variant
+ * @brief Calculates the 128-bit hash of @p data using XXH3.
+ *
+ * @param data The block of data to be hashed, at least @p len bytes in size.
+ * @param len  The length of @p data, in bytes.
+ * @param seed The 64-bit seed to alter the hash's output predictably.
+ *
+ * @pre
+ *   The memory between @p data and @p data + @p len must be valid,
+ *   readable, contiguous memory. However, if @p len is `0`, @p data may be
+ *   `NULL`. In C++, this also must be *TriviallyCopyable*.
+ *
+ * @return The calculated 128-bit XXH3 value.
+ *
+ * @see @ref single_shot_example "Single Shot Example" for an example.
  */
 XXH_PUBLIC_API XXH_PUREF XXH128_hash_t XXH128(XXH_NOESCAPE const void* data, size_t len, XXH64_hash_t seed);
 
@@ -1596,9 +1823,16 @@ XXH_PUBLIC_API XXH_PUREF XXH128_hash_t XXH128(XXH_NOESCAPE const void* data, siz
 /* Symbols defined below must be considered tied to a specific library version. */
 
 /*!
- * XXH3_generateSecret():
+ * @brief Derive a high-entropy secret from any user-defined content, named customSeed.
  *
- * Derive a high-entropy secret from any user-defined content, named customSeed.
+ * @param secretBuffer    A writable buffer for derived high-entropy secret data.
+ * @param secretSize      Size of secretBuffer, in bytes.  Must be >= XXH3_SECRET_SIZE_MIN.
+ * @param customSeed      A user-defined content.
+ * @param customSeedSize  Size of customSeed, in bytes.
+ *
+ * @return @ref XXH_OK on success.
+ * @return @ref XXH_ERROR on failure.
+ *
  * The generated secret can be used in combination with `*_withSecret()` functions.
  * The `_withSecret()` variants are useful to provide a higher level of protection
  * than 64-bit seed, as it becomes much more difficult for an external actor to
@@ -1651,6 +1885,9 @@ XXH_PUBLIC_API XXH_errorcode XXH3_generateSecret(XXH_NOESCAPE void* secretBuffer
 /*!
  * @brief Generate the same secret as the _withSeed() variants.
  *
+ * @param secretBuffer A writable buffer of @ref XXH3_SECRET_DEFAULT_SIZE bytes
+ * @param seed         The 64-bit seed to alter the hash result predictably.
+ *
  * The generated secret can be used in combination with
  *`*_withSecret()` and `_withSecretandSeed()` variants.
  *
@@ -1670,7 +1907,7 @@ XXH_PUBLIC_API XXH_errorcode XXH3_generateSecret(XXH_NOESCAPE void* secretBuffer
  *    };
  *    // Fast, caches the seeded secret for future uses.
  *    class HashFast {
- *        unsigned char secret[XXH3_SECRET_SIZE_MIN];
+ *        unsigned char secret[XXH3_SECRET_DEFAULT_SIZE];
  *    public:
  *        HashFast(XXH64_hash_t s) {
  *            XXH3_generateSecret_fromSeed(secret, seed);
@@ -1682,15 +1919,26 @@ XXH_PUBLIC_API XXH_errorcode XXH3_generateSecret(XXH_NOESCAPE void* secretBuffer
  *        }
  *    };
  * @endcode
- * @param secretBuffer A writable buffer of @ref XXH3_SECRET_SIZE_MIN bytes
- * @param seed The seed to seed the state.
  */
 XXH_PUBLIC_API void XXH3_generateSecret_fromSeed(XXH_NOESCAPE void* secretBuffer, XXH64_hash_t seed);
 
 /*!
- * These variants generate hash values using either
- * @p seed for "short" keys (< XXH3_MIDSIZE_MAX = 240 bytes)
- * or @p secret for "large" keys (>= XXH3_MIDSIZE_MAX).
+ * @brief Maximum size of "short" key in bytes.
+ */
+#define XXH3_MIDSIZE_MAX 240
+
+/*!
+ * @brief Calculates 64/128-bit seeded variant of XXH3 hash of @p data.
+ *
+ * @param data       The block of data to be hashed, at least @p len bytes in size.
+ * @param len        The length of @p data, in bytes.
+ * @param secret     The secret data.
+ * @param secretSize The length of @p secret, in bytes.
+ * @param seed       The 64-bit seed to alter the hash result predictably.
+ *
+ * These variants generate hash values using either:
+ * - @p seed for "short" keys (< @ref XXH3_MIDSIZE_MAX = 240 bytes)
+ * - @p secret for "large" keys (>= @ref XXH3_MIDSIZE_MAX).
  *
  * This generally benefits speed, compared to `_withSeed()` or `_withSecret()`.
  * `_withSeed()` has to generate the secret on the fly for "large" keys.
@@ -1717,22 +1965,71 @@ XXH_PUBLIC_API XXH_PUREF XXH64_hash_t
 XXH3_64bits_withSecretandSeed(XXH_NOESCAPE const void* data, size_t len,
                               XXH_NOESCAPE const void* secret, size_t secretSize,
                               XXH64_hash_t seed);
-/*! @copydoc XXH3_64bits_withSecretandSeed() */
+
+/*!
+ * @brief Calculates 128-bit seeded variant of XXH3 hash of @p data.
+ *
+ * @param data       The memory segment to be hashed, at least @p len bytes in size.
+ * @param length     The length of @p data, in bytes.
+ * @param secret     The secret used to alter hash result predictably.
+ * @param secretSize The length of @p secret, in bytes (must be >= XXH3_SECRET_SIZE_MIN)
+ * @param seed64     The 64-bit seed to alter the hash result predictably.
+ *
+ * @return @ref XXH_OK on success.
+ * @return @ref XXH_ERROR on failure.
+ *
+ * @see XXH3_64bits_withSecretandSeed(): contract is the same.
+ */
 XXH_PUBLIC_API XXH_PUREF XXH128_hash_t
 XXH3_128bits_withSecretandSeed(XXH_NOESCAPE const void* input, size_t length,
                                XXH_NOESCAPE const void* secret, size_t secretSize,
                                XXH64_hash_t seed64);
+
 #ifndef XXH_NO_STREAM
-/*! @copydoc XXH3_64bits_withSecretandSeed() */
+/*!
+ * @brief Resets an @ref XXH3_state_t with secret data to begin a new hash.
+ *
+ * @param statePtr   A pointer to an @ref XXH3_state_t allocated with @ref XXH3_createState().
+ * @param secret     The secret data.
+ * @param secretSize The length of @p secret, in bytes.
+ * @param seed64     The 64-bit seed to alter the hash result predictably.
+ *
+ * @return @ref XXH_OK on success.
+ * @return @ref XXH_ERROR on failure.
+ *
+ * @see XXH3_64bits_withSecretandSeed(). Contract is identical.
+ */
 XXH_PUBLIC_API XXH_errorcode
 XXH3_64bits_reset_withSecretandSeed(XXH_NOESCAPE XXH3_state_t* statePtr,
                                     XXH_NOESCAPE const void* secret, size_t secretSize,
                                     XXH64_hash_t seed64);
-/*! @copydoc XXH3_64bits_withSecretandSeed() */
+
+/*!
+ * @brief Resets an @ref XXH3_state_t with secret data to begin a new hash.
+ *
+ * @param statePtr   A pointer to an @ref XXH3_state_t allocated with @ref XXH3_createState().
+ * @param secret     The secret data.
+ * @param secretSize The length of @p secret, in bytes.
+ * @param seed64     The 64-bit seed to alter the hash result predictably.
+ *
+ * @return @ref XXH_OK on success.
+ * @return @ref XXH_ERROR on failure.
+ *
+ * @see XXH3_64bits_withSecretandSeed(). Contract is identical.
+ *
+ * Note: there was a bug in an earlier version of this function (<= v0.8.2)
+ * that would make it generate an incorrect hash value
+ * when @p seed == 0 and @p length < XXH3_MIDSIZE_MAX
+ * and @p secret is different from XXH3_generateSecret_fromSeed().
+ * As stated in the contract, the correct hash result must be
+ * the same as XXH3_128bits_withSeed() when @p length <= XXH3_MIDSIZE_MAX.
+ * Results generated by this older version are wrong, hence not comparable.
+ */
 XXH_PUBLIC_API XXH_errorcode
 XXH3_128bits_reset_withSecretandSeed(XXH_NOESCAPE XXH3_state_t* statePtr,
                                      XXH_NOESCAPE const void* secret, size_t secretSize,
                                      XXH64_hash_t seed64);
+
 #endif /* !XXH_NO_STREAM */
 
 #endif  /* !XXH_NO_XXH3 */
@@ -2100,15 +2397,15 @@ static void* XXH_memcpy(void* dest, const void* src, size_t size)
 
 #if XXH_NO_INLINE_HINTS  /* disable inlining hints */
 #  if defined(__GNUC__) || defined(__clang__)
-#    define XXH_FORCE_INLINE static __attribute__((unused))
+#    define XXH_FORCE_INLINE static __attribute__((__unused__))
 #  else
 #    define XXH_FORCE_INLINE static
 #  endif
 #  define XXH_NO_INLINE static
 /* enable inlining hints */
 #elif defined(__GNUC__) || defined(__clang__)
-#  define XXH_FORCE_INLINE static __inline__ __attribute__((always_inline, unused))
-#  define XXH_NO_INLINE static __attribute__((noinline))
+#  define XXH_FORCE_INLINE static __inline__ __attribute__((__always_inline__, __unused__))
+#  define XXH_NO_INLINE static __attribute__((__noinline__))
 #elif defined(_MSC_VER)  /* Visual Studio */
 #  define XXH_FORCE_INLINE static __forceinline
 #  define XXH_NO_INLINE static __declspec(noinline)
@@ -2206,10 +2503,14 @@ static void* XXH_memcpy(void* dest, const void* src, size_t size)
 #if !defined (__VMS) \
  && (defined (__cplusplus) \
  || (defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) /* C99 */) )
-# include <stdint.h>
-  typedef uint8_t xxh_u8;
+#   ifdef _AIX
+#     include <inttypes.h>
+#   else
+#     include <stdint.h>
+#   endif
+    typedef uint8_t xxh_u8;
 #else
-  typedef unsigned char xxh_u8;
+    typedef unsigned char xxh_u8;
 #endif
 typedef XXH32_hash_t xxh_u32;
 
@@ -2295,11 +2596,11 @@ static xxh_u32 XXH_read32(const void* memPtr) { return *(const xxh_u32*) memPtr;
  * https://gcc.godbolt.org/z/xYez1j67Y.
  */
 #ifdef XXH_OLD_NAMES
-typedef union { xxh_u32 u32; } __attribute__((packed)) unalign;
+typedef union { xxh_u32 u32; } __attribute__((__packed__)) unalign;
 #endif
 static xxh_u32 XXH_read32(const void* ptr)
 {
-    typedef __attribute__((aligned(1))) xxh_u32 xxh_unalign32;
+    typedef __attribute__((__aligned__(1))) xxh_u32 xxh_unalign32;
     return *((const xxh_unalign32*)ptr);
 }
 
@@ -2445,6 +2746,9 @@ static int XXH_isLittleEndian(void)
                                && XXH_HAS_BUILTIN(__builtin_rotateleft64)
 #  define XXH_rotl32 __builtin_rotateleft32
 #  define XXH_rotl64 __builtin_rotateleft64
+#elif XXH_HAS_BUILTIN(__builtin_stdc_rotate_left)
+#  define XXH_rotl32 __builtin_stdc_rotate_left
+#  define XXH_rotl64 __builtin_stdc_rotate_left
 /* Note: although _rotl exists for minGW (GCC under windows), performance seems poor */
 #elif defined(_MSC_VER)
 #  define XXH_rotl32(x,r) _rotl(x,r)
@@ -2590,7 +2894,7 @@ static xxh_u32 XXH32_round(xxh_u32 acc, xxh_u32 input)
 #if (defined(__SSE4_1__) || defined(__aarch64__) || defined(__wasm_simd128__)) && !defined(XXH_ENABLE_AUTOVECTORIZE)
     /*
      * UGLY HACK:
-     * A compiler fence is the only thing that prevents GCC and Clang from
+     * A compiler fence is used to prevent GCC and Clang from
      * autovectorizing the XXH32 loop (pragmas and attributes don't work for some
      * reason) without globally disabling SSE4.1.
      *
@@ -2919,20 +3223,7 @@ XXH_PUBLIC_API XXH32_hash_t XXH32_digest(const XXH32_state_t* state)
 
 /*******   Canonical representation   *******/
 
-/*!
- * @ingroup XXH32_family
- * The default return values from XXH functions are unsigned 32 and 64 bit
- * integers.
- *
- * The canonical representation uses big endian convention, the same convention
- * as human-readable numbers (large digits first).
- *
- * This way, hash values can be written into a file or buffer, remaining
- * comparable across different systems.
- *
- * The following functions allow transformation of hash values to and from their
- * canonical format.
- */
+/*! @ingroup XXH32_family */
 XXH_PUBLIC_API void XXH32_canonicalFromHash(XXH32_canonical_t* dst, XXH32_hash_t hash)
 {
     XXH_STATIC_ASSERT(sizeof(XXH32_canonical_t) == sizeof(XXH32_hash_t));
@@ -2987,11 +3278,11 @@ static xxh_u64 XXH_read64(const void* memPtr)
  * https://gcc.godbolt.org/z/xYez1j67Y.
  */
 #ifdef XXH_OLD_NAMES
-typedef union { xxh_u32 u32; xxh_u64 u64; } __attribute__((packed)) unalign64;
+typedef union { xxh_u32 u32; xxh_u64 u64; } __attribute__((__packed__)) unalign64;
 #endif
 static xxh_u64 XXH_read64(const void* ptr)
 {
-    typedef __attribute__((aligned(1))) xxh_u64 xxh_unalign64;
+    typedef __attribute__((__aligned__(1))) xxh_u64 xxh_unalign64;
     return *((const xxh_unalign64*)ptr);
 }
 
@@ -3110,6 +3401,23 @@ static xxh_u64 XXH64_round(xxh_u64 acc, xxh_u64 input)
     acc += input * XXH_PRIME64_2;
     acc  = XXH_rotl64(acc, 31);
     acc *= XXH_PRIME64_1;
+#if (defined(__AVX512F__)) && !defined(XXH_ENABLE_AUTOVECTORIZE)
+    /*
+     * DISABLE AUTOVECTORIZATION:
+     * A compiler fence is used to prevent GCC and Clang from
+     * autovectorizing the XXH64 loop (pragmas and attributes don't work for some
+     * reason) without globally disabling AVX512.
+     *
+     * Autovectorization of XXH64 tends to be detrimental,
+     * though the exact outcome may change depending on exact cpu and compiler version.
+     * For information, it has been reported as detrimental for Skylake-X,
+     * but possibly beneficial for Zen4.
+     *
+     * The default is to disable auto-vectorization,
+     * but you can select to enable it instead using `XXH_ENABLE_AUTOVECTORIZE` build variable.
+     */
+    XXH_COMPILER_GUARD(acc);
+#endif
     return acc;
 }
 
@@ -3416,7 +3724,11 @@ XXH_PUBLIC_API XXH64_hash_t XXH64_hashFromCanonical(XXH_NOESCAPE const XXH64_can
 
 #ifndef XXH_HAS_INCLUDE
 #  ifdef __has_include
-#    define XXH_HAS_INCLUDE(x) __has_include(x)
+/*
+ * Not defined as XXH_HAS_INCLUDE(x) (function-like) because
+ * this causes segfaults in Apple Clang 4.2 (on Mac OS X 10.7 Lion)
+ */
+#    define XXH_HAS_INCLUDE __has_include
 #  else
 #    define XXH_HAS_INCLUDE(x) 0
 #  endif
@@ -3655,7 +3967,7 @@ enum XXH_VECTOR_TYPE /* fake enum */ {
 #endif
 
 #if defined(__GNUC__) || defined(__clang__)
-#  define XXH_ALIASING __attribute__((may_alias))
+#  define XXH_ALIASING __attribute__((__may_alias__))
 #else
 #  define XXH_ALIASING /* nothing */
 #endif
@@ -4407,8 +4719,6 @@ XXH3_len_17to128_64b(const xxh_u8* XXH_RESTRICT input, size_t len,
         return XXH3_avalanche(acc);
     }
 }
-
-#define XXH3_MIDSIZE_MAX 240
 
 XXH_NO_INLINE XXH_PUREF XXH64_hash_t
 XXH3_len_129to240_64b(const xxh_u8* XXH_RESTRICT input, size_t len,
@@ -5747,7 +6057,7 @@ XXH3_64bits_withSecretandSeed(XXH_NOESCAPE const void* input, size_t length, XXH
 /* ===   XXH3 streaming   === */
 #ifndef XXH_NO_STREAM
 /*
- * Malloc's a pointer that is always aligned to align.
+ * Malloc's a pointer that is always aligned to @align.
  *
  * This must be freed with `XXH_alignedFree()`.
  *
@@ -5815,8 +6125,12 @@ static void XXH_alignedFree(void* p)
 /*!
  * @brief Allocate an @ref XXH3_state_t.
  *
- * Must be freed with XXH3_freeState().
- * @return An allocated XXH3_state_t on success, `NULL` on failure.
+ * @return An allocated pointer of @ref XXH3_state_t on success.
+ * @return `NULL` on failure.
+ *
+ * @note Must be freed with XXH3_freeState().
+ *
+ * @see @ref streaming_example "Streaming Example"
  */
 XXH_PUBLIC_API XXH3_state_t* XXH3_createState(void)
 {
@@ -5830,9 +6144,13 @@ XXH_PUBLIC_API XXH3_state_t* XXH3_createState(void)
 /*!
  * @brief Frees an @ref XXH3_state_t.
  *
- * Must be allocated with XXH3_createState().
  * @param statePtr A pointer to an @ref XXH3_state_t allocated with @ref XXH3_createState().
- * @return XXH_OK.
+ *
+ * @return @ref XXH_OK.
+ *
+ * @note Must be allocated with XXH3_createState().
+ *
+ * @see @ref streaming_example "Streaming Example"
  */
 XXH_PUBLIC_API XXH_errorcode XXH3_freeState(XXH3_state_t* statePtr)
 {
@@ -6622,7 +6940,7 @@ XXH_PUBLIC_API XXH128_hash_t XXH3_128bits_digest (XXH_NOESCAPE const XXH3_state_
         }
     }
     /* len <= XXH3_MIDSIZE_MAX : short code */
-    if (state->seed)
+    if (state->useSeed)
         return XXH3_128bits_withSeed(state->buffer, (size_t)state->totalLen, state->seed);
     return XXH3_128bits_withSecret(state->buffer, (size_t)(state->totalLen),
                                    secret, state->secretLimit + XXH_STRIPE_LEN);
