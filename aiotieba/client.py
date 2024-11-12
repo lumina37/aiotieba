@@ -43,7 +43,6 @@ from .api import (
     get_follows,
     get_forum,
     get_forum_detail,
-    get_god_threads,
     get_group_msg,
     get_images,
     get_member_users,
@@ -1226,21 +1225,6 @@ class Client:
             return await get_tab_map.request_ws(self._ws_core, fname)
 
         return await get_tab_map.request_http(self._http_core, fname)
-
-    @handle_exception(get_god_threads.GodThreads)
-    async def get_god_threads(self, /, pn: int = 1, rn=10) -> get_god_threads.GodThreads:
-        """
-        获取pn页的精选神帖列表
-
-        Args:
-            pn (int, optional): 页码. Defaults to 1.
-            rn (int, optional): 请求的条目数. Defaults to 10. Max to 100.
-
-        Returns:
-            GodThreads: 精选神帖列表
-        """
-
-        return await get_god_threads.request(self._http_core, pn, rn)
 
     @handle_exception(get_rank_users.RankUsers)
     async def get_rank_users(self, fname_or_fid: str | int, /, pn: int = 1) -> get_rank_users.RankUsers:
