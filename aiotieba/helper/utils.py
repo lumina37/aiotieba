@@ -75,7 +75,7 @@ def handle_exception(
                 logger = get_logger()
                 if logger.isEnabledFor(err_log_level):
                     if err is None:
-                        err = "Suceeded"
+                        err = "Succeeded"
                     log_str = f"{err}. args={args} kwargs={kwargs}"
                     record = logger.makeRecord(logger.name, log_level, None, 0, log_str, None, None, func.__name__)
                     logger.handle(record)
