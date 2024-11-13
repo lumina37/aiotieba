@@ -199,7 +199,7 @@ class Contents_p(Containers[TypeFragment]):
                 else:
                     from ...logging import get_logger as LOG
 
-                    LOG().warning(f"Unknown fragment type. type={_type} proto={proto}")
+                    LOG().warning("Unknown fragment type. type=%s proto=%s", _type, proto)
 
         objs = list(_frags())
 
@@ -287,7 +287,7 @@ class Contents_pc(Containers[TypeFragment]):
                 else:
                     from ...logging import get_logger as LOG
 
-                    LOG().warning(f"Unknown fragment type. type={_type} proto={proto}")
+                    LOG().warning("Unknown fragment type. type=%s proto=%s", _type, proto)
 
         objs = list(_frags())
 
@@ -586,7 +586,7 @@ class Post:
     @cached_property
     def text(self) -> str:
         if self.sign:
-            text = f'{self.contents.text}\n{self.sign}'
+            text = f"{self.contents.text}\n{self.sign}"
         else:
             text = self.contents.text
         return text
@@ -775,7 +775,7 @@ class Contents_pt(Containers[TypeFragment]):
                 else:
                     from ...logging import get_logger as LOG
 
-                    LOG().warning(f"Unknown fragment type. type={_type} proto={proto}")
+                    LOG().warning("Unknown fragment type. type=%s proto=%s", _type, proto)
 
         objs = list(_frags())
 

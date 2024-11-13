@@ -1017,7 +1017,7 @@ class Client:
         elif size == 'l':
             img_url = yarl.URL.build(scheme="http", host="imgsrc.baidu.com", path=f"/forum/pic/item/{raw_hash}.jpg")
         else:
-            LOG().warning(f"Invalid size={size}")
+            LOG().warning("Invalid size=%s", size)
             return get_images.Image()
 
         return await get_images.request(self._http_core, img_url)

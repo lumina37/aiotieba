@@ -156,7 +156,7 @@ class Contents_t(Containers[TypeFragment]):
                 else:
                     from ...logging import get_logger as LOG
 
-                    LOG().warning(f"Unknown fragment type. type={_type} proto={proto}")
+                    LOG().warning("Unknown fragment type. type=%s proto=%s", _type, proto)
 
         objs = list(_frags())
 
@@ -435,7 +435,7 @@ class Contents_st(Containers[TypeFragment]):
                 else:
                     from ...logging import get_logger as LOG
 
-                    LOG().warning(f"Unknown fragment type. type={_type} proto={proto}")
+                    LOG().warning("Unknown fragment type. type=%s proto=%s", _type, proto)
 
         objs = list(_frags())
 
