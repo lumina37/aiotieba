@@ -69,7 +69,7 @@ class NetCore:
         # 获取TCP连接
         try:
             async with timeout(self.timeout.http_connect, self.connector._loop):
-                conn = await self.connector.connect(request, [], self.timeout.http)
+                conn = await self.connector.connect(request, [], self.timeout.http_timeout)
         except asyncio.TimeoutError as exc:
             raise aiohttp.ServerTimeoutError(f"Connection timeout to host {request.url}") from exc
 

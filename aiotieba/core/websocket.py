@@ -11,6 +11,7 @@ from collections.abc import Awaitable
 from typing import Callable
 
 import aiohttp
+import aiohttp.client_ws
 import yarl
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import algorithms
@@ -336,9 +337,9 @@ class WsCore:
             conn = response.connection
             conn_proto = conn.protocol
             transport = conn.transport
-            reader = aiohttp.FlowControlDataQueue(conn_proto, 1 << 16, loop=self.loop)
-            conn_proto.set_parser(aiohttp.http.WebSocketReader(reader, 4 * 1024 * 1024), reader)
-            writer = aiohttp.http.WebSocketWriter(conn_proto, transport, use_mask=True)
+            reader = aiohttp.client.WebSocketDataQueue(conn_proto, 1 << 16, loop=self.loop)
+            conn_proto.set_parser(aiohttp.client.WebSocketReader(reader, 4 * 1024 * 1024), reader)
+            writer = aiohttp.client.WebSocketWriter(conn_proto, transport, use_mask=True)
         except BaseException:
             response.close()
             raise
@@ -348,11 +349,10 @@ class WsCore:
                 writer,
                 'chat',
                 response,
-                self.net_core.timeout.ws_keepalive,
+                self.net_core.timeout.ws_timeout,
                 True,
                 True,
                 self.loop,
-                receive_timeout=self.net_core.timeout.ws_read,
                 heartbeat=self.net_core.timeout.ws_heartbeat,
             )
 
