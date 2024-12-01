@@ -26,7 +26,11 @@ def parse_body(body: bytes) -> Image:
 
 
 async def _request_bytes(http_core: HttpCore, url: yarl.URL) -> bytes:
-    request = http_core.pack_web_get_request(url, [])
+    request = http_core.pack_web_get_request(
+        url,
+        [],
+        extra_headers=[(aiohttp.hdrs.REFERER, "tieba.baidu.com")],
+    )
 
     body = await http_core.net_core.send_request(request, read_bufsize=256 * 1024, headers_checker=_headers_checker)
 
