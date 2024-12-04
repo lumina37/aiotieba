@@ -50,6 +50,7 @@ from .api import (
     get_rank_forums,
     get_rank_users,
     get_recom_status,
+    get_recover_info,
     get_recovers,
     get_replys,
     get_self_follow_forums,
@@ -1348,6 +1349,26 @@ class Client:
             user_id = id_
 
         return await get_recovers.request(self._http_core, fid, user_id, pn, rn)
+
+    @handle_exception(get_recover_info.RecoverThread)
+    async def get_recover_info(self, fname_or_fid: str | int, tid: int) -> get_recover_info.RecoverThread:
+        """
+        获取单个待恢复帖子信息
+
+        Args:
+            fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先fid
+            tid (int): 主题帖id
+
+        Returns:
+            RecoverThread: 待恢复帖子信息
+
+        Note:
+            本接口需要有目标贴吧的吧务身份
+        """
+
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
+
+        return await get_recover_info.request(self._http_core, fid, tid)
 
     @handle_exception(get_bawu_userlogs.Userlogs)
     async def get_bawu_userlogs(

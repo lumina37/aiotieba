@@ -12,8 +12,8 @@ def parse_body(body: bytes) -> SelfFollowForumsV1:
     if code := res_json['errno']:
         raise TiebaServerError(code, res_json['errmsg'])
 
-    data_dict = res_json['data']['like_forum']
-    self_follow_forums = SelfFollowForumsV1.from_tbdata(data_dict)
+    data_map = res_json['data']['like_forum']
+    self_follow_forums = SelfFollowForumsV1.from_tbdata(data_map)
 
     return self_follow_forums
 
