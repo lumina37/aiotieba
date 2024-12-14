@@ -84,7 +84,7 @@ class HttpCore:
         STOKEN_morsel['domain'] = "tieba.baidu.com"
         self.web.cookie_jar._cookies[("tieba.baidu.com", "")]['STOKEN'] = STOKEN_morsel
 
-    def pack_form_request(self, url: yarl.URL, /, data: list[tuple[str, str]]) -> aiohttp.ClientRequest:
+    def pack_form_request(self, url: yarl.URL, data: list[tuple[str, str]]) -> aiohttp.ClientRequest:
         """
         自动签名参数元组列表
         并将其打包为移动端表单请求
@@ -114,7 +114,7 @@ class HttpCore:
 
         return request
 
-    def pack_proto_request(self, url: yarl.URL, /, data: bytes) -> aiohttp.ClientRequest:
+    def pack_proto_request(self, url: yarl.URL, data: bytes) -> aiohttp.ClientRequest:
         """
         打包移动端protobuf请求
 
@@ -149,7 +149,7 @@ class HttpCore:
         return request
 
     def pack_web_get_request(
-        self, url: yarl.URL, /, params: list[tuple[str, str]], *, extra_headers: list[tuple[str, str]] | None = None
+        self, url: yarl.URL, params: list[tuple[str, str]], *, extra_headers: list[tuple[str, str]] | None = None
     ) -> aiohttp.ClientRequest:
         """
         打包网页端参数请求
@@ -181,7 +181,7 @@ class HttpCore:
         return request
 
     def pack_web_form_request(
-        self, url: yarl.URL, /, data: list[tuple[str, str]], *, extra_headers: list[tuple[str, str]] | None = None
+        self, url: yarl.URL, data: list[tuple[str, str]], *, extra_headers: list[tuple[str, str]] | None = None
     ) -> aiohttp.ClientRequest:
         """
         打包网页端表单请求
