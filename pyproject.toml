@@ -1,6 +1,6 @@
 [project]
 name = "aiotieba"
-version = "4.5.0a9"
+version = "4.5.0a10"
 description = "Asynchronous I/O Client for Baidu Tieba"
 authors = [{ name = "lumina37", email = "starry.qvq@gmail.com" }]
 urls = { Repository = "https://github.com/lumina37/aiotieba/", Documentation = "https://aiotieba.cc/" }
@@ -63,9 +63,9 @@ build-backend = "scikit_build_core.build"
 [tool.uv]
 managed = true
 dev-dependencies = [
-  "pytest==8.3.3",
-  "pytest-asyncio==0.24.0",
-  "pytest-rerunfailures==14.0",
+  "pytest==8.3.4",
+  "pytest-asyncio==0.25.0",
+  "pytest-rerunfailures==15.0",
   "mkdocs-material",
   "mkdocstrings[python]",
 ]
