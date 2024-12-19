@@ -3,7 +3,6 @@ from __future__ import annotations
 import dataclasses as dcs
 
 from ...enums import Gender, PrivLike, PrivReply
-from .vimage import VirtualImage
 
 
 @dcs.dataclass
@@ -30,7 +29,6 @@ class UserInfo:
         sign (str): 个性签名
         ip (str): ip归属地
         icons (list[str]): 印记信息
-        vimage (VirtualImage_pf): 虚拟形象信息
 
         is_vip (bool): 是否超级会员
         is_god (bool): 是否大神
@@ -61,7 +59,6 @@ class UserInfo:
     sign: str = ""
     ip: str = ''
     icons: list[str] = dcs.field(default_factory=list)
-    vimage: VirtualImage = dcs.field(default_factory=VirtualImage)
 
     is_vip: bool = False
     is_god: bool = False

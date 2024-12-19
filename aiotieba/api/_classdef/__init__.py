@@ -19,5 +19,4 @@ from .contents import (
     TypeFragTiebaPlus,
 )
 from .user import UserInfo
-from .vimage import VirtualImage
 from .vote import VoteInfo

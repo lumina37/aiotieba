@@ -13,7 +13,6 @@ from .api import (
     add_blacklist_old,
     add_post,
     agree,
-    agree_vimage,
     block,
     del_bawu,
     del_bawu_blacklist,
@@ -2055,26 +2054,6 @@ class Client:
         await self.__init_tbs()
 
         return await agree.request(self._http_core, tid, pid, is_comment, is_disagree=True, is_undo=True)
-
-    @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def agree_vimage(self, id_: str | int) -> BoolResponse:
-        """
-        虚拟形象点赞
-
-        Args:
-            id_ (str | int): 点赞对象的用户id user_id / user_name / portrait 优先user_id
-
-        Returns:
-            BoolResponse: True成功 False失败
-        """
-
-        if not isinstance(id_, int):
-            user = await self.get_user_info(id_, ReqUInfo.USER_ID)
-            user_id = user.user_id
-        else:
-            user_id = id_
-
-        return await agree_vimage.request(self._http_core, user_id)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def follow_user(self, id_: str | int) -> BoolResponse:

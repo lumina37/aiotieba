@@ -30,11 +30,6 @@ async def sign(BDUSS_key: str, *, retry_times: int = 0):
             await asyncio.sleep(1.0)
             if await client.sign_growth_share():
                 break
-        # 虚拟形象点赞
-        for _ in range(retry_times):
-            await asyncio.sleep(1.0)
-            if await client.agree_vimage(6050811555):
-                break
         # 互关任务
         for _ in range(retry_times):
             await asyncio.sleep(1.0)
