@@ -57,11 +57,11 @@ nav:
           - square_forums: ref/classdef/square_forums.md
           - bawu_info: ref/classdef/bawu_info.md
           - bawu_perm: ref/classdef/bawu_perm.md
-          - god_threads: ref/classdef/god_threads.md
           - rank_users: ref/classdef/rank_users.md
           - member_users: ref/classdef/member_users.md
           - blocks: ref/classdef/blocks.md
           - recovers: ref/classdef/recovers.md
+          - recover_thread: ref/classdef/recover_thread.md
           - bawu_userlogs: ref/classdef/bawu_userlogs.md
           - bawu_postlogs: ref/classdef/bawu_postlogs.md
           - unblock_appeals: ref/classdef/unblock_appeals.md

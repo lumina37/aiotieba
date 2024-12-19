@@ -9,24 +9,28 @@ from ._classdef import SelfFollowForums
 
 def parse_body(body: bytes) -> SelfFollowForums:
     res_json = parse_json(body)
-    if code := res_json['errno']:
-        raise TiebaServerError(code, res_json['errmsg'])
+    if code := res_json['error_code']:
+        raise TiebaServerError(code, res_json['error_msg'])
 
-    data_dict = res_json['data']['like_forum']
-    self_follow_forums = SelfFollowForums.from_tbdata(data_dict)
+    self_follow_forums = SelfFollowForums.from_tbdata(res_json)
 
     return self_follow_forums
 
 
-async def request(http_core: HttpCore, pn: int) -> SelfFollowForums:
-    params = [
-        ('pn', pn),
-        ('rn', '200'),
+async def request(http_core: HttpCore, pn: int, rn: int) -> SelfFollowForums:
+    data = [
+        ('tbs', http_core.account.tbs),
+        ('sort_type', 3),
+        ('call_from', 3),
+        ('page_no', pn),
+        ('res_num', rn),
     ]
 
-    request = http_core.pack_web_get_request(
-        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mg/o/getForumHome"), params
+    request = http_core.pack_web_form_request(
+        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/c/f/forum/forumGuide"),
+        data,
+        extra_headers=[('Subapp-Type', 'hybrid')],
     )
 
-    body = await http_core.net_core.send_request(request, read_bufsize=128 * 1024)
+    body = await http_core.net_core.send_request(request, read_bufsize=64 * 1024)
     return parse_body(body)

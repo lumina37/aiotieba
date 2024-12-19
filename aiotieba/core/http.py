@@ -148,23 +148,30 @@ class HttpCore:
 
         return request
 
-    def pack_web_get_request(self, url: yarl.URL, params: list[tuple[str, str]]) -> aiohttp.ClientRequest:
+    def pack_web_get_request(
+        self, url: yarl.URL, params: list[tuple[str, str]], *, extra_headers: list[tuple[str, str]] | None = None
+    ) -> aiohttp.ClientRequest:
         """
         打包网页端参数请求
 
         Args:
             url (yarl.URL): 链接
             params (list[tuple[str, str]]): 参数元组列表
+            extra_headers (list[tuple[str, str]]): 额外的请求头
 
         Returns:
             aiohttp.ClientRequest
         """
 
         url = url.update_query(params)
+        headers = self.web.headers
+        if extra_headers:
+            headers |= extra_headers
+
         request = aiohttp.ClientRequest(
             aiohttp.hdrs.METH_GET,
             url,
-            headers=self.web.headers,
+            headers=headers,
             cookies=self.web.cookie_jar.filter_cookies(url),
             proxy=self.net_core.proxy.url,
             proxy_auth=self.net_core.proxy.auth,
@@ -173,17 +180,24 @@ class HttpCore:
 
         return request
 
-    def pack_web_form_request(self, url: yarl.URL, data: list[tuple[str, str]]) -> aiohttp.ClientRequest:
+    def pack_web_form_request(
+        self, url: yarl.URL, data: list[tuple[str, str]], *, extra_headers: list[tuple[str, str]] | None = None
+    ) -> aiohttp.ClientRequest:
         """
         打包网页端表单请求
 
         Args:
             url (yarl.URL): 链接
             data (list[tuple[str, str]]): 参数元组列表
+            extra_headers (list[tuple[str, str]]): 额外的请求头
 
         Returns:
             aiohttp.ClientRequest
         """
+
+        headers = self.web.headers
+        if extra_headers:
+            headers |= extra_headers
 
         payload = aiohttp.payload.BytesPayload(
             urllib.parse.urlencode(data, doseq=True).encode('utf-8'),
@@ -193,7 +207,7 @@ class HttpCore:
         request = aiohttp.ClientRequest(
             aiohttp.hdrs.METH_POST,
             url,
-            headers=self.web.headers,
+            headers=headers,
             data=payload,
             cookies=self.web.cookie_jar.filter_cookies(url),
             proxy=self.net_core.proxy.url,

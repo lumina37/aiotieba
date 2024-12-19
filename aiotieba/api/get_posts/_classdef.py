@@ -5,7 +5,7 @@ from functools import cached_property
 
 from ...enums import Gender, PrivLike, PrivReply
 from ...exception import TbErrorExt
-from .._classdef import Containers, TypeMessage, VirtualImage, VoteInfo
+from .._classdef import Containers, TypeMessage, VoteInfo
 from .._classdef.contents import (
     _IMAGEHASH_EXP,
     FragAt,
@@ -18,8 +18,6 @@ from .._classdef.contents import (
     TypeFragment,
     TypeFragText,
 )
-
-VirtualImage_p = VirtualImage
 
 FragText_p = FragText_pt = FragText_pc = FragText
 FragEmoji_p = FragEmoji_pt = FragEmoji_pc = FragEmoji
@@ -199,7 +197,7 @@ class Contents_p(Containers[TypeFragment]):
                 else:
                     from ...logging import get_logger as LOG
 
-                    LOG().warning(f"Unknown fragment type. type={_type} proto={proto}")
+                    LOG().warning("Unknown fragment type. type=%s proto=%s", _type, proto)
 
         objs = list(_frags())
 
@@ -287,7 +285,7 @@ class Contents_pc(Containers[TypeFragment]):
                 else:
                     from ...logging import get_logger as LOG
 
-                    LOG().warning(f"Unknown fragment type. type={_type} proto={proto}")
+                    LOG().warning("Unknown fragment type. type=%s proto=%s", _type, proto)
 
         objs = list(_frags())
 
@@ -513,7 +511,6 @@ class Post:
         pid (int): 回复id
         user (UserInfo_p): 发布者的用户信息
         author_id (int): 发布者的user_id
-        vimage (VirtualImage_p): 虚拟形象信息
 
         floor (int): 楼层数
         reply_num (int): 楼中楼数
@@ -534,7 +531,6 @@ class Post:
     pid: int = 0
     user: UserInfo_p = dcs.field(default_factory=UserInfo_p)
     author_id: int = 0
-    vimage: VirtualImage_p = dcs.field(default_factory=VirtualImage_p)
 
     floor: int = 0
     reply_num: int = 0
@@ -551,7 +547,6 @@ class Post:
         is_aimeme = bool(data_proto.sprite_meme_info.meme_id)
         pid = data_proto.id
         author_id = data_proto.author_id
-        vimage = VirtualImage_p.from_tbdata(data_proto)
         floor = data_proto.floor
         reply_num = data_proto.sub_post_number
         agree = data_proto.agree.agree_num
@@ -568,7 +563,6 @@ class Post:
             pid,
             None,
             author_id,
-            vimage,
             floor,
             reply_num,
             agree,
@@ -586,7 +580,7 @@ class Post:
     @cached_property
     def text(self) -> str:
         if self.sign:
-            text = f'{self.contents.text}\n{self.sign}'
+            text = f"{self.contents.text}\n{self.sign}"
         else:
             text = self.contents.text
         return text
@@ -775,7 +769,7 @@ class Contents_pt(Containers[TypeFragment]):
                 else:
                     from ...logging import get_logger as LOG
 
-                    LOG().warning(f"Unknown fragment type. type={_type} proto={proto}")
+                    LOG().warning("Unknown fragment type. type=%s proto=%s", _type, proto)
 
         objs = list(_frags())
 

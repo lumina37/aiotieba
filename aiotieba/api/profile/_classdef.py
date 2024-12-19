@@ -27,32 +27,6 @@ FragVoice_pf = FragVoice
 
 
 @dcs.dataclass
-class VirtualImage_pf:
-    """
-    虚拟形象信息
-
-    Attributes:
-        enabled (bool): 是否启用虚拟形象
-        state (str): 虚拟形象状态签名
-    """
-
-    enabled: bool = False
-    state: str = ""
-
-    @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> VirtualImage_pf:
-        enabled = bool(data_proto.isset_virtual_image)
-        state = data_proto.personal_state.text
-        return VirtualImage_pf(enabled, state)
-
-    def __str__(self) -> str:
-        return self.state
-
-    def __bool__(self) -> bool:
-        return self.enabled
-
-
-@dcs.dataclass
 class UserInfo_pf(TbErrorExt):
     """
     用户信息
@@ -77,7 +51,6 @@ class UserInfo_pf(TbErrorExt):
         sign (str): 个性签名
         ip (str): ip归属地
         icons (list[str]): 印记信息
-        vimage (VirtualImage_pf): 虚拟形象信息
 
         is_vip (bool): 是否超级会员
         is_god (bool): 是否大神
@@ -107,7 +80,6 @@ class UserInfo_pf(TbErrorExt):
     sign: str = ""
     ip: str = ''
     icons: list[str] = dcs.field(default_factory=list)
-    vimage: VirtualImage_pf = dcs.field(default_factory=VirtualImage_pf)
 
     is_vip: bool = False
     is_god: bool = False
@@ -136,7 +108,6 @@ class UserInfo_pf(TbErrorExt):
         sign = user_proto.intro
         ip = user_proto.ip_address
         icons = [name for i in user_proto.iconinfo if (name := i.name)]
-        vimage = VirtualImage_pf.from_tbdata(user_proto.virtual_image_info)
         is_vip = bool(user_proto.new_tshow_icon)
         is_god = bool(user_proto.new_god_data.status)
         anti_proto = data_proto.anti_stat
@@ -163,7 +134,6 @@ class UserInfo_pf(TbErrorExt):
             sign,
             ip,
             icons,
-            vimage,
             is_vip,
             is_god,
             is_blocked,
@@ -304,7 +274,7 @@ class Contents_pf(Containers[TypeFragment]):
                 else:
                     from ...logging import get_logger as LOG
 
-                    LOG().warning(f"Unknown fragment type. type={_type} proto={proto}")
+                    LOG().warning("Unknown fragment type. type=%s proto=%s", _type, proto)
 
         objs = list(_frags())
         objs += imgs

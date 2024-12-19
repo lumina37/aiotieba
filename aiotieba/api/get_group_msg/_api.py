@@ -16,7 +16,7 @@ def pack_proto(account: Account, group_ids: list[int], msg_ids: list[int], get_t
         group_proto.groupId = group_id
         group_proto.lastMsgId = msg_id
     req_proto.data.gettype = str(get_type)
-    req_proto.cuid = f"{account.cuid}|com.baidu.tieba_mini{POST_VERSION}"
+    req_proto.cuid = f'{account.cuid}|com.baidu.tieba_mini{POST_VERSION}'
 
     return req_proto.SerializeToString()
 
