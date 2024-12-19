@@ -1268,7 +1268,7 @@ class Client:
 
         Args:
             fname_or_fid (str | int): 目标贴吧名或fid 优先贴吧名
-            pn (int, optional): 页码. Defaults to 1.
+            pn (int, optional): 页码. Defaults to 1. Max to 500.
 
         Returns:
             MemberUsers: 最新关注用户列表
