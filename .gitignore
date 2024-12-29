@@ -9,6 +9,7 @@ dist/
 *build*/
 
 .python-version
+*.lock
 
 /*.py
 account.toml
