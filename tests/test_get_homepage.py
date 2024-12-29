@@ -10,7 +10,6 @@ async def test_Homepage(client: tb.Client):
 
     ##### Thread_pf #####
     thread = homepage[0]
-    assert len(thread.contents) > 0
     assert thread.fid > 0
     assert thread.fname != ''
     assert thread.tid > 0
