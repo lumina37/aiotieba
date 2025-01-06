@@ -1,6 +1,6 @@
 [project]
 name = "aiotieba"
-version = "4.5.1a0"
+version = "4.5.1a2"
 description = "Asynchronous I/O Client for Baidu Tieba"
 authors = [{ name = "lumina37", email = "starry.qvq@gmail.com" }]
 urls = { Repository = "https://github.com/lumina37/aiotieba/", Documentation = "https://aiotieba.cc/" }

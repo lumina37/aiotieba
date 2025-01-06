@@ -84,6 +84,7 @@ from .api import (
     set_profile,
     set_thread_privacy,
     sign_forum,
+    sign_forums,
     sign_growth,
     sync,
     tieba_uid2user_info,
@@ -2334,6 +2335,20 @@ class Client:
         await self.__init_tbs()
 
         return await sign_forum.request(self._http_core, fname)
+
+    @handle_exception(BoolResponse, ok_log_level=logging.INFO)
+    async def sign_forums(self) -> BoolResponse:
+        """
+        一键签到
+
+        Returns:
+            BoolResponse: True成功 False失败
+
+        Note:
+            非SVIP可签到50个吧，SVIP1~5分别可签200~400个吧
+        """
+
+        return await sign_forums.request(self._http_core)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def sign_growth(self) -> BoolResponse:
