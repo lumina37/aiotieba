@@ -3,15 +3,19 @@ from __future__ import annotations
 import dataclasses as dcs
 import urllib.parse
 from http.cookies import Morsel
+from typing import TYPE_CHECKING
 
 import aiohttp
-import yarl
 
 from ..__version__ import __version__
 from ..const import APP_BASE_HOST
 from ..helper.crypto import sign
-from .account import Account
-from .net import NetCore
+
+if TYPE_CHECKING:
+    import yarl
+
+    from .account import Account
+    from .net import NetCore
 
 
 @dcs.dataclass
@@ -78,11 +82,11 @@ class HttpCore:
         BDUSS_morsel = Morsel()
         BDUSS_morsel.set("BDUSS", new_account.BDUSS, new_account.BDUSS)
         BDUSS_morsel["domain"] = "baidu.com"
-        self.web.cookie_jar._cookies[("baidu.com", "")]["BDUSS"] = BDUSS_morsel
+        self.web.cookie_jar._cookies["baidu.com", ""]["BDUSS"] = BDUSS_morsel
         STOKEN_morsel = Morsel()
         STOKEN_morsel.set("STOKEN", new_account.STOKEN, new_account.STOKEN)
         STOKEN_morsel["domain"] = "tieba.baidu.com"
-        self.web.cookie_jar._cookies[("tieba.baidu.com", "")]["STOKEN"] = STOKEN_morsel
+        self.web.cookie_jar._cookies["tieba.baidu.com", ""]["STOKEN"] = STOKEN_morsel
 
     def pack_form_request(self, url: yarl.URL, data: list[tuple[str, str]]) -> aiohttp.ClientRequest:
         """

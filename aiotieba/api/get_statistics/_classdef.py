@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from collections.abc import Sequence
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 @dcs.dataclass

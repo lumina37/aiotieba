@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import yarl
 
 from ...const import APP_BASE_HOST, APP_SECURE_SCHEME, MAIN_VERSION
-from ...core import HttpCore
 from ...exception import TiebaServerError
 from ...helper import parse_json
 from ._classdef import UserInfo_login
+
+if TYPE_CHECKING:
+    from ...core import HttpCore
 
 
 def parse_body(body: bytes) -> tuple[UserInfo_login, str]:

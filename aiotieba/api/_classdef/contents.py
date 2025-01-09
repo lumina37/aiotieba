@@ -3,11 +3,12 @@ from __future__ import annotations
 import dataclasses as dcs
 import re
 from functools import cached_property
-from typing import Protocol, TypeVar
+from typing import TYPE_CHECKING, Protocol, TypeVar
 
 import yarl
 
-from .common import TypeMessage
+if TYPE_CHECKING:
+    from .common import TypeMessage
 
 TypeFragment = TypeVar("TypeFragment")
 

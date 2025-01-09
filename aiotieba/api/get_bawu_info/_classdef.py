@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import dataclasses as dcs
 from functools import cached_property
+from typing import TYPE_CHECKING
 
-from .._classdef import TypeMessage
+if TYPE_CHECKING:
+    from .._classdef import TypeMessage
 
 
 @dcs.dataclass

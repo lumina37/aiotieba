@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import subprocess
-from collections.abc import Iterator
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 commom_proto_pth = Path("aiotieba/api/_protobuf")
 

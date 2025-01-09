@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import dataclasses as dcs
+from typing import TYPE_CHECKING
 
-from .common import TypeMessage
+if TYPE_CHECKING:
+    from .common import TypeMessage
 
 
 @dcs.dataclass

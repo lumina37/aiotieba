@@ -99,10 +99,8 @@ select = [
   "ASYNC",
   "B",
   "A",
-  "COM",
   "C4",
   "FA",
-  "ISC",
   "ICN",
   "LOG",
   "G",
@@ -112,11 +110,13 @@ select = [
   "Q",
   "RSE",
   "SLOT",
+  "TC",
+  "PTH",
   "NPY",
   "PERF",
   "FURB",
 ]
-ignore = ["A005", "E402", "E501", "E266", "COM812"]
+ignore = ["A005", "E402", "E501", "E266"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]

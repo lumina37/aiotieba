@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from collections.abc import Mapping
-
-import bs4
+from typing import TYPE_CHECKING
 
 from ...exception import TbErrorExt
 from ...helper import parse_json
 from .._classdef import Containers
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    import bs4
 
 
 @dcs.dataclass

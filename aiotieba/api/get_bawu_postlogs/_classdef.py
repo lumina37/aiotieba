@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import dataclasses as dcs
 from datetime import datetime
-
-import bs4
+from typing import TYPE_CHECKING
 
 from ...exception import TbErrorExt
 from ...helper import default_datetime
 from .._classdef import Containers
 from .._classdef.contents import _IMAGEHASH_EXP
+
+if TYPE_CHECKING:
+    import bs4
 
 
 @dcs.dataclass

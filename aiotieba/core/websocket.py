@@ -8,7 +8,7 @@ import random
 import time
 import weakref
 from collections.abc import Awaitable
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
 
 import aiohttp
 import aiohttp.client_ws
@@ -19,8 +19,10 @@ from cryptography.hazmat.primitives.ciphers import algorithms
 from ..enums import WsStatus
 from ..exception import HTTPStatusError
 from ..helper import timeout
-from .account import Account
-from .net import NetCore
+
+if TYPE_CHECKING:
+    from .account import Account
+    from .net import NetCore
 
 TypeWebsocketCallback = Callable[["WsCore", bytes, int], Awaitable[None]]
 

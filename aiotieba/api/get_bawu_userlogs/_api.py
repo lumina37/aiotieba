@@ -1,16 +1,20 @@
 from __future__ import annotations
 
-import datetime
 import time
+from typing import TYPE_CHECKING
 from urllib.parse import quote
 
 import bs4
 import yarl
 
 from ...const import WEB_BASE_HOST
-from ...core import HttpCore
 from ...enums import BawuSearchType
 from ._classdef import Userlogs
+
+if TYPE_CHECKING:
+    import datetime
+
+    from ...core import HttpCore
 
 
 def parse_body(body: bytes) -> Userlogs:

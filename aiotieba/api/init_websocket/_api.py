@@ -2,16 +2,19 @@ from __future__ import annotations
 
 import binascii
 import time
+from typing import TYPE_CHECKING
 
 from cryptography.hazmat.primitives.asymmetric.padding import PKCS1v15
 from cryptography.hazmat.primitives.serialization import load_der_public_key
 
 from ...const import MAIN_VERSION
-from ...core import Account, WsCore
 from ...exception import TiebaServerError
 from ...helper import pack_json
 from ._classdef import WsMsgGroupInfo
 from .protobuf import UpdateClientInfoReqIdl_pb2, UpdateClientInfoResIdl_pb2
+
+if TYPE_CHECKING:
+    from ...core import Account, WsCore
 
 CMD = 1001
 
