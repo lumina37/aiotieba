@@ -111,6 +111,7 @@ select = [
   "PT",
   "Q",
   "RSE",
+  "SLOT",
   "NPY",
   "PERF",
   "FURB",

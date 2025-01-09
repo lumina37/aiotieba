@@ -69,6 +69,8 @@ class StrResponse(TbErrorExt, str):
         err (Exception | None): 捕获的异常
     """
 
+    __slots__ = []
+
     def __new__(cls, s: str = "") -> StrResponse:
         obj = super().__new__(cls, s)
         return obj
