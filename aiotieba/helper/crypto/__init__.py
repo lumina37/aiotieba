@@ -15,5 +15,5 @@ def sign(data: list[tuple[str, str | int]]) -> list[tuple[str, str | int]]:
         list[tuple[str, str | int]]: 签名后的form参数元组列表
     """
 
-    data.append(('sign', _sign(data)))
+    data.append(("sign", _sign(data)))
     return data

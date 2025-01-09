@@ -10,7 +10,7 @@ async def test_Forum_detail(client: tb.Client):
 
     ##### Forum_detail #####
     assert forum.fid > 0
-    assert forum.fname != ''
+    assert forum.fname != ""
     assert forum.small_avatar != ""
     assert forum.origin_avatar != ""
     assert forum.slogan != ""

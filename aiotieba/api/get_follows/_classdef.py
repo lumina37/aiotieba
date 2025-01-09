@@ -25,18 +25,18 @@ class Follow:
     """
 
     user_id: int = 0
-    portrait: str = ''
-    user_name: str = ''
-    nick_name_new: str = ''
+    portrait: str = ""
+    user_name: str = ""
+    nick_name_new: str = ""
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> Follow:
-        user_id = int(data_map['id'])
-        portrait = data_map['portrait']
-        if '?' in portrait:
+        user_id = int(data_map["id"])
+        portrait = data_map["portrait"]
+        if "?" in portrait:
             portrait = portrait[:-13]
-        user_name = data_map['name']
-        nick_name_new = data_map['name_show']
+        user_name = data_map["name"]
+        nick_name_new = data_map["name_show"]
         return Follow(user_id, portrait, user_name, nick_name_new)
 
     def __str__(self) -> str:
@@ -90,9 +90,9 @@ class Page_follow:
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> Page_follow:
-        current_page = int(data_map['pn'])
-        total_count = int(data_map['total_follow_num'])
-        has_more = bool(int(data_map['has_more']))
+        current_page = int(data_map["pn"])
+        total_count = int(data_map["total_follow_num"])
+        has_more = bool(int(data_map["has_more"]))
         has_prev = current_page > 1
         return Page_follow(current_page, total_count, has_more, has_prev)
 
@@ -114,7 +114,7 @@ class Follows(TbErrorExt, Containers[Follow]):
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> Follows:
-        objs = [Follow.from_tbdata(m) for m in data_map['follow_list']]
+        objs = [Follow.from_tbdata(m) for m in data_map["follow_list"]]
         page = Page_follow.from_tbdata(data_map)
         return Follows(objs, page)
 

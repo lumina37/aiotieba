@@ -28,28 +28,28 @@ class BlacklistUser:
     """
 
     user_id: int = 0
-    portrait: str = ''
-    user_name: str = ''
-    nick_name_new: str = ''
+    portrait: str = ""
+    user_name: str = ""
+    nick_name_new: str = ""
 
     btype: BlacklistType = BlacklistType.NULL
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> BlacklistUser:
-        user_id = int(data_map['uid'])
-        portrait = data_map['portrait']
-        if '?' in portrait:
+        user_id = int(data_map["uid"])
+        portrait = data_map["portrait"]
+        if "?" in portrait:
             portrait = portrait[:-13]
-        user_name = data_map['user_name']
-        nick_name_new = data_map['name_show']
+        user_name = data_map["user_name"]
+        nick_name_new = data_map["name_show"]
 
         btype = BlacklistType.NULL
-        perm: dict[str, str] = data_map['perm_list']
-        if int(perm['follow']):
+        perm: dict[str, str] = data_map["perm_list"]
+        if int(perm["follow"]):
             btype |= BlacklistType.FOLLOW
-        if int(perm['chat']):
+        if int(perm["chat"]):
             btype |= BlacklistType.CHAT
-        if int(perm['interact']):
+        if int(perm["interact"]):
             btype |= BlacklistType.INTERACT
 
         return BlacklistUser(user_id, portrait, user_name, nick_name_new, btype)
@@ -96,5 +96,5 @@ class BlacklistUsers(TbErrorExt, Containers[BlacklistUser]):
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> BlacklistUsers:
-        objs = [BlacklistUser.from_tbdata(m) for m in data_map.get('user_perm_list', [])]
+        objs = [BlacklistUser.from_tbdata(m) for m in data_map.get("user_perm_list", [])]
         return BlacklistUsers(objs)

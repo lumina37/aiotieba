@@ -16,14 +16,14 @@ class UserInfo_login:
     """
 
     user_id: int = 0
-    portrait: str = ''
-    user_name: str = ''
+    portrait: str = ""
+    user_name: str = ""
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> UserInfo_login:
-        user_id = int(data_map['id'])
-        portrait = data_map['portrait']
-        user_name = data_map['name']
+        user_id = int(data_map["id"])
+        portrait = data_map["portrait"]
+        user_name = data_map["name"]
         return UserInfo_login(user_id, portrait, user_name)
 
     def __str__(self) -> str:

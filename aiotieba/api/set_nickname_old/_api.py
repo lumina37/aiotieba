@@ -8,14 +8,14 @@ from ...helper import parse_json
 
 def parse_body(body: bytes) -> None:
     res_json = parse_json(body)
-    if code := res_json['no']:
-        raise TiebaServerError(code, res_json['error'])
+    if code := res_json["no"]:
+        raise TiebaServerError(code, res_json["error"])
 
 
 async def request(http_core: HttpCore, nick_name: str) -> BoolResponse:
     params = [
-        ('nickname', nick_name),
-        ('tbs', 1),
+        ("nickname", nick_name),
+        ("tbs", 1),
     ]
 
     request = http_core.pack_web_form_request(

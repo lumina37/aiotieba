@@ -11,4 +11,4 @@ async def test_Fans(client: tb.Client):
     ##### Fan #####
     fan = fans[0]
     assert fan.user_id > 0
-    assert fan.portrait != ''
+    assert fan.portrait != ""

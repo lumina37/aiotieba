@@ -76,13 +76,13 @@ class HttpCore:
         self.account = new_account
 
         BDUSS_morsel = Morsel()
-        BDUSS_morsel.set('BDUSS', new_account.BDUSS, new_account.BDUSS)
-        BDUSS_morsel['domain'] = "baidu.com"
-        self.web.cookie_jar._cookies[("baidu.com", "")]['BDUSS'] = BDUSS_morsel
+        BDUSS_morsel.set("BDUSS", new_account.BDUSS, new_account.BDUSS)
+        BDUSS_morsel["domain"] = "baidu.com"
+        self.web.cookie_jar._cookies[("baidu.com", "")]["BDUSS"] = BDUSS_morsel
         STOKEN_morsel = Morsel()
-        STOKEN_morsel.set('STOKEN', new_account.STOKEN, new_account.STOKEN)
-        STOKEN_morsel['domain'] = "tieba.baidu.com"
-        self.web.cookie_jar._cookies[("tieba.baidu.com", "")]['STOKEN'] = STOKEN_morsel
+        STOKEN_morsel.set("STOKEN", new_account.STOKEN, new_account.STOKEN)
+        STOKEN_morsel["domain"] = "tieba.baidu.com"
+        self.web.cookie_jar._cookies[("tieba.baidu.com", "")]["STOKEN"] = STOKEN_morsel
 
     def pack_form_request(self, url: yarl.URL, data: list[tuple[str, str]]) -> aiohttp.ClientRequest:
         """
@@ -98,7 +98,7 @@ class HttpCore:
         """
 
         payload = aiohttp.payload.BytesPayload(
-            urllib.parse.urlencode(sign(data), doseq=True).encode('utf-8'),
+            urllib.parse.urlencode(sign(data), doseq=True).encode("utf-8"),
             content_type="application/x-www-form-urlencoded",
         )
 
@@ -126,13 +126,13 @@ class HttpCore:
             aiohttp.ClientRequest
         """
 
-        writer = aiohttp.MultipartWriter('form-data', boundary="-*_r1999")
+        writer = aiohttp.MultipartWriter("form-data", boundary="-*_r1999")
         payload_headers = {
             aiohttp.hdrs.CONTENT_DISPOSITION: aiohttp.helpers.content_disposition_header(
-                'form-data', name='data', filename='file'
+                "form-data", name="data", filename="file"
             )
         }
-        payload = aiohttp.BytesPayload(data, content_type='', headers=payload_headers)
+        payload = aiohttp.BytesPayload(data, content_type="", headers=payload_headers)
         payload.headers.popone(aiohttp.hdrs.CONTENT_TYPE)
         writer._parts.append((payload, None, None))
 
@@ -200,7 +200,7 @@ class HttpCore:
             headers |= extra_headers
 
         payload = aiohttp.payload.BytesPayload(
-            urllib.parse.urlencode(data, doseq=True).encode('utf-8'),
+            urllib.parse.urlencode(data, doseq=True).encode("utf-8"),
             content_type="application/x-www-form-urlencoded",
         )
 

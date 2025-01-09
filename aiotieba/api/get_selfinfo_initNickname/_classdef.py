@@ -20,15 +20,15 @@ class UserInfo_selfinit:
         log_name (str): 用于在日志中记录用户信息
     """
 
-    user_name: str = ''
-    nick_name_old: str = ''
+    user_name: str = ""
+    nick_name_old: str = ""
     tieba_uid: int = 0
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> UserInfo_selfinit:
-        user_name = data_map['user_name']
-        nick_name_old = data_map['name_show']
-        tieba_uid = data_map['tieba_uid']
+        user_name = data_map["user_name"]
+        nick_name_old = data_map["name_show"]
+        tieba_uid = data_map["tieba_uid"]
         return UserInfo_selfinit(user_name, nick_name_old, tieba_uid)
 
     def __str__(self) -> str:

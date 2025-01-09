@@ -16,12 +16,12 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'AddPostResIdl_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "AddPostResIdl_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
-    _globals['_ADDPOSTRESIDL']._serialized_start = 37
-    _globals['_ADDPOSTRESIDL']._serialized_end = 279
-    _globals['_ADDPOSTRESIDL_DATARES']._serialized_start = 116
-    _globals['_ADDPOSTRESIDL_DATARES']._serialized_end = 279
-    _globals['_ADDPOSTRESIDL_DATARES_POSTANTIINFO']._serialized_start = 245
-    _globals['_ADDPOSTRESIDL_DATARES_POSTANTIINFO']._serialized_end = 279
+    _globals["_ADDPOSTRESIDL"]._serialized_start = 37
+    _globals["_ADDPOSTRESIDL"]._serialized_end = 279
+    _globals["_ADDPOSTRESIDL_DATARES"]._serialized_start = 116
+    _globals["_ADDPOSTRESIDL_DATARES"]._serialized_end = 279
+    _globals["_ADDPOSTRESIDL_DATARES_POSTANTIINFO"]._serialized_start = 245
+    _globals["_ADDPOSTRESIDL_DATARES_POSTANTIINFO"]._serialized_end = 279

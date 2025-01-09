@@ -30,8 +30,8 @@ class UserInfo_moindex:
     """
 
     user_id: int = 0
-    portrait: str = ''
-    user_name: str = ''
+    portrait: str = ""
+    user_name: str = ""
 
     gender: Gender = Gender.UNKNOWN
     post_num: int = 0
@@ -44,19 +44,19 @@ class UserInfo_moindex:
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> UserInfo_moindex:
-        user_id = data_map['id']
-        portrait = data_map['portrait']
-        user_name = data_map['name']
+        user_id = data_map["id"]
+        portrait = data_map["portrait"]
+        user_name = data_map["name"]
 
-        gender = Gender(data_map['user_sex'])
-        post_num = data_map['post_num']
-        fan_num = data_map['fans_num']
-        follow_num = data_map['concern_num']
-        forum_num = data_map['like_forum_num']
-        sign = data_map['intro']
+        gender = Gender(data_map["user_sex"])
+        post_num = data_map["post_num"]
+        fan_num = data_map["fans_num"]
+        follow_num = data_map["concern_num"]
+        forum_num = data_map["like_forum_num"]
+        sign = data_map["intro"]
 
-        if vip_dict := data_map['vipInfo']:
-            is_vip = int(vip_dict['v_status']) == 3
+        if vip_dict := data_map["vipInfo"]:
+            is_vip = int(vip_dict["v_status"]) == 3
         else:
             is_vip = False
 

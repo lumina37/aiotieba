@@ -7,7 +7,7 @@ from ._classdef import MemberUsers
 
 
 def parse_body(body: bytes) -> MemberUsers:
-    soup = bs4.BeautifulSoup(body, 'lxml')
+    soup = bs4.BeautifulSoup(body, "lxml")
     member_users = MemberUsers.from_tbdata(soup)
 
     return member_users
@@ -15,9 +15,9 @@ def parse_body(body: bytes) -> MemberUsers:
 
 async def request(http_core: HttpCore, fname: str, pn: int) -> MemberUsers:
     params = [
-        ('word', fname),
-        ('pn', pn),
-        ('ie', 'utf-8'),
+        ("word", fname),
+        ("pn", pn),
+        ("ie", "utf-8"),
     ]
 
     request = http_core.pack_web_get_request(

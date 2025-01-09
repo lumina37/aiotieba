@@ -17,12 +17,12 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'GetForumSquareResIdl_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "GetForumSquareResIdl_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
-    _globals['_GETFORUMSQUARERESIDL']._serialized_start = 56
-    _globals['_GETFORUMSQUARERESIDL']._serialized_end = 370
-    _globals['_GETFORUMSQUARERESIDL_DATARES']._serialized_start = 149
-    _globals['_GETFORUMSQUARERESIDL_DATARES']._serialized_end = 370
-    _globals['_GETFORUMSQUARERESIDL_DATARES_RECOMMENDFORUMINFO']._serialized_start = 251
-    _globals['_GETFORUMSQUARERESIDL_DATARES_RECOMMENDFORUMINFO']._serialized_end = 370
+    _globals["_GETFORUMSQUARERESIDL"]._serialized_start = 56
+    _globals["_GETFORUMSQUARERESIDL"]._serialized_end = 370
+    _globals["_GETFORUMSQUARERESIDL_DATARES"]._serialized_start = 149
+    _globals["_GETFORUMSQUARERESIDL_DATARES"]._serialized_end = 370
+    _globals["_GETFORUMSQUARERESIDL_DATARES_RECOMMENDFORUMINFO"]._serialized_start = 251
+    _globals["_GETFORUMSQUARERESIDL_DATARES_RECOMMENDFORUMINFO"]._serialized_end = 370

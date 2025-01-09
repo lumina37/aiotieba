@@ -123,15 +123,15 @@ class UserInfo_u:
     """
 
     user_id: int = 0
-    portrait: str = ''
-    user_name: str = ''
-    nick_name_new: str = ''
+    portrait: str = ""
+    user_name: str = ""
+    nick_name_new: str = ""
 
     @staticmethod
     def from_tbdata(data_proto: TypeMessage) -> UserInfo_u:
         user_id = data_proto.user_id
         portrait = data_proto.user_portrait
-        if '?' in portrait:
+        if "?" in portrait:
             portrait = portrait[:-13]
         user_name = data_proto.user_name
         nick_name_new = data_proto.name_show
@@ -431,10 +431,10 @@ class UserThread:
     """
 
     contents: Contents_ut = dcs.field(default_factory=Contents_ut)
-    title: str = ''
+    title: str = ""
 
     fid: int = 0
-    fname: str = ''
+    fname: str = ""
     tid: int = 0
     pid: int = 0
     user: UserInfo_u = dcs.field(default_factory=UserInfo_u)

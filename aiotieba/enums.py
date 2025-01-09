@@ -139,9 +139,9 @@ class BawuType(StrEnum):
         VOICE_EDITOR 语音小编
     """
 
-    MANAGER = 'assist'
-    IMAGE_EDITOR = 'picadmin'
-    VOICE_EDITOR = 'voiceadmin'
+    MANAGER = "assist"
+    IMAGE_EDITOR = "picadmin"
+    VOICE_EDITOR = "voiceadmin"
 
 
 class BawuPermType(enum.Flag):

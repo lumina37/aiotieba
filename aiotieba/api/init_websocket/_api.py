@@ -26,12 +26,12 @@ def pack_proto(account: Account) -> bytes:
     req_proto.data.bduss = account.BDUSS
 
     device = {
-        'cuid': account.cuid,
-        '_client_version': MAIN_VERSION,
-        '_msg_status': '1',
-        'cuid_galaxy2': account.cuid_galaxy2,
-        '_client_type': '2',
-        'timestamp': str(int(time.time() * 1000)),
+        "cuid": account.cuid,
+        "_client_version": MAIN_VERSION,
+        "_msg_status": "1",
+        "cuid_galaxy2": account.cuid_galaxy2,
+        "_client_type": "2",
+        "timestamp": str(int(time.time() * 1000)),
     }
     req_proto.data.device = pack_json(device)
 

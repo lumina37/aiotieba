@@ -58,7 +58,7 @@ class FragImage_p:
         origin_src = data_proto.origin_src
         origin_size = data_proto.origin_size
 
-        show_width, _, show_height = data_proto.bsize.partition(',')
+        show_width, _, show_height = data_proto.bsize.partition(",")
         show_width = int(show_width)
         show_height = int(show_height)
 
@@ -326,14 +326,14 @@ class UserInfo_p:
     """
 
     user_id: int = 0
-    portrait: str = ''
-    user_name: str = ''
-    nick_name_new: str = ''
+    portrait: str = ""
+    user_name: str = ""
+    nick_name_new: str = ""
 
     level: int = 0
     glevel: int = 0
     gender: Gender = Gender.UNKNOWN
-    ip: str = ''
+    ip: str = ""
     icons: list[str] = dcs.field(default_factory=list)
 
     is_bawu: bool = False
@@ -346,7 +346,7 @@ class UserInfo_p:
     def from_tbdata(data_proto: TypeMessage) -> UserInfo_p:
         user_id = data_proto.id
         portrait = data_proto.portrait
-        if '?' in portrait:
+        if "?" in portrait:
             portrait = portrait[:-13]
         user_name = data_proto.name
         nick_name_new = data_proto.name_show
@@ -435,7 +435,7 @@ class Comment_p:
     contents: Contents_pc = dcs.field(default_factory=Contents_pc)
 
     fid: int = 0
-    fname: str = ''
+    fname: str = ""
     tid: int = 0
     ppid: int = 0
     pid: int = 0
@@ -458,7 +458,7 @@ class Comment_p:
             first_frag = contents[0]
             if (
                 isinstance(first_frag, FragText_p)
-                and first_frag.text == '回复 '
+                and first_frag.text == "回复 "
                 and (reply_to_id := data_proto.content[1].uid)
             ):
                 reply_to_id = reply_to_id
@@ -468,7 +468,7 @@ class Comment_p:
                 contents.texts = contents.texts[2:]
                 if contents.texts:
                     first_text_frag = contents.texts[0]
-                    first_text_frag.text = first_text_frag.text.removeprefix(' :')
+                    first_text_frag.text = first_text_frag.text.removeprefix(" :")
 
         contents = contents
 
@@ -479,7 +479,7 @@ class Comment_p:
         create_time = data_proto.time
 
         return Comment_p(
-            contents, 0, '', 0, 0, pid, None, author_id, reply_to_id, 0, agree, disagree, create_time, False
+            contents, 0, "", 0, 0, pid, None, author_id, reply_to_id, 0, agree, disagree, create_time, False
         )
 
     def __eq__(self, obj: Comment_p) -> bool:
@@ -526,7 +526,7 @@ class Post:
     is_aimeme: bool = False
 
     fid: int = 0
-    fname: str = ''
+    fname: str = ""
     tid: int = 0
     pid: int = 0
     user: UserInfo_p = dcs.field(default_factory=UserInfo_p)
@@ -558,7 +558,7 @@ class Post:
             comments,
             is_aimeme,
             0,
-            '',
+            "",
             0,
             pid,
             None,
@@ -637,10 +637,10 @@ class Forum_p:
     """
 
     fid: int = 0
-    fname: str = ''
+    fname: str = ""
 
-    category: str = ''
-    subcategory: str = ''
+    category: str = ""
+    subcategory: str = ""
 
     member_num: int = 0
     post_num: int = 0
@@ -825,13 +825,13 @@ class UserInfo_pt:
     """
 
     user_id: int = 0
-    portrait: str = ''
-    user_name: str = ''
-    nick_name_new: str = ''
+    portrait: str = ""
+    user_name: str = ""
+    nick_name_new: str = ""
 
     level: int = 0
     glevel: int = 0
-    ip: str = ''
+    ip: str = ""
     icons: list[str] = dcs.field(default_factory=list)
 
     is_bawu: bool = False
@@ -844,7 +844,7 @@ class UserInfo_pt:
     def from_tbdata(data_proto: TypeMessage) -> UserInfo_pt:
         user_id = data_proto.id
         portrait = data_proto.portrait
-        if '?' in portrait:
+        if "?" in portrait:
             portrait = portrait[:-13]
         user_name = data_proto.name
         nick_name_new = data_proto.name_show
@@ -925,7 +925,7 @@ class ShareThread_pt:
     title: str = ""
 
     fid: int = 0
-    fname: str = ''
+    fname: str = ""
     tid: int = 0
     author_id: int = 0
 
@@ -992,7 +992,7 @@ class Thread_p:
     title: str = ""
 
     fid: int = 0
-    fname: str = ''
+    fname: str = ""
     tid: int = 0
     pid: int = 0
     user: UserInfo_pt = dcs.field(default_factory=UserInfo_pt)
@@ -1039,7 +1039,7 @@ class Thread_p:
             contents,
             title,
             0,
-            '',
+            "",
             tid,
             pid,
             user,

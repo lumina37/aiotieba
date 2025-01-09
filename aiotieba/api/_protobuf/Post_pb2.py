@@ -19,22 +19,22 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'Post_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "Post_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
-    _globals['_POST']._serialized_start = 76
-    _globals['_POST']._serialized_end = 814
-    _globals['_POST_SUBPOST']._serialized_start = 508
-    _globals['_POST_SUBPOST']._serialized_end = 554
-    _globals['_POST_SIGNATUREDATA']._serialized_start = 556
-    _globals['_POST_SIGNATUREDATA']._serialized_end = 674
-    _globals['_POST_SIGNATUREDATA_SIGNATURECONTENT']._serialized_start = 628
-    _globals['_POST_SIGNATUREDATA_SIGNATURECONTENT']._serialized_end = 674
-    _globals['_POST_CUSTOMFIGURE']._serialized_start = 676
-    _globals['_POST_CUSTOMFIGURE']._serialized_end = 716
-    _globals['_POST_CUSTOMSTATE']._serialized_start = 718
-    _globals['_POST_CUSTOMSTATE']._serialized_end = 748
-    _globals['_POST_CHATCONTENT']._serialized_start = 750
-    _globals['_POST_CHATCONTENT']._serialized_end = 779
-    _globals['_POST_SPRITEMEMEINFO']._serialized_start = 781
-    _globals['_POST_SPRITEMEMEINFO']._serialized_end = 814
+    _globals["_POST"]._serialized_start = 76
+    _globals["_POST"]._serialized_end = 814
+    _globals["_POST_SUBPOST"]._serialized_start = 508
+    _globals["_POST_SUBPOST"]._serialized_end = 554
+    _globals["_POST_SIGNATUREDATA"]._serialized_start = 556
+    _globals["_POST_SIGNATUREDATA"]._serialized_end = 674
+    _globals["_POST_SIGNATUREDATA_SIGNATURECONTENT"]._serialized_start = 628
+    _globals["_POST_SIGNATUREDATA_SIGNATURECONTENT"]._serialized_end = 674
+    _globals["_POST_CUSTOMFIGURE"]._serialized_start = 676
+    _globals["_POST_CUSTOMFIGURE"]._serialized_end = 716
+    _globals["_POST_CUSTOMSTATE"]._serialized_start = 718
+    _globals["_POST_CUSTOMSTATE"]._serialized_end = 748
+    _globals["_POST_CHATCONTENT"]._serialized_start = 750
+    _globals["_POST_CHATCONTENT"]._serialized_end = 779
+    _globals["_POST_SPRITEMEMEINFO"]._serialized_start = 781
+    _globals["_POST_SPRITEMEMEINFO"]._serialized_end = 814

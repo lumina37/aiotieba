@@ -36,40 +36,40 @@ class Account:
     """
 
     __slots__ = [
-        '_BDUSS',
-        '_STOKEN',
-        '_tbs',
-        '_android_id',
-        '_uuid',
-        '_client_id',
-        '_sample_id',
-        '_cuid',
-        '_cuid_galaxy2',
-        '_c3_aid',
-        '_z_id',
-        '_aes_ecb_sec_key',
-        '_aes_ecb_chiper',
-        '_aes_cbc_sec_key',
-        '_aes_cbc_chiper',
+        "_BDUSS",
+        "_STOKEN",
+        "_tbs",
+        "_android_id",
+        "_uuid",
+        "_client_id",
+        "_sample_id",
+        "_cuid",
+        "_cuid_galaxy2",
+        "_c3_aid",
+        "_z_id",
+        "_aes_ecb_sec_key",
+        "_aes_ecb_chiper",
+        "_aes_cbc_sec_key",
+        "_aes_cbc_chiper",
     ]
 
     __serialize__ = [
-        '_BDUSS',
-        '_STOKEN',
-        '_tbs',
-        '_android_id',
-        '_uuid',
-        '_client_id',
-        '_sample_id',
-        '_cuid',
-        '_cuid_galaxy2',
-        '_c3_aid',
-        '_z_id',
-        '_aes_ecb_sec_key',
-        '_aes_cbc_sec_key',
+        "_BDUSS",
+        "_STOKEN",
+        "_tbs",
+        "_android_id",
+        "_uuid",
+        "_client_id",
+        "_sample_id",
+        "_cuid",
+        "_cuid_galaxy2",
+        "_c3_aid",
+        "_z_id",
+        "_aes_ecb_sec_key",
+        "_aes_cbc_sec_key",
     ]
 
-    def __init__(self, BDUSS: str = '', STOKEN: str = '') -> None:
+    def __init__(self, BDUSS: str = "", STOKEN: str = "") -> None:
         self.BDUSS = BDUSS
         self.STOKEN = STOKEN
 
@@ -132,7 +132,7 @@ class Account:
         for key, value in dic.items():
             if not value:
                 continue
-            key = '_' + key
+            key = "_" + key
             setattr(account, key, value)
 
         return account
@@ -398,7 +398,7 @@ class Account:
         """
 
         if self._aes_ecb_chiper is None:
-            salt = b'\xa4\x0b\xc8\x34\xd6\x95\xf3\x13'
+            salt = b"\xa4\x0b\xc8\x34\xd6\x95\xf3\x13"
             kdf = PBKDF2HMAC(hashes.SHA1(), 32, salt, 5)
             ws_secret_key = kdf.derive(self.aes_ecb_sec_key)
             self._aes_ecb_chiper = Cipher(algorithms.AES(ws_secret_key), modes.ECB())
@@ -435,7 +435,7 @@ class Account:
         """
 
         if self._aes_cbc_chiper is None:
-            iv = b'\x00' * 16
+            iv = b"\x00" * 16
             self._aes_cbc_chiper = Cipher(algorithms.AES(self.aes_cbc_sec_key), modes.CBC(iv))
 
         return self._aes_cbc_chiper

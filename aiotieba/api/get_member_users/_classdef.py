@@ -17,17 +17,17 @@ class MemberUser:
         level (int): 等级
     """
 
-    user_name: str = ''
-    portrait: str = ''
+    user_name: str = ""
+    portrait: str = ""
     level: int = 0
 
     @staticmethod
     def from_tbdata(data_tag: bs4.element.Tag) -> "MemberUser":
         user_item = data_tag.a
-        user_name = user_item['title']
-        portrait = user_item['href'][14:]
+        user_name = user_item["title"]
+        portrait = user_item["href"][14:]
         level_item = data_tag.span
-        level = int(level_item['class'][1][12:])
+        level = int(level_item["class"][1][12:])
         return MemberUser(user_name, portrait, level)
 
 
@@ -77,8 +77,8 @@ class MemberUsers(TbErrorExt, Containers[MemberUser]):
 
     @staticmethod
     def from_tbdata(data_soup: bs4.BeautifulSoup) -> "MemberUsers":
-        objs = [MemberUser.from_tbdata(t) for t in data_soup('div', class_='name_wrap')]
-        page = Page_member.from_tbdata(data_soup.find('div', class_='tbui_pagination').find('li', class_='active'))
+        objs = [MemberUser.from_tbdata(t) for t in data_soup("div", class_="name_wrap")]
+        page = Page_member.from_tbdata(data_soup.find("div", class_="tbui_pagination").find("li", class_="active"))
         return MemberUsers(objs, page)
 
     @property

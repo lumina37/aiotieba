@@ -21,10 +21,10 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'PbFloorResIdl_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "PbFloorResIdl_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
-    _globals['_PBFLOORRESIDL']._serialized_start = 117
-    _globals['_PBFLOORRESIDL']._serialized_end = 341
-    _globals['_PBFLOORRESIDL_DATARES']._serialized_start = 196
-    _globals['_PBFLOORRESIDL_DATARES']._serialized_end = 341
+    _globals["_PBFLOORRESIDL"]._serialized_start = 117
+    _globals["_PBFLOORRESIDL"]._serialized_end = 341
+    _globals["_PBFLOORRESIDL_DATARES"]._serialized_start = 196
+    _globals["_PBFLOORRESIDL_DATARES"]._serialized_end = 341

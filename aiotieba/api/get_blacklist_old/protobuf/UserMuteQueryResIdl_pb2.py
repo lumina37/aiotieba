@@ -17,12 +17,12 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'UserMuteQueryResIdl_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "UserMuteQueryResIdl_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
-    _globals['_USERMUTEQUERYRESIDL']._serialized_start = 55
-    _globals['_USERMUTEQUERYRESIDL']._serialized_end = 338
-    _globals['_USERMUTEQUERYRESIDL_DATARES']._serialized_start = 146
-    _globals['_USERMUTEQUERYRESIDL_DATARES']._serialized_end = 338
-    _globals['_USERMUTEQUERYRESIDL_DATARES_MUTEUSER']._serialized_start = 236
-    _globals['_USERMUTEQUERYRESIDL_DATARES_MUTEUSER']._serialized_end = 338
+    _globals["_USERMUTEQUERYRESIDL"]._serialized_start = 55
+    _globals["_USERMUTEQUERYRESIDL"]._serialized_end = 338
+    _globals["_USERMUTEQUERYRESIDL_DATARES"]._serialized_start = 146
+    _globals["_USERMUTEQUERYRESIDL_DATARES"]._serialized_end = 338
+    _globals["_USERMUTEQUERYRESIDL_DATARES_MUTEUSER"]._serialized_start = 236
+    _globals["_USERMUTEQUERYRESIDL_DATARES_MUTEUSER"]._serialized_end = 338

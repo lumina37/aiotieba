@@ -22,7 +22,7 @@ class SquareForum:
     """
 
     fid: int = 0
-    fname: str = ''
+    fname: str = ""
 
     member_num: int = 0
     post_num: int = 0

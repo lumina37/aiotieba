@@ -157,20 +157,20 @@ class Client:
     """
 
     __slots__ = [
-        '_account',
-        '_timeout',
-        '_proxy',
-        '_try_ws',
-        '_connector',
-        '_http_core',
-        '_ws_core',
-        '_user',
+        "_account",
+        "_timeout",
+        "_proxy",
+        "_try_ws",
+        "_connector",
+        "_http_core",
+        "_ws_core",
+        "_user",
     ]
 
     def __init__(
         self,
-        BDUSS: str = '',
-        STOKEN: str = '',
+        BDUSS: str = "",
+        STOKEN: str = "",
         *,
         account: Account | None = None,
         try_ws: bool = False,
@@ -1012,7 +1012,7 @@ class Client:
         return await get_images.request(self._http_core, yarl.URL(img_url))
 
     @handle_exception(get_images.Image)
-    async def hash2image(self, raw_hash: str, size: Literal['s', 'm', 'l'] = 's') -> get_images.Image:
+    async def hash2image(self, raw_hash: str, size: Literal["s", "m", "l"] = "s") -> get_images.Image:
         """
         通过百度图库hash获取静态图像
 
@@ -1024,15 +1024,15 @@ class Client:
             Image: 图像
         """
 
-        if size == 's':
+        if size == "s":
             img_url = yarl.URL.build(
                 scheme="http", host="imgsrc.baidu.com", path=f"/forum/w=720;q=60;g=0/sign=__/{raw_hash}.jpg"
             )
-        elif size == 'm':
+        elif size == "m":
             img_url = yarl.URL.build(
                 scheme="http", host="imgsrc.baidu.com", path=f"/forum/w=960;q=60;g=0/sign=__/{raw_hash}.jpg"
             )
-        elif size == 'l':
+        elif size == "l":
             img_url = yarl.URL.build(scheme="http", host="imgsrc.baidu.com", path=f"/forum/pic/item/{raw_hash}.jpg")
         else:
             LOG().warning("Invalid size=%s", size)
@@ -1041,7 +1041,7 @@ class Client:
         return await get_images.request(self._http_core, img_url)
 
     @handle_exception(get_images.Image)
-    async def get_portrait(self, id_: str | int, size: Literal['s', 'm', 'l'] = 's') -> get_images.Image:
+    async def get_portrait(self, id_: str | int, size: Literal["s", "m", "l"] = "s") -> get_images.Image:
         """
         获取用户头像
 
@@ -1059,12 +1059,12 @@ class Client:
         else:
             portrait = id_
 
-        if size == 's':
-            path = 'n'
-        elif size == 'm':
-            path = ''
-        elif size == 'l':
-            path = 'h'
+        if size == "s":
+            path = "n"
+        elif size == "m":
+            path = ""
+        elif size == "l":
+            path = "h"
         else:
             LOG().warning(f"Invalid size={size}")
             return get_images.Image()
@@ -1302,7 +1302,7 @@ class Client:
         return await get_rank_forums.request(self._http_core, fname, pn, rank_type)
 
     @handle_exception(get_blocks.Blocks)
-    async def get_blocks(self, fname_or_fid: str | int, name: str = '', pn: int = 1) -> get_blocks.Blocks:
+    async def get_blocks(self, fname_or_fid: str | int, name: str = "", pn: int = 1) -> get_blocks.Blocks:
         """
         获取pn页的待解封用户列表
 
@@ -1373,7 +1373,7 @@ class Client:
         /,
         pn: int = 1,
         *,
-        search_value: str = '',
+        search_value: str = "",
         search_type: BawuSearchType = BawuSearchType.USER,
         start_dt: datetime.datetime | None = None,
         end_dt: datetime.datetime | None = None,
@@ -1411,7 +1411,7 @@ class Client:
         /,
         pn: int = 1,
         *,
-        search_value: str = '',
+        search_value: str = "",
         search_type: BawuSearchType = BawuSearchType.USER,
         start_dt: datetime.datetime | None = None,
         end_dt: datetime.datetime | None = None,
@@ -1516,7 +1516,7 @@ class Client:
         return await get_recom_status.request(self._http_core, fid)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def block(self, fname_or_fid: str | int, id_: str | int, *, day: int = 1, reason: str = '') -> BoolResponse:
+    async def block(self, fname_or_fid: str | int, id_: str | int, *, day: int = 1, reason: str = "") -> BoolResponse:
         """
         封禁用户
 
@@ -1790,7 +1790,7 @@ class Client:
         return await recover.request(self._http_core, fid, tid, pid, is_hide)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def good(self, fname_or_fid: str | int, tid: int, *, cname: str = '') -> BoolResponse:
+    async def good(self, fname_or_fid: str | int, tid: int, *, cname: str = "") -> BoolResponse:
         """
         加精主题帖
 
@@ -1840,8 +1840,8 @@ class Client:
 
         return await ungood.request(self._http_core, fname, fid, tid)
 
-    async def __get_cid(self, fname_or_fid: str | int, cname: str = '') -> int:
-        if cname == '':
+    async def __get_cid(self, fname_or_fid: str | int, cname: str = "") -> int:
+        if cname == "":
             return 0
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
@@ -1850,14 +1850,14 @@ class Client:
 
         cid = 0
         for item in cates:
-            if cname == item['class_name']:
-                cid = item['class_id']
+            if cname == item["class_name"]:
+                cid = item["class_id"]
                 break
 
         return cid
 
     @handle_exception(IntResponse)
-    async def get_cid(self, fname_or_fid: str | int, cname: str = '') -> IntResponse:
+    async def get_cid(self, fname_or_fid: str | int, cname: str = "") -> IntResponse:
         """
         通过精华分区名获取精华分区id
 
@@ -2290,7 +2290,7 @@ class Client:
         return await set_thread_privacy.request(self._http_core, fid, tid, pid, is_hide=False)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def set_profile(self, nick_name: str, sign: str = '', gender: Gender = Gender.UNKNOWN) -> BoolResponse:
+    async def set_profile(self, nick_name: str, sign: str = "", gender: Gender = Gender.UNKNOWN) -> BoolResponse:
         """
         设置主页信息
 
@@ -2361,7 +2361,7 @@ class Client:
 
         await self.__init_tbs()
 
-        return await sign_growth.request_web(self._http_core, act_type='page_sign')
+        return await sign_growth.request_web(self._http_core, act_type="page_sign")
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def sign_growth_share(self) -> BoolResponse:
@@ -2374,7 +2374,7 @@ class Client:
 
         await self.__init_tbs()
 
-        return await sign_growth.request_app(self._http_core, act_type='share_thread')
+        return await sign_growth.request_app(self._http_core, act_type="share_thread")
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     @_try_websocket

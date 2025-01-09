@@ -9,8 +9,8 @@ from ._classdef import RecomStatus
 
 def parse_body(body: bytes) -> RecomStatus:
     res_json = parse_json(body)
-    if code := int(res_json['error_code']):
-        raise TiebaServerError(code, res_json['error_msg'])
+    if code := int(res_json["error_code"]):
+        raise TiebaServerError(code, res_json["error_msg"])
 
     status = RecomStatus.from_tbdata(res_json)
 
@@ -19,11 +19,11 @@ def parse_body(body: bytes) -> RecomStatus:
 
 async def request(http_core: HttpCore, fid: int) -> RecomStatus:
     data = [
-        ('BDUSS', http_core.account.BDUSS),
-        ('_client_version', MAIN_VERSION),
-        ('forum_id', fid),
-        ('pn', 1),
-        ('rn', 0),
+        ("BDUSS", http_core.account.BDUSS),
+        ("_client_version", MAIN_VERSION),
+        ("forum_id", fid),
+        ("pn", 1),
+        ("rn", 0),
     ]
 
     request = http_core.pack_form_request(

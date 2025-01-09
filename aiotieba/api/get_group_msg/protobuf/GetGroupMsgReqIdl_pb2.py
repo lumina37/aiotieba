@@ -14,12 +14,12 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'GetGroupMsgReqIdl_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "GetGroupMsgReqIdl_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
-    _globals['_GETGROUPMSGREQIDL']._serialized_start = 28
-    _globals['_GETGROUPMSGREQIDL']._serialized_end = 242
-    _globals['_GETGROUPMSGREQIDL_DATAREQ']._serialized_start = 106
-    _globals['_GETGROUPMSGREQIDL_DATAREQ']._serialized_end = 242
-    _globals['_GETGROUPMSGREQIDL_DATAREQ_GROUPLASTID']._serialized_start = 193
-    _globals['_GETGROUPMSGREQIDL_DATAREQ_GROUPLASTID']._serialized_end = 242
+    _globals["_GETGROUPMSGREQIDL"]._serialized_start = 28
+    _globals["_GETGROUPMSGREQIDL"]._serialized_end = 242
+    _globals["_GETGROUPMSGREQIDL_DATAREQ"]._serialized_start = 106
+    _globals["_GETGROUPMSGREQIDL_DATAREQ"]._serialized_end = 242
+    _globals["_GETGROUPMSGREQIDL_DATAREQ_GROUPLASTID"]._serialized_start = 193
+    _globals["_GETGROUPMSGREQIDL_DATAREQ_GROUPLASTID"]._serialized_end = 242

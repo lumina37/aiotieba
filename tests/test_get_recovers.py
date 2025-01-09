@@ -11,5 +11,5 @@ async def test_Recovers(client: tb.Client):
     ##### Recover #####
     recover = recovers[0]
     assert recover.tid > 0
-    assert recover.op_show_name != ''
+    assert recover.op_show_name != ""
     assert recover.op_time != 0

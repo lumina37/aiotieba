@@ -9,8 +9,8 @@ from ._classdef import Ats
 
 def parse_body(body: bytes) -> Ats:
     res_json = parse_json(body)
-    if code := int(res_json['error_code']):
-        raise TiebaServerError(code, res_json['error_msg'])
+    if code := int(res_json["error_code"]):
+        raise TiebaServerError(code, res_json["error_msg"])
 
     ats = Ats.from_tbdata(res_json)
 
@@ -19,9 +19,9 @@ def parse_body(body: bytes) -> Ats:
 
 async def request(http_core: HttpCore, pn: int) -> Ats:
     data = [
-        ('BDUSS', http_core.account.BDUSS),
-        ('_client_version', MAIN_VERSION),
-        ('pn', pn),
+        ("BDUSS", http_core.account.BDUSS),
+        ("_client_version", MAIN_VERSION),
+        ("pn", pn),
     ]
 
     request = http_core.pack_form_request(

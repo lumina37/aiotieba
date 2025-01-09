@@ -9,7 +9,7 @@ import yarl
 
 from .common import TypeMessage
 
-TypeFragment = TypeVar('TypeFragment')
+TypeFragment = TypeVar("TypeFragment")
 
 
 @dcs.dataclass
@@ -58,7 +58,7 @@ class TypeFragEmoji(Protocol):
     desc: str
 
 
-_IMAGEHASH_EXP = re.compile(r'/([a-z0-9]{32,})\.')
+_IMAGEHASH_EXP = re.compile(r"/([a-z0-9]{32,})\.")
 
 
 @dcs.dataclass
@@ -91,7 +91,7 @@ class FragImage:
         origin_src = data_proto.origin_src
         origin_size = data_proto.origin_size
 
-        show_width, _, show_height = data_proto.bsize.partition(',')
+        show_width, _, show_height = data_proto.bsize.partition(",")
         show_width = int(show_width)
         show_height = int(show_height)
 
@@ -231,7 +231,7 @@ class FragLink:
     @cached_property
     def url(self) -> yarl.URL:
         if self.is_external:
-            url = yarl.URL(self.raw_url.query['url'])
+            url = yarl.URL(self.raw_url.query["url"])
         else:
             url = self.raw_url
         return url

@@ -16,10 +16,10 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'GetUserByTiebaUidReqIdl_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "GetUserByTiebaUidReqIdl_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
-    _globals['_GETUSERBYTIEBAUIDREQIDL']._serialized_start = 51
-    _globals['_GETUSERBYTIEBAUIDREQIDL']._serialized_end = 182
-    _globals['_GETUSERBYTIEBAUIDREQIDL_DATAREQ']._serialized_start = 126
-    _globals['_GETUSERBYTIEBAUIDREQIDL_DATAREQ']._serialized_end = 182
+    _globals["_GETUSERBYTIEBAUIDREQIDL"]._serialized_start = 51
+    _globals["_GETUSERBYTIEBAUIDREQIDL"]._serialized_end = 182
+    _globals["_GETUSERBYTIEBAUIDREQIDL_DATAREQ"]._serialized_start = 126
+    _globals["_GETUSERBYTIEBAUIDREQIDL_DATAREQ"]._serialized_end = 182

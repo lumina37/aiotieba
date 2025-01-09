@@ -10,21 +10,21 @@ from ...helper import parse_json
 
 def parse_body(body: bytes) -> None:
     res_json = parse_json(body)
-    if code := res_json['no']:
-        raise TiebaServerError(code, res_json['error'])
+    if code := res_json["no"]:
+        raise TiebaServerError(code, res_json["error"])
 
 
 async def request(http_core: HttpCore, fid: int, appeal_ids: list[int], refuse: bool) -> BoolResponse:
     data = (
         [
-            ('fn', '-'),
-            ('fid', fid),
+            ("fn", "-"),
+            ("fid", fid),
         ]
-        + [(f'appeal_list[{i}]', appeal_id) for i, appeal_id in enumerate(appeal_ids)]
+        + [(f"appeal_list[{i}]", appeal_id) for i, appeal_id in enumerate(appeal_ids)]
         + [
-            ('refuse_reason', '_'),
-            ('status', 2 if refuse else 1),
-            ('tbs', http_core.account.tbs),
+            ("refuse_reason", "_"),
+            ("status", 2 if refuse else 1),
+            ("tbs", http_core.account.tbs),
         ]
     )
 

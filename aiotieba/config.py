@@ -27,7 +27,7 @@ class ProxyConfig:
 
     @staticmethod
     def from_env() -> ProxyConfig:
-        proxy_info = aiohttp.helpers.proxies_from_env().get('http', None)
+        proxy_info = aiohttp.helpers.proxies_from_env().get("http", None)
         if proxy_info is None:
             url, auth = None, None
         else:

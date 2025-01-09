@@ -9,8 +9,8 @@ from ...helper import pack_json, parse_json
 
 def parse_body(body: bytes) -> None:
     res_json = parse_json(body)
-    if code := res_json['no']:
-        raise TiebaServerError(code, res_json['error'])
+    if code := res_json["no"]:
+        raise TiebaServerError(code, res_json["error"])
 
 
 def pack_perm_settings(perms: BawuPermType) -> list:
@@ -32,9 +32,9 @@ def pack_perm_settings(perms: BawuPermType) -> list:
 
 async def request(http_core: HttpCore, fid: int, portrait: str, perms: BawuPermType) -> BoolResponse:
     data = [
-        ('forum_id', fid),
-        ('auth_user_portrait', portrait),
-        ('perm_setting', pack_json(pack_perm_settings(perms))),
+        ("forum_id", fid),
+        ("auth_user_portrait", portrait),
+        ("perm_setting", pack_json(pack_perm_settings(perms))),
     ]
 
     request = http_core.pack_web_form_request(

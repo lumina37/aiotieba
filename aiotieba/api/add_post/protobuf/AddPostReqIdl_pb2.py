@@ -16,10 +16,10 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'AddPostReqIdl_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "AddPostReqIdl_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
-    _globals['_ADDPOSTREQIDL']._serialized_start = 41
-    _globals['_ADDPOSTREQIDL']._serialized_end = 555
-    _globals['_ADDPOSTREQIDL_DATAREQ']._serialized_start = 97
-    _globals['_ADDPOSTREQIDL_DATAREQ']._serialized_end = 555
+    _globals["_ADDPOSTREQIDL"]._serialized_start = 41
+    _globals["_ADDPOSTREQIDL"]._serialized_end = 555
+    _globals["_ADDPOSTREQIDL_DATAREQ"]._serialized_start = 97
+    _globals["_ADDPOSTREQIDL_DATAREQ"]._serialized_end = 555

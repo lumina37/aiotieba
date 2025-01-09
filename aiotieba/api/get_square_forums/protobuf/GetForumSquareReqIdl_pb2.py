@@ -16,10 +16,10 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'GetForumSquareReqIdl_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "GetForumSquareReqIdl_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
-    _globals['_GETFORUMSQUAREREQIDL']._serialized_start = 48
-    _globals['_GETFORUMSQUAREREQIDL']._serialized_end = 215
-    _globals['_GETFORUMSQUAREREQIDL_DATAREQ']._serialized_start = 117
-    _globals['_GETFORUMSQUAREREQIDL_DATAREQ']._serialized_end = 215
+    _globals["_GETFORUMSQUAREREQIDL"]._serialized_start = 48
+    _globals["_GETFORUMSQUAREREQIDL"]._serialized_end = 215
+    _globals["_GETFORUMSQUAREREQIDL_DATAREQ"]._serialized_start = 117
+    _globals["_GETFORUMSQUAREREQIDL_DATAREQ"]._serialized_end = 215

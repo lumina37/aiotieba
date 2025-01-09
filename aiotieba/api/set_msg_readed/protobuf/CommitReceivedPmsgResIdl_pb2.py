@@ -16,8 +16,8 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'CommitReceivedPmsgResIdl_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "CommitReceivedPmsgResIdl_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
-    _globals['_COMMITRECEIVEDPMSGRESIDL']._serialized_start = 47
-    _globals['_COMMITRECEIVEDPMSGRESIDL']._serialized_end = 96
+    _globals["_COMMITRECEIVEDPMSGRESIDL"]._serialized_start = 47
+    _globals["_COMMITRECEIVEDPMSGRESIDL"]._serialized_end = 96

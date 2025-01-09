@@ -4,7 +4,7 @@ import dataclasses as dcs
 from collections.abc import Iterator
 from typing import Generic, SupportsIndex, TypeVar, overload
 
-TypeContainer = TypeVar('TypeContainer')
+TypeContainer = TypeVar("TypeContainer")
 
 
 @dcs.dataclass

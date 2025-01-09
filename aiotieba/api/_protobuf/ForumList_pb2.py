@@ -14,8 +14,8 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'ForumList_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "ForumList_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
-    _globals['_FORUMLIST']._serialized_start = 19
-    _globals['_FORUMLIST']._serialized_end = 128
+    _globals["_FORUMLIST"]._serialized_start = 19
+    _globals["_FORUMLIST"]._serialized_end = 128

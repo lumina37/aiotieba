@@ -18,12 +18,12 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'ReplyMeResIdl_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "ReplyMeResIdl_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
-    _globals['_REPLYMERESIDL']._serialized_start = 61
-    _globals['_REPLYMERESIDL']._serialized_end = 466
-    _globals['_REPLYMERESIDL_DATARES']._serialized_start = 140
-    _globals['_REPLYMERESIDL_DATARES']._serialized_end = 466
-    _globals['_REPLYMERESIDL_DATARES_REPLYLIST']._serialized_start = 227
-    _globals['_REPLYMERESIDL_DATARES_REPLYLIST']._serialized_end = 466
+    _globals["_REPLYMERESIDL"]._serialized_start = 61
+    _globals["_REPLYMERESIDL"]._serialized_end = 466
+    _globals["_REPLYMERESIDL_DATARES"]._serialized_start = 140
+    _globals["_REPLYMERESIDL_DATARES"]._serialized_end = 466
+    _globals["_REPLYMERESIDL_DATARES_REPLYLIST"]._serialized_start = 227
+    _globals["_REPLYMERESIDL_DATARES_REPLYLIST"]._serialized_end = 466

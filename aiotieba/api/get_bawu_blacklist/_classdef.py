@@ -20,15 +20,15 @@ class BawuBlacklistUser:
     """
 
     user_id: int = 0
-    portrait: str = ''
-    user_name: str = ''
+    portrait: str = ""
+    user_name: str = ""
 
     @staticmethod
     def from_tbdata(data_tag: bs4.element.Tag) -> "BawuBlacklistUser":
         user_info_item = data_tag.previous_sibling.input
-        user_name = user_info_item['data-user-name']
-        user_id = int(user_info_item['data-user-id'])
-        portrait = data_tag.a['href'][14:-17]
+        user_name = user_info_item["data-user-name"]
+        user_id = int(user_info_item["data-user-id"])
+        portrait = data_tag.a["href"][14:-17]
         return BawuBlacklistUser(user_id, portrait, user_name)
 
     def __str__(self) -> str:
@@ -70,10 +70,10 @@ class Page_bwblacklist:
     has_prev: bool = False
 
     def from_tbdata(data_soup: bs4.BeautifulSoup) -> "Page_bwblacklist":
-        total_count_tag = data_soup.find('div', class_='breadcrumbs')
+        total_count_tag = data_soup.find("div", class_="breadcrumbs")
         total_count = int(total_count_tag.em.text)
 
-        page_tag = data_soup.find('div', class_='tbui_pagination').find('li', class_='active')
+        page_tag = data_soup.find("div", class_="tbui_pagination").find("li", class_="active")
         if page_tag is None:
             if total_count != 0:
                 current_page = 1
@@ -109,7 +109,7 @@ class BawuBlacklistUsers(TbErrorExt, Containers[BawuBlacklistUser]):
 
     @staticmethod
     def from_tbdata(data_soup: bs4.BeautifulSoup) -> "BawuBlacklistUsers":
-        objs = [BawuBlacklistUser.from_tbdata(t) for t in data_soup('td', class_='left_cell')]
+        objs = [BawuBlacklistUser.from_tbdata(t) for t in data_soup("td", class_="left_cell")]
         page = Page_bwblacklist.from_tbdata(data_soup)
         return BawuBlacklistUsers(objs, page)
 

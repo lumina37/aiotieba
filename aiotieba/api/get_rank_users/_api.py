@@ -7,7 +7,7 @@ from ._classdef import RankUsers
 
 
 def parse_body(body: bytes) -> RankUsers:
-    soup = bs4.BeautifulSoup(body, 'lxml')
+    soup = bs4.BeautifulSoup(body, "lxml")
     rank_users = RankUsers.from_tbdata(soup)
 
     return rank_users
@@ -15,9 +15,9 @@ def parse_body(body: bytes) -> RankUsers:
 
 async def request(http_core: HttpCore, fname: str, pn: int) -> RankUsers:
     params = [
-        ('kw', fname),
-        ('pn', pn),
-        ('ie', 'utf-8'),
+        ("kw", fname),
+        ("pn", pn),
+        ("ie", "utf-8"),
     ]
 
     request = http_core.pack_web_get_request(

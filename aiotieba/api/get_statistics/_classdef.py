@@ -33,8 +33,8 @@ class Statistics:
     @staticmethod
     def from_tbdata(data_seq: Sequence) -> Statistics:
         def extract(i: int) -> list[int]:
-            seq: list = data_seq[i]['group'][1]['values']
-            seq = [int(item['value']) for item in seq]
+            seq: list = data_seq[i]["group"][1]["values"]
+            seq = [int(item["value"]) for item in seq]
             return seq
 
         view = extract(0)

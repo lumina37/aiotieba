@@ -11,20 +11,20 @@ from ._classdef import UserInfo_login
 
 def parse_body(body: bytes) -> tuple[UserInfo_login, str]:
     res_json = parse_json(body)
-    if code := int(res_json['error_code']):
-        raise TiebaServerError(code, res_json['error_msg'])
+    if code := int(res_json["error_code"]):
+        raise TiebaServerError(code, res_json["error_msg"])
 
-    user_dict = res_json['user']
+    user_dict = res_json["user"]
     user = UserInfo_login.from_tbdata(user_dict)
-    tbs = res_json['anti']['tbs']
+    tbs = res_json["anti"]["tbs"]
 
     return user, tbs
 
 
 async def request(http_core: HttpCore) -> tuple[UserInfo_login, str]:
     data = [
-        ('_client_version', MAIN_VERSION),
-        ('bdusstoken', http_core.account.BDUSS),
+        ("_client_version", MAIN_VERSION),
+        ("bdusstoken", http_core.account.BDUSS),
     ]
 
     request = http_core.pack_form_request(

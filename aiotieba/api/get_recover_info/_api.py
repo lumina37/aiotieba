@@ -9,10 +9,10 @@ from ._classdef import RecoverThread
 
 def parse_body(body: bytes) -> RecoverThread:
     res_json = parse_json(body)
-    if code := res_json['no']:
-        raise TiebaServerError(code, res_json['error'])
+    if code := res_json["no"]:
+        raise TiebaServerError(code, res_json["error"])
 
-    data_map = res_json['data']
+    data_map = res_json["data"]
     rec_thread = RecoverThread.from_tbdata(data_map)
 
     return rec_thread
@@ -20,10 +20,10 @@ def parse_body(body: bytes) -> RecoverThread:
 
 async def request(http_core: HttpCore, fid: int, tid: int) -> RecoverThread:
     params = [
-        ('forum_id', fid),
-        ('thread_id', tid),
-        ('type', 1),
-        ('sub_type', 1),
+        ("forum_id", fid),
+        ("thread_id", tid),
+        ("type", 1),
+        ("sub_type", 1),
     ]
 
     request = http_core.pack_web_get_request(

@@ -16,12 +16,12 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'CommitPersonalMsgResIdl_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "CommitPersonalMsgResIdl_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
-    _globals['_COMMITPERSONALMSGRESIDL']._serialized_start = 47
-    _globals['_COMMITPERSONALMSGRESIDL']._serialized_end = 287
-    _globals['_COMMITPERSONALMSGRESIDL_DATARES']._serialized_start = 146
-    _globals['_COMMITPERSONALMSGRESIDL_DATARES']._serialized_end = 287
-    _globals['_COMMITPERSONALMSGRESIDL_DATARES_BLOCKINFO']._serialized_start = 235
-    _globals['_COMMITPERSONALMSGRESIDL_DATARES_BLOCKINFO']._serialized_end = 287
+    _globals["_COMMITPERSONALMSGRESIDL"]._serialized_start = 47
+    _globals["_COMMITPERSONALMSGRESIDL"]._serialized_end = 287
+    _globals["_COMMITPERSONALMSGRESIDL_DATARES"]._serialized_start = 146
+    _globals["_COMMITPERSONALMSGRESIDL_DATARES"]._serialized_end = 287
+    _globals["_COMMITPERSONALMSGRESIDL_DATARES_BLOCKINFO"]._serialized_start = 235
+    _globals["_COMMITPERSONALMSGRESIDL_DATARES_BLOCKINFO"]._serialized_end = 287

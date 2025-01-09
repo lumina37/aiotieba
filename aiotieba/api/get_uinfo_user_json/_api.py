@@ -11,10 +11,10 @@ def parse_body(body: bytes) -> UserInfo_json:
     if not body:
         raise TiebaValueError("Empty body")
 
-    text = body.decode('utf-8', errors='ignore')
+    text = body.decode("utf-8", errors="ignore")
     res_json = parse_json(text)
 
-    user_dict = res_json['creator']
+    user_dict = res_json["creator"]
     user = UserInfo_json.from_tbdata(user_dict)
 
     return user
@@ -22,8 +22,8 @@ def parse_body(body: bytes) -> UserInfo_json:
 
 async def request(http_core: HttpCore, user_name: str) -> UserInfo_json:
     params = [
-        ('un', user_name),
-        ('ie', 'utf-8'),
+        ("un", user_name),
+        ("ie", "utf-8"),
     ]
 
     request = http_core.pack_web_get_request(

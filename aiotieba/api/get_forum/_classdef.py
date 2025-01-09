@@ -30,10 +30,10 @@ class Forum(TbErrorExt):
     """
 
     fid: int = 0
-    fname: str = ''
+    fname: str = ""
 
-    category: str = ''
-    subcategory: str = ''
+    category: str = ""
+    subcategory: str = ""
 
     small_avatar: str = ""
     slogan: str = ""
@@ -45,16 +45,16 @@ class Forum(TbErrorExt):
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> Forum:
-        fid = data_map['id']
-        fname = data_map['name']
-        category = data_map['first_class']
-        subcategory = data_map['second_class']
-        small_avatar = data_map['avatar']
-        slogan = data_map['slogan']
-        member_num = data_map['member_num']
-        post_num = data_map['post_num']
-        thread_num = data_map['thread_num']
-        has_bawu = 'managers' in data_map
+        fid = data_map["id"]
+        fname = data_map["name"]
+        category = data_map["first_class"]
+        subcategory = data_map["second_class"]
+        small_avatar = data_map["avatar"]
+        slogan = data_map["slogan"]
+        member_num = data_map["member_num"]
+        post_num = data_map["post_num"]
+        thread_num = data_map["thread_num"]
+        has_bawu = "managers" in data_map
         return Forum(
             fid, fname, category, subcategory, small_avatar, slogan, member_num, post_num, thread_num, has_bawu
         )

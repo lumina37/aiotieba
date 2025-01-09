@@ -88,9 +88,6 @@ line-length = 120
 target-version = "py39"
 preview = true
 
-[tool.ruff.format]
-quote-style = "preserve"
-
 [tool.ruff.lint]
 select = [
   "F",
@@ -105,14 +102,20 @@ select = [
   "COM",
   "C4",
   "FA",
+  "ISC",
+  "ICN",
+  "LOG",
+  "G",
   "PIE",
+  "T20",
   "PT",
+  "Q",
   "RSE",
   "NPY",
   "PERF",
   "FURB",
 ]
-ignore = ["E402", "E501", "E266", "COM812"]
+ignore = ["A005", "E402", "E501", "E266", "COM812"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]

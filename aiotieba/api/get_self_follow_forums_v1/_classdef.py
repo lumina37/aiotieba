@@ -19,14 +19,14 @@ class SelfFollowForumV1:
     """
 
     fid: int = 0
-    fname: str = ''
+    fname: str = ""
     level: int = 0
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> SelfFollowForumV1:
-        fid = data_map['forum_id']
-        fname = data_map['forum_name']
-        level = data_map['level_id']
+        fid = data_map["forum_id"]
+        fname = data_map["forum_name"]
+        level = data_map["level_id"]
         return SelfFollowForumV1(fid, fname, level)
 
 
@@ -51,8 +51,8 @@ class Page_sforumV1:
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> Page_sforumV1:
-        current_page = data_map['cur_page']
-        total_page = data_map['total_page']
+        current_page = data_map["cur_page"]
+        total_page = data_map["total_page"]
         has_more = current_page < total_page
         has_prev = current_page > 1
         return Page_sforumV1(current_page, total_page, has_more, has_prev)
@@ -75,8 +75,8 @@ class SelfFollowForumsV1(TbErrorExt, Containers[SelfFollowForumV1]):
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> SelfFollowForumsV1:
-        objs = [SelfFollowForumV1.from_tbdata(m) for m in data_map['list']]
-        page = Page_sforumV1.from_tbdata(data_map['page'])
+        objs = [SelfFollowForumV1.from_tbdata(m) for m in data_map["list"]]
+        page = Page_sforumV1.from_tbdata(data_map["page"])
         return SelfFollowForumsV1(objs, page)
 
     @property

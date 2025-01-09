@@ -14,12 +14,12 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'PushNotifyResIdl_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "PushNotifyResIdl_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
-    _globals['_PUSHNOTIFYRESIDL']._serialized_start = 27
-    _globals['_PUSHNOTIFYRESIDL']._serialized_end = 257
-    _globals['_PUSHNOTIFYRESIDL_PUSHERMSG']._serialized_start = 95
-    _globals['_PUSHNOTIFYRESIDL_PUSHERMSG']._serialized_end = 257
-    _globals['_PUSHNOTIFYRESIDL_PUSHERMSG_PUSHERMSGINFO']._serialized_start = 165
-    _globals['_PUSHNOTIFYRESIDL_PUSHERMSG_PUSHERMSGINFO']._serialized_end = 257
+    _globals["_PUSHNOTIFYRESIDL"]._serialized_start = 27
+    _globals["_PUSHNOTIFYRESIDL"]._serialized_end = 257
+    _globals["_PUSHNOTIFYRESIDL_PUSHERMSG"]._serialized_start = 95
+    _globals["_PUSHNOTIFYRESIDL_PUSHERMSG"]._serialized_end = 257
+    _globals["_PUSHNOTIFYRESIDL_PUSHERMSG_PUSHERMSGINFO"]._serialized_start = 165
+    _globals["_PUSHNOTIFYRESIDL_PUSHERMSG_PUSHERMSGINFO"]._serialized_end = 257

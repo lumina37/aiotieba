@@ -24,7 +24,7 @@ class ForumInfoCache:
             int: 该贴吧的forum_id
         """
 
-        return cls._fname2fid.get(fname, '')
+        return cls._fname2fid.get(fname, "")
 
     @classmethod
     def get_fname(cls, fid: int) -> str:
@@ -38,7 +38,7 @@ class ForumInfoCache:
             str: 该贴吧的贴吧名
         """
 
-        return cls._fid2fname.get(fid, '')
+        return cls._fid2fname.get(fid, "")
 
     @classmethod
     def add_forum(cls, fname: str, fid: int) -> None:

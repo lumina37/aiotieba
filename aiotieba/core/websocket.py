@@ -55,10 +55,10 @@ def pack_ws_bytes(
         encryptor = account.aes_ecb_chiper.encryptor()
         data = encryptor.update(data) + encryptor.finalize()
 
-    data = b''.join([
-        flag.to_bytes(1, 'big'),
-        cmd.to_bytes(4, 'big'),
-        req_id.to_bytes(4, 'big'),
+    data = b"".join([
+        flag.to_bytes(1, "big"),
+        cmd.to_bytes(4, "big"),
+        req_id.to_bytes(4, "big"),
         data,
     ])
 
@@ -81,8 +81,8 @@ def parse_ws_bytes(account: Account, data: bytes) -> tuple[bytes, int, int]:
 
     data_view = memoryview(data)
     flag = data_view[0]
-    cmd = int.from_bytes(data_view[1:5], 'big')
-    req_id = int.from_bytes(data_view[5:9], 'big')
+    cmd = int.from_bytes(data_view[1:5], "big")
+    req_id = int.from_bytes(data_view[5:9], "big")
 
     data = data_view[9:].tobytes()
     if flag & 0b10000000:
@@ -315,7 +315,7 @@ class WsCore:
             hdrs.CONNECTION: "upgrade",
             hdrs.SEC_WEBSOCKET_EXTENSIONS: "im_version=2.3",
             hdrs.SEC_WEBSOCKET_VERSION: "13",
-            hdrs.SEC_WEBSOCKET_KEY: sec_key_bytes.decode('ascii'),
+            hdrs.SEC_WEBSOCKET_KEY: sec_key_bytes.decode("ascii"),
             hdrs.ACCEPT_ENCODING: "gzip",
             hdrs.HOST: "im.tieba.baidu.com:8000",
         }
@@ -347,7 +347,7 @@ class WsCore:
             self.websocket = aiohttp.ClientWebSocketResponse(
                 reader,
                 writer,
-                'chat',
+                "chat",
                 response,
                 self.net_core.timeout.ws_timeout,
                 True,

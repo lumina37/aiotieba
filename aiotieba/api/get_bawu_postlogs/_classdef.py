@@ -29,12 +29,12 @@ class Media_postlog:
     @staticmethod
     def from_tbdata(data_tag: bs4.element.Tag) -> Media_postlog:
         if img_item := data_tag.img:
-            src = img_item['original']
+            src = img_item["original"]
             hash_ = _IMAGEHASH_EXP.search(src).group(1)
         else:
             src = ""
             hash_ = ""
-        origin_src = data_tag['href']
+        origin_src = data_tag["href"]
         return Media_postlog(src, origin_src, hash_)
 
 
@@ -65,19 +65,19 @@ class Postlog:
     tid: int = 0
     pid: int = 0
 
-    op_type: str = ''
-    post_portrait: str = ''
+    op_type: str = ""
+    post_portrait: str = ""
     post_time: datetime = dcs.field(default_factory=default_datetime)
-    op_user_name: str = ''
+    op_user_name: str = ""
     op_time: datetime = dcs.field(default_factory=default_datetime)
 
     @staticmethod
     def from_tbdata(data_tag: bs4.element.Tag) -> Postlog:
         left_cell_item = data_tag.td
 
-        post_meta_item = left_cell_item.find('div', class_='post_meta')
+        post_meta_item = left_cell_item.find("div", class_="post_meta")
         post_user_item = post_meta_item.div
-        post_portrait = post_user_item.a['href'][14:-17]
+        post_portrait = post_user_item.a["href"][14:-17]
         post_time_item = post_meta_item.time
         post_time_str = post_time_item.text
         post_time_month = int(post_time_str[:2])
@@ -88,23 +88,23 @@ class Postlog:
 
         post_content_item = post_meta_item.next_sibling
         title_item = post_content_item.h1.a
-        url: str = title_item['href']
-        tid = int(url[3 : url.find('?')])
-        pid = int(url[url.rfind('#') + 1 :])
-        title: str = title_item['title']
+        url: str = title_item["href"]
+        tid = int(url[3 : url.find("?")])
+        pid = int(url[url.rfind("#") + 1 :])
+        title: str = title_item["title"]
 
         text_item = post_content_item.div
         text = text_item.string[12:]
 
-        if pid == tid or not title.startswith('回复：'):
+        if pid == tid or not title.startswith("回复："):
             # is thread
             pid = 0
             text = f"{title}\n{text}"
         else:
-            title = title.removeprefix('回复：')
+            title = title.removeprefix("回复：")
 
         if media_list_item := text_item.next_sibling:
-            medias = [Media_postlog.from_tbdata(tag) for tag in media_list_item.find_all('a')]
+            medias = [Media_postlog.from_tbdata(tag) for tag in media_list_item.find_all("a")]
         else:
             medias = []
 
@@ -115,7 +115,7 @@ class Postlog:
         op_user_name = op_user_name_item.string
 
         op_time_item = op_user_name_item.next_sibling
-        op_time = datetime.strptime(op_time_item.text, '%Y-%m-%d%H:%M')
+        op_time = datetime.strptime(op_time_item.text, "%Y-%m-%d%H:%M")
 
         return Postlog(text, title, medias, tid, pid, op_type, post_portrait, post_time, op_user_name, op_time)
 
@@ -143,10 +143,10 @@ class Page_postlog:
 
     @staticmethod
     def from_tbdata(data_soup: bs4.BeautifulSoup) -> Page_postlog:
-        total_count_tag = data_soup.find('div', class_='breadcrumbs')
+        total_count_tag = data_soup.find("div", class_="breadcrumbs")
         total_count = int(total_count_tag.em.text)
 
-        page_tag = data_soup.find('div', class_='tbui_pagination').find('li', class_='active')
+        page_tag = data_soup.find("div", class_="tbui_pagination").find("li", class_="active")
         if page_tag is None:
             if total_count != 0:
                 current_page = 1
@@ -182,7 +182,7 @@ class Postlogs(TbErrorExt, Containers[Postlog]):
 
     @staticmethod
     def from_tbdata(data_soup: bs4.BeautifulSoup) -> Postlogs:
-        objs = [Postlog.from_tbdata(t) for t in data_soup.find('tbody').find_all('tr')]
+        objs = [Postlog.from_tbdata(t) for t in data_soup.find("tbody").find_all("tr")]
         page = Page_postlog.from_tbdata(data_soup)
         return Postlogs(objs, page)
 

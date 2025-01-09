@@ -17,18 +17,18 @@ SOFIRE_HOST = "sofire.baidu.com"
 
 
 async def request(http_core: HttpCore):
-    app_key = '200033'  # get by p/5/aio
-    sec_key = 'ea737e4f435b53786043369d2e5ace4f'
+    app_key = "200033"  # get by p/5/aio
+    sec_key = "ea737e4f435b53786043369d2e5ace4f"
     xyus = (
-        hashlib.md5((http_core.account.android_id + http_core.account.uuid).encode('ascii')).hexdigest().upper() + '|0'
+        hashlib.md5((http_core.account.android_id + http_core.account.uuid).encode("ascii")).hexdigest().upper() + "|0"
     )
-    xyus_md5_str = hashlib.md5(xyus.encode('ascii')).hexdigest()
+    xyus_md5_str = hashlib.md5(xyus.encode("ascii")).hexdigest()
     current_ts = str(int(time.time()))
 
-    params = {"module_section": [{'zid': xyus}]}
+    params = {"module_section": [{"zid": xyus}]}
 
     req_body = pack_json(params)
-    req_body = gzip.compress(req_body.encode('utf-8'), compresslevel=6, mtime=0)
+    req_body = gzip.compress(req_body.encode("utf-8"), compresslevel=6, mtime=0)
 
     padder = padding.PKCS7(algorithms.AES.block_size).padder()
     padded_req_body = padder.update(req_body) + padder.finalize()
@@ -44,19 +44,19 @@ async def request(http_core: HttpCore):
 
     headers = {
         "x-device-id": xyus_md5_str,
-        "User-Agent": f'x6/{app_key}/{MAIN_VERSION}/4.4.1.3',
-        "x-plu-ver": 'x6/4.4.1.3',
+        "User-Agent": f"x6/{app_key}/{MAIN_VERSION}/4.4.1.3",
+        "x-plu-ver": "x6/4.4.1.3",
     }
 
-    path_combine = ''.join((app_key, current_ts, sec_key))
-    path_combine_md5 = hashlib.md5(path_combine.encode('ascii')).hexdigest()
+    path_combine = "".join((app_key, current_ts, sec_key))
+    path_combine_md5 = hashlib.md5(path_combine.encode("ascii")).hexdigest()
     req_query_skey = rc4_42(xyus_md5_str, http_core.account.aes_cbc_sec_key)
-    req_query_skey = binascii.b2a_base64(req_query_skey).decode('ascii')
+    req_query_skey = binascii.b2a_base64(req_query_skey).decode("ascii")
     url = yarl.URL.build(
         scheme="https",
         host=SOFIRE_HOST,
         path=f"/c/11/z/100/{app_key}/{current_ts}/{path_combine_md5}",
-        query=[('skey', req_query_skey)],
+        query=[("skey", req_query_skey)],
     )
 
     request = aiohttp.ClientRequest(
@@ -72,11 +72,11 @@ async def request(http_core: HttpCore):
     body = await http_core.net_core.send_request(request, read_bufsize=1024)
     res_json = parse_json(body)
 
-    res_query_skey = binascii.a2b_base64(res_json['skey'])
+    res_query_skey = binascii.a2b_base64(res_json["skey"])
     res_aes_sec_key = rc4_42(xyus_md5_str, res_query_skey)
-    res_data = binascii.a2b_base64(res_json['data'])
+    res_data = binascii.a2b_base64(res_json["data"])
 
-    iv = b'\x00' * 16
+    iv = b"\x00" * 16
     aes_chiper = Cipher(algorithms.AES(res_aes_sec_key), modes.CBC(iv))
     aes_decryptor = aes_chiper.decryptor()
     decrypted_res_data = aes_decryptor.update(res_data) + aes_decryptor.finalize()
@@ -84,8 +84,8 @@ async def request(http_core: HttpCore):
     unpadder = padding.PKCS7(algorithms.AES.block_size).unpadder()
     unpadded_data = unpadder.update(decrypted_res_data) + unpadder.finalize()
 
-    res_data = unpadded_data.decode('utf-8')
+    res_data = unpadded_data.decode("utf-8")
     res_data = parse_json(res_data)
-    zid = res_data['token']
+    zid = res_data["token"]
 
     return zid

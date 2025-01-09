@@ -12,14 +12,14 @@ async def test_clib(client: tb.Client):
     account = client.account
     account.android_id = "6723280942424242"
     account.uuid = "67232809-3407-3442-4207-672346917aaa"
-    assert account.cuid_galaxy2 == '06C7F37D41256F25FABA97B885DB6EFB|VAPUDW7TA'
-    assert account.c3_aid == 'A00-OGBA33NRAQASXI6FDZ4YAJFTK75EF4Y5-YVOG764X'
+    assert account.cuid_galaxy2 == "06C7F37D41256F25FABA97B885DB6EFB|VAPUDW7TA"
+    assert account.c3_aid == "A00-OGBA33NRAQASXI6FDZ4YAJFTK75EF4Y5-YVOG764X"
 
     data = [
-        ('reverse', 1999),
-        ('hello_cosmic', '你好42'),
+        ("reverse", 1999),
+        ("hello_cosmic", "你好42"),
     ]
-    assert _sign(data) == '248dab3e1fe46aea603cdc45c08f80eb'
+    assert _sign(data) == "248dab3e1fe46aea603cdc45c08f80eb"
 
-    query_key = rc4_42('d0337b3b3d597c5f87a1c0c37139d87b', b'6723280942424242')
-    assert query_key == b'\x9f\xabU\x14\xa7\x0e\xb6k\xc4wV\xf2HN+.'
+    query_key = rc4_42("d0337b3b3d597c5f87a1c0c37139d87b", b"6723280942424242")
+    assert query_key == b"\x9f\xabU\x14\xa7\x0e\xb6k\xc4wV\xf2HN+."

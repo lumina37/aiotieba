@@ -24,9 +24,9 @@ class BlacklistOldUser:
     """
 
     user_id: int = 0
-    portrait: str = ''
-    user_name: str = ''
-    nick_name_old: str = ''
+    portrait: str = ""
+    user_name: str = ""
+    nick_name_old: str = ""
 
     until_time: int = 0
 
@@ -34,7 +34,7 @@ class BlacklistOldUser:
     def from_tbdata(data_proto: TypeMessage) -> "BlacklistOldUser":
         user_id = data_proto.user_id
         portrait = data_proto.portrait
-        if '?' in portrait:
+        if "?" in portrait:
             portrait = portrait[:-13]
         user_name = data_proto.user_name
         nick_name_old = data_proto.name_show

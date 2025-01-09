@@ -17,12 +17,12 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'SearchPostForumResIdl_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "SearchPostForumResIdl_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
-    _globals['_SEARCHPOSTFORUMRESIDL']._serialized_start = 63
-    _globals['_SEARCHPOSTFORUMRESIDL']._serialized_end = 316
-    _globals['_SEARCHPOSTFORUMRESIDL_DATARES']._serialized_start = 158
-    _globals['_SEARCHPOSTFORUMRESIDL_DATARES']._serialized_end = 316
-    _globals['_SEARCHPOSTFORUMRESIDL_DATARES_SEARCHFORUM']._serialized_start = 234
-    _globals['_SEARCHPOSTFORUMRESIDL_DATARES_SEARCHFORUM']._serialized_end = 316
+    _globals["_SEARCHPOSTFORUMRESIDL"]._serialized_start = 63
+    _globals["_SEARCHPOSTFORUMRESIDL"]._serialized_end = 316
+    _globals["_SEARCHPOSTFORUMRESIDL_DATARES"]._serialized_start = 158
+    _globals["_SEARCHPOSTFORUMRESIDL_DATARES"]._serialized_end = 316
+    _globals["_SEARCHPOSTFORUMRESIDL_DATARES_SEARCHFORUM"]._serialized_start = 234
+    _globals["_SEARCHPOSTFORUMRESIDL_DATARES_SEARCHFORUM"]._serialized_end = 316

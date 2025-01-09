@@ -20,14 +20,14 @@ class UserInfo_ws:
     """
 
     user_id: int = 0
-    portrait: str = ''
-    user_name: str = ''
+    portrait: str = ""
+    user_name: str = ""
 
     @staticmethod
     def from_tbdata(data_proto: TypeMessage) -> UserInfo_ws:
         user_id = data_proto.userId
         portrait = data_proto.portrait
-        if '?' in portrait:
+        if "?" in portrait:
             portrait = portrait[:-13]
         user_name = data_proto.userName
         return UserInfo_ws(user_id, portrait, user_name)

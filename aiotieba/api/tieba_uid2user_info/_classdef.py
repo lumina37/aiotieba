@@ -29,9 +29,9 @@ class UserInfo_TUid(TbErrorExt):
     """
 
     user_id: int = 0
-    portrait: str = ''
-    user_name: str = ''
-    nick_name_new: str = ''
+    portrait: str = ""
+    user_name: str = ""
+    nick_name_new: str = ""
     tieba_uid: int = 0
 
     age: float = 0.0
@@ -43,7 +43,7 @@ class UserInfo_TUid(TbErrorExt):
     def from_tbdata(data_proto: TypeMessage) -> "UserInfo_TUid":
         user_id = data_proto.id
         portrait = data_proto.portrait
-        if '?' in portrait:
+        if "?" in portrait:
             portrait = portrait[:-13]
         user_name = data_proto.name
         nick_name_new = data_proto.name_show

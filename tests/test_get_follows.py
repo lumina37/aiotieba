@@ -11,4 +11,4 @@ async def test_Follows(client: tb.Client):
     ##### Follow #####
     follow = follows[0]
     assert follow.user_id > 0
-    assert follow.portrait != ''
+    assert follow.portrait != ""

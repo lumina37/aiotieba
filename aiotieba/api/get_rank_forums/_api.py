@@ -8,7 +8,7 @@ from ._classdef import RankForums
 
 
 def parse_body(body: bytes) -> RankForums:
-    soup = bs4.BeautifulSoup(body, 'lxml')
+    soup = bs4.BeautifulSoup(body, "lxml")
     bawu_postlogs = RankForums.from_tbdata(soup)
 
     return bawu_postlogs
@@ -16,10 +16,10 @@ def parse_body(body: bytes) -> RankForums:
 
 async def request(http_core: HttpCore, fname: str, pn: int, rank_type: RankForumType) -> RankForums:
     params = [
-        ('kw', fname),
-        ('type', int(rank_type)),
-        ('pn', pn),
-        ('ie', 'utf-8'),
+        ("kw", fname),
+        ("type", int(rank_type)),
+        ("pn", pn),
+        ("ie", "utf-8"),
     ]
 
     request = http_core.pack_web_get_request(

@@ -10,7 +10,7 @@ def _headers_checker(response: aiohttp.ClientResponse) -> None:
     if response.status != 200:
         raise HTTPStatusError(response.status, response.reason)
 
-    if not response.content_type.endswith(('jpeg', 'png', 'bmp'), 6):
+    if not response.content_type.endswith(("jpeg", "png", "bmp"), 6):
         raise ContentTypeError(f"Expect jpeg, png or bmp, got {response.content_type}")
 
 

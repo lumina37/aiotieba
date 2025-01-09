@@ -26,9 +26,9 @@ class UserInfo_reply:
     """
 
     user_id: int = 0
-    portrait: str = ''
-    user_name: str = ''
-    nick_name_new: str = ''
+    portrait: str = ""
+    user_name: str = ""
+    nick_name_new: str = ""
 
     priv_like: PrivLike = PrivLike.PUBLIC
     priv_reply: PrivReply = PrivReply.ALL
@@ -37,7 +37,7 @@ class UserInfo_reply:
     def from_tbdata(data_proto: TypeMessage) -> "UserInfo_reply":
         user_id = data_proto.id
         portrait = data_proto.portrait
-        if '?' in portrait:
+        if "?" in portrait:
             portrait = portrait[:-13]
         user_name = data_proto.name
         nick_name_new = data_proto.name_show
@@ -91,8 +91,8 @@ class UserInfo_reply_p:
     """
 
     user_id: int = 0
-    user_name: str = ''
-    nick_name_new: str = ''
+    user_name: str = ""
+    nick_name_new: str = ""
 
     @staticmethod
     def from_tbdata(data_proto: TypeMessage) -> "UserInfo_reply_p":
@@ -142,8 +142,8 @@ class UserInfo_reply_t:
     """
 
     user_id: int = 0
-    portrait: str = ''
-    nick_name_new: str = ''
+    portrait: str = ""
+    nick_name_new: str = ""
 
     @staticmethod
     def from_tbdata(data_proto: TypeMessage) -> "UserInfo_reply_t":
@@ -199,7 +199,7 @@ class Reply:
 
     text: str = ""
 
-    fname: str = ''
+    fname: str = ""
     tid: int = 0
     ppid: int = 0
     pid: int = 0

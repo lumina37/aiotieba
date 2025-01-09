@@ -141,9 +141,9 @@ class UserInfo_c:
     """
 
     user_id: int = 0
-    portrait: str = ''
-    user_name: str = ''
-    nick_name_new: str = ''
+    portrait: str = ""
+    user_name: str = ""
+    nick_name_new: str = ""
 
     level: int = 0
     gender: Gender = Gender.UNKNOWN
@@ -159,7 +159,7 @@ class UserInfo_c:
     def from_tbdata(data_proto: TypeMessage) -> UserInfo_c:
         user_id = data_proto.id
         portrait = data_proto.portrait
-        if '?' in portrait:
+        if "?" in portrait:
             portrait = portrait[:-13]
         user_name = data_proto.name
         nick_name_new = data_proto.name_show
@@ -244,7 +244,7 @@ class Comment:
     contents: Contents_c = dcs.field(default_factory=Contents_c)
 
     fid: int = 0
-    fname: str = ''
+    fname: str = ""
     tid: int = 0
     ppid: int = 0
     pid: int = 0
@@ -266,7 +266,7 @@ class Comment:
             first_frag = contents[0]
             if (
                 isinstance(first_frag, FragText_c)
-                and first_frag.text == '回复 '
+                and first_frag.text == "回复 "
                 and (reply_to_id := data_proto.content[1].uid)
             ):
                 reply_to_id = reply_to_id
@@ -276,7 +276,7 @@ class Comment:
                 contents.texts = contents.texts[2:]
                 if contents.texts:
                     first_text_frag = contents.texts[0]
-                    first_text_frag.text = first_text_frag.text.removeprefix(' :')
+                    first_text_frag.text = first_text_frag.text.removeprefix(" :")
 
         pid = data_proto.id
         user = UserInfo_c.from_tbdata(data_proto.author)
@@ -284,7 +284,7 @@ class Comment:
         disagree = data_proto.agree.disagree_num
         create_time = data_proto.time
 
-        return Comment(contents, 0, '', 0, 0, pid, user, reply_to_id, 0, agree, disagree, create_time, False)
+        return Comment(contents, 0, "", 0, 0, pid, user, reply_to_id, 0, agree, disagree, create_time, False)
 
     def __eq__(self, obj: Comment) -> bool:
         return self.pid == obj.pid
@@ -349,10 +349,10 @@ class Forum_c:
     """
 
     fid: int = 0
-    fname: str = ''
+    fname: str = ""
 
-    category: str = ''
-    subcategory: str = ''
+    category: str = ""
+    subcategory: str = ""
 
     @staticmethod
     def from_tbdata(data_proto: TypeMessage) -> Forum_c:
@@ -384,9 +384,9 @@ class UserInfo_ct:
     """
 
     user_id: int = 0
-    portrait: str = ''
-    user_name: str = ''
-    nick_name_new: str = ''
+    portrait: str = ""
+    user_name: str = ""
+    nick_name_new: str = ""
 
     level: int = 0
     is_god: bool = False
@@ -395,7 +395,7 @@ class UserInfo_ct:
     def from_tbdata(data_proto: TypeMessage) -> UserInfo_ct:
         user_id = data_proto.id
         portrait = data_proto.portrait
-        if '?' in portrait:
+        if "?" in portrait:
             portrait = portrait[:-13]
         user_name = data_proto.name
         nick_name_new = data_proto.name_show
@@ -453,10 +453,10 @@ class Thread_c:
         reply_num (int): 回复数
     """
 
-    title: str = ''
+    title: str = ""
 
     fid: int = 0
-    fname: str = ''
+    fname: str = ""
     tid: int = 0
     user: UserInfo_ct = dcs.field(default_factory=UserInfo_ct)
 
@@ -471,7 +471,7 @@ class Thread_c:
         user = UserInfo_ct.from_tbdata(data_proto.author)
         type_ = data_proto.thread_type
         reply_num = data_proto.reply_num
-        return Thread_c(title, 0, '', tid, user, type_, reply_num)
+        return Thread_c(title, 0, "", tid, user, type_, reply_num)
 
     def __eq__(self, obj: Thread_c) -> bool:
         return self.tid == obj.tid
@@ -518,7 +518,7 @@ class FragImage_cp:
         origin_src = data_proto.origin_src
         origin_size = data_proto.origin_size
 
-        show_width, _, show_height = data_proto.bsize.partition(',')
+        show_width, _, show_height = data_proto.bsize.partition(",")
         show_width = int(show_width)
         show_height = int(show_height)
 
@@ -652,9 +652,9 @@ class UserInfo_cp:
     """
 
     user_id: int = 0
-    portrait: str = ''
-    user_name: str = ''
-    nick_name_new: str = ''
+    portrait: str = ""
+    user_name: str = ""
+    nick_name_new: str = ""
 
     level: int = 0
     gender: Gender = Gender.UNKNOWN
@@ -669,7 +669,7 @@ class UserInfo_cp:
     def from_tbdata(data_proto: TypeMessage) -> UserInfo_cp:
         user_id = data_proto.id
         portrait = data_proto.portrait
-        if '?' in portrait:
+        if "?" in portrait:
             portrait = portrait[:-13]
         user_name = data_proto.name
         nick_name_new = data_proto.name_show
@@ -739,7 +739,7 @@ class Post_c:
     sign: str = ""
 
     fid: int = 0
-    fname: str = ''
+    fname: str = ""
     tid: int = 0
     pid: int = 0
     user: UserInfo_cp = dcs.field(default_factory=UserInfo_cp)
@@ -755,7 +755,7 @@ class Post_c:
         user = UserInfo_cp.from_tbdata(data_proto.author)
         floor = data_proto.floor
         create_time = data_proto.time
-        return Post_c(contents, sign, 0, '', 0, pid, user, floor, create_time)
+        return Post_c(contents, sign, 0, "", 0, pid, user, floor, create_time)
 
     def __eq__(self, obj: Post_c) -> bool:
         return self.pid == obj.pid

@@ -22,17 +22,17 @@ class Block:
     """
 
     user_id: int = 0
-    user_name: str = ''
-    nick_name_old: str = ''
+    user_name: str = ""
+    nick_name_old: str = ""
     day: int = 0
 
     @staticmethod
     def from_tbdata(data_tag: bs4.element.Tag) -> Block:
         id_tag = data_tag.a
-        user_id = int(id_tag['attr-uid'])
-        user_name = id_tag['attr-un']
-        nick_name_old = id_tag['attr-nn']
-        day = int(id_tag['attr-blockday'])
+        user_id = int(id_tag["attr-uid"])
+        user_name = id_tag["attr-un"]
+        nick_name_old = id_tag["attr-nn"]
+        day = int(id_tag["attr-blockday"])
         return Block(user_id, user_name, nick_name_old, day)
 
 
@@ -61,11 +61,11 @@ class Page_block:
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> Page_block:
-        page_size = data_map['size']
-        current_page = data_map['pn']
-        total_page = data_map['total_page']
-        total_count = data_map['total_count']
-        has_more = data_map['have_next']
+        page_size = data_map["size"]
+        current_page = data_map["pn"]
+        total_page = data_map["total_page"]
+        total_count = data_map["total_count"]
+        has_more = data_map["have_next"]
         has_prev = current_page > 1
         return Page_block(page_size, current_page, total_page, total_count, has_more, has_prev)
 
@@ -86,9 +86,9 @@ class Blocks(TbErrorExt, Containers[Block]):
     page: Page_block = dcs.field(default_factory=Page_block)
 
     def from_tbdata(data_map: Mapping) -> Blocks:
-        data_soup = bs4.BeautifulSoup(data_map['data']['content'], 'lxml')
-        objs = [Block.from_tbdata(t) for t in data_soup('li')]
-        page = Page_block.from_tbdata(data_map['data']['page'])
+        data_soup = bs4.BeautifulSoup(data_map["data"]["content"], "lxml")
+        objs = [Block.from_tbdata(t) for t in data_soup("li")]
+        page = Page_block.from_tbdata(data_map["data"]["page"])
         return Blocks(objs, page)
 
     @property

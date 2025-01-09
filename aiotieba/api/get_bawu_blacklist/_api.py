@@ -7,7 +7,7 @@ from ._classdef import BawuBlacklistUsers
 
 
 def parse_body(body: bytes) -> BawuBlacklistUsers:
-    soup = bs4.BeautifulSoup(body, 'lxml')
+    soup = bs4.BeautifulSoup(body, "lxml")
     bawu_blacklist_users = BawuBlacklistUsers.from_tbdata(soup)
 
     return bawu_blacklist_users
@@ -15,8 +15,8 @@ def parse_body(body: bytes) -> BawuBlacklistUsers:
 
 async def request(http_core: HttpCore, fname: str, pn: int) -> BawuBlacklistUsers:
     params = [
-        ('word', fname),
-        ('pn', pn),
+        ("word", fname),
+        ("pn", pn),
     ]
 
     request = http_core.pack_web_get_request(
