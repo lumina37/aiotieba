@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from collections.abc import Mapping
+from typing import TYPE_CHECKING
 
 from ...exception import TbErrorExt
 from .._classdef import Containers
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 
 @dcs.dataclass
@@ -21,16 +24,16 @@ class FollowForum:
     """
 
     fid: int = 0
-    fname: str = ''
+    fname: str = ""
     level: int = 0
     exp: int = 0
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> FollowForum:
-        fid = int(data_map['id'])
-        fname = data_map['name']
-        level = int(data_map['level_id'])
-        exp = int(data_map['cur_score'])
+        fid = int(data_map["id"])
+        fname = data_map["name"]
+        level = int(data_map["level_id"])
+        exp = int(data_map["cur_score"])
         return FollowForum(fid, fname, level, exp)
 
     def __eq__(self, obj: FollowForum) -> bool:
@@ -56,12 +59,12 @@ class FollowForums(TbErrorExt, Containers[FollowForum]):
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> FollowForums:
-        if forum_list := data_map.get('forum_list', {}):
-            forum_dicts = forum_list.get('non-gconforum', [])
+        if forum_list := data_map.get("forum_list", {}):
+            forum_dicts = forum_list.get("non-gconforum", [])
             objs = [FollowForum.from_tbdata(m) for m in forum_dicts]
-            forum_dicts = forum_list.get('gconforum', [])
+            forum_dicts = forum_list.get("gconforum", [])
             objs += [FollowForum.from_tbdata(m) for m in forum_dicts]
-            has_more = bool(int(data_map['has_more']))
+            has_more = bool(int(data_map["has_more"]))
         else:
             objs = []
             has_more = False

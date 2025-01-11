@@ -25,6 +25,6 @@ async def test_get_user_posts(client: tb.Client):
     ##### UserInfo_u #####
     user = post.user
     assert user.user_id == post.author_id
-    assert user.portrait != ''
-    assert user.user_name != ''
-    assert user.nick_name_new != ''
+    assert user.portrait != ""
+    assert user.user_name != ""
+    assert user.nick_name_new != ""

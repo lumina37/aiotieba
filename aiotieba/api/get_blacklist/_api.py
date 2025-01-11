@@ -9,8 +9,8 @@ from ._classdef import BlacklistUsers
 
 def parse_body(body: bytes) -> BlacklistUsers:
     res_json = parse_json(body)
-    if code := int(res_json['error_code']):
-        raise TiebaServerError(code, res_json['error_msg'])
+    if code := int(res_json["error_code"]):
+        raise TiebaServerError(code, res_json["error_msg"])
 
     blacklist_users = BlacklistUsers.from_tbdata(res_json)
 
@@ -19,8 +19,8 @@ def parse_body(body: bytes) -> BlacklistUsers:
 
 async def request(http_core: HttpCore) -> BlacklistUsers:
     data = [
-        ('BDUSS', http_core.account.BDUSS),
-        ('_client_version', MAIN_VERSION),
+        ("BDUSS", http_core.account.BDUSS),
+        ("_client_version", MAIN_VERSION),
     ]
 
     request = http_core.pack_form_request(

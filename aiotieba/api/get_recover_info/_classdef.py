@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from collections.abc import Mapping
 from functools import cached_property
+from typing import TYPE_CHECKING
 
 from ...exception import TbErrorExt
 from .._classdef import Containers
 from .._classdef.contents import _IMAGEHASH_EXP, TypeFragment, TypeFragText
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 
 @dcs.dataclass
@@ -22,7 +25,7 @@ class FragText_rt:
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> FragText_rt:
-        text = data_map['value']
+        text = data_map["value"]
         return FragText_rt(text)
 
 
@@ -45,9 +48,9 @@ class FragImage_rt:
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> FragImage_rt:
-        src = data_map['url']
-        show_width = int(data_map['width'])
-        show_height = int(data_map['height'])
+        src = data_map["url"]
+        show_width = int(data_map["width"])
+        show_height = int(data_map["height"])
 
         hash_ = _IMAGEHASH_EXP.search(src).group(1)
 
@@ -73,14 +76,14 @@ class Contents_rt(Containers[TypeFragment]):
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> Contents_rt:
-        content_maps = data_map['content_detail']
+        content_maps = data_map["content_detail"]
 
         texts = []
-        imgs = [FragImage_rt.from_tbdata(m) for m in data_map['all_pics']]
+        imgs = [FragImage_rt.from_tbdata(m) for m in data_map["all_pics"]]
 
         def _frags():
             for cmap in content_maps:
-                _type = cmap['type']
+                _type = cmap["type"]
                 # 1纯文本
                 if _type == 1:
                     frag = FragText_rt.from_tbdata(cmap)
@@ -119,17 +122,17 @@ class UserInfo_rt:
         log_name (str): 用于在日志中记录用户信息
     """
 
-    portrait: str = ''
-    user_name: str = ''
-    nick_name_new: str = ''
+    portrait: str = ""
+    user_name: str = ""
+    nick_name_new: str = ""
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> UserInfo_rt:
-        portrait = data_map['portrait']
-        if '?' in portrait:
+        portrait = data_map["portrait"]
+        if "?" in portrait:
             portrait = portrait[:-13]
-        user_name = data_map['user_name']
-        nick_name_new = data_map['show_nickname']
+        user_name = data_map["user_name"]
+        nick_name_new = data_map["show_nickname"]
         return UserInfo_rt(portrait, user_name, nick_name_new)
 
     def __str__(self) -> str:
@@ -171,7 +174,7 @@ class RecoverThread(TbErrorExt):
     """
 
     contents: Contents_rt = dcs.field(default_factory=Contents_rt)
-    title: str = ''
+    title: str = ""
 
     tid: int = 0
     pid: int = 0
@@ -185,20 +188,20 @@ class RecoverThread(TbErrorExt):
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> RecoverThread:
-        thread_info = data_map['thread_info']
+        thread_info = data_map["thread_info"]
 
         contents = Contents_rt.from_tbdata(thread_info)
-        title = thread_info['title']
+        title = thread_info["title"]
 
-        tid = thread_info['thread_id']
-        pid = thread_info['post_id']
-        user = UserInfo_rt.from_tbdata(data_map['user_info'])
+        tid = thread_info["thread_id"]
+        pid = thread_info["post_id"]
+        user = UserInfo_rt.from_tbdata(data_map["user_info"])
 
-        view_num = thread_info['read_num']
-        reply_num = thread_info['comment_num']
-        share_num = thread_info['share_num']
-        agree = thread_info['agree_num']
-        disagree = thread_info['disagree_num']
+        view_num = thread_info["read_num"]
+        reply_num = thread_info["comment_num"]
+        share_num = thread_info["share_num"]
+        agree = thread_info["agree_num"]
+        disagree = thread_info["disagree_num"]
 
         return RecoverThread(contents, title, tid, pid, user, view_num, reply_num, share_num, agree, disagree)
 

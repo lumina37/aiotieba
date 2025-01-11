@@ -14,8 +14,8 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'Voice_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "Voice_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
-    _globals['_VOICE']._serialized_start = 15
-    _globals['_VOICE']._serialized_end = 62
+    _globals["_VOICE"]._serialized_start = 15
+    _globals["_VOICE"]._serialized_end = 62

@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from collections.abc import Mapping
+from typing import TYPE_CHECKING
 
 from ...exception import TbErrorExt
 from .._classdef import Containers
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 
 @dcs.dataclass
@@ -29,35 +32,35 @@ class Appeal:
     """
 
     user_id: int = 0
-    portrait: str = ''
-    user_name: str = ''
-    nick_name: str = ''
+    portrait: str = ""
+    user_name: str = ""
+    nick_name: str = ""
 
     appeal_id: int = 0
-    appeal_reason: str = ''
+    appeal_reason: str = ""
     appeal_time: int = 0
 
-    punish_reason: str = ''
+    punish_reason: str = ""
     punish_time: int = 0
     punish_day: int = 0
-    op_name: str = ''
+    op_name: str = ""
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> Appeal:
-        user_map = data_map['user']
-        user_id = user_map['id']
-        portrait = user_map['portrait']
-        if '?' in portrait:
+        user_map = data_map["user"]
+        user_id = user_map["id"]
+        portrait = user_map["portrait"]
+        if "?" in portrait:
             portrait = portrait[:-13]
-        user_name = user_map['name']
-        nick_name = user_map['name_show']
-        appeal_id = int(data_map['appeal_id'])
-        appeal_reason = data_map['appeal_reason']
-        appeal_time = int(data_map['appeal_time'])
-        punish_reason = data_map['punish_reason']
-        punish_time = int(data_map['punish_start_time'])
-        punish_day = data_map['punish_day_num']
-        op_name = data_map['operate_man']
+        user_name = user_map["name"]
+        nick_name = user_map["name_show"]
+        appeal_id = int(data_map["appeal_id"])
+        appeal_reason = data_map["appeal_reason"]
+        appeal_time = int(data_map["appeal_time"])
+        punish_reason = data_map["punish_reason"]
+        punish_time = int(data_map["punish_start_time"])
+        punish_day = data_map["punish_day_num"]
+        op_name = data_map["operate_man"]
         return Appeal(
             user_id,
             portrait,
@@ -89,6 +92,6 @@ class Appeals(TbErrorExt, Containers[Appeal]):
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> Appeals:
-        objs = [Appeal.from_tbdata(m) for m in data_map['data'].get('appeal_list', [])]
-        has_more = data_map['data'].get('has_more', False)
+        objs = [Appeal.from_tbdata(m) for m in data_map["data"].get("appeal_list", [])]
+        has_more = data_map["data"].get("has_more", False)
         return Appeals(objs, has_more)

@@ -21,10 +21,10 @@ class Userlog:
         op_time (datetime.datetime): 操作时间
     """
 
-    op_type: str = ''
+    op_type: str = ""
     op_duration: int = 0
-    user_portrait: str = ''
-    op_user_name: str = ''
+    user_portrait: str = ""
+    op_user_name: str = ""
     op_time: datetime = dcs.field(default_factory=default_datetime)
 
     @staticmethod
@@ -32,20 +32,20 @@ class Userlog:
         left_cell_item = data_tag.td
 
         post_user_item = left_cell_item.a
-        user_portrait = post_user_item['href'][14:-17]
+        user_portrait = post_user_item["href"][14:-17]
 
         op_type_item = left_cell_item.next_sibling.next_sibling
         op_type = op_type_item.string
 
         op_duration_item = op_type_item.next_sibling
-        op_duration = op_duration_item.string.replace(' ', '')
-        op_duration = 0 if '天' not in op_duration else int(op_duration[:-1])
+        op_duration = op_duration_item.string.replace(" ", "")
+        op_duration = 0 if "天" not in op_duration else int(op_duration[:-1])
 
         op_user_name_item = op_duration_item.next_sibling
         op_user_name = op_user_name_item.string
 
         op_time_item = op_user_name_item.next_sibling
-        op_time = datetime.strptime(op_time_item.text, '%Y-%m-%d %H:%M')
+        op_time = datetime.strptime(op_time_item.text, "%Y-%m-%d %H:%M")
 
         return Userlog(op_type, op_duration, user_portrait, op_user_name, op_time)
 
@@ -73,10 +73,10 @@ class Page_userlog:
 
     @staticmethod
     def from_tbdata(data_soup: bs4.BeautifulSoup) -> "Page_userlog":
-        total_count_tag = data_soup.find('div', class_='breadcrumbs')
+        total_count_tag = data_soup.find("div", class_="breadcrumbs")
         total_count = int(total_count_tag.em.text)
 
-        page_tag = data_soup.find('div', class_='tbui_pagination').find('li', class_='active')
+        page_tag = data_soup.find("div", class_="tbui_pagination").find("li", class_="active")
         if page_tag is None:
             if total_count != 0:
                 current_page = 1
@@ -112,7 +112,7 @@ class Userlogs(TbErrorExt, Containers[Userlog]):
 
     @staticmethod
     def from_tbdata(data_soup: bs4.BeautifulSoup) -> "Userlogs":
-        objs = [Userlog.from_tbdata(t) for t in data_soup.find('tbody').find_all('tr')]
+        objs = [Userlog.from_tbdata(t) for t in data_soup.find("tbody").find_all("tr")]
         page = Page_userlog.from_tbdata(data_soup)
         return Userlogs(objs, page)
 

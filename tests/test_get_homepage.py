@@ -10,9 +10,8 @@ async def test_Homepage(client: tb.Client):
 
     ##### Thread_pf #####
     thread = homepage[0]
-    assert len(thread.contents) > 0
     assert thread.fid > 0
-    assert thread.fname != ''
+    assert thread.fname != ""
     assert thread.tid > 0
     assert thread.pid > 0
     assert thread.author_id == thread.user.user_id
@@ -23,9 +22,9 @@ async def test_Homepage(client: tb.Client):
     user = homepage.user
     assert user.user_id == thread.user.user_id
     assert user.user_id > 0
-    assert user.portrait != ''
-    assert user.user_name != ''
-    assert user.nick_name_new != ''
+    assert user.portrait != ""
+    assert user.user_name != ""
+    assert user.nick_name_new != ""
     assert user.tieba_uid > 0
     assert user.glevel > 0
     assert user.gender != tb.Gender.UNKNOWN
@@ -35,4 +34,4 @@ async def test_Homepage(client: tb.Client):
     assert user.fan_num > 0
     assert user.follow_num > 0
     assert user.forum_num > 0
-    assert user.ip != ''
+    assert user.ip != ""

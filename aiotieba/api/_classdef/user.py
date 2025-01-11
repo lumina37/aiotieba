@@ -42,10 +42,10 @@ class UserInfo:
     """
 
     user_id: int = 0
-    portrait: str = ''
-    user_name: str = ''
-    nick_name_old: str = ''
-    nick_name_new: str = ''
+    portrait: str = ""
+    user_name: str = ""
+    nick_name_old: str = ""
+    nick_name_new: str = ""
     tieba_uid: int = 0
 
     glevel: int = 0
@@ -57,7 +57,7 @@ class UserInfo:
     follow_num: int = 0
     forum_num: int = 0
     sign: str = ""
-    ip: str = ''
+    ip: str = ""
     icons: list[str] = dcs.field(default_factory=list)
 
     is_vip: bool = False

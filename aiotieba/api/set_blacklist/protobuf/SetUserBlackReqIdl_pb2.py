@@ -16,12 +16,12 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'SetUserBlackReqIdl_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "SetUserBlackReqIdl_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
-    _globals['_SETUSERBLACKREQIDL']._serialized_start = 46
-    _globals['_SETUSERBLACKREQIDL']._serialized_end = 297
-    _globals['_SETUSERBLACKREQIDL_DATAREQ']._serialized_start = 112
-    _globals['_SETUSERBLACKREQIDL_DATAREQ']._serialized_end = 297
-    _globals['_SETUSERBLACKREQIDL_DATAREQ_PERMISSIONLIST']._serialized_start = 233
-    _globals['_SETUSERBLACKREQIDL_DATAREQ_PERMISSIONLIST']._serialized_end = 297
+    _globals["_SETUSERBLACKREQIDL"]._serialized_start = 46
+    _globals["_SETUSERBLACKREQIDL"]._serialized_end = 297
+    _globals["_SETUSERBLACKREQIDL_DATAREQ"]._serialized_start = 112
+    _globals["_SETUSERBLACKREQIDL_DATAREQ"]._serialized_end = 297
+    _globals["_SETUSERBLACKREQIDL_DATAREQ_PERMISSIONLIST"]._serialized_start = 233
+    _globals["_SETUSERBLACKREQIDL_DATAREQ_PERMISSIONLIST"]._serialized_end = 297

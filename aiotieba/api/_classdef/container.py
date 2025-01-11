@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from collections.abc import Iterator
-from typing import Generic, SupportsIndex, TypeVar, overload
+from typing import TYPE_CHECKING, Generic, SupportsIndex, TypeVar, overload
 
-TypeContainer = TypeVar('TypeContainer')
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+TypeContainer = TypeVar("TypeContainer")
 
 
 @dcs.dataclass

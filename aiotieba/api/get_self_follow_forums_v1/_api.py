@@ -9,10 +9,10 @@ from ._classdef import SelfFollowForumsV1
 
 def parse_body(body: bytes) -> SelfFollowForumsV1:
     res_json = parse_json(body)
-    if code := res_json['errno']:
-        raise TiebaServerError(code, res_json['errmsg'])
+    if code := res_json["errno"]:
+        raise TiebaServerError(code, res_json["errmsg"])
 
-    data_map = res_json['data']['like_forum']
+    data_map = res_json["data"]["like_forum"]
     self_follow_forums = SelfFollowForumsV1.from_tbdata(data_map)
 
     return self_follow_forums
@@ -20,8 +20,8 @@ def parse_body(body: bytes) -> SelfFollowForumsV1:
 
 async def request(http_core: HttpCore, pn: int, rn: int) -> SelfFollowForumsV1:
     params = [
-        ('pn', pn),
-        ('rn', rn),
+        ("pn", pn),
+        ("rn", rn),
     ]
 
     request = http_core.pack_web_get_request(

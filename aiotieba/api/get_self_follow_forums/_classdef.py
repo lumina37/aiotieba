@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from collections.abc import Mapping
+from typing import TYPE_CHECKING
 
 from ...exception import TbErrorExt
 from .._classdef import Containers
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 
 @dcs.dataclass
@@ -20,16 +23,16 @@ class SelfFollowForum:
     """
 
     fid: int = 0
-    fname: str = ''
+    fname: str = ""
     level: int = 0
     is_signed: bool = False
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> SelfFollowForum:
-        fid = data_map['forum_id']
-        fname = data_map['forum_name']
-        level = data_map['level_id']
-        is_signed = data_map['is_sign']
+        fid = data_map["forum_id"]
+        fname = data_map["forum_name"]
+        level = data_map["level_id"]
+        is_signed = data_map["is_sign"]
         return SelfFollowForum(fid, fname, level, is_signed)
 
 
@@ -49,6 +52,6 @@ class SelfFollowForums(TbErrorExt, Containers[SelfFollowForum]):
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> SelfFollowForums:
-        objs = [SelfFollowForum.from_tbdata(m) for m in data_map['like_forum']]
-        has_more = data_map['like_forum_has_more']
+        objs = [SelfFollowForum.from_tbdata(m) for m in data_map["like_forum"]]
+        has_more = data_map["like_forum_has_more"]
         return SelfFollowForums(objs, has_more)

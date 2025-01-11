@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import subprocess
-from collections.abc import Iterator
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 commom_proto_pth = Path("aiotieba/api/_protobuf")
 
-for fpth in commom_proto_pth.glob('*_pb2.py'):
+for fpth in commom_proto_pth.glob("*_pb2.py"):
     fpth.unlink()
 
 subprocess.run("protoc --python_out=. *.proto", cwd=str(commom_proto_pth), check=True, timeout=60.0)
@@ -15,12 +18,12 @@ subprocess.run("protoc --python_out=. *.proto", cwd=str(commom_proto_pth), check
 def row_filter(rows: list[str], import_perfix: str) -> Iterator[str]:
     is_runtime_checker = False
     for row in rows:
-        if row.startswith('#'):
+        if row.startswith("#"):
             continue
 
         if not is_runtime_checker and row.startswith("_runtime"):
             is_runtime_checker = True
-        if is_runtime_checker and row.startswith(')'):
+        if is_runtime_checker and row.startswith(")"):
             is_runtime_checker = False
             continue
         if is_runtime_checker:
@@ -35,31 +38,31 @@ def row_filter(rows: list[str], import_perfix: str) -> Iterator[str]:
         yield row
 
 
-for fpth in commom_proto_pth.glob('*_pb2.py'):
-    bak_fpth = fpth.with_suffix('.bak')
+for fpth in commom_proto_pth.glob("*_pb2.py"):
+    bak_fpth = fpth.with_suffix(".bak")
     with (
-        fpth.open('r') as f,
-        bak_fpth.open('w') as bak_f,
+        fpth.open("r") as f,
+        bak_fpth.open("w") as bak_f,
     ):
         bak_f.writelines(row_filter(f, "from . "))
     fpth.unlink()
     bak_fpth.rename(fpth)
 
-for mod_pth in Path("aiotieba/api").glob('*/protobuf'):
-    for fpth in mod_pth.glob('*_pb2.py'):
+for mod_pth in Path("aiotieba/api").glob("*/protobuf"):
+    for fpth in mod_pth.glob("*_pb2.py"):
         fpth.unlink()
 
     subprocess.run("protoc -I../../_protobuf -I. --python_out=. *.proto", cwd=str(mod_pth), check=True, timeout=10.0)
 
-    for fpth in mod_pth.glob('*_pb2.py'):
-        bak_fpth = fpth.with_suffix('.bak')
+    for fpth in mod_pth.glob("*_pb2.py"):
+        bak_fpth = fpth.with_suffix(".bak")
         with (
-            fpth.open('r') as f,
-            bak_fpth.open('w') as bak_f,
+            fpth.open("r") as f,
+            bak_fpth.open("w") as bak_f,
         ):
             bak_f.writelines(row_filter(f, "from ..._protobuf "))
         fpth.unlink()
         bak_fpth.rename(fpth)
 
-subprocess.run("uvx ruff check . --fix --unsafe-fixes", cwd='.', check=False, timeout=10.0)
-subprocess.run("uvx ruff format .", cwd='.', check=False, timeout=30.0)
+subprocess.run("uvx ruff check . --fix --unsafe-fixes", cwd=".", check=False, timeout=10.0)
+subprocess.run("uvx ruff format .", cwd=".", check=False, timeout=30.0)

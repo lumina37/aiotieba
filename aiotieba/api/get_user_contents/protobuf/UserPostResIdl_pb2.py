@@ -17,10 +17,10 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'UserPostResIdl_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "UserPostResIdl_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
-    _globals['_USERPOSTRESIDL']._serialized_start = 57
-    _globals['_USERPOSTRESIDL']._serialized_end = 180
-    _globals['_USERPOSTRESIDL_DATARES']._serialized_start = 137
-    _globals['_USERPOSTRESIDL_DATARES']._serialized_end = 180
+    _globals["_USERPOSTRESIDL"]._serialized_start = 57
+    _globals["_USERPOSTRESIDL"]._serialized_end = 180
+    _globals["_USERPOSTRESIDL_DATARES"]._serialized_start = 137
+    _globals["_USERPOSTRESIDL_DATARES"]._serialized_end = 180

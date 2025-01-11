@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from collections.abc import Mapping
 from functools import cached_property
+from typing import TYPE_CHECKING
 
 from ...exception import TbErrorExt
 from .._classdef import Containers
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 
 @dcs.dataclass
@@ -23,17 +26,17 @@ class UserInfo_rec:
         log_name (str): 用于在日志中记录用户信息
     """
 
-    user_name: str = ''
-    portrait: str = ''
-    nick_name_new: str = ''
+    user_name: str = ""
+    portrait: str = ""
+    nick_name_new: str = ""
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> UserInfo_rec:
-        portrait = data_map['portrait']
-        if '?' in portrait:
+        portrait = data_map["portrait"]
+        if "?" in portrait:
             portrait = portrait[:-13]
-        user_name = data_map['user_name']
-        nick_name_new = data_map['user_nickname']
+        user_name = data_map["user_name"]
+        nick_name_new = data_map["user_nickname"]
         return UserInfo_rec(user_name, portrait, nick_name_new)
 
     def __str__(self) -> str:
@@ -82,7 +85,7 @@ class Recover:
     tid: int = 0
     pid: int = 0
     user: UserInfo_rec = dcs.field(default_factory=UserInfo_rec)
-    op_show_name: str = ''
+    op_show_name: str = ""
     op_time: int = 0
 
     is_floor: bool = False
@@ -90,20 +93,20 @@ class Recover:
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> Recover:
-        thread_info = data_map['thread_info']
-        tid = int(thread_info['tid'])
-        if post_info := data_map['post_info']:
-            text = post_info['abstract']
-            pid = int(post_info['pid'])
+        thread_info = data_map["thread_info"]
+        tid = int(thread_info["tid"])
+        if post_info := data_map["post_info"]:
+            text = post_info["abstract"]
+            pid = int(post_info["pid"])
             user = UserInfo_rec.from_tbdata(post_info)
         else:
-            text = thread_info['abstract']
+            text = thread_info["abstract"]
             pid = 0
             user = UserInfo_rec.from_tbdata(thread_info)
-        is_floor = bool(data_map['is_foor'])  # 百度的Code Review主要起到一个装饰的作用
-        is_hide = bool(int(data_map['is_frs_mask']))
-        op_show_name = data_map['op_info']['name']
-        op_time = int(data_map['op_info']['time'])
+        is_floor = bool(data_map["is_foor"])  # 百度的Code Review主要起到一个装饰的作用
+        is_hide = bool(int(data_map["is_frs_mask"]))
+        op_show_name = data_map["op_info"]["name"]
+        op_time = int(data_map["op_info"]["time"])
         return Recover(text, tid, pid, user, op_show_name, op_time, is_floor, is_hide)
 
 
@@ -128,9 +131,9 @@ class Page_recover:
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> Page_recover:
-        page_size = data_map['rn']
-        current_page = data_map['pn']
-        has_more = data_map['has_more']
+        page_size = data_map["rn"]
+        current_page = data_map["pn"]
+        has_more = data_map["has_more"]
         has_prev = current_page > 1
         return Page_recover(page_size, current_page, has_more, has_prev)
 
@@ -152,8 +155,8 @@ class Recovers(TbErrorExt, Containers[Recover]):
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> None:
-        objs = [Recover.from_tbdata(t) for t in data_map['data']['thread_list']]
-        page = Page_recover.from_tbdata(data_map['data']['page'])
+        objs = [Recover.from_tbdata(t) for t in data_map["data"]["thread_list"]]
+        page = Page_recover.from_tbdata(data_map["data"]["page"])
         return Recovers(objs, page)
 
     @property

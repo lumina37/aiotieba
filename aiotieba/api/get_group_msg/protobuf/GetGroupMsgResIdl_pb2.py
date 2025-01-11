@@ -16,18 +16,18 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'GetGroupMsgResIdl_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "GetGroupMsgResIdl_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
-    _globals['_GETGROUPMSGRESIDL']._serialized_start = 41
-    _globals['_GETGROUPMSGRESIDL']._serialized_end = 600
-    _globals['_GETGROUPMSGRESIDL_DATARES']._serialized_start = 128
-    _globals['_GETGROUPMSGRESIDL_DATARES']._serialized_end = 600
-    _globals['_GETGROUPMSGRESIDL_DATARES_GROUPMSG']._serialized_start = 196
-    _globals['_GETGROUPMSGRESIDL_DATARES_GROUPMSG']._serialized_end = 600
-    _globals['_GETGROUPMSGRESIDL_DATARES_GROUPMSG_GROUPINFO']._serialized_start = 336
-    _globals['_GETGROUPMSGRESIDL_DATARES_GROUPMSG_GROUPINFO']._serialized_end = 383
-    _globals['_GETGROUPMSGRESIDL_DATARES_GROUPMSG_MSGINFO']._serialized_start = 386
-    _globals['_GETGROUPMSGRESIDL_DATARES_GROUPMSG_MSGINFO']._serialized_end = 600
-    _globals['_GETGROUPMSGRESIDL_DATARES_GROUPMSG_MSGINFO_USERINFO']._serialized_start = 538
-    _globals['_GETGROUPMSGRESIDL_DATARES_GROUPMSG_MSGINFO_USERINFO']._serialized_end = 600
+    _globals["_GETGROUPMSGRESIDL"]._serialized_start = 41
+    _globals["_GETGROUPMSGRESIDL"]._serialized_end = 600
+    _globals["_GETGROUPMSGRESIDL_DATARES"]._serialized_start = 128
+    _globals["_GETGROUPMSGRESIDL_DATARES"]._serialized_end = 600
+    _globals["_GETGROUPMSGRESIDL_DATARES_GROUPMSG"]._serialized_start = 196
+    _globals["_GETGROUPMSGRESIDL_DATARES_GROUPMSG"]._serialized_end = 600
+    _globals["_GETGROUPMSGRESIDL_DATARES_GROUPMSG_GROUPINFO"]._serialized_start = 336
+    _globals["_GETGROUPMSGRESIDL_DATARES_GROUPMSG_GROUPINFO"]._serialized_end = 383
+    _globals["_GETGROUPMSGRESIDL_DATARES_GROUPMSG_MSGINFO"]._serialized_start = 386
+    _globals["_GETGROUPMSGRESIDL_DATARES_GROUPMSG_MSGINFO"]._serialized_end = 600
+    _globals["_GETGROUPMSGRESIDL_DATARES_GROUPMSG_MSGINFO_USERINFO"]._serialized_start = 538
+    _globals["_GETGROUPMSGRESIDL_DATARES_GROUPMSG_MSGINFO_USERINFO"]._serialized_end = 600

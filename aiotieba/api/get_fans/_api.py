@@ -9,8 +9,8 @@ from ._classdef import Fans
 
 def parse_body(body: bytes) -> Fans:
     res_json = parse_json(body)
-    if code := int(res_json['error_code']):
-        raise TiebaServerError(code, res_json['error_msg'])
+    if code := int(res_json["error_code"]):
+        raise TiebaServerError(code, res_json["error_msg"])
 
     fans = Fans.from_tbdata(res_json)
 
@@ -19,10 +19,10 @@ def parse_body(body: bytes) -> Fans:
 
 async def request(http_core: HttpCore, user_id: int, pn: int) -> Fans:
     data = [
-        ('BDUSS', http_core.account.BDUSS),
-        ('_client_version', MAIN_VERSION),
-        ('pn', pn),
-        ('uid', user_id),
+        ("BDUSS", http_core.account.BDUSS),
+        ("_client_version", MAIN_VERSION),
+        ("pn", pn),
+        ("uid", user_id),
     ]
 
     request = http_core.pack_form_request(

@@ -4,11 +4,11 @@ import sys
 from pathlib import Path
 
 logging.addLevelName(logging.FATAL, "FATAL")
-logging.addLevelName(logging.WARN, "WARN")
+logging.addLevelName(logging.WARNING, "WARN")
 
 logging.raiseExceptions = False
 
-_FORMATTER = logging.Formatter("<{asctime}> [{levelname}] [{funcName}] {message}", "%Y-%m-%d %H:%M:%S", style='{')
+_FORMATTER = logging.Formatter("<{asctime}> [{levelname}] [{funcName}] {message}", "%Y-%m-%d %H:%M:%S", style="{")
 
 
 class TiebaLogger(logging.Logger):
@@ -20,8 +20,8 @@ class TiebaLogger(logging.Logger):
         stream_log_level (int): 标准输出日志级别. Defaults to `logging.DEBUG`.
     """
 
-    def __init__(self, name: str = '', stream_log_level: int = logging.DEBUG) -> None:
-        if name == '':
+    def __init__(self, name: str = "", stream_log_level: int = logging.DEBUG) -> None:
+        if name == "":
             name = Path(sys.argv[0]).stem
         super().__init__(name)
 
@@ -81,7 +81,7 @@ def set_formatter(formatter: logging.Formatter) -> None:
 _FILELOG_ENABLED = False
 
 
-def enable_filelog(log_level: int = logging.INFO, log_dir: Path = Path('log'), backup_count: int = 5) -> None:
+def enable_filelog(log_level: int = logging.INFO, log_dir: Path = Path("log"), backup_count: int = 5) -> None:
     """
     启用文件日志
 
@@ -102,7 +102,7 @@ def enable_filelog(log_level: int = logging.INFO, log_dir: Path = Path('log'), b
     logger = get_logger()
 
     file_hd = logging.handlers.TimedRotatingFileHandler(
-        log_dir / f"{logger.name}.log", when='MIDNIGHT', backupCount=backup_count, encoding='utf-8'
+        log_dir / f"{logger.name}.log", when="MIDNIGHT", backupCount=backup_count, encoding="utf-8"
     )
     file_hd.setLevel(log_level)
     file_hd.setFormatter(_FORMATTER)

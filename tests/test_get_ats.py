@@ -14,8 +14,8 @@ async def test_Ats(client: tb.Client):
     # UserInfo_at
     user = at.user
     assert user.user_id > 0
-    assert user.portrait != ''
-    assert user.nick_name_new != ''
+    assert user.portrait != ""
+    assert user.nick_name_new != ""
     assert user.nick_name == user.nick_name_new
     assert user.show_name == user.nick_name_new
     assert user.priv_like != 0
@@ -23,7 +23,7 @@ async def test_Ats(client: tb.Client):
 
     # At
     assert at.text != ""
-    assert at.fname != ''
+    assert at.fname != ""
     assert at.tid > 0
     assert at.pid > 0
     assert at.author_id == user.user_id

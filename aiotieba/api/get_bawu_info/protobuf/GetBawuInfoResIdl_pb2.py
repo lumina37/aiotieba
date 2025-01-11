@@ -16,16 +16,16 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'GetBawuInfoResIdl_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "GetBawuInfoResIdl_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
-    _globals['_GETBAWUINFORESIDL']._serialized_start = 41
-    _globals['_GETBAWUINFORESIDL']._serialized_end = 534
-    _globals['_GETBAWUINFORESIDL_DATARES']._serialized_start = 128
-    _globals['_GETBAWUINFORESIDL_DATARES']._serialized_end = 534
-    _globals['_GETBAWUINFORESIDL_DATARES_BAWUTEAM']._serialized_start = 201
-    _globals['_GETBAWUINFORESIDL_DATARES_BAWUTEAM']._serialized_end = 534
-    _globals['_GETBAWUINFORESIDL_DATARES_BAWUTEAM_BAWUROLEDES']._serialized_start = 306
-    _globals['_GETBAWUINFORESIDL_DATARES_BAWUTEAM_BAWUROLEDES']._serialized_end = 534
-    _globals['_GETBAWUINFORESIDL_DATARES_BAWUTEAM_BAWUROLEDES_BAWUROLEINFOPUB']._serialized_start = 424
-    _globals['_GETBAWUINFORESIDL_DATARES_BAWUTEAM_BAWUROLEDES_BAWUROLEINFOPUB']._serialized_end = 534
+    _globals["_GETBAWUINFORESIDL"]._serialized_start = 41
+    _globals["_GETBAWUINFORESIDL"]._serialized_end = 534
+    _globals["_GETBAWUINFORESIDL_DATARES"]._serialized_start = 128
+    _globals["_GETBAWUINFORESIDL_DATARES"]._serialized_end = 534
+    _globals["_GETBAWUINFORESIDL_DATARES_BAWUTEAM"]._serialized_start = 201
+    _globals["_GETBAWUINFORESIDL_DATARES_BAWUTEAM"]._serialized_end = 534
+    _globals["_GETBAWUINFORESIDL_DATARES_BAWUTEAM_BAWUROLEDES"]._serialized_start = 306
+    _globals["_GETBAWUINFORESIDL_DATARES_BAWUTEAM_BAWUROLEDES"]._serialized_end = 534
+    _globals["_GETBAWUINFORESIDL_DATARES_BAWUTEAM_BAWUROLEDES_BAWUROLEINFOPUB"]._serialized_start = 424
+    _globals["_GETBAWUINFORESIDL_DATARES_BAWUTEAM_BAWUROLEDES_BAWUROLEINFOPUB"]._serialized_end = 534

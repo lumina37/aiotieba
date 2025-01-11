@@ -18,14 +18,14 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'ProfileResIdl_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "ProfileResIdl_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
-    _globals['_PROFILERESIDL']._serialized_start = 69
-    _globals['_PROFILERESIDL']._serialized_end = 433
-    _globals['_PROFILERESIDL_DATARES']._serialized_start = 148
-    _globals['_PROFILERESIDL_DATARES']._serialized_end = 433
-    _globals['_PROFILERESIDL_DATARES_ANTI']._serialized_start = 325
-    _globals['_PROFILERESIDL_DATARES_ANTI']._serialized_end = 391
-    _globals['_PROFILERESIDL_DATARES_USERAGREEINFO']._serialized_start = 393
-    _globals['_PROFILERESIDL_DATARES_USERAGREEINFO']._serialized_end = 433
+    _globals["_PROFILERESIDL"]._serialized_start = 69
+    _globals["_PROFILERESIDL"]._serialized_end = 433
+    _globals["_PROFILERESIDL_DATARES"]._serialized_start = 148
+    _globals["_PROFILERESIDL_DATARES"]._serialized_end = 433
+    _globals["_PROFILERESIDL_DATARES_ANTI"]._serialized_start = 325
+    _globals["_PROFILERESIDL_DATARES_ANTI"]._serialized_end = 391
+    _globals["_PROFILERESIDL_DATARES_USERAGREEINFO"]._serialized_start = 393
+    _globals["_PROFILERESIDL_DATARES_USERAGREEINFO"]._serialized_end = 433

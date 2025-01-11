@@ -9,10 +9,10 @@ from ._classdef import BawuPerm
 
 def parse_body(body: bytes) -> BawuPerm:
     res_json = parse_json(body)
-    if code := res_json['no']:
-        raise TiebaServerError(code, res_json['error'])
+    if code := res_json["no"]:
+        raise TiebaServerError(code, res_json["error"])
 
-    data_map = res_json['data']
+    data_map = res_json["data"]
     perm = BawuPerm.from_tbdata(data_map)
 
     return perm
@@ -20,8 +20,8 @@ def parse_body(body: bytes) -> BawuPerm:
 
 async def request(http_core: HttpCore, fid: int, portrait: str) -> BawuPerm:
     params = [
-        ('forum_id', fid),
-        ('portrait', portrait),
+        ("forum_id", fid),
+        ("portrait", portrait),
     ]
 
     request = http_core.pack_web_get_request(

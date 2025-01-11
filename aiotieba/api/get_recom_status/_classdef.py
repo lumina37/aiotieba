@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from collections.abc import Mapping
+from typing import TYPE_CHECKING
 
 from ...exception import TbErrorExt
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 
 @dcs.dataclass
@@ -23,6 +26,6 @@ class RecomStatus(TbErrorExt):
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> RecomStatus:
-        total_recom_num = int(data_map['total_recommend_num'])
-        used_recom_num = int(data_map['used_recommend_num'])
+        total_recom_num = int(data_map["total_recommend_num"])
+        used_recom_num = int(data_map["used_recommend_num"])
         return RecomStatus(total_recom_num, used_recom_num)

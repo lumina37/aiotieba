@@ -9,10 +9,10 @@ from ._classdef import Statistics
 
 def parse_body(body: bytes) -> Statistics:
     res_json = parse_json(body)
-    if code := int(res_json['error_code']):
-        raise TiebaServerError(code, res_json['error_msg'])
+    if code := int(res_json["error_code"]):
+        raise TiebaServerError(code, res_json["error_msg"])
 
-    data_seq = res_json['data']
+    data_seq = res_json["data"]
     stat = Statistics.from_tbdata(data_seq)
 
     return stat
@@ -20,9 +20,9 @@ def parse_body(body: bytes) -> Statistics:
 
 async def request(http_core: HttpCore, fid: int) -> Statistics:
     data = [
-        ('BDUSS', http_core.account.BDUSS),
-        ('_client_version', MAIN_VERSION),
-        ('forum_id', fid),
+        ("BDUSS", http_core.account.BDUSS),
+        ("_client_version", MAIN_VERSION),
+        ("forum_id", fid),
     ]
 
     request = http_core.pack_form_request(

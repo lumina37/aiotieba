@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from collections.abc import Mapping
 from functools import cached_property
+from typing import TYPE_CHECKING
 
 from ...exception import TbErrorExt
 from .._classdef import Containers
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 
 @dcs.dataclass
@@ -25,18 +28,18 @@ class Fan:
     """
 
     user_id: int = 0
-    portrait: str = ''
-    user_name: str = ''
-    nick_name_new: str = ''
+    portrait: str = ""
+    user_name: str = ""
+    nick_name_new: str = ""
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> Fan:
-        user_id = int(data_map['id'])
-        portrait = data_map['portrait']
-        if '?' in portrait:
+        user_id = int(data_map["id"])
+        portrait = data_map["portrait"]
+        if "?" in portrait:
             portrait = portrait[:-13]
-        user_name = data_map['name']
-        nick_name_new = data_map['name_show']
+        user_name = data_map["name"]
+        nick_name_new = data_map["name_show"]
         return Fan(user_id, portrait, user_name, nick_name_new)
 
     def __str__(self) -> str:
@@ -94,12 +97,12 @@ class Page_fan:
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> Page_fan:
-        page_size = int(data_map['page_size'])
-        current_page = int(data_map['current_page'])
-        total_page = int(data_map['total_page'])
-        total_count = int(data_map['total_count'])
-        has_more = bool(int(data_map['has_more']))
-        has_prev = bool(int(data_map['has_prev']))
+        page_size = int(data_map["page_size"])
+        current_page = int(data_map["current_page"])
+        total_page = int(data_map["total_page"])
+        total_count = int(data_map["total_count"])
+        has_more = bool(int(data_map["has_more"]))
+        has_prev = bool(int(data_map["has_prev"]))
         return Page_fan(page_size, current_page, total_page, total_count, has_more, has_prev)
 
 
@@ -120,8 +123,8 @@ class Fans(TbErrorExt, Containers[Fan]):
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> Fans:
-        objs = [Fan.from_tbdata(m) for m in data_map['user_list']]
-        page = Page_fan.from_tbdata(data_map['page'])
+        objs = [Fan.from_tbdata(m) for m in data_map["user_list"]]
+        page = Page_fan.from_tbdata(data_map["page"])
         return Fans(objs, page)
 
     @property

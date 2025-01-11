@@ -9,8 +9,8 @@ from ._classdef import Blocks
 
 def parse_body(body: bytes) -> Blocks:
     res_json = parse_json(body)
-    if code := res_json['no']:
-        raise TiebaServerError(code, res_json['error'])
+    if code := res_json["no"]:
+        raise TiebaServerError(code, res_json["error"])
 
     blocks = Blocks.from_tbdata(res_json)
 
@@ -19,11 +19,11 @@ def parse_body(body: bytes) -> Blocks:
 
 async def request(http_core: HttpCore, fid: int, name: str, pn: int) -> Blocks:
     params = [
-        ('fn', '-'),
-        ('fid', fid),
-        ('word', name),
-        ('is_ajax', 1),
-        ('pn', pn),
+        ("fn", "-"),
+        ("fid", fid),
+        ("word", name),
+        ("is_ajax", 1),
+        ("pn", pn),
     ]
 
     request = http_core.pack_web_get_request(

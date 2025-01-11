@@ -27,9 +27,9 @@ class Forum_detail(TbErrorExt):
     """
 
     fid: int = 0
-    fname: str = ''
+    fname: str = ""
 
-    category: str = ''
+    category: str = ""
 
     small_avatar: str = ""
     origin_avatar: str = ""

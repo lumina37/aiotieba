@@ -8,18 +8,18 @@ import aiotieba as tb
 async def test_get_user_info(client: tb.Client):
     self_info = await client.get_self_info(tb.ReqUInfo.BASIC)
     assert self_info.user_id > 0
-    assert self_info.portrait != ''
-    assert self_info.user_name != ''
+    assert self_info.portrait != ""
+    assert self_info.user_name != ""
 
     self_info = await client.get_self_info()
     assert self_info.user_id > 0
-    assert self_info.portrait != ''
-    assert self_info.user_name != ''
-    assert self_info.nick_name_new != ''
+    assert self_info.portrait != ""
+    assert self_info.user_name != ""
+    assert self_info.nick_name_new != ""
     assert self_info.tieba_uid > 0
     assert self_info.glevel > 0
     assert self_info.age > 0
-    assert self_info.ip != ''
+    assert self_info.ip != ""
     assert self_info.post_num > 0
     assert self_info.priv_like != 0
     assert self_info.priv_reply != 0
@@ -52,7 +52,7 @@ async def test_get_user_info(client: tb.Client):
     assert user.tieba_uid > 0
     assert user.glevel > 0
     assert user.age > 0
-    assert user.ip != ''
+    assert user.ip != ""
     assert user.post_num > 0
     assert user.priv_like != 0
     assert user.priv_reply != 0
@@ -64,7 +64,7 @@ async def test_get_user_info(client: tb.Client):
     assert user.tieba_uid > 0
     assert user.glevel > 0
     assert user.age > 0
-    assert user.ip != ''
+    assert user.ip != ""
     assert user.post_num > 0
     assert user.priv_like != 0
     assert user.priv_reply != 0

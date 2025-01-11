@@ -9,8 +9,8 @@ from ._classdef import Follows
 
 def parse_body(body: bytes) -> Follows:
     res_json = parse_json(body)
-    if code := int(res_json['error_code']):
-        raise TiebaServerError(code, res_json['error_msg'])
+    if code := int(res_json["error_code"]):
+        raise TiebaServerError(code, res_json["error_msg"])
 
     follows = Follows.from_tbdata(res_json)
 
@@ -19,10 +19,10 @@ def parse_body(body: bytes) -> Follows:
 
 async def request(http_core: HttpCore, user_id: int, pn: int) -> Follows:
     data = [
-        ('BDUSS', http_core.account.BDUSS),
-        ('_client_version', MAIN_VERSION),
-        ('pn', pn),
-        ('uid', user_id),
+        ("BDUSS", http_core.account.BDUSS),
+        ("_client_version", MAIN_VERSION),
+        ("pn", pn),
+        ("uid", user_id),
     ]
 
     request = http_core.pack_form_request(

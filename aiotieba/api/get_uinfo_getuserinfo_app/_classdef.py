@@ -29,9 +29,9 @@ class UserInfo_guinfo_app(TbErrorExt):
     """
 
     user_id: int = 0
-    portrait: str = ''
-    user_name: str = ''
-    nick_name_old: str = ''
+    portrait: str = ""
+    user_name: str = ""
+    nick_name_old: str = ""
 
     gender: Gender = Gender.UNKNOWN
 
@@ -42,7 +42,7 @@ class UserInfo_guinfo_app(TbErrorExt):
     def from_tbdata(data_proto: TypeMessage) -> "UserInfo_guinfo_app":
         user_id = data_proto.id
         portrait = data_proto.portrait
-        if '?' in portrait:
+        if "?" in portrait:
             portrait = portrait[:-13]
         user_name = data_proto.name
         nick_name_old = data_proto.name_show

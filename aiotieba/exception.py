@@ -69,11 +69,13 @@ class StrResponse(TbErrorExt, str):
         err (Exception | None): 捕获的异常
     """
 
-    def __new__(cls, s: str = '') -> StrResponse:
+    __slots__ = []
+
+    def __new__(cls, s: str = "") -> StrResponse:
         obj = super().__new__(cls, s)
         return obj
 
-    def __init__(self, s: str = '') -> None:
+    def __init__(self, s: str = "") -> None:
         pass
 
     def __hash__(self) -> int:
@@ -85,7 +87,7 @@ class TiebaServerError(RuntimeError):
     贴吧服务器异常
     """
 
-    __slots__ = ['code', 'msg']
+    __slots__ = ["code", "msg"]
 
     def __init__(self, code: int, msg: str) -> None:
         super().__init__(code, msg)
@@ -98,7 +100,7 @@ class HTTPStatusError(RuntimeError):
     错误的状态码
     """
 
-    __slots__ = ['code', 'msg']
+    __slots__ = ["code", "msg"]
 
     def __init__(self, code: int, msg: str) -> None:
         super().__init__(code, msg)

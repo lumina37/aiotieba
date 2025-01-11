@@ -19,12 +19,12 @@ try:
 
     def pack_json(obj: Any) -> str:
         bjson: bytes = jsonlib.dumps(obj)
-        return bjson.decode('utf-8')
+        return bjson.decode("utf-8")
 
 except ImportError:
     import json as jsonlib
 
-    pack_json = functools.partial(jsonlib.dumps, separators=(',', ':'))
+    pack_json = functools.partial(jsonlib.dumps, separators=(",", ":"))
 
 parse_json = jsonlib.loads
 
@@ -34,7 +34,7 @@ def is_portrait(portrait: Any) -> bool:
     简单判断输入是否符合portrait格式
     """
 
-    return isinstance(portrait, str) and portrait.startswith('tb.')
+    return isinstance(portrait, str) and portrait.startswith("tb.")
 
 
 def is_user_name(user_name: Any) -> bool:
@@ -42,7 +42,7 @@ def is_user_name(user_name: Any) -> bool:
     简单判断输入是否符合user_name格式
     """
 
-    return isinstance(user_name, str) and not user_name.startswith('tb.')
+    return isinstance(user_name, str) and not user_name.startswith("tb.")
 
 
 def default_datetime() -> datetime:

@@ -14,10 +14,10 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'CommitReceivedPmsgReqIdl_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "CommitReceivedPmsgReqIdl_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
-    _globals['_COMMITRECEIVEDPMSGREQIDL']._serialized_start = 35
-    _globals['_COMMITRECEIVEDPMSGREQIDL']._serialized_end = 185
-    _globals['_COMMITRECEIVEDPMSGREQIDL_DATAREQ']._serialized_start = 112
-    _globals['_COMMITRECEIVEDPMSGREQIDL_DATAREQ']._serialized_end = 185
+    _globals["_COMMITRECEIVEDPMSGREQIDL"]._serialized_start = 35
+    _globals["_COMMITRECEIVEDPMSGREQIDL"]._serialized_end = 185
+    _globals["_COMMITRECEIVEDPMSGREQIDL_DATAREQ"]._serialized_start = 112
+    _globals["_COMMITRECEIVEDPMSGREQIDL_DATAREQ"]._serialized_end = 185

@@ -1,16 +1,19 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from collections.abc import Mapping
 from functools import cached_property
+from typing import TYPE_CHECKING
 
 from ...enums import Gender
 from ...exception import TbErrorExt
 
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
 
 def _tbnum2int(tb_num: str) -> int:
     if isinstance(tb_num, str):
-        return int(float(tb_num.removesuffix('万')) * 1e4)
+        return int(float(tb_num.removesuffix("万")) * 1e4)
     else:
         return tb_num
 
@@ -40,10 +43,10 @@ class UserInfo_panel(TbErrorExt):
         log_name (str): 用于在日志中记录用户信息
     """
 
-    portrait: str = ''
-    user_name: str = ''
-    nick_name_new: str = ''
-    nick_name_old: str = ''
+    portrait: str = ""
+    user_name: str = ""
+    nick_name_new: str = ""
+    nick_name_old: str = ""
 
     gender: Gender = Gender.UNKNOWN
     age: int = 0.0
@@ -54,29 +57,29 @@ class UserInfo_panel(TbErrorExt):
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> UserInfo_panel:
-        portrait = data_map['portrait']
-        user_name = data_map['name']
-        nick_name_new = data_map['show_nickname']
-        nick_name_old = data_map['name_show']
+        portrait = data_map["portrait"]
+        user_name = data_map["name"]
+        nick_name_new = data_map["show_nickname"]
+        nick_name_old = data_map["name_show"]
 
-        sex = data_map['sex']
-        if sex == 'male':
+        sex = data_map["sex"]
+        if sex == "male":
             gender = Gender.MALE
-        elif sex == 'female':
+        elif sex == "female":
             gender = Gender.FEMALE
         else:
             gender = Gender.UNKNOWN
 
-        if (tb_age := data_map['tb_age']) != '-':
+        if (tb_age := data_map["tb_age"]) != "-":
             age = float(tb_age)
         else:
             age = 0.0
 
-        post_num = _tbnum2int(data_map['post_num'])
-        fan_num = _tbnum2int(data_map['followed_count'])
+        post_num = _tbnum2int(data_map["post_num"])
+        fan_num = _tbnum2int(data_map["followed_count"])
 
-        if vip_dict := data_map['vipInfo']:
-            is_vip = int(vip_dict['v_status']) == 3
+        if vip_dict := data_map["vipInfo"]:
+            is_vip = int(vip_dict["v_status"]) == 3
         else:
             is_vip = False
 

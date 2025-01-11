@@ -64,9 +64,9 @@ class UserInfo_pf(TbErrorExt):
     """
 
     user_id: int = 0
-    portrait: str = ''
-    user_name: str = ''
-    nick_name_new: str = ''
+    portrait: str = ""
+    user_name: str = ""
+    nick_name_new: str = ""
     tieba_uid: int = 0
 
     glevel: int = 0
@@ -78,7 +78,7 @@ class UserInfo_pf(TbErrorExt):
     follow_num: int = 0
     forum_num: int = 0
     sign: str = ""
-    ip: str = ''
+    ip: str = ""
     icons: list[str] = dcs.field(default_factory=list)
 
     is_vip: bool = False
@@ -92,7 +92,7 @@ class UserInfo_pf(TbErrorExt):
         user_proto = data_proto.user
         user_id = user_proto.id
         portrait = user_proto.portrait
-        if '?' in portrait:
+        if "?" in portrait:
             portrait = portrait[:-13]
         user_name = user_proto.name
         nick_name_new = user_proto.name_show
@@ -329,7 +329,7 @@ class Thread_pf:
     title: str = ""
 
     fid: int = 0
-    fname: str = ''
+    fname: str = ""
     tid: int = 0
     pid: int = 0
     user: UserInfo_pf = dcs.field(default_factory=UserInfo_pf)

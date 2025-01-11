@@ -20,18 +20,18 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'FrsPageResIdl_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "FrsPageResIdl_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
-    _globals['_FRSPAGERESIDL']._serialized_start = 97
-    _globals['_FRSPAGERESIDL']._serialized_end = 727
-    _globals['_FRSPAGERESIDL_DATARES']._serialized_start = 176
-    _globals['_FRSPAGERESIDL_DATARES']._serialized_end = 727
-    _globals['_FRSPAGERESIDL_DATARES_FORUMINFO']._serialized_start = 435
-    _globals['_FRSPAGERESIDL_DATARES_FORUMINFO']._serialized_end = 644
-    _globals['_FRSPAGERESIDL_DATARES_FORUMINFO_MANAGER']._serialized_start = 635
-    _globals['_FRSPAGERESIDL_DATARES_FORUMINFO_MANAGER']._serialized_end = 644
-    _globals['_FRSPAGERESIDL_DATARES_NAVTABINFO']._serialized_start = 646
-    _globals['_FRSPAGERESIDL_DATARES_NAVTABINFO']._serialized_end = 684
-    _globals['_FRSPAGERESIDL_DATARES_FORUMRULESTATUS']._serialized_start = 686
-    _globals['_FRSPAGERESIDL_DATARES_FORUMRULESTATUS']._serialized_end = 727
+    _globals["_FRSPAGERESIDL"]._serialized_start = 97
+    _globals["_FRSPAGERESIDL"]._serialized_end = 727
+    _globals["_FRSPAGERESIDL_DATARES"]._serialized_start = 176
+    _globals["_FRSPAGERESIDL_DATARES"]._serialized_end = 727
+    _globals["_FRSPAGERESIDL_DATARES_FORUMINFO"]._serialized_start = 435
+    _globals["_FRSPAGERESIDL_DATARES_FORUMINFO"]._serialized_end = 644
+    _globals["_FRSPAGERESIDL_DATARES_FORUMINFO_MANAGER"]._serialized_start = 635
+    _globals["_FRSPAGERESIDL_DATARES_FORUMINFO_MANAGER"]._serialized_end = 644
+    _globals["_FRSPAGERESIDL_DATARES_NAVTABINFO"]._serialized_start = 646
+    _globals["_FRSPAGERESIDL_DATARES_NAVTABINFO"]._serialized_end = 684
+    _globals["_FRSPAGERESIDL_DATARES_FORUMRULESTATUS"]._serialized_start = 686
+    _globals["_FRSPAGERESIDL_DATARES_FORUMRULESTATUS"]._serialized_end = 727

@@ -14,8 +14,8 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'Error_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "Error_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
-    _globals['_ERROR']._serialized_start = 15
-    _globals['_ERROR']._serialized_end = 55
+    _globals["_ERROR"]._serialized_start = 15
+    _globals["_ERROR"]._serialized_end = 55

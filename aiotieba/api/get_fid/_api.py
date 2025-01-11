@@ -8,10 +8,10 @@ from ...helper import parse_json
 
 def parse_body(body: bytes) -> int:
     res_json = parse_json(body)
-    if code := res_json['no']:
-        raise TiebaServerError(code, res_json['error'])
+    if code := res_json["no"]:
+        raise TiebaServerError(code, res_json["error"])
 
-    if not (fid := res_json['data']['fid']):
+    if not (fid := res_json["data"]["fid"]):
         raise TiebaValueError("fid is 0")
 
     return fid
@@ -19,8 +19,8 @@ def parse_body(body: bytes) -> int:
 
 async def request(http_core: HttpCore, fname: str) -> int:
     params = [
-        ('fname', fname),
-        ('ie', 'utf-8'),
+        ("fname", fname),
+        ("ie", "utf-8"),
     ]
 
     request = http_core.pack_web_get_request(

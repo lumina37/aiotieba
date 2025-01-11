@@ -1,20 +1,24 @@
 from __future__ import annotations
 
-import datetime
 import time
+from typing import TYPE_CHECKING
 from urllib.parse import quote
 
 import bs4
 import yarl
 
 from ...const import WEB_BASE_HOST
-from ...core import HttpCore
 from ...enums import BawuSearchType
 from ._classdef import Postlogs
 
+if TYPE_CHECKING:
+    import datetime
+
+    from ...core import HttpCore
+
 
 def parse_body(body: bytes) -> Postlogs:
-    soup = bs4.BeautifulSoup(body, 'lxml')
+    soup = bs4.BeautifulSoup(body, "lxml")
     bawu_postlogs = Postlogs.from_tbdata(soup)
 
     return bawu_postlogs
@@ -31,25 +35,25 @@ async def request(
     op_type: int,
 ) -> Postlogs:
     params = [
-        ('word', fname),
-        ('pn', pn),
-        ('ie', 'utf-8'),
+        ("word", fname),
+        ("pn", pn),
+        ("ie", "utf-8"),
     ]
 
     if op_type:
-        params.append(('op_type', op_type))
+        params.append(("op_type", op_type))
 
     if search_value:
         if search_type == BawuSearchType.USER:
             search_value = quote(search_value)
             extend_params = [
-                ('svalue', search_value),
-                ('stype', 'post_uname'),
+                ("svalue", search_value),
+                ("stype", "post_uname"),
             ]
         else:
             extend_params = [
-                ('svalue', search_value),
-                ('stype', 'op_uname'),
+                ("svalue", search_value),
+                ("stype", "op_uname"),
             ]
         params += extend_params
 
@@ -60,8 +64,8 @@ async def request(
         else:
             end = int(end_dt.timestamp())
         extend_params = [
-            ('end', end),
-            ('begin', begin),
+            ("end", end),
+            ("begin", begin),
         ]
         params += extend_params
 

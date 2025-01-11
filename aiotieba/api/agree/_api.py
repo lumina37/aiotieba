@@ -8,8 +8,8 @@ from ...helper import parse_json
 
 def parse_body(body: bytes) -> None:
     res_json = parse_json(body)
-    if code := int(res_json['error_code']):
-        raise TiebaServerError(code, res_json['error_msg'])
+    if code := int(res_json["error_code"]):
+        raise TiebaServerError(code, res_json["error_msg"])
 
 
 async def request(
@@ -21,15 +21,15 @@ async def request(
         obj_type = 3
 
     data = [
-        ('BDUSS', http_core.account.BDUSS),
-        ('_client_version', MAIN_VERSION),
-        ('agree_type', 5 if is_disagree else 2),
-        ('cuid', http_core.account.cuid_galaxy2),
-        ('obj_type', obj_type),
-        ('op_type', str(int(is_undo))),
-        ('post_id', pid),
-        ('tbs', http_core.account.tbs),
-        ('thread_id', tid),
+        ("BDUSS", http_core.account.BDUSS),
+        ("_client_version", MAIN_VERSION),
+        ("agree_type", 5 if is_disagree else 2),
+        ("cuid", http_core.account.cuid_galaxy2),
+        ("obj_type", obj_type),
+        ("op_type", str(int(is_undo))),
+        ("post_id", pid),
+        ("tbs", http_core.account.tbs),
+        ("thread_id", tid),
     ]
 
     request = http_core.pack_form_request(

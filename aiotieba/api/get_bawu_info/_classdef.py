@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import dataclasses as dcs
 from functools import cached_property
+from typing import TYPE_CHECKING
 
-from .._classdef import TypeMessage
+if TYPE_CHECKING:
+    from .._classdef import TypeMessage
 
 
 @dcs.dataclass
@@ -25,9 +27,9 @@ class UserInfo_bawu:
     """
 
     user_id: int = 0
-    portrait: str = ''
-    user_name: str = ''
-    nick_name_new: str = ''
+    portrait: str = ""
+    user_name: str = ""
+    nick_name_new: str = ""
 
     level: int = 0
 
@@ -116,16 +118,16 @@ class BawuInfo:
                 users = []
             return users
 
-        admin = extract('吧主')
-        manager = extract('小吧主')
-        voice_editor = extract('语音小编')
-        image_editor = extract('图片小编')
-        video_editor = extract('视频小编')
-        broadcast_editor = extract('广播小编')
-        journal_chief_editor = extract('吧刊主编')
-        journal_editor = extract('吧刊小编')
-        profess_admin = extract('职业吧主')
-        fourth_admin = extract('第四吧主')
+        admin = extract("吧主")
+        manager = extract("小吧主")
+        voice_editor = extract("语音小编")
+        image_editor = extract("图片小编")
+        video_editor = extract("视频小编")
+        broadcast_editor = extract("广播小编")
+        journal_chief_editor = extract("吧刊主编")
+        journal_editor = extract("吧刊小编")
+        profess_admin = extract("职业吧主")
+        fourth_admin = extract("第四吧主")
 
         return BawuInfo(
             all_,

@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import dataclasses as dcs
+from typing import TYPE_CHECKING
 
 from ...exception import TbErrorExt
-from .._classdef import TypeMessage
+
+if TYPE_CHECKING:
+    from .._classdef import TypeMessage
 
 
 @dcs.dataclass

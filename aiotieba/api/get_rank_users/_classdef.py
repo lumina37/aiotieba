@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from collections.abc import Mapping
-
-import bs4
+from typing import TYPE_CHECKING
 
 from ...exception import TbErrorExt
 from ...helper import parse_json
 from .._classdef import Containers
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    import bs4
 
 
 @dcs.dataclass
@@ -22,7 +25,7 @@ class RankUser:
         is_vip (bool): 是否超级会员
     """
 
-    user_name: str = ''
+    user_name: str = ""
     level: int = 0
     exp: int = 0
     is_vip: bool = False
@@ -31,10 +34,10 @@ class RankUser:
     def from_tbdata(data_tag: bs4.element.Tag) -> RankUser:
         user_name_item = data_tag.td.next_sibling
         user_name = user_name_item.text
-        is_vip = 'drl_item_vip' in user_name_item.div['class']
+        is_vip = "drl_item_vip" in user_name_item.div["class"]
         level_item = user_name_item.next_sibling
         # e.g. get level 16 from "bg_lv16" by slicing [5:]
-        level = int(level_item.div['class'][0][5:])
+        level = int(level_item.div["class"][0][5:])
         exp_item = level_item.next_sibling
         exp = int(exp_item.text)
         return RankUser(user_name, level, exp, is_vip)
@@ -61,8 +64,8 @@ class Page_rank:
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> Page_rank:
-        current_page = data_map['cur_page']
-        total_page = data_map['total_num']
+        current_page = data_map["cur_page"]
+        total_page = data_map["total_num"]
         has_more = current_page < total_page
         has_prev = current_page > 1
         return Page_rank(current_page, total_page, has_more, has_prev)
@@ -85,9 +88,9 @@ class RankUsers(TbErrorExt, Containers[RankUser]):
 
     @staticmethod
     def from_tbdata(data_soup: bs4.BeautifulSoup) -> RankUsers:
-        objs = [RankUser.from_tbdata(t) for t in data_soup('tr', class_=['drl_list_item', 'drl_list_item_self'])]
-        page_item = data_soup.find('ul', class_='p_rank_pager')
-        page_dict = parse_json(page_item['data-field'])
+        objs = [RankUser.from_tbdata(t) for t in data_soup("tr", class_=["drl_list_item", "drl_list_item_self"])]
+        page_item = data_soup.find("ul", class_="p_rank_pager")
+        page_dict = parse_json(page_item["data-field"])
         page = Page_rank.from_tbdata(page_dict)
         return RankUsers(objs, page)
 

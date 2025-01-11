@@ -16,14 +16,14 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'GetForumDetailResIdl_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "GetForumDetailResIdl_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
-    _globals['_GETFORUMDETAILRESIDL']._serialized_start = 44
-    _globals['_GETFORUMDETAILRESIDL']._serialized_end = 515
-    _globals['_GETFORUMDETAILRESIDL_DATARES']._serialized_start = 137
-    _globals['_GETFORUMDETAILRESIDL_DATARES']._serialized_end = 515
-    _globals['_GETFORUMDETAILRESIDL_DATARES_RECOMMENDFORUMINFO']._serialized_start = 291
-    _globals['_GETFORUMDETAILRESIDL_DATARES_RECOMMENDFORUMINFO']._serialized_end = 466
-    _globals['_GETFORUMDETAILRESIDL_DATARES_MANAGERELECTIONTAB']._serialized_start = 468
-    _globals['_GETFORUMDETAILRESIDL_DATARES_MANAGERELECTIONTAB']._serialized_end = 515
+    _globals["_GETFORUMDETAILRESIDL"]._serialized_start = 44
+    _globals["_GETFORUMDETAILRESIDL"]._serialized_end = 515
+    _globals["_GETFORUMDETAILRESIDL_DATARES"]._serialized_start = 137
+    _globals["_GETFORUMDETAILRESIDL_DATARES"]._serialized_end = 515
+    _globals["_GETFORUMDETAILRESIDL_DATARES_RECOMMENDFORUMINFO"]._serialized_start = 291
+    _globals["_GETFORUMDETAILRESIDL_DATARES_RECOMMENDFORUMINFO"]._serialized_end = 466
+    _globals["_GETFORUMDETAILRESIDL_DATARES_MANAGERELECTIONTAB"]._serialized_start = 468
+    _globals["_GETFORUMDETAILRESIDL_DATARES_MANAGERELECTIONTAB"]._serialized_end = 515

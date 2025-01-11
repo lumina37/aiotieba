@@ -14,10 +14,10 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'UpdateClientInfoReqIdl_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "UpdateClientInfoReqIdl_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
-    _globals['_UPDATECLIENTINFOREQIDL']._serialized_start = 33
-    _globals['_UPDATECLIENTINFOREQIDL']._serialized_end = 195
-    _globals['_UPDATECLIENTINFOREQIDL_DATAREQ']._serialized_start = 120
-    _globals['_UPDATECLIENTINFOREQIDL_DATAREQ']._serialized_end = 195
+    _globals["_UPDATECLIENTINFOREQIDL"]._serialized_start = 33
+    _globals["_UPDATECLIENTINFOREQIDL"]._serialized_end = 195
+    _globals["_UPDATECLIENTINFOREQIDL_DATAREQ"]._serialized_start = 120
+    _globals["_UPDATECLIENTINFOREQIDL_DATAREQ"]._serialized_end = 195

@@ -11,6 +11,6 @@ async def test_FollowForums(client: tb.Client):
     ##### FollowForum #####
     forum = forums[0]
     assert forum.fid > 0
-    assert forum.fname != ''
+    assert forum.fname != ""
     assert forum.level > 0
     assert forum.exp > 0

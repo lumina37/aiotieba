@@ -14,22 +14,22 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'User_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "User_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
-    _globals['_USER']._serialized_start = 15
-    _globals['_USER']._serialized_end = 1125
-    _globals['_USER_ICON']._serialized_start = 699
-    _globals['_USER_ICON']._serialized_end = 719
-    _globals['_USER_PRIVSETS']._serialized_start = 722
-    _globals['_USER_PRIVSETS']._serialized_end = 893
-    _globals['_USER_LIKEFORUMINFO']._serialized_start = 895
-    _globals['_USER_LIKEFORUMINFO']._serialized_end = 948
-    _globals['_USER_USERVIPINFO']._serialized_start = 950
-    _globals['_USER_USERVIPINFO']._serialized_end = 998
-    _globals['_USER_TSHOWINFO']._serialized_start = 1000
-    _globals['_USER_TSHOWINFO']._serialized_end = 1025
-    _globals['_USER_NEWGODINFO']._serialized_start = 1027
-    _globals['_USER_NEWGODINFO']._serialized_end = 1093
-    _globals['_USER_USERGROWTH']._serialized_start = 1095
-    _globals['_USER_USERGROWTH']._serialized_end = 1125
+    _globals["_USER"]._serialized_start = 15
+    _globals["_USER"]._serialized_end = 1125
+    _globals["_USER_ICON"]._serialized_start = 699
+    _globals["_USER_ICON"]._serialized_end = 719
+    _globals["_USER_PRIVSETS"]._serialized_start = 722
+    _globals["_USER_PRIVSETS"]._serialized_end = 893
+    _globals["_USER_LIKEFORUMINFO"]._serialized_start = 895
+    _globals["_USER_LIKEFORUMINFO"]._serialized_end = 948
+    _globals["_USER_USERVIPINFO"]._serialized_start = 950
+    _globals["_USER_USERVIPINFO"]._serialized_end = 998
+    _globals["_USER_TSHOWINFO"]._serialized_start = 1000
+    _globals["_USER_TSHOWINFO"]._serialized_end = 1025
+    _globals["_USER_NEWGODINFO"]._serialized_start = 1027
+    _globals["_USER_NEWGODINFO"]._serialized_end = 1093
+    _globals["_USER_USERGROWTH"]._serialized_start = 1095
+    _globals["_USER_USERGROWTH"]._serialized_end = 1125

@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from collections.abc import Mapping
 from functools import cached_property
+from typing import TYPE_CHECKING
 
 from ...enums import PrivLike, PrivReply
 from ...exception import TbErrorExt
 from .._classdef import Containers
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 
 @dcs.dataclass
@@ -28,9 +31,9 @@ class Page_at:
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> Page_at:
-        current_page = int(data_map['current_page'])
-        has_more = bool(int(data_map['has_more']))
-        has_prev = bool(int(data_map['has_prev']))
+        current_page = int(data_map["current_page"])
+        has_more = bool(int(data_map["has_more"]))
+        has_prev = bool(int(data_map["has_prev"]))
         return Page_at(current_page, has_more, has_prev)
 
 
@@ -54,24 +57,24 @@ class UserInfo_at:
     """
 
     user_id: int = 0
-    portrait: str = ''
-    user_name: str = ''
-    nick_name_new: str = ''
+    portrait: str = ""
+    user_name: str = ""
+    nick_name_new: str = ""
 
     priv_like: PrivLike = PrivLike.PUBLIC
     priv_reply: PrivReply = PrivReply.ALL
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> UserInfo_at:
-        user_id = int(data_map['id'])
-        portrait = data_map['portrait']
-        if '?' in portrait:
+        user_id = int(data_map["id"])
+        portrait = data_map["portrait"]
+        if "?" in portrait:
             portrait = portrait[:-13]
-        user_name = data_map['name']
-        nick_name_new = data_map['name_show']
-        if priv_sets := data_map['priv_sets']:
-            priv_like = PrivLike(int(priv_sets.get('like', 1)))
-            priv_reply = PrivReply(int(priv_sets.get('reply', 1)))
+        user_name = data_map["name"]
+        nick_name_new = data_map["name_show"]
+        if priv_sets := data_map["priv_sets"]:
+            priv_like = PrivLike(int(priv_sets.get("like", 1)))
+            priv_reply = PrivReply(int(priv_sets.get("reply", 1)))
         else:
             priv_like = PrivLike.PUBLIC
             priv_reply = PrivReply.ALL
@@ -130,7 +133,7 @@ class At:
 
     text: str = ""
 
-    fname: str = ''
+    fname: str = ""
     tid: int = 0
     pid: int = 0
     user: UserInfo_at = dcs.field(default_factory=UserInfo_at)
@@ -142,14 +145,14 @@ class At:
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> At:
-        text = data_map['content']
-        fname = data_map['fname']
-        tid = int(data_map['thread_id'])
-        pid = int(data_map['post_id'])
-        user = UserInfo_at.from_tbdata(data_map['replyer'])
-        is_comment = bool(int(data_map['is_floor']))
-        is_thread = bool(int(data_map['is_first_post']))
-        create_time = int(data_map['time'])
+        text = data_map["content"]
+        fname = data_map["fname"]
+        tid = int(data_map["thread_id"])
+        pid = int(data_map["post_id"])
+        user = UserInfo_at.from_tbdata(data_map["replyer"])
+        is_comment = bool(int(data_map["is_floor"]))
+        is_thread = bool(int(data_map["is_first_post"]))
+        create_time = int(data_map["time"])
         return At(text, fname, tid, pid, user, is_comment, is_thread, create_time)
 
     def __eq__(self, obj: At) -> bool:
@@ -180,8 +183,8 @@ class Ats(TbErrorExt, Containers[At]):
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> Ats:
-        objs = [At.from_tbdata(m) for m in data_map.get('at_list', [])]
-        page = Page_at.from_tbdata(data_map['page'])
+        objs = [At.from_tbdata(m) for m in data_map.get("at_list", [])]
+        page = Page_at.from_tbdata(data_map["page"])
         return Ats(objs, page)
 
     @property

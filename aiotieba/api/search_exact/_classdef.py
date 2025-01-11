@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from collections.abc import Mapping
+from typing import TYPE_CHECKING
 
 from ...exception import TbErrorExt
 from .._classdef import Containers
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 
 @dcs.dataclass
@@ -28,24 +31,24 @@ class ExactSearch:
     text: str = ""
     title: str = ""
 
-    fname: str = ''
+    fname: str = ""
     tid: int = 0
     pid: int = 0
-    show_name: str = ''
+    show_name: str = ""
 
     is_comment: bool = False
     create_time: int = 0
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> ExactSearch:
-        text = data_map['content']
-        title = data_map['title']
-        fname = data_map['fname']
-        tid = int(data_map['tid'])
-        pid = int(data_map['pid'])
-        show_name = data_map['author']["name_show"]
-        is_comment = bool(int(data_map['is_floor']))
-        create_time = int(data_map['time'])
+        text = data_map["content"]
+        title = data_map["title"]
+        fname = data_map["fname"]
+        tid = int(data_map["tid"])
+        pid = int(data_map["pid"])
+        show_name = data_map["author"]["name_show"]
+        is_comment = bool(int(data_map["is_floor"]))
+        create_time = int(data_map["time"])
         return ExactSearch(text, title, fname, tid, pid, show_name, is_comment, create_time)
 
     def __eq__(self, obj: ExactSearch) -> bool:
@@ -106,8 +109,8 @@ class ExactSearches(TbErrorExt, Containers[ExactSearch]):
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> ExactSearches:
-        objs = [ExactSearch.from_tbdata(m) for m in data_map.get('post_list', [])]
-        page = Page_exsch.from_tbdata(data_map['page'])
+        objs = [ExactSearch.from_tbdata(m) for m in data_map.get("post_list", [])]
+        page = Page_exsch.from_tbdata(data_map["page"])
         return ExactSearches(objs, page)
 
     @property

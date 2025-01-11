@@ -12,9 +12,9 @@ async def test_Comments(client: tb.Client):
     ##### Forum_c #####
     forum = comments.forum
     assert forum.fid == 37574
-    assert forum.fname == 'starry'
-    assert forum.category != ''
-    assert forum.subcategory != ''
+    assert forum.fname == "starry"
+    assert forum.category != ""
+    assert forum.subcategory != ""
 
     ##### Thread_c #####
     thread = comments.thread
@@ -22,17 +22,17 @@ async def test_Comments(client: tb.Client):
     # UserInfo_ct
     user = thread.user
     assert user.user_id > 0
-    assert user.portrait != ''
-    assert user.user_name != ''
-    assert user.nick_name_new != ''
+    assert user.portrait != ""
+    assert user.user_name != ""
+    assert user.nick_name_new != ""
     assert user.nick_name == user.nick_name_new
     assert user.show_name == user.nick_name_new
     assert user.level > 0
 
     # Thread_c
-    assert thread.title != ''
+    assert thread.title != ""
     assert thread.fid > 0
-    assert thread.fname != ''
+    assert thread.fname != ""
     assert thread.tid == 8211419000
     assert thread.author_id == user.user_id
     assert thread.reply_num > 0
@@ -43,9 +43,9 @@ async def test_Comments(client: tb.Client):
     # UserInfo_cp
     user = post.user
     assert user.user_id > 0
-    assert user.portrait != ''
-    assert user.user_name != ''
-    assert user.nick_name_new != ''
+    assert user.portrait != ""
+    assert user.user_name != ""
+    assert user.nick_name_new != ""
     assert user.nick_name == user.nick_name_new
     assert user.show_name == user.nick_name_new
     assert user.level > 0
@@ -56,7 +56,7 @@ async def test_Comments(client: tb.Client):
     # Post_c
     assert post.text != ""
     assert post.fid > 0
-    assert post.fname != ''
+    assert post.fname != ""
     assert post.tid > 0
     assert post.pid > 0
     assert post.author_id == user.user_id
@@ -65,31 +65,31 @@ async def test_Comments(client: tb.Client):
 
     # FragText
     frag = post.contents.texts[0]
-    assert frag.text != ''
+    assert frag.text != ""
 
     # FragAt
     frag = post.contents.ats[0]
-    assert frag.text != ''
+    assert frag.text != ""
     assert frag.user_id > 0
 
     # FragVoice
     frag = post.contents.voice
-    assert frag.md5 != ''
+    assert frag.md5 != ""
     assert frag.duration > 0
 
     # FragImage
     frag = post.contents.imgs[0]
-    assert frag.src != ''
-    assert frag.big_src != ''
-    assert frag.origin_src != ''
+    assert frag.src != ""
+    assert frag.big_src != ""
+    assert frag.origin_src != ""
     assert len(frag.hash) == 40
     assert frag.show_width > 0
     assert frag.show_height > 0
 
     # FragEmoji
     frag = post.contents.emojis[0]
-    assert frag.desc != ''
-    assert frag.id == 'image_emoticon3'
+    assert frag.desc != ""
+    assert frag.id == "image_emoticon3"
 
     ##### Comment #####
     comment = comments[0]
@@ -97,9 +97,9 @@ async def test_Comments(client: tb.Client):
     # UserInfo_c
     user = comment.user
     assert user.user_id > 0
-    assert user.portrait != ''
-    assert user.user_name != ''
-    assert user.nick_name_new != ''
+    assert user.portrait != ""
+    assert user.user_name != ""
+    assert user.nick_name_new != ""
     assert user.nick_name == user.nick_name_new
     assert user.show_name == user.nick_name_new
     assert user.level > 0
@@ -110,7 +110,7 @@ async def test_Comments(client: tb.Client):
     # Comment
     assert comment.text != ""
     assert comment.fid > 0
-    assert comment.fname != ''
+    assert comment.fname != ""
     assert comment.tid > 0
     assert comment.ppid > 0
     assert comment.pid > 0
@@ -121,29 +121,29 @@ async def test_Comments(client: tb.Client):
 
     # FragText
     frag = comment.contents.texts[0]
-    assert frag.text != ''
+    assert frag.text != ""
 
     # FragAt
     frag = comment.contents.ats[0]
-    assert frag.text != ''
+    assert frag.text != ""
     assert frag.user_id > 0
 
     # FragVoice
     frag = comment.contents.voice
-    assert frag.md5 != ''
+    assert frag.md5 != ""
     assert frag.duration > 0
 
     # FragEmoji
     frag = comment.contents.emojis[0]
-    assert frag.desc != ''
+    assert frag.desc != ""
 
     # FragTiebaplus
     frag = comment.contents.tiebapluses[0]
-    assert frag.text != ''
-    assert frag.url != ''
+    assert frag.text != ""
+    assert frag.url != ""
     frag = comment.contents.tiebapluses[1]
-    assert frag.text != ''
-    assert frag.url != ''
+    assert frag.text != ""
+    assert frag.url != ""
 
     comment = comments[1]
     assert comment.reply_to_id != 0
@@ -159,7 +159,7 @@ async def test_FragLink(client: tb.Client):
 
     # FragLink
     frag = post.contents.links[0]
-    assert frag.title != ''
+    assert frag.title != ""
     assert frag.url.host == "tieba.baidu.com"
     assert frag.is_external is False
     frag = post.contents.links[1]
@@ -171,7 +171,7 @@ async def test_FragLink(client: tb.Client):
 
     # FragLink
     frag = comment.contents.links[0]
-    assert frag.title != ''
+    assert frag.title != ""
     assert frag.url.host == "tieba.baidu.com"
     assert frag.is_external is False
     frag = comment.contents.links[1]

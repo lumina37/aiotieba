@@ -1,6 +1,6 @@
 [project]
 name = "aiotieba"
-version = "4.5.0"
+version = "4.5.1"
 description = "Asynchronous I/O Client for Baidu Tieba"
 authors = [{ name = "lumina37", email = "starry.qvq@gmail.com" }]
 urls = { Repository = "https://github.com/lumina37/aiotieba/", Documentation = "https://aiotieba.cc/" }
@@ -80,16 +80,13 @@ template = '''__version__ = "${version}"'''
 
 [tool.cibuildwheel]
 build = "cp38-* cp39-* cp310-* cp311-* cp312-* cp313-* cp313t-* pp38-* pp39-* pp310-*"
-free-threaded-support = true
 skip = "*-win32 *_i686 *_s390x *_ppc64le"
+enable = ["pypy", "cpython-freethreading"]
 
 [tool.ruff]
 line-length = 120
 target-version = "py39"
 preview = true
-
-[tool.ruff.format]
-quote-style = "preserve"
 
 [tool.ruff.lint]
 select = [
@@ -102,17 +99,24 @@ select = [
   "ASYNC",
   "B",
   "A",
-  "COM",
   "C4",
   "FA",
+  "ICN",
+  "LOG",
+  "G",
   "PIE",
+  "T20",
   "PT",
+  "Q",
   "RSE",
+  "SLOT",
+  "TC",
+  "PTH",
   "NPY",
   "PERF",
   "FURB",
 ]
-ignore = ["E402", "E501", "E266", "COM812"]
+ignore = ["A005", "E402", "E501", "E266"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]

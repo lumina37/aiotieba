@@ -9,10 +9,10 @@ from ._classdef import UserInfo_selfinit
 
 def parse_body(body: bytes) -> UserInfo_selfinit:
     res_json = parse_json(body)
-    if code := int(res_json['error_code']):
-        raise TiebaServerError(code, res_json['error_msg'])
+    if code := int(res_json["error_code"]):
+        raise TiebaServerError(code, res_json["error_msg"])
 
-    user_dict = res_json['user_info']
+    user_dict = res_json["user_info"]
     user = UserInfo_selfinit.from_tbdata(user_dict)
 
     return user
@@ -20,8 +20,8 @@ def parse_body(body: bytes) -> UserInfo_selfinit:
 
 async def request(http_core: HttpCore) -> UserInfo_selfinit:
     data = [
-        ('BDUSS', http_core.account.BDUSS),
-        ('_client_version', MAIN_VERSION),
+        ("BDUSS", http_core.account.BDUSS),
+        ("_client_version", MAIN_VERSION),
     ]
 
     request = http_core.pack_form_request(

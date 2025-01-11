@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from collections.abc import Mapping
 from functools import cached_property
+from typing import TYPE_CHECKING
 
 from ...exception import TbErrorExt
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 
 @dcs.dataclass
@@ -26,16 +29,16 @@ class UserInfo_guinfo_web(TbErrorExt):
     """
 
     user_id: int = 0
-    portrait: str = ''
-    user_name: str = ''
-    nick_name_new: str = ''
+    portrait: str = ""
+    user_name: str = ""
+    nick_name_new: str = ""
 
     @staticmethod
     def from_tbdata(data_map: Mapping) -> UserInfo_guinfo_web:
-        user_id = data_map['uid']
-        portrait = data_map['portrait']
-        user_name = user_name if (user_name := data_map['uname']) != user_id else ''
-        nick_name_new = data_map['show_nickname']
+        user_id = data_map["uid"]
+        portrait = data_map["portrait"]
+        user_name = user_name if (user_name := data_map["uname"]) != user_id else ""
+        nick_name_new = data_map["show_nickname"]
         return UserInfo_guinfo_web(user_id, portrait, user_name, nick_name_new)
 
     def __str__(self) -> str:
