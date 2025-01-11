@@ -44,6 +44,7 @@ async def sign(BDUSS_key: str, *, retry_times: int = 0):
             if success:
                 break
         # 签到
+        await client.sign_forums()  # 先一键签到
         retry_list: list[str] = []
         for pn in range(1, 9999):
             forums = await client.get_self_follow_forums(pn)
