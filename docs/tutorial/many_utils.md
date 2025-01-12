@@ -48,7 +48,7 @@ async def sign(BDUSS_key: str, *, retry_times: int = 0):
         retry_list: list[str] = []
         for pn in range(1, 9999):
             forums = await client.get_self_follow_forums(pn)
-            retry_list += [forum.fname for forum in forums]
+            retry_list += [forum.fname for forum in forums if not forum.is_signed]
             if not forums.has_more:
                 break
         for _ in range(retry_times + 1):
