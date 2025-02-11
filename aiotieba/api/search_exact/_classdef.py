@@ -17,7 +17,7 @@ class ExactSearch:
 
     Attributes:
         text (str): 文本内容
-        title (str): 标题
+        title (str): 标题内容
 
         fname (str): 所在贴吧名
         tid (int): 所在主题帖id

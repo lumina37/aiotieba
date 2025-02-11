@@ -201,41 +201,6 @@ asyncio.run(main())
 账号1: AAAA, 账号2: BBBB
 ```
 
-## 使用STOKEN
-
-只有少数接口需要用到`STOKEN`，例如用于获取自身关注吧列表的`get_self_follow_forums`
-
-### 样例代码
-
-本样例将获取并打印当前账号的一部分关注吧列表
-
-```python
-import asyncio
-
-import aiotieba as tb
-
-BDUSS = "在这里输入你账号的BDUSS"
-STOKEN = "在这里输入你账号的网页端STOKEN"
-
-
-async def main():
-    account = tb.Account(BDUSS, STOKEN)
-    async with tb.Client(account=account) as client:
-        forums = await client.get_self_follow_forums()
-        print(forums[:3])
-
-
-asyncio.run(main())
-```
-
-### 期望结果
-
-如果你的[`BDUSS`](#bduss)和`STOKEN`均填写无误，你会获得类似下面这样的结果
-
-```log
-[SelfFollowForum(fid=1999, fname='启动！', level=1), SelfFollowForum(fid=1999, fname='启动！', level=1), SelfFollowForum(fid=1999, fname='启动！', level=1)]
-```
-
 ## Account的序列化与反序列化
 
 该功能可以用于导出账号参数

@@ -70,6 +70,7 @@ def handle_exception(
     """
 
     def wrapper(func):
+        @functools.wraps(func)
         async def awrapper(self, *args, **kwargs):
             def _log(log_level: int, err: Exception | None = None) -> None:
                 logger = get_logger()

@@ -44,10 +44,11 @@ async def sign(BDUSS_key: str, *, retry_times: int = 0):
             if success:
                 break
         # 签到
+        await client.sign_forums()  # 先一键签到
         retry_list: list[str] = []
         for pn in range(1, 9999):
             forums = await client.get_self_follow_forums(pn)
-            retry_list += [forum.fname for forum in forums]
+            retry_list += [forum.fname for forum in forums if not forum.is_signed]
             if not forums.has_more:
                 break
         for _ in range(retry_times + 1):
@@ -65,6 +66,27 @@ async def sign(BDUSS_key: str, *, retry_times: int = 0):
 async def main():
     await sign("在此处输入待签到账号的BDUSS", retry_times=3)
     await sign("在此处输入另一个待签到账号的BDUSS", retry_times=3)
+
+
+asyncio.run(main())
+```
+
+## 批量封禁
+
+```python
+import asyncio
+
+import aiotieba as tb
+
+
+async def main():
+    async with tb.Client("在此处输入你的BDUSS") as client:
+        for uid in [
+            1111,
+            2222,
+            3333,
+        ]:
+            await client.block("xxx", uid, day=10)
 
 
 asyncio.run(main())
