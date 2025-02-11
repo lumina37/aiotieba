@@ -71,6 +71,27 @@ async def main():
 asyncio.run(main())
 ```
 
+## 批量封禁
+
+```python
+import asyncio
+
+import aiotieba as tb
+
+
+async def main():
+    async with tb.Client("在此处输入你的BDUSS") as client:
+        for uid in [
+            1111,
+            2222,
+            3333,
+        ]:
+            await client.block("xxx", uid, day=10)
+
+
+asyncio.run(main())
+```
+
 ## 将个人主页的帖子全部设为隐藏
 
 ```python
