@@ -1,6 +1,6 @@
 [project]
 name = "aiotieba"
-version = "4.5.2a0"
+version = "4.5.2"
 description = "Asynchronous I/O Client for Baidu Tieba"
 authors = [{ name = "lumina37", email = "starry.qvq@gmail.com" }]
 urls = { Repository = "https://github.com/lumina37/aiotieba/", Documentation = "https://aiotieba.cc/" }
@@ -34,7 +34,7 @@ dependencies = [
   "protobuf>=4.21.1,<6",
   "cryptography>=35.0.0,<41;python_version>='3.9' and python_version<'3.12'",
   "cryptography>=35.0.0,<45;python_version>='3.12'",
-  "async-timeout>=4.0,<5;python_version<'3.11'",
+  "async-timeout>=4.0,<6;python_version<'3.11'",
   "StrEnum>=0.4.0,<0.5;python_version<'3.11'",
 ]
 
@@ -64,7 +64,7 @@ build-backend = "scikit_build_core.build"
 managed = true
 dev-dependencies = [
   "pytest==8.3.4",
-  "pytest-asyncio==0.25.0",
+  "pytest-asyncio==0.25.3",
   "pytest-rerunfailures==15.0",
   "mkdocs-material",
   "mkdocstrings[python]",

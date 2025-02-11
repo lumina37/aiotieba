@@ -307,7 +307,7 @@ class Thread_pf:
     Attributes:
         text (str): 文本内容
         contents (Contents_pf): 正文内容碎片列表
-        title (str): 标题
+        title (str): 标题内容
 
         fid (int): 所在吧id
         fname (str): 所在贴吧名

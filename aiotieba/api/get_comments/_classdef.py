@@ -439,7 +439,7 @@ class Thread_c:
     主题帖信息
 
     Attributes:
-        title (str): 标题
+        title (str): 标题内容
 
         fid (int): 所在吧id
         fname (str): 所在贴吧名
