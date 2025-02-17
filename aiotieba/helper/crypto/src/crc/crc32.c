@@ -44,8 +44,7 @@ static uint32_t tbc_crc32Table[] = {
     0x24B4A3A6L, 0xBAD03605L, 0xCDD70693L, 0x54DE5729L, 0x23D967BFL, 0xB3667A2EL, 0xC4614AB8L, 0x5D681B02L, 0x2A6F2B94L,
     0xB40BBE37L, 0xC30C8EA1L, 0x5A05DF1BL, 0x2D02EF8DL};
 
-uint32_t tbc_crc32(const unsigned char* src, size_t srcLen, uint32_t prev_val)
-{
+uint32_t tbc_crc32(const unsigned char* src, size_t srcLen, uint32_t prev_val) {
     uint32_t crc32_val = ~prev_val;
 
     unsigned char* cursor = (unsigned char*)src;

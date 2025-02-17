@@ -1,5 +1,5 @@
-#include <memory.h>  // memset memcpy
-#include <stdbool.h> // bool
+#include <memory.h>   // memset memcpy
+#include <stdbool.h>  // bool
 
 #include "base32/base32.h"
 #include "crc/crc32.h"
@@ -21,8 +21,7 @@
 static const char CUID2_PERFIX[] = {'c', 'o', 'm', '.', 'b', 'a', 'i', 'd', 'u'};
 static const char CUID3_PERFIX[] = {'c', 'o', 'm', '.', 'h', 'e', 'l', 'i', 'o', 's'};
 
-static inline void __tbc_update(uint64_t* sec, uint64_t hashVal, uint64_t start, bool flag)
-{
+static inline void __tbc_update(uint64_t* sec, uint64_t hashVal, uint64_t start, bool flag) {
     uint64_t end = start + HASH_SIZE_IN_BIT;
     uint64_t secTemp = *sec;
     uint64_t var9 = ((uint64_t)1 << end) - 1;
@@ -46,8 +45,7 @@ static inline void __tbc_update(uint64_t* sec, uint64_t hashVal, uint64_t start,
     *sec = secTemp;
 }
 
-static inline void __tbc_writeBuffer(unsigned char* buffer, const uint64_t sec)
-{
+static inline void __tbc_writeBuffer(unsigned char* buffer, const uint64_t sec) {
     uint64_t tmpSec = sec;
     for (uint64_t i = 0; i < STEP_SIZE; i++) {
         buffer[i] = (unsigned char)((uint64_t)UINT8_MAX & tmpSec);
@@ -55,20 +53,19 @@ static inline void __tbc_writeBuffer(unsigned char* buffer, const uint64_t sec)
     }
 }
 
-void tbc_heliosHash(const unsigned char* src, size_t srcSize, unsigned char* dst)
-{
+void tbc_heliosHash(const unsigned char* src, size_t srcSize, unsigned char* dst) {
     // init
     uint32_t crc32Val;
     uint32_t xxhash32Val;
-    uint64_t sec = ((uint64_t)1 << 40) - 1; // equals to `-1L>>>-40L` in java
+    uint64_t sec = ((uint64_t)1 << 40) - 1;  // equals to `-1L>>>-40L` in java
     unsigned char buffer[HASHER_NUM * STEP_SIZE];
-    memset(buffer, -1, STEP_SIZE); // Now buffer is [-1 * 5, ...]
+    memset(buffer, -1, STEP_SIZE);  // Now buffer is [-1 * 5, ...]
 
     // 1st hash with CRC32
     crc32Val = tbc_crc32(src, srcSize, 0);
     crc32Val = tbc_crc32(buffer, STEP_SIZE, crc32Val);
     __tbc_update(&sec, (uint64_t)crc32Val, 8, false);
-    __tbc_writeBuffer(buffer + STEP_SIZE, sec); // Now buffer is [-1 * 5, crcrc, ...]
+    __tbc_writeBuffer(buffer + STEP_SIZE, sec);  // Now buffer is [-1 * 5, crcrc, ...]
 
     // 2nd hash with xxHash32
     XXH32_state_t xxState4StepTwo, xxState4StepThree;
@@ -78,13 +75,13 @@ void tbc_heliosHash(const unsigned char* src, size_t srcSize, unsigned char* dst
     XXH32_copyState(&xxState4StepThree, &xxState4StepTwo);
     xxhash32Val = XXH32_digest(&xxState4StepTwo);
     __tbc_update(&sec, xxhash32Val, 0, true);
-    __tbc_writeBuffer(buffer + STEP_SIZE * 2, sec); // Now buffer is [-1[5], crc[5], xxxxx, ...]
+    __tbc_writeBuffer(buffer + STEP_SIZE * 2, sec);  // Now buffer is [-1[5], crc[5], xxxxx, ...]
 
     // 3rd hash with xxHash32
     XXH32_update(&xxState4StepThree, buffer + STEP_SIZE * 2, STEP_SIZE);
     xxhash32Val = XXH32_digest(&xxState4StepThree);
     __tbc_update(&sec, xxhash32Val, 1, true);
-    __tbc_writeBuffer(buffer + STEP_SIZE * 3, sec); // Now buffer is [-1[5], crc[5], xx[5], xx[5]]
+    __tbc_writeBuffer(buffer + STEP_SIZE * 3, sec);  // Now buffer is [-1[5], crc[5], xx[5], xx[5]]
 
     // 4th hash with CRC32
     crc32Val = tbc_crc32(buffer + STEP_SIZE, STEP_SIZE * 3, crc32Val);
@@ -94,8 +91,7 @@ void tbc_heliosHash(const unsigned char* src, size_t srcSize, unsigned char* dst
     __tbc_writeBuffer(dst, sec);
 }
 
-void tbc_cuid_galaxy2(const unsigned char* androidID, unsigned char* dst)
-{
+void tbc_cuid_galaxy2(const unsigned char* androidID, unsigned char* dst) {
     // step 1: build src buffer and compute md5
     unsigned char md5Buffer[sizeof(CUID2_PERFIX) + TBC_ANDROID_ID_SIZE];
 
@@ -133,8 +129,7 @@ void tbc_cuid_galaxy2(const unsigned char* androidID, unsigned char* dst)
     tbc_base32_encode(heHash, TBC_HELIOS_HASH_SIZE, (dst + dstOffset));
 }
 
-void tbc_c3_aid(const unsigned char* androidID, const unsigned char* uuid, unsigned char* dst)
-{
+void tbc_c3_aid(const unsigned char* androidID, const unsigned char* uuid, unsigned char* dst) {
     // step 1: set prefix
     // dst will be ['A00-', ...]
     dst[0] = 'A';

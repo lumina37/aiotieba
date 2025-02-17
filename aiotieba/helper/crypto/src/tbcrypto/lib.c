@@ -6,8 +6,7 @@
 #include "tbcrypto/rc442.h"
 #include "tbcrypto/sign.h"
 
-PyObject* cuid_galaxy2(PyObject* Py_UNUSED(self), PyObject* args)
-{
+PyObject* cuid_galaxy2(PyObject* Py_UNUSED(self), PyObject* args) {
     unsigned char dst[TBC_CUID_GALAXY2_SIZE];
     const unsigned char* androidID;
     Py_ssize_t androidIDSize;
@@ -27,8 +26,7 @@ PyObject* cuid_galaxy2(PyObject* Py_UNUSED(self), PyObject* args)
     return PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, dst, TBC_CUID_GALAXY2_SIZE);
 }
 
-PyObject* c3_aid(PyObject* Py_UNUSED(self), PyObject* args)
-{
+PyObject* c3_aid(PyObject* Py_UNUSED(self), PyObject* args) {
     unsigned char dst[TBC_C3_AID_SIZE];
     const unsigned char* androidID;
     Py_ssize_t androidIDSize;
@@ -54,8 +52,7 @@ PyObject* c3_aid(PyObject* Py_UNUSED(self), PyObject* args)
     return PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, dst, TBC_C3_AID_SIZE);
 }
 
-PyObject* rc4_42(PyObject* Py_UNUSED(self), PyObject* args)
-{
+PyObject* rc4_42(PyObject* Py_UNUSED(self), PyObject* args) {
     unsigned char dst[TBC_RC4_SIZE];
     const unsigned char* xyusMd5Str;
     Py_ssize_t xyusMd5Size;
@@ -91,8 +88,7 @@ static PyMethodDef crypto_methods[] = {
 
 static PyModuleDef crypto_module = {PyModuleDef_HEAD_INIT, "crypto", NULL, -1, crypto_methods};
 
-PyMODINIT_FUNC PyInit_crypto(void)
-{
+PyMODINIT_FUNC PyInit_crypto(void) {
     PyObject* mod = PyModule_Create(&crypto_module);
     if (mod == NULL) {
         return NULL;
