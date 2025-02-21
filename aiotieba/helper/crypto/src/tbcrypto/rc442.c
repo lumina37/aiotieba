@@ -1,4 +1,4 @@
-#include <stddef.h> // size_t
+#include <stddef.h>  // size_t
 
 #include "tbcrypto/const.h"
 #include "tbcrypto/error.h"
@@ -11,8 +11,7 @@ typedef struct rc4_42_context {
     unsigned char m[256];
 } rc4_42_context;
 
-static inline void rc4_42_setup(rc4_42_context* ctx, const unsigned char* key, unsigned int keyLen)
-{
+static inline void rc4_42_setup(rc4_42_context* ctx, const unsigned char* key, unsigned int keyLen) {
     int i, j, a;
     unsigned int k;
     unsigned char* m;
@@ -21,14 +20,12 @@ static inline void rc4_42_setup(rc4_42_context* ctx, const unsigned char* key, u
     ctx->y = 0;
     m = ctx->m;
 
-    for (i = 0; i < 256; i++)
-        m[i] = (unsigned char)i;
+    for (i = 0; i < 256; i++) m[i] = (unsigned char)i;
 
     j = k = 0;
 
     for (i = 0; i < 256; i++, k++) {
-        if (k >= keyLen)
-            k = 0;
+        if (k >= keyLen) k = 0;
 
         a = m[i];
         j = (j + a + key[k]) & 0xFF;
@@ -37,8 +34,7 @@ static inline void rc4_42_setup(rc4_42_context* ctx, const unsigned char* key, u
     }
 }
 
-static inline void rc4_42_crypt(rc4_42_context* ctx, const unsigned char* src, size_t srcLen, unsigned char* dst)
-{
+static inline void rc4_42_crypt(rc4_42_context* ctx, const unsigned char* src, size_t srcLen, unsigned char* dst) {
     int x, y, a, b;
     size_t i;
     unsigned char* m;
@@ -57,15 +53,14 @@ static inline void rc4_42_crypt(rc4_42_context* ctx, const unsigned char* src, s
         m[y] = (unsigned char)a;
 
         dst[i] = (unsigned char)(src[i] ^ m[(unsigned char)(a + b)]);
-        dst[i] = dst[i] ^ 42; // different from general RC4
+        dst[i] = dst[i] ^ 42;  // different from general RC4
     }
 
     ctx->x = x;
     ctx->y = y;
 }
 
-void tbc_rc4_42(const unsigned char* xyusMd5Str, const unsigned char* cbcSecKey, unsigned char* dst)
-{
+void tbc_rc4_42(const unsigned char* xyusMd5Str, const unsigned char* cbcSecKey, unsigned char* dst) {
     rc4_42_context rc442Ctx;
 
     rc4_42_setup(&rc442Ctx, xyusMd5Str, TBC_MD5_STR_SIZE);

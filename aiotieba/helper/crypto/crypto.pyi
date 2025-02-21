@@ -15,6 +15,7 @@ def cuid_galaxy2(android_id: str) -> str:
         此实现与12.x版本及以前的官方实现一致
     """
 
+
 def c3_aid(android_id: str, uuid: str) -> str:
     """
     使用给定的android_id和uuid生成c3_aid
@@ -33,6 +34,7 @@ def c3_aid(android_id: str, uuid: str) -> str:
         此实现与12.x版本及以前的官方实现一致
     """
 
+
 def rc4_42(xyus_md5_str: str, aes_cbc_sec_key: bytes) -> bytes:
     """
     RC4加密的变体 一次额外的42异或
@@ -44,6 +46,7 @@ def rc4_42(xyus_md5_str: str, aes_cbc_sec_key: bytes) -> bytes:
     Returns:
         bytes
     """
+
 
 def sign(data: list[tuple[str, str | int]]) -> str:
     """
