@@ -47,10 +47,9 @@ asyncio.run(main())
 *输出样例*
 
 ```log
----
 tid=8537603600 text=一人发一句最喜欢的游戏台词
 楼主先来
-很喜欢lol布隆说的“夜晚越黑暗，星星就越明亮”，尤其在当下这个有着诸多缺点的世界里，这句话让我感觉舒服了很多在人们已不再相信理想主义的至暗时刻，高擎炬火之人便显得更加重要，至少我会坚持我的理想
+很喜欢lol布隆说的“夜晚越黑暗，星星就越明亮”，尤其在当下这个有着诸多缺点的世界里，这句话让我感觉舒服了很多。在人们已不再相信理想主义的至暗时刻，高擎炬火之人便显得更加重要，至少我会坚持我的理想
 ---
 tid=8093410706 text=大概是剪切板里的一些有意思的话
 今天看自己的剪切板快满了，稍微翻翻突然发现以前存的一些话还挺有意思，就放在这里啦
@@ -73,7 +72,9 @@ tid=8537699088 text=记录一下自己人生第一次当“老师”的经历^_^
 ## 友情链接
 
 + [TiebaManager（吧务管理器 有用户界面）](https://github.com/dog194/TiebaManager)
-+ [基于aiotieba的高弹性吧务审查框架](https://github.com/lumina37/aiotieba-reviewer)
++ [基于aiotieba的tieba bot](https://github.com/adk23333/BungleCat)
++ [基于aiotieba的贴吧管理器](https://github.com/adk23333/tieba-admin)
++ [C#版本的贴吧接口库](https://github.com/BaWuZhuShou/AioTieba4DotNet)
 + [贴吧protobuf定义文件合集（更新至12.51.7.1）](https://github.com/n0099/tbclient.protobuf)
 + [TiebaLite 第三方安卓客户端（已停更）](https://github.com/HuanCheng65/TiebaLite/tree/4.0-dev)
 
