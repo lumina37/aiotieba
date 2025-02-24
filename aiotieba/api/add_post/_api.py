@@ -4,7 +4,7 @@ import time
 import yarl
 
 from ...__version__ import __version__
-from ...const import APP_BASE_HOST, APP_SECURE_SCHEME, POST_VERSION
+from ...const import APP_BASE_HOST
 from ...core import Account, HttpCore, WsCore
 from ...exception import BoolResponse, TiebaServerError, TiebaValueError
 from .protobuf import AddPostReqIdl_pb2, AddPostResIdl_pb2
@@ -26,7 +26,7 @@ def pack_proto(account: Account, fname: str, fid: int, tid: int, show_name: str,
     req_proto = AddPostReqIdl_pb2.AddPostReqIdl()
     req_proto.data.common.BDUSS = account.BDUSS
     req_proto.data.common._client_type = 2
-    req_proto.data.common._client_version = POST_VERSION
+    req_proto.data.common._client_version = "12.35.1.0"
     req_proto.data.common._client_id = account.client_id
     req_proto.data.common._phone_imei = "000000000000000"
     req_proto.data.common._from = "1008621x"
@@ -102,7 +102,7 @@ async def request_http(
     data = pack_proto(http_core.account, fname, fid, tid, show_name, content)
 
     request = http_core.pack_proto_request(
-        yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/c/post/add", query_string=f"cmd={CMD}"),
+        yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/c/post/add", query_string=f"cmd={CMD}"),
         data,
     )
 

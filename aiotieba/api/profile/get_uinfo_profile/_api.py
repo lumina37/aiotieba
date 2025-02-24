@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import yarl
 
-from ....const import APP_BASE_HOST, APP_INSECURE_SCHEME, MAIN_VERSION
+from ....const import APP_BASE_HOST, MAIN_VERSION
 from ....exception import TiebaServerError
 from .._classdef import UserInfo_pf
 from .._const import CMD
@@ -46,9 +46,7 @@ async def request_http(http_core: HttpCore, uid_or_portrait: str | int) -> UserI
     data = pack_proto(uid_or_portrait)
 
     request = http_core.pack_proto_request(
-        yarl.URL.build(
-            scheme=APP_INSECURE_SCHEME, host=APP_BASE_HOST, path="/c/u/user/profile", query_string=f"cmd={CMD}"
-        ),
+        yarl.URL.build(scheme="http", host=APP_BASE_HOST, path="/c/u/user/profile", query_string=f"cmd={CMD}"),
         data,
     )
 

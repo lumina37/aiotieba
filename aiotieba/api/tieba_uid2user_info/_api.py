@@ -1,6 +1,6 @@
 import yarl
 
-from ...const import APP_BASE_HOST, APP_INSECURE_SCHEME, MAIN_VERSION
+from ...const import APP_BASE_HOST, MAIN_VERSION
 from ...core import HttpCore, WsCore
 from ...exception import TiebaServerError
 from ._classdef import UserInfo_TUid
@@ -35,7 +35,7 @@ async def request_http(http_core: HttpCore, tieba_uid: int) -> UserInfo_TUid:
 
     request = http_core.pack_proto_request(
         yarl.URL.build(
-            scheme=APP_INSECURE_SCHEME,
+            scheme="http",
             host=APP_BASE_HOST,
             path="/c/u/user/getUserByTiebaUid",
             query_string=f"cmd={CMD}",

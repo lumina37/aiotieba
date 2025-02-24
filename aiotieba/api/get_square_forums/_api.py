@@ -1,6 +1,6 @@
 import yarl
 
-from ...const import APP_BASE_HOST, APP_SECURE_SCHEME, MAIN_VERSION
+from ...const import APP_BASE_HOST, MAIN_VERSION
 from ...core import Account, HttpCore, WsCore
 from ...exception import TiebaServerError
 from ._classdef import SquareForums
@@ -37,9 +37,7 @@ async def request_http(http_core: HttpCore, cname: str, pn: int, rn: int) -> Squ
     data = pack_proto(http_core.account, cname, pn, rn)
 
     request = http_core.pack_proto_request(
-        yarl.URL.build(
-            scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/f/forum/getForumSquare", query_string=f"cmd={CMD}"
-        ),
+        yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/f/forum/getForumSquare", query_string=f"cmd={CMD}"),
         data,
     )
 

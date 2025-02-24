@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ...const import POST_VERSION
 from ...exception import TiebaServerError
 from ._classdef import WsMsgGroups
 from .protobuf import GetGroupMsgReqIdl_pb2, GetGroupMsgResIdl_pb2
@@ -20,7 +19,7 @@ def pack_proto(account: Account, group_ids: list[int], msg_ids: list[int], get_t
         group_proto.groupId = group_id
         group_proto.lastMsgId = msg_id
     req_proto.data.gettype = str(get_type)
-    req_proto.cuid = f"{account.cuid}|com.baidu.tieba_mini{POST_VERSION}"
+    req_proto.cuid = f"{account.cuid}|com.baidu.tieba_mini12.35.1.0"
 
     return req_proto.SerializeToString()
 

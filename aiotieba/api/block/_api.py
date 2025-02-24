@@ -1,6 +1,6 @@
 import yarl
 
-from ...const import APP_BASE_HOST, APP_SECURE_SCHEME
+from ...const import APP_BASE_HOST
 from ...core import HttpCore
 from ...exception import BoolResponse, TiebaServerError
 from ...helper import parse_json
@@ -29,7 +29,7 @@ async def request(http_core: HttpCore, fid: int, portrait: str, day: int, reason
     ]
 
     request = http_core.pack_form_request(
-        yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/c/bawu/commitprison"), data
+        yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/c/bawu/commitprison"), data
     )
 
     body = await http_core.net_core.send_request(request, read_bufsize=1024)
