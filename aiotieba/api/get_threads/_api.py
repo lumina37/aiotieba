@@ -1,6 +1,6 @@
 import yarl
 
-from ...const import APP_BASE_HOST, MAIN_VERSION
+from ...const import APP_BASE_HOST
 from ...core import HttpCore, WsCore
 from ...exception import TiebaServerError
 from ._classdef import Threads
@@ -12,7 +12,7 @@ CMD = 301001
 def pack_proto(fname: str, pn: int, rn: int, sort: int, is_good: bool) -> bytes:
     req_proto = FrsPageReqIdl_pb2.FrsPageReqIdl()
     req_proto.data.common._client_type = 2
-    req_proto.data.common._client_version = MAIN_VERSION
+    req_proto.data.common._client_version = "12.64.1.1"
     req_proto.data.kw = fname
     req_proto.data.pn = pn
     req_proto.data.rn = 13
