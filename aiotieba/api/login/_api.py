@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import yarl
 
-from ...const import APP_BASE_HOST, APP_SECURE_SCHEME, MAIN_VERSION
+from ...const import APP_BASE_HOST, MAIN_VERSION
 from ...exception import TiebaServerError
 from ...helper import parse_json
 from ._classdef import UserInfo_login
@@ -31,9 +31,7 @@ async def request(http_core: HttpCore) -> tuple[UserInfo_login, str]:
         ("bdusstoken", http_core.account.BDUSS),
     ]
 
-    request = http_core.pack_form_request(
-        yarl.URL.build(scheme=APP_SECURE_SCHEME, host=APP_BASE_HOST, path="/c/s/login"), data
-    )
+    request = http_core.pack_form_request(yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/s/login"), data)
 
     body = await http_core.net_core.send_request(request, read_bufsize=1024)
     return parse_body(body)
