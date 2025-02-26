@@ -40,6 +40,7 @@ nav:
           - threads: ref/classdef/threads.md
           - posts: ref/classdef/posts.md
           - comments: ref/classdef/comments.md
+          - last_replyers: ref/classdef/last_replyers.md
           - searches: ref/classdef/searches.md
           - user_info: ref/classdef/user_info.md
           - profile: ref/classdef/profile.md

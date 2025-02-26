@@ -1,0 +1,20 @@
+// tbclient.FrsPage.FrsPageResIdl
+syntax = "proto3";
+
+import "Error.proto";
+import "Page.proto";
+import "ThreadInfo.proto";
+
+message FrsPageResIdl4lp {
+    Error error = 1;
+    message DataRes {
+        message ForumInfo {
+            int64 id = 1;
+            string name = 2;
+        }
+        ForumInfo forum = 2;
+        Page page = 4;
+        repeated ThreadInfo thread_list = 7;
+    }
+    DataRes data = 2;
+}
