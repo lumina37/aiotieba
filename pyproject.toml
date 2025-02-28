@@ -57,7 +57,7 @@ speedup = [
 ]
 
 [build-system]
-requires = ["scikit-build-core<0.11,>=0.8"]
+requires = ["scikit-build-core>=0.8,<0.12"]
 build-backend = "scikit_build_core.build"
 
 [tool.uv]
