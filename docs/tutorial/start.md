@@ -129,6 +129,47 @@ asyncio.run(main())
 AAAA（你的用户名）
 ```
 
+## 内容的层次结构
+
+本样例将协助你理解“主题帖-回复-楼中楼”的三级层次结构，以及如何解析富媒体内容
+
+### 样例代码
+
+本样例将逐级获取并打印“主题帖-回复-楼中楼”中各层级的部分内容
+
+```python
+import asyncio
+
+import aiotieba as tb
+
+
+async def main():
+    async with tb.Client() as client:
+        threads = await client.get_threads("天堂鸡汤")
+        for thread in threads[3:6]:
+            print(thread)  # 打印整个主题帖
+            print(thread.contents)  # 打印主题帖中的内容碎片（含富媒体信息）
+            print(thread.contents.emojis)  # 仅打印表情相关的内容碎片
+
+        selected_thread = threads[4]
+        posts = await client.get_posts(selected_thread.tid)
+        for post in posts[3:6]:
+            print(post)  # 打印整个回复
+            print(post.contents)  # 打印回复中的内容碎片
+            print(post.contents.imgs)  # 仅打印图片相关的内容碎片
+
+        for post in posts:
+            if post.reply_num == 0:
+                continue
+            comments = await client.get_comments(post.tid, post.pid)
+            for comment in comments:
+                print(comment)  # 打印整个楼中楼
+                print(comment.contents.ats)  # 仅打印@相关的内容碎片
+                break
+
+asyncio.run(main())
+```
+
 ## 运行时更改BDUSS
 
 该案例演示了如何在运行时更改BDUSS
