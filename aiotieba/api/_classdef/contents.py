@@ -3,7 +3,7 @@ from __future__ import annotations
 import dataclasses as dcs
 import re
 from functools import cached_property
-from typing import TYPE_CHECKING, Protocol, TypeVar
+from typing import TYPE_CHECKING, Any, Protocol, TypeVar
 
 import yarl
 
@@ -298,3 +298,19 @@ class FragItem:
 
 class TypeFragItem(Protocol):
     text: str
+
+
+@dcs.dataclass
+class FragUnknown:
+    """
+    未知碎片
+
+    Attributes:
+        data (Any): 原始数据
+    """
+
+    proto: Any
+
+    @staticmethod
+    def from_tbdata(data: Any) -> FragUnknown:
+        return FragItem(data)

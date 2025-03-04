@@ -13,6 +13,7 @@ from .._classdef.contents import (
     FragLink,
     FragText,
     FragTiebaPlus,
+    FragUnknown,
     FragVideo,
     FragVoice,
     TypeFragment,
@@ -152,9 +153,7 @@ class Contents_t(Containers[TypeFragment]):
                 elif _type == 34:
                     continue
                 else:
-                    from ...logging import get_logger as LOG
-
-                    LOG().warning("Unknown fragment type. type=%s proto=%s", _type, proto)
+                    yield FragUnknown.from_tbdata(frag)
 
         objs = list(_frags())
 
@@ -433,9 +432,7 @@ class Contents_st(Containers[TypeFragment]):
                 elif _type == 34:
                     continue
                 else:
-                    from ...logging import get_logger as LOG
-
-                    LOG().warning("Unknown fragment type. type=%s proto=%s", _type, proto)
+                    yield FragUnknown.from_tbdata(frag)
 
         objs = list(_frags())
 
