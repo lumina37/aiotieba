@@ -40,7 +40,9 @@ jobs:
           cache-dependency-glob: "pyproject.toml"
 
       - name: Install dependencies
-        run: uv sync -p ${{ matrix.python-version }}
+        run: |
+          uv python pin ${{ matrix.python-version }}
+          uv sync
 
       - name: Run tests
         env:
