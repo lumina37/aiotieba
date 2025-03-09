@@ -170,6 +170,9 @@ class Thread_lp:
         author_id (int): 发布者的user_id
         last_replyer (LastReplyer): 最后回复者的用户信息
 
+        is_good (bool): 是否精品帖
+        is_top (bool): 是否置顶帖
+
         create_time (int): 创建时间 10位时间戳 以秒为单位
         last_time (int): 最后回复时间 10位时间戳 以秒为单位
     """
@@ -183,6 +186,9 @@ class Thread_lp:
     user: UserInfo_lp = dcs.field(default_factory=UserInfo_lp)
     last_replyer: LastReplyer = dcs.field(default_factory=LastReplyer)
 
+    is_good: bool = False
+    is_top: bool = False
+
     create_time: int = 0
     last_time: int = 0
 
@@ -191,13 +197,13 @@ class Thread_lp:
         title = data_proto.title
         tid = data_proto.id
         pid = data_proto.first_post_id
-        is_good = bool(data_proto.is_good)
-        is_top = bool(data_proto.is_top)
         user = UserInfo_lp.from_tbdata(data_proto.author)
         last_replyer = LastReplyer.from_tbdata(data_proto.last_replyer)
+        is_good = bool(data_proto.is_good)
+        is_top = bool(data_proto.is_top)
         create_time = data_proto.create_time
         last_time = data_proto.last_time_int
-        return Thread_lp(title, 0, "", tid, pid, is_good, is_top, user, last_replyer, create_time, last_time)
+        return Thread_lp(title, 0, "", tid, pid, user, last_replyer, is_good, is_top, create_time, last_time)
 
     def __eq__(self, obj: Thread_lp) -> bool:
         return self.pid == obj.pid
