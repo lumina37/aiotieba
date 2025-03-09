@@ -191,11 +191,13 @@ class Thread_lp:
         title = data_proto.title
         tid = data_proto.id
         pid = data_proto.first_post_id
+        is_good = bool(data_proto.is_good)
+        is_top = bool(data_proto.is_top)
         user = UserInfo_lp.from_tbdata(data_proto.author)
         last_replyer = LastReplyer.from_tbdata(data_proto.last_replyer)
         create_time = data_proto.create_time
         last_time = data_proto.last_time_int
-        return Thread_lp(title, 0, "", tid, pid, user, last_replyer, create_time, last_time)
+        return Thread_lp(title, 0, "", tid, pid, is_good, is_top, user, last_replyer, create_time, last_time)
 
     def __eq__(self, obj: Thread_lp) -> bool:
         return self.pid == obj.pid
