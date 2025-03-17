@@ -55,3 +55,15 @@ def sign(data: list[tuple[str, str | int]]) -> str:
     Returns:
         str: 签名
     """
+
+
+def enuid(cuid2: str) -> str:
+    """
+    生成EnUid
+
+    Args:
+        cuid_galaxy2 (str)
+
+    Returns:
+        str: 变种base64编码后的enuid
+    """
