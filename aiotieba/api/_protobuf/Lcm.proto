@@ -1,0 +1,46 @@
+syntax = "proto3";
+option optimize_for = LITE_RUNTIME;
+
+message Common {
+    string cuid = 1;
+    string device = 2;
+    string os_version = 3;
+    string manufacture = 4;
+    string model_type = 5;
+    string app_id = 6;
+    string app_version = 7;
+    string sdk_version = 8;
+    string network = 9;
+    string rom_version = 10;
+    string user_key = 11;
+}
+
+message LcmNotify {
+    int64 log_id = 1;
+    int32 action = 2;
+}
+
+message LcmRequest {
+    int64 log_id = 1;
+    string token = 2;
+    Common common = 3;
+    int64 timestamp = 4;
+    int32 action = 5;
+    int32 start_type = 6;
+    int32 conn_type = 7;
+}
+
+message LcmResponse {
+    int64 log_id = 1;
+    int32 error_code = 2;
+    string error_msg = 3;
+    int64 next_interval_ms = 4;
+    string server_info = 5;
+}
+
+message RpcData {
+    LcmRequest lcm_request = 1;
+    LcmResponse lcm_response = 2;
+    LcmNotify lcm_notify = 3;
+}
+

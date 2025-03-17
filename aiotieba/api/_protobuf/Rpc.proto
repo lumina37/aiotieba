@@ -1,0 +1,51 @@
+syntax = "proto3";
+option optimize_for = LITE_RUNTIME;
+
+message ChunkInfo {
+	int64 stream_id = 1;
+	int64 chunk_id = 2;
+}
+
+message EventTimestamp {
+	string event = 1;
+	int64 timestamp_ms = 2;
+}
+
+message RpcNotifyMeta {
+	int64 service_id = 1;
+	int64 method_id = 2;
+	int64 log_id = 3;
+	repeated EventTimestamp event_list = 4;
+}
+
+message RpcRequestMeta {
+	int64 service_id = 1;
+	int64 method_id = 2;
+	int64 log_id = 3;
+	int32 need_common = 4;
+	repeated EventTimestamp event_list = 5;
+}
+
+
+
+message RpcResponseMeta {
+	int64 service_id = 1;
+	int64 method_id = 2;
+	int64 log_id = 3;
+	int32 error_code = 4;
+	string error_text = 5;
+	repeated EventTimestamp event_list = 6;
+}
+
+message RpcMeta{
+	RpcRequestMeta request = 1;
+	RpcResponseMeta response = 2;
+	optional int32 compress_type = 3;
+	int64 correlation_id = 4;
+	int32 attachment_size = 5;
+	ChunkInfo chunk_info = 6;
+	bytes authentication_data = 7;
+	RpcNotifyMeta notify = 8;
+	int32 accept_compress_type = 9;
+}
+
