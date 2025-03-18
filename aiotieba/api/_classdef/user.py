@@ -63,6 +63,9 @@ class UserInfo:
     is_vip: bool = False
     is_god: bool = False
     is_blocked: bool = False
+    uk: int = 0
+    bduk: str = ''
+    trigger_id: int = 0
     priv_like: PrivLike = PrivLike.PUBLIC
     priv_reply: PrivReply = PrivReply.ALL
 
