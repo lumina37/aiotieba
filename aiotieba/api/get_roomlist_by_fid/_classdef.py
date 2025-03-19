@@ -1,7 +1,5 @@
 import dataclasses as dcs
 
-from ...exception import TbErrorExt
-from .._classdef import Containers, TypeMessage
 
 @dcs.dataclass
 class RoomList:
@@ -18,8 +16,7 @@ class RoomList:
     @staticmethod
     def from_tbdata(resjson: dict) -> "RoomList":  # todo:解析json并参数化而不是直接返回
         room_list = []
-        for x in resjson['data']['list']:
-            for y in x['room_list']:
+        for x in resjson["data"]["list"]:
+            for y in x["room_list"]:
                 room_list.append(y)
         return RoomList(room_list)
-

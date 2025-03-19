@@ -13,7 +13,6 @@ from .api import (
     add_blacklist_old,
     add_post,
     agree,
-    agree_vimage,
     block,
     del_bawu,
     del_bawu_blacklist,
@@ -43,7 +42,7 @@ from .api import (
     get_follows,
     get_forum,
     get_forum_detail,
-    get_god_threads,
+    get_forum_level,
     get_group_msg,
     get_images,
     get_member_users,
@@ -53,6 +52,7 @@ from .api import (
     get_recom_status,
     get_recovers,
     get_replys,
+    get_roomlist_by_fid,
     get_self_follow_forums,
     get_selfinfo_initNickname,
     get_selfinfo_moindex,
@@ -76,6 +76,7 @@ from .api import (
     recover,
     remove_fan,
     search_exact,
+    send_chatroom_msg,
     send_msg,
     set_bawu_perm,
     set_blacklist,
@@ -93,14 +94,11 @@ from .api import (
     unfollow_forum,
     unfollow_user,
     ungood,
-    send_chatroom_msg,
-    get_forum_level,
-    get_roomlist_by_fid,
 )
 from .api._classdef import UserInfo
 from .config import ProxyConfig, TimeoutConfig
 from .const import MAIN_VERSION
-from .core import Account, HttpCore, NetCore, WsCore, BLCPCore
+from .core import Account, BLCPCore, HttpCore, NetCore, WsCore
 from .enums import (
     BawuPermType,
     BawuSearchType,
@@ -159,21 +157,21 @@ class Client:
     """
 
     __slots__ = [
-        '_account',
-        '_timeout',
-        '_proxy',
-        '_try_ws',
-        '_connector',
-        '_http_core',
-        '_ws_core',
-        '_user',
-        '_blcp_core'
+        "_account",
+        "_timeout",
+        "_proxy",
+        "_try_ws",
+        "_connector",
+        "_http_core",
+        "_ws_core",
+        "_user",
+        "_blcp_core",
     ]
 
     def __init__(
         self,
-        BDUSS: str = '',
-        STOKEN: str = '',
+        BDUSS: str = "",
+        STOKEN: str = "",
         *,
         account: Account | None = None,
         try_ws: bool = False,
@@ -999,7 +997,7 @@ class Client:
         return await get_images.request(self._http_core, yarl.URL(img_url))
 
     @handle_exception(get_images.Image)
-    async def hash2image(self, raw_hash: str, /, size: Literal['s', 'm', 'l'] = 's') -> get_images.Image:
+    async def hash2image(self, raw_hash: str, /, size: Literal["s", "m", "l"] = "s") -> get_images.Image:
         """
         通过百度图库hash获取静态图像
 
@@ -1011,15 +1009,15 @@ class Client:
             Image: 图像
         """
 
-        if size == 's':
+        if size == "s":
             img_url = yarl.URL.build(
                 scheme="http", host="imgsrc.baidu.com", path=f"/forum/w=720;q=60;g=0/sign=__/{raw_hash}.jpg"
             )
-        elif size == 'm':
+        elif size == "m":
             img_url = yarl.URL.build(
                 scheme="http", host="imgsrc.baidu.com", path=f"/forum/w=960;q=60;g=0/sign=__/{raw_hash}.jpg"
             )
-        elif size == 'l':
+        elif size == "l":
             img_url = yarl.URL.build(scheme="http", host="imgsrc.baidu.com", path=f"/forum/pic/item/{raw_hash}.jpg")
         else:
             LOG().warning(f"Invalid size={size}")
@@ -1028,7 +1026,7 @@ class Client:
         return await get_images.request(self._http_core, img_url)
 
     @handle_exception(get_images.Image)
-    async def get_portrait(self, id_: str | int, /, size: Literal['s', 'm', 'l'] = 's') -> get_images.Image:
+    async def get_portrait(self, id_: str | int, /, size: Literal["s", "m", "l"] = "s") -> get_images.Image:
         """
         获取用户头像
 
@@ -1046,12 +1044,12 @@ class Client:
         else:
             portrait = id_
 
-        if size == 's':
-            path = 'n'
-        elif size == 'm':
-            path = ''
-        elif size == 'l':
-            path = 'h'
+        if size == "s":
+            path = "n"
+        elif size == "m":
+            path = ""
+        elif size == "l":
+            path = "h"
         else:
             LOG().warning(f"Invalid size={size}")
             return get_images.Image()
@@ -1231,21 +1229,6 @@ class Client:
 
         return await get_tab_map.request_http(self._http_core, fname)
 
-    @handle_exception(get_god_threads.GodThreads)
-    async def get_god_threads(self, /, pn: int = 1, rn=10) -> get_god_threads.GodThreads:
-        """
-        获取pn页的精选神帖列表
-
-        Args:
-            pn (int, optional): 页码. Defaults to 1.
-            rn (int, optional): 请求的条目数. Defaults to 10. Max to 100.
-
-        Returns:
-            GodThreads: 精选神帖列表
-        """
-
-        return await get_god_threads.request(self._http_core, pn, rn)
-
     @handle_exception(get_rank_users.RankUsers)
     async def get_rank_users(self, fname_or_fid: str | int, /, pn: int = 1) -> get_rank_users.RankUsers:
         """
@@ -1304,7 +1287,7 @@ class Client:
         return await get_rank_forums.request(self._http_core, fname, pn, rank_type)
 
     @handle_exception(get_blocks.Blocks)
-    async def get_blocks(self, fname_or_fid: str | int, /, name: str = '', pn: int = 1) -> get_blocks.Blocks:
+    async def get_blocks(self, fname_or_fid: str | int, /, name: str = "", pn: int = 1) -> get_blocks.Blocks:
         """
         获取pn页的待解封用户列表
 
@@ -1355,7 +1338,7 @@ class Client:
         /,
         pn: int = 1,
         *,
-        search_value: str = '',
+        search_value: str = "",
         search_type: BawuSearchType = BawuSearchType.USER,
         start_dt: datetime.datetime | None = None,
         end_dt: datetime.datetime | None = None,
@@ -1393,7 +1376,7 @@ class Client:
         /,
         pn: int = 1,
         *,
-        search_value: str = '',
+        search_value: str = "",
         search_type: BawuSearchType = BawuSearchType.USER,
         start_dt: datetime.datetime | None = None,
         end_dt: datetime.datetime | None = None,
@@ -1501,7 +1484,7 @@ class Client:
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def block(
-        self, fname_or_fid: str | int, /, id_: str | int, *, day: int = 1, reason: str = ''
+        self, fname_or_fid: str | int, /, id_: str | int, *, day: int = 1, reason: str = ""
     ) -> BoolResponse:
         """
         封禁用户
@@ -1776,7 +1759,7 @@ class Client:
         return await recover.request(self._http_core, fid, tid, pid, is_hide)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def good(self, fname_or_fid: str | int, /, tid: int, *, cname: str = '') -> BoolResponse:
+    async def good(self, fname_or_fid: str | int, /, tid: int, *, cname: str = "") -> BoolResponse:
         """
         加精主题帖
 
@@ -1826,8 +1809,8 @@ class Client:
 
         return await ungood.request(self._http_core, fname, fid, tid)
 
-    async def __get_cid(self, fname_or_fid: str | int, /, cname: str = '') -> int:
-        if cname == '':
+    async def __get_cid(self, fname_or_fid: str | int, /, cname: str = "") -> int:
+        if cname == "":
             return 0
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
@@ -1836,14 +1819,14 @@ class Client:
 
         cid = 0
         for item in cates:
-            if cname == item['class_name']:
-                cid = item['class_id']
+            if cname == item["class_name"]:
+                cid = item["class_id"]
                 break
 
         return cid
 
     @handle_exception(IntResponse)
-    async def get_cid(self, fname_or_fid: str | int, /, cname: str = '') -> IntResponse:
+    async def get_cid(self, fname_or_fid: str | int, /, cname: str = "") -> IntResponse:
         """
         通过精华分区名获取精华分区id
 
@@ -2041,26 +2024,6 @@ class Client:
         await self.__init_tbs()
 
         return await agree.request(self._http_core, tid, pid, is_comment, is_disagree=True, is_undo=True)
-
-    @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def agree_vimage(self, id_: str | int) -> BoolResponse:
-        """
-        虚拟形象点赞
-
-        Args:
-            id_ (str | int): 点赞对象的用户id user_id / user_name / portrait 优先user_id
-
-        Returns:
-            BoolResponse: True成功 False失败
-        """
-
-        if not isinstance(id_, int):
-            user = await self.get_user_info(id_, ReqUInfo.USER_ID)
-            user_id = user.user_id
-        else:
-            user_id = id_
-
-        return await agree_vimage.request(self._http_core, user_id)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def follow_user(self, id_: str | int) -> BoolResponse:
@@ -2296,7 +2259,7 @@ class Client:
         return await set_thread_privacy.request(self._http_core, fid, tid, pid, is_hide=False)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def set_profile(self, nick_name: str, sign: str = '', gender: Gender = Gender.UNKNOWN) -> BoolResponse:
+    async def set_profile(self, nick_name: str, sign: str = "", gender: Gender = Gender.UNKNOWN) -> BoolResponse:
         """
         设置主页信息
 
@@ -2353,7 +2316,7 @@ class Client:
 
         await self.__init_tbs()
 
-        return await sign_growth.request_web(self._http_core, act_type='page_sign')
+        return await sign_growth.request_web(self._http_core, act_type="page_sign")
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def sign_growth_share(self) -> BoolResponse:
@@ -2366,7 +2329,7 @@ class Client:
 
         await self.__init_tbs()
 
-        return await sign_growth.request_app(self._http_core, act_type='share_thread')
+        return await sign_growth.request_app(self._http_core, act_type="share_thread")
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     @_try_websocket
@@ -2480,7 +2443,9 @@ class Client:
         return await get_group_msg.request(self._ws_core, group_ids, get_type)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def send_chatroom_msg(self, chatroom_id: int, forum_id: int, text: str, atuser_ids: list[int] = None, robotc: int = -1):
+    async def send_chatroom_msg(
+        self, chatroom_id: int, forum_id: int, text: str, atuser_ids: list[int] = None, robotc: int = -1
+    ):
         """
         向吧群发送信息，仅限简单文本。如需要@他人需要指定atuser_ids，如需与bot交互需要指定atuser_ids和robot
 
@@ -2494,16 +2459,17 @@ class Client:
         Returns:
             BoolResponse: True成功 False失败
         """
+
         async def _ensure_user_info():
-            required_attrs = ['user_id', 'portrait']
+            required_attrs = ["user_id", "portrait"]
             max_retries = 3
 
             for _ in range(max_retries + 1):
-                if all([getattr(self._user, attr) for attr in required_attrs]):
+                if all(getattr(self._user, attr) for attr in required_attrs):
                     return
                 await self.get_self_info()
 
-            raise ValueError('登录失败')
+            raise ValueError("登录失败")
 
         await _ensure_user_info()
         if self._blcp_core.status != 1:
@@ -2523,16 +2489,29 @@ class Client:
                     userforAt = await self._get_uinfo_profile(user_id)
 
                 atdata.append({
-                    'at_type': 'user',
-                    'at_baidu_uk': self._blcp_core.getBDUKfromUserId(str(user_id)),
-                    'at_name': userforAt.nick_name,
-                    'at_portrait': userforAt.portrait,
-                    'position': str(count)
+                    "at_type": "user",
+                    "at_baidu_uk": self._blcp_core.getBDUKfromUserId(str(user_id)),
+                    "at_name": userforAt.nick_name,
+                    "at_portrait": userforAt.portrait,
+                    "position": str(count),
                 })
 
-        return await send_chatroom_msg.request(self._blcp_core, chatroom_id, self._user.uk, self._user.user_id,
-                                               self._user.trigger_id, self._user.nick_name,
-                                               self._user.portrait, text, forum_id, level, isvip, glevel, atdata, robot=robotc)
+        return await send_chatroom_msg.request(
+            self._blcp_core,
+            chatroom_id,
+            self._user.uk,
+            self._user.user_id,
+            self._user.trigger_id,
+            self._user.nick_name,
+            self._user.portrait,
+            text,
+            forum_id,
+            level,
+            isvip,
+            glevel,
+            atdata,
+            robot=robotc,
+        )
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def _init_blcp(self):
@@ -2558,7 +2537,7 @@ class Client:
             Level: 等级
         """
 
-        if not self._user.user_id: # 检查是否登陆
+        if not self._user.user_id:  # 检查是否登陆
             await self.get_self_info()
 
         return await get_forum_level.request_http(self._http_core, forum_id)
@@ -2575,7 +2554,7 @@ class Client:
             list[dict]: 群信息
         """
 
-        if not self._user.user_id: # 检查是否登陆
+        if not self._user.user_id:  # 检查是否登陆
             await self.get_self_info()
 
         return await get_roomlist_by_fid.request(self._http_core, forum_id)

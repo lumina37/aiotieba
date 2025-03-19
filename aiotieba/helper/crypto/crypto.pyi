@@ -56,8 +56,7 @@ def sign(data: list[tuple[str, str | int]]) -> str:
         str: 签名
     """
 
-
-def enuid(cuid2: str) -> str:
+def enuid(cuid_galaxy2: str) -> str:
     """
     生成EnUid
 

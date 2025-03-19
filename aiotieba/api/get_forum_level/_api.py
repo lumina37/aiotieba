@@ -1,15 +1,13 @@
-import aiohttp
 import yarl
 
-from ._classdef import LevelInfo
 from ...const import APP_BASE_HOST, MAIN_VERSION
-
+from ...core import Account, HttpCore, WsCore
 from ...exception import TiebaServerError
-
-from ...core import HttpCore, Account, WsCore
+from ._classdef import LevelInfo
 from .protobuf import GetLevelInfoReqIdl_pb2, GetLevelInfoResIdl_pb2
 
 CMD = 301005
+
 
 def pack_proto(account: Account, fid: int) -> bytes:
     req_proto = GetLevelInfoReqIdl_pb2.GetLevelInfoReqIdl()
@@ -37,9 +35,7 @@ async def request_http(http_core: HttpCore, forum_id: int) -> LevelInfo:
     data = pack_proto(http_core.account, forum_id)
 
     request = http_core.pack_proto_request(
-        yarl.URL.build(
-            scheme="https", host=APP_BASE_HOST, path="/c/f/forum/getLevelInfo", query_string=f"cmd={CMD}"
-        ),
+        yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/f/forum/getLevelInfo", query_string=f"cmd={CMD}"),
         data,
     )
 

@@ -1,39 +1,36 @@
 from __future__ import annotations
 
 import asyncio
+import base64
+import dataclasses as dcs
 import gzip
 import json
 import random
 import socket
-import urllib.parse
-import weakref
-from hashlib import md5
-from sys import maxsize as LongMax
 import ssl
 import time
-import dataclasses as dcs
-from asyncio import StreamReader, StreamWriter, IncompleteReadError, Queue
+import urllib.parse
+import weakref
+from asyncio import IncompleteReadError, Queue, StreamReader, StreamWriter
+from hashlib import md5
+from sys import maxsize as LongMax
+from typing import TYPE_CHECKING
 
 import aiohttp
 import yarl
-
-from ..const import CHAT_VERSION, CHAT_APPID, CHAT_SDK_VERSION
-from ..helper.crypto import enuid
-
-from ..api._classdef import UserInfo
-
-from .net import NetCore
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-import base64
 
-from ..helper import timeout
-
-from .account import Account
-
+from ..api._protobuf import Lcm_pb2, Rpc_pb2
 from ..config import ProxyConfig, TimeoutConfig
+from ..const import CHAT_APPID, CHAT_SDK_VERSION, CHAT_VERSION
+from ..helper import timeout
+from ..helper.crypto import enuid
 
-from ..api._protobuf import Rpc_pb2, Lcm_pb2
+if TYPE_CHECKING:
+    from ..api._classdef import UserInfo
+    from .account import Account
+    from .net import NetCore
 
 
 @dcs.dataclass
@@ -62,16 +59,15 @@ class BLCPCore:
     heartbeater: asyncio.Task
 
     def __init__(
-            self,
-            proxy: ProxyConfig | None = None,
-            timeout: TimeoutConfig | None = None,
-            loop: asyncio.AbstractEventLoop = None,
-            net_core: NetCore = None,
-            account: Account = None,
-            user: UserInfo = None,
-            max_queue_length: int = 100
+        self,
+        proxy: ProxyConfig | None = None,
+        timeout: TimeoutConfig | None = None,
+        loop: asyncio.AbstractEventLoop = None,
+        net_core: NetCore = None,
+        account: Account = None,
+        user: UserInfo = None,
+        max_queue_length: int = 100,
     ) -> None:
-
         if not isinstance(proxy, ProxyConfig):
             proxy = ProxyConfig()
         self.proxy = proxy
@@ -96,7 +92,6 @@ class BLCPCore:
         self.account = new_account
 
     async def connect(self) -> None:
-
         self.waiter = BLCPWaiter(5)
 
         context = ssl.create_default_context()
@@ -106,7 +101,8 @@ class BLCPCore:
 
         try:
             reader, writer = await asyncio.open_connection(
-                'common.lcs.baidu.com', 443, ssl=context, family=socket.AF_INET)  # 实际上可以支持ipv6
+                "common.lcs.baidu.com", 443, ssl=context, family=socket.AF_INET
+            )  # 实际上可以支持ipv6
         except BaseException:
             raise
         else:
@@ -127,8 +123,9 @@ class BLCPCore:
 
         # 握手
         loginBLCPRequest = BLCPData(serviceId=1, methodId=1)
-        loginBLCPRequest.RpcBody = self.buildRpcBody(serviceId=1, methodId=1,
-                                                     correlationId=loginBLCPRequest.correlationId, need_common=1)
+        loginBLCPRequest.RpcBody = self.buildRpcBody(
+            serviceId=1, methodId=1, correlationId=loginBLCPRequest.correlationId, need_common=1
+        )
         LcmBody = Lcm_pb2.RpcData()
         LcmBody.lcm_request.log_id = loginBLCPRequest.correlationId
         LcmBody.lcm_request.token = blcp_token
@@ -149,10 +146,10 @@ class BLCPCore:
         try:
             rpc, lcm = ClientBLCPResponses.parseBLCPResponse(reps.toBytes())
         except:
-            raise Exception('BLCP Handshake error.')  # todo: 特殊的握手错误
+            raise Exception("BLCP Handshake error.")  # todo: 特殊的握手错误
 
-        if rpc.response.error_text != 'success' or lcm.lcm_response.error_msg != 'success':
-            raise Exception('BLCP Handshake error.')  # todo: 特殊的握手错误
+        if rpc.response.error_text != "success" or lcm.lcm_response.error_msg != "success":
+            raise Exception("BLCP Handshake error.")  # todo: 特殊的握手错误
 
         # 第二部分登陆
         # 构造部分位于 com.baidu.searchbox.cloudcontrolblcp.CloudControlBlCPManager
@@ -164,17 +161,28 @@ class BLCPCore:
         login_from = "1008550l"  # baidu_imsdk_common_data.xml
         cfrom = login_from
         c3_aid = self.account.c3_aid
-        reqdict = {"params": {"appname": "tieba",
-                              "sid": sid,
-                              "ua": ua,
-                              "uid": uid, "cfrom": cfrom,
-                              "from": login_from, "network": "1_-1", "p_sv": "32", "mps": "", "mpv": "1",
-                              "c3_aid": c3_aid, "type_id": "0"},
-                   "filter": {"aps": {"cpu_abi": "armeabi-v7a"}, "command": {"step": "0"}}}
+        reqdict = {
+            "params": {
+                "appname": "tieba",
+                "sid": sid,
+                "ua": ua,
+                "uid": uid,
+                "cfrom": cfrom,
+                "from": login_from,
+                "network": "1_-1",
+                "p_sv": "32",
+                "mps": "",
+                "mpv": "1",
+                "c3_aid": c3_aid,
+                "type_id": "0",
+            },
+            "filter": {"aps": {"cpu_abi": "armeabi-v7a"}, "command": {"step": "0"}},
+        }
 
         loginBLCPRequest = BLCPData(serviceId=4, methodId=1)
-        loginBLCPRequest.RpcBody = self.buildRpcBody(serviceId=4, methodId=1,
-                                                     correlationId=loginBLCPRequest.correlationId)
+        loginBLCPRequest.RpcBody = self.buildRpcBody(
+            serviceId=4, methodId=1, correlationId=loginBLCPRequest.correlationId
+        )
         loginBLCPRequest.LcmBody = json.dumps(reqdict).encode()
         response = self.waiter.new(loginBLCPRequest.correlationId)
         self.writer.write(loginBLCPRequest.toBytes())
@@ -183,29 +191,47 @@ class BLCPCore:
         try:
             rpc, lcm = ClientBLCPResponses.parseBLCPResponse(reps.toBytes())
         except:
-            raise Exception('BLCP Handshake error.')  # todo: 特殊的握手错误
+            raise Exception("BLCP Handshake error.")  # todo: 特殊的握手错误
 
-        if rpc.response.error_text != 'success' or lcm.get('errno') != '0':
-            raise Exception('BLCP Handshake error.')  # todo: 特殊的握手错误
+        if rpc.response.error_text != "success" or lcm.get("errno") != "0":
+            raise Exception("BLCP Handshake error.")  # todo: 特殊的握手错误
 
         loginBLCPRequest = BLCPData(serviceId=2, methodId=50)
         loginBLCPRequest.correlationId = 2000003149381050
-        loginBLCPRequest.RpcBody = self.buildRpcBody(serviceId=2, methodId=50,
-                                                     correlationId=loginBLCPRequest.correlationId)
+        loginBLCPRequest.RpcBody = self.buildRpcBody(
+            serviceId=2, methodId=50, correlationId=loginBLCPRequest.correlationId
+        )
 
         client_identifier = {"zid": "", "version_code": ""}  # 待完善，目前可以不携带zid
         cookie = ""  # 待完善，目前可以不携带cookie
         token = self.account.BDUSS
 
-        reqdict = {"method": 50, "appid": CHAT_APPID, "device_id": "android_" + cuid_galaxy2,
-                   "account_type": 1,
-                   "token": token,
-                   "version": 4, "sdk_version": CHAT_SDK_VERSION, "app_version": CHAT_VERSION, "app_open_type": 0,
-                   "client_identifier": json.dumps(client_identifier), "tail": 0, "timeout": 10, "cookie": cookie,
-                   "device_info": {"app_version": CHAT_VERSION, "os_version": "32", "platform": "android", "appid":
-                       str(CHAT_APPID), "from": login_from, "cfrom": cfrom},
-                   "rpc": json.dumps({"rpc_retry_time": 0}), "user_type": 0,
-                   "client_logid": int(time.time() * 1000 * 1000)}
+        reqdict = {
+            "method": 50,
+            "appid": CHAT_APPID,
+            "device_id": "android_" + cuid_galaxy2,
+            "account_type": 1,
+            "token": token,
+            "version": 4,
+            "sdk_version": CHAT_SDK_VERSION,
+            "app_version": CHAT_VERSION,
+            "app_open_type": 0,
+            "client_identifier": json.dumps(client_identifier),
+            "tail": 0,
+            "timeout": 10,
+            "cookie": cookie,
+            "device_info": {
+                "app_version": CHAT_VERSION,
+                "os_version": "32",
+                "platform": "android",
+                "appid": str(CHAT_APPID),
+                "from": login_from,
+                "cfrom": cfrom,
+            },
+            "rpc": json.dumps({"rpc_retry_time": 0}),
+            "user_type": 0,
+            "client_logid": int(time.time() * 1000 * 1000),
+        }
 
         loginBLCPRequest.LcmBody = json.dumps(reqdict).encode()
         response = self.waiter.new(loginBLCPRequest.correlationId)
@@ -215,17 +241,17 @@ class BLCPCore:
         try:
             rpc, lcm = ClientBLCPResponses.parseBLCPResponse(reps.toBytes())
         except:
-            raise Exception('BLCP Handshake error.')  # todo: 特殊的握手错误
+            raise Exception("BLCP Handshake error.")  # todo: 特殊的握手错误
 
-        if rpc.response.error_text != 'success' or lcm.get('err_code') != 0:
-            raise Exception('BLCP Handshake error.')  # todo: 特殊的握手错误
+        if rpc.response.error_text != "success" or lcm.get("err_code") != 0:
+            raise Exception("BLCP Handshake error.")  # todo: 特殊的握手错误
 
         rep = json.loads(reps.LcmBody)
 
-        self.user.trigger_id = rep['trigger_id'][0]
-        self.user.uk = rep['uk']
-        self.user.bduk = rep['bd_uid']
-        self.login_id = rep['login_id']
+        self.user.trigger_id = rep["trigger_id"][0]
+        self.user.uk = rep["uk"]
+        self.user.bduk = rep["bd_uid"]
+        self.login_id = rep["login_id"]
 
         self.status = 1
 
@@ -234,7 +260,7 @@ class BLCPCore:
             "Content-Type": "application/json",
             "Accept-Encoding": "gzip",
             "User-Agent": "okhttp/3.11.0",
-            "Host": "pim.baidu.com"
+            "Host": "pim.baidu.com",
         }
         request_id = str(int(time.time() * 1000))
         ts = int(time.time() * 1000)
@@ -249,7 +275,7 @@ class BLCPCore:
             "sdk_version": "3460016",
             "sign": md5((str(CHAT_APPID) + cuid_galaxy2 + "android" + str(ts)).encode()).hexdigest(),  # appid
             "ts": ts,
-            "user_key": ""
+            "user_key": "",
         }
         request = aiohttp.ClientRequest(
             "POST",
@@ -258,15 +284,15 @@ class BLCPCore:
             # proxy=self.net_core.proxy.url,
             # proxy_auth=self.net_core.proxy.auth,
             # ssl=False,
-            data=json.dumps(data)
+            data=json.dumps(data),
         )  # todo: 支持代理
 
         try:
             response = await self.net_core.req2res(request, False, 2 * 1024)
             rjson = await response.json()
-            return rjson['token']
+            return rjson["token"]
         except Exception:
-            return ''
+            return ""
 
     async def groupchat(self):  # 模拟正常请求，暂不清楚作用
         headers = {
@@ -274,11 +300,15 @@ class BLCPCore:
             "Accept-Encoding": "gzip",
             "User-Agent": "okhttp/3.11.0",
             "Host": "pim.baidu.com",
-            "Cookie": "BDUSS=" + self.account.BDUSS
+            "Cookie": "BDUSS=" + self.account.BDUSS,
         }
         ts = int(time.time())
-        data = {"method": "get_joined_groups", "appid": CHAT_APPID, "timestamp": ts,
-                'sign': md5((str(ts) + self.account.BDUSS + str(CHAT_APPID)).encode()).hexdigest()}
+        data = {
+            "method": "get_joined_groups",
+            "appid": CHAT_APPID,
+            "timestamp": ts,
+            "sign": md5((str(ts) + self.account.BDUSS + str(CHAT_APPID)).encode()).hexdigest(),
+        }
         request = aiohttp.ClientRequest(
             "POST",
             yarl.URL.build(scheme="https", host="pim.baidu.com", path="/rest/2.0/im/groupchat", port=443),
@@ -286,14 +316,14 @@ class BLCPCore:
             # proxy=self.net_core.proxy.url,
             # proxy_auth=self.net_core.proxy.auth,
             # ssl=False,
-            data=urllib.parse.urlencode(data)
+            data=urllib.parse.urlencode(data),
         )  # todo: 支持代理
 
         try:
             response = await self.net_core.req2res(request, False, 2 * 1024)
-            rjson = await response.json()
+            await response.json()
         except Exception:
-            return ''
+            return ""
 
     async def groupchatv1(self):  # 模拟正常请求，暂不清楚作用
         headers = {
@@ -301,14 +331,21 @@ class BLCPCore:
             "Accept-Encoding": "gzip",
             "User-Agent": "okhttp/3.11.0",
             "Host": "pim.baidu.com",
-            "Cookie": "BDUSS=" + self.account.BDUSS
+            "Cookie": "BDUSS=" + self.account.BDUSS,
         }
         ts = int(time.time())
-        data = {"method": "get_joined_groups", "group_type": 3, "appid": CHAT_APPID, "source": 0,
-                "cuid": self.account.cuid_galaxy2, "app_version": CHAT_VERSION, "sdk_version": str(CHAT_SDK_VERSION),
-                "timestamp": ts,
-                "device_type": 2,
-                'sign': md5((str(ts) + self.account.BDUSS + str(CHAT_APPID)).encode()).hexdigest()}
+        data = {
+            "method": "get_joined_groups",
+            "group_type": 3,
+            "appid": CHAT_APPID,
+            "source": 0,
+            "cuid": self.account.cuid_galaxy2,
+            "app_version": CHAT_VERSION,
+            "sdk_version": str(CHAT_SDK_VERSION),
+            "timestamp": ts,
+            "device_type": 2,
+            "sign": md5((str(ts) + self.account.BDUSS + str(CHAT_APPID)).encode()).hexdigest(),
+        }
         request = aiohttp.ClientRequest(
             "POST",
             yarl.URL.build(scheme="https", host="pim.baidu.com", path="/rest/2.0/im/groupchatv1", port=443),
@@ -316,28 +353,28 @@ class BLCPCore:
             # proxy=self.net_core.proxy.url,
             # proxy_auth=self.net_core.proxy.auth,
             # ssl=False,
-            data=urllib.parse.urlencode(data)
+            data=urllib.parse.urlencode(data),
         )  # todo: 支持代理
 
         try:
             response = await self.net_core.req2res(request, False, 2 * 1024)
-            rjson = await response.json()
+            await response.json()
         except Exception:
-            return ''
+            return ""
 
     @staticmethod
     def getBDUKfromUserId(user_id: str):
         padder = padding.PKCS7(algorithms.AES.block_size).padder()
         padded_req_body = padder.update(user_id.encode()) + padder.finalize()
 
-        aes_encryptor = Cipher(algorithms.AES(b"AFD311832EDEEAEF"), modes.CBC(b'2011121211143000')).encryptor()
+        aes_encryptor = Cipher(algorithms.AES(b"AFD311832EDEEAEF"), modes.CBC(b"2011121211143000")).encryptor()
         req_body_aes = aes_encryptor.update(padded_req_body) + aes_encryptor.finalize()
 
-        return base64.urlsafe_b64encode(req_body_aes).strip(b'=').decode()
+        return base64.urlsafe_b64encode(req_body_aes).strip(b"=").decode()
 
     @staticmethod
     def getmsgkey(bduk: str):
-        return bduk + str(int(time.time() * 1000) * 1000) + '{}'.format(random.randint(-LongMax, LongMax))
+        return bduk + str(int(time.time() * 1000) * 1000) + f"{random.randint(-LongMax, LongMax)}"
 
     @staticmethod
     def buildRpcBody(serviceId, methodId, correlationId, compress_type=0, need_common=1):
@@ -367,25 +404,33 @@ class BLCPCore:
             self.waiter.set_done(msg.correlationId, msg)
             # todo: 加上callbacks以处理服务端主动发送的消息，如群聊消息等。获取群聊消息推送需要先发包绑定群聊。
             if msg.isNotify:
-                rpc, lcm = ClientBLCPResponses.parseBLCPResponse(msg.toBytes())  # todo:优化。这里在解码后又编码再解码了一次
+                rpc, lcm = ClientBLCPResponses.parseBLCPResponse(
+                    msg.toBytes()
+                )  # todo:优化。这里在解码后又编码再解码了一次
                 if self.message_queue.full():
                     await self.message_queue.get()  # 队满自动丢弃
                 await self.message_queue.put(lcm)
 
         self.status = -1
-        raise Exception('IM服务端断开连接')
+        raise Exception("IM服务端断开连接")
 
     async def joinChatRoom(self, chatroom_id: int) -> bool:
         if self.status != 1:
             raise Exception("IM未登陆")
         request = BLCPData(serviceId=3, methodId=201)  # 加入Chatroom的请求
-        request.RpcBody = self.buildRpcBody(serviceId=3, methodId=201,
-                                            correlationId=request.correlationId)
-        reqdict = {"method": 201, "mcast_id": chatroom_id, "appid": CHAT_APPID, "uk": self.user.uk,
-                   "origin_id": self.user.trigger_id,
-                   "msg_key": "k" + str(int(time.time() * 100000)), "sdk_version": CHAT_SDK_VERSION,
-                   "is_reliable": False,
-                   "client_logid": int(time.time() * 1000 * 1000), "rpc": json.dumps({"rpc_retry_time": 0})}
+        request.RpcBody = self.buildRpcBody(serviceId=3, methodId=201, correlationId=request.correlationId)
+        reqdict = {
+            "method": 201,
+            "mcast_id": chatroom_id,
+            "appid": CHAT_APPID,
+            "uk": self.user.uk,
+            "origin_id": self.user.trigger_id,
+            "msg_key": "k" + str(int(time.time() * 100000)),
+            "sdk_version": CHAT_SDK_VERSION,
+            "is_reliable": False,
+            "client_logid": int(time.time() * 1000 * 1000),
+            "rpc": json.dumps({"rpc_retry_time": 0}),
+        }
         request.LcmBody = json.dumps(reqdict).encode()
         response = self.waiter.new(request.correlationId)
         self.writer.write(request.toBytes())
@@ -394,11 +439,11 @@ class BLCPCore:
         try:
             rpc, lcm = ClientBLCPResponses.parseBLCPResponse(reps.toBytes())
         except:
-            raise Exception('BLCP Handshake error.')  # todo: 特殊的握手错误
-        if rpc.response.error_text != 'success' or lcm.get('err_code') != 0:
-            raise Exception('BLCP Handshake error.')  # todo: 特殊的握手错误
+            raise Exception("BLCP Handshake error.")  # todo: 特殊的握手错误
+        if rpc.response.error_text != "success" or lcm.get("err_code") != 0:
+            raise Exception("BLCP Handshake error.")  # todo: 特殊的握手错误
 
-        ret = await self.fetch_mcast_msg_client_request(self.account.cuid_galaxy2, chatroom_id)  # todo:获取历史消息
+        await self.fetch_mcast_msg_client_request(self.account.cuid_galaxy2, chatroom_id)  # todo:获取历史消息
 
         if self.heartbeater is not None and not self.heartbeater.done():
             self.heartbeater.cancel()
@@ -418,82 +463,101 @@ class BLCPCore:
 
     async def heartbeat(self):
         request = BLCPData(serviceId=1, methodId=3)
-        request.RpcBody = self.buildRpcBody(serviceId=1, methodId=3,
-                                            correlationId=request.correlationId)
+        request.RpcBody = self.buildRpcBody(serviceId=1, methodId=3, correlationId=request.correlationId)
         LcmBody = Lcm_pb2.RpcData()
         LcmBody.lcm_request.log_id = request.correlationId
         LcmBody.lcm_request.timestamp = request.timestamp
         request.LcmBody = LcmBody.SerializeToString()
         self.writer.write(request.toBytes())
 
-    async def enter_chatroom_client_request(self, cuid_galaxy2: str, room_id: int,
-                                            account_type: int = 1):  # 模拟正常请求，暂不清楚作用
+    async def enter_chatroom_client_request(
+        self, cuid_galaxy2: str, room_id: int, account_type: int = 1
+    ):  # 模拟正常请求，暂不清楚作用
         headers = {
             "Content-Type": "application/json",
             "Accept-Encoding": "gzip",
             "User-Agent": "okhttp/3.11.0",
             "Host": "pim.baidu.com",
-            "Cookie": "BDUSS=" + self.account.BDUSS
+            "Cookie": "BDUSS=" + self.account.BDUSS,
         }
-        data = {"appid": CHAT_APPID, "room_id": room_id, "app_version": CHAT_VERSION,
-                "cuid": cuid_galaxy2,
-                "device_id": cuid_galaxy2, "sdk_version": CHAT_SDK_VERSION,
-                "timestamp": int(time.time()), "account_type": account_type}
-        data['sign'] = generate_sign(data)
+        data = {
+            "appid": CHAT_APPID,
+            "room_id": room_id,
+            "app_version": CHAT_VERSION,
+            "cuid": cuid_galaxy2,
+            "device_id": cuid_galaxy2,
+            "sdk_version": CHAT_SDK_VERSION,
+            "timestamp": int(time.time()),
+            "account_type": account_type,
+        }
+        data["sign"] = generate_sign(data)
 
         request = aiohttp.ClientRequest(
             "POST",
-            yarl.URL.build(scheme="https", host="pim.baidu.com", path="/rest/3.0/im/chatroom/enter_chatroom_client",
-                           port=443),
+            yarl.URL.build(
+                scheme="https", host="pim.baidu.com", path="/rest/3.0/im/chatroom/enter_chatroom_client", port=443
+            ),
             headers=headers,
             # proxy=self.net_core.proxy.url,
             # proxy_auth=self.net_core.proxy.auth,
             # ssl=False,
-            data=json.dumps(data)
+            data=json.dumps(data),
         )  # todo: 支持代理
 
         try:
             response = await self.net_core.req2res(request, False, 2 * 1024)
-            res = await response.read()
+            await response.read()
             rjson = await response.json()
         except:
-            raise Exception('进入群聊失败.')
+            raise Exception("进入群聊失败.")
         return rjson
 
-    async def fetch_mcast_msg_client_request(self, cuid_galaxy2: str, room_id: int,
-                                             account_type: int = 1):  # 该方法可以获取历史消息，暂未继续开发
+    async def fetch_mcast_msg_client_request(
+        self, cuid_galaxy2: str, room_id: int, account_type: int = 1
+    ):  # 该方法可以获取历史消息，暂未继续开发
         headers = {
             "Content-Type": "application/json",
             "Accept-Encoding": "gzip",
             "User-Agent": "okhttp/3.11.0",
             "Host": "pim.baidu.com",
-            "Cookie": "BDUSS=" + self.account.BDUSS
+            "Cookie": "BDUSS=" + self.account.BDUSS,
         }
-        data = {"appid": CHAT_APPID, "mcast_id": room_id, "msgid_begin": 0, "msgid_end": 9223372036854775807,
-                "count": -60, "category": 4, "app_version": CHAT_VERSION, "sdk_version": CHAT_SDK_VERSION,
-                "device_id": cuid_galaxy2, "device_type": 2, "from_action": 1,
-                "ext_info": urllib.parse.quote(
-                    json.dumps({"last_callback_msg_id": 0, "cast_id": 0, "local_ts": 0, "latest_msg_id": 0})),
-                "timestamp": int(time.time()), "account_type": account_type}
-        data['sign'] = generate_sign(data)
+        data = {
+            "appid": CHAT_APPID,
+            "mcast_id": room_id,
+            "msgid_begin": 0,
+            "msgid_end": 9223372036854775807,
+            "count": -60,
+            "category": 4,
+            "app_version": CHAT_VERSION,
+            "sdk_version": CHAT_SDK_VERSION,
+            "device_id": cuid_galaxy2,
+            "device_type": 2,
+            "from_action": 1,
+            "ext_info": urllib.parse.quote(
+                json.dumps({"last_callback_msg_id": 0, "cast_id": 0, "local_ts": 0, "latest_msg_id": 0})
+            ),
+            "timestamp": int(time.time()),
+            "account_type": account_type,
+        }
+        data["sign"] = generate_sign(data)
 
         request = aiohttp.ClientRequest(
             "POST",
-            yarl.URL.build(scheme="https", host="pim.baidu.com", path="/rest/3.0/im/fetch_mcast_msg_client",
-                           port=443),
+            yarl.URL.build(scheme="https", host="pim.baidu.com", path="/rest/3.0/im/fetch_mcast_msg_client", port=443),
             headers=headers,
             # proxy=self.net_core.proxy.url,
             # proxy_auth=self.net_core.proxy.auth,
             # ssl=False,
-            data=json.dumps(data)
+            data=json.dumps(data),
         )  # todo: 支持代理
 
         try:
             response = await self.net_core.req2res(request, False, 2 * 1024)
-            res = await response.read()
+            await response.read()
             rjson = await response.json()
         except:
-            raise Exception('进入群聊失败.')
+            raise Exception("进入群聊失败.")
         return rjson
 
 
@@ -508,7 +572,7 @@ def generate_sign(json_obj):
     sign_str = "".join(f"{key}={value}" for key, value in sorted_items)
 
     # 计算MD5签名
-    return md5(sign_str.encode('utf-8')).hexdigest()
+    return md5(sign_str.encode("utf-8")).hexdigest()
 
 
 @dcs.dataclass
@@ -522,8 +586,16 @@ class BLCPData:
     correlationId: int
     isNotify: bool
 
-    def __init__(self, serviceId: int, methodId: int, RpcBody: bytes = None, LcmBody: bytes = None,
-                 timestamp: int = None, ifRequest: bool = True, isNotify: bool = False):
+    def __init__(
+        self,
+        serviceId: int,
+        methodId: int,
+        RpcBody: bytes = None,
+        LcmBody: bytes = None,
+        timestamp: int = None,
+        ifRequest: bool = True,
+        isNotify: bool = False,
+    ):
         self.serviceId = serviceId
         self.methodId = methodId
         self.RpcBody = RpcBody
@@ -540,9 +612,9 @@ class BLCPData:
 
     def toBytes(self):
         buffer = bytearray()
-        buffer.extend(b'lcp\x01')
-        buffer.extend(int.to_bytes(len(self.RpcBody) + len(self.LcmBody), 4, 'big'))
-        buffer.extend(int.to_bytes(len(self.RpcBody), 4, 'big'))
+        buffer.extend(b"lcp\x01")
+        buffer.extend(int.to_bytes(len(self.RpcBody) + len(self.LcmBody), 4, "big"))
+        buffer.extend(int.to_bytes(len(self.RpcBody), 4, "big"))
         buffer.extend(self.RpcBody)
         buffer.extend(self.LcmBody)
 
@@ -550,30 +622,28 @@ class BLCPData:
 
 
 class ClientBLCPResponses:
-
     def __init__(self, reader: StreamReader, writer: StreamWriter):
         self.reader = reader
         self.writer = writer
 
-    def __aiter__(self) -> "ClientBLCPResponses":
+    def __aiter__(self) -> ClientBLCPResponses:
         return self
 
     async def __anext__(self):
         rBytes = bytearray()
         try:
-            rBytes += await self.reader.readuntil(b'lcp\x01')
+            rBytes += await self.reader.readuntil(b"lcp\x01")
         except IncompleteReadError:
             raise StopAsyncIteration("BLCP连接被关闭")  # 连接被关闭，reader会得到EOF返回空字节而不是阻塞。
         else:
             length_bytes = await self.reader.read(8)
             rBytes += length_bytes
-            all_length = int.from_bytes(length_bytes[0:4], byteorder='big')
+            all_length = int.from_bytes(length_bytes[0:4], byteorder="big")
             rBytes += await self.reader.read(all_length)
 
         try:
             RpcMeta, Lcm = self.parseBLCPResponse(rBytes)
         except:
-            print("BLCP响应解析失败")
             return None
         RpcMeta: Rpc_pb2.RpcMeta
         if not RpcMeta or not Lcm:
@@ -581,7 +651,6 @@ class ClientBLCPResponses:
         service_id = RpcMeta.response.service_id
         method_id = RpcMeta.response.method_id
         correlation_id = RpcMeta.correlation_id
-
 
         responseBLCP = BLCPData(serviceId=service_id, methodId=method_id)
         responseBLCP.correlationId = correlation_id
@@ -597,12 +666,10 @@ class ClientBLCPResponses:
 
         return responseBLCP
 
-    async def __aenter__(self) -> "ClientBLCPResponses":
+    async def __aenter__(self) -> ClientBLCPResponses:
         return self
 
-    async def __aexit__(
-            self
-    ) -> None:
+    async def __aexit__(self) -> None:
         await self.close()
 
     async def close(self):
@@ -610,16 +677,15 @@ class ClientBLCPResponses:
 
     @staticmethod
     def parseBLCPResponse(receivedBytes: bytes) -> (Rpc_pb2.RpcMeta, Lcm_pb2.RpcData):
-
         if len(receivedBytes) < 4:
             return None, None
-        if receivedBytes[0:4] != b'lcp\x01':
+        if receivedBytes[0:4] != b"lcp\x01":
             return None, None
 
         # 跳过lcp和1
         receivedBytes = receivedBytes[4:]
-        b1 = int.from_bytes(receivedBytes[0:4], byteorder='big')
-        b2 = int.from_bytes(receivedBytes[4:8], byteorder='big')
+        b1 = int.from_bytes(receivedBytes[0:4], byteorder="big")
+        b2 = int.from_bytes(receivedBytes[4:8], byteorder="big")
         receivedBytes = receivedBytes[8:]
 
         barr1 = receivedBytes[0:b2]
@@ -651,13 +717,13 @@ class ClientBLCPResponses:
 @dcs.dataclass
 class BLCPResponse:
     """
-        BLCP响应
+    BLCP响应
 
-        Args:
-            future (asyncio.Future): 用于等待读事件到来的Future
-            req_id (int): 请求id
-            read_timeout (float): 读超时时间
-        """
+    Args:
+        future (asyncio.Future): 用于等待读事件到来的Future
+        req_id (int): 请求id
+        read_timeout (float): 读超时时间
+    """
 
     loop: asyncio.AbstractEventLoop
     future: asyncio.Future
