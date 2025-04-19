@@ -34,7 +34,7 @@ async def request_http(http_core: HttpCore, user_id: int, btype: BlacklistType) 
     data = pack_proto(http_core.account, user_id, btype)
 
     request = http_core.pack_proto_request(
-        yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/c/user/setUserBlack", query_string=f"cmd={CMD}"),
+        yarl.URL.build(scheme="http", host=APP_BASE_HOST, path="/c/c/user/setUserBlack", query_string=f"cmd={CMD}"),
         data,
     )
 

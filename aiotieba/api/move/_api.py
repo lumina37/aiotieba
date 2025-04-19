@@ -22,7 +22,7 @@ async def request(http_core: HttpCore, fid: int, tid: int, to_tab_id: int, from_
     ]
 
     request = http_core.pack_form_request(
-        yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/c/bawu/moveTabThread"), data
+        yarl.URL.build(scheme="http", host=APP_BASE_HOST, path="/c/c/bawu/moveTabThread"), data
     )
 
     body = await http_core.net_core.send_request(request, read_bufsize=1024)

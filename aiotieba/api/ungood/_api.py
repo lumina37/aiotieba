@@ -22,7 +22,7 @@ async def request(http_core: HttpCore, fname: str, fid: int, tid: int) -> BoolRe
     ]
 
     request = http_core.pack_form_request(
-        yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/c/bawu/commitgood"), data
+        yarl.URL.build(scheme="http", host=APP_BASE_HOST, path="/c/c/bawu/commitgood"), data
     )
 
     body = await http_core.net_core.send_request(request, read_bufsize=1024)

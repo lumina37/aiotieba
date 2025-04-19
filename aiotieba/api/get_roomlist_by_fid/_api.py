@@ -24,7 +24,7 @@ async def request(http_core: HttpCore, fid: int) -> RoomList:
     ]
 
     request = http_core.pack_form_request(
-        yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/f/chat/getRoomListByFid"),
+        yarl.URL.build(scheme="http", host=APP_BASE_HOST, path="/c/f/chat/getRoomListByFid"),
         data,
     )
 
