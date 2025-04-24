@@ -35,7 +35,7 @@ jobs:
           ref: develop
 
       - name: Setup UV
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
         with:
           cache-dependency-glob: "pyproject.toml"
 
