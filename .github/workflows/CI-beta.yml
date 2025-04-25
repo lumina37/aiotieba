@@ -21,8 +21,6 @@ jobs:
 
       - name: Setup UV
         uses: astral-sh/setup-uv@v6
-        with:
-          cache-dependency-glob: "pyproject.toml"
 
       - name: Install dependencies
         run: |

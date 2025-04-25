@@ -33,7 +33,7 @@ jobs:
         run: uv sync --only-dev
 
       - name: Build
-        run: uv run mkdocs build -d site -s
+        run: uv run mkdocs build -d site
 
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3

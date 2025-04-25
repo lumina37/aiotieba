@@ -2324,7 +2324,7 @@ class Client:
         用户成长等级任务: 分享主题帖
 
         Returns:
-            bool: True成功 False失败
+            BoolResponse: True成功 False失败
         """
 
         await self.__init_tbs()
@@ -2445,7 +2445,7 @@ class Client:
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def send_chatroom_msg(
         self, chatroom_id: int, forum_id: int, text: str, atuser_ids: list[int] = None, robotc: int = -1
-    ):
+    ) -> BoolResponse:
         """
         向吧群发送信息，仅限简单文本。如需要@他人需要指定atuser_ids，如需与bot交互需要指定atuser_ids和robot
 
