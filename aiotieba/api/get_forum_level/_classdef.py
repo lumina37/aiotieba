@@ -1,7 +1,7 @@
 import dataclasses as dcs
 
-from ...exception import TbErrorExt
-from .._classdef import Containers, TypeMessage
+from .._classdef import TypeMessage
+
 
 @dcs.dataclass
 class LevelInfo:
@@ -25,4 +25,3 @@ class LevelInfo:
         level_name = data_proto.level_name
         is_like = data_proto.is_like
         return LevelInfo(level_name, user_level, is_like)
-

@@ -12,6 +12,7 @@ from .._classdef.contents import (
     FragEmoji,
     FragLink,
     FragText,
+    FragUnknown,
     FragVideo,
     FragVoice,
     TypeFragment,
@@ -272,9 +273,7 @@ class Contents_pf(Containers[TypeFragment]):
                 elif _type == 10:  # voice
                     continue
                 else:
-                    from ...logging import get_logger as LOG
-
-                    LOG().warning("Unknown fragment type. type=%s proto=%s", _type, proto)
+                    yield FragUnknown.from_tbdata(frag)
 
         objs = list(_frags())
         objs += imgs

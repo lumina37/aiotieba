@@ -30,7 +30,7 @@ async def request(http_core: HttpCore) -> tuple[str, str]:
         ("cuid", http_core.account.cuid_galaxy2),
     ]
 
-    request = http_core.pack_form_request(yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/s/sync"), data)
+    request = http_core.pack_form_request(yarl.URL.build(scheme="http", host=APP_BASE_HOST, path="/c/s/sync"), data)
 
     body = await http_core.net_core.send_request(request, read_bufsize=64 * 1024)
     return parse_body(body)

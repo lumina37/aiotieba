@@ -11,7 +11,7 @@ jobs:
     environment: develop
 
     env:
-      PYTHON_VERSION: "3.13"
+      PYTHON_VERSION: "3.14"
 
     steps:
       - name: Checkout develop
@@ -19,18 +19,13 @@ jobs:
         with:
           ref: develop
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
       - name: Setup UV
-        uses: astral-sh/setup-uv@v5
-        with:
-          cache-dependency-glob: "pyproject.toml"
+        uses: astral-sh/setup-uv@v6
 
       - name: Install dependencies
-        run: uv sync
+        run: |
+          uv python pin ${{ env.PYTHON_VERSION }}
+          uv sync
 
       - name: Run tests
         env:

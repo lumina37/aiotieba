@@ -35,12 +35,12 @@ jobs:
           ref: develop
 
       - name: Setup UV
-        uses: astral-sh/setup-uv@v5
-        with:
-          cache-dependency-glob: "pyproject.toml"
+        uses: astral-sh/setup-uv@v6
 
       - name: Install dependencies
-        run: uv sync -p ${{ matrix.python-version }}
+        run: |
+          uv python pin ${{ matrix.python-version }}
+          uv sync
 
       - name: Run tests
         env:

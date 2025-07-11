@@ -38,7 +38,7 @@ async def request_http(http_core: HttpCore, user_id: int, pn: int, public_only: 
     data = pack_proto(http_core.account, user_id, pn, public_only)
 
     request = http_core.pack_proto_request(
-        yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/u/feed/userpost", query_string=f"cmd={CMD}"),
+        yarl.URL.build(scheme="http", host=APP_BASE_HOST, path="/c/u/feed/userpost", query_string=f"cmd={CMD}"),
         data,
     )
 

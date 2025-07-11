@@ -9,6 +9,7 @@ from .contents import (
     FragLink,
     FragText,
     FragTiebaPlus,
+    FragUnknown,
     TypeFragAt,
     TypeFragEmoji,
     TypeFragImage,

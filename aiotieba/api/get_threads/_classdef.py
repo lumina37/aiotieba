@@ -13,6 +13,7 @@ from .._classdef.contents import (
     FragLink,
     FragText,
     FragTiebaPlus,
+    FragUnknown,
     FragVideo,
     FragVoice,
     TypeFragment,
@@ -152,9 +153,7 @@ class Contents_t(Containers[TypeFragment]):
                 elif _type == 34:
                     continue
                 else:
-                    from ...logging import get_logger as LOG
-
-                    LOG().warning("Unknown fragment type. type=%s proto=%s", _type, proto)
+                    yield FragUnknown.from_tbdata(frag)
 
         objs = list(_frags())
 
@@ -205,6 +204,8 @@ class Page_t:
     def from_tbdata(data_proto: TypeMessage) -> Page_t:
         page_size = data_proto.page_size
         current_page = data_proto.current_page
+        if current_page == 0 and page_size != 0:
+            current_page = 1
         total_page = data_proto.total_page
         total_count = data_proto.total_count
         has_more = bool(data_proto.has_more)
@@ -431,9 +432,7 @@ class Contents_st(Containers[TypeFragment]):
                 elif _type == 34:
                     continue
                 else:
-                    from ...logging import get_logger as LOG
-
-                    LOG().warning("Unknown fragment type. type=%s proto=%s", _type, proto)
+                    yield FragUnknown.from_tbdata(frag)
 
         objs = list(_frags())
 

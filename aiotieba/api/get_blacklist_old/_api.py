@@ -36,7 +36,7 @@ async def request_http(http_core: HttpCore, pn: int, rn: int) -> BlacklistOldUse
     data = pack_proto(http_core.account, pn, rn)
 
     request = http_core.pack_proto_request(
-        yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/u/user/userMuteQuery", query_string=f"cmd={CMD}"),
+        yarl.URL.build(scheme="http", host=APP_BASE_HOST, path="/c/u/user/userMuteQuery", query_string=f"cmd={CMD}"),
         data,
     )
 

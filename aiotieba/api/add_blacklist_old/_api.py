@@ -21,7 +21,7 @@ async def request(http_core: HttpCore, user_id: int) -> BoolResponse:
     ]
 
     request = http_core.pack_form_request(
-        yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/c/user/userMuteAdd"), data
+        yarl.URL.build(scheme="http", host=APP_BASE_HOST, path="/c/c/user/userMuteAdd"), data
     )
 
     body = await http_core.net_core.send_request(request, read_bufsize=1024)

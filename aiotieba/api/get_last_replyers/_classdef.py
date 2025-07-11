@@ -34,6 +34,8 @@ class Page_lp:
     def from_tbdata(data_proto: TypeMessage) -> Page_lp:
         page_size = data_proto.page_size
         current_page = data_proto.current_page
+        if current_page == 0 and page_size != 0:
+            current_page = 1
         total_page = data_proto.total_page
         total_count = data_proto.total_count
         has_more = bool(data_proto.has_more)

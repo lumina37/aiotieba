@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from ...exception import TbErrorExt
 from .._classdef import Containers
-from .._classdef.contents import _IMAGEHASH_EXP, TypeFragment, TypeFragText
+from .._classdef.contents import _IMAGEHASH_EXP, FragUnknown, TypeFragment, TypeFragText
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -92,9 +92,7 @@ class Contents_ri(Containers[TypeFragment]):
                 elif _type == 3:
                     continue
                 else:
-                    from ...logging import get_logger as LOG
-
-                    LOG().warning("Unknown fragment type. type=%s proto=%s", _type, cmap)
+                    yield FragUnknown.from_tbdata(cmap)
 
         objs = list(_frags())
         objs += imgs
