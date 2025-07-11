@@ -1,7 +1,7 @@
 #include "tbcrypto/bb64.h"
 
 #include <string.h>
-#include <malloc.h>
+#include <stdlib.h>
 
 #define LAST_IND(x,part_type)    (sizeof(x)/sizeof(part_type) - 1)
 #if defined(__BYTE_ORDER) && __BYTE_ORDER == __BIG_ENDIAN
