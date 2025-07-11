@@ -81,7 +81,7 @@ template = '''__version__ = "${version}"'''
 [tool.cibuildwheel]
 build = "cp39-* cp310-* cp311-* cp312-* cp313-* cp313t-* pp39-* pp310-* pp311-*"
 skip = "*-win32 *_i686 *_s390x *_ppc64le"
-enable = ["pypy", "cpython-freethreading"]
+enable = ["pypy", "pypy-eol", "cpython-freethreading"]
 
 [tool.ruff]
 line-length = 120
