@@ -63,9 +63,9 @@ build-backend = "scikit_build_core.build"
 [tool.uv]
 managed = true
 dev-dependencies = [
-  "pytest==8.3.5",
-  "pytest-asyncio==0.25.3",
-  "pytest-rerunfailures==15.0",
+  "pytest==8.4.1",
+  "pytest-asyncio==1.0.0",
+  "pytest-rerunfailures==15.1",
   "mkdocs-material",
   "mkdocstrings[python]",
 ]
