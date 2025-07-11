@@ -75,6 +75,7 @@ tid=8537699088 text=记录一下自己人生第一次当“老师”的经历^_^
 + [基于aiotieba的tieba bot](https://github.com/adk23333/BungleCat)
 + [基于aiotieba的贴吧管理器](https://github.com/adk23333/tieba-admin)
 + [C#版本的贴吧接口库](https://github.com/BaWuZhuShou/AioTieba4DotNet)
++ [贴吧第三方网页前端](https://0xacab.org/johnxina/rat)
 + [贴吧protobuf定义文件合集（更新至12.51.7.1）](https://github.com/n0099/tbclient.protobuf)
 + [TiebaLite 第三方安卓客户端（已停更）](https://github.com/HuanCheng65/TiebaLite/tree/4.0-dev)
 
