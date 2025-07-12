@@ -20,7 +20,7 @@ async def request_web(http_core: HttpCore, act_type: str) -> BoolResponse:
     ]
 
     request = http_core.pack_web_form_request(
-        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mo/q/usergrowth/commitUGTaskInfo"), data
+        yarl.URL.build(scheme="http", host=WEB_BASE_HOST, path="/mo/q/usergrowth/commitUGTaskInfo"), data
     )
 
     body = await http_core.net_core.send_request(request, read_bufsize=1024)

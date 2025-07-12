@@ -828,12 +828,13 @@ class Client:
         return await get_follow_forums.request(self._http_core, user_id, pn, rn)
 
     @handle_exception(get_self_follow_forums.SelfFollowForums)
-    async def get_self_follow_forums(self, pn: int = 1) -> get_self_follow_forums.SelfFollowForums:
+    async def get_self_follow_forums(self, pn: int = 1, *, rn: int = 200) -> get_self_follow_forums.SelfFollowForums:
         """
         获取本账号关注贴吧列表
 
         Args:
             pn (int, optional): 页码. Defaults to 1.
+            rn (int, optional): 请求的条目数. Defaults to 200. Max to 200.
 
         Returns:
             SelfFollowForums: 本账号关注贴吧列表
@@ -842,7 +843,7 @@ class Client:
             本接口需要STOKEN
         """
 
-        return await get_self_follow_forums.request(self._http_core, pn)
+        return await get_self_follow_forums.request(self._http_core, pn, rn)
 
     @handle_exception(get_dislike_forums.DislikeForums)
     @_try_websocket

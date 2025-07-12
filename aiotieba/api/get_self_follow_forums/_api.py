@@ -27,7 +27,7 @@ async def request(http_core: HttpCore, pn: int, rn: int) -> SelfFollowForums:
     ]
 
     request = http_core.pack_web_form_request(
-        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/c/f/forum/forumGuide"),
+        yarl.URL.build(scheme="http", host=WEB_BASE_HOST, path="/c/f/forum/forumGuide"),
         data,
         extra_headers=[("Subapp-Type", "hybrid")],
     )

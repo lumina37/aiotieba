@@ -25,7 +25,7 @@ async def request(http_core: HttpCore, pn: int, rn: int) -> SelfFollowForumsV1:
     ]
 
     request = http_core.pack_web_get_request(
-        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mg/o/getForumHome"), params
+        yarl.URL.build(scheme="http", host=WEB_BASE_HOST, path="/mg/o/getForumHome"), params
     )
 
     body = await http_core.net_core.send_request(request, read_bufsize=128 * 1024)
