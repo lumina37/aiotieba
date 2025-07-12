@@ -6,14 +6,14 @@ on:
     paths:
       - "mkdocs.yml"
       - "docs/**"
-      - "aiotieba/__version__.py"
+      - "pyproject.toml"
       - ".github/workflows/Pages*"
   pull_request:
     branches: [develop]
     paths:
       - "mkdocs.yml"
       - "docs/**"
-      - "aiotieba/__version__.py"
+      - "pyproject.toml"
       - ".github/workflows/Pages*"
 
 jobs:
