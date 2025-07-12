@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import logging
 import socket
 from typing import TYPE_CHECKING, Literal
@@ -86,6 +85,7 @@ from .api import (
     set_profile,
     set_thread_privacy,
     sign_forum,
+    sign_forums,
     sign_growth,
     sync,
     tieba_uid2user_info,
@@ -120,6 +120,7 @@ from .helper.utils import handle_exception, is_portrait, is_user_name
 from .logging import get_logger as LOG
 
 if TYPE_CHECKING:
+    import asyncio
     import datetime
 
 
@@ -2305,6 +2306,17 @@ class Client:
         await self.__init_tbs()
 
         return await sign_forum.request(self._http_core, fname)
+
+    @handle_exception(BoolResponse, ok_log_level=logging.INFO)
+    async def sign_forums(self) -> BoolResponse:
+        """
+        一键签到
+
+        Returns:
+            BoolResponse: True成功 False失败
+        """
+
+        return await sign_forums.request(self._http_core)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def sign_growth(self) -> BoolResponse:
