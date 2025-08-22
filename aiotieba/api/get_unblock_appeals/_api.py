@@ -27,7 +27,7 @@ async def request(http_core: HttpCore, fid: int, pn: int, rn: int) -> Appeals:
     ]
 
     request = http_core.pack_web_form_request(
-        yarl.URL.build(scheme="http", host=WEB_BASE_HOST, path="/mo/q/getBawuAppealList"), data
+        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mo/q/getBawuAppealList"), data
     )
 
     body = await http_core.net_core.send_request(request, read_bufsize=32 * 1024)
