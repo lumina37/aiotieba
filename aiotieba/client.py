@@ -45,6 +45,7 @@ from .api import (
     get_forum_level,
     get_group_msg,
     get_images,
+    get_last_replyers,
     get_member_users,
     get_posts,
     get_rank_forums,
@@ -509,6 +510,42 @@ class Client:
 
         return await get_comments.request_http(self._http_core, tid, pid, pn, is_comment)
 
+    @handle_exception(get_last_replyers.Threads_lp)
+    @_try_websocket
+    async def get_last_replyers(
+        self,
+        fname_or_fid: str | int,
+        /,
+        pn: int = 1,
+        *,
+        rn: int = 30,
+        sort: ThreadSortType = ThreadSortType.REPLY,
+        is_good: bool = False,
+    ) -> get_last_replyers.Threads_lp:
+        """
+        通过旧版接口获取带最后回复人的首页帖子
+
+        Args:
+            fname_or_fid (str | int): 贴吧名或fid 优先贴吧名
+            pn (int, optional): 页码. Defaults to 1.
+            rn (int, optional): 请求的条目数. Defaults to 30. Max to 100.
+            sort (ThreadSortType, optional): HOT热门排序 REPLY按回复时间 CREATE按发布时间 FOLLOW关注的人. Defaults to ThreadSortType.REPLY.
+            is_good (bool, optional): True则获取精品区帖子 False则获取普通区帖子. Defaults to False.
+
+        Returns:
+            Threads_lp: 带最后回复人的帖子列表
+
+        Note:
+            该接口主要用于反挖坟 目前未封装完整的返回信息
+        """
+
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
+
+        if self._ws_core.status == WsStatus.OPEN:
+            return await get_last_replyers.request_ws(self._ws_core, fname, pn, rn, sort, is_good)
+
+        return await get_last_replyers.request_http(self._http_core, fname, pn, rn, sort, is_good)
+    
     @handle_exception(search_exact.ExactSearches)
     async def search_exact(
         self,
