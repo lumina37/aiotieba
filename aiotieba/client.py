@@ -86,6 +86,7 @@ from .api import (
     set_profile,
     set_thread_privacy,
     sign_forum,
+    sign_forums,
     sign_growth,
     sync,
     tieba_uid2user_info,
@@ -120,6 +121,7 @@ from .helper.utils import handle_exception, is_portrait, is_user_name
 from .logging import get_logger as LOG
 
 if TYPE_CHECKING:
+    import asyncio
     import datetime
 
 
@@ -863,12 +865,13 @@ class Client:
         return await get_follow_forums.request(self._http_core, user_id, pn, rn)
 
     @handle_exception(get_self_follow_forums.SelfFollowForums)
-    async def get_self_follow_forums(self, pn: int = 1) -> get_self_follow_forums.SelfFollowForums:
+    async def get_self_follow_forums(self, pn: int = 1, *, rn: int = 200) -> get_self_follow_forums.SelfFollowForums:
         """
         获取本账号关注贴吧列表
 
         Args:
             pn (int, optional): 页码. Defaults to 1.
+            rn (int, optional): 请求的条目数. Defaults to 200. Max to 200.
 
         Returns:
             SelfFollowForums: 本账号关注贴吧列表
@@ -877,7 +880,7 @@ class Client:
             本接口需要STOKEN
         """
 
-        return await get_self_follow_forums.request(self._http_core, pn)
+        return await get_self_follow_forums.request(self._http_core, pn, rn)
 
     @handle_exception(get_dislike_forums.DislikeForums)
     @_try_websocket
@@ -2343,6 +2346,17 @@ class Client:
         return await sign_forum.request(self._http_core, fname)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
+    async def sign_forums(self) -> BoolResponse:
+        """
+        一键签到
+
+        Returns:
+            BoolResponse: True成功 False失败
+        """
+
+        return await sign_forums.request(self._http_core)
+
+    @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def sign_growth(self) -> BoolResponse:
         """
         用户成长等级任务: 签到
@@ -2563,7 +2577,7 @@ class Client:
 
     @handle_exception(get_forum_level.LevelInfo)
     @_try_websocket
-    async def get_forum_level(self, forum_id: int):
+    async def get_forum_level(self, forum_id: int) -> get_forum_level.LevelInfo:
         """
         获取某吧等级
 
@@ -2571,16 +2585,16 @@ class Client:
             forum_id (int),: 吧id.
 
         Returns:
-            Level: 等级
+            LevelInfo: 等级
         """
 
-        if not self._user.user_id:  # 检查是否登陆
+        if not self._user.user_id:
             await self.get_self_info()
 
         return await get_forum_level.request_http(self._http_core, forum_id)
 
-    @handle_exception(BoolResponse)
-    async def get_roomlist_by_fid(self, forum_id: int):
+    @handle_exception(get_roomlist_by_fid.RoomList)
+    async def get_roomlist_by_fid(self, forum_id: int) -> get_roomlist_by_fid.RoomList:
         """
         获取某吧所有群聊
 
@@ -2588,7 +2602,7 @@ class Client:
             forum_id (int),: 吧id.
 
         Returns:
-            list[dict]: 群信息
+            RoomList: 群信息
         """
 
         if not self._user.user_id:  # 检查是否登陆
@@ -2596,24 +2610,26 @@ class Client:
 
         return await get_roomlist_by_fid.request(self._http_core, forum_id)
 
-    def get_chat_message_queue(self):
+    def get_chat_message_queue(self) -> asyncio.Queue:
         """
         获取消息队列（全局共用），该队列仅包含通知（Notify）类型消息
 
         Returns:
-            Queue[dict|Lcm_pb2.RpcData]: 消息
+            Queue: 消息队列
         """
 
         return self._blcp_core.message_queue
 
     @handle_exception(BoolResponse)
-    async def join_chatroom(self, room_id: int):
+    async def join_chatroom(self, room_id: int) -> BoolResponse:
         """
         获取某吧等级
 
         Args:
-            room_id (int),: 房间id.
+            room_id (int): 房间id
 
+        Returns:
+            BoolResponse: True成功 False失败
         """
 
         if not self._user.user_id:  # 检查是否登陆
@@ -2623,7 +2639,7 @@ class Client:
 
         try:
             await self._blcp_core.joinChatRoom(room_id)
-        except:
-            raise Exception("加入房间失败")  # todo:统一的Exception
+        except Exception as err:
+            raise Exception("加入房间失败") from err
 
         return BoolResponse()

@@ -27,7 +27,7 @@ def pack_proto(
     req_proto.data.pn = pn
     req_proto.data.rn = rn if rn > 1 else 2
     req_proto.data.r = sort
-    req_proto.data.lz = only_thread_author
+    req_proto.data.lz = int(only_thread_author)
     if with_comments:
         req_proto.data.common.BDUSS = account.BDUSS
         req_proto.data.with_floor = with_comments

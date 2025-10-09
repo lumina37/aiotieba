@@ -6,14 +6,14 @@ on:
     paths:
       - "mkdocs.yml"
       - "docs/**"
-      - "aiotieba/__version__.py"
+      - "pyproject.toml"
       - ".github/workflows/Pages*"
   pull_request:
     branches: [develop]
     paths:
       - "mkdocs.yml"
       - "docs/**"
-      - "aiotieba/__version__.py"
+      - "pyproject.toml"
       - ".github/workflows/Pages*"
 
 jobs:
@@ -22,12 +22,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: develop
 
       - name: Setup UV
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v7
 
       - name: Install dependencies
         run: uv sync --only-dev
@@ -36,7 +36,7 @@ jobs:
         run: uv run mkdocs build -d site
 
       - name: Upload Artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: site
 

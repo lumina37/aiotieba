@@ -436,8 +436,9 @@ class Contents_st(Containers[TypeFragment]):
 
         objs = list(_frags())
 
-        del ats[0]
-        del objs[0]
+        if ats:
+            del ats[0]
+            del objs[0]
         objs += imgs
 
         if data_proto.video_info.video_width:

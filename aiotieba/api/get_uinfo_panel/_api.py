@@ -25,7 +25,7 @@ async def request(http_core: HttpCore, name_or_portrait: str) -> UserInfo_panel:
         params = [("un", name_or_portrait)]
 
     request = http_core.pack_web_get_request(
-        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/home/get/panel"), params
+        yarl.URL.build(scheme="http", host=WEB_BASE_HOST, path="/home/get/panel"), params
     )
 
     body = await http_core.net_core.send_request(request, read_bufsize=8 * 1024)

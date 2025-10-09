@@ -1,6 +1,6 @@
 [project]
 name = "aiotieba"
-version = "4.6.0"
+version = "4.6.1"
 description = "Asynchronous I/O Client for Baidu Tieba"
 authors = [{ name = "lumina37", email = "starry.qvq@gmail.com" }]
 urls = { Repository = "https://github.com/lumina37/aiotieba/", Documentation = "https://aiotieba.cc/" }
@@ -17,23 +17,26 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Topic :: Internet :: WWW/HTTP :: Session",
 ]
-requires-python = ">=3.9,<3.14"
+requires-python = ">=3.9,<3.15"
 dependencies = [
   "aiohttp>=3.11.0,<4;python_version>='3.9' and python_version<'3.12'",
   "aiohttp>=3.11.0,<4;python_version=='3.12'",
-  "aiohttp>=3.11.0,<4;python_version>='3.13'",
+  "aiohttp>=3.11.0,<4;python_version=='3.13'",
+  "aiohttp>=3.13.0,<4;python_version>='3.14'",
   "beautifulsoup4>=4.5.2,<5;python_version=='3.9'",
   "beautifulsoup4>=4.7.1,<5;python_version>='3.10'",
   "lxml>=4.6.0,<7;python_version=='3.9'",
   "lxml>=4.6.4,<7;python_version=='3.10'",
   "lxml>=4.9.2,<7;python_version=='3.11'",
   "lxml>=4.9.3,<7;python_version=='3.12'",
-  "lxml>=5.3.0,<7;python_version>='3.13'",
+  "lxml>=5.3.0,<7;python_version=='3.13'",
+  "lxml>=6.0.1,<7;python_version>='3.14'",
   "protobuf>=4.21.1,<7",
   "cryptography>=35.0.0,<41;python_version>='3.9' and python_version<'3.12'",
-  "cryptography>=35.0.0,<46;python_version>='3.12'",
+  "cryptography>=35.0.0,<47;python_version>='3.12'",
   "async-timeout>=4.0,<6;python_version<'3.11'",
   "StrEnum>=0.4.0,<0.5;python_version<'3.11'",
 ]
@@ -48,12 +51,22 @@ speedup = [
   "orjson>=3.4.7,<4;python_version=='3.10'",
   "orjson>=3.7.10,<4;python_version=='3.11'",
   "orjson>=3.9.10,<4;python_version=='3.12'",
-  "orjson>=3.10.7,<4;python_version>='3.13'",
+  "orjson>=3.10.7,<4;python_version=='3.13'",
+  "orjson>=3.11.1,<4;python_version>='3.14'",
   "uvloop>=0.15.0,<1.0;python_version=='3.9' and sys_platform!='win32'",
   "uvloop>=0.16.0,<1.0;python_version=='3.10' and sys_platform!='win32'",
   "uvloop>=0.17.0,<1.0;python_version=='3.11' and sys_platform!='win32'",
   "uvloop>=0.18.0,<1.0;python_version=='3.12' and sys_platform!='win32'",
   "uvloop>=0.21.0,<1.0;python_version>='3.13' and sys_platform!='win32'",
+]
+
+[dependency-groups]
+dev = [
+  "pytest==8.4.2",
+  "pytest-asyncio==1.2.0",
+  "pytest-rerunfailures==16.0.1",
+  "mkdocs-material",
+  "mkdocstrings[python]",
 ]
 
 [build-system]
@@ -62,13 +75,6 @@ build-backend = "scikit_build_core.build"
 
 [tool.uv]
 managed = true
-dev-dependencies = [
-  "pytest==8.4.1",
-  "pytest-asyncio==1.0.0",
-  "pytest-rerunfailures==15.1",
-  "mkdocs-material",
-  "mkdocstrings[python]",
-]
 
 [tool.scikit-build]
 sdist.exclude = ["*.proto", ".*", "docs", "scripts", "tests", "mkdocs.yml"]
@@ -79,7 +85,7 @@ path = "aiotieba/__version__.py"
 template = '''__version__ = "${version}"'''
 
 [tool.cibuildwheel]
-build = "cp39-* cp310-* cp311-* cp312-* cp313-* cp313t-* pp39-* pp310-* pp311-*"
+build = "cp39-* cp310-* cp311-* cp312-* cp313-* cp313t-* cp314-* cp314t-* pp39-* pp310-* pp311-*"
 skip = "*-win32 *_i686 *_s390x *_ppc64le"
 enable = ["pypy", "pypy-eol", "cpython-freethreading"]
 

@@ -17,7 +17,7 @@ def pack_proto(fname: str, pn: int, rn: int, sort: int, is_good: bool) -> bytes:
     req_proto.data.pn = 0 if pn == 1 else pn
     req_proto.data.rn = rn
     req_proto.data.rn_need = rn + 5
-    req_proto.data.is_good = is_good
+    req_proto.data.is_good = int(is_good)
     req_proto.data.sort_type = sort
 
     return req_proto.SerializeToString()

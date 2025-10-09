@@ -21,7 +21,7 @@ async def request(http_core: HttpCore) -> BoolResponse:
     ]
 
     request = http_core.pack_web_form_request(
-        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/c/c/forum/msign"),
+        yarl.URL.build(scheme="http", host=WEB_BASE_HOST, path="/c/c/forum/msign"),
         data,
         extra_headers=[("Subapp-Type", "hybrid")],
     )
