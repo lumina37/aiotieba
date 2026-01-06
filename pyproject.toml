@@ -64,7 +64,7 @@ speedup = [
 dev = [
   "pytest==8.4.2",
   "pytest-asyncio==1.2.0",
-  "pytest-rerunfailures==16.0.1",
+  "pytest-rerunfailures==16.1",
   "mkdocs-material",
   "mkdocstrings[python]",
 ]
