@@ -62,7 +62,7 @@ speedup = [
 
 [dependency-groups]
 dev = [
-  "pytest==8.4.2",
+  "pytest==9.0.2",
   "pytest-asyncio==1.2.0",
   "pytest-rerunfailures==16.0.1",
   "mkdocs-material",
