@@ -5,9 +5,12 @@ import functools
 import logging
 import sys
 from datetime import datetime
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any
 
 from ..logging import get_logger
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 if sys.version_info >= (3, 11):
     async_timeout = asyncio
