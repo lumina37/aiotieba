@@ -70,7 +70,7 @@ async def request(
         params += extend_params
 
     request = http_core.pack_web_get_request(
-        yarl.URL.build(scheme="http", host=WEB_BASE_HOST, path="/bawu2/platform/listPostLog"), params
+        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/bawu2/platform/listPostLog"), params
     )
 
     body = await http_core.net_core.send_request(request, read_bufsize=32 * 1024)

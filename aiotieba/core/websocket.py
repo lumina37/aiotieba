@@ -7,11 +7,10 @@ import gzip
 import random
 import time
 import weakref
-from collections.abc import Awaitable
-from typing import TYPE_CHECKING, Callable
+from collections.abc import Awaitable, Callable
+from typing import TYPE_CHECKING
 
 import aiohttp
-import aiohttp.client_ws
 import yarl
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import algorithms
