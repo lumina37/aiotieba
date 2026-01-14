@@ -72,12 +72,15 @@ tid=8537699088 text=记录一下自己人生第一次当“老师”的经历^_^
 ## 友情链接
 
 + [TiebaManager（吧务管理器 有用户界面）](https://github.com/dog194/TiebaManager)
++ [功能全面的贴吧管理QQ bot](https://github.com/TiebaMeow/TiebaManageBot)
++ [易于部署和使用的 Web 贴吧管理和自动化平台](https://github.com/TiebaMeow/WebTiebaManager)
++ [灵活且高可靠的贴吧爬虫](https://github.com/TiebaMeow/TiebaScraper)
 + [基于aiotieba的tieba bot](https://github.com/adk23333/BungleCat)
 + [基于aiotieba的贴吧管理器](https://github.com/adk23333/tieba-admin)
 + [C#版本的贴吧接口库](https://github.com/BaWuZhuShou/AioTieba4DotNet)
 + [贴吧第三方网页前端](https://0xacab.org/johnxina/rat)
 + [贴吧protobuf定义文件合集（更新至12.51.7.1）](https://github.com/n0099/tbclient.protobuf)
-+ [TiebaLite 第三方安卓客户端（已停更）](https://github.com/HuanCheng65/TiebaLite/tree/4.0-dev)
++ [TiebaLite 第三方安卓客户端](https://github.com/zzc10086/TiebaLite)
 
 ## 特别鸣谢
 
