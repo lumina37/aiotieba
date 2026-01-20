@@ -67,6 +67,7 @@ from .api import (
     get_uinfo_user_json,
     get_unblock_appeals,
     get_user_contents,
+    get_user_forum_info,
     good,
     handle_unblock_appeals,
     init_z_id,
@@ -545,7 +546,7 @@ class Client:
             return await get_last_replyers.request_ws(self._ws_core, fname, pn, rn, sort, is_good)
 
         return await get_last_replyers.request_http(self._http_core, fname, pn, rn, sort, is_good)
-    
+
     @handle_exception(search_exact.ExactSearches)
     async def search_exact(
         self,
@@ -863,6 +864,38 @@ class Client:
             user_id = id_
 
         return await get_follow_forums.request(self._http_core, user_id, pn, rn)
+
+    @handle_exception(get_user_forum_info.UserForumInfo)
+    async def get_user_forum_info(
+        self, fname_or_fid: str | int, id_: str | int, /
+    ) -> get_user_forum_info.UserForumInfo:
+        """
+        获取用户在某吧内的信息
+
+        Args:
+            fname_or_fid (str | int): 目标贴吧名或fid 优先fid
+            id_ (str | int): 用户id user_id / user_name / portrait 优先portrait
+
+        Returns:
+            UserForumInfo: 用户在吧内的信息
+        """
+
+        if not fname_or_fid or not id_:
+            LOG().warning("Null input")
+            return get_user_forum_info.UserForumInfo()
+
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
+
+        if not is_portrait(id_):
+            user = await self.get_user_info(id_, ReqUInfo.PORTRAIT)
+            portrait = user.portrait
+        else:
+            portrait = id_
+
+        if not portrait:
+            return get_user_forum_info.UserForumInfo()
+
+        return await get_user_forum_info.request(self._http_core, fid, portrait)
 
     @handle_exception(get_self_follow_forums.SelfFollowForums)
     async def get_self_follow_forums(self, pn: int = 1, *, rn: int = 200) -> get_self_follow_forums.SelfFollowForums:
@@ -2539,13 +2572,15 @@ class Client:
                 if not all([userforAt.portrait, userforAt.nick_name]):
                     userforAt = await self._get_uinfo_profile(user_id)
 
-                atdata.append({
-                    "at_type": "user",
-                    "at_baidu_uk": self._blcp_core.getBDUKfromUserId(str(user_id)),
-                    "at_name": userforAt.nick_name,
-                    "at_portrait": userforAt.portrait,
-                    "position": str(count),
-                })
+                atdata.append(
+                    {
+                        "at_type": "user",
+                        "at_baidu_uk": self._blcp_core.getBDUKfromUserId(str(user_id)),
+                        "at_name": userforAt.nick_name,
+                        "at_portrait": userforAt.portrait,
+                        "position": str(count),
+                    }
+                )
 
         return await send_chatroom_msg.request(
             self._blcp_core,
