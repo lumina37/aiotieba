@@ -43,11 +43,13 @@ class PrivReply(enum.IntEnum):
 
     Note:
         ALL 允许所有人\n
+        UNKNOWN 未知分类\n
         FANS 仅允许我的粉丝\n
         FOLLOW 仅允许我的关注
     """
 
     ALL = 1
+    UNKNOWN = 2
     FANS = 5
     FOLLOW = 6
 
