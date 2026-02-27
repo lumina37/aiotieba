@@ -20,7 +20,7 @@ jobs:
       - name: Build wheels
         uses: pypa/cibuildwheel@v3.3.1
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: artifact-wheels-${{ matrix.os }}
           path: ./wheelhouse/*.whl
@@ -34,7 +34,7 @@ jobs:
       - name: Build sdist
         run: pipx run build --sdist
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: artifact-source
           path: ./dist/*.tar.gz
@@ -52,7 +52,7 @@ jobs:
 
     steps:
       - name: Merge artifacts
-        uses: actions/upload-artifact/merge@v6
+        uses: actions/upload-artifact/merge@v7
         with:
           name: artifact
           pattern: artifact-*
