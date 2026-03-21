@@ -1,6 +1,6 @@
 [project]
 name = "aiotieba"
-version = "4.6.2"
+version = "4.6.3"
 description = "Asynchronous I/O Client for Baidu Tieba"
 authors = [{ name = "lumina37", email = "starry.qvq@gmail.com" }]
 urls = { Repository = "https://github.com/lumina37/aiotieba/", Documentation = "https://aiotieba.cc/" }
@@ -63,7 +63,7 @@ dev = [
 ]
 
 [build-system]
-requires = ["scikit-build-core>=0.8,<0.13"]
+requires = ["scikit-build-core>=0.12.2,<0.13"]
 build-backend = "scikit_build_core.build"
 
 [tool.uv]
