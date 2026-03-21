@@ -81,7 +81,6 @@ template = '''__version__ = "${version}"'''
 build = "cp310-* cp311-* cp312-* cp313-* cp313t-* cp314-* cp314t-* pp310-* pp311-*"
 skip = "*-win32 *_i686 *_s390x *_ppc64le"
 enable = ["pypy", "pypy-eol", "cpython-freethreading"]
-build-frontend = "uv"
 
 [tool.ruff]
 line-length = 120
