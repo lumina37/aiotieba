@@ -78,11 +78,11 @@ class ThreadSortType(enum.IntEnum):
     主题帖排序
 
     Note:
-        对于有热门分区的贴吧 0热门排序(HOT) 1按发布时间(CREATE) 2关注的人(FOLLOW) 34热门排序(HOT) >=5是按回复时间(REPLY)\n
+        对于有热门分区的贴吧 0热门排序(HOT) 1按发布时间(CREATE) 2关注的人(FOLLOW) 34热门排序(HOT) >=6是按回复时间(REPLY)\n
         对于无热门分区的贴吧 0按回复时间(REPLY) 1按发布时间(CREATE) 2关注的人(FOLLOW) >=3按回复时间(REPLY)
     """
 
-    REPLY = 5
+    REPLY = 6
     CREATE = 1
     HOT = 3
     FOLLOW = 2
