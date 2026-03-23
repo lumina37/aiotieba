@@ -1,6 +1,6 @@
 [project]
 name = "aiotieba"
-version = "4.6.4"
+version = "4.6.4a0"
 description = "Asynchronous I/O Client for Baidu Tieba"
 authors = [{ name = "lumina37", email = "starry.qvq@gmail.com" }]
 urls = { Repository = "https://github.com/lumina37/aiotieba/", Documentation = "https://aiotieba.cc/" }
@@ -81,6 +81,7 @@ template = '''__version__ = "${version}"'''
 build = "cp310-* cp311-* cp312-* cp313-* cp313t-* cp314-* cp314t-* pp310-* pp311-*"
 skip = "*-win32 *_i686 *_s390x *_ppc64le"
 enable = ["pypy", "pypy-eol", "cpython-freethreading"]
+build-frontend = "uv"
 
 [tool.ruff]
 line-length = 120
