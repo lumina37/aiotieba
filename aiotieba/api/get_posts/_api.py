@@ -30,8 +30,8 @@ def pack_proto(
     req_proto.data.lz = int(only_thread_author)
     if with_comments:
         req_proto.data.common.BDUSS = account.BDUSS
-        req_proto.data.with_floor = with_comments
-        req_proto.data.floor_sort_type = comment_sort_by_agree
+        req_proto.data.with_floor = int(with_comments)
+        req_proto.data.floor_sort_type = int(comment_sort_by_agree)
         req_proto.data.floor_rn = comment_rn
 
     return req_proto.SerializeToString()
