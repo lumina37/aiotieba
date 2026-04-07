@@ -14,7 +14,7 @@ CMD = 202003
 
 def pack_proto(account: Account, group_ids: list[int], msg_ids: list[int], get_type: int) -> bytes:
     req_proto = GetGroupMsgReqIdl_pb2.GetGroupMsgReqIdl()
-    for group_id, msg_id in zip(group_ids, msg_ids):
+    for group_id, msg_id in zip(group_ids, msg_ids, strict=False):
         group_proto = req_proto.data.groupMids.add()
         group_proto.groupId = group_id
         group_proto.lastMsgId = msg_id

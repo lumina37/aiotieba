@@ -2512,20 +2512,6 @@ class Client:
 
         return await get_group_msg.request(self._ws_core, group_ids, get_type)
 
-    async def get_group_msg(self, group_ids: list[int], *, get_type: int = 1) -> get_group_msg.WsMsgGroups:
-        """
-        获取分组信息
-
-        Args:
-            group_ids (list[int]): 待获取分组的group_id
-            get_type (int, optional): 获取类型. Defaults to 1.
-
-        Returns:
-            WsMsgGroups: websocket消息组列表
-        """
-
-        return await get_group_msg.request(self._ws_core, group_ids, get_type)
-
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def send_chatroom_msg(
         self, chatroom_id: int, forum_id: int, text: str, atuser_ids: list[int] = None, robotc: int = -1
@@ -2572,15 +2558,13 @@ class Client:
                 if not all([userforAt.portrait, userforAt.nick_name]):
                     userforAt = await self._get_uinfo_profile(user_id)
 
-                atdata.append(
-                    {
-                        "at_type": "user",
-                        "at_baidu_uk": self._blcp_core.getBDUKfromUserId(str(user_id)),
-                        "at_name": userforAt.nick_name,
-                        "at_portrait": userforAt.portrait,
-                        "position": str(count),
-                    }
-                )
+                atdata.append({
+                    "at_type": "user",
+                    "at_baidu_uk": self._blcp_core.getBDUKfromUserId(str(user_id)),
+                    "at_name": userforAt.nick_name,
+                    "at_portrait": userforAt.portrait,
+                    "position": str(count),
+                })
 
         return await send_chatroom_msg.request(
             self._blcp_core,

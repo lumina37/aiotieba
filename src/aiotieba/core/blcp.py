@@ -21,7 +21,9 @@ import yarl
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
-from ..api._protobuf import Lcm_pb2, Rpc_pb2
+from ..api._protobuf import Lcm_pb2
+
+from ..api._protobuf import Rpc_pb2
 from ..config import ProxyConfig, TimeoutConfig
 from ..const import CHAT_APPID, CHAT_SDK_VERSION, CHAT_VERSION
 from ..helper import timeout
@@ -146,10 +148,10 @@ class BLCPCore:
         try:
             rpc, lcm = ClientBLCPResponses.parseBLCPResponse(reps.toBytes())
         except:
-            raise Exception("BLCP Handshake error.")  # todo: 特殊的握手错误
+            raise Exception("BLCP Handshake error")  # TODO: 特殊的握手错误
 
         if rpc.response.error_text != "success" or lcm.lcm_response.error_msg != "success":
-            raise Exception("BLCP Handshake error.")  # todo: 特殊的握手错误
+            raise Exception("BLCP Handshake error")  # TODO: 特殊的握手错误
 
         # 第二部分登陆
         # 构造部分位于 com.baidu.searchbox.cloudcontrolblcp.CloudControlBlCPManager
