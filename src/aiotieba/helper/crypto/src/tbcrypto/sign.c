@@ -1,5 +1,5 @@
-#include <memory.h>  // memset memcpy
-#include <string.h>  // strlen
+#include <memory.h>
+#include <string.h>
 
 #include "mbedtls/md5.h"
 #include "rapidjson/itoa.h"
@@ -10,7 +10,7 @@
 
 static const unsigned char SIGN_SUFFIX[] = {'t', 'i', 'e', 'b', 'a', 'c', 'l', 'i', 'e', 'n', 't', '!', '!', '!'};
 
-static inline void __tbc_pyStr2UTF8(const char** dst, size_t* dstSize, PyObject* pyoStr) {
+static void __tbc_pyStr2UTF8(const char** dst, size_t* dstSize, PyObject* pyoStr) {
     if (PyUnicode_1BYTE_KIND == PyUnicode_KIND(pyoStr)) {
         (*dst) = PyUnicode_DATA(pyoStr);
         (*dstSize) = PyUnicode_GET_LENGTH(pyoStr);

@@ -1,7 +1,6 @@
-#include <stddef.h>  // size_t
+#include <stddef.h>
 
 #include "tbcrypto/const.h"
-#include "tbcrypto/error.h"
 
 #include "tbcrypto/rc442.h"
 
@@ -11,7 +10,7 @@ typedef struct rc4_42_context {
     unsigned char m[256];
 } rc4_42_context;
 
-static inline void rc4_42_setup(rc4_42_context* ctx, const unsigned char* key, unsigned int keyLen) {
+static void __tbc_rc442Setup(rc4_42_context* ctx, const unsigned char* key, unsigned int keyLen) {
     int i, j, a;
     unsigned int k;
     unsigned char* m;
@@ -34,7 +33,7 @@ static inline void rc4_42_setup(rc4_42_context* ctx, const unsigned char* key, u
     }
 }
 
-static inline void rc4_42_crypt(rc4_42_context* ctx, const unsigned char* src, size_t srcLen, unsigned char* dst) {
+static void __tbc_rc442Crypt(rc4_42_context* ctx, const unsigned char* src, size_t srcLen, unsigned char* dst) {
     int x, y, a, b;
     size_t i;
     unsigned char* m;
@@ -63,6 +62,6 @@ static inline void rc4_42_crypt(rc4_42_context* ctx, const unsigned char* src, s
 void tbc_rc4_42(const unsigned char* xyusMd5Str, const unsigned char* cbcSecKey, unsigned char* dst) {
     rc4_42_context rc442Ctx;
 
-    rc4_42_setup(&rc442Ctx, xyusMd5Str, TBC_MD5_STR_SIZE);
-    rc4_42_crypt(&rc442Ctx, cbcSecKey, TBC_CBC_SECKEY_SIZE, dst);
+    __tbc_rc442Setup(&rc442Ctx, xyusMd5Str, TBC_MD5_STR_SIZE);
+    __tbc_rc442Crypt(&rc442Ctx, cbcSecKey, TBC_CBC_SECKEY_SIZE, dst);
 }

@@ -1,5 +1,5 @@
-#include <memory.h>   // memset memcpy
-#include <stdbool.h>  // bool
+#include <memory.h>
+#include <stdbool.h>
 
 #include "base32/base32.h"
 #include "crc/crc32.h"
@@ -10,7 +10,6 @@
 #include "xxHash/xxhash.h"
 
 #include "tbcrypto/const.h"
-#include "tbcrypto/error.h"
 
 #include "tbcrypto/cuid.h"
 
@@ -21,7 +20,7 @@
 static const char CUID2_PERFIX[] = {'c', 'o', 'm', '.', 'b', 'a', 'i', 'd', 'u'};
 static const char CUID3_PERFIX[] = {'c', 'o', 'm', '.', 'h', 'e', 'l', 'i', 'o', 's'};
 
-static inline void __tbc_update(uint64_t* sec, uint64_t hashVal, uint64_t start, bool flag) {
+static void __tbc_update(uint64_t* sec, uint64_t hashVal, uint64_t start, bool flag) {
     uint64_t end = start + HASH_SIZE_IN_BIT;
     uint64_t secTemp = *sec;
     uint64_t var9 = ((uint64_t)1 << end) - 1;
@@ -45,7 +44,7 @@ static inline void __tbc_update(uint64_t* sec, uint64_t hashVal, uint64_t start,
     *sec = secTemp;
 }
 
-static inline void __tbc_writeBuffer(unsigned char* buffer, const uint64_t sec) {
+static void __tbc_writeBuffer(unsigned char* buffer, const uint64_t sec) {
     uint64_t tmpSec = sec;
     for (uint64_t i = 0; i < STEP_SIZE; i++) {
         buffer[i] = (unsigned char)((uint64_t)UINT8_MAX & tmpSec);

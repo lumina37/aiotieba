@@ -2,7 +2,7 @@ BasedOnStyle: Google
 IndentWidth: 4
 ColumnLimit: 120
 ---
-Language: Cpp
+Language: C
 AccessModifierOffset: -4
 IndentPPDirectives: AfterHash
 IncludeBlocks: Preserve

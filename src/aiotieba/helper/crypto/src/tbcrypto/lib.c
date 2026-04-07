@@ -1,11 +1,10 @@
 #include "tbcrypto/pywrap.h"
 
+#include "tbcrypto/bb64.h"
 #include "tbcrypto/const.h"
 #include "tbcrypto/cuid.h"
-#include "tbcrypto/error.h"
 #include "tbcrypto/rc442.h"
 #include "tbcrypto/sign.h"
-#include "tbcrypto/bb64.h"
 
 PyObject* cuid_galaxy2(PyObject* Py_UNUSED(self), PyObject* args) {
     unsigned char dst[TBC_CUID_GALAXY2_SIZE];
@@ -79,8 +78,7 @@ PyObject* rc4_42(PyObject* Py_UNUSED(self), PyObject* args) {
     return PyBytes_FromStringAndSize((char*)dst, TBC_RC4_SIZE);
 }
 
-PyObject* enuid(PyObject* Py_UNUSED(self), PyObject* args)
-{
+PyObject* enuid(PyObject* Py_UNUSED(self), PyObject* args) {
     unsigned char dst[TBC_ENUID_SIZE + 1];  // str ends with '\0'
     const unsigned char* cuid2;
     Py_ssize_t cuid2Size;
@@ -91,7 +89,8 @@ PyObject* enuid(PyObject* Py_UNUSED(self), PyObject* args)
     }
 
     if (cuid2Size != TBC_CUID_GALAXY2_SIZE) {
-        PyErr_Format(PyExc_ValueError, "Invalid size of cuid_galaxy2. Expect %zu, got %zu", TBC_CUID_GALAXY2_SIZE, cuid2Size);
+        PyErr_Format(PyExc_ValueError, "Invalid size of cuid_galaxy2. Expect %zu, got %zu", TBC_CUID_GALAXY2_SIZE,
+                     cuid2Size);
         return NULL;
     }
 
@@ -99,8 +98,6 @@ PyObject* enuid(PyObject* Py_UNUSED(self), PyObject* args)
 
     return PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, dst, TBC_ENUID_SIZE);
 }
-
-
 
 static PyMethodDef crypto_methods[] = {
     {"cuid_galaxy2", (PyCFunction)cuid_galaxy2, METH_VARARGS, NULL},
