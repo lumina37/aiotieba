@@ -1,6 +1,6 @@
 [project]
 name = "aiotieba"
-version = "4.6.5a0"
+version = "4.6.5a1"
 description = "Asynchronous I/O Client for Baidu Tieba"
 authors = [{ name = "lumina37", email = "starry.qvq@gmail.com" }]
 urls = { Repository = "https://github.com/lumina37/aiotieba/", Documentation = "https://aiotieba.cc/" }
@@ -78,9 +78,9 @@ path = "aiotieba/__version__.py"
 template = '''__version__ = "${version}"'''
 
 [tool.cibuildwheel]
-build = "cp310-* cp311-* cp312-* cp313-* cp313t-* cp314-* cp314t-* pp310-* pp311-*"
+build = "cp310* cp311* cp312* cp313* cp314* pp310* pp311*"
 skip = "*-win32 *_i686 *_s390x *_ppc64le"
-enable = ["pypy", "pypy-eol", "cpython-freethreading"]
+enable = ["pypy"]
 build-frontend = "uv"
 
 [tool.ruff]
