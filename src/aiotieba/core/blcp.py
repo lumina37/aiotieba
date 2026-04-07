@@ -21,9 +21,7 @@ import yarl
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
-from ..api._protobuf import Lcm_pb2
-
-from ..api._protobuf import Rpc_pb2
+from ..api._protobuf import Lcm_pb2, Rpc_pb2
 from ..config import ProxyConfig, TimeoutConfig
 from ..const import CHAT_APPID, CHAT_SDK_VERSION, CHAT_VERSION
 from ..helper import timeout
