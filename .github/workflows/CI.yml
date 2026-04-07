@@ -6,13 +6,13 @@ on:
   push:
     branches: [develop]
     paths:
-      - "aiotieba/**"
+      - "src/**"
       - "tests/**"
       - ".github/workflows/CI.yml"
   pull_request:
     branches: [develop]
     paths:
-      - "aiotieba/**"
+      - "src/**"
       - "tests/**"
       - ".github/workflows/CI.yml"
   workflow_dispatch:
