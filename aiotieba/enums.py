@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import enum
 import sys
 
@@ -27,14 +29,23 @@ class PrivLike(enum.IntEnum):
     关注吧列表的公开状态
 
     Note:
+        UNKNOWN 未知\n
         PUBLIC 所有人可见\n
         FRIEND 好友可见\n
         HIDE 完全隐藏
     """
 
+    UNKNOWN = 0
     PUBLIC = 1
     FRIEND = 2
     HIDE = 3
+
+    @staticmethod
+    def from_int(val: int) -> PrivLike:
+        if val in [1, 2, 3]:
+            return PrivLike(val)
+        else:
+            return PrivLike.UNKNOWN
 
 
 class PrivReply(enum.IntEnum):
@@ -42,16 +53,23 @@ class PrivReply(enum.IntEnum):
     帖子评论权限
 
     Note:
+        UNKNOWN 未知\n
         ALL 允许所有人\n
-        UNKNOWN 未知分类\n
         FANS 仅允许我的粉丝\n
         FOLLOW 仅允许我的关注
     """
 
+    UNKNOWN = 0
     ALL = 1
-    UNKNOWN = 2
     FANS = 5
     FOLLOW = 6
+
+    @staticmethod
+    def from_int(val: int) -> PrivReply:
+        if val in [1, 5, 6]:
+            return PrivReply(val)
+        else:
+            return PrivReply.UNKNOWN
 
 
 class ReqUInfo(enum.Flag):
