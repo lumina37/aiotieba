@@ -40,12 +40,9 @@ class PrivLike(enum.IntEnum):
     FRIEND = 2
     HIDE = 3
 
-    @staticmethod
-    def from_int(val: int) -> PrivLike:
-        if val in [1, 2, 3]:
-            return PrivLike(val)
-        else:
-            return PrivLike.UNKNOWN
+    @classmethod
+    def __missing__(cls, _: int) -> PrivLike:
+        return PrivLike.UNKNOWN
 
 
 class PrivReply(enum.IntEnum):
@@ -64,12 +61,9 @@ class PrivReply(enum.IntEnum):
     FANS = 5
     FOLLOW = 6
 
-    @staticmethod
-    def from_int(val: int) -> PrivReply:
-        if val in [1, 5, 6]:
-            return PrivReply(val)
-        else:
-            return PrivReply.UNKNOWN
+    @classmethod
+    def __missing__(cls, _: int) -> PrivReply:
+        return PrivReply.UNKNOWN
 
 
 class ReqUInfo(enum.Flag):
