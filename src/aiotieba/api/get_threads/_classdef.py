@@ -5,11 +5,13 @@ from functools import cached_property
 
 from ...enums import Gender, PrivLike, PrivReply
 from ...exception import TbErrorExt
+from ...logging import get_logger
 from .._classdef import Containers, TypeMessage, VoteInfo
 from .._classdef.contents import (
     _IMAGEHASH_EXP,
     FragAt,
     FragEmoji,
+    FragImage,
     FragLink,
     FragText,
     FragTiebaPlus,
@@ -22,6 +24,7 @@ from .._classdef.contents import (
 
 FragText_t = FragText_st = FragText
 FragEmoji_t = FragEmoji_st = FragEmoji
+FragImage_t = FragImage
 FragAt_t = FragAt_st = FragAt
 FragLink_t = FragLink_st = FragLink
 FragTiebaPlus_t = FragTiebaPlus_st = FragTiebaPlus
@@ -30,45 +33,57 @@ FragVoice_t = FragVoice_st = FragVoice
 
 
 @dcs.dataclass
-class FragImage_t:
+class FragImage_feed:
     """
     图像碎片
 
     Attributes:
-        src (str): 小图链接 宽720px 一定是静态图
+        src (str): 小图链接 宽720px
         big_src (str): 大图链接 宽960px
         origin_src (str): 原图链接
-        origin_size (int): 原图大小
-        show_width (int): 图像在客户端预览显示的宽度
-        show_height (int): 图像在客户端预览显示的高度
+        width (int): 图像宽度
+        height (int): 图像高度
         hash (str): 百度图床hash
     """
 
     src: str = dcs.field(default="", repr=False)
     big_src: str = dcs.field(default="", repr=False)
     origin_src: str = dcs.field(default="", repr=False)
-    origin_size: int = 0
-    show_width: int = 0
-    show_height: int = 0
+    width: int = 0
+    height: int = 0
     hash: str = ""
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> FragImage_t:
-        src = data_proto.cdn_src
-        big_src = data_proto.big_cdn_src
-        origin_src = data_proto.origin_src
-        origin_size = data_proto.origin_size
+    def from_tbdata(data_proto: TypeMessage) -> FragImage_feed:
+        src = data_proto.small_pic_url
+        big_src = data_proto.big_pic_url
+        origin_src = data_proto.origin_pic_url
+        width = data_proto.width
+        height = data_proto.height
 
-        show_width, _, show_height = data_proto.bsize.partition(",")
-        show_width = int(show_width)
-        show_height = int(show_height)
+        hash_ = _IMAGEHASH_EXP.search(origin_src).group(1)
 
-        if hash_obj := _IMAGEHASH_EXP.search(src):
-            hash_ = hash_obj.group(1)
-        else:
-            hash_ = ""
+        return FragImage_feed(src, big_src, origin_src, width, height, hash_)
 
-        return FragImage_t(src, big_src, origin_src, origin_size, show_width, show_height, hash_)
+
+@dcs.dataclass
+class FragEmoji_feed:
+    """
+    表情碎片
+
+    Attributes:
+        id (str): 表情图片id
+        desc (str): 表情描述
+    """
+
+    id: str = ""
+    desc: str = ""
+
+    @staticmethod
+    def from_tbdata(data_proto: TypeMessage) -> FragEmoji_feed:
+        id_ = data_proto.name
+        desc = data_proto.c
+        return FragEmoji_feed(id_, desc)
 
 
 @dcs.dataclass
@@ -82,8 +97,8 @@ class Contents_t(Containers[TypeFragment]):
         text (str): 文本内容
 
         texts (list[TypeFragText]): 纯文本碎片列表
-        emojis (list[FragEmoji_t]): 表情碎片列表
-        imgs (list[FragImage_t]): 图像碎片列表
+        emojis (list[FragEmoji_t | FragEmoji_feed]): 表情碎片列表
+        imgs (list[FragImage_t | FragImage_feed]): 图像碎片列表
         ats (list[FragAt_t]): @碎片列表
         links (list[FragLink_t]): 链接碎片列表
         tiebapluses (list[FragTiebaPlus_t]): 贴吧plus碎片列表
@@ -92,8 +107,8 @@ class Contents_t(Containers[TypeFragment]):
     """
 
     texts: list[TypeFragText] = dcs.field(default_factory=list, repr=False)
-    emojis: list[FragEmoji_t] = dcs.field(default_factory=list, repr=False)
-    imgs: list[FragImage_t] = dcs.field(default_factory=list, repr=False)
+    emojis: list[FragEmoji_t | FragEmoji_feed] = dcs.field(default_factory=list, repr=False)
+    imgs: list[FragImage_t | FragImage_feed] = dcs.field(default_factory=list, repr=False)
     ats: list[FragAt_t] = dcs.field(default_factory=list, repr=False)
     links: list[FragLink_t] = dcs.field(default_factory=list, repr=False)
     tiebapluses: list[FragTiebaPlus_t] = dcs.field(default_factory=list, repr=False)
@@ -170,6 +185,44 @@ class Contents_t(Containers[TypeFragment]):
             voice = FragVoice_t()
 
         return Contents_t(objs, texts, emojis, imgs, ats, links, tiebapluses, video, voice)
+
+    @staticmethod
+    def from_feed(data_proto: TypeMessage) -> Contents_t:
+        texts = []
+        emojis = []
+        imgs = []
+
+        def _frags():
+            for component in data_proto.components:
+                _type = component.component
+                if _type == "feed_abstract":
+                    for proto in component.feed_abstract.data:
+                        if proto.type == 1:
+                            frag = FragText_t.from_tbdata(proto.text_info)
+                            texts.append(frag)
+                            yield frag
+                        elif proto.type == 3:
+                            frag = FragEmoji_feed.from_tbdata(proto.emoji_info)
+                            emojis.append(frag)
+                            yield frag
+                        else:
+                            yield FragUnknown.from_tbdata(frag)
+                elif _type == "feed_pic":
+                    for proto in component.feed_pic.pics:
+                        frag = FragImage_feed.from_tbdata(proto)
+                        imgs.append(frag)
+                        yield frag
+                elif _type in ["feed_head", "feed_title", "feed_social", "feed_poll"]:
+                    continue
+                else:
+                    get_logger().debug("Unknown component type. type=%s", _type)
+
+        objs = list(_frags())
+
+        video = FragVideo_t()
+        voice = FragVoice_t()
+
+        return Contents_t(objs, texts, emojis, imgs, [], [], [], video, voice)
 
     @cached_property
     def text(self) -> str:
@@ -645,34 +698,40 @@ class Thread:
     @staticmethod
     def from_feed(data_proto: TypeMessage) -> None:
         # 从12.65版本开始部分热门吧的主题帖列表采用feed形式推送
-        contents = Contents_t.from_tbdata(data_proto)
-        title = data_proto.title
-        tid = data_proto.id
-        pid = data_proto.first_post_id
-        author_id = data_proto.author_id
-        type_ = data_proto.thread_type
-        tab_id = data_proto.tab_id
-        is_good = bool(data_proto.is_good)
-        is_top = bool(data_proto.is_top)
-        is_share = bool(data_proto.is_share_thread)
-        is_hide = bool(data_proto.is_frs_mask)
-        is_livepost = bool(data_proto.is_livepost)
-        vote_info = VoteInfo.from_tbdata(data_proto.poll_info)
-        if is_share:
-            if data_proto.origin_thread_info.pid:
-                share_origin = ShareThread.from_tbdata(data_proto.origin_thread_info)
-            else:
-                is_share = False
-                share_origin = ShareThread()
-        else:
-            share_origin = ShareThread()
-        view_num = data_proto.view_num
-        reply_num = data_proto.reply_num
-        share_num = data_proto.share_num
-        agree = data_proto.agree.agree_num
-        disagree = data_proto.agree.disagree_num
-        create_time = data_proto.create_time
-        last_time = data_proto.last_time_int
+        contents = Contents_t.from_feed(data_proto)
+
+        business_info_map = {it.key: it.value for it in data_proto.business_info}
+
+        title = business_info_map["title"]
+        tid = int(business_info_map["thread_id"])
+        pid = 0
+        author_id = int(business_info_map["user_id"])
+        type_ = int(business_info_map["thread_type"])
+        tab_id = int(business_info_map["inner_tab_id"])
+        is_good = False
+        is_top = False
+        is_share = False
+        is_hide = False
+        is_livepost = False
+
+        vote_info = None
+        for component in data_proto.components:
+            _type = component.component
+            if _type != "feed_poll":  # TODO: 不确定 找个抽奖帖测试
+                continue
+            vote_info = VoteInfo.from_tbdata(component.feed_poll)
+        if vote_info is None:
+            vote_info = VoteInfo()
+
+        share_origin = ShareThread()  # TODO: 找个转发帖测试
+
+        view_num = int(business_info_map["view_num"])
+        reply_num = 0
+        share_num = 0
+        agree = 0
+        disagree = 0
+        create_time = int(business_info_map["create_time"])
+        last_time = 0
         return Thread(
             contents,
             title,
@@ -705,6 +764,14 @@ class Thread:
 
     def __hash__(self) -> int:
         return self.pid
+
+    @cached_property
+    def text(self) -> str:
+        if self.title:
+            text = f"{self.title}\n{self.contents.text}"
+        else:
+            text = self.contents.text
+        return text
 
     @property
     def is_help(self) -> bool:
@@ -786,10 +853,10 @@ class Threads(TbErrorExt, Containers[Thread]):
         tab_map = {p.tab_name: p.tab_id for p in data_proto.nav_tab_info.tab}
 
         objs = [Thread.from_tbdata(p) for p in data_proto.thread_list]
-        # if not objs:
-        #     objs = [Thread.from_feed(p) for p in data_proto.page_data.feed_list]
+        if not objs:
+            objs = [Thread.from_feed(p.feed) for p in data_proto.page_data.feed_list if p.layout == "feed"]
 
-        users = {p.id: UserInfo_t.from_tbdata(p) for p in data_proto.user_list}
+        users = {p.id: UserInfo_t.from_tbdata(p) for p in data_proto.user_list}  # TODO: 新版用户信息不走这里了
 
         for thread in objs:
             thread.fname = forum.fname

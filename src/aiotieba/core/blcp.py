@@ -191,10 +191,10 @@ class BLCPCore:
         try:
             rpc, lcm = ClientBLCPResponses.parseBLCPResponse(reps.toBytes())
         except:
-            raise Exception("BLCP Handshake error.")  # todo: 特殊的握手错误
+            raise Exception("BLCP Handshake error.")  # TODO: 特殊的握手错误
 
         if rpc.response.error_text != "success" or lcm.get("errno") != "0":
-            raise Exception("BLCP Handshake error.")  # todo: 特殊的握手错误
+            raise Exception("BLCP Handshake error.")  # TODO: 特殊的握手错误
 
         loginBLCPRequest = BLCPData(serviceId=2, methodId=50)
         loginBLCPRequest.correlationId = 2000003149381050
@@ -241,10 +241,10 @@ class BLCPCore:
         try:
             rpc, lcm = ClientBLCPResponses.parseBLCPResponse(reps.toBytes())
         except:
-            raise Exception("BLCP Handshake error.")  # todo: 特殊的握手错误
+            raise Exception("BLCP Handshake error.")  # TODO: 特殊的握手错误
 
         if rpc.response.error_text != "success" or lcm.get("err_code") != 0:
-            raise Exception("BLCP Handshake error.")  # todo: 特殊的握手错误
+            raise Exception("BLCP Handshake error.")  # TODO: 特殊的握手错误
 
         rep = json.loads(reps.LcmBody)
 
@@ -285,7 +285,7 @@ class BLCPCore:
             # proxy_auth=self.net_core.proxy.auth,
             # ssl=False,
             data=json.dumps(data),
-        )  # todo: 支持代理
+        )  # TODO: 支持代理
 
         try:
             response = await self.net_core.req2res(request, False, 2 * 1024)
@@ -317,7 +317,7 @@ class BLCPCore:
             # proxy_auth=self.net_core.proxy.auth,
             # ssl=False,
             data=urllib.parse.urlencode(data),
-        )  # todo: 支持代理
+        )  # TODO: 支持代理
 
         try:
             response = await self.net_core.req2res(request, False, 2 * 1024)
@@ -354,7 +354,7 @@ class BLCPCore:
             # proxy_auth=self.net_core.proxy.auth,
             # ssl=False,
             data=urllib.parse.urlencode(data),
-        )  # todo: 支持代理
+        )  # TODO: 支持代理
 
         try:
             response = await self.net_core.req2res(request, False, 2 * 1024)
@@ -402,11 +402,11 @@ class BLCPCore:
             if not msg:
                 continue
             self.waiter.set_done(msg.correlationId, msg)
-            # todo: 加上callbacks以处理服务端主动发送的消息，如群聊消息等。获取群聊消息推送需要先发包绑定群聊。
+            # TODO: 加上callbacks以处理服务端主动发送的消息，如群聊消息等。获取群聊消息推送需要先发包绑定群聊。
             if msg.isNotify:
                 rpc, lcm = ClientBLCPResponses.parseBLCPResponse(
                     msg.toBytes()
-                )  # todo:优化。这里在解码后又编码再解码了一次
+                )  # TODO:优化。这里在解码后又编码再解码了一次
                 if self.message_queue.full():
                     await self.message_queue.get()  # 队满自动丢弃
                 await self.message_queue.put(lcm)
@@ -439,11 +439,11 @@ class BLCPCore:
         try:
             rpc, lcm = ClientBLCPResponses.parseBLCPResponse(reps.toBytes())
         except:
-            raise Exception("BLCP Handshake error.")  # todo: 特殊的握手错误
+            raise Exception("BLCP Handshake error.")  # TODO: 特殊的握手错误
         if rpc.response.error_text != "success" or lcm.get("err_code") != 0:
-            raise Exception("BLCP Handshake error.")  # todo: 特殊的握手错误
+            raise Exception("BLCP Handshake error.")  # TODO: 特殊的握手错误
 
-        await self.fetch_mcast_msg_client_request(self.account.cuid_galaxy2, chatroom_id)  # todo:获取历史消息
+        await self.fetch_mcast_msg_client_request(self.account.cuid_galaxy2, chatroom_id)  # TODO:获取历史消息
 
         if self.heartbeater is not None and not self.heartbeater.done():
             self.heartbeater.cancel()
@@ -502,7 +502,7 @@ class BLCPCore:
             # proxy_auth=self.net_core.proxy.auth,
             # ssl=False,
             data=json.dumps(data),
-        )  # todo: 支持代理
+        )  # TODO: 支持代理
 
         try:
             response = await self.net_core.req2res(request, False, 2 * 1024)
@@ -550,7 +550,7 @@ class BLCPCore:
             # proxy_auth=self.net_core.proxy.auth,
             # ssl=False,
             data=json.dumps(data),
-        )  # todo: 支持代理
+        )  # TODO: 支持代理
 
         try:
             response = await self.net_core.req2res(request, False, 2 * 1024)
@@ -661,7 +661,7 @@ class ClientBLCPResponses:
         if isinstance(Lcm, Lcm_pb2.RpcData):
             responseBLCP.LcmBody = Lcm.SerializeToString()
         else:
-            responseBLCP.LcmBody = json.dumps(Lcm).encode()  # todo:这里又编码回字节了，性能浪费
+            responseBLCP.LcmBody = json.dumps(Lcm).encode()  # TODO:这里又编码回字节了，性能浪费
         responseBLCP.ifRequest = False
 
         return responseBLCP
@@ -694,7 +694,7 @@ class ClientBLCPResponses:
         Rpc: Rpc_pb2.RpcMeta = Rpc_pb2.RpcMeta()
         Rpc.ParseFromString(barr1)
 
-        # todo: 优化Lcm消息类型判别，目前try处理比较暴力
+        # TODO: 优化Lcm消息类型判别，目前try处理比较暴力
         try:
             Lcm = Lcm_pb2.RpcData()
             Lcm.ParseFromString(barr2)

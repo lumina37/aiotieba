@@ -6,6 +6,7 @@ import "Page.proto";
 import "ThreadInfo.proto";
 import "User.proto";
 import "FrsTabInfo.proto";
+import "PollInfo.proto";
 
 message PageData {
     message LayoutFactory {
@@ -13,7 +14,46 @@ message PageData {
 
         message FeedLayout {
             message ComponentFactory {
+                string component = 1;
 
+                message FeedContentResource {
+                    int32 type = 1;
+
+                    message FeedContentText {
+                        string text = 1;
+                    }
+                    FeedContentText text_info = 8;
+
+                    message FeedContentEmoji {
+                        string name = 1;
+                        string c = 2;
+                    }
+                    FeedContentEmoji emoji_info = 10;
+                }
+
+                message TitleComponent {
+                    repeated FeedContentResource data = 1;
+                }
+                TitleComponent feed_title = 3;
+
+                message AbstractComponent {
+                    repeated FeedContentResource data = 1;
+                }
+                AbstractComponent feed_abstract = 4;
+
+                message FeedPicComponent {
+                    message PicInfo {
+                        string small_pic_url = 1;
+                        string big_pic_url = 2;
+                        string origin_pic_url = 3;
+                        uint32 width = 4;
+                        uint32 height = 5;
+                    }
+                    repeated PicInfo pics = 1;
+                }
+                FeedPicComponent feed_pic = 7;
+
+                PollInfo feed_poll = 22;
             }
             repeated ComponentFactory components = 1;
 
