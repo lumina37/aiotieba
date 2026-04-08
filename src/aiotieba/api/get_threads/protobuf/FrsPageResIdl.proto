@@ -7,8 +7,30 @@ import "ThreadInfo.proto";
 import "User.proto";
 import "FrsTabInfo.proto";
 
+message PageData {
+    message LayoutFactory {
+        string layout = 1;
+
+        message FeedLayout {
+            message ComponentFactory {
+
+            }
+            repeated ComponentFactory components = 1;
+
+            message FeedKV {
+                string key = 1;
+                string value = 2;
+            }
+            repeated FeedKV business_info = 5;
+        }
+        FeedLayout feed = 2;
+    }
+    repeated LayoutFactory feed_list = 2;
+}
+
 message FrsPageResIdl {
     Error error = 1;
+
     message DataRes {
         message ForumInfo {
             int64 id = 1;
@@ -22,17 +44,22 @@ message FrsPageResIdl {
             repeated Manager managers = 17;
         }
         ForumInfo forum = 2;
+
         Page page = 4;
         repeated ThreadInfo thread_list = 7;
         repeated User user_list = 17;
+
         message NavTabInfo {
             repeated FrsTabInfo tab = 1;
         }
         NavTabInfo nav_tab_info = 37;
+
         message ForumRuleStatus {
             int32 has_forum_rule = 4;
         }
         ForumRuleStatus forum_rule = 105;
+
+        PageData page_data = 126;
     }
     DataRes data = 2;
 }
