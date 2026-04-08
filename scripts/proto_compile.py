@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-commom_proto_pth = Path("aiotieba/api/_protobuf")
+commom_proto_pth = Path("src/aiotieba/api/_protobuf")
 
 for fpth in commom_proto_pth.glob("*_pb2.py"):
     fpth.unlink()
@@ -48,7 +48,7 @@ for fpth in commom_proto_pth.glob("*_pb2.py"):
     fpth.unlink()
     bak_fpth.rename(fpth)
 
-for mod_pth in Path("aiotieba/api").glob("*/protobuf"):
+for mod_pth in Path("src/aiotieba/api").glob("*/protobuf"):
     for fpth in mod_pth.glob("*_pb2.py"):
         fpth.unlink()
 
@@ -64,5 +64,5 @@ for mod_pth in Path("aiotieba/api").glob("*/protobuf"):
         fpth.unlink()
         bak_fpth.rename(fpth)
 
-subprocess.run("uvx ruff check . --fix --unsafe-fixes", cwd=".", check=False, timeout=10.0)
-subprocess.run("uvx ruff format .", cwd=".", check=False, timeout=30.0)
+subprocess.run("uvx ruff check src/**/*_pb2.py --fix --unsafe-fixes", cwd=".", check=False, timeout=10.0)
+subprocess.run("uvx ruff format src/**/*_pb2.py", cwd=".", check=False, timeout=30.0)

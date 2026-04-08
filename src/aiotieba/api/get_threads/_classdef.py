@@ -642,19 +642,69 @@ class Thread:
             last_time,
         )
 
+    @staticmethod
+    def from_feed(data_proto: TypeMessage) -> None:
+        # 从12.65版本开始部分热门吧的主题帖列表采用feed形式推送
+        contents = Contents_t.from_tbdata(data_proto)
+        title = data_proto.title
+        tid = data_proto.id
+        pid = data_proto.first_post_id
+        author_id = data_proto.author_id
+        type_ = data_proto.thread_type
+        tab_id = data_proto.tab_id
+        is_good = bool(data_proto.is_good)
+        is_top = bool(data_proto.is_top)
+        is_share = bool(data_proto.is_share_thread)
+        is_hide = bool(data_proto.is_frs_mask)
+        is_livepost = bool(data_proto.is_livepost)
+        vote_info = VoteInfo.from_tbdata(data_proto.poll_info)
+        if is_share:
+            if data_proto.origin_thread_info.pid:
+                share_origin = ShareThread.from_tbdata(data_proto.origin_thread_info)
+            else:
+                is_share = False
+                share_origin = ShareThread()
+        else:
+            share_origin = ShareThread()
+        view_num = data_proto.view_num
+        reply_num = data_proto.reply_num
+        share_num = data_proto.share_num
+        agree = data_proto.agree.agree_num
+        disagree = data_proto.agree.disagree_num
+        create_time = data_proto.create_time
+        last_time = data_proto.last_time_int
+        return Thread(
+            contents,
+            title,
+            0,
+            "",
+            tid,
+            pid,
+            None,
+            author_id,
+            type_,
+            tab_id,
+            is_good,
+            is_top,
+            is_share,
+            is_hide,
+            is_livepost,
+            vote_info,
+            share_origin,
+            view_num,
+            reply_num,
+            share_num,
+            agree,
+            disagree,
+            create_time,
+            last_time,
+        )
+
     def __eq__(self, obj: Thread) -> bool:
         return self.pid == obj.pid
 
     def __hash__(self) -> int:
         return self.pid
-
-    @cached_property
-    def text(self) -> str:
-        if self.title:
-            text = f"{self.title}\n{self.contents.text}"
-        else:
-            text = self.contents.text
-        return text
 
     @property
     def is_help(self) -> bool:
@@ -736,7 +786,11 @@ class Threads(TbErrorExt, Containers[Thread]):
         tab_map = {p.tab_name: p.tab_id for p in data_proto.nav_tab_info.tab}
 
         objs = [Thread.from_tbdata(p) for p in data_proto.thread_list]
+        # if not objs:
+        #     objs = [Thread.from_feed(p) for p in data_proto.page_data.feed_list]
+
         users = {p.id: UserInfo_t.from_tbdata(p) for p in data_proto.user_list}
+
         for thread in objs:
             thread.fname = forum.fname
             thread.fid = forum.fid

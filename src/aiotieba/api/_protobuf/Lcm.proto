@@ -1,5 +1,4 @@
 syntax = "proto3";
-option optimize_for = LITE_RUNTIME;
 
 message Common {
     string cuid = 1;
@@ -43,4 +42,3 @@ message RpcData {
     LcmResponse lcm_response = 2;
     LcmNotify lcm_notify = 3;
 }
-

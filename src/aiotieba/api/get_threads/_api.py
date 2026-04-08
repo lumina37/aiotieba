@@ -1,6 +1,6 @@
 import yarl
 
-from ...const import APP_BASE_HOST, MAIN_VERSION
+from ...const import APP_BASE_HOST
 from ...core import HttpCore, WsCore
 from ...exception import TiebaServerError
 from ._classdef import Threads
@@ -9,10 +9,10 @@ from .protobuf import FrsPageReqIdl_pb2, FrsPageResIdl_pb2
 CMD = 301001
 
 
-def pack_proto(fname: str, pn: int, rn: int, sort: int, is_good: bool) -> bytes:
+def pack_proto(fname: str, pn: int, rn: int, sort: int, is_good: bool, version: str) -> bytes:
     req_proto = FrsPageReqIdl_pb2.FrsPageReqIdl()
     req_proto.data.common._client_type = 2
-    req_proto.data.common._client_version = MAIN_VERSION
+    req_proto.data.common._client_version = version
     req_proto.data.kw = fname
     req_proto.data.pn = 0 if pn == 1 else pn
     req_proto.data.rn = rn
@@ -36,8 +36,10 @@ def parse_body(body: bytes) -> Threads:
     return threads
 
 
-async def request_http(http_core: HttpCore, fname: str, pn: int, rn: int, sort: int, is_good: bool) -> Threads:
-    data = pack_proto(fname, pn, rn, sort, is_good)
+async def request_http(
+    http_core: HttpCore, fname: str, pn: int, rn: int, sort: int, is_good: bool, version: str
+) -> Threads:
+    data = pack_proto(fname, pn, rn, sort, is_good, version)
 
     request = http_core.pack_proto_request(
         yarl.URL.build(scheme="http", host=APP_BASE_HOST, path="/c/f/frs/page", query_string=f"cmd={CMD}"),
@@ -48,8 +50,8 @@ async def request_http(http_core: HttpCore, fname: str, pn: int, rn: int, sort: 
     return parse_body(body)
 
 
-async def request_ws(ws_core: WsCore, fname: str, pn: int, rn: int, sort: int, is_good: bool) -> Threads:
-    data = pack_proto(fname, pn, rn, sort, is_good)
+async def request_ws(ws_core: WsCore, fname: str, pn: int, rn: int, sort: int, is_good: bool, version: str) -> Threads:
+    data = pack_proto(fname, pn, rn, sort, is_good, version)
 
     response = await ws_core.send(data, CMD)
     return parse_body(await response.read())

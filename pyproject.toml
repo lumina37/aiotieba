@@ -1,6 +1,6 @@
 [project]
 name = "aiotieba"
-version = "4.6.5a3"
+version = "4.6.5a4"
 description = "Asynchronous I/O Client for Baidu Tieba"
 authors = [{ name = "lumina37", email = "starry.qvq@gmail.com" }]
 urls = { Repository = "https://github.com/lumina37/aiotieba/", Documentation = "https://aiotieba.cc/" }
@@ -49,13 +49,8 @@ speedup = [
 ]
 
 [dependency-groups]
-dev = [
-  "pytest==9.0.2",
-  "pytest-asyncio==1.3.0",
-  "pytest-rerunfailures==16.1",
-  "mkdocs-material",
-  "mkdocstrings[python]",
-]
+dev = ["pytest==9.0.3", "pytest-asyncio==1.3.0", "pytest-rerunfailures==16.1"]
+docs = ["mkdocs-material", "mkdocstrings[python]"]
 
 [build-system]
 requires = ["scikit-build-core>=0.12.2,<0.13"]

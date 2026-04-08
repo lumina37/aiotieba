@@ -15,6 +15,7 @@ message PostInfoList {
     uint32 create_time = 5;
     string forum_name = 6;
     string title = 7;
+
     message PostInfoContent {
         message Abstract {
             int32 type = 1;
@@ -24,11 +25,13 @@ message PostInfoList {
             string voice_md5 = 7;
         }
         repeated Abstract post_content = 1;
+
         uint64 create_time = 2;
         uint64 post_type = 3;
         uint64 post_id = 4;
     }
     repeated PostInfoContent content = 8;
+
     string user_name = 10;
     repeated Media media = 16;
     uint32 reply_num = 17;

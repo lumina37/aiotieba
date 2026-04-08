@@ -12,7 +12,7 @@ from ..._protobuf import Error_pb2 as Error__pb2
 from ..._protobuf import User_pb2 as User__pb2
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\x1dGetUserByTiebaUidResIdl.proto\x1a\x0b\x45rror.proto\x1a\nUser.proto"\x80\x01\n\x17GetUserByTiebaUidResIdl\x12\x15\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x06.Error\x12.\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32 .GetUserByTiebaUidResIdl.DataRes\x1a\x1e\n\x07\x44\x61taRes\x12\x13\n\x04user\x18\x01 \x01(\x0b\x32\x05.Userb\x06proto3'
+    b'\n\x1dGetUserByTiebaUidResIdl.proto\x1a\x0b\x45rror.proto\x1a\nUser.proto"\x1e\n\x07\x44\x61taRes\x12\x13\n\x04user\x18\x01 \x01(\x0b\x32\x05.User"H\n\x17GetUserByTiebaUidResIdl\x12\x15\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x06.Error\x12\x16\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x08.DataResb\x06proto3'
 )
 
 _globals = globals()
@@ -20,7 +20,7 @@ _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "GetUserByTiebaUidResIdl_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
-    _globals["_GETUSERBYTIEBAUIDRESIDL"]._serialized_start = 59
-    _globals["_GETUSERBYTIEBAUIDRESIDL"]._serialized_end = 187
-    _globals["_GETUSERBYTIEBAUIDRESIDL_DATARES"]._serialized_start = 157
-    _globals["_GETUSERBYTIEBAUIDRESIDL_DATARES"]._serialized_end = 187
+    _globals["_DATARES"]._serialized_start = 58
+    _globals["_DATARES"]._serialized_end = 88
+    _globals["_GETUSERBYTIEBAUIDRESIDL"]._serialized_start = 90
+    _globals["_GETUSERBYTIEBAUIDRESIDL"]._serialized_end = 162

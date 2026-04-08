@@ -155,3 +155,52 @@ async def test_Threads(client: tb.Client):
             assert frag.width > 0
             assert frag.height > 0
             assert frag.view_num > 0
+
+
+@pytest.mark.xfail
+@pytest.mark.asyncio(loop_scope="session")
+async def test_ThreadsBeta(client: tb.Client):
+    fname = "孙笑川"
+    threads = await client._get_threads(fname)
+
+    ##### Forum_t #####
+    forum = threads.forum
+    assert forum.fid == 21841105
+    assert forum.fname == fname
+    assert forum.category != ""
+    assert forum.subcategory != ""
+    assert forum.member_num > 0
+    assert forum.post_num > 0
+    assert forum.thread_num > 0
+    assert forum.has_bawu is True
+    assert forum.has_rule is True
+
+    ##### Thread #####
+    assert len(threads) >= 2
+    for thread in threads:
+        # Normal Thread
+        if thread.tid == 10266810557:
+            # UserInfo_t
+            user = thread.user
+            assert user.user_id > 0
+            assert user.portrait != ""
+            assert user.user_name != ""
+            assert user.nick_name_new != ""
+            assert user.nick_name == user.nick_name_new
+            assert user.show_name == user.nick_name_new
+            assert user.level > 0
+            assert user.glevel > 0
+            assert user.priv_like != 0
+            assert user.priv_reply != 0
+
+            # Thread
+            assert thread.text != ""
+            assert thread.title != ""
+            assert thread.fid > 0
+            assert thread.fname != ""
+            assert thread.pid > 0
+            assert thread.author_id == user.user_id
+            assert thread.view_num > 0
+            assert thread.reply_num > 0
+            assert thread.create_time > 0
+            assert thread.last_time > 0

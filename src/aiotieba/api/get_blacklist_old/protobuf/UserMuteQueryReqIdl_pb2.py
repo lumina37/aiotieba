@@ -11,7 +11,7 @@ _sym_db = _symbol_database.Default()
 from ..._protobuf import CommonReq_pb2 as CommonReq__pb2
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\x19UserMuteQueryReqIdl.proto\x1a\x0f\x43ommonReq.proto"\x80\x01\n\x13UserMuteQueryReqIdl\x12*\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x1c.UserMuteQueryReqIdl.DataReq\x1a=\n\x07\x44\x61taReq\x12\x1a\n\x06\x63ommon\x18\x02 \x01(\x0b\x32\n.CommonReq\x12\n\n\x02pn\x18\x04 \x01(\r\x12\n\n\x02rn\x18\x05 \x01(\rb\x06proto3'
+    b'\n\x19UserMuteQueryReqIdl.proto\x1a\x0f\x43ommonReq.proto"=\n\x07\x44\x61taReq\x12\x1a\n\x06\x63ommon\x18\x02 \x01(\x0b\x32\n.CommonReq\x12\n\n\x02pn\x18\x04 \x01(\r\x12\n\n\x02rn\x18\x05 \x01(\r"-\n\x13UserMuteQueryReqIdl\x12\x16\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x08.DataReqb\x06proto3'
 )
 
 _globals = globals()
@@ -19,7 +19,7 @@ _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "UserMuteQueryReqIdl_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
-    _globals["_USERMUTEQUERYREQIDL"]._serialized_start = 47
-    _globals["_USERMUTEQUERYREQIDL"]._serialized_end = 175
-    _globals["_USERMUTEQUERYREQIDL_DATAREQ"]._serialized_start = 114
-    _globals["_USERMUTEQUERYREQIDL_DATAREQ"]._serialized_end = 175
+    _globals["_DATAREQ"]._serialized_start = 46
+    _globals["_DATAREQ"]._serialized_end = 107
+    _globals["_USERMUTEQUERYREQIDL"]._serialized_start = 109
+    _globals["_USERMUTEQUERYREQIDL"]._serialized_end = 154

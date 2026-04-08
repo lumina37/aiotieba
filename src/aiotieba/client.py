@@ -416,6 +416,39 @@ class Client:
 
     @handle_exception(get_threads.Threads)
     @_try_websocket
+    async def _get_threads(
+        self,
+        fname_or_fid: str | int,
+        /,
+        pn: int = 1,
+        *,
+        rn: int = 30,
+        sort: ThreadSortType = ThreadSortType.REPLY,
+        is_good: bool = False,
+    ) -> get_threads.Threads:
+        """
+        获取首页帖子 (beta)
+
+        Args:
+            fname_or_fid (str | int): 贴吧名或fid 优先贴吧名
+            pn (int, optional): 页码. Defaults to 1.
+            rn (int, optional): 请求的条目数. Defaults to 30. Max to 100.
+            sort (ThreadSortType, optional): HOT热门排序 REPLY按回复时间 CREATE按发布时间 FOLLOW关注的人. Defaults to ThreadSortType.REPLY.
+            is_good (bool, optional): True则获取精品区帖子 False则获取普通区帖子. Defaults to False.
+
+        Returns:
+            Threads: 帖子列表
+        """
+
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
+
+        if self._ws_core.status == WsStatus.OPEN:
+            return await get_threads.request_ws(self._ws_core, fname, pn, rn, sort, is_good, MAIN_VERSION)
+
+        return await get_threads.request_http(self._http_core, fname, pn, rn, sort, is_good, MAIN_VERSION)
+
+    @handle_exception(get_threads.Threads)
+    @_try_websocket
     async def get_threads(
         self,
         fname_or_fid: str | int,
@@ -442,10 +475,12 @@ class Client:
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
-        if self._ws_core.status == WsStatus.OPEN:
-            return await get_threads.request_ws(self._ws_core, fname, pn, rn, sort, is_good)
+        THREAD_VERSION = "12.64.1.1"
 
-        return await get_threads.request_http(self._http_core, fname, pn, rn, sort, is_good)
+        if self._ws_core.status == WsStatus.OPEN:
+            return await get_threads.request_ws(self._ws_core, fname, pn, rn, sort, is_good, THREAD_VERSION)
+
+        return await get_threads.request_http(self._http_core, fname, pn, rn, sort, is_good, THREAD_VERSION)
 
     @handle_exception(get_posts.Posts)
     @_try_websocket
@@ -941,9 +976,9 @@ class Client:
         else:
             user_id = id_
 
-        UPOST_VERSION = "8.9.8.5"
+        USER_POST_VERSION = "8.9.8.5"
 
-        return await get_user_contents.get_posts.request_http(self._http_core, user_id, pn, rn, UPOST_VERSION)
+        return await get_user_contents.get_posts.request_http(self._http_core, user_id, pn, rn, USER_POST_VERSION)
 
     @_try_websocket
     async def __get_self_posts(self, pn: int, rn: int):
