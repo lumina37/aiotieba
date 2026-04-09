@@ -697,7 +697,6 @@ class Thread:
 
     @staticmethod
     def from_feed(data_proto: TypeMessage) -> None:
-        # 从12.65版本开始部分热门吧的主题帖列表采用feed形式推送
         contents = Contents_t.from_feed(data_proto)
 
         business_info_map = {it.key: it.value for it in data_proto.business_info}
@@ -705,6 +704,7 @@ class Thread:
         title = business_info_map["title"]
         tid = int(business_info_map["thread_id"])
         pid = 0
+
         author_id = int(business_info_map["user_id"])
         type_ = int(business_info_map["thread_type"])
         tab_id = int(business_info_map["inner_tab_id"])
@@ -717,7 +717,7 @@ class Thread:
         vote_info = None
         for component in data_proto.components:
             _type = component.component
-            if _type != "feed_poll":  # TODO: 不确定 找个抽奖帖测试
+            if _type != "feed_poll":  # TODO: 不确定，需要找个抽奖帖测试
                 continue
             vote_info = VoteInfo.from_tbdata(component.feed_poll)
         if vote_info is None:
@@ -853,15 +853,25 @@ class Threads(TbErrorExt, Containers[Thread]):
         tab_map = {p.tab_name: p.tab_id for p in data_proto.nav_tab_info.tab}
 
         objs = [Thread.from_tbdata(p) for p in data_proto.thread_list]
-        if not objs:
-            objs = [Thread.from_feed(p.feed) for p in data_proto.page_data.feed_list if p.layout == "feed"]
-
-        users = {p.id: UserInfo_t.from_tbdata(p) for p in data_proto.user_list}  # TODO: 新版用户信息不走这里了
-
+        users = {p.id: UserInfo_t.from_tbdata(p) for p in data_proto.user_list}
         for thread in objs:
             thread.fname = forum.fname
             thread.fid = forum.fid
             thread.user = users[thread.author_id]
+
+        return Threads(objs, page, forum, tab_map)
+
+    @staticmethod
+    def from_feed(data_proto: TypeMessage) -> Threads:
+        # 从12.65版本开始部分热门吧的主题帖列表采用feed形式推送
+        page = Page_t.from_tbdata(data_proto.page)
+        forum = Forum_t.from_tbdata(data_proto)
+        tab_map = {p.tab_name: p.tab_id for p in data_proto.nav_tab_info.tab}
+
+        objs = [Thread.from_feed(p.feed) for p in data_proto.page_data.feed_list if p.layout == "feed"]
+        for thread in objs:
+            thread.fname = forum.fname
+            thread.fid = forum.fid
 
         return Threads(objs, page, forum, tab_map)
 

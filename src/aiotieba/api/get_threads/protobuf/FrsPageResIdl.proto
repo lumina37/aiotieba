@@ -31,6 +31,14 @@ message PageData {
                     FeedContentEmoji emoji_info = 10;
                 }
 
+                message PicInfo {
+                    string small_pic_url = 1;
+                    string big_pic_url = 2;
+                    string origin_pic_url = 3;
+                    uint32 width = 4;
+                    uint32 height = 5;
+                }
+
                 message TitleComponent {
                     repeated FeedContentResource data = 1;
                 }
@@ -42,13 +50,6 @@ message PageData {
                 AbstractComponent feed_abstract = 4;
 
                 message FeedPicComponent {
-                    message PicInfo {
-                        string small_pic_url = 1;
-                        string big_pic_url = 2;
-                        string origin_pic_url = 3;
-                        uint32 width = 4;
-                        uint32 height = 5;
-                    }
                     repeated PicInfo pics = 1;
                 }
                 FeedPicComponent feed_pic = 7;
