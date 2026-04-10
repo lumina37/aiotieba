@@ -15,7 +15,7 @@ async def main():
     # [6] `async with`是什么？
     async with tb.Client() as client:
         # [1] CPU在何时离开？——`await`关键字
-        threads = await client.get_threads('天堂鸡汤')
+        threads = await client.get_threads("天堂鸡汤")
 
     print(threads)
 

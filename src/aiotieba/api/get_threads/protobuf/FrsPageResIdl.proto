@@ -1,0 +1,106 @@
+// tbclient.FrsPage.FrsPageResIdl
+syntax = "proto3";
+
+import "Error.proto";
+import "Page.proto";
+import "ThreadInfo.proto";
+import "User.proto";
+import "FrsTabInfo.proto";
+import "PollInfo.proto";
+
+message PageData {
+    message LayoutFactory {
+        string layout = 1;
+
+        message FeedLayout {
+            message ComponentFactory {
+                string component = 1;
+
+                message FeedContentResource {
+                    int32 type = 1;
+
+                    message FeedContentText {
+                        string text = 1;
+                    }
+                    FeedContentText text_info = 8;
+
+                    message FeedContentEmoji {
+                        string name = 1;
+                        string c = 2;
+                    }
+                    FeedContentEmoji emoji_info = 10;
+                }
+
+                message PicInfo {
+                    string small_pic_url = 1;
+                    string big_pic_url = 2;
+                    string origin_pic_url = 3;
+                    uint32 width = 4;
+                    uint32 height = 5;
+                }
+
+                message TitleComponent {
+                    repeated FeedContentResource data = 1;
+                }
+                TitleComponent feed_title = 3;
+
+                message AbstractComponent {
+                    repeated FeedContentResource data = 1;
+                }
+                AbstractComponent feed_abstract = 4;
+
+                message FeedPicComponent {
+                    repeated PicInfo pics = 1;
+                }
+                FeedPicComponent feed_pic = 7;
+
+                PollInfo feed_poll = 22;
+            }
+            repeated ComponentFactory components = 1;
+
+            message FeedKV {
+                string key = 1;
+                string value = 2;
+            }
+            repeated FeedKV business_info = 5;
+        }
+        FeedLayout feed = 2;
+    }
+    repeated LayoutFactory feed_list = 2;
+}
+
+message FrsPageResIdl {
+    Error error = 1;
+
+    message DataRes {
+        message ForumInfo {
+            int64 id = 1;
+            string name = 2;
+            string first_class = 3;
+            string second_class = 4;
+            int32 member_num = 9;
+            int32 thread_num = 10;
+            int32 post_num = 11;
+            message Manager {}
+            repeated Manager managers = 17;
+        }
+        ForumInfo forum = 2;
+
+        Page page = 4;
+        repeated ThreadInfo thread_list = 7;
+        repeated User user_list = 17;
+
+        message NavTabInfo {
+            repeated FrsTabInfo tab = 1;
+        }
+        NavTabInfo nav_tab_info = 37;
+
+        message ForumRuleStatus {
+            int32 has_forum_rule = 4;
+        }
+        ForumRuleStatus forum_rule = 105;
+
+        PageData page_data = 126;
+    }
+    DataRes data = 2;
+}

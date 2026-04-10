@@ -1,0 +1,12 @@
+// tbclient.GetLevelInfo.GetLevelInfoReqIdl
+syntax = "proto3";
+
+import "CommonReq.proto";
+
+message GetLevelInfoReqIdl {
+    message DataReq {
+        CommonReq common = 2;
+        int64 forum_id = 1;
+    }
+    DataReq data = 1;
+}

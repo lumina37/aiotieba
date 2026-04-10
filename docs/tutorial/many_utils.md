@@ -25,24 +25,6 @@ async def sign(BDUSS_key: str, *, retry_times: int = 0):
             await asyncio.sleep(1.0)
             if await client.sign_growth():
                 break
-        # 分享任务
-        for _ in range(retry_times):
-            await asyncio.sleep(1.0)
-            if await client.sign_growth_share():
-                break
-        # 互关任务
-        for _ in range(retry_times):
-            await asyncio.sleep(1.0)
-            someone = 'tb.1.2fc1394a.ukuFqA26BTuAeXqYr1Nmwg'
-            success = False
-            success = await client.unfollow_user(someone)
-            if not success:
-                continue
-            success = await client.follow_user(someone)
-            if not success:
-                continue
-            if success:
-                break
         # 签到
         await client.sign_forums()  # 先一键签到
         retry_list: list[str] = []
@@ -121,16 +103,14 @@ import aiotieba as tb
 
 async def main():
     async with tb.Client("在此处输入你的BDUSS") as client:
-        await asyncio.gather(
-            *[
-                client.dislike_forum(fname)
-                for fname in [
-                    "贴吧名A",
-                    "贴吧名B",
-                    "贴吧名C",
-                ]  # 把你要屏蔽的贴吧名填在这个列表里
-            ]
-        )
+        await asyncio.gather(*[
+            client.dislike_forum(fname)
+            for fname in [
+                "贴吧名A",
+                "贴吧名B",
+                "贴吧名C",
+            ]  # 把你要屏蔽的贴吧名填在这个列表里
+        ])
 
 
 asyncio.run(main())
@@ -155,9 +135,9 @@ async def main():
         ]
         while 1:
             forums = await client.get_dislike_forums()
-            await asyncio.gather(
-                *[client.undislike_forum(forum.fid) for forum in forums if forum.fname not in preserve_fnames]
-            )
+            await asyncio.gather(*[
+                client.undislike_forum(forum.fid) for forum in forums if forum.fname not in preserve_fnames
+            ])
             if not forums.has_more:
                 break
 
@@ -210,7 +190,9 @@ import aiotieba as tb
 async def main():
     async with tb.Client("在此处输入你的BDUSS") as client:
         while posts_list := await client.get_user_posts():
-            await asyncio.gather(*[client.del_post(post.fid, post.tid, post.pid) for posts in posts_list for post in posts])
+            await asyncio.gather(*[
+                client.del_post(post.fid, post.tid, post.pid) for posts in posts_list for post in posts
+            ])
 
 
 asyncio.run(main())

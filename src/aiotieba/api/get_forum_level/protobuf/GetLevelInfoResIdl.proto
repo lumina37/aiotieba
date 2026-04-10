@@ -1,0 +1,15 @@
+// tbclient.GetLevelInfo.GetLevelInfoResIdl
+syntax = "proto3";
+
+import "Error.proto";
+
+message GetLevelInfoResIdl {
+    Error error = 2;
+    message DataRes {
+        int32 is_like = 2;
+        // repeated LevelInfo level_info = 1;
+        string level_name = 4;
+        int32 user_level = 3;
+    }
+    DataRes data = 1;
+}

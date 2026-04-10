@@ -118,6 +118,7 @@ async def main():
 
     print(user)
 
+
 asyncio.run(main())
 ```
 
@@ -166,6 +167,7 @@ async def main():
                 print(comment)  # 打印整个楼中楼
                 print(comment.contents.ats)  # 仅打印@相关的内容碎片
                 break
+
 
 asyncio.run(main())
 ```
@@ -225,7 +227,7 @@ BDUSS2 = "在这里输入第二个账号的BDUSS"
 
 
 async def main():
-    async with (tb.Client(BDUSS1) as client1, tb.Client(BDUSS2) as client2):
+    async with tb.Client(BDUSS1) as client1, tb.Client(BDUSS2) as client2:
         user1 = await client1.get_self_info()
         user2 = await client2.get_self_info()
         print(f"账号1: {user1}, 账号2: {user2}")
@@ -296,12 +298,13 @@ import aiotieba as tb
 
 BDUSS = "在这里输入你账号的BDUSS"
 
+
 async def main():
     async with tb.Client(BDUSS) as client:
         # [1] 什么是`asyncio.gather`？
         # 参考官方文档：并发运行任务
         # https://docs.python.org/zh-cn/3/library/asyncio-task.html#running-tasks-concurrently
-        user, threads = await asyncio.gather(client.get_self_info(), client.get_threads('天堂鸡汤'))
+        user, threads = await asyncio.gather(client.get_self_info(), client.get_threads("天堂鸡汤"))
 
     # 将获取的信息打印到日志
     print(f"当前用户: {user}")
