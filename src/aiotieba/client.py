@@ -2403,19 +2403,6 @@ class Client:
         return await sign_growth.request_web(self._http_core, act_type="page_sign")
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def sign_growth_share(self) -> BoolResponse:
-        """
-        用户成长等级任务: 分享主题帖
-
-        Returns:
-            BoolResponse: True成功 False失败
-        """
-
-        await self.__init_tbs()
-
-        return await sign_growth.request_app(self._http_core, act_type="share_thread")
-
-    @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     @_try_websocket
     async def add_post(self, fname_or_fid: str | int, /, tid: int, content: str) -> BoolResponse:
         """

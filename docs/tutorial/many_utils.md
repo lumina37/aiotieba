@@ -25,24 +25,6 @@ async def sign(BDUSS_key: str, *, retry_times: int = 0):
             await asyncio.sleep(1.0)
             if await client.sign_growth():
                 break
-        # 分享任务
-        for _ in range(retry_times):
-            await asyncio.sleep(1.0)
-            if await client.sign_growth_share():
-                break
-        # 互关任务
-        for _ in range(retry_times):
-            await asyncio.sleep(1.0)
-            someone = "tb.1.2fc1394a.ukuFqA26BTuAeXqYr1Nmwg"
-            success = False
-            success = await client.unfollow_user(someone)
-            if not success:
-                continue
-            success = await client.follow_user(someone)
-            if not success:
-                continue
-            if success:
-                break
         # 签到
         await client.sign_forums()  # 先一键签到
         retry_list: list[str] = []
