@@ -814,7 +814,7 @@ class Client:
     @handle_exception(get_blacklist.BlacklistUsers)
     async def get_blacklist(self) -> get_blacklist.BlacklistUsers:
         """
-        获取新版用户黑名单列表
+        获取完整的新版用户黑名单列表
 
         Returns:
             BlacklistUsers: 新版用户黑名单列表

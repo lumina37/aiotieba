@@ -9,9 +9,9 @@ from ._classdef import RankForums
 
 def parse_body(body: bytes) -> RankForums:
     soup = bs4.BeautifulSoup(body, "lxml")
-    bawu_postlogs = RankForums.from_tbdata(soup)
+    rank_forums = RankForums.from_tbdata(soup)
 
-    return bawu_postlogs
+    return rank_forums
 
 
 async def request(http_core: HttpCore, fname: str, pn: int, rank_type: RankForumType) -> RankForums:
@@ -23,7 +23,7 @@ async def request(http_core: HttpCore, fname: str, pn: int, rank_type: RankForum
     ]
 
     request = http_core.pack_web_get_request(
-        yarl.URL.build(scheme="http", host=WEB_BASE_HOST, path="/sign/index"), params
+        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/sign/index"), params
     )
 
     body = await http_core.net_core.send_request(request, read_bufsize=8 * 1024)

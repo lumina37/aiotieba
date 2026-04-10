@@ -10,7 +10,7 @@ def parse_body(body: bytes) -> None:
     res_json = parse_json(body)
     if code := int(res_json["error_code"]):
         raise TiebaServerError(code, res_json["error_msg"])
-    if code := int(res_json["error"]["errno"]):
+    if "error" in res_json and (code := int(res_json["error"]["errno"])):
         raise TiebaServerError(code, res_json["error"]["errmsg"])
 
 
@@ -21,7 +21,7 @@ async def request(http_core: HttpCore) -> BoolResponse:
     ]
 
     request = http_core.pack_web_form_request(
-        yarl.URL.build(scheme="http", host=WEB_BASE_HOST, path="/c/c/forum/msign"),
+        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/c/c/forum/msign"),
         data,
         extra_headers=[("Subapp-Type", "hybrid")],
     )
