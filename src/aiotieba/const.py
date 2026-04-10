@@ -1,4 +1,5 @@
-MAIN_VERSION = "22.4.1.0"
+LATEST_VERSION = "22.5.1.0"  # 通常用于写API (`agree`...)
+STABLE_VERSION = "12.64.1.1"  # 通常用于只读API (`get_threads`...)
 CHAT_VERSION = "12.68.1.0"
 CHAT_APPID = 10773430
 CHAT_SDK_VERSION = 11250036

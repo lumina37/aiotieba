@@ -1,6 +1,6 @@
 import yarl
 
-from ...const import APP_BASE_HOST, MAIN_VERSION
+from ...const import APP_BASE_HOST, LATEST_VERSION
 from ...core import HttpCore
 from ...enums import SearchType
 from ...exception import TiebaServerError
@@ -22,7 +22,7 @@ async def request(
     http_core: HttpCore, fname: str, query: str, pn: int, rn: int, search_type: SearchType, only_thread: bool
 ) -> ExactSearches:
     data = [
-        ("_client_version", MAIN_VERSION),
+        ("_client_version", LATEST_VERSION),
         ("kw", fname),
         ("only_thread", int(only_thread)),
         ("pn", pn),

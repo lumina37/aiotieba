@@ -1,6 +1,6 @@
 import yarl
 
-from ...const import APP_BASE_HOST, MAIN_VERSION
+from ...const import APP_BASE_HOST, LATEST_VERSION
 from ...core import Account, HttpCore, WsCore
 from ...enums import BlacklistType
 from ...exception import BoolResponse, TiebaServerError
@@ -13,7 +13,7 @@ def pack_proto(account: Account, user_id: int, btype: BlacklistType) -> bytes:
     req_proto = SetUserBlackReqIdl_pb2.SetUserBlackReqIdl()
     req_proto.data.common.BDUSS = account.BDUSS
     req_proto.data.common._client_type = 2
-    req_proto.data.common._client_version = MAIN_VERSION
+    req_proto.data.common._client_version = LATEST_VERSION
     req_proto.data.black_uid = user_id
     req_proto.data.perm_list.follow = 1 if btype & BlacklistType.FOLLOW else 2
     req_proto.data.perm_list.interact = 1 if btype & BlacklistType.INTERACT else 2

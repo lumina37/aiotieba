@@ -1,6 +1,6 @@
 import yarl
 
-from ...const import APP_BASE_HOST, MAIN_VERSION
+from ...const import APP_BASE_HOST, LATEST_VERSION
 from ...core import Account, HttpCore, WsCore
 from ...exception import TiebaServerError
 from ._classdef import Replys
@@ -12,7 +12,7 @@ CMD = 303007
 def pack_proto(account: Account, pn: int) -> bytes:
     req_proto = ReplyMeReqIdl_pb2.ReplyMeReqIdl()
     req_proto.data.common.BDUSS = account.BDUSS
-    req_proto.data.common._client_version = MAIN_VERSION
+    req_proto.data.common._client_version = LATEST_VERSION
     req_proto.data.pn = str(pn)
 
     return req_proto.SerializeToString()

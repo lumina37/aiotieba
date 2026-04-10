@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from cryptography.hazmat.primitives.asymmetric.padding import PKCS1v15
 from cryptography.hazmat.primitives.serialization import load_der_public_key
 
-from ...const import MAIN_VERSION
+from ...const import STABLE_VERSION
 from ...exception import TiebaServerError
 from ...helper import pack_json
 from ._classdef import WsMsgGroupInfo
@@ -30,7 +30,7 @@ def pack_proto(account: Account) -> bytes:
 
     device = {
         "cuid": account.cuid,
-        "_client_version": MAIN_VERSION,
+        "_client_version": STABLE_VERSION,
         "_msg_status": "1",
         "cuid_galaxy2": account.cuid_galaxy2,
         "_client_type": "2",
@@ -42,7 +42,7 @@ def pack_proto(account: Account) -> bytes:
     secret_key = rsa_chiper.encrypt(account.aes_ecb_sec_key, PKCS1v15())
     req_proto.data.secretKey = secret_key
     req_proto.data.stoken = account.STOKEN
-    req_proto.cuid = f"{account.cuid}|com.baidu.tieba{MAIN_VERSION}"
+    req_proto.cuid = f"{account.cuid}|com.baidu.tieba{STABLE_VERSION}"
 
     return req_proto.SerializeToString()
 

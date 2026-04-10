@@ -1,6 +1,6 @@
 import yarl
 
-from ...const import APP_BASE_HOST, MAIN_VERSION
+from ...const import APP_BASE_HOST, LATEST_VERSION
 from ...core import HttpCore, WsCore
 from ...exception import TiebaServerError
 from ._classdef import Forum_detail
@@ -11,7 +11,7 @@ CMD = 303021
 
 def pack_proto(fid: int) -> bytes:
     req_proto = GetForumDetailReqIdl_pb2.GetForumDetailReqIdl()
-    req_proto.data.common._client_version = MAIN_VERSION
+    req_proto.data.common._client_version = LATEST_VERSION
     req_proto.data.forum_id = fid
 
     return req_proto.SerializeToString()

@@ -8,7 +8,7 @@ import yarl
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
-from ...const import MAIN_VERSION
+from ...const import STABLE_VERSION
 from ...core import HttpCore
 from ...helper import pack_json, parse_json
 from ...helper.crypto import rc4_42
@@ -44,7 +44,7 @@ async def request(http_core: HttpCore):
 
     headers = {
         "x-device-id": xyus_md5_str,
-        "User-Agent": f"x6/{app_key}/{MAIN_VERSION}/4.4.1.3",
+        "User-Agent": f"x6/{app_key}/{STABLE_VERSION}/4.4.1.3",
         "x-plu-ver": "x6/4.4.1.3",
     }
 

@@ -1,6 +1,6 @@
 import yarl
 
-from ...const import APP_BASE_HOST, MAIN_VERSION
+from ...const import APP_BASE_HOST
 from ...core import Account, HttpCore, WsCore
 from ...exception import TiebaServerError
 from ._classdef import LevelInfo
@@ -12,7 +12,6 @@ CMD = 301005
 def pack_proto(account: Account, fid: int) -> bytes:
     req_proto = GetLevelInfoReqIdl_pb2.GetLevelInfoReqIdl()
     req_proto.data.common.BDUSS = account.BDUSS
-    req_proto.data.common._client_version = MAIN_VERSION
     req_proto.data.forum_id = fid
 
     return req_proto.SerializeToString()

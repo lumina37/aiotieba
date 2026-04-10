@@ -1,6 +1,6 @@
 import yarl
 
-from ...const import APP_BASE_HOST, MAIN_VERSION
+from ...const import APP_BASE_HOST, LATEST_VERSION
 from ...core import Account, HttpCore, WsCore
 from ...exception import TiebaServerError
 from ._classdef import SquareForums
@@ -12,7 +12,7 @@ CMD = 309653
 def pack_proto(account: Account, cname: str, pn: int, rn: int) -> bytes:
     req_proto = GetForumSquareReqIdl_pb2.GetForumSquareReqIdl()
     req_proto.data.common.BDUSS = account.BDUSS
-    req_proto.data.common._client_version = MAIN_VERSION
+    req_proto.data.common._client_version = LATEST_VERSION
     req_proto.data.class_name = cname
     req_proto.data.pn = pn
     req_proto.data.rn = rn

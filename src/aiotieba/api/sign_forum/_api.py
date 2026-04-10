@@ -1,6 +1,6 @@
 import yarl
 
-from ...const import APP_BASE_HOST, MAIN_VERSION
+from ...const import APP_BASE_HOST, LATEST_VERSION
 from ...core import HttpCore
 from ...exception import BoolResponse, TiebaServerError, TiebaValueError
 from ...helper import parse_json
@@ -17,7 +17,7 @@ def parse_body(body: bytes) -> None:
 async def request(http_core: HttpCore, fname: str) -> BoolResponse:
     data = [
         ("BDUSS", http_core.account.BDUSS),
-        ("_client_version", MAIN_VERSION),
+        ("_client_version", LATEST_VERSION),
         ("kw", fname),
         ("tbs", http_core.account.tbs),
     ]

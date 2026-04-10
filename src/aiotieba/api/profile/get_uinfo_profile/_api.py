@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import yarl
 
-from ....const import APP_BASE_HOST, MAIN_VERSION
+from ....const import APP_BASE_HOST, LATEST_VERSION
 from ....exception import TiebaServerError
 from .._classdef import UserInfo_pf
 from .._const import CMD
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 def pack_proto(uid_or_portrait: str | int) -> bytes:
     req_proto = ProfileReqIdl_pb2.ProfileReqIdl()
-    req_proto.data.common._client_version = MAIN_VERSION
+    req_proto.data.common._client_version = LATEST_VERSION
     req_proto.data.common._client_type = 2
     req_proto.data.need_post_count = 1
     req_proto.data.page = 1

@@ -1,6 +1,6 @@
 import yarl
 
-from ....const import APP_BASE_HOST, MAIN_VERSION
+from ....const import APP_BASE_HOST, STABLE_VERSION
 from ....core import Account, HttpCore, WsCore
 from ....exception import TiebaServerError
 from .._classdef import UserThreads
@@ -11,7 +11,7 @@ from ..protobuf import UserPostReqIdl_pb2, UserPostResIdl_pb2
 def pack_proto(account: Account, user_id: int, pn: int, public_only: bool) -> bytes:
     req_proto = UserPostReqIdl_pb2.UserPostReqIdl()
     req_proto.data.common.BDUSS = account.BDUSS
-    req_proto.data.common._client_version = MAIN_VERSION
+    req_proto.data.common._client_version = STABLE_VERSION
     req_proto.data.user_id = user_id
     req_proto.data.is_thread = 1
     req_proto.data.need_content = 1

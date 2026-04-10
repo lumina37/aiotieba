@@ -1,6 +1,6 @@
 import yarl
 
-from ...const import MAIN_VERSION, WEB_BASE_HOST
+from ...const import LATEST_VERSION, WEB_BASE_HOST
 from ...core import HttpCore
 from ...exception import BoolResponse, TiebaServerError
 from ...helper import parse_json
@@ -16,7 +16,7 @@ def parse_body(body: bytes) -> None:
 
 async def request(http_core: HttpCore) -> BoolResponse:
     data = [
-        ("_client_version", MAIN_VERSION),
+        ("_client_version", LATEST_VERSION),
         ("subapp_type", "hybrid"),
     ]
 

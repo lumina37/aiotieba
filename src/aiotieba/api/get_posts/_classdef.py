@@ -192,8 +192,8 @@ class Contents_p(Containers[TypeFragment]):
                     tiebapluses.append(frag)
                     texts.append(frag)
                     yield frag
-                # outdated tiebaplus
-                elif _type == 34:
+                # outdated tiebaplus / vote
+                elif _type in [34, 52]:
                     continue
                 else:
                     yield FragUnknown.from_tbdata(proto)

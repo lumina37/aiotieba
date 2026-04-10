@@ -1,6 +1,6 @@
 import yarl
 
-from ...const import APP_BASE_HOST, MAIN_VERSION
+from ...const import APP_BASE_HOST, LATEST_VERSION
 from ...core import HttpCore, WsCore
 from ...exception import TiebaServerError
 from ._classdef import UserInfo_TUid
@@ -11,7 +11,7 @@ CMD = 309702
 
 def pack_proto(tieba_uid: int) -> bytes:
     req_proto = GetUserByTiebaUidReqIdl_pb2.GetUserByTiebaUidReqIdl()
-    req_proto.data.common._client_version = MAIN_VERSION
+    req_proto.data.common._client_version = LATEST_VERSION
     req_proto.data.tieba_uid = str(tieba_uid)
 
     return req_proto.SerializeToString()

@@ -100,7 +100,7 @@ from .api import (
 )
 from .api._classdef import UserInfo
 from .config import ProxyConfig, TimeoutConfig
-from .const import MAIN_VERSION
+from .const import STABLE_VERSION
 from .core import Account, BLCPCore, HttpCore, NetCore, WsCore
 from .enums import (
     BawuPermType,
@@ -442,12 +442,10 @@ class Client:
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
-        THREAD_VERSION = "12.64.1.1"
-
         if self._ws_core.status == WsStatus.OPEN:
-            return await get_threads.request_ws(self._ws_core, fname, pn, rn, sort, is_good, THREAD_VERSION)
+            return await get_threads.request_ws(self._ws_core, fname, pn, rn, sort, is_good, STABLE_VERSION)
 
-        return await get_threads.request_http(self._http_core, fname, pn, rn, sort, is_good, THREAD_VERSION)
+        return await get_threads.request_http(self._http_core, fname, pn, rn, sort, is_good, STABLE_VERSION)
 
     @handle_exception(get_posts.Posts)
     @_try_websocket
@@ -953,9 +951,9 @@ class Client:
         user_id = user.user_id
 
         if self._ws_core.status == WsStatus.OPEN:
-            return await get_user_contents.get_posts.request_ws(self._ws_core, user_id, pn, rn, MAIN_VERSION)
+            return await get_user_contents.get_posts.request_ws(self._ws_core, user_id, pn, rn, STABLE_VERSION)
 
-        return await get_user_contents.get_posts.request_http(self._http_core, user_id, pn, rn, MAIN_VERSION)
+        return await get_user_contents.get_posts.request_http(self._http_core, user_id, pn, rn, STABLE_VERSION)
 
     @handle_exception(get_user_contents.UserPostss)
     async def get_user_posts(
@@ -2547,7 +2545,7 @@ class Client:
         if self._blcp_core.status != 1:
             await self._init_blcp()
 
-        level_info = await self.get_forum_level(forum_id)
+        level_info = await self.__get_forum_level(forum_id)
         level = level_info.user_level
         isvip = self._user.is_vip
         glevel = self._user.glevel
@@ -2596,19 +2594,7 @@ class Client:
         else:
             raise
 
-    @handle_exception(get_forum_level.LevelInfo)
-    @_try_websocket
-    async def get_forum_level(self, forum_id: int) -> get_forum_level.LevelInfo:
-        """
-        获取某吧等级
-
-        Args:
-            forum_id (int),: 吧id.
-
-        Returns:
-            LevelInfo: 等级
-        """
-
+    async def __get_forum_level(self, forum_id: int) -> get_forum_level.LevelInfo:
         if not self._user.user_id:
             await self.get_self_info()
 

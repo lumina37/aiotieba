@@ -1,6 +1,6 @@
 import yarl
 
-from ...const import APP_BASE_HOST, MAIN_VERSION
+from ...const import APP_BASE_HOST, LATEST_VERSION
 from ...core import HttpCore
 from ...exception import BoolResponse, TiebaServerError
 from ...helper import parse_json
@@ -22,7 +22,7 @@ async def request(
 
     data = [
         ("BDUSS", http_core.account.BDUSS),
-        ("_client_version", MAIN_VERSION),
+        ("_client_version", LATEST_VERSION),
         ("agree_type", 5 if is_disagree else 2),
         ("cuid", http_core.account.cuid_galaxy2),
         ("obj_type", obj_type),

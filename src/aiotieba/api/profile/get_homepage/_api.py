@@ -1,6 +1,6 @@
 import yarl
 
-from ....const import APP_BASE_HOST, MAIN_VERSION
+from ....const import APP_BASE_HOST, LATEST_VERSION
 from ....core import HttpCore, WsCore
 from ....exception import TiebaServerError
 from .._classdef import Homepage
@@ -10,7 +10,7 @@ from ..protobuf import ProfileReqIdl_pb2, ProfileResIdl_pb2
 
 def pack_proto(user_id: int, pn: int) -> bytes:
     req_proto = ProfileReqIdl_pb2.ProfileReqIdl()
-    req_proto.data.common._client_version = MAIN_VERSION
+    req_proto.data.common._client_version = LATEST_VERSION
     req_proto.data.common._client_type = 2
     req_proto.data.uid = user_id
     req_proto.data.need_post_count = 1

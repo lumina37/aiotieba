@@ -1,6 +1,6 @@
 import yarl
 
-from ...const import APP_BASE_HOST, MAIN_VERSION
+from ...const import APP_BASE_HOST, LATEST_VERSION
 from ...core import Account, HttpCore, WsCore
 from ...exception import TiebaServerError
 from ._classdef import TabMap
@@ -12,7 +12,7 @@ CMD = 309466
 def pack_proto(account: Account, fname: str) -> bytes:
     req_proto = SearchPostForumReqIdl_pb2.SearchPostForumReqIdl()
     req_proto.data.common.BDUSS = account.BDUSS
-    req_proto.data.common._client_version = MAIN_VERSION
+    req_proto.data.common._client_version = LATEST_VERSION
     req_proto.data.fname = fname
 
     return req_proto.SerializeToString()

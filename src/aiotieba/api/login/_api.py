@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import yarl
 
-from ...const import APP_BASE_HOST, MAIN_VERSION
+from ...const import APP_BASE_HOST, LATEST_VERSION
 from ...exception import TiebaServerError
 from ...helper import parse_json
 from ._classdef import UserInfo_login
@@ -27,7 +27,7 @@ def parse_body(body: bytes) -> tuple[UserInfo_login, str]:
 
 async def request(http_core: HttpCore) -> tuple[UserInfo_login, str]:
     data = [
-        ("_client_version", MAIN_VERSION),
+        ("_client_version", LATEST_VERSION),
         ("bdusstoken", http_core.account.BDUSS),
     ]
 
