@@ -64,5 +64,5 @@ for mod_pth in Path("src/aiotieba/api").glob("*/protobuf"):
         fpth.unlink()
         bak_fpth.rename(fpth)
 
-subprocess.run("uvx ruff check src/**/*_pb2.py --fix --unsafe-fixes", cwd=".", check=False, timeout=10.0)
-subprocess.run("uvx ruff format src/**/*_pb2.py", cwd=".", check=False, timeout=30.0)
+subprocess.run("uvx ruff check src/**/*_pb2.py --fix --unsafe-fixes -s", cwd=".", check=False, timeout=10.0)
+subprocess.run("uvx ruff format src/**/*_pb2.py -s", cwd=".", check=False, timeout=30.0)
