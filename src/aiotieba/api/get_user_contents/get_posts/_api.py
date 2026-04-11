@@ -12,7 +12,7 @@ def pack_proto(account: Account, user_id: int, pn: int, rn: int, version: str) -
     req_proto = UserPostReqIdl_pb2.UserPostReqIdl()
     req_proto.data.common.BDUSS = account.BDUSS
     req_proto.data.common._client_version = version
-    req_proto.data.user_id = user_id
+    req_proto.data.uid = user_id
     req_proto.data.need_content = 1
     req_proto.data.pn = pn
     req_proto.data.rn = rn
