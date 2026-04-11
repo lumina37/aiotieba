@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import dataclasses as dcs
+import warnings
 from functools import cached_property
 
+from ...enums import ThreadType
 from ...exception import TbErrorExt
+from ...logging import get_logger as LOG
 from .._classdef import Containers, TypeMessage, VoteInfo
 from .._classdef.contents import (
     _IMAGEHASH_EXP,
@@ -415,7 +418,7 @@ class UserThread:
         user (UserInfo_u): 发布者的用户信息
         author_id (int): 发布者的user_id
 
-        type (int): 帖子类型
+        type (ThreadType): 帖子类型
         is_help (bool): 是否为求助帖
 
         vote_info (VoteInfo): 投票信息
@@ -436,7 +439,7 @@ class UserThread:
     pid: int = 0
     user: UserInfo_u = dcs.field(default_factory=UserInfo_u)
 
-    type: int = 0
+    type: ThreadType = ThreadType.UNKNOWN
 
     vote_info: VoteInfo = dcs.field(default_factory=VoteInfo)
     view_num: int = 0
@@ -454,7 +457,11 @@ class UserThread:
         fname = data_proto.forum_name
         tid = data_proto.thread_id
         pid = data_proto.post_id
-        type_ = data_proto.thread_type
+
+        type_ = ThreadType(data_proto.thread_type)
+        if type_ == ThreadType.UNKNOWN:
+            LOG().debug("Unknown thread type. tid=%d, type=%s", tid, data_proto.thread_type)
+
         vote_info = VoteInfo.from_tbdata(data_proto.poll_info)
         view_num = data_proto.freq_num
         reply_num = data_proto.reply_num
@@ -494,9 +501,10 @@ class UserThread:
             text = self.contents.text
         return text
 
+    @warnings.deprecated("使用 thread.type == ThreadType.HELP 作为替代")
     @property
     def is_help(self) -> bool:
-        return self.type == 71
+        return self.type == ThreadType.HELP
 
 
 @dcs.dataclass

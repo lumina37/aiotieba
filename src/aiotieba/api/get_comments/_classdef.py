@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import dataclasses as dcs
+import warnings
 from functools import cached_property
 
-from ...enums import Gender, PrivLike, PrivReply
+from ...enums import Gender, PrivLike, PrivReply, ThreadType
 from ...exception import TbErrorExt
+from ...logging import get_logger as LOG
 from .._classdef import Containers, TypeMessage
 from .._classdef.contents import (
     _IMAGEHASH_EXP,
@@ -446,7 +448,7 @@ class Thread_c:
         user (UserInfo_ct): 发布者的用户信息
         author_id (int): 发布者的user_id
 
-        type (int): 帖子类型
+        type (ThreadType): 帖子类型
         is_help (bool): 是否为求助帖
 
         reply_num (int): 回复数
@@ -459,7 +461,7 @@ class Thread_c:
     tid: int = 0
     user: UserInfo_ct = dcs.field(default_factory=UserInfo_ct)
 
-    type: int = 0
+    type: ThreadType = ThreadType.UNKNOWN
 
     reply_num: int = 0
 
@@ -468,7 +470,11 @@ class Thread_c:
         title = data_proto.title
         tid = data_proto.id
         user = UserInfo_ct.from_tbdata(data_proto.author)
-        type_ = data_proto.thread_type
+
+        type_ = ThreadType(data_proto.thread_type)
+        if type_ == ThreadType.UNKNOWN:
+            LOG().debug("Unknown thread type. tid=%d, type=%s", tid, data_proto.thread_type)
+
         reply_num = data_proto.reply_num
         return Thread_c(title, 0, "", tid, user, type_, reply_num)
 
@@ -482,9 +488,10 @@ class Thread_c:
     def author_id(self) -> int:
         return self.user.user_id
 
+    @warnings.deprecated("使用 thread.type == ThreadType.HELP 作为替代")
     @property
     def is_help(self) -> bool:
-        return self.type == 71
+        return self.type == ThreadType.HELP
 
 
 @dcs.dataclass

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import dataclasses as dcs
+import warnings
 from functools import cached_property
 
-from ...enums import Gender, PrivLike, PrivReply
+from ...enums import Gender, PrivLike, PrivReply, ThreadType
 from ...exception import TbErrorExt
-from ...logging import get_logger
+from ...logging import get_logger as LOG
 from .._classdef import Containers, TypeMessage, VoteInfo
 from .._classdef.contents import (
     _IMAGEHASH_EXP,
@@ -215,7 +216,7 @@ class Contents_t(Containers[TypeFragment]):
                 elif _type in ["feed_head", "feed_title", "feed_social", "feed_poll"]:
                     continue
                 else:
-                    get_logger().debug("Unknown component type. type=%s", _type)
+                    LOG().debug("Unknown component type. type=%s", _type)
 
         objs = list(_frags())
 
@@ -590,7 +591,7 @@ class Thread:
         user (UserInfo_t): 发布者的用户信息
         author_id (int): 发布者的user_id
 
-        type (int): 帖子类型
+        type (ThreadType): 帖子类型
         tab_id (int): 帖子所在分区id
         is_good (bool): 是否精品帖
         is_top (bool): 是否置顶帖
@@ -620,7 +621,7 @@ class Thread:
     user: UserInfo_t = dcs.field(default_factory=UserInfo_t)
     author_id: int = 0
 
-    type: int = 0
+    type: ThreadType = ThreadType.UNKNOWN
     tab_id: int = 0
     is_good: bool = False
     is_top: bool = False
@@ -645,7 +646,11 @@ class Thread:
         tid = data_proto.id
         pid = data_proto.first_post_id
         author_id = data_proto.author_id
-        type_ = data_proto.thread_type
+
+        type_ = ThreadType(data_proto.thread_type)
+        if type_ == ThreadType.UNKNOWN:
+            LOG().debug("Unknown thread type. tid=%d, type=%s", tid, data_proto.thread_type)
+
         tab_id = data_proto.tab_id
         is_good = bool(data_proto.is_good)
         is_top = bool(data_proto.is_top)
@@ -706,7 +711,7 @@ class Thread:
         pid = 0
 
         author_id = int(business_info_map["user_id"])
-        type_ = int(business_info_map["thread_type"])
+        type_ = ThreadType(int(business_info_map["thread_type"]))
         tab_id = int(business_info_map["inner_tab_id"])
         is_good = False
         is_top = False
@@ -773,9 +778,10 @@ class Thread:
             text = self.contents.text
         return text
 
+    @warnings.deprecated("使用 thread.type == ThreadType.HELP 作为替代")
     @property
     def is_help(self) -> bool:
-        return self.type == 71
+        return self.type == ThreadType.HELP
 
 
 @dcs.dataclass
