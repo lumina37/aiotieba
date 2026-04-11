@@ -1015,7 +1015,7 @@ class Thread_p:
         pid = thread_proto.post_id
         user = UserInfo_pt.from_tbdata(thread_proto.author)
 
-        type_ = ThreadType(data_proto.thread_type)
+        type_ = ThreadType(thread_proto.thread_type)
         if type_ == ThreadType.UNKNOWN:
             LOG().debug("Unknown thread type. tid=%d, type=%s", tid, data_proto.thread_type)
 
