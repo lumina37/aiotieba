@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-import warnings
 from functools import cached_property
 
 from ...enums import Gender, PrivLike, PrivReply, ThreadType
 from ...exception import TbErrorExt
+from ...helper import deprecated
 from ...logging import get_logger as LOG
 from .._classdef import Containers, TypeMessage, VoteInfo
 from .._classdef.contents import (
@@ -778,8 +778,8 @@ class Thread:
             text = self.contents.text
         return text
 
-    @warnings.deprecated("使用 thread.type == ThreadType.HELP 作为替代")
     @property
+    @deprecated("使用 thread.type == ThreadType.HELP 作为替代")
     def is_help(self) -> bool:
         return self.type == ThreadType.HELP
 
