@@ -29,7 +29,7 @@ def parse_body(body: bytes) -> UserThreads:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    uthreads = UserThreads.from_tbdata(data_proto)
+    uthreads = UserThreads.from_proto(data_proto)
 
     return uthreads
 

@@ -28,7 +28,7 @@ class RankForum:
     has_bawu: bool = False
 
     @staticmethod
-    def from_tbdata(data_tag: bs4.element.Tag) -> "RankForum":
+    def from_xml(data_tag: bs4.element.Tag) -> "RankForum":
         rank_idx_item = data_tag.td
         fname_item = rank_idx_item.find_next_sibling("td")
         fname = fname_item.text
@@ -62,7 +62,7 @@ class Page_rankforum:
     has_prev: bool = False
 
     @staticmethod
-    def from_tbdata(data_soup: bs4.BeautifulSoup) -> "Page_rankforum":
+    def from_xml(data_soup: bs4.BeautifulSoup) -> "Page_rankforum":
         pages_item = data_soup.find("div", class_="pagination")
         current_page_item = pages_item.span
         current_page = int(current_page_item.text)
@@ -92,10 +92,10 @@ class RankForums(TbErrorExt, Containers[RankForum]):
     page: Page_rankforum = dcs.field(default_factory=Page_rankforum)
 
     @staticmethod
-    def from_tbdata(data_soup: bs4.BeautifulSoup) -> "RankForums":
+    def from_xml(data_soup: bs4.BeautifulSoup) -> "RankForums":
         dbgtbody = data_soup.find("table")
-        objs = [RankForum.from_tbdata(t) for t in dbgtbody.find_all("tr", class_="j_rank_row")]
-        page = Page_rankforum.from_tbdata(data_soup)
+        objs = [RankForum.from_xml(t) for t in dbgtbody.find_all("tr", class_="j_rank_row")]
+        page = Page_rankforum.from_xml(data_soup)
         return RankForums(objs, page)
 
     @property

@@ -34,7 +34,7 @@ class UserInfo_bawu:
     level: int = 0
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> UserInfo_bawu:
+    def from_proto(data_proto: TypeMessage) -> UserInfo_bawu:
         user_id = data_proto.user_id
         portrait = data_proto.portrait
         user_name = data_proto.user_name
@@ -106,10 +106,10 @@ class BawuInfo:
     fourth_admin: list[UserInfo_bawu] = dcs.field(default_factory=list)
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> BawuInfo:
+    def from_proto(data_proto: TypeMessage) -> BawuInfo:
         all_ = []
         r_protos = data_proto.bawu_team_info.bawu_team_list
-        _dict = {r_proto.role_name: [UserInfo_bawu.from_tbdata(p) for p in r_proto.role_info] for r_proto in r_protos}
+        _dict = {r_proto.role_name: [UserInfo_bawu.from_proto(p) for p in r_proto.role_info] for r_proto in r_protos}
 
         def extract(role_name: str) -> list[UserInfo_bawu]:
             if users := _dict.get(role_name):

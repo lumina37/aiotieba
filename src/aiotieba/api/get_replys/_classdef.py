@@ -34,7 +34,7 @@ class UserInfo_reply:
     priv_reply: PrivReply = PrivReply.ALL
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "UserInfo_reply":
+    def from_proto(data_proto: TypeMessage) -> "UserInfo_reply":
         user_id = data_proto.id
         portrait = data_proto.portrait
         if "?" in portrait:
@@ -95,7 +95,7 @@ class UserInfo_reply_p:
     nick_name_new: str = ""
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "UserInfo_reply_p":
+    def from_proto(data_proto: TypeMessage) -> "UserInfo_reply_p":
         user_id = data_proto.id
         user_name = data_proto.name
         nick_name_new = data_proto.name_show
@@ -146,7 +146,7 @@ class UserInfo_reply_t:
     nick_name_new: str = ""
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "UserInfo_reply_t":
+    def from_proto(data_proto: TypeMessage) -> "UserInfo_reply_t":
         user_id = data_proto.id
         portrait = data_proto.portrait
         nick_name_new = data_proto.name_show
@@ -211,15 +211,15 @@ class Reply:
     create_time: int = 0
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "Reply":
+    def from_proto(data_proto: TypeMessage) -> "Reply":
         text = data_proto.content
         fname = data_proto.fname
         tid = data_proto.thread_id
         ppid = data_proto.quote_pid
         pid = data_proto.post_id
-        user = UserInfo_reply.from_tbdata(data_proto.replyer)
-        post_user = UserInfo_reply_p.from_tbdata(data_proto.quote_user)
-        thread_user = UserInfo_reply_t.from_tbdata(data_proto.thread_author_user)
+        user = UserInfo_reply.from_proto(data_proto.replyer)
+        post_user = UserInfo_reply_p.from_proto(data_proto.quote_user)
+        thread_user = UserInfo_reply_t.from_proto(data_proto.thread_author_user)
         is_comment = bool(data_proto.is_floor)
         create_time = data_proto.time
         return Reply(text, fname, tid, ppid, pid, user, post_user, thread_user, is_comment, create_time)
@@ -253,7 +253,7 @@ class Page_reply:
     has_prev: bool = False
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "Page_reply":
+    def from_proto(data_proto: TypeMessage) -> "Page_reply":
         current_page = data_proto.current_page
         has_more = bool(data_proto.has_more)
         has_prev = bool(data_proto.has_prev)
@@ -276,9 +276,9 @@ class Replys(TbErrorExt, Containers[Reply]):
     page: Page_reply = dcs.field(default_factory=Page_reply)
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "Replys":
-        objs = [Reply.from_tbdata(p) for p in data_proto.reply_list]
-        page = Page_reply.from_tbdata(data_proto.page)
+    def from_proto(data_proto: TypeMessage) -> "Replys":
+        objs = [Reply.from_proto(p) for p in data_proto.reply_list]
+        page = Page_reply.from_proto(data_proto.page)
         return Replys(objs, page)
 
     @property

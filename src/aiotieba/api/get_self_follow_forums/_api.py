@@ -12,7 +12,7 @@ def parse_body(body: bytes) -> SelfFollowForums:
     if code := res_json["error_code"]:
         raise TiebaServerError(code, res_json["error_msg"])
 
-    self_follow_forums = SelfFollowForums.from_tbdata(res_json)
+    self_follow_forums = SelfFollowForums.from_json(res_json)
 
     return self_follow_forums
 

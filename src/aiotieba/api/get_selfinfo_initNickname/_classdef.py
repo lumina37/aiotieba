@@ -28,7 +28,7 @@ class UserInfo_selfinit:
     tieba_uid: int = 0
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> UserInfo_selfinit:
+    def from_json(data_map: Mapping) -> UserInfo_selfinit:
         user_name = data_map["user_name"]
         nick_name_old = data_map["name_show"]
         tieba_uid = data_map["tieba_uid"]

@@ -14,7 +14,7 @@ def parse_body(body: bytes) -> UserForumInfo:
         raise TiebaServerError(code, err_msg)
 
     data_map = res_json.get("data", {})
-    return UserForumInfo.from_tbdata(data_map)
+    return UserForumInfo.from_json(data_map)
 
 
 async def request(http_core: HttpCore, forum_id: int, friend_portrait: str) -> UserForumInfo:

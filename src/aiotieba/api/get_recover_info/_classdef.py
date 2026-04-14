@@ -24,7 +24,7 @@ class FragText_ri:
     text: str = ""
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> FragText_ri:
+    def from_json(data_map: Mapping) -> FragText_ri:
         text = data_map["value"]
         return FragText_ri(text)
 
@@ -47,7 +47,7 @@ class FragImage_ri:
     hash: str = ""
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> FragImage_ri:
+    def from_json(data_map: Mapping) -> FragImage_ri:
         src = data_map["url"]
         show_width = int(data_map["width"])
         show_height = int(data_map["height"])
@@ -75,24 +75,24 @@ class Contents_ri(Containers[TypeFragment]):
     imgs: list[FragImage_ri] = dcs.field(default_factory=list, repr=False)
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> Contents_ri:
+    def from_json(data_map: Mapping) -> Contents_ri:
         content_maps = data_map["content_detail"]
 
         texts = []
-        imgs = [FragImage_ri.from_tbdata(m) for m in data_map["all_pics"]]
+        imgs = [FragImage_ri.from_json(m) for m in data_map["all_pics"]]
 
         def _frags():
             for cmap in content_maps:
                 _type = cmap["type"]
                 # 1纯文本
                 if _type == 1:
-                    frag = FragText_ri.from_tbdata(cmap)
+                    frag = FragText_ri.from_json(cmap)
                     texts.append(frag)
                     yield frag
                 elif _type == 3:
                     continue
                 else:
-                    yield FragUnknown.from_tbdata(cmap)
+                    yield FragUnknown.from_proto(cmap)
 
         objs = list(_frags())
         objs += imgs
@@ -125,7 +125,7 @@ class UserInfo_ri:
     nick_name_new: str = ""
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> UserInfo_ri:
+    def from_json(data_map: Mapping) -> UserInfo_ri:
         portrait = data_map["portrait"]
         if "?" in portrait:
             portrait = portrait[:-13]
@@ -181,15 +181,15 @@ class RecoverInfo(TbErrorExt):
     user: UserInfo_ri = dcs.field(default_factory=UserInfo_ri)
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> RecoverInfo:
+    def from_json(data_map: Mapping) -> RecoverInfo:
         thread_info = data_map["thread_info"]
 
-        contents = Contents_ri.from_tbdata(thread_info)
+        contents = Contents_ri.from_json(thread_info)
         title = thread_info["title"]
 
         tid = thread_info["thread_id"]
         pid = thread_info["post_id"]
-        user = UserInfo_ri.from_tbdata(data_map["user_info"])
+        user = UserInfo_ri.from_json(data_map["user_info"])
 
         return RecoverInfo(contents, title, tid, pid, user)
 

@@ -40,7 +40,7 @@ class UserInfo_TUid(TbErrorExt):
     is_god: bool = False
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "UserInfo_TUid":
+    def from_proto(data_proto: TypeMessage) -> "UserInfo_TUid":
         user_id = data_proto.id
         portrait = data_proto.portrait
         if "?" in portrait:

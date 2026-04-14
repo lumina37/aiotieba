@@ -31,7 +31,7 @@ class UserInfo_rec:
     nick_name_new: str = ""
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> UserInfo_rec:
+    def from_json(data_map: Mapping) -> UserInfo_rec:
         portrait = data_map["portrait"]
         if "?" in portrait:
             portrait = portrait[:-13]
@@ -92,17 +92,17 @@ class Recover:
     is_hide: bool = False
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> Recover:
+    def from_json(data_map: Mapping) -> Recover:
         thread_info = data_map["thread_info"]
         tid = int(thread_info["tid"])
         if post_info := data_map["post_info"]:
             text = post_info["abstract"]
             pid = int(post_info["pid"])
-            user = UserInfo_rec.from_tbdata(post_info)
+            user = UserInfo_rec.from_json(post_info)
         else:
             text = thread_info["abstract"]
             pid = 0
-            user = UserInfo_rec.from_tbdata(thread_info)
+            user = UserInfo_rec.from_json(thread_info)
         is_floor = bool(data_map["is_foor"])  # 百度的Code Review主要起到一个装饰的作用
         is_hide = bool(int(data_map["is_frs_mask"]))
         op_show_name = data_map["op_info"]["name"]
@@ -130,7 +130,7 @@ class Page_recover:
     has_prev: bool = False
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> Page_recover:
+    def from_json(data_map: Mapping) -> Page_recover:
         page_size = data_map["rn"]
         current_page = data_map["pn"]
         has_more = data_map["has_more"]
@@ -154,9 +154,9 @@ class Recovers(TbErrorExt, Containers[Recover]):
     page: Page_recover = dcs.field(default_factory=Page_recover)
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> None:
-        objs = [Recover.from_tbdata(t) for t in data_map["data"]["thread_list"]]
-        page = Page_recover.from_tbdata(data_map["data"]["page"])
+    def from_json(data_map: Mapping) -> None:
+        objs = [Recover.from_json(t) for t in data_map["data"]["thread_list"]]
+        page = Page_recover.from_json(data_map["data"]["page"])
         return Recovers(objs, page)
 
     @property

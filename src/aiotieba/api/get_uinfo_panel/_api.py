@@ -12,8 +12,8 @@ def parse_body(body: bytes) -> UserInfo_panel:
     if code := res_json["no"]:
         raise TiebaServerError(code, res_json["error"])
 
-    user_dict = res_json["data"]
-    user = UserInfo_panel.from_tbdata(user_dict)
+    data_map = res_json["data"]
+    user = UserInfo_panel.from_json(data_map)
 
     return user
 

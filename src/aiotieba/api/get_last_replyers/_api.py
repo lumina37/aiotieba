@@ -31,7 +31,7 @@ def parse_body(body: bytes) -> Threads_lp:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    threads = Threads_lp.from_tbdata(data_proto)
+    threads = Threads_lp.from_proto(data_proto)
 
     return threads
 

@@ -31,7 +31,7 @@ class Page_lp:
     has_prev: bool = False
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> Page_lp:
+    def from_proto(data_proto: TypeMessage) -> Page_lp:
         page_size = data_proto.page_size
         current_page = data_proto.current_page
         if current_page == 0 and page_size != 0:
@@ -65,7 +65,7 @@ class UserInfo_lp:
     nick_name_old: str = ""
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> UserInfo_lp:
+    def from_proto(data_proto: TypeMessage) -> UserInfo_lp:
         user_id = data_proto.id
         portrait = data_proto.portrait
         if "?" in portrait:
@@ -124,7 +124,7 @@ class LastReplyer:
     nick_name_old: str = ""
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> LastReplyer:
+    def from_proto(data_proto: TypeMessage) -> LastReplyer:
         user_id = data_proto.id
         user_name = data_proto.name
         nick_name_old = data_proto.name_show
@@ -195,12 +195,12 @@ class Thread_lp:
     last_time: int = 0
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> None:
+    def from_proto(data_proto: TypeMessage) -> None:
         title = data_proto.title
         tid = data_proto.id
         pid = data_proto.first_post_id
-        user = UserInfo_lp.from_tbdata(data_proto.author)
-        last_replyer = LastReplyer.from_tbdata(data_proto.last_replyer)
+        user = UserInfo_lp.from_proto(data_proto.author)
+        last_replyer = LastReplyer.from_proto(data_proto.last_replyer)
         is_good = bool(data_proto.is_good)
         is_top = bool(data_proto.is_top)
         create_time = data_proto.create_time
@@ -236,7 +236,7 @@ class Forum_lp:
     fname: str = ""
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> Forum_lp:
+    def from_proto(data_proto: TypeMessage) -> Forum_lp:
         forum_proto = data_proto.forum
         fid = forum_proto.id
         fname = forum_proto.name
@@ -262,11 +262,11 @@ class Threads_lp(TbErrorExt, Containers[Thread_lp]):
     forum: Forum_lp = dcs.field(default_factory=Forum_lp)
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> Threads_lp:
-        page = Page_lp.from_tbdata(data_proto.page)
-        forum = Forum_lp.from_tbdata(data_proto)
+    def from_proto(data_proto: TypeMessage) -> Threads_lp:
+        page = Page_lp.from_proto(data_proto.page)
+        forum = Forum_lp.from_proto(data_proto)
 
-        objs = [Thread_lp.from_tbdata(p) for p in data_proto.thread_list]
+        objs = [Thread_lp.from_proto(p) for p in data_proto.thread_list]
         for thread in objs:
             thread.fname = forum.fname
             thread.fid = forum.fid

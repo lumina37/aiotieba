@@ -13,7 +13,7 @@ def parse_body(body: bytes) -> BawuPerm:
         raise TiebaServerError(code, res_json["error"])
 
     data_map = res_json["data"]
-    perm = BawuPerm.from_tbdata(data_map)
+    perm = BawuPerm.from_json(data_map)
 
     return perm
 

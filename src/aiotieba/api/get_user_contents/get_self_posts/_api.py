@@ -28,7 +28,7 @@ def parse_body(body: bytes) -> UserPostss:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    upostss = UserPostss.from_tbdata(data_proto)
+    upostss = UserPostss.from_proto(data_proto)
 
     return upostss
 

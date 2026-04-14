@@ -23,7 +23,7 @@ class WsNotify:
     create_time: int = 0
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "WsNotify":
+    def from_proto(data_proto: TypeMessage) -> "WsNotify":
         data_proto = data_proto.data
         note_type = data_proto.type
         group_type = data_proto.groupType

@@ -33,7 +33,7 @@ class Follow:
     nick_name_new: str = ""
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> Follow:
+    def from_json(data_map: Mapping) -> Follow:
         user_id = int(data_map["id"])
         portrait = data_map["portrait"]
         if "?" in portrait:
@@ -92,7 +92,7 @@ class Page_follow:
     has_prev: bool = False
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> Page_follow:
+    def from_json(data_map: Mapping) -> Page_follow:
         current_page = int(data_map["pn"])
         total_count = int(data_map["total_follow_num"])
         has_more = bool(int(data_map["has_more"]))
@@ -116,9 +116,9 @@ class Follows(TbErrorExt, Containers[Follow]):
     page: Page_follow = dcs.field(default_factory=Page_follow)
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> Follows:
-        objs = [Follow.from_tbdata(m) for m in data_map["follow_list"]]
-        page = Page_follow.from_tbdata(data_map)
+    def from_json(data_map: Mapping) -> Follows:
+        objs = [Follow.from_json(m) for m in data_map["follow_list"]]
+        page = Page_follow.from_json(data_map)
         return Follows(objs, page)
 
     @property

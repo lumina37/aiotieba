@@ -9,7 +9,7 @@ from ._classdef import RankForums
 
 def parse_body(body: bytes) -> RankForums:
     soup = bs4.BeautifulSoup(body, "lxml")
-    rank_forums = RankForums.from_tbdata(soup)
+    rank_forums = RankForums.from_xml(soup)
 
     return rank_forums
 

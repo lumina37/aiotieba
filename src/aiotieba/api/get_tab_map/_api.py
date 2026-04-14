@@ -26,7 +26,7 @@ def parse_body(body: bytes) -> TabMap:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    tab_map = TabMap.from_tbdata(data_proto)
+    tab_map = TabMap.from_proto(data_proto)
 
     return tab_map
 

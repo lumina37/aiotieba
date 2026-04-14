@@ -32,7 +32,7 @@ def parse_body(body: bytes) -> WsMsgGroups:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    groups = WsMsgGroups.from_tbdata(data_proto)
+    groups = WsMsgGroups.from_proto(data_proto)
 
     return groups
 

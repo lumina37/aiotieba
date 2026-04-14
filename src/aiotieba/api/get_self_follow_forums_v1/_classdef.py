@@ -26,7 +26,7 @@ class SelfFollowForumV1:
     level: int = 0
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> SelfFollowForumV1:
+    def from_json(data_map: Mapping) -> SelfFollowForumV1:
         fid = data_map["forum_id"]
         fname = data_map["forum_name"]
         level = data_map["level_id"]
@@ -53,7 +53,7 @@ class Page_sforumV1:
     has_prev: bool = False
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> Page_sforumV1:
+    def from_json(data_map: Mapping) -> Page_sforumV1:
         current_page = data_map["cur_page"]
         total_page = data_map["total_page"]
         has_more = current_page < total_page
@@ -77,9 +77,9 @@ class SelfFollowForumsV1(TbErrorExt, Containers[SelfFollowForumV1]):
     page: Page_sforumV1 = dcs.field(default_factory=Page_sforumV1)
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> SelfFollowForumsV1:
-        objs = [SelfFollowForumV1.from_tbdata(m) for m in data_map["list"]]
-        page = Page_sforumV1.from_tbdata(data_map["page"])
+    def from_json(data_map: Mapping) -> SelfFollowForumsV1:
+        objs = [SelfFollowForumV1.from_json(m) for m in data_map["list"]]
+        page = Page_sforumV1.from_json(data_map["page"])
         return SelfFollowForumsV1(objs, page)
 
     @property

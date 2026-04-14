@@ -34,7 +34,7 @@ class Statistics:
     recommend: list[int] = dcs.field(default_factory=list)
 
     @staticmethod
-    def from_tbdata(data_seq: Sequence) -> Statistics:
+    def from_json(data_seq: Sequence) -> Statistics:
         def extract(i: int) -> list[int]:
             seq: list = data_seq[i]["group"][1]["values"]
             seq = [int(item["value"]) for item in seq]

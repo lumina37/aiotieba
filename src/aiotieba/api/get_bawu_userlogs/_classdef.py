@@ -28,7 +28,7 @@ class Userlog:
     op_time: datetime = dcs.field(default_factory=default_datetime)
 
     @staticmethod
-    def from_tbdata(data_tag: bs4.element.Tag) -> "Userlog":
+    def from_xml(data_tag: bs4.element.Tag) -> "Userlog":
         left_cell_item = data_tag.td
 
         post_user_item = left_cell_item.a
@@ -72,7 +72,7 @@ class Page_userlog:
     has_prev: bool = False
 
     @staticmethod
-    def from_tbdata(data_soup: bs4.BeautifulSoup) -> "Page_userlog":
+    def from_xml(data_soup: bs4.BeautifulSoup) -> "Page_userlog":
         total_count_tag = data_soup.find("div", class_="breadcrumbs")
         total_count = int(total_count_tag.em.text)
 
@@ -111,9 +111,9 @@ class Userlogs(TbErrorExt, Containers[Userlog]):
     page: Page_userlog = dcs.field(default_factory=Page_userlog)
 
     @staticmethod
-    def from_tbdata(data_soup: bs4.BeautifulSoup) -> "Userlogs":
-        objs = [Userlog.from_tbdata(t) for t in data_soup.find("tbody").find_all("tr")]
-        page = Page_userlog.from_tbdata(data_soup)
+    def from_xml(data_soup: bs4.BeautifulSoup) -> "Userlogs":
+        objs = [Userlog.from_xml(t) for t in data_soup.find("tbody").find_all("tr")]
+        page = Page_userlog.from_xml(data_soup)
         return Userlogs(objs, page)
 
     @property

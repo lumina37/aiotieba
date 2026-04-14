@@ -24,7 +24,7 @@ class UserInfo_ws:
     user_name: str = ""
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> UserInfo_ws:
+    def from_proto(data_proto: TypeMessage) -> UserInfo_ws:
         user_id = data_proto.userId
         portrait = data_proto.portrait
         if "?" in portrait:
@@ -69,11 +69,11 @@ class WsMessage:
     create_time: int = 0
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> None:
+    def from_proto(data_proto: TypeMessage) -> None:
         msg_id = data_proto.msgId
         msg_type = data_proto.msgType
         text = data_proto.content
-        user = UserInfo_ws.from_tbdata(data_proto.userInfo)
+        user = UserInfo_ws.from_proto(data_proto.userInfo)
         create_time = data_proto.createTime
         return WsMessage(msg_id, msg_type, text, user, create_time)
 
@@ -94,10 +94,10 @@ class WsMsgGroup:
     messages: list[WsMessage] = dcs.field(default_factory=list)
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> WsMsgGroup:
+    def from_proto(data_proto: TypeMessage) -> WsMsgGroup:
         group_id = data_proto.groupInfo.groupId
         group_type = data_proto.groupInfo.groupType
-        messages = [WsMessage.from_tbdata(p) for p in data_proto.msgList]
+        messages = [WsMessage.from_proto(p) for p in data_proto.msgList]
         return WsMsgGroup(group_id, group_type, messages)
 
 
@@ -112,6 +112,6 @@ class WsMsgGroups(TbErrorExt, Containers[WsMsgGroup]):
     """
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> WsMsgGroups:
-        objs = [WsMsgGroup.from_tbdata(p) for p in data_proto.groupInfo]
+    def from_proto(data_proto: TypeMessage) -> WsMsgGroups:
+        objs = [WsMsgGroup.from_proto(p) for p in data_proto.groupInfo]
         return WsMsgGroups(objs)

@@ -8,7 +8,7 @@ from ._classdef import RankUsers
 
 def parse_body(body: bytes) -> RankUsers:
     soup = bs4.BeautifulSoup(body, "lxml")
-    rank_users = RankUsers.from_tbdata(soup)
+    rank_users = RankUsers.from_xml(soup)
 
     return rank_users
 

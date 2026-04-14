@@ -55,7 +55,7 @@ class FragImage_feed:
     hash: str = ""
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> FragImage_feed:
+    def from_proto(data_proto: TypeMessage) -> FragImage_feed:
         src = data_proto.small_pic_url
         big_src = data_proto.big_pic_url
         origin_src = data_proto.origin_pic_url
@@ -81,7 +81,7 @@ class FragEmoji_feed:
     desc: str = ""
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> FragEmoji_feed:
+    def from_proto(data_proto: TypeMessage) -> FragEmoji_feed:
         id_ = data_proto.name
         desc = data_proto.c
         return FragEmoji_feed(id_, desc)
@@ -117,7 +117,7 @@ class Contents_t(Containers[TypeFragment]):
     voice: FragVoice_t = dcs.field(default_factory=FragVoice_t, repr=False)
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> Contents_t:
+    def from_proto(data_proto: TypeMessage) -> Contents_t:
         content_protos = data_proto.first_post_content
 
         texts = []
@@ -132,26 +132,26 @@ class Contents_t(Containers[TypeFragment]):
                 _type = proto.type
                 # 0纯文本 9电话号 18话题 27百科词条
                 if _type in [0, 9, 18, 27]:
-                    frag = FragText_t.from_tbdata(proto)
+                    frag = FragText_t.from_proto(proto)
                     texts.append(frag)
                     yield frag
                 # 11:tid=5047676428
                 elif _type in [2, 11]:
-                    frag = FragEmoji_t.from_tbdata(proto)
+                    frag = FragEmoji_t.from_proto(proto)
                     emojis.append(frag)
                     yield frag
                 # 20:tid=5470214675
                 elif _type in [3, 20]:
-                    frag = FragImage_t.from_tbdata(proto)
+                    frag = FragImage_t.from_proto(proto)
                     imgs.append(frag)
                     yield frag
                 elif _type == 4:
-                    frag = FragAt_t.from_tbdata(proto)
+                    frag = FragAt_t.from_proto(proto)
                     ats.append(frag)
                     texts.append(frag)
                     yield frag
                 elif _type == 1:
-                    frag = FragLink_t.from_tbdata(proto)
+                    frag = FragLink_t.from_proto(proto)
                     links.append(frag)
                     texts.append(frag)
                     yield frag
@@ -161,7 +161,7 @@ class Contents_t(Containers[TypeFragment]):
                     continue
                 # 35|36:tid=7769728331 / 37:tid=7760184147
                 elif _type in [35, 36, 37]:
-                    frag = FragTiebaPlus_t.from_tbdata(proto)
+                    frag = FragTiebaPlus_t.from_proto(proto)
                     tiebapluses.append(frag)
                     texts.append(frag)
                     yield frag
@@ -169,18 +169,18 @@ class Contents_t(Containers[TypeFragment]):
                 elif _type == 34:
                     continue
                 else:
-                    yield FragUnknown.from_tbdata(frag)
+                    yield FragUnknown.from_proto(frag)
 
         objs = list(_frags())
 
         if data_proto.video_info.video_width:
-            video = FragVideo_t.from_tbdata(data_proto.video_info)
+            video = FragVideo_t.from_proto(data_proto.video_info)
             objs.append(video)
         else:
             video = FragVideo_t()
 
         if data_proto.voice_info:
-            voice = FragVoice_t.from_tbdata(data_proto.voice_info[0])
+            voice = FragVoice_t.from_proto(data_proto.voice_info[0])
             objs.append(voice)
         else:
             voice = FragVoice_t()
@@ -199,18 +199,18 @@ class Contents_t(Containers[TypeFragment]):
                 if _type == "feed_abstract":
                     for proto in component.feed_abstract.data:
                         if proto.type == 1:
-                            frag = FragText_t.from_tbdata(proto.text_info)
+                            frag = FragText_t.from_proto(proto.text_info)
                             texts.append(frag)
                             yield frag
                         elif proto.type == 3:
-                            frag = FragEmoji_feed.from_tbdata(proto.emoji_info)
+                            frag = FragEmoji_feed.from_proto(proto.emoji_info)
                             emojis.append(frag)
                             yield frag
                         else:
-                            yield FragUnknown.from_tbdata(frag)
+                            yield FragUnknown.from_proto(frag)
                 elif _type == "feed_pic":
                     for proto in component.feed_pic.pics:
-                        frag = FragImage_feed.from_tbdata(proto)
+                        frag = FragImage_feed.from_proto(proto)
                         imgs.append(frag)
                         yield frag
                 elif _type in ["feed_head", "feed_title", "feed_social", "feed_poll"]:
@@ -255,7 +255,7 @@ class Page_t:
     has_prev: bool = False
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> Page_t:
+    def from_proto(data_proto: TypeMessage) -> Page_t:
         page_size = data_proto.page_size
         current_page = data_proto.current_page
         if current_page == 0 and page_size != 0:
@@ -311,7 +311,7 @@ class UserInfo_t:
     priv_reply: PrivReply = PrivReply.ALL
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> UserInfo_t:
+    def from_proto(data_proto: TypeMessage) -> UserInfo_t:
         user_id = data_proto.id
         portrait = data_proto.portrait
         if "?" in portrait:
@@ -395,7 +395,7 @@ class FragImage_st:
     hash: str = ""
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> FragImage_st:
+    def from_proto(data_proto: TypeMessage) -> FragImage_st:
         src = data_proto.water_pic
         big_src = data_proto.small_pic
         origin_src = data_proto.big_pic
@@ -441,12 +441,12 @@ class Contents_st(Containers[TypeFragment]):
     voice: FragVoice_st = dcs.field(default_factory=FragVoice_st, repr=False)
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> Contents_st:
+    def from_proto(data_proto: TypeMessage) -> Contents_st:
         content_protos = data_proto.content
 
         texts = []
         emojis = []
-        imgs = [FragImage_st.from_tbdata(p) for p in data_proto.media]
+        imgs = [FragImage_st.from_proto(p) for p in data_proto.media]
         ats = []
         links = []
         tiebapluses = []
@@ -456,21 +456,21 @@ class Contents_st(Containers[TypeFragment]):
                 _type = proto.type
                 # 0纯文本 9电话号 18话题 27百科词条
                 if _type in [0, 9, 18, 27]:
-                    frag = FragText_st.from_tbdata(proto)
+                    frag = FragText_st.from_proto(proto)
                     texts.append(frag)
                     yield frag
                 # 11:tid=5047676428
                 elif _type in [2, 11]:
-                    frag = FragEmoji_st.from_tbdata(proto)
+                    frag = FragEmoji_st.from_proto(proto)
                     emojis.append(frag)
                     yield frag
                 elif _type == 4:
-                    frag = FragAt_st.from_tbdata(proto)
+                    frag = FragAt_st.from_proto(proto)
                     ats.append(frag)
                     texts.append(frag)
                     yield frag
                 elif _type == 1:
-                    frag = FragLink_st.from_tbdata(proto)
+                    frag = FragLink_st.from_proto(proto)
                     links.append(frag)
                     texts.append(frag)
                     yield frag
@@ -478,7 +478,7 @@ class Contents_st(Containers[TypeFragment]):
                     continue
                 # 35|36:tid=7769728331 / 37:tid=7760184147
                 elif _type in [35, 36, 37]:
-                    frag = FragTiebaPlus_st.from_tbdata(proto)
+                    frag = FragTiebaPlus_st.from_proto(proto)
                     tiebapluses.append(frag)
                     texts.append(frag)
                     yield frag
@@ -486,7 +486,7 @@ class Contents_st(Containers[TypeFragment]):
                 elif _type == 34:
                     continue
                 else:
-                    yield FragUnknown.from_tbdata(frag)
+                    yield FragUnknown.from_proto(frag)
 
         objs = list(_frags())
 
@@ -496,13 +496,13 @@ class Contents_st(Containers[TypeFragment]):
         objs += imgs
 
         if data_proto.video_info.video_width:
-            video = FragVideo_st.from_tbdata(data_proto.video_info)
+            video = FragVideo_st.from_proto(data_proto.video_info)
             objs.append(video)
         else:
             video = FragVideo_st()
 
         if data_proto.voice_info:
-            voice = FragVoice_st.from_tbdata(data_proto.voice_info[0])
+            voice = FragVoice_st.from_proto(data_proto.voice_info[0])
             objs.append(voice)
         else:
             voice = FragVoice_st()
@@ -548,15 +548,15 @@ class ShareThread:
     vote_info: VoteInfo = dcs.field(default_factory=VoteInfo)
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> ShareThread:
-        contents = Contents_st.from_tbdata(data_proto)
+    def from_proto(data_proto: TypeMessage) -> ShareThread:
+        contents = Contents_st.from_proto(data_proto)
         author_id = data_proto.content[0].uid if data_proto.content else 0
         title = data_proto.title
         fid = data_proto.fid
         fname = data_proto.fname
         tid = int(tid) if (tid := data_proto.tid) else 0
         pid = data_proto.pid
-        vote_info = VoteInfo.from_tbdata(data_proto.poll_info)
+        vote_info = VoteInfo.from_proto(data_proto.poll_info)
         return ShareThread(contents, title, author_id, fid, fname, tid, pid, vote_info)
 
     def __eq__(self, obj: ShareThread) -> bool:
@@ -640,8 +640,8 @@ class Thread:
     last_time: int = 0
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> None:
-        contents = Contents_t.from_tbdata(data_proto)
+    def from_proto(data_proto: TypeMessage) -> None:
+        contents = Contents_t.from_proto(data_proto)
         title = data_proto.title
         tid = data_proto.id
         pid = data_proto.first_post_id
@@ -657,10 +657,10 @@ class Thread:
         is_share = bool(data_proto.is_share_thread)
         is_hide = bool(data_proto.is_frs_mask)
         is_livepost = bool(data_proto.is_livepost)
-        vote_info = VoteInfo.from_tbdata(data_proto.poll_info)
+        vote_info = VoteInfo.from_proto(data_proto.poll_info)
         if is_share:
             if data_proto.origin_thread_info.pid:
-                share_origin = ShareThread.from_tbdata(data_proto.origin_thread_info)
+                share_origin = ShareThread.from_proto(data_proto.origin_thread_info)
             else:
                 is_share = False
                 share_origin = ShareThread()
@@ -724,7 +724,7 @@ class Thread:
             _type = component.component
             if _type != "feed_poll":  # TODO: 不确定，需要找个抽奖帖测试
                 continue
-            vote_info = VoteInfo.from_tbdata(component.feed_poll)
+            vote_info = VoteInfo.from_proto(component.feed_poll)
         if vote_info is None:
             vote_info = VoteInfo()
 
@@ -818,7 +818,7 @@ class Forum_t:
     has_rule: bool = False
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> Forum_t:
+    def from_proto(data_proto: TypeMessage) -> Forum_t:
         forum_proto = data_proto.forum
         fid = forum_proto.id
         fname = forum_proto.name
@@ -853,13 +853,13 @@ class Threads(TbErrorExt, Containers[Thread]):
     tab_map: dict[str, int] = dcs.field(default_factory=dict)
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> Threads:
-        page = Page_t.from_tbdata(data_proto.page)
-        forum = Forum_t.from_tbdata(data_proto)
+    def from_proto(data_proto: TypeMessage) -> Threads:
+        page = Page_t.from_proto(data_proto.page)
+        forum = Forum_t.from_proto(data_proto)
         tab_map = {p.tab_name: p.tab_id for p in data_proto.nav_tab_info.tab}
 
-        objs = [Thread.from_tbdata(p) for p in data_proto.thread_list]
-        users = {p.id: UserInfo_t.from_tbdata(p) for p in data_proto.user_list}
+        objs = [Thread.from_proto(p) for p in data_proto.thread_list]
+        users = {p.id: UserInfo_t.from_proto(p) for p in data_proto.user_list}
         for thread in objs:
             thread.fname = forum.fname
             thread.fid = forum.fid
@@ -870,8 +870,8 @@ class Threads(TbErrorExt, Containers[Thread]):
     @staticmethod
     def from_feed(data_proto: TypeMessage) -> Threads:
         # 从12.65版本开始部分热门吧的主题帖列表采用feed形式推送
-        page = Page_t.from_tbdata(data_proto.page)
-        forum = Forum_t.from_tbdata(data_proto)
+        page = Page_t.from_proto(data_proto.page)
+        forum = Forum_t.from_proto(data_proto)
         tab_map = {p.tab_name: p.tab_id for p in data_proto.nav_tab_info.tab}
 
         objs = [Thread.from_feed(p.feed) for p in data_proto.page_data.feed_list if p.layout == "feed"]

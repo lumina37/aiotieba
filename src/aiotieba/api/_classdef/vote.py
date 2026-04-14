@@ -21,7 +21,7 @@ class VoteOption:
     text: str = ""
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> VoteOption:
+    def from_proto(data_proto: TypeMessage) -> VoteOption:
         vote_num = data_proto.num
         text = data_proto.text
         return VoteOption(vote_num, text)
@@ -47,10 +47,10 @@ class VoteInfo:
     total_user: int = 0
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> VoteInfo:
+    def from_proto(data_proto: TypeMessage) -> VoteInfo:
         title = data_proto.title
         is_multi = bool(data_proto.is_multi)
-        options = [VoteOption.from_tbdata(p) for p in data_proto.options]
+        options = [VoteOption.from_proto(p) for p in data_proto.options]
         total_vote = data_proto.total_poll
         total_user = data_proto.total_num
         return VoteInfo(title, is_multi, options, total_vote, total_user)

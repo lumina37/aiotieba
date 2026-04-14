@@ -40,7 +40,7 @@ class Forum_detail(TbErrorExt):
     has_bawu: bool = False
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "Forum_detail":
+    def from_proto(data_proto: TypeMessage) -> "Forum_detail":
         forum_proto = data_proto.forum_info
         fid = forum_proto.forum_id
         fname = forum_proto.forum_name

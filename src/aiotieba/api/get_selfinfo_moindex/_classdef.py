@@ -46,7 +46,7 @@ class UserInfo_moindex:
     is_vip: bool = False
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> UserInfo_moindex:
+    def from_json(data_map: Mapping) -> UserInfo_moindex:
         user_id = data_map["id"]
         portrait = data_map["portrait"]
         user_name = data_map["name"]
