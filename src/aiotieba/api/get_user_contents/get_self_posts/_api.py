@@ -1,6 +1,6 @@
 import yarl
 
-from ....const import APP_BASE_HOST
+from ....const import APP_BASE_HOST, LATEST_VERSION
 from ....core import Account, HttpCore, WsCore
 from ....exception import TiebaServerError
 from .._classdef import UserPostss
@@ -8,10 +8,10 @@ from .._const import CMD
 from ..protobuf import UserPostReqIdl_pb2, UserPostResIdl_pb2
 
 
-def pack_proto(account: Account, user_id: int, pn: int, rn: int, version: str) -> bytes:
+def pack_proto(account: Account, user_id: int, pn: int, rn: int) -> bytes:
     req_proto = UserPostReqIdl_pb2.UserPostReqIdl()
     req_proto.data.common.BDUSS = account.BDUSS
-    req_proto.data.common._client_version = version
+    req_proto.data.common._client_version = LATEST_VERSION
     req_proto.data.uid = user_id
     req_proto.data.need_content = 1
     req_proto.data.pn = pn
@@ -33,8 +33,8 @@ def parse_body(body: bytes) -> UserPostss:
     return upostss
 
 
-async def request_http(http_core: HttpCore, user_id: int, pn: int, rn: int, version: str) -> UserPostss:
-    data = pack_proto(http_core.account, user_id, pn, rn, version)
+async def request_http(http_core: HttpCore, user_id: int, pn: int, rn: int) -> UserPostss:
+    data = pack_proto(http_core.account, user_id, pn, rn)
 
     request = http_core.pack_proto_request(
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/u/feed/userpost", query_string=f"cmd={CMD}"),
@@ -45,8 +45,8 @@ async def request_http(http_core: HttpCore, user_id: int, pn: int, rn: int, vers
     return parse_body(body)
 
 
-async def request_ws(ws_core: WsCore, user_id: int, pn: int, rn: int, version: str) -> UserPostss:
-    data = pack_proto(ws_core.account, user_id, pn, rn, version)
+async def request_ws(ws_core: WsCore, user_id: int, pn: int, rn: int) -> UserPostss:
+    data = pack_proto(ws_core.account, user_id, pn, rn)
 
     response = await ws_core.send(data, CMD)
     return parse_body(await response.read())

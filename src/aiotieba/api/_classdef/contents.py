@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING, Any, Protocol, TypeVar
 import yarl
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from .common import TypeMessage
 
 TypeFragment = TypeVar("TypeFragment")
@@ -27,6 +29,11 @@ class FragText:
     @staticmethod
     def from_proto(data_proto: TypeMessage) -> FragText:
         text = data_proto.text
+        return FragText(text)
+
+    @staticmethod
+    def from_json(data_map: Mapping) -> FragText:
+        text = data_map["text"]
         return FragText(text)
 
 
@@ -232,6 +239,13 @@ class FragLink:
         raw_url = yarl.URL(text)
         return FragLink(text, title, raw_url)
 
+    @staticmethod
+    def from_json(data_map: Mapping) -> FragLink:
+        text = data_map["link"]
+        title = data_map["text"]
+        raw_url = yarl.URL(text)
+        return FragLink(text, title, raw_url)
+
     @cached_property
     def url(self) -> yarl.URL:
         if self.is_external:
@@ -316,4 +330,8 @@ class FragUnknown:
 
     @staticmethod
     def from_proto(data: Any) -> FragUnknown:
+        return FragUnknown(data)
+
+    @staticmethod
+    def from_json(data: Mapping) -> FragUnknown:
         return FragUnknown(data)

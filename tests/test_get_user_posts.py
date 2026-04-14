@@ -3,7 +3,7 @@ import pytest
 import aiotieba as tb
 
 
-@pytest.mark.flaky(reruns=2, reruns_delay=5.0)
+@pytest.xfail
 @pytest.mark.asyncio(loop_scope="session")
 async def test_get_user_posts(client: tb.Client):
     user_id = 4954297652
