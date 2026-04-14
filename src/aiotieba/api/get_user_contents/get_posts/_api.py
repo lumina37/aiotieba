@@ -1,40 +1,52 @@
 import yarl
 
-from ....const import LATEST_VERSION, WEB_BASE_HOST
-from ....core import HttpCore
+from ....const import APP_BASE_HOST
+from ....core import Account, HttpCore, WsCore
 from ....exception import TiebaServerError
-from ....helper import parse_json
 from .._classdef import UserPostss
+from .._const import CMD
+from ..protobuf import UserPostReqIdl_pb2, UserPostResIdl_pb2
+
+
+def pack_proto(account: Account, user_id: int, pn: int, rn: int, version: str) -> bytes:
+    req_proto = UserPostReqIdl_pb2.UserPostReqIdl()
+    req_proto.data.common.BDUSS = account.BDUSS
+    req_proto.data.common._client_version = version
+    req_proto.data.uid = user_id
+    req_proto.data.need_content = 1
+    req_proto.data.pn = pn
+    req_proto.data.rn = rn
+
+    return req_proto.SerializeToString()
 
 
 def parse_body(body: bytes) -> UserPostss:
-    res_json = parse_json(body)
-    if code := int(res_json["error_code"]):
-        raise TiebaServerError(code, res_json["error_msg"])
+    res_proto = UserPostResIdl_pb2.UserPostResIdl()
+    res_proto.ParseFromString(body)
 
-    upostss = UserPostss.from_json(res_json)
+    if code := res_proto.error.errorno:
+        raise TiebaServerError(code, res_proto.error.errmsg)
+
+    data_proto = res_proto.data
+    upostss = UserPostss.from_proto(data_proto)
 
     return upostss
 
 
-async def request(http_core: HttpCore, user_id: int, pn: int, rn: int) -> UserPostss:
-    data = [
-        ("_client_version", LATEST_VERSION),
-        ("res_num", rn),
-        ("is_thread", 1),
-        ("need_content", 1),
-        ("is_view_card", 1),
-        # ("forum_id", 0),
-        ("uid", user_id),
-        ("pn", pn),
-        ("subapp_type", "hybrid"),
-    ]
+async def request_http(http_core: HttpCore, user_id: int, pn: int, rn: int, version: str) -> UserPostss:
+    data = pack_proto(http_core.account, user_id, pn, rn, version)
 
-    request = http_core.pack_web_form_request(
-        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/c/u/feed/userpost"),
+    request = http_core.pack_proto_request(
+        yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/u/feed/userpost", query_string=f"cmd={CMD}"),
         data,
-        extra_headers=[("Subapp-Type", "hybrid")],
     )
 
     body = await http_core.net_core.send_request(request, read_bufsize=64 * 1024)
     return parse_body(body)
+
+
+async def request_ws(ws_core: WsCore, user_id: int, pn: int, rn: int, version: str) -> UserPostss:
+    data = pack_proto(ws_core.account, user_id, pn, rn, version)
+
+    response = await ws_core.send(data, CMD)
+    return parse_body(await response.read())

@@ -100,7 +100,7 @@ from .api import (
 )
 from .api._classdef import UserInfo
 from .config import ProxyConfig, TimeoutConfig
-from .const import STABLE_VERSION
+from .const import LATEST_VERSION, STABLE_VERSION
 from .core import Account, BLCPCore, HttpCore, NetCore, WsCore
 from .enums import (
     BawuPermType,
@@ -952,9 +952,9 @@ class Client:
         user_id = user.user_id
 
         if self._ws_core.status == WsStatus.OPEN:
-            return await get_user_contents.get_self_posts.request_ws(self._ws_core, user_id, pn, rn)
+            return await get_user_contents.get_posts.request_ws(self._ws_core, user_id, pn, rn, LATEST_VERSION)
 
-        return await get_user_contents.get_self_posts.request_http(self._http_core, user_id, pn, rn)
+        return await get_user_contents.get_posts.request_http(self._http_core, user_id, pn, rn, LATEST_VERSION)
 
     @handle_exception(get_user_contents.UserPostss)
     async def get_user_posts(self, id_: str | int, pn: int = 1, *, rn: int = 20) -> get_user_contents.UserPostss:
@@ -964,7 +964,7 @@ class Client:
         Args:
             id_ (str | int): 用户id user_id / user_name / portrait 优先user_id
             pn (int, optional): 页码. Defaults to 1.
-            rn (int, optional): 请求的条目数. Defaults to 20. Max to Inf.
+            rn (int, optional): 请求的条目数. Defaults to 20. Max to 74.
 
         Returns:
             UserPostss: 回复列表
@@ -976,7 +976,12 @@ class Client:
         else:
             user_id = id_
 
-        return await get_user_contents.get_posts.request(self._http_core, user_id, pn, rn)
+        USER_POSTS_VERSION = "8"
+
+        if self._ws_core.status == WsStatus.OPEN:
+            return await get_user_contents.get_posts.request_ws(self._ws_core, user_id, pn, rn, USER_POSTS_VERSION)
+
+        return await get_user_contents.get_posts.request_http(self._http_core, user_id, pn, rn, USER_POSTS_VERSION)
 
     @handle_exception(get_user_contents.UserThreads)
     @_try_websocket
