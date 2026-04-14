@@ -934,26 +934,27 @@ class Client:
 
         return await get_dislike_forums.request_http(self._http_core, pn, rn)
 
-    async def __get_user_posts(self, id_: str | int, pn: int, rn: int):
-        if not isinstance(id_, int):
-            user = await self.get_user_info(id_, ReqUInfo.USER_ID)
-            user_id = user.user_id
-        else:
-            user_id = id_
-
-        USER_POST_VERSION = "8.9.8.5"
-
-        return await get_user_contents.get_posts.request_http(self._http_core, user_id, pn, rn, USER_POST_VERSION)
-
+    @handle_exception(get_user_contents.UserPostss)
     @_try_websocket
-    async def __get_self_posts(self, pn: int, rn: int):
+    async def get_self_posts(self, pn: int, rn: int):
+        """
+        获取当前用户发布的回复列表
+
+        Args:
+            pn (int, optional): 页码. Defaults to 1.
+            rn (int, optional): 请求的条目数. Defaults to 20. Max to 50.
+
+        Returns:
+            UserPostss: 回复列表
+        """
+
         user = await self.get_self_info(ReqUInfo.USER_ID)
         user_id = user.user_id
 
         if self._ws_core.status == WsStatus.OPEN:
-            return await get_user_contents.get_posts.request_ws(self._ws_core, user_id, pn, rn, STABLE_VERSION)
+            return await get_user_contents.get_self_posts.request_ws(self._ws_core, user_id, pn, rn, STABLE_VERSION)
 
-        return await get_user_contents.get_posts.request_http(self._http_core, user_id, pn, rn, STABLE_VERSION)
+        return await get_user_contents.get_self_posts.request_http(self._http_core, user_id, pn, rn, STABLE_VERSION)
 
     @handle_exception(get_user_contents.UserPostss)
     async def get_user_posts(
@@ -963,8 +964,7 @@ class Client:
         获取用户发布的回复列表
 
         Args:
-            id_ (str | int | None): 用户id user_id / user_name / portrait 优先user_id
-                默认为None即获取本账号信息. Defaults to None.
+            id_ (str | int): 用户id user_id / user_name / portrait 优先user_id
             pn (int, optional): 页码. Defaults to 1.
             rn (int, optional): 请求的条目数. Defaults to 20. Max to 50.
 
@@ -972,10 +972,15 @@ class Client:
             UserPostss: 回复列表
         """
 
-        if id_ is None:
-            return await self.__get_self_posts(pn, rn)
+        if not isinstance(id_, int):
+            user = await self.get_user_info(id_, ReqUInfo.USER_ID)
+            user_id = user.user_id
         else:
-            return await self.__get_user_posts(id_, pn, rn)
+            user_id = id_
+
+        USER_POST_VERSION = "8.9.8.5"
+
+        return await get_user_contents.get_self_posts.request_http(self._http_core, user_id, pn, rn, USER_POST_VERSION)
 
     @handle_exception(get_user_contents.UserThreads)
     @_try_websocket
