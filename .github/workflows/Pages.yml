@@ -18,7 +18,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
 
     steps:
       - name: Checkout
@@ -43,7 +43,7 @@ jobs:
   deploy:
     needs: build
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
 
     permissions:
       pages: write
