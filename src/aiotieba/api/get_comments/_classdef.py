@@ -3,8 +3,10 @@ from __future__ import annotations
 import dataclasses as dcs
 from functools import cached_property
 
-from ...enums import Gender, PrivLike, PrivReply
+from ...enums import Gender, PrivLike, PrivReply, ThreadType
 from ...exception import TbErrorExt
+from ...helper import deprecated
+from ...logging import get_logger as LOG
 from .._classdef import Containers, TypeMessage
 from .._classdef.contents import (
     _IMAGEHASH_EXP,
@@ -53,7 +55,7 @@ class Contents_c(Containers[TypeFragment]):
     voice: FragVoice_c = dcs.field(default_factory=FragVoice_c, repr=False)
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> Contents_c:
+    def from_proto(data_proto: TypeMessage) -> Contents_c:
         content_protos = data_proto.content
 
         texts = []
@@ -68,32 +70,32 @@ class Contents_c(Containers[TypeFragment]):
                 _type = proto.type
                 # 0纯文本 9电话号 18话题 27百科词条
                 if _type in [0, 9, 18, 27]:
-                    frag = FragText_c.from_tbdata(proto)
+                    frag = FragText_c.from_proto(proto)
                     texts.append(frag)
                     yield frag
                 # 11:tid=5047676428
                 elif _type in [2, 11]:
-                    frag = FragEmoji_c.from_tbdata(proto)
+                    frag = FragEmoji_c.from_proto(proto)
                     emojis.append(frag)
                     yield frag
                 elif _type == 4:
-                    frag = FragAt_c.from_tbdata(proto)
+                    frag = FragAt_c.from_proto(proto)
                     ats.append(frag)
                     texts.append(frag)
                     yield frag
                 elif _type == 1:
-                    frag = FragLink_c.from_tbdata(proto)
+                    frag = FragLink_c.from_proto(proto)
                     links.append(frag)
                     texts.append(frag)
                     yield frag
                 elif _type == 10:  # voice
-                    frag = FragVoice_c.from_tbdata(proto)
+                    frag = FragVoice_c.from_proto(proto)
                     nonlocal voice
                     voice = frag
                     yield frag
                 # 35|36:tid=7769728331 / 37:tid=7760184147
                 elif _type in [35, 36, 37]:
-                    frag = FragTiebaPlus_c.from_tbdata(proto)
+                    frag = FragTiebaPlus_c.from_proto(proto)
                     tiebapluses.append(frag)
                     texts.append(frag)
                     yield frag
@@ -101,7 +103,7 @@ class Contents_c(Containers[TypeFragment]):
                 elif _type == 34:
                     continue
                 else:
-                    yield FragUnknown.from_tbdata(proto)
+                    yield FragUnknown.from_proto(proto)
 
         objs = list(_frags())
 
@@ -155,7 +157,7 @@ class UserInfo_c:
     priv_reply: PrivReply = PrivReply.ALL
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> UserInfo_c:
+    def from_proto(data_proto: TypeMessage) -> UserInfo_c:
         user_id = data_proto.id
         portrait = data_proto.portrait
         if "?" in portrait:
@@ -257,8 +259,8 @@ class Comment:
     is_thread_author: bool = False
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> None:
-        contents = Contents_c.from_tbdata(data_proto)
+    def from_proto(data_proto: TypeMessage) -> None:
+        contents = Contents_c.from_proto(data_proto)
 
         reply_to_id = 0
         if contents:
@@ -278,7 +280,7 @@ class Comment:
                     first_text_frag.text = first_text_frag.text.removeprefix(" :")
 
         pid = data_proto.id
-        user = UserInfo_c.from_tbdata(data_proto.author)
+        user = UserInfo_c.from_proto(data_proto.author)
         agree = data_proto.agree.agree_num
         disagree = data_proto.agree.disagree_num
         create_time = data_proto.time
@@ -324,7 +326,7 @@ class Page_c:
     has_prev: bool = False
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> Page_c:
+    def from_proto(data_proto: TypeMessage) -> Page_c:
         page_size = data_proto.page_size
         current_page = data_proto.current_page
         total_page = data_proto.total_page
@@ -354,7 +356,7 @@ class Forum_c:
     subcategory: str = ""
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> Forum_c:
+    def from_proto(data_proto: TypeMessage) -> Forum_c:
         fid = data_proto.id
         fname = data_proto.name
         category = data_proto.first_class
@@ -391,7 +393,7 @@ class UserInfo_ct:
     is_god: bool = False
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> UserInfo_ct:
+    def from_proto(data_proto: TypeMessage) -> UserInfo_ct:
         user_id = data_proto.id
         portrait = data_proto.portrait
         if "?" in portrait:
@@ -446,7 +448,7 @@ class Thread_c:
         user (UserInfo_ct): 发布者的用户信息
         author_id (int): 发布者的user_id
 
-        type (int): 帖子类型
+        type (ThreadType): 帖子类型
         is_help (bool): 是否为求助帖
 
         reply_num (int): 回复数
@@ -459,16 +461,20 @@ class Thread_c:
     tid: int = 0
     user: UserInfo_ct = dcs.field(default_factory=UserInfo_ct)
 
-    type: int = 0
+    type: ThreadType = ThreadType.UNKNOWN
 
     reply_num: int = 0
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> Thread_c:
+    def from_proto(data_proto: TypeMessage) -> Thread_c:
         title = data_proto.title
         tid = data_proto.id
-        user = UserInfo_ct.from_tbdata(data_proto.author)
-        type_ = data_proto.thread_type
+        user = UserInfo_ct.from_proto(data_proto.author)
+
+        type_ = ThreadType(data_proto.thread_type)
+        if type_ == ThreadType.UNKNOWN:
+            LOG().debug("Unknown thread type. tid=%d, type=%s", tid, data_proto.thread_type)
+
         reply_num = data_proto.reply_num
         return Thread_c(title, 0, "", tid, user, type_, reply_num)
 
@@ -483,8 +489,9 @@ class Thread_c:
         return self.user.user_id
 
     @property
+    @deprecated("使用 thread.type == ThreadType.HELP 作为替代")
     def is_help(self) -> bool:
-        return self.type == 71
+        return self.type == ThreadType.HELP
 
 
 @dcs.dataclass
@@ -511,7 +518,7 @@ class FragImage_cp:
     hash: str = ""
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> FragImage_cp:
+    def from_proto(data_proto: TypeMessage) -> FragImage_cp:
         src = data_proto.cdn_src
         big_src = data_proto.big_cdn_src
         origin_src = data_proto.origin_src
@@ -557,7 +564,7 @@ class Contents_cp(Containers[TypeFragment]):
     voice: FragVoice_cp = dcs.field(default_factory=FragVoice_cp, repr=False)
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> Contents_cp:
+    def from_proto(data_proto: TypeMessage) -> Contents_cp:
         content_protos = data_proto.content
 
         texts = []
@@ -573,37 +580,37 @@ class Contents_cp(Containers[TypeFragment]):
                 _type = proto.type
                 # 0纯文本 9电话号 18话题 27百科词条
                 if _type in [0, 9, 18, 27]:
-                    frag = FragText_cp.from_tbdata(proto)
+                    frag = FragText_cp.from_proto(proto)
                     texts.append(frag)
                     yield frag
                 # 11:tid=5047676428
                 elif _type in [2, 11]:
-                    frag = FragEmoji_cp.from_tbdata(proto)
+                    frag = FragEmoji_cp.from_proto(proto)
                     emojis.append(frag)
                     yield frag
                 # 20:tid=5470214675
                 elif _type in [3, 20]:
-                    frag = FragImage_cp.from_tbdata(proto)
+                    frag = FragImage_cp.from_proto(proto)
                     imgs.append(frag)
                     yield frag
                 elif _type == 4:
-                    frag = FragAt_cp.from_tbdata(proto)
+                    frag = FragAt_cp.from_proto(proto)
                     ats.append(frag)
                     texts.append(frag)
                     yield frag
                 elif _type == 1:
-                    frag = FragLink_cp.from_tbdata(proto)
+                    frag = FragLink_cp.from_proto(proto)
                     links.append(frag)
                     texts.append(frag)
                     yield frag
                 elif _type == 10:  # voice
-                    frag = FragVoice_cp.from_tbdata(proto)
+                    frag = FragVoice_cp.from_proto(proto)
                     nonlocal voice
                     voice = frag
                     yield frag
                 # 35|36:tid=7769728331 / 37:tid=7760184147
                 elif _type in [35, 36, 37]:
-                    frag = FragTiebaPlus_cp.from_tbdata(proto)
+                    frag = FragTiebaPlus_cp.from_proto(proto)
                     tiebapluses.append(frag)
                     texts.append(frag)
                     yield frag
@@ -611,7 +618,7 @@ class Contents_cp(Containers[TypeFragment]):
                 elif _type == 34:
                     continue
                 else:
-                    yield FragUnknown.from_tbdata(proto)
+                    yield FragUnknown.from_proto(proto)
 
         objs = list(_frags())
 
@@ -663,7 +670,7 @@ class UserInfo_cp:
     priv_reply: PrivReply = PrivReply.ALL
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> UserInfo_cp:
+    def from_proto(data_proto: TypeMessage) -> UserInfo_cp:
         user_id = data_proto.id
         portrait = data_proto.portrait
         if "?" in portrait:
@@ -745,11 +752,11 @@ class Post_c:
     create_time: int = 0
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> Post_c:
-        contents = Contents_cp.from_tbdata(data_proto)
+    def from_proto(data_proto: TypeMessage) -> Post_c:
+        contents = Contents_cp.from_proto(data_proto)
         sign = "".join(p.text for p in data_proto.signature.content if p.type == 0)
         pid = data_proto.id
-        user = UserInfo_cp.from_tbdata(data_proto.author)
+        user = UserInfo_cp.from_proto(data_proto.author)
         floor = data_proto.floor
         create_time = data_proto.time
         return Post_c(contents, sign, 0, "", 0, pid, user, floor, create_time)
@@ -796,18 +803,18 @@ class Comments(TbErrorExt, Containers[Comment]):
     post: Post_c = dcs.field(default_factory=Post_c)
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> Comments:
-        page = Page_c.from_tbdata(data_proto.page)
-        forum = Forum_c.from_tbdata(data_proto.forum)
-        thread = Thread_c.from_tbdata(data_proto.thread)
+    def from_proto(data_proto: TypeMessage) -> Comments:
+        page = Page_c.from_proto(data_proto.page)
+        forum = Forum_c.from_proto(data_proto.forum)
+        thread = Thread_c.from_proto(data_proto.thread)
         thread.fid = forum.fid
         thread.fname = forum.fname
-        post = Post_c.from_tbdata(data_proto.post)
+        post = Post_c.from_proto(data_proto.post)
         post.fid = thread.fid
         post.fname = thread.fname
         post.tid = thread.tid
 
-        objs = [Comment.from_tbdata(p) for p in data_proto.subpost_list]
+        objs = [Comment.from_proto(p) for p in data_proto.subpost_list]
         for comment in objs:
             comment.fid = forum.fid
             comment.fname = forum.fname

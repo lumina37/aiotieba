@@ -2,8 +2,12 @@ from __future__ import annotations
 
 import dataclasses as dcs
 from functools import cached_property
+from typing import TYPE_CHECKING
 
+from ...enums import ThreadType
 from ...exception import TbErrorExt
+from ...helper import deprecated
+from ...logging import get_logger as LOG
 from .._classdef import Containers, TypeMessage, VoteInfo
 from .._classdef.contents import (
     _IMAGEHASH_EXP,
@@ -17,6 +21,10 @@ from .._classdef.contents import (
     TypeFragment,
     TypeFragText,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
 
 FragText_up = FragText_ut = FragText
 FragEmoji_ut = FragEmoji
@@ -40,9 +48,15 @@ class FragVoice_up:
     duration: int = 0
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> FragVoice_up:
+    def from_proto(data_proto: TypeMessage) -> FragVoice_up:
         md5 = data_proto.voice_md5
         duration = int(data_proto.during_time) / 1000
+        return FragVoice_up(md5, duration)
+
+    @staticmethod
+    def from_json(data_map: Mapping) -> FragVoice_up:
+        md5 = data_map["voice_md5"]
+        duration = int(data_map["during_time"]) / 1000
         return FragVoice_up(md5, duration)
 
     def __bool__(self) -> bool:
@@ -69,7 +83,7 @@ class Contents_up(Containers[TypeFragment]):
     voice: FragVoice_up = dcs.field(default_factory=FragVoice_up, repr=False)
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> Contents_up:
+    def from_proto(data_proto: TypeMessage) -> Contents_up:
         content_protos = data_proto.post_content
 
         texts = []
@@ -80,20 +94,51 @@ class Contents_up(Containers[TypeFragment]):
             for proto in content_protos:
                 _type = proto.type
                 if _type in [0, 4]:
-                    frag = FragText_up.from_tbdata(proto)
+                    frag = FragText_up.from_proto(proto)
                     texts.append(frag)
                     yield frag
                 elif _type == 1:
-                    frag = FragLink_up.from_tbdata(proto)
+                    frag = FragLink_up.from_proto(proto)
                     links.append(frag)
                     texts.append(frag)
                     yield frag
                 elif _type == 10:  # voice
                     nonlocal voice
-                    voice = FragVoice_up.from_tbdata(proto)
+                    voice = FragVoice_up.from_proto(proto)
                     continue
                 else:
-                    yield FragUnknown.from_tbdata(frag)
+                    yield FragUnknown.from_proto(frag)
+
+        objs = list(_frags())
+
+        return Contents_up(objs, texts, links, voice)
+
+    @staticmethod
+    def from_json(data_map: Mapping) -> Contents_up:
+        content_maps = data_map["post_content"]
+
+        texts = []
+        links = []
+        voice = FragVoice_up()
+
+        def _frags():
+            for content_map in content_maps:
+                _type = int(content_map["type"])
+                if _type in [0, 4]:
+                    frag = FragText_up.from_json(content_map)
+                    texts.append(frag)
+                    yield frag
+                elif _type == 1:
+                    frag = FragLink_up.from_json(content_map)
+                    links.append(frag)
+                    texts.append(frag)
+                    yield frag
+                elif _type == 10:  # voice
+                    nonlocal voice
+                    voice = FragVoice_up.from_json(content_map)
+                    continue
+                else:
+                    yield FragUnknown.from_json(content_map)
 
         objs = list(_frags())
 
@@ -127,13 +172,23 @@ class UserInfo_u:
     nick_name_new: str = ""
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> UserInfo_u:
+    def from_proto(data_proto: TypeMessage) -> UserInfo_u:
         user_id = data_proto.user_id
         portrait = data_proto.user_portrait
         if "?" in portrait:
             portrait = portrait[:-13]
         user_name = data_proto.user_name
         nick_name_new = data_proto.name_show
+        return UserInfo_u(user_id, portrait, user_name, nick_name_new)
+
+    @staticmethod
+    def from_json(data_map: Mapping) -> UserInfo_u:
+        user_id = int(data_map["user_id"])
+        portrait = data_map["user_portrait"]
+        if "?" in portrait:
+            portrait = portrait[:-13]
+        user_name = data_map["user_name"]
+        nick_name_new = data_map["name_show"]
         return UserInfo_u(user_id, portrait, user_name, nick_name_new)
 
     def __str__(self) -> str:
@@ -198,11 +253,19 @@ class UserPost:
     create_time: int = 0
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> UserPost:
-        contents = Contents_up.from_tbdata(data_proto)
+    def from_proto(data_proto: TypeMessage) -> UserPost:
+        contents = Contents_up.from_proto(data_proto)
         pid = data_proto.post_id
         is_comment = bool(data_proto.post_type)
         create_time = data_proto.create_time
+        return UserPost(contents, 0, 0, pid, None, is_comment, create_time)
+
+    @staticmethod
+    def from_json(data_map: Mapping) -> UserPost:
+        contents = Contents_up.from_json(data_map)
+        pid = int(data_map["post_id"])
+        is_comment = bool(int(data_map["post_type"]))
+        create_time = int(data_map["create_time"])
         return UserPost(contents, 0, 0, pid, None, is_comment, create_time)
 
     def __eq__(self, obj: UserPost) -> bool:
@@ -236,10 +299,20 @@ class UserPosts(Containers[UserPost]):
     tid: int = 0
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> UserPosts:
+    def from_proto(data_proto: TypeMessage) -> UserPosts:
         fid = data_proto.forum_id
         tid = data_proto.thread_id
-        objs = [UserPost.from_tbdata(p) for p in data_proto.content]
+        objs = [UserPost.from_proto(p) for p in data_proto.content]
+        for upost in objs:
+            upost.fid = fid
+            upost.tid = tid
+        return UserPosts(objs, fid, tid)
+
+    @staticmethod
+    def from_json(data_map: Mapping) -> UserPosts:
+        fid = int(data_map["forum_id"])
+        tid = int(data_map["thread_id"])
+        objs = [UserPost.from_json(m) for m in data_map["content"]]
         for upost in objs:
             upost.fid = fid
             upost.tid = tid
@@ -257,10 +330,20 @@ class UserPostss(TbErrorExt, Containers[UserPosts]):
     """
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> UserPostss:
-        objs = [UserPosts.from_tbdata(p) for p in data_proto.post_list]
+    def from_proto(data_proto: TypeMessage) -> UserPostss:
+        objs = [UserPosts.from_proto(p) for p in data_proto.post_list]
         if objs:
-            user = UserInfo_u.from_tbdata(data_proto.post_list[0])
+            user = UserInfo_u.from_proto(data_proto.post_list[0])
+            for uposts in objs:
+                for upost in uposts:
+                    upost.user = user
+        return UserPostss(objs)
+
+    @staticmethod
+    def from_json(data_map: Mapping) -> UserPostss:
+        objs = [UserPosts.from_json(m) for m in data_map["post_list"]]
+        if objs:
+            user = UserInfo_u.from_json(data_map["post_list"][0])
             for uposts in objs:
                 for upost in uposts:
                     upost.user = user
@@ -291,7 +374,7 @@ class FragImage_ut:
     hash: str = ""
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> FragImage_ut:
+    def from_proto(data_proto: TypeMessage) -> FragImage_ut:
         src = data_proto.small_pic
         big_src = data_proto.big_pic
         origin_src = data_proto.origin_pic
@@ -333,12 +416,12 @@ class Contents_ut(Containers[TypeFragment]):
     voice: FragVoice_ut = dcs.field(default_factory=FragVoice_ut, repr=False)
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> Contents_ut:
+    def from_proto(data_proto: TypeMessage) -> Contents_ut:
         content_protos = data_proto.first_post_content
 
         texts = []
         emojis = []
-        imgs = [FragImage_ut.from_tbdata(p) for p in data_proto.media if p.type != 5]
+        imgs = [FragImage_ut.from_proto(p) for p in data_proto.media if p.type != 5]
         ats = []
         links = []
 
@@ -347,24 +430,24 @@ class Contents_ut(Containers[TypeFragment]):
                 _type = proto.type
                 # 0纯文本 9电话号 18话题 27百科词条
                 if _type in [0, 9, 18, 27]:
-                    frag = FragText_ut.from_tbdata(proto)
+                    frag = FragText_ut.from_proto(proto)
                     texts.append(frag)
                     yield frag
                 # 11:tid=5047676428
                 elif _type in [2, 11]:
-                    frag = FragEmoji_ut.from_tbdata(proto)
+                    frag = FragEmoji_ut.from_proto(proto)
                     emojis.append(frag)
                     yield frag
                 # img will be init elsewhere
                 elif _type in [3, 20]:
                     continue
                 elif _type == 4:
-                    frag = FragAt_ut.from_tbdata(proto)
+                    frag = FragAt_ut.from_proto(proto)
                     ats.append(frag)
                     texts.append(frag)
                     yield frag
                 elif _type == 1:
-                    frag = FragLink_ut.from_tbdata(proto)
+                    frag = FragLink_ut.from_proto(proto)
                     links.append(frag)
                     texts.append(frag)
                     yield frag
@@ -373,19 +456,19 @@ class Contents_ut(Containers[TypeFragment]):
                 elif _type == 10:  # voice
                     continue
                 else:
-                    yield FragUnknown.from_tbdata(frag)
+                    yield FragUnknown.from_proto(frag)
 
         objs = list(_frags())
         objs += imgs
 
         if data_proto.video_info.video_width:
-            video = FragVideo_ut.from_tbdata(data_proto.video_info)
+            video = FragVideo_ut.from_proto(data_proto.video_info)
             objs.append(video)
         else:
             video = FragVideo_ut()
 
         if data_proto.voice_info:
-            voice = FragVoice_ut.from_tbdata(data_proto.voice_info[0])
+            voice = FragVoice_ut.from_proto(data_proto.voice_info[0])
             objs.append(voice)
         else:
             voice = FragVoice_ut()
@@ -415,7 +498,7 @@ class UserThread:
         user (UserInfo_u): 发布者的用户信息
         author_id (int): 发布者的user_id
 
-        type (int): 帖子类型
+        type (ThreadType): 帖子类型
         is_help (bool): 是否为求助帖
 
         vote_info (VoteInfo): 投票信息
@@ -436,7 +519,7 @@ class UserThread:
     pid: int = 0
     user: UserInfo_u = dcs.field(default_factory=UserInfo_u)
 
-    type: int = 0
+    type: ThreadType = ThreadType.UNKNOWN
 
     vote_info: VoteInfo = dcs.field(default_factory=VoteInfo)
     view_num: int = 0
@@ -447,15 +530,19 @@ class UserThread:
     create_time: int = 0
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> UserThread:
-        contents = Contents_ut.from_tbdata(data_proto)
+    def from_proto(data_proto: TypeMessage) -> UserThread:
+        contents = Contents_ut.from_proto(data_proto)
         title = data_proto.title
         fid = data_proto.forum_id
         fname = data_proto.forum_name
         tid = data_proto.thread_id
         pid = data_proto.post_id
-        type_ = data_proto.thread_type
-        vote_info = VoteInfo.from_tbdata(data_proto.poll_info)
+
+        type_ = ThreadType(data_proto.thread_type)
+        if type_ == ThreadType.UNKNOWN:
+            LOG().debug("Unknown thread type. tid=%d, type=%s", tid, data_proto.thread_type)
+
+        vote_info = VoteInfo.from_proto(data_proto.poll_info)
         view_num = data_proto.freq_num
         reply_num = data_proto.reply_num
         share_num = data_proto.share_num
@@ -495,8 +582,9 @@ class UserThread:
         return text
 
     @property
+    @deprecated("使用 thread.type == ThreadType.HELP 作为替代")
     def is_help(self) -> bool:
-        return self.type == 71
+        return self.type == ThreadType.HELP
 
 
 @dcs.dataclass
@@ -510,10 +598,10 @@ class UserThreads(TbErrorExt, Containers[UserThread]):
     """
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> UserThreads:
-        objs = [UserThread.from_tbdata(p) for p in data_proto.post_list]
+    def from_proto(data_proto: TypeMessage) -> UserThreads:
+        objs = [UserThread.from_proto(p) for p in data_proto.post_list]
         if objs:
-            user = UserInfo_u.from_tbdata(data_proto.post_list[0])
+            user = UserInfo_u.from_proto(data_proto.post_list[0])
             for uthread in objs:
                 uthread.user = user
         return UserThreads(objs)

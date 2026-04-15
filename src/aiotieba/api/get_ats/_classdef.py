@@ -30,7 +30,7 @@ class Page_at:
     has_prev: int = False
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> Page_at:
+    def from_json(data_map: Mapping) -> Page_at:
         current_page = int(data_map["current_page"])
         has_more = bool(int(data_map["has_more"]))
         has_prev = bool(int(data_map["has_prev"]))
@@ -65,7 +65,7 @@ class UserInfo_at:
     priv_reply: PrivReply = PrivReply.ALL
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> UserInfo_at:
+    def from_json(data_map: Mapping) -> UserInfo_at:
         user_id = int(data_map["id"])
         portrait = data_map["portrait"]
         if "?" in portrait:
@@ -144,12 +144,12 @@ class At:
     create_time: int = 0
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> At:
+    def from_json(data_map: Mapping) -> At:
         text = data_map["content"]
         fname = data_map["fname"]
         tid = int(data_map["thread_id"])
         pid = int(data_map["post_id"])
-        user = UserInfo_at.from_tbdata(data_map["replyer"])
+        user = UserInfo_at.from_json(data_map["replyer"])
         is_comment = bool(int(data_map["is_floor"]))
         is_thread = bool(int(data_map["is_first_post"]))
         create_time = int(data_map["time"])
@@ -182,9 +182,9 @@ class Ats(TbErrorExt, Containers[At]):
     page: Page_at = dcs.field(default_factory=Page_at)
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> Ats:
-        objs = [At.from_tbdata(m) for m in data_map.get("at_list", [])]
-        page = Page_at.from_tbdata(data_map["page"])
+    def from_json(data_map: Mapping) -> Ats:
+        objs = [At.from_json(m) for m in data_map.get("at_list", [])]
+        page = Page_at.from_json(data_map["page"])
         return Ats(objs, page)
 
     @property

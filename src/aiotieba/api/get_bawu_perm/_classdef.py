@@ -22,7 +22,7 @@ class BawuPerm(TbErrorExt):
 
     perms: BawuPermType = BawuPermType.NULL
 
-    def from_tbdata(data_map: Mapping) -> BawuPerm:
+    def from_json(data_map: Mapping) -> BawuPerm:
         perms = BawuPermType.NULL
 
         for cate in ["category_user", "category_thread"]:

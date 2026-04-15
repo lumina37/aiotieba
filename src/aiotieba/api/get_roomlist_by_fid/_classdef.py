@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses as dcs
 
 
@@ -13,7 +15,7 @@ class RoomList:
     room_list: list
 
     @staticmethod
-    def from_tbdata(resjson: dict) -> "RoomList":  # TODO: 解析json并参数化而不是直接返回
+    def from_json(resjson: dict) -> RoomList:  # TODO: 解析json并参数化而不是直接返回
         room_list = []
         for x in resjson["data"]["list"]:
             room_list.extend(x["room_list"])

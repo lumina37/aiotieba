@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses as dcs
 from functools import cached_property
 
@@ -31,7 +33,7 @@ class BlacklistOldUser:
     until_time: int = 0
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "BlacklistOldUser":
+    def from_proto(data_proto: TypeMessage) -> BlacklistOldUser:
         user_id = data_proto.user_id
         portrait = data_proto.portrait
         if "?" in portrait:
@@ -44,7 +46,7 @@ class BlacklistOldUser:
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
 
-    def __eq__(self, obj: "BlacklistOldUser") -> bool:
+    def __eq__(self, obj: BlacklistOldUser) -> bool:
         return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
@@ -85,7 +87,7 @@ class Page_blacklist:
     has_prev: bool = False
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "Page_blacklist":
+    def from_proto(data_proto: TypeMessage) -> Page_blacklist:
         current_page = data_proto.current_page
         has_more = bool(data_proto.has_more)
         has_prev = bool(data_proto.has_prev)
@@ -108,9 +110,9 @@ class BlacklistOldUsers(TbErrorExt, Containers[BlacklistOldUser]):
     page: Page_blacklist = dcs.field(default_factory=Page_blacklist)
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> "BlacklistOldUsers":
-        objs = [BlacklistOldUser.from_tbdata(p) for p in data_proto.mute_user]
-        page = Page_blacklist.from_tbdata(data_proto.page)
+    def from_proto(data_proto: TypeMessage) -> BlacklistOldUsers:
+        objs = [BlacklistOldUser.from_proto(p) for p in data_proto.mute_user]
+        page = Page_blacklist.from_proto(data_proto.page)
         return BlacklistOldUsers(objs, page)
 
     @property

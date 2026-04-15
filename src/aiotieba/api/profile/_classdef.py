@@ -89,7 +89,7 @@ class UserInfo_pf(TbErrorExt):
     priv_reply: PrivReply = PrivReply.ALL
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> UserInfo_pf:
+    def from_proto(data_proto: TypeMessage) -> UserInfo_pf:
         user_proto = data_proto.user
         user_id = user_proto.id
         portrait = user_proto.portrait
@@ -193,7 +193,7 @@ class FragImage_pf:
     hash: str = ""
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> FragImage_pf:
+    def from_proto(data_proto: TypeMessage) -> FragImage_pf:
         src = data_proto.big_pic
         origin_src = data_proto.origin_pic
         origin_size = data_proto.origin_size
@@ -234,12 +234,12 @@ class Contents_pf(Containers[TypeFragment]):
     voice: FragVoice_pf = dcs.field(default_factory=FragVoice_pf, repr=False)
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> Contents_pf:
+    def from_proto(data_proto: TypeMessage) -> Contents_pf:
         content_protos = data_proto.first_post_content
 
         texts = []
         emojis = []
-        imgs = [FragImage_pf.from_tbdata(p) for p in data_proto.media if p.type != 5]
+        imgs = [FragImage_pf.from_proto(p) for p in data_proto.media if p.type != 5]
         ats = []
         links = []
 
@@ -248,23 +248,23 @@ class Contents_pf(Containers[TypeFragment]):
                 _type = proto.type
                 # 0纯文本 9电话号 18话题 27百科词条
                 if _type in [0, 9, 18, 27]:
-                    frag = FragText_pf.from_tbdata(proto)
+                    frag = FragText_pf.from_proto(proto)
                     texts.append(frag)
                     yield frag
                 # 11:tid=5047676428
                 elif _type in [2, 11]:
-                    frag = FragEmoji_pf.from_tbdata(proto)
+                    frag = FragEmoji_pf.from_proto(proto)
                     emojis.append(frag)
                     yield frag
                 elif _type in [3, 20]:
                     continue
                 elif _type == 4:
-                    frag = FragAt_pf.from_tbdata(proto)
+                    frag = FragAt_pf.from_proto(proto)
                     ats.append(frag)
                     texts.append(frag)
                     yield frag
                 elif _type == 1:
-                    frag = FragLink_pf.from_tbdata(proto)
+                    frag = FragLink_pf.from_proto(proto)
                     links.append(frag)
                     texts.append(frag)
                     yield frag
@@ -273,19 +273,19 @@ class Contents_pf(Containers[TypeFragment]):
                 elif _type == 10:  # voice
                     continue
                 else:
-                    yield FragUnknown.from_tbdata(frag)
+                    yield FragUnknown.from_proto(frag)
 
         objs = list(_frags())
         objs += imgs
 
         if data_proto.video_info.video_width:
-            video = FragVideo_pf.from_tbdata(data_proto.video_info)
+            video = FragVideo_pf.from_proto(data_proto.video_info)
             objs.append(video)
         else:
             video = FragVideo_pf()
 
         if data_proto.voice_info:
-            voice = FragVoice_pf.from_tbdata(data_proto.voice_info[0])
+            voice = FragVoice_pf.from_proto(data_proto.voice_info[0])
             objs.append(voice)
         else:
             voice = FragVoice_pf()
@@ -342,14 +342,14 @@ class Thread_pf:
     create_time: int = 0
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> Thread_pf:
-        contents = Contents_pf.from_tbdata(data_proto)
+    def from_proto(data_proto: TypeMessage) -> Thread_pf:
+        contents = Contents_pf.from_proto(data_proto)
         title = data_proto.title
         fid = data_proto.forum_id
         fname = data_proto.forum_name
         tid = data_proto.thread_id
         pid = data_proto.post_id
-        vote_info = VoteInfo.from_tbdata(data_proto.poll_info)
+        vote_info = VoteInfo.from_proto(data_proto.poll_info)
         view_num = data_proto.freq_num
         reply_num = data_proto.reply_num
         share_num = data_proto.share_num
@@ -407,9 +407,9 @@ class Homepage(TbErrorExt, Containers[Thread_pf]):
     user: UserInfo_pf = dcs.field(default_factory=UserInfo_pf)
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> Homepage:
-        objs = [Thread_pf.from_tbdata(p) for p in data_proto.post_list]
-        user = UserInfo_pf.from_tbdata(data_proto)
+    def from_proto(data_proto: TypeMessage) -> Homepage:
+        objs = [Thread_pf.from_proto(p) for p in data_proto.post_list]
+        user = UserInfo_pf.from_proto(data_proto)
 
         for thread in objs:
             thread.user = user

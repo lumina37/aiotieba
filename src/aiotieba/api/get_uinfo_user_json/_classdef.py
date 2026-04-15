@@ -29,7 +29,7 @@ class UserInfo_json(TbErrorExt):
     user_name: str = ""
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> UserInfo_json:
+    def from_json(data_map: Mapping) -> UserInfo_json:
         user_id = data_map["id"]
         portrait = data_map["portrait"]
         user_name = ""

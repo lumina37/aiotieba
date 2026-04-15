@@ -25,7 +25,7 @@ def parse_body(body: bytes) -> LevelInfo:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    level_info = LevelInfo.from_tbdata(data_proto)
+    level_info = LevelInfo.from_proto(data_proto)
 
     return level_info
 

@@ -13,7 +13,7 @@ def parse_body(body: bytes) -> RecoverInfo:
         raise TiebaServerError(code, res_json["error"])
 
     data_map = res_json["data"]
-    rec_info = RecoverInfo.from_tbdata(data_map)
+    rec_info = RecoverInfo.from_json(data_map)
 
     return rec_info
 

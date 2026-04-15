@@ -29,7 +29,7 @@ class FollowForum:
     exp: int = 0
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> FollowForum:
+    def from_json(data_map: Mapping) -> FollowForum:
         fid = int(data_map["id"])
         fname = data_map["name"]
         level = int(data_map["level_id"])
@@ -58,12 +58,12 @@ class FollowForums(TbErrorExt, Containers[FollowForum]):
     has_more: bool = False
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> FollowForums:
+    def from_json(data_map: Mapping) -> FollowForums:
         if forum_list := data_map.get("forum_list", {}):
             forum_dicts = forum_list.get("non-gconforum", [])
-            objs = [FollowForum.from_tbdata(m) for m in forum_dicts]
+            objs = [FollowForum.from_json(m) for m in forum_dicts]
             forum_dicts = forum_list.get("gconforum", [])
-            objs += [FollowForum.from_tbdata(m) for m in forum_dicts]
+            objs += [FollowForum.from_json(m) for m in forum_dicts]
             has_more = bool(int(data_map["has_more"]))
         else:
             objs = []

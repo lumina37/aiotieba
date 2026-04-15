@@ -28,7 +28,7 @@ class SelfFollowForum:
     is_signed: bool = False
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> SelfFollowForum:
+    def from_json(data_map: Mapping) -> SelfFollowForum:
         fid = data_map["forum_id"]
         fname = data_map["forum_name"]
         level = data_map["level_id"]
@@ -51,7 +51,7 @@ class SelfFollowForums(TbErrorExt, Containers[SelfFollowForum]):
     has_more: bool = False
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> SelfFollowForums:
-        objs = [SelfFollowForum.from_tbdata(m) for m in data_map["like_forum"]]
+    def from_json(data_map: Mapping) -> SelfFollowForums:
+        objs = [SelfFollowForum.from_json(m) for m in data_map["like_forum"]]
         has_more = data_map["like_forum_has_more"]
         return SelfFollowForums(objs, has_more)

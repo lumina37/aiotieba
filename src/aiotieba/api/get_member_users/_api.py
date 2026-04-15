@@ -8,7 +8,7 @@ from ._classdef import MemberUsers
 
 def parse_body(body: bytes) -> MemberUsers:
     soup = bs4.BeautifulSoup(body, "lxml")
-    member_users = MemberUsers.from_tbdata(soup)
+    member_users = MemberUsers.from_xml(soup)
 
     return member_users
 

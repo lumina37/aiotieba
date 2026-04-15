@@ -26,7 +26,7 @@ def parse_body(body: bytes) -> TabMap:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    tab_map = TabMap.from_tbdata(data_proto)
+    tab_map = TabMap.from_proto(data_proto)
 
     return tab_map
 
@@ -35,7 +35,9 @@ async def request_http(http_core: HttpCore, fname: str) -> TabMap:
     data = pack_proto(http_core.account, fname)
 
     request = http_core.pack_proto_request(
-        yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/f/forum/searchPostForum", query_string=f"cmd={CMD}"),
+        yarl.URL.build(
+            scheme="https", host=APP_BASE_HOST, path="/c/f/forum/searchPostForum", query_string=f"cmd={CMD}"
+        ),
         data,
     )
 

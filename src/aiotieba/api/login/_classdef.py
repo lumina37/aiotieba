@@ -23,7 +23,7 @@ class UserInfo_login:
     user_name: str = ""
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> UserInfo_login:
+    def from_json(data_map: Mapping) -> UserInfo_login:
         user_id = int(data_map["id"])
         portrait = data_map["portrait"]
         user_name = data_map["name"]

@@ -1,9 +1,13 @@
-import dataclasses as dcs
+from __future__ import annotations
 
-import bs4
+import dataclasses as dcs
+from typing import TYPE_CHECKING
 
 from ...exception import TbErrorExt
 from .._classdef import Containers
+
+if TYPE_CHECKING:
+    import bs4
 
 
 @dcs.dataclass
@@ -24,7 +28,7 @@ class BawuBlacklistUser:
     user_name: str = ""
 
     @staticmethod
-    def from_tbdata(data_tag: bs4.element.Tag) -> "BawuBlacklistUser":
+    def from_xml(data_tag: bs4.element.Tag) -> BawuBlacklistUser:
         user_info_item = data_tag.previous_sibling.input
         user_name = user_info_item["data-user-name"]
         user_id = int(user_info_item["data-user-id"])
@@ -34,7 +38,7 @@ class BawuBlacklistUser:
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
 
-    def __eq__(self, obj: "BawuBlacklistUser") -> bool:
+    def __eq__(self, obj: BawuBlacklistUser) -> bool:
         return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
@@ -69,7 +73,7 @@ class Page_bwblacklist:
     has_more: bool = False
     has_prev: bool = False
 
-    def from_tbdata(data_soup: bs4.BeautifulSoup) -> "Page_bwblacklist":
+    def from_xml(data_soup: bs4.BeautifulSoup) -> Page_bwblacklist:
         total_count_tag = data_soup.find("div", class_="breadcrumbs")
         total_count = int(total_count_tag.em.text)
 
@@ -108,9 +112,9 @@ class BawuBlacklistUsers(TbErrorExt, Containers[BawuBlacklistUser]):
     page: Page_bwblacklist = dcs.field(default_factory=Page_bwblacklist)
 
     @staticmethod
-    def from_tbdata(data_soup: bs4.BeautifulSoup) -> "BawuBlacklistUsers":
-        objs = [BawuBlacklistUser.from_tbdata(t) for t in data_soup("td", class_="left_cell")]
-        page = Page_bwblacklist.from_tbdata(data_soup)
+    def from_xml(data_soup: bs4.BeautifulSoup) -> BawuBlacklistUsers:
+        objs = [BawuBlacklistUser.from_xml(t) for t in data_soup("td", class_="left_cell")]
+        page = Page_bwblacklist.from_xml(data_soup)
         return BawuBlacklistUsers(objs, page)
 
     @property

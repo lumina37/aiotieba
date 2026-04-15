@@ -12,8 +12,8 @@ def parse_body(body: bytes) -> Statistics:
     if code := int(res_json["error_code"]):
         raise TiebaServerError(code, res_json["error_msg"])
 
-    data_seq = res_json["data"]
-    stat = Statistics.from_tbdata(data_seq)
+    data_map = res_json["data"]
+    stat = Statistics.from_json(data_map)
 
     return stat
 

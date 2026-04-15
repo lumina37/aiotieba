@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 def parse_body(body: bytes) -> Postlogs:
     soup = bs4.BeautifulSoup(body, "lxml")
-    bawu_postlogs = Postlogs.from_tbdata(soup)
+    bawu_postlogs = Postlogs.from_xml(soup)
 
     return bawu_postlogs
 

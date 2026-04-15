@@ -13,7 +13,7 @@ def parse_body(body: bytes) -> Forum:
         raise TiebaServerError(code, res_json["error_msg"])
 
     forum_dict = res_json["forum"]
-    forum = Forum.from_tbdata(forum_dict)
+    forum = Forum.from_json(forum_dict)
 
     return forum
 

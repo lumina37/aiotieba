@@ -12,7 +12,7 @@ def pack_proto(account: Account, user_id: int, pn: int, rn: int, version: str) -
     req_proto = UserPostReqIdl_pb2.UserPostReqIdl()
     req_proto.data.common.BDUSS = account.BDUSS
     req_proto.data.common._client_version = version
-    req_proto.data.user_id = user_id
+    req_proto.data.uid = user_id
     req_proto.data.need_content = 1
     req_proto.data.pn = pn
     req_proto.data.rn = rn
@@ -28,7 +28,7 @@ def parse_body(body: bytes) -> UserPostss:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    upostss = UserPostss.from_tbdata(data_proto)
+    upostss = UserPostss.from_proto(data_proto)
 
     return upostss
 
@@ -41,7 +41,7 @@ async def request_http(http_core: HttpCore, user_id: int, pn: int, rn: int, vers
         data,
     )
 
-    body = await http_core.net_core.send_request(request, read_bufsize=8 * 1024)
+    body = await http_core.net_core.send_request(request, read_bufsize=64 * 1024)
     return parse_body(body)
 
 

@@ -66,6 +66,39 @@ class PrivReply(enum.IntEnum):
         return PrivReply.UNKNOWN
 
 
+class ThreadType(enum.IntEnum):
+    """
+    主题帖类型
+
+    Note:
+        UNKNOWN 未知\n
+        ARTICLE 图文帖\n
+        ALBUM 相册帖\n
+        VOICE 语音帖\n
+        STORY 会员小说帖\n
+        VIDEO 视频帖\n
+        LIVE 直播帖\n
+        HELP 求助帖\n
+        VOTE 打分帖\n
+        LOTTERY 抽奖帖
+    """
+
+    UNKNOWN = -1
+    ARTICLE = 0
+    ALBUM = 1
+    VOICE = 11
+    STORY = 31
+    VIDEO = 40
+    LIVE = 50
+    HELP = 71
+    VOTE = 75
+    LOTTERY = 76
+
+    @classmethod
+    def __missing__(cls, _: int) -> ThreadType:
+        return ThreadType.UNKNOWN
+
+
 class ReqUInfo(enum.Flag):
     """
     使用该枚举类指定待获取的用户信息字段

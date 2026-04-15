@@ -30,7 +30,7 @@ class SquareForum:
     is_followed: bool = False
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> SquareForum:
+    def from_proto(data_proto: TypeMessage) -> SquareForum:
         fid = data_proto.forum_id
         fname = data_proto.forum_name
         member_num = data_proto.member_count
@@ -69,7 +69,7 @@ class Page_square:
     has_prev: bool = False
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage) -> Page_square:
+    def from_proto(data_proto: TypeMessage) -> Page_square:
         page_size = data_proto.page_size
         current_page = data_proto.current_page
         total_page = data_proto.total_page
@@ -95,9 +95,9 @@ class SquareForums(TbErrorExt, Containers[SquareForum]):
     page: Page_square = dcs.field(default_factory=Page_square)
 
     @staticmethod
-    def from_tbdata(data_proto: TypeMessage | None = None) -> None:
-        objs = [SquareForum.from_tbdata(p) for p in data_proto.forum_info]
-        page = Page_square.from_tbdata(data_proto.page)
+    def from_proto(data_proto: TypeMessage | None = None) -> None:
+        objs = [SquareForum.from_proto(p) for p in data_proto.forum_info]
+        page = Page_square.from_proto(data_proto.page)
         return SquareForums(objs, page)
 
     @property

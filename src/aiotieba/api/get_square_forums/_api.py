@@ -28,7 +28,7 @@ def parse_body(body: bytes) -> SquareForums:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    square_forums = SquareForums.from_tbdata(data_proto)
+    square_forums = SquareForums.from_proto(data_proto)
 
     return square_forums
 

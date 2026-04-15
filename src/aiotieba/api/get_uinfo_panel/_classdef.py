@@ -56,7 +56,7 @@ class UserInfo_panel(TbErrorExt):
     is_vip: bool = False
 
     @staticmethod
-    def from_tbdata(data_map: Mapping) -> UserInfo_panel:
+    def from_json(data_map: Mapping) -> UserInfo_panel:
         portrait = data_map["portrait"]
         user_name = data_map["name"]
         nick_name_new = data_map["show_nickname"]

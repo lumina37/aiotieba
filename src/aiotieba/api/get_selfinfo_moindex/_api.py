@@ -13,7 +13,7 @@ def parse_body(body: bytes) -> UserInfo_moindex:
         raise TiebaServerError(code, res_json["error"])
 
     user_dict = res_json["data"]
-    user = UserInfo_moindex.from_tbdata(user_dict)
+    user = UserInfo_moindex.from_json(user_dict)
 
     return user
 

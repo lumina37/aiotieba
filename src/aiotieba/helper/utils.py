@@ -58,6 +58,23 @@ def timeout(delay: float, loop: asyncio.AbstractEventLoop) -> async_timeout.Time
     return async_timeout.timeout_at(when)
 
 
+if sys.version_info >= (3, 13):
+    from warnings import deprecated
+else:
+    import warnings
+
+    def deprecated(reason):
+        def decorator(func):
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                warnings.warn(f"{func.__name__} is deprecated: {reason}", DeprecationWarning, stacklevel=2)
+                return func(*args, **kwargs)
+
+            return wrapper
+
+        return decorator
+
+
 def handle_exception(
     null_factory: Callable[[], Any],
     ok_log_level: int = logging.NOTSET,

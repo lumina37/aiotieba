@@ -27,7 +27,7 @@ def parse_body(body: bytes) -> Homepage:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
     data_proto = res_proto.data
-    homepage = Homepage.from_tbdata(data_proto)
+    homepage = Homepage.from_proto(data_proto)
 
     return homepage
 
