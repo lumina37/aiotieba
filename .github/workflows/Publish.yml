@@ -47,7 +47,7 @@ jobs:
   publish:
     name: Publish
     needs: [build_wheels, build_sdist]
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
 
     environment:
       name: pypi
