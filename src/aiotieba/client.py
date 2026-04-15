@@ -68,6 +68,7 @@ from .api import (
     get_uinfo_user_json,
     get_unblock_appeals,
     get_user_contents,
+    get_user_contents_pc,
     get_user_forum_info,
     good,
     handle_unblock_appeals,
@@ -981,6 +982,28 @@ class Client:
             return await get_user_contents.get_posts.request_ws(self._ws_core, user_id, pn, rn, LATEST_VERSION)
 
         return await get_user_contents.get_posts.request_http(self._http_core, user_id, pn, rn, LATEST_VERSION)
+
+    @handle_exception(get_user_contents_pc.PcUserPosts)
+    async def get_user_posts_pc(self, id_: str | int, pn: int = 1, *, rn: int = 20) -> get_user_contents_pc.PcUserPosts:
+        """
+        获取用户发布的回复列表
+
+        Args:
+            id_ (str | int): 用户id user_id / user_name / portrait 优先portrait
+            pn (int, optional): 页码. Defaults to 1.
+            rn (int, optional): 请求的条目数. Defaults to 20. Max to 74.
+
+        Returns:
+            UserPosts: 回复列表
+        """
+
+        if not is_portrait(id_):
+            user = await self.get_user_info(id_, ReqUInfo.PORTRAIT)
+            portrait = user.portrait
+        else:
+            portrait = id_
+
+        return await get_user_contents_pc.get_posts.request(self._http_core, portrait, pn, rn)
 
     @handle_exception(get_user_contents.UserPostss)
     async def get_user_posts(self, id_: str | int, pn: int = 1, *, rn: int = 20) -> get_user_contents.UserPostss:
