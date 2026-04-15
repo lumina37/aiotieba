@@ -1,6 +1,10 @@
-import dataclasses as dcs
+from __future__ import annotations
 
-from .._classdef import TypeMessage
+import dataclasses as dcs
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .._classdef import TypeMessage
 
 
 @dcs.dataclass
@@ -20,7 +24,7 @@ class LevelInfo:
     is_like: int = 0
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> "LevelInfo":
+    def from_proto(data_proto: TypeMessage) -> LevelInfo:
         user_level = data_proto.user_level
         level_name = data_proto.level_name
         is_like = data_proto.is_like

@@ -1,7 +1,12 @@
+from __future__ import annotations
+
 import dataclasses as dcs
+from typing import TYPE_CHECKING
 
 from ...exception import TbErrorExt
-from .._classdef import TypeMessage
+
+if TYPE_CHECKING:
+    from .._classdef import TypeMessage
 
 
 @dcs.dataclass
@@ -40,7 +45,7 @@ class UserInfo_TUid(TbErrorExt):
     is_god: bool = False
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> "UserInfo_TUid":
+    def from_proto(data_proto: TypeMessage) -> UserInfo_TUid:
         user_id = data_proto.id
         portrait = data_proto.portrait
         if "?" in portrait:
@@ -56,7 +61,7 @@ class UserInfo_TUid(TbErrorExt):
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
 
-    def __eq__(self, obj: "UserInfo_TUid") -> bool:
+    def __eq__(self, obj: UserInfo_TUid) -> bool:
         return self.user_id == obj.user_id
 
     def __hash__(self) -> int:

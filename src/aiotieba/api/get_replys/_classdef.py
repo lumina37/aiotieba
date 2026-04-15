@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses as dcs
 from functools import cached_property
 
@@ -34,7 +36,7 @@ class UserInfo_reply:
     priv_reply: PrivReply = PrivReply.ALL
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> "UserInfo_reply":
+    def from_proto(data_proto: TypeMessage) -> UserInfo_reply:
         user_id = data_proto.id
         portrait = data_proto.portrait
         if "?" in portrait:
@@ -48,7 +50,7 @@ class UserInfo_reply:
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
 
-    def __eq__(self, obj: "UserInfo_reply") -> bool:
+    def __eq__(self, obj: UserInfo_reply) -> bool:
         return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
@@ -95,7 +97,7 @@ class UserInfo_reply_p:
     nick_name_new: str = ""
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> "UserInfo_reply_p":
+    def from_proto(data_proto: TypeMessage) -> UserInfo_reply_p:
         user_id = data_proto.id
         user_name = data_proto.name
         nick_name_new = data_proto.name_show
@@ -104,7 +106,7 @@ class UserInfo_reply_p:
     def __str__(self) -> str:
         return self.user_name or str(self.user_id)
 
-    def __eq__(self, obj: "UserInfo_reply_p") -> bool:
+    def __eq__(self, obj: UserInfo_reply_p) -> bool:
         return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
@@ -146,7 +148,7 @@ class UserInfo_reply_t:
     nick_name_new: str = ""
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> "UserInfo_reply_t":
+    def from_proto(data_proto: TypeMessage) -> UserInfo_reply_t:
         user_id = data_proto.id
         portrait = data_proto.portrait
         nick_name_new = data_proto.name_show
@@ -155,7 +157,7 @@ class UserInfo_reply_t:
     def __str__(self) -> str:
         return self.portrait or str(self.user_id)
 
-    def __eq__(self, obj: "UserInfo_reply_t") -> bool:
+    def __eq__(self, obj: UserInfo_reply_t) -> bool:
         return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
@@ -211,7 +213,7 @@ class Reply:
     create_time: int = 0
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> "Reply":
+    def from_proto(data_proto: TypeMessage) -> Reply:
         text = data_proto.content
         fname = data_proto.fname
         tid = data_proto.thread_id
@@ -224,7 +226,7 @@ class Reply:
         create_time = data_proto.time
         return Reply(text, fname, tid, ppid, pid, user, post_user, thread_user, is_comment, create_time)
 
-    def __eq__(self, obj: "Reply") -> bool:
+    def __eq__(self, obj: Reply) -> bool:
         return self.pid == obj.pid
 
     def __hash__(self) -> int:
@@ -253,7 +255,7 @@ class Page_reply:
     has_prev: bool = False
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> "Page_reply":
+    def from_proto(data_proto: TypeMessage) -> Page_reply:
         current_page = data_proto.current_page
         has_more = bool(data_proto.has_more)
         has_prev = bool(data_proto.has_prev)
@@ -276,7 +278,7 @@ class Replys(TbErrorExt, Containers[Reply]):
     page: Page_reply = dcs.field(default_factory=Page_reply)
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> "Replys":
+    def from_proto(data_proto: TypeMessage) -> Replys:
         objs = [Reply.from_proto(p) for p in data_proto.reply_list]
         page = Page_reply.from_proto(data_proto.page)
         return Replys(objs, page)

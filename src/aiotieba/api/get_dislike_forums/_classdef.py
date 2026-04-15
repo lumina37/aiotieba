@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses as dcs
 
 from ...exception import TbErrorExt
@@ -22,7 +24,7 @@ class Page_dislikef:
     has_prev: bool = False
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> "Page_dislikef":
+    def from_proto(data_proto: TypeMessage) -> Page_dislikef:
         current_page = data_proto.cur_page
         has_more = bool(data_proto.has_more)
         has_prev = current_page > 1
@@ -55,7 +57,7 @@ class DislikeForum:
     is_followed: bool = False
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> "DislikeForum":
+    def from_proto(data_proto: TypeMessage) -> DislikeForum:
         fid = data_proto.forum_id
         fname = data_proto.forum_name
         member_num = data_proto.member_count
@@ -63,7 +65,7 @@ class DislikeForum:
         thread_num = data_proto.thread_num
         return DislikeForum(fid, fname, member_num, post_num, thread_num)
 
-    def __eq__(self, obj: "DislikeForum") -> bool:
+    def __eq__(self, obj: DislikeForum) -> bool:
         return self.fid == obj.fid
 
     def __hash__(self) -> int:
@@ -85,7 +87,7 @@ class DislikeForums(TbErrorExt, Containers[DislikeForum]):
     page: Page_dislikef = dcs.field(default_factory=Page_dislikef)
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> "DislikeForums":
+    def from_proto(data_proto: TypeMessage) -> DislikeForums:
         objs = [DislikeForum.from_proto(p) for p in data_proto.forum_list]
         page = Page_dislikef.from_proto(data_proto)
         return DislikeForums(objs, page)

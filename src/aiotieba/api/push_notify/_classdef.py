@@ -1,6 +1,10 @@
-import dataclasses as dcs
+from __future__ import annotations
 
-from .._classdef import TypeMessage
+import dataclasses as dcs
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .._classdef import TypeMessage
 
 
 @dcs.dataclass
@@ -23,7 +27,7 @@ class WsNotify:
     create_time: int = 0
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> "WsNotify":
+    def from_proto(data_proto: TypeMessage) -> WsNotify:
         data_proto = data_proto.data
         note_type = data_proto.type
         group_type = data_proto.groupType
