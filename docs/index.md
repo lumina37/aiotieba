@@ -40,7 +40,7 @@ async def main():
     async with aiotieba.Client() as client:
         threads = await client.get_threads("天堂鸡汤")
         for thread in threads[3:6]:
-            print(f"tid={thread.tid} text={thread.text}")
+            print(f"tid={thread.tid}\ntext={thread.text}")
 
 
 asyncio.run(main())
@@ -52,11 +52,11 @@ asyncio.run(main())
 tid=8537603600 text=一人发一句最喜欢的游戏台词
 楼主先来
 很喜欢lol布隆说的“夜晚越黑暗，星星就越明亮”，尤其在当下这个有着诸多缺点的世界里，这句话让我感觉舒服了很多在人们已不再相信理想主义的至暗时刻，高擎炬火之人便显得更加重要，至少我会坚持我的理想
----
+
 tid=8093410706 text=大概是剪切板里的一些有意思的话
 今天看自己的剪切板快满了，稍微翻翻突然发现以前存的一些话还挺有意思，就放在这里啦
 （咦，疑似水帖啊我）
----
+
 tid=8537699088 text=记录一下自己人生第一次当“老师”的经历^_^
 明天我带的孩子们就“毕业”了，第一次当老师我改变了很多也收获了很多，就想着给自己记录一下这段宝贵的经历:-)
 ```
