@@ -70,7 +70,7 @@ template = '''__version__ = "${version}"'''
 [tool.cibuildwheel]
 build = "cp310* cp311* cp312* cp313* cp314* pp310* pp311*"
 skip = "*-win32 *_i686 *_s390x *_ppc64le"
-enable = ["pypy"]
+enable = ["pypy", "pypy-eol"]
 build-frontend = "uv"
 
 [tool.ruff]
