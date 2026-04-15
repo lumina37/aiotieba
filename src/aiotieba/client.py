@@ -39,6 +39,7 @@ from .api import (
     get_fans,
     get_fid,
     get_follow_forums,
+    get_follow_forums_pc,
     get_follows,
     get_forum,
     get_forum_detail,
@@ -865,6 +866,30 @@ class Client:
             user_id = id_
 
         return await get_follow_forums.request(self._http_core, user_id, pn, rn)
+
+    @handle_exception(get_follow_forums_pc.PcFollowForums)
+    async def get_follow_forums_pc(
+        self, id_: str | int, /, pn: int = 1, *, rn: int = 50
+    ) -> get_follow_forums_pc.PcFollowForums:
+        """
+        获取用户关注贴吧列表
+
+        Args:
+            id_ (str | int): 用户id user_id / user_name / portrait 优先portrait
+            pn (int, optional): 页码. Defaults to 1.
+            rn (int, optional): 请求的条目数. Defaults to 50. Max to Inf.
+
+        Returns:
+            PcFollowForums: 用户关注贴吧列表
+        """
+
+        if not is_portrait(id_):
+            user = await self.get_user_info(id_, ReqUInfo.PORTRAIT)
+            portrait = user.portrait
+        else:
+            portrait = id_
+
+        return await get_follow_forums_pc.request(self._http_core, portrait, pn, rn)
 
     @handle_exception(get_user_forum_info.UserForumInfo)
     async def get_user_forum_info(

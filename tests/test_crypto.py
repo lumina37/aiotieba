@@ -1,7 +1,7 @@
 import pytest
 
 import aiotieba as tb
-from aiotieba.helper.crypto import _sign, rc4_42
+from aiotieba.helper.crypto import APP_SALT, compute_sign, rc4_42
 
 
 @pytest.mark.asyncio(loop_scope="session")
@@ -19,7 +19,7 @@ async def test_clib(client: tb.Client):
         ("reverse", 1999),
         ("hello_cosmic", "你好42"),
     ]
-    assert _sign(data) == "248dab3e1fe46aea603cdc45c08f80eb"
+    assert compute_sign(data, salt=APP_SALT) == "0be9991d2f8371952ab0b9cb14363bc2"
 
     query_key = rc4_42("d0337b3b3d597c5f87a1c0c37139d87b", b"6723280942424242")
     assert query_key == b"\x9f\xabU\x14\xa7\x0e\xb6k\xc4wV\xf2HN+."

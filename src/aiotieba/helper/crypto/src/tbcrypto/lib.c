@@ -4,7 +4,6 @@
 #include "tbcrypto/const.h"
 #include "tbcrypto/cuid.h"
 #include "tbcrypto/rc442.h"
-#include "tbcrypto/sign.h"
 
 PyObject* cuid_galaxy2(PyObject* Py_UNUSED(self), PyObject* args) {
     unsigned char dst[TBC_CUID_GALAXY2_SIZE];
@@ -103,7 +102,6 @@ static PyMethodDef crypto_methods[] = {
     {"cuid_galaxy2", (PyCFunction)cuid_galaxy2, METH_VARARGS, NULL},
     {"c3_aid", (PyCFunction)c3_aid, METH_VARARGS, NULL},
     {"rc4_42", (PyCFunction)rc4_42, METH_VARARGS, NULL},
-    {"sign", (PyCFunction)sign, METH_VARARGS, NULL},
     {"enuid", (PyCFunction)enuid, METH_VARARGS, NULL},
     {NULL, NULL, 0, NULL},
 };
