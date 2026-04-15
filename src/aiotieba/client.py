@@ -117,6 +117,7 @@ from .enums import (
     WsStatus,
 )
 from .exception import BoolResponse, IntResponse, StrResponse
+from .helper import deprecated
 from .helper.cache import ForumInfoCache
 from .helper.utils import handle_exception, is_portrait, is_user_name
 from .logging import get_logger as LOG
@@ -2425,6 +2426,7 @@ class Client:
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     @_try_websocket
+    @deprecated("此接口风险极高，可能导致账号被永久封禁屏蔽，故弃用并将于近期移除")
     async def add_post(self, fname_or_fid: str | int, /, tid: int, content: str) -> BoolResponse:
         """
         回复主题帖
