@@ -56,9 +56,6 @@ docs = ["mkdocs-material", "mkdocstrings[python]"]
 requires = ["scikit-build-core>=0.12.2,<0.13"]
 build-backend = "scikit_build_core.build"
 
-[tool.uv]
-managed = true
-
 [tool.scikit-build]
 sdist.exclude = ["*.proto", ".*", "docs", "scripts", "tests", "mkdocs.yml"]
 wheel.exclude = ["*.c", "*.h", "*.txt"]
@@ -67,55 +64,5 @@ wheel.exclude = ["*.c", "*.h", "*.txt"]
 path = "aiotieba/__version__.py"
 template = '''__version__ = "${version}"'''
 
-[tool.cibuildwheel]
-build = "cp310* cp311* cp312* cp313* cp314* pp310* pp311*"
-skip = "*-win32 *_i686 *_s390x *_ppc64le"
-enable = ["pypy", "pypy-eol"]
-build-frontend = "uv"
-
-[tool.ruff]
-line-length = 120
-target-version = "py310"
-preview = true
-
-[tool.ruff.lint]
-select = [
-  "F",
-  "E",
-  "W",
-  "I",
-  "UP",
-  "YTT",
-  "ASYNC",
-  "B",
-  "A",
-  "C4",
-  "FA",
-  "ICN",
-  "LOG",
-  "G",
-  "PIE",
-  "T20",
-  "PT",
-  "Q",
-  "RSE",
-  "SLOT",
-  "TC",
-  "PTH",
-  "NPY",
-  "PERF",
-  "FURB",
-]
-ignore = ["A005", "E402", "E501", "E266"]
-
-[tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["F401"]
-"typing.py" = ["F401"]
-"*_pb2.py" = ["F401"]
-
-[tool.pytest.ini_options]
-addopts = "-q"
-testpaths = ["tests"]
-required_plugins = "pytest-asyncio pytest-rerunfailures"
-asyncio_mode = "strict"
-asyncio_default_fixture_loop_scope = "function"
+[tool.uv]
+managed = true
