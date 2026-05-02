@@ -6,12 +6,16 @@ on:
   push:
     branches: [develop]
     paths:
+      - "pyproject.toml"
+      - "pytest.ini"
       - "src/**"
       - "tests/**"
       - ".github/workflows/CI.yml"
   pull_request:
     branches: [develop]
     paths:
+      - "pyproject.toml"
+      - "pytest.ini"
       - "src/**"
       - "tests/**"
       - ".github/workflows/CI.yml"
