@@ -25,14 +25,18 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from ..api._protobuf import Lcm_pb2, Rpc_pb2
 from ..config import ProxyConfig, TimeoutConfig
-from ..const import CHAT_APPID, CHAT_SDK_VERSION, CHAT_VERSION
+from ..const import CHAT_VERSION
 from ..helper import timeout
-from ..helper.crypto import enuid
+from ..helper.crypto import enuid, sign
 
 if TYPE_CHECKING:
     from ..api._classdef import UserInfo
     from .account import Account
     from .net import NetCore
+
+
+CHAT_APPID = 10773430
+CHAT_SDK_VERSION = 11250036
 
 
 @dcs.dataclass
@@ -492,7 +496,7 @@ class BLCPCore:
             "timestamp": int(time.time()),
             "account_type": account_type,
         }
-        data["sign"] = generate_sign(data)
+        data = sign(data, salt=b"")
 
         request = aiohttp.ClientRequest(
             "POST",
@@ -542,7 +546,7 @@ class BLCPCore:
             "timestamp": int(time.time()),
             "account_type": account_type,
         }
-        data["sign"] = generate_sign(data)
+        data = sign(data, salt=b"")
 
         request = aiohttp.ClientRequest(
             "POST",
@@ -561,20 +565,6 @@ class BLCPCore:
         except:
             raise Exception("进入群聊失败.")
         return rjson
-
-
-def generate_sign(json_obj):
-    if json_obj is None:
-        return ""
-
-    # 按照字典序排序键值对
-    sorted_items = sorted(json_obj.items())
-
-    # 构造签名字符串
-    sign_str = "".join(f"{key}={value}" for key, value in sorted_items)
-
-    # 计算MD5签名
-    return md5(sign_str.encode("utf-8")).hexdigest()
 
 
 @dcs.dataclass

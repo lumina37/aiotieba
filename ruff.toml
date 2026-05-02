@@ -1,0 +1,38 @@
+line-length = 120
+target-version = "py310"
+preview = true
+
+[lint]
+select = [
+    "F",
+    "E",
+    "W",
+    "I",
+    "UP",
+    "YTT",
+    "ASYNC",
+    "B",
+    "A",
+    "C4",
+    "FA",
+    "ICN",
+    "LOG",
+    "G",
+    "PIE",
+    "T20",
+    "PT",
+    "Q",
+    "RSE",
+    "SLOT",
+    "TC",
+    "PTH",
+    "NPY",
+    "PERF",
+    "FURB",
+]
+ignore = ["A005", "E402", "E501", "E266"]
+
+[lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"typing.py" = ["F401"]
+"*_pb2.py" = ["F401"]

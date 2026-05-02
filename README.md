@@ -76,16 +76,17 @@ text=记录一下自己人生第一次当“老师”的经历^_^
 ## 友情链接
 
 + [带UI的吧务管理器 (dog194/TiebaManager)](https://github.com/dog194/TiebaManager)
++ [第三方桌面客户端 (clb-128258/TiebaDesktop)](https://github.com/clb-128258/TiebaDesktop)
 + [VSCode贴吧摸鱼插件 (akacaijizhou/tieba-fish)](https://github.com/akacaijizhou/tieba-fish)
 + [eztb贴吧工具箱 (Dilettante258/eazy-tieba)](https://www.eztb.org)
 + [功能全面的贴吧管理QQ bot (TiebaMeow/TiebaManageBot)](https://github.com/TiebaMeow/TiebaManageBot)
 + [易于部署和使用的 Web 贴吧管理和自动化平台 (TiebaMeow/WebTiebaManager)](https://github.com/TiebaMeow/WebTiebaManager)
 + [灵活且高可靠的贴吧爬虫 (TiebaMeow/TiebaScraper)](https://github.com/TiebaMeow/TiebaScraper)
-+ [TiebaLite 第三方安卓客户端 (zzc10086/TiebaLite)](https://github.com/zzc10086/TiebaLite)
++ [第三方安卓客户端 (zzc10086/TiebaLite)](https://github.com/zzc10086/TiebaLite)
 + [C#版本的贴吧接口库 (BaWuZhuShou/AioTieba4DotNet)](https://github.com/BaWuZhuShou/AioTieba4DotNet)
 + [基于aiotieba的tieba bot (adk23333/BungleCat)](https://github.com/adk23333/BungleCat)
 + [基于aiotieba的贴吧管理器 (adk23333/tieba-admin)](https://github.com/adk23333/tieba-admin)
-+ [贴吧protobuf定义文件合集 更新至12.51 (n0099/tbclient.protobuf)](https://github.com/n0099/tbclient.protobuf)
++ [贴吧protobuf定义文件合集 更新至22.5 (clb-128258/tbclient.protobuf)](https://github.com/clb-128258/tbclient.protobuf)
 
 ## 特别鸣谢
 

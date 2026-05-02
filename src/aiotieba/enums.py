@@ -41,7 +41,7 @@ class PrivLike(enum.IntEnum):
     HIDE = 3
 
     @classmethod
-    def __missing__(cls, _: int) -> PrivLike:
+    def _missing_(cls, _: int) -> PrivLike:
         return PrivLike.UNKNOWN
 
 
@@ -62,7 +62,7 @@ class PrivReply(enum.IntEnum):
     FOLLOW = 6
 
     @classmethod
-    def __missing__(cls, _: int) -> PrivReply:
+    def _missing_(cls, _: int) -> PrivReply:
         return PrivReply.UNKNOWN
 
 
@@ -95,7 +95,7 @@ class ThreadType(enum.IntEnum):
     LOTTERY = 76
 
     @classmethod
-    def __missing__(cls, _: int) -> ThreadType:
+    def _missing_(cls, _: int) -> ThreadType:
         return ThreadType.UNKNOWN
 
 

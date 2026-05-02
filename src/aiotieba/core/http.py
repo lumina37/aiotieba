@@ -9,7 +9,7 @@ import aiohttp
 
 from ..__version__ import __version__
 from ..const import APP_BASE_HOST
-from ..helper.crypto import sign
+from ..helper.crypto import APP_SALT, sign
 
 if TYPE_CHECKING:
     import yarl
@@ -101,8 +101,9 @@ class HttpCore:
             aiohttp.ClientRequest
         """
 
+        signed_data = sign(data, salt=APP_SALT)
         payload = aiohttp.payload.BytesPayload(
-            urllib.parse.urlencode(sign(data), doseq=True).encode("utf-8"),
+            urllib.parse.urlencode(signed_data, doseq=True).encode("utf-8"),
             content_type="application/x-www-form-urlencoded",
         )
 
