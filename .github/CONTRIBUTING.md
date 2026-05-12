@@ -16,9 +16,9 @@
 
 ## 异常处理规范
 
-- 使用`@handle_exception(ResponseType)`装饰器捕获所有异常。`ResponseType`必须继承自`TbErrorExt`
+- 使用`@handle_exception(ResponseType)`装饰器捕获API调用过程抛出的所有异常。`ResponseType`必须继承自`TbErrorExt`
 
-示例
+示例：
 
 ```python
 @handle_exception(Threads)
@@ -58,8 +58,8 @@ Note:
 
 ## 新增API时的检查清单
 
-- [ ] 在 `src/aiotieba/api/`中创建新的API模块包
-- [ ] 在 `src/aiotieba/client.py` 中添加公开方法，使用`@handle_exception`+可选的`@_try_websocket`或`@_force_websocket` 装饰
+- [ ] 在`src/aiotieba/api/`中创建新的API模块包
+- [ ] 在`src/aiotieba/client.py`中添加公开方法，使用`@handle_exception`+可选的`@_try_websocket`或`@_force_websocket` 装饰
 - [ ] 在`src/aiotieba/client.py`顶部的import中导入新API模块
 - [ ] 如有新的protobuf定义，运行`python scripts/proto_compile.py`编译
 - [ ] 如有新的数据类型定义，添加到`src/aiotieba/api/<mod>/_classdef.py`

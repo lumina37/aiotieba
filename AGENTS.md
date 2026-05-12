@@ -105,4 +105,4 @@ aiotieba/
 
 ## 可用的skills
 
-可用的skills位于`.agents/skills`目录下
+可用的skills位于`skills`目录下
