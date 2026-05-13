@@ -106,7 +106,7 @@ class Follows(TbErrorExt, Containers[Follow]):
     粉丝列表
 
     Attributes:
-        objs (list[Follow]): 粉丝列表
+        objs (list[Follow]): 关注列表
         err (Exception | None): 捕获的异常
 
         page (Page_follow): 页信息

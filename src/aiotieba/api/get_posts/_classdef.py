@@ -309,7 +309,7 @@ class UserInfo_p:
 
         level (int): 等级
         glevel (int): 贴吧成长等级
-        gender (int): 性别
+        gender (Gender): 性别
         ip (str): ip归属地
         icons (list[str]): 印记信息
 
@@ -941,10 +941,10 @@ class ShareThread_pt:
         return ShareThread_pt(contents, title, fid, fname, tid, author_id, vote_info)
 
     def __eq__(self, obj: ShareThread_pt) -> bool:
-        return self.pid == obj.pid
+        return self.tid == obj.tid
 
     def __hash__(self) -> int:
-        return self.pid
+        return self.tid
 
     @cached_property
     def text(self) -> str:

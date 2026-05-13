@@ -21,7 +21,6 @@ class BlacklistOldUser:
         until_time (int): 解禁时间 10位时间戳 以秒为单位
 
         nick_name (str): 用户昵称
-        show_name (str): 显示名称
         log_name (str): 用于在日志中记录用户信息
     """
 

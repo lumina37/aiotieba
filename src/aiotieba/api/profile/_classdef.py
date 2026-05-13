@@ -180,14 +180,15 @@ class FragImage_pf:
     Attributes:
         src (str): 大图链接 宽960px
         origin_src (str): 原图链接
+        origin_size (int): 原图大小
         width (int): 图像宽度
         height (int): 图像高度
         hash (str): 百度图床hash
     """
 
     src: str = dcs.field(default="", repr=False)
-    big_src: str = dcs.field(default="", repr=False)
     origin_src: str = dcs.field(default="", repr=False)
+    origin_size: int = 0
     width: int = 0
     height: int = 0
     hash: str = ""
@@ -273,7 +274,7 @@ class Contents_pf(Containers[TypeFragment]):
                 elif _type == 10:  # voice
                     continue
                 else:
-                    yield FragUnknown.from_proto(frag)
+                    yield FragUnknown.from_proto(proto)
 
         objs = list(_frags())
         objs += imgs

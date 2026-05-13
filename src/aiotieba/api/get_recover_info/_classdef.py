@@ -68,7 +68,7 @@ class Contents_ri(Containers[TypeFragment]):
         text (str): 文本内容
 
         texts (list[TypeFragText]): 纯文本碎片列表
-        imgs (list[FragImage_t]): 图像碎片列表
+        imgs (list[FragImage_ri]): 图像碎片列表
     """
 
     texts: list[TypeFragText] = dcs.field(default_factory=list, repr=False)

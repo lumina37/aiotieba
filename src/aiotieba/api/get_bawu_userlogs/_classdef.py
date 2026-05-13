@@ -105,7 +105,7 @@ class Userlogs(TbErrorExt, Containers[Userlog]):
     吧务用户管理日志表
 
     Attributes:
-        objs (list[Postlog]): 吧务用户管理日志表
+        objs (list[Userlog]): 吧务用户管理日志表
         err (Exception | None): 捕获的异常
 
         page (Page_userlog): 页信息

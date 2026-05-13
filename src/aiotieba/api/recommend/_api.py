@@ -10,7 +10,7 @@ def parse_body(body: bytes) -> None:
     res_json = parse_json(body)
     if code := int(res_json["error_code"]):
         raise TiebaServerError(code, res_json["error_msg"])
-    if code := int(res_json["data"]["is_push_success"]) != 1:
+    if (code := int(res_json["data"]["is_push_success"])) != 1:
         raise TiebaServerError(code, res_json["data"]["msg"])
 
 

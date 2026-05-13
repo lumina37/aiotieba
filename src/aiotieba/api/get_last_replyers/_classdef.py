@@ -195,7 +195,7 @@ class Thread_lp:
     last_time: int = 0
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> None:
+    def from_proto(data_proto: TypeMessage) -> Thread_lp:
         title = data_proto.title
         tid = data_proto.id
         pid = data_proto.first_post_id

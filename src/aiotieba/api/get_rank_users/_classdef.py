@@ -60,7 +60,7 @@ class Page_rank:
     total_page: int = 0
 
     has_more: bool = False
-    has_prev: int = False
+    has_prev: bool = False
 
     @staticmethod
     def from_json(data_map: Mapping) -> Page_rank:

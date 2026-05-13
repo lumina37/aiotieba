@@ -150,11 +150,11 @@ class FragVoice:
 
     Attributes:
         md5 (str): 音频md5
-        duration (int): 音频长度 以秒为单位
+        duration (float): 音频长度 以秒为单位
     """
 
     md5: str = ""
-    duration: int = 0
+    duration: float = 0.0
 
     @staticmethod
     def from_proto(data_proto: TypeMessage) -> FragVoice:
@@ -209,7 +209,7 @@ class FragVideo:
 class TypeFragVideo(Protocol):
     src: str
     cover_src: str
-    duration: int
+    duration: float
     width: int
     height: int
     view_num: int
@@ -326,12 +326,12 @@ class FragUnknown:
         data (Any): 原始数据
     """
 
-    proto: Any
+    data: Any
 
     @staticmethod
-    def from_proto(data: Any) -> FragUnknown:
-        return FragUnknown(data)
+    def from_proto(data_proto: TypeMessage) -> FragUnknown:
+        return FragUnknown(data_proto)
 
     @staticmethod
-    def from_json(data: Mapping) -> FragUnknown:
-        return FragUnknown(data)
+    def from_json(data_map: Mapping) -> FragUnknown:
+        return FragUnknown(data_map)

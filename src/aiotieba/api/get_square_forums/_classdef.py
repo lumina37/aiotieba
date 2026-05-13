@@ -95,7 +95,7 @@ class SquareForums(TbErrorExt, Containers[SquareForum]):
     page: Page_square = dcs.field(default_factory=Page_square)
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage | None = None) -> None:
+    def from_proto(data_proto: TypeMessage | None = None) -> SquareForums:
         objs = [SquareForum.from_proto(p) for p in data_proto.forum_info]
         page = Page_square.from_proto(data_proto.page)
         return SquareForums(objs, page)

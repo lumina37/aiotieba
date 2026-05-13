@@ -169,7 +169,7 @@ class Contents_t(Containers[TypeFragment]):
                 elif _type == 34:
                     continue
                 else:
-                    yield FragUnknown.from_proto(frag)
+                    yield FragUnknown.from_proto(proto)
 
         objs = list(_frags())
 
@@ -207,7 +207,7 @@ class Contents_t(Containers[TypeFragment]):
                             emojis.append(frag)
                             yield frag
                         else:
-                            yield FragUnknown.from_proto(frag)
+                            yield FragUnknown.from_proto(proto)
                 elif _type == "feed_pic":
                     for proto in component.feed_pic.pics:
                         frag = FragImage_feed.from_proto(proto)
@@ -428,7 +428,7 @@ class Contents_st(Containers[TypeFragment]):
         links (list[FragLink_st]): 链接碎片列表
         tiebapluses (list[FragTiebaPlus_st]): 贴吧plus碎片列表
         video (FragVideo_st): 视频碎片
-        voice (FragVoice_st): 视频碎片
+        voice (FragVoice_st): 音频碎片
     """
 
     texts: list[TypeFragText] = dcs.field(default_factory=list, repr=False)
@@ -486,7 +486,7 @@ class Contents_st(Containers[TypeFragment]):
                 elif _type == 34:
                     continue
                 else:
-                    yield FragUnknown.from_proto(frag)
+                    yield FragUnknown.from_proto(proto)
 
         objs = list(_frags())
 
@@ -640,7 +640,7 @@ class Thread:
     last_time: int = 0
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> None:
+    def from_proto(data_proto: TypeMessage) -> Thread:
         contents = Contents_t.from_proto(data_proto)
         title = data_proto.title
         tid = data_proto.id
@@ -701,7 +701,7 @@ class Thread:
         )
 
     @staticmethod
-    def from_feed(data_proto: TypeMessage) -> None:
+    def from_feed(data_proto: TypeMessage) -> Thread:
         contents = Contents_t.from_feed(data_proto)
 
         business_info_map = {it.key: it.value for it in data_proto.business_info}

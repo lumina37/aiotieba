@@ -34,7 +34,7 @@ class Page_dislikef:
 @dcs.dataclass
 class DislikeForum:
     """
-    吧广场贴吧信息
+    首页推荐屏蔽的贴吧信息
 
     Attributes:
         fid (int): 贴吧id
@@ -43,8 +43,6 @@ class DislikeForum:
         member_num (int): 吧会员数
         post_num (int): 发帖量
         thread_num (int): 主题帖数
-
-        is_followed (bool): 是否已关注
     """
 
     fid: int = 0
@@ -82,6 +80,7 @@ class DislikeForums(TbErrorExt, Containers[DislikeForum]):
         err (Exception | None): 捕获的异常
 
         page (Page_dislikef): 页信息
+        has_more (bool): 是否还有下一页
     """
 
     page: Page_dislikef = dcs.field(default_factory=Page_dislikef)

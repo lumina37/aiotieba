@@ -49,7 +49,7 @@ class FollowForums(TbErrorExt, Containers[FollowForum]):
     用户关注贴吧列表
 
     Attributes:
-        objs (list[Forum]): 用户关注贴吧列表
+        objs (list[FollowForum]): 用户关注贴吧列表
         err (Exception | None): 捕获的异常
 
         has_more (bool): 是否还有下一页
