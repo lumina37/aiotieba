@@ -1,5 +1,22 @@
-
 # 开发规范
+
+## commit规范
+
+提交信息须遵循简化版的[Conventional Commits](https://www.conventionalcommits.org/zh-hans/)，格式为 `<type>: <description>`。
+
+| 类型 | 说明 |
+| ------ | ------ |
+| `feat` | 新功能 |
+| `fix` | Bug修复 |
+| `refactor` | 重构（既非新功能也非修复） |
+| `perf` | 性能优化 |
+| `chore` | 日常维护（依赖更新、脚本改进等） |
+| `docs` | 文档变更 |
+| `test` | 测试相关 |
+| `style` | 代码格式（不影响逻辑的空白、缩进等） |
+| `ci` | CI/CD 配置变更 |
+
+外部PR和commit须向develop分支而不是master分支提交
 
 ## 代码风格
 
@@ -54,7 +71,7 @@ Note:
 ## 测试编写规范
 
 - 使用`client`入参捕获fixture，不要在测试内自行构造`Client`
-- 涉及网络IO的测试需使用`@pytest.mark.flaky(reruns=2, reruns_delay=5.0)`抑制网络抖动
+- 涉及网络IO的测试需使用`@pytest.mark.flaky(reruns=2, reruns_delay=5.0)`抑制偶发错误
 
 ## 新增API时的检查清单
 
@@ -65,4 +82,4 @@ Note:
 - [ ] 如有新的数据类型定义，添加到`src/aiotieba/api/<mod>/_classdef.py`
 - [ ] 如有新的数据类型定义，创建`docs/ref/classdef/<name>.md`并添加到`mkdocs.yml`的navigate列表末尾
 - [ ] 如有新的枚举类型，添加到 `src/aiotieba/enums.py`
-- [ ] 运行`uvx ruff check .`和`uvx ruff format . --check`对应的代码检查
+- [ ] 运行`uvx ruff check .`和`uvx ruff format . --check`执行代码检查
