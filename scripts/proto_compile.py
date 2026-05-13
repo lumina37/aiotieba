@@ -33,38 +33,38 @@ def row_filter(rows: list[str], import_perfix: str) -> Iterator[str]:
         yield row
 
 
-commom_proto_pth = Path("src/aiotieba/api/_protobuf")
+commom_proto_path = Path("src/aiotieba/api/_protobuf")
 
-for fpth in commom_proto_pth.glob("*_pb2.py"):
-    fpth.unlink()
+for file_path in commom_proto_path.glob("*_pb2.py"):
+    file_path.unlink()
 
-subprocess.run("protoc --python_out=. *.proto", cwd=commom_proto_pth, check=True, timeout=60.0)
+subprocess.run("protoc --python_out=. *.proto", cwd=commom_proto_path, check=True, timeout=60.0)
 
-for fpth in commom_proto_pth.glob("*_pb2.py"):
-    tmp_fpth = fpth.with_suffix(".tmp")
+for file_path in commom_proto_path.glob("*_pb2.py"):
+    tmp_file_path = file_path.with_suffix(".tmp")
     with (
-        fpth.open("r") as f,
-        tmp_fpth.open("w") as tmp_f,
+        file_path.open("r") as file,
+        tmp_file_path.open("w") as tmp_file,
     ):
-        tmp_f.writelines(row_filter(f, "from . "))
-    fpth.unlink()
-    tmp_fpth.rename(fpth)
+        tmp_file.writelines(row_filter(file, "from . "))
+    file_path.unlink()
+    tmp_file_path.rename(file_path)
 
-for api_pth in Path("src/aiotieba/api").glob("*/protobuf"):
-    for fpth in api_pth.glob("*_pb2.py"):
-        fpth.unlink()
+for api_path in Path("src/aiotieba/api").glob("*/protobuf"):
+    for file_path in api_path.glob("*_pb2.py"):
+        file_path.unlink()
 
-    subprocess.run("protoc -I../../_protobuf -I. --python_out=. *.proto", cwd=api_pth, check=True, timeout=60.0)
+    subprocess.run("protoc -I../../_protobuf -I. --python_out=. *.proto", cwd=api_path, check=True, timeout=60.0)
 
-    for fpth in api_pth.glob("*_pb2.py"):
-        tmp_fpth = fpth.with_suffix(".tmp")
+    for file_path in api_path.glob("*_pb2.py"):
+        tmp_file_path = file_path.with_suffix(".tmp")
         with (
-            fpth.open("r") as f,
-            tmp_fpth.open("w") as tmp_f,
+            file_path.open("r") as file,
+            tmp_file_path.open("w") as tmp_file,
         ):
-            tmp_f.writelines(row_filter(f, "from ..._protobuf "))
-        fpth.unlink()
-        tmp_fpth.rename(fpth)
+            tmp_file.writelines(row_filter(file, "from ..._protobuf "))
+        file_path.unlink()
+        tmp_file_path.rename(file_path)
 
 subprocess.run("uvx ruff check src/**/*_pb2.py --fix --unsafe-fixes -s", timeout=60.0)
 subprocess.run("uvx ruff format src/**/*_pb2.py -s", timeout=60.0)
