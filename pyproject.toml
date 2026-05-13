@@ -57,7 +57,8 @@ requires = ["scikit-build-core>=0.12.2,<0.13"]
 build-backend = "scikit_build_core.build"
 
 [tool.scikit-build]
-sdist.exclude = ["*.proto", ".*", "docs", "scripts", "tests", "mkdocs.yml"]
+sdist.include = ["README.md", "pyproject.toml"]
+sdist.exclude = [".*", "docs", "tests", "*.proto", "*.yml", "*.md", "*.toml", "*.ini"]
 wheel.exclude = ["*.c", "*.h", "*.txt"]
 
 [[tool.scikit-build.generate]]
