@@ -49,7 +49,7 @@ speedup = [
 ]
 
 [dependency-groups]
-dev = ["pytest==9.0.3", "pytest-asyncio==1.3.0", "pytest-rerunfailures==16.1"]
+dev = ["pytest==9.0.3", "pytest-asyncio==1.3.0", "pytest-rerunfailures==16.2"]
 docs = ["mkdocs-material", "mkdocstrings[python]"]
 
 [build-system]
