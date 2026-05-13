@@ -770,9 +770,9 @@ class Client:
         获取关注列表
 
         Args:
-            pn (int, optional): 页码. Defaults to 1.
             id_ (str | int | None): 用户id user_id / user_name / portrait 优先user_id
                 默认为None即获取本账号信息. Defaults to None.
+            pn (int, optional): 页码. Defaults to 1.
 
         Returns:
             Follows: 关注列表
@@ -795,9 +795,9 @@ class Client:
         获取粉丝列表
 
         Args:
-            pn (int, optional): 页码. Defaults to 1.
             id_ (str | int | None): 用户id user_id / user_name / portrait 优先user_id
                 默认为None即获取本账号信息. Defaults to None.
+            pn (int, optional): 页码. Defaults to 1.
 
         Returns:
             Fans: 粉丝列表
@@ -1832,7 +1832,7 @@ class Client:
 
         Args:
             fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid 优先fid
-            tid (int, optional): 待解除屏蔽的主题帖tid
+            tid (int): 待解除屏蔽的主题帖tid
 
         Returns:
             BoolResponse: True成功 False失败
@@ -1850,7 +1850,7 @@ class Client:
 
         Args:
             fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid 优先fid
-            tid (int, optional): 待恢复的主题帖tid
+            tid (int): 待恢复的主题帖tid
 
         Returns:
             BoolResponse: True成功 False失败
@@ -1864,11 +1864,11 @@ class Client:
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def recover_post(self, fname_or_fid: str | int, /, pid: int) -> BoolResponse:
         """
-        恢复主题帖
+        恢复回复
 
         Args:
             fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid 优先fid
-            pid (int, optional): 待恢复的回复pid
+            pid (int): 待恢复的回复pid
 
         Returns:
             BoolResponse: True成功 False失败
@@ -2373,7 +2373,7 @@ class Client:
         Args:
             fname_or_fid (str | int): 主题帖所在贴吧的贴吧名或fid 优先fid
             tid (int): 主题帖tid
-            tid (int): 主题帖pid
+            pid (int): 主题帖pid
 
         Returns:
             BoolResponse: True成功 False失败
@@ -2391,7 +2391,7 @@ class Client:
         Args:
             fname_or_fid (str | int): 主题帖所在贴吧的贴吧名或fid 优先fid
             tid (int): 主题帖tid
-            tid (int): 主题帖pid
+            pid (int): 主题帖pid
 
         Returns:
             BoolResponse: True成功 False失败
@@ -2664,7 +2664,7 @@ class Client:
         获取某吧所有群聊
 
         Args:
-            forum_id (int),: 吧id.
+            forum_id (int): 吧id.
 
         Returns:
             RoomList: 群信息
@@ -2688,7 +2688,7 @@ class Client:
     @handle_exception(BoolResponse)
     async def join_chatroom(self, room_id: int) -> BoolResponse:
         """
-        获取某吧等级
+        加入聊天室
 
         Args:
             room_id (int): 房间id
