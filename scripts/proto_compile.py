@@ -7,18 +7,13 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-commom_proto_pth = Path("src/aiotieba/api/_protobuf")
-
-for fpth in commom_proto_pth.glob("*_pb2.py"):
-    fpth.unlink()
-
-subprocess.run("protoc --python_out=. *.proto", cwd=str(commom_proto_pth), check=True, timeout=60.0)
-
 
 def row_filter(rows: list[str], import_perfix: str) -> Iterator[str]:
     is_runtime_checker = False
     for row in rows:
         if row.startswith("#"):
+            continue
+        if row.startswith('"""'):
             continue
 
         if not is_runtime_checker and row.startswith("_runtime"):
@@ -38,31 +33,38 @@ def row_filter(rows: list[str], import_perfix: str) -> Iterator[str]:
         yield row
 
 
+commom_proto_pth = Path("src/aiotieba/api/_protobuf")
+
 for fpth in commom_proto_pth.glob("*_pb2.py"):
-    bak_fpth = fpth.with_suffix(".bak")
+    fpth.unlink()
+
+subprocess.run("protoc --python_out=. *.proto", cwd=commom_proto_pth, check=True, timeout=60.0)
+
+for fpth in commom_proto_pth.glob("*_pb2.py"):
+    tmp_fpth = fpth.with_suffix(".tmp")
     with (
         fpth.open("r") as f,
-        bak_fpth.open("w") as bak_f,
+        tmp_fpth.open("w") as tmp_f,
     ):
-        bak_f.writelines(row_filter(f, "from . "))
+        tmp_f.writelines(row_filter(f, "from . "))
     fpth.unlink()
-    bak_fpth.rename(fpth)
+    tmp_fpth.rename(fpth)
 
-for mod_pth in Path("src/aiotieba/api").glob("*/protobuf"):
-    for fpth in mod_pth.glob("*_pb2.py"):
+for api_pth in Path("src/aiotieba/api").glob("*/protobuf"):
+    for fpth in api_pth.glob("*_pb2.py"):
         fpth.unlink()
 
-    subprocess.run("protoc -I../../_protobuf -I. --python_out=. *.proto", cwd=str(mod_pth), check=True, timeout=10.0)
+    subprocess.run("protoc -I../../_protobuf -I. --python_out=. *.proto", cwd=api_pth, check=True, timeout=60.0)
 
-    for fpth in mod_pth.glob("*_pb2.py"):
-        bak_fpth = fpth.with_suffix(".bak")
+    for fpth in api_pth.glob("*_pb2.py"):
+        tmp_fpth = fpth.with_suffix(".tmp")
         with (
             fpth.open("r") as f,
-            bak_fpth.open("w") as bak_f,
+            tmp_fpth.open("w") as tmp_f,
         ):
-            bak_f.writelines(row_filter(f, "from ..._protobuf "))
+            tmp_f.writelines(row_filter(f, "from ..._protobuf "))
         fpth.unlink()
-        bak_fpth.rename(fpth)
+        tmp_fpth.rename(fpth)
 
-subprocess.run("uvx ruff check src/**/*_pb2.py --fix --unsafe-fixes -s", cwd=".", check=False, timeout=10.0)
-subprocess.run("uvx ruff format src/**/*_pb2.py -s", cwd=".", check=False, timeout=30.0)
+subprocess.run("uvx ruff check src/**/*_pb2.py --fix --unsafe-fixes -s", timeout=60.0)
+subprocess.run("uvx ruff format src/**/*_pb2.py -s", timeout=60.0)
