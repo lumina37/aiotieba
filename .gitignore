@@ -1,4 +1,5 @@
 .*/
+!.agent/
 !.github/
 *_cache/
 *.py[cd]
