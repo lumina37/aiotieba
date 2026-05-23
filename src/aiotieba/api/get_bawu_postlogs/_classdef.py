@@ -41,7 +41,7 @@ class Media_postlog:
 
 
 @dcs.dataclass
-class Postlog:
+class BawuPostLog:
     """
     吧务帖子管理日志
 
@@ -74,7 +74,7 @@ class Postlog:
     op_time: datetime = dcs.field(default_factory=default_datetime)
 
     @staticmethod
-    def from_xml(data_tag: bs4.element.Tag) -> Postlog:
+    def from_xml(data_tag: bs4.element.Tag) -> BawuPostLog:
         left_cell_item = data_tag.td
 
         post_meta_item = left_cell_item.find("div", class_="post_meta")
@@ -119,7 +119,7 @@ class Postlog:
         op_time_item = op_user_name_item.next_sibling
         op_time = datetime.strptime(op_time_item.text, "%Y-%m-%d%H:%M")
 
-        return Postlog(text, title, medias, tid, pid, op_type, post_portrait, post_time, op_user_name, op_time)
+        return BawuPostLog(text, title, medias, tid, pid, op_type, post_portrait, post_time, op_user_name, op_time)
 
 
 @dcs.dataclass
@@ -168,12 +168,12 @@ class Page_postlog:
 
 
 @dcs.dataclass
-class Postlogs(TbErrorExt, Containers[Postlog]):
+class BawuPostLogs(TbErrorExt, Containers[BawuPostLog]):
     """
     吧务帖子管理日志表
 
     Attributes:
-        objs (list[Postlog]): 吧务帖子管理日志表
+        objs (list[BawuPostLog]): 吧务帖子管理日志表
         err (Exception | None): 捕获的异常
 
         page (Page_postlog): 页信息
@@ -183,10 +183,10 @@ class Postlogs(TbErrorExt, Containers[Postlog]):
     page: Page_postlog = dcs.field(default_factory=Page_postlog)
 
     @staticmethod
-    def from_xml(data_soup: bs4.BeautifulSoup) -> Postlogs:
-        objs = [Postlog.from_xml(t) for t in data_soup.find("tbody").find_all("tr")]
+    def from_xml(data_soup: bs4.BeautifulSoup) -> BawuPostLogs:
+        objs = [BawuPostLog.from_xml(t) for t in data_soup.find("tbody").find_all("tr")]
         page = Page_postlog.from_xml(data_soup)
-        return Postlogs(objs, page)
+        return BawuPostLogs(objs, page)
 
     @property
     def has_more(self) -> bool:

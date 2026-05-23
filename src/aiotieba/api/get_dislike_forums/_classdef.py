@@ -41,7 +41,7 @@ class DislikeForum:
         fname (str): 贴吧名
 
         member_num (int): 吧会员数
-        post_num (int): 发帖量
+        post_num (int): 发帖数
         thread_num (int): 主题帖数
     """
 

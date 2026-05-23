@@ -27,6 +27,7 @@ from .api import (
     get_ats,
     get_bawu_blacklist,
     get_bawu_info,
+    get_bawu_memberlist,
     get_bawu_perm,
     get_bawu_postlogs,
     get_bawu_userlogs,
@@ -1375,7 +1376,7 @@ class Client:
     @handle_exception(get_rank_users.RankUsers)
     async def get_rank_users(self, fname_or_fid: str | int, /, pn: int = 1) -> get_rank_users.RankUsers:
         """
-        获取pn页的等级排行榜用户列表
+        获取等级排行榜用户列表
 
         Args:
             fname_or_fid (str | int): 目标贴吧名或fid 优先贴吧名
@@ -1392,7 +1393,7 @@ class Client:
     @handle_exception(get_member_users.MemberUsers)
     async def get_member_users(self, fname_or_fid: str | int, /, pn: int = 1) -> get_member_users.MemberUsers:
         """
-        获取pn页的最新关注用户列表
+        获取最新关注用户列表
 
         Args:
             fname_or_fid (str | int): 目标贴吧名或fid 优先贴吧名
@@ -1414,7 +1415,7 @@ class Client:
         self, fname_or_fid: str | int, /, pn: int = 1, *, rank_type: RankForumType = RankForumType.WEEKLY
     ) -> get_rank_forums.RankForums:
         """
-        获取pn页的吧签到排行表
+        获取吧签到排行表
 
         Args:
             fname_or_fid (str | int): 目标贴吧名或fid 优先贴吧名
@@ -1432,7 +1433,7 @@ class Client:
     @handle_exception(get_blocks.Blocks)
     async def get_blocks(self, fname_or_fid: str | int, /, name: str = "", pn: int = 1) -> get_blocks.Blocks:
         """
-        获取pn页的待解封用户列表
+        获获取吧务后台待解封用户列表
 
         Args:
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先fid
@@ -1452,7 +1453,7 @@ class Client:
         self, fname_or_fid: str | int, /, pn: int = 1, *, rn: int = 10, id_: str | int | None = None
     ) -> get_recovers.Recovers:
         """
-        获取pn页的待恢复帖子列表
+        获取吧务后台待恢复帖子列表
 
         Args:
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先fid
@@ -1474,7 +1475,35 @@ class Client:
 
         return await get_recovers.request(self._http_core, fid, user_id, pn, rn)
 
-    @handle_exception(get_bawu_userlogs.Userlogs)
+    @handle_exception(get_bawu_memberlist.BawuListMemberUsers)
+    async def get_bawu_memberlist(
+        self,
+        fname_or_fid: str | int,
+        /,
+        pn: int = 1,
+        *,
+        search_value: str = "",
+    ) -> get_bawu_memberlist.BawuListMemberUsers:
+        """
+        获取吧务后台吧会员列表
+
+        Args:
+            fname_or_fid (str | int): 目标贴吧名或fid 优先贴吧名
+            pn (int, optional): 页码. Defaults to 1.
+            search_value (str, optional): 搜索用户名. Defaults to ''.
+
+        Returns:
+            BawuListMemberUsers: 吧会员列表
+
+        Note:
+            本接口需要STOKEN
+        """
+
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
+
+        return await get_bawu_memberlist.request(self._http_core, fname, pn, search_value)
+
+    @handle_exception(get_bawu_userlogs.BawuUserLogs)
     async def get_bawu_userlogs(
         self,
         fname_or_fid: str | int,
@@ -1486,7 +1515,7 @@ class Client:
         start_dt: datetime.datetime | None = None,
         end_dt: datetime.datetime | None = None,
         op_type: int = 0,
-    ) -> get_bawu_userlogs.Userlogs:
+    ) -> get_bawu_userlogs.BawuUserLogs:
         """
         获取吧务用户管理日志表
 
@@ -1500,7 +1529,7 @@ class Client:
             op_type (int, optional): 搜索操作类型. Defaults to 0.
 
         Returns:
-            Userlogs: 吧务用户管理日志表
+            BawuUserLogs: 吧务用户管理日志表
 
         Note:
             本接口需要STOKEN
@@ -1512,7 +1541,7 @@ class Client:
             self._http_core, fname, pn, search_value, search_type, start_dt, end_dt, op_type
         )
 
-    @handle_exception(get_bawu_postlogs.Postlogs)
+    @handle_exception(get_bawu_postlogs.BawuPostLogs)
     async def get_bawu_postlogs(
         self,
         fname_or_fid: str | int,
@@ -1524,9 +1553,9 @@ class Client:
         start_dt: datetime.datetime | None = None,
         end_dt: datetime.datetime | None = None,
         op_type: int = 0,
-    ) -> get_bawu_postlogs.Postlogs:
+    ) -> get_bawu_postlogs.BawuPostLogs:
         """
-        获取吧务帖子管理日志表
+        获取吧务后台帖子管理日志表
 
         Args:
             fname_or_fid (str | int): 目标贴吧名或fid 优先贴吧名
@@ -1538,7 +1567,7 @@ class Client:
             op_type (int, optional): 搜索操作类型. Defaults to 0.
 
         Returns:
-            Postlogs: 吧务帖子管理日志表
+            BawuPostLogs: 吧务帖子管理日志表
 
         Note:
             本接口需要STOKEN
@@ -1555,7 +1584,7 @@ class Client:
         self, fname_or_fid: str | int, /, pn: int = 1, *, rn: int = 5
     ) -> get_unblock_appeals.Appeals:
         """
-        获取申诉请求列表
+        获取吧务后台申诉请求列表
 
         Args:
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先fid
@@ -1576,7 +1605,7 @@ class Client:
         self, fname_or_fid: str | int, /, pn: int = 1
     ) -> get_bawu_blacklist.BawuBlacklistUsers:
         """
-        获取pn页的吧务黑名单列表
+        获取吧务后台黑名单列表
 
         Args:
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先贴吧名

@@ -9,7 +9,7 @@ import yarl
 
 from ...const import WEB_BASE_HOST
 from ...enums import BawuSearchType
-from ._classdef import Userlogs
+from ._classdef import BawuUserLogs
 
 if TYPE_CHECKING:
     import datetime
@@ -17,9 +17,9 @@ if TYPE_CHECKING:
     from ...core import HttpCore
 
 
-def parse_body(body: bytes) -> Userlogs:
+def parse_body(body: bytes) -> BawuUserLogs:
     soup = bs4.BeautifulSoup(body, "lxml")
-    bawu_userlogs = Userlogs.from_xml(soup)
+    bawu_userlogs = BawuUserLogs.from_xml(soup)
 
     return bawu_userlogs
 
@@ -33,7 +33,7 @@ async def request(
     start_dt: datetime.datetime | None,
     end_dt: datetime.datetime | None,
     op_type: int,
-) -> Userlogs:
+) -> BawuUserLogs:
     params = [
         ("word", fname),
         ("pn", pn),

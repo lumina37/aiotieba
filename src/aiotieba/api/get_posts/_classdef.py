@@ -632,7 +632,7 @@ class Forum_p:
         subcategory (str): 二级分类
 
         member_num (int): 吧会员数
-        post_num (int): 发帖量
+        post_num (int): 发帖数
     """
 
     fid: int = 0
