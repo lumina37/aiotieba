@@ -1,0 +1,14 @@
+// tbclient.AddPoll.AddPollReqIdl
+syntax = "proto3";
+
+import "CommonReq.proto";
+
+message AddPollReqIdl {
+    message DataReq {
+        uint64 thread_id = 1;
+        string options = 2;
+        CommonReq common = 3;
+        uint64 forum_id = 4;
+    }
+    DataReq data = 1;
+}

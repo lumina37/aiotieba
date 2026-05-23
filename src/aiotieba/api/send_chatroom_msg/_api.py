@@ -13,7 +13,7 @@ class AppConstants:
 
 
 async def construct_request_data(
-    blcpcore, room_id, uk, user_id, origin_id, name, portrait, text, forum_id, level, vip, glevel, atdata=None, robot=-1
+    blcpcore, room_id, uk, user_id, origin_id, name, portrait, text, fid, level, vip, glevel, atdata=None, robot=-1
 ):
     constants = AppConstants()
 
@@ -87,7 +87,7 @@ async def construct_request_data(
                 "height": 12,
                 "priority": 2,
                 "schema": "https://tieba.baidu.com/mo/q/wise-bawu-core/forum-level?customfullscreen=1&forum_id="
-                + str(forum_id)
+                + str(fid)
                 + "&nonavigationbar=1&obj_locate=5&portrait="
                 + portrait
                 + "?t="
@@ -127,7 +127,7 @@ async def construct_request_data(
         content["text"]["ext"]["content"] = {"robot_params": {"scene": "tieba_group_chat", "type": robot}}
 
     content["text"]["ext"]["level"] = level
-    content["text"]["ext"]["forum_id"] = forum_id
+    content["text"]["ext"]["forum_id"] = fid
 
     if atdata:
         # 携带艾特@信息
@@ -194,7 +194,7 @@ async def request(
     name: str,
     portrait: str,
     text: str,
-    forum_id: int,
+    fid: int,
     level: int,
     vip: bool,
     glevel: int,
@@ -202,6 +202,6 @@ async def request(
     robot=-1,
 ):
     request_data = await construct_request_data(
-        blcpcore, room_id, uk, user_id, origin_id, name, portrait, text, forum_id, level, vip, glevel, atdata, robot
+        blcpcore, room_id, uk, user_id, origin_id, name, portrait, text, fid, level, vip, glevel, atdata, robot
     )
     return await send_request(blcpcore, request_data)

@@ -17,11 +17,11 @@ def parse_body(body: bytes) -> UserForumInfo:
     return UserForumInfo.from_json(data_map)
 
 
-async def request(http_core: HttpCore, forum_id: int, friend_portrait: str) -> UserForumInfo:
+async def request(http_core: HttpCore, fid: int, friend_portrait: str) -> UserForumInfo:
     data = [
         ("BDUSS", http_core.account.BDUSS),
         ("_client_version", LATEST_VERSION),
-        ("forum_id", forum_id),
+        ("forum_id", fid),
         ("friend_portrait", friend_portrait),
     ]
 

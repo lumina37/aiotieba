@@ -9,6 +9,8 @@ from ...exception import BoolResponse, TiebaServerError
 from ...helper import parse_json
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from ...core import HttpCore
 
 
@@ -18,7 +20,7 @@ def parse_body(body: bytes) -> None:
         raise TiebaServerError(code, res_json["error_msg"])
 
 
-async def request(http_core: HttpCore, fid: int, tid: int, pids: list[int], block: bool) -> BoolResponse:
+async def request(http_core: HttpCore, fid: int, tid: int, pids: Iterable[int], block: bool) -> BoolResponse:
     data = [
         ("BDUSS", http_core.account.BDUSS),
         ("forum_id", fid),

@@ -11,6 +11,7 @@ from .api import (
     add_bawu,
     add_bawu_blacklist,
     add_blacklist_old,
+    add_poll,
     add_post,
     agree,
     block,
@@ -128,6 +129,7 @@ from .logging import get_logger as LOG
 if TYPE_CHECKING:
     import asyncio
     import datetime
+    from collections.abc import Iterable
 
 
 def _try_websocket(func):
@@ -333,7 +335,7 @@ class Client:
     @handle_exception(get_forum.Forum)
     async def get_forum(self, fname_or_fid: str | int) -> get_forum.Forum:
         """
-        通过forum_id获取贴吧信息
+        获取贴吧信息
         此接口较`get_forum_detail`更强大
 
         Args:
@@ -351,7 +353,7 @@ class Client:
     @_try_websocket
     async def get_forum_detail(self, fname_or_fid: str | int) -> get_forum_detail.Forum_detail:
         """
-        通过forum_id获取贴吧信息
+        获取贴吧信息
 
         Args:
             fname_or_fid (str | int): 目标贴吧名或fid 优先fid
@@ -1795,13 +1797,15 @@ class Client:
         return await del_thread.request(self._http_core, fid, tid, is_hide=False)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def del_threads(self, fname_or_fid: str | int, /, tids: list[int], *, block: bool = False) -> BoolResponse:
+    async def del_threads(
+        self, fname_or_fid: str | int, /, tids: Iterable[int], *, block: bool = False
+    ) -> BoolResponse:
         """
         批量删除主题帖
 
         Args:
             fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid 优先fid
-            tids (list[int]): 待删除的主题帖tid列表. Length Max to 30.
+            tids (Iterable[int]): 待删除的主题帖tid列表. Length Max to 30.
             block (bool, optional): 是否同时封一天. Defaults to False.
 
         Returns:
@@ -1834,7 +1838,7 @@ class Client:
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def del_posts(
-        self, fname_or_fid: str | int, /, tid: int, pids: list[int], *, block: bool = False
+        self, fname_or_fid: str | int, /, tid: int, pids: Iterable[int], *, block: bool = False
     ) -> BoolResponse:
         """
         批量删除回复
@@ -1842,7 +1846,7 @@ class Client:
         Args:
             fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid 优先fid
             tid (int): 所在主题帖tid
-            pids (list[int]): 待删除的回复pid列表. Length Max to 30.
+            pids (Iterable[int]): 待删除的回复pid列表. Length Max to 30.
             block (bool, optional): 是否同时封一天. Defaults to False.
 
         Returns:
@@ -2102,14 +2106,14 @@ class Client:
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def handle_unblock_appeals(
-        self, fname_or_fid: str | int, /, appeal_ids: list[int], *, refuse: bool = True
+        self, fname_or_fid: str | int, /, appeal_ids: Iterable[int], *, refuse: bool = True
     ) -> BoolResponse:
         """
         拒绝或通过解封申诉
 
         Args:
             fname_or_fid (str | int): 申诉所在贴吧的贴吧名或fid 优先fid
-            appeal_ids (list[int]): 申诉请求的appeal_id列表. Length Max to 30.
+            appeal_ids (Iterable[int]): 申诉请求的appeal_id列表. Length Max to 30.
             refuse (bool, optional): True则拒绝申诉 False则接受申诉. Defaults to True.
 
         Returns:
@@ -2542,6 +2546,25 @@ class Client:
         return await add_post.request_http(self._http_core, fname, fid, tid, show_name, content)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
+    @_try_websocket
+    async def add_poll(self, tid: int, /, options: Iterable[int]) -> BoolResponse:
+        """
+        投票
+
+        Args:
+            tid (int): 投票帖的id
+            option (Iterable[int]): 投票选项 1对应第一个选项
+
+        Returns:
+            BoolResponse: 投票是否成功
+        """
+
+        if self._ws_core.status == WsStatus.OPEN:
+            return await add_poll.request_ws(self._ws_core, tid, options)
+
+        return await add_poll.request_http(self._http_core, tid, options)
+
+    @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     @_force_websocket
     async def send_msg(self, id_: str | int, content: str) -> BoolResponse:
         """
@@ -2585,12 +2608,12 @@ class Client:
 
     @handle_exception(get_group_msg.WsMsgGroups)
     @_force_websocket
-    async def get_group_msg(self, group_ids: list[int], *, get_type: int = 1) -> get_group_msg.WsMsgGroups:
+    async def get_group_msg(self, group_ids: Iterable[int], *, get_type: int = 1) -> get_group_msg.WsMsgGroups:
         """
         获取分组信息
 
         Args:
-            group_ids (list[int]): 待获取分组的group_id
+            group_ids (Iterable[int]): 待获取分组的group_id
             get_type (int, optional): 获取类型. Defaults to 1.
 
         Returns:
@@ -2601,16 +2624,16 @@ class Client:
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def send_chatroom_msg(
-        self, chatroom_id: int, forum_id: int, text: str, atuser_ids: list[int] = None, robotc: int = -1
+        self, chatroom_id: int, fid: int, text: str, atuser_ids: Iterable[int] = None, robotc: int = -1
     ) -> BoolResponse:
         """
         向吧群发送信息，仅限简单文本。如需要@他人需要指定atuser_ids，如需与bot交互需要指定atuser_ids和robot
 
         Args:
             chatroom_id (int): 聊天室id
-            forum_id (int): 吧id
+            fid (int): 吧id
             text (str): 待发送内容
-            atuser_ids (list[int], optional): 需要@的人的user_id列表
+            atuser_ids (Iterable[int], optional): 需要@的人的user_id列表
             robotc (int, optional): 机器人指令id。机器人靠此分辨指令，而非text内容。
 
         Returns:
@@ -2632,7 +2655,7 @@ class Client:
         if self._blcp_core.status != 1:
             await self._init_blcp()
 
-        level_info = await self.__get_forum_level(forum_id)
+        level_info = await self.__get_forum_level(fid)
         level = level_info.user_level
         isvip = self._user.is_vip
         glevel = self._user.glevel
@@ -2662,7 +2685,7 @@ class Client:
             self._user.nick_name,
             self._user.portrait,
             text,
-            forum_id,
+            fid,
             level,
             isvip,
             glevel,
@@ -2681,19 +2704,19 @@ class Client:
         else:
             raise
 
-    async def __get_forum_level(self, forum_id: int) -> get_forum_level.LevelInfo:
+    async def __get_forum_level(self, fid: int) -> get_forum_level.LevelInfo:
         if not self._user.user_id:
             await self.get_self_info()
 
-        return await get_forum_level.request_http(self._http_core, forum_id)
+        return await get_forum_level.request_http(self._http_core, fid)
 
     @handle_exception(get_roomlist_by_fid.RoomList)
-    async def get_roomlist_by_fid(self, forum_id: int) -> get_roomlist_by_fid.RoomList:
+    async def get_roomlist_by_fid(self, fid: int) -> get_roomlist_by_fid.RoomList:
         """
         获取某吧所有群聊
 
         Args:
-            forum_id (int): 吧id.
+            fid (int): 吧id.
 
         Returns:
             RoomList: 群信息
@@ -2702,7 +2725,7 @@ class Client:
         if not self._user.user_id:  # 检查是否登陆
             await self.get_self_info()
 
-        return await get_roomlist_by_fid.request(self._http_core, forum_id)
+        return await get_roomlist_by_fid.request(self._http_core, fid)
 
     def get_chat_message_queue(self) -> asyncio.Queue:
         """

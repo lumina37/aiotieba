@@ -1,0 +1,8 @@
+// tbclient.AddPoll.AddPollResIdl
+syntax = "proto3";
+
+import "Error.proto";
+
+message AddPollResIdl {
+    Error error = 1;
+}
