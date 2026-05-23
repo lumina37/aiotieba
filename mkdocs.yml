@@ -70,6 +70,18 @@ nav:
           - statistics: ref/classdef/statistics.md
           - recom_status: ref/classdef/recom_status.md
           - group_msg: ref/classdef/group_msg.md
+          - bawu_memberlist: ref/classdef/bawu_memberlist.md
+          - forum: ref/classdef/forum.md
+          - forum_level: ref/classdef/forum_level.md
+          - init_websocket: ref/classdef/init_websocket.md
+          - login: ref/classdef/login.md
+          - push_notify: ref/classdef/push_notify.md
+          - rank_forums: ref/classdef/rank_forums.md
+          - roomlist_by_fid: ref/classdef/roomlist_by_fid.md
+          - selfinfo_initNickname: ref/classdef/selfinfo_initNickname.md
+          - selfinfo_moindex: ref/classdef/selfinfo_moindex.md
+          - tab_map: ref/classdef/tab_map.md
+          - user_forum_info: ref/classdef/user_forum_info.md
 
 markdown_extensions:
   - md_in_html
