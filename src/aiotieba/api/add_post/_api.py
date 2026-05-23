@@ -1,13 +1,18 @@
+from __future__ import annotations
+
 import datetime
 import time
+from typing import TYPE_CHECKING
 
 import yarl
 
 from ...__version__ import __version__
 from ...const import APP_BASE_HOST
-from ...core import Account, HttpCore, WsCore
 from ...exception import BoolResponse, TiebaServerError, TiebaValueError
 from .protobuf import AddPostReqIdl_pb2, AddPostResIdl_pb2
+
+if TYPE_CHECKING:
+    from ...core import Account, HttpCore, WsCore
 
 CMD = 309731
 

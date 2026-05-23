@@ -49,7 +49,7 @@ class BawuUserLog:
         op_user_name = op_user_name_item.string
 
         op_time_item = op_user_name_item.next_sibling
-        op_time = datetime.strptime(op_time_item.text, "%Y-%m-%d %H:%M")
+        op_time = datetime.strptime(op_time_item.string, "%Y-%m-%d %H:%M")
 
         return BawuUserLog(op_type, op_duration, user_portrait, op_user_name, op_time)
 

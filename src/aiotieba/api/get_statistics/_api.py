@@ -1,10 +1,16 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import yarl
 
 from ...const import APP_BASE_HOST, LATEST_VERSION
-from ...core import HttpCore
 from ...exception import TiebaServerError
 from ...helper import parse_json
 from ._classdef import Statistics
+
+if TYPE_CHECKING:
+    from ...core import HttpCore
 
 
 def parse_body(body: bytes) -> Statistics:

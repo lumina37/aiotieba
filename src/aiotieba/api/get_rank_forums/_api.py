@@ -1,10 +1,16 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import bs4
 import yarl
 
 from ...const import WEB_BASE_HOST
-from ...core import HttpCore
-from ...enums import RankForumType
 from ._classdef import RankForums
+
+if TYPE_CHECKING:
+    from ...core import HttpCore
+    from ...enums import RankForumType
 
 
 def parse_body(body: bytes) -> RankForums:

@@ -1,11 +1,17 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import yarl
 
 from ....const import APP_BASE_HOST
-from ....core import Account, HttpCore, WsCore
 from ....exception import TiebaServerError
 from .._classdef import UserPostss
 from .._const import CMD
 from ..protobuf import UserPostReqIdl_pb2, UserPostResIdl_pb2
+
+if TYPE_CHECKING:
+    from ....core import Account, HttpCore, WsCore
 
 
 def pack_proto(account: Account, user_id: int, pn: int, rn: int, version: str) -> bytes:

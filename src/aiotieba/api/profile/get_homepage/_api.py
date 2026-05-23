@@ -1,11 +1,17 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import yarl
 
 from ....const import APP_BASE_HOST, LATEST_VERSION
-from ....core import HttpCore, WsCore
 from ....exception import TiebaServerError
 from .._classdef import Homepage
 from .._const import CMD
 from ..protobuf import ProfileReqIdl_pb2, ProfileResIdl_pb2
+
+if TYPE_CHECKING:
+    from ....core import HttpCore, WsCore
 
 
 def pack_proto(user_id: int, pn: int) -> bytes:

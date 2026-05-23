@@ -135,7 +135,7 @@ def main() -> None:
             api_path = API_ROOT / dir_name
             proto_dir = api_path / "protobuf"
             if not proto_dir.is_dir():
-                print(
+                print(  # noqa: T201
                     f"目录 '{api_path}' 不包含protobuf子目录",
                     file=sys.stderr,
                 )

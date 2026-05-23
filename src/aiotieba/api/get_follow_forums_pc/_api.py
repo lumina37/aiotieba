@@ -1,11 +1,17 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import yarl
 
 from ...const import WEB_BASE_HOST
-from ...core import HttpCore
 from ...exception import TiebaServerError
 from ...helper import parse_json
 from ...helper.crypto import PC_SALT, sign
 from ._classdef import PcFollowForums
+
+if TYPE_CHECKING:
+    from ...core import HttpCore
 
 
 def parse_body(body: bytes) -> PcFollowForums:

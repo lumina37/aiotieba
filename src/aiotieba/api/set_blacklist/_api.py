@@ -1,10 +1,16 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import yarl
 
 from ...const import APP_BASE_HOST, LATEST_VERSION
-from ...core import Account, HttpCore, WsCore
 from ...enums import BlacklistType
 from ...exception import BoolResponse, TiebaServerError
 from .protobuf import SetUserBlackReqIdl_pb2, SetUserBlackResIdl_pb2
+
+if TYPE_CHECKING:
+    from ...core import Account, HttpCore, WsCore
 
 CMD = 309697
 

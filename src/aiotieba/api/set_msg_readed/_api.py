@@ -1,8 +1,14 @@
-from ...core import WsCore
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from ...enums import MsgType
 from ...exception import BoolResponse, TiebaServerError
-from ..get_group_msg import WsMessage
 from .protobuf import CommitReceivedPmsgReqIdl_pb2, CommitReceivedPmsgResIdl_pb2
+
+if TYPE_CHECKING:
+    from ...core import WsCore
+    from ..get_group_msg import WsMessage
 
 CMD = 205006
 

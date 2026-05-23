@@ -43,27 +43,30 @@ class BawuListMemberUser:
 
     @staticmethod
     def from_xml(data_tag: bs4.element.Tag) -> BawuListMemberUser:
-        tds = data_tag.find_all("td")
+        left_cell_item = data_tag.td
 
-        left_cell = tds[0]
-        user_name = left_cell.a.text.strip()
+        post_user_item = left_cell_item.a
+        user_name = post_user_item.text.lstrip()
 
-        exp = int(tds[2].text.strip())
+        exp_item = left_cell_item.next_sibling.next_sibling
+        exp = int(exp_item.string)
 
-        level_item = tds[3].div
-        level = int(level_item.span.text.strip())
+        level_item = exp_item.next_sibling
+        level = int(level_item.string)
 
-        thread_num = int(tds[4].text.strip())
+        thread_num_item = level_item.next_sibling
+        thread_num = int(thread_num_item.string)
 
-        good_num_text = tds[5].text.strip()
+        good_num_item = thread_num_item.next_sibling
+        good_num_text = good_num_item.string
         good_num = int(good_num_text) if good_num_text else 0
 
-        in_time_str = tds[6].text.strip()
-        join_time = datetime.strptime(in_time_str, "%Y-%m-%d %H:%M")
+        join_time_item = good_num_item.next_sibling
+        join_time = datetime.strptime(join_time_item.string, "%Y-%m-%d %H:%M")
 
-        btn_group = tds[7]
-        user_id = int(btn_group["id"])
-        portrait = btn_group["portrait"]
+        btn_group_item = join_time_item.next_sibling
+        user_id = int(btn_group_item["id"])
+        portrait = btn_group_item["portrait"]
 
         return BawuListMemberUser(user_id, portrait, user_name, exp, level, thread_num, good_num, join_time)
 
