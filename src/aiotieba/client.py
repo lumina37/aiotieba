@@ -966,7 +966,7 @@ class Client:
 
     @handle_exception(get_user_contents.UserPostss)
     @_try_websocket
-    async def get_self_posts(self, pn: int = 1, *, rn: int = 20):
+    async def get_self_posts(self, pn: int = 1, *, rn: int = 20) -> get_user_contents.UserPostss:
         """
         获取当前用户发布的回复列表
 
@@ -2553,7 +2553,7 @@ class Client:
 
         Args:
             tid (int): 投票帖的id
-            option (Iterable[int]): 投票选项 1对应第一个选项
+            options (Iterable[int]): 投票选项集合 (1,)对应第一个选项
 
         Returns:
             BoolResponse: 投票是否成功
