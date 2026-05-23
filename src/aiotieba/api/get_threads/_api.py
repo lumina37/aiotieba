@@ -1,10 +1,16 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import yarl
 
 from ...const import APP_BASE_HOST
-from ...core import HttpCore, WsCore
 from ...exception import TiebaServerError
 from ._classdef import Threads
 from .protobuf import FrsPageReqIdl_pb2, FrsPageResIdl_pb2
+
+if TYPE_CHECKING:
+    from ...core import HttpCore, WsCore
 
 CMD = 301001
 

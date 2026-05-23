@@ -1,10 +1,16 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import yarl
 
 from ...const import APP_BASE_HOST, LATEST_VERSION
-from ...core import HttpCore
 from ...exception import TiebaServerError
 from ...helper import parse_json
 from ._classdef import UserForumInfo
+
+if TYPE_CHECKING:
+    from ...core import HttpCore
 
 
 def parse_body(body: bytes) -> UserForumInfo:
@@ -17,11 +23,11 @@ def parse_body(body: bytes) -> UserForumInfo:
     return UserForumInfo.from_json(data_map)
 
 
-async def request(http_core: HttpCore, forum_id: int, friend_portrait: str) -> UserForumInfo:
+async def request(http_core: HttpCore, fid: int, friend_portrait: str) -> UserForumInfo:
     data = [
         ("BDUSS", http_core.account.BDUSS),
         ("_client_version", LATEST_VERSION),
-        ("forum_id", forum_id),
+        ("forum_id", fid),
         ("friend_portrait", friend_portrait),
     ]
 

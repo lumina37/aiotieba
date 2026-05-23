@@ -19,7 +19,6 @@ class UserInfo_selfinit:
         tieba_uid (int): 用户个人主页uid
 
         nick_name (str): 用户昵称
-        show_name (str): 显示名称
         log_name (str): 用于在日志中记录用户信息
     """
 

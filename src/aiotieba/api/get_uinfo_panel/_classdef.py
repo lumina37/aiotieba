@@ -49,7 +49,7 @@ class UserInfo_panel(TbErrorExt):
     nick_name_old: str = ""
 
     gender: Gender = Gender.UNKNOWN
-    age: int = 0.0
+    age: float = 0.0
     post_num: int = 0
     fan_num: int = 0
 

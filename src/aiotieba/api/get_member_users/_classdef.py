@@ -52,7 +52,7 @@ class Page_member:
     total_page: int = 0
 
     has_more: bool = False
-    has_prev: int = False
+    has_prev: bool = False
 
     @staticmethod
     def from_xml(data_tag: bs4.element.Tag) -> Page_member:

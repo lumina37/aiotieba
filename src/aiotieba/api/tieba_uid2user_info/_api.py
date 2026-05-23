@@ -1,10 +1,16 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import yarl
 
 from ...const import APP_BASE_HOST, LATEST_VERSION
-from ...core import HttpCore, WsCore
 from ...exception import TiebaServerError
 from ._classdef import UserInfo_TUid
 from .protobuf import GetUserByTiebaUidReqIdl_pb2, GetUserByTiebaUidResIdl_pb2
+
+if TYPE_CHECKING:
+    from ...core import HttpCore, WsCore
 
 CMD = 309702
 

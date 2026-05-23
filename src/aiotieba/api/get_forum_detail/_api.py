@@ -1,10 +1,16 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import yarl
 
 from ...const import APP_BASE_HOST, LATEST_VERSION
-from ...core import HttpCore, WsCore
 from ...exception import TiebaServerError
 from ._classdef import Forum_detail
 from .protobuf import GetForumDetailReqIdl_pb2, GetForumDetailResIdl_pb2
+
+if TYPE_CHECKING:
+    from ...core import HttpCore, WsCore
 
 CMD = 303021
 

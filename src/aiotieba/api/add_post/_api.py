@@ -1,13 +1,18 @@
+from __future__ import annotations
+
 import datetime
 import time
+from typing import TYPE_CHECKING
 
 import yarl
 
 from ...__version__ import __version__
 from ...const import APP_BASE_HOST
-from ...core import Account, HttpCore, WsCore
 from ...exception import BoolResponse, TiebaServerError, TiebaValueError
 from .protobuf import AddPostReqIdl_pb2, AddPostResIdl_pb2
+
+if TYPE_CHECKING:
+    from ...core import Account, HttpCore, WsCore
 
 CMD = 309731
 
@@ -50,7 +55,7 @@ def pack_proto(account: Account, fname: str, fid: int, tid: int, show_name: str,
     req_proto.data.common.c3_aid = account.c3_aid
     req_proto.data.common.sample_id = account.sample_id
     req_proto.data.common.scr_w = 720
-    req_proto.data.common.scr_w = 1280
+    req_proto.data.common.scr_h = 1280
     req_proto.data.common.scr_dip = 1.5
     req_proto.data.common.q_type = 0
     req_proto.data.common.is_teenager = 0

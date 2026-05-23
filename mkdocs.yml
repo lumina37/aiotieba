@@ -70,6 +70,13 @@ nav:
           - statistics: ref/classdef/statistics.md
           - recom_status: ref/classdef/recom_status.md
           - group_msg: ref/classdef/group_msg.md
+          - bawu_memberlist: ref/classdef/bawu_memberlist.md
+          - forum: ref/classdef/forum.md
+          - forum_level: ref/classdef/forum_level.md
+          - login: ref/classdef/login.md
+          - rank_forums: ref/classdef/rank_forums.md
+          - tab_map: ref/classdef/tab_map.md
+          - user_forum_info: ref/classdef/user_forum_info.md
 
 markdown_extensions:
   - md_in_html

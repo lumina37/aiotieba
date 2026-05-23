@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 @dcs.dataclass
-class Userlog:
+class BawuUserLog:
     """
     吧务用户管理日志
 
@@ -32,7 +32,7 @@ class Userlog:
     op_time: datetime = dcs.field(default_factory=default_datetime)
 
     @staticmethod
-    def from_xml(data_tag: bs4.element.Tag) -> Userlog:
+    def from_xml(data_tag: bs4.element.Tag) -> BawuUserLog:
         left_cell_item = data_tag.td
 
         post_user_item = left_cell_item.a
@@ -49,9 +49,9 @@ class Userlog:
         op_user_name = op_user_name_item.string
 
         op_time_item = op_user_name_item.next_sibling
-        op_time = datetime.strptime(op_time_item.text, "%Y-%m-%d %H:%M")
+        op_time = datetime.strptime(op_time_item.string, "%Y-%m-%d %H:%M")
 
-        return Userlog(op_type, op_duration, user_portrait, op_user_name, op_time)
+        return BawuUserLog(op_type, op_duration, user_portrait, op_user_name, op_time)
 
 
 @dcs.dataclass
@@ -100,12 +100,12 @@ class Page_userlog:
 
 
 @dcs.dataclass
-class Userlogs(TbErrorExt, Containers[Userlog]):
+class BawuUserLogs(TbErrorExt, Containers[BawuUserLog]):
     """
     吧务用户管理日志表
 
     Attributes:
-        objs (list[Postlog]): 吧务用户管理日志表
+        objs (list[BawuUserLog]): 吧务用户管理日志表
         err (Exception | None): 捕获的异常
 
         page (Page_userlog): 页信息
@@ -115,10 +115,10 @@ class Userlogs(TbErrorExt, Containers[Userlog]):
     page: Page_userlog = dcs.field(default_factory=Page_userlog)
 
     @staticmethod
-    def from_xml(data_soup: bs4.BeautifulSoup) -> Userlogs:
-        objs = [Userlog.from_xml(t) for t in data_soup.find("tbody").find_all("tr")]
+    def from_xml(data_soup: bs4.BeautifulSoup) -> BawuUserLogs:
+        objs = [BawuUserLog.from_xml(t) for t in data_soup.find("tbody").find_all("tr")]
         page = Page_userlog.from_xml(data_soup)
-        return Userlogs(objs, page)
+        return BawuUserLogs(objs, page)
 
     @property
     def has_more(self) -> bool:

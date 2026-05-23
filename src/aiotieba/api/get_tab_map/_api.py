@@ -1,10 +1,16 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import yarl
 
 from ...const import APP_BASE_HOST, LATEST_VERSION
-from ...core import Account, HttpCore, WsCore
 from ...exception import TiebaServerError
 from ._classdef import TabMap
 from .protobuf import SearchPostForumReqIdl_pb2, SearchPostForumResIdl_pb2
+
+if TYPE_CHECKING:
+    from ...core import Account, HttpCore, WsCore
 
 CMD = 309466
 

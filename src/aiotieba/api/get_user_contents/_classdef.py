@@ -41,11 +41,11 @@ class FragVoice_up:
 
     Attributes:
         md5 (str): 音频md5
-        duration (int): 音频长度 以秒为单位
+        duration (float): 音频长度 以秒为单位
     """
 
     md5: str = ""
-    duration: int = 0
+    duration: float = 0.0
 
     @staticmethod
     def from_proto(data_proto: TypeMessage) -> FragVoice_up:
@@ -107,7 +107,7 @@ class Contents_up(Containers[TypeFragment]):
                     voice = FragVoice_up.from_proto(proto)
                     continue
                 else:
-                    yield FragUnknown.from_proto(frag)
+                    yield FragUnknown.from_proto(proto)
 
         objs = list(_frags())
 
@@ -456,7 +456,7 @@ class Contents_ut(Containers[TypeFragment]):
                 elif _type == 10:  # voice
                     continue
                 else:
-                    yield FragUnknown.from_proto(frag)
+                    yield FragUnknown.from_proto(proto)
 
         objs = list(_frags())
         objs += imgs
@@ -496,7 +496,6 @@ class UserThread:
         tid (int): 主题帖tid
         pid (int): 首楼回复pid
         user (UserInfo_u): 发布者的用户信息
-        author_id (int): 发布者的user_id
 
         type (ThreadType): 帖子类型
         is_help (bool): 是否为求助帖

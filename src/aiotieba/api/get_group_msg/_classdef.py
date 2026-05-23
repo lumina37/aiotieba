@@ -56,9 +56,9 @@ class WsMessage:
 
     Attributes:
         msg_id (int): 消息id
-        msg_type (str): 消息类型
+        msg_type (int): 消息类型
         text (str): 文本内容
-        user (UserInfo_ws): 文本内容
+        user (UserInfo_ws): 用户信息
         create_time (int): 发送时间 10位时间戳 以秒为单位
     """
 
@@ -69,7 +69,7 @@ class WsMessage:
     create_time: int = 0
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> None:
+    def from_proto(data_proto: TypeMessage) -> WsMessage:
         msg_id = data_proto.msgId
         msg_type = data_proto.msgType
         text = data_proto.content
@@ -84,7 +84,7 @@ class WsMsgGroup:
     websocket消息组
 
     Attributes:
-        group_id (str): 消息组id
+        group_id (int): 消息组id
         group_type (int): 消息组类别
         messages (list[WsMessage]): 消息列表
     """

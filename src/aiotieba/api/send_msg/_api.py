@@ -1,6 +1,12 @@
-from ...core import WsCore
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from ...exception import TiebaServerError
 from .protobuf import CommitPersonalMsgReqIdl_pb2, CommitPersonalMsgResIdl_pb2
+
+if TYPE_CHECKING:
+    from ...core import WsCore
 
 CMD = 205001
 

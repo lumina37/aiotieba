@@ -1,9 +1,15 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import bs4
 import yarl
 
 from ...const import WEB_BASE_HOST
-from ...core import HttpCore
 from ._classdef import MemberUsers
+
+if TYPE_CHECKING:
+    from ...core import HttpCore
 
 
 def parse_body(body: bytes) -> MemberUsers:

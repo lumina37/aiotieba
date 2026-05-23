@@ -73,6 +73,7 @@ class Page_bwblacklist:
     has_more: bool = False
     has_prev: bool = False
 
+    @staticmethod
     def from_xml(data_soup: bs4.BeautifulSoup) -> Page_bwblacklist:
         total_count_tag = data_soup.find("div", class_="breadcrumbs")
         total_count = int(total_count_tag.em.text)

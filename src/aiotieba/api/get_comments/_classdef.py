@@ -259,7 +259,7 @@ class Comment:
     is_thread_author: bool = False
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> None:
+    def from_proto(data_proto: TypeMessage) -> Comment:
         contents = Contents_c.from_proto(data_proto)
 
         reply_to_id = 0

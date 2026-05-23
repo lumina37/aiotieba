@@ -1,9 +1,16 @@
-import aiohttp
-import yarl
+from __future__ import annotations
 
-from ...core import HttpCore
+from typing import TYPE_CHECKING
+
+import aiohttp
+
 from ...exception import ContentTypeError, HTTPStatusError
 from ._classdef import Image, ImageBytes
+
+if TYPE_CHECKING:
+    import yarl
+
+    from ...core import HttpCore
 
 
 def _headers_checker(response: aiohttp.ClientResponse) -> None:

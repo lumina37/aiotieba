@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import binascii
 import gzip
 import hashlib
 import time
+from typing import TYPE_CHECKING
 
 import aiohttp
 import yarl
@@ -9,9 +12,11 @@ from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from ...const import STABLE_VERSION
-from ...core import HttpCore
 from ...helper import pack_json, parse_json
 from ...helper.crypto import rc4_42
+
+if TYPE_CHECKING:
+    from ...core import HttpCore
 
 SOFIRE_HOST = "sofire.baidu.com"
 

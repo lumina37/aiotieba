@@ -26,7 +26,7 @@ class Forum(TbErrorExt):
         small_avatar (str): 吧头像(小)
         slogan (str): 吧标语
         member_num (int): 吧会员数
-        post_num (int): 发帖量
+        post_num (int): 发帖数
         thread_num (int): 主题帖数
 
         has_bawu (bool): 是否有吧务

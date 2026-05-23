@@ -33,5 +33,5 @@ class WsNotify:
         group_type = data_proto.groupType
         group_id = data_proto.groupId
         msg_id = data_proto.msgId
-        create_time = str(create_time) if (create_time := data_proto.et) else 0
+        create_time = int(create_time) if (create_time := data_proto.et) else 0
         return WsNotify(note_type, group_id, group_type, msg_id, create_time)

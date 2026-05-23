@@ -22,6 +22,7 @@ class BawuPerm(TbErrorExt):
 
     perms: BawuPermType = BawuPermType.NULL
 
+    @staticmethod
     def from_json(data_map: Mapping) -> BawuPerm:
         perms = BawuPermType.NULL
 

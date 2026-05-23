@@ -76,10 +76,10 @@ class Page_block:
 @dcs.dataclass
 class Blocks(TbErrorExt, Containers[Block]):
     """
-    待恢复帖子列表
+    待解封用户列表
 
     Attributes:
-        objs (list[Block]): 待恢复帖子列表
+        objs (list[Block]): 待解封用户列表
         err (Exception | None): 捕获的异常
 
         page (Page_block): 页信息

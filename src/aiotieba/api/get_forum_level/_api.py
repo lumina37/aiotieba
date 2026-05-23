@@ -1,10 +1,16 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import yarl
 
 from ...const import APP_BASE_HOST
-from ...core import Account, HttpCore, WsCore
 from ...exception import TiebaServerError
 from ._classdef import LevelInfo
 from .protobuf import GetLevelInfoReqIdl_pb2, GetLevelInfoResIdl_pb2
+
+if TYPE_CHECKING:
+    from ...core import Account, HttpCore, WsCore
 
 CMD = 301005
 
@@ -30,8 +36,8 @@ def parse_body(body: bytes) -> LevelInfo:
     return level_info
 
 
-async def request_http(http_core: HttpCore, forum_id: int) -> LevelInfo:
-    data = pack_proto(http_core.account, forum_id)
+async def request_http(http_core: HttpCore, fid: int) -> LevelInfo:
+    data = pack_proto(http_core.account, fid)
 
     request = http_core.pack_proto_request(
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/f/forum/getLevelInfo", query_string=f"cmd={CMD}"),
@@ -42,8 +48,8 @@ async def request_http(http_core: HttpCore, forum_id: int) -> LevelInfo:
     return parse_body(body)
 
 
-async def request_ws(ws_core: WsCore, forum_id: int) -> LevelInfo:
-    data = pack_proto(ws_core.account, forum_id)
+async def request_ws(ws_core: WsCore, fid: int) -> LevelInfo:
+    data = pack_proto(ws_core.account, fid)
 
     response = await ws_core.send(data, CMD)
     return parse_body(await response.read())

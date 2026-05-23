@@ -36,11 +36,11 @@ class FragVoice_up:
 
     Attributes:
         md5 (str): 音频md5
-        duration (int): 音频长度 以秒为单位
+        duration (float): 音频长度 以秒为单位
     """
 
     md5: str = ""
-    duration: int = 0
+    duration: float = 0.0
 
     @staticmethod
     def from_json(data_map: Mapping) -> FragVoice_up:

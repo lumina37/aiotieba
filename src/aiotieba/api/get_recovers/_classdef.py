@@ -154,7 +154,7 @@ class Recovers(TbErrorExt, Containers[Recover]):
     page: Page_recover = dcs.field(default_factory=Page_recover)
 
     @staticmethod
-    def from_json(data_map: Mapping) -> None:
+    def from_json(data_map: Mapping) -> Recovers:
         objs = [Recover.from_json(t) for t in data_map["data"]["thread_list"]]
         page = Page_recover.from_json(data_map["data"]["page"])
         return Recovers(objs, page)
