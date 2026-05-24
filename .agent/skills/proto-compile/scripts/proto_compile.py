@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import argparse
 import subprocess
-import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
+
+from aiotieba.logging import get_logger
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
+LOG = get_logger()
 
 API_ROOT = Path("src/aiotieba/api")
 COMMON_PROTO_DIR = API_ROOT / "_protobuf"
@@ -135,10 +137,7 @@ def main() -> None:
             api_path = API_ROOT / dir_name
             proto_dir = api_path / "protobuf"
             if not proto_dir.is_dir():
-                print(  # noqa: T201
-                    f"目录 '{api_path}' 不包含protobuf子目录",
-                    file=sys.stderr,
-                )
+                LOG.error("目录 '%s' 不包含protobuf子目录", api_path)
                 continue
             compile_api(api_path)
     else:
