@@ -1,17 +1,20 @@
 from __future__ import annotations
 
 import argparse
+import re
 import subprocess
 from pathlib import Path
+from urllib.parse import unquote
 
 from aiohttp.multipart import parse_content_disposition
 
 from aiotieba.logging import get_logger
 
+LOG = get_logger()
+
+
 NL = b"\r\n"
 DOUBLE_NL = NL + NL
-
-LOG = get_logger()
 
 
 def extract_boundary(data: bytes) -> str:
@@ -54,6 +57,27 @@ def parse_multipart_body(body_data: bytes, boundary: str) -> dict[str, bytes]:
     return parts
 
 
+OCTAL_PATTERN = re.compile(r"(\\[0-7]{3})+")
+URLENCODE_PATTERN = re.compile(r"(%[0-9A-Fa-f]{2})+")
+
+
+def _replace_octal(match: re.Match[str]) -> str:
+    octals = [g for g in match.group(0).split("\\") if g]
+    raw_bytes = bytes(int(o, 8) for o in octals)
+    return raw_bytes.decode("utf-8", errors="replace")
+
+
+def _replace_urlencoded(match: re.Match[str]) -> str:
+    decoded = unquote(match.group(0))
+    return f"{decoded}(urlquote)"
+
+
+def postprocess_protoc_output(text: str) -> str:
+    text = OCTAL_PATTERN.sub(_replace_octal, text)
+    text = URLENCODE_PATTERN.sub(_replace_urlencoded, text)
+    return text
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="从multipart二进制文件中提取protobuf载荷并用protoc --decode_raw解码",
@@ -92,6 +116,7 @@ def main() -> None:
         return
 
     decoded = proc.stdout.decode("utf-8", errors="replace")
+    decoded = postprocess_protoc_output(decoded)
 
     print(decoded)
 
