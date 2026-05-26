@@ -1,12 +1,6 @@
 from __future__ import annotations
 
 import enum
-import sys
-
-if sys.version_info >= (3, 11):
-    from enum import StrEnum
-else:
-    from strenum import StrEnum
 
 
 class Gender(enum.IntEnum):
@@ -176,7 +170,7 @@ class SearchType(enum.IntEnum):
     RELATION = 2
 
 
-class BawuType(StrEnum):
+class BawuType(enum.StrEnum):
     """
     吧务类型
 

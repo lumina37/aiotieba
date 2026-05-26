@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import dataclasses as dcs
 from collections.abc import Callable
 
@@ -70,7 +69,7 @@ class NetCore:
         try:
             async with timeout(self.timeout.http_connect, self.connector._loop):
                 conn = await self.connector.connect(request, [], self.timeout.http_timeout)
-        except asyncio.TimeoutError as exc:
+        except TimeoutError as exc:
             raise aiohttp.ServerTimeoutError(f"Connection timeout to host {request.url}") from exc
 
         # 设置响应解析流程
