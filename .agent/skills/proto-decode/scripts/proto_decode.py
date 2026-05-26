@@ -118,7 +118,7 @@ def main() -> None:
     decoded = proc.stdout.decode("utf-8", errors="replace")
     decoded = postprocess_protoc_output(decoded)
 
-    print(decoded)
+    print(decoded)  # noqa: T201
 
 
 if __name__ == "__main__":
