@@ -1,7 +1,7 @@
 ---
 name: proto-decode
 description: >-
-  解析multipart二进制payload文件，提取protobuf内容并使用protoc --decode_raw解码
+  解析multipart二进制payload文件，提取protobuf内容并使用protoc解码
 ---
 
 # Protobuf解码Skill
