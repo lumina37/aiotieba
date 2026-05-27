@@ -68,6 +68,7 @@ from .api import (
     get_uinfo_getUserInfo_web,
     get_uinfo_panel,
     get_uinfo_user_json,
+    get_uinfo_userCard,
     get_unblock_appeals,
     get_user_contents,
     get_user_contents_pc,
@@ -612,8 +613,7 @@ class Client:
             user_id (int): 用户id user_id
 
         Returns:
-            UserInfo_guinfo_app: 包含 user_id / portrait / user_name / nick_name_old / 性别 /
-                是否大神 / 是否超级会员
+            UserInfo_guinfo_app: 包含 user_id / portrait / user_name / 性别 / 是否大神 / 是否超会
         """
 
         if self._ws_core.status == WsStatus.OPEN:
@@ -672,7 +672,7 @@ class Client:
             name_or_portrait (str): 用户id user_name / portrait
 
         Returns:
-            UserInfo_panel: 包含较全面的用户信息
+            UserInfo_panel: 包含 portrait / user_name / age / 是否超会 等信息
 
         Note:
             从2022.08.30开始服务端不再返回user_id字段 请谨慎使用\n
@@ -681,6 +681,20 @@ class Client:
         """
 
         return await get_uinfo_panel.request(self._http_core, name_or_portrait)
+
+    @handle_exception(get_uinfo_userCard.UserInfo_uc)
+    async def _get_uinfo_userCard(self, portrait: str) -> get_uinfo_userCard.UserInfo_uc:
+        """
+        接口 https://tieba.baidu.com/c/u/pc/userCard
+
+        Args:
+            portrait (str): 用户portrait
+
+        Returns:
+            UserInfo_uc: 包含 portrait / tieba_uid / nick_name_new / age / sign / ip 等信息
+        """
+
+        return await get_uinfo_userCard.request(self._http_core, portrait)
 
     async def get_user_info(self, id_: str | int, /, require: ReqUInfo = ReqUInfo.ALL) -> UserInfo:
         """
@@ -702,20 +716,24 @@ class Client:
             if (require | ReqUInfo.BASIC) == ReqUInfo.BASIC:
                 # 仅有BASIC需求
                 return await self._get_uinfo_getuserinfo(id_)
-            else:
-                return await self._get_uinfo_profile(id_)
+            if self.account.BDUSS and not require & (ReqUInfo.TIEBA_UID | ReqUInfo.OTHER):
+                return await self._get_uinfo_getUserInfo(id_)
+            return await self._get_uinfo_profile(id_)
         elif is_portrait(id_):
             if (require | ReqUInfo.BASIC) == ReqUInfo.BASIC:
                 # 仅有BASIC需求
                 if not require & ReqUInfo.USER_ID:
                     # 无USER_ID需求
                     return await self._get_uinfo_panel(id_)
+            if (require | (ReqUInfo.NICK_NAME | ReqUInfo.TIEBA_UID)) == (ReqUInfo.NICK_NAME | ReqUInfo.TIEBA_UID):
+                # 仅有NICK_NAME和TIEBA_UID需求
+                return await self._get_uinfo_userCard(id_)
             return await self._get_uinfo_profile(id_)
         else:
             if (require | ReqUInfo.BASIC) == ReqUInfo.BASIC:
                 return await self._get_uinfo_user_json(id_)
-            elif require & ReqUInfo.NICK_NAME and not require & ReqUInfo.USER_ID:
-                # 有NICK_NAME需求但无USER_ID需求
+            elif require & ReqUInfo.NICK_NAME and not require & (ReqUInfo.USER_ID | ReqUInfo.TIEBA_UID):
+                # 有NICK_NAME需求但无USER_ID和TIEBA_UID需求
                 return await self._get_uinfo_panel(id_)
             else:
                 user = await self._get_uinfo_user_json(id_)

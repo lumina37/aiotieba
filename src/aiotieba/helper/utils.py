@@ -12,11 +12,6 @@ from ..logging import get_logger
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-if sys.version_info >= (3, 11):
-    async_timeout = asyncio
-else:
-    import async_timeout
-
 try:
     import orjson as jsonlib
 
@@ -52,10 +47,10 @@ def default_datetime() -> datetime:
     return datetime(1970, 1, 1)
 
 
-def timeout(delay: float, loop: asyncio.AbstractEventLoop) -> async_timeout.Timeout:
+def timeout(delay: float, loop: asyncio.AbstractEventLoop) -> asyncio.Timeout:
     now = loop.time()
     when = round(now) + delay
-    return async_timeout.timeout_at(when)
+    return asyncio.timeout_at(when)
 
 
 if sys.version_info >= (3, 13):

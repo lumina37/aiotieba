@@ -430,11 +430,11 @@ async def crawler(fname: str):
                     # 消费者协程不断地使用Queue.get从task_queue中拉取由生产者协程提供的页码pn作为任务
                     # asyncio.wait_for会等待作为参数的协程执行完毕直到超时
                     # timeout=1即把超时时间设为1秒
-                    # 如果超过1秒未获取到新的页码pn，asyncio.wait_for(...)将抛出asyncio.TimeoutError
+                    # 如果超过1秒未获取到新的页码pn，asyncio.wait_for(...)将抛出TimeoutError
                     pn = await asyncio.wait_for(task_queue.get(), timeout=1)
                     LOG().debug(f"Worker#{i} handling pn:{pn}")
-                except asyncio.TimeoutError:
-                    # 捕获asyncio.TimeoutError以退出协程
+                except TimeoutError:
+                    # 捕获TimeoutError以退出协程
                     if is_running is False:
                         # 如果is_running为False，意味着不需要再轮询task_queue获取新任务
                         LOG().debug(f"Worker#{i} quit")

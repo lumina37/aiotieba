@@ -196,15 +196,15 @@ class WsResponse:
             bytes
 
         Raises:
-            asyncio.TimeoutError: 读取超时
+            TimeoutError: 读取超时
         """
 
         try:
             async with timeout(self.read_timeout, self.loop):
                 return await self.future
-        except asyncio.TimeoutError as err:
+        except TimeoutError as err:
             self.future.cancel()
-            raise asyncio.TimeoutError("Timeout to read") from err
+            raise TimeoutError("Timeout to read") from err
         except BaseException:
             self.future.cancel()
             raise
@@ -409,7 +409,7 @@ class WsCore:
             WsResponse: websocket响应对象
 
         Raises:
-            asyncio.TimeoutError: 发送超时
+            TimeoutError: 发送超时
         """
 
         response = self.waiter.new()
@@ -418,9 +418,9 @@ class WsCore:
         try:
             async with timeout(self.net_core.timeout.ws_send, self.loop):
                 await self.websocket.send_bytes(req_data)
-        except asyncio.TimeoutError as err:
+        except TimeoutError as err:
             response.future.cancel()
-            raise asyncio.TimeoutError("Timeout to send") from err
+            raise TimeoutError("Timeout to send") from err
         except BaseException:
             response.future.cancel()
         else:
