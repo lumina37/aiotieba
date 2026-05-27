@@ -121,7 +121,6 @@ from .enums import (
     WsStatus,
 )
 from .exception import BoolResponse, IntResponse, StrResponse
-from .helper import deprecated
 from .helper.cache import ForumInfoCache
 from .helper.utils import handle_exception, is_portrait, is_user_name
 from .logging import get_logger as LOG
