@@ -58,7 +58,7 @@ class UserInfo_moindex:
         forum_num = data_map["like_forum_num"]
         sign = data_map["intro"]
 
-        if vip_dict := data_map["vipInfo"]:
+        if vip_dict := data_map.get("vipInfo", None):
             is_vip = int(vip_dict["v_status"]) == 3
         else:
             is_vip = False

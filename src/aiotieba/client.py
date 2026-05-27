@@ -105,7 +105,7 @@ from .api import (
 )
 from .api._classdef import UserInfo
 from .config import ProxyConfig, TimeoutConfig
-from .const import LATEST_VERSION, STABLE_VERSION
+from .const import LATEST_VERSION, LEGACY_VERSION
 from .core import Account, BLCPCore, HttpCore, NetCore, WsCore
 from .enums import (
     BawuPermType,
@@ -301,7 +301,7 @@ class Client:
                 user = await self._get_uinfo_profile(self._user.user_id)
                 self._user |= user
             elif require & (ReqUInfo.TIEBA_UID | ReqUInfo.NICK_NAME):
-                await self.__get_selfinfo_initNickname()
+                await self.__init_selfinfo_initNickname()
 
         return self._user
 
@@ -450,9 +450,9 @@ class Client:
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
         if self._ws_core.status == WsStatus.OPEN:
-            return await get_threads.request_ws(self._ws_core, fname, pn, rn, sort, is_good, STABLE_VERSION)
+            return await get_threads.request_ws(self._ws_core, fname, pn, rn, sort, is_good, LEGACY_VERSION)
 
-        return await get_threads.request_http(self._http_core, fname, pn, rn, sort, is_good, STABLE_VERSION)
+        return await get_threads.request_http(self._http_core, fname, pn, rn, sort, is_good, LEGACY_VERSION)
 
     @handle_exception(get_posts.Posts)
     @_try_websocket
@@ -749,7 +749,7 @@ class Client:
             tieba_uid (int): 用户id tieba_uid
 
         Returns:
-            UserInfo_TUid: 包含较全面的用户信息
+            UserInfo_TUid: 包含 user_id / portrait / user_name / nick_name_new
 
         Note:
             请注意tieba_uid与旧版user_id的区别
@@ -1222,11 +1222,19 @@ class Client:
 
         return await get_images.request(self._http_core, img_url)
 
-    async def __get_selfinfo_initNickname(self) -> None:
+    async def __init_selfinfo_initNickname(self) -> None:
+        """
+        填充 user_name / nick_name_old / tieba_uid
+        """
+
         user = await get_selfinfo_initNickname.request(self._http_core)
         self._user |= user
 
-    async def __get_selfinfo_moindex(self) -> None:
+    async def __init_selfinfo_moindex(self) -> None:
+        """
+        填充 user_id / portrait / user_name
+        """
+
         user = await get_selfinfo_moindex.request(self._http_core)
         self._user |= user
 
@@ -2554,7 +2562,7 @@ class Client:
         await self.__init_tbs()
         await self.__init_client_id()
         await self.__init_sample_id()
-        await self.__get_selfinfo_initNickname()
+        await self.__init_selfinfo_initNickname()
 
         show_name = self._user.show_name
 
