@@ -12,7 +12,6 @@ from .api import (
     add_bawu_blacklist,
     add_blacklist_old,
     add_poll,
-    add_post,
     agree,
     block,
     del_bawu,
@@ -2530,46 +2529,6 @@ class Client:
         await self.__init_tbs()
 
         return await sign_growth.request_web(self._http_core, act_type="page_sign")
-
-    @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    @_try_websocket
-    @deprecated("此接口风险极高，可能导致账号被永久封禁屏蔽，故弃用并将于近期移除")
-    async def add_post(self, fname_or_fid: str | int, /, tid: int, content: str) -> BoolResponse:
-        """
-        回复主题帖
-
-        Args:
-            fname_or_fid (str | int): 要回复的主题帖所在贴吧的贴吧名或fid
-            tid (int): 要回复的主题帖的tid
-            content (str): 回复内容
-
-        Returns:
-            BoolResponse: 回帖是否成功
-
-        Note:
-            本接口仍处于测试阶段\n
-            高频率调用会导致<永久封禁屏蔽>! 请谨慎使用!
-        """
-
-        if isinstance(fname_or_fid, str):
-            fname = fname_or_fid
-            fid = await self.__get_fid(fname)
-        else:
-            fid = fname_or_fid
-            fname = await self.__get_fname(fid)
-
-        await self.__init_z_id()
-        await self.__init_tbs()
-        await self.__init_client_id()
-        await self.__init_sample_id()
-        await self.__init_selfinfo_initNickname()
-
-        show_name = self._user.show_name
-
-        if self._ws_core.status == WsStatus.OPEN:
-            return await add_post.request_ws(self._ws_core, fname, fid, tid, show_name, content)
-
-        return await add_post.request_http(self._http_core, fname, fid, tid, show_name, content)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     @_try_websocket
