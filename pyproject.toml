@@ -33,8 +33,10 @@ dependencies = [
 
 [project.optional-dependencies]
 img = [
-  "opencv-contrib-python-headless>=4.6.0.66,<5;sys_platform=='linux'",
-  "opencv-contrib-python>=4.6.0.66,<5;sys_platform!='linux'",
+  "opencv-contrib-python-headless>=4.6.0.66,<5",
+]
+img-gui = [
+  "opencv-contrib-python>=4.6.0.66,<5",
 ]
 speedup = [
   "orjson>=3.7.10,<4;python_version=='3.11'",
