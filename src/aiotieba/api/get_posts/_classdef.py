@@ -1017,7 +1017,7 @@ class Thread_p:
 
         type_ = ThreadType(thread_proto.thread_type)
         if type_ == ThreadType.UNKNOWN:
-            LOG().debug("Unknown thread type. tid=%d, type=%s", tid, data_proto.thread_type)
+            LOG().debug("Unknown thread type. tid=%d, type=%s", tid, thread_proto.thread_type)
 
         is_share = bool(thread_proto.is_share_thread)
         view_num = data_proto.thread_freq_num
