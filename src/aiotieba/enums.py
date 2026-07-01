@@ -68,7 +68,9 @@ class ThreadType(enum.IntEnum):
         UNKNOWN 未知\n
         ARTICLE 图文帖\n
         ALBUM 相册帖\n
+        EXT_SHARE 来自外部网站的分享帖\n
         VOICE 语音帖\n
+        NETDISK 网盘分享帖\n
         STORY 会员小说帖\n
         VIDEO 视频帖\n
         LIVE 直播帖\n
@@ -80,7 +82,9 @@ class ThreadType(enum.IntEnum):
     UNKNOWN = -1
     ARTICLE = 0
     ALBUM = 1
+    EXT_SHARE = 6
     VOICE = 11
+    NETDISK = 14
     STORY = 31
     VIDEO = 40
     LIVE = 50
