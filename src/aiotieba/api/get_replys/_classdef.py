@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import dataclasses as dcs
 from functools import cached_property
+from typing import Self
 
 from ...enums import PrivLike, PrivReply
 from ...exception import TbErrorExt
@@ -36,7 +37,7 @@ class UserInfo_reply:
     priv_reply: PrivReply = PrivReply.ALL
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> UserInfo_reply:
+    def from_proto(data_proto: TypeMessage) -> Self:
         user_id = data_proto.id
         portrait = data_proto.portrait
         if "?" in portrait:
@@ -97,7 +98,7 @@ class UserInfo_reply_p:
     nick_name_new: str = ""
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> UserInfo_reply_p:
+    def from_proto(data_proto: TypeMessage) -> Self:
         user_id = data_proto.id
         user_name = data_proto.name
         nick_name_new = data_proto.name_show
@@ -148,7 +149,7 @@ class UserInfo_reply_t:
     nick_name_new: str = ""
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> UserInfo_reply_t:
+    def from_proto(data_proto: TypeMessage) -> Self:
         user_id = data_proto.id
         portrait = data_proto.portrait
         nick_name_new = data_proto.name_show
@@ -213,7 +214,7 @@ class Reply:
     create_time: int = 0
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Reply:
+    def from_proto(data_proto: TypeMessage) -> Self:
         text = data_proto.content
         fname = data_proto.fname
         tid = data_proto.thread_id
@@ -255,7 +256,7 @@ class Page_reply:
     has_prev: bool = False
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Page_reply:
+    def from_proto(data_proto: TypeMessage) -> Self:
         current_page = data_proto.current_page
         has_more = bool(data_proto.has_more)
         has_prev = bool(data_proto.has_prev)
@@ -278,7 +279,7 @@ class Replys(TbErrorExt, Containers[Reply]):
     page: Page_reply = dcs.field(default_factory=Page_reply)
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Replys:
+    def from_proto(data_proto: TypeMessage) -> Self:
         objs = [Reply.from_proto(p) for p in data_proto.reply_list]
         page = Page_reply.from_proto(data_proto.page)
         return Replys(objs, page)

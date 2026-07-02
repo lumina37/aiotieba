@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses as dcs
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from ...exception import TbErrorExt
 from ...helper import default_datetime
@@ -32,7 +32,7 @@ class BawuUserLog:
     op_time: datetime = dcs.field(default_factory=default_datetime)
 
     @staticmethod
-    def from_xml(data_tag: bs4.element.Tag) -> BawuUserLog:
+    def from_xml(data_tag: bs4.element.Tag) -> Self:
         left_cell_item = data_tag.td
 
         post_user_item = left_cell_item.a
@@ -76,7 +76,7 @@ class Page_userlog:
     has_prev: bool = False
 
     @staticmethod
-    def from_xml(data_soup: bs4.BeautifulSoup) -> Page_userlog:
+    def from_xml(data_soup: bs4.BeautifulSoup) -> Self:
         total_count_tag = data_soup.find("div", class_="breadcrumbs")
         total_count = int(total_count_tag.em.text)
 
@@ -115,7 +115,7 @@ class BawuUserLogs(TbErrorExt, Containers[BawuUserLog]):
     page: Page_userlog = dcs.field(default_factory=Page_userlog)
 
     @staticmethod
-    def from_xml(data_soup: bs4.BeautifulSoup) -> BawuUserLogs:
+    def from_xml(data_soup: bs4.BeautifulSoup) -> Self:
         objs = [BawuUserLog.from_xml(t) for t in data_soup.find("tbody").find_all("tr")]
         page = Page_userlog.from_xml(data_soup)
         return BawuUserLogs(objs, page)

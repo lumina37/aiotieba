@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from ...exception import TbErrorExt
 
@@ -45,7 +45,7 @@ class Forum_detail(TbErrorExt):
     has_bawu: bool = False
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Forum_detail:
+    def from_proto(data_proto: TypeMessage) -> Self:
         forum_proto = data_proto.forum_info
         fid = forum_proto.forum_id
         fname = forum_proto.forum_name

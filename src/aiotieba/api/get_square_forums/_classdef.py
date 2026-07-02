@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import dataclasses as dcs
+from typing import Self
 
 from ...exception import TbErrorExt
 from .._classdef import Containers, TypeMessage
@@ -30,7 +31,7 @@ class SquareForum:
     is_followed: bool = False
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> SquareForum:
+    def from_proto(data_proto: TypeMessage) -> Self:
         fid = data_proto.forum_id
         fname = data_proto.forum_name
         member_num = data_proto.member_count
@@ -69,7 +70,7 @@ class Page_square:
     has_prev: bool = False
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Page_square:
+    def from_proto(data_proto: TypeMessage) -> Self:
         page_size = data_proto.page_size
         current_page = data_proto.current_page
         total_page = data_proto.total_page
@@ -95,7 +96,7 @@ class SquareForums(TbErrorExt, Containers[SquareForum]):
     page: Page_square = dcs.field(default_factory=Page_square)
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage | None = None) -> SquareForums:
+    def from_proto(data_proto: TypeMessage | None = None) -> Self:
         objs = [SquareForum.from_proto(p) for p in data_proto.forum_info]
         page = Page_square.from_proto(data_proto.page)
         return SquareForums(objs, page)

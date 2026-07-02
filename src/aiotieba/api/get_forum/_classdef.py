@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from ...exception import TbErrorExt
 
@@ -47,7 +47,7 @@ class Forum(TbErrorExt):
     has_bawu: bool = False
 
     @staticmethod
-    def from_json(data_map: Mapping) -> Forum:
+    def from_json(data_map: Mapping) -> Self:
         fid = data_map["id"]
         fname = data_map["name"]
         category = data_map["first_class"]

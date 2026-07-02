@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from ...exception import TbErrorExt
 
@@ -27,7 +27,7 @@ class UserInfo_uf:
     is_like: bool = False
 
     @staticmethod
-    def from_json(data_map: Mapping) -> UserInfo_uf:
+    def from_json(data_map: Mapping) -> Self:
         show_name = data_map.get("name", "")
         user_id = int(data_map.get("id", 0) or 0)
         portrait = data_map.get("portrait", "")
@@ -99,7 +99,7 @@ class UserForumInfo(TbErrorExt):
     high_light_sign_days: int = 0
 
     @staticmethod
-    def from_json(data_map: Mapping) -> UserForumInfo:
+    def from_json(data_map: Mapping) -> Self:
         user = UserInfo_uf.from_json(data_map.get("user_info", {}))
         user_forum = data_map.get("user_forum_info", {})
         forum = data_map.get("forum_info", {})

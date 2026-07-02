@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import dataclasses as dcs
 from functools import cached_property
+from typing import Self
 
 from ...enums import Gender, PrivLike, PrivReply, ThreadType
 from ...exception import TbErrorExt
@@ -54,7 +55,7 @@ class FragImage_p:
     hash: str = ""
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> FragImage_p:
+    def from_proto(data_proto: TypeMessage) -> Self:
         src = data_proto.cdn_src
         big_src = data_proto.big_cdn_src
         origin_src = data_proto.origin_src
@@ -94,7 +95,7 @@ class FragVideo_p:
     view_num: int = 0
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> FragVideo_p:
+    def from_proto(data_proto: TypeMessage) -> Self:
         src = data_proto.link
         cover_src = data_proto.src
         duration = data_proto.during_time
@@ -137,7 +138,7 @@ class Contents_p(Containers[TypeFragment]):
     voice: FragVoice_p = dcs.field(default_factory=FragVoice_p, repr=False)
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Contents_p:
+    def from_proto(data_proto: TypeMessage) -> Self:
         content_protos = data_proto.content
 
         texts = []
@@ -235,7 +236,7 @@ class Contents_pc(Containers[TypeFragment]):
     voice: FragVoice_pc = dcs.field(default_factory=FragVoice_pc, repr=False)
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Contents_pc:
+    def from_proto(data_proto: TypeMessage) -> Self:
         content_protos = data_proto.content
 
         texts = []
@@ -341,7 +342,7 @@ class UserInfo_p:
     priv_reply: PrivReply = PrivReply.ALL
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> UserInfo_p:
+    def from_proto(data_proto: TypeMessage) -> Self:
         user_id = data_proto.id
         portrait = data_proto.portrait
         if "?" in portrait:
@@ -448,7 +449,7 @@ class Comment_p:
     is_thread_author: bool = False
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Comment_p:
+    def from_proto(data_proto: TypeMessage) -> Self:
         contents = Contents_pc.from_proto(data_proto)
 
         reply_to_id = 0
@@ -538,7 +539,7 @@ class Post:
     is_thread_author: bool = False
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Post:
+    def from_proto(data_proto: TypeMessage) -> Self:
         contents = Contents_p.from_proto(data_proto)
         sign = "".join(p.text for p in data_proto.signature.content if p.type == 0)
         comments = [Comment_p.from_proto(p) for p in data_proto.sub_post_list.sub_post_list]
@@ -608,7 +609,7 @@ class Page_p:
     has_prev: bool = False
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Page_p:
+    def from_proto(data_proto: TypeMessage) -> Self:
         page_size = data_proto.page_size
         current_page = data_proto.current_page
         total_page = data_proto.total_page
@@ -644,7 +645,7 @@ class Forum_p:
     post_num: int = 0
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Forum_p:
+    def from_proto(data_proto: TypeMessage) -> Self:
         fid = data_proto.id
         fname = data_proto.name
         category = data_proto.first_class
@@ -676,7 +677,7 @@ class FragImage_pt:
     hash: str = ""
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> FragImage_pt:
+    def from_proto(data_proto: TypeMessage) -> Self:
         src = data_proto.water_pic
         big_src = data_proto.small_pic
         origin_src = data_proto.big_pic
@@ -722,7 +723,7 @@ class Contents_pt(Containers[TypeFragment]):
     voice: FragVoice_pt = dcs.field(default_factory=FragVoice_pt, repr=False)
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Contents_pt:
+    def from_proto(data_proto: TypeMessage) -> Self:
         content_protos = data_proto.content
 
         texts = []
@@ -838,7 +839,7 @@ class UserInfo_pt:
     priv_reply: PrivReply = PrivReply.ALL
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> UserInfo_pt:
+    def from_proto(data_proto: TypeMessage) -> Self:
         user_id = data_proto.id
         portrait = data_proto.portrait
         if "?" in portrait:
@@ -929,7 +930,7 @@ class ShareThread_pt:
     vote_info: VoteInfo = dcs.field(default_factory=VoteInfo)
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> ShareThread_pt:
+    def from_proto(data_proto: TypeMessage) -> Self:
         contents = Contents_pt.from_proto(data_proto)
         title = data_proto.title
         fid = data_proto.fid
@@ -1007,7 +1008,7 @@ class Thread_p:
     create_time: int = 0
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Thread_p:
+    def from_proto(data_proto: TypeMessage) -> Self:
         thread_proto = data_proto.thread
         title = thread_proto.title
         tid = thread_proto.id
@@ -1096,7 +1097,7 @@ class Posts(TbErrorExt, Containers[Post]):
     thread: Thread_p = dcs.field(default_factory=Thread_p)
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Posts:
+    def from_proto(data_proto: TypeMessage) -> Self:
         page = Page_p.from_proto(data_proto.page)
         forum = Forum_p.from_proto(data_proto.forum)
         thread = Thread_p.from_proto(data_proto)

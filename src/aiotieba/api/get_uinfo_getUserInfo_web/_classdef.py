@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses as dcs
 from functools import cached_property
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from ...exception import TbErrorExt
 
@@ -34,7 +34,7 @@ class UserInfo_guinfo_web(TbErrorExt):
     nick_name_new: str = ""
 
     @staticmethod
-    def from_json(data_map: Mapping) -> UserInfo_guinfo_web:
+    def from_json(data_map: Mapping) -> Self:
         user_id = data_map["uid"]
         portrait = data_map["portrait"]
         user_name = user_name if (user_name := data_map["uname"]) != user_id else ""

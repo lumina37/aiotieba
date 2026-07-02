@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses as dcs
 from functools import cached_property
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from ...exception import TbErrorExt
 from .._classdef import Containers
@@ -33,7 +33,7 @@ class Fan:
     nick_name_new: str = ""
 
     @staticmethod
-    def from_json(data_map: Mapping) -> Fan:
+    def from_json(data_map: Mapping) -> Self:
         user_id = int(data_map["id"])
         portrait = data_map["portrait"]
         if "?" in portrait:
@@ -96,7 +96,7 @@ class Page_fan:
     has_prev: bool = False
 
     @staticmethod
-    def from_json(data_map: Mapping) -> Page_fan:
+    def from_json(data_map: Mapping) -> Self:
         page_size = int(data_map["page_size"])
         current_page = int(data_map["current_page"])
         total_page = int(data_map["total_page"])
@@ -122,7 +122,7 @@ class Fans(TbErrorExt, Containers[Fan]):
     page: Page_fan = dcs.field(default_factory=Page_fan)
 
     @staticmethod
-    def from_json(data_map: Mapping) -> Fans:
+    def from_json(data_map: Mapping) -> Self:
         objs = [Fan.from_json(m) for m in data_map["user_list"]]
         page = Page_fan.from_json(data_map["page"])
         return Fans(objs, page)

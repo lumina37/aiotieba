@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import dataclasses as dcs
 from functools import cached_property
+from typing import Self
 
 from ...exception import TbErrorExt
 from .._classdef import Containers, TypeMessage
@@ -32,7 +33,7 @@ class BlacklistOldUser:
     until_time: int = 0
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> BlacklistOldUser:
+    def from_proto(data_proto: TypeMessage) -> Self:
         user_id = data_proto.user_id
         portrait = data_proto.portrait
         if "?" in portrait:
@@ -86,7 +87,7 @@ class Page_blacklist:
     has_prev: bool = False
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Page_blacklist:
+    def from_proto(data_proto: TypeMessage) -> Self:
         current_page = data_proto.current_page
         has_more = bool(data_proto.has_more)
         has_prev = bool(data_proto.has_prev)
@@ -109,7 +110,7 @@ class BlacklistOldUsers(TbErrorExt, Containers[BlacklistOldUser]):
     page: Page_blacklist = dcs.field(default_factory=Page_blacklist)
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> BlacklistOldUsers:
+    def from_proto(data_proto: TypeMessage) -> Self:
         objs = [BlacklistOldUser.from_proto(p) for p in data_proto.mute_user]
         page = Page_blacklist.from_proto(data_proto.page)
         return BlacklistOldUsers(objs, page)

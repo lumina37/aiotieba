@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses as dcs
 from functools import cached_property
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from .._classdef import Containers
 from .._classdef.contents import (
@@ -43,7 +43,7 @@ class FragVoice_up:
     duration: float = 0.0
 
     @staticmethod
-    def from_json(data_map: Mapping) -> FragVoice_up:
+    def from_json(data_map: Mapping) -> Self:
         md5 = data_map["voice_md5"]
         duration = int(data_map["during_time"]) / 1000
         return FragVoice_up(md5, duration)
@@ -72,7 +72,7 @@ class Contents_pcup(Containers[TypeFragment]):
     voice: FragVoice_up = dcs.field(default_factory=FragVoice_up, repr=False)
 
     @staticmethod
-    def from_json(data_map: Mapping) -> Contents_pcup:
+    def from_json(data_map: Mapping) -> Self:
         content_maps = data_map["content"]
 
         texts = []
@@ -130,7 +130,7 @@ class UserInfo_pcu:
     nick_name_new: str = ""
 
     @staticmethod
-    def from_json(data_map: Mapping) -> UserInfo_pcu:
+    def from_json(data_map: Mapping) -> Self:
         user_id = data_map["id"]
         portrait = data_map["portrait"]
         if "?" in portrait:
@@ -197,7 +197,7 @@ class PcUserPost:
     create_time: int = 0
 
     @staticmethod
-    def from_json(data_map: Mapping) -> PcUserPost:
+    def from_json(data_map: Mapping) -> Self:
         post_info = data_map["post_info"]
         contents = Contents_pcup.from_json(post_info)
         pid = post_info["id"]
@@ -229,7 +229,7 @@ class PcUserPosts(Containers[PcUserPost]):
     """
 
     @staticmethod
-    def from_json(data_map: Mapping) -> PcUserPosts:
+    def from_json(data_map: Mapping) -> Self:
         user = UserInfo_pcu.from_json(data_map["list"][0]["post_info"]["author"])
         objs = [PcUserPost.from_json(m) for m in data_map["list"]]
         for upost in objs:

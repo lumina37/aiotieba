@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses as dcs
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from ...exception import TbErrorExt
 from ...helper import default_datetime
@@ -42,7 +42,7 @@ class BawuListMemberUser:
     join_time: datetime = dcs.field(default_factory=default_datetime)
 
     @staticmethod
-    def from_xml(data_tag: bs4.element.Tag) -> BawuListMemberUser:
+    def from_xml(data_tag: bs4.element.Tag) -> Self:
         left_cell_item = data_tag.td
 
         post_user_item = left_cell_item.a
@@ -82,6 +82,6 @@ class BawuListMemberUsers(TbErrorExt, Containers[BawuListMemberUser]):
     """
 
     @staticmethod
-    def from_xml(data_soup: bs4.BeautifulSoup) -> BawuListMemberUsers:
+    def from_xml(data_soup: bs4.BeautifulSoup) -> Self:
         objs = [BawuListMemberUser.from_xml(t) for t in data_soup.find("tbody").find_all("tr")]
         return BawuListMemberUsers(objs)

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -23,7 +23,7 @@ class UserInfo_login:
     user_name: str = ""
 
     @staticmethod
-    def from_json(data_map: Mapping) -> UserInfo_login:
+    def from_json(data_map: Mapping) -> Self:
         user_id = int(data_map["id"])
         portrait = data_map["portrait"]
         user_name = data_map["name"]

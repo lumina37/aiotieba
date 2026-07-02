@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses as dcs
 from functools import cached_property
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from ...enums import ThreadType
 from ...exception import TbErrorExt
@@ -47,13 +47,13 @@ class FragVoice_up:
     duration: float = 0.0
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> FragVoice_up:
+    def from_proto(data_proto: TypeMessage) -> Self:
         md5 = data_proto.voice_md5
         duration = int(data_proto.during_time) / 1000
         return FragVoice_up(md5, duration)
 
     @staticmethod
-    def from_json(data_map: Mapping) -> FragVoice_up:
+    def from_json(data_map: Mapping) -> Self:
         md5 = data_map["voice_md5"]
         duration = int(data_map["during_time"]) / 1000
         return FragVoice_up(md5, duration)
@@ -82,7 +82,7 @@ class Contents_up(Containers[TypeFragment]):
     voice: FragVoice_up = dcs.field(default_factory=FragVoice_up, repr=False)
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Contents_up:
+    def from_proto(data_proto: TypeMessage) -> Self:
         content_protos = data_proto.post_content
 
         texts = []
@@ -113,7 +113,7 @@ class Contents_up(Containers[TypeFragment]):
         return Contents_up(objs, texts, links, voice)
 
     @staticmethod
-    def from_json(data_map: Mapping) -> Contents_up:
+    def from_json(data_map: Mapping) -> Self:
         content_maps = data_map["post_content"]
 
         texts = []
@@ -171,7 +171,7 @@ class UserInfo_u:
     nick_name_new: str = ""
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> UserInfo_u:
+    def from_proto(data_proto: TypeMessage) -> Self:
         user_id = data_proto.user_id
         portrait = data_proto.user_portrait
         if "?" in portrait:
@@ -181,7 +181,7 @@ class UserInfo_u:
         return UserInfo_u(user_id, portrait, user_name, nick_name_new)
 
     @staticmethod
-    def from_json(data_map: Mapping) -> UserInfo_u:
+    def from_json(data_map: Mapping) -> Self:
         user_id = int(data_map["user_id"])
         portrait = data_map["user_portrait"]
         if "?" in portrait:
@@ -252,7 +252,7 @@ class UserPost:
     create_time: int = 0
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> UserPost:
+    def from_proto(data_proto: TypeMessage) -> Self:
         contents = Contents_up.from_proto(data_proto)
         pid = data_proto.post_id
         is_comment = bool(data_proto.post_type)
@@ -260,7 +260,7 @@ class UserPost:
         return UserPost(contents, 0, 0, pid, None, is_comment, create_time)
 
     @staticmethod
-    def from_json(data_map: Mapping) -> UserPost:
+    def from_json(data_map: Mapping) -> Self:
         contents = Contents_up.from_json(data_map)
         pid = int(data_map["post_id"])
         is_comment = bool(int(data_map["post_type"]))
@@ -298,7 +298,7 @@ class UserPosts(Containers[UserPost]):
     tid: int = 0
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> UserPosts:
+    def from_proto(data_proto: TypeMessage) -> Self:
         fid = data_proto.forum_id
         tid = data_proto.thread_id
         objs = [UserPost.from_proto(p) for p in data_proto.content]
@@ -308,7 +308,7 @@ class UserPosts(Containers[UserPost]):
         return UserPosts(objs, fid, tid)
 
     @staticmethod
-    def from_json(data_map: Mapping) -> UserPosts:
+    def from_json(data_map: Mapping) -> Self:
         fid = int(data_map["forum_id"])
         tid = int(data_map["thread_id"])
         objs = [UserPost.from_json(m) for m in data_map["content"]]
@@ -329,7 +329,7 @@ class UserPostss(TbErrorExt, Containers[UserPosts]):
     """
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> UserPostss:
+    def from_proto(data_proto: TypeMessage) -> Self:
         objs = [UserPosts.from_proto(p) for p in data_proto.post_list]
         if objs:
             user = UserInfo_u.from_proto(data_proto.post_list[0])
@@ -339,7 +339,7 @@ class UserPostss(TbErrorExt, Containers[UserPosts]):
         return UserPostss(objs)
 
     @staticmethod
-    def from_json(data_map: Mapping) -> UserPostss:
+    def from_json(data_map: Mapping) -> Self:
         objs = [UserPosts.from_json(m) for m in data_map["post_list"]]
         if objs:
             user = UserInfo_u.from_json(data_map["post_list"][0])
@@ -373,7 +373,7 @@ class FragImage_ut:
     hash: str = ""
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> FragImage_ut:
+    def from_proto(data_proto: TypeMessage) -> Self:
         src = data_proto.small_pic
         big_src = data_proto.big_pic
         origin_src = data_proto.origin_pic
@@ -415,7 +415,7 @@ class Contents_ut(Containers[TypeFragment]):
     voice: FragVoice_ut = dcs.field(default_factory=FragVoice_ut, repr=False)
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Contents_ut:
+    def from_proto(data_proto: TypeMessage) -> Self:
         content_protos = data_proto.first_post_content
 
         texts = []
@@ -528,7 +528,7 @@ class UserThread:
     create_time: int = 0
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> UserThread:
+    def from_proto(data_proto: TypeMessage) -> Self:
         contents = Contents_ut.from_proto(data_proto)
         title = data_proto.title
         fid = data_proto.forum_id
@@ -591,7 +591,7 @@ class UserThreads(TbErrorExt, Containers[UserThread]):
     """
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> UserThreads:
+    def from_proto(data_proto: TypeMessage) -> Self:
         objs = [UserThread.from_proto(p) for p in data_proto.post_list]
         if objs:
             user = UserInfo_u.from_proto(data_proto.post_list[0])

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 if TYPE_CHECKING:
     from .._classdef import TypeMessage
@@ -24,7 +24,7 @@ class LevelInfo:
     is_like: int = 0
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> LevelInfo:
+    def from_proto(data_proto: TypeMessage) -> Self:
         user_level = data_proto.user_level
         level_name = data_proto.level_name
         is_like = data_proto.is_like

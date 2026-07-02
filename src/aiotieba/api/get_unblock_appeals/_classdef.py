@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from ...exception import TbErrorExt
 from .._classdef import Containers
@@ -46,7 +46,7 @@ class Appeal:
     op_name: str = ""
 
     @staticmethod
-    def from_json(data_map: Mapping) -> Appeal:
+    def from_json(data_map: Mapping) -> Self:
         user_map = data_map["user"]
         user_id = user_map["id"]
         portrait = user_map["portrait"]
@@ -91,7 +91,7 @@ class Appeals(TbErrorExt, Containers[Appeal]):
     has_more: bool = False
 
     @staticmethod
-    def from_json(data_map: Mapping) -> Appeals:
+    def from_json(data_map: Mapping) -> Self:
         objs = [Appeal.from_json(m) for m in data_map["data"].get("appeal_list", [])]
         has_more = data_map["data"].get("has_more", False)
         return Appeals(objs, has_more)

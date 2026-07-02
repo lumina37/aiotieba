@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 if TYPE_CHECKING:
     from .._classdef import TypeMessage
@@ -23,7 +23,7 @@ class WsMsgGroupInfo:
     last_msg_id: int = 0
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> WsMsgGroupInfo:
+    def from_proto(data_proto: TypeMessage) -> Self:
         group_id = data_proto.groupId
         group_type = data_proto.groupType
         last_msg_id = data_proto.lastMsgId
