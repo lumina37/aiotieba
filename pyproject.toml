@@ -36,7 +36,7 @@ img = [
   "opencv-contrib-python-headless>=4.6.0.66,<5",
 ]
 img-gui = [
-  "opencv-contrib-python>=4.6.0.66,<5",
+  "opencv-contrib-python>=4.6.0.66,<6",
 ]
 speedup = [
   "orjson>=3.7.10,<4;python_version=='3.11'",
