@@ -61,6 +61,3 @@ wheel.exclude = ["*.c", "*.h", "*.txt"]
 [[tool.scikit-build.generate]]
 path = "aiotieba/__version__.py"
 template = '''__version__ = "${version}"'''
-
-[tool.uv]
-managed = true
