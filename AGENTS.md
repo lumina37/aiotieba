@@ -107,9 +107,4 @@ aiotieba/
 
 ## 可用的skills
 
-可用的skills位于`.agent/skills`目录下，供opencode辅助调用：
-
-| Skill | 说明 |
-| ------ | ------ |
-| **proto-compile** | 将Protobuf消息定义文件`.proto`编译为python代码。在变更或新增`.proto`文件时使用 |
-| **proto-decode** | 解析multipart二进制payload文件，提取Protobuf内容并使用`protoc --decode_raw`解码。在需要查看请求/响应的原始protobuf数据时使用 |
+可用的skills位于`.agent/skills`目录下
