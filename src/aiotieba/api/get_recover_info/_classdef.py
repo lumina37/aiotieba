@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses as dcs
 from functools import cached_property
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from ...exception import TbErrorExt
 from .._classdef import Containers
@@ -24,7 +24,7 @@ class FragText_ri:
     text: str = ""
 
     @staticmethod
-    def from_json(data_map: Mapping) -> FragText_ri:
+    def from_json(data_map: Mapping) -> Self:
         text = data_map["value"]
         return FragText_ri(text)
 
@@ -47,7 +47,7 @@ class FragImage_ri:
     hash: str = ""
 
     @staticmethod
-    def from_json(data_map: Mapping) -> FragImage_ri:
+    def from_json(data_map: Mapping) -> Self:
         src = data_map["url"]
         show_width = int(data_map["width"])
         show_height = int(data_map["height"])
@@ -75,7 +75,7 @@ class Contents_ri(Containers[TypeFragment]):
     imgs: list[FragImage_ri] = dcs.field(default_factory=list, repr=False)
 
     @staticmethod
-    def from_json(data_map: Mapping) -> Contents_ri:
+    def from_json(data_map: Mapping) -> Self:
         content_maps = data_map["content_detail"]
 
         texts = []
@@ -125,7 +125,7 @@ class UserInfo_ri:
     nick_name_new: str = ""
 
     @staticmethod
-    def from_json(data_map: Mapping) -> UserInfo_ri:
+    def from_json(data_map: Mapping) -> Self:
         portrait = data_map["portrait"]
         if "?" in portrait:
             portrait = portrait[:-13]
@@ -181,7 +181,7 @@ class RecoverInfo(TbErrorExt):
     user: UserInfo_ri = dcs.field(default_factory=UserInfo_ri)
 
     @staticmethod
-    def from_json(data_map: Mapping) -> RecoverInfo:
+    def from_json(data_map: Mapping) -> Self:
         thread_info = data_map["thread_info"]
 
         contents = Contents_ri.from_json(thread_info)

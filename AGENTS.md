@@ -34,7 +34,7 @@ aiotieba/
 │       ├── cache.py            # 吧名↔fid的双向缓存
 │       └── crypto/             # 密码学 C 扩展
 │           ├── CMakeLists.txt  # C扩展构建
-│           └── src/            # C扩展源码
+│           └── csrc/           # C扩展源码
 ├── tests/                      # pytest单元测试
 │   ├── conftest.py             # Client fixture（需要TB_BDUSS和TB_STOKEN环境变量）
 │   └── test_xx.py              # 各API的单元测试
@@ -42,8 +42,10 @@ aiotieba/
 │   ├── tutorial/               # 教程
 │   └── ref/                    # 参考文档
 │       └── classdef/           # 各API相关的数据类型文档
-├── scripts/
-│   └── proto_compile.py        # Protobuf一键编译脚本
+├── .agent/                     # AGENT辅助工具
+│   └── skills/                 # Skill定义
+│       ├── proto-compile/      # Protobuf编译skill
+│       └── proto-decode/       # Protobuf解码skill
 ├── pyproject.toml              # 项目元数据与依赖项
 ├── CMakeLists.txt              # 辅助scikit-build-core生成C扩展
 ├── mkdocs.yml                  # MkDocs文档配置

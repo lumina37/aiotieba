@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from ...enums import BawuPermType
 from ...exception import TbErrorExt
@@ -23,7 +23,7 @@ class BawuPerm(TbErrorExt):
     perms: BawuPermType = BawuPermType.NULL
 
     @staticmethod
-    def from_json(data_map: Mapping) -> BawuPerm:
+    def from_json(data_map: Mapping) -> Self:
         perms = BawuPermType.NULL
 
         for cate in ["category_user", "category_thread"]:

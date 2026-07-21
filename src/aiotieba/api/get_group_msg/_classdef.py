@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import dataclasses as dcs
+from typing import Self
 
 from ...exception import TbErrorExt
 from .._classdef import Containers, TypeMessage
@@ -24,7 +25,7 @@ class UserInfo_ws:
     user_name: str = ""
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> UserInfo_ws:
+    def from_proto(data_proto: TypeMessage) -> Self:
         user_id = data_proto.userId
         portrait = data_proto.portrait
         if "?" in portrait:
@@ -69,7 +70,7 @@ class WsMessage:
     create_time: int = 0
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> WsMessage:
+    def from_proto(data_proto: TypeMessage) -> Self:
         msg_id = data_proto.msgId
         msg_type = data_proto.msgType
         text = data_proto.content
@@ -94,7 +95,7 @@ class WsMsgGroup:
     messages: list[WsMessage] = dcs.field(default_factory=list)
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> WsMsgGroup:
+    def from_proto(data_proto: TypeMessage) -> Self:
         group_id = data_proto.groupInfo.groupId
         group_type = data_proto.groupInfo.groupType
         messages = [WsMessage.from_proto(p) for p in data_proto.msgList]
@@ -112,6 +113,6 @@ class WsMsgGroups(TbErrorExt, Containers[WsMsgGroup]):
     """
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> WsMsgGroups:
+    def from_proto(data_proto: TypeMessage) -> Self:
         objs = [WsMsgGroup.from_proto(p) for p in data_proto.groupInfo]
         return WsMsgGroups(objs)

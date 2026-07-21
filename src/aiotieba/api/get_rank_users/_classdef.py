@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from ...exception import TbErrorExt
 from ...helper import parse_json
@@ -31,7 +31,7 @@ class RankUser:
     is_vip: bool = False
 
     @staticmethod
-    def from_xml(data_tag: bs4.element.Tag) -> RankUser:
+    def from_xml(data_tag: bs4.element.Tag) -> Self:
         user_name_item = data_tag.td.next_sibling
         user_name = user_name_item.text
         is_vip = "drl_item_vip" in user_name_item.div["class"]
@@ -63,7 +63,7 @@ class Page_rank:
     has_prev: bool = False
 
     @staticmethod
-    def from_json(data_map: Mapping) -> Page_rank:
+    def from_json(data_map: Mapping) -> Self:
         current_page = data_map["cur_page"]
         total_page = data_map["total_num"]
         has_more = current_page < total_page
@@ -87,7 +87,7 @@ class RankUsers(TbErrorExt, Containers[RankUser]):
     page: Page_rank = dcs.field(default_factory=Page_rank)
 
     @staticmethod
-    def from_xml(data_soup: bs4.BeautifulSoup) -> RankUsers:
+    def from_xml(data_soup: bs4.BeautifulSoup) -> Self:
         objs = [RankUser.from_xml(t) for t in data_soup("tr", class_=["drl_list_item", "drl_list_item_self"])]
         page_item = data_soup.find("ul", class_="p_rank_pager")
         page_dict = parse_json(page_item["data-field"])

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 import bs4
 
@@ -30,7 +30,7 @@ class Block:
     day: int = 0
 
     @staticmethod
-    def from_xml(data_tag: bs4.element.Tag) -> Block:
+    def from_xml(data_tag: bs4.element.Tag) -> Self:
         id_tag = data_tag.a
         user_id = int(id_tag["attr-uid"])
         user_name = id_tag["attr-un"]
@@ -63,7 +63,7 @@ class Page_block:
     has_prev: bool = False
 
     @staticmethod
-    def from_json(data_map: Mapping) -> Page_block:
+    def from_json(data_map: Mapping) -> Self:
         page_size = data_map["size"]
         current_page = data_map["pn"]
         total_page = data_map["total_page"]

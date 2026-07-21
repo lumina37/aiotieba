@@ -1,4 +1,4 @@
-set(TBC_INCLUDE_DIRS ./include)
+set(TBC_INCLUDE_DIRS ./csrc)
 file(GLOB_RECURSE TBC_SOURCES *.c)
 
 Python3_add_library(crypto MODULE ${TBC_SOURCES})

@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import dataclasses as dcs
 from functools import cached_property
+from typing import Self
 
 from ...enums import Gender, PrivLike, PrivReply, ThreadType
 from ...exception import TbErrorExt
-from ...helper import deprecated
 from ...logging import get_logger as LOG
 from .._classdef import Containers, TypeMessage
 from .._classdef.contents import (
@@ -55,7 +55,7 @@ class Contents_c(Containers[TypeFragment]):
     voice: FragVoice_c = dcs.field(default_factory=FragVoice_c, repr=False)
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Contents_c:
+    def from_proto(data_proto: TypeMessage) -> Self:
         content_protos = data_proto.content
 
         texts = []
@@ -157,7 +157,7 @@ class UserInfo_c:
     priv_reply: PrivReply = PrivReply.ALL
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> UserInfo_c:
+    def from_proto(data_proto: TypeMessage) -> Self:
         user_id = data_proto.id
         portrait = data_proto.portrait
         if "?" in portrait:
@@ -259,7 +259,7 @@ class Comment:
     is_thread_author: bool = False
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Comment:
+    def from_proto(data_proto: TypeMessage) -> Self:
         contents = Contents_c.from_proto(data_proto)
 
         reply_to_id = 0
@@ -326,7 +326,7 @@ class Page_c:
     has_prev: bool = False
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Page_c:
+    def from_proto(data_proto: TypeMessage) -> Self:
         page_size = data_proto.page_size
         current_page = data_proto.current_page
         total_page = data_proto.total_page
@@ -356,7 +356,7 @@ class Forum_c:
     subcategory: str = ""
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Forum_c:
+    def from_proto(data_proto: TypeMessage) -> Self:
         fid = data_proto.id
         fname = data_proto.name
         category = data_proto.first_class
@@ -393,7 +393,7 @@ class UserInfo_ct:
     is_god: bool = False
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> UserInfo_ct:
+    def from_proto(data_proto: TypeMessage) -> Self:
         user_id = data_proto.id
         portrait = data_proto.portrait
         if "?" in portrait:
@@ -466,7 +466,7 @@ class Thread_c:
     reply_num: int = 0
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Thread_c:
+    def from_proto(data_proto: TypeMessage) -> Self:
         title = data_proto.title
         tid = data_proto.id
         user = UserInfo_ct.from_proto(data_proto.author)
@@ -487,11 +487,6 @@ class Thread_c:
     @property
     def author_id(self) -> int:
         return self.user.user_id
-
-    @property
-    @deprecated("使用 thread.type == ThreadType.HELP 作为替代")
-    def is_help(self) -> bool:
-        return self.type == ThreadType.HELP
 
 
 @dcs.dataclass
@@ -518,7 +513,7 @@ class FragImage_cp:
     hash: str = ""
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> FragImage_cp:
+    def from_proto(data_proto: TypeMessage) -> Self:
         src = data_proto.cdn_src
         big_src = data_proto.big_cdn_src
         origin_src = data_proto.origin_src
@@ -564,7 +559,7 @@ class Contents_cp(Containers[TypeFragment]):
     voice: FragVoice_cp = dcs.field(default_factory=FragVoice_cp, repr=False)
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Contents_cp:
+    def from_proto(data_proto: TypeMessage) -> Self:
         content_protos = data_proto.content
 
         texts = []
@@ -670,7 +665,7 @@ class UserInfo_cp:
     priv_reply: PrivReply = PrivReply.ALL
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> UserInfo_cp:
+    def from_proto(data_proto: TypeMessage) -> Self:
         user_id = data_proto.id
         portrait = data_proto.portrait
         if "?" in portrait:
@@ -752,7 +747,7 @@ class Post_c:
     create_time: int = 0
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Post_c:
+    def from_proto(data_proto: TypeMessage) -> Self:
         contents = Contents_cp.from_proto(data_proto)
         sign = "".join(p.text for p in data_proto.signature.content if p.type == 0)
         pid = data_proto.id
@@ -803,7 +798,7 @@ class Comments(TbErrorExt, Containers[Comment]):
     post: Post_c = dcs.field(default_factory=Post_c)
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Comments:
+    def from_proto(data_proto: TypeMessage) -> Self:
         page = Page_c.from_proto(data_proto.page)
         forum = Forum_c.from_proto(data_proto.forum)
         thread = Thread_c.from_proto(data_proto.thread)

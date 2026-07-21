@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import dataclasses as dcs
 from functools import cached_property
+from typing import Self
 
 from ...enums import Gender, PrivLike, PrivReply, ThreadType
 from ...exception import TbErrorExt
-from ...helper import deprecated
 from ...logging import get_logger as LOG
 from .._classdef import Containers, TypeMessage, VoteInfo
 from .._classdef.contents import (
@@ -55,7 +55,7 @@ class FragImage_feed:
     hash: str = ""
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> FragImage_feed:
+    def from_proto(data_proto: TypeMessage) -> Self:
         src = data_proto.small_pic_url
         big_src = data_proto.big_pic_url
         origin_src = data_proto.origin_pic_url
@@ -81,7 +81,7 @@ class FragEmoji_feed:
     desc: str = ""
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> FragEmoji_feed:
+    def from_proto(data_proto: TypeMessage) -> Self:
         id_ = data_proto.name
         desc = data_proto.c
         return FragEmoji_feed(id_, desc)
@@ -117,7 +117,7 @@ class Contents_t(Containers[TypeFragment]):
     voice: FragVoice_t = dcs.field(default_factory=FragVoice_t, repr=False)
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Contents_t:
+    def from_proto(data_proto: TypeMessage) -> Self:
         content_protos = data_proto.first_post_content
 
         texts = []
@@ -188,7 +188,7 @@ class Contents_t(Containers[TypeFragment]):
         return Contents_t(objs, texts, emojis, imgs, ats, links, tiebapluses, video, voice)
 
     @staticmethod
-    def from_feed(data_proto: TypeMessage) -> Contents_t:
+    def from_feed(data_proto: TypeMessage) -> Self:
         texts = []
         emojis = []
         imgs = []
@@ -255,7 +255,7 @@ class Page_t:
     has_prev: bool = False
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Page_t:
+    def from_proto(data_proto: TypeMessage) -> Self:
         page_size = data_proto.page_size
         current_page = data_proto.current_page
         if current_page == 0 and page_size != 0:
@@ -311,7 +311,7 @@ class UserInfo_t:
     priv_reply: PrivReply = PrivReply.ALL
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> UserInfo_t:
+    def from_proto(data_proto: TypeMessage) -> Self:
         user_id = data_proto.id
         portrait = data_proto.portrait
         if "?" in portrait:
@@ -395,7 +395,7 @@ class FragImage_st:
     hash: str = ""
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> FragImage_st:
+    def from_proto(data_proto: TypeMessage) -> Self:
         src = data_proto.water_pic
         big_src = data_proto.small_pic
         origin_src = data_proto.big_pic
@@ -441,7 +441,7 @@ class Contents_st(Containers[TypeFragment]):
     voice: FragVoice_st = dcs.field(default_factory=FragVoice_st, repr=False)
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Contents_st:
+    def from_proto(data_proto: TypeMessage) -> Self:
         content_protos = data_proto.content
 
         texts = []
@@ -548,7 +548,7 @@ class ShareThread:
     vote_info: VoteInfo = dcs.field(default_factory=VoteInfo)
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> ShareThread:
+    def from_proto(data_proto: TypeMessage) -> Self:
         contents = Contents_st.from_proto(data_proto)
         author_id = data_proto.content[0].uid if data_proto.content else 0
         title = data_proto.title
@@ -640,7 +640,7 @@ class Thread:
     last_time: int = 0
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Thread:
+    def from_proto(data_proto: TypeMessage) -> Self:
         contents = Contents_t.from_proto(data_proto)
         title = data_proto.title
         tid = data_proto.id
@@ -701,7 +701,7 @@ class Thread:
         )
 
     @staticmethod
-    def from_feed(data_proto: TypeMessage) -> Thread:
+    def from_feed(data_proto: TypeMessage) -> Self:
         contents = Contents_t.from_feed(data_proto)
 
         business_info_map = {it.key: it.value for it in data_proto.business_info}
@@ -778,11 +778,6 @@ class Thread:
             text = self.contents.text
         return text
 
-    @property
-    @deprecated("使用 thread.type == ThreadType.HELP 作为替代")
-    def is_help(self) -> bool:
-        return self.type == ThreadType.HELP
-
 
 @dcs.dataclass
 class Forum_t:
@@ -818,7 +813,7 @@ class Forum_t:
     has_rule: bool = False
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Forum_t:
+    def from_proto(data_proto: TypeMessage) -> Self:
         forum_proto = data_proto.forum
         fid = forum_proto.id
         fname = forum_proto.name
@@ -853,7 +848,7 @@ class Threads(TbErrorExt, Containers[Thread]):
     tab_map: dict[str, int] = dcs.field(default_factory=dict)
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Threads:
+    def from_proto(data_proto: TypeMessage) -> Self:
         page = Page_t.from_proto(data_proto.page)
         forum = Forum_t.from_proto(data_proto)
         tab_map = {p.tab_name: p.tab_id for p in data_proto.nav_tab_info.tab}
@@ -868,7 +863,7 @@ class Threads(TbErrorExt, Containers[Thread]):
         return Threads(objs, page, forum, tab_map)
 
     @staticmethod
-    def from_feed(data_proto: TypeMessage) -> Threads:
+    def from_feed(data_proto: TypeMessage) -> Self:
         # 从12.65版本开始部分热门吧的主题帖列表采用feed形式推送
         page = Page_t.from_proto(data_proto.page)
         forum = Forum_t.from_proto(data_proto)

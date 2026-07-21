@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from ...exception import TbErrorExt
 from .._classdef import Containers
@@ -29,7 +29,7 @@ class FollowForum:
     exp: int = 0
 
     @staticmethod
-    def from_json(data_map: Mapping) -> FollowForum:
+    def from_json(data_map: Mapping) -> Self:
         fid = int(data_map["id"])
         fname = data_map["name"]
         level = int(data_map["level_id"])
@@ -58,7 +58,7 @@ class FollowForums(TbErrorExt, Containers[FollowForum]):
     has_more: bool = False
 
     @staticmethod
-    def from_json(data_map: Mapping) -> FollowForums:
+    def from_json(data_map: Mapping) -> Self:
         if forum_list := data_map.get("forum_list", {}):
             forum_dicts = forum_list.get("non-gconforum", [])
             objs = [FollowForum.from_json(m) for m in forum_dicts]

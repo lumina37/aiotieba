@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses as dcs
 from functools import cached_property
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from ...enums import Gender
 from ...exception import TbErrorExt
@@ -49,7 +49,7 @@ class UserInfo_uc(TbErrorExt):
     ip: str = ""
 
     @staticmethod
-    def from_json(data_map: Mapping) -> UserInfo_uc:
+    def from_json(data_map: Mapping) -> Self:
         portrait = data_map["portrait"]
         if "?" in portrait:
             portrait = portrait[:-13]

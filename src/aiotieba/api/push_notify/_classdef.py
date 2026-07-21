@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 if TYPE_CHECKING:
     from .._classdef import TypeMessage
@@ -27,7 +27,7 @@ class WsNotify:
     create_time: int = 0
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> WsNotify:
+    def from_proto(data_proto: TypeMessage) -> Self:
         data_proto = data_proto.data
         note_type = data_proto.type
         group_type = data_proto.groupType

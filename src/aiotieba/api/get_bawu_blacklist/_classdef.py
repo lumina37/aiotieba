@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from ...exception import TbErrorExt
 from .._classdef import Containers
@@ -28,7 +28,7 @@ class BawuBlacklistUser:
     user_name: str = ""
 
     @staticmethod
-    def from_xml(data_tag: bs4.element.Tag) -> BawuBlacklistUser:
+    def from_xml(data_tag: bs4.element.Tag) -> Self:
         user_info_item = data_tag.previous_sibling.input
         user_name = user_info_item["data-user-name"]
         user_id = int(user_info_item["data-user-id"])
@@ -74,7 +74,7 @@ class Page_bwblacklist:
     has_prev: bool = False
 
     @staticmethod
-    def from_xml(data_soup: bs4.BeautifulSoup) -> Page_bwblacklist:
+    def from_xml(data_soup: bs4.BeautifulSoup) -> Self:
         total_count_tag = data_soup.find("div", class_="breadcrumbs")
         total_count = int(total_count_tag.em.text)
 
@@ -113,7 +113,7 @@ class BawuBlacklistUsers(TbErrorExt, Containers[BawuBlacklistUser]):
     page: Page_bwblacklist = dcs.field(default_factory=Page_bwblacklist)
 
     @staticmethod
-    def from_xml(data_soup: bs4.BeautifulSoup) -> BawuBlacklistUsers:
+    def from_xml(data_soup: bs4.BeautifulSoup) -> Self:
         objs = [BawuBlacklistUser.from_xml(t) for t in data_soup("td", class_="left_cell")]
         page = Page_bwblacklist.from_xml(data_soup)
         return BawuBlacklistUsers(objs, page)

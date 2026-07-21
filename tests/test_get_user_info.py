@@ -21,14 +21,8 @@ async def test_get_user_info(client: tb.Client):
     assert self_info.age > 0
     assert self_info.ip != ""
     assert self_info.post_num > 0
-    assert self_info.priv_like != 0
-    assert self_info.priv_reply != 0
-
-    homepage = await client.get_homepage(self_info.user_id)
-    user = homepage.user
-    assert user.user_id == self_info.user_id
-    assert user.portrait == self_info.portrait
-    assert user.user_name == self_info.user_name
+    assert self_info.priv_like != tb.PrivLike.UNKNOWN
+    assert self_info.priv_reply != tb.PrivReply.UNKNOWN
 
     user = await client.get_user_info(self_info.portrait, tb.enums.ReqUInfo.BASIC)
     assert user.user_id == self_info.user_id
@@ -45,7 +39,7 @@ async def test_get_user_info(client: tb.Client):
     assert user.portrait == self_info.portrait
     assert user.user_name == self_info.user_name
 
-    user = await client.get_user_info(user.portrait)
+    user = await client.get_user_info(user.user_name)
     assert user.user_id == self_info.user_id
     assert user.portrait == self_info.portrait
     assert user.user_name == self_info.user_name
@@ -54,8 +48,8 @@ async def test_get_user_info(client: tb.Client):
     assert user.age > 0
     assert user.ip != ""
     assert user.post_num > 0
-    assert user.priv_like != 0
-    assert user.priv_reply != 0
+    assert user.priv_like != tb.PrivLike.UNKNOWN
+    assert user.priv_reply != tb.PrivReply.UNKNOWN
 
     user = await client.get_user_info(user.user_id)
     assert user.user_id == self_info.user_id
@@ -66,12 +60,111 @@ async def test_get_user_info(client: tb.Client):
     assert user.age > 0
     assert user.ip != ""
     assert user.post_num > 0
-    assert user.priv_like != 0
-    assert user.priv_reply != 0
+    assert user.priv_like != tb.PrivLike.UNKNOWN
+    assert user.priv_reply != tb.PrivReply.UNKNOWN
 
-    user = await client.tieba_uid2user_info(3356245857)
+    user = await client.get_user_info(user.portrait)
     assert user.user_id == self_info.user_id
     assert user.portrait == self_info.portrait
     assert user.user_name == self_info.user_name
     assert user.tieba_uid > 0
+    assert user.glevel > 0
     assert user.age > 0
+    assert user.ip != ""
+    assert user.post_num > 0
+    assert user.priv_like != tb.PrivLike.UNKNOWN
+    assert user.priv_reply != tb.PrivReply.UNKNOWN
+
+
+@pytest.mark.flaky(reruns=2, reruns_delay=5.0)
+@pytest.mark.asyncio(loop_scope="session")
+async def test_get_uinfo_xx(client: tb.Client):
+    user = await client._get_uinfo_profile(957339815)
+    assert user.user_id > 0
+    assert user.portrait != ""
+    assert user.user_name != ""
+    assert user.nick_name_new != ""
+    assert user.tieba_uid > 0
+    assert user.glevel > 0
+    assert user.gender != tb.Gender.UNKNOWN
+    assert user.age > 0.0
+    assert user.post_num > 0
+    assert user.agree_num > 0
+    assert user.fan_num > 0
+    assert user.follow_num > 0
+    assert user.forum_num > 0
+    assert user.sign != ""
+    assert user.ip != ""
+    assert len(user.icons) > 0
+    assert user.priv_like != tb.PrivLike.UNKNOWN
+    assert user.priv_reply != tb.PrivReply.UNKNOWN
+
+    user = await client._get_uinfo_profile("tb.1.8277e641.gUE2cTq4A4z5fi2EHn5k3Q")
+    assert user.user_id > 0
+    assert user.portrait != ""
+    assert user.user_name != ""
+    assert user.nick_name_new != ""
+    assert user.tieba_uid > 0
+    assert user.glevel > 0
+    assert user.gender != tb.Gender.UNKNOWN
+    assert user.age > 0.0
+    assert user.post_num > 0
+    assert user.agree_num > 0
+    assert user.fan_num > 0
+    assert user.follow_num > 0
+    assert user.forum_num > 0
+    assert user.sign != ""
+    assert user.ip != ""
+    assert len(user.icons) > 0
+    assert user.priv_like != tb.PrivLike.UNKNOWN
+    assert user.priv_reply != tb.PrivReply.UNKNOWN
+
+    user = await client._get_uinfo_getuserinfo(957339815)
+    assert user.user_id > 0
+    assert user.portrait != ""
+    assert user.user_name != ""
+    assert user.nick_name_old != ""
+    assert user.gender != tb.Gender.UNKNOWN
+
+    user = await client._get_uinfo_getUserInfo(957339815)
+    assert user.user_id > 0
+    assert user.portrait != ""
+    assert user.user_name != ""
+    assert user.nick_name_new != ""
+
+    user = await client._get_uinfo_user_json("LuminaOvO")
+    assert user.user_id > 0
+    assert user.portrait != ""
+    assert user.user_name != ""
+
+    user = await client._get_uinfo_panel("LuminaOvO")
+    assert user.portrait != ""
+    assert user.user_name != ""
+    assert user.nick_name_new != ""
+    assert user.nick_name_old != ""
+    assert user.gender != tb.Gender.UNKNOWN
+    assert user.age > 0.0
+    assert user.post_num > 0
+    assert user.fan_num > 0
+
+    user = await client._get_uinfo_panel("tb.1.8277e641.gUE2cTq4A4z5fi2EHn5k3Q")
+    assert user.portrait != ""
+    assert user.user_name != ""
+    assert user.nick_name_new != ""
+    assert user.nick_name_old != ""
+    assert user.gender != tb.Gender.UNKNOWN
+    assert user.age > 0.0
+    assert user.post_num > 0
+    assert user.fan_num > 0
+
+    user = await client._get_uinfo_userCard("tb.1.8277e641.gUE2cTq4A4z5fi2EHn5k3Q")
+    assert user.portrait != ""
+    assert user.nick_name_new != ""
+    assert user.tieba_uid > 0
+    assert user.gender != tb.Gender.UNKNOWN
+    assert user.age > 0.0
+    assert user.agree_num > 0
+    assert user.fan_num > 0
+    assert user.follow_num > 0
+    assert user.sign != ""
+    assert user.ip != ""

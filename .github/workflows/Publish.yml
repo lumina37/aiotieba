@@ -12,17 +12,17 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: ["ubuntu-latest", "windows-2025-vs2026", "macos-26", "macos-26-intel"]
+        os: ["ubuntu-latest", "windows-2025-vs2026", "macos-26"]
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         
       - name: Setup UV
         uses: astral-sh/setup-uv@v7
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.4.1
+        uses: pypa/cibuildwheel@v4.1.0
         with:
           config-file: "cibuildwheel.toml"
 
@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-slim
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Build sdist
         run: pipx run build --sdist

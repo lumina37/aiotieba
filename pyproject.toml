@@ -1,6 +1,6 @@
 [project]
 name = "aiotieba"
-version = "4.7.2a2"
+version = "4.7.2a8"
 description = "Asynchronous I/O Client for Baidu Tieba"
 authors = [{ name = "lumina37", email = "starry.qvq@gmail.com" }]
 urls = { Repository = "https://github.com/lumina37/aiotieba/", Documentation = "https://aiotieba.cc/" }
@@ -28,13 +28,15 @@ dependencies = [
   "lxml>=5.3.0,<7;python_version=='3.13'",
   "lxml>=6.0.1,<7;python_version>='3.14'",
   "protobuf>=4.21.1,<8",
-  "cryptography>=35.0.0,<49",
+  "cryptography>=35.0.0,<50",
 ]
 
 [project.optional-dependencies]
 img = [
-  "opencv-contrib-python-headless>=4.6.0.66,<5;sys_platform=='linux'",
-  "opencv-contrib-python>=4.6.0.66,<5;sys_platform!='linux'",
+  "opencv-contrib-python-headless>=4.6.0.66,<6",
+]
+img-gui = [
+  "opencv-contrib-python>=4.6.0.66,<6",
 ]
 speedup = [
   "orjson>=3.7.10,<4;python_version=='3.11'",
@@ -44,11 +46,11 @@ speedup = [
 ]
 
 [dependency-groups]
-dev = ["pytest==9.0.3", "pytest-asyncio==1.4.0", "pytest-rerunfailures==16.3"]
+dev = ["pytest==9.1.1", "pytest-asyncio==1.4.0", "pytest-rerunfailures==16.4"]
 docs = ["mkdocs-material", "mkdocstrings[python]"]
 
 [build-system]
-requires = ["scikit-build-core>=0.12.2,<0.13"]
+requires = ["scikit-build-core>=1.0,<1.1"]
 build-backend = "scikit_build_core.build"
 
 [tool.scikit-build]
@@ -59,6 +61,3 @@ wheel.exclude = ["*.c", "*.h", "*.txt"]
 [[tool.scikit-build.generate]]
 path = "aiotieba/__version__.py"
 template = '''__version__ = "${version}"'''
-
-[tool.uv]
-managed = true

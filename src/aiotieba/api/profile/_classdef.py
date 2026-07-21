@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import dataclasses as dcs
 from functools import cached_property
+from typing import Self
 
 from ...enums import Gender, PrivLike, PrivReply
 from ...exception import TbErrorExt
@@ -89,7 +90,7 @@ class UserInfo_pf(TbErrorExt):
     priv_reply: PrivReply = PrivReply.ALL
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> UserInfo_pf:
+    def from_proto(data_proto: TypeMessage) -> Self:
         user_proto = data_proto.user
         user_id = user_proto.id
         portrait = user_proto.portrait
@@ -194,7 +195,7 @@ class FragImage_pf:
     hash: str = ""
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> FragImage_pf:
+    def from_proto(data_proto: TypeMessage) -> Self:
         src = data_proto.big_pic
         origin_src = data_proto.origin_pic
         origin_size = data_proto.origin_size
@@ -235,7 +236,7 @@ class Contents_pf(Containers[TypeFragment]):
     voice: FragVoice_pf = dcs.field(default_factory=FragVoice_pf, repr=False)
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Contents_pf:
+    def from_proto(data_proto: TypeMessage) -> Self:
         content_protos = data_proto.first_post_content
 
         texts = []
@@ -343,7 +344,7 @@ class Thread_pf:
     create_time: int = 0
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Thread_pf:
+    def from_proto(data_proto: TypeMessage) -> Self:
         contents = Contents_pf.from_proto(data_proto)
         title = data_proto.title
         fid = data_proto.forum_id
@@ -408,7 +409,7 @@ class Homepage(TbErrorExt, Containers[Thread_pf]):
     user: UserInfo_pf = dcs.field(default_factory=UserInfo_pf)
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Homepage:
+    def from_proto(data_proto: TypeMessage) -> Self:
         objs = [Thread_pf.from_proto(p) for p in data_proto.post_list]
         user = UserInfo_pf.from_proto(data_proto)
 

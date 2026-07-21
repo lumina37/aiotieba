@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses as dcs
 from functools import cached_property
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from ...enums import BlacklistType
 from ...exception import TbErrorExt
@@ -38,7 +38,7 @@ class BlacklistUser:
     btype: BlacklistType = BlacklistType.NULL
 
     @staticmethod
-    def from_json(data_map: Mapping) -> BlacklistUser:
+    def from_json(data_map: Mapping) -> Self:
         user_id = int(data_map["uid"])
         portrait = data_map["portrait"]
         if "?" in portrait:
@@ -98,6 +98,6 @@ class BlacklistUsers(TbErrorExt, Containers[BlacklistUser]):
     """
 
     @staticmethod
-    def from_json(data_map: Mapping) -> BlacklistUsers:
+    def from_json(data_map: Mapping) -> Self:
         objs = [BlacklistUser.from_json(m) for m in data_map.get("user_perm_list", [])]
         return BlacklistUsers(objs)

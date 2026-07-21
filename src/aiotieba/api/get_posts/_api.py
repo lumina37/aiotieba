@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import yarl
 
-from ...const import APP_BASE_HOST, STABLE_VERSION
+from ...const import APP_BASE_HOST, LEGACY_VERSION
 from ...exception import TiebaServerError
 from ._classdef import Posts
 from .protobuf import PbPageReqIdl_pb2, PbPageResIdl_pb2
@@ -28,7 +28,7 @@ def pack_proto(
 ) -> bytes:
     req_proto = PbPageReqIdl_pb2.PbPageReqIdl()
     req_proto.data.common._client_type = 2
-    req_proto.data.common._client_version = STABLE_VERSION
+    req_proto.data.common._client_version = LEGACY_VERSION
     req_proto.data.kz = tid
     req_proto.data.pn = pn
     req_proto.data.rn = rn if rn > 1 else 2

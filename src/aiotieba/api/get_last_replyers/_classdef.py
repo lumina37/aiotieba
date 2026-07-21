@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import dataclasses as dcs
 from functools import cached_property
+from typing import Self
 
 from ...exception import TbErrorExt
 from .._classdef import Containers, TypeMessage
@@ -31,7 +32,7 @@ class Page_lp:
     has_prev: bool = False
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Page_lp:
+    def from_proto(data_proto: TypeMessage) -> Self:
         page_size = data_proto.page_size
         current_page = data_proto.current_page
         if current_page == 0 and page_size != 0:
@@ -65,7 +66,7 @@ class UserInfo_lp:
     nick_name_old: str = ""
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> UserInfo_lp:
+    def from_proto(data_proto: TypeMessage) -> Self:
         user_id = data_proto.id
         portrait = data_proto.portrait
         if "?" in portrait:
@@ -124,7 +125,7 @@ class LastReplyer:
     nick_name_old: str = ""
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> LastReplyer:
+    def from_proto(data_proto: TypeMessage) -> Self:
         user_id = data_proto.id
         user_name = data_proto.name
         nick_name_old = data_proto.name_show
@@ -195,7 +196,7 @@ class Thread_lp:
     last_time: int = 0
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Thread_lp:
+    def from_proto(data_proto: TypeMessage) -> Self:
         title = data_proto.title
         tid = data_proto.id
         pid = data_proto.first_post_id
@@ -236,7 +237,7 @@ class Forum_lp:
     fname: str = ""
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Forum_lp:
+    def from_proto(data_proto: TypeMessage) -> Self:
         forum_proto = data_proto.forum
         fid = forum_proto.id
         fname = forum_proto.name
@@ -262,7 +263,7 @@ class Threads_lp(TbErrorExt, Containers[Thread_lp]):
     forum: Forum_lp = dcs.field(default_factory=Forum_lp)
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Threads_lp:
+    def from_proto(data_proto: TypeMessage) -> Self:
         page = Page_lp.from_proto(data_proto.page)
         forum = Forum_lp.from_proto(data_proto)
 

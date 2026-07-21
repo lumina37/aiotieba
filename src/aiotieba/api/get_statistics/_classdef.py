@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -34,7 +34,7 @@ class Statistics:
     recommend: list[int] = dcs.field(default_factory=list)
 
     @staticmethod
-    def from_json(data_seq: Sequence) -> Statistics:
+    def from_json(data_seq: Sequence) -> Self:
         def extract(i: int) -> list[int]:
             seq: list = data_seq[i]["group"][1]["values"]
             seq = [int(item["value"]) for item in seq]

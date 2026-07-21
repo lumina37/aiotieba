@@ -77,6 +77,7 @@ PyObject* rc4_42(PyObject* Py_UNUSED(self), PyObject* const* args, Py_ssize_t na
 
     tbc_rc4_42(xyusMd5Str, cbcSecKey, dst);
 
+    // py315: should use [`PyBytesWriter`](https://peps.python.org/pep-0782/) instead
     return PyBytes_FromStringAndSize((char*)dst, TBC_RC4_SIZE);
 }
 

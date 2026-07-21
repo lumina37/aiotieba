@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 if TYPE_CHECKING:
     from .common import TypeMessage
@@ -21,7 +21,7 @@ class VoteOption:
     text: str = ""
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> VoteOption:
+    def from_proto(data_proto: TypeMessage) -> Self:
         vote_num = data_proto.num
         text = data_proto.text
         return VoteOption(vote_num, text)
@@ -47,7 +47,7 @@ class VoteInfo:
     total_user: int = 0
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> VoteInfo:
+    def from_proto(data_proto: TypeMessage) -> Self:
         title = data_proto.title
         is_multi = bool(data_proto.is_multi)
         options = [VoteOption.from_proto(p) for p in data_proto.options]

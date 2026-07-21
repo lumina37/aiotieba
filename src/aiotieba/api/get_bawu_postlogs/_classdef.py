@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses as dcs
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from ...exception import TbErrorExt
 from ...helper import default_datetime
@@ -29,7 +29,7 @@ class Media_postlog:
     hash: str = ""
 
     @staticmethod
-    def from_xml(data_tag: bs4.element.Tag) -> Media_postlog:
+    def from_xml(data_tag: bs4.element.Tag) -> Self:
         if img_item := data_tag.img:
             src = img_item["original"]
             hash_ = _IMAGEHASH_EXP.search(src).group(1)
@@ -74,7 +74,7 @@ class BawuPostLog:
     op_time: datetime = dcs.field(default_factory=default_datetime)
 
     @staticmethod
-    def from_xml(data_tag: bs4.element.Tag) -> BawuPostLog:
+    def from_xml(data_tag: bs4.element.Tag) -> Self:
         left_cell_item = data_tag.td
 
         post_meta_item = left_cell_item.find("div", class_="post_meta")
@@ -144,7 +144,7 @@ class Page_postlog:
     has_prev: bool = False
 
     @staticmethod
-    def from_xml(data_soup: bs4.BeautifulSoup) -> Page_postlog:
+    def from_xml(data_soup: bs4.BeautifulSoup) -> Self:
         total_count_tag = data_soup.find("div", class_="breadcrumbs")
         total_count = int(total_count_tag.em.text)
 
@@ -183,7 +183,7 @@ class BawuPostLogs(TbErrorExt, Containers[BawuPostLog]):
     page: Page_postlog = dcs.field(default_factory=Page_postlog)
 
     @staticmethod
-    def from_xml(data_soup: bs4.BeautifulSoup) -> BawuPostLogs:
+    def from_xml(data_soup: bs4.BeautifulSoup) -> Self:
         objs = [BawuPostLog.from_xml(t) for t in data_soup.find("tbody").find_all("tr")]
         page = Page_postlog.from_xml(data_soup)
         return BawuPostLogs(objs, page)

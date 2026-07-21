@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from ...exception import TbErrorExt
 
@@ -29,7 +29,7 @@ class UserInfo_json(TbErrorExt):
     user_name: str = ""
 
     @staticmethod
-    def from_json(data_map: Mapping) -> UserInfo_json:
+    def from_json(data_map: Mapping) -> Self:
         user_id = data_map["id"]
         portrait = data_map["portrait"]
         user_name = ""

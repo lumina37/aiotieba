@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses as dcs
 from functools import cached_property
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from ...exception import TbErrorExt
 from .._classdef import Containers
@@ -33,7 +33,7 @@ class Follow:
     nick_name_new: str = ""
 
     @staticmethod
-    def from_json(data_map: Mapping) -> Follow:
+    def from_json(data_map: Mapping) -> Self:
         user_id = int(data_map["id"])
         portrait = data_map["portrait"]
         if "?" in portrait:
@@ -92,7 +92,7 @@ class Page_follow:
     has_prev: bool = False
 
     @staticmethod
-    def from_json(data_map: Mapping) -> Page_follow:
+    def from_json(data_map: Mapping) -> Self:
         current_page = int(data_map["pn"])
         total_count = int(data_map["total_follow_num"])
         has_more = bool(int(data_map["has_more"]))
@@ -116,7 +116,7 @@ class Follows(TbErrorExt, Containers[Follow]):
     page: Page_follow = dcs.field(default_factory=Page_follow)
 
     @staticmethod
-    def from_json(data_map: Mapping) -> Follows:
+    def from_json(data_map: Mapping) -> Self:
         objs = [Follow.from_json(m) for m in data_map["follow_list"]]
         page = Page_follow.from_json(data_map)
         return Follows(objs, page)

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses as dcs
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from ...exception import TbErrorExt
 from .._classdef import Containers
@@ -26,7 +26,7 @@ class MemberUser:
     level: int = 0
 
     @staticmethod
-    def from_xml(data_tag: bs4.element.Tag) -> MemberUser:
+    def from_xml(data_tag: bs4.element.Tag) -> Self:
         user_item = data_tag.a
         user_name = user_item["title"]
         portrait = user_item["href"][14:]
@@ -55,7 +55,7 @@ class Page_member:
     has_prev: bool = False
 
     @staticmethod
-    def from_xml(data_tag: bs4.element.Tag) -> Page_member:
+    def from_xml(data_tag: bs4.element.Tag) -> Self:
         current_page = int(data_tag.text)
         total_page_item = data_tag.parent.next_sibling
         total_page = int(total_page_item.text[1:-1])
@@ -80,7 +80,7 @@ class MemberUsers(TbErrorExt, Containers[MemberUser]):
     page: Page_member = dcs.field(default_factory=Page_member)
 
     @staticmethod
-    def from_xml(data_soup: bs4.BeautifulSoup) -> MemberUsers:
+    def from_xml(data_soup: bs4.BeautifulSoup) -> Self:
         objs = [MemberUser.from_xml(t) for t in data_soup("div", class_="name_wrap")]
         page = Page_member.from_xml(data_soup.find("div", class_="tbui_pagination").find("li", class_="active"))
         return MemberUsers(objs, page)

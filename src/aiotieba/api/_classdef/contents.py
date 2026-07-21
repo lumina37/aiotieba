@@ -3,7 +3,7 @@ from __future__ import annotations
 import dataclasses as dcs
 import re
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Protocol, TypeVar
+from typing import TYPE_CHECKING, Any, Protocol, Self, TypeVar
 
 import yarl
 
@@ -27,12 +27,12 @@ class FragText:
     text: str = ""
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> FragText:
+    def from_proto(data_proto: TypeMessage) -> Self:
         text = data_proto.text
         return FragText(text)
 
     @staticmethod
-    def from_json(data_map: Mapping) -> FragText:
+    def from_json(data_map: Mapping) -> Self:
         text = data_map["text"]
         return FragText(text)
 
@@ -55,7 +55,7 @@ class FragEmoji:
     desc: str = ""
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> FragEmoji:
+    def from_proto(data_proto: TypeMessage) -> Self:
         id_ = data_proto.text
         desc = data_proto.c
         return FragEmoji(id_, desc)
@@ -93,7 +93,7 @@ class FragImage:
     hash: str = ""
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> FragImage:
+    def from_proto(data_proto: TypeMessage) -> Self:
         src = data_proto.cdn_src
         big_src = data_proto.big_cdn_src
         origin_src = data_proto.origin_src
@@ -132,7 +132,7 @@ class FragAt:
     user_id: int = 0
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> FragAt:
+    def from_proto(data_proto: TypeMessage) -> Self:
         text = data_proto.text
         user_id = data_proto.uid
         return FragAt(text, user_id)
@@ -157,7 +157,7 @@ class FragVoice:
     duration: float = 0.0
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> FragVoice:
+    def from_proto(data_proto: TypeMessage) -> Self:
         md5 = data_proto.voice_md5
         duration = data_proto.during_time / 1000
         return FragVoice(md5, duration)
@@ -193,7 +193,7 @@ class FragVideo:
     view_num: int = 0
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> FragVideo:
+    def from_proto(data_proto: TypeMessage) -> Self:
         src = data_proto.video_url
         cover_src = data_proto.thumbnail_url
         duration = data_proto.video_duration
@@ -233,14 +233,14 @@ class FragLink:
     raw_url: yarl.URL = dcs.field(default_factory=yarl.URL)
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> FragLink:
+    def from_proto(data_proto: TypeMessage) -> Self:
         text = data_proto.link
         title = data_proto.text
         raw_url = yarl.URL(text)
         return FragLink(text, title, raw_url)
 
     @staticmethod
-    def from_json(data_map: Mapping) -> FragLink:
+    def from_json(data_map: Mapping) -> Self:
         text = data_map["link"]
         title = data_map["text"]
         raw_url = yarl.URL(text)
@@ -285,7 +285,7 @@ class FragTiebaPlus:
     url: yarl.URL = dcs.field(default_factory=yarl.URL)
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> FragTiebaPlus:
+    def from_proto(data_proto: TypeMessage) -> Self:
         text = data_proto.tiebaplus_info.desc
         url = yarl.URL(data_proto.tiebaplus_info.jump_url)
         return FragTiebaPlus(text, url)
@@ -308,7 +308,7 @@ class FragItem:
     text: str = ""
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> FragItem:
+    def from_proto(data_proto: TypeMessage) -> Self:
         text = data_proto.item.item_name
         return FragItem(text)
 
@@ -329,9 +329,9 @@ class FragUnknown:
     data: Any
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage) -> FragUnknown:
+    def from_proto(data_proto: TypeMessage) -> Self:
         return FragUnknown(data_proto)
 
     @staticmethod
-    def from_json(data_map: Mapping) -> FragUnknown:
+    def from_json(data_map: Mapping) -> Self:
         return FragUnknown(data_map)

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import yarl
 
-from ...const import APP_BASE_HOST, STABLE_VERSION
+from ...const import APP_BASE_HOST, LEGACY_VERSION
 from ...exception import TiebaServerError
 from ._classdef import Comments
 from .protobuf import PbFloorReqIdl_pb2, PbFloorResIdl_pb2
@@ -18,7 +18,7 @@ CMD = 302002
 def pack_proto(tid: int, pid: int, pn: int, is_comment: bool) -> bytes:
     req_proto = PbFloorReqIdl_pb2.PbFloorReqIdl()
     req_proto.data.common._client_type = 2
-    req_proto.data.common._client_version = STABLE_VERSION
+    req_proto.data.common._client_version = LEGACY_VERSION
     req_proto.data.kz = tid
     if is_comment:
         req_proto.data.spid = pid
