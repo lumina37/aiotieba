@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import socket
+import ssl
 from typing import TYPE_CHECKING, Literal
 
 import aiohttp
@@ -206,12 +207,20 @@ class Client:
         self._user = UserInfo()
 
     async def __aenter__(self) -> Client:
+        ssl_context = ssl.SSLContext(
+            ssl.PROTOCOL_TLS_CLIENT,
+            check_hostname=False,
+            verify_mode=ssl.CERT_NONE,
+            minimum_version=ssl.TLSVersion.TLSv1_2,
+            maximum_version=ssl.TLSVersion.TLSv1_2,
+        )
+
         connector = aiohttp.TCPConnector(
             ttl_dns_cache=self._timeout.dns_ttl,
             family=socket.AF_INET,
             keepalive_timeout=self._timeout.http_keepalive,
             limit=0,
-            ssl=False,
+            ssl=ssl_context,
         )
         self._connector = connector
 
