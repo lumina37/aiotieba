@@ -28,7 +28,7 @@ dependencies = [
   "lxml>=5.3.0,<7;python_version=='3.13'",
   "lxml>=6.0.1,<7;python_version>='3.14'",
   "protobuf>=4.21.1,<8",
-  "cryptography>=35.0.0,<50",
+  "cryptography>=35.0.0,<51",
 ]
 
 [project.optional-dependencies]
