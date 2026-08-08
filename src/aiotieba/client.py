@@ -297,7 +297,7 @@ class Client:
             require (ReqUInfo): 指示需要获取的字段
 
         Returns:
-            TypeUserInfo: 用户信息
+            UserInfo: 用户信息
         """
 
         if not self._user.user_id:
@@ -1022,7 +1022,7 @@ class Client:
             rn (int, optional): 请求的条目数. Defaults to 20. Max to 74.
 
         Returns:
-            UserPosts: 回复列表
+            PcUserPosts: 回复列表
         """
 
         if not is_portrait(id_):
@@ -1494,7 +1494,7 @@ class Client:
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先fid
             pn (int, optional): 页码. Defaults to 1.
             rn (int, optional): 请求的条目数. Defaults to 10. Max to 50.
-            id_ (str | int, optional): 用于查询的被删帖用户的id user_id / user_name / portrait 优先user_id. Defaults to None.
+            id_ (str | int | None, optional): 用于查询的被删帖用户的id user_id / user_name / portrait 优先user_id. Defaults to None.
 
         Returns:
             Recovers: 待恢复帖子列表
@@ -1559,8 +1559,8 @@ class Client:
             pn (int, optional): 页码. Defaults to 1.
             search_value (str, optional): 搜索关键字. Defaults to ''.
             search_type (BawuSearchType, optional): 搜索类型. Defaults to BawuSearchType.USER.
-            start_dt (datetime.datetime, optional): 搜索的起始时间(含). Defaults to None.
-            end_dt (datetime.datetime, optional): 搜索的结束时间(含). Defaults to None.
+            start_dt (datetime.datetime | None, optional): 搜索的起始时间(含). Defaults to None.
+            end_dt (datetime.datetime | None, optional): 搜索的结束时间(含). Defaults to None.
             op_type (int, optional): 搜索操作类型. Defaults to 0.
 
         Returns:
@@ -1597,8 +1597,8 @@ class Client:
             pn (int, optional): 页码. Defaults to 1.
             search_value (str, optional): 搜索关键字. Defaults to ''.
             search_type (BawuSearchType, optional): 搜索类型. Defaults to BawuSearchType.USER.
-            start_dt (datetime.datetime, optional): 搜索的起始时间(含). Defaults to None.
-            end_dt (datetime.datetime, optional): 搜索的结束时间(含). Defaults to None.
+            start_dt (datetime.datetime | None, optional): 搜索的起始时间(含). Defaults to None.
+            end_dt (datetime.datetime | None, optional): 搜索的结束时间(含). Defaults to None.
             op_type (int, optional): 搜索操作类型. Defaults to 0.
 
         Returns:
@@ -1647,7 +1647,7 @@ class Client:
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
-            BlacklistUsers: 吧务黑名单列表
+            BawuBlacklistUsers: 吧务黑名单列表
 
         Note:
             本接口需要STOKEN

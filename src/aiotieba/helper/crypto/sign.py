@@ -9,6 +9,7 @@ def compute_sign(data: list[tuple[str, str | int]], *, salt: bytes) -> str:
 
     Args:
         data (list[tuple[str, str | int]]): 参数元组列表
+        salt (bytes): 计算签名使用的盐值
 
     Returns:
         str: 签名
@@ -30,6 +31,7 @@ def sign(data: list[tuple[str, str | int]], *, salt: bytes) -> list[tuple[str, s
 
     Args:
         data (list[tuple[str, str | int]]): 参数元组列表
+        salt (bytes): 计算签名使用的盐值
 
     Returns:
         list[tuple[str, str | int]]: 签名后的form参数元组列表

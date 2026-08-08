@@ -777,10 +777,10 @@ class BLCPWaiter:
         创建一个可用于等待数据的响应对象
 
         Args:
-            req_id (int): 请求id
+            req_id (int, optional): 请求id. Defaults to None.
 
         Returns:
-            WsResponse: websocket响应
+            BLCPResponse: blcp响应
         """
         if not req_id:
             self.req_id += 1
@@ -797,7 +797,7 @@ class BLCPWaiter:
 
         Args:
             req_id (int): 请求id
-            data (bytes): 填入的数据
+            data (BLCPData): 填入的数据
         """
 
         blcp_resp: BLCPResponse = self.waiter.get(req_id, None)
