@@ -1,6 +1,6 @@
 [project]
 name = "aiotieba"
-version = "4.7.2a9"
+version = "4.7.2"
 description = "Asynchronous I/O Client for Baidu Tieba"
 authors = [{ name = "lumina37", email = "starry.qvq@gmail.com" }]
 urls = { Repository = "https://github.com/lumina37/aiotieba/", Documentation = "https://aiotieba.cc/" }
@@ -16,6 +16,7 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
   "Topic :: Internet :: WWW/HTTP :: Session",
 ]
 requires-python = ">=3.11,<3.16"
@@ -26,7 +27,8 @@ dependencies = [
   "lxml>=4.9.2,<7;python_version=='3.11'",
   "lxml>=4.9.3,<7;python_version=='3.12'",
   "lxml>=5.3.0,<7;python_version=='3.13'",
-  "lxml>=6.0.1,<7;python_version>='3.14'",
+  "lxml>=6.0.1,<7;python_version=='3.14'",
+  "lxml>=6.1.2,<7;python_version>='3.15'",
   "protobuf>=4.21.1,<8",
   "cryptography>=35.0.0,<51",
 ]
@@ -42,7 +44,8 @@ speedup = [
   "orjson>=3.7.10,<4;python_version=='3.11'",
   "orjson>=3.9.10,<4;python_version=='3.12'",
   "orjson>=3.10.7,<4;python_version=='3.13'",
-  "orjson>=3.11.1,<4;python_version>='3.14'",
+  "orjson>=3.11.1,<4;python_version=='3.14'",
+  "orjson>=3.12.0,<4;python_version>='3.15'",
 ]
 
 [dependency-groups]
