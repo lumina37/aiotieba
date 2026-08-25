@@ -83,6 +83,7 @@ from .api import (
     recover,
     remove_fan,
     search_exact,
+    search_global,
     send_chatroom_msg,
     send_msg,
     set_bawu_perm,
@@ -113,6 +114,7 @@ from .enums import (
     BawuType,
     BlacklistType,
     Gender,
+    GlobalSearchSortType,
     GroupType,
     PostSortType,
     RankForumType,
@@ -591,6 +593,38 @@ class Client:
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
         return await search_exact.request(self._http_core, fname, query, pn, rn, search_type, only_thread)
+
+    @handle_exception(search_global.GlobalSearches)
+    async def search_global(
+        self,
+        word: str,
+        /,
+        pn: int = 1,
+        *,
+        rn: int = 20,
+        sort: GlobalSearchSortType = GlobalSearchSortType.DESC,
+    ) -> search_global.GlobalSearches:
+        """
+        全吧搜索 不限定贴吧的全站主题帖关键词搜索
+
+        Args:
+            word (str): 查询文本
+            pn (int, optional): 页码. Defaults to 1.
+            rn (int, optional): 请求的条目数. Defaults to 20.
+            sort (GlobalSearchSortType, optional): 排序方式. Defaults to GlobalSearchSortType.DESC.
+
+        Returns:
+            GlobalSearches: 全吧搜索结果列表
+
+        Note:
+            该接口为PC网页端搜索接口(逆向所得 非官方开放API) 走`subapp_type=pc`网页端签名通道 复用当前账号的Cookie(BDUSS)鉴权\n
+            不同于`search_exact`所用的App表单签名协议 其稳定性与频控策略未经长期验证 请自行控制调用频率\n
+            该接口存在与请求参数无关的服务端间歇性错误(如`TiebaServerError`300003) 失败会体现在返回值`.err` 建议调用方按需重试\n
+            仅支持搜索主题帖 实测该接口的评论/楼中楼搜索(tt=3)不会生效 服务端会原样返回主题帖结果\n
+            若需要某个主题帖下的评论 请在拿到`tid`后使用`get_posts`单独查询
+        """
+
+        return await search_global.request(self._http_core, word, pn, rn, sort)
 
     @handle_exception(profile.UserInfo_pf)
     @_try_websocket
