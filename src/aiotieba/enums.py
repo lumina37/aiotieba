@@ -174,6 +174,21 @@ class SearchType(enum.IntEnum):
     RELATION = 2
 
 
+class GlobalSearchSortType(enum.IntEnum):
+    """
+    全吧搜索结果排序
+
+    Note:
+        ASC 最早发帖\n
+        RELATION 最相关\n
+        DESC 最新发帖
+    """
+
+    ASC = 0
+    RELATION = 2
+    DESC = 5
+
+
 class BawuType(enum.StrEnum):
     """
     吧务类型
