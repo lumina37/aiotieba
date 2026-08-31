@@ -30,6 +30,9 @@ parse_json = jsonlib.loads
 def is_portrait(portrait: Any) -> bool:
     """
     简单判断输入是否符合portrait格式
+
+    Returns:
+        bool: 输入是否符合portrait格式
     """
 
     return isinstance(portrait, str) and portrait.startswith("tb.")
@@ -38,6 +41,9 @@ def is_portrait(portrait: Any) -> bool:
 def is_user_name(user_name: Any) -> bool:
     """
     简单判断输入是否符合user_name格式
+
+    Returns:
+        bool: 输入是否符合user_name格式
     """
 
     return isinstance(user_name, str) and not user_name.startswith("tb.")
@@ -82,6 +88,9 @@ def handle_exception(
         null_factory (Callable[[], Any]): 空构造工厂 用于返回一个默认值
         ok_log_level (int, optional): 正常日志等级. Defaults to logging.NOTSET.
         err_log_level (int, optional): 异常日志等级. Defaults to logging.WARNING.
+
+    Returns:
+        Callable: 装饰器 用于包装异步类成员函数
     """
 
     def wrapper(func):

@@ -162,7 +162,7 @@ class HttpCore:
         Args:
             url (yarl.URL): 链接
             params (list[tuple[str, str]]): 参数元组列表
-            extra_headers (list[tuple[str, str]]): 额外的请求头
+            extra_headers (list[tuple[str, str]] | None): 额外的请求头
 
         Returns:
             aiohttp.ClientRequest
@@ -194,7 +194,7 @@ class HttpCore:
         Args:
             url (yarl.URL): 链接
             data (list[tuple[str, str]]): 参数元组列表
-            extra_headers (list[tuple[str, str]]): 额外的请求头
+            extra_headers (list[tuple[str, str]] | None): 额外的请求头
 
         Returns:
             aiohttp.ClientRequest

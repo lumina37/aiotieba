@@ -65,7 +65,7 @@ tid=8537699088 text=记录一下自己人生第一次当“老师”的经历^_^
 
 ## 项目特色
 
-+ 收录[**数十个常用API**](https://github.com/lumina37/aiotieba/tree/develop/aiotieba/api)
++ 收录[**数十个常用API**](https://github.com/lumina37/aiotieba/tree/develop/src/aiotieba/api)
 + 类型注解全覆盖，方法注释全覆盖，类属性注释全覆盖，内部命名统一
 + 请求参数支持protobuf序列化
 + 支持websocket接口

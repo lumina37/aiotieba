@@ -75,9 +75,7 @@ def parse_ws_bytes(account: Account, data: bytes) -> tuple[bytes, int, int]:
         data (bytes): 接收到的websocket数据
 
     Returns:
-        bytes: 解包后的websocket数据
-        int: 对应请求的cmd类型
-        int: 对应请求的id
+        tuple[bytes, int, int]: 解包后的websocket数据 依次为数据、cmd类型、请求id
     """
 
     data_view = memoryview(data)
@@ -236,9 +234,6 @@ class WsWaiter:
         """
         创建一个可用于等待数据的响应对象
 
-        Args:
-            req_id (int): 请求id
-
         Returns:
             WsResponse: websocket响应
         """
@@ -300,6 +295,7 @@ class WsCore:
 
         Raises:
             aiohttp.WSServerHandshakeError: websocket握手失败
+            HTTPStatusError: websocket握手失败 状态码不是101
         """
 
         self._status = WsStatus.CONNECTING
@@ -389,6 +385,9 @@ class WsCore:
     def status(self) -> WsStatus:
         """
         websocket状态
+
+        Returns:
+            WsStatus: 当前的websocket状态
         """
 
         if self._status != WsStatus.CLOSED and self.websocket._writer.transport.is_closing():

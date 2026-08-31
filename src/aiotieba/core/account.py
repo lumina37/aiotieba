@@ -141,6 +141,9 @@ class Account:
     def BDUSS(self) -> str:
         """
         当前账号的BDUSS
+
+        Returns:
+            str: 当前账号的BDUSS
         """
 
         return self._BDUSS
@@ -155,6 +158,9 @@ class Account:
     def STOKEN(self) -> str:
         """
         当前账号的STOKEN
+
+        Returns:
+            str: 当前账号的STOKEN
         """
 
         return self._STOKEN
@@ -394,7 +400,7 @@ class Account:
         获取供贴吧websocket使用的AES-ECB加密器
 
         Returns:
-            Cipher[ECB]: AES-ECB加密器
+            Cipher[modes.ECB]: AES-ECB加密器
         """
 
         if self._aes_ecb_chiper is None:
@@ -431,7 +437,7 @@ class Account:
         获取供贴吧客户端使用的AES-CBC加密器
 
         Returns:
-            Cipher[CBC]: AES-CBC加密器
+            Cipher[modes.CBC]: AES-CBC加密器
         """
 
         if self._aes_cbc_chiper is None:
