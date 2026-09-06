@@ -82,8 +82,8 @@ from .api import (
     recommend,
     recover,
     remove_fan,
-    search_exact,
     search_global,
+    search_in_forum,
     send_chatroom_msg,
     send_msg,
     set_bawu_perm,
@@ -114,12 +114,12 @@ from .enums import (
     BawuType,
     BlacklistType,
     Gender,
-    GlobalSearchSortType,
     GroupType,
     PostSortType,
     RankForumType,
     ReqUInfo,
-    SearchType,
+    SearchGlobalType,
+    SearchInForumType,
     ThreadSortType,
     WsStatus,
 )
@@ -563,8 +563,8 @@ class Client:
 
         return await get_last_replyers.request_http(self._http_core, fname, pn, rn, sort, is_good)
 
-    @handle_exception(search_exact.ExactSearches)
-    async def search_exact(
+    @handle_exception(search_in_forum.SearchInForums)
+    async def search_in_forum(
         self,
         fname_or_fid: str | int,
         query: str,
@@ -572,59 +572,56 @@ class Client:
         pn: int = 1,
         *,
         rn: int = 30,
-        search_type: SearchType = SearchType.ALL,
+        search_type: SearchInForumType = SearchInForumType.ALL,
         only_thread: bool = False,
-    ) -> search_exact.ExactSearches:
+    ) -> search_in_forum.SearchInForums:
         """
-        贴吧搜索
+        吧内搜索 在指定贴吧内搜索特定内容
 
         Args:
             fname_or_fid (str | int): 查询的贴吧名或fid 优先贴吧名
             query (str): 查询文本
             pn (int, optional): 页码. Defaults to 1.
             rn (int, optional): 请求的条目数. Defaults to 30.
-            search_type (SearchType, optional): 查询模式 默认查询全部. Defaults to SearchType.ALL.
+            search_type (SearchInForumType, optional): 查询模式 默认查询全部. Defaults to SearchInForumType.ALL.
             only_thread (bool, optional): 是否仅查询主题帖. Defaults to False.
 
         Returns:
-            ExactSearches: 搜索结果列表
+            SearchInForums: 搜索结果列表
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
-        return await search_exact.request(self._http_core, fname, query, pn, rn, search_type, only_thread)
+        return await search_in_forum.request(self._http_core, fname, query, pn, rn, search_type, only_thread)
 
-    @handle_exception(search_global.GlobalSearches)
+    @handle_exception(search_global.SearchGlobals)
     async def search_global(
         self,
-        word: str,
+        query: str,
         /,
         pn: int = 1,
         *,
         rn: int = 20,
-        sort: GlobalSearchSortType = GlobalSearchSortType.DESC,
-    ) -> search_global.GlobalSearches:
+        sort: SearchGlobalType = SearchGlobalType.DESC,
+    ) -> search_global.SearchGlobals:
         """
-        全吧搜索 不限定贴吧的全站主题帖关键词搜索
+        全吧搜索
 
         Args:
-            word (str): 查询文本
+            query (str): 查询文本
             pn (int, optional): 页码. Defaults to 1.
             rn (int, optional): 请求的条目数. Defaults to 20.
-            sort (GlobalSearchSortType, optional): 排序方式. Defaults to GlobalSearchSortType.DESC.
+            sort (SearchGlobalType, optional): 排序方式. Defaults to SearchGlobalType.DESC.
 
         Returns:
-            GlobalSearches: 全吧搜索结果列表
+            SearchGlobals: 全吧搜索结果列表
 
         Note:
-            该接口为PC网页端搜索接口(逆向所得 非官方开放API) 走`subapp_type=pc`网页端签名通道 复用当前账号的Cookie(BDUSS)鉴权\n
-            不同于`search_exact`所用的App表单签名协议 其稳定性与频控策略未经长期验证 请自行控制调用频率\n
-            该接口存在与请求参数无关的服务端间歇性错误(如`TiebaServerError`300003) 失败会体现在返回值`.err` 建议调用方按需重试\n
             仅支持搜索主题帖 实测该接口的评论/楼中楼搜索(tt=3)不会生效 服务端会原样返回主题帖结果\n
             若需要某个主题帖下的评论 请在拿到`tid`后使用`get_posts`单独查询
         """
 
-        return await search_global.request(self._http_core, word, pn, rn, sort)
+        return await search_global.request(self._http_core, query, pn, rn, sort)
 
     @handle_exception(profile.UserInfo_pf)
     @_try_websocket

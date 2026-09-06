@@ -159,9 +159,9 @@ class BawuSearchType(enum.IntEnum):
     OP = 1
 
 
-class SearchType(enum.IntEnum):
+class SearchInForumType(enum.IntEnum):
     """
-    搜索类型
+    吧内搜索类型
 
     Note:
         ALL 搜索全部\n
@@ -174,9 +174,9 @@ class SearchType(enum.IntEnum):
     RELATION = 2
 
 
-class GlobalSearchSortType(enum.IntEnum):
+class SearchGlobalType(enum.IntEnum):
     """
-    全吧搜索结果排序
+    全吧搜索类型
 
     Note:
         ASC 最早发帖\n

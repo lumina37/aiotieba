@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 @dcs.dataclass
-class GlobalSearchPost:
+class SearchGlobal:
     """
     全吧搜索结果
 
@@ -50,7 +50,7 @@ class GlobalSearchPost:
     @staticmethod
     def from_json(data_map: Mapping) -> Self:
         user_map = data_map.get("user") or {}
-        return GlobalSearchPost(
+        return SearchGlobal(
             tid=int(data_map["tid"]),
             pid=int(data_map["pid"]),
             title=data_map.get("title", ""),
@@ -65,7 +65,7 @@ class GlobalSearchPost:
             author_show_name=user_map.get("show_nickname") or user_map.get("user_name", ""),
         )
 
-    def __eq__(self, obj: GlobalSearchPost) -> bool:
+    def __eq__(self, obj: SearchGlobal) -> bool:
         return self.pid == obj.pid
 
     def __hash__(self) -> int:
@@ -73,12 +73,12 @@ class GlobalSearchPost:
 
 
 @dcs.dataclass
-class GlobalSearches(TbErrorExt, Containers[GlobalSearchPost]):
+class SearchGlobals(TbErrorExt, Containers[SearchGlobal]):
     """
     全吧搜索结果列表
 
     Attributes:
-        objs (list[GlobalSearchPost]): 搜索结果列表
+        objs (list[SearchGlobal]): 搜索结果列表
         err (Exception | None): 捕获的异常
 
         has_more (bool): 是否还有下一页
@@ -90,7 +90,7 @@ class GlobalSearches(TbErrorExt, Containers[GlobalSearchPost]):
 
     @staticmethod
     def from_json(data_map: Mapping) -> Self:
-        objs = [GlobalSearchPost.from_json(m) for m in data_map.get("post_list", [])]
+        objs = [SearchGlobal.from_json(m) for m in data_map.get("post_list", [])]
         has_more = bool(int(data_map.get("has_more") or 0))
         current_page = int(data_map.get("current_page") or 0)
-        return GlobalSearches(objs, has_more, current_page)
+        return SearchGlobals(objs, has_more, current_page)

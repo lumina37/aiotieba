@@ -41,7 +41,7 @@ nav:
           - posts: ref/classdef/posts.md
           - comments: ref/classdef/comments.md
           - last_replyers: ref/classdef/last_replyers.md
-          - searches: ref/classdef/searches.md
+          - searches_in_forum: ref/classdef/searches_in_forum.md
           - searches_global: ref/classdef/searches_global.md
           - user_info: ref/classdef/user_info.md
           - profile: ref/classdef/profile.md

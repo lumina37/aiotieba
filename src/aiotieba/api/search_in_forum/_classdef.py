@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 @dcs.dataclass
-class ExactSearch:
+class SearchInForum:
     """
     搜索结果
 
@@ -49,9 +49,9 @@ class ExactSearch:
         show_name = data_map["author"]["name_show"]
         is_comment = bool(int(data_map["is_floor"]))
         create_time = int(data_map["time"])
-        return ExactSearch(text, title, fname, tid, pid, show_name, is_comment, create_time)
+        return SearchInForum(text, title, fname, tid, pid, show_name, is_comment, create_time)
 
-    def __eq__(self, obj: ExactSearch) -> bool:
+    def __eq__(self, obj: SearchInForum) -> bool:
         return self.pid == obj.pid
 
     def __hash__(self) -> int:
@@ -59,7 +59,7 @@ class ExactSearch:
 
 
 @dcs.dataclass
-class Page_exsch:
+class Page_fsch:
     """
     页信息
 
@@ -89,29 +89,29 @@ class Page_exsch:
         total_count = int(data_map["total_count"])
         has_more = bool(int(data_map["has_more"]))
         has_prev = bool(int(data_map["has_prev"]))
-        return Page_exsch(page_size, current_page, total_page, total_count, has_more, has_prev)
+        return Page_fsch(page_size, current_page, total_page, total_count, has_more, has_prev)
 
 
 @dcs.dataclass
-class ExactSearches(TbErrorExt, Containers[ExactSearch]):
+class SearchInForums(TbErrorExt, Containers[SearchInForum]):
     """
     搜索结果列表
 
     Attributes:
-        objs (list[ExactSearch]): 搜索结果列表
+        objs (list[SearchInForum]): 搜索结果列表
         err (Exception | None): 捕获的异常
 
-        page (Page_exsch): 页信息
+        page (Page_fsch): 页信息
         has_more (bool): 是否还有下一页
     """
 
-    page: Page_exsch = dcs.field(default_factory=Page_exsch)
+    page: Page_fsch = dcs.field(default_factory=Page_fsch)
 
     @staticmethod
     def from_json(data_map: Mapping) -> Self:
-        objs = [ExactSearch.from_json(m) for m in data_map.get("post_list", [])]
-        page = Page_exsch.from_json(data_map["page"])
-        return ExactSearches(objs, page)
+        objs = [SearchInForum.from_json(m) for m in data_map.get("post_list", [])]
+        page = Page_fsch.from_json(data_map["page"])
+        return SearchInForums(objs, page)
 
     @property
     def has_more(self) -> bool:
