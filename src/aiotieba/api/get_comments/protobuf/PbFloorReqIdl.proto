@@ -10,6 +10,7 @@ message PbFloorReqIdl {
         int64 pid = 2;
         int64 spid = 3;
         int32 pn = 4;
+        int32 sort = 19;
     }
     DataReq data = 1;
 }

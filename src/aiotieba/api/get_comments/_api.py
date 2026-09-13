@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import yarl
 
-from ...const import APP_BASE_HOST, LEGACY_VERSION
+from ...const import APP_BASE_HOST, LATEST_VERSION
 from ...exception import TiebaServerError
 from ._classdef import Comments
 from .protobuf import PbFloorReqIdl_pb2, PbFloorResIdl_pb2
@@ -15,16 +15,17 @@ if TYPE_CHECKING:
 CMD = 302002
 
 
-def pack_proto(tid: int, pid: int, pn: int, is_comment: bool) -> bytes:
+def pack_proto(tid: int, pid: int, pn: int, is_comment: bool, sort: int) -> bytes:
     req_proto = PbFloorReqIdl_pb2.PbFloorReqIdl()
     req_proto.data.common._client_type = 2
-    req_proto.data.common._client_version = LEGACY_VERSION
+    req_proto.data.common._client_version = LATEST_VERSION
     req_proto.data.kz = tid
     if is_comment:
         req_proto.data.spid = pid
     else:
         req_proto.data.pid = pid
     req_proto.data.pn = pn
+    req_proto.data.sort = sort
 
     return req_proto.SerializeToString()
 
@@ -42,8 +43,8 @@ def parse_body(body: bytes) -> Comments:
     return comments
 
 
-async def request_http(http_core: HttpCore, tid: int, pid: int, pn: int, is_comment: bool) -> Comments:
-    data = pack_proto(tid, pid, pn, is_comment)
+async def request_http(http_core: HttpCore, tid: int, pid: int, pn: int, is_comment: bool, sort: int) -> Comments:
+    data = pack_proto(tid, pid, pn, is_comment, sort)
 
     request = http_core.pack_proto_request(
         yarl.URL.build(scheme="http", host=APP_BASE_HOST, path="/c/f/pb/floor", query_string=f"cmd={CMD}"),
@@ -54,8 +55,8 @@ async def request_http(http_core: HttpCore, tid: int, pid: int, pn: int, is_comm
     return parse_body(body)
 
 
-async def request_ws(ws_core: WsCore, tid: int, pid: int, pn: int, is_comment: bool) -> Comments:
-    data = pack_proto(tid, pid, pn, is_comment)
+async def request_ws(ws_core: WsCore, tid: int, pid: int, pn: int, is_comment: bool, sort: int) -> Comments:
+    data = pack_proto(tid, pid, pn, is_comment, sort)
 
     response = await ws_core.send(data, CMD)
     return parse_body(await response.read())
