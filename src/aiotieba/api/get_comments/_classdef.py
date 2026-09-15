@@ -62,7 +62,7 @@ class Contents_c(Containers[TypeFragment]):
 
         texts = []
         emojis = []
-        imgs=[]
+        imgs = []
         ats = []
         links = []
         tiebapluses = []

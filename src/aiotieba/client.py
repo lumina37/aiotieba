@@ -507,13 +507,7 @@ class Client:
     @handle_exception(get_comments.Comments)
     @_try_websocket
     async def get_comments(
-        self, tid: int,
-        pid: int,
-        /,
-        pn: int = 1,
-        *,
-        is_comment: bool = False,
-        sort: PostSortType = PostSortType.ASC
+        self, tid: int, pid: int, /, pn: int = 1, *, is_comment: bool = False, sort: PostSortType = PostSortType.ASC
     ) -> get_comments.Comments:
         """
         获取楼中楼回复
