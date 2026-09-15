@@ -55,7 +55,6 @@ class UserInfo_pf(TbErrorExt):
         icons (list[str]): 印记信息
 
         is_vip (bool): 是否超级会员
-        is_god (bool): 是否大神
         is_blocked (bool): 是否被永久封禁屏蔽
         priv_like (PrivLike): 关注吧列表的公开状态
         priv_reply (PrivReply): 帖子评论权限
@@ -84,7 +83,6 @@ class UserInfo_pf(TbErrorExt):
     icons: list[str] = dcs.field(default_factory=list)
 
     is_vip: bool = False
-    is_god: bool = False
     is_blocked: bool = False
     priv_like: PrivLike = PrivLike.PUBLIC
     priv_reply: PrivReply = PrivReply.ALL
@@ -111,7 +109,6 @@ class UserInfo_pf(TbErrorExt):
         ip = user_proto.ip_address
         icons = [name for i in user_proto.iconinfo if (name := i.name)]
         is_vip = bool(user_proto.new_tshow_icon)
-        is_god = bool(user_proto.new_god_data.status)
         anti_proto = data_proto.anti_stat
         if anti_proto.block_stat and anti_proto.hide_stat and anti_proto.days_tofree > 30:
             is_blocked = True
@@ -137,7 +134,6 @@ class UserInfo_pf(TbErrorExt):
             ip,
             icons,
             is_vip,
-            is_god,
             is_blocked,
             priv_like,
             priv_reply,

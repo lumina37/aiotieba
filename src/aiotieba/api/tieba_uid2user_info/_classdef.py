@@ -26,8 +26,6 @@ class UserInfo_TUid(TbErrorExt):
         age (float): 吧龄
         sign (str): 个性签名
 
-        is_god (bool): 是否大神
-
         nick_name (str): 用户昵称
         show_name (str): 显示名称
         log_name (str): 用于在日志中记录用户信息
@@ -42,8 +40,6 @@ class UserInfo_TUid(TbErrorExt):
     age: float = 0.0
     sign: str = ""
 
-    is_god: bool = False
-
     @staticmethod
     def from_proto(data_proto: TypeMessage) -> Self:
         user_id = data_proto.id
@@ -55,8 +51,7 @@ class UserInfo_TUid(TbErrorExt):
         tieba_uid = int(data_proto.tieba_uid)
         age = float(data_proto.tb_age)
         sign = data_proto.intro
-        is_god = bool(data_proto.new_god_data.status)
-        return UserInfo_TUid(user_id, portrait, user_name, nick_name_new, tieba_uid, age, sign, is_god)
+        return UserInfo_TUid(user_id, portrait, user_name, nick_name_new, tieba_uid, age, sign)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)

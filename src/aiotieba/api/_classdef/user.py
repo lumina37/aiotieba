@@ -31,7 +31,6 @@ class UserInfo:
         icons (list[str]): 印记信息
 
         is_vip (bool): 是否超级会员
-        is_god (bool): 是否大神
         is_blocked (bool): 是否被永久封禁屏蔽
         priv_like (PrivLike): 关注吧列表的公开状态
         priv_reply (PrivReply): 帖子评论权限
@@ -61,7 +60,6 @@ class UserInfo:
     icons: list[str] = dcs.field(default_factory=list)
 
     is_vip: bool = False
-    is_god: bool = False
     is_blocked: bool = False
     uk: int = 0
     bduk: str = ""

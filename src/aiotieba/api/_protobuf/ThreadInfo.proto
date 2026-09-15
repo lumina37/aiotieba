@@ -32,7 +32,6 @@ message ThreadInfo {
     uint32 is_ad = 59;
     PollInfo poll_info = 74;
     VideoInfo video_info = 79;
-    int32 is_godthread_recommend = 85;
     Agree agree = 126;
     int32 share_num = 135;
 

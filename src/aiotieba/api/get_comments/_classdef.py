@@ -140,7 +140,6 @@ class UserInfo_c:
 
         is_bawu (bool): 是否吧务
         is_vip (bool): 是否超级会员
-        is_god (bool): 是否大神
         priv_like (PrivLike): 关注吧列表的公开状态
         priv_reply (PrivReply): 帖子评论权限
 
@@ -160,7 +159,6 @@ class UserInfo_c:
 
     is_bawu: bool = False
     is_vip: bool = False
-    is_god: bool = False
     priv_like: PrivLike = PrivLike.PUBLIC
     priv_reply: PrivReply = PrivReply.ALL
 
@@ -177,7 +175,6 @@ class UserInfo_c:
         icons = [name for i in data_proto.iconinfo if (name := i.name)]
         is_bawu = bool(data_proto.is_bawu)
         is_vip = bool(data_proto.new_tshow_icon)
-        is_god = bool(data_proto.new_god_data.status)
         priv_like = PrivLike(priv_like) if (priv_like := data_proto.priv_sets.like) else PrivLike.PUBLIC
         priv_reply = PrivReply(priv_reply) if (priv_reply := data_proto.priv_sets.reply) else PrivReply.ALL
         return UserInfo_c(
@@ -190,7 +187,6 @@ class UserInfo_c:
             icons,
             is_bawu,
             is_vip,
-            is_god,
             priv_like,
             priv_reply,
         )
@@ -385,8 +381,6 @@ class UserInfo_ct:
 
         level (int): 等级
 
-        is_god (bool): 是否大神
-
         nick_name (str): 用户昵称
         show_name (str): 显示名称
         log_name (str): 用于在日志中记录用户信息
@@ -398,7 +392,6 @@ class UserInfo_ct:
     nick_name_new: str = ""
 
     level: int = 0
-    is_god: bool = False
 
     @staticmethod
     def from_proto(data_proto: TypeMessage) -> Self:
@@ -409,8 +402,7 @@ class UserInfo_ct:
         user_name = data_proto.name
         nick_name_new = data_proto.name_show
         level = data_proto.level_id
-        is_god = bool(data_proto.new_god_data.status)
-        return UserInfo_ct(user_id, portrait, user_name, nick_name_new, level, is_god)
+        return UserInfo_ct(user_id, portrait, user_name, nick_name_new, level)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
@@ -649,7 +641,6 @@ class UserInfo_cp:
 
         is_bawu (bool): 是否吧务
         is_vip (bool): 是否超级会员
-        is_god (bool): 是否大神
         priv_like (PrivLike): 关注吧列表的公开状态
         priv_reply (PrivReply): 帖子评论权限
 
@@ -668,7 +659,6 @@ class UserInfo_cp:
 
     is_bawu: bool = False
     is_vip: bool = False
-    is_god: bool = False
     priv_like: PrivLike = PrivLike.PUBLIC
     priv_reply: PrivReply = PrivReply.ALL
 
@@ -684,11 +674,10 @@ class UserInfo_cp:
         gender = Gender(data_proto.gender)
         is_bawu = bool(data_proto.is_bawu)
         is_vip = bool(data_proto.new_tshow_icon)
-        is_god = bool(data_proto.new_god_data.status)
         priv_like = PrivLike(priv_like) if (priv_like := data_proto.priv_sets.like) else PrivLike.PUBLIC
         priv_reply = PrivReply(priv_reply) if (priv_reply := data_proto.priv_sets.reply) else PrivReply.ALL
         return UserInfo_cp(
-            user_id, portrait, user_name, nick_name_new, level, gender, is_bawu, is_vip, is_god, priv_like, priv_reply
+            user_id, portrait, user_name, nick_name_new, level, gender, is_bawu, is_vip, priv_like, priv_reply
         )
 
     def __str__(self) -> str:

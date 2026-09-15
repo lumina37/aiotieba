@@ -315,7 +315,6 @@ class UserInfo_p:
 
         is_bawu (bool): 是否吧务
         is_vip (bool): 是否超级会员
-        is_god (bool): 是否大神
         priv_like (PrivLike): 关注吧列表的公开状态
         priv_reply (PrivReply): 帖子评论权限
 
@@ -337,7 +336,6 @@ class UserInfo_p:
 
     is_bawu: bool = False
     is_vip: bool = False
-    is_god: bool = False
     priv_like: PrivLike = PrivLike.PUBLIC
     priv_reply: PrivReply = PrivReply.ALL
 
@@ -356,7 +354,6 @@ class UserInfo_p:
         icons = [name for i in data_proto.iconinfo if (name := i.name)]
         is_bawu = bool(data_proto.is_bawu)
         is_vip = bool(data_proto.new_tshow_icon)
-        is_god = bool(data_proto.new_god_data.status)
         priv_like = PrivLike(priv_like) if (priv_like := data_proto.priv_sets.like) else PrivLike.PUBLIC
         priv_reply = PrivReply(priv_reply) if (priv_reply := data_proto.priv_sets.reply) else PrivReply.ALL
         return UserInfo_p(
@@ -371,7 +368,6 @@ class UserInfo_p:
             icons,
             is_bawu,
             is_vip,
-            is_god,
             priv_like,
             priv_reply,
         )
@@ -813,7 +809,6 @@ class UserInfo_pt:
 
         is_bawu (bool): 是否吧务
         is_vip (bool): 是否超级会员
-        is_god (bool): 是否大神
         priv_like (PrivLike): 关注吧列表的公开状态
         priv_reply (PrivReply): 帖子评论权限
 
@@ -834,7 +829,6 @@ class UserInfo_pt:
 
     is_bawu: bool = False
     is_vip: bool = False
-    is_god: bool = False
     priv_like: PrivLike = PrivLike.PUBLIC
     priv_reply: PrivReply = PrivReply.ALL
 
@@ -852,7 +846,6 @@ class UserInfo_pt:
         icons = [name for i in data_proto.iconinfo if (name := i.name)]
         is_bawu = bool(data_proto.is_bawu)
         is_vip = bool(data_proto.new_tshow_icon)
-        is_god = bool(data_proto.new_god_data.status)
         priv_like = PrivLike(priv_like) if (priv_like := data_proto.priv_sets.like) else PrivLike.PUBLIC
         priv_reply = PrivReply(priv_reply) if (priv_reply := data_proto.priv_sets.reply) else PrivReply.ALL
         return UserInfo_pt(
@@ -866,7 +859,6 @@ class UserInfo_pt:
             icons,
             is_bawu,
             is_vip,
-            is_god,
             priv_like,
             priv_reply,
         )
