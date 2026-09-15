@@ -108,7 +108,7 @@ class UserInfo_pf(TbErrorExt):
         sign = user_proto.intro
         ip = user_proto.ip_address
         icons = [name for i in user_proto.iconinfo if (name := i.name)]
-        is_vip = bool(user_proto.new_tshow_icon)
+        is_vip = user_proto.is_mem != 0
         anti_proto = data_proto.anti_stat
         if anti_proto.block_stat and anti_proto.hide_stat and anti_proto.days_tofree > 30:
             is_blocked = True

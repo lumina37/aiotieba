@@ -50,7 +50,7 @@ class UserInfo_guinfo_app(TbErrorExt):
         user_name = data_proto.name
         nick_name_old = data_proto.name_show
         gender = Gender(data_proto.sex)
-        is_vip = bool(data_proto.vipInfo.v_status)
+        is_vip = data_proto.is_mem != 0
         return UserInfo_guinfo_app(user_id, portrait, user_name, nick_name_old, gender, is_vip)
 
     def __str__(self) -> str:

@@ -78,6 +78,7 @@ class UserInfo_panel(TbErrorExt):
         post_num = _tbnum2int(data_map["post_num"])
         fan_num = _tbnum2int(data_map["followed_count"])
 
+        # 该接口的 json 回包不含 is_mem 无法使用会员标记 只能退化为 vipInfo.v_status
         if vip_dict := data_map["vipInfo"]:
             is_vip = int(vip_dict["v_status"]) == 3
         else:
