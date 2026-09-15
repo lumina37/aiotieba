@@ -41,6 +41,7 @@ class Contents_c(Containers[TypeFragment]):
 
         texts (list[TypeFragText]): 纯文本碎片列表
         emojis (list[FragEmoji_c]): 表情碎片列表
+        imgs (list[FragImage_cp]): 图像碎片列表
         ats (list[FragAt_c]): @碎片列表
         links (list[FragLink_c]): 链接碎片列表
         tiebapluses (list[FragTiebaPlus_c]): 贴吧plus碎片列表
@@ -49,6 +50,7 @@ class Contents_c(Containers[TypeFragment]):
 
     texts: list[TypeFragText] = dcs.field(default_factory=list, repr=False)
     emojis: list[FragEmoji_c] = dcs.field(default_factory=list, repr=False)
+    imgs: list[FragImage_cp] = dcs.field(default_factory=list, repr=False)
     ats: list[FragAt_c] = dcs.field(default_factory=list, repr=False)
     links: list[FragLink_c] = dcs.field(default_factory=list, repr=False)
     tiebapluses: list[FragTiebaPlus_c] = dcs.field(default_factory=list, repr=False)
@@ -60,6 +62,7 @@ class Contents_c(Containers[TypeFragment]):
 
         texts = []
         emojis = []
+        imgs=[]
         ats = []
         links = []
         tiebapluses = []
@@ -77,6 +80,11 @@ class Contents_c(Containers[TypeFragment]):
                 elif _type in [2, 11]:
                     frag = FragEmoji_c.from_proto(proto)
                     emojis.append(frag)
+                    yield frag
+                # 20:tid=5470214675
+                elif _type in [3, 20]:
+                    frag = FragImage_cp.from_proto(proto)
+                    imgs.append(frag)
                     yield frag
                 elif _type == 4:
                     frag = FragAt_c.from_proto(proto)
@@ -107,7 +115,7 @@ class Contents_c(Containers[TypeFragment]):
 
         objs = list(_frags())
 
-        return Contents_c(objs, texts, emojis, ats, links, tiebapluses, voice)
+        return Contents_c(objs, texts, emojis, imgs, ats, links, tiebapluses, voice)
 
     @cached_property
     def text(self) -> str:

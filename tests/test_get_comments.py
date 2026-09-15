@@ -93,6 +93,7 @@ async def test_Comments(client: tb.Client):
 
     ##### Comment #####
     comment = comments[0]
+    comment_with_image = comments[2]
 
     # UserInfo_c
     user = comment.user
@@ -127,6 +128,15 @@ async def test_Comments(client: tb.Client):
     frag = comment.contents.ats[0]
     assert frag.text != ""
     assert frag.user_id > 0
+
+    # FragImage
+    frag = comment_with_image.contents.imgs[0]
+    assert frag.src != ""
+    assert frag.big_src != ""
+    assert frag.origin_src != ""
+    assert len(frag.hash) == 40
+    assert frag.show_width > 0
+    assert frag.show_height > 0
 
     # FragVoice
     frag = comment.contents.voice

@@ -507,7 +507,13 @@ class Client:
     @handle_exception(get_comments.Comments)
     @_try_websocket
     async def get_comments(
-        self, tid: int, pid: int, /, pn: int = 1, *, is_comment: bool = False
+        self, tid: int,
+        pid: int,
+        /,
+        pn: int = 1,
+        *,
+        is_comment: bool = False,
+        sort: PostSortType = PostSortType.ASC
     ) -> get_comments.Comments:
         """
         获取楼中楼回复
@@ -517,15 +523,16 @@ class Client:
             pid (int): 所在楼层的pid或楼中楼的pid
             pn (int, optional): 页码. Defaults to 1.
             is_comment (bool, optional): pid是否指向楼中楼 若指向楼中楼则获取其附近的楼中楼列表. Defaults to False.
+            sort (PostSortType, optional): 楼中楼排序 ASC时间顺序 DESC时间倒序 HOT热门序. Defaults to PostSortType.ASC.
 
         Returns:
             Comments: 楼中楼列表
         """
 
         if self._ws_core.status == WsStatus.OPEN:
-            return await get_comments.request_ws(self._ws_core, tid, pid, pn, is_comment)
+            return await get_comments.request_ws(self._ws_core, tid, pid, pn, is_comment, sort)
 
-        return await get_comments.request_http(self._http_core, tid, pid, pn, is_comment)
+        return await get_comments.request_http(self._http_core, tid, pid, pn, is_comment, sort)
 
     @handle_exception(get_last_replyers.Threads_lp)
     @_try_websocket
