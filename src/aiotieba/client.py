@@ -113,6 +113,7 @@ from .enums import (
     BawuSearchType,
     BawuType,
     BlacklistType,
+    CommentSortType,
     Gender,
     GroupType,
     PostSortType,
@@ -507,7 +508,14 @@ class Client:
     @handle_exception(get_comments.Comments)
     @_try_websocket
     async def get_comments(
-        self, tid: int, pid: int, /, pn: int = 1, *, is_comment: bool = False, sort: PostSortType = PostSortType.ASC
+        self,
+        tid: int,
+        pid: int,
+        /,
+        pn: int = 1,
+        *,
+        is_comment: bool = False,
+        sort: CommentSortType = CommentSortType.ASC,
     ) -> get_comments.Comments:
         """
         获取楼中楼回复
@@ -517,7 +525,7 @@ class Client:
             pid (int): 所在楼层的pid或楼中楼的pid
             pn (int, optional): 页码. Defaults to 1.
             is_comment (bool, optional): pid是否指向楼中楼 若指向楼中楼则获取其附近的楼中楼列表. Defaults to False.
-            sort (PostSortType, optional): 楼中楼排序 ASC时间顺序 DESC时间倒序 HOT热门序. Defaults to PostSortType.ASC.
+            sort (CommentSortType, optional): 楼中楼排序 ASC时间顺序 DESC时间倒序 HOT热门序. Defaults to CommentSortType.ASC.
 
         Returns:
             Comments: 楼中楼列表

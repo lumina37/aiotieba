@@ -146,6 +146,21 @@ class PostSortType(enum.IntEnum):
     HOT = 2
 
 
+class CommentSortType(enum.IntEnum):
+    """
+    楼中楼排序
+
+    Note:
+        ASC 时间顺序\n
+        DESC 时间倒序\n
+        HOT 热门序
+    """
+
+    ASC = 0
+    DESC = 1
+    HOT = 2
+
+
 class BawuSearchType(enum.IntEnum):
     """
     吧务后台搜索类型

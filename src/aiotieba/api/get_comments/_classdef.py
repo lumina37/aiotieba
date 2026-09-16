@@ -30,6 +30,51 @@ FragVoice_c = FragVoice_cp = FragVoice
 
 
 @dcs.dataclass
+class FragImage_c:
+    """
+    图像碎片
+
+    Attributes:
+        src (str): 小图链接 宽720px 一定是静态图
+        big_src (str): 大图链接 宽960px
+        origin_src (str): 原图链接
+        origin_size (int): 原图大小
+        show_width (int): 图像在客户端预览显示的宽度
+        show_height (int): 图像在客户端预览显示的高度
+        hash (str): 百度图床hash
+    """
+
+    src: str = dcs.field(default="", repr=False)
+    big_src: str = dcs.field(default="", repr=False)
+    origin_src: str = dcs.field(default="", repr=False)
+    origin_size: int = 0
+    show_width: int = 0
+    show_height: int = 0
+    hash: str = ""
+
+    @staticmethod
+    def from_proto(data_proto: TypeMessage) -> Self:
+        src = data_proto.cdn_src
+        big_src = data_proto.big_cdn_src
+        origin_src = data_proto.origin_src
+        origin_size = data_proto.origin_size
+
+        show_width, _, show_height = data_proto.bsize.partition(",")
+        show_width = int(show_width)
+        show_height = int(show_height)
+
+        if hash_obj := _IMAGEHASH_EXP.search(src):
+            hash_ = hash_obj.group(1)
+        else:
+            hash_ = ""
+
+        return FragImage_c(src, big_src, origin_src, origin_size, show_width, show_height, hash_)
+
+
+FragImage_cp = FragImage_c
+
+
+@dcs.dataclass
 class Contents_c(Containers[TypeFragment]):
     """
     内容碎片列表
@@ -41,7 +86,7 @@ class Contents_c(Containers[TypeFragment]):
 
         texts (list[TypeFragText]): 纯文本碎片列表
         emojis (list[FragEmoji_c]): 表情碎片列表
-        imgs (list[FragImage_cp]): 图像碎片列表
+        imgs (list[FragImage_c]): 图像碎片列表
         ats (list[FragAt_c]): @碎片列表
         links (list[FragLink_c]): 链接碎片列表
         tiebapluses (list[FragTiebaPlus_c]): 贴吧plus碎片列表
@@ -50,7 +95,7 @@ class Contents_c(Containers[TypeFragment]):
 
     texts: list[TypeFragText] = dcs.field(default_factory=list, repr=False)
     emojis: list[FragEmoji_c] = dcs.field(default_factory=list, repr=False)
-    imgs: list[FragImage_cp] = dcs.field(default_factory=list, repr=False)
+    imgs: list[FragImage_c] = dcs.field(default_factory=list, repr=False)
     ats: list[FragAt_c] = dcs.field(default_factory=list, repr=False)
     links: list[FragLink_c] = dcs.field(default_factory=list, repr=False)
     tiebapluses: list[FragTiebaPlus_c] = dcs.field(default_factory=list, repr=False)
@@ -83,7 +128,7 @@ class Contents_c(Containers[TypeFragment]):
                     yield frag
                 # 20:tid=5470214675
                 elif _type in [3, 20]:
-                    frag = FragImage_cp.from_proto(proto)
+                    frag = FragImage_c.from_proto(proto)
                     imgs.append(frag)
                     yield frag
                 elif _type == 4:
@@ -487,48 +532,6 @@ class Thread_c:
     @property
     def author_id(self) -> int:
         return self.user.user_id
-
-
-@dcs.dataclass
-class FragImage_cp:
-    """
-    图像碎片
-
-    Attributes:
-        src (str): 小图链接 宽720px 一定是静态图
-        big_src (str): 大图链接 宽960px
-        origin_src (str): 原图链接
-        origin_size (int): 原图大小
-        show_width (int): 图像在客户端预览显示的宽度
-        show_height (int): 图像在客户端预览显示的高度
-        hash (str): 百度图床hash
-    """
-
-    src: str = dcs.field(default="", repr=False)
-    big_src: str = dcs.field(default="", repr=False)
-    origin_src: str = dcs.field(default="", repr=False)
-    origin_size: int = 0
-    show_width: int = 0
-    show_height: int = 0
-    hash: str = ""
-
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
-        src = data_proto.cdn_src
-        big_src = data_proto.big_cdn_src
-        origin_src = data_proto.origin_src
-        origin_size = data_proto.origin_size
-
-        show_width, _, show_height = data_proto.bsize.partition(",")
-        show_width = int(show_width)
-        show_height = int(show_height)
-
-        if hash_obj := _IMAGEHASH_EXP.search(src):
-            hash_ = hash_obj.group(1)
-        else:
-            hash_ = ""
-
-        return FragImage_cp(src, big_src, origin_src, origin_size, show_width, show_height, hash_)
 
 
 @dcs.dataclass
