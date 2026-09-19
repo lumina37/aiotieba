@@ -427,9 +427,9 @@ class Account:
             self._aes_cbc_sec_key = random.randbytes(16)
         return self._aes_cbc_sec_key
 
-    @aes_ecb_sec_key.setter
-    def aes_ecb_sec_key(self, new_aes_ecb_sec_key: bytes) -> None:
-        self._aes_ecb_sec_key = new_aes_ecb_sec_key
+    @aes_cbc_sec_key.setter
+    def aes_cbc_sec_key(self, new_aes_cbc_sec_key: bytes) -> None:
+        self._aes_cbc_sec_key = new_aes_cbc_sec_key
 
     @property
     def aes_cbc_chiper(self) -> Cipher[modes.CBC]:

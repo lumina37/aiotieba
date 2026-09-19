@@ -660,7 +660,7 @@ class Client:
             user_id (int): 用户id user_id
 
         Returns:
-            UserInfo_guinfo_app: 包含 user_id / portrait / user_name / 性别 / 是否大神 / 是否超会
+            UserInfo_guinfo_app: 包含 user_id / portrait / user_name / 旧版昵称 / 性别 / 是否超会
         """
 
         if self._ws_core.status == WsStatus.OPEN:
@@ -2657,7 +2657,7 @@ class Client:
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def send_chatroom_msg(
-        self, chatroom_id: int, fid: int, text: str, atuser_ids: Iterable[int] = None, robotc: int = -1
+        self, chatroom_id: int, fid: int, text: str, atuser_ids: Iterable[int] = None, robot: int = -1
     ) -> BoolResponse:
         """
         向吧群发送信息，仅限简单文本。如需要@他人需要指定atuser_ids，如需与bot交互需要指定atuser_ids和robot
@@ -2667,7 +2667,7 @@ class Client:
             fid (int): 吧id
             text (str): 待发送内容
             atuser_ids (Iterable[int], optional): 需要@的人的user_id列表
-            robotc (int, optional): 机器人指令id。机器人靠此分辨指令，而非text内容。
+            robot (int, optional): 机器人指令id。机器人靠此分辨指令，而非text内容。
 
         Returns:
             BoolResponse: True成功 False失败
@@ -2690,7 +2690,7 @@ class Client:
 
         level_info = await self.__get_forum_level(fid)
         level = level_info.user_level
-        isvip = self._user.is_vip
+        is_vip = self._user.is_vip
         glevel = self._user.glevel
 
         # 处理艾特@
@@ -2720,10 +2720,10 @@ class Client:
             text,
             fid,
             level,
-            isvip,
+            is_vip,
             glevel,
             atdata,
-            robot=robotc,
+            robot,
         )
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
@@ -2771,12 +2771,12 @@ class Client:
         return self._blcp_core.message_queue
 
     @handle_exception(BoolResponse)
-    async def join_chatroom(self, room_id: int) -> BoolResponse:
+    async def join_chatroom(self, chatroom_id: int) -> BoolResponse:
         """
         加入聊天室
 
         Args:
-            room_id (int): 房间id
+            chatroom_id (int): 聊天室id
 
         Returns:
             BoolResponse: True成功 False失败
@@ -2788,7 +2788,7 @@ class Client:
             await self._init_blcp()
 
         try:
-            await self._blcp_core.joinChatRoom(room_id)
+            await self._blcp_core.joinChatRoom(chatroom_id)
         except Exception as err:
             raise Exception("加入房间失败") from err
 

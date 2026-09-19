@@ -45,8 +45,8 @@ class BawuListMemberUser:
     def from_xml(data_tag: bs4.element.Tag) -> Self:
         left_cell_item = data_tag.td
 
-        post_user_item = left_cell_item.a
-        user_name = post_user_item.text.lstrip()
+        user_item = left_cell_item.a
+        user_name = user_item.text.lstrip()
 
         exp_item = left_cell_item.next_sibling.next_sibling
         exp = int(exp_item.string)

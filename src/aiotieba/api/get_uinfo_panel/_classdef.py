@@ -58,6 +58,8 @@ class UserInfo_panel(TbErrorExt):
     @staticmethod
     def from_json(data_map: Mapping) -> Self:
         portrait = data_map["portrait"]
+        if "?" in portrait:
+            portrait = portrait[:-13]
         user_name = data_map["name"]
         nick_name_new = data_map["show_nickname"]
         nick_name_old = data_map["name_show"]
@@ -96,7 +98,7 @@ class UserInfo_panel(TbErrorExt):
         return hash(self.portrait)
 
     def __bool__(self) -> bool:
-        return hash(self.portrait)
+        return bool(self.portrait)
 
     @property
     def nick_name(self) -> str:

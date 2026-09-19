@@ -17,8 +17,11 @@ def parse_body(body: bytes) -> RoomList:
     res_json = parse_json(body)
     if code := int(res_json["error_code"]):
         raise TiebaServerError(code, res_json["error_msg"])
-    roomlist = RoomList.from_json(res_json)
-    return roomlist
+
+    data_map = res_json["data"]
+    room_list = RoomList.from_json(data_map)
+
+    return room_list
 
 
 async def request(http_core: HttpCore, fid: int) -> RoomList:

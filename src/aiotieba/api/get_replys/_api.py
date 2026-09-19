@@ -24,9 +24,9 @@ def pack_proto(account: Account, pn: int) -> bytes:
     return req_proto.SerializeToString()
 
 
-def parse_body(proto: bytes) -> Replys:
+def parse_body(body: bytes) -> Replys:
     res_proto = ReplyMeResIdl_pb2.ReplyMeResIdl()
-    res_proto.ParseFromString(proto)
+    res_proto.ParseFromString(body)
 
     if code := res_proto.error.errorno:
         raise TiebaServerError(code, res_proto.error.errmsg)

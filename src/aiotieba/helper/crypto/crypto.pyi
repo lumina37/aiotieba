@@ -45,17 +45,6 @@ def rc4_42(xyus_md5_str: str, aes_cbc_sec_key: bytes) -> bytes:
         bytes
     """
 
-def sign(data: list[tuple[str, str | int]]) -> str:
-    """
-    为参数元组列表计算贴吧客户端签名
-
-    Args:
-        data (list[tuple[str, str | int]]): 参数元组列表
-
-    Returns:
-        str: 签名
-    """
-
 def enuid(cuid_galaxy2: str) -> str:
     """
     生成EnUid

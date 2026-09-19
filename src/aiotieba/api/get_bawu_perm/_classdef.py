@@ -28,11 +28,11 @@ class BawuPerm(TbErrorExt):
 
         for cate in ["category_user", "category_thread"]:
             perm_setting = data_map["perm_setting"]
-            for unblock_perm_dict in perm_setting[cate]:
-                if not unblock_perm_dict["switch"]:
+            for perm_setting_item in perm_setting[cate]:
+                if not perm_setting_item["switch"]:
                     continue
 
-                perm_idx: int = unblock_perm_dict["perm"] - 2
+                perm_idx: int = perm_setting_item["perm"] - 2
                 perm = [
                     BawuPermType.RECOVER_APPEAL,
                     BawuPermType.RECOVER,

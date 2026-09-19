@@ -111,7 +111,6 @@ class FragImage:
         return FragImage(src, big_src, origin_src, origin_size, show_width, show_height, hash_)
 
 
-@dcs.dataclass
 class TypeFragImage(Protocol):
     src: str
     origin_src: str
@@ -168,7 +167,7 @@ class FragVoice:
 
 class TypeFragVoice(Protocol):
     md5: str
-    duration: int
+    duration: float
 
 
 @dcs.dataclass
@@ -209,7 +208,7 @@ class FragVideo:
 class TypeFragVideo(Protocol):
     src: str
     cover_src: str
-    duration: float
+    duration: int
     width: int
     height: int
     view_num: int

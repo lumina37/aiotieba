@@ -278,7 +278,7 @@ class BlacklistType(enum.Flag):
 
 class WsStatus(enum.IntEnum):
     """
-    回复排序
+    websocket状态
 
     Note:
         CLOSED 已关闭\n

@@ -456,7 +456,6 @@ class Comment_p:
                 and first_frag.text == "回复 "
                 and (reply_to_id := data_proto.content[1].uid)
             ):
-                reply_to_id = reply_to_id
                 if isinstance(contents[1], FragAt_p):
                     del contents.ats[0]
                 contents.objs = contents.objs[2:]
@@ -464,8 +463,6 @@ class Comment_p:
                 if contents.texts:
                     first_text_frag = contents.texts[0]
                     first_text_frag.text = first_text_frag.text.removeprefix(" :")
-
-        contents = contents
 
         pid = data_proto.id
         author_id = data_proto.author_id
@@ -966,7 +963,6 @@ class Thread_p:
 
         type (ThreadType): 帖子类型
         is_share (bool): 是否分享帖
-        is_help (bool): 是否为求助帖
 
         vote_info (VoteInfo): 投票信息
         share_origin (ShareThread_pt): 转发来的原帖内容

@@ -26,7 +26,7 @@ class Forum_detail(TbErrorExt):
         origin_avatar (str): 吧头像(原图)
         slogan (str): 吧标语
         member_num (int): 吧会员数
-        post_num (int): 发帖数
+        thread_num (int): 主题帖数
 
         has_bawu (bool): 是否有吧务
     """
@@ -40,7 +40,7 @@ class Forum_detail(TbErrorExt):
     origin_avatar: str = ""
     slogan: str = ""
     member_num: int = 0
-    post_num: int = 0
+    thread_num: int = 0
 
     has_bawu: bool = False
 
@@ -54,6 +54,6 @@ class Forum_detail(TbErrorExt):
         origin_avatar = forum_proto.avatar_origin
         slogan = forum_proto.slogan
         member_num = forum_proto.member_count
-        post_num = forum_proto.thread_count
+        thread_num = forum_proto.thread_count
         has_bawu = data_proto.election_tab.new_strategy_text == "已有吧主"
-        return Forum_detail(fid, fname, category, small_avatar, origin_avatar, slogan, member_num, post_num, has_bawu)
+        return Forum_detail(fid, fname, category, small_avatar, origin_avatar, slogan, member_num, thread_num, has_bawu)

@@ -65,7 +65,7 @@ class Page_rank:
     @staticmethod
     def from_json(data_map: Mapping) -> Self:
         current_page = data_map["cur_page"]
-        total_page = data_map["total_num"]
+        total_page = data_map["total_page"]
         has_more = current_page < total_page
         has_prev = current_page > 1
         return Page_rank(current_page, total_page, has_more, has_prev)

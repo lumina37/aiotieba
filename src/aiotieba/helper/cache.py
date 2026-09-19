@@ -24,7 +24,7 @@ class ForumInfoCache:
             int: 该贴吧的forum_id
         """
 
-        return cls._fname2fid.get(fname, "")
+        return cls._fname2fid.get(fname, 0)
 
     @classmethod
     def get_fname(cls, fid: int) -> str:

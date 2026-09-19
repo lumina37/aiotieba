@@ -32,7 +32,7 @@ class UserInfo_uf:
         user_id = int(data_map.get("id", 0) or 0)
         portrait = data_map.get("portrait", "")
         if "?" in portrait:
-            portrait = portrait.split("?", 1)[0]
+            portrait = portrait[:-13]
         is_like = bool(int(data_map.get("is_like", 0) or 0))
         return UserInfo_uf(user_id, portrait, show_name, is_like)
 

@@ -61,7 +61,7 @@ class BLCPCore:
     waiter: BLCPWaiter
     net_core: NetCore
     trigger_id: int
-    message_queue: Queue  # 该消息队列只有群聊消息，没有各种握手
+    message_queue: Queue  # 该消息队列只存放服务端主动推送（Notify）的消息
     heartbeater: asyncio.Task
 
     def __init__(
@@ -477,7 +477,7 @@ class BLCPCore:
         self.writer.write(request.toBytes())
 
     async def enter_chatroom_client_request(
-        self, cuid_galaxy2: str, room_id: int, account_type: int = 1
+        self, cuid_galaxy2: str, chatroom_id: int, account_type: int = 1
     ):  # 模拟正常请求，暂不清楚作用
         headers = {
             "Content-Type": "application/json",
@@ -488,7 +488,7 @@ class BLCPCore:
         }
         data = {
             "appid": CHAT_APPID,
-            "room_id": room_id,
+            "room_id": chatroom_id,
             "app_version": CHAT_VERSION,
             "cuid": cuid_galaxy2,
             "device_id": cuid_galaxy2,
@@ -519,7 +519,7 @@ class BLCPCore:
         return rjson
 
     async def fetch_mcast_msg_client_request(
-        self, cuid_galaxy2: str, room_id: int, account_type: int = 1
+        self, cuid_galaxy2: str, chatroom_id: int, account_type: int = 1
     ):  # 该方法可以获取历史消息，暂未继续开发
         headers = {
             "Content-Type": "application/json",
@@ -530,7 +530,7 @@ class BLCPCore:
         }
         data = {
             "appid": CHAT_APPID,
-            "mcast_id": room_id,
+            "mcast_id": chatroom_id,
             "msgid_begin": 0,
             "msgid_end": 9223372036854775807,
             "count": -60,

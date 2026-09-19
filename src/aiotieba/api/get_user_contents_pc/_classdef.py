@@ -21,16 +21,16 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
 
 
-FragText_up = FragText_ut = FragText
-FragEmoji_ut = FragEmoji
-FragAt_ut = FragAt
-FragLink_up = FragLink_ut = FragLink
-FragVideo_ut = FragVideo
-FragVoice_ut = FragVoice
+FragText_pcup = FragText_pcut = FragText
+FragEmoji_pcut = FragEmoji
+FragAt_pcut = FragAt
+FragLink_pcup = FragLink_pcut = FragLink
+FragVideo_pcut = FragVideo
+FragVoice_pcut = FragVoice
 
 
 @dcs.dataclass
-class FragVoice_up:
+class FragVoice_pcup:
     """
     音频碎片
 
@@ -46,7 +46,7 @@ class FragVoice_up:
     def from_json(data_map: Mapping) -> Self:
         md5 = data_map["voice_md5"]
         duration = int(data_map["during_time"]) / 1000
-        return FragVoice_up(md5, duration)
+        return FragVoice_pcup(md5, duration)
 
     def __bool__(self) -> bool:
         return bool(self.md5)
@@ -63,13 +63,13 @@ class Contents_pcup(Containers[TypeFragment]):
         text (str): 文本内容
 
         texts (list[TypeFragText]): 纯文本碎片列表
-        links (list[FragLink_up]): 链接碎片列表
-        voice (FragVoice_up): 音频碎片
+        links (list[FragLink_pcup]): 链接碎片列表
+        voice (FragVoice_pcup): 音频碎片
     """
 
     texts: list[TypeFragText] = dcs.field(default_factory=list, repr=False)
-    links: list[FragLink_up] = dcs.field(default_factory=list, repr=False)
-    voice: FragVoice_up = dcs.field(default_factory=FragVoice_up, repr=False)
+    links: list[FragLink_pcup] = dcs.field(default_factory=list, repr=False)
+    voice: FragVoice_pcup = dcs.field(default_factory=FragVoice_pcup, repr=False)
 
     @staticmethod
     def from_json(data_map: Mapping) -> Self:
@@ -77,23 +77,23 @@ class Contents_pcup(Containers[TypeFragment]):
 
         texts = []
         links = []
-        voice = FragVoice_up()
+        voice = FragVoice_pcup()
 
         def _frags():
             for content_map in content_maps:
                 _type = int(content_map["type"])
                 if _type in [0, 4]:
-                    frag = FragText_up.from_json(content_map)
+                    frag = FragText_pcup.from_json(content_map)
                     texts.append(frag)
                     yield frag
                 elif _type == 1:
-                    frag = FragLink_up.from_json(content_map)
+                    frag = FragLink_pcup.from_json(content_map)
                     links.append(frag)
                     texts.append(frag)
                     yield frag
                 elif _type == 10:  # voice
                     nonlocal voice
-                    voice = FragVoice_up.from_json(content_map)
+                    voice = FragVoice_pcup.from_json(content_map)
                     continue
                 else:
                     yield FragUnknown.from_json(content_map)
@@ -200,9 +200,12 @@ class PcUserPost:
     def from_json(data_map: Mapping) -> Self:
         post_info = data_map["post_info"]
         contents = Contents_pcup.from_json(post_info)
+        thread_info = data_map["thread_info"]
+        fid = thread_info["fid"]
+        tid = thread_info["tid"]
         pid = post_info["id"]
         create_time = post_info["time"]
-        return PcUserPost(contents, 0, 0, pid, None, create_time)
+        return PcUserPost(contents, fid, tid, pid, None, create_time)
 
     def __eq__(self, obj: PcUserPost) -> bool:
         return self.pid == obj.pid

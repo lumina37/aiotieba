@@ -497,7 +497,6 @@ class UserThread:
         user (UserInfo_u): 发布者的用户信息
 
         type (ThreadType): 帖子类型
-        is_help (bool): 是否为求助帖
 
         vote_info (VoteInfo): 投票信息
         view_num (int): 浏览量

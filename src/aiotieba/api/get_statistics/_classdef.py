@@ -37,7 +37,7 @@ class Statistics:
     def from_json(data_seq: Sequence) -> Self:
         def extract(i: int) -> list[int]:
             seq: list = data_seq[i]["group"][1]["values"]
-            seq = [int(item["value"]) for item in seq]
+            seq = [int(item["value"]) for item in reversed(seq)]
             return seq
 
         view = extract(0)

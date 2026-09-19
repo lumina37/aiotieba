@@ -138,7 +138,7 @@ class MsgIDManager:
         if mid_pair is not None:
             mid_pair.update_msg_id(msg_id)
         else:
-            mid_pair = MsgIDPair(msg_id, msg_id)
+            self.gid2mid[group_id] = MsgIDPair(msg_id, msg_id)
 
     def get_msg_id(self, group_id: int) -> int:
         """

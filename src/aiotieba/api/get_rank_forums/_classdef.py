@@ -97,8 +97,8 @@ class RankForums(TbErrorExt, Containers[RankForum]):
 
     @staticmethod
     def from_xml(data_soup: bs4.BeautifulSoup) -> Self:
-        dbgtbody = data_soup.find("table")
-        objs = [RankForum.from_xml(t) for t in dbgtbody.find_all("tr", class_="j_rank_row")]
+        rank_table = data_soup.find("table")
+        objs = [RankForum.from_xml(t) for t in rank_table.find_all("tr", class_="j_rank_row")]
         page = Page_rankforum.from_xml(data_soup)
         return RankForums(objs, page)
 

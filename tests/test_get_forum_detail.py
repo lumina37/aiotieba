@@ -15,5 +15,5 @@ async def test_Forum_detail(client: tb.Client):
     assert forum.origin_avatar != ""
     assert forum.slogan != ""
     assert forum.member_num > 0
-    assert forum.post_num > 0
+    assert forum.thread_num > 0
     assert forum.has_bawu is True

@@ -17,7 +17,7 @@ class SquareForum:
         fname (str): 贴吧名
 
         member_num (int): 吧会员数
-        post_num (int): 发帖数
+        thread_num (int): 主题帖数
 
         is_followed (bool): 是否已关注
     """
@@ -26,7 +26,7 @@ class SquareForum:
     fname: str = ""
 
     member_num: int = 0
-    post_num: int = 0
+    thread_num: int = 0
 
     is_followed: bool = False
 
@@ -35,9 +35,9 @@ class SquareForum:
         fid = data_proto.forum_id
         fname = data_proto.forum_name
         member_num = data_proto.member_count
-        post_num = data_proto.thread_count
+        thread_num = data_proto.thread_count
         is_followed = bool(data_proto.is_like)
-        return SquareForum(fid, fname, member_num, post_num, is_followed)
+        return SquareForum(fid, fname, member_num, thread_num, is_followed)
 
     def __eq__(self, obj: SquareForum) -> bool:
         return self.fid == obj.fid
@@ -96,7 +96,7 @@ class SquareForums(TbErrorExt, Containers[SquareForum]):
     page: Page_square = dcs.field(default_factory=Page_square)
 
     @staticmethod
-    def from_proto(data_proto: TypeMessage | None = None) -> Self:
+    def from_proto(data_proto: TypeMessage) -> Self:
         objs = [SquareForum.from_proto(p) for p in data_proto.forum_info]
         page = Page_square.from_proto(data_proto.page)
         return SquareForums(objs, page)

@@ -15,7 +15,20 @@ class AppConstants:
 
 
 async def construct_request_data(
-    blcpcore, room_id, uk, user_id, origin_id, name, portrait, text, fid, level, vip, glevel, atdata=None, robot=-1
+    blcpcore,
+    chatroom_id,
+    uk,
+    user_id,
+    origin_id,
+    name,
+    portrait,
+    text,
+    fid,
+    level,
+    is_vip,
+    glevel,
+    atdata=None,
+    robot=-1,
 ):
     constants = AppConstants()
 
@@ -25,10 +38,10 @@ async def construct_request_data(
     # 构造content
     content = {
         "text": {
-            "room_id": str(room_id),
+            "room_id": str(chatroom_id),
             "type": "0",
             "to_uid": "0",
-            "vip": str(int(vip)),
+            "vip": str(int(is_vip)),
             "name": name,
             "portrait": portrait + "?t=" + str(int(time.time())),
             "content_type": "0",
@@ -41,7 +54,7 @@ async def construct_request_data(
 
     # 构造main_data，其主要包含名字、头像、昵称颜色、大会员标志等UI展示信息
     main_data = []
-    if vip:
+    if is_vip:
         main_data.append({
             "icon": {
                 "height": 75,
@@ -68,7 +81,7 @@ async def construct_request_data(
         "type": 1,
     }
 
-    if vip:
+    if is_vip:
         # 开通了贴吧大会员，更新名称颜色
         namedata["text"].update({"text_color": {"day": "CAM_X0301", "night": "CAM_X0301", "type": 2}})
     main_data.extend((
@@ -111,7 +124,7 @@ async def construct_request_data(
         "role": 0,
         "send_status": 0,
         "from": "android",
-        "session_id": room_id,
+        "session_id": chatroom_id,
         "type": 1,
         "user_name": name,
     }
@@ -142,7 +155,7 @@ async def construct_request_data(
     # 构造最终请求数据
     request_data = {
         "method": 185,
-        "mcast_id": room_id,
+        "mcast_id": chatroom_id,
         "role": 3,
         "token": blcpcore.account.BDUSS,
         "appid": constants.appid,
@@ -189,7 +202,7 @@ async def send_request(blcpcore, request_data):
 
 async def request(
     blcpcore: BLCPCore,
-    room_id: int,
+    chatroom_id: int,
     uk: int,
     user_id: int,
     origin_id: int,
@@ -198,12 +211,12 @@ async def request(
     text: str,
     fid: int,
     level: int,
-    vip: bool,
+    is_vip: bool,
     glevel: int,
     atdata: list[dict] = None,
     robot=-1,
 ):
     request_data = await construct_request_data(
-        blcpcore, room_id, uk, user_id, origin_id, name, portrait, text, fid, level, vip, glevel, atdata, robot
+        blcpcore, chatroom_id, uk, user_id, origin_id, name, portrait, text, fid, level, is_vip, glevel, atdata, robot
     )
     return await send_request(blcpcore, request_data)

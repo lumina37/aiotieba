@@ -92,7 +92,7 @@ class Contents_ri(Containers[TypeFragment]):
                 elif _type == 3:
                     continue
                 else:
-                    yield FragUnknown.from_proto(cmap)
+                    yield FragUnknown.from_json(cmap)
 
         objs = list(_frags())
         objs += imgs

@@ -319,7 +319,6 @@ class Comment:
                 and first_frag.text == "回复 "
                 and (reply_to_id := data_proto.content[1].uid)
             ):
-                reply_to_id = reply_to_id
                 if isinstance(contents[1], FragAt_c):
                     del contents.ats[0]
                 contents.objs = contents.objs[2:]
@@ -494,7 +493,6 @@ class Thread_c:
         author_id (int): 发布者的user_id
 
         type (ThreadType): 帖子类型
-        is_help (bool): 是否为求助帖
 
         reply_num (int): 回复数
     """

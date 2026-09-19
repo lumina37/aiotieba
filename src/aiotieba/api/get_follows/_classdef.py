@@ -103,7 +103,7 @@ class Page_follow:
 @dcs.dataclass
 class Follows(TbErrorExt, Containers[Follow]):
     """
-    粉丝列表
+    关注列表
 
     Attributes:
         objs (list[Follow]): 关注列表

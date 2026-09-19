@@ -88,6 +88,7 @@ class Blocks(TbErrorExt, Containers[Block]):
 
     page: Page_block = dcs.field(default_factory=Page_block)
 
+    @staticmethod
     def from_json(data_map: Mapping) -> Blocks:
         data_soup = bs4.BeautifulSoup(data_map["data"]["content"], "lxml")
         objs = [Block.from_xml(t) for t in data_soup("li")]

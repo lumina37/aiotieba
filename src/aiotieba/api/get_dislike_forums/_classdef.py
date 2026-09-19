@@ -53,8 +53,6 @@ class DislikeForum:
     post_num: int = 0
     thread_num: int = 0
 
-    is_followed: bool = False
-
     @staticmethod
     def from_proto(data_proto: TypeMessage) -> Self:
         fid = data_proto.forum_id

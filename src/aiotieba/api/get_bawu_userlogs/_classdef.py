@@ -35,8 +35,8 @@ class BawuUserLog:
     def from_xml(data_tag: bs4.element.Tag) -> Self:
         left_cell_item = data_tag.td
 
-        post_user_item = left_cell_item.a
-        user_portrait = post_user_item["href"][14:-17]
+        user_item = left_cell_item.a
+        user_portrait = user_item["href"][14:-17]
 
         op_type_item = left_cell_item.next_sibling.next_sibling
         op_type = op_type_item.string

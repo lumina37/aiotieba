@@ -594,7 +594,6 @@ class Thread:
         is_share (bool): 是否分享帖
         is_hide (bool): 是否被屏蔽
         is_livepost (bool): 是否为置顶话题
-        is_help (bool): 是否为求助帖
 
         vote_info (VoteInfo): 投票信息
         share_origin (ShareThread): 转发来的原帖内容

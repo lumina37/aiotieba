@@ -32,7 +32,7 @@ class SelfFollowForum:
         fid = data_map["forum_id"]
         fname = data_map["forum_name"]
         level = data_map["level_id"]
-        is_signed = data_map["is_sign"]
+        is_signed = bool(int(data_map["is_sign"]))
         return SelfFollowForum(fid, fname, level, is_signed)
 
 
