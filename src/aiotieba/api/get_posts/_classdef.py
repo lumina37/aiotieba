@@ -421,8 +421,6 @@ class Comment_p:
         reply_to_id (int): 被回复者的user_id
 
         floor (int): 所在楼层数
-        agree (int): 点赞数
-        disagree (int): 点踩数
         create_time (int): 创建时间 10位时间戳 以秒为单位
         is_thread_author (bool): 是否楼主
     """
@@ -439,8 +437,6 @@ class Comment_p:
     reply_to_id: int = 0
 
     floor: int = 0
-    agree: int = 0
-    disagree: int = 0
     create_time: int = 0
     is_thread_author: bool = False
 
@@ -466,13 +462,9 @@ class Comment_p:
 
         pid = data_proto.id
         author_id = data_proto.author_id
-        agree = data_proto.agree.agree_num
-        disagree = data_proto.agree.disagree_num
         create_time = data_proto.time
 
-        return Comment_p(
-            contents, 0, "", 0, 0, pid, None, author_id, reply_to_id, 0, agree, disagree, create_time, False
-        )
+        return Comment_p(contents, 0, "", 0, 0, pid, None, author_id, reply_to_id, 0, create_time, False)
 
     def __eq__(self, obj: Comment_p) -> bool:
         return self.pid == obj.pid
@@ -587,7 +579,6 @@ class Page_p:
         page_size (int): 页大小
         current_page (int): 当前页码
         total_page (int): 总页码
-        total_count (int): 总计数
 
         has_more (bool): 是否有后继页
         has_prev (bool): 是否有前驱页
@@ -596,7 +587,6 @@ class Page_p:
     page_size: int = 0
     current_page: int = 0
     total_page: int = 0
-    total_count: int = 0
 
     has_more: bool = False
     has_prev: bool = False
@@ -606,10 +596,9 @@ class Page_p:
         page_size = data_proto.page_size
         current_page = data_proto.current_page
         total_page = data_proto.total_page
-        total_count = data_proto.total_count
         has_more = bool(data_proto.has_more)
         has_prev = bool(data_proto.has_prev)
-        return Page_p(page_size, current_page, total_page, total_count, has_more, has_prev)
+        return Page_p(page_size, current_page, total_page, has_more, has_prev)
 
 
 @dcs.dataclass
@@ -805,7 +794,6 @@ class UserInfo_pt:
         icons (list[str]): 印记信息
 
         is_bawu (bool): 是否吧务
-        is_vip (bool): 是否超级会员
         priv_like (PrivLike): 关注吧列表的公开状态
         priv_reply (PrivReply): 帖子评论权限
 
@@ -825,7 +813,6 @@ class UserInfo_pt:
     icons: list[str] = dcs.field(default_factory=list)
 
     is_bawu: bool = False
-    is_vip: bool = False
     priv_like: PrivLike = PrivLike.PUBLIC
     priv_reply: PrivReply = PrivReply.ALL
 
@@ -842,7 +829,6 @@ class UserInfo_pt:
         ip = data_proto.ip_address
         icons = [name for i in data_proto.iconinfo if (name := i.name)]
         is_bawu = bool(data_proto.is_bawu)
-        is_vip = data_proto.is_mem != 0
         priv_like = PrivLike(priv_like) if (priv_like := data_proto.priv_sets.like) else PrivLike.PUBLIC
         priv_reply = PrivReply(priv_reply) if (priv_reply := data_proto.priv_sets.reply) else PrivReply.ALL
         return UserInfo_pt(
@@ -855,7 +841,6 @@ class UserInfo_pt:
             ip,
             icons,
             is_bawu,
-            is_vip,
             priv_like,
             priv_reply,
         )
@@ -903,9 +888,19 @@ class ShareThread_pt:
         fid (int): 所在吧id
         fname (str): 所在贴吧名
         tid (int): 主题帖tid
+        pid (int): 首楼回复pid
+        user (UserInfo_pt): 发布者的用户信息
         author_id (int): 发布者的user_id
 
-        vote_info (VoteInfo): 投票内容
+        type (ThreadType): 帖子类型
+
+        vote_info (VoteInfo): 投票信息
+        reply_num (int): 回复数
+        share_num (int): 分享数
+        agree (int): 点赞数
+        disagree (int): 点踩数
+
+        is_deleted (bool): 原帖是否已被删除
     """
 
     contents: Contents_pt = dcs.field(default_factory=Contents_pt)
@@ -914,9 +909,18 @@ class ShareThread_pt:
     fid: int = 0
     fname: str = ""
     tid: int = 0
-    author_id: int = 0
+    pid: int = 0
+    user: UserInfo_pt = dcs.field(default_factory=UserInfo_pt)
+
+    type: ThreadType = ThreadType.UNKNOWN
 
     vote_info: VoteInfo = dcs.field(default_factory=VoteInfo)
+    reply_num: int = 0
+    share_num: int = 0
+    agree: int = 0
+    disagree: int = 0
+
+    is_deleted: bool = False
 
     @staticmethod
     def from_proto(data_proto: TypeMessage) -> Self:
@@ -925,15 +929,46 @@ class ShareThread_pt:
         fid = data_proto.fid
         fname = data_proto.fname
         tid = int(tid) if (tid := data_proto.tid) else 0
-        author_id = data_proto.content[0].uid if data_proto.content else 0
+        pid = data_proto.pid
+        user = UserInfo_pt.from_proto(data_proto.author)
+
+        type_ = ThreadType(data_proto.thread_type)
+        if type_ == ThreadType.UNKNOWN:
+            LOG().debug("Unknown thread type. tid=%d, type=%s", tid, data_proto.thread_type)
+
         vote_info = VoteInfo.from_proto(data_proto.poll_info)
-        return ShareThread_pt(contents, title, fid, fname, tid, author_id, vote_info)
+        reply_num = data_proto.reply_num
+        share_num = data_proto.shared_num
+        agree = data_proto.agree.agree_num
+        disagree = data_proto.agree.disagree_num
+        is_deleted = bool(data_proto.is_deleted)
+
+        return ShareThread_pt(
+            contents,
+            title,
+            fid,
+            fname,
+            tid,
+            pid,
+            user,
+            type_,
+            vote_info,
+            reply_num,
+            share_num,
+            agree,
+            disagree,
+            is_deleted,
+        )
 
     def __eq__(self, obj: ShareThread_pt) -> bool:
         return self.tid == obj.tid
 
     def __hash__(self) -> int:
         return self.tid
+
+    @property
+    def author_id(self) -> int:
+        return self.user.user_id
 
     @cached_property
     def text(self) -> str:
@@ -971,6 +1006,7 @@ class Thread_p:
         share_num (int): 分享数
         agree (int): 点赞数
         disagree (int): 点踩数
+        collect_num (int): 收藏数
         create_time (int): 创建时间 10位时间戳 以秒为单位
     """
 
@@ -993,6 +1029,7 @@ class Thread_p:
     share_num: int = 0
     agree: int = 0
     disagree: int = 0
+    collect_num: int = 0
     create_time: int = 0
 
     @staticmethod
@@ -1013,6 +1050,7 @@ class Thread_p:
         share_num = thread_proto.share_num
         agree = thread_proto.agree.agree_num
         disagree = thread_proto.agree.disagree_num
+        collect_num = thread_proto.collect_num
         create_time = thread_proto.create_time
 
         if not is_share:
@@ -1042,6 +1080,7 @@ class Thread_p:
             share_num,
             agree,
             disagree,
+            collect_num,
             create_time,
         )
 

@@ -41,9 +41,15 @@ message ThreadInfo {
         string fname = 4;
         string tid = 5;
         int64 fid = 7;
+        int32 thread_type = 8;
+        int32 is_deleted = 9;
         repeated Voice voice_info = 12;
         VideoInfo video_info = 13;
         repeated PbContent content = 14;
+        int32 reply_num = 16;
+        User author = 18;
+        Agree agree = 19;
+        int32 shared_num = 20;
         PollInfo poll_info = 21;
         int64 pid = 25;
     }
@@ -53,5 +59,7 @@ message ThreadInfo {
     int32 is_share_thread = 143;
     int32 tab_id = 175;
     int32 is_deleted = 181;
+    // get_posts(PbPage)全版本下发; get_threads(FrsPage)在LEGACY_VERSION下不下发
+    uint32 collect_num = 190;
     int32 is_frs_mask = 198;
 }
