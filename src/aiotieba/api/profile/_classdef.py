@@ -9,7 +9,6 @@ from ...exception import TbErrorExt
 from .._classdef import Containers, TypeMessage, VoteInfo
 from .._classdef.contents import (
     _IMAGEHASH_EXP,
-    FragAt,
     FragEmoji,
     FragLink,
     FragText,
@@ -22,10 +21,34 @@ from .._classdef.contents import (
 
 FragText_pf = FragText
 FragEmoji_pf = FragEmoji
-FragAt_pf = FragAt
 FragLink_pf = FragLink
 FragVideo_pf = FragVideo
 FragVoice_pf = FragVoice
+
+
+@dcs.dataclass
+class FragAt_pf:
+    """
+    @碎片
+
+    Attributes:
+        text (str): 被@用户的昵称 含@
+        user_id (int): 被@用户的user_id
+        portrait (str): 被@用户的portrait
+    """
+
+    text: str = ""
+    user_id: int = 0
+    portrait: str = ""
+
+    @staticmethod
+    def from_proto(data_proto: TypeMessage) -> Self:
+        text = data_proto.text
+        user_id = data_proto.uid
+        portrait = data_proto.portrait
+        if "?" in portrait:
+            portrait = portrait[:-13]
+        return FragAt_pf(text, user_id, portrait)
 
 
 @dcs.dataclass

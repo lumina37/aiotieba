@@ -29,6 +29,7 @@ message ThreadInfo {
     int32 create_time = 45;
     int64 post_id = 52;
     int64 author_id = 56;
+    uint32 valid_post_num = 57;
     uint32 is_ad = 59;
     PollInfo poll_info = 74;
     VideoInfo video_info = 79;
@@ -59,7 +60,6 @@ message ThreadInfo {
     int32 is_share_thread = 143;
     int32 tab_id = 175;
     int32 is_deleted = 181;
-    // get_posts(PbPage)全版本下发; get_threads(FrsPage)在LEGACY_VERSION下不下发
     uint32 collect_num = 190;
     int32 is_frs_mask = 198;
 }

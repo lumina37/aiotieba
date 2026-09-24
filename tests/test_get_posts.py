@@ -30,6 +30,7 @@ async def test_Posts(client: tb.Client):
     assert user.show_name == user.nick_name_new
     assert user.level > 0
     assert user.glevel > 0
+    assert user.gender > 0
     assert user.ip != ""
     assert user.priv_like != 0
     assert user.priv_reply != 0
@@ -54,7 +55,14 @@ async def test_Posts(client: tb.Client):
     assert thread.view_num > 0
     assert thread.reply_num > 0
     assert thread.share_num > 0
+    assert thread.collect_num > 0
     assert thread.create_time > 0
+
+    ##### Page_p #####
+    page = posts.page
+    assert page.page_size > 0
+    assert page.current_page == 1
+    assert page.total_page > 0
 
     ##### Post #####
     assert len(posts) >= 2
@@ -69,6 +77,7 @@ async def test_Posts(client: tb.Client):
     assert user.show_name == user.nick_name_new
     assert user.level > 0
     assert user.glevel > 0
+    assert user.gender > 0
     assert user.ip != ""
     assert user.priv_like != 0
     assert user.priv_reply != 0
@@ -93,6 +102,7 @@ async def test_Posts(client: tb.Client):
     frag = post.contents.ats[0]
     assert frag.text != ""
     assert frag.user_id > 0
+    assert frag.portrait != ""
 
     # FragVoice
     frag = post.contents.voice
@@ -156,6 +166,8 @@ async def test_ShareThread_pt(client: tb.Client):
     assert sthread.fid == 37574
     assert sthread.fname == "starry"
     assert sthread.tid > 0
+    assert sthread.type == tb.ThreadType.VOICE
+    assert sthread.is_deleted is False
 
     # VoteInfo
     vote_info = sthread.vote_info
@@ -171,6 +183,7 @@ async def test_ShareThread_pt(client: tb.Client):
     assert frag.text != ""
 
     # FragAt
+    # 原帖正文不下发portrait 因此FragAt_pt不含该字段
     frag = sthread.contents.ats[0]
     assert frag.text != ""
     assert frag.user_id > 0

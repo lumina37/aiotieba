@@ -24,11 +24,39 @@ from .._classdef.contents import (
 
 FragText_p = FragText_pt = FragText_pc = FragText
 FragEmoji_p = FragEmoji_pt = FragEmoji_pc = FragEmoji
-FragAt_p = FragAt_pt = FragAt_pc = FragAt
+FragAt_pt = FragAt
 FragLink_p = FragLink_pt = FragLink_pc = FragLink
 FragTiebaPlus_p = FragTiebaPlus_pt = FragTiebaPlus_pc = FragTiebaPlus
 FragVideo_pt = FragVideo
 FragVoice_p = FragVoice_pt = FragVoice_pc = FragVoice
+
+
+@dcs.dataclass
+class FragAt_p:
+    """
+    @碎片
+
+    Attributes:
+        text (str): 被@用户的昵称 含@
+        user_id (int): 被@用户的user_id
+        portrait (str): 被@用户的portrait
+    """
+
+    text: str = ""
+    user_id: int = 0
+    portrait: str = ""
+
+    @staticmethod
+    def from_proto(data_proto: TypeMessage) -> Self:
+        text = data_proto.text
+        user_id = data_proto.uid
+        portrait = data_proto.portrait
+        if "?" in portrait:
+            portrait = portrait[:-13]
+        return FragAt_p(text, user_id, portrait)
+
+
+FragAt_pc = FragAt_p
 
 
 @dcs.dataclass
@@ -452,7 +480,7 @@ class Comment_p:
                 and first_frag.text == "回复 "
                 and (reply_to_id := data_proto.content[1].uid)
             ):
-                if isinstance(contents[1], FragAt_p):
+                if isinstance(contents[1], FragAt_pc):
                     del contents.ats[0]
                 contents.objs = contents.objs[2:]
                 contents.texts = contents.texts[2:]
@@ -790,6 +818,7 @@ class UserInfo_pt:
 
         level (int): 等级
         glevel (int): 贴吧成长等级
+        gender (Gender): 性别
         ip (str): ip归属地
         icons (list[str]): 印记信息
 
@@ -809,6 +838,7 @@ class UserInfo_pt:
 
     level: int = 0
     glevel: int = 0
+    gender: Gender = Gender.UNKNOWN
     ip: str = ""
     icons: list[str] = dcs.field(default_factory=list)
 
@@ -826,6 +856,7 @@ class UserInfo_pt:
         nick_name_new = data_proto.name_show
         level = data_proto.level_id
         glevel = data_proto.user_growth.level_id
+        gender = Gender(data_proto.gender)
         ip = data_proto.ip_address
         icons = [name for i in data_proto.iconinfo if (name := i.name)]
         is_bawu = bool(data_proto.is_bawu)
@@ -838,6 +869,7 @@ class UserInfo_pt:
             nick_name_new,
             level,
             glevel,
+            gender,
             ip,
             icons,
             is_bawu,
@@ -888,7 +920,6 @@ class ShareThread_pt:
         fid (int): 所在吧id
         fname (str): 所在贴吧名
         tid (int): 主题帖tid
-        pid (int): 首楼回复pid
         user (UserInfo_pt): 发布者的用户信息
         author_id (int): 发布者的user_id
 
@@ -909,8 +940,8 @@ class ShareThread_pt:
     fid: int = 0
     fname: str = ""
     tid: int = 0
-    pid: int = 0
     user: UserInfo_pt = dcs.field(default_factory=UserInfo_pt)
+    author_id: int = 0
 
     type: ThreadType = ThreadType.UNKNOWN
 
@@ -929,8 +960,8 @@ class ShareThread_pt:
         fid = data_proto.fid
         fname = data_proto.fname
         tid = int(tid) if (tid := data_proto.tid) else 0
-        pid = data_proto.pid
         user = UserInfo_pt.from_proto(data_proto.author)
+        author_id = data_proto.content[0].uid if data_proto.content else 0
 
         type_ = ThreadType(data_proto.thread_type)
         if type_ == ThreadType.UNKNOWN:
@@ -949,8 +980,8 @@ class ShareThread_pt:
             fid,
             fname,
             tid,
-            pid,
             user,
+            author_id,
             type_,
             vote_info,
             reply_num,
@@ -965,10 +996,6 @@ class ShareThread_pt:
 
     def __hash__(self) -> int:
         return self.tid
-
-    @property
-    def author_id(self) -> int:
-        return self.user.user_id
 
     @cached_property
     def text(self) -> str:

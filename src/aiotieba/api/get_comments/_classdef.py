@@ -10,7 +10,6 @@ from ...logging import get_logger as LOG
 from .._classdef import Containers, TypeMessage
 from .._classdef.contents import (
     _IMAGEHASH_EXP,
-    FragAt,
     FragEmoji,
     FragLink,
     FragText,
@@ -23,10 +22,37 @@ from .._classdef.contents import (
 
 FragText_c = FragText_cp = FragText
 FragEmoji_c = FragEmoji_cp = FragEmoji
-FragAt_c = FragAt_cp = FragAt
 FragLink_c = FragLink_cp = FragLink
 FragTiebaPlus_c = FragTiebaPlus_cp = FragTiebaPlus
 FragVoice_c = FragVoice_cp = FragVoice
+
+
+@dcs.dataclass
+class FragAt_c:
+    """
+    @碎片
+
+    Attributes:
+        text (str): 被@用户的昵称 含@
+        user_id (int): 被@用户的user_id
+        portrait (str): 被@用户的portrait
+    """
+
+    text: str = ""
+    user_id: int = 0
+    portrait: str = ""
+
+    @staticmethod
+    def from_proto(data_proto: TypeMessage) -> Self:
+        text = data_proto.text
+        user_id = data_proto.uid
+        portrait = data_proto.portrait
+        if "?" in portrait:
+            portrait = portrait[:-13]
+        return FragAt_c(text, user_id, portrait)
+
+
+FragAt_cp = FragAt_c
 
 
 @dcs.dataclass
@@ -425,6 +451,8 @@ class UserInfo_ct:
 
         level (int): 等级
 
+        is_vip (bool): 是否超级会员
+
         nick_name (str): 用户昵称
         show_name (str): 显示名称
         log_name (str): 用于在日志中记录用户信息
@@ -436,6 +464,7 @@ class UserInfo_ct:
     nick_name_new: str = ""
 
     level: int = 0
+    is_vip: bool = False
 
     @staticmethod
     def from_proto(data_proto: TypeMessage) -> Self:
@@ -446,7 +475,8 @@ class UserInfo_ct:
         user_name = data_proto.name
         nick_name_new = data_proto.name_show
         level = data_proto.level_id
-        return UserInfo_ct(user_id, portrait, user_name, nick_name_new, level)
+        is_vip = data_proto.is_mem != 0
+        return UserInfo_ct(user_id, portrait, user_name, nick_name_new, level, is_vip)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
@@ -495,6 +525,7 @@ class Thread_c:
         type (ThreadType): 帖子类型
 
         reply_num (int): 回复数
+        floor_num (int): 未删除的楼层数
     """
 
     title: str = ""
@@ -507,6 +538,7 @@ class Thread_c:
     type: ThreadType = ThreadType.UNKNOWN
 
     reply_num: int = 0
+    floor_num: int = 0
 
     @staticmethod
     def from_proto(data_proto: TypeMessage) -> Self:
@@ -519,7 +551,8 @@ class Thread_c:
             LOG().debug("Unknown thread type. tid=%d, type=%s", tid, data_proto.thread_type)
 
         reply_num = data_proto.reply_num
-        return Thread_c(title, 0, "", tid, user, type_, reply_num)
+        floor_num = data_proto.valid_post_num
+        return Thread_c(title, 0, "", tid, user, type_, reply_num, floor_num)
 
     def __eq__(self, obj: Thread_c) -> bool:
         return self.tid == obj.tid
@@ -729,6 +762,8 @@ class Post_c:
         author_id (int): 发布者的user_id
 
         floor (int): 楼层数
+        agree (int): 点赞数
+        disagree (int): 点踩数
         create_time (int): 创建时间 10位时间戳 以秒为单位
     """
 
@@ -742,6 +777,8 @@ class Post_c:
     user: UserInfo_cp = dcs.field(default_factory=UserInfo_cp)
 
     floor: int = 0
+    agree: int = 0
+    disagree: int = 0
     create_time: int = 0
 
     @staticmethod
@@ -751,8 +788,10 @@ class Post_c:
         pid = data_proto.id
         user = UserInfo_cp.from_proto(data_proto.author)
         floor = data_proto.floor
+        agree = data_proto.agree.agree_num
+        disagree = data_proto.agree.disagree_num
         create_time = data_proto.time
-        return Post_c(contents, sign, 0, "", 0, pid, user, floor, create_time)
+        return Post_c(contents, sign, 0, "", 0, pid, user, floor, agree, disagree, create_time)
 
     def __eq__(self, obj: Post_c) -> bool:
         return self.pid == obj.pid
