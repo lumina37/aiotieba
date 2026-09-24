@@ -27,7 +27,7 @@ class UserInfo_moindex:
         forum_num (int): 关注贴吧数
         sign (str): 个性签名
 
-        is_vip (bool): 是否超级会员
+        is_vip (bool): 是否会员
 
         log_name (str): 用于在日志中记录用户信息
     """
@@ -59,7 +59,7 @@ class UserInfo_moindex:
         sign = data_map["intro"]
 
         if vip_dict := data_map.get("vipInfo", None):
-            is_vip = int(vip_dict["v_status"]) == 3
+            is_vip = int(vip_dict["v_status"]) != 0
         else:
             is_vip = False
 

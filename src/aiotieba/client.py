@@ -660,7 +660,7 @@ class Client:
             user_id (int): 用户id user_id
 
         Returns:
-            UserInfo_guinfo_app: 包含 user_id / portrait / user_name / 旧版昵称 / 性别 / 是否超会
+            UserInfo_guinfo_app: 包含 user_id / portrait / user_name / 旧版昵称 / 性别 / 是否会员
         """
 
         if self._ws_core.status == WsStatus.OPEN:
@@ -719,7 +719,7 @@ class Client:
             name_or_portrait (str): 用户id user_name / portrait
 
         Returns:
-            UserInfo_panel: 包含 portrait / user_name / age / 是否超会 等信息
+            UserInfo_panel: 包含 portrait / user_name / age / 是否会员 等信息
 
         Note:
             从2022.08.30开始服务端不再返回user_id字段 请谨慎使用\n

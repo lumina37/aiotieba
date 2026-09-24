@@ -43,6 +43,7 @@ message User {
     }
     repeated LikeForumInfo likeForum = 47;
     int32 is_guanfang = 52;
+    int32 thread_num = 87;
     int32 is_fans = 91;
     int32 is_default_avatar = 106;
     string tieba_uid = 120;

@@ -26,7 +26,7 @@ class UserInfo_guinfo_app(TbErrorExt):
 
         gender (Gender): 性别
 
-        is_vip (bool): 是否超级会员
+        is_vip (bool): 是否会员
 
         nick_name (str): 用户昵称
         log_name (str): 用于在日志中记录用户信息

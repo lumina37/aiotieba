@@ -22,6 +22,7 @@ class UserInfo:
         gender (Gender): 性别
         age (float): 吧龄 以年为单位
         post_num (int): 发帖数
+        thread_num (int): 主题帖数
         agree_num (int): 获赞数
         fan_num (int): 粉丝数
         follow_num (int): 关注数
@@ -30,7 +31,7 @@ class UserInfo:
         ip (str): ip归属地
         icons (list[str]): 印记信息
 
-        is_vip (bool): 是否超级会员
+        is_vip (bool): 是否会员
         is_blocked (bool): 是否被永久封禁屏蔽
         uk (int): 群聊账号标识 来自群聊服务的登录回包
         bduk (str): 群聊账号标识bd_uid 来自群聊服务的登录回包
@@ -54,6 +55,7 @@ class UserInfo:
     gender: Gender = Gender.UNKNOWN
     age: float = 0.0
     post_num: int = 0
+    thread_num: int = 0
     agree_num: int = 0
     fan_num: int = 0
     follow_num: int = 0

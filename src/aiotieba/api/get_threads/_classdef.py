@@ -218,7 +218,7 @@ class UserInfo_t:
         icons (list[str]): 印记信息
 
         is_bawu (bool): 是否吧务
-        is_vip (bool): 是否超级会员
+        is_vip (bool): 是否会员
         priv_like (PrivLike): 关注吧列表的公开状态
         priv_reply (PrivReply): 帖子评论权限
 

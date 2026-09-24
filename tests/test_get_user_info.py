@@ -1,6 +1,7 @@
 import pytest
 
 import aiotieba as tb
+from aiotieba.api.get_uinfo_panel import UserInfo_panel
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=5.0)
@@ -89,6 +90,7 @@ async def test_get_uinfo_xx(client: tb.Client):
     assert user.gender != tb.Gender.UNKNOWN
     assert user.age > 0.0
     assert user.post_num > 0
+    assert user.thread_num > 0
     assert user.agree_num > 0
     assert user.fan_num > 0
     assert user.follow_num > 0
@@ -109,6 +111,7 @@ async def test_get_uinfo_xx(client: tb.Client):
     assert user.gender != tb.Gender.UNKNOWN
     assert user.age > 0.0
     assert user.post_num > 0
+    assert user.thread_num > 0
     assert user.agree_num > 0
     assert user.fan_num > 0
     assert user.follow_num > 0
@@ -146,6 +149,7 @@ async def test_get_uinfo_xx(client: tb.Client):
     assert user.age > 0.0
     assert user.post_num > 0
     assert user.fan_num > 0
+    assert user.is_vip is True
 
     user = await client._get_uinfo_panel("tb.1.8277e641.gUE2cTq4A4z5fi2EHn5k3Q")
     assert user.portrait != ""
@@ -156,6 +160,7 @@ async def test_get_uinfo_xx(client: tb.Client):
     assert user.age > 0.0
     assert user.post_num > 0
     assert user.fan_num > 0
+    assert user.is_vip is True
 
     user = await client._get_uinfo_userCard("tb.1.8277e641.gUE2cTq4A4z5fi2EHn5k3Q")
     assert user.portrait != ""

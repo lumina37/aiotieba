@@ -22,7 +22,7 @@ class RankUser:
         user_name (str): 用户名
         level (int): 等级
         exp (int): 经验值
-        is_vip (bool): 是否超级会员
+        is_vip (bool): 是否会员
     """
 
     user_name: str = ""

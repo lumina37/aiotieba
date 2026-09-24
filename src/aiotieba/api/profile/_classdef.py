@@ -69,6 +69,7 @@ class UserInfo_pf(TbErrorExt):
         gender (Gender): 性别
         age (float): 吧龄 以年为单位
         post_num (int): 发帖数
+        thread_num (int): 主题帖数
         agree_num (int): 获赞数
         fan_num (int): 粉丝数
         follow_num (int): 关注数
@@ -77,7 +78,7 @@ class UserInfo_pf(TbErrorExt):
         ip (str): ip归属地
         icons (list[str]): 印记信息
 
-        is_vip (bool): 是否超级会员
+        is_vip (bool): 是否会员
         is_blocked (bool): 是否被永久封禁屏蔽
         priv_like (PrivLike): 关注吧列表的公开状态
         priv_reply (PrivReply): 帖子评论权限
@@ -97,6 +98,7 @@ class UserInfo_pf(TbErrorExt):
     gender: Gender = Gender.UNKNOWN
     age: float = 0.0
     post_num: int = 0
+    thread_num: int = 0
     agree_num: int = 0
     fan_num: int = 0
     follow_num: int = 0
@@ -124,6 +126,7 @@ class UserInfo_pf(TbErrorExt):
         gender = Gender(user_proto.sex)
         age = float(age) if (age := user_proto.tb_age) else 0.0
         post_num = user_proto.post_num
+        thread_num = user_proto.thread_num
         agree_num = data_proto.user_agree_info.total_agree_num
         fan_num = user_proto.fans_num
         follow_num = user_proto.concern_num
@@ -149,6 +152,7 @@ class UserInfo_pf(TbErrorExt):
             gender,
             age,
             post_num,
+            thread_num,
             agree_num,
             fan_num,
             follow_num,

@@ -210,7 +210,7 @@ class UserInfo_c:
         icons (list[str]): 印记信息
 
         is_bawu (bool): 是否吧务
-        is_vip (bool): 是否超级会员
+        is_vip (bool): 是否会员
         priv_like (PrivLike): 关注吧列表的公开状态
         priv_reply (PrivReply): 帖子评论权限
 
@@ -451,7 +451,7 @@ class UserInfo_ct:
 
         level (int): 等级
 
-        is_vip (bool): 是否超级会员
+        is_vip (bool): 是否会员
 
         nick_name (str): 用户昵称
         show_name (str): 显示名称
@@ -674,7 +674,7 @@ class UserInfo_cp:
         gender (Gender): 性别
 
         is_bawu (bool): 是否吧务
-        is_vip (bool): 是否超级会员
+        is_vip (bool): 是否会员
         priv_like (PrivLike): 关注吧列表的公开状态
         priv_reply (PrivReply): 帖子评论权限
 
