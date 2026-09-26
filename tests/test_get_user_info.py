@@ -1,7 +1,6 @@
 import pytest
 
 import aiotieba as tb
-from aiotieba.api.get_uinfo_panel import UserInfo_panel
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=5.0)

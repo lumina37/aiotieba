@@ -21,7 +21,8 @@ class SearchInForum:
 
         fname (str): 所在贴吧名
         tid (int): 所在主题帖id
-        pid (int): 回复id
+        ppid (int): 所在楼层id
+        pid (int): 该条结果的回复id
         show_name (str): 发布者的显示名称
 
         is_comment (bool): 是否楼中楼
@@ -33,6 +34,7 @@ class SearchInForum:
 
     fname: str = ""
     tid: int = 0
+    ppid: int = 0
     pid: int = 0
     show_name: str = ""
 
@@ -45,11 +47,12 @@ class SearchInForum:
         title = data_map["title"]
         fname = data_map["fname"]
         tid = int(data_map["tid"])
-        pid = int(data_map["pid"])
-        show_name = data_map["author"]["name_show"]
         is_comment = bool(int(data_map["is_floor"]))
+        ppid = int(data_map["pid"])
+        pid = int(data_map["cid"]) if is_comment else ppid
+        show_name = data_map["author"]["name_show"]
         create_time = int(data_map["time"])
-        return SearchInForum(text, title, fname, tid, pid, show_name, is_comment, create_time)
+        return SearchInForum(text, title, fname, tid, ppid, pid, show_name, is_comment, create_time)
 
     def __eq__(self, obj: SearchInForum) -> bool:
         return self.pid == obj.pid
