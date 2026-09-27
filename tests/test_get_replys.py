@@ -1,6 +1,7 @@
 import pytest
 
 import aiotieba as tb
+from aiotieba import ObjType
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=5.0)
@@ -29,7 +30,11 @@ async def test_Replys(client: tb.Client):
     assert reply.thread
     assert reply.thread.user.user_id > 0
 
+    ##### ObjType #####
+    assert reply.obj_type in [ObjType.POST, ObjType.COMMENT]
+
     ##### Post_rep #####
-    if reply.is_comment:
-        assert reply.post
-        assert reply.post.user.user_id > 0
+    comment = next((reply for reply in replys.objs if reply.obj_type == ObjType.COMMENT), None)
+    if comment is not None:
+        assert comment.post
+        assert comment.post.user.user_id > 0

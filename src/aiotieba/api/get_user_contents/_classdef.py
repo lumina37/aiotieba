@@ -4,7 +4,7 @@ import dataclasses as dcs
 from functools import cached_property
 from typing import TYPE_CHECKING, Self
 
-from ...enums import ThreadType
+from ...enums import ObjType, ThreadType
 from ...exception import TbErrorExt
 from ...logging import get_logger as LOG
 from .._classdef import Containers, TypeMessage, VoteInfo
@@ -31,6 +31,9 @@ FragAt_ut = FragAt
 FragLink_up = FragLink_ut = FragLink
 FragVideo_ut = FragVideo
 FragVoice_ut = FragVoice
+
+# post_type -> ObjType
+_POST_TYPE2OBJ_TYPE = {0: ObjType.POST, 1: ObjType.COMMENT}
 
 
 @dcs.dataclass
@@ -235,7 +238,7 @@ class UserPost:
         user (UserInfo_u): 发布者的用户信息
         author_id (int): 发布者的user_id
 
-        is_comment (bool): 是否为楼中楼
+        obj_type (ObjType): 帖子对象类型
 
         create_time (int): 创建时间 10位时间戳 以秒为单位
     """
@@ -247,7 +250,7 @@ class UserPost:
     pid: int = 0
     user: UserInfo_u = dcs.field(default_factory=UserInfo_u)
 
-    is_comment: bool = False
+    obj_type: ObjType = ObjType.UNKNOWN
 
     create_time: int = 0
 
@@ -255,17 +258,17 @@ class UserPost:
     def from_proto(data_proto: TypeMessage) -> Self:
         contents = Contents_up.from_proto(data_proto)
         pid = data_proto.post_id
-        is_comment = bool(data_proto.post_type)
+        obj_type = ObjType(_POST_TYPE2OBJ_TYPE.get(data_proto.post_type, -1))
         create_time = data_proto.create_time
-        return UserPost(contents, 0, 0, pid, None, is_comment, create_time)
+        return UserPost(contents, 0, 0, pid, None, obj_type, create_time)
 
     @staticmethod
     def from_json(data_map: Mapping) -> Self:
         contents = Contents_up.from_json(data_map)
         pid = int(data_map["post_id"])
-        is_comment = bool(int(data_map["post_type"]))
+        obj_type = ObjType(_POST_TYPE2OBJ_TYPE.get(int(data_map["post_type"]), -1))
         create_time = int(data_map["create_time"])
-        return UserPost(contents, 0, 0, pid, None, is_comment, create_time)
+        return UserPost(contents, 0, 0, pid, None, obj_type, create_time)
 
     def __eq__(self, obj: UserPost) -> bool:
         return self.pid == obj.pid

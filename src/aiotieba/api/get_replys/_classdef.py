@@ -4,7 +4,7 @@ import dataclasses as dcs
 from functools import cached_property
 from typing import Self
 
-from ...enums import PrivLike, PrivReply
+from ...enums import ObjType, PrivLike, PrivReply
 from ...exception import TbErrorExt
 from .._classdef import Containers, TypeMessage
 from .._classdef.contents import (
@@ -336,7 +336,7 @@ class Reply:
         post (Post_rep): 父级回复信息
         thread (Thread_rep): 父级主题帖信息
 
-        is_comment (bool): 是否楼中楼
+        obj_type (ObjType): 帖子对象类型
         create_time (int): 创建时间 10位时间戳 以秒为单位
     """
 
@@ -350,7 +350,7 @@ class Reply:
     post: Post_rep = dcs.field(default_factory=Post_rep)
     thread: Thread_rep = dcs.field(default_factory=Thread_rep)
 
-    is_comment: bool = False
+    obj_type: ObjType = ObjType.UNKNOWN
     create_time: int = 0
 
     @staticmethod
@@ -364,9 +364,9 @@ class Reply:
         user = UserInfo_rep.from_proto(data_proto.replyer)
         post = Post_rep.from_proto(data_proto)
         thread = Thread_rep.from_proto(data_proto)
-        is_comment = bool(data_proto.is_floor)
+        obj_type = ObjType.COMMENT if data_proto.is_floor else ObjType.POST
         create_time = data_proto.time
-        return Reply(contents, fname, tid, ppid, pid, user, post, thread, is_comment, create_time)
+        return Reply(contents, fname, tid, ppid, pid, user, post, thread, obj_type, create_time)
 
     def __eq__(self, obj: Reply) -> bool:
         return self.pid == obj.pid

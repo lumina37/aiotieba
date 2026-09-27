@@ -4,7 +4,7 @@ import dataclasses as dcs
 from functools import cached_property
 from typing import TYPE_CHECKING, Self
 
-from ...enums import PrivLike, PrivReply
+from ...enums import ObjType, PrivLike, PrivReply
 from ...exception import TbErrorExt
 from .._classdef import Containers
 
@@ -125,8 +125,7 @@ class At:
         user (UserInfo_at): 发布者的用户信息
         author_id (int): 发布者的user_id
 
-        is_comment (bool): 是否楼中楼
-        is_thread (bool): 是否主题帖
+        obj_type (ObjType): 帖子对象类型
 
         create_time (int): 创建时间
     """
@@ -138,8 +137,7 @@ class At:
     pid: int = 0
     user: UserInfo_at = dcs.field(default_factory=UserInfo_at)
 
-    is_comment: bool = False
-    is_thread: bool = False
+    obj_type: ObjType = ObjType.UNKNOWN
 
     create_time: int = 0
 
@@ -150,10 +148,14 @@ class At:
         tid = int(data_map["thread_id"])
         pid = int(data_map["post_id"])
         user = UserInfo_at.from_json(data_map["replyer"])
-        is_comment = bool(int(data_map["is_floor"]))
-        is_thread = bool(int(data_map["is_first_post"]))
+        if int(data_map["is_floor"]):
+            obj_type = ObjType.COMMENT
+        elif int(data_map["is_first_post"]):
+            obj_type = ObjType.THREAD
+        else:
+            obj_type = ObjType.UNKNOWN
         create_time = int(data_map["time"])
-        return At(text, fname, tid, pid, user, is_comment, is_thread, create_time)
+        return At(text, fname, tid, pid, user, obj_type, create_time)
 
     def __eq__(self, obj: At) -> bool:
         return self.pid == obj.pid

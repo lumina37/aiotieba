@@ -1,6 +1,7 @@
 import pytest
 
 import aiotieba as tb
+from aiotieba import ObjType
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=5.0)
@@ -27,4 +28,5 @@ async def test_Ats(client: tb.Client):
     assert at.tid > 0
     assert at.pid > 0
     assert at.author_id == user.user_id
+    assert at.obj_type in [ObjType.THREAD, ObjType.POST, ObjType.COMMENT]
     assert at.create_time > 0

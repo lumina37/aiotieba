@@ -97,6 +97,27 @@ class ThreadType(enum.IntEnum):
         return ThreadType.UNKNOWN
 
 
+class ObjType(enum.IntEnum):
+    """
+    帖子对象类型
+
+    Note:
+        UNKNOWN 未知\n
+        THREAD 主题帖\n
+        POST 回复\n
+        COMMENT 楼中楼
+    """
+
+    UNKNOWN = 0
+    THREAD = 1
+    POST = 2
+    COMMENT = 3
+
+    @classmethod
+    def _missing_(cls, _: int) -> ObjType:
+        return ObjType.UNKNOWN
+
+
 class ReqUInfo(enum.Flag):
     """
     使用该枚举类指定待获取的用户信息字段

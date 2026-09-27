@@ -4,6 +4,7 @@ import dataclasses as dcs
 from functools import cached_property
 from typing import TYPE_CHECKING, Self
 
+from ...enums import ObjType
 from ...exception import TbErrorExt
 from .._classdef import Containers
 
@@ -77,7 +78,7 @@ class Recover:
         op_show_name (str): 操作人显示名称
         op_time (int): 操作时间 10位时间戳 以秒为单位
 
-        is_floor (bool): 是否为楼中楼
+        obj_type (ObjType): 帖子对象类型
         is_hide (bool): 是否为屏蔽
     """
 
@@ -88,7 +89,7 @@ class Recover:
     op_show_name: str = ""
     op_time: int = 0
 
-    is_floor: bool = False
+    obj_type: ObjType = ObjType.UNKNOWN
     is_hide: bool = False
 
     @staticmethod
@@ -104,10 +105,16 @@ class Recover:
             pid = 0
             user = UserInfo_rec.from_json(thread_info)
         is_floor = bool(data_map["is_foor"])  # 百度的Code Review主要起到一个装饰的作用
+        if is_floor:
+            obj_type = ObjType.COMMENT
+        elif pid:
+            obj_type = ObjType.POST
+        else:
+            obj_type = ObjType.THREAD
         is_hide = bool(int(data_map["is_frs_mask"]))
         op_show_name = data_map["op_info"]["name"]
         op_time = int(data_map["op_info"]["time"])
-        return Recover(text, tid, pid, user, op_show_name, op_time, is_floor, is_hide)
+        return Recover(text, tid, pid, user, op_show_name, op_time, obj_type, is_hide)
 
 
 @dcs.dataclass

@@ -1,6 +1,7 @@
 import pytest
 
 import aiotieba as tb
+from aiotieba import ObjType
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=5.0)
@@ -11,5 +12,6 @@ async def test_Recovers(client: tb.Client):
     ##### Recover #####
     recover = recovers[0]
     assert recover.tid > 0
+    assert recover.obj_type in [ObjType.THREAD, ObjType.POST, ObjType.COMMENT]
     assert recover.op_show_name != ""
     assert recover.op_time != 0
