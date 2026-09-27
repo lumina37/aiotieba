@@ -19,7 +19,7 @@ def pack_proto(account: Account, pn: int) -> bytes:
     req_proto = ReplyMeReqIdl_pb2.ReplyMeReqIdl()
     req_proto.data.common.BDUSS = account.BDUSS
     req_proto.data.common._client_version = LATEST_VERSION
-    req_proto.data.pn = str(pn)
+    req_proto.data.pn = pn
 
     return req_proto.SerializeToString()
 

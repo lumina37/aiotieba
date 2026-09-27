@@ -15,8 +15,6 @@ class BawuInfo_f:
     """
     吧务信息
 
-    该接口仅返回大吧主
-
     Attributes:
         user_id (int): user_id
         portrait (str): portrait
@@ -92,7 +90,6 @@ class Forum(TbErrorExt):
         thread_num (int): 主题帖数
 
         admins (list[BawuInfo_f]): 大吧主列表
-
         has_bawu (bool): 是否有吧务
     """
 
@@ -109,7 +106,6 @@ class Forum(TbErrorExt):
     thread_num: int = 0
 
     admins: list[BawuInfo_f] = dcs.field(default_factory=list)
-
     has_bawu: bool = False
 
     @staticmethod

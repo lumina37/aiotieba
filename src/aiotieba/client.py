@@ -1118,9 +1118,13 @@ class Client:
         user_id = user.user_id
 
         if self._ws_core.status == WsStatus.OPEN:
-            return await get_user_contents.get_threads.request_ws(self._ws_core, user_id, pn, public_only)
+            return await get_user_contents.get_threads.request_ws(
+                self._ws_core, user_id, pn, is_self=True, public_only=public_only
+            )
 
-        return await get_user_contents.get_threads.request_http(self._http_core, user_id, pn, public_only)
+        return await get_user_contents.get_threads.request_http(
+            self._http_core, user_id, pn, is_self=True, public_only=public_only
+        )
 
     @handle_exception(get_user_contents.UserThreads)
     @_try_websocket
@@ -1142,10 +1146,16 @@ class Client:
         else:
             user_id = id_
 
-        if self._ws_core.status == WsStatus.OPEN:
-            return await get_user_contents.get_threads.request_ws(self._ws_core, user_id, pn, False)
+        is_self = user_id == self._user.user_id
 
-        return await get_user_contents.get_threads.request_http(self._http_core, user_id, pn, False)
+        if self._ws_core.status == WsStatus.OPEN:
+            return await get_user_contents.get_threads.request_ws(
+                self._ws_core, user_id, pn, is_self=is_self, public_only=False
+            )
+
+        return await get_user_contents.get_threads.request_http(
+            self._http_core, user_id, pn, is_self=is_self, public_only=False
+        )
 
     @handle_exception(get_replys.Replys)
     @_try_websocket
