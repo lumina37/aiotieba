@@ -120,6 +120,7 @@ class At:
         text (str): 文本内容
 
         fname (str): 所在贴吧名
+        fid (int): 所在贴吧id
         tid (int): 所在主题帖id
         pid (int): 回复id
         user (UserInfo_at): 发布者的用户信息
@@ -133,6 +134,7 @@ class At:
     text: str = ""
 
     fname: str = ""
+    fid: int = 0
     tid: int = 0
     pid: int = 0
     user: UserInfo_at = dcs.field(default_factory=UserInfo_at)
@@ -145,17 +147,13 @@ class At:
     def from_json(data_map: Mapping) -> Self:
         text = data_map["content"]
         fname = data_map["fname"]
+        fid = int(data_map["fid"])
         tid = int(data_map["thread_id"])
         pid = int(data_map["post_id"])
         user = UserInfo_at.from_json(data_map["replyer"])
-        if int(data_map["is_floor"]):
-            obj_type = ObjType.COMMENT
-        elif int(data_map["is_first_post"]):
-            obj_type = ObjType.THREAD
-        else:
-            obj_type = ObjType.UNKNOWN
+        obj_type = ObjType(int(data_map["type"]))
         create_time = int(data_map["time"])
-        return At(text, fname, tid, pid, user, obj_type, create_time)
+        return At(text, fname, fid, tid, pid, user, obj_type, create_time)
 
     def __eq__(self, obj: At) -> bool:
         return self.pid == obj.pid

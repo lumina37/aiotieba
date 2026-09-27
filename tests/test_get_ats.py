@@ -25,6 +25,7 @@ async def test_Ats(client: tb.Client):
     # At
     assert at.text != ""
     assert at.fname != ""
+    assert at.fid > 0
     assert at.tid > 0
     assert at.pid > 0
     assert at.author_id == user.user_id

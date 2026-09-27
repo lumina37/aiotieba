@@ -258,7 +258,7 @@ class UserPost:
     def from_proto(data_proto: TypeMessage) -> Self:
         contents = Contents_up.from_proto(data_proto)
         pid = data_proto.post_id
-        obj_type = ObjType(_POST_TYPE2OBJ_TYPE.get(data_proto.post_type, -1))
+        obj_type = _POST_TYPE2OBJ_TYPE[data_proto.post_type]
         create_time = data_proto.create_time
         return UserPost(contents, 0, 0, pid, None, obj_type, create_time)
 
@@ -266,7 +266,7 @@ class UserPost:
     def from_json(data_map: Mapping) -> Self:
         contents = Contents_up.from_json(data_map)
         pid = int(data_map["post_id"])
-        obj_type = ObjType(_POST_TYPE2OBJ_TYPE.get(int(data_map["post_type"]), -1))
+        obj_type = _POST_TYPE2OBJ_TYPE[int(data_map["post_type"])]
         create_time = int(data_map["create_time"])
         return UserPost(contents, 0, 0, pid, None, obj_type, create_time)
 
