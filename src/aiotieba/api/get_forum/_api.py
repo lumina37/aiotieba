@@ -31,5 +31,5 @@ async def request(http_core: HttpCore, fname: str) -> Forum:
         yarl.URL.build(scheme="http", host=APP_BASE_HOST, path="/c/f/frs/frsBottom"), data
     )
 
-    body = await http_core.net_core.send_request(request, read_bufsize=8 * 1024)
+    body = await http_core.net_core.send_request(request)
     return parse_body(body)

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses as dcs
 from functools import cached_property
-from typing import TYPE_CHECKING, Self
+from typing import Self
 
 from ...enums import ObjType, ThreadType
 from ...exception import TbErrorExt
@@ -20,10 +20,6 @@ from .._classdef.contents import (
     TypeFragment,
     TypeFragText,
 )
-
-if TYPE_CHECKING:
-    from collections.abc import Mapping
-
 
 FragText_up = FragText_ut = FragText
 FragEmoji_ut = FragEmoji
@@ -55,12 +51,6 @@ class FragVoice_up:
         duration = int(data_proto.during_time) / 1000
         return FragVoice_up(md5, duration)
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
-        md5 = data_map["voice_md5"]
-        duration = int(data_map["during_time"]) / 1000
-        return FragVoice_up(md5, duration)
-
     def __bool__(self) -> bool:
         return bool(self.md5)
 
@@ -90,10 +80,6 @@ class FragImage_up:
     def from_proto(data_proto: TypeMessage) -> Self:
         return FragImage_up._build(data_proto.src)
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
-        return FragImage_up._build(data_map["src"])
-
 
 @dcs.dataclass
 class FragAt_up:
@@ -111,10 +97,6 @@ class FragAt_up:
     @staticmethod
     def from_proto(data_proto: TypeMessage) -> Self:
         return FragAt_up(data_proto.text, data_proto.un)
-
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
-        return FragAt_up(data_map["text"], data_map.get("un", ""))
 
 
 @dcs.dataclass
@@ -184,50 +166,6 @@ class Contents_up(Containers[TypeFragment]):
 
         return Contents_up(objs, texts, imgs, ats, links, voice)
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
-        content_maps = data_map["post_content"]
-
-        texts = []
-        imgs = []
-        ats = []
-        links = []
-        voice = FragVoice_up()
-
-        def _frags():
-            for content_map in content_maps:
-                _type = int(content_map["type"])
-                # 摘要形式不区分图像type 图像以src标记
-                if content_map.get("src"):
-                    frag = FragImage_up.from_json(content_map)
-                    imgs.append(frag)
-                    yield frag
-                # 0纯文本 9电话号 18话题 27百科词条 40梗百科
-                elif _type in [0, 9, 18, 27, 40]:
-                    frag = FragText_up.from_json(content_map)
-                    texts.append(frag)
-                    yield frag
-                elif _type == 1:
-                    frag = FragLink_up.from_json(content_map)
-                    links.append(frag)
-                    texts.append(frag)
-                    yield frag
-                elif _type == 4:
-                    frag = FragAt_up.from_json(content_map)
-                    ats.append(frag)
-                    texts.append(frag)
-                    yield frag
-                elif _type == 10:  # voice
-                    nonlocal voice
-                    voice = FragVoice_up.from_json(content_map)
-                    yield voice
-                else:
-                    yield FragUnknown.from_json(content_map)
-
-        objs = list(_frags())
-
-        return Contents_up(objs, texts, imgs, ats, links, voice)
-
     @cached_property
     def text(self) -> str:
         text = "".join(frag.text for frag in self.texts)
@@ -263,16 +201,6 @@ class UserInfo_u:
             portrait = portrait[:-13]
         user_name = data_proto.user_name
         nick_name_new = data_proto.name_show
-        return UserInfo_u(user_id, portrait, user_name, nick_name_new)
-
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
-        user_id = int(data_map["user_id"])
-        portrait = data_map["user_portrait"]
-        if "?" in portrait:
-            portrait = portrait[:-13]
-        user_name = data_map["user_name"]
-        nick_name_new = data_map["name_show"]
         return UserInfo_u(user_id, portrait, user_name, nick_name_new)
 
     def __str__(self) -> str:
@@ -348,23 +276,6 @@ class Thread_up:
 
         return Thread_up(fid, tid, title, type_, view_num, reply_num, create_time)
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
-        fid = int(data_map["forum_id"])
-        tid = int(data_map["thread_id"])
-        title = data_map["title"].removeprefix("回复：")
-
-        thread_type = int(data_map["thread_type"])
-        type_ = ThreadType(thread_type)
-        if type_ == ThreadType.UNKNOWN:
-            LOG().debug("Unknown thread type. tid=%d, type=%s", tid, thread_type)
-
-        view_num = int(data_map["freq_num"])
-        reply_num = int(data_map["reply_num"])
-        create_time = int(data_map["create_time"])
-
-        return Thread_up(fid, tid, title, type_, view_num, reply_num, create_time)
-
     def __eq__(self, obj: Thread_up) -> bool:
         return self.tid == obj.tid
 
@@ -416,14 +327,6 @@ class UserPost:
         create_time = data_proto.create_time
         return UserPost(contents, 0, 0, pid, None, Thread_up(), obj_type, create_time)
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
-        contents = Contents_up.from_json(data_map)
-        pid = int(data_map["post_id"])
-        obj_type = _POST_TYPE2OBJ_TYPE[int(data_map["post_type"])]
-        create_time = int(data_map["create_time"])
-        return UserPost(contents, 0, 0, pid, None, Thread_up(), obj_type, create_time)
-
     def __eq__(self, obj: UserPost) -> bool:
         return self.pid == obj.pid
 
@@ -468,18 +371,6 @@ class UserPosts(Containers[UserPost]):
             upost.thread = thread
         return UserPosts(objs, fid, tid, thread)
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
-        fid = int(data_map["forum_id"])
-        tid = int(data_map["thread_id"])
-        thread = Thread_up.from_json(data_map)
-        objs = [UserPost.from_json(m) for m in data_map["content"]]
-        for upost in objs:
-            upost.fid = fid
-            upost.tid = tid
-            upost.thread = thread
-        return UserPosts(objs, fid, tid, thread)
-
 
 @dcs.dataclass
 class UserPostss(TbErrorExt, Containers[UserPosts]):
@@ -496,16 +387,6 @@ class UserPostss(TbErrorExt, Containers[UserPosts]):
         objs = [UserPosts.from_proto(p) for p in data_proto.post_list]
         if objs:
             user = UserInfo_u.from_proto(data_proto.post_list[0])
-            for uposts in objs:
-                for upost in uposts:
-                    upost.user = user
-        return UserPostss(objs)
-
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
-        objs = [UserPosts.from_json(m) for m in data_map["post_list"]]
-        if objs:
-            user = UserInfo_u.from_json(data_map["post_list"][0])
             for uposts in objs:
                 for upost in uposts:
                     upost.user = user

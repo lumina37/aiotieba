@@ -47,8 +47,8 @@ async def request(
     request = http_core.pack_web_get_request(
         yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mo/q/search/thread"),
         params,
-        extra_headers=[("Referer", REFERER_GLOBAL)],
+        extra_headers={"Referer": REFERER_GLOBAL},
     )
 
-    body = await http_core.net_core.send_request(request, read_bufsize=8 * 1024)
+    body = await http_core.net_core.send_request(request)
     return parse_body(body)

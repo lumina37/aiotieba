@@ -325,7 +325,7 @@ class WsCore:
             ssl=False,
         )
 
-        response = await self.net_core.req2res(request, False, 2 * 1024)
+        response = await self.net_core.req2res(request, False)
 
         if response.status != 101:
             raise HTTPStatusError(response.status, response.reason)

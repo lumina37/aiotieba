@@ -47,7 +47,7 @@ async def request(http_core: HttpCore, fid: int, portrait: str, perms: BawuPermT
         yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mo/q/setAuthToolPerm"), data
     )
 
-    body = await http_core.net_core.send_request(request, read_bufsize=2 * 1024)
+    body = await http_core.net_core.send_request(request)
     parse_body(body)
 
     return BoolResponse()

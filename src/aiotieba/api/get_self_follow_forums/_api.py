@@ -35,8 +35,8 @@ async def request(http_core: HttpCore, pn: int, rn: int) -> SelfFollowForums:
     request = http_core.pack_web_form_request(
         yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/c/f/forum/forumGuide"),
         data,
-        extra_headers=[("Subapp-Type", "hybrid")],
+        extra_headers={"Subapp-Type": "hybrid"},
     )
 
-    body = await http_core.net_core.send_request(request, read_bufsize=64 * 1024)
+    body = await http_core.net_core.send_request(request)
     return parse_body(body)

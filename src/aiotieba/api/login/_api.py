@@ -33,5 +33,5 @@ async def request(http_core: HttpCore) -> tuple[UserInfo_login, str]:
 
     request = http_core.pack_form_request(yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/s/login"), data)
 
-    body = await http_core.net_core.send_request(request, read_bufsize=1024)
+    body = await http_core.net_core.send_request(request)
     return parse_body(body)

@@ -38,7 +38,7 @@ async def request(http_core: HttpCore, fid: int, appeal_ids: Iterable[int], refu
         yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mo/q/multiAppealhandle"), data
     )
 
-    body = await http_core.net_core.send_request(request, read_bufsize=1024)
+    body = await http_core.net_core.send_request(request)
     parse_body(body)
 
     return BoolResponse()

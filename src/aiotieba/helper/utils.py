@@ -49,6 +49,20 @@ def is_user_name(user_name: Any) -> bool:
     return isinstance(user_name, str) and not user_name.startswith("tb.")
 
 
+def check_rn(rn: int, rn_min: int, rn_max: int) -> None:
+    """
+    检查rn是否位于[rn_min, rn_max]区间内
+
+    Args:
+        rn (int): 请求的条目数
+        rn_min (int): 区间下限
+        rn_max (int): 区间上限
+    """
+
+    if not rn_min <= rn <= rn_max:
+        get_logger().warning(f"rn={rn} is out of range [{rn_min}, {rn_max}]")
+
+
 def default_datetime() -> datetime:
     return datetime(1970, 1, 1)
 

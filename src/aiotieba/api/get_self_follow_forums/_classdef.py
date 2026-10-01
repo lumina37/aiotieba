@@ -20,6 +20,11 @@ class SelfFollowForum:
         fname (str): 贴吧名
         level (int): 用户等级
         is_signed (bool): 是否已签到
+
+        today_thread_num (int): 今日新帖数
+        hot_num (int): 吧热度
+        member_count (int): 关注数
+        thread_num (int): 主题帖数
     """
 
     fid: int = 0
@@ -27,13 +32,24 @@ class SelfFollowForum:
     level: int = 0
     is_signed: bool = False
 
+    today_thread_num: int = 0
+    hot_num: int = 0
+    member_count: int = 0
+    thread_num: int = 0
+
     @staticmethod
     def from_json(data_map: Mapping) -> Self:
         fid = data_map["forum_id"]
         fname = data_map["forum_name"]
         level = data_map["level_id"]
         is_signed = bool(int(data_map["is_sign"]))
-        return SelfFollowForum(fid, fname, level, is_signed)
+
+        today_thread_num = int(data_map.get("day_thread_num") or 0)
+        hot_num = int(data_map.get("hot_num") or 0)
+        member_count = int(data_map.get("member_count") or 0)
+        thread_num = int(data_map.get("thread_num") or 0)
+
+        return SelfFollowForum(fid, fname, level, is_signed, today_thread_num, hot_num, member_count, thread_num)
 
 
 @dcs.dataclass

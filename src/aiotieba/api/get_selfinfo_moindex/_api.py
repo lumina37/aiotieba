@@ -31,5 +31,5 @@ async def request(http_core: HttpCore) -> UserInfo_moindex:
         yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mo/q/newmoindex"), params
     )
 
-    body = await http_core.net_core.send_request(request, read_bufsize=4 * 1024)
+    body = await http_core.net_core.send_request(request)
     return parse_body(body)

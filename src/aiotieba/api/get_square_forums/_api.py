@@ -47,7 +47,7 @@ async def request_http(http_core: HttpCore, cname: str, pn: int, rn: int) -> Squ
         data,
     )
 
-    body = await http_core.net_core.send_request(request, read_bufsize=16 * 1024)
+    body = await http_core.net_core.send_request(request)
     return parse_body(body)
 
 

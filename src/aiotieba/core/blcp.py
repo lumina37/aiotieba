@@ -294,7 +294,7 @@ class BLCPCore:
         )  # TODO: 支持代理
 
         try:
-            response = await self.net_core.req2res(request, False, 2 * 1024)
+            response = await self.net_core.req2res(request, False)
             rjson = await response.json()
             return rjson["token"]
         except Exception:
@@ -326,7 +326,7 @@ class BLCPCore:
         )  # TODO: 支持代理
 
         try:
-            response = await self.net_core.req2res(request, False, 2 * 1024)
+            response = await self.net_core.req2res(request, False)
             await response.json()
         except Exception:
             return ""
@@ -363,7 +363,7 @@ class BLCPCore:
         )  # TODO: 支持代理
 
         try:
-            response = await self.net_core.req2res(request, False, 2 * 1024)
+            response = await self.net_core.req2res(request, False)
             await response.json()
         except Exception:
             return ""
@@ -511,7 +511,7 @@ class BLCPCore:
         )  # TODO: 支持代理
 
         try:
-            response = await self.net_core.req2res(request, False, 2 * 1024)
+            response = await self.net_core.req2res(request, False)
             await response.read()
             rjson = await response.json()
         except:
@@ -559,7 +559,7 @@ class BLCPCore:
         )  # TODO: 支持代理
 
         try:
-            response = await self.net_core.req2res(request, False, 2 * 1024)
+            response = await self.net_core.req2res(request, False)
             await response.read()
             rjson = await response.json()
         except:

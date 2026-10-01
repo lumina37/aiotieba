@@ -34,5 +34,5 @@ async def request(http_core: HttpCore, name_or_portrait: str) -> UserInfo_panel:
         yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/home/get/panel"), params
     )
 
-    body = await http_core.net_core.send_request(request, read_bufsize=8 * 1024)
+    body = await http_core.net_core.send_request(request)
     return parse_body(body)
