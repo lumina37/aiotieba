@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 def parse_body(body: bytes) -> Follows:
     res_json = parse_json(body)
-    if code := int(res_json["error_code"]):
+    if code := res_json["error_code"]:
         raise TiebaServerError(code, res_json["error_msg"])
 
     follows = Follows.from_json(res_json)

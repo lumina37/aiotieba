@@ -31,3 +31,16 @@ async def test_Ats(client: tb.Client):
     assert at.author_id == user.user_id
     assert at.obj_type in [ObjType.THREAD, ObjType.POST, ObjType.COMMENT]
     assert at.create_time > 0
+
+    ##### Thread_at #####
+    assert at.thread
+    assert at.thread.tid == at.tid
+    assert at.thread.contents.text != ""
+    assert at.thread.user.user_id > 0
+
+    ##### Post_at #####
+    comment = next((at for at in ats if at.obj_type == ObjType.COMMENT), None)
+    if comment is not None:
+        assert comment.post
+        assert comment.post.pid > 0
+        assert comment.post.user.user_id > 0

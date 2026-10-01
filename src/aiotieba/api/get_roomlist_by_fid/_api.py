@@ -18,7 +18,7 @@ def parse_body(body: bytes) -> RoomList:
     if code := int(res_json["error_code"]):
         raise TiebaServerError(code, res_json["error_msg"])
 
-    data_map = res_json["data"]
+    data_map = res_json.get("data") or {}
     room_list = RoomList.from_json(data_map)
 
     return room_list

@@ -15,12 +15,13 @@ if TYPE_CHECKING:
 
 def parse_body(body: bytes) -> UserForumInfo:
     res_json = parse_json(body)
-    if code := int(res_json.get("error_code", 0) or 0):
-        err_msg = res_json.get("error_msg") or res_json.get("error") or res_json.get("errmsg") or ""
-        raise TiebaServerError(code, err_msg)
+    if code := res_json["error_code"]:
+        raise TiebaServerError(code, res_json["error_msg"])
 
-    data_map = res_json.get("data", {})
-    return UserForumInfo.from_json(data_map)
+    data_map = res_json["data"]
+    user_forum_info = UserForumInfo.from_json(data_map)
+
+    return user_forum_info
 
 
 async def request(http_core: HttpCore, fid: int, friend_portrait: str) -> UserForumInfo:

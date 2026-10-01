@@ -117,7 +117,7 @@ class Follows(TbErrorExt, Containers[Follow]):
 
     @staticmethod
     def from_json(data_map: Mapping) -> Self:
-        objs = [Follow.from_json(m) for m in data_map["follow_list"]]
+        objs = [Follow.from_json(m) for m in data_map.get("follow_list") or []]
         page = Page_follow.from_json(data_map)
         return Follows(objs, page)
 

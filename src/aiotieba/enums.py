@@ -225,19 +225,49 @@ class SearchGlobalType(enum.IntEnum):
     DESC = 5
 
 
-class BawuType(enum.StrEnum):
+class BawuType(enum.IntEnum):
     """
     吧务类型
 
     Note:
-        MANAGER 小吧\n
+        ADMIN 大吧主\n
+        MANAGER 小吧主\n
+        VIDEO_EDITOR 视频小编\n
         IMAGE_EDITOR 图片小编\n
-        VOICE_EDITOR 语音小编
+        JOURNAL_EDITOR 吧刊小编\n
+        JOURNAL_CHIEF_EDITOR 吧刊主编\n
+        VOICE_EDITOR 语音小编\n
+        BROADCAST_EDITOR 广播小编
     """
 
-    MANAGER = "assist"
-    IMAGE_EDITOR = "picadmin"
-    VOICE_EDITOR = "voiceadmin"
+    ADMIN = 1
+    MANAGER = 2
+    VIDEO_EDITOR = 3
+    IMAGE_EDITOR = 4
+    JOURNAL_EDITOR = 5
+    JOURNAL_CHIEF_EDITOR = 6
+    VOICE_EDITOR = 20
+    BROADCAST_EDITOR = 26
+
+    @property
+    def role_name(self) -> str:
+        """
+        服务端在请求参数中使用的角色名
+        """
+
+        return _BAWU_ROLE_NAMES[self]
+
+
+_BAWU_ROLE_NAMES = {
+    BawuType.ADMIN: "manager",
+    BawuType.MANAGER: "assist",
+    BawuType.VIDEO_EDITOR: "videoadmin",
+    BawuType.IMAGE_EDITOR: "picadmin",
+    BawuType.JOURNAL_EDITOR: "publication",
+    BawuType.JOURNAL_CHIEF_EDITOR: "publication_editor",
+    BawuType.VOICE_EDITOR: "voiceadmin",
+    BawuType.BROADCAST_EDITOR: "broadcast_admin",
+}
 
 
 class BawuPermType(enum.Flag):

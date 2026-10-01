@@ -14,7 +14,6 @@ async def test_Replys(client: tb.Client):
     assert len(replys.objs) > 0
 
     reply = replys.objs[0]
-    assert reply.tid > 0
     assert reply.pid > 0
     assert reply.fname != ""
     assert reply.create_time > 0
@@ -28,6 +27,7 @@ async def test_Replys(client: tb.Client):
 
     ##### Thread_rep #####
     assert reply.thread
+    assert reply.thread.tid > 0
     assert reply.thread.user.user_id > 0
 
     ##### ObjType #####
@@ -37,4 +37,5 @@ async def test_Replys(client: tb.Client):
     comment = next((reply for reply in replys.objs if reply.obj_type == ObjType.COMMENT), None)
     if comment is not None:
         assert comment.post
+        assert comment.post.pid > 0
         assert comment.post.user.user_id > 0

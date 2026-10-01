@@ -66,6 +66,58 @@ class FragVoice_up:
 
 
 @dcs.dataclass
+class FragImage_up:
+    """
+    图像碎片
+
+    Attributes:
+        src (str): 图像链接
+        hash (str): 百度图床hash
+    """
+
+    src: str = dcs.field(default="", repr=False)
+    hash: str = ""
+
+    @staticmethod
+    def _build(src: str) -> Self:
+        if hash_obj := _IMAGEHASH_EXP.search(src):
+            hash_ = hash_obj.group(1)
+        else:
+            hash_ = ""
+        return FragImage_up(src, hash_)
+
+    @staticmethod
+    def from_proto(data_proto: TypeMessage) -> Self:
+        return FragImage_up._build(data_proto.src)
+
+    @staticmethod
+    def from_json(data_map: Mapping) -> Self:
+        return FragImage_up._build(data_map["src"])
+
+
+@dcs.dataclass
+class FragAt_up:
+    """
+    @碎片
+
+    Attributes:
+        text (str): 被@用户的昵称 含@
+        user_name (str): 被@用户的用户名
+    """
+
+    text: str = ""
+    user_name: str = ""
+
+    @staticmethod
+    def from_proto(data_proto: TypeMessage) -> Self:
+        return FragAt_up(data_proto.text, data_proto.un)
+
+    @staticmethod
+    def from_json(data_map: Mapping) -> Self:
+        return FragAt_up(data_map["text"], data_map.get("un", ""))
+
+
+@dcs.dataclass
 class Contents_up(Containers[TypeFragment]):
     """
     内容碎片列表
@@ -76,11 +128,15 @@ class Contents_up(Containers[TypeFragment]):
         text (str): 文本内容
 
         texts (list[TypeFragText]): 纯文本碎片列表
+        imgs (list[FragImage_up]): 图像碎片列表
+        ats (list[FragAt_up]): @碎片列表
         links (list[FragLink_up]): 链接碎片列表
         voice (FragVoice_up): 音频碎片
     """
 
     texts: list[TypeFragText] = dcs.field(default_factory=list, repr=False)
+    imgs: list[FragImage_up] = dcs.field(default_factory=list, repr=False)
+    ats: list[FragAt_up] = dcs.field(default_factory=list, repr=False)
     links: list[FragLink_up] = dcs.field(default_factory=list, repr=False)
     voice: FragVoice_up = dcs.field(default_factory=FragVoice_up, repr=False)
 
@@ -89,13 +145,21 @@ class Contents_up(Containers[TypeFragment]):
         content_protos = data_proto.post_content
 
         texts = []
+        imgs = []
+        ats = []
         links = []
         voice = FragVoice_up()
 
         def _frags():
             for proto in content_protos:
                 _type = proto.type
-                if _type in [0, 4]:
+                # 摘要形式不区分图像type 图像以src标记
+                if proto.src:
+                    frag = FragImage_up.from_proto(proto)
+                    imgs.append(frag)
+                    yield frag
+                # 0纯文本 9电话号 18话题 27百科词条 40梗百科
+                elif _type in [0, 9, 18, 27, 40]:
                     frag = FragText_up.from_proto(proto)
                     texts.append(frag)
                     yield frag
@@ -104,29 +168,42 @@ class Contents_up(Containers[TypeFragment]):
                     links.append(frag)
                     texts.append(frag)
                     yield frag
+                elif _type == 4:
+                    frag = FragAt_up.from_proto(proto)
+                    ats.append(frag)
+                    texts.append(frag)
+                    yield frag
                 elif _type == 10:  # voice
                     nonlocal voice
                     voice = FragVoice_up.from_proto(proto)
-                    continue
+                    yield voice
                 else:
                     yield FragUnknown.from_proto(proto)
 
         objs = list(_frags())
 
-        return Contents_up(objs, texts, links, voice)
+        return Contents_up(objs, texts, imgs, ats, links, voice)
 
     @staticmethod
     def from_json(data_map: Mapping) -> Self:
         content_maps = data_map["post_content"]
 
         texts = []
+        imgs = []
+        ats = []
         links = []
         voice = FragVoice_up()
 
         def _frags():
             for content_map in content_maps:
                 _type = int(content_map["type"])
-                if _type in [0, 4]:
+                # 摘要形式不区分图像type 图像以src标记
+                if content_map.get("src"):
+                    frag = FragImage_up.from_json(content_map)
+                    imgs.append(frag)
+                    yield frag
+                # 0纯文本 9电话号 18话题 27百科词条 40梗百科
+                elif _type in [0, 9, 18, 27, 40]:
                     frag = FragText_up.from_json(content_map)
                     texts.append(frag)
                     yield frag
@@ -135,16 +212,21 @@ class Contents_up(Containers[TypeFragment]):
                     links.append(frag)
                     texts.append(frag)
                     yield frag
+                elif _type == 4:
+                    frag = FragAt_up.from_json(content_map)
+                    ats.append(frag)
+                    texts.append(frag)
+                    yield frag
                 elif _type == 10:  # voice
                     nonlocal voice
                     voice = FragVoice_up.from_json(content_map)
-                    continue
+                    yield voice
                 else:
                     yield FragUnknown.from_json(content_map)
 
         objs = list(_frags())
 
-        return Contents_up(objs, texts, links, voice)
+        return Contents_up(objs, texts, imgs, ats, links, voice)
 
     @cached_property
     def text(self) -> str:
@@ -224,6 +306,76 @@ class UserInfo_u:
 
 
 @dcs.dataclass
+class Thread_up:
+    """
+    父级主题帖信息
+
+    Attributes:
+        fid (int): 所在吧id
+        tid (int): 主题帖id
+        title (str): 标题内容 已去除服务端为回复添加的`回复：`前缀
+
+        type (ThreadType): 帖子类型
+        view_num (int): 浏览量
+        reply_num (int): 回复数
+        create_time (int): 创建时间 10位时间戳 以秒为单位
+    """
+
+    fid: int = 0
+    tid: int = 0
+    title: str = ""
+
+    type: ThreadType = ThreadType.UNKNOWN
+    view_num: int = 0
+    reply_num: int = 0
+    create_time: int = 0
+
+    @staticmethod
+    def from_proto(data_proto: TypeMessage) -> Self:
+        fid = data_proto.forum_id
+        tid = data_proto.thread_id
+        # 服务端仅为回复添加`回复：`前缀 主题帖自身不带
+        title = data_proto.title.removeprefix("回复：")
+
+        thread_type = data_proto.thread_type
+        type_ = ThreadType(thread_type)
+        if type_ == ThreadType.UNKNOWN:
+            LOG().debug("Unknown thread type. tid=%d, type=%s", tid, thread_type)
+
+        view_num = data_proto.freq_num
+        reply_num = data_proto.reply_num
+        create_time = data_proto.create_time
+
+        return Thread_up(fid, tid, title, type_, view_num, reply_num, create_time)
+
+    @staticmethod
+    def from_json(data_map: Mapping) -> Self:
+        fid = int(data_map["forum_id"])
+        tid = int(data_map["thread_id"])
+        title = data_map["title"].removeprefix("回复：")
+
+        thread_type = int(data_map["thread_type"])
+        type_ = ThreadType(thread_type)
+        if type_ == ThreadType.UNKNOWN:
+            LOG().debug("Unknown thread type. tid=%d, type=%s", tid, thread_type)
+
+        view_num = int(data_map["freq_num"])
+        reply_num = int(data_map["reply_num"])
+        create_time = int(data_map["create_time"])
+
+        return Thread_up(fid, tid, title, type_, view_num, reply_num, create_time)
+
+    def __eq__(self, obj: Thread_up) -> bool:
+        return self.tid == obj.tid
+
+    def __hash__(self) -> int:
+        return self.tid
+
+    def __bool__(self) -> bool:
+        return bool(self.tid)
+
+
+@dcs.dataclass
 class UserPost:
     """
     用户历史回复信息
@@ -237,6 +389,7 @@ class UserPost:
         pid (int): 回复id
         user (UserInfo_u): 发布者的用户信息
         author_id (int): 发布者的user_id
+        thread (Thread_up): 父级主题帖信息
 
         obj_type (ObjType): 帖子对象类型
 
@@ -249,6 +402,7 @@ class UserPost:
     tid: int = 0
     pid: int = 0
     user: UserInfo_u = dcs.field(default_factory=UserInfo_u)
+    thread: Thread_up = dcs.field(default_factory=Thread_up)
 
     obj_type: ObjType = ObjType.UNKNOWN
 
@@ -260,7 +414,7 @@ class UserPost:
         pid = data_proto.post_id
         obj_type = _POST_TYPE2OBJ_TYPE[data_proto.post_type]
         create_time = data_proto.create_time
-        return UserPost(contents, 0, 0, pid, None, obj_type, create_time)
+        return UserPost(contents, 0, 0, pid, None, Thread_up(), obj_type, create_time)
 
     @staticmethod
     def from_json(data_map: Mapping) -> Self:
@@ -268,7 +422,7 @@ class UserPost:
         pid = int(data_map["post_id"])
         obj_type = _POST_TYPE2OBJ_TYPE[int(data_map["post_type"])]
         create_time = int(data_map["create_time"])
-        return UserPost(contents, 0, 0, pid, None, obj_type, create_time)
+        return UserPost(contents, 0, 0, pid, None, Thread_up(), obj_type, create_time)
 
     def __eq__(self, obj: UserPost) -> bool:
         return self.pid == obj.pid
@@ -295,30 +449,36 @@ class UserPosts(Containers[UserPost]):
 
         fid (int): 所在吧id
         tid (int): 所在主题帖id
+        thread (Thread_up): 父级主题帖信息
     """
 
     fid: int = 0
     tid: int = 0
+    thread: Thread_up = dcs.field(default_factory=Thread_up)
 
     @staticmethod
     def from_proto(data_proto: TypeMessage) -> Self:
         fid = data_proto.forum_id
         tid = data_proto.thread_id
+        thread = Thread_up.from_proto(data_proto)
         objs = [UserPost.from_proto(p) for p in data_proto.content]
         for upost in objs:
             upost.fid = fid
             upost.tid = tid
-        return UserPosts(objs, fid, tid)
+            upost.thread = thread
+        return UserPosts(objs, fid, tid, thread)
 
     @staticmethod
     def from_json(data_map: Mapping) -> Self:
         fid = int(data_map["forum_id"])
         tid = int(data_map["thread_id"])
+        thread = Thread_up.from_json(data_map)
         objs = [UserPost.from_json(m) for m in data_map["content"]]
         for upost in objs:
             upost.fid = fid
             upost.tid = tid
-        return UserPosts(objs, fid, tid)
+            upost.thread = thread
+        return UserPosts(objs, fid, tid, thread)
 
 
 @dcs.dataclass

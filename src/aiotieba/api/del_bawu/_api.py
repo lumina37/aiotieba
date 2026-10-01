@@ -25,7 +25,7 @@ async def request(http_core: HttpCore, fid: int, portrait: str, bawu_type: BawuT
         ("fid", fid),
         ("team_un", "-"),
         ("team_uid", portrait),
-        ("bawu_type", bawu_type),
+        ("bawu_type", bawu_type.role_name),
     ]
 
     request = http_core.pack_web_form_request(

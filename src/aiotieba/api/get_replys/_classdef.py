@@ -271,22 +271,25 @@ class Post_rep:
     父级回复信息
 
     Attributes:
+        pid (int): 父级回复id
         contents (Contents_rep): 正文内容碎片列表
         user (UserInfo_rep_p): 发布者的用户信息
     """
 
+    pid: int = 0
     contents: Contents_rep = dcs.field(default_factory=Contents_rep)
     user: UserInfo_rep_p = dcs.field(default_factory=UserInfo_rep_p)
 
     @staticmethod
     def from_proto(data_proto: TypeMessage) -> Self:
+        pid = data_proto.quote_pid
         new_floor_infos = data_proto.new_floor_info
         contents = Contents_rep()
         if len(new_floor_infos) > 2:
             contents = Contents_rep.from_proto(new_floor_infos[-2])
             _strip_quote_header(contents)
         user = UserInfo_rep_p.from_proto(data_proto.quote_user)
-        return Post_rep(contents, user)
+        return Post_rep(pid, contents, user)
 
     def __bool__(self) -> bool:
         return bool(self.contents)
@@ -298,22 +301,25 @@ class Thread_rep:
     父级主题帖信息
 
     Attributes:
+        tid (int): 父级主题帖id
         contents (Contents_rep): 正文内容碎片列表
         user (UserInfo_rep_t): 发布者的用户信息
     """
 
+    tid: int = 0
     contents: Contents_rep = dcs.field(default_factory=Contents_rep)
     user: UserInfo_rep_t = dcs.field(default_factory=UserInfo_rep_t)
 
     @staticmethod
     def from_proto(data_proto: TypeMessage) -> Self:
+        tid = data_proto.thread_id
         new_floor_infos = data_proto.new_floor_info
         contents = Contents_rep()
         if len(new_floor_infos) > 1:
             contents = Contents_rep.from_proto(new_floor_infos[0])
             _strip_quote_header(contents)
         user = UserInfo_rep_t.from_proto(data_proto.thread_author_user)
-        return Thread_rep(contents, user)
+        return Thread_rep(tid, contents, user)
 
     def __bool__(self) -> bool:
         return bool(self.contents)
@@ -328,8 +334,6 @@ class Reply:
         contents (Contents_rep): 正文内容碎片列表
 
         fname (str): 所在贴吧名
-        tid (int): 所在主题帖id
-        ppid (int): 所在楼层pid
         pid (int): 回复id
         user (UserInfo_rep): 发布者的用户信息
         author_id (int): 发布者的user_id
@@ -343,8 +347,6 @@ class Reply:
     contents: Contents_rep = dcs.field(default_factory=Contents_rep)
 
     fname: str = ""
-    tid: int = 0
-    ppid: int = 0
     pid: int = 0
     user: UserInfo_rep = dcs.field(default_factory=UserInfo_rep)
     post: Post_rep = dcs.field(default_factory=Post_rep)
@@ -358,15 +360,13 @@ class Reply:
         new_floor_infos = data_proto.new_floor_info
         contents = Contents_rep.from_proto(new_floor_infos[-1]) if new_floor_infos else Contents_rep()
         fname = data_proto.fname
-        tid = data_proto.thread_id
-        ppid = data_proto.quote_pid
         pid = data_proto.post_id
         user = UserInfo_rep.from_proto(data_proto.replyer)
         post = Post_rep.from_proto(data_proto)
         thread = Thread_rep.from_proto(data_proto)
         obj_type = ObjType.COMMENT if data_proto.is_floor else ObjType.POST
         create_time = data_proto.time
-        return Reply(contents, fname, tid, ppid, pid, user, post, thread, obj_type, create_time)
+        return Reply(contents, fname, pid, user, post, thread, obj_type, create_time)
 
     def __eq__(self, obj: Reply) -> bool:
         return self.pid == obj.pid
