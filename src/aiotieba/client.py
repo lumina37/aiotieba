@@ -54,6 +54,7 @@ from .api import (
     get_rank_forums,
     get_rank_users,
     get_recom_status,
+    get_recover_info,
     get_recovers,
     get_replys,
     get_roomlist_by_fid,
@@ -1016,9 +1017,6 @@ class Client:
 
         Returns:
             SelfFollowForums: 本账号关注贴吧列表
-
-        Note:
-            本接口需要STOKEN
         """
 
         check_rn(rn, 1, 200)
@@ -1488,6 +1486,9 @@ class Client:
 
         Returns:
             RankUsers: 等级排行榜用户列表
+
+        Note:
+            本接口需要STOKEN
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
@@ -1579,6 +1580,26 @@ class Client:
             user_id = id_
 
         return await get_recovers.request(self._http_core, fid, user_id, pn, rn)
+
+    @handle_exception(get_recover_info.RecoverInfo)
+    async def get_recover_info(
+        self, fname_or_fid: str | int, /, tid: int, pid: int = 0
+    ) -> get_recover_info.RecoverInfo:
+        """
+        获取待恢复帖子的详细信息
+
+        Args:
+            fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先fid
+            tid (int): 所在主题帖tid
+            pid (int, optional): 待恢复的回复pid. Defaults to 0即获取主题帖正文.
+
+        Returns:
+            RecoverInfo: 待恢复帖子信息
+        """
+
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
+
+        return await get_recover_info.request(self._http_core, fid, tid, pid)
 
     @handle_exception(get_bawu_memberlist.BawuListMemberUsers)
     async def get_bawu_memberlist(

@@ -531,9 +531,8 @@ class PcUserPost:
         contents (Contents_pcup): 正文内容碎片列表
 
         fid (int): 所在吧id
-        tid (int): 所在主题帖id
-        ppid (int): 父级回复id 仅楼中楼有效 楼层回复恒为0
-        pid (int): 回复id 主题帖为主题帖id 回复为楼层pid 楼中楼为楼中楼pid
+        ppid (int): 父级回复id
+        pid (int): 回复id
         user (UserInfo_pcu): 发布者的用户信息
         thread (Thread_pcup): 父级主题帖信息
 
@@ -544,7 +543,6 @@ class PcUserPost:
     contents: Contents_pcup = dcs.field(default_factory=Contents_pcup)
 
     fid: int = 0
-    tid: int = 0
     ppid: int = 0
     pid: int = 0
     user: UserInfo_pcu = dcs.field(default_factory=UserInfo_pcu)
@@ -561,7 +559,6 @@ class PcUserPost:
         post_info = data_map.get("post_info")
         if post_info:
             contents = Contents_pcup.from_json(post_info.get("content") or [])
-            # quote_id仅在回复为楼中楼时下发 其值为所在楼层的pid 楼层回复恒为0
             ppid = int(post_info.get("quote_id") or 0)
             pid = int(post_info["id"])
             user = UserInfo_pcu.from_json(post_info["author"])
@@ -575,7 +572,7 @@ class PcUserPost:
 
         obj_type = ObjType(int(data_map["type"]))
 
-        return PcUserPost(contents, thread.fid, thread.tid, ppid, pid, user, thread, obj_type, create_time)
+        return PcUserPost(contents, thread.fid, ppid, pid, user, thread, obj_type, create_time)
 
     def __eq__(self, obj: PcUserPost) -> bool:
         return self.pid == obj.pid

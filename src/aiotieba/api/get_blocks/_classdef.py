@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import dataclasses as dcs
+from datetime import datetime
 from typing import TYPE_CHECKING, Self
 
 import bs4
 
 from ...exception import TbErrorExt
+from ...helper import default_datetime
 from .._classdef import Containers
 
 if TYPE_CHECKING:
@@ -20,23 +22,31 @@ class Block:
     Attributes:
         user_id (int): user_id
         user_name (str): 用户名
-        nick_name_old (str): 旧版昵称
+        nick_name_new (str): 新版昵称
         day (int): 封禁天数
+
+        block_time (datetime): 封禁时间
     """
 
     user_id: int = 0
     user_name: str = ""
-    nick_name_old: str = ""
+    nick_name_new: str = ""
     day: int = 0
+
+    block_time: datetime = dcs.field(default_factory=default_datetime)
 
     @staticmethod
     def from_xml(data_tag: bs4.element.Tag) -> Self:
         id_tag = data_tag.a
         user_id = int(id_tag["attr-uid"])
         user_name = id_tag["attr-un"]
-        nick_name_old = id_tag["attr-nn"]
+        nick_name_new = id_tag["attr-nn"]
         day = int(id_tag["attr-blockday"])
-        return Block(user_id, user_name, nick_name_old, day)
+
+        block_time_item = data_tag.find("span", class_="block_list_item_time")
+        block_time = datetime.strptime(block_time_item.string, "%Y-%m-%d %H:%M")
+
+        return Block(user_id, user_name, nick_name_new, day, block_time)
 
 
 @dcs.dataclass

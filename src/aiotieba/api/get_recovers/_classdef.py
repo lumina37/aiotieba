@@ -66,6 +66,61 @@ class UserInfo_rec:
 
 
 @dcs.dataclass
+class Post_rec:
+    """
+    父级回复信息
+
+    Attributes:
+        pid (int): 父级回复id
+        text (str): 文本内容
+        user (UserInfo_rec): 发布者的用户信息
+    """
+
+    pid: int = 0
+    text: str = ""
+    user: UserInfo_rec = dcs.field(default_factory=UserInfo_rec)
+
+    @staticmethod
+    def from_json(data_map: Mapping) -> Self:
+        pid = int(data_map["pid"])
+        text = data_map["abstract"]
+        user = UserInfo_rec.from_json(data_map)
+        return Post_rec(pid, text, user)
+
+    def __bool__(self) -> bool:
+        return bool(self.pid)
+
+
+@dcs.dataclass
+class Thread_rec:
+    """
+    所在主题帖信息
+
+    Attributes:
+        tid (int): 主题帖id
+        title (str): 标题
+        text (str): 文本内容
+        user (UserInfo_rec): 发布者的用户信息
+    """
+
+    tid: int = 0
+    title: str = ""
+    text: str = ""
+    user: UserInfo_rec = dcs.field(default_factory=UserInfo_rec)
+
+    @staticmethod
+    def from_json(data_map: Mapping) -> Self:
+        tid = int(data_map["tid"])
+        title = data_map["title"]
+        text = data_map["abstract"]
+        user = UserInfo_rec.from_json(data_map)
+        return Thread_rec(tid, title, text, user)
+
+    def __bool__(self) -> bool:
+        return bool(self.tid)
+
+
+@dcs.dataclass
 class Recover:
     """
     待恢复帖子信息
@@ -73,12 +128,15 @@ class Recover:
     Attributes:
         text (str): 文本内容
         tid (int): 所在主题帖id
-        pid (int): 回复id 若为主题帖则该字段为0
-        user (UserInfo_rec): 发布者的用户信息
+        pid (int): 待恢复对象的id 若`obj_type`为`THREAD`则该字段为0
+        user (UserInfo_rec): 待恢复对象的发布者用户信息
+        post (Post_rec): 父级回复信息 仅`obj_type`为`COMMENT`时有值
+        thread (Thread_rec): 所在主题帖信息 当`obj_type`为`THREAD`时即待恢复对象本身
+
         op_show_name (str): 操作人显示名称
         op_time (int): 操作时间 10位时间戳 以秒为单位
 
-        obj_type (ObjType): 帖子对象类型
+        obj_type (ObjType): 待恢复对象的类型
         is_hide (bool): 是否为屏蔽
     """
 
@@ -86,6 +144,9 @@ class Recover:
     tid: int = 0
     pid: int = 0
     user: UserInfo_rec = dcs.field(default_factory=UserInfo_rec)
+    post: Post_rec = dcs.field(default_factory=Post_rec)
+    thread: Thread_rec = dcs.field(default_factory=Thread_rec)
+
     op_show_name: str = ""
     op_time: int = 0
 
@@ -95,26 +156,35 @@ class Recover:
     @staticmethod
     def from_json(data_map: Mapping) -> Self:
         thread_info = data_map["thread_info"]
-        tid = int(thread_info["tid"])
-        if post_info := data_map["post_info"]:
+        post_info = data_map["post_info"]
+        sub_post_info = data_map["sub_post_info"]
+
+        thread = Thread_rec.from_json(thread_info)
+
+        if sub_post_info:
+            obj_type = ObjType.COMMENT
+            post = Post_rec.from_json(post_info)
+            text = sub_post_info["abstract"]
+            pid = int(sub_post_info["pid"])
+            user = UserInfo_rec.from_json(sub_post_info)
+        elif post_info:
+            obj_type = ObjType.POST
+            post = Post_rec()
             text = post_info["abstract"]
             pid = int(post_info["pid"])
             user = UserInfo_rec.from_json(post_info)
         else:
-            text = thread_info["abstract"]
-            pid = 0
-            user = UserInfo_rec.from_json(thread_info)
-        is_floor = bool(data_map["is_foor"])  # 百度的Code Review主要起到一个装饰的作用
-        if is_floor:
-            obj_type = ObjType.COMMENT
-        elif pid:
-            obj_type = ObjType.POST
-        else:
             obj_type = ObjType.THREAD
-        is_hide = bool(int(data_map["is_frs_mask"]))
+            post = Post_rec()
+            text = thread.text
+            pid = 0
+            user = thread.user
+
         op_show_name = data_map["op_info"]["name"]
         op_time = int(data_map["op_info"]["time"])
-        return Recover(text, tid, pid, user, op_show_name, op_time, obj_type, is_hide)
+        is_hide = bool(int(data_map["is_frs_mask"]))
+
+        return Recover(text, thread.tid, pid, user, post, thread, op_show_name, op_time, obj_type, is_hide)
 
 
 @dcs.dataclass
@@ -140,7 +210,7 @@ class Page_recover:
     def from_json(data_map: Mapping) -> Self:
         page_size = data_map["rn"]
         current_page = data_map["pn"]
-        has_more = data_map["has_more"]
+        has_more = bool(data_map["has_more"])
         has_prev = current_page > 1
         return Page_recover(page_size, current_page, has_more, has_prev)
 

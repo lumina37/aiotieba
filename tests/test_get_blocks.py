@@ -12,3 +12,5 @@ async def test_Blocks(client: tb.Client):
     block = blocks[0]
     assert block.user_id > 0
     assert block.day > 0
+    assert block.nick_name_new != ""
+    assert block.block_time.year > 2000
