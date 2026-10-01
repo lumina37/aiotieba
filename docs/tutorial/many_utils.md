@@ -27,10 +27,11 @@ async def sign(BDUSS_key: str, *, retry_times: int = 0):
                 break
         # 签到
         await client.sign_forums()  # 先一键签到
+        user = await client.get_self_info(tb.ReqUInfo.USER_ID)
         retry_list: list[str] = []
         for pn in range(1, 9999):
-            forums = await client.get_self_follow_forums(pn)
-            retry_list += [forum.fname for forum in forums if not forum.is_signed]
+            forums = await client.get_follow_forums(user.user_id, pn, rn=200)
+            retry_list += [forum.fname for forum in forums]
             if not forums.has_more:
                 break
         for _ in range(retry_times + 1):

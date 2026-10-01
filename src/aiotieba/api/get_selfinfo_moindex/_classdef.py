@@ -5,6 +5,7 @@ from functools import cached_property
 from typing import TYPE_CHECKING, Self
 
 from ...enums import Gender
+from ...helper import vipinfo2bool
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -58,10 +59,7 @@ class UserInfo_moindex:
         forum_num = data_map["like_forum_num"]
         sign = data_map["intro"]
 
-        if vip_dict := data_map.get("vipInfo", None):
-            is_vip = int(vip_dict["v_status"]) != 0
-        else:
-            is_vip = False
+        is_vip = vipinfo2bool(data_map.get("vipInfo"))
 
         return UserInfo_moindex(
             user_id, portrait, user_name, gender, post_num, fan_num, follow_num, forum_num, sign, is_vip
@@ -77,7 +75,7 @@ class UserInfo_moindex:
         return self.user_id
 
     def __bool__(self) -> bool:
-        return self.user_id
+        return bool(self.user_id)
 
     @cached_property
     def log_name(self) -> str:

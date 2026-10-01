@@ -34,7 +34,7 @@ class Follow:
 
     @staticmethod
     def from_json(data_map: Mapping) -> Self:
-        user_id = int(data_map["id"])
+        user_id = data_map["id"]
         portrait = data_map["portrait"]
         if "?" in portrait:
             portrait = portrait[:-13]
@@ -93,9 +93,9 @@ class Page_follow:
 
     @staticmethod
     def from_json(data_map: Mapping) -> Self:
-        current_page = int(data_map["pn"])
-        total_count = int(data_map["total_follow_num"])
-        has_more = bool(int(data_map["has_more"]))
+        current_page = data_map["pn"]
+        total_count = data_map["total_follow_num"]
+        has_more = bool(data_map["has_more"])
         has_prev = current_page > 1
         return Page_follow(current_page, total_count, has_more, has_prev)
 

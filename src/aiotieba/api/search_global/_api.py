@@ -18,8 +18,8 @@ REFERER_GLOBAL = "https://tieba.baidu.com/f/search/res"
 
 def parse_body(body: bytes) -> SearchGlobals:
     res_json = parse_json(body)
-    if code := int(res_json["no"]):
-        raise TiebaServerError(code, res_json.get("error", ""))
+    if code := res_json["no"]:
+        raise TiebaServerError(code, res_json["error"])
 
     searches = SearchGlobals.from_json(res_json["data"])
 

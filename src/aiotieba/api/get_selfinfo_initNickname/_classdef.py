@@ -30,7 +30,7 @@ class UserInfo_selfinit:
     def from_json(data_map: Mapping) -> Self:
         user_name = data_map["user_name"]
         nick_name_old = data_map["name_show"]
-        tieba_uid = data_map["tieba_uid"]
+        tieba_uid = int(data_map["tieba_uid"])
         return UserInfo_selfinit(user_name, nick_name_old, tieba_uid)
 
     def __str__(self) -> str:

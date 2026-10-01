@@ -283,12 +283,15 @@ class Post_rep:
     @staticmethod
     def from_proto(data_proto: TypeMessage) -> Self:
         pid = data_proto.quote_pid
+
         new_floor_infos = data_proto.new_floor_info
         contents = Contents_rep()
         if len(new_floor_infos) > 2:
             contents = Contents_rep.from_proto(new_floor_infos[-2])
             _strip_quote_header(contents)
+
         user = UserInfo_rep_p.from_proto(data_proto.quote_user)
+
         return Post_rep(pid, contents, user)
 
     def __bool__(self) -> bool:
@@ -313,12 +316,15 @@ class Thread_rep:
     @staticmethod
     def from_proto(data_proto: TypeMessage) -> Self:
         tid = data_proto.thread_id
+
         new_floor_infos = data_proto.new_floor_info
         contents = Contents_rep()
         if len(new_floor_infos) > 1:
             contents = Contents_rep.from_proto(new_floor_infos[0])
             _strip_quote_header(contents)
+
         user = UserInfo_rep_t.from_proto(data_proto.thread_author_user)
+
         return Thread_rep(tid, contents, user)
 
     def __bool__(self) -> bool:

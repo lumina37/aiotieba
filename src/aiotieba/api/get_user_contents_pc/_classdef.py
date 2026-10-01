@@ -41,7 +41,7 @@ class FragEmoji_pcup:
     @staticmethod
     def from_json(data_map: Mapping) -> Self:
         id_ = data_map["text"]
-        desc = data_map.get("c", "")
+        desc = data_map["c"]
         return FragEmoji_pcup(id_, desc)
 
 
@@ -54,7 +54,6 @@ class FragImage_pcup:
         src (str): 小图链接 宽720px
         big_src (str): 大图链接 宽960px
         origin_src (str): 原图链接
-        origin_size (int): 原图大小
         show_width (int): 图像在客户端预览显示的宽度
         show_height (int): 图像在客户端预览显示的高度
         hash (str): 百度图床hash
@@ -63,7 +62,6 @@ class FragImage_pcup:
     src: str = dcs.field(default="", repr=False)
     big_src: str = dcs.field(default="", repr=False)
     origin_src: str = dcs.field(default="", repr=False)
-    origin_size: int = 0
     show_width: int = 0
     show_height: int = 0
     hash: str = ""
@@ -73,18 +71,17 @@ class FragImage_pcup:
         src = data_map["cdn_src"]
         big_src = data_map["big_cdn_src"]
         origin_src = data_map["origin_src"]
-        origin_size = int(data_map.get("origin_size", 0))
 
-        show_width, _, show_height = data_map.get("bsize", "").partition(",")
-        show_width = int(show_width) if show_width else 0
-        show_height = int(show_height) if show_height else 0
+        show_width, _, show_height = data_map["bsize"].partition(",")
+        show_width = int(show_width)
+        show_height = int(show_height)
 
         if hash_obj := _IMAGEHASH_EXP.search(src):
             hash_ = hash_obj.group(1)
         else:
             hash_ = ""
 
-        return FragImage_pcup(src, big_src, origin_src, origin_size, show_width, show_height, hash_)
+        return FragImage_pcup(src, big_src, origin_src, show_width, show_height, hash_)
 
 
 @dcs.dataclass
@@ -105,7 +102,7 @@ class FragAt_pcup:
     @staticmethod
     def from_json(data_map: Mapping) -> Self:
         text = data_map["text"]
-        user_id = int(data_map["uid"])
+        user_id = data_map["uid"]
         portrait = data_map["portrait"]
         if "?" in portrait:
             portrait = portrait[:-13]
@@ -135,9 +132,9 @@ class FragVideo_pcup:
     def from_json(data_map: Mapping) -> Self:
         src = data_map["link"]
         cover_src = data_map["src"]
-        duration = int(data_map.get("during_time", 0))
-        width = int(data_map.get("width", 0))
-        height = int(data_map.get("height", 0))
+        duration = int(data_map["during_time"])
+        width = int(data_map["width"])
+        height = int(data_map["height"])
         return FragVideo_pcup(src, cover_src, duration, width, height)
 
     def __bool__(self) -> bool:
@@ -206,7 +203,7 @@ class Contents_pcup(Containers[TypeFragment]):
 
         def _frags():
             for content_map in content_maps:
-                _type = int(content_map["type"])
+                _type = content_map["type"]
                 # 0纯文本 9电话号 18话题 27百科词条 40梗百科
                 if _type in [0, 9, 18, 27, 40]:
                     frag = FragText_pcup.from_json(content_map)
@@ -264,23 +261,14 @@ class UserInfo_pcu:
         user_name (str): 用户名
         nick_name_new (str): 新版昵称
 
-        level (int): 吧内等级
         gender (Gender): 性别
-        icons (list[str]): 印记信息
 
-        is_bawu (bool): 是否吧务
-        is_vip (bool): 是否会员
         priv_like (PrivLike): 关注吧列表的公开状态
         priv_reply (PrivReply): 帖子评论权限
 
         nick_name (str): 用户昵称
         show_name (str): 显示名称
         log_name (str): 用于在日志中记录用户信息
-
-    Note:
-        服务端对回复作者与主题帖作者下发的字段集不同\n
-        回复作者不含level_id/iconinfo/is_bawu且is_mem恒为0\n
-        主题帖作者不含level_id
     """
 
     user_id: int = 0
@@ -288,44 +276,32 @@ class UserInfo_pcu:
     user_name: str = ""
     nick_name_new: str = ""
 
-    level: int = 0
     gender: Gender = Gender.UNKNOWN
-    icons: list[str] = dcs.field(default_factory=list)
 
-    is_bawu: bool = False
-    is_vip: bool = False
     priv_like: PrivLike = PrivLike.PUBLIC
     priv_reply: PrivReply = PrivReply.ALL
 
     @staticmethod
     def from_json(data_map: Mapping) -> Self:
-        user_id = int(data_map["id"])
+        user_id = data_map["id"]
         portrait = data_map["portrait"]
         if "?" in portrait:
             portrait = portrait[:-13]
         user_name = data_map["name"]
         nick_name_new = data_map["name_show"]
 
-        level = int(data_map.get("level_id", 0))
-        gender = Gender(int(data_map.get("gender", 0)))
-        icons = [name for i in data_map.get("iconinfo") or [] if (name := i.get("name"))]
+        gender = Gender(data_map["gender"])
 
-        is_bawu = bool(data_map.get("is_bawu", 0))
-        is_vip = int(data_map.get("is_mem", 0)) != 0
         priv_sets = data_map.get("priv_sets") or {}
-        priv_like = PrivLike(priv_like) if (priv_like := int(priv_sets.get("like", 0))) else PrivLike.PUBLIC
-        priv_reply = PrivReply(priv_reply) if (priv_reply := int(priv_sets.get("reply", 0))) else PrivReply.ALL
+        priv_like = PrivLike(priv_like) if (priv_like := priv_sets.get("like", 0)) else PrivLike.PUBLIC
+        priv_reply = PrivReply(priv_reply) if (priv_reply := priv_sets.get("reply", 0)) else PrivReply.ALL
 
         return UserInfo_pcu(
             user_id,
             portrait,
             user_name,
             nick_name_new,
-            level,
             gender,
-            icons,
-            is_bawu,
-            is_vip,
             priv_like,
             priv_reply,
         )
@@ -385,13 +361,13 @@ class Forum_pcup:
 
     @staticmethod
     def from_json(data_map: Mapping) -> Self:
-        fid = int(data_map["id"])
+        fid = data_map["id"]
         fname = data_map["name"]
-        avatar = data_map.get("avatar", "")
-        member_num = int(data_map.get("member_num", 0))
-        post_num = int(data_map.get("post_num", 0))
-        slogan = data_map.get("slogan", "")
-        is_liked = bool(data_map.get("is_liked", 0))
+        avatar = data_map["avatar"]
+        member_num = data_map["member_num"]
+        post_num = data_map["post_num"]
+        slogan = data_map["slogan"]
+        is_liked = bool(data_map["is_liked"])
         return Forum_pcup(fid, fname, avatar, member_num, post_num, slogan, is_liked)
 
     def __bool__(self) -> bool:
@@ -454,26 +430,26 @@ class Thread_pcup:
         contents = Contents_pcup.from_json(data_map.get("first_post_content") or [])
         title = data_map["title"]
 
-        fid = int(data_map["fid"])
+        fid = data_map["fid"]
         fname = data_map["fname"]
-        tid = int(data_map["tid"])
-        pid = int(data_map["first_post_id"])
+        tid = data_map["tid"]
+        pid = data_map["first_post_id"]
         user = UserInfo_pcu.from_json(data_map["author"])
         forum = Forum_pcup.from_json(data_map["forum_info"])
 
-        thread_type = int(data_map["thread_type"])
+        thread_type = data_map["thread_type"]
         type_ = ThreadType(thread_type)
         if type_ == ThreadType.UNKNOWN:
             LOG().debug("Unknown thread type. tid=%d, type=%s", tid, thread_type)
 
-        view_num = int(data_map["view_num"])
-        reply_num = int(data_map["reply_num"])
-        share_num = int(data_map["share_num"])
+        view_num = data_map["view_num"]
+        reply_num = data_map["reply_num"]
+        share_num = data_map["share_num"]
         agree_map = data_map["agree"]
-        agree = int(agree_map["agree_num"])
-        disagree = int(agree_map["disagree_num"])
-        create_time = int(data_map["create_time"])
-        last_time = int(data_map["last_time_int"])
+        agree = agree_map["agree_num"]
+        disagree = agree_map["disagree_num"]
+        create_time = data_map["create_time"]
+        last_time = data_map["last_time_int"]
         is_good = bool(data_map["is_good"])
         is_top = bool(data_map["is_top"])
         is_deleted = bool(data_map["is_deleted"])
@@ -556,13 +532,13 @@ class PcUserPost:
     def from_json(data_map: Mapping) -> Self:
         thread = Thread_pcup.from_json(data_map["thread_info"])
 
-        post_info = data_map.get("post_info")
+        post_info = data_map["post_info"]
         if post_info:
-            contents = Contents_pcup.from_json(post_info.get("content") or [])
-            ppid = int(post_info.get("quote_id") or 0)
-            pid = int(post_info["id"])
+            contents = Contents_pcup.from_json(post_info["content"])
+            ppid = int(post_info["quote_id"])
+            pid = post_info["id"]
             user = UserInfo_pcu.from_json(post_info["author"])
-            create_time = int(post_info["time"])
+            create_time = post_info["time"]
         else:
             contents = thread.contents
             ppid = 0
@@ -570,7 +546,7 @@ class PcUserPost:
             user = thread.user
             create_time = thread.create_time
 
-        obj_type = ObjType(int(data_map["type"]))
+        obj_type = ObjType(data_map["type"])
 
         return PcUserPost(contents, thread.fid, ppid, pid, user, thread, obj_type, create_time)
 

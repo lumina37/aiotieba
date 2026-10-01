@@ -42,12 +42,12 @@ class SelfFollowForum:
         fid = data_map["forum_id"]
         fname = data_map["forum_name"]
         level = data_map["level_id"]
-        is_signed = bool(int(data_map["is_sign"]))
+        is_signed = bool(data_map["is_sign"])
 
-        today_thread_num = int(data_map.get("day_thread_num") or 0)
-        hot_num = int(data_map.get("hot_num") or 0)
-        member_count = int(data_map.get("member_count") or 0)
-        thread_num = int(data_map.get("thread_num") or 0)
+        today_thread_num = data_map["day_thread_num"]
+        hot_num = data_map["hot_num"]
+        member_count = data_map["member_count"]
+        thread_num = data_map["thread_num"]
 
         return SelfFollowForum(fid, fname, level, is_signed, today_thread_num, hot_num, member_count, thread_num)
 
@@ -60,14 +60,9 @@ class SelfFollowForums(TbErrorExt, Containers[SelfFollowForum]):
     Attributes:
         objs (list[SelfFollowForum]): 本账号关注贴吧列表
         err (Exception | None): 捕获的异常
-
-        has_more (bool): 是否还有下一页
     """
-
-    has_more: bool = False
 
     @staticmethod
     def from_json(data_map: Mapping) -> Self:
         objs = [SelfFollowForum.from_json(m) for m in data_map["like_forum"]]
-        has_more = data_map["like_forum_has_more"]
-        return SelfFollowForums(objs, has_more)
+        return SelfFollowForums(objs)

@@ -33,10 +33,10 @@ class BawuInfo_f:
 
     @staticmethod
     def from_json(data_map: Mapping) -> Self:
-        user_id = int(data_map.get("id", 0) or 0)
-        portrait = data_map.get("portrait") or ""
-        user_name = data_map.get("name") or ""
-        nick_name_new = data_map.get("show_name") or ""
+        user_id = data_map["id"]
+        portrait = data_map["portrait"]
+        user_name = data_map["name"]
+        nick_name_new = data_map["show_name"]
         return BawuInfo_f(user_id, portrait, user_name, nick_name_new)
 
     def __str__(self) -> str:

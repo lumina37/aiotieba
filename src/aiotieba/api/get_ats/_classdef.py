@@ -38,7 +38,7 @@ class FragEmoji_at:
     @staticmethod
     def from_json(data_map: Mapping) -> Self:
         id_ = data_map["text"]
-        desc = data_map.get("c", "")
+        desc = data_map["c"]
         return FragEmoji_at(id_, desc)
 
 
@@ -64,11 +64,11 @@ class FragImage_at:
     @staticmethod
     def from_json(data_map: Mapping) -> Self:
         src = data_map["src"]
-        origin_size = int(data_map.get("size", 0))
+        origin_size = int(data_map["size"])
 
-        show_width, _, show_height = data_map.get("bsize", "").partition(",")
-        show_width = int(show_width) if show_width else 0
-        show_height = int(show_height) if show_height else 0
+        show_width, _, show_height = data_map["bsize"].partition(",")
+        show_width = int(show_width)
+        show_height = int(show_height)
 
         if hash_obj := _IMAGEHASH_EXP.search(src):
             hash_ = hash_obj.group(1)
@@ -423,14 +423,14 @@ class Post_at:
 
     @staticmethod
     def from_json(data_map: Mapping) -> Self:
-        # quote_pid仅在@出现在楼中楼时下发 缺省时与0等价
         pid = int(data_map.get("quote_pid") or 0)
+
         new_floor_infos = data_map["new_floor_info"]
-        # 存在父级楼层时 new_floor_info[-2] 为其内容 @出现在主题帖或楼层回复时无父级楼层
         contents = Contents_at()
         if len(new_floor_infos) > 2:
             contents = Contents_at.from_json(new_floor_infos[-2]["content"])
             _strip_quote_header(contents)
+
         user = UserInfo_at_p.from_json(data_map["quote_user"])
         return Post_at(pid, contents, user)
 

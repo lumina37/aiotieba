@@ -433,7 +433,6 @@ class Client:
         return StrResponse(fname)
 
     @handle_exception(get_threads.Threads)
-    @_try_websocket
     async def get_threads(
         self,
         fname_or_fid: str | int,
@@ -467,7 +466,6 @@ class Client:
         return await get_threads.request_http(self._http_core, fname, pn, rn, sort, is_good, LEGACY_VERSION)
 
     @handle_exception(get_posts.Posts)
-    @_try_websocket
     async def get_posts(
         self,
         tid: int,
@@ -1007,20 +1005,18 @@ class Client:
         return await get_user_forum_info.request(self._http_core, fid, portrait)
 
     @handle_exception(get_self_follow_forums.SelfFollowForums)
-    async def get_self_follow_forums(self, pn: int = 1, *, rn: int = 200) -> get_self_follow_forums.SelfFollowForums:
+    async def get_self_follow_forums(self) -> get_self_follow_forums.SelfFollowForums:
         """
         获取本账号关注贴吧列表
 
-        Args:
-            pn (int, optional): 页码. Defaults to 1.
-            rn (int, optional): 请求的条目数. Range [1, 200]. Defaults to 200.
+        Note:
+            该接口不分页 服务端单次最多下发200个吧 关注数超过200时请改用get_follow_forums
 
         Returns:
             SelfFollowForums: 本账号关注贴吧列表
         """
 
-        check_rn(rn, 1, 200)
-        return await get_self_follow_forums.request(self._http_core, pn, rn)
+        return await get_self_follow_forums.request(self._http_core)
 
     @handle_exception(get_dislike_forums.DislikeForums)
     @_try_websocket

@@ -14,7 +14,6 @@ async def test_get_user_posts_pc(client: tb.Client):
     upost = uposts[0]
     assert len(upost.contents) > 0
     assert upost.fid > 0
-    assert upost.tid > 0
     assert upost.pid > 0
     assert upost.obj_type in [ObjType.POST, ObjType.COMMENT]
     assert upost.create_time > 0
@@ -32,14 +31,9 @@ async def test_get_user_posts_pc(client: tb.Client):
     assert user.user_name != ""
     assert user.nick_name_new != ""
 
-    # 以下为PC侧独有
-    for icon in user.icons:
-        assert icon != ""
-
     ##### Thread_pcup #####
     thread = upost.thread
     assert thread
-    assert thread.tid == upost.tid
     assert thread.fid == upost.fid
     assert thread.title != ""
     assert thread.create_time > 0

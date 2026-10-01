@@ -114,7 +114,7 @@ class SearchInForums(TbErrorExt, Containers[SearchInForum]):
 
     @staticmethod
     def from_json(data_map: Mapping) -> Self:
-        objs = [SearchInForum.from_json(m) for m in data_map.get("post_list", [])]
+        objs = [SearchInForum.from_json(m) for m in data_map["post_list"]]
         page = Page_fsch.from_json(data_map["page"])
         return SearchInForums(objs, page)
 

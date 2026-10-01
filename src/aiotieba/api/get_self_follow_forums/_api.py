@@ -23,12 +23,10 @@ def parse_body(body: bytes) -> SelfFollowForums:
     return self_follow_forums
 
 
-async def request(http_core: HttpCore, pn: int, rn: int) -> SelfFollowForums:
+async def request(http_core: HttpCore) -> SelfFollowForums:
     data = [
         ("sort_type", 3),
         ("call_from", 3),
-        ("page_no", pn),
-        ("res_num", rn),
     ]
 
     request = http_core.pack_web_form_request(

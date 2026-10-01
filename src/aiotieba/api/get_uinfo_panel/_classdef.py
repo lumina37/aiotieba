@@ -6,16 +6,10 @@ from typing import TYPE_CHECKING, Self
 
 from ...enums import Gender
 from ...exception import TbErrorExt
+from ...helper import tbnum2int, vipinfo2bool
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
-
-
-def _tbnum2int(tb_num: str) -> int:
-    if isinstance(tb_num, str):
-        return int(float(tb_num.removesuffix("万")) * 1e4)
-    else:
-        return tb_num
 
 
 @dcs.dataclass
@@ -77,13 +71,10 @@ class UserInfo_panel(TbErrorExt):
         else:
             age = 0.0
 
-        post_num = _tbnum2int(data_map["post_num"])
-        fan_num = _tbnum2int(data_map["followed_count"])
+        post_num = tbnum2int(data_map["post_num"], "万")
+        fan_num = tbnum2int(data_map["followed_count"], "万")
 
-        if vip_dict := data_map["vipInfo"]:
-            is_vip = int(vip_dict["v_status"]) != 0
-        else:
-            is_vip = False
+        is_vip = vipinfo2bool(data_map.get("vipInfo"))
 
         return UserInfo_panel(portrait, user_name, nick_name_new, nick_name_old, gender, age, post_num, fan_num, is_vip)
 

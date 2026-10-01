@@ -9,5 +9,7 @@ from .utils import (
     jsonlib,
     pack_json,
     parse_json,
+    tbnum2int,
     timeout,
+    vipinfo2bool,
 )
