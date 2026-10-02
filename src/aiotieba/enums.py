@@ -238,7 +238,9 @@ class BawuType(enum.StrEnum):
         JOURNAL_EDITOR 吧刊小编\n
         JOURNAL_CHIEF_EDITOR 吧刊主编\n
         VOICE_EDITOR 语音小编\n
-        BROADCAST_EDITOR 广播小编
+        BROADCAST_EDITOR 广播小编\n
+        PROFESS_ADMIN 职业吧主\n
+        FOURTH_ADMIN 第四吧主
     """
 
     UNKNOWN = "unknown"
@@ -250,6 +252,8 @@ class BawuType(enum.StrEnum):
     JOURNAL_CHIEF_EDITOR = "publication_editor"
     VOICE_EDITOR = "voiceadmin"
     BROADCAST_EDITOR = "broadcast_admin"
+    PROFESS_ADMIN = "profess_admin"
+    FOURTH_ADMIN = "fourth_admin"
 
     @classmethod
     def _missing_(cls, _: object) -> BawuType:

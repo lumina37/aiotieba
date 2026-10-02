@@ -93,6 +93,8 @@ class BawuInfo(TbErrorExt):
         broadcast_editor (list[UserInfo_bawu]): 广播小编
         journal_chief_editor (list[UserInfo_bawu]): 吧刊主编
         journal_editor (list[UserInfo_bawu]): 吧刊小编
+        profess_admin (list[UserInfo_bawu]): 职业吧主
+        fourth_admin (list[UserInfo_bawu]): 第四吧主
     """
 
     all: list[UserInfo_bawu] = dcs.field(default_factory=list, repr=False)
@@ -105,6 +107,8 @@ class BawuInfo(TbErrorExt):
     broadcast_editor: list[UserInfo_bawu] = dcs.field(default_factory=list)
     journal_chief_editor: list[UserInfo_bawu] = dcs.field(default_factory=list)
     journal_editor: list[UserInfo_bawu] = dcs.field(default_factory=list)
+    profess_admin: list[UserInfo_bawu] = dcs.field(default_factory=list)
+    fourth_admin: list[UserInfo_bawu] = dcs.field(default_factory=list)
 
     @classmethod
     def from_proto(cls, data_proto: TypeMessage) -> Self:
@@ -131,6 +135,8 @@ class BawuInfo(TbErrorExt):
         broadcast_editor = extract(BawuType.BROADCAST_EDITOR)
         journal_chief_editor = extract(BawuType.JOURNAL_CHIEF_EDITOR)
         journal_editor = extract(BawuType.JOURNAL_EDITOR)
+        profess_admin = extract(BawuType.PROFESS_ADMIN)
+        fourth_admin = extract(BawuType.FOURTH_ADMIN)
 
         return cls(
             all_,
@@ -142,4 +148,6 @@ class BawuInfo(TbErrorExt):
             broadcast_editor,
             journal_chief_editor,
             journal_editor,
+            profess_admin,
+            fourth_admin,
         )
