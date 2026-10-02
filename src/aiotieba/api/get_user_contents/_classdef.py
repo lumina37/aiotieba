@@ -4,7 +4,7 @@ import dataclasses as dcs
 from functools import cached_property
 from typing import Self
 
-from ...enums import ObjType, ThreadType
+from ...enums import ContentType, ThreadType
 from ...exception import TbErrorExt
 from ...logging import get_logger as LOG
 from .._classdef import Containers, TypeMessage, VoteInfo
@@ -28,8 +28,8 @@ FragLink_up = FragLink_ut = FragLink
 FragVideo_ut = FragVideo
 FragVoice_ut = FragVoice
 
-# post_type -> ObjType
-_POST_TYPE2OBJ_TYPE = {0: ObjType.POST, 1: ObjType.COMMENT}
+# post_type -> ContentType
+_POST_TYPE2OBJ_TYPE = {0: ContentType.POST, 1: ContentType.COMMENT}
 
 
 @dcs.dataclass
@@ -302,7 +302,7 @@ class UserPost:
         author_id (int): 发布者的user_id
         thread (Thread_up): 父级主题帖信息
 
-        obj_type (ObjType): 帖子对象类型
+        content_type (ContentType): 帖子对象类型
 
         create_time (int): 创建时间 10位时间戳 以秒为单位
     """
@@ -315,7 +315,7 @@ class UserPost:
     user: UserInfo_u = dcs.field(default_factory=UserInfo_u)
     thread: Thread_up = dcs.field(default_factory=Thread_up)
 
-    obj_type: ObjType = ObjType.UNKNOWN
+    content_type: ContentType = ContentType.UNKNOWN
 
     create_time: int = 0
 
@@ -323,9 +323,9 @@ class UserPost:
     def from_proto(cls, data_proto: TypeMessage) -> Self:
         contents = Contents_up.from_proto(data_proto)
         pid = data_proto.post_id
-        obj_type = _POST_TYPE2OBJ_TYPE[data_proto.post_type]
+        content_type = _POST_TYPE2OBJ_TYPE[data_proto.post_type]
         create_time = data_proto.create_time
-        return cls(contents, 0, 0, pid, None, Thread_up(), obj_type, create_time)
+        return cls(contents, 0, 0, pid, None, Thread_up(), content_type, create_time)
 
     def __eq__(self, obj: UserPost) -> bool:
         return self.pid == obj.pid

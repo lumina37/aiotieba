@@ -1,7 +1,7 @@
 import pytest
 
 import aiotieba as tb
-from aiotieba import ObjType
+from aiotieba import ContentType
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=5.0)
@@ -15,11 +15,11 @@ async def test_get_user_posts_pc(client: tb.Client):
     assert len(upost.contents) > 0
     assert upost.fid > 0
     assert upost.pid > 0
-    assert upost.obj_type in [ObjType.POST, ObjType.COMMENT]
+    assert upost.content_type in [ContentType.POST, ContentType.COMMENT]
     assert upost.create_time > 0
 
     # 以下为PC侧独有 ppid仅在楼中楼有效
-    comment = next((p for p in uposts if p.obj_type == ObjType.COMMENT), None)
+    comment = next((p for p in uposts if p.content_type == ContentType.COMMENT), None)
     if comment is not None:
         assert comment.ppid > 0
         assert comment.ppid != comment.pid

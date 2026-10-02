@@ -1,7 +1,7 @@
 import pytest
 
 import aiotieba as tb
-from aiotieba import ObjType
+from aiotieba import ContentType
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=5.0)
@@ -12,7 +12,7 @@ async def test_Recovers(client: tb.Client):
     ##### Recover #####
     recover = recovers[0]
     assert recover.tid > 0
-    assert recover.obj_type in [ObjType.THREAD, ObjType.POST, ObjType.COMMENT]
+    assert recover.content_type in [ContentType.THREAD, ContentType.POST, ContentType.COMMENT]
     assert recover.op_show_name != ""
     assert recover.op_time != 0
 
@@ -22,7 +22,7 @@ async def test_Recovers(client: tb.Client):
     assert recover.thread.user.portrait != ""
 
     ##### Post_rec #####
-    if recover.obj_type is ObjType.COMMENT:
+    if recover.content_type is ContentType.COMMENT:
         assert recover.post.pid > 0
         assert recover.post.text != ""
     else:
@@ -30,7 +30,7 @@ async def test_Recovers(client: tb.Client):
 
     ##### Recover #####
     assert recover.user.portrait != ""
-    if recover.obj_type is ObjType.THREAD:
+    if recover.content_type is ContentType.THREAD:
         assert recover.pid == 0
     else:
         assert recover.pid > 0

@@ -97,7 +97,7 @@ class ThreadType(enum.IntEnum):
         return ThreadType.UNKNOWN
 
 
-class ObjType(enum.IntEnum):
+class ContentType(enum.IntEnum):
     """
     帖子对象类型
 
@@ -114,8 +114,8 @@ class ObjType(enum.IntEnum):
     COMMENT = 3
 
     @classmethod
-    def _missing_(cls, _: int) -> ObjType:
-        return ObjType.UNKNOWN
+    def _missing_(cls, _: int) -> ContentType:
+        return ContentType.UNKNOWN
 
 
 class ReqUInfo(enum.Flag):

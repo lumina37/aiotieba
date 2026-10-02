@@ -3,7 +3,7 @@ from __future__ import annotations
 import dataclasses as dcs
 from typing import TYPE_CHECKING, Self
 
-from ...enums import ObjType
+from ...enums import ContentType
 from ...exception import TbErrorExt
 from .._classdef import Containers
 
@@ -26,7 +26,7 @@ class SearchInForum:
         pid (int): 该条结果的回复id
         show_name (str): 发布者的显示名称
 
-        obj_type (ObjType): 帖子对象类型
+        content_type (ContentType): 帖子对象类型
         create_time (int): 创建时间
     """
 
@@ -39,7 +39,7 @@ class SearchInForum:
     pid: int = 0
     show_name: str = ""
 
-    obj_type: ObjType = ObjType.UNKNOWN
+    content_type: ContentType = ContentType.UNKNOWN
     create_time: int = 0
 
     @classmethod
@@ -49,12 +49,12 @@ class SearchInForum:
         fname = data_map["fname"]
         tid = int(data_map["tid"])
         is_comment = bool(int(data_map["is_floor"]))
-        obj_type = ObjType.COMMENT if is_comment else ObjType.POST
+        content_type = ContentType.COMMENT if is_comment else ContentType.POST
         ppid = int(data_map["pid"])
         pid = int(data_map["cid"]) if is_comment else ppid
         show_name = data_map["author"]["name_show"]
         create_time = int(data_map["time"])
-        return cls(text, title, fname, tid, ppid, pid, show_name, obj_type, create_time)
+        return cls(text, title, fname, tid, ppid, pid, show_name, content_type, create_time)
 
     def __eq__(self, obj: SearchInForum) -> bool:
         return self.pid == obj.pid

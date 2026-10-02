@@ -1,7 +1,7 @@
 import pytest
 
 import aiotieba as tb
-from aiotieba import ObjType
+from aiotieba import ContentType
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=5.0)
@@ -23,7 +23,7 @@ async def test_get_user_posts(client: tb.Client):
     assert post.fid > 0
     assert post.tid > 0
     assert post.pid > 0
-    assert post.obj_type in [ObjType.POST, ObjType.COMMENT]
+    assert post.content_type in [ContentType.POST, ContentType.COMMENT]
     assert post.create_time > 0
 
     ##### UserInfo_u #####

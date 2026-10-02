@@ -4,7 +4,7 @@ import dataclasses as dcs
 from functools import cached_property
 from typing import TYPE_CHECKING, Self
 
-from ...enums import ObjType, PrivLike, PrivReply
+from ...enums import ContentType, PrivLike, PrivReply
 from ...exception import TbErrorExt
 from .._classdef import Containers
 from .._classdef.contents import (
@@ -485,7 +485,7 @@ class At:
         post (Post_at): 父级回复信息
         thread (Thread_at): 父级主题帖信息
 
-        obj_type (ObjType): 帖子对象类型
+        content_type (ContentType): 帖子对象类型
 
         create_time (int): 创建时间
     """
@@ -500,7 +500,7 @@ class At:
     post: Post_at = dcs.field(default_factory=Post_at)
     thread: Thread_at = dcs.field(default_factory=Thread_at)
 
-    obj_type: ObjType = ObjType.UNKNOWN
+    content_type: ContentType = ContentType.UNKNOWN
 
     create_time: int = 0
 
@@ -514,9 +514,9 @@ class At:
         user = UserInfo_at.from_json(data_map["replyer"])
         post = Post_at.from_json(data_map)
         thread = Thread_at.from_json(data_map)
-        obj_type = ObjType(int(data_map["type"]))
+        content_type = ContentType(int(data_map["type"]))
         create_time = int(data_map["time"])
-        return cls(text, fname, fid, tid, pid, user, post, thread, obj_type, create_time)
+        return cls(text, fname, fid, tid, pid, user, post, thread, content_type, create_time)
 
     def __eq__(self, obj: At) -> bool:
         return self.pid == obj.pid

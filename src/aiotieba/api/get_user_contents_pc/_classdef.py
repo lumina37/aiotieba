@@ -4,7 +4,7 @@ import dataclasses as dcs
 from functools import cached_property
 from typing import TYPE_CHECKING, Self
 
-from ...enums import Gender, ObjType, PrivLike, PrivReply, ThreadType
+from ...enums import ContentType, Gender, PrivLike, PrivReply, ThreadType
 from ...exception import TbErrorExt
 from ...logging import get_logger as LOG
 from .._classdef import Containers
@@ -510,7 +510,7 @@ class PcUserPost:
         user (UserInfo_pcu): 发布者的用户信息
         thread (Thread_pcup): 父级主题帖信息
 
-        obj_type (ObjType): 帖子对象类型
+        content_type (ContentType): 帖子对象类型
         create_time (int): 创建时间 10位时间戳 以秒为单位
     """
 
@@ -522,7 +522,7 @@ class PcUserPost:
     user: UserInfo_pcu = dcs.field(default_factory=UserInfo_pcu)
     thread: Thread_pcup = dcs.field(default_factory=Thread_pcup)
 
-    obj_type: ObjType = ObjType.UNKNOWN
+    content_type: ContentType = ContentType.UNKNOWN
 
     create_time: int = 0
 
@@ -544,9 +544,9 @@ class PcUserPost:
             user = thread.user
             create_time = thread.create_time
 
-        obj_type = ObjType(data_map["type"])
+        content_type = ContentType(data_map["type"])
 
-        return cls(contents, thread.fid, ppid, pid, user, thread, obj_type, create_time)
+        return cls(contents, thread.fid, ppid, pid, user, thread, content_type, create_time)
 
     def __eq__(self, obj: PcUserPost) -> bool:
         return self.pid == obj.pid

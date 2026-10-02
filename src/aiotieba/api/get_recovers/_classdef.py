@@ -4,7 +4,7 @@ import dataclasses as dcs
 from functools import cached_property
 from typing import TYPE_CHECKING, Self
 
-from ...enums import ObjType
+from ...enums import ContentType
 from ...exception import TbErrorExt
 from .._classdef import Containers
 
@@ -128,15 +128,15 @@ class Recover:
     Attributes:
         text (str): 文本内容
         tid (int): 所在主题帖id
-        pid (int): 待恢复对象的id 若`obj_type`为`THREAD`则该字段为0
+        pid (int): 待恢复对象的id 若`content_type`为`THREAD`则该字段为0
         user (UserInfo_rec): 待恢复对象的发布者用户信息
-        post (Post_rec): 父级回复信息 仅`obj_type`为`COMMENT`时有值
-        thread (Thread_rec): 所在主题帖信息 当`obj_type`为`THREAD`时即待恢复对象本身
+        post (Post_rec): 父级回复信息 仅`content_type`为`COMMENT`时有值
+        thread (Thread_rec): 所在主题帖信息 当`content_type`为`THREAD`时即待恢复对象本身
 
         op_show_name (str): 操作人显示名称
         op_time (int): 操作时间 10位时间戳 以秒为单位
 
-        obj_type (ObjType): 待恢复对象的类型
+        content_type (ContentType): 待恢复对象的类型
         is_hide (bool): 是否为屏蔽
     """
 
@@ -150,7 +150,7 @@ class Recover:
     op_show_name: str = ""
     op_time: int = 0
 
-    obj_type: ObjType = ObjType.UNKNOWN
+    content_type: ContentType = ContentType.UNKNOWN
     is_hide: bool = False
 
     @classmethod
@@ -162,19 +162,19 @@ class Recover:
         thread = Thread_rec.from_json(thread_info)
 
         if sub_post_info:
-            obj_type = ObjType.COMMENT
+            content_type = ContentType.COMMENT
             post = Post_rec.from_json(post_info)
             text = sub_post_info["abstract"]
             pid = int(sub_post_info["pid"])
             user = UserInfo_rec.from_json(sub_post_info)
         elif post_info:
-            obj_type = ObjType.POST
+            content_type = ContentType.POST
             post = Post_rec()
             text = post_info["abstract"]
             pid = int(post_info["pid"])
             user = UserInfo_rec.from_json(post_info)
         else:
-            obj_type = ObjType.THREAD
+            content_type = ContentType.THREAD
             post = Post_rec()
             text = thread.text
             pid = 0
@@ -184,7 +184,7 @@ class Recover:
         op_time = int(data_map["op_info"]["time"])
         is_hide = bool(int(data_map["is_frs_mask"]))
 
-        return cls(text, thread.tid, pid, user, post, thread, op_show_name, op_time, obj_type, is_hide)
+        return cls(text, thread.tid, pid, user, post, thread, op_show_name, op_time, content_type, is_hide)
 
 
 @dcs.dataclass
