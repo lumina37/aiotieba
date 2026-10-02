@@ -1,2 +1,2 @@
 from ._api import parse_body, request
-from ._classdef import BawuPerm
+from ._classdef import BawuPerm, UserInfo_perm

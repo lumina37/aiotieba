@@ -6,16 +6,10 @@ from typing import TYPE_CHECKING, Self
 
 from ...enums import Gender
 from ...exception import TbErrorExt
+from ...helper import tbnum2int, vipinfo2bool
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
-
-
-def _tbnum2int(tb_num: str) -> int:
-    if isinstance(tb_num, str):
-        return int(float(tb_num.removesuffix("万")) * 1e4)
-    else:
-        return tb_num
 
 
 @dcs.dataclass
@@ -36,7 +30,7 @@ class UserInfo_panel(TbErrorExt):
         post_num (int): 发帖数
         fan_num (int): 粉丝数
 
-        is_vip (bool): 是否超级会员
+        is_vip (bool): 是否会员
 
         nick_name (str): 用户昵称
         show_name (str): 显示名称
@@ -55,9 +49,11 @@ class UserInfo_panel(TbErrorExt):
 
     is_vip: bool = False
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         portrait = data_map["portrait"]
+        if "?" in portrait:
+            portrait = portrait[:-13]
         user_name = data_map["name"]
         nick_name_new = data_map["show_nickname"]
         nick_name_old = data_map["name_show"]
@@ -75,15 +71,12 @@ class UserInfo_panel(TbErrorExt):
         else:
             age = 0.0
 
-        post_num = _tbnum2int(data_map["post_num"])
-        fan_num = _tbnum2int(data_map["followed_count"])
+        post_num = tbnum2int(data_map["post_num"], "万")
+        fan_num = tbnum2int(data_map["followed_count"], "万")
 
-        if vip_dict := data_map["vipInfo"]:
-            is_vip = int(vip_dict["v_status"]) == 3
-        else:
-            is_vip = False
+        is_vip = vipinfo2bool(data_map.get("vipInfo"))
 
-        return UserInfo_panel(portrait, user_name, nick_name_new, nick_name_old, gender, age, post_num, fan_num, is_vip)
+        return cls(portrait, user_name, nick_name_new, nick_name_old, gender, age, post_num, fan_num, is_vip)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait
@@ -95,7 +88,7 @@ class UserInfo_panel(TbErrorExt):
         return hash(self.portrait)
 
     def __bool__(self) -> bool:
-        return hash(self.portrait)
+        return bool(self.portrait)
 
     @property
     def nick_name(self) -> str:

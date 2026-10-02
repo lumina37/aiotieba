@@ -34,5 +34,5 @@ async def request(http_core: HttpCore) -> UserInfo_selfinit:
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/s/initNickname"), data
     )
 
-    body = await http_core.net_core.send_request(request, read_bufsize=1024)
+    body = await http_core.net_core.send_request(request)
     return parse_body(body)

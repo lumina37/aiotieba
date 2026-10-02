@@ -3,6 +3,7 @@ syntax = "proto3";
 
 import "Error.proto";
 import "Page.proto";
+import "PbContent.proto";
 import "User.proto";
 
 message ReplyMeResIdl {
@@ -21,6 +22,10 @@ message ReplyMeResIdl {
             uint64 quote_pid = 14;
             User quote_user = 15;
             User thread_author_user = 25;
+            message NewFloorInfo {
+                repeated PbContent content = 1;
+            }
+            repeated NewFloorInfo new_floor_info = 28;
         }
         repeated ReplyList reply_list = 2;
     }

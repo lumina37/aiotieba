@@ -5,6 +5,7 @@ from functools import cached_property
 from typing import TYPE_CHECKING, Self
 
 from ...enums import Gender
+from ...helper import vipinfo2bool
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -27,7 +28,7 @@ class UserInfo_moindex:
         forum_num (int): 关注贴吧数
         sign (str): 个性签名
 
-        is_vip (bool): 是否超级会员
+        is_vip (bool): 是否会员
 
         log_name (str): 用于在日志中记录用户信息
     """
@@ -45,8 +46,8 @@ class UserInfo_moindex:
 
     is_vip: bool = False
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         user_id = data_map["id"]
         portrait = data_map["portrait"]
         user_name = data_map["name"]
@@ -58,14 +59,9 @@ class UserInfo_moindex:
         forum_num = data_map["like_forum_num"]
         sign = data_map["intro"]
 
-        if vip_dict := data_map.get("vipInfo", None):
-            is_vip = int(vip_dict["v_status"]) == 3
-        else:
-            is_vip = False
+        is_vip = vipinfo2bool(data_map.get("vipInfo"))
 
-        return UserInfo_moindex(
-            user_id, portrait, user_name, gender, post_num, fan_num, follow_num, forum_num, sign, is_vip
-        )
+        return cls(user_id, portrait, user_name, gender, post_num, fan_num, follow_num, forum_num, sign, is_vip)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait
@@ -77,7 +73,7 @@ class UserInfo_moindex:
         return self.user_id
 
     def __bool__(self) -> bool:
-        return self.user_id
+        return bool(self.user_id)
 
     @cached_property
     def log_name(self) -> str:

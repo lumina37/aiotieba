@@ -5,7 +5,7 @@ import "CommonReq.proto";
 
 message ReplyMeReqIdl {
     message DataReq {
-        string pn = 1;
+        int32 pn = 1;
         CommonReq common = 3;
     }
     DataReq data = 1;

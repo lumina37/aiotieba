@@ -49,9 +49,7 @@ class NetCore:
             timeout = TimeoutConfig()
         self.timeout = timeout
 
-    async def req2res(
-        self, request: aiohttp.ClientRequest, read_until_eof: bool = True, read_bufsize: int = 64 * 1024
-    ) -> aiohttp.ClientResponse:
+    async def req2res(self, request: aiohttp.ClientRequest, read_until_eof: bool = True) -> aiohttp.ClientResponse:
         """
         发送http请求并返回ClientResponse
 
@@ -59,7 +57,6 @@ class NetCore:
             request (aiohttp.ClientRequest): 待发送的请求
 
             read_until_eof (bool, optional): 是否读取到EOF就中止. Defaults to True.
-            read_bufsize (int, optional): 读缓冲区大小 以字节为单位. Defaults to 64KiB.
 
         Returns:
             ClientResponse: 响应
@@ -77,7 +74,6 @@ class NetCore:
             read_until_eof=read_until_eof,
             auto_decompress=True,
             read_timeout=self.timeout.http_read,
-            read_bufsize=read_bufsize,
         )
 
         # 发送请求
@@ -97,7 +93,6 @@ class NetCore:
     async def send_request(
         self,
         request: aiohttp.ClientRequest,
-        read_bufsize: int = 64 * 1024,
         headers_checker: TypeHeadersChecker = check_status_code,
     ) -> bytes:
         """
@@ -106,14 +101,13 @@ class NetCore:
 
         Args:
             request (aiohttp.ClientRequest): 待发送的请求
-            read_bufsize (int, optional): 读缓冲区大小 以字节为单位. Defaults to 64KiB.
             headers_checker (TypeHeadersChecker, optional): headers检查函数. Defaults to check_status_code.
 
         Returns:
             bytes: body
         """
 
-        response = await self.req2res(request, True, read_bufsize)
+        response = await self.req2res(request, True)
 
         # 检查headers
         headers_checker(response)

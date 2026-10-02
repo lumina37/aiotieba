@@ -30,5 +30,5 @@ async def request(http_core: HttpCore, fname: str, pn: int) -> MemberUsers:
         yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/bawu2/platform/listMemberInfo"), params
     )
 
-    body = await http_core.net_core.send_request(request, read_bufsize=32 * 1024)
+    body = await http_core.net_core.send_request(request)
     return parse_body(body)

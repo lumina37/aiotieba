@@ -27,13 +27,13 @@ class BawuBlacklistUser:
     portrait: str = ""
     user_name: str = ""
 
-    @staticmethod
-    def from_xml(data_tag: bs4.element.Tag) -> Self:
+    @classmethod
+    def from_xml(cls, data_tag: bs4.element.Tag) -> Self:
         user_info_item = data_tag.previous_sibling.input
         user_name = user_info_item["data-user-name"]
         user_id = int(user_info_item["data-user-id"])
         portrait = data_tag.a["href"][14:-17]
-        return BawuBlacklistUser(user_id, portrait, user_name)
+        return cls(user_id, portrait, user_name)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
@@ -73,8 +73,8 @@ class Page_bwblacklist:
     has_more: bool = False
     has_prev: bool = False
 
-    @staticmethod
-    def from_xml(data_soup: bs4.BeautifulSoup) -> Self:
+    @classmethod
+    def from_xml(cls, data_soup: bs4.BeautifulSoup) -> Self:
         total_count_tag = data_soup.find("div", class_="breadcrumbs")
         total_count = int(total_count_tag.em.text)
 
@@ -94,7 +94,7 @@ class Page_bwblacklist:
         has_more = current_page < total_page
         has_prev = current_page > 1
 
-        return Page_bwblacklist(current_page, total_page, total_count, has_more, has_prev)
+        return cls(current_page, total_page, total_count, has_more, has_prev)
 
 
 @dcs.dataclass
@@ -112,11 +112,11 @@ class BawuBlacklistUsers(TbErrorExt, Containers[BawuBlacklistUser]):
 
     page: Page_bwblacklist = dcs.field(default_factory=Page_bwblacklist)
 
-    @staticmethod
-    def from_xml(data_soup: bs4.BeautifulSoup) -> Self:
+    @classmethod
+    def from_xml(cls, data_soup: bs4.BeautifulSoup) -> Self:
         objs = [BawuBlacklistUser.from_xml(t) for t in data_soup("td", class_="left_cell")]
         page = Page_bwblacklist.from_xml(data_soup)
-        return BawuBlacklistUsers(objs, page)
+        return cls(objs, page)
 
     @property
     def has_more(self) -> bool:

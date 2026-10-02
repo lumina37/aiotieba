@@ -47,7 +47,7 @@ async def request_http(http_core: HttpCore, fname: str) -> TabMap:
         data,
     )
 
-    body = await http_core.net_core.send_request(request, read_bufsize=4 * 1024)
+    body = await http_core.net_core.send_request(request)
     return parse_body(body)
 
 

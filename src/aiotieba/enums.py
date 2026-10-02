@@ -97,6 +97,27 @@ class ThreadType(enum.IntEnum):
         return ThreadType.UNKNOWN
 
 
+class ContentType(enum.IntEnum):
+    """
+    帖子对象类型
+
+    Note:
+        UNKNOWN 未知\n
+        THREAD 主题帖\n
+        POST 回复\n
+        COMMENT 楼中楼
+    """
+
+    UNKNOWN = 0
+    THREAD = 1
+    POST = 2
+    COMMENT = 3
+
+    @classmethod
+    def _missing_(cls, _: int) -> ContentType:
+        return ContentType.UNKNOWN
+
+
 class ReqUInfo(enum.Flag):
     """
     使用该枚举类指定待获取的用户信息字段
@@ -146,6 +167,21 @@ class PostSortType(enum.IntEnum):
     HOT = 2
 
 
+class CommentSortType(enum.IntEnum):
+    """
+    楼中楼排序
+
+    Note:
+        ASC 时间顺序\n
+        DESC 时间倒序\n
+        HOT 热门序
+    """
+
+    ASC = 0
+    DESC = 1
+    HOT = 2
+
+
 class BawuSearchType(enum.IntEnum):
     """
     吧务后台搜索类型
@@ -159,9 +195,9 @@ class BawuSearchType(enum.IntEnum):
     OP = 1
 
 
-class SearchType(enum.IntEnum):
+class SearchInForumType(enum.IntEnum):
     """
-    搜索类型
+    吧内搜索类型
 
     Note:
         ALL 搜索全部\n
@@ -174,9 +210,9 @@ class SearchType(enum.IntEnum):
     RELATION = 2
 
 
-class GlobalSearchSortType(enum.IntEnum):
+class SearchGlobalType(enum.IntEnum):
     """
-    全吧搜索结果排序
+    全吧搜索类型
 
     Note:
         ASC 最早发帖\n
@@ -194,14 +230,30 @@ class BawuType(enum.StrEnum):
     吧务类型
 
     Note:
-        MANAGER 小吧\n
+        UNKNOWN 未知\n
+        ADMIN 大吧主\n
+        MANAGER 小吧主\n
+        VIDEO_EDITOR 视频小编\n
         IMAGE_EDITOR 图片小编\n
-        VOICE_EDITOR 语音小编
+        JOURNAL_EDITOR 吧刊小编\n
+        JOURNAL_CHIEF_EDITOR 吧刊主编\n
+        VOICE_EDITOR 语音小编\n
+        BROADCAST_EDITOR 广播小编
     """
 
+    UNKNOWN = "unknown"
+    ADMIN = "manager"
     MANAGER = "assist"
+    VIDEO_EDITOR = "videoadmin"
     IMAGE_EDITOR = "picadmin"
+    JOURNAL_EDITOR = "publication"
+    JOURNAL_CHIEF_EDITOR = "publication_editor"
     VOICE_EDITOR = "voiceadmin"
+    BROADCAST_EDITOR = "broadcast_admin"
+
+    @classmethod
+    def _missing_(cls, _: object) -> BawuType:
+        return BawuType.UNKNOWN
 
 
 class BawuPermType(enum.Flag):
@@ -263,7 +315,7 @@ class BlacklistType(enum.Flag):
 
 class WsStatus(enum.IntEnum):
     """
-    回复排序
+    websocket状态
 
     Note:
         CLOSED 已关闭\n

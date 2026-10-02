@@ -29,7 +29,7 @@ async def request_web(http_core: HttpCore, act_type: str) -> BoolResponse:
         yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mo/q/usergrowth/commitUGTaskInfo"), data
     )
 
-    body = await http_core.net_core.send_request(request, read_bufsize=1024)
+    body = await http_core.net_core.send_request(request)
     parse_body_web(body)
 
     return BoolResponse()
@@ -53,7 +53,7 @@ async def request_app(http_core: HttpCore, act_type: str) -> BoolResponse:
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/c/user/commitUGTaskInfo"), data
     )
 
-    body = await http_core.net_core.send_request(request, read_bufsize=1024)
+    body = await http_core.net_core.send_request(request)
     parse_body_app(body)
 
     return BoolResponse()

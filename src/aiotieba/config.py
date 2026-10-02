@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import dataclasses as dcs
+from typing import Self
 
 import aiohttp
 import yarl
@@ -25,14 +26,14 @@ class ProxyConfig:
         self.url = url
         self.auth = auth
 
-    @staticmethod
-    def from_env() -> ProxyConfig:
+    @classmethod
+    def from_env(cls) -> Self:
         proxy_info = aiohttp.helpers.proxies_from_env().get("http", None)
         if proxy_info is None:
             url, auth = None, None
         else:
             url, auth = proxy_info.proxy, proxy_info.proxy_auth
-        return ProxyConfig(url, auth)
+        return cls(url, auth)
 
 
 @dcs.dataclass
@@ -48,8 +49,8 @@ class TimeoutConfig:
         ws_send (float, optional): websocket发送数据的超时时间. Defaults to 3.0.
         ws_read (float, optional): 从发送websocket数据到结束等待响应的超时时间. Defaults to 8.0.
         ws_close (float, optional): 等待websocket终止连接的时间. Defaults to 10.0.
-        ws_keepalive (float, optional): websocket在长达ws_keepalive的时间内未发生IO则发送close信号关闭连接. Defaults to 300.0.
-        ws_heartbeat (float, optional): websocket心跳间隔. 为None则不发送心跳. Defaults to None.
+        ws_keepalive (float | None, optional): websocket在长达ws_keepalive的时间内未收到任何数据则关闭连接. 为None则不限制. Defaults to 300.0.
+        ws_heartbeat (float | None, optional): websocket心跳间隔. 为None则不发送心跳. Defaults to None.
         dns_ttl (int, optional): dns的本地缓存超时时间. Defaults to 600.
 
     Note:
@@ -63,7 +64,7 @@ class TimeoutConfig:
     ws_send: float = 3.0
     ws_read: float = 8.0
     ws_close: float = 10.0
-    ws_keepalive: float = 300.0
+    ws_keepalive: float | None = 300.0
     ws_heartbeat: float | None = None
     dns_ttl: int = 600
 
@@ -75,4 +76,4 @@ class TimeoutConfig:
 
     @property
     def ws_timeout(self) -> aiohttp.ClientWSTimeout:
-        return aiohttp.ClientWSTimeout(self.ws_read, self.ws_close)
+        return aiohttp.ClientWSTimeout(ws_receive=self.ws_keepalive, ws_close=self.ws_close)

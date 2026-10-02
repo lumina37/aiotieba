@@ -19,14 +19,14 @@ def pack_proto(account: Account, pn: int) -> bytes:
     req_proto = ReplyMeReqIdl_pb2.ReplyMeReqIdl()
     req_proto.data.common.BDUSS = account.BDUSS
     req_proto.data.common._client_version = LATEST_VERSION
-    req_proto.data.pn = str(pn)
+    req_proto.data.pn = pn
 
     return req_proto.SerializeToString()
 
 
-def parse_body(proto: bytes) -> Replys:
+def parse_body(body: bytes) -> Replys:
     res_proto = ReplyMeResIdl_pb2.ReplyMeResIdl()
-    res_proto.ParseFromString(proto)
+    res_proto.ParseFromString(body)
 
     if code := res_proto.error.errorno:
         raise TiebaServerError(code, res_proto.error.errmsg)
@@ -45,7 +45,7 @@ async def request_http(http_core: HttpCore, pn: int) -> Replys:
         data,
     )
 
-    body = await http_core.net_core.send_request(request, read_bufsize=16 * 1024)
+    body = await http_core.net_core.send_request(request)
     return parse_body(body)
 
 

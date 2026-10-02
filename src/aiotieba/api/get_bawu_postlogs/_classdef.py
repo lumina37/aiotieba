@@ -28,8 +28,8 @@ class Media_postlog:
     origin_src: str = dcs.field(default="", repr=False)
     hash: str = ""
 
-    @staticmethod
-    def from_xml(data_tag: bs4.element.Tag) -> Self:
+    @classmethod
+    def from_xml(cls, data_tag: bs4.element.Tag) -> Self:
         if img_item := data_tag.img:
             src = img_item["original"]
             hash_ = _IMAGEHASH_EXP.search(src).group(1)
@@ -37,7 +37,7 @@ class Media_postlog:
             src = ""
             hash_ = ""
         origin_src = data_tag["href"]
-        return Media_postlog(src, origin_src, hash_)
+        return cls(src, origin_src, hash_)
 
 
 @dcs.dataclass
@@ -73,8 +73,8 @@ class BawuPostLog:
     op_user_name: str = ""
     op_time: datetime = dcs.field(default_factory=default_datetime)
 
-    @staticmethod
-    def from_xml(data_tag: bs4.element.Tag) -> Self:
+    @classmethod
+    def from_xml(cls, data_tag: bs4.element.Tag) -> Self:
         left_cell_item = data_tag.td
 
         post_meta_item = left_cell_item.find("div", class_="post_meta")
@@ -119,7 +119,7 @@ class BawuPostLog:
         op_time_item = op_user_name_item.next_sibling
         op_time = datetime.strptime(op_time_item.text, "%Y-%m-%d%H:%M")
 
-        return BawuPostLog(text, title, medias, tid, pid, op_type, post_portrait, post_time, op_user_name, op_time)
+        return cls(text, title, medias, tid, pid, op_type, post_portrait, post_time, op_user_name, op_time)
 
 
 @dcs.dataclass
@@ -143,8 +143,8 @@ class Page_postlog:
     has_more: bool = False
     has_prev: bool = False
 
-    @staticmethod
-    def from_xml(data_soup: bs4.BeautifulSoup) -> Self:
+    @classmethod
+    def from_xml(cls, data_soup: bs4.BeautifulSoup) -> Self:
         total_count_tag = data_soup.find("div", class_="breadcrumbs")
         total_count = int(total_count_tag.em.text)
 
@@ -164,7 +164,7 @@ class Page_postlog:
         has_more = current_page < total_page
         has_prev = current_page > 1
 
-        return Page_postlog(current_page, total_page, total_count, has_more, has_prev)
+        return cls(current_page, total_page, total_count, has_more, has_prev)
 
 
 @dcs.dataclass
@@ -182,11 +182,11 @@ class BawuPostLogs(TbErrorExt, Containers[BawuPostLog]):
 
     page: Page_postlog = dcs.field(default_factory=Page_postlog)
 
-    @staticmethod
-    def from_xml(data_soup: bs4.BeautifulSoup) -> Self:
+    @classmethod
+    def from_xml(cls, data_soup: bs4.BeautifulSoup) -> Self:
         objs = [BawuPostLog.from_xml(t) for t in data_soup.find("tbody").find_all("tr")]
         page = Page_postlog.from_xml(data_soup)
-        return BawuPostLogs(objs, page)
+        return cls(objs, page)
 
     @property
     def has_more(self) -> bool:

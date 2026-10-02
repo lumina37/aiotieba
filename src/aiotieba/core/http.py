@@ -154,7 +154,7 @@ class HttpCore:
         return request
 
     def pack_web_get_request(
-        self, url: yarl.URL, params: list[tuple[str, str]], *, extra_headers: list[tuple[str, str]] | None = None
+        self, url: yarl.URL, params: list[tuple[str, str]], *, extra_headers: dict[str, str] | None = None
     ) -> aiohttp.ClientRequest:
         """
         打包网页端参数请求
@@ -162,7 +162,7 @@ class HttpCore:
         Args:
             url (yarl.URL): 链接
             params (list[tuple[str, str]]): 参数元组列表
-            extra_headers (list[tuple[str, str]] | None): 额外的请求头
+            extra_headers (dict[str, str] | None): 额外的请求头
 
         Returns:
             aiohttp.ClientRequest
@@ -171,7 +171,7 @@ class HttpCore:
         url = url.update_query(params)
         headers = self.web.headers
         if extra_headers:
-            headers |= extra_headers
+            headers = headers | extra_headers
 
         request = aiohttp.ClientRequest(
             aiohttp.hdrs.METH_GET,
@@ -186,7 +186,7 @@ class HttpCore:
         return request
 
     def pack_web_form_request(
-        self, url: yarl.URL, data: list[tuple[str, str]], *, extra_headers: list[tuple[str, str]] | None = None
+        self, url: yarl.URL, data: list[tuple[str, str]], *, extra_headers: dict[str, str] | None = None
     ) -> aiohttp.ClientRequest:
         """
         打包网页端表单请求
@@ -194,7 +194,7 @@ class HttpCore:
         Args:
             url (yarl.URL): 链接
             data (list[tuple[str, str]]): 参数元组列表
-            extra_headers (list[tuple[str, str]] | None): 额外的请求头
+            extra_headers (dict[str, str] | None): 额外的请求头
 
         Returns:
             aiohttp.ClientRequest
@@ -202,7 +202,7 @@ class HttpCore:
 
         headers = self.web.headers
         if extra_headers:
-            headers |= extra_headers
+            headers = headers | extra_headers
 
         payload = aiohttp.payload.BytesPayload(
             urllib.parse.urlencode(data, doseq=True).encode("utf-8"),

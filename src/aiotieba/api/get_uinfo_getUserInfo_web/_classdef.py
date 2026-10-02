@@ -33,13 +33,15 @@ class UserInfo_guinfo_web(TbErrorExt):
     user_name: str = ""
     nick_name_new: str = ""
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         user_id = data_map["uid"]
         portrait = data_map["portrait"]
-        user_name = user_name if (user_name := data_map["uname"]) != user_id else ""
+        user_name = data_map["uname"]
+        if user_name == str(user_id):
+            user_name = ""
         nick_name_new = data_map["show_nickname"]
-        return UserInfo_guinfo_web(user_id, portrait, user_name, nick_name_new)
+        return cls(user_id, portrait, user_name, nick_name_new)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)

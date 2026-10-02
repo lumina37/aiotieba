@@ -25,14 +25,14 @@ class MemberUser:
     portrait: str = ""
     level: int = 0
 
-    @staticmethod
-    def from_xml(data_tag: bs4.element.Tag) -> Self:
+    @classmethod
+    def from_xml(cls, data_tag: bs4.element.Tag) -> Self:
         user_item = data_tag.a
         user_name = user_item["title"]
         portrait = user_item["href"][14:]
         level_item = data_tag.span
         level = int(level_item["class"][1][12:])
-        return MemberUser(user_name, portrait, level)
+        return cls(user_name, portrait, level)
 
 
 @dcs.dataclass
@@ -54,14 +54,14 @@ class Page_member:
     has_more: bool = False
     has_prev: bool = False
 
-    @staticmethod
-    def from_xml(data_tag: bs4.element.Tag) -> Self:
+    @classmethod
+    def from_xml(cls, data_tag: bs4.element.Tag) -> Self:
         current_page = int(data_tag.text)
         total_page_item = data_tag.parent.next_sibling
         total_page = int(total_page_item.text[1:-1])
         has_more = current_page < total_page
         has_prev = current_page > 1
-        return Page_member(current_page, total_page, has_more, has_prev)
+        return cls(current_page, total_page, has_more, has_prev)
 
 
 @dcs.dataclass
@@ -79,11 +79,11 @@ class MemberUsers(TbErrorExt, Containers[MemberUser]):
 
     page: Page_member = dcs.field(default_factory=Page_member)
 
-    @staticmethod
-    def from_xml(data_soup: bs4.BeautifulSoup) -> Self:
+    @classmethod
+    def from_xml(cls, data_soup: bs4.BeautifulSoup) -> Self:
         objs = [MemberUser.from_xml(t) for t in data_soup("div", class_="name_wrap")]
         page = Page_member.from_xml(data_soup.find("div", class_="tbui_pagination").find("li", class_="active"))
-        return MemberUsers(objs, page)
+        return cls(objs, page)
 
     @property
     def has_more(self) -> bool:

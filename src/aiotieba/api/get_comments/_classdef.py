@@ -10,7 +10,6 @@ from ...logging import get_logger as LOG
 from .._classdef import Containers, TypeMessage
 from .._classdef.contents import (
     _IMAGEHASH_EXP,
-    FragAt,
     FragEmoji,
     FragLink,
     FragText,
@@ -23,10 +22,82 @@ from .._classdef.contents import (
 
 FragText_c = FragText_cp = FragText
 FragEmoji_c = FragEmoji_cp = FragEmoji
-FragAt_c = FragAt_cp = FragAt
 FragLink_c = FragLink_cp = FragLink
 FragTiebaPlus_c = FragTiebaPlus_cp = FragTiebaPlus
 FragVoice_c = FragVoice_cp = FragVoice
+
+
+@dcs.dataclass
+class FragAt_c:
+    """
+    @碎片
+
+    Attributes:
+        text (str): 被@用户的昵称 含@
+        user_id (int): 被@用户的user_id
+        portrait (str): 被@用户的portrait
+    """
+
+    text: str = ""
+    user_id: int = 0
+    portrait: str = ""
+
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
+        text = data_proto.text
+        user_id = data_proto.uid
+        portrait = data_proto.portrait
+        if "?" in portrait:
+            portrait = portrait[:-13]
+        return cls(text, user_id, portrait)
+
+
+FragAt_cp = FragAt_c
+
+
+@dcs.dataclass
+class FragImage_c:
+    """
+    图像碎片
+
+    Attributes:
+        src (str): 小图链接 宽720px 一定是静态图
+        big_src (str): 大图链接 宽960px
+        origin_src (str): 原图链接
+        origin_size (int): 原图大小
+        show_width (int): 图像在客户端预览显示的宽度
+        show_height (int): 图像在客户端预览显示的高度
+        hash (str): 百度图床hash
+    """
+
+    src: str = dcs.field(default="", repr=False)
+    big_src: str = dcs.field(default="", repr=False)
+    origin_src: str = dcs.field(default="", repr=False)
+    origin_size: int = 0
+    show_width: int = 0
+    show_height: int = 0
+    hash: str = ""
+
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
+        src = data_proto.cdn_src
+        big_src = data_proto.big_cdn_src
+        origin_src = data_proto.origin_src
+        origin_size = data_proto.origin_size
+
+        show_width, _, show_height = data_proto.bsize.partition(",")
+        show_width = int(show_width)
+        show_height = int(show_height)
+
+        if hash_obj := _IMAGEHASH_EXP.search(src):
+            hash_ = hash_obj.group(1)
+        else:
+            hash_ = ""
+
+        return cls(src, big_src, origin_src, origin_size, show_width, show_height, hash_)
+
+
+FragImage_cp = FragImage_c
 
 
 @dcs.dataclass
@@ -41,7 +112,7 @@ class Contents_c(Containers[TypeFragment]):
 
         texts (list[TypeFragText]): 纯文本碎片列表
         emojis (list[FragEmoji_c]): 表情碎片列表
-        imgs (list[FragImage_cp]): 图像碎片列表
+        imgs (list[FragImage_c]): 图像碎片列表
         ats (list[FragAt_c]): @碎片列表
         links (list[FragLink_c]): 链接碎片列表
         tiebapluses (list[FragTiebaPlus_c]): 贴吧plus碎片列表
@@ -50,19 +121,19 @@ class Contents_c(Containers[TypeFragment]):
 
     texts: list[TypeFragText] = dcs.field(default_factory=list, repr=False)
     emojis: list[FragEmoji_c] = dcs.field(default_factory=list, repr=False)
-    imgs: list[FragImage_cp] = dcs.field(default_factory=list, repr=False)
+    imgs: list[FragImage_c] = dcs.field(default_factory=list, repr=False)
     ats: list[FragAt_c] = dcs.field(default_factory=list, repr=False)
     links: list[FragLink_c] = dcs.field(default_factory=list, repr=False)
     tiebapluses: list[FragTiebaPlus_c] = dcs.field(default_factory=list, repr=False)
     voice: FragVoice_c = dcs.field(default_factory=FragVoice_c, repr=False)
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         content_protos = data_proto.content
 
         texts = []
         emojis = []
-        imgs=[]
+        imgs = []
         ats = []
         links = []
         tiebapluses = []
@@ -83,7 +154,7 @@ class Contents_c(Containers[TypeFragment]):
                     yield frag
                 # 20:tid=5470214675
                 elif _type in [3, 20]:
-                    frag = FragImage_cp.from_proto(proto)
+                    frag = FragImage_c.from_proto(proto)
                     imgs.append(frag)
                     yield frag
                 elif _type == 4:
@@ -115,7 +186,7 @@ class Contents_c(Containers[TypeFragment]):
 
         objs = list(_frags())
 
-        return Contents_c(objs, texts, emojis, imgs, ats, links, tiebapluses, voice)
+        return cls(objs, texts, emojis, imgs, ats, links, tiebapluses, voice)
 
     @cached_property
     def text(self) -> str:
@@ -139,8 +210,7 @@ class UserInfo_c:
         icons (list[str]): 印记信息
 
         is_bawu (bool): 是否吧务
-        is_vip (bool): 是否超级会员
-        is_god (bool): 是否大神
+        is_vip (bool): 是否会员
         priv_like (PrivLike): 关注吧列表的公开状态
         priv_reply (PrivReply): 帖子评论权限
 
@@ -160,12 +230,11 @@ class UserInfo_c:
 
     is_bawu: bool = False
     is_vip: bool = False
-    is_god: bool = False
     priv_like: PrivLike = PrivLike.PUBLIC
     priv_reply: PrivReply = PrivReply.ALL
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         user_id = data_proto.id
         portrait = data_proto.portrait
         if "?" in portrait:
@@ -176,11 +245,10 @@ class UserInfo_c:
         gender = Gender(data_proto.gender)
         icons = [name for i in data_proto.iconinfo if (name := i.name)]
         is_bawu = bool(data_proto.is_bawu)
-        is_vip = bool(data_proto.new_tshow_icon)
-        is_god = bool(data_proto.new_god_data.status)
+        is_vip = data_proto.is_mem != 0
         priv_like = PrivLike(priv_like) if (priv_like := data_proto.priv_sets.like) else PrivLike.PUBLIC
         priv_reply = PrivReply(priv_reply) if (priv_reply := data_proto.priv_sets.reply) else PrivReply.ALL
-        return UserInfo_c(
+        return cls(
             user_id,
             portrait,
             user_name,
@@ -190,7 +258,6 @@ class UserInfo_c:
             icons,
             is_bawu,
             is_vip,
-            is_god,
             priv_like,
             priv_reply,
         )
@@ -266,8 +333,8 @@ class Comment:
     create_time: int = 0
     is_thread_author: bool = False
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         contents = Contents_c.from_proto(data_proto)
 
         reply_to_id = 0
@@ -278,7 +345,6 @@ class Comment:
                 and first_frag.text == "回复 "
                 and (reply_to_id := data_proto.content[1].uid)
             ):
-                reply_to_id = reply_to_id
                 if isinstance(contents[1], FragAt_c):
                     del contents.ats[0]
                 contents.objs = contents.objs[2:]
@@ -293,7 +359,7 @@ class Comment:
         disagree = data_proto.agree.disagree_num
         create_time = data_proto.time
 
-        return Comment(contents, 0, "", 0, 0, pid, user, reply_to_id, 0, agree, disagree, create_time, False)
+        return cls(contents, 0, "", 0, 0, pid, user, reply_to_id, 0, agree, disagree, create_time, False)
 
     def __eq__(self, obj: Comment) -> bool:
         return self.pid == obj.pid
@@ -333,15 +399,15 @@ class Page_c:
     has_more: bool = False
     has_prev: bool = False
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         page_size = data_proto.page_size
         current_page = data_proto.current_page
         total_page = data_proto.total_page
         total_count = data_proto.total_count
         has_more = current_page < total_page
         has_prev = current_page > 1
-        return Page_c(page_size, current_page, total_page, total_count, has_more, has_prev)
+        return cls(page_size, current_page, total_page, total_count, has_more, has_prev)
 
 
 @dcs.dataclass
@@ -363,13 +429,13 @@ class Forum_c:
     category: str = ""
     subcategory: str = ""
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         fid = data_proto.id
         fname = data_proto.name
         category = data_proto.first_class
         subcategory = data_proto.second_class
-        return Forum_c(fid, fname, category, subcategory)
+        return cls(fid, fname, category, subcategory)
 
 
 @dcs.dataclass
@@ -385,7 +451,7 @@ class UserInfo_ct:
 
         level (int): 等级
 
-        is_god (bool): 是否大神
+        is_vip (bool): 是否会员
 
         nick_name (str): 用户昵称
         show_name (str): 显示名称
@@ -398,10 +464,10 @@ class UserInfo_ct:
     nick_name_new: str = ""
 
     level: int = 0
-    is_god: bool = False
+    is_vip: bool = False
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         user_id = data_proto.id
         portrait = data_proto.portrait
         if "?" in portrait:
@@ -409,8 +475,8 @@ class UserInfo_ct:
         user_name = data_proto.name
         nick_name_new = data_proto.name_show
         level = data_proto.level_id
-        is_god = bool(data_proto.new_god_data.status)
-        return UserInfo_ct(user_id, portrait, user_name, nick_name_new, level, is_god)
+        is_vip = data_proto.is_mem != 0
+        return cls(user_id, portrait, user_name, nick_name_new, level, is_vip)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
@@ -457,9 +523,9 @@ class Thread_c:
         author_id (int): 发布者的user_id
 
         type (ThreadType): 帖子类型
-        is_help (bool): 是否为求助帖
 
         reply_num (int): 回复数
+        floor_num (int): 未删除的楼层数
     """
 
     title: str = ""
@@ -472,9 +538,10 @@ class Thread_c:
     type: ThreadType = ThreadType.UNKNOWN
 
     reply_num: int = 0
+    floor_num: int = 0
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         title = data_proto.title
         tid = data_proto.id
         user = UserInfo_ct.from_proto(data_proto.author)
@@ -484,7 +551,8 @@ class Thread_c:
             LOG().debug("Unknown thread type. tid=%d, type=%s", tid, data_proto.thread_type)
 
         reply_num = data_proto.reply_num
-        return Thread_c(title, 0, "", tid, user, type_, reply_num)
+        floor_num = data_proto.valid_post_num
+        return cls(title, 0, "", tid, user, type_, reply_num, floor_num)
 
     def __eq__(self, obj: Thread_c) -> bool:
         return self.tid == obj.tid
@@ -495,48 +563,6 @@ class Thread_c:
     @property
     def author_id(self) -> int:
         return self.user.user_id
-
-
-@dcs.dataclass
-class FragImage_cp:
-    """
-    图像碎片
-
-    Attributes:
-        src (str): 小图链接 宽720px 一定是静态图
-        big_src (str): 大图链接 宽960px
-        origin_src (str): 原图链接
-        origin_size (int): 原图大小
-        show_width (int): 图像在客户端预览显示的宽度
-        show_height (int): 图像在客户端预览显示的高度
-        hash (str): 百度图床hash
-    """
-
-    src: str = dcs.field(default="", repr=False)
-    big_src: str = dcs.field(default="", repr=False)
-    origin_src: str = dcs.field(default="", repr=False)
-    origin_size: int = 0
-    show_width: int = 0
-    show_height: int = 0
-    hash: str = ""
-
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
-        src = data_proto.cdn_src
-        big_src = data_proto.big_cdn_src
-        origin_src = data_proto.origin_src
-        origin_size = data_proto.origin_size
-
-        show_width, _, show_height = data_proto.bsize.partition(",")
-        show_width = int(show_width)
-        show_height = int(show_height)
-
-        if hash_obj := _IMAGEHASH_EXP.search(src):
-            hash_ = hash_obj.group(1)
-        else:
-            hash_ = ""
-
-        return FragImage_cp(src, big_src, origin_src, origin_size, show_width, show_height, hash_)
 
 
 @dcs.dataclass
@@ -566,8 +592,8 @@ class Contents_cp(Containers[TypeFragment]):
     tiebapluses: list[FragTiebaPlus_cp] = dcs.field(default_factory=list, repr=False)
     voice: FragVoice_cp = dcs.field(default_factory=FragVoice_cp, repr=False)
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         content_protos = data_proto.content
 
         texts = []
@@ -625,7 +651,7 @@ class Contents_cp(Containers[TypeFragment]):
 
         objs = list(_frags())
 
-        return Contents_cp(objs, texts, emojis, imgs, ats, links, tiebapluses, voice)
+        return cls(objs, texts, emojis, imgs, ats, links, tiebapluses, voice)
 
     @cached_property
     def text(self) -> str:
@@ -648,8 +674,7 @@ class UserInfo_cp:
         gender (Gender): 性别
 
         is_bawu (bool): 是否吧务
-        is_vip (bool): 是否超级会员
-        is_god (bool): 是否大神
+        is_vip (bool): 是否会员
         priv_like (PrivLike): 关注吧列表的公开状态
         priv_reply (PrivReply): 帖子评论权限
 
@@ -668,12 +693,11 @@ class UserInfo_cp:
 
     is_bawu: bool = False
     is_vip: bool = False
-    is_god: bool = False
     priv_like: PrivLike = PrivLike.PUBLIC
     priv_reply: PrivReply = PrivReply.ALL
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         user_id = data_proto.id
         portrait = data_proto.portrait
         if "?" in portrait:
@@ -683,13 +707,10 @@ class UserInfo_cp:
         level = data_proto.level_id
         gender = Gender(data_proto.gender)
         is_bawu = bool(data_proto.is_bawu)
-        is_vip = bool(data_proto.new_tshow_icon)
-        is_god = bool(data_proto.new_god_data.status)
+        is_vip = data_proto.is_mem != 0
         priv_like = PrivLike(priv_like) if (priv_like := data_proto.priv_sets.like) else PrivLike.PUBLIC
         priv_reply = PrivReply(priv_reply) if (priv_reply := data_proto.priv_sets.reply) else PrivReply.ALL
-        return UserInfo_cp(
-            user_id, portrait, user_name, nick_name_new, level, gender, is_bawu, is_vip, is_god, priv_like, priv_reply
-        )
+        return cls(user_id, portrait, user_name, nick_name_new, level, gender, is_bawu, is_vip, priv_like, priv_reply)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
@@ -739,6 +760,8 @@ class Post_c:
         author_id (int): 发布者的user_id
 
         floor (int): 楼层数
+        agree (int): 点赞数
+        disagree (int): 点踩数
         create_time (int): 创建时间 10位时间戳 以秒为单位
     """
 
@@ -752,17 +775,21 @@ class Post_c:
     user: UserInfo_cp = dcs.field(default_factory=UserInfo_cp)
 
     floor: int = 0
+    agree: int = 0
+    disagree: int = 0
     create_time: int = 0
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         contents = Contents_cp.from_proto(data_proto)
         sign = "".join(p.text for p in data_proto.signature.content if p.type == 0)
         pid = data_proto.id
         user = UserInfo_cp.from_proto(data_proto.author)
         floor = data_proto.floor
+        agree = data_proto.agree.agree_num
+        disagree = data_proto.agree.disagree_num
         create_time = data_proto.time
-        return Post_c(contents, sign, 0, "", 0, pid, user, floor, create_time)
+        return cls(contents, sign, 0, "", 0, pid, user, floor, agree, disagree, create_time)
 
     def __eq__(self, obj: Post_c) -> bool:
         return self.pid == obj.pid
@@ -805,8 +832,8 @@ class Comments(TbErrorExt, Containers[Comment]):
     thread: Thread_c = dcs.field(default_factory=Thread_c)
     post: Post_c = dcs.field(default_factory=Post_c)
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         page = Page_c.from_proto(data_proto.page)
         forum = Forum_c.from_proto(data_proto.forum)
         thread = Thread_c.from_proto(data_proto.thread)
@@ -826,7 +853,7 @@ class Comments(TbErrorExt, Containers[Comment]):
             comment.floor = post.floor
             comment.is_thread_author = thread.author_id == comment.author_id
 
-        return Comments(objs, page, forum, thread, post)
+        return cls(objs, page, forum, thread, post)
 
     @property
     def has_more(self) -> bool:

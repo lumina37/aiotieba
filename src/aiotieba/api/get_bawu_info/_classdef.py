@@ -4,6 +4,9 @@ import dataclasses as dcs
 from functools import cached_property
 from typing import TYPE_CHECKING, Self
 
+from ...enums import BawuType
+from ...exception import TbErrorExt
+
 if TYPE_CHECKING:
     from .._classdef import TypeMessage
 
@@ -33,14 +36,14 @@ class UserInfo_bawu:
 
     level: int = 0
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         user_id = data_proto.user_id
         portrait = data_proto.portrait
         user_name = data_proto.user_name
         nick_name_new = data_proto.name_show
         level = data_proto.user_level
-        return UserInfo_bawu(user_id, portrait, user_name, nick_name_new, level)
+        return cls(user_id, portrait, user_name, nick_name_new, level)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
@@ -73,11 +76,13 @@ class UserInfo_bawu:
 
 
 @dcs.dataclass
-class BawuInfo:
+class BawuInfo(TbErrorExt):
     """
     吧务团队信息
 
     Attributes:
+        err (Exception | None): 捕获的异常
+
         all (list[UserInfo_bawu]): 所有吧务
 
         admin (list[UserInfo_bawu]): 大吧主
@@ -88,8 +93,6 @@ class BawuInfo:
         broadcast_editor (list[UserInfo_bawu]): 广播小编
         journal_chief_editor (list[UserInfo_bawu]): 吧刊主编
         journal_editor (list[UserInfo_bawu]): 吧刊小编
-        profess_admin (list[UserInfo_bawu]): 职业吧主
-        fourth_admin (list[UserInfo_bawu]): 第四吧主
     """
 
     all: list[UserInfo_bawu] = dcs.field(default_factory=list, repr=False)
@@ -102,34 +105,34 @@ class BawuInfo:
     broadcast_editor: list[UserInfo_bawu] = dcs.field(default_factory=list)
     journal_chief_editor: list[UserInfo_bawu] = dcs.field(default_factory=list)
     journal_editor: list[UserInfo_bawu] = dcs.field(default_factory=list)
-    profess_admin: list[UserInfo_bawu] = dcs.field(default_factory=list)
-    fourth_admin: list[UserInfo_bawu] = dcs.field(default_factory=list)
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         all_ = []
-        r_protos = data_proto.bawu_team_info.bawu_team_list
-        _dict = {r_proto.role_name: [UserInfo_bawu.from_proto(p) for p in r_proto.role_info] for r_proto in r_protos}
+        _dict: dict[BawuType, list[UserInfo_bawu]] = {}
+        for r_proto in data_proto.bawu_team_info.bawu_team_list:
+            for p in r_proto.role_info:
+                bawu_type = BawuType(p.role_name)
+                if bawu_type is BawuType.UNKNOWN:
+                    continue
 
-        def extract(role_name: str) -> list[UserInfo_bawu]:
-            if users := _dict.get(role_name):
-                all_.extend(users)
-            else:
-                users = []
-            return users
+                user = UserInfo_bawu.from_proto(p)
+                all_.append(user)
+                _dict.setdefault(bawu_type, []).append(user)
 
-        admin = extract("吧主")
-        manager = extract("小吧主")
-        voice_editor = extract("语音小编")
-        image_editor = extract("图片小编")
-        video_editor = extract("视频小编")
-        broadcast_editor = extract("广播小编")
-        journal_chief_editor = extract("吧刊主编")
-        journal_editor = extract("吧刊小编")
-        profess_admin = extract("职业吧主")
-        fourth_admin = extract("第四吧主")
+        def extract(bawu_type: BawuType) -> list[UserInfo_bawu]:
+            return _dict.get(bawu_type, [])
 
-        return BawuInfo(
+        admin = extract(BawuType.ADMIN)
+        manager = extract(BawuType.MANAGER)
+        voice_editor = extract(BawuType.VOICE_EDITOR)
+        image_editor = extract(BawuType.IMAGE_EDITOR)
+        video_editor = extract(BawuType.VIDEO_EDITOR)
+        broadcast_editor = extract(BawuType.BROADCAST_EDITOR)
+        journal_chief_editor = extract(BawuType.JOURNAL_CHIEF_EDITOR)
+        journal_editor = extract(BawuType.JOURNAL_EDITOR)
+
+        return cls(
             all_,
             admin,
             manager,
@@ -139,6 +142,4 @@ class BawuInfo:
             broadcast_editor,
             journal_chief_editor,
             journal_editor,
-            profess_admin,
-            fourth_admin,
         )

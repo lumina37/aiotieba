@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 def parse_body(body: bytes) -> Follows:
     res_json = parse_json(body)
-    if code := int(res_json["error_code"]):
+    if code := res_json["error_code"]:
         raise TiebaServerError(code, res_json["error_msg"])
 
     follows = Follows.from_json(res_json)
@@ -25,7 +25,6 @@ def parse_body(body: bytes) -> Follows:
 
 async def request(http_core: HttpCore, user_id: int, pn: int) -> Follows:
     data = [
-        ("BDUSS", http_core.account.BDUSS),
         ("_client_version", LATEST_VERSION),
         ("pn", pn),
         ("uid", user_id),
@@ -35,5 +34,5 @@ async def request(http_core: HttpCore, user_id: int, pn: int) -> Follows:
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/u/follow/followList"), data
     )
 
-    body = await http_core.net_core.send_request(request, read_bufsize=8 * 1024)
+    body = await http_core.net_core.send_request(request)
     return parse_body(body)

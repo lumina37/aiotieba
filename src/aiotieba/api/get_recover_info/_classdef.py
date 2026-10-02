@@ -23,10 +23,10 @@ class FragText_ri:
 
     text: str = ""
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         text = data_map["value"]
-        return FragText_ri(text)
+        return cls(text)
 
 
 @dcs.dataclass
@@ -46,15 +46,15 @@ class FragImage_ri:
     show_height: int = 0
     hash: str = ""
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         src = data_map["url"]
         show_width = int(data_map["width"])
         show_height = int(data_map["height"])
 
         hash_ = _IMAGEHASH_EXP.search(src).group(1)
 
-        return FragImage_ri(src, show_width, show_height, hash_)
+        return cls(src, show_width, show_height, hash_)
 
 
 @dcs.dataclass
@@ -74,8 +74,8 @@ class Contents_ri(Containers[TypeFragment]):
     texts: list[TypeFragText] = dcs.field(default_factory=list, repr=False)
     imgs: list[FragImage_ri] = dcs.field(default_factory=list, repr=False)
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         content_maps = data_map["content_detail"]
 
         texts = []
@@ -92,12 +92,12 @@ class Contents_ri(Containers[TypeFragment]):
                 elif _type == 3:
                     continue
                 else:
-                    yield FragUnknown.from_proto(cmap)
+                    yield FragUnknown.from_json(cmap)
 
         objs = list(_frags())
         objs += imgs
 
-        return Contents_ri(objs, texts, imgs)
+        return cls(objs, texts, imgs)
 
     @cached_property
     def text(self) -> str:
@@ -124,14 +124,14 @@ class UserInfo_ri:
     user_name: str = ""
     nick_name_new: str = ""
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         portrait = data_map["portrait"]
         if "?" in portrait:
             portrait = portrait[:-13]
         user_name = data_map["user_name"]
         nick_name_new = data_map["show_nickname"]
-        return UserInfo_ri(portrait, user_name, nick_name_new)
+        return cls(portrait, user_name, nick_name_new)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait
@@ -180,8 +180,8 @@ class RecoverInfo(TbErrorExt):
     pid: int = 0
     user: UserInfo_ri = dcs.field(default_factory=UserInfo_ri)
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         thread_info = data_map["thread_info"]
 
         contents = Contents_ri.from_json(thread_info)
@@ -191,7 +191,7 @@ class RecoverInfo(TbErrorExt):
         pid = thread_info["post_id"]
         user = UserInfo_ri.from_json(data_map["user_info"])
 
-        return RecoverInfo(contents, title, tid, pid, user)
+        return cls(contents, title, tid, pid, user)
 
     def __eq__(self, obj: RecoverInfo) -> bool:
         return self.pid == obj.pid

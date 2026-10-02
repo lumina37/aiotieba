@@ -22,9 +22,9 @@ class WsMsgGroupInfo:
     group_type: int = 0
     last_msg_id: int = 0
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         group_id = data_proto.groupId
         group_type = data_proto.groupType
         last_msg_id = data_proto.lastMsgId
-        return WsMsgGroupInfo(group_id, group_type, last_msg_id)
+        return cls(group_id, group_type, last_msg_id)

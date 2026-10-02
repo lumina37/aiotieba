@@ -4,6 +4,7 @@ import dataclasses as dcs
 from typing import TYPE_CHECKING, Self
 
 from ...exception import TbErrorExt
+from ...helper import tbnum2int
 from .._classdef import Containers
 
 if TYPE_CHECKING:
@@ -11,7 +12,7 @@ if TYPE_CHECKING:
 
 
 @dcs.dataclass
-class GlobalSearchPost:
+class SearchGlobal:
     """
     全吧搜索结果
 
@@ -47,25 +48,41 @@ class GlobalSearchPost:
     author_name: str = ""
     author_show_name: str = ""
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
-        user_map = data_map.get("user") or {}
-        return GlobalSearchPost(
-            tid=int(data_map["tid"]),
-            pid=int(data_map["pid"]),
-            title=data_map.get("title", ""),
-            content=data_map.get("content", ""),
-            create_time=int(data_map.get("create_time") or data_map.get("time") or 0),
-            forum_id=int(data_map.get("forum_id") or 0),
-            forum_name=data_map.get("forum_name", ""),
-            post_num=int(data_map.get("post_num") or 0),
-            pb_url=data_map.get("pb_url", ""),
-            author_id=int(user_map.get("user_id") or 0),
-            author_name=user_map.get("user_name", ""),
-            author_show_name=user_map.get("show_nickname") or user_map.get("user_name", ""),
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
+        user_map = data_map["user"]
+
+        tid = int(data_map["tid"])
+        pid = int(data_map["pid"])
+        title = data_map["title"]
+        content = data_map["content"]
+        create_time = data_map["create_time"]
+
+        forum_id = data_map["forum_id"]
+        forum_name = data_map["forum_name"]
+        post_num = tbnum2int(data_map["post_num"], "W")
+        pb_url = data_map["pb_url"]
+
+        author_id = user_map["user_id"]
+        author_name = user_map["user_name"] or ""
+        author_show_name = user_map["show_nickname"] or user_map["user_name"] or ""
+
+        return cls(
+            tid,
+            pid,
+            title,
+            content,
+            create_time,
+            forum_id,
+            forum_name,
+            post_num,
+            pb_url,
+            author_id,
+            author_name,
+            author_show_name,
         )
 
-    def __eq__(self, obj: GlobalSearchPost) -> bool:
+    def __eq__(self, obj: SearchGlobal) -> bool:
         return self.pid == obj.pid
 
     def __hash__(self) -> int:
@@ -73,12 +90,12 @@ class GlobalSearchPost:
 
 
 @dcs.dataclass
-class GlobalSearches(TbErrorExt, Containers[GlobalSearchPost]):
+class SearchGlobals(TbErrorExt, Containers[SearchGlobal]):
     """
     全吧搜索结果列表
 
     Attributes:
-        objs (list[GlobalSearchPost]): 搜索结果列表
+        objs (list[SearchGlobal]): 搜索结果列表
         err (Exception | None): 捕获的异常
 
         has_more (bool): 是否还有下一页
@@ -88,9 +105,9 @@ class GlobalSearches(TbErrorExt, Containers[GlobalSearchPost]):
     has_more: bool = False
     current_page: int = 0
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
-        objs = [GlobalSearchPost.from_json(m) for m in data_map.get("post_list", [])]
-        has_more = bool(int(data_map.get("has_more") or 0))
-        current_page = int(data_map.get("current_page") or 0)
-        return GlobalSearches(objs, has_more, current_page)
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
+        objs = [SearchGlobal.from_json(m) for m in data_map["post_list"]]
+        has_more = bool(data_map["has_more"])
+        current_page = data_map["current_page"]
+        return cls(objs, has_more, current_page)

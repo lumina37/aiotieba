@@ -25,7 +25,6 @@ def parse_body(body: bytes) -> Fans:
 
 async def request(http_core: HttpCore, user_id: int, pn: int) -> Fans:
     data = [
-        ("BDUSS", http_core.account.BDUSS),
         ("_client_version", LATEST_VERSION),
         ("pn", pn),
         ("uid", user_id),
@@ -35,5 +34,5 @@ async def request(http_core: HttpCore, user_id: int, pn: int) -> Fans:
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/u/fans/page"), data
     )
 
-    body = await http_core.net_core.send_request(request, read_bufsize=16 * 1024)
+    body = await http_core.net_core.send_request(request)
     return parse_body(body)

@@ -3,17 +3,21 @@ from __future__ import annotations
 import dataclasses as dcs
 from typing import TYPE_CHECKING, Self
 
+from ...exception import TbErrorExt
+
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
 @dcs.dataclass
-class Statistics:
+class Statistics(TbErrorExt):
     """
     吧务后台统计信息
     时间从旧到新
 
     Attributes:
+        err (Exception | None): 捕获的异常
+
         view (list[int]): 浏览量
         thread (list[int]): 主题帖数
         new_member (list[int]): 新增吧会员数
@@ -33,11 +37,11 @@ class Statistics:
     avg_times: list[int] = dcs.field(default_factory=list)
     recommend: list[int] = dcs.field(default_factory=list)
 
-    @staticmethod
-    def from_json(data_seq: Sequence) -> Self:
+    @classmethod
+    def from_json(cls, data_seq: Sequence) -> Self:
         def extract(i: int) -> list[int]:
             seq: list = data_seq[i]["group"][1]["values"]
-            seq = [int(item["value"]) for item in seq]
+            seq = [int(item["value"]) for item in reversed(seq)]
             return seq
 
         view = extract(0)
@@ -49,4 +53,4 @@ class Statistics:
         avg_times = extract(6)
         recommend = extract(7)
 
-        return Statistics(view, thread, new_member, post, sign_ratio, avg_time, avg_times, recommend)
+        return cls(view, thread, new_member, post, sign_ratio, avg_time, avg_times, recommend)

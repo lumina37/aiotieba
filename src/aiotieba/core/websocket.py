@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-import binascii
 import dataclasses as dcs
 import gzip
-import random
 import time
 import weakref
 from collections.abc import Awaitable, Callable
@@ -15,8 +13,8 @@ import yarl
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import algorithms
 
+from ..__version__ import __version__
 from ..enums import WsStatus
-from ..exception import HTTPStatusError
 from ..helper import timeout
 
 if TYPE_CHECKING:
@@ -24,6 +22,8 @@ if TYPE_CHECKING:
     from .net import NetCore
 
 TypeWebsocketCallback = Callable[["WsCore", bytes, int], Awaitable[None]]
+
+WS_URL = yarl.URL.build(scheme="ws", host="im.tieba.baidu.com", port=8000)
 
 
 def pack_ws_bytes(
@@ -138,7 +138,7 @@ class MsgIDManager:
         if mid_pair is not None:
             mid_pair.update_msg_id(msg_id)
         else:
-            mid_pair = MsgIDPair(msg_id, msg_id)
+            self.gid2mid[group_id] = MsgIDPair(msg_id, msg_id)
 
     def get_msg_id(self, group_id: int) -> int:
         """
@@ -266,6 +266,7 @@ class WsCore:
 
     account: Account
     net_core: NetCore
+    session: aiohttp.ClientSession
     waiter: WsWaiter
     callbacks: dict[int, TypeWebsocketCallback]
     websocket: aiohttp.ClientWebSocketResponse
@@ -277,6 +278,7 @@ class WsCore:
     def __init__(self, account: Account, net_core: NetCore) -> None:
         self.set_account(account)
         self.net_core = net_core
+        self.session: aiohttp.ClientSession = None
 
         self.callbacks: dict[int, TypeWebsocketCallback] = {}
         self.websocket: aiohttp.ClientWebSocketResponse = None
@@ -295,7 +297,6 @@ class WsCore:
 
         Raises:
             aiohttp.WSServerHandshakeError: websocket握手失败
-            HTTPStatusError: websocket握手失败 状态码不是101
         """
 
         self._status = WsStatus.CONNECTING
@@ -305,63 +306,61 @@ class WsCore:
 
         from aiohttp import hdrs
 
-        ws_url = yarl.URL.build(scheme="ws", host="im.tieba.baidu.com", port=8000)
-        sec_key_bytes = binascii.b2a_base64(random.randbytes(16), newline=False)
-        headers = {
-            hdrs.UPGRADE: "websocket",
-            hdrs.CONNECTION: "upgrade",
-            hdrs.SEC_WEBSOCKET_EXTENSIONS: "im_version=2.3",
-            hdrs.SEC_WEBSOCKET_VERSION: "13",
-            hdrs.SEC_WEBSOCKET_KEY: sec_key_bytes.decode("ascii"),
-            hdrs.ACCEPT_ENCODING: "gzip",
-            hdrs.HOST: "im.tieba.baidu.com:8000",
-        }
-        request = aiohttp.ClientRequest(
-            hdrs.METH_GET,
-            ws_url,
-            headers=headers,
-            proxy=self.net_core.proxy.url,
-            proxy_auth=self.net_core.proxy.auth,
-            ssl=False,
-        )
+        if self.websocket is not None:
+            await self.websocket.close()
+            self.websocket = None
 
-        response = await self.net_core.req2res(request, False, 2 * 1024)
+        if self.session is None:
+            self.session = aiohttp.ClientSession(
+                connector=self.net_core.connector,
+                connector_owner=False,
+                cookie_jar=aiohttp.DummyCookieJar(),
+                skip_auto_headers={hdrs.ACCEPT},
+            )
 
-        if response.status != 101:
-            raise HTTPStatusError(response.status, response.reason)
+        proxy = self.net_core.proxy
+        if proxy.auth is None:
+            proxy_headers = None
+        else:
+            proxy_headers = {"Proxy-Authorization": aiohttp.encode_basic_auth(proxy.auth.login, proxy.auth.password)}
 
         try:
-            conn = response.connection
-            conn_proto = conn.protocol
-            transport = conn.transport
-            reader = aiohttp.client.WebSocketDataQueue(conn_proto, 1 << 16, loop=self.loop)
-            conn_proto.set_parser(aiohttp.client.WebSocketReader(reader, 4 * 1024 * 1024), reader)
-            writer = aiohttp.client.WebSocketWriter(conn_proto, transport, use_mask=True)
-        except BaseException:
-            response.close()
-            raise
-        else:
-            self.websocket = aiohttp.ClientWebSocketResponse(
-                reader,
-                writer,
-                "chat",
-                response,
-                self.net_core.timeout.ws_timeout,
-                True,
-                True,
-                self.loop,
+            self.websocket = await self.session.ws_connect(
+                WS_URL,
+                headers={
+                    hdrs.SEC_WEBSOCKET_EXTENSIONS: "im_version=2.3",
+                    hdrs.ACCEPT_ENCODING: "gzip",
+                    hdrs.USER_AGENT: f"aiotieba/{__version__}",
+                },
+                timeout=self.net_core.timeout.ws_timeout,
+                autoclose=True,
+                autoping=True,
                 heartbeat=self.net_core.timeout.ws_heartbeat,
+                ssl=False,
+                compress=0,
+                proxy=proxy.url,
+                proxy_headers=proxy_headers,
             )
+        except BaseException:
+            self.websocket = None
+            self._status = WsStatus.CLOSED
+            raise
 
         if self.ws_dispatcher is not None and not self.ws_dispatcher.done():
             self.ws_dispatcher.cancel()
         self.ws_dispatcher = self.loop.create_task(self.__ws_dispatch(), name="ws_dispatcher")
 
     async def close(self) -> None:
-        if self.status == WsStatus.OPEN:
+        if self.websocket is not None:
             await self.websocket.close()
-            self.ws_dispatcher.cancel()
+            if self.ws_dispatcher is not None and not self.ws_dispatcher.done():
+                self.ws_dispatcher.cancel()
+            self.websocket = None
         self._status = WsStatus.CLOSED
+
+        if self.session is not None:
+            await self.session.close()
+            self.session = None
 
     def __default_callback(self, req_id: int, data: bytes) -> None:
         self.waiter.set_done(req_id, data)
@@ -380,6 +379,8 @@ class WsCore:
             self._status = WsStatus.CLOSED
         except Exception:
             self._status = WsStatus.CLOSED
+            if self.websocket is not None:
+                await self.websocket.close()
 
     @property
     def status(self) -> WsStatus:
@@ -390,7 +391,7 @@ class WsCore:
             WsStatus: 当前的websocket状态
         """
 
-        if self._status != WsStatus.CLOSED and self.websocket._writer.transport.is_closing():
+        if self._status != WsStatus.CLOSED and (self.websocket is None or self.websocket.closed):
             self._status = WsStatus.CLOSED
         return self._status
 

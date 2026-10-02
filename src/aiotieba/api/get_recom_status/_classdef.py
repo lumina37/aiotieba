@@ -24,8 +24,8 @@ class RecomStatus(TbErrorExt):
     total_recom_num: int = 0
     used_recom_num: int = 0
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         total_recom_num = int(data_map["total_recommend_num"])
         used_recom_num = int(data_map["used_recommend_num"])
-        return RecomStatus(total_recom_num, used_recom_num)
+        return cls(total_recom_num, used_recom_num)

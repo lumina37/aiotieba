@@ -22,7 +22,7 @@ class RankUser:
         user_name (str): 用户名
         level (int): 等级
         exp (int): 经验值
-        is_vip (bool): 是否超级会员
+        is_vip (bool): 是否会员
     """
 
     user_name: str = ""
@@ -30,8 +30,8 @@ class RankUser:
     exp: int = 0
     is_vip: bool = False
 
-    @staticmethod
-    def from_xml(data_tag: bs4.element.Tag) -> Self:
+    @classmethod
+    def from_xml(cls, data_tag: bs4.element.Tag) -> Self:
         user_name_item = data_tag.td.next_sibling
         user_name = user_name_item.text
         is_vip = "drl_item_vip" in user_name_item.div["class"]
@@ -40,7 +40,7 @@ class RankUser:
         level = int(level_item.div["class"][0][5:])
         exp_item = level_item.next_sibling
         exp = int(exp_item.text)
-        return RankUser(user_name, level, exp, is_vip)
+        return cls(user_name, level, exp, is_vip)
 
 
 @dcs.dataclass
@@ -62,13 +62,13 @@ class Page_rank:
     has_more: bool = False
     has_prev: bool = False
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         current_page = data_map["cur_page"]
-        total_page = data_map["total_num"]
+        total_page = data_map["total_page"]
         has_more = current_page < total_page
         has_prev = current_page > 1
-        return Page_rank(current_page, total_page, has_more, has_prev)
+        return cls(current_page, total_page, has_more, has_prev)
 
 
 @dcs.dataclass
@@ -86,13 +86,13 @@ class RankUsers(TbErrorExt, Containers[RankUser]):
 
     page: Page_rank = dcs.field(default_factory=Page_rank)
 
-    @staticmethod
-    def from_xml(data_soup: bs4.BeautifulSoup) -> Self:
+    @classmethod
+    def from_xml(cls, data_soup: bs4.BeautifulSoup) -> Self:
         objs = [RankUser.from_xml(t) for t in data_soup("tr", class_=["drl_list_item", "drl_list_item_self"])]
         page_item = data_soup.find("ul", class_="p_rank_pager")
         page_dict = parse_json(page_item["data-field"])
         page = Page_rank.from_json(page_dict)
-        return RankUsers(objs, page)
+        return cls(objs, page)
 
     @property
     def has_more(self) -> bool:

@@ -26,8 +26,7 @@ class UserInfo_guinfo_app(TbErrorExt):
 
         gender (Gender): 性别
 
-        is_vip (bool): 是否超级会员
-        is_god (bool): 是否大神
+        is_vip (bool): 是否会员
 
         nick_name (str): 用户昵称
         log_name (str): 用于在日志中记录用户信息
@@ -41,10 +40,9 @@ class UserInfo_guinfo_app(TbErrorExt):
     gender: Gender = Gender.UNKNOWN
 
     is_vip: bool = False
-    is_god: bool = False
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         user_id = data_proto.id
         portrait = data_proto.portrait
         if "?" in portrait:
@@ -52,9 +50,8 @@ class UserInfo_guinfo_app(TbErrorExt):
         user_name = data_proto.name
         nick_name_old = data_proto.name_show
         gender = Gender(data_proto.sex)
-        is_vip = bool(data_proto.vipInfo.v_status)
-        is_god = bool(data_proto.new_god_data.status)
-        return UserInfo_guinfo_app(user_id, portrait, user_name, nick_name_old, gender, is_vip, is_god)
+        is_vip = data_proto.is_mem != 0
+        return cls(user_id, portrait, user_name, nick_name_old, gender, is_vip)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)

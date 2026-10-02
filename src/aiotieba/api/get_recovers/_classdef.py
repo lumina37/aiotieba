@@ -4,6 +4,7 @@ import dataclasses as dcs
 from functools import cached_property
 from typing import TYPE_CHECKING, Self
 
+from ...enums import ContentType
 from ...exception import TbErrorExt
 from .._classdef import Containers
 
@@ -30,14 +31,14 @@ class UserInfo_rec:
     portrait: str = ""
     nick_name_new: str = ""
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         portrait = data_map["portrait"]
         if "?" in portrait:
             portrait = portrait[:-13]
         user_name = data_map["user_name"]
         nick_name_new = data_map["user_nickname"]
-        return UserInfo_rec(user_name, portrait, nick_name_new)
+        return cls(user_name, portrait, nick_name_new)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait
@@ -65,6 +66,61 @@ class UserInfo_rec:
 
 
 @dcs.dataclass
+class Post_rec:
+    """
+    父级回复信息
+
+    Attributes:
+        pid (int): 父级回复id
+        text (str): 文本内容
+        user (UserInfo_rec): 发布者的用户信息
+    """
+
+    pid: int = 0
+    text: str = ""
+    user: UserInfo_rec = dcs.field(default_factory=UserInfo_rec)
+
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
+        pid = int(data_map["pid"])
+        text = data_map["abstract"]
+        user = UserInfo_rec.from_json(data_map)
+        return cls(pid, text, user)
+
+    def __bool__(self) -> bool:
+        return bool(self.pid)
+
+
+@dcs.dataclass
+class Thread_rec:
+    """
+    所在主题帖信息
+
+    Attributes:
+        tid (int): 主题帖id
+        title (str): 标题
+        text (str): 文本内容
+        user (UserInfo_rec): 发布者的用户信息
+    """
+
+    tid: int = 0
+    title: str = ""
+    text: str = ""
+    user: UserInfo_rec = dcs.field(default_factory=UserInfo_rec)
+
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
+        tid = int(data_map["tid"])
+        title = data_map["title"]
+        text = data_map["abstract"]
+        user = UserInfo_rec.from_json(data_map)
+        return cls(tid, title, text, user)
+
+    def __bool__(self) -> bool:
+        return bool(self.tid)
+
+
+@dcs.dataclass
 class Recover:
     """
     待恢复帖子信息
@@ -72,12 +128,15 @@ class Recover:
     Attributes:
         text (str): 文本内容
         tid (int): 所在主题帖id
-        pid (int): 回复id 若为主题帖则该字段为0
-        user (UserInfo_rec): 发布者的用户信息
+        pid (int): 待恢复对象的id 若`content_type`为`THREAD`则该字段为0
+        user (UserInfo_rec): 待恢复对象的发布者用户信息
+        post (Post_rec): 父级回复信息 仅`content_type`为`COMMENT`时有值
+        thread (Thread_rec): 所在主题帖信息 当`content_type`为`THREAD`时即待恢复对象本身
+
         op_show_name (str): 操作人显示名称
         op_time (int): 操作时间 10位时间戳 以秒为单位
 
-        is_floor (bool): 是否为楼中楼
+        content_type (ContentType): 待恢复对象的类型
         is_hide (bool): 是否为屏蔽
     """
 
@@ -85,29 +144,47 @@ class Recover:
     tid: int = 0
     pid: int = 0
     user: UserInfo_rec = dcs.field(default_factory=UserInfo_rec)
+    post: Post_rec = dcs.field(default_factory=Post_rec)
+    thread: Thread_rec = dcs.field(default_factory=Thread_rec)
+
     op_show_name: str = ""
     op_time: int = 0
 
-    is_floor: bool = False
+    content_type: ContentType = ContentType.UNKNOWN
     is_hide: bool = False
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         thread_info = data_map["thread_info"]
-        tid = int(thread_info["tid"])
-        if post_info := data_map["post_info"]:
+        post_info = data_map["post_info"]
+        sub_post_info = data_map["sub_post_info"]
+
+        thread = Thread_rec.from_json(thread_info)
+
+        if sub_post_info:
+            content_type = ContentType.COMMENT
+            post = Post_rec.from_json(post_info)
+            text = sub_post_info["abstract"]
+            pid = int(sub_post_info["pid"])
+            user = UserInfo_rec.from_json(sub_post_info)
+        elif post_info:
+            content_type = ContentType.POST
+            post = Post_rec()
             text = post_info["abstract"]
             pid = int(post_info["pid"])
             user = UserInfo_rec.from_json(post_info)
         else:
-            text = thread_info["abstract"]
+            content_type = ContentType.THREAD
+            post = Post_rec()
+            text = thread.text
             pid = 0
-            user = UserInfo_rec.from_json(thread_info)
-        is_floor = bool(data_map["is_foor"])  # 百度的Code Review主要起到一个装饰的作用
-        is_hide = bool(int(data_map["is_frs_mask"]))
+            user = thread.user
+
         op_show_name = data_map["op_info"]["name"]
         op_time = int(data_map["op_info"]["time"])
-        return Recover(text, tid, pid, user, op_show_name, op_time, is_floor, is_hide)
+        is_hide = bool(int(data_map["is_frs_mask"]))
+
+        return cls(text, thread.tid, pid, user, post, thread, op_show_name, op_time, content_type, is_hide)
 
 
 @dcs.dataclass
@@ -129,13 +206,13 @@ class Page_recover:
     has_more: bool = False
     has_prev: bool = False
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         page_size = data_map["rn"]
         current_page = data_map["pn"]
-        has_more = data_map["has_more"]
+        has_more = bool(data_map["has_more"])
         has_prev = current_page > 1
-        return Page_recover(page_size, current_page, has_more, has_prev)
+        return cls(page_size, current_page, has_more, has_prev)
 
 
 @dcs.dataclass
@@ -153,11 +230,11 @@ class Recovers(TbErrorExt, Containers[Recover]):
 
     page: Page_recover = dcs.field(default_factory=Page_recover)
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         objs = [Recover.from_json(t) for t in data_map["data"]["thread_list"]]
         page = Page_recover.from_json(data_map["data"]["page"])
-        return Recovers(objs, page)
+        return cls(objs, page)
 
     @property
     def has_more(self) -> bool:

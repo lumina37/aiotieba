@@ -1,12 +1,72 @@
 from __future__ import annotations
 
 import dataclasses as dcs
+from functools import cached_property
 from typing import TYPE_CHECKING, Self
 
 from ...exception import TbErrorExt
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
+
+
+@dcs.dataclass
+class BawuInfo_f:
+    """
+    吧务信息
+
+    Attributes:
+        user_id (int): user_id
+        portrait (str): portrait
+        user_name (str): 用户名
+        nick_name_new (str): 新版昵称
+
+        nick_name (str): 用户昵称
+        show_name (str): 显示名称
+        log_name (str): 用于在日志中记录用户信息
+    """
+
+    user_id: int = 0
+    portrait: str = ""
+    user_name: str = ""
+    nick_name_new: str = ""
+
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
+        user_id = data_map["id"]
+        portrait = data_map["portrait"]
+        user_name = data_map["name"]
+        nick_name_new = data_map["show_name"]
+        return cls(user_id, portrait, user_name, nick_name_new)
+
+    def __str__(self) -> str:
+        return self.user_name or self.portrait or str(self.user_id)
+
+    def __eq__(self, obj: BawuInfo_f) -> bool:
+        return self.user_id == obj.user_id
+
+    def __hash__(self) -> int:
+        return self.user_id
+
+    def __bool__(self) -> bool:
+        return bool(self.user_id)
+
+    @property
+    def nick_name(self) -> str:
+        return self.nick_name_new
+
+    @property
+    def show_name(self) -> str:
+        return self.nick_name_new or self.user_name
+
+    @cached_property
+    def log_name(self) -> str:
+        if self.user_name:
+            return self.user_name
+        elif self.portrait:
+            return f"{self.nick_name_new}/{self.portrait}"
+        else:
+            return str(self.user_id)
 
 
 @dcs.dataclass
@@ -29,6 +89,7 @@ class Forum(TbErrorExt):
         post_num (int): 发帖数
         thread_num (int): 主题帖数
 
+        admins (list[BawuInfo_f]): 大吧主列表
         has_bawu (bool): 是否有吧务
     """
 
@@ -44,10 +105,11 @@ class Forum(TbErrorExt):
     post_num: int = 0
     thread_num: int = 0
 
+    admins: list[BawuInfo_f] = dcs.field(default_factory=list)
     has_bawu: bool = False
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         fid = data_map["id"]
         fname = data_map["name"]
         category = data_map["first_class"]
@@ -57,7 +119,18 @@ class Forum(TbErrorExt):
         member_num = data_map["member_num"]
         post_num = data_map["post_num"]
         thread_num = data_map["thread_num"]
+        admins = [BawuInfo_f.from_json(m) for m in data_map.get("managers") or ()]
         has_bawu = "managers" in data_map
-        return Forum(
-            fid, fname, category, subcategory, small_avatar, slogan, member_num, post_num, thread_num, has_bawu
+        return cls(
+            fid,
+            fname,
+            category,
+            subcategory,
+            small_avatar,
+            slogan,
+            member_num,
+            post_num,
+            thread_num,
+            admins,
+            has_bawu,
         )

@@ -31,8 +31,8 @@ class Page_lp:
     has_more: bool = False
     has_prev: bool = False
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         page_size = data_proto.page_size
         current_page = data_proto.current_page
         if current_page == 0 and page_size != 0:
@@ -41,7 +41,7 @@ class Page_lp:
         total_count = data_proto.total_count
         has_more = bool(data_proto.has_more)
         has_prev = bool(data_proto.has_prev)
-        return Page_lp(page_size, current_page, total_page, total_count, has_more, has_prev)
+        return cls(page_size, current_page, total_page, total_count, has_more, has_prev)
 
 
 @dcs.dataclass
@@ -65,15 +65,15 @@ class UserInfo_lp:
     user_name: str = ""
     nick_name_old: str = ""
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         user_id = data_proto.id
         portrait = data_proto.portrait
         if "?" in portrait:
             portrait = portrait[:-13]
         user_name = data_proto.name
         nick_name_old = data_proto.name_show
-        return UserInfo_lp(user_id, portrait, user_name, nick_name_old)
+        return cls(user_id, portrait, user_name, nick_name_old)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
@@ -124,12 +124,12 @@ class LastReplyer:
     user_name: str = ""
     nick_name_old: str = ""
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         user_id = data_proto.id
         user_name = data_proto.name
         nick_name_old = data_proto.name_show
-        return LastReplyer(user_id, user_name, nick_name_old)
+        return cls(user_id, user_name, nick_name_old)
 
     def __str__(self) -> str:
         return self.user_name or str(self.user_id)
@@ -195,8 +195,8 @@ class Thread_lp:
     create_time: int = 0
     last_time: int = 0
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         title = data_proto.title
         tid = data_proto.id
         pid = data_proto.first_post_id
@@ -206,7 +206,7 @@ class Thread_lp:
         is_top = bool(data_proto.is_top)
         create_time = data_proto.create_time
         last_time = data_proto.last_time_int
-        return Thread_lp(title, 0, "", tid, pid, user, last_replyer, is_good, is_top, create_time, last_time)
+        return cls(title, 0, "", tid, pid, user, last_replyer, is_good, is_top, create_time, last_time)
 
     def __eq__(self, obj: Thread_lp) -> bool:
         return self.pid == obj.pid
@@ -236,12 +236,12 @@ class Forum_lp:
     fid: int = 0
     fname: str = ""
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         forum_proto = data_proto.forum
         fid = forum_proto.id
         fname = forum_proto.name
-        return Forum_lp(fid, fname)
+        return cls(fid, fname)
 
 
 @dcs.dataclass
@@ -262,8 +262,8 @@ class Threads_lp(TbErrorExt, Containers[Thread_lp]):
     page: Page_lp = dcs.field(default_factory=Page_lp)
     forum: Forum_lp = dcs.field(default_factory=Forum_lp)
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         page = Page_lp.from_proto(data_proto.page)
         forum = Forum_lp.from_proto(data_proto)
 
@@ -272,7 +272,7 @@ class Threads_lp(TbErrorExt, Containers[Thread_lp]):
             thread.fname = forum.fname
             thread.fid = forum.fid
 
-        return Threads_lp(objs, page, forum)
+        return cls(objs, page, forum)
 
     @property
     def has_more(self) -> bool:

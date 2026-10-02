@@ -23,20 +23,17 @@ def parse_body(body: bytes) -> SelfFollowForums:
     return self_follow_forums
 
 
-async def request(http_core: HttpCore, pn: int, rn: int) -> SelfFollowForums:
+async def request(http_core: HttpCore) -> SelfFollowForums:
     data = [
-        ("tbs", http_core.account.tbs),
         ("sort_type", 3),
         ("call_from", 3),
-        ("page_no", pn),
-        ("res_num", rn),
     ]
 
     request = http_core.pack_web_form_request(
         yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/c/f/forum/forumGuide"),
         data,
-        extra_headers=[("Subapp-Type", "hybrid")],
+        extra_headers={"Subapp-Type": "hybrid"},
     )
 
-    body = await http_core.net_core.send_request(request, read_bufsize=64 * 1024)
+    body = await http_core.net_core.send_request(request)
     return parse_body(body)

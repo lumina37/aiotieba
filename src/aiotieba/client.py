@@ -54,6 +54,7 @@ from .api import (
     get_rank_forums,
     get_rank_users,
     get_recom_status,
+    get_recover_info,
     get_recovers,
     get_replys,
     get_roomlist_by_fid,
@@ -82,8 +83,8 @@ from .api import (
     recommend,
     recover,
     remove_fan,
-    search_exact,
     search_global,
+    search_in_forum,
     send_chatroom_msg,
     send_msg,
     set_bawu_perm,
@@ -113,19 +114,20 @@ from .enums import (
     BawuSearchType,
     BawuType,
     BlacklistType,
+    CommentSortType,
     Gender,
-    GlobalSearchSortType,
     GroupType,
     PostSortType,
     RankForumType,
     ReqUInfo,
-    SearchType,
+    SearchGlobalType,
+    SearchInForumType,
     ThreadSortType,
     WsStatus,
 )
 from .exception import BoolResponse, IntResponse, StrResponse
 from .helper.cache import ForumInfoCache
-from .helper.utils import handle_exception, is_portrait, is_user_name
+from .helper.utils import check_rn, handle_exception, is_portrait, is_user_name
 from .logging import get_logger as LOG
 
 if TYPE_CHECKING:
@@ -431,7 +433,6 @@ class Client:
         return StrResponse(fname)
 
     @handle_exception(get_threads.Threads)
-    @_try_websocket
     async def get_threads(
         self,
         fname_or_fid: str | int,
@@ -448,7 +449,7 @@ class Client:
         Args:
             fname_or_fid (str | int): 贴吧名或fid 优先贴吧名
             pn (int, optional): 页码. Defaults to 1.
-            rn (int, optional): 请求的条目数. Defaults to 30. Max to 100.
+            rn (int, optional): 请求的条目数. Range [1, 100]. Defaults to 30.
             sort (ThreadSortType, optional): HOT热门排序 REPLY按回复时间 CREATE按发布时间 FOLLOW关注的人. Defaults to ThreadSortType.REPLY.
             is_good (bool, optional): True则获取精品区帖子 False则获取普通区帖子. Defaults to False.
 
@@ -456,6 +457,7 @@ class Client:
             Threads: 帖子列表
         """
 
+        check_rn(rn, 1, 100)
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
         if self._ws_core.status == WsStatus.OPEN:
@@ -464,7 +466,6 @@ class Client:
         return await get_threads.request_http(self._http_core, fname, pn, rn, sort, is_good, LEGACY_VERSION)
 
     @handle_exception(get_posts.Posts)
-    @_try_websocket
     async def get_posts(
         self,
         tid: int,
@@ -484,16 +485,22 @@ class Client:
         Args:
             tid (int): 所在主题帖tid
             pn (int, optional): 页码. Defaults to 1.
-            rn (int, optional): 请求的条目数. Defaults to 30.
+            rn (int, optional): 请求的条目数. Range [2, 30]. Defaults to 30.
             sort (PostSortType, optional): ASC时间顺序 DESC时间倒序 HOT热门序. Defaults to PostSortType.ASC.
             only_thread_author (bool, optional): True则只看楼主 False则请求全部. Defaults to False.
             with_comments (bool, optional): True则同时请求高赞楼中楼 False则返回的Post.comments字段为空. Defaults to False.
             comment_sort_by_agree (bool, optional): True则楼中楼按点赞数顺序 False则楼中楼按时间顺序. Defaults to True.
-            comment_rn (int, optional): 请求的楼中楼数量. Defaults to 4. Max to 50.
+            comment_rn (int, optional): 请求的楼中楼数量. Range [1, 50]. Defaults to 4. 仅在with_comments为True时生效.
 
         Returns:
             Posts: 回复列表
         """
+
+        check_rn(rn, 2, 30)
+        if with_comments:
+            check_rn(comment_rn, 1, 50)
+        elif comment_rn != 4 or comment_sort_by_agree is not True:
+            LOG().warning("comment_rn and comment_sort_by_agree are ignored because with_comments is False")
 
         if self._ws_core.status == WsStatus.OPEN:
             return await get_posts.request_ws(
@@ -507,13 +514,14 @@ class Client:
     @handle_exception(get_comments.Comments)
     @_try_websocket
     async def get_comments(
-        self, tid: int,
+        self,
+        tid: int,
         pid: int,
         /,
         pn: int = 1,
         *,
         is_comment: bool = False,
-        sort: PostSortType = PostSortType.ASC
+        sort: CommentSortType = CommentSortType.ASC,
     ) -> get_comments.Comments:
         """
         获取楼中楼回复
@@ -523,7 +531,7 @@ class Client:
             pid (int): 所在楼层的pid或楼中楼的pid
             pn (int, optional): 页码. Defaults to 1.
             is_comment (bool, optional): pid是否指向楼中楼 若指向楼中楼则获取其附近的楼中楼列表. Defaults to False.
-            sort (PostSortType, optional): 楼中楼排序 ASC时间顺序 DESC时间倒序 HOT热门序. Defaults to PostSortType.ASC.
+            sort (CommentSortType, optional): 楼中楼排序 ASC时间顺序 DESC时间倒序 HOT热门序. Defaults to CommentSortType.ASC.
 
         Returns:
             Comments: 楼中楼列表
@@ -552,7 +560,7 @@ class Client:
         Args:
             fname_or_fid (str | int): 贴吧名或fid 优先贴吧名
             pn (int, optional): 页码. Defaults to 1.
-            rn (int, optional): 请求的条目数. Defaults to 30. Max to 100.
+            rn (int, optional): 请求的条目数. Range [1, 100]. Defaults to 30.
             sort (ThreadSortType, optional): HOT热门排序 REPLY按回复时间 CREATE按发布时间 FOLLOW关注的人. Defaults to ThreadSortType.REPLY.
             is_good (bool, optional): True则获取精品区帖子 False则获取普通区帖子. Defaults to False.
 
@@ -563,6 +571,7 @@ class Client:
             该接口主要用于反挖坟 目前未封装完整的返回信息
         """
 
+        check_rn(rn, 1, 100)
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
         if self._ws_core.status == WsStatus.OPEN:
@@ -570,8 +579,8 @@ class Client:
 
         return await get_last_replyers.request_http(self._http_core, fname, pn, rn, sort, is_good)
 
-    @handle_exception(search_exact.ExactSearches)
-    async def search_exact(
+    @handle_exception(search_in_forum.SearchInForums)
+    async def search_in_forum(
         self,
         fname_or_fid: str | int,
         query: str,
@@ -579,59 +588,58 @@ class Client:
         pn: int = 1,
         *,
         rn: int = 30,
-        search_type: SearchType = SearchType.ALL,
+        search_type: SearchInForumType = SearchInForumType.ALL,
         only_thread: bool = False,
-    ) -> search_exact.ExactSearches:
+    ) -> search_in_forum.SearchInForums:
         """
-        贴吧搜索
+        吧内搜索 在指定贴吧内搜索特定内容
 
         Args:
             fname_or_fid (str | int): 查询的贴吧名或fid 优先贴吧名
             query (str): 查询文本
             pn (int, optional): 页码. Defaults to 1.
-            rn (int, optional): 请求的条目数. Defaults to 30.
-            search_type (SearchType, optional): 查询模式 默认查询全部. Defaults to SearchType.ALL.
+            rn (int, optional): 请求的条目数. Range [1, 50]. Defaults to 30. 大于50时服务端会退化为10条.
+            search_type (SearchInForumType, optional): 查询模式 默认查询全部. Defaults to SearchInForumType.ALL.
             only_thread (bool, optional): 是否仅查询主题帖. Defaults to False.
 
         Returns:
-            ExactSearches: 搜索结果列表
+            SearchInForums: 搜索结果列表
         """
 
+        check_rn(rn, 1, 50)
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
-        return await search_exact.request(self._http_core, fname, query, pn, rn, search_type, only_thread)
+        return await search_in_forum.request(self._http_core, fname, query, pn, rn, search_type, only_thread)
 
-    @handle_exception(search_global.GlobalSearches)
+    @handle_exception(search_global.SearchGlobals)
     async def search_global(
         self,
-        word: str,
+        query: str,
         /,
         pn: int = 1,
         *,
         rn: int = 20,
-        sort: GlobalSearchSortType = GlobalSearchSortType.DESC,
-    ) -> search_global.GlobalSearches:
+        sort: SearchGlobalType = SearchGlobalType.DESC,
+    ) -> search_global.SearchGlobals:
         """
-        全吧搜索 不限定贴吧的全站主题帖关键词搜索
+        全吧搜索
 
         Args:
-            word (str): 查询文本
+            query (str): 查询文本
             pn (int, optional): 页码. Defaults to 1.
-            rn (int, optional): 请求的条目数. Defaults to 20.
-            sort (GlobalSearchSortType, optional): 排序方式. Defaults to GlobalSearchSortType.DESC.
+            rn (int, optional): 请求的条目数. Range [1, 50]. Defaults to 20. 大于50时服务端会退化为10条.
+            sort (SearchGlobalType, optional): 排序方式. Defaults to SearchGlobalType.DESC.
 
         Returns:
-            GlobalSearches: 全吧搜索结果列表
+            SearchGlobals: 全吧搜索结果列表
 
         Note:
-            该接口为PC网页端搜索接口(逆向所得 非官方开放API) 走`subapp_type=pc`网页端签名通道 复用当前账号的Cookie(BDUSS)鉴权\n
-            不同于`search_exact`所用的App表单签名协议 其稳定性与频控策略未经长期验证 请自行控制调用频率\n
-            该接口存在与请求参数无关的服务端间歇性错误(如`TiebaServerError`300003) 失败会体现在返回值`.err` 建议调用方按需重试\n
             仅支持搜索主题帖 实测该接口的评论/楼中楼搜索(tt=3)不会生效 服务端会原样返回主题帖结果\n
             若需要某个主题帖下的评论 请在拿到`tid`后使用`get_posts`单独查询
         """
 
-        return await search_global.request(self._http_core, word, pn, rn, sort)
+        check_rn(rn, 1, 50)
+        return await search_global.request(self._http_core, query, pn, rn, sort)
 
     @handle_exception(profile.UserInfo_pf)
     @_try_websocket
@@ -661,7 +669,7 @@ class Client:
             user_id (int): 用户id user_id
 
         Returns:
-            UserInfo_guinfo_app: 包含 user_id / portrait / user_name / 性别 / 是否大神 / 是否超会
+            UserInfo_guinfo_app: 包含 user_id / portrait / user_name / 旧版昵称 / 性别 / 是否会员
         """
 
         if self._ws_core.status == WsStatus.OPEN:
@@ -720,7 +728,7 @@ class Client:
             name_or_portrait (str): 用户id user_name / portrait
 
         Returns:
-            UserInfo_panel: 包含 portrait / user_name / age / 是否超会 等信息
+            UserInfo_panel: 包含 portrait / user_name / age / 是否会员 等信息
 
         Note:
             从2022.08.30开始服务端不再返回user_id字段 请谨慎使用\n
@@ -902,12 +910,13 @@ class Client:
 
         Args:
             pn (int, optional): 页码. Defaults to 1.
-            rn (int, optional): 请求的条目数. Defaults to 10. Max to Inf.
+            rn (int, optional): 请求的条目数. Range [1, Inf]. Defaults to 10.
 
         Returns:
             BlacklistOldUsers: 旧版用户黑名单列表
         """
 
+        check_rn(rn, 1, 0xFFFFFFFF)  # rn为uint32字段 服务端未观测到上限
         if self._ws_core.status == WsStatus.OPEN:
             return await get_blacklist_old.request_ws(self._ws_core, pn, rn)
 
@@ -923,12 +932,13 @@ class Client:
         Args:
             id_ (str | int): 用户id user_id / user_name / portrait 优先user_id
             pn (int, optional): 页码. Defaults to 1.
-            rn (int, optional): 请求的条目数. Defaults to 50. Max to Inf.
+            rn (int, optional): 请求的条目数. Range [1, 200]. Defaults to 50.
 
         Returns:
             FollowForums: 用户关注贴吧列表
         """
 
+        check_rn(rn, 1, 200)
         if not isinstance(id_, int):
             user = await self.get_user_info(id_, ReqUInfo.USER_ID)
             user_id = user.user_id
@@ -947,12 +957,13 @@ class Client:
         Args:
             id_ (str | int): 用户id user_id / user_name / portrait 优先portrait
             pn (int, optional): 页码. Defaults to 1.
-            rn (int, optional): 请求的条目数. Defaults to 50. Max to Inf.
+            rn (int, optional): 请求的条目数. Range [1, 200]. Defaults to 50.
 
         Returns:
             PcFollowForums: 用户关注贴吧列表
         """
 
+        check_rn(rn, 1, 200)
         if not is_portrait(id_):
             user = await self.get_user_info(id_, ReqUInfo.PORTRAIT)
             portrait = user.portrait
@@ -994,22 +1005,18 @@ class Client:
         return await get_user_forum_info.request(self._http_core, fid, portrait)
 
     @handle_exception(get_self_follow_forums.SelfFollowForums)
-    async def get_self_follow_forums(self, pn: int = 1, *, rn: int = 200) -> get_self_follow_forums.SelfFollowForums:
+    async def get_self_follow_forums(self) -> get_self_follow_forums.SelfFollowForums:
         """
         获取本账号关注贴吧列表
 
-        Args:
-            pn (int, optional): 页码. Defaults to 1.
-            rn (int, optional): 请求的条目数. Defaults to 200. Max to 200.
+        Note:
+            该接口不分页 服务端单次最多下发200个吧 关注数超过200时请改用get_follow_forums
 
         Returns:
             SelfFollowForums: 本账号关注贴吧列表
-
-        Note:
-            本接口需要STOKEN
         """
 
-        return await get_self_follow_forums.request(self._http_core, pn, rn)
+        return await get_self_follow_forums.request(self._http_core)
 
     @handle_exception(get_dislike_forums.DislikeForums)
     @_try_websocket
@@ -1019,12 +1026,13 @@ class Client:
 
         Args:
             pn (int, optional): 页码. Defaults to 1.
-            rn (int, optional): 请求的条目数. Defaults to 20. Max to 20.
+            rn (int, optional): 请求的条目数. Range [1, 50]. Defaults to 20.
 
         Returns:
             DislikeForums: 首页推荐屏蔽的贴吧列表
         """
 
+        check_rn(rn, 1, 50)
         if self._ws_core.status == WsStatus.OPEN:
             return await get_dislike_forums.request_ws(self._ws_core, pn, rn)
 
@@ -1038,12 +1046,13 @@ class Client:
 
         Args:
             pn (int, optional): 页码. Defaults to 1.
-            rn (int, optional): 请求的条目数. Defaults to 20. Max to 74.
+            rn (int, optional): 请求的条目数. Range [1, 74]. Defaults to 20.
 
         Returns:
             UserPostss: 回复列表
         """
 
+        check_rn(rn, 1, 74)  # 服务端返回的帖子数在rn>=74后稳定在72
         user = await self.get_self_info(ReqUInfo.USER_ID)
         user_id = user.user_id
 
@@ -1060,12 +1069,13 @@ class Client:
         Args:
             id_ (str | int): 用户id user_id / user_name / portrait 优先portrait
             pn (int, optional): 页码. Defaults to 1.
-            rn (int, optional): 请求的条目数. Defaults to 20. Max to 74.
+            rn (int, optional): 请求的条目数. Range [1, 74]. Defaults to 20.
 
         Returns:
             PcUserPosts: 回复列表
         """
 
+        check_rn(rn, 1, 74)  # 服务端返回的条目数在rn>=74后稳定在72
         if not is_portrait(id_):
             user = await self.get_user_info(id_, ReqUInfo.PORTRAIT)
             portrait = user.portrait
@@ -1082,12 +1092,13 @@ class Client:
         Args:
             id_ (str | int): 用户id user_id / user_name / portrait 优先user_id
             pn (int, optional): 页码. Defaults to 1.
-            rn (int, optional): 请求的条目数. Defaults to 20. Max to 74.
+            rn (int, optional): 请求的条目数. Range [1, 74]. Defaults to 20.
 
         Returns:
             UserPostss: 回复列表
         """
 
+        check_rn(rn, 1, 74)  # 服务端返回的帖子数在rn>=74后稳定在72
         if not isinstance(id_, int):
             user = await self.get_user_info(id_, ReqUInfo.USER_ID)
             user_id = user.user_id
@@ -1119,9 +1130,13 @@ class Client:
         user_id = user.user_id
 
         if self._ws_core.status == WsStatus.OPEN:
-            return await get_user_contents.get_threads.request_ws(self._ws_core, user_id, pn, public_only)
+            return await get_user_contents.get_threads.request_ws(
+                self._ws_core, user_id, pn, is_self=True, public_only=public_only
+            )
 
-        return await get_user_contents.get_threads.request_http(self._http_core, user_id, pn, public_only)
+        return await get_user_contents.get_threads.request_http(
+            self._http_core, user_id, pn, is_self=True, public_only=public_only
+        )
 
     @handle_exception(get_user_contents.UserThreads)
     @_try_websocket
@@ -1143,10 +1158,16 @@ class Client:
         else:
             user_id = id_
 
-        if self._ws_core.status == WsStatus.OPEN:
-            return await get_user_contents.get_threads.request_ws(self._ws_core, user_id, pn, False)
+        is_self = user_id == self._user.user_id
 
-        return await get_user_contents.get_threads.request_http(self._http_core, user_id, pn, False)
+        if self._ws_core.status == WsStatus.OPEN:
+            return await get_user_contents.get_threads.request_ws(
+                self._ws_core, user_id, pn, is_self=is_self, public_only=False
+            )
+
+        return await get_user_contents.get_threads.request_http(
+            self._http_core, user_id, pn, is_self=is_self, public_only=False
+        )
 
     @handle_exception(get_replys.Replys)
     @_try_websocket
@@ -1295,12 +1316,13 @@ class Client:
         Args:
             cname (str): 类别名
             pn (int, optional): 页码. Defaults to 1.
-            rn (int, optional): 请求的条目数. Defaults to 20. Max to Inf.
+            rn (int, optional): 请求的条目数. Range [1, 1000]. Defaults to 20.
 
         Returns:
             SquareForums: 吧广场列表
         """
 
+        check_rn(rn, 1, 1000)  # 大于1099时服务端返回300003
         if self._ws_core.status == WsStatus.OPEN:
             return await get_square_forums.request_ws(self._ws_core, cname, pn, rn)
 
@@ -1460,6 +1482,9 @@ class Client:
 
         Returns:
             RankUsers: 等级排行榜用户列表
+
+        Note:
+            本接口需要STOKEN
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
@@ -1534,13 +1559,14 @@ class Client:
         Args:
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先fid
             pn (int, optional): 页码. Defaults to 1.
-            rn (int, optional): 请求的条目数. Defaults to 10. Max to 50.
+            rn (int, optional): 请求的条目数. Range [1, 50]. Defaults to 10.
             id_ (str | int | None, optional): 用于查询的被删帖用户的id user_id / user_name / portrait 优先user_id. Defaults to None.
 
         Returns:
             Recovers: 待恢复帖子列表
         """
 
+        check_rn(rn, 1, 50)
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
 
         if id_ and not isinstance(id_, int):
@@ -1550,6 +1576,26 @@ class Client:
             user_id = id_
 
         return await get_recovers.request(self._http_core, fid, user_id, pn, rn)
+
+    @handle_exception(get_recover_info.RecoverInfo)
+    async def get_recover_info(
+        self, fname_or_fid: str | int, /, tid: int, pid: int = 0
+    ) -> get_recover_info.RecoverInfo:
+        """
+        获取待恢复帖子的详细信息
+
+        Args:
+            fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先fid
+            tid (int): 所在主题帖tid
+            pid (int, optional): 待恢复的回复pid. Defaults to 0即获取主题帖正文.
+
+        Returns:
+            RecoverInfo: 待恢复帖子信息
+        """
+
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
+
+        return await get_recover_info.request(self._http_core, fid, tid, pid)
 
     @handle_exception(get_bawu_memberlist.BawuListMemberUsers)
     async def get_bawu_memberlist(
@@ -1613,6 +1659,9 @@ class Client:
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
+        if end_dt is not None and start_dt is None:
+            LOG().warning("end_dt is ignored because start_dt is None")
+
         return await get_bawu_userlogs.request(
             self._http_core, fname, pn, search_value, search_type, start_dt, end_dt, op_type
         )
@@ -1651,6 +1700,9 @@ class Client:
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
+        if end_dt is not None and start_dt is None:
+            LOG().warning("end_dt is ignored because start_dt is None")
+
         return await get_bawu_postlogs.request(
             self._http_core, fname, pn, search_value, search_type, start_dt, end_dt, op_type
         )
@@ -1665,12 +1717,13 @@ class Client:
         Args:
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先fid
             pn (int, optional): 页码. Defaults to 1.
-            rn (int, optional): 请求的条目数. Defaults to 5. Max to 50.
+            rn (int, optional): 请求的条目数. Range [1, 50]. Defaults to 5.
 
         Returns:
             Appeals: 申诉请求列表
         """
 
+        check_rn(rn, 1, 50)
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
         await self.__init_tbs()
 
@@ -2658,7 +2711,7 @@ class Client:
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def send_chatroom_msg(
-        self, chatroom_id: int, fid: int, text: str, atuser_ids: Iterable[int] = None, robotc: int = -1
+        self, chatroom_id: int, fid: int, text: str, atuser_ids: Iterable[int] = None, robot: int = -1
     ) -> BoolResponse:
         """
         向吧群发送信息，仅限简单文本。如需要@他人需要指定atuser_ids，如需与bot交互需要指定atuser_ids和robot
@@ -2668,7 +2721,7 @@ class Client:
             fid (int): 吧id
             text (str): 待发送内容
             atuser_ids (Iterable[int], optional): 需要@的人的user_id列表
-            robotc (int, optional): 机器人指令id。机器人靠此分辨指令，而非text内容。
+            robot (int, optional): 机器人指令id。机器人靠此分辨指令，而非text内容。
 
         Returns:
             BoolResponse: True成功 False失败
@@ -2691,7 +2744,7 @@ class Client:
 
         level_info = await self.__get_forum_level(fid)
         level = level_info.user_level
-        isvip = self._user.is_vip
+        is_vip = self._user.is_vip
         glevel = self._user.glevel
 
         # 处理艾特@
@@ -2721,10 +2774,10 @@ class Client:
             text,
             fid,
             level,
-            isvip,
+            is_vip,
             glevel,
             atdata,
-            robot=robotc,
+            robot,
         )
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
@@ -2772,12 +2825,12 @@ class Client:
         return self._blcp_core.message_queue
 
     @handle_exception(BoolResponse)
-    async def join_chatroom(self, room_id: int) -> BoolResponse:
+    async def join_chatroom(self, chatroom_id: int) -> BoolResponse:
         """
         加入聊天室
 
         Args:
-            room_id (int): 房间id
+            chatroom_id (int): 聊天室id
 
         Returns:
             BoolResponse: True成功 False失败
@@ -2789,7 +2842,7 @@ class Client:
             await self._init_blcp()
 
         try:
-            await self._blcp_core.joinChatRoom(room_id)
+            await self._blcp_core.joinChatRoom(chatroom_id)
         except Exception as err:
             raise Exception("加入房间失败") from err
 

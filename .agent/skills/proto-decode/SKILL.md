@@ -18,7 +18,7 @@ python scripts/proto_decode.py <file>
 
 ## 输出样例
 
-`protoc --decode_raw`的输出格式为字段编号后接字段值，嵌套消息使用大括号缩进：
+输出格式为字段编号后接字段值，嵌套消息使用大括号缩进：
 
 ```
 1: 1

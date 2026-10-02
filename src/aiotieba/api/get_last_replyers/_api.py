@@ -50,7 +50,7 @@ async def request_http(http_core: HttpCore, fname: str, pn: int, rn: int, sort: 
         data,
     )
 
-    body = await http_core.net_core.send_request(request, read_bufsize=256 * 1024)
+    body = await http_core.net_core.send_request(request)
     return parse_body(body)
 
 

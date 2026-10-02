@@ -4,13 +4,14 @@ import asyncio
 import functools
 import logging
 import sys
+import time
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 from ..logging import get_logger
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Mapping
 
 try:
     import orjson as jsonlib
@@ -47,6 +48,60 @@ def is_user_name(user_name: Any) -> bool:
     """
 
     return isinstance(user_name, str) and not user_name.startswith("tb.")
+
+
+def check_rn(rn: int, rn_min: int, rn_max: int) -> None:
+    """
+    检查rn是否位于[rn_min, rn_max]区间内
+
+    Args:
+        rn (int): 请求的条目数
+        rn_min (int): 区间下限
+        rn_max (int): 区间上限
+    """
+
+    if not rn_min <= rn <= rn_max:
+        get_logger().warning(f"rn={rn} is out of range [{rn_min}, {rn_max}]")
+
+
+def tbnum2int(tb_num: int | str, suffix: str) -> int:
+    """
+    将贴吧数字转换为整数
+
+    Args:
+        tb_num (int | str): 贴吧数字
+        suffix (str): 该接口的缩写后缀 其权值为1e4 如"W" "万"
+
+    Returns:
+        int: 整数
+    """
+
+    if not isinstance(tb_num, str):
+        return tb_num
+
+    if tb_num.endswith(suffix):
+        return int(float(tb_num.removesuffix(suffix)) * 1e4)
+
+    return int(tb_num)
+
+
+def vipinfo2bool(vip_info: Mapping | None) -> bool:
+    """
+    判断vipInfo所表示的会员身份当前是否有效
+
+    Args:
+        vip_info (Mapping | None): 回包中的vipInfo字段
+
+    Returns:
+        bool: 当前是否是有效的会员
+    """
+
+    if not vip_info:
+        return False
+    if not int(vip_info["v_status"]):
+        return False
+
+    return int(vip_info["e_time"]) > time.time()
 
 
 def default_datetime() -> datetime:

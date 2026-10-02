@@ -66,6 +66,7 @@ async def test_Threads(client: tb.Client):
             frag = thread.contents.ats[0]
             assert frag.text != ""
             assert frag.user_id > 0
+            assert frag.portrait != ""
 
             # FragVoice
             frag = thread.contents.voice
@@ -115,6 +116,7 @@ async def test_Threads(client: tb.Client):
             frag = sthread.contents.ats[0]
             assert frag.text != ""
             assert frag.user_id != 0
+            assert frag.portrait != ""
 
             # FragLink
             frag = sthread.contents.links[0]

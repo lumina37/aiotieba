@@ -1,6 +1,6 @@
 [project]
 name = "aiotieba"
-version = "4.7.2"
+version = "4.8.0"
 description = "Asynchronous I/O Client for Baidu Tieba"
 authors = [{ name = "lumina37", email = "starry.qvq@gmail.com" }]
 urls = { Repository = "https://github.com/lumina37/aiotieba/", Documentation = "https://aiotieba.cc/" }
@@ -21,8 +21,7 @@ classifiers = [
 ]
 requires-python = ">=3.11,<3.16"
 dependencies = [
-  "aiohttp>=3.11.0,<4;python_version>='3.11' and python_version<'3.14'",
-  "aiohttp>=3.13.0,<4;python_version>='3.14'",
+  "aiohttp>=3.14.0,<4",
   "beautifulsoup4>=4.7.1,<5",
   "lxml>=4.9.2,<7;python_version=='3.11'",
   "lxml>=4.9.3,<7;python_version=='3.12'",
@@ -49,11 +48,11 @@ speedup = [
 ]
 
 [dependency-groups]
-dev = ["pytest==9.1.1", "pytest-asyncio==1.4.0", "pytest-rerunfailures==16.6"]
+dev = ["pytest==9.1.1", "pytest-asyncio==1.4.0", "pytest-rerunfailures==16.7"]
 docs = ["mkdocs-material", "mkdocstrings[python]"]
 
 [build-system]
-requires = ["scikit-build-core>=1.0,<1.1"]
+requires = ["scikit-build-core>=1.0,<1.2"]
 build-backend = "scikit_build_core.build"
 
 [tool.scikit-build]

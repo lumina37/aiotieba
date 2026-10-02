@@ -26,12 +26,12 @@ class UserInfo_selfinit:
     nick_name_old: str = ""
     tieba_uid: int = 0
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         user_name = data_map["user_name"]
         nick_name_old = data_map["name_show"]
-        tieba_uid = data_map["tieba_uid"]
-        return UserInfo_selfinit(user_name, nick_name_old, tieba_uid)
+        tieba_uid = int(data_map["tieba_uid"])
+        return cls(user_name, nick_name_old, tieba_uid)
 
     def __str__(self) -> str:
         return self.user_name

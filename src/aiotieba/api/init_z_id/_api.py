@@ -74,7 +74,7 @@ async def request(http_core: HttpCore):
         ssl=False,
     )
 
-    body = await http_core.net_core.send_request(request, read_bufsize=1024)
+    body = await http_core.net_core.send_request(request)
     res_json = parse_json(body)
 
     res_query_skey = binascii.a2b_base64(res_json["skey"])

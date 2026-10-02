@@ -39,5 +39,5 @@ async def request(http_core: HttpCore, portrait: str, pn: int, rn: int) -> PcFol
         yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/c/f/pc/myForumList"), params
     )
 
-    body = await http_core.net_core.send_request(request, read_bufsize=16 * 1024)
+    body = await http_core.net_core.send_request(request)
     return parse_body(body)

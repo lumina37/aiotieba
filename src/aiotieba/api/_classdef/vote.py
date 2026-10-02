@@ -20,11 +20,11 @@ class VoteOption:
     vote_num: int = 0
     text: str = ""
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         vote_num = data_proto.num
         text = data_proto.text
-        return VoteOption(vote_num, text)
+        return cls(vote_num, text)
 
 
 @dcs.dataclass
@@ -46,14 +46,14 @@ class VoteInfo:
     total_vote: int = 0
     total_user: int = 0
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         title = data_proto.title
         is_multi = bool(data_proto.is_multi)
         options = [VoteOption.from_proto(p) for p in data_proto.options]
         total_vote = data_proto.total_poll
         total_user = data_proto.total_num
-        return VoteInfo(title, is_multi, options, total_vote, total_user)
+        return cls(title, is_multi, options, total_vote, total_user)
 
     def __len__(self) -> int:
         return len(self.options)

@@ -31,8 +31,8 @@ class RankForum:
 
     has_bawu: bool = False
 
-    @staticmethod
-    def from_xml(data_tag: bs4.element.Tag) -> Self:
+    @classmethod
+    def from_xml(cls, data_tag: bs4.element.Tag) -> Self:
         rank_idx_item = data_tag.td
         fname_item = rank_idx_item.find_next_sibling("td")
         fname = fname_item.text
@@ -43,7 +43,7 @@ class RankForum:
         manager_item = member_num_item.find_next_sibling("td", class_="clearfix")
         manager_status_item = manager_item.div
         has_bawu = manager_status_item["class"][0] != "no_bawu"
-        return RankForum(fname, sign_num, member_num, has_bawu)
+        return cls(fname, sign_num, member_num, has_bawu)
 
 
 @dcs.dataclass
@@ -65,8 +65,8 @@ class Page_rankforum:
     has_more: bool = False
     has_prev: bool = False
 
-    @staticmethod
-    def from_xml(data_soup: bs4.BeautifulSoup) -> Self:
+    @classmethod
+    def from_xml(cls, data_soup: bs4.BeautifulSoup) -> Self:
         pages_item = data_soup.find("div", class_="pagination")
         current_page_item = pages_item.span
         current_page = int(current_page_item.text)
@@ -77,7 +77,7 @@ class Page_rankforum:
         has_more = current_page < total_page
         has_prev = current_page > 1
 
-        return Page_rankforum(current_page, total_page, has_more, has_prev)
+        return cls(current_page, total_page, has_more, has_prev)
 
 
 @dcs.dataclass
@@ -95,12 +95,12 @@ class RankForums(TbErrorExt, Containers[RankForum]):
 
     page: Page_rankforum = dcs.field(default_factory=Page_rankforum)
 
-    @staticmethod
-    def from_xml(data_soup: bs4.BeautifulSoup) -> Self:
-        dbgtbody = data_soup.find("table")
-        objs = [RankForum.from_xml(t) for t in dbgtbody.find_all("tr", class_="j_rank_row")]
+    @classmethod
+    def from_xml(cls, data_soup: bs4.BeautifulSoup) -> Self:
+        rank_table = data_soup.find("table")
+        objs = [RankForum.from_xml(t) for t in rank_table.find_all("tr", class_="j_rank_row")]
         page = Page_rankforum.from_xml(data_soup)
-        return RankForums(objs, page)
+        return cls(objs, page)
 
     @property
     def has_more(self) -> bool:

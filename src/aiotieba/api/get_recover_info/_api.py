@@ -37,5 +37,5 @@ async def request(http_core: HttpCore, fid: int, tid: int, pid: int) -> RecoverI
         yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mo/q/bawu/getRecoverInfo"), params
     )
 
-    body = await http_core.net_core.send_request(request, read_bufsize=16 * 1024)
+    body = await http_core.net_core.send_request(request)
     return parse_body(body)

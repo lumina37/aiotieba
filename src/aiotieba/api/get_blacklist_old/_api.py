@@ -25,9 +25,9 @@ def pack_proto(account: Account, pn: int, rn: int) -> bytes:
     return req_proto.SerializeToString()
 
 
-def parse_body(proto: bytes) -> BlacklistOldUsers:
+def parse_body(body: bytes) -> BlacklistOldUsers:
     res_proto = UserMuteQueryResIdl_pb2.UserMuteQueryResIdl()
-    res_proto.ParseFromString(proto)
+    res_proto.ParseFromString(body)
 
     if code := res_proto.error.errorno:
         raise TiebaServerError(code, res_proto.error.errmsg)
@@ -46,7 +46,7 @@ async def request_http(http_core: HttpCore, pn: int, rn: int) -> BlacklistOldUse
         data,
     )
 
-    body = await http_core.net_core.send_request(request, read_bufsize=8 * 1024)
+    body = await http_core.net_core.send_request(request)
     return parse_body(body)
 
 

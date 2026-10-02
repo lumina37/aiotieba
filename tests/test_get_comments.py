@@ -28,14 +28,18 @@ async def test_Comments(client: tb.Client):
     assert user.nick_name == user.nick_name_new
     assert user.show_name == user.nick_name_new
     assert user.level > 0
+    assert user.log_name != ""
 
     # Thread_c
     assert thread.title != ""
-    assert thread.fid > 0
-    assert thread.fname != ""
+    assert thread.fid == forum.fid
+    assert thread.fname == forum.fname
     assert thread.tid == 8211419000
     assert thread.author_id == user.user_id
+    assert thread.type == tb.ThreadType.VOICE
     assert thread.reply_num > 0
+    assert thread.floor_num > 0
+    assert thread.floor_num <= thread.reply_num
 
     ##### Post_c #####
     post = comments.post
@@ -50,14 +54,16 @@ async def test_Comments(client: tb.Client):
     assert user.show_name == user.nick_name_new
     assert user.level > 0
     assert user.gender > 0
+    assert user.is_bawu is True
     assert user.priv_like != 0
     assert user.priv_reply != 0
+    assert user.log_name != ""
 
     # Post_c
     assert post.text != ""
-    assert post.fid > 0
-    assert post.fname != ""
-    assert post.tid > 0
+    assert post.fid == forum.fid
+    assert post.fname == forum.fname
+    assert post.tid == thread.tid
     assert post.pid > 0
     assert post.author_id == user.user_id
     assert post.floor > 0
@@ -71,6 +77,7 @@ async def test_Comments(client: tb.Client):
     frag = post.contents.ats[0]
     assert frag.text != ""
     assert frag.user_id > 0
+    assert frag.portrait != ""
 
     # FragVoice
     frag = post.contents.voice
@@ -82,6 +89,7 @@ async def test_Comments(client: tb.Client):
     assert frag.src != ""
     assert frag.big_src != ""
     assert frag.origin_src != ""
+    assert frag.origin_size > 0
     assert len(frag.hash) == 40
     assert frag.show_width > 0
     assert frag.show_height > 0
@@ -105,18 +113,28 @@ async def test_Comments(client: tb.Client):
     assert user.show_name == user.nick_name_new
     assert user.level > 0
     assert user.gender > 0
+    assert user.is_bawu is True
     assert user.priv_like != 0
     assert user.priv_reply != 0
+    assert len(user.icons) > 0
+    assert user.log_name != ""
+
+    ##### Page_c #####
+    page = comments.page
+    assert page.page_size > 0
+    assert page.current_page == 1
+    assert page.total_page > 0
+    assert page.total_count >= len(comments)
 
     # Comment
     assert comment.text != ""
-    assert comment.fid > 0
-    assert comment.fname != ""
-    assert comment.tid > 0
-    assert comment.ppid > 0
+    assert comment.fid == forum.fid
+    assert comment.fname == forum.fname
+    assert comment.tid == thread.tid
+    assert comment.ppid == post.pid
     assert comment.pid > 0
     assert comment.author_id == user.user_id
-    assert comment.floor > 0
+    assert comment.floor == post.floor
     assert comment.create_time > 0
     assert comment.is_thread_author == (comment.author_id == thread.author_id)
 
@@ -128,12 +146,14 @@ async def test_Comments(client: tb.Client):
     frag = comment.contents.ats[0]
     assert frag.text != ""
     assert frag.user_id > 0
+    assert frag.portrait != ""
 
     # FragImage
     frag = comment_with_image.contents.imgs[0]
     assert frag.src != ""
     assert frag.big_src != ""
     assert frag.origin_src != ""
+    assert frag.origin_size > 0
     assert len(frag.hash) == 40
     assert frag.show_width > 0
     assert frag.show_height > 0

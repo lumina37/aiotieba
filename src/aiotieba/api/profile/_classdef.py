@@ -9,7 +9,6 @@ from ...exception import TbErrorExt
 from .._classdef import Containers, TypeMessage, VoteInfo
 from .._classdef.contents import (
     _IMAGEHASH_EXP,
-    FragAt,
     FragEmoji,
     FragLink,
     FragText,
@@ -22,10 +21,34 @@ from .._classdef.contents import (
 
 FragText_pf = FragText
 FragEmoji_pf = FragEmoji
-FragAt_pf = FragAt
 FragLink_pf = FragLink
 FragVideo_pf = FragVideo
 FragVoice_pf = FragVoice
+
+
+@dcs.dataclass
+class FragAt_pf:
+    """
+    @碎片
+
+    Attributes:
+        text (str): 被@用户的昵称 含@
+        user_id (int): 被@用户的user_id
+        portrait (str): 被@用户的portrait
+    """
+
+    text: str = ""
+    user_id: int = 0
+    portrait: str = ""
+
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
+        text = data_proto.text
+        user_id = data_proto.uid
+        portrait = data_proto.portrait
+        if "?" in portrait:
+            portrait = portrait[:-13]
+        return cls(text, user_id, portrait)
 
 
 @dcs.dataclass
@@ -46,6 +69,7 @@ class UserInfo_pf(TbErrorExt):
         gender (Gender): 性别
         age (float): 吧龄 以年为单位
         post_num (int): 发帖数
+        thread_num (int): 主题帖数
         agree_num (int): 获赞数
         fan_num (int): 粉丝数
         follow_num (int): 关注数
@@ -54,8 +78,7 @@ class UserInfo_pf(TbErrorExt):
         ip (str): ip归属地
         icons (list[str]): 印记信息
 
-        is_vip (bool): 是否超级会员
-        is_god (bool): 是否大神
+        is_vip (bool): 是否会员
         is_blocked (bool): 是否被永久封禁屏蔽
         priv_like (PrivLike): 关注吧列表的公开状态
         priv_reply (PrivReply): 帖子评论权限
@@ -75,6 +98,7 @@ class UserInfo_pf(TbErrorExt):
     gender: Gender = Gender.UNKNOWN
     age: float = 0.0
     post_num: int = 0
+    thread_num: int = 0
     agree_num: int = 0
     fan_num: int = 0
     follow_num: int = 0
@@ -84,13 +108,12 @@ class UserInfo_pf(TbErrorExt):
     icons: list[str] = dcs.field(default_factory=list)
 
     is_vip: bool = False
-    is_god: bool = False
     is_blocked: bool = False
     priv_like: PrivLike = PrivLike.PUBLIC
     priv_reply: PrivReply = PrivReply.ALL
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         user_proto = data_proto.user
         user_id = user_proto.id
         portrait = user_proto.portrait
@@ -103,6 +126,7 @@ class UserInfo_pf(TbErrorExt):
         gender = Gender(user_proto.sex)
         age = float(age) if (age := user_proto.tb_age) else 0.0
         post_num = user_proto.post_num
+        thread_num = user_proto.thread_num
         agree_num = data_proto.user_agree_info.total_agree_num
         fan_num = user_proto.fans_num
         follow_num = user_proto.concern_num
@@ -110,8 +134,7 @@ class UserInfo_pf(TbErrorExt):
         sign = user_proto.intro
         ip = user_proto.ip_address
         icons = [name for i in user_proto.iconinfo if (name := i.name)]
-        is_vip = bool(user_proto.new_tshow_icon)
-        is_god = bool(user_proto.new_god_data.status)
+        is_vip = user_proto.is_mem != 0
         anti_proto = data_proto.anti_stat
         if anti_proto.block_stat and anti_proto.hide_stat and anti_proto.days_tofree > 30:
             is_blocked = True
@@ -119,7 +142,7 @@ class UserInfo_pf(TbErrorExt):
             is_blocked = False
         priv_like = PrivLike(priv_like) if (priv_like := user_proto.priv_sets.like) else PrivLike.PUBLIC
         priv_reply = PrivReply(priv_reply) if (priv_reply := user_proto.priv_sets.reply) else PrivReply.ALL
-        return UserInfo_pf(
+        return cls(
             user_id,
             portrait,
             user_name,
@@ -129,6 +152,7 @@ class UserInfo_pf(TbErrorExt):
             gender,
             age,
             post_num,
+            thread_num,
             agree_num,
             fan_num,
             follow_num,
@@ -137,7 +161,6 @@ class UserInfo_pf(TbErrorExt):
             ip,
             icons,
             is_vip,
-            is_god,
             is_blocked,
             priv_like,
             priv_reply,
@@ -194,8 +217,8 @@ class FragImage_pf:
     height: int = 0
     hash: str = ""
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         src = data_proto.big_pic
         origin_src = data_proto.origin_pic
         origin_size = data_proto.origin_size
@@ -205,7 +228,7 @@ class FragImage_pf:
 
         hash_ = _IMAGEHASH_EXP.search(src).group(1)
 
-        return FragImage_pf(src, origin_src, origin_size, width, height, hash_)
+        return cls(src, origin_src, origin_size, width, height, hash_)
 
 
 @dcs.dataclass
@@ -235,8 +258,8 @@ class Contents_pf(Containers[TypeFragment]):
     video: FragVideo_pf = dcs.field(default_factory=FragVideo_pf, repr=False)
     voice: FragVoice_pf = dcs.field(default_factory=FragVoice_pf, repr=False)
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         content_protos = data_proto.first_post_content
 
         texts = []
@@ -292,7 +315,7 @@ class Contents_pf(Containers[TypeFragment]):
         else:
             voice = FragVoice_pf()
 
-        return Contents_pf(objs, texts, emojis, imgs, ats, links, video, voice)
+        return cls(objs, texts, emojis, imgs, ats, links, video, voice)
 
     @cached_property
     def text(self) -> str:
@@ -343,8 +366,8 @@ class Thread_pf:
     disagree: int = 0
     create_time: int = 0
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         contents = Contents_pf.from_proto(data_proto)
         title = data_proto.title
         fid = data_proto.forum_id
@@ -358,7 +381,7 @@ class Thread_pf:
         agree = data_proto.agree.agree_num
         disagree = data_proto.agree.disagree_num
         create_time = data_proto.create_time
-        return Thread_pf(
+        return cls(
             contents,
             title,
             fid,
@@ -408,12 +431,12 @@ class Homepage(TbErrorExt, Containers[Thread_pf]):
 
     user: UserInfo_pf = dcs.field(default_factory=UserInfo_pf)
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         objs = [Thread_pf.from_proto(p) for p in data_proto.post_list]
         user = UserInfo_pf.from_proto(data_proto)
 
         for thread in objs:
             thread.user = user
 
-        return Homepage(objs, user)
+        return cls(objs, user)

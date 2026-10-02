@@ -24,11 +24,39 @@ from .._classdef.contents import (
 
 FragText_p = FragText_pt = FragText_pc = FragText
 FragEmoji_p = FragEmoji_pt = FragEmoji_pc = FragEmoji
-FragAt_p = FragAt_pt = FragAt_pc = FragAt
+FragAt_pt = FragAt
 FragLink_p = FragLink_pt = FragLink_pc = FragLink
 FragTiebaPlus_p = FragTiebaPlus_pt = FragTiebaPlus_pc = FragTiebaPlus
 FragVideo_pt = FragVideo
 FragVoice_p = FragVoice_pt = FragVoice_pc = FragVoice
+
+
+@dcs.dataclass
+class FragAt_p:
+    """
+    @碎片
+
+    Attributes:
+        text (str): 被@用户的昵称 含@
+        user_id (int): 被@用户的user_id
+        portrait (str): 被@用户的portrait
+    """
+
+    text: str = ""
+    user_id: int = 0
+    portrait: str = ""
+
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
+        text = data_proto.text
+        user_id = data_proto.uid
+        portrait = data_proto.portrait
+        if "?" in portrait:
+            portrait = portrait[:-13]
+        return cls(text, user_id, portrait)
+
+
+FragAt_pc = FragAt_p
 
 
 @dcs.dataclass
@@ -54,8 +82,8 @@ class FragImage_p:
     show_height: int = 0
     hash: str = ""
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         src = data_proto.cdn_src
         big_src = data_proto.big_cdn_src
         origin_src = data_proto.origin_src
@@ -70,7 +98,7 @@ class FragImage_p:
         else:
             hash_ = ""
 
-        return FragImage_p(src, big_src, origin_src, origin_size, show_width, show_height, hash_)
+        return cls(src, big_src, origin_src, origin_size, show_width, show_height, hash_)
 
 
 @dcs.dataclass
@@ -94,15 +122,15 @@ class FragVideo_p:
     height: int = 0
     view_num: int = 0
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         src = data_proto.link
         cover_src = data_proto.src
         duration = data_proto.during_time
         width = data_proto.width
         height = data_proto.height
         view_num = data_proto.count
-        return FragVideo_p(src, cover_src, duration, width, height, view_num)
+        return cls(src, cover_src, duration, width, height, view_num)
 
     def __bool__(self) -> bool:
         return bool(self.width)
@@ -137,8 +165,8 @@ class Contents_p(Containers[TypeFragment]):
     video: FragVideo_p = dcs.field(default_factory=FragVideo_p, repr=False)
     voice: FragVoice_p = dcs.field(default_factory=FragVoice_p, repr=False)
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         content_protos = data_proto.content
 
         texts = []
@@ -202,7 +230,7 @@ class Contents_p(Containers[TypeFragment]):
 
         objs = list(_frags())
 
-        return Contents_p(objs, texts, emojis, imgs, ats, links, tiebapluses, video, voice)
+        return cls(objs, texts, emojis, imgs, ats, links, tiebapluses, video, voice)
 
     @cached_property
     def text(self) -> str:
@@ -235,8 +263,8 @@ class Contents_pc(Containers[TypeFragment]):
     tiebapluses: list[FragTiebaPlus_pc] = dcs.field(default_factory=list, repr=False)
     voice: FragVoice_pc = dcs.field(default_factory=FragVoice_pc, repr=False)
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         content_protos = data_proto.content
 
         texts = []
@@ -288,7 +316,7 @@ class Contents_pc(Containers[TypeFragment]):
 
         objs = list(_frags())
 
-        return Contents_pc(objs, texts, emojis, ats, links, tiebapluses, voice)
+        return cls(objs, texts, emojis, ats, links, tiebapluses, voice)
 
     @cached_property
     def text(self) -> str:
@@ -314,8 +342,7 @@ class UserInfo_p:
         icons (list[str]): 印记信息
 
         is_bawu (bool): 是否吧务
-        is_vip (bool): 是否超级会员
-        is_god (bool): 是否大神
+        is_vip (bool): 是否会员
         priv_like (PrivLike): 关注吧列表的公开状态
         priv_reply (PrivReply): 帖子评论权限
 
@@ -337,12 +364,11 @@ class UserInfo_p:
 
     is_bawu: bool = False
     is_vip: bool = False
-    is_god: bool = False
     priv_like: PrivLike = PrivLike.PUBLIC
     priv_reply: PrivReply = PrivReply.ALL
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         user_id = data_proto.id
         portrait = data_proto.portrait
         if "?" in portrait:
@@ -355,11 +381,10 @@ class UserInfo_p:
         ip = data_proto.ip_address
         icons = [name for i in data_proto.iconinfo if (name := i.name)]
         is_bawu = bool(data_proto.is_bawu)
-        is_vip = bool(data_proto.new_tshow_icon)
-        is_god = bool(data_proto.new_god_data.status)
+        is_vip = data_proto.is_mem != 0
         priv_like = PrivLike(priv_like) if (priv_like := data_proto.priv_sets.like) else PrivLike.PUBLIC
         priv_reply = PrivReply(priv_reply) if (priv_reply := data_proto.priv_sets.reply) else PrivReply.ALL
-        return UserInfo_p(
+        return cls(
             user_id,
             portrait,
             user_name,
@@ -371,7 +396,6 @@ class UserInfo_p:
             icons,
             is_bawu,
             is_vip,
-            is_god,
             priv_like,
             priv_reply,
         )
@@ -425,8 +449,6 @@ class Comment_p:
         reply_to_id (int): 被回复者的user_id
 
         floor (int): 所在楼层数
-        agree (int): 点赞数
-        disagree (int): 点踩数
         create_time (int): 创建时间 10位时间戳 以秒为单位
         is_thread_author (bool): 是否楼主
     """
@@ -443,13 +465,11 @@ class Comment_p:
     reply_to_id: int = 0
 
     floor: int = 0
-    agree: int = 0
-    disagree: int = 0
     create_time: int = 0
     is_thread_author: bool = False
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         contents = Contents_pc.from_proto(data_proto)
 
         reply_to_id = 0
@@ -460,8 +480,7 @@ class Comment_p:
                 and first_frag.text == "回复 "
                 and (reply_to_id := data_proto.content[1].uid)
             ):
-                reply_to_id = reply_to_id
-                if isinstance(contents[1], FragAt_p):
+                if isinstance(contents[1], FragAt_pc):
                     del contents.ats[0]
                 contents.objs = contents.objs[2:]
                 contents.texts = contents.texts[2:]
@@ -469,17 +488,11 @@ class Comment_p:
                     first_text_frag = contents.texts[0]
                     first_text_frag.text = first_text_frag.text.removeprefix(" :")
 
-        contents = contents
-
         pid = data_proto.id
         author_id = data_proto.author_id
-        agree = data_proto.agree.agree_num
-        disagree = data_proto.agree.disagree_num
         create_time = data_proto.time
 
-        return Comment_p(
-            contents, 0, "", 0, 0, pid, None, author_id, reply_to_id, 0, agree, disagree, create_time, False
-        )
+        return cls(contents, 0, "", 0, 0, pid, None, author_id, reply_to_id, 0, create_time, False)
 
     def __eq__(self, obj: Comment_p) -> bool:
         return self.pid == obj.pid
@@ -538,8 +551,8 @@ class Post:
     create_time: int = 0
     is_thread_author: bool = False
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         contents = Contents_p.from_proto(data_proto)
         sign = "".join(p.text for p in data_proto.signature.content if p.type == 0)
         comments = [Comment_p.from_proto(p) for p in data_proto.sub_post_list.sub_post_list]
@@ -551,7 +564,7 @@ class Post:
         agree = data_proto.agree.agree_num
         disagree = data_proto.agree.disagree_num
         create_time = data_proto.time
-        return Post(
+        return cls(
             contents,
             sign,
             comments,
@@ -594,7 +607,6 @@ class Page_p:
         page_size (int): 页大小
         current_page (int): 当前页码
         total_page (int): 总页码
-        total_count (int): 总计数
 
         has_more (bool): 是否有后继页
         has_prev (bool): 是否有前驱页
@@ -603,20 +615,18 @@ class Page_p:
     page_size: int = 0
     current_page: int = 0
     total_page: int = 0
-    total_count: int = 0
 
     has_more: bool = False
     has_prev: bool = False
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         page_size = data_proto.page_size
         current_page = data_proto.current_page
         total_page = data_proto.total_page
-        total_count = data_proto.total_count
         has_more = bool(data_proto.has_more)
         has_prev = bool(data_proto.has_prev)
-        return Page_p(page_size, current_page, total_page, total_count, has_more, has_prev)
+        return cls(page_size, current_page, total_page, has_more, has_prev)
 
 
 @dcs.dataclass
@@ -644,15 +654,15 @@ class Forum_p:
     member_num: int = 0
     post_num: int = 0
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         fid = data_proto.id
         fname = data_proto.name
         category = data_proto.first_class
         subcategory = data_proto.second_class
         member_num = data_proto.member_num
         post_num = data_proto.post_num
-        return Forum_p(fid, fname, category, subcategory, member_num, post_num)
+        return cls(fid, fname, category, subcategory, member_num, post_num)
 
 
 @dcs.dataclass
@@ -676,8 +686,8 @@ class FragImage_pt:
     show_height: int = 0
     hash: str = ""
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         src = data_proto.water_pic
         big_src = data_proto.small_pic
         origin_src = data_proto.big_pic
@@ -690,7 +700,7 @@ class FragImage_pt:
         else:
             hash_ = ""
 
-        return FragImage_pt(src, big_src, origin_src, show_width, show_height, hash_)
+        return cls(src, big_src, origin_src, show_width, show_height, hash_)
 
 
 @dcs.dataclass
@@ -722,8 +732,8 @@ class Contents_pt(Containers[TypeFragment]):
     video: FragVideo_pt = dcs.field(default_factory=FragVideo_pt, repr=False)
     voice: FragVoice_pt = dcs.field(default_factory=FragVoice_pt, repr=False)
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         content_protos = data_proto.content
 
         texts = []
@@ -787,7 +797,7 @@ class Contents_pt(Containers[TypeFragment]):
         else:
             voice = FragVoice_pt()
 
-        return Contents_pt(objs, texts, emojis, imgs, ats, links, tiebapluses, video, voice)
+        return cls(objs, texts, emojis, imgs, ats, links, tiebapluses, video, voice)
 
     @cached_property
     def text(self) -> str:
@@ -808,12 +818,11 @@ class UserInfo_pt:
 
         level (int): 等级
         glevel (int): 贴吧成长等级
+        gender (Gender): 性别
         ip (str): ip归属地
         icons (list[str]): 印记信息
 
         is_bawu (bool): 是否吧务
-        is_vip (bool): 是否超级会员
-        is_god (bool): 是否大神
         priv_like (PrivLike): 关注吧列表的公开状态
         priv_reply (PrivReply): 帖子评论权限
 
@@ -829,17 +838,16 @@ class UserInfo_pt:
 
     level: int = 0
     glevel: int = 0
+    gender: Gender = Gender.UNKNOWN
     ip: str = ""
     icons: list[str] = dcs.field(default_factory=list)
 
     is_bawu: bool = False
-    is_vip: bool = False
-    is_god: bool = False
     priv_like: PrivLike = PrivLike.PUBLIC
     priv_reply: PrivReply = PrivReply.ALL
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         user_id = data_proto.id
         portrait = data_proto.portrait
         if "?" in portrait:
@@ -848,25 +856,23 @@ class UserInfo_pt:
         nick_name_new = data_proto.name_show
         level = data_proto.level_id
         glevel = data_proto.user_growth.level_id
+        gender = Gender(data_proto.gender)
         ip = data_proto.ip_address
         icons = [name for i in data_proto.iconinfo if (name := i.name)]
         is_bawu = bool(data_proto.is_bawu)
-        is_vip = bool(data_proto.new_tshow_icon)
-        is_god = bool(data_proto.new_god_data.status)
         priv_like = PrivLike(priv_like) if (priv_like := data_proto.priv_sets.like) else PrivLike.PUBLIC
         priv_reply = PrivReply(priv_reply) if (priv_reply := data_proto.priv_sets.reply) else PrivReply.ALL
-        return UserInfo_pt(
+        return cls(
             user_id,
             portrait,
             user_name,
             nick_name_new,
             level,
             glevel,
+            gender,
             ip,
             icons,
             is_bawu,
-            is_vip,
-            is_god,
             priv_like,
             priv_reply,
         )
@@ -914,9 +920,18 @@ class ShareThread_pt:
         fid (int): 所在吧id
         fname (str): 所在贴吧名
         tid (int): 主题帖tid
+        user (UserInfo_pt): 发布者的用户信息
         author_id (int): 发布者的user_id
 
-        vote_info (VoteInfo): 投票内容
+        type (ThreadType): 帖子类型
+
+        vote_info (VoteInfo): 投票信息
+        reply_num (int): 回复数
+        share_num (int): 分享数
+        agree (int): 点赞数
+        disagree (int): 点踩数
+
+        is_deleted (bool): 原帖是否已被删除
     """
 
     contents: Contents_pt = dcs.field(default_factory=Contents_pt)
@@ -925,20 +940,56 @@ class ShareThread_pt:
     fid: int = 0
     fname: str = ""
     tid: int = 0
+    user: UserInfo_pt = dcs.field(default_factory=UserInfo_pt)
     author_id: int = 0
 
-    vote_info: VoteInfo = dcs.field(default_factory=VoteInfo)
+    type: ThreadType = ThreadType.UNKNOWN
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    vote_info: VoteInfo = dcs.field(default_factory=VoteInfo)
+    reply_num: int = 0
+    share_num: int = 0
+    agree: int = 0
+    disagree: int = 0
+
+    is_deleted: bool = False
+
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         contents = Contents_pt.from_proto(data_proto)
         title = data_proto.title
         fid = data_proto.fid
         fname = data_proto.fname
         tid = int(tid) if (tid := data_proto.tid) else 0
+        user = UserInfo_pt.from_proto(data_proto.author)
         author_id = data_proto.content[0].uid if data_proto.content else 0
+
+        type_ = ThreadType(data_proto.thread_type)
+        if type_ == ThreadType.UNKNOWN:
+            LOG().debug("Unknown thread type. tid=%d, type=%s", tid, data_proto.thread_type)
+
         vote_info = VoteInfo.from_proto(data_proto.poll_info)
-        return ShareThread_pt(contents, title, fid, fname, tid, author_id, vote_info)
+        reply_num = data_proto.reply_num
+        share_num = data_proto.shared_num
+        agree = data_proto.agree.agree_num
+        disagree = data_proto.agree.disagree_num
+        is_deleted = bool(data_proto.is_deleted)
+
+        return cls(
+            contents,
+            title,
+            fid,
+            fname,
+            tid,
+            user,
+            author_id,
+            type_,
+            vote_info,
+            reply_num,
+            share_num,
+            agree,
+            disagree,
+            is_deleted,
+        )
 
     def __eq__(self, obj: ShareThread_pt) -> bool:
         return self.tid == obj.tid
@@ -974,7 +1025,6 @@ class Thread_p:
 
         type (ThreadType): 帖子类型
         is_share (bool): 是否分享帖
-        is_help (bool): 是否为求助帖
 
         vote_info (VoteInfo): 投票信息
         share_origin (ShareThread_pt): 转发来的原帖内容
@@ -983,6 +1033,7 @@ class Thread_p:
         share_num (int): 分享数
         agree (int): 点赞数
         disagree (int): 点踩数
+        collect_num (int): 收藏数
         create_time (int): 创建时间 10位时间戳 以秒为单位
     """
 
@@ -1005,10 +1056,11 @@ class Thread_p:
     share_num: int = 0
     agree: int = 0
     disagree: int = 0
+    collect_num: int = 0
     create_time: int = 0
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         thread_proto = data_proto.thread
         title = thread_proto.title
         tid = thread_proto.id
@@ -1025,6 +1077,7 @@ class Thread_p:
         share_num = thread_proto.share_num
         agree = thread_proto.agree.agree_num
         disagree = thread_proto.agree.disagree_num
+        collect_num = thread_proto.collect_num
         create_time = thread_proto.create_time
 
         if not is_share:
@@ -1037,7 +1090,7 @@ class Thread_p:
             vote_info = VoteInfo()
             share_origin = ShareThread_pt.from_proto(thread_proto.origin_thread_info)
 
-        return Thread_p(
+        return cls(
             contents,
             title,
             0,
@@ -1054,6 +1107,7 @@ class Thread_p:
             share_num,
             agree,
             disagree,
+            collect_num,
             create_time,
         )
 
@@ -1096,8 +1150,8 @@ class Posts(TbErrorExt, Containers[Post]):
     forum: Forum_p = dcs.field(default_factory=Forum_p)
     thread: Thread_p = dcs.field(default_factory=Thread_p)
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         page = Page_p.from_proto(data_proto.page)
         forum = Forum_p.from_proto(data_proto.forum)
         thread = Thread_p.from_proto(data_proto)
@@ -1122,7 +1176,7 @@ class Posts(TbErrorExt, Containers[Post]):
                 comment.user = users[comment.author_id]
                 comment.is_thread_author = thread.author_id == comment.author_id
 
-        return Posts(objs, page, forum, thread)
+        return cls(objs, page, forum, thread)
 
     @property
     def has_more(self) -> bool:

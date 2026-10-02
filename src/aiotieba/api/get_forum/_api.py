@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 def parse_body(body: bytes) -> Forum:
     res_json = parse_json(body)
-    if code := int(res_json["error_code"]):
+    if code := res_json["error_code"]:
         raise TiebaServerError(code, res_json["error_msg"])
 
     forum_dict = res_json["forum"]
@@ -31,5 +31,5 @@ async def request(http_core: HttpCore, fname: str) -> Forum:
         yarl.URL.build(scheme="http", host=APP_BASE_HOST, path="/c/f/frs/frsBottom"), data
     )
 
-    body = await http_core.net_core.send_request(request, read_bufsize=8 * 1024)
+    body = await http_core.net_core.send_request(request)
     return parse_body(body)
