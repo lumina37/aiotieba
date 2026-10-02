@@ -35,8 +35,8 @@ class Block:
 
     block_time: datetime = dcs.field(default_factory=default_datetime)
 
-    @staticmethod
-    def from_xml(data_tag: bs4.element.Tag) -> Self:
+    @classmethod
+    def from_xml(cls, data_tag: bs4.element.Tag) -> Self:
         id_tag = data_tag.a
         user_id = int(id_tag["attr-uid"])
         user_name = id_tag["attr-un"]
@@ -46,7 +46,7 @@ class Block:
         block_time_item = data_tag.find("span", class_="block_list_item_time")
         block_time = datetime.strptime(block_time_item.string, "%Y-%m-%d %H:%M")
 
-        return Block(user_id, user_name, nick_name_new, day, block_time)
+        return cls(user_id, user_name, nick_name_new, day, block_time)
 
 
 @dcs.dataclass
@@ -72,15 +72,15 @@ class Page_block:
     has_more: bool = False
     has_prev: bool = False
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         page_size = data_map["size"]
         current_page = data_map["pn"]
         total_page = data_map["total_page"]
         total_count = data_map["total_count"]
         has_more = data_map["have_next"]
         has_prev = current_page > 1
-        return Page_block(page_size, current_page, total_page, total_count, has_more, has_prev)
+        return cls(page_size, current_page, total_page, total_count, has_more, has_prev)
 
 
 @dcs.dataclass
@@ -98,12 +98,12 @@ class Blocks(TbErrorExt, Containers[Block]):
 
     page: Page_block = dcs.field(default_factory=Page_block)
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Blocks:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         data_soup = bs4.BeautifulSoup(data_map["data"]["content"], "lxml")
         objs = [Block.from_xml(t) for t in data_soup("li")]
         page = Page_block.from_json(data_map["data"]["page"])
-        return Blocks(objs, page)
+        return cls(objs, page)
 
     @property
     def has_more(self) -> bool:

@@ -37,8 +37,8 @@ class BlacklistUser:
 
     btype: BlacklistType = BlacklistType.NULL
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         user_id = int(data_map["uid"])
         portrait = data_map["portrait"]
         if "?" in portrait:
@@ -55,7 +55,7 @@ class BlacklistUser:
         if int(perm["interact"]):
             btype |= BlacklistType.INTERACT
 
-        return BlacklistUser(user_id, portrait, user_name, nick_name_new, btype)
+        return cls(user_id, portrait, user_name, nick_name_new, btype)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
@@ -97,7 +97,7 @@ class BlacklistUsers(TbErrorExt, Containers[BlacklistUser]):
         err (Exception | None): 捕获的异常
     """
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         objs = [BlacklistUser.from_json(m) for m in data_map.get("user_perm_list", [])]
-        return BlacklistUsers(objs)
+        return cls(objs)

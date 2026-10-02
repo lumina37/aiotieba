@@ -40,8 +40,8 @@ class UserInfo_TUid(TbErrorExt):
     age: float = 0.0
     sign: str = ""
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         user_id = data_proto.id
         portrait = data_proto.portrait
         if "?" in portrait:
@@ -51,7 +51,7 @@ class UserInfo_TUid(TbErrorExt):
         tieba_uid = int(data_proto.tieba_uid)
         age = float(data_proto.tb_age)
         sign = data_proto.intro
-        return UserInfo_TUid(user_id, portrait, user_name, nick_name_new, tieba_uid, age, sign)
+        return cls(user_id, portrait, user_name, nick_name_new, tieba_uid, age, sign)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)

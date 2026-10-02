@@ -23,9 +23,9 @@ class LevelInfo:
     user_level: int = 0
     is_like: bool = False
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         user_level = data_proto.user_level
         level_name = data_proto.level_name
         is_like = bool(data_proto.is_like)
-        return LevelInfo(level_name, user_level, is_like)
+        return cls(level_name, user_level, is_like)

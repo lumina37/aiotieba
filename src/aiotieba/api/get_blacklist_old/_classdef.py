@@ -32,8 +32,8 @@ class BlacklistOldUser:
 
     until_time: int = 0
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         user_id = data_proto.user_id
         portrait = data_proto.portrait
         if "?" in portrait:
@@ -41,7 +41,7 @@ class BlacklistOldUser:
         user_name = data_proto.user_name
         nick_name_old = data_proto.name_show
         until_time = data_proto.mute_time
-        return BlacklistOldUser(user_id, portrait, user_name, nick_name_old, until_time)
+        return cls(user_id, portrait, user_name, nick_name_old, until_time)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
@@ -86,12 +86,12 @@ class Page_blacklist:
     has_more: bool = False
     has_prev: bool = False
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         current_page = data_proto.current_page
         has_more = bool(data_proto.has_more)
         has_prev = bool(data_proto.has_prev)
-        return Page_blacklist(current_page, has_more, has_prev)
+        return cls(current_page, has_more, has_prev)
 
 
 @dcs.dataclass
@@ -109,11 +109,11 @@ class BlacklistOldUsers(TbErrorExt, Containers[BlacklistOldUser]):
 
     page: Page_blacklist = dcs.field(default_factory=Page_blacklist)
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         objs = [BlacklistOldUser.from_proto(p) for p in data_proto.mute_user]
         page = Page_blacklist.from_proto(data_proto.page)
-        return BlacklistOldUsers(objs, page)
+        return cls(objs, page)
 
     @property
     def has_more(self) -> bool:

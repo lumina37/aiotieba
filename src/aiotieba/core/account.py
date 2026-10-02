@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import random
+from typing import Self
 
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -115,8 +116,8 @@ class Account:
 
         return dic
 
-    @staticmethod
-    def from_dict(dic: dict[str, str | bytes]) -> Account:
+    @classmethod
+    def from_dict(cls, dic: dict[str, str | bytes]) -> Self:
         """
         将字典转换为Account
 
@@ -127,7 +128,7 @@ class Account:
             Account: 用户参数容器
         """
 
-        account = Account()
+        account = cls()
 
         for key, value in dic.items():
             if not value:

@@ -48,8 +48,8 @@ class SearchGlobal:
     author_name: str = ""
     author_show_name: str = ""
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         user_map = data_map["user"]
 
         tid = int(data_map["tid"])
@@ -67,7 +67,7 @@ class SearchGlobal:
         author_name = user_map["user_name"] or ""
         author_show_name = user_map["show_nickname"] or user_map["user_name"] or ""
 
-        return SearchGlobal(
+        return cls(
             tid,
             pid,
             title,
@@ -105,9 +105,9 @@ class SearchGlobals(TbErrorExt, Containers[SearchGlobal]):
     has_more: bool = False
     current_page: int = 0
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         objs = [SearchGlobal.from_json(m) for m in data_map["post_list"]]
         has_more = bool(data_map["has_more"])
         current_page = data_map["current_page"]
-        return SearchGlobals(objs, has_more, current_page)
+        return cls(objs, has_more, current_page)

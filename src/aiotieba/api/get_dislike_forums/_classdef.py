@@ -24,12 +24,12 @@ class Page_dislikef:
     has_more: bool = False
     has_prev: bool = False
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         current_page = data_proto.cur_page
         has_more = bool(data_proto.has_more)
         has_prev = current_page > 1
-        return Page_dislikef(current_page, has_more, has_prev)
+        return cls(current_page, has_more, has_prev)
 
 
 @dcs.dataclass
@@ -53,14 +53,14 @@ class DislikeForum:
     post_num: int = 0
     thread_num: int = 0
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         fid = data_proto.forum_id
         fname = data_proto.forum_name
         member_num = data_proto.member_count
         post_num = data_proto.post_num
         thread_num = data_proto.thread_num
-        return DislikeForum(fid, fname, member_num, post_num, thread_num)
+        return cls(fid, fname, member_num, post_num, thread_num)
 
     def __eq__(self, obj: DislikeForum) -> bool:
         return self.fid == obj.fid
@@ -84,11 +84,11 @@ class DislikeForums(TbErrorExt, Containers[DislikeForum]):
 
     page: Page_dislikef = dcs.field(default_factory=Page_dislikef)
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         objs = [DislikeForum.from_proto(p) for p in data_proto.forum_list]
         page = Page_dislikef.from_proto(data_proto)
-        return DislikeForums(objs, page)
+        return cls(objs, page)
 
     @property
     def has_more(self) -> bool:

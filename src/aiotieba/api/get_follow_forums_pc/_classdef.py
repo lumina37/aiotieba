@@ -26,12 +26,12 @@ class PcFollowForum:
     fname: str = ""
     level: int = 0
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         fid = data_map["forum_id"]
         fname = data_map["forum_name"]
         level = data_map["level_id"]
-        return PcFollowForum(fid, fname, level)
+        return cls(fid, fname, level)
 
     def __eq__(self, obj: PcFollowForum) -> bool:
         return self.fid == obj.fid
@@ -54,8 +54,8 @@ class PcFollowForums(TbErrorExt, Containers[PcFollowForum]):
 
     has_more: bool = False
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         objs = [PcFollowForum.from_json(m) for m in data_map["like"]]
         has_more = bool(data_map["has_more"])
-        return PcFollowForums(objs, has_more)
+        return cls(objs, has_more)

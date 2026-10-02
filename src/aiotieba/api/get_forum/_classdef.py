@@ -31,13 +31,13 @@ class BawuInfo_f:
     user_name: str = ""
     nick_name_new: str = ""
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         user_id = data_map["id"]
         portrait = data_map["portrait"]
         user_name = data_map["name"]
         nick_name_new = data_map["show_name"]
-        return BawuInfo_f(user_id, portrait, user_name, nick_name_new)
+        return cls(user_id, portrait, user_name, nick_name_new)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
@@ -108,8 +108,8 @@ class Forum(TbErrorExt):
     admins: list[BawuInfo_f] = dcs.field(default_factory=list)
     has_bawu: bool = False
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         fid = data_map["id"]
         fname = data_map["name"]
         category = data_map["first_class"]
@@ -121,7 +121,7 @@ class Forum(TbErrorExt):
         thread_num = data_map["thread_num"]
         admins = [BawuInfo_f.from_json(m) for m in data_map.get("managers") or ()]
         has_bawu = "managers" in data_map
-        return Forum(
+        return cls(
             fid,
             fname,
             category,

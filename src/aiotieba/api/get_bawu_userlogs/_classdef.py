@@ -31,8 +31,8 @@ class BawuUserLog:
     op_user_name: str = ""
     op_time: datetime = dcs.field(default_factory=default_datetime)
 
-    @staticmethod
-    def from_xml(data_tag: bs4.element.Tag) -> Self:
+    @classmethod
+    def from_xml(cls, data_tag: bs4.element.Tag) -> Self:
         left_cell_item = data_tag.td
 
         user_item = left_cell_item.a
@@ -51,7 +51,7 @@ class BawuUserLog:
         op_time_item = op_user_name_item.next_sibling
         op_time = datetime.strptime(op_time_item.string, "%Y-%m-%d %H:%M")
 
-        return BawuUserLog(op_type, op_duration, user_portrait, op_user_name, op_time)
+        return cls(op_type, op_duration, user_portrait, op_user_name, op_time)
 
 
 @dcs.dataclass
@@ -75,8 +75,8 @@ class Page_userlog:
     has_more: bool = False
     has_prev: bool = False
 
-    @staticmethod
-    def from_xml(data_soup: bs4.BeautifulSoup) -> Self:
+    @classmethod
+    def from_xml(cls, data_soup: bs4.BeautifulSoup) -> Self:
         total_count_tag = data_soup.find("div", class_="breadcrumbs")
         total_count = int(total_count_tag.em.text)
 
@@ -96,7 +96,7 @@ class Page_userlog:
         has_more = current_page < total_page
         has_prev = current_page > 1
 
-        return Page_userlog(current_page, total_page, total_count, has_more, has_prev)
+        return cls(current_page, total_page, total_count, has_more, has_prev)
 
 
 @dcs.dataclass
@@ -114,11 +114,11 @@ class BawuUserLogs(TbErrorExt, Containers[BawuUserLog]):
 
     page: Page_userlog = dcs.field(default_factory=Page_userlog)
 
-    @staticmethod
-    def from_xml(data_soup: bs4.BeautifulSoup) -> Self:
+    @classmethod
+    def from_xml(cls, data_soup: bs4.BeautifulSoup) -> Self:
         objs = [BawuUserLog.from_xml(t) for t in data_soup.find("tbody").find_all("tr")]
         page = Page_userlog.from_xml(data_soup)
-        return BawuUserLogs(objs, page)
+        return cls(objs, page)
 
     @property
     def has_more(self) -> bool:

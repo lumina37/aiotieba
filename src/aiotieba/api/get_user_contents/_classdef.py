@@ -45,11 +45,11 @@ class FragVoice_up:
     md5: str = ""
     duration: float = 0.0
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         md5 = data_proto.voice_md5
         duration = int(data_proto.during_time) / 1000
-        return FragVoice_up(md5, duration)
+        return cls(md5, duration)
 
     def __bool__(self) -> bool:
         return bool(self.md5)
@@ -68,17 +68,17 @@ class FragImage_up:
     src: str = dcs.field(default="", repr=False)
     hash: str = ""
 
-    @staticmethod
-    def _build(src: str) -> Self:
+    @classmethod
+    def _build(cls, src: str) -> Self:
         if hash_obj := _IMAGEHASH_EXP.search(src):
             hash_ = hash_obj.group(1)
         else:
             hash_ = ""
-        return FragImage_up(src, hash_)
+        return cls(src, hash_)
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
-        return FragImage_up._build(data_proto.src)
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
+        return cls._build(data_proto.src)
 
 
 @dcs.dataclass
@@ -94,9 +94,9 @@ class FragAt_up:
     text: str = ""
     user_name: str = ""
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
-        return FragAt_up(data_proto.text, data_proto.un)
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
+        return cls(data_proto.text, data_proto.un)
 
 
 @dcs.dataclass
@@ -122,8 +122,8 @@ class Contents_up(Containers[TypeFragment]):
     links: list[FragLink_up] = dcs.field(default_factory=list, repr=False)
     voice: FragVoice_up = dcs.field(default_factory=FragVoice_up, repr=False)
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         content_protos = data_proto.post_content
 
         texts = []
@@ -164,7 +164,7 @@ class Contents_up(Containers[TypeFragment]):
 
         objs = list(_frags())
 
-        return Contents_up(objs, texts, imgs, ats, links, voice)
+        return cls(objs, texts, imgs, ats, links, voice)
 
     @cached_property
     def text(self) -> str:
@@ -193,15 +193,15 @@ class UserInfo_u:
     user_name: str = ""
     nick_name_new: str = ""
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         user_id = data_proto.user_id
         portrait = data_proto.user_portrait
         if "?" in portrait:
             portrait = portrait[:-13]
         user_name = data_proto.user_name
         nick_name_new = data_proto.name_show
-        return UserInfo_u(user_id, portrait, user_name, nick_name_new)
+        return cls(user_id, portrait, user_name, nick_name_new)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
@@ -258,8 +258,8 @@ class Thread_up:
     reply_num: int = 0
     create_time: int = 0
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         fid = data_proto.forum_id
         tid = data_proto.thread_id
         # 服务端仅为回复添加`回复：`前缀 主题帖自身不带
@@ -274,7 +274,7 @@ class Thread_up:
         reply_num = data_proto.reply_num
         create_time = data_proto.create_time
 
-        return Thread_up(fid, tid, title, type_, view_num, reply_num, create_time)
+        return cls(fid, tid, title, type_, view_num, reply_num, create_time)
 
     def __eq__(self, obj: Thread_up) -> bool:
         return self.tid == obj.tid
@@ -319,13 +319,13 @@ class UserPost:
 
     create_time: int = 0
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         contents = Contents_up.from_proto(data_proto)
         pid = data_proto.post_id
         obj_type = _POST_TYPE2OBJ_TYPE[data_proto.post_type]
         create_time = data_proto.create_time
-        return UserPost(contents, 0, 0, pid, None, Thread_up(), obj_type, create_time)
+        return cls(contents, 0, 0, pid, None, Thread_up(), obj_type, create_time)
 
     def __eq__(self, obj: UserPost) -> bool:
         return self.pid == obj.pid
@@ -359,8 +359,8 @@ class UserPosts(Containers[UserPost]):
     tid: int = 0
     thread: Thread_up = dcs.field(default_factory=Thread_up)
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         fid = data_proto.forum_id
         tid = data_proto.thread_id
         thread = Thread_up.from_proto(data_proto)
@@ -369,7 +369,7 @@ class UserPosts(Containers[UserPost]):
             upost.fid = fid
             upost.tid = tid
             upost.thread = thread
-        return UserPosts(objs, fid, tid, thread)
+        return cls(objs, fid, tid, thread)
 
 
 @dcs.dataclass
@@ -382,15 +382,15 @@ class UserPostss(TbErrorExt, Containers[UserPosts]):
         err (Exception | None): 捕获的异常
     """
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         objs = [UserPosts.from_proto(p) for p in data_proto.post_list]
         if objs:
             user = UserInfo_u.from_proto(data_proto.post_list[0])
             for uposts in objs:
                 for upost in uposts:
                     upost.user = user
-        return UserPostss(objs)
+        return cls(objs)
 
 
 @dcs.dataclass
@@ -416,8 +416,8 @@ class FragImage_ut:
     height: int = 0
     hash: str = ""
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         src = data_proto.small_pic
         big_src = data_proto.big_pic
         origin_src = data_proto.origin_pic
@@ -428,7 +428,7 @@ class FragImage_ut:
 
         hash_ = _IMAGEHASH_EXP.search(src).group(1)
 
-        return FragImage_ut(src, big_src, origin_src, origin_size, width, height, hash_)
+        return cls(src, big_src, origin_src, origin_size, width, height, hash_)
 
 
 @dcs.dataclass
@@ -458,8 +458,8 @@ class Contents_ut(Containers[TypeFragment]):
     video: FragVideo_ut = dcs.field(default_factory=FragVideo_ut, repr=False)
     voice: FragVoice_ut = dcs.field(default_factory=FragVoice_ut, repr=False)
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         content_protos = data_proto.first_post_content
 
         texts = []
@@ -516,7 +516,7 @@ class Contents_ut(Containers[TypeFragment]):
         else:
             voice = FragVoice_ut()
 
-        return Contents_ut(objs, texts, emojis, imgs, ats, links, video, voice)
+        return cls(objs, texts, emojis, imgs, ats, links, video, voice)
 
     @cached_property
     def text(self) -> str:
@@ -570,8 +570,8 @@ class UserThread:
     disagree: int = 0
     create_time: int = 0
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         contents = Contents_ut.from_proto(data_proto)
         title = data_proto.title
         fid = data_proto.forum_id
@@ -590,7 +590,7 @@ class UserThread:
         agree = data_proto.agree.agree_num
         disagree = data_proto.agree.disagree_num
         create_time = data_proto.create_time
-        return UserThread(
+        return cls(
             contents,
             title,
             fid,
@@ -633,11 +633,11 @@ class UserThreads(TbErrorExt, Containers[UserThread]):
         err (Exception | None): 捕获的异常
     """
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         objs = [UserThread.from_proto(p) for p in data_proto.post_list]
         if objs:
             user = UserInfo_u.from_proto(data_proto.post_list[0])
             for uthread in objs:
                 uthread.user = user
-        return UserThreads(objs)
+        return cls(objs)

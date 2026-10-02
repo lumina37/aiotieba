@@ -46,8 +46,8 @@ class UserInfo_moindex:
 
     is_vip: bool = False
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         user_id = data_map["id"]
         portrait = data_map["portrait"]
         user_name = data_map["name"]
@@ -61,9 +61,7 @@ class UserInfo_moindex:
 
         is_vip = vipinfo2bool(data_map.get("vipInfo"))
 
-        return UserInfo_moindex(
-            user_id, portrait, user_name, gender, post_num, fan_num, follow_num, forum_num, sign, is_vip
-        )
+        return cls(user_id, portrait, user_name, gender, post_num, fan_num, follow_num, forum_num, sign, is_vip)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait

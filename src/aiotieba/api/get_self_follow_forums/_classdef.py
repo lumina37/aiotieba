@@ -37,8 +37,8 @@ class SelfFollowForum:
     member_count: int = 0
     thread_num: int = 0
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         fid = data_map["forum_id"]
         fname = data_map["forum_name"]
         level = data_map["level_id"]
@@ -49,7 +49,7 @@ class SelfFollowForum:
         member_count = data_map["member_count"]
         thread_num = data_map["thread_num"]
 
-        return SelfFollowForum(fid, fname, level, is_signed, today_thread_num, hot_num, member_count, thread_num)
+        return cls(fid, fname, level, is_signed, today_thread_num, hot_num, member_count, thread_num)
 
 
 @dcs.dataclass
@@ -62,7 +62,7 @@ class SelfFollowForums(TbErrorExt, Containers[SelfFollowForum]):
         err (Exception | None): 捕获的异常
     """
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         objs = [SelfFollowForum.from_json(m) for m in data_map["like_forum"]]
-        return SelfFollowForums(objs)
+        return cls(objs)

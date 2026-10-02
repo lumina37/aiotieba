@@ -40,8 +40,8 @@ class Contents_rep(Containers[TypeFragment]):
     emojis: list[FragEmoji_rep] = dcs.field(default_factory=list, repr=False)
     ats: list[FragAt_rep] = dcs.field(default_factory=list, repr=False)
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         content_protos = data_proto.content
 
         texts = []
@@ -69,7 +69,7 @@ class Contents_rep(Containers[TypeFragment]):
 
         objs = list(_frags())
 
-        return Contents_rep(objs, texts, emojis, ats)
+        return cls(objs, texts, emojis, ats)
 
     @cached_property
     def text(self) -> str:
@@ -121,8 +121,8 @@ class UserInfo_rep:
     priv_like: PrivLike = PrivLike.PUBLIC
     priv_reply: PrivReply = PrivReply.ALL
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         user_id = data_proto.id
         portrait = data_proto.portrait
         if "?" in portrait:
@@ -131,7 +131,7 @@ class UserInfo_rep:
         nick_name_new = data_proto.name_show
         priv_like = PrivLike(priv_like) if (priv_like := data_proto.priv_sets.like) else PrivLike.PUBLIC
         priv_reply = PrivReply(priv_reply) if (priv_reply := data_proto.priv_sets.reply) else PrivReply.ALL
-        return UserInfo_rep(user_id, portrait, user_name, nick_name_new, priv_like, priv_reply)
+        return cls(user_id, portrait, user_name, nick_name_new, priv_like, priv_reply)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
@@ -182,12 +182,12 @@ class UserInfo_rep_p:
     user_name: str = ""
     nick_name_new: str = ""
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         user_id = data_proto.id
         user_name = data_proto.name
         nick_name_new = data_proto.name_show
-        return UserInfo_rep_p(user_id, user_name, nick_name_new)
+        return cls(user_id, user_name, nick_name_new)
 
     def __str__(self) -> str:
         return self.user_name or str(self.user_id)
@@ -233,12 +233,12 @@ class UserInfo_rep_t:
     portrait: str = ""
     nick_name_new: str = ""
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         user_id = data_proto.id
         portrait = data_proto.portrait
         nick_name_new = data_proto.name_show
-        return UserInfo_rep_t(user_id, portrait, nick_name_new)
+        return cls(user_id, portrait, nick_name_new)
 
     def __str__(self) -> str:
         return self.portrait or str(self.user_id)
@@ -280,8 +280,8 @@ class Post_rep:
     contents: Contents_rep = dcs.field(default_factory=Contents_rep)
     user: UserInfo_rep_p = dcs.field(default_factory=UserInfo_rep_p)
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         pid = data_proto.quote_pid
 
         new_floor_infos = data_proto.new_floor_info
@@ -292,7 +292,7 @@ class Post_rep:
 
         user = UserInfo_rep_p.from_proto(data_proto.quote_user)
 
-        return Post_rep(pid, contents, user)
+        return cls(pid, contents, user)
 
     def __bool__(self) -> bool:
         return bool(self.contents)
@@ -313,8 +313,8 @@ class Thread_rep:
     contents: Contents_rep = dcs.field(default_factory=Contents_rep)
     user: UserInfo_rep_t = dcs.field(default_factory=UserInfo_rep_t)
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         tid = data_proto.thread_id
 
         new_floor_infos = data_proto.new_floor_info
@@ -325,7 +325,7 @@ class Thread_rep:
 
         user = UserInfo_rep_t.from_proto(data_proto.thread_author_user)
 
-        return Thread_rep(tid, contents, user)
+        return cls(tid, contents, user)
 
     def __bool__(self) -> bool:
         return bool(self.contents)
@@ -361,8 +361,8 @@ class Reply:
     obj_type: ObjType = ObjType.UNKNOWN
     create_time: int = 0
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         new_floor_infos = data_proto.new_floor_info
         contents = Contents_rep.from_proto(new_floor_infos[-1]) if new_floor_infos else Contents_rep()
         fname = data_proto.fname
@@ -372,7 +372,7 @@ class Reply:
         thread = Thread_rep.from_proto(data_proto)
         obj_type = ObjType.COMMENT if data_proto.is_floor else ObjType.POST
         create_time = data_proto.time
-        return Reply(contents, fname, pid, user, post, thread, obj_type, create_time)
+        return cls(contents, fname, pid, user, post, thread, obj_type, create_time)
 
     def __eq__(self, obj: Reply) -> bool:
         return self.pid == obj.pid
@@ -406,12 +406,12 @@ class Page_rep:
     has_more: bool = False
     has_prev: bool = False
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         current_page = data_proto.current_page
         has_more = bool(data_proto.has_more)
         has_prev = bool(data_proto.has_prev)
-        return Page_rep(current_page, has_more, has_prev)
+        return cls(current_page, has_more, has_prev)
 
 
 @dcs.dataclass
@@ -429,11 +429,11 @@ class Replys(TbErrorExt, Containers[Reply]):
 
     page: Page_rep = dcs.field(default_factory=Page_rep)
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         objs = [Reply.from_proto(p) for p in data_proto.reply_list]
         page = Page_rep.from_proto(data_proto.page)
-        return Replys(objs, page)
+        return cls(objs, page)
 
     @property
     def has_more(self) -> bool:

@@ -41,8 +41,8 @@ class BawuListMemberUser:
 
     join_time: datetime = dcs.field(default_factory=default_datetime)
 
-    @staticmethod
-    def from_xml(data_tag: bs4.element.Tag) -> Self:
+    @classmethod
+    def from_xml(cls, data_tag: bs4.element.Tag) -> Self:
         left_cell_item = data_tag.td
 
         user_item = left_cell_item.a
@@ -68,7 +68,7 @@ class BawuListMemberUser:
         user_id = int(btn_group_item["id"])
         portrait = btn_group_item["portrait"]
 
-        return BawuListMemberUser(user_id, portrait, user_name, exp, level, thread_num, good_num, join_time)
+        return cls(user_id, portrait, user_name, exp, level, thread_num, good_num, join_time)
 
 
 @dcs.dataclass
@@ -81,7 +81,7 @@ class BawuListMemberUsers(TbErrorExt, Containers[BawuListMemberUser]):
         err (Exception | None): 捕获的异常
     """
 
-    @staticmethod
-    def from_xml(data_soup: bs4.BeautifulSoup) -> Self:
+    @classmethod
+    def from_xml(cls, data_soup: bs4.BeautifulSoup) -> Self:
         objs = [BawuListMemberUser.from_xml(t) for t in data_soup.find("tbody").find_all("tr")]
-        return BawuListMemberUsers(objs)
+        return cls(objs)

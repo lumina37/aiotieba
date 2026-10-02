@@ -35,11 +35,11 @@ class FragEmoji_at:
     id: str = ""
     desc: str = ""
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         id_ = data_map["text"]
         desc = data_map["c"]
-        return FragEmoji_at(id_, desc)
+        return cls(id_, desc)
 
 
 @dcs.dataclass
@@ -61,8 +61,8 @@ class FragImage_at:
     show_height: int = 0
     hash: str = ""
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         src = data_map["src"]
         origin_size = int(data_map["size"])
 
@@ -75,7 +75,7 @@ class FragImage_at:
         else:
             hash_ = ""
 
-        return FragImage_at(src, origin_size, show_width, show_height, hash_)
+        return cls(src, origin_size, show_width, show_height, hash_)
 
 
 @dcs.dataclass
@@ -93,14 +93,14 @@ class FragAt_at:
     user_id: int = 0
     portrait: str = ""
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         text = data_map["text"]
         user_id = int(data_map["uid"])
         portrait = data_map["portrait"]
         if "?" in portrait:
             portrait = portrait[:-13]
-        return FragAt_at(text, user_id, portrait)
+        return cls(text, user_id, portrait)
 
 
 @dcs.dataclass
@@ -126,8 +126,8 @@ class Contents_at(Containers[TypeFragment]):
     ats: list[FragAt_at] = dcs.field(default_factory=list, repr=False)
     links: list[FragLink_at] = dcs.field(default_factory=list, repr=False)
 
-    @staticmethod
-    def from_json(content_maps: Sequence[Mapping]) -> Self:
+    @classmethod
+    def from_json(cls, content_maps: Sequence[Mapping]) -> Self:
         texts = []
         emojis = []
         imgs = []
@@ -161,7 +161,7 @@ class Contents_at(Containers[TypeFragment]):
 
         objs = list(_frags())
 
-        return Contents_at(objs, texts, emojis, imgs, ats, links)
+        return cls(objs, texts, emojis, imgs, ats, links)
 
     @cached_property
     def text(self) -> str:
@@ -202,12 +202,12 @@ class Page_at:
     has_more: bool = False
     has_prev: bool = False
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         current_page = int(data_map["current_page"])
         has_more = bool(int(data_map["has_more"]))
         has_prev = bool(int(data_map["has_prev"]))
-        return Page_at(current_page, has_more, has_prev)
+        return cls(current_page, has_more, has_prev)
 
 
 @dcs.dataclass
@@ -237,8 +237,8 @@ class UserInfo_at:
     priv_like: PrivLike = PrivLike.PUBLIC
     priv_reply: PrivReply = PrivReply.ALL
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         user_id = int(data_map["id"])
         portrait = data_map["portrait"]
         if "?" in portrait:
@@ -252,7 +252,7 @@ class UserInfo_at:
             priv_like = PrivLike.PUBLIC
             priv_reply = PrivReply.ALL
 
-        return UserInfo_at(user_id, portrait, user_name, nick_name_new, priv_like, priv_reply)
+        return cls(user_id, portrait, user_name, nick_name_new, priv_like, priv_reply)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
@@ -305,15 +305,15 @@ class UserInfo_at_p:
     user_name: str = ""
     nick_name_new: str = ""
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         user_id = int(data_map["id"])
         portrait = data_map["portrait"]
         if "?" in portrait:
             portrait = portrait[:-13]
         user_name = data_map["name"]
         nick_name_new = data_map["name_show"]
-        return UserInfo_at_p(user_id, portrait, user_name, nick_name_new)
+        return cls(user_id, portrait, user_name, nick_name_new)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
@@ -366,15 +366,15 @@ class UserInfo_at_t:
     user_name: str = ""
     nick_name_new: str = ""
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         user_id = int(data_map["id"])
         portrait = data_map["portrait"]
         if "?" in portrait:
             portrait = portrait[:-13]
         user_name = data_map["name"]
         nick_name_new = data_map["name_show"]
-        return UserInfo_at_t(user_id, portrait, user_name, nick_name_new)
+        return cls(user_id, portrait, user_name, nick_name_new)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
@@ -421,8 +421,8 @@ class Post_at:
     contents: Contents_at = dcs.field(default_factory=Contents_at)
     user: UserInfo_at_p = dcs.field(default_factory=UserInfo_at_p)
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         pid = int(data_map.get("quote_pid") or 0)
 
         new_floor_infos = data_map["new_floor_info"]
@@ -432,7 +432,7 @@ class Post_at:
             _strip_quote_header(contents)
 
         user = UserInfo_at_p.from_json(data_map["quote_user"])
-        return Post_at(pid, contents, user)
+        return cls(pid, contents, user)
 
     def __bool__(self) -> bool:
         return bool(self.contents)
@@ -453,8 +453,8 @@ class Thread_at:
     contents: Contents_at = dcs.field(default_factory=Contents_at)
     user: UserInfo_at_t = dcs.field(default_factory=UserInfo_at_t)
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         tid = int(data_map["thread_id"])
         new_floor_infos = data_map["new_floor_info"]
         contents = Contents_at()
@@ -462,7 +462,7 @@ class Thread_at:
             contents = Contents_at.from_json(new_floor_infos[0]["content"])
             _strip_quote_header(contents)
         user = UserInfo_at_t.from_json(data_map["thread_author_user"])
-        return Thread_at(tid, contents, user)
+        return cls(tid, contents, user)
 
     def __bool__(self) -> bool:
         return bool(self.contents)
@@ -504,8 +504,8 @@ class At:
 
     create_time: int = 0
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         text = data_map["content"]
         fname = data_map["fname"]
         fid = int(data_map["fid"])
@@ -516,7 +516,7 @@ class At:
         thread = Thread_at.from_json(data_map)
         obj_type = ObjType(int(data_map["type"]))
         create_time = int(data_map["time"])
-        return At(text, fname, fid, tid, pid, user, post, thread, obj_type, create_time)
+        return cls(text, fname, fid, tid, pid, user, post, thread, obj_type, create_time)
 
     def __eq__(self, obj: At) -> bool:
         return self.pid == obj.pid
@@ -544,11 +544,11 @@ class Ats(TbErrorExt, Containers[At]):
 
     page: Page_at = dcs.field(default_factory=Page_at)
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         objs = [At.from_json(m) for m in data_map.get("at_list", [])]
         page = Page_at.from_json(data_map["page"])
-        return Ats(objs, page)
+        return cls(objs, page)
 
     @property
     def has_more(self) -> bool:

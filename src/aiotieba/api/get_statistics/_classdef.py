@@ -37,8 +37,8 @@ class Statistics(TbErrorExt):
     avg_times: list[int] = dcs.field(default_factory=list)
     recommend: list[int] = dcs.field(default_factory=list)
 
-    @staticmethod
-    def from_json(data_seq: Sequence) -> Self:
+    @classmethod
+    def from_json(cls, data_seq: Sequence) -> Self:
         def extract(i: int) -> list[int]:
             seq: list = data_seq[i]["group"][1]["values"]
             seq = [int(item["value"]) for item in reversed(seq)]
@@ -53,4 +53,4 @@ class Statistics(TbErrorExt):
         avg_times = extract(6)
         recommend = extract(7)
 
-        return Statistics(view, thread, new_member, post, sign_ratio, avg_time, avg_times, recommend)
+        return cls(view, thread, new_member, post, sign_ratio, avg_time, avg_times, recommend)

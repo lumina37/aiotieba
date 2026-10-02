@@ -31,14 +31,14 @@ class UserInfo_rec:
     portrait: str = ""
     nick_name_new: str = ""
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         portrait = data_map["portrait"]
         if "?" in portrait:
             portrait = portrait[:-13]
         user_name = data_map["user_name"]
         nick_name_new = data_map["user_nickname"]
-        return UserInfo_rec(user_name, portrait, nick_name_new)
+        return cls(user_name, portrait, nick_name_new)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait
@@ -80,12 +80,12 @@ class Post_rec:
     text: str = ""
     user: UserInfo_rec = dcs.field(default_factory=UserInfo_rec)
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         pid = int(data_map["pid"])
         text = data_map["abstract"]
         user = UserInfo_rec.from_json(data_map)
-        return Post_rec(pid, text, user)
+        return cls(pid, text, user)
 
     def __bool__(self) -> bool:
         return bool(self.pid)
@@ -108,13 +108,13 @@ class Thread_rec:
     text: str = ""
     user: UserInfo_rec = dcs.field(default_factory=UserInfo_rec)
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         tid = int(data_map["tid"])
         title = data_map["title"]
         text = data_map["abstract"]
         user = UserInfo_rec.from_json(data_map)
-        return Thread_rec(tid, title, text, user)
+        return cls(tid, title, text, user)
 
     def __bool__(self) -> bool:
         return bool(self.tid)
@@ -153,8 +153,8 @@ class Recover:
     obj_type: ObjType = ObjType.UNKNOWN
     is_hide: bool = False
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         thread_info = data_map["thread_info"]
         post_info = data_map["post_info"]
         sub_post_info = data_map["sub_post_info"]
@@ -184,7 +184,7 @@ class Recover:
         op_time = int(data_map["op_info"]["time"])
         is_hide = bool(int(data_map["is_frs_mask"]))
 
-        return Recover(text, thread.tid, pid, user, post, thread, op_show_name, op_time, obj_type, is_hide)
+        return cls(text, thread.tid, pid, user, post, thread, op_show_name, op_time, obj_type, is_hide)
 
 
 @dcs.dataclass
@@ -206,13 +206,13 @@ class Page_recover:
     has_more: bool = False
     has_prev: bool = False
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         page_size = data_map["rn"]
         current_page = data_map["pn"]
         has_more = bool(data_map["has_more"])
         has_prev = current_page > 1
-        return Page_recover(page_size, current_page, has_more, has_prev)
+        return cls(page_size, current_page, has_more, has_prev)
 
 
 @dcs.dataclass
@@ -230,11 +230,11 @@ class Recovers(TbErrorExt, Containers[Recover]):
 
     page: Page_recover = dcs.field(default_factory=Page_recover)
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         objs = [Recover.from_json(t) for t in data_map["data"]["thread_list"]]
         page = Page_recover.from_json(data_map["data"]["page"])
-        return Recovers(objs, page)
+        return cls(objs, page)
 
     @property
     def has_more(self) -> bool:

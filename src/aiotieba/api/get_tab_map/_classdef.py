@@ -22,10 +22,10 @@ class TabMap(TbErrorExt):
 
     map: dict[str, int] = dcs.field(default_factory=dict)
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         map_ = {tab_proto.tab_name: tab_proto.tab_id for tab_proto in data_proto.exact_match.tab_info}
-        return TabMap(map_)
+        return cls(map_)
 
     def __getitem__(self, key: str) -> int:
         return self.map[key]

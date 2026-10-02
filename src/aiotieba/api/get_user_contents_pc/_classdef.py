@@ -38,11 +38,11 @@ class FragEmoji_pcup:
     id: str = ""
     desc: str = ""
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         id_ = data_map["text"]
         desc = data_map["c"]
-        return FragEmoji_pcup(id_, desc)
+        return cls(id_, desc)
 
 
 @dcs.dataclass
@@ -66,8 +66,8 @@ class FragImage_pcup:
     show_height: int = 0
     hash: str = ""
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         src = data_map["cdn_src"]
         big_src = data_map["big_cdn_src"]
         origin_src = data_map["origin_src"]
@@ -81,7 +81,7 @@ class FragImage_pcup:
         else:
             hash_ = ""
 
-        return FragImage_pcup(src, big_src, origin_src, show_width, show_height, hash_)
+        return cls(src, big_src, origin_src, show_width, show_height, hash_)
 
 
 @dcs.dataclass
@@ -99,14 +99,14 @@ class FragAt_pcup:
     user_id: int = 0
     portrait: str = ""
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         text = data_map["text"]
         user_id = data_map["uid"]
         portrait = data_map["portrait"]
         if "?" in portrait:
             portrait = portrait[:-13]
-        return FragAt_pcup(text, user_id, portrait)
+        return cls(text, user_id, portrait)
 
 
 @dcs.dataclass
@@ -128,14 +128,14 @@ class FragVideo_pcup:
     width: int = 0
     height: int = 0
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         src = data_map["link"]
         cover_src = data_map["src"]
         duration = int(data_map["during_time"])
         width = int(data_map["width"])
         height = int(data_map["height"])
-        return FragVideo_pcup(src, cover_src, duration, width, height)
+        return cls(src, cover_src, duration, width, height)
 
     def __bool__(self) -> bool:
         return bool(self.width)
@@ -154,11 +154,11 @@ class FragVoice_pcup:
     md5: str = ""
     duration: float = 0.0
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         md5 = data_map["voice_md5"]
         duration = int(data_map["during_time"]) / 1000
-        return FragVoice_pcup(md5, duration)
+        return cls(md5, duration)
 
     def __bool__(self) -> bool:
         return bool(self.md5)
@@ -191,8 +191,8 @@ class Contents_pcup(Containers[TypeFragment]):
     video: FragVideo_pcup = dcs.field(default_factory=FragVideo_pcup, repr=False)
     voice: FragVoice_pcup = dcs.field(default_factory=FragVoice_pcup, repr=False)
 
-    @staticmethod
-    def from_json(content_maps: Sequence[Mapping]) -> Self:
+    @classmethod
+    def from_json(cls, content_maps: Sequence[Mapping]) -> Self:
         texts = []
         emojis = []
         imgs = []
@@ -242,7 +242,7 @@ class Contents_pcup(Containers[TypeFragment]):
 
         objs = list(_frags())
 
-        return Contents_pcup(objs, texts, emojis, imgs, ats, links, video, voice)
+        return cls(objs, texts, emojis, imgs, ats, links, video, voice)
 
     @cached_property
     def text(self) -> str:
@@ -281,8 +281,8 @@ class UserInfo_pcu:
     priv_like: PrivLike = PrivLike.PUBLIC
     priv_reply: PrivReply = PrivReply.ALL
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         user_id = data_map["id"]
         portrait = data_map["portrait"]
         if "?" in portrait:
@@ -296,7 +296,7 @@ class UserInfo_pcu:
         priv_like = PrivLike(priv_like) if (priv_like := priv_sets.get("like", 0)) else PrivLike.PUBLIC
         priv_reply = PrivReply(priv_reply) if (priv_reply := priv_sets.get("reply", 0)) else PrivReply.ALL
 
-        return UserInfo_pcu(
+        return cls(
             user_id,
             portrait,
             user_name,
@@ -359,14 +359,14 @@ class Forum_pcup:
 
     is_liked: bool = False
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         fid = data_map["id"]
         fname = data_map["name"]
         member_num = data_map["member_num"]
         post_num = data_map["post_num"]
         is_liked = bool(data_map["is_liked"])
-        return Forum_pcup(fid, fname, member_num, post_num, is_liked)
+        return cls(fid, fname, member_num, post_num, is_liked)
 
     def __bool__(self) -> bool:
         return bool(self.fid)
@@ -423,8 +423,8 @@ class Thread_pcup:
     is_top: bool = False
     is_deleted: bool = False
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         contents = Contents_pcup.from_json(data_map.get("first_post_content") or [])
         title = data_map["title"]
 
@@ -452,7 +452,7 @@ class Thread_pcup:
         is_top = bool(data_map["is_top"])
         is_deleted = bool(data_map["is_deleted"])
 
-        return Thread_pcup(
+        return cls(
             contents,
             title,
             fid,
@@ -526,8 +526,8 @@ class PcUserPost:
 
     create_time: int = 0
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         thread = Thread_pcup.from_json(data_map["thread_info"])
 
         post_info = data_map["post_info"]
@@ -546,7 +546,7 @@ class PcUserPost:
 
         obj_type = ObjType(data_map["type"])
 
-        return PcUserPost(contents, thread.fid, ppid, pid, user, thread, obj_type, create_time)
+        return cls(contents, thread.fid, ppid, pid, user, thread, obj_type, create_time)
 
     def __eq__(self, obj: PcUserPost) -> bool:
         return self.pid == obj.pid
@@ -573,8 +573,8 @@ class PcUserPosts(TbErrorExt, Containers[PcUserPost]):
         err (Exception | None): 捕获的异常
     """
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         objs = [PcUserPost.from_json(m) for m in data_map.get("list") or []]
 
-        return PcUserPosts(objs)
+        return cls(objs)

@@ -44,8 +44,8 @@ class Forum_detail(TbErrorExt):
 
     has_bawu: bool = False
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         forum_proto = data_proto.forum_info
         fid = forum_proto.forum_id
         fname = forum_proto.forum_name
@@ -56,4 +56,4 @@ class Forum_detail(TbErrorExt):
         member_num = forum_proto.member_count
         post_num = forum_proto.thread_count
         has_bawu = data_proto.election_tab.new_strategy_text == "已有吧主"
-        return Forum_detail(fid, fname, category, small_avatar, origin_avatar, slogan, member_num, post_num, has_bawu)
+        return cls(fid, fname, category, small_avatar, origin_avatar, slogan, member_num, post_num, has_bawu)

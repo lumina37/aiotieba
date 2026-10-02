@@ -36,14 +36,14 @@ class UserInfo_bawu:
 
     level: int = 0
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         user_id = data_proto.user_id
         portrait = data_proto.portrait
         user_name = data_proto.user_name
         nick_name_new = data_proto.name_show
         level = data_proto.user_level
-        return UserInfo_bawu(user_id, portrait, user_name, nick_name_new, level)
+        return cls(user_id, portrait, user_name, nick_name_new, level)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
@@ -106,8 +106,8 @@ class BawuInfo(TbErrorExt):
     journal_chief_editor: list[UserInfo_bawu] = dcs.field(default_factory=list)
     journal_editor: list[UserInfo_bawu] = dcs.field(default_factory=list)
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         all_ = []
         _dict: dict[BawuType, list[UserInfo_bawu]] = {}
         for r_proto in data_proto.bawu_team_info.bawu_team_list:
@@ -132,7 +132,7 @@ class BawuInfo(TbErrorExt):
         journal_chief_editor = extract(BawuType.JOURNAL_CHIEF_EDITOR)
         journal_editor = extract(BawuType.JOURNAL_EDITOR)
 
-        return BawuInfo(
+        return cls(
             all_,
             admin,
             manager,

@@ -49,8 +49,8 @@ class UserInfo_panel(TbErrorExt):
 
     is_vip: bool = False
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         portrait = data_map["portrait"]
         if "?" in portrait:
             portrait = portrait[:-13]
@@ -76,7 +76,7 @@ class UserInfo_panel(TbErrorExt):
 
         is_vip = vipinfo2bool(data_map.get("vipInfo"))
 
-        return UserInfo_panel(portrait, user_name, nick_name_new, nick_name_old, gender, age, post_num, fan_num, is_vip)
+        return cls(portrait, user_name, nick_name_new, nick_name_old, gender, age, post_num, fan_num, is_vip)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait

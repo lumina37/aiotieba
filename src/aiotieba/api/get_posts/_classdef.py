@@ -46,14 +46,14 @@ class FragAt_p:
     user_id: int = 0
     portrait: str = ""
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         text = data_proto.text
         user_id = data_proto.uid
         portrait = data_proto.portrait
         if "?" in portrait:
             portrait = portrait[:-13]
-        return FragAt_p(text, user_id, portrait)
+        return cls(text, user_id, portrait)
 
 
 FragAt_pc = FragAt_p
@@ -82,8 +82,8 @@ class FragImage_p:
     show_height: int = 0
     hash: str = ""
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         src = data_proto.cdn_src
         big_src = data_proto.big_cdn_src
         origin_src = data_proto.origin_src
@@ -98,7 +98,7 @@ class FragImage_p:
         else:
             hash_ = ""
 
-        return FragImage_p(src, big_src, origin_src, origin_size, show_width, show_height, hash_)
+        return cls(src, big_src, origin_src, origin_size, show_width, show_height, hash_)
 
 
 @dcs.dataclass
@@ -122,15 +122,15 @@ class FragVideo_p:
     height: int = 0
     view_num: int = 0
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         src = data_proto.link
         cover_src = data_proto.src
         duration = data_proto.during_time
         width = data_proto.width
         height = data_proto.height
         view_num = data_proto.count
-        return FragVideo_p(src, cover_src, duration, width, height, view_num)
+        return cls(src, cover_src, duration, width, height, view_num)
 
     def __bool__(self) -> bool:
         return bool(self.width)
@@ -165,8 +165,8 @@ class Contents_p(Containers[TypeFragment]):
     video: FragVideo_p = dcs.field(default_factory=FragVideo_p, repr=False)
     voice: FragVoice_p = dcs.field(default_factory=FragVoice_p, repr=False)
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         content_protos = data_proto.content
 
         texts = []
@@ -230,7 +230,7 @@ class Contents_p(Containers[TypeFragment]):
 
         objs = list(_frags())
 
-        return Contents_p(objs, texts, emojis, imgs, ats, links, tiebapluses, video, voice)
+        return cls(objs, texts, emojis, imgs, ats, links, tiebapluses, video, voice)
 
     @cached_property
     def text(self) -> str:
@@ -263,8 +263,8 @@ class Contents_pc(Containers[TypeFragment]):
     tiebapluses: list[FragTiebaPlus_pc] = dcs.field(default_factory=list, repr=False)
     voice: FragVoice_pc = dcs.field(default_factory=FragVoice_pc, repr=False)
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         content_protos = data_proto.content
 
         texts = []
@@ -316,7 +316,7 @@ class Contents_pc(Containers[TypeFragment]):
 
         objs = list(_frags())
 
-        return Contents_pc(objs, texts, emojis, ats, links, tiebapluses, voice)
+        return cls(objs, texts, emojis, ats, links, tiebapluses, voice)
 
     @cached_property
     def text(self) -> str:
@@ -367,8 +367,8 @@ class UserInfo_p:
     priv_like: PrivLike = PrivLike.PUBLIC
     priv_reply: PrivReply = PrivReply.ALL
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         user_id = data_proto.id
         portrait = data_proto.portrait
         if "?" in portrait:
@@ -384,7 +384,7 @@ class UserInfo_p:
         is_vip = data_proto.is_mem != 0
         priv_like = PrivLike(priv_like) if (priv_like := data_proto.priv_sets.like) else PrivLike.PUBLIC
         priv_reply = PrivReply(priv_reply) if (priv_reply := data_proto.priv_sets.reply) else PrivReply.ALL
-        return UserInfo_p(
+        return cls(
             user_id,
             portrait,
             user_name,
@@ -468,8 +468,8 @@ class Comment_p:
     create_time: int = 0
     is_thread_author: bool = False
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         contents = Contents_pc.from_proto(data_proto)
 
         reply_to_id = 0
@@ -492,7 +492,7 @@ class Comment_p:
         author_id = data_proto.author_id
         create_time = data_proto.time
 
-        return Comment_p(contents, 0, "", 0, 0, pid, None, author_id, reply_to_id, 0, create_time, False)
+        return cls(contents, 0, "", 0, 0, pid, None, author_id, reply_to_id, 0, create_time, False)
 
     def __eq__(self, obj: Comment_p) -> bool:
         return self.pid == obj.pid
@@ -551,8 +551,8 @@ class Post:
     create_time: int = 0
     is_thread_author: bool = False
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         contents = Contents_p.from_proto(data_proto)
         sign = "".join(p.text for p in data_proto.signature.content if p.type == 0)
         comments = [Comment_p.from_proto(p) for p in data_proto.sub_post_list.sub_post_list]
@@ -564,7 +564,7 @@ class Post:
         agree = data_proto.agree.agree_num
         disagree = data_proto.agree.disagree_num
         create_time = data_proto.time
-        return Post(
+        return cls(
             contents,
             sign,
             comments,
@@ -619,14 +619,14 @@ class Page_p:
     has_more: bool = False
     has_prev: bool = False
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         page_size = data_proto.page_size
         current_page = data_proto.current_page
         total_page = data_proto.total_page
         has_more = bool(data_proto.has_more)
         has_prev = bool(data_proto.has_prev)
-        return Page_p(page_size, current_page, total_page, has_more, has_prev)
+        return cls(page_size, current_page, total_page, has_more, has_prev)
 
 
 @dcs.dataclass
@@ -654,15 +654,15 @@ class Forum_p:
     member_num: int = 0
     post_num: int = 0
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         fid = data_proto.id
         fname = data_proto.name
         category = data_proto.first_class
         subcategory = data_proto.second_class
         member_num = data_proto.member_num
         post_num = data_proto.post_num
-        return Forum_p(fid, fname, category, subcategory, member_num, post_num)
+        return cls(fid, fname, category, subcategory, member_num, post_num)
 
 
 @dcs.dataclass
@@ -686,8 +686,8 @@ class FragImage_pt:
     show_height: int = 0
     hash: str = ""
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         src = data_proto.water_pic
         big_src = data_proto.small_pic
         origin_src = data_proto.big_pic
@@ -700,7 +700,7 @@ class FragImage_pt:
         else:
             hash_ = ""
 
-        return FragImage_pt(src, big_src, origin_src, show_width, show_height, hash_)
+        return cls(src, big_src, origin_src, show_width, show_height, hash_)
 
 
 @dcs.dataclass
@@ -732,8 +732,8 @@ class Contents_pt(Containers[TypeFragment]):
     video: FragVideo_pt = dcs.field(default_factory=FragVideo_pt, repr=False)
     voice: FragVoice_pt = dcs.field(default_factory=FragVoice_pt, repr=False)
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         content_protos = data_proto.content
 
         texts = []
@@ -797,7 +797,7 @@ class Contents_pt(Containers[TypeFragment]):
         else:
             voice = FragVoice_pt()
 
-        return Contents_pt(objs, texts, emojis, imgs, ats, links, tiebapluses, video, voice)
+        return cls(objs, texts, emojis, imgs, ats, links, tiebapluses, video, voice)
 
     @cached_property
     def text(self) -> str:
@@ -846,8 +846,8 @@ class UserInfo_pt:
     priv_like: PrivLike = PrivLike.PUBLIC
     priv_reply: PrivReply = PrivReply.ALL
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         user_id = data_proto.id
         portrait = data_proto.portrait
         if "?" in portrait:
@@ -862,7 +862,7 @@ class UserInfo_pt:
         is_bawu = bool(data_proto.is_bawu)
         priv_like = PrivLike(priv_like) if (priv_like := data_proto.priv_sets.like) else PrivLike.PUBLIC
         priv_reply = PrivReply(priv_reply) if (priv_reply := data_proto.priv_sets.reply) else PrivReply.ALL
-        return UserInfo_pt(
+        return cls(
             user_id,
             portrait,
             user_name,
@@ -953,8 +953,8 @@ class ShareThread_pt:
 
     is_deleted: bool = False
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         contents = Contents_pt.from_proto(data_proto)
         title = data_proto.title
         fid = data_proto.fid
@@ -974,7 +974,7 @@ class ShareThread_pt:
         disagree = data_proto.agree.disagree_num
         is_deleted = bool(data_proto.is_deleted)
 
-        return ShareThread_pt(
+        return cls(
             contents,
             title,
             fid,
@@ -1059,8 +1059,8 @@ class Thread_p:
     collect_num: int = 0
     create_time: int = 0
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         thread_proto = data_proto.thread
         title = thread_proto.title
         tid = thread_proto.id
@@ -1090,7 +1090,7 @@ class Thread_p:
             vote_info = VoteInfo()
             share_origin = ShareThread_pt.from_proto(thread_proto.origin_thread_info)
 
-        return Thread_p(
+        return cls(
             contents,
             title,
             0,
@@ -1150,8 +1150,8 @@ class Posts(TbErrorExt, Containers[Post]):
     forum: Forum_p = dcs.field(default_factory=Forum_p)
     thread: Thread_p = dcs.field(default_factory=Thread_p)
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         page = Page_p.from_proto(data_proto.page)
         forum = Forum_p.from_proto(data_proto.forum)
         thread = Thread_p.from_proto(data_proto)
@@ -1176,7 +1176,7 @@ class Posts(TbErrorExt, Containers[Post]):
                 comment.user = users[comment.author_id]
                 comment.is_thread_author = thread.author_id == comment.author_id
 
-        return Posts(objs, page, forum, thread)
+        return cls(objs, page, forum, thread)
 
     @property
     def has_more(self) -> bool:

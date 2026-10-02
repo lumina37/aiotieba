@@ -24,14 +24,14 @@ class UserInfo_ws:
     portrait: str = ""
     user_name: str = ""
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         user_id = data_proto.userId
         portrait = data_proto.portrait
         if "?" in portrait:
             portrait = portrait[:-13]
         user_name = data_proto.userName
-        return UserInfo_ws(user_id, portrait, user_name)
+        return cls(user_id, portrait, user_name)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
@@ -69,14 +69,14 @@ class WsMessage:
     user: UserInfo_ws = dcs.field(default_factory=UserInfo_ws)
     create_time: int = 0
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         msg_id = data_proto.msgId
         msg_type = data_proto.msgType
         text = data_proto.content
         user = UserInfo_ws.from_proto(data_proto.userInfo)
         create_time = data_proto.createTime
-        return WsMessage(msg_id, msg_type, text, user, create_time)
+        return cls(msg_id, msg_type, text, user, create_time)
 
 
 @dcs.dataclass
@@ -94,12 +94,12 @@ class WsMsgGroup:
     group_type: int = 0
     messages: list[WsMessage] = dcs.field(default_factory=list)
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         group_id = data_proto.groupInfo.groupId
         group_type = data_proto.groupInfo.groupType
         messages = [WsMessage.from_proto(p) for p in data_proto.msgList]
-        return WsMsgGroup(group_id, group_type, messages)
+        return cls(group_id, group_type, messages)
 
 
 @dcs.dataclass
@@ -112,7 +112,7 @@ class WsMsgGroups(TbErrorExt, Containers[WsMsgGroup]):
         err (Exception | None): 捕获的异常
     """
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         objs = [WsMsgGroup.from_proto(p) for p in data_proto.groupInfo]
-        return WsMsgGroups(objs)
+        return cls(objs)

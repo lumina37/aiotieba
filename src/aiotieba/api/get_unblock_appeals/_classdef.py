@@ -45,8 +45,8 @@ class Appeal:
     punish_day: int = 0
     op_name: str = ""
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         user_map = data_map["user"]
         user_id = user_map["id"]
         portrait = user_map["portrait"]
@@ -61,7 +61,7 @@ class Appeal:
         punish_time = int(data_map["punish_start_time"])
         punish_day = data_map["punish_day_num"]
         op_name = data_map["operate_man"]
-        return Appeal(
+        return cls(
             user_id,
             portrait,
             user_name,
@@ -90,8 +90,8 @@ class Appeals(TbErrorExt, Containers[Appeal]):
 
     has_more: bool = False
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         objs = [Appeal.from_json(m) for m in data_map["data"].get("appeal_list", [])]
         has_more = data_map["data"].get("has_more", False)
-        return Appeals(objs, has_more)
+        return cls(objs, has_more)

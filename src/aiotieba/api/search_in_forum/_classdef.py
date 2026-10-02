@@ -42,8 +42,8 @@ class SearchInForum:
     obj_type: ObjType = ObjType.UNKNOWN
     create_time: int = 0
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         text = data_map["content"]
         title = data_map["title"]
         fname = data_map["fname"]
@@ -54,7 +54,7 @@ class SearchInForum:
         pid = int(data_map["cid"]) if is_comment else ppid
         show_name = data_map["author"]["name_show"]
         create_time = int(data_map["time"])
-        return SearchInForum(text, title, fname, tid, ppid, pid, show_name, obj_type, create_time)
+        return cls(text, title, fname, tid, ppid, pid, show_name, obj_type, create_time)
 
     def __eq__(self, obj: SearchInForum) -> bool:
         return self.pid == obj.pid
@@ -86,15 +86,15 @@ class Page_fsch:
     has_more: bool = False
     has_prev: bool = False
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         page_size = int(data_map["page_size"])
         current_page = int(data_map["current_page"])
         total_page = int(data_map["total_page"])
         total_count = int(data_map["total_count"])
         has_more = bool(int(data_map["has_more"]))
         has_prev = bool(int(data_map["has_prev"]))
-        return Page_fsch(page_size, current_page, total_page, total_count, has_more, has_prev)
+        return cls(page_size, current_page, total_page, total_count, has_more, has_prev)
 
 
 @dcs.dataclass
@@ -112,11 +112,11 @@ class SearchInForums(TbErrorExt, Containers[SearchInForum]):
 
     page: Page_fsch = dcs.field(default_factory=Page_fsch)
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         objs = [SearchInForum.from_json(m) for m in data_map["post_list"]]
         page = Page_fsch.from_json(data_map["page"])
-        return SearchInForums(objs, page)
+        return cls(objs, page)
 
     @property
     def has_more(self) -> bool:

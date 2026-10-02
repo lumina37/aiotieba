@@ -32,15 +32,15 @@ class Fan:
     user_name: str = ""
     nick_name_new: str = ""
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         user_id = int(data_map["id"])
         portrait = data_map["portrait"]
         if "?" in portrait:
             portrait = portrait[:-13]
         user_name = data_map["name"]
         nick_name_new = data_map["name_show"]
-        return Fan(user_id, portrait, user_name, nick_name_new)
+        return cls(user_id, portrait, user_name, nick_name_new)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
@@ -95,15 +95,15 @@ class Page_fan:
     has_more: bool = False
     has_prev: bool = False
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         page_size = int(data_map["page_size"])
         current_page = int(data_map["current_page"])
         total_page = int(data_map["total_page"])
         total_count = int(data_map["total_count"])
         has_more = bool(int(data_map["has_more"]))
         has_prev = bool(int(data_map["has_prev"]))
-        return Page_fan(page_size, current_page, total_page, total_count, has_more, has_prev)
+        return cls(page_size, current_page, total_page, total_count, has_more, has_prev)
 
 
 @dcs.dataclass
@@ -121,11 +121,11 @@ class Fans(TbErrorExt, Containers[Fan]):
 
     page: Page_fan = dcs.field(default_factory=Page_fan)
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         objs = [Fan.from_json(m) for m in data_map["user_list"]]
         page = Page_fan.from_json(data_map["page"])
-        return Fans(objs, page)
+        return cls(objs, page)
 
     @property
     def has_more(self) -> bool:

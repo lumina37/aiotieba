@@ -26,15 +26,15 @@ class UserInfo_uf:
     show_name: str = ""
     is_like: bool = False
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         show_name = data_map["name"]
         user_id = data_map["id"]
         portrait = data_map["portrait"]
         if "?" in portrait:
             portrait = portrait[:-13]
         is_like = bool(data_map["is_like"])
-        return UserInfo_uf(user_id, portrait, show_name, is_like)
+        return cls(user_id, portrait, show_name, is_like)
 
     def __str__(self) -> str:
         return self.show_name or self.portrait or str(self.user_id)
@@ -94,8 +94,8 @@ class UserForumInfo(TbErrorExt):
     role_name: str = ""
     high_light_sign_days: int = 0
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         # 本接口强制要求BDUSS可用 服务端必定下发user_info
         user = UserInfo_uf.from_json(data_map["user_info"])
         user_forum = data_map["user_forum_info"]
@@ -117,7 +117,7 @@ class UserForumInfo(TbErrorExt):
         role_name = user_forum["role_name"]
         high_light_sign_days = user_forum["high_light_sign_days"]
 
-        return UserForumInfo(
+        return cls(
             user,
             fname,
             small_avatar,

@@ -33,8 +33,8 @@ class UserInfo_perm:
     bawu_type: BawuType = BawuType.UNKNOWN
     begin_time: datetime = dcs.field(default_factory=default_datetime)
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         user_name = data_map["user_name"]
         nick_name_old = data_map["user_nickname"]
         level = data_map["level_id"]
@@ -46,7 +46,7 @@ class UserInfo_perm:
         else:
             begin_time = default_datetime()
 
-        return UserInfo_perm(user_name, nick_name_old, level, bawu_type, begin_time)
+        return cls(user_name, nick_name_old, level, bawu_type, begin_time)
 
 
 @dcs.dataclass
@@ -63,8 +63,8 @@ class BawuPerm(TbErrorExt):
     user: UserInfo_perm = dcs.field(default_factory=UserInfo_perm)
     perms: BawuPermType = BawuPermType.NULL
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         user = UserInfo_perm.from_json(data_map["user"])
 
         perms = BawuPermType.NULL
@@ -85,4 +85,4 @@ class BawuPerm(TbErrorExt):
 
                 perms |= perm
 
-        return BawuPerm(user, perms)
+        return cls(user, perms)

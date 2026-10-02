@@ -22,12 +22,12 @@ class UserInfo_login:
     portrait: str = ""
     user_name: str = ""
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         user_id = int(data_map["id"])
         portrait = data_map["portrait"]
         user_name = data_map["name"]
-        return UserInfo_login(user_id, portrait, user_name)
+        return cls(user_id, portrait, user_name)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)

@@ -32,15 +32,15 @@ class Follow:
     user_name: str = ""
     nick_name_new: str = ""
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         user_id = data_map["id"]
         portrait = data_map["portrait"]
         if "?" in portrait:
             portrait = portrait[:-13]
         user_name = data_map["name"]
         nick_name_new = data_map["name_show"]
-        return Follow(user_id, portrait, user_name, nick_name_new)
+        return cls(user_id, portrait, user_name, nick_name_new)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
@@ -91,13 +91,13 @@ class Page_follow:
     has_more: bool = False
     has_prev: bool = False
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         current_page = data_map["pn"]
         total_count = data_map["total_follow_num"]
         has_more = bool(data_map["has_more"])
         has_prev = current_page > 1
-        return Page_follow(current_page, total_count, has_more, has_prev)
+        return cls(current_page, total_count, has_more, has_prev)
 
 
 @dcs.dataclass
@@ -115,11 +115,11 @@ class Follows(TbErrorExt, Containers[Follow]):
 
     page: Page_follow = dcs.field(default_factory=Page_follow)
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         objs = [Follow.from_json(m) for m in data_map.get("follow_list") or []]
         page = Page_follow.from_json(data_map)
-        return Follows(objs, page)
+        return cls(objs, page)
 
     @property
     def has_more(self) -> bool:

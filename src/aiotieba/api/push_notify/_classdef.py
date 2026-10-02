@@ -26,12 +26,12 @@ class WsNotify:
     msg_id: int = 0
     create_time: int = 0
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         data_proto = data_proto.data
         note_type = data_proto.type
         group_type = data_proto.groupType
         group_id = data_proto.groupId
         msg_id = data_proto.msgId
         create_time = int(create_time) if (create_time := data_proto.et) else 0
-        return WsNotify(note_type, group_id, group_type, msg_id, create_time)
+        return cls(note_type, group_id, group_type, msg_id, create_time)

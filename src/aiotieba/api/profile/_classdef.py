@@ -41,14 +41,14 @@ class FragAt_pf:
     user_id: int = 0
     portrait: str = ""
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         text = data_proto.text
         user_id = data_proto.uid
         portrait = data_proto.portrait
         if "?" in portrait:
             portrait = portrait[:-13]
-        return FragAt_pf(text, user_id, portrait)
+        return cls(text, user_id, portrait)
 
 
 @dcs.dataclass
@@ -112,8 +112,8 @@ class UserInfo_pf(TbErrorExt):
     priv_like: PrivLike = PrivLike.PUBLIC
     priv_reply: PrivReply = PrivReply.ALL
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         user_proto = data_proto.user
         user_id = user_proto.id
         portrait = user_proto.portrait
@@ -142,7 +142,7 @@ class UserInfo_pf(TbErrorExt):
             is_blocked = False
         priv_like = PrivLike(priv_like) if (priv_like := user_proto.priv_sets.like) else PrivLike.PUBLIC
         priv_reply = PrivReply(priv_reply) if (priv_reply := user_proto.priv_sets.reply) else PrivReply.ALL
-        return UserInfo_pf(
+        return cls(
             user_id,
             portrait,
             user_name,
@@ -217,8 +217,8 @@ class FragImage_pf:
     height: int = 0
     hash: str = ""
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         src = data_proto.big_pic
         origin_src = data_proto.origin_pic
         origin_size = data_proto.origin_size
@@ -228,7 +228,7 @@ class FragImage_pf:
 
         hash_ = _IMAGEHASH_EXP.search(src).group(1)
 
-        return FragImage_pf(src, origin_src, origin_size, width, height, hash_)
+        return cls(src, origin_src, origin_size, width, height, hash_)
 
 
 @dcs.dataclass
@@ -258,8 +258,8 @@ class Contents_pf(Containers[TypeFragment]):
     video: FragVideo_pf = dcs.field(default_factory=FragVideo_pf, repr=False)
     voice: FragVoice_pf = dcs.field(default_factory=FragVoice_pf, repr=False)
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         content_protos = data_proto.first_post_content
 
         texts = []
@@ -315,7 +315,7 @@ class Contents_pf(Containers[TypeFragment]):
         else:
             voice = FragVoice_pf()
 
-        return Contents_pf(objs, texts, emojis, imgs, ats, links, video, voice)
+        return cls(objs, texts, emojis, imgs, ats, links, video, voice)
 
     @cached_property
     def text(self) -> str:
@@ -366,8 +366,8 @@ class Thread_pf:
     disagree: int = 0
     create_time: int = 0
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         contents = Contents_pf.from_proto(data_proto)
         title = data_proto.title
         fid = data_proto.forum_id
@@ -381,7 +381,7 @@ class Thread_pf:
         agree = data_proto.agree.agree_num
         disagree = data_proto.agree.disagree_num
         create_time = data_proto.create_time
-        return Thread_pf(
+        return cls(
             contents,
             title,
             fid,
@@ -431,12 +431,12 @@ class Homepage(TbErrorExt, Containers[Thread_pf]):
 
     user: UserInfo_pf = dcs.field(default_factory=UserInfo_pf)
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         objs = [Thread_pf.from_proto(p) for p in data_proto.post_list]
         user = UserInfo_pf.from_proto(data_proto)
 
         for thread in objs:
             thread.user = user
 
-        return Homepage(objs, user)
+        return cls(objs, user)

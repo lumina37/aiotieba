@@ -22,12 +22,12 @@ class RoomList(TbErrorExt):
 
     room_list: list = dcs.field(default_factory=list)
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         if not data_map:
-            return RoomList()
+            return cls()
 
         room_list = []
         for x in data_map["list"]:
             room_list.extend(x["room_list"])
-        return RoomList(room_list)
+        return cls(room_list)

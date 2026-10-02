@@ -30,14 +30,14 @@ class SquareForum:
 
     is_followed: bool = False
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         fid = data_proto.forum_id
         fname = data_proto.forum_name
         member_num = data_proto.member_count
         thread_num = data_proto.thread_count
         is_followed = bool(data_proto.is_like)
-        return SquareForum(fid, fname, member_num, thread_num, is_followed)
+        return cls(fid, fname, member_num, thread_num, is_followed)
 
     def __eq__(self, obj: SquareForum) -> bool:
         return self.fid == obj.fid
@@ -69,15 +69,15 @@ class Page_square:
     has_more: bool = False
     has_prev: bool = False
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         page_size = data_proto.page_size
         current_page = data_proto.current_page
         total_page = data_proto.total_page
         total_count = data_proto.total_count
         has_more = bool(data_proto.has_more)
         has_prev = bool(data_proto.has_prev)
-        return Page_square(page_size, current_page, total_page, total_count, has_more, has_prev)
+        return cls(page_size, current_page, total_page, total_count, has_more, has_prev)
 
 
 @dcs.dataclass
@@ -95,11 +95,11 @@ class SquareForums(TbErrorExt, Containers[SquareForum]):
 
     page: Page_square = dcs.field(default_factory=Page_square)
 
-    @staticmethod
-    def from_proto(data_proto: TypeMessage) -> Self:
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
         objs = [SquareForum.from_proto(p) for p in data_proto.forum_info]
         page = Page_square.from_proto(data_proto.page)
-        return SquareForums(objs, page)
+        return cls(objs, page)
 
     @property
     def has_more(self) -> bool:

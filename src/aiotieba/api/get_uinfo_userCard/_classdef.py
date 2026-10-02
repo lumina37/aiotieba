@@ -48,8 +48,8 @@ class UserInfo_uc(TbErrorExt):
     sign: str = ""
     ip: str = ""
 
-    @staticmethod
-    def from_json(data_map: Mapping) -> Self:
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
         portrait = data_map["portrait"]
         if "?" in portrait:
             portrait = portrait[:-13]
@@ -63,7 +63,7 @@ class UserInfo_uc(TbErrorExt):
         sign = data_map["intro"]
         ip = data_map["ip_address"]
 
-        return UserInfo_uc(portrait, nick_name_new, tieba_uid, gender, age, agree_num, fan_num, follow_num, sign, ip)
+        return cls(portrait, nick_name_new, tieba_uid, gender, age, agree_num, fan_num, follow_num, sign, ip)
 
     def __str__(self) -> str:
         return self.nick_name_new or self.portrait

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import dataclasses as dcs
+from typing import Self
 
 import aiohttp
 import yarl
@@ -25,14 +26,14 @@ class ProxyConfig:
         self.url = url
         self.auth = auth
 
-    @staticmethod
-    def from_env() -> ProxyConfig:
+    @classmethod
+    def from_env(cls) -> Self:
         proxy_info = aiohttp.helpers.proxies_from_env().get("http", None)
         if proxy_info is None:
             url, auth = None, None
         else:
             url, auth = proxy_info.proxy, proxy_info.proxy_auth
-        return ProxyConfig(url, auth)
+        return cls(url, auth)
 
 
 @dcs.dataclass
