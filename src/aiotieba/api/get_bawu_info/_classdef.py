@@ -109,15 +109,16 @@ class BawuInfo(TbErrorExt):
     @staticmethod
     def from_proto(data_proto: TypeMessage) -> Self:
         all_ = []
-        _dict: dict[int, list[UserInfo_bawu]] = {}
+        _dict: dict[BawuType, list[UserInfo_bawu]] = {}
         for r_proto in data_proto.bawu_team_info.bawu_team_list:
             for p in r_proto.role_info:
-                if not p.role_id:
+                bawu_type = BawuType(p.role_name)
+                if bawu_type is BawuType.UNKNOWN:
                     continue
 
                 user = UserInfo_bawu.from_proto(p)
                 all_.append(user)
-                _dict.setdefault(p.role_id, []).append(user)
+                _dict.setdefault(bawu_type, []).append(user)
 
         def extract(bawu_type: BawuType) -> list[UserInfo_bawu]:
             return _dict.get(bawu_type, [])

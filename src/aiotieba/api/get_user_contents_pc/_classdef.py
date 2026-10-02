@@ -344,31 +344,29 @@ class Forum_pcup:
     Attributes:
         fid (int): 贴吧id
         fname (str): 贴吧名
-        avatar (str): 贴吧头像链接
+
         member_num (int): 会员数
         post_num (int): 帖子数
-        slogan (str): 一句话简介
+
         is_liked (bool): 是否已关注
     """
 
     fid: int = 0
     fname: str = ""
-    avatar: str = dcs.field(default="", repr=False)
+
     member_num: int = 0
     post_num: int = 0
-    slogan: str = ""
+
     is_liked: bool = False
 
     @staticmethod
     def from_json(data_map: Mapping) -> Self:
         fid = data_map["id"]
         fname = data_map["name"]
-        avatar = data_map["avatar"]
         member_num = data_map["member_num"]
         post_num = data_map["post_num"]
-        slogan = data_map["slogan"]
         is_liked = bool(data_map["is_liked"])
-        return Forum_pcup(fid, fname, avatar, member_num, post_num, slogan, is_liked)
+        return Forum_pcup(fid, fname, member_num, post_num, is_liked)
 
     def __bool__(self) -> bool:
         return bool(self.fid)

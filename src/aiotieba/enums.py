@@ -225,11 +225,12 @@ class SearchGlobalType(enum.IntEnum):
     DESC = 5
 
 
-class BawuType(enum.IntEnum):
+class BawuType(enum.StrEnum):
     """
     吧务类型
 
     Note:
+        UNKNOWN 未知\n
         ADMIN 大吧主\n
         MANAGER 小吧主\n
         VIDEO_EDITOR 视频小编\n
@@ -240,34 +241,19 @@ class BawuType(enum.IntEnum):
         BROADCAST_EDITOR 广播小编
     """
 
-    ADMIN = 1
-    MANAGER = 2
-    VIDEO_EDITOR = 3
-    IMAGE_EDITOR = 4
-    JOURNAL_EDITOR = 5
-    JOURNAL_CHIEF_EDITOR = 6
-    VOICE_EDITOR = 20
-    BROADCAST_EDITOR = 26
+    UNKNOWN = "unknown"
+    ADMIN = "manager"
+    MANAGER = "assist"
+    VIDEO_EDITOR = "videoadmin"
+    IMAGE_EDITOR = "picadmin"
+    JOURNAL_EDITOR = "publication"
+    JOURNAL_CHIEF_EDITOR = "publication_editor"
+    VOICE_EDITOR = "voiceadmin"
+    BROADCAST_EDITOR = "broadcast_admin"
 
-    @property
-    def role_name(self) -> str:
-        """
-        服务端在请求参数中使用的角色名
-        """
-
-        return _BAWU_ROLE_NAMES[self]
-
-
-_BAWU_ROLE_NAMES = {
-    BawuType.ADMIN: "manager",
-    BawuType.MANAGER: "assist",
-    BawuType.VIDEO_EDITOR: "videoadmin",
-    BawuType.IMAGE_EDITOR: "picadmin",
-    BawuType.JOURNAL_EDITOR: "publication",
-    BawuType.JOURNAL_CHIEF_EDITOR: "publication_editor",
-    BawuType.VOICE_EDITOR: "voiceadmin",
-    BawuType.BROADCAST_EDITOR: "broadcast_admin",
-}
+    @classmethod
+    def _missing_(cls, _: object) -> BawuType:
+        return BawuType.UNKNOWN
 
 
 class BawuPermType(enum.Flag):

@@ -24,7 +24,7 @@ async def request(http_core: HttpCore, fid: int, user_name: str, bawu_type: Bawu
         ("fn", "-"),
         ("fid", fid),
         ("team_un", user_name),
-        ("type", bawu_type.role_name),
+        ("type", bawu_type),
         ("tbs", http_core.account.tbs),
     ]
 
