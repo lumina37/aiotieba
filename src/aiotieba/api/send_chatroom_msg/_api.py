@@ -213,7 +213,7 @@ async def request(
     level: int,
     is_vip: bool,
     glevel: int,
-    atdata: list[dict] = None,
+    atdata: list[dict] | None = None,
     robot=-1,
 ):
     request_data = await construct_request_data(

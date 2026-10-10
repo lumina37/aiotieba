@@ -1,8 +1,12 @@
 line-length = 120
 target-version = "py311"
+
+extend-exclude = ["*_pb2.py"]
+
 preview = true
 
 [lint]
+explicit-preview-rules = true
 select = [
     "F",
     "E",
@@ -16,13 +20,16 @@ select = [
     "C4",
     "FA",
     "ICN",
+    "ISC",
     "LOG",
     "G",
     "PIE",
+    "T10",
     "T20",
     "PT",
     "Q",
     "RSE",
+    "RUF",
     "SLOT",
     "TC",
     "PTH",
@@ -30,9 +37,20 @@ select = [
     "PERF",
     "FURB",
 ]
-ignore = ["A005", "E402", "E501", "E266"]
+
+ignore = [
+    "line-too-long",
+    "unsorted-dunder-slots",
+]
+allowed-confusables = ["，", "：", "（", "）"]
 
 [lint.per-file-ignores]
-"__init__.py" = ["F401"]
-"typing.py" = ["F401"]
-"*_pb2.py" = ["E712", "F401", "F821"]
+"__init__.py" = ["unused-import"]
+"typing.py" = ["unused-import"]
+
+[lint.isort]
+known-first-party = ["aiotieba"]
+
+[format]
+docstring-code-format = true
+line-ending = "lf"
