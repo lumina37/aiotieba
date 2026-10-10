@@ -1,9 +1,15 @@
+# yaml-language-server: $schema=https://squidfunk.github.io/mkdocs-material/schema.json
 site_name: aiotieba
 site_description: aiotieba开发文档
 site_url: https://aiotieba.cc/
 
+repo_name: lumina37/aiotieba
+repo_url: https://github.com/lumina37/aiotieba/
+edit_uri: edit/develop/docs/
+
 theme:
   name: material
+  language: zh
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
@@ -16,13 +22,24 @@ theme:
         icon: material/brightness-4
         name: Switch to light mode
   features:
-    - navigation.sections
+    # 导航
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.instant.progress
+    - navigation.tabs
+    - navigation.indexes
+    - navigation.top
+    - navigation.tracking
+    - navigation.footer
+    - toc.follow
+    # 搜索
     - search.suggest
     - search.highlight
-  language: zh
-
-repo_name: lumina37/aiotieba
-repo_url: https://github.com/lumina37/aiotieba/
+    - search.share
+    # 内容
+    - content.code.copy
+    - content.tooltips
+    - content.action.edit
 
 nav:
   - 介绍: index.md
@@ -79,21 +96,62 @@ nav:
           - tab_map: ref/classdef/tab_map.md
           - user_forum_info: ref/classdef/user_forum_info.md
 
+validation:
+  nav:
+    omitted_files: warn
+    not_found: warn
+    absolute_links: relative_to_docs
+  links:
+    not_found: warn
+    absolute_links: relative_to_docs
+    unrecognized_links: warn
+    anchors: warn
+
 markdown_extensions:
-  - md_in_html
+  # Python Markdown 官方扩展
+  - abbr
   - admonition
-  - codehilite:
-      css_class: highlight
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      permalink_title: 复制本节链接
+      toc_depth: 3
+  # PyMdown Extensions（mkdocs-material自带）
+  - pymdownx.betterem
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.superfences
+  - pymdownx.tilde
 
 plugins:
-  - search
+  - search:
+      lang: zh
   - mkdocstrings:
       handlers:
         python:
+          paths: [src]
           options:
+            docstring_style: google
+            members_order: source
             show_bases: false
             show_source: false
-            members_order: source
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            separate_signature: true
+            signature_crossrefs: true
+            show_signature_annotations: true
+            filters: ["!^_[^_]"]
 
 extra_css:
   - css/custom.css
