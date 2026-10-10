@@ -5,7 +5,7 @@ from aiotieba import ContentType
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=5.0)
-@pytest.mark.asyncio(loop_scope="session")
+@pytest.mark.asyncio
 async def test_Replys(client: tb.Client):
     replys = await client.get_replys()
 

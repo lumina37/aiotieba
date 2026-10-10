@@ -5,7 +5,7 @@ from aiotieba import ContentType
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=5.0)
-@pytest.mark.asyncio(loop_scope="session")
+@pytest.mark.asyncio
 async def test_get_user_posts(client: tb.Client):
     user_id = 4954297652
     postss = await client.get_user_posts(user_id)
