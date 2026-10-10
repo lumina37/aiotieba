@@ -15,19 +15,19 @@ on:
       - "docs/**"
       - "pyproject.toml"
       - ".github/workflows/Pages*"
+  workflow_dispatch:
 
 jobs:
   build:
+    name: Build
     runs-on: ubuntu-slim
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-        with:
-          ref: develop
 
       - name: Setup UV
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v10.3.0
 
       - name: Install dependencies
         run: uv sync --only-group docs
@@ -35,19 +35,21 @@ jobs:
       - name: Build
         run: uv run mkdocs build -d site
 
-      - name: Upload Artifact
+      - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
         with:
           path: site
 
   deploy:
+    name: Deploy
+    if: github.event_name != 'pull_request'
     needs: build
 
     runs-on: ubuntu-slim
 
     permissions:
-      pages: write
-      id-token: write
+      pages: write # publish the built site to the github-pages environment
+      id-token: write # mint the OIDC token that authorises the deployment
 
     environment:
       name: github-pages

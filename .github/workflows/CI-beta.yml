@@ -2,6 +2,12 @@ name: CI-beta
 
 on:
   workflow_dispatch:
+    inputs:
+      python-version:
+        description: "CPython version to test"
+        required: false
+        type: string
+        default: "3.16"
 
 jobs:
   test-beta:
@@ -10,9 +16,6 @@ jobs:
 
     environment: develop
 
-    env:
-      PYTHON_VERSION: "3.15"
-
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -20,12 +23,12 @@ jobs:
           ref: develop
 
       - name: Setup UV
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v10.3.0
+        with:
+          python-version: ${{ inputs.python-version }}
 
       - name: Install dependencies
-        run: |
-          uv python pin ${{ env.PYTHON_VERSION }}
-          uv sync
+        run: uv sync
 
       - name: Run tests
         env:

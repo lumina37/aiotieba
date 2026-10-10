@@ -3,7 +3,7 @@ name: Publish
 on:
   push:
     tags:
-      - "*"
+      - "v*"
   workflow_dispatch:
 
 jobs:
@@ -17,34 +17,42 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-        
+
       - name: Setup UV
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v10.3.0
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v4.3.0
+        uses: pypa/cibuildwheel@v4.3.1
         with:
           config-file: "cibuildwheel.toml"
 
-      - uses: actions/upload-artifact@v7
+      - name: Upload wheels
+        uses: actions/upload-artifact@v7
         with:
           name: artifact-wheels-${{ matrix.os }}
           path: ./wheelhouse/*.whl
+          if-no-files-found: error
 
   build_sdist:
     name: Build source distribution
     runs-on: ubuntu-slim
+
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Build sdist
-        run: pipx run build --sdist
+      - name: Setup UV
+        uses: astral-sh/setup-uv@v10.3.0
 
-      - uses: actions/upload-artifact@v7
+      - name: Build sdist
+        run: uv build --sdist
+
+      - name: Upload sdist
+        uses: actions/upload-artifact@v7
         with:
           name: artifact-source
           path: ./dist/*.tar.gz
+          if-no-files-found: error
 
   publish:
     name: Publish
@@ -55,28 +63,22 @@ jobs:
       name: pypi
 
     permissions:
-      id-token: write
+      id-token: write # mint the OIDC token for PyPI Trusted Publishing
 
     steps:
-      - name: Merge artifacts
-        uses: actions/upload-artifact/merge@v7
-        with:
-          name: artifact
-          pattern: artifact-*
-          delete-merged: true
-
       - name: Download artifacts
         uses: actions/download-artifact@v8
         with:
-          name: artifact
+          pattern: artifact-*
           path: dist
+          merge-multiple: true
 
       - name: Publish to PyPI
-        if: ${{ github.event_name == 'push' }}
+        if: github.event_name == 'push'
         uses: pypa/gh-action-pypi-publish@release/v1
 
       - name: Publish to TestPyPI
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+        if: github.event_name == 'workflow_dispatch'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
