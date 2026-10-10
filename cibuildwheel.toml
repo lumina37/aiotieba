@@ -1,5 +1,6 @@
 [tool.cibuildwheel]
-build = "cp311* cp312* cp313* cp314* cp315* pp311*"
-skip = "*-win32 *_i686 *_s390x *_ppc64le"
-enable = ["pypy", "pypy-eol"]
+build = "cp3{11..15}*"
+archs = ["auto64"]
 build-frontend = "uv"
+# Smoke-test the compiled C extension in every built wheel
+test-command = "python -c \"from aiotieba.helper.crypto import rc4_42; assert rc4_42('d0337b3b3d597c5f87a1c0c37139d87b', b'6723280942424242').hex() == '9fab5514a70eb66bc47756f2484e2b2e'\""
