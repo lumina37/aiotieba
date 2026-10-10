@@ -1,27 +1,33 @@
 [project]
 name = "aiotieba"
-version = "4.8.0"
+version = "4.8.1a0"
 description = "Asynchronous I/O Client for Baidu Tieba"
 authors = [{ name = "lumina37", email = "starry.qvq@gmail.com" }]
 urls = { Repository = "https://github.com/lumina37/aiotieba/", Documentation = "https://aiotieba.cc/" }
 readme = "README.md"
+license = "Unlicense"
 keywords = ["baidu", "tieba"]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Framework :: AsyncIO",
   "Intended Audience :: Developers",
-  "License :: OSI Approved :: The Unlicense (Unlicense)",
   "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
   "Programming Language :: Python :: 3.15",
   "Topic :: Internet :: WWW/HTTP :: Session",
+  "Typing :: Typed",
 ]
 requires-python = ">=3.11,<3.16"
 dependencies = [
-  "aiohttp>=3.14.0,<4",
+  "aiohttp>=3.9,<4;python_version=='3.11'",
+  "aiohttp>=3.10,<4;python_version=='3.12'",
+  "aiohttp>=3.11,<4;python_version=='3.13'",
+  "aiohttp>=3.13.1,<4;python_version=='3.14'",
+  "aiohttp>=3.14.4,<4;python_version>='3.15'",
   "beautifulsoup4>=4.7.1,<5",
   "lxml>=4.9.2,<7;python_version=='3.11'",
   "lxml>=4.9.3,<7;python_version=='3.12'",
@@ -51,13 +57,18 @@ speedup = [
 dev = ["pytest==9.1.1", "pytest-asyncio==1.4.0", "pytest-rerunfailures==16.7"]
 docs = ["mkdocs-material", "mkdocstrings[python]"]
 
+[tool.uv]
+default-groups = ["dev"]
+
 [build-system]
 requires = ["scikit-build-core>=1.0,<1.2"]
 build-backend = "scikit_build_core.build"
 
 [tool.scikit-build]
-sdist.include = ["README.md", "pyproject.toml"]
-sdist.exclude = [".*", "docs", "tests", "*.proto", "*.yml", "*.md", "*.toml", "*.ini"]
+minimum-version = "build-system.requires"
+build-dir = "build/{wheel_tag}"
+sdist.include = ["README.md", "pyproject.toml", "LICENSE"]
+sdist.exclude = [".*", "docs", "tests", "site*", "*.proto", "*.yml", "*.md", "*.toml", "*.ini", "*.so", "*.pyd"]
 wheel.exclude = ["*.c", "*.h", "*.txt"]
 
 [[tool.scikit-build.generate]]

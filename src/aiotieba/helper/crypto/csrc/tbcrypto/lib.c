@@ -102,7 +102,7 @@ PyObject* enuid(PyObject* Py_UNUSED(self), PyObject* const* args, Py_ssize_t nar
     return PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, dst, TBC_ENUID_SIZE);
 }
 
-static PyMethodDef crypto_methods[] = {
+static const PyMethodDef crypto_methods[] = {
     {"cuid_galaxy2", (PyCFunction)cuid_galaxy2, METH_FASTCALL, NULL},
     {"c3_aid", (PyCFunction)c3_aid, METH_FASTCALL, NULL},
     {"rc4_42", (PyCFunction)rc4_42, METH_FASTCALL, NULL},
@@ -110,17 +110,30 @@ static PyMethodDef crypto_methods[] = {
     {NULL, NULL, 0, NULL},
 };
 
-static PyModuleDef crypto_module = {PyModuleDef_HEAD_INIT, "crypto", NULL, -1, crypto_methods};
-
-PyMODINIT_FUNC PyInit_crypto(void) {
-    PyObject* mod = PyModule_Create(&crypto_module);
-    if (mod == NULL) {
-        return NULL;
-    }
-
-#ifdef Py_GIL_DISABLED
-    PyUnstable_Module_SetGIL(mod, Py_MOD_GIL_NOT_USED);
-#endif
-
-    return mod;
+static int exec_crypto(PyObject* Py_UNUSED(module)) {
+    return 0; // no dynamic initialization needed
 }
+
+static const PyModuleDef_Slot crypto_slots[] = {
+    {Py_mod_exec, (void*)exec_crypto},
+#if PY_VERSION_HEX >= 0x030C0000
+    // this module keeps no mutable global state, so it is safe to share between interpreters
+    {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED},
+#endif
+#if PY_VERSION_HEX >= 0x030D0000
+    // only takes effect on free-threaded builds
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#endif
+    {0, NULL},
+};
+
+static PyModuleDef crypto_module = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "crypto",
+    .m_doc = NULL,
+    .m_size = 0, // no per-module state; required for the Py_mod_gil declaration
+    .m_methods = crypto_methods,
+    .m_slots = (PyModuleDef_Slot*)crypto_slots,
+};
+
+PyMODINIT_FUNC PyInit_crypto(void) { return PyModuleDef_Init(&crypto_module); }
