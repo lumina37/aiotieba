@@ -4,7 +4,7 @@ import aiotieba as tb
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=5.0)
-@pytest.mark.asyncio(loop_scope="session")
+@pytest.mark.asyncio
 async def test_Threads(client: tb.Client):
     fname = "starry"
     threads = await client.get_threads(fname)

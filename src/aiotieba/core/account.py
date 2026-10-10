@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import random
-from typing import Self
+from typing import ClassVar, Self
 
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -54,7 +54,7 @@ class Account:
         "_aes_cbc_chiper",
     ]
 
-    __serialize__ = [
+    __serialize__: ClassVar[list[str]] = [
         "_BDUSS",
         "_STOKEN",
         "_tbs",

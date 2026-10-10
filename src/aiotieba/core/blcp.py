@@ -68,10 +68,10 @@ class BLCPCore:
         self,
         proxy: ProxyConfig | None = None,
         timeout: TimeoutConfig | None = None,
-        loop: asyncio.AbstractEventLoop = None,
-        net_core: NetCore = None,
-        account: Account = None,
-        user: UserInfo = None,
+        loop: asyncio.AbstractEventLoop | None = None,
+        net_core: NetCore | None = None,
+        account: Account | None = None,
+        user: UserInfo | None = None,
         max_queue_length: int = 100,
     ) -> None:
         if not isinstance(proxy, ProxyConfig):
@@ -410,7 +410,7 @@ class BLCPCore:
             self.waiter.set_done(msg.correlationId, msg)
             # TODO: 加上callbacks以处理服务端主动发送的消息，如群聊消息等。获取群聊消息推送需要先发包绑定群聊。
             if msg.isNotify:
-                rpc, lcm = ClientBLCPResponses.parseBLCPResponse(
+                _rpc, lcm = ClientBLCPResponses.parseBLCPResponse(
                     msg.toBytes()
                 )  # TODO:优化。这里在解码后又编码再解码了一次
                 if self.message_queue.full():
@@ -582,9 +582,9 @@ class BLCPData:
         self,
         serviceId: int,
         methodId: int,
-        RpcBody: bytes = None,
-        LcmBody: bytes = None,
-        timestamp: int = None,
+        RpcBody: bytes | None = None,
+        LcmBody: bytes | None = None,
+        timestamp: int | None = None,
         ifRequest: bool = True,
         isNotify: bool = False,
     ):
@@ -668,7 +668,7 @@ class ClientBLCPResponses:
         pass
 
     @staticmethod
-    def parseBLCPResponse(receivedBytes: bytes) -> (Rpc_pb2.RpcMeta, Lcm_pb2.RpcData):
+    def parseBLCPResponse(receivedBytes: bytes) -> tuple[Rpc_pb2.RpcMeta, Lcm_pb2.RpcData]:
         if len(receivedBytes) < 4:
             return None, None
         if receivedBytes[0:4] != b"lcp\x01":
@@ -772,7 +772,7 @@ class BLCPWaiter:
         for ws_resp in self.waiter.values():
             ws_resp.future.cancel()
 
-    def new(self, req_id: int = None) -> BLCPResponse:
+    def new(self, req_id: int | None = None) -> BLCPResponse:
         """
         创建一个可用于等待数据的响应对象
 

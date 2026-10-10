@@ -4,7 +4,7 @@ import aiotieba as tb
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=5.0)
-@pytest.mark.asyncio(loop_scope="session")
+@pytest.mark.asyncio
 async def test_Posts(client: tb.Client):
     posts = await client.get_posts(8211419000)
 
@@ -154,7 +154,7 @@ async def test_Posts(client: tb.Client):
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=5.0)
-@pytest.mark.asyncio(loop_scope="session")
+@pytest.mark.asyncio
 async def test_ShareThread_pt(client: tb.Client):
     posts = await client.get_posts(8213449397)
 

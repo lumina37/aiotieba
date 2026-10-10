@@ -132,7 +132,7 @@ from .logging import get_logger as LOG
 
 if TYPE_CHECKING:
     import asyncio
-    import datetime
+    import datetime as dt
     from collections.abc import Iterable
 
 
@@ -1634,8 +1634,8 @@ class Client:
         *,
         search_value: str = "",
         search_type: BawuSearchType = BawuSearchType.USER,
-        start_dt: datetime.datetime | None = None,
-        end_dt: datetime.datetime | None = None,
+        start_dt: dt.datetime | None = None,
+        end_dt: dt.datetime | None = None,
         op_type: int = 0,
     ) -> get_bawu_userlogs.BawuUserLogs:
         """
@@ -1675,8 +1675,8 @@ class Client:
         *,
         search_value: str = "",
         search_type: BawuSearchType = BawuSearchType.USER,
-        start_dt: datetime.datetime | None = None,
-        end_dt: datetime.datetime | None = None,
+        start_dt: dt.datetime | None = None,
+        end_dt: dt.datetime | None = None,
         op_type: int = 0,
     ) -> get_bawu_postlogs.BawuPostLogs:
         """
@@ -2711,7 +2711,7 @@ class Client:
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def send_chatroom_msg(
-        self, chatroom_id: int, fid: int, text: str, atuser_ids: Iterable[int] = None, robot: int = -1
+        self, chatroom_id: int, fid: int, text: str, atuser_ids: Iterable[int] | None = None, robot: int = -1
     ) -> BoolResponse:
         """
         向吧群发送信息，仅限简单文本。如需要@他人需要指定atuser_ids，如需与bot交互需要指定atuser_ids和robot

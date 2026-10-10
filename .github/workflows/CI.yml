@@ -20,11 +20,18 @@ on:
       - "tests/**"
       - ".github/workflows/CI.yml"
   workflow_dispatch:
+    inputs:
+      pr:
+        description: "要测试的PR编号"
+        required: false
+        type: string
 
 jobs:
   test:
     name: Test
     runs-on: ubuntu-slim
+
+    if: github.event_name != 'workflow_dispatch' || !inputs.pr
 
     environment: develop
 
@@ -35,16 +42,63 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-        with:
-          ref: develop
 
       - name: Setup UV
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v10.3.0
+        with:
+          python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
+        run: uv sync
+
+      - name: Run tests
+        env:
+          TB_BDUSS: ${{ secrets.BDUSS }}
+          TB_STOKEN: ${{ secrets.STOKEN }}
+        run: uv run pytest
+
+
+  test-pr:
+    name: Test PR #${{ inputs.pr }}
+    runs-on: ubuntu-slim
+
+    if: github.event_name == 'workflow_dispatch' && inputs.pr != ''
+
+    environment: develop
+
+    permissions:
+      contents: read
+      pull-requests: read
+
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v7
+        with:
+          ref: refs/pull/${{ inputs.pr }}/head
+
+      - name: Identify PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ inputs.pr }}
         run: |
-          uv python pin ${{ matrix.python-version }}
-          uv sync
+          INFO=$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" \
+            --json number,title,author,headRefOid)
+          echo "$INFO"
+          EXPECTED=$(echo "$INFO" | jq -r .headRefOid)
+          ACTUAL=$(git rev-parse HEAD)
+          echo "checked out: $ACTUAL"
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "::error::checked out $ACTUAL but PR #$PR head is $EXPECTED"
+            exit 1
+          fi
+
+      - name: Setup UV
+        uses: astral-sh/setup-uv@v10.3.0
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: uv sync
 
       - name: Run tests
         env:

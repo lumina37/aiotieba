@@ -12,7 +12,7 @@ from ...enums import BawuSearchType
 from ._classdef import BawuUserLogs
 
 if TYPE_CHECKING:
-    import datetime
+    import datetime as dt
 
     from ...core import HttpCore
 
@@ -30,8 +30,8 @@ async def request(
     pn: int,
     search_value: str,
     search_type: BawuSearchType,
-    start_dt: datetime.datetime | None,
-    end_dt: datetime.datetime | None,
+    start_dt: dt.datetime | None,
+    end_dt: dt.datetime | None,
     op_type: int,
 ) -> BawuUserLogs:
     params = [
