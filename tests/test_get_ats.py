@@ -15,7 +15,7 @@ async def test_Ats(client: tb.Client):
     # UserInfo_at
     user = at.user
     assert user.user_id > 0
-    assert user.portrait != ""
+    assert user.portrait.startswith("tb.")
     assert user.nick_name_new != ""
     assert user.nick_name == user.nick_name_new
     assert user.show_name == user.nick_name_new

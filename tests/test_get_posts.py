@@ -23,7 +23,7 @@ async def test_Posts(client: tb.Client):
     # UserInfo_pt
     user = thread.user
     assert user.user_id > 0
-    assert user.portrait != ""
+    assert user.portrait.startswith("tb.")
     assert user.user_name != ""
     assert user.nick_name_new != ""
     assert user.nick_name == user.nick_name_new
@@ -71,7 +71,7 @@ async def test_Posts(client: tb.Client):
     # UserInfo_p
     user = post.user
     assert user.user_id > 0
-    assert user.portrait != ""
+    assert user.portrait.startswith("tb.")
     assert user.user_name != ""
     assert user.nick_name_new != ""
     assert user.show_name == user.nick_name_new
@@ -102,7 +102,7 @@ async def test_Posts(client: tb.Client):
     frag = post.contents.ats[0]
     assert frag.text != ""
     assert frag.user_id > 0
-    assert frag.portrait != ""
+    assert frag.portrait.startswith("tb.")
 
     # FragVoice
     frag = post.contents.voice

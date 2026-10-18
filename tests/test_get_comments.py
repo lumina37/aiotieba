@@ -22,7 +22,7 @@ async def test_Comments(client: tb.Client):
     # UserInfo_ct
     user = thread.user
     assert user.user_id > 0
-    assert user.portrait != ""
+    assert user.portrait.startswith("tb.")
     assert user.user_name != ""
     assert user.nick_name_new != ""
     assert user.nick_name == user.nick_name_new
@@ -47,7 +47,7 @@ async def test_Comments(client: tb.Client):
     # UserInfo_cp
     user = post.user
     assert user.user_id > 0
-    assert user.portrait != ""
+    assert user.portrait.startswith("tb.")
     assert user.user_name != ""
     assert user.nick_name_new != ""
     assert user.nick_name == user.nick_name_new
@@ -77,7 +77,7 @@ async def test_Comments(client: tb.Client):
     frag = post.contents.ats[0]
     assert frag.text != ""
     assert frag.user_id > 0
-    assert frag.portrait != ""
+    assert frag.portrait.startswith("tb.")
 
     # FragVoice
     frag = post.contents.voice
@@ -106,7 +106,7 @@ async def test_Comments(client: tb.Client):
     # UserInfo_c
     user = comment.user
     assert user.user_id > 0
-    assert user.portrait != ""
+    assert user.portrait.startswith("tb.")
     assert user.user_name != ""
     assert user.nick_name_new != ""
     assert user.nick_name == user.nick_name_new
@@ -146,7 +146,7 @@ async def test_Comments(client: tb.Client):
     frag = comment.contents.ats[0]
     assert frag.text != ""
     assert frag.user_id > 0
-    assert frag.portrait != ""
+    assert frag.portrait.startswith("tb.")
 
     # FragImage
     frag = comment_with_image.contents.imgs[0]

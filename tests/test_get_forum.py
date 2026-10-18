@@ -26,7 +26,7 @@ async def test_Forum(client: tb.Client):
 
     admin = forum.admins[0]
     assert admin.user_id > 0
-    assert admin.portrait != ""
+    assert admin.portrait.startswith("tb.")
     assert admin.user_name != ""
     assert bool(admin) is True
     assert str(admin) != ""

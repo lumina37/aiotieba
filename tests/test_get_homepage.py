@@ -22,7 +22,7 @@ async def test_Homepage(client: tb.Client):
     user = homepage.user
     assert user.user_id == thread.user.user_id
     assert user.user_id > 0
-    assert user.portrait != ""
+    assert user.portrait.startswith("tb.")
     assert user.user_name != ""
     assert user.nick_name_new != ""
     assert user.tieba_uid > 0
