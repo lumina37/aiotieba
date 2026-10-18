@@ -11,7 +11,14 @@ message UpdateClientInfoResIdl {
             int32 groupType = 20;
             int64 lastMsgId = 21;
         }
+        message UserInfo {
+            int64 userId = 1;
+            string userName = 2;
+            string portrait = 4;
+        }
         repeated GroupInfo groupInfo = 1;
+        UserInfo userInfo = 2;
+        int64 isUserAvailable = 6;
     }
     DataRes data = 2;
 }

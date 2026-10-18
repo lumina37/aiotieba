@@ -1,8 +1,12 @@
 from __future__ import annotations
 
 import dataclasses as dcs
+from typing import TYPE_CHECKING, Self
 
 from ...enums import Gender, PrivLike, PrivReply
+
+if TYPE_CHECKING:
+    from .common import TypeMessage
 
 
 @dcs.dataclass
@@ -107,3 +111,46 @@ class UserInfo:
             return f"{self.nick_name}/{self.portrait}"
         else:
             return str(self.user_id)
+
+
+@dcs.dataclass
+class UserInfo_ws:
+    """
+    websocket接口中的用户信息
+
+    Attributes:
+        user_id (int): user_id
+        portrait (str): portrait
+        user_name (str): 用户名
+
+        log_name (str): 用于在日志中记录用户信息
+    """
+
+    user_id: int = 0
+    portrait: str = ""
+    user_name: str = ""
+
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
+        user_id = data_proto.userId
+        portrait = data_proto.portrait
+        if "?" in portrait:
+            portrait = portrait[:-13]
+        user_name = data_proto.userName
+        return cls(user_id, portrait, user_name)
+
+    def __str__(self) -> str:
+        return self.user_name or self.portrait or str(self.user_id)
+
+    def __eq__(self, obj: UserInfo_ws) -> bool:
+        return self.user_id == obj.user_id
+
+    def __hash__(self) -> int:
+        return self.user_id
+
+    def __bool__(self) -> bool:
+        return bool(self.user_id)
+
+    @property
+    def log_name(self) -> str:
+        return str(self)

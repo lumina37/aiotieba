@@ -8,9 +8,9 @@ from cryptography.hazmat.primitives.asymmetric.padding import PKCS1v15
 from cryptography.hazmat.primitives.serialization import load_der_public_key
 
 from ...const import LATEST_VERSION
-from ...exception import TiebaServerError
+from ...exception import TiebaServerError, TiebaValueError
 from ...helper import pack_json
-from ._classdef import WsMsgGroupInfo
+from ._classdef import InitWsInfo
 from .protobuf import UpdateClientInfoReqIdl_pb2, UpdateClientInfoResIdl_pb2
 
 if TYPE_CHECKING:
@@ -47,22 +47,27 @@ def pack_proto(account: Account) -> bytes:
     return req_proto.SerializeToString()
 
 
-def parse_body(body: bytes) -> list[WsMsgGroupInfo]:
+def parse_body(body: bytes) -> InitWsInfo:
     res_proto = UpdateClientInfoResIdl_pb2.UpdateClientInfoResIdl()
     res_proto.ParseFromString(body)
 
     if code := res_proto.error.errorno:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
-    groups = [WsMsgGroupInfo.from_proto(p) for p in res_proto.data.groupInfo]
+    data_proto = res_proto.data
+    user_id = data_proto.userInfo.userId
+    if not user_id or data_proto.isUserAvailable != user_id:
+        raise TiebaValueError(f"isUserAvailable({data_proto.isUserAvailable}) userId({user_id})")
 
-    return groups
+    info = InitWsInfo.from_proto(res_proto)
+
+    return info
 
 
-async def request(ws_core: WsCore) -> list[WsMsgGroupInfo]:
+async def request(ws_core: WsCore) -> InitWsInfo:
     data = pack_proto(ws_core.account)
 
     resp = await ws_core.send(data, CMD, compress=False, encrypt=False)
-    groups = parse_body(await resp.read())
+    info = parse_body(await resp.read())
 
-    return groups
+    return info

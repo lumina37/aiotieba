@@ -1,18 +1,12 @@
-.*/
-!.agent/
-!.github/
-*_cache/
-*.py[cd]
 __pycache__
+*.pyd
 
 log/
 dist/
+note/
 *build*/
 
 .python-version
 *.lock
 
 /*.py
-account.toml
-database.toml
-update.md

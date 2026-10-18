@@ -278,13 +278,18 @@ class Client:
     async def __upload_sec_key(self) -> None:
         from .api import init_websocket
 
-        groups = await init_websocket.request(self._ws_core)
+        info = await init_websocket.request(self._ws_core)
 
         mid_manager = self._ws_core.mid_manager
-        for group in groups:
+        for group in info.groups:
             if group.group_type == GroupType.PRIVATE_MSG:
                 mid_manager.priv_gid = group.group_id
             mid_manager.update_msg_id(group.group_id, group.last_msg_id)
+
+        user = info.user
+        self._user.user_id = user.user_id
+        self._user.user_name = user.user_name
+        self._user.portrait = user.portrait
 
         self._ws_core._status = WsStatus.OPEN
 

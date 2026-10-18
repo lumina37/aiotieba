@@ -18,5 +18,5 @@ from .contents import (
     TypeFragText,
     TypeFragTiebaPlus,
 )
-from .user import UserInfo
+from .user import UserInfo, UserInfo_ws
 from .vote import VoteInfo
