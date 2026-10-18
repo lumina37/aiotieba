@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import socket
 import ssl
@@ -117,6 +118,7 @@ from .enums import (
     CommentSortType,
     Gender,
     GroupType,
+    MsgType,
     PostSortType,
     RankForumType,
     ReqUInfo,
@@ -275,7 +277,6 @@ class Client:
 
     async def __upload_sec_key(self) -> None:
         from .api import init_websocket
-        from .core.websocket import MsgIDPair
 
         groups = await init_websocket.request(self._ws_core)
 
@@ -283,7 +284,7 @@ class Client:
         for group in groups:
             if group.group_type == GroupType.PRIVATE_MSG:
                 mid_manager.priv_gid = group.group_id
-        mid_manager.gid2mid |= {g.group_id: MsgIDPair(g.last_msg_id, g.last_msg_id) for g in groups}
+            mid_manager.update_msg_id(group.group_id, group.last_msg_id)
 
         self._ws_core._status = WsStatus.OPEN
 
@@ -2671,10 +2672,13 @@ class Client:
         else:
             user_id = id_
 
-        msg_id = await send_msg.request(self._ws_core, user_id, content)
+        result = await send_msg.request(self._ws_core, user_id, content)
 
         mid_manager = self._ws_core.mid_manager
-        mid_manager.update_msg_id(mid_manager.priv_gid, msg_id)
+        user_id = result.to_uid or user_id
+        mid_manager.update_local_msg_id(user_id, result.local_msg_id)
+        if result.group_id and result.to_user_type == 0:
+            mid_manager.priv_gid = result.group_id
 
         return BoolResponse()
 
@@ -2691,7 +2695,16 @@ class Client:
             BoolResponse: True成功 False失败
         """
 
-        return await set_msg_readed.request(self._ws_core, message)
+        result = await set_msg_readed.request(self._ws_core, message)
+
+        mid_manager = self._ws_core.mid_manager
+        user_id = result.to_uid or message.user.user_id
+        if result.read_msg_id:
+            mid_manager.update_sent_msg_id(user_id, result.read_msg_id)
+        if result.group_id and result.to_user_type == 0:
+            mid_manager.priv_gid = result.group_id
+
+        return BoolResponse()
 
     @handle_exception(get_group_msg.WsMsgGroups)
     @_force_websocket
@@ -2707,7 +2720,34 @@ class Client:
             WsMsgGroups: websocket消息组列表
         """
 
-        return await get_group_msg.request(self._ws_core, group_ids, get_type)
+        groups = await get_group_msg.request(self._ws_core, group_ids, get_type)
+        if groups.err is not None:
+            return groups
+
+        mid_manager = self._ws_core.mid_manager
+
+        for group in groups:
+            if group.group_type != GroupType.PRIVATE_MSG:
+                continue
+
+            for message in group.messages:
+                user_id = message.user.user_id
+                if not user_id:
+                    continue
+
+                mid_manager.update_pulled_msg_id(user_id, message.msg_id)
+
+                if message.msg_type != MsgType.READED:
+                    continue
+
+                content: dict = json.loads(message.text)
+                if int(content.get("eventId", 0)) != 22001:
+                    continue
+
+                read_msg_id = int(content["eventParam"]["readMsgId"])
+                mid_manager.update_read_msg_id(user_id, read_msg_id)
+
+        return groups
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def send_chatroom_msg(

@@ -3,7 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from ...enums import MsgType
-from ...exception import BoolResponse, TiebaServerError
+from ...exception import TiebaServerError
+from ._classdef import SetMsgReadedResult
 from .protobuf import CommitReceivedPmsgReqIdl_pb2, CommitReceivedPmsgResIdl_pb2
 
 if TYPE_CHECKING:
@@ -23,20 +24,24 @@ def pack_proto(user_id: int, group_id: int, msg_id: int) -> bytes:
     return req_proto.SerializeToString()
 
 
-def parse_body(body: bytes) -> None:
+def parse_body(body: bytes) -> SetMsgReadedResult:
     res_proto = CommitReceivedPmsgResIdl_pb2.CommitReceivedPmsgResIdl()
     res_proto.ParseFromString(body)
 
     if code := res_proto.error.errorno:
         raise TiebaServerError(code, res_proto.error.errmsg)
 
+    result = SetMsgReadedResult.from_proto(res_proto.data)
 
-async def request(ws_core: WsCore, message: WsMessage) -> BoolResponse:
+    return result
+
+
+async def request(ws_core: WsCore, message: WsMessage) -> SetMsgReadedResult:
     user_id = message.user.user_id
     msg_id = message.msg_id
     data = pack_proto(user_id, ws_core.mid_manager.priv_gid, msg_id)
 
     resp = await ws_core.send(data, CMD)
-    parse_body(await resp.read())
+    result = parse_body(await resp.read())
 
-    return BoolResponse()
+    return result
