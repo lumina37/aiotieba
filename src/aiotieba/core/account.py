@@ -29,6 +29,7 @@ class Account:
         cuid (str): 例:baidutiebaappe4200716-58a8-4170-af15-ea7edeb8e513
         cuid_galaxy2 (str): 例:A3ED2D7B9CFC28E8934A3FBD3A9579C7|VZ5FKB5XS
         c3_aid (str): 例:A00-ZNU3O3EP74D727LMQY745CZSGZQJQZGP-3JXCKC7X
+        baidu_id (str): 例:1A2B3C4D5E6F708192A3B4C5D6E7F809:FG=1
         z_id (str): z_id
         aes_ecb_sec_key (bytes): 供贴吧AES-ECB加密使用的随机密码 长度为31字节
         aes_ecb_chiper (Any): AES-ECB加密器
@@ -47,6 +48,7 @@ class Account:
         "_cuid",
         "_cuid_galaxy2",
         "_c3_aid",
+        "_baidu_id",
         "_z_id",
         "_aes_ecb_sec_key",
         "_aes_ecb_chiper",
@@ -65,6 +67,7 @@ class Account:
         "_cuid",
         "_cuid_galaxy2",
         "_c3_aid",
+        "_baidu_id",
         "_z_id",
         "_aes_ecb_sec_key",
         "_aes_cbc_sec_key",
@@ -82,6 +85,7 @@ class Account:
         self._cuid: str = None
         self._cuid_galaxy2: str = None
         self._c3_aid: str = None
+        self._baidu_id: str = None
         self._z_id: str = None
         self._aes_ecb_sec_key: bytes = None
         self._aes_ecb_chiper = None
@@ -355,6 +359,27 @@ class Account:
     @c3_aid.setter
     def c3_aid(self, new_c3_aid: str) -> None:
         self._c3_aid = new_c3_aid
+
+    @property
+    def baidu_id(self) -> str:
+        """
+        返回一个可作为请求参数的baidu_id
+
+        Returns:
+            str
+
+        Examples:
+            1A2B3C4D5E6F708192A3B4C5D6E7F809:FG=1
+
+        Note:
+            在初始化后该属性便不会再发生变化
+        """
+
+        return self._baidu_id
+
+    @baidu_id.setter
+    def baidu_id(self, new_baidu_id: str) -> None:
+        self._baidu_id = new_baidu_id
 
     @property
     def z_id(self) -> str:

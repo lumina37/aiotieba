@@ -78,6 +78,7 @@ from .api import (
     get_user_forum_info,
     good,
     handle_unblock_appeals,
+    init_baidu_id,
     init_z_id,
     login,
     move,
@@ -372,6 +373,13 @@ class Client:
 
         z_id = await init_z_id.request(self._http_core)
         self.account.z_id = z_id
+
+    async def __init_baidu_id(self) -> None:
+        if self.account.baidu_id:
+            return
+
+        baidu_id = await init_baidu_id.request(self._http_core)
+        self.account.baidu_id = baidu_id
 
     @handle_exception(get_forum.Forum)
     async def get_forum(self, fname_or_fid: str | int) -> get_forum.Forum:
