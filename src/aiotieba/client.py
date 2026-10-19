@@ -4,6 +4,7 @@ import json
 import logging
 import socket
 import ssl
+from functools import wraps
 from typing import TYPE_CHECKING, Literal
 
 import aiohttp
@@ -108,7 +109,7 @@ from .api import (
 )
 from .api._classdef import UserInfo
 from .config import ProxyConfig, TimeoutConfig
-from .const import LATEST_VERSION, LEGACY_VERSION
+from .const import CHAT_VERSION, LAST_REPLYERS_VERSION, LATEST_VERSION, LEGACY_VERSION, USER_POSTS_VERSION
 from .core import Account, BLCPCore, HttpCore, NetCore, WsCore
 from .enums import (
     BawuPermType,
@@ -138,25 +139,31 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
 
-def _try_websocket(func):
-    async def awrapper(self: Client, *args, **kwargs):
-        if self._try_ws:
-            await self.init_websocket()
-        return await func(self, *args, **kwargs)
+def _try_websocket(client_version: str = LATEST_VERSION):
+    def decorator(func):
+        @wraps(func)
+        async def awrapper(self: Client, *args, **kwargs):
+            if self._try_ws:
+                await self.init_websocket(client_version)
+            return await func(self, *args, **kwargs)
 
-    awrapper.__name__ = func.__name__
+        return awrapper
 
-    return awrapper
+    return decorator
 
 
-def _force_websocket(func):
-    async def awrapper(self: Client, *args, **kwargs):
-        await self.init_websocket()
-        return await func(self, *args, **kwargs)
+def _force_websocket(client_version: str = LATEST_VERSION):
+    def decorator(func):
+        @wraps(func)
+        async def awrapper(self: Client, *args, **kwargs):
+            ok = await self.init_websocket(client_version)
+            if ok.err is not None:
+                raise ok.err
+            return await func(self, *args, **kwargs)
 
-    awrapper.__name__ = func.__name__
+        return awrapper
 
-    return awrapper
+    return decorator
 
 
 class Client:
@@ -179,7 +186,7 @@ class Client:
         "_try_ws",
         "_connector",
         "_http_core",
-        "_ws_core",
+        "_ws_cores",
         "_user",
         "_blcp_core",
     ]
@@ -232,13 +239,14 @@ class Client:
 
         net_core = NetCore(connector, self._proxy, self._timeout)
         self._http_core = HttpCore(self._account, net_core)
-        self._ws_core = WsCore(self._account, net_core)
+        self._ws_cores: dict[str, WsCore] = {}
         self._blcp_core = BLCPCore(account=self._account, net_core=net_core, user=self._user)
 
         return self
 
     async def __aexit__(self, exc_type=None, exc_val=None, exc_tb=None) -> None:
-        await self._ws_core.close()
+        for ws_core in self._ws_cores.values():
+            await ws_core.close()
         await self._connector.close()
 
     def __hash__(self) -> int:
@@ -254,33 +262,48 @@ class Client:
     @account.setter
     def account(self, new_account: Account) -> None:
         self._http_core.set_account(new_account)
-        self._ws_core.set_account(new_account)
+        for ws_core in self._ws_cores.values():
+            ws_core.set_account(new_account)
 
     @handle_exception(BoolResponse)
-    async def init_websocket(self) -> BoolResponse:
+    async def init_websocket(self, client_version: str = LATEST_VERSION) -> BoolResponse:
         """
-        初始化websocket
+        初始化指定版本的websocket
+
+        Args:
+            client_version (str, optional): 客户端版本. Defaults to LATEST_VERSION.
 
         Returns:
             BoolResponse: True无须执行 False失败
         """
 
-        if self._ws_core.status == WsStatus.CLOSED:
+        ws_core = self._ws_cores.get(client_version)
+        if ws_core is None:
+            ws_core = self._ws_cores[client_version] = WsCore(self._account, self._http_core.net_core, client_version)
+
+        if ws_core.status == WsStatus.CLOSED:
             try:
-                await self._ws_core.connect()
-                await self.__upload_sec_key()
+                await ws_core.connect()
+                await self.__upload_sec_key(ws_core)
             except BaseException:
-                self._ws_core._status = WsStatus.CLOSED
+                ws_core._status = WsStatus.CLOSED
                 raise
 
         return BoolResponse()
 
-    async def __upload_sec_key(self) -> None:
+    def __get_open_ws_core(self, client_version: str = LATEST_VERSION) -> WsCore | None:
+        ws_core = self._ws_cores.get(client_version)
+        if ws_core is None or ws_core.status != WsStatus.OPEN:
+            return None
+
+        return ws_core
+
+    async def __upload_sec_key(self, ws_core: WsCore) -> None:
         from .api import init_websocket
 
-        info = await init_websocket.request(self._ws_core)
+        info = await init_websocket.request(ws_core)
 
-        mid_manager = self._ws_core.mid_manager
+        mid_manager = ws_core.mid_manager
         for group in info.groups:
             if group.group_type == GroupType.PRIVATE_MSG:
                 mid_manager.priv_gid = group.group_id
@@ -291,7 +314,7 @@ class Client:
         self._user.user_name = user.user_name
         self._user.portrait = user.portrait
 
-        self._ws_core._status = WsStatus.OPEN
+        ws_core._status = WsStatus.OPEN
 
     async def __init_tbs(self) -> None:
         if self.account.tbs:
@@ -368,7 +391,7 @@ class Client:
         return await get_forum.request(self._http_core, fname)
 
     @handle_exception(get_forum_detail.Forum_detail)
-    @_try_websocket
+    @_try_websocket()
     async def get_forum_detail(self, fname_or_fid: str | int) -> get_forum_detail.Forum_detail:
         """
         获取贴吧信息
@@ -382,8 +405,8 @@ class Client:
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
 
-        if self._ws_core.status == WsStatus.OPEN:
-            return await get_forum_detail.request_ws(self._ws_core, fid)
+        if ws_core := self.__get_open_ws_core():
+            return await get_forum_detail.request_ws(ws_core, fid)
 
         return await get_forum_detail.request_http(self._http_core, fid)
 
@@ -439,6 +462,7 @@ class Client:
         return StrResponse(fname)
 
     @handle_exception(get_threads.Threads)
+    @_try_websocket(LEGACY_VERSION)
     async def get_threads(
         self,
         fname_or_fid: str | int,
@@ -466,12 +490,13 @@ class Client:
         check_rn(rn, 1, 100)
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
-        if self._ws_core.status == WsStatus.OPEN:
-            return await get_threads.request_ws(self._ws_core, fname, pn, rn, sort, is_good, LEGACY_VERSION)
+        if ws_core := self.__get_open_ws_core(LEGACY_VERSION):
+            return await get_threads.request_ws(ws_core, fname, pn, rn, sort, is_good, LEGACY_VERSION)
 
         return await get_threads.request_http(self._http_core, fname, pn, rn, sort, is_good, LEGACY_VERSION)
 
     @handle_exception(get_posts.Posts)
+    @_try_websocket(LEGACY_VERSION)
     async def get_posts(
         self,
         tid: int,
@@ -508,9 +533,9 @@ class Client:
         elif comment_rn != 4 or comment_sort_by_agree is not True:
             LOG().warning("comment_rn and comment_sort_by_agree are ignored because with_comments is False")
 
-        if self._ws_core.status == WsStatus.OPEN:
+        if ws_core := self.__get_open_ws_core(LEGACY_VERSION):
             return await get_posts.request_ws(
-                self._ws_core, tid, pn, rn, sort, only_thread_author, with_comments, comment_sort_by_agree, comment_rn
+                ws_core, tid, pn, rn, sort, only_thread_author, with_comments, comment_sort_by_agree, comment_rn
             )
 
         return await get_posts.request_http(
@@ -518,7 +543,7 @@ class Client:
         )
 
     @handle_exception(get_comments.Comments)
-    @_try_websocket
+    @_try_websocket()
     async def get_comments(
         self,
         tid: int,
@@ -543,13 +568,13 @@ class Client:
             Comments: 楼中楼列表
         """
 
-        if self._ws_core.status == WsStatus.OPEN:
-            return await get_comments.request_ws(self._ws_core, tid, pid, pn, is_comment, sort)
+        if ws_core := self.__get_open_ws_core():
+            return await get_comments.request_ws(ws_core, tid, pid, pn, is_comment, sort)
 
         return await get_comments.request_http(self._http_core, tid, pid, pn, is_comment, sort)
 
     @handle_exception(get_last_replyers.Threads_lp)
-    @_try_websocket
+    @_try_websocket(LAST_REPLYERS_VERSION)
     async def get_last_replyers(
         self,
         fname_or_fid: str | int,
@@ -580,8 +605,8 @@ class Client:
         check_rn(rn, 1, 100)
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
-        if self._ws_core.status == WsStatus.OPEN:
-            return await get_last_replyers.request_ws(self._ws_core, fname, pn, rn, sort, is_good)
+        if ws_core := self.__get_open_ws_core(LAST_REPLYERS_VERSION):
+            return await get_last_replyers.request_ws(ws_core, fname, pn, rn, sort, is_good)
 
         return await get_last_replyers.request_http(self._http_core, fname, pn, rn, sort, is_good)
 
@@ -648,7 +673,7 @@ class Client:
         return await search_global.request(self._http_core, query, pn, rn, sort)
 
     @handle_exception(profile.UserInfo_pf)
-    @_try_websocket
+    @_try_websocket()
     async def _get_uinfo_profile(self, uid_or_portrait: str | int) -> profile.UserInfo_pf:
         """
         接口 https://tiebac.baidu.com/c/u/user/profile
@@ -660,13 +685,13 @@ class Client:
             UserInfo_pf: 包含最全面的用户信息
         """
 
-        if self._ws_core.status == WsStatus.OPEN:
-            return await profile.get_uinfo_profile.request_ws(self._ws_core, uid_or_portrait)
+        if ws_core := self.__get_open_ws_core():
+            return await profile.get_uinfo_profile.request_ws(ws_core, uid_or_portrait)
 
         return await profile.get_uinfo_profile.request_http(self._http_core, uid_or_portrait)
 
     @handle_exception(get_uinfo_getuserinfo_app.UserInfo_guinfo_app)
-    @_try_websocket
+    @_try_websocket()
     async def _get_uinfo_getuserinfo(self, user_id: int) -> get_uinfo_getuserinfo_app.UserInfo_guinfo_app:
         """
         接口 https://tiebac.baidu.com/c/u/user/getuserinfo
@@ -678,8 +703,8 @@ class Client:
             UserInfo_guinfo_app: 包含 user_id / portrait / user_name / 旧版昵称 / 性别 / 是否会员
         """
 
-        if self._ws_core.status == WsStatus.OPEN:
-            user = await get_uinfo_getuserinfo_app.request_ws(self._ws_core, user_id)
+        if ws_core := self.__get_open_ws_core():
+            user = await get_uinfo_getuserinfo_app.request_ws(ws_core, user_id)
 
         else:
             user = await get_uinfo_getuserinfo_app.request_http(self._http_core, user_id)
@@ -802,7 +827,7 @@ class Client:
                 return await self._get_uinfo_profile(user.portrait)
 
     @handle_exception(tieba_uid2user_info.UserInfo_TUid)
-    @_try_websocket
+    @_try_websocket()
     async def tieba_uid2user_info(self, tieba_uid: int) -> tieba_uid2user_info.UserInfo_TUid:
         """
         通过tieba_uid获取用户信息
@@ -817,13 +842,13 @@ class Client:
             请注意tieba_uid与旧版user_id的区别
         """
 
-        if self._ws_core.status == WsStatus.OPEN:
-            return await tieba_uid2user_info.request_ws(self._ws_core, tieba_uid)
+        if ws_core := self.__get_open_ws_core():
+            return await tieba_uid2user_info.request_ws(ws_core, tieba_uid)
 
         return await tieba_uid2user_info.request_http(self._http_core, tieba_uid)
 
     @handle_exception(profile.Homepage)
-    @_try_websocket
+    @_try_websocket()
     async def get_homepage(self, id_: str | int, /, pn: int = 1) -> profile.Homepage:
         """
         获取用户个人页信息
@@ -842,8 +867,8 @@ class Client:
         else:
             user_id = id_
 
-        if self._ws_core.status == WsStatus.OPEN:
-            return await profile.get_homepage.request_ws(self._ws_core, user_id, pn)
+        if ws_core := self.__get_open_ws_core():
+            return await profile.get_homepage.request_ws(ws_core, user_id, pn)
 
         return await profile.get_homepage.request_http(self._http_core, user_id, pn)
 
@@ -909,7 +934,7 @@ class Client:
         return await get_blacklist.request(self._http_core)
 
     @handle_exception(get_blacklist_old.BlacklistOldUsers)
-    @_try_websocket
+    @_try_websocket()
     async def get_blacklist_old(self, pn: int = 1, /, *, rn: int = 10) -> get_blacklist_old.BlacklistOldUsers:
         """
         获取旧版用户黑名单列表
@@ -922,9 +947,9 @@ class Client:
             BlacklistOldUsers: 旧版用户黑名单列表
         """
 
-        check_rn(rn, 1, 0xFFFFFFFF)  # rn为uint32字段 服务端未观测到上限
-        if self._ws_core.status == WsStatus.OPEN:
-            return await get_blacklist_old.request_ws(self._ws_core, pn, rn)
+        check_rn(rn, 1, 0xFFFFFFFF)
+        if ws_core := self.__get_open_ws_core():
+            return await get_blacklist_old.request_ws(ws_core, pn, rn)
 
         return await get_blacklist_old.request_http(self._http_core, pn, rn)
 
@@ -1025,7 +1050,7 @@ class Client:
         return await get_self_follow_forums.request(self._http_core)
 
     @handle_exception(get_dislike_forums.DislikeForums)
-    @_try_websocket
+    @_try_websocket()
     async def get_dislike_forums(self, pn: int = 1, /, *, rn: int = 20) -> get_dislike_forums.DislikeForums:
         """
         获取首页推荐屏蔽的贴吧列表
@@ -1039,13 +1064,13 @@ class Client:
         """
 
         check_rn(rn, 1, 50)
-        if self._ws_core.status == WsStatus.OPEN:
-            return await get_dislike_forums.request_ws(self._ws_core, pn, rn)
+        if ws_core := self.__get_open_ws_core():
+            return await get_dislike_forums.request_ws(ws_core, pn, rn)
 
         return await get_dislike_forums.request_http(self._http_core, pn, rn)
 
     @handle_exception(get_user_contents.UserPostss)
-    @_try_websocket
+    @_try_websocket()
     async def get_self_posts(self, pn: int = 1, *, rn: int = 20) -> get_user_contents.UserPostss:
         """
         获取当前用户发布的回复列表
@@ -1062,8 +1087,8 @@ class Client:
         user = await self.get_self_info(ReqUInfo.USER_ID)
         user_id = user.user_id
 
-        if self._ws_core.status == WsStatus.OPEN:
-            return await get_user_contents.get_posts.request_ws(self._ws_core, user_id, pn, rn, LATEST_VERSION)
+        if ws_core := self.__get_open_ws_core():
+            return await get_user_contents.get_posts.request_ws(ws_core, user_id, pn, rn, LATEST_VERSION)
 
         return await get_user_contents.get_posts.request_http(self._http_core, user_id, pn, rn, LATEST_VERSION)
 
@@ -1091,6 +1116,7 @@ class Client:
         return await get_user_contents_pc.get_posts.request(self._http_core, portrait, pn, rn)
 
     @handle_exception(get_user_contents.UserPostss)
+    @_try_websocket(USER_POSTS_VERSION)
     async def get_user_posts(self, id_: str | int, pn: int = 1, *, rn: int = 20) -> get_user_contents.UserPostss:
         """
         获取用户发布的回复列表
@@ -1111,15 +1137,13 @@ class Client:
         else:
             user_id = id_
 
-        USER_POSTS_VERSION = "8"
-
-        if self._ws_core.status == WsStatus.OPEN:
-            return await get_user_contents.get_posts.request_ws(self._ws_core, user_id, pn, rn, USER_POSTS_VERSION)
+        if ws_core := self.__get_open_ws_core(USER_POSTS_VERSION):
+            return await get_user_contents.get_posts.request_ws(ws_core, user_id, pn, rn, USER_POSTS_VERSION)
 
         return await get_user_contents.get_posts.request_http(self._http_core, user_id, pn, rn, USER_POSTS_VERSION)
 
     @handle_exception(get_user_contents.UserThreads)
-    @_try_websocket
+    @_try_websocket()
     async def get_self_threads(self, pn: int = 1, *, public_only: bool = False) -> get_user_contents.UserThreads:
         """
         获取当前用户发布的主题帖列表
@@ -1135,9 +1159,9 @@ class Client:
         user = await self.get_self_info(ReqUInfo.USER_ID)
         user_id = user.user_id
 
-        if self._ws_core.status == WsStatus.OPEN:
+        if ws_core := self.__get_open_ws_core():
             return await get_user_contents.get_threads.request_ws(
-                self._ws_core, user_id, pn, is_self=True, public_only=public_only
+                ws_core, user_id, pn, is_self=True, public_only=public_only
             )
 
         return await get_user_contents.get_threads.request_http(
@@ -1145,7 +1169,7 @@ class Client:
         )
 
     @handle_exception(get_user_contents.UserThreads)
-    @_try_websocket
+    @_try_websocket()
     async def get_user_threads(self, id_: str | int, pn: int = 1) -> get_user_contents.UserThreads:
         """
         获取用户发布的主题帖列表
@@ -1166,9 +1190,9 @@ class Client:
 
         is_self = user_id == self._user.user_id
 
-        if self._ws_core.status == WsStatus.OPEN:
+        if ws_core := self.__get_open_ws_core():
             return await get_user_contents.get_threads.request_ws(
-                self._ws_core, user_id, pn, is_self=is_self, public_only=False
+                ws_core, user_id, pn, is_self=is_self, public_only=False
             )
 
         return await get_user_contents.get_threads.request_http(
@@ -1176,7 +1200,7 @@ class Client:
         )
 
     @handle_exception(get_replys.Replys)
-    @_try_websocket
+    @_try_websocket()
     async def get_replys(self, pn: int = 1) -> get_replys.Replys:
         """
         获取回复信息
@@ -1188,8 +1212,8 @@ class Client:
             Replys: 回复列表
         """
 
-        if self._ws_core.status == WsStatus.OPEN:
-            return await get_replys.request_ws(self._ws_core, pn)
+        if ws_core := self.__get_open_ws_core():
+            return await get_replys.request_ws(ws_core, pn)
 
         return await get_replys.request_http(self._http_core, pn)
 
@@ -1314,7 +1338,7 @@ class Client:
         self._user |= user
 
     @handle_exception(get_square_forums.SquareForums)
-    @_try_websocket
+    @_try_websocket()
     async def get_square_forums(self, cname: str, /, pn: int = 1, *, rn: int = 20) -> get_square_forums.SquareForums:
         """
         获取吧广场列表
@@ -1328,14 +1352,14 @@ class Client:
             SquareForums: 吧广场列表
         """
 
-        check_rn(rn, 1, 1000)  # 大于1099时服务端返回300003
-        if self._ws_core.status == WsStatus.OPEN:
-            return await get_square_forums.request_ws(self._ws_core, cname, pn, rn)
+        check_rn(rn, 1, 1000)
+        if ws_core := self.__get_open_ws_core():
+            return await get_square_forums.request_ws(ws_core, cname, pn, rn)
 
         return await get_square_forums.request_http(self._http_core, cname, pn, rn)
 
     @handle_exception(get_bawu_info.BawuInfo)
-    @_try_websocket
+    @_try_websocket()
     async def get_bawu_info(self, fname_or_fid: str | int) -> get_bawu_info.BawuInfo:
         """
         获取吧务团队信息
@@ -1349,8 +1373,8 @@ class Client:
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
 
-        if self._ws_core.status == WsStatus.OPEN:
-            return await get_bawu_info.request_ws(self._ws_core, fid)
+        if ws_core := self.__get_open_ws_core():
+            return await get_bawu_info.request_ws(ws_core, fid)
 
         return await get_bawu_info.request_http(self._http_core, fid)
 
@@ -1458,7 +1482,7 @@ class Client:
         return await set_bawu_perm.request(self._http_core, fid, portrait, perms)
 
     @handle_exception(get_tab_map.TabMap)
-    @_try_websocket
+    @_try_websocket()
     async def get_tab_map(self, fname_or_fid: str | int) -> get_tab_map.TabMap:
         """
         获取分区名到分区id的映射
@@ -1472,8 +1496,8 @@ class Client:
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
-        if self._ws_core.status == WsStatus.OPEN:
-            return await get_tab_map.request_ws(self._ws_core, fname)
+        if ws_core := self.__get_open_ws_core():
+            return await get_tab_map.request_ws(ws_core, fname)
 
         return await get_tab_map.request_http(self._http_core, fname)
 
@@ -2401,7 +2425,7 @@ class Client:
         return await remove_fan.request(self._http_core, user_id)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    @_try_websocket
+    @_try_websocket()
     async def set_blacklist(self, id_: str | int, *, btype: BlacklistType = BlacklistType.ALL) -> BoolResponse:
         """
         设置新版用户黑名单
@@ -2420,8 +2444,8 @@ class Client:
         else:
             user_id = id_
 
-        if self._ws_core.status == WsStatus.OPEN:
-            return await set_blacklist.request_ws(self._ws_core, user_id, btype)
+        if ws_core := self.__get_open_ws_core():
+            return await set_blacklist.request_ws(ws_core, user_id, btype)
 
         return await set_blacklist.request_http(self._http_core, user_id, btype)
 
@@ -2639,7 +2663,7 @@ class Client:
         return await sign_growth.request_web(self._http_core, act_type="page_sign")
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    @_try_websocket
+    @_try_websocket()
     async def add_poll(self, tid: int, /, options: Iterable[int]) -> BoolResponse:
         """
         投票
@@ -2652,13 +2676,13 @@ class Client:
             BoolResponse: 投票是否成功
         """
 
-        if self._ws_core.status == WsStatus.OPEN:
-            return await add_poll.request_ws(self._ws_core, tid, options)
+        if ws_core := self.__get_open_ws_core():
+            return await add_poll.request_ws(ws_core, tid, options)
 
         return await add_poll.request_http(self._http_core, tid, options)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    @_force_websocket
+    @_force_websocket(CHAT_VERSION)
     async def send_msg(self, id_: str | int, content: str) -> BoolResponse:
         """
         发送私信
@@ -2677,9 +2701,10 @@ class Client:
         else:
             user_id = id_
 
-        result = await send_msg.request(self._ws_core, user_id, content)
+        ws_core = self._ws_cores[CHAT_VERSION]
+        result = await send_msg.request(ws_core, user_id, content)
 
-        mid_manager = self._ws_core.mid_manager
+        mid_manager = ws_core.mid_manager
         user_id = result.to_uid or user_id
         mid_manager.update_local_msg_id(user_id, result.local_msg_id)
         if result.group_id and result.to_user_type == 0:
@@ -2688,7 +2713,7 @@ class Client:
         return BoolResponse()
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    @_force_websocket
+    @_force_websocket(CHAT_VERSION)
     async def set_msg_readed(self, message: get_group_msg.WsMessage) -> BoolResponse:
         """
         将一条私信设为已读
@@ -2700,9 +2725,10 @@ class Client:
             BoolResponse: True成功 False失败
         """
 
-        result = await set_msg_readed.request(self._ws_core, message)
+        ws_core = self._ws_cores[CHAT_VERSION]
+        result = await set_msg_readed.request(ws_core, message)
 
-        mid_manager = self._ws_core.mid_manager
+        mid_manager = ws_core.mid_manager
         user_id = result.to_uid or message.user.user_id
         if result.read_msg_id:
             mid_manager.update_sent_msg_id(user_id, result.read_msg_id)
@@ -2712,7 +2738,7 @@ class Client:
         return BoolResponse()
 
     @handle_exception(get_group_msg.WsMsgGroups)
-    @_force_websocket
+    @_force_websocket(CHAT_VERSION)
     async def get_group_msg(self, group_ids: Iterable[int], *, get_type: int = 1) -> get_group_msg.WsMsgGroups:
         """
         获取分组信息
@@ -2725,11 +2751,12 @@ class Client:
             WsMsgGroups: websocket消息组列表
         """
 
-        groups = await get_group_msg.request(self._ws_core, group_ids, get_type)
+        ws_core = self._ws_cores[CHAT_VERSION]
+        groups = await get_group_msg.request(ws_core, group_ids, get_type)
         if groups.err is not None:
             return groups
 
-        mid_manager = self._ws_core.mid_manager
+        mid_manager = ws_core.mid_manager
 
         for group in groups:
             if group.group_type != GroupType.PRIVATE_MSG:

@@ -361,6 +361,7 @@ class WsCore:
 
     account: Account
     net_core: NetCore
+    client_version: str
     session: aiohttp.ClientSession
     waiter: WsWaiter
     callbacks: dict[int, TypeWebsocketCallback]
@@ -370,9 +371,10 @@ class WsCore:
     _status: WsStatus
     loop: asyncio.AbstractEventLoop
 
-    def __init__(self, account: Account, net_core: NetCore) -> None:
+    def __init__(self, account: Account, net_core: NetCore, client_version: str) -> None:
         self.set_account(account)
         self.net_core = net_core
+        self.client_version = client_version
         self.session: aiohttp.ClientSession = None
 
         self.callbacks: dict[int, TypeWebsocketCallback] = {}

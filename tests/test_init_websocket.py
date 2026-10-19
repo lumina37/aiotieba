@@ -1,6 +1,7 @@
 import pytest
 
 import aiotieba as tb
+from aiotieba.const import LATEST_VERSION
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=5.0)
@@ -9,8 +10,10 @@ async def test_InitWsInfo(client: tb.Client):
     ##### init_websocket #####
     ok = await client.init_websocket()
 
+    ws_core = client._ws_cores[LATEST_VERSION]
+
     assert ok
-    assert client._ws_core.status == tb.WsStatus.OPEN
+    assert ws_core.status == tb.WsStatus.OPEN
 
     ##### UserInfo_ws #####
     user = client._user
@@ -20,7 +23,7 @@ async def test_InitWsInfo(client: tb.Client):
     assert user.portrait.startswith("tb.")
 
     ##### MidManager #####
-    mid_manager = client._ws_core.mid_manager
+    mid_manager = ws_core.mid_manager
 
     assert mid_manager.priv_gid > 0
     assert len(mid_manager.gid2mid) > 1

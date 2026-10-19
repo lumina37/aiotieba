@@ -84,7 +84,7 @@ aiotieba/
 用户调用 Client.get_threads("天堂鸡汤")
     │
     ├── @handle_exception(Threads) 装饰器（异常捕获 + 日志）
-    ├── @_try_websocket 装饰器（优先 WebSocket，失败降级 HTTP）
+    ├── @_try_websocket(LEGACY_VERSION) 装饰器（优先 WebSocket，失败降级 HTTP）
     │
     ├── WebSocket 路径:
     │   ├── pack_proto() → 构造请求

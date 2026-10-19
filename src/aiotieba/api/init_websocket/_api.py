@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 from cryptography.hazmat.primitives.asymmetric.padding import PKCS1v15
 from cryptography.hazmat.primitives.serialization import load_der_public_key
 
-from ...const import LATEST_VERSION
 from ...exception import TiebaServerError, TiebaValueError
 from ...helper import pack_json
 from ._classdef import InitWsInfo
@@ -24,13 +23,13 @@ PUBLIC_KEY = binascii.a2b_base64(
 )
 
 
-def pack_proto(account: Account) -> bytes:
+def pack_proto(account: Account, client_version: str) -> bytes:
     req_proto = UpdateClientInfoReqIdl_pb2.UpdateClientInfoReqIdl()
     req_proto.data.bduss = account.BDUSS
 
     device = {
         "cuid": account.cuid,
-        "_client_version": LATEST_VERSION,
+        "_client_version": client_version,
         "_msg_status": "1",
         "cuid_galaxy2": account.cuid_galaxy2,
         "_client_type": "2",
@@ -42,7 +41,7 @@ def pack_proto(account: Account) -> bytes:
     secret_key = rsa_chiper.encrypt(account.aes_ecb_sec_key, PKCS1v15())
     req_proto.data.secretKey = secret_key
     req_proto.data.stoken = account.STOKEN
-    req_proto.cuid = f"{account.cuid}|com.baidu.tieba{LATEST_VERSION}"
+    req_proto.cuid = f"{account.cuid}|com.baidu.tieba{client_version}"
 
     return req_proto.SerializeToString()
 
@@ -65,7 +64,7 @@ def parse_body(body: bytes) -> InitWsInfo:
 
 
 async def request(ws_core: WsCore) -> InitWsInfo:
-    data = pack_proto(ws_core.account)
+    data = pack_proto(ws_core.account, ws_core.client_version)
 
     resp = await ws_core.send(data, CMD, compress=False, encrypt=False)
     info = parse_body(await resp.read())
