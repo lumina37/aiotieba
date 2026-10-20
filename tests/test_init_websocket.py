@@ -16,7 +16,7 @@ async def test_InitWsInfo(client: tb.Client):
     assert ws_core.status == tb.WsStatus.OPEN
 
     ##### UserInfo_ws #####
-    user = client._user
+    user = client.account.user
 
     assert user.user_id > 0
     assert user.user_name != ""

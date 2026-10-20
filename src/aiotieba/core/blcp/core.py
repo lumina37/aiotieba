@@ -26,7 +26,6 @@ from .exception import BLCPError, BLCPLoginError
 from .packet import BLCPBody, BLCPRequest, BLCPResponse, JsonBody, LcmBody
 
 if TYPE_CHECKING:
-    from ...api._classdef import UserInfo
     from ...config import TimeoutConfig
     from ..account import Account
     from ..net import NetCore
@@ -43,13 +42,11 @@ class BLCPCore:
     Args:
         account (Account): 用户参数容器
         net_core (NetCore): 网络连接容器
-        user (UserInfo): 用户信息容器
         timeout (TimeoutConfig, optional): 超时配置. Defaults to None.
         max_notify_queue (int, optional): 推送队列长度上限. Defaults to 100.
     """
 
     account: Account
-    user: UserInfo
     net_core: NetCore
     conn: BLCPConn
     login_id: int
@@ -60,12 +57,10 @@ class BLCPCore:
         self,
         account: Account,
         net_core: NetCore,
-        user: UserInfo,
         timeout: TimeoutConfig | None = None,
         max_notify_queue: int = 100,
     ) -> None:
         self.account = account
-        self.user = user
         self.net_core = net_core
         self.conn = BLCPConn(timeout=timeout, max_notify_queue=max_notify_queue)
         self.login_id = 0
@@ -221,8 +216,8 @@ class BLCPCore:
             "method": int(method),
             "mcast_id": chatroom_id,
             "appid": CHAT_APPID,
-            "uk": self.user.uk,
-            "origin_id": self.user.trigger_id,
+            "uk": self.account.user.uk,
+            "origin_id": self.account.user.trigger_id,
             "msg_key": "k" + str(int(time.time() * 100000)),
             "sdk_version": CHAT_SDK_VERSION,
             "is_reliable": False,
@@ -358,9 +353,9 @@ class BLCPCore:
         if err_code != 0:
             raise BLCPLoginError(f"IM登录失败 err_code={err_code}")
 
-        self.user.trigger_id = payload["trigger_id"][0]
-        self.user.uk = payload["uk"]
-        self.user.bduk = payload.get("bd_uid", "")
+        self.account.user.trigger_id = payload["trigger_id"][0]
+        self.account.user.uk = payload["uk"]
+        self.account.user.bduk = payload.get("bd_uid", "")
         self.login_id = payload.get("login_id", 0)
 
     async def _fetch_room_history(self, chatroom_id: int) -> dict[str, Any]:

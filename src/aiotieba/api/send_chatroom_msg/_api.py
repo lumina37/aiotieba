@@ -16,21 +16,23 @@ class AppConstants:
 
 def construct_request_data(
     core: BLCPCore,
-    chatroom_id,
-    uk,
-    user_id,
-    origin_id,
-    name,
-    portrait,
-    text,
-    fid,
-    level,
-    is_vip,
-    glevel,
-    atdata=None,
-    robot=-1,
+    chatroom_id: int,
+    text: str,
+    fid: int,
+    level: int,
+    atdata: list[dict] | None = None,
+    robot: int = -1,
 ):
     constants = AppConstants()
+
+    user = core.account.user
+    uk = user.uk
+    user_id = user.user_id
+    origin_id = user.trigger_id
+    name = user.nick_name
+    portrait = user.portrait
+    is_vip = user.is_vip
+    glevel = user.glevel
 
     # 构造app_safe_ext
     app_safe_ext = {"haotianjing": {"zid": core.account.z_id or ""}}
@@ -194,20 +196,11 @@ async def send_request(core: BLCPCore, request_data: dict) -> BoolResponse:
 async def request(
     core: BLCPCore,
     chatroom_id: int,
-    uk: int,
-    user_id: int,
-    origin_id: int,
-    name: str,
-    portrait: str,
     text: str,
     fid: int,
     level: int,
-    is_vip: bool,
-    glevel: int,
     atdata: list[dict] | None = None,
-    robot=-1,
+    robot: int = -1,
 ):
-    request_data = construct_request_data(
-        core, chatroom_id, uk, user_id, origin_id, name, portrait, text, fid, level, is_vip, glevel, atdata, robot
-    )
+    request_data = construct_request_data(core, chatroom_id, text, fid, level, atdata, robot)
     return await send_request(core, request_data)

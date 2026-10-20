@@ -188,7 +188,6 @@ class Client:
         "_connector",
         "_http_core",
         "_ws_cores",
-        "_user",
         "_blcp_core",
     ]
 
@@ -218,8 +217,6 @@ class Client:
 
         self._try_ws = try_ws
 
-        self._user = UserInfo()
-
     async def __aenter__(self) -> Client:
         ssl_context = ssl.SSLContext(
             ssl.PROTOCOL_TLS_CLIENT,
@@ -241,7 +238,7 @@ class Client:
         net_core = NetCore(connector, self._proxy, self._timeout)
         self._http_core = HttpCore(self._account, net_core)
         self._ws_cores: dict[str, WsCore] = {}
-        self._blcp_core = BLCPCore(account=self._account, net_core=net_core, user=self._user)
+        self._blcp_core = BLCPCore(account=self._account, net_core=net_core)
 
         return self
 
@@ -259,10 +256,11 @@ class Client:
 
     @property
     def account(self) -> Account:
-        return self._http_core.account
+        return self._account
 
     @account.setter
     def account(self, new_account: Account) -> None:
+        self._account = new_account
         self._http_core.set_account(new_account)
         for ws_core in self._ws_cores.values():
             ws_core.set_account(new_account)
@@ -313,9 +311,7 @@ class Client:
             mid_manager.update_msg_id(group.group_id, group.last_msg_id)
 
         user = info.user
-        self._user.user_id = user.user_id
-        self._user.user_name = user.user_name
-        self._user.portrait = user.portrait
+        self.account.user |= user
 
         ws_core._status = WsStatus.OPEN
 
@@ -336,22 +332,23 @@ class Client:
             UserInfo: 用户信息
         """
 
-        if not self._user.user_id:
+        user = self.account.user
+
+        if not user.user_id:
             if require & ReqUInfo.BASIC:
                 await self.__login()
-        if not self._user.tieba_uid:
+        if not user.tieba_uid:
             if require == ReqUInfo.ALL:
-                user = await self._get_uinfo_profile(self._user.user_id)
-                self._user |= user
+                user |= await self._get_uinfo_profile(user.user_id)
             elif require & (ReqUInfo.TIEBA_UID | ReqUInfo.NICK_NAME):
                 await self.__init_selfinfo_initNickname()
 
-        return self._user
+        return user
 
     async def __login(self) -> None:
         user, tbs = await login.request(self._http_core)
 
-        self._user |= user
+        self.account.user |= user
         self.account.tbs = tbs
 
     async def __init_client_id(self) -> None:
@@ -1198,7 +1195,7 @@ class Client:
         else:
             user_id = id_
 
-        is_self = user_id == self._user.user_id
+        is_self = user_id == self.account.user.user_id
 
         if ws_core := self.__get_open_ws_core():
             return await get_user_contents.get_threads.request_ws(
@@ -1337,7 +1334,7 @@ class Client:
         """
 
         user = await get_selfinfo_initNickname.request(self._http_core)
-        self._user |= user
+        self.account.user |= user
 
     async def __init_selfinfo_moindex(self) -> None:
         """
@@ -1345,7 +1342,7 @@ class Client:
         """
 
         user = await get_selfinfo_moindex.request(self._http_core)
-        self._user |= user
+        self.account.user |= user
 
     @handle_exception(get_square_forums.SquareForums)
     @_try_websocket()
@@ -2809,15 +2806,13 @@ class Client:
             BoolResponse: True成功 False失败
         """
 
-        if not self._user.user_id:
+        if not self.account.user.user_id:
             await self.__login()
         if not self._blcp_core.is_logged_in:
             await self.__init_blcp()
 
         level_info = await self.__get_forum_level(fid)
         level = level_info.user_level
-        is_vip = self._user.is_vip
-        glevel = self._user.glevel
 
         # 处理艾特@
         atdata = []
@@ -2838,18 +2833,11 @@ class Client:
         return await send_chatroom_msg.request(
             self._blcp_core,
             chatroom_id,
-            self._user.uk,
-            self._user.user_id,
-            self._user.trigger_id,
-            self._user.nick_name,
-            self._user.portrait,
             text,
             fid,
             level,
-            is_vip,
-            glevel,
-            atdata,
-            robot,
+            atdata=atdata,
+            robot=robot,
         )
 
     async def __init_blcp(self) -> None:
@@ -2857,7 +2845,7 @@ class Client:
             await self._blcp_core.login()
 
     async def __get_forum_level(self, fid: int) -> get_forum_level.LevelInfo:
-        if not self._user.user_id:
+        if not self.account.user.user_id:
             await self.get_self_info()
 
         return await get_forum_level.request_http(self._http_core, fid)
@@ -2874,7 +2862,7 @@ class Client:
             RoomList: 群信息
         """
 
-        if not self._user.user_id:
+        if not self.account.user.user_id:
             await self.__login()
 
         return await get_roomlist_by_fid.request(self._http_core, fid)
@@ -2901,7 +2889,7 @@ class Client:
             BoolResponse: True成功 False失败
         """
 
-        if not self._user.user_id:
+        if not self.account.user.user_id:
             await self.__login()
         if not self._blcp_core.is_logged_in:
             await self.__init_blcp()

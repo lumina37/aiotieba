@@ -24,7 +24,7 @@ aiotieba/
 │   │   ├── _protobuf/          # 通用protobuf定义
 │   │   └── get_xx...           # 各个API模块
 │   ├── core/                   # 网络会话类
-│   │   ├── account.py          # Account类（存放与用户信息相关的不变量）
+│   │   ├── account.py          # Account类（用户token与当前用户信息）
 │   │   ├── net.py              # NetCore（连接池、代理与超时配置）
 │   │   ├── http.py             # HttpCore（http会话）
 │   │   ├── websocket.py        # WsCore（websocket会话）
@@ -77,7 +77,7 @@ aiotieba/
 ### 核心状态容器
 
 1. **`Client`**：主客户端类，封装所有贴吧API的入口
-2. **`Account`**：BDUSS等用户身份相关token的容器
+2. **`Account`**：BDUSS等身份token与当前用户信息`user`的容器
 3. **`NetCore`**：管理TCP连接池。同时保存代理、超时等配置信息
 4. **`HttpCore`**：HTTP的会话状态容器
 5. **`WsCore`**：WebSocket的会话状态容器

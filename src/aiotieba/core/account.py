@@ -7,12 +7,13 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
+from ..api._classdef import UserInfo
 from ..helper.crypto import c3_aid, cuid_galaxy2
 
 
 class Account:
     """
-    贴吧的用户参数容器
+    贴吧的账号与用户信息容器
 
     Args:
         BDUSS (str, optional): BDUSS. Defaults to ''.
@@ -21,6 +22,7 @@ class Account:
     Attributes:
         BDUSS (str): BDUSS
         STOKEN (str): 网页STOKEN
+        user (UserInfo): 当前用户信息 不参与序列化
         tbs (str): 长度为26的小写16进制字符串 例:91be894d01799c4991be894d01
         android_id (str): 长度为16的小写16进制字符串 包含8字节信息 例:91be894d01799c49
         uuid (str): 包含16字节信息 例:e4200716-58a8-4170-af15-ea7edeb8e513
@@ -40,6 +42,7 @@ class Account:
     __slots__ = [
         "_BDUSS",
         "_STOKEN",
+        "user",
         "_tbs",
         "_android_id",
         "_uuid",
@@ -77,6 +80,7 @@ class Account:
         self.BDUSS = BDUSS
         self.STOKEN = STOKEN
 
+        self.user = UserInfo()
         self._tbs: str = None
         self._android_id: str = None
         self._uuid: str = None
