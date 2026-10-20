@@ -28,7 +28,12 @@ aiotieba/
 │   │   ├── net.py              # NetCore（连接池、代理与超时配置）
 │   │   ├── http.py             # HttpCore（http会话）
 │   │   ├── websocket.py        # WsCore（websocket会话）
-│   │   └── blcp.py             # BLCPCore（BLCP私有协议会话）
+│   │   └── blcp/               # BLCP私有协议
+│   │       ├── const.py        # 跨模块常量（appid/sdk版本）
+│   │       ├── enums.py        # 服务号、方法号、压缩类型
+│   │       ├── packet.py       # 报文对象（帧/RpcMeta/报文体）的序列化
+│   │       ├── conn.py         # BLCPConn（传输 + RPC + 心跳）
+│   │       └── core.py         # BLCPCore（登录 + 吧群/聊天室等业务）
 │   └── helper/                 # 内部辅助工具
 │       ├── utils.py            # 实用方法
 │       ├── cache.py            # 吧名↔fid的双向缓存
@@ -76,7 +81,8 @@ aiotieba/
 3. **`NetCore`**：管理TCP连接池。同时保存代理、超时等配置信息
 4. **`HttpCore`**：HTTP的会话状态容器
 5. **`WsCore`**：WebSocket的会话状态容器
-6. **`BLCPCore`**：百度直播聊天协议的会话状态容器
+6. **`BLCPConn`**：BLCP连接层。负责传输、RPC配对与心跳维持
+7. **`BLCPCore`**：BLCP业务层。负责登录、吧群等业务与pim HTTP请求，内部持有`BLCPConn`
 
 ### 数据流概览
 

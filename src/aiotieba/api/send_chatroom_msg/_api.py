@@ -4,18 +4,18 @@ import json
 import time
 from dataclasses import dataclass
 
-from ...core import BLCPCore, BLCPData
-from ...exception import BoolResponse
+from ...core import CHAT_APPID, CHAT_SDK_VERSION, BLCPCore, BLCPMethodID, BLCPServiceID
+from ...exception import BoolResponse, TiebaServerError
 
 
 @dataclass
 class AppConstants:
-    appid: int = 10773430
-    sdk_version: int = 11250036
+    appid: int = CHAT_APPID
+    sdk_version: int = CHAT_SDK_VERSION
 
 
-async def construct_request_data(
-    blcpcore,
+def construct_request_data(
+    core: BLCPCore,
     chatroom_id,
     uk,
     user_id,
@@ -33,7 +33,7 @@ async def construct_request_data(
     constants = AppConstants()
 
     # 构造app_safe_ext
-    app_safe_ext = {"haotianjing": {"zid": blcpcore.account.z_id or ""}}
+    app_safe_ext = {"haotianjing": {"zid": core.account.z_id or ""}}
 
     # 构造content
     content = {
@@ -47,7 +47,7 @@ async def construct_request_data(
             "content_type": "0",
             "content_body": json.dumps({"text": text}, ensure_ascii=False),
             "src": "",
-            "baidu_uk": blcpcore.getBDUKfromUserId(str(user_id)),
+            "baidu_uk": core.get_bduk(user_id),
             "ext": {},
         }
     }
@@ -132,7 +132,7 @@ async def construct_request_data(
     content["text"]["ext"].update(ext_data)
 
     # 携带文字、气泡信息，但这部分内容比较多，暂且未开发，注释之
-    # content['text']['ext']['bubble_info'] = {'color_info': {'at_text_color': '', 'at_text_color_dark': 'AF9EFF', 'text_color': '141414', 'text_color_dark': 'FFFFFF'}, 'end_time': 0, 'id': 1380005, 'img_info': {'android_left': 'https://tieba-ares.cdn.bcebos.com/mis/2023-3/1678971300129/4d9fd67c26e3.png', 'android_left_dark': 'https://tieba-ares.cdn.bcebos.com/mis/2023-3/1678971300129/4d9fd67c26e3.png', 'android_right': 'https://tieba-ares.cdn.bcebos.com/mis/2023-3/1678971357436/745549b2ae39.png', 'android_right_dark': 'https://tieba-ares.cdn.bcebos.com/mis/2023-3/1678971357436/745549b2ae39.png', 'ios_left': 'https://tieba-ares.cdn.bcebos.com/mis/2023-3/1678876082814/0a1741207e0d.png', 'ios_left_dark': 'https://tieba-ares.cdn.bcebos.com/mis/2023-3/1678876082814/0a1741207e0d.png', 'ios_right': 'https://tieba-ares.cdn.bcebos.com/mis/2023-3/1678876082435/c07fbaa4ad57.png', 'ios_right_dark': 'https://tieba-ares.cdn.bcebos.com/mis/2023-3/1678876082435/c07fbaa4ad57.png'}, 'jump_url': 'https://tieba.baidu.com/mo/q/hybrid/decorator?pageType=4&from_page=4&nonavigationbar=1&customfullscreen=1&decoratorId=1380005', 'type': 2}
+    # content['text']['ext']['bubble_info'] = {...}
 
     if robot == -1:
         # 没有机器人指令
@@ -154,17 +154,17 @@ async def construct_request_data(
 
     # 构造最终请求数据
     request_data = {
-        "method": 185,
+        "method": int(BLCPMethodID.SEND_MCAST_MSG),
         "mcast_id": chatroom_id,
         "role": 3,
-        "token": blcpcore.account.BDUSS,
+        "token": core.account.BDUSS,
         "appid": constants.appid,
         "uk": uk,
         "origin_id": origin_id,
         "type": 81,
         "app_safe_ext": json.dumps(app_safe_ext, ensure_ascii=False),
         "content": content,
-        "msg_key": blcpcore.getmsgkey(blcpcore.getBDUKfromUserId(str(user_id))),
+        "msg_key": core.make_msg_key(core.get_bduk(user_id)),
         "account_type": 1,
         "sdk_version": constants.sdk_version,
         "event_list": [
@@ -177,31 +177,22 @@ async def construct_request_data(
     return request_data
 
 
-async def send_request(blcpcore, request_data):
-    loginBLCPRequest = BLCPData(serviceId=3, methodId=185)
-    loginBLCPRequest.correlationId = int(time.time() * 1000 * 1000)
-    loginBLCPRequest.RpcBody = blcpcore.buildRpcBody(
-        serviceId=3, methodId=185, correlationId=loginBLCPRequest.correlationId
-    )
-
-    request_data["client_logid"] = loginBLCPRequest.correlationId
+async def send_request(core: BLCPCore, request_data: dict) -> BoolResponse:
+    request_data["client_logid"] = int(time.time() * 1_000_000)
     request_data["rpc"] = '{"rpc_retry_time":0}'
 
-    loginBLCPRequest.LcmBody = json.dumps(request_data, ensure_ascii=False).encode("utf-8")
-    response = blcpcore.waiter.new(loginBLCPRequest.correlationId)
-    blcpcore.writer.write(loginBLCPRequest.toBytes())
-    reps = await response.read()
-    try:
-        err_code = json.loads(reps.LcmBody)["err_code"]
-    except json.JSONDecodeError:
-        raise
+    response = await core.request(BLCPServiceID.MCAST, BLCPMethodID.SEND_MCAST_MSG, request_data)
+
+    payload = response.payload
+    err_code = payload.get("err_code", -1)
     if err_code == 0:
         return BoolResponse()
-    raise
+
+    raise TiebaServerError(err_code, payload.get("msg", "发送群聊消息失败"))
 
 
 async def request(
-    blcpcore: BLCPCore,
+    core: BLCPCore,
     chatroom_id: int,
     uk: int,
     user_id: int,
@@ -216,7 +207,7 @@ async def request(
     atdata: list[dict] | None = None,
     robot=-1,
 ):
-    request_data = await construct_request_data(
-        blcpcore, chatroom_id, uk, user_id, origin_id, name, portrait, text, fid, level, is_vip, glevel, atdata, robot
+    request_data = construct_request_data(
+        core, chatroom_id, uk, user_id, origin_id, name, portrait, text, fid, level, is_vip, glevel, atdata, robot
     )
-    return await send_request(blcpcore, request_data)
+    return await send_request(core, request_data)

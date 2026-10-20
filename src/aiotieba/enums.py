@@ -332,6 +332,23 @@ class WsStatus(enum.IntEnum):
     OPEN = enum.auto()
 
 
+class BLCPStatus(enum.IntEnum):
+    """
+    BLCP状态
+
+    Note:
+        CLOSED 已关闭\n
+        CONNECTING 正在连接\n
+        OPEN 连接可用\n
+        LOGGED_IN 业务已登录
+    """
+
+    CLOSED = -1
+    CONNECTING = 0
+    OPEN = 1
+    LOGGED_IN = 2
+
+
 class GroupType(enum.IntEnum):
     """
     消息组类型

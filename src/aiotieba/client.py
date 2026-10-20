@@ -248,6 +248,7 @@ class Client:
     async def __aexit__(self, exc_type=None, exc_val=None, exc_tb=None) -> None:
         for ws_core in self._ws_cores.values():
             await ws_core.close()
+        await self._blcp_core.close()
         await self._connector.close()
 
     def __hash__(self) -> int:
@@ -265,6 +266,7 @@ class Client:
         self._http_core.set_account(new_account)
         for ws_core in self._ws_cores.values():
             ws_core.set_account(new_account)
+        self._blcp_core.set_account(new_account)
 
     @handle_exception(BoolResponse)
     async def init_websocket(self, client_version: str = LATEST_VERSION) -> BoolResponse:
@@ -2807,20 +2809,10 @@ class Client:
             BoolResponse: True成功 False失败
         """
 
-        async def _ensure_user_info():
-            required_attrs = ["user_id", "portrait"]
-            max_retries = 3
-
-            for _ in range(max_retries + 1):
-                if all(getattr(self._user, attr) for attr in required_attrs):
-                    return
-                await self.get_self_info()
-
-            raise ValueError("登录失败")
-
-        await _ensure_user_info()
-        if self._blcp_core.status != 1:
-            await self._init_blcp()
+        if not self._user.user_id:
+            await self.__login()
+        if not self._blcp_core.is_logged_in:
+            await self.__init_blcp()
 
         level_info = await self.__get_forum_level(fid)
         level = level_info.user_level
@@ -2837,7 +2829,7 @@ class Client:
 
                 atdata.append({
                     "at_type": "user",
-                    "at_baidu_uk": self._blcp_core.getBDUKfromUserId(str(user_id)),
+                    "at_baidu_uk": self._blcp_core.get_bduk(user_id),
                     "at_name": userforAt.nick_name,
                     "at_portrait": userforAt.portrait,
                     "position": str(count),
@@ -2860,16 +2852,9 @@ class Client:
             robot,
         )
 
-    @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def _init_blcp(self):
-        if self._blcp_core.status == -1:
-            await self._blcp_core.connect()
-        if self._blcp_core.status == 0:
+    async def __init_blcp(self) -> None:
+        if not self._blcp_core.is_logged_in:
             await self._blcp_core.login()
-        if self._blcp_core.status == 1:
-            return BoolResponse()
-        else:
-            raise
 
     async def __get_forum_level(self, fid: int) -> get_forum_level.LevelInfo:
         if not self._user.user_id:
@@ -2889,8 +2874,8 @@ class Client:
             RoomList: 群信息
         """
 
-        if not self._user.user_id:  # 检查是否登陆
-            await self.get_self_info()
+        if not self._user.user_id:
+            await self.__login()
 
         return await get_roomlist_by_fid.request(self._http_core, fid)
 
@@ -2916,13 +2901,13 @@ class Client:
             BoolResponse: True成功 False失败
         """
 
-        if not self._user.user_id:  # 检查是否登陆
-            await self.get_self_info()
-        if self._blcp_core.status != 1:  # 检查BLCP是否登陆
-            await self._init_blcp()
+        if not self._user.user_id:
+            await self.__login()
+        if not self._blcp_core.is_logged_in:
+            await self.__init_blcp()
 
         try:
-            await self._blcp_core.joinChatRoom(chatroom_id)
+            await self._blcp_core.join_chatroom(chatroom_id)
         except Exception as err:
             raise Exception("加入房间失败") from err
 
