@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import dataclasses as dcs
 import gzip
 import time
@@ -319,11 +320,6 @@ class WsWaiter:
         self.waiter = weakref.WeakValueDictionary()
         self.req_id = int(time.time())
         self.read_timeout = read_timeout
-        weakref.finalize(self, self.__cancel_all)
-
-    def __cancel_all(self) -> None:
-        for ws_resp in self.waiter.values():
-            ws_resp.future.cancel()
 
     def new(self) -> WsResponse:
         """
@@ -348,9 +344,21 @@ class WsWaiter:
         """
 
         ws_resp: WsResponse = self.waiter.get(req_id, None)
-        if ws_resp is None:
+        if ws_resp is None or ws_resp.future.done():
             return
         ws_resp.future.set_result(data)
+
+    def fail_all(self, err: BaseException) -> None:
+        """
+        使所有等待中的响应以异常结束
+
+        Args:
+            err (BaseException): 异常
+        """
+
+        for ws_resp in list(self.waiter.values()):
+            if not ws_resp.future.done():
+                ws_resp.future.set_exception(err)
 
 
 @dcs.dataclass
@@ -362,11 +370,12 @@ class WsCore:
     account: Account
     net_core: NetCore
     client_version: str
-    session: aiohttp.ClientSession
-    waiter: WsWaiter
+    session: aiohttp.ClientSession | None
+    waiter: WsWaiter | None
     callbacks: dict[int, TypeWebsocketCallback]
-    websocket: aiohttp.ClientWebSocketResponse
-    ws_dispatcher: asyncio.Task
+    websocket: aiohttp.ClientWebSocketResponse | None
+    ws_dispatcher: asyncio.Task | None
+    callback_tasks: set[asyncio.Task]
     mid_manager: MsgIDManager
     _status: WsStatus
     loop: asyncio.AbstractEventLoop
@@ -375,11 +384,14 @@ class WsCore:
         self.set_account(account)
         self.net_core = net_core
         self.client_version = client_version
-        self.session: aiohttp.ClientSession = None
+        self.session = None
 
+        self.waiter = None
         self.callbacks: dict[int, TypeWebsocketCallback] = {}
-        self.websocket: aiohttp.ClientWebSocketResponse = None
-        self.ws_dispatcher: asyncio.Task = None
+        self.websocket = None
+        self.ws_dispatcher = None
+        self.callback_tasks: set[asyncio.Task] = set()
+        self.mid_manager = MsgIDManager()
 
         self._status = WsStatus.CLOSED
 
@@ -390,30 +402,27 @@ class WsCore:
 
     async def connect(self) -> None:
         """
-        建立weboscket连接
+        建立websocket连接
 
         Raises:
             aiohttp.WSServerHandshakeError: websocket握手失败
+            aiohttp.ServerDisconnectedError: 连接在握手期间被关闭
         """
 
-        self._status = WsStatus.CONNECTING
+        await self.close()
 
+        self._status = WsStatus.CONNECTING
         self.waiter = WsWaiter(self.net_core.timeout.ws_read)
         self.mid_manager = MsgIDManager()
 
         from aiohttp import hdrs
 
-        if self.websocket is not None:
-            await self.websocket.close()
-            self.websocket = None
-
-        if self.session is None:
-            self.session = aiohttp.ClientSession(
-                connector=self.net_core.connector,
-                connector_owner=False,
-                cookie_jar=aiohttp.DummyCookieJar(),
-                skip_auto_headers={hdrs.ACCEPT},
-            )
+        session = self.session = aiohttp.ClientSession(
+            connector=self.net_core.connector,
+            connector_owner=False,
+            cookie_jar=aiohttp.DummyCookieJar(),
+            skip_auto_headers={hdrs.ACCEPT},
+        )
 
         proxy = self.net_core.proxy
         if proxy.auth is None:
@@ -422,7 +431,7 @@ class WsCore:
             proxy_headers = {"Proxy-Authorization": aiohttp.encode_basic_auth(proxy.auth.login, proxy.auth.password)}
 
         try:
-            self.websocket = await self.session.ws_connect(
+            self.websocket = await session.ws_connect(
                 WS_URL,
                 headers={
                     hdrs.SEC_WEBSOCKET_EXTENSIONS: "im_version=2.3",
@@ -439,45 +448,81 @@ class WsCore:
                 proxy_headers=proxy_headers,
             )
         except BaseException:
-            self.websocket = None
-            self._status = WsStatus.CLOSED
+            await self.close()
             raise
 
-        if self.ws_dispatcher is not None and not self.ws_dispatcher.done():
-            self.ws_dispatcher.cancel()
-        self.ws_dispatcher = self.loop.create_task(self.__ws_dispatch(), name="ws_dispatcher")
+        websocket = self.websocket
+        waiter = self.waiter
+        if websocket is None or waiter is None:
+            await self.close()
+            raise aiohttp.ServerDisconnectedError("websocket连接已关闭")
+
+        self.ws_dispatcher = self.loop.create_task(self.__ws_dispatch(websocket, waiter), name="ws_dispatcher")
 
     async def close(self) -> None:
-        if self.websocket is not None:
-            await self.websocket.close()
-            if self.ws_dispatcher is not None and not self.ws_dispatcher.done():
-                self.ws_dispatcher.cancel()
-            self.websocket = None
+        """
+        关闭连接并终止后台任务
+        """
+
+        if self._status is WsStatus.CLOSED and self.websocket is None and self.session is None:
+            return
+
         self._status = WsStatus.CLOSED
 
-        if self.session is not None:
-            await self.session.close()
-            self.session = None
+        websocket, self.websocket = self.websocket, None
+        dispatcher, self.ws_dispatcher = self.ws_dispatcher, None
+        session, self.session = self.session, None
+        waiter, self.waiter = self.waiter, None
 
-    def __default_callback(self, req_id: int, data: bytes) -> None:
-        self.waiter.set_done(req_id, data)
+        if waiter is not None:
+            waiter.fail_all(aiohttp.ServerDisconnectedError("websocket连接已关闭"))
 
-    async def __ws_dispatch(self) -> None:
         try:
-            async for msg in self.websocket:
+            if websocket is not None:
+                with contextlib.suppress(Exception):
+                    await websocket.close()
+
+            if dispatcher is not None and not dispatcher.done():
+                dispatcher.cancel()
+                with contextlib.suppress(asyncio.CancelledError, Exception):
+                    await dispatcher
+
+            current_task = asyncio.current_task()
+            callback_tasks = [task for task in self.callback_tasks if task is not current_task]
+            self.callback_tasks.clear()
+
+            for task in callback_tasks:
+                task.cancel()
+            if callback_tasks:
+                await asyncio.gather(*callback_tasks, return_exceptions=True)
+
+        finally:
+            if session is not None:
+                await session.close()
+
+    async def __ws_dispatch(self, websocket: aiohttp.ClientWebSocketResponse, waiter: WsWaiter) -> None:
+        try:
+            async for msg in websocket:
+                if msg.type is not aiohttp.WSMsgType.BINARY:
+                    continue
+
                 data, cmd, req_id = parse_ws_bytes(self.account, msg.data)
                 res_callback = self.callbacks.get(cmd, None)
                 if res_callback is None:
-                    self.__default_callback(req_id, data)
+                    waiter.set_done(req_id, data)
                 else:
-                    self.loop.create_task(res_callback(self, data, req_id))
+                    task = self.loop.create_task(res_callback(self, data, req_id))
+                    self.callback_tasks.add(task)
+                    task.add_done_callback(self.callback_tasks.discard)
 
         except asyncio.CancelledError:
-            self._status = WsStatus.CLOSED
+            raise
         except Exception:
+            with contextlib.suppress(Exception):
+                await websocket.close()
+        finally:
             self._status = WsStatus.CLOSED
-            if self.websocket is not None:
-                await self.websocket.close()
+            waiter.fail_all(aiohttp.ServerDisconnectedError("websocket连接已断开"))
 
     @property
     def status(self) -> WsStatus:
@@ -507,18 +552,25 @@ class WsCore:
 
         Raises:
             TimeoutError: 发送超时
+            aiohttp.ServerDisconnectedError: 连接未建立或已关闭
         """
 
-        response = self.waiter.new()
+        waiter = self.waiter
+        websocket = self.websocket
+        if waiter is None or websocket is None or websocket.closed:
+            raise aiohttp.ServerDisconnectedError("websocket连接未建立")
+
+        response = waiter.new()
         req_data = pack_ws_bytes(self.account, data, cmd, response.req_id, compress=compress, encrypt=encrypt)
 
         try:
             async with timeout(self.net_core.timeout.ws_send, self.loop):
-                await self.websocket.send_bytes(req_data)
+                await websocket.send_bytes(req_data)
         except TimeoutError as err:
             response.future.cancel()
             raise TimeoutError("Timeout to send") from err
         except BaseException:
             response.future.cancel()
+            raise
         else:
             return response
