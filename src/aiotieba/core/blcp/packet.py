@@ -10,6 +10,7 @@ from sys import maxsize as LONG_MAX
 from typing import TYPE_CHECKING, Any, Self
 
 from ...api._protobuf import Lcm_pb2, Rpc_pb2
+from ...helper import parse_json
 from .enums import BLCPServiceID, CompressType
 from .exception import BLCPProtocolError
 
@@ -172,7 +173,7 @@ class RpcMeta:
         return self.notify is not None
 
     @property
-    def _inner(self) -> RpcRequestMeta | RpcResponseMeta | RpcNotifyMeta | None:
+    def __inner(self) -> RpcRequestMeta | RpcResponseMeta | RpcNotifyMeta | None:
         if self.response is not None:
             return self.response
         if self.notify is not None:
@@ -181,18 +182,15 @@ class RpcMeta:
 
     @property
     def service_id(self) -> int:
-        inner = self._inner
-        return inner.service_id if inner is not None else -1
+        return self.__inner.service_id
 
     @property
     def method_id(self) -> int:
-        inner = self._inner
-        return inner.method_id if inner is not None else -1
+        return self.__inner.method_id
 
     @property
     def log_id(self) -> int:
-        inner = self._inner
-        return inner.log_id if inner is not None else 0
+        return self.__inner.log_id
 
     def to_proto(self) -> Rpc_pb2.RpcMeta:
         proto = Rpc_pb2.RpcMeta()
@@ -202,9 +200,9 @@ class RpcMeta:
             proto.response.CopyFrom(self.response.to_proto())
         if self.notify is not None:
             proto.notify.CopyFrom(self.notify.to_proto())
-        proto.compress_type = int(self.compress_type)
+        proto.compress_type = self.compress_type
         proto.correlation_id = self.correlation_id
-        proto.accept_compress_type = int(self.accept_compress_type)
+        proto.accept_compress_type = self.accept_compress_type
         return proto
 
     @classmethod
@@ -273,14 +271,7 @@ class BLCPBody(abc.ABC):
 
         # 控制面使用protobuf 业务面使用json
         body_type: type[BLCPBody] = LcmBody if meta.service_id == BLCPServiceID.LCM else JsonBody
-        try:
-            return body_type.decode(data)
-        except Exception:
-            fallback: type[BLCPBody] = JsonBody if body_type is LcmBody else LcmBody
-            try:
-                return fallback.decode(data)
-            except Exception as err:
-                raise BLCPProtocolError(f"无法解析报文体 {data[:32]!r}") from err
+        return body_type.decode(data)
 
 
 @dcs.dataclass
@@ -339,7 +330,6 @@ class LcmBody(BLCPBody):
         rpc_data = Lcm_pb2.RpcData()
         request = rpc_data.lcm_request
         request.log_id = log_id
-        # Note: 协议中该字段为bytes 本地proto定义为string 对ASCII token等价
         request.token = token
         request.timestamp = timestamp
         request.start_type = start_type
@@ -419,10 +409,7 @@ class JsonBody(BLCPBody):
 
     @classmethod
     def decode(cls, data: bytes) -> Self:
-        payload = json.loads(data)
-        if not isinstance(payload, dict):
-            raise BLCPProtocolError("JSON报文体不是对象")
-        return cls(payload)
+        return cls(parse_json(data))
 
 
 @dcs.dataclass
@@ -485,7 +472,6 @@ class LCPFrame:
 
         Raises:
             asyncio.IncompleteReadError: 连接被关闭
-            BLCPProtocolError: 帧长度非法
         """
 
         await reader.readuntil(FRAME_PREFIX)
@@ -493,8 +479,6 @@ class LCPFrame:
 
         total_len = int.from_bytes(lengths[0:4], "big")
         header_len = int.from_bytes(lengths[4:8], "big")
-        if total_len > 1 << 20 or header_len > 1 << 20 or header_len > total_len:
-            raise BLCPProtocolError(f"帧长度非法 total={total_len} header={header_len}")
 
         header = await reader.readexactly(header_len)
         body = await reader.readexactly(total_len - header_len)
@@ -545,46 +529,16 @@ class BLCPPacket:
 
         Returns:
             BLCPPacket: 报文 具体类型由帧头决定
-
-        Raises:
-            BLCPProtocolError: 帧头中缺少request/response/notify
         """
 
         meta = RpcMeta.decode(frame.header)
         body = BLCPBody.decode_for(meta, frame.body)
 
-        if meta.is_notify:
-            return BLCPNotify(meta, body)
-        if meta.is_response:
-            return BLCPResponse(meta, body)
         if meta.is_request:
             return BLCPRequest(meta, body)
-
-        raise BLCPProtocolError("帧头中缺少request/response/notify")
-
-    @classmethod
-    def from_bytes(cls, data: bytes) -> Self:
-        """
-        从字节反序列化为报文
-
-        Args:
-            data (bytes): 至少包含一个完整帧的字节
-
-        Returns:
-            BLCPPacket: 报文
-        """
-
-        if not data.startswith(FRAME_PREFIX):
-            raise BLCPProtocolError("帧缺少lcp魔数")
-
-        total_len = int.from_bytes(data[4:8], "big")
-        header_len = int.from_bytes(data[8:12], "big")
-        if header_len > total_len or len(data) < 12 + total_len:
-            raise BLCPProtocolError(f"帧长度非法 total={total_len} header={header_len}")
-
-        frame = LCPFrame(data[12 : 12 + header_len], data[12 + header_len : 12 + total_len])
-
-        return cls.from_frame(frame)
+        if meta.is_response:
+            return BLCPResponse(meta, body)
+        return BLCPNotify(meta, body)
 
 
 @dcs.dataclass
@@ -623,18 +577,13 @@ class BLCPRequest(BLCPPacket):
             correlation_id = random.randint(0, LONG_MAX)
 
         events = [EventTimestamp.now(event)] if event else []
-        meta = RpcMeta(
-            correlation_id=correlation_id,
-            request=RpcRequestMeta(
-                service_id=int(service_id),
-                method_id=int(method_id),
-                log_id=correlation_id,
-                need_common=need_common,
-                events=events,
-            ),
-        )
+        request_meta = RpcRequestMeta(service_id, method_id, correlation_id, need_common, events)
+        meta = RpcMeta(correlation_id, request_meta)
 
-        return cls(meta, body if body is not None else BytesBody())
+        if body is None:
+            body = BytesBody()
+
+        return cls(meta, body)
 
     @property
     def correlation_id(self) -> int:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import json
+import asyncio
 import logging
 import socket
 import ssl
@@ -25,6 +25,7 @@ from .api import (
     del_thread,
     del_threads,
     dislike_forum,
+    fetch_chatroom_msg,
     follow_forum,
     follow_user,
     get_ats,
@@ -37,6 +38,7 @@ from .api import (
     get_blacklist,
     get_blacklist_old,
     get_blocks,
+    get_chatroom_detail,
     get_cid,
     get_comments,
     get_dislike_forums,
@@ -51,6 +53,7 @@ from .api import (
     get_group_msg,
     get_images,
     get_last_replyers,
+    get_lcm_token,
     get_member_users,
     get_posts,
     get_rank_forums,
@@ -80,7 +83,11 @@ from .api import (
     handle_unblock_appeals,
     init_baidu_id,
     init_z_id,
+    join_chatroom,
     login,
+    login_blcp_cc,
+    login_blcp_im,
+    login_blcp_lcm,
     move,
     profile,
     recommend,
@@ -117,6 +124,7 @@ from .enums import (
     BawuSearchType,
     BawuType,
     BlacklistType,
+    BLCPStatus,
     CommentSortType,
     Gender,
     GroupType,
@@ -131,11 +139,11 @@ from .enums import (
 )
 from .exception import BoolResponse, IntResponse, StrResponse
 from .helper.cache import ForumInfoCache
-from .helper.utils import check_rn, handle_exception, is_portrait, is_user_name
+from .helper.crypto import user_id2bduk
+from .helper.utils import check_rn, handle_exception, is_portrait, is_user_name, parse_json
 from .logging import get_logger as LOG
 
 if TYPE_CHECKING:
-    import asyncio
     import datetime as dt
     from collections.abc import Iterable
 
@@ -238,15 +246,28 @@ class Client:
         net_core = NetCore(connector, self._proxy, self._timeout)
         self._http_core = HttpCore(self._account, net_core)
         self._ws_cores: dict[str, WsCore] = {}
-        self._blcp_core = BLCPCore(account=self._account, net_core=net_core)
+        self._blcp_core = BLCPCore(account=self._account)
 
         return self
 
     async def __aexit__(self, exc_type=None, exc_val=None, exc_tb=None) -> None:
-        for ws_core in self._ws_cores.values():
-            await ws_core.close()
-        await self._blcp_core.close()
-        await self._connector.close()
+        await self.close()
+
+    async def close(self) -> None:
+        """
+        关闭所有连接
+        """
+
+        ws_cores, self._ws_cores = self._ws_cores, {}
+
+        try:
+            if ws_cores:
+                await asyncio.gather(*(ws_core.close() for ws_core in ws_cores.values()), return_exceptions=True)
+        finally:
+            try:
+                await self._blcp_core.close()
+            finally:
+                await self._connector.close()
 
     def __hash__(self) -> int:
         return hash(self.account)
@@ -287,7 +308,7 @@ class Client:
                 await ws_core.connect()
                 await self.__upload_sec_key(ws_core)
             except BaseException:
-                ws_core._status = WsStatus.CLOSED
+                await ws_core.close()
                 raise
 
         return BoolResponse()
@@ -2779,7 +2800,7 @@ class Client:
                 if message.msg_type != MsgType.READED:
                     continue
 
-                content: dict = json.loads(message.text)
+                content: dict = parse_json(message.text)
                 if int(content.get("eventId", 0)) != 22001:
                     continue
 
@@ -2788,61 +2809,37 @@ class Client:
 
         return groups
 
-    @handle_exception(BoolResponse, ok_log_level=logging.INFO)
-    async def send_chatroom_msg(
-        self, chatroom_id: int, fid: int, text: str, atuser_ids: Iterable[int] | None = None, robot: int = -1
-    ) -> BoolResponse:
-        """
-        向吧群发送信息，仅限简单文本。如需要@他人需要指定atuser_ids，如需与bot交互需要指定atuser_ids和robot
-
-        Args:
-            chatroom_id (int): 聊天室id
-            fid (int): 吧id
-            text (str): 待发送内容
-            atuser_ids (Iterable[int], optional): 需要@的人的user_id列表
-            robot (int, optional): 机器人指令id。机器人靠此分辨指令，而非text内容。
-
-        Returns:
-            BoolResponse: True成功 False失败
-        """
-
-        if not self.account.user.user_id:
-            await self.__login()
-        if not self._blcp_core.is_logged_in:
-            await self.__init_blcp()
-
-        level_info = await self.__get_forum_level(fid)
-        level = level_info.user_level
-
-        # 处理艾特@
-        atdata = []
-        if atuser_ids:
-            for count, user_id in enumerate(atuser_ids):
-                userforAt = await self._get_uinfo_profile(user_id)
-                if not all([userforAt.portrait, userforAt.nick_name]):
-                    userforAt = await self._get_uinfo_profile(user_id)
-
-                atdata.append({
-                    "at_type": "user",
-                    "at_baidu_uk": self._blcp_core.get_bduk(user_id),
-                    "at_name": userforAt.nick_name,
-                    "at_portrait": userforAt.portrait,
-                    "position": str(count),
-                })
-
-        return await send_chatroom_msg.request(
-            self._blcp_core,
-            chatroom_id,
-            text,
-            fid,
-            level,
-            atdata=atdata,
-            robot=robot,
-        )
-
     async def __init_blcp(self) -> None:
-        if not self._blcp_core.is_logged_in:
-            await self._blcp_core.login()
+        if self._blcp_core.conn.status is BLCPStatus.LOGGED_IN:
+            return
+
+        token = await self.__get_lcm_token()
+
+        if not self._blcp_core.conn.is_open:
+            await self._blcp_core.conn.connect()
+
+        await self.__login_blcp_lcm(token)
+        await self.__login_blcp_cc()
+        await self.__login_blcp_im()
+
+        self._blcp_core.conn.status = BLCPStatus.LOGGED_IN
+
+    async def __get_lcm_token(self) -> str:
+        return await get_lcm_token.request(self._http_core)
+
+    async def __login_blcp_lcm(self, token: str) -> None:
+        interval_ms = await login_blcp_lcm.request(self._blcp_core, token)
+        self._blcp_core.conn.start_heartbeat(interval_ms)
+
+    async def __login_blcp_cc(self) -> None:
+        await login_blcp_cc.request(self._blcp_core)
+
+    async def __login_blcp_im(self) -> None:
+        result = await login_blcp_im.request(self._blcp_core)
+        user = self.account.user
+        user.trigger_id = result.trigger_id
+        user.uk = result.uk
+        user.bduk = result.bduk
 
     async def __get_forum_level(self, fid: int) -> get_forum_level.LevelInfo:
         if not self.account.user.user_id:
@@ -2856,7 +2853,7 @@ class Client:
         获取某吧所有群聊
 
         Args:
-            fid (int): 吧id.
+            fid (int): 吧id
 
         Returns:
             RoomList: 群信息
@@ -2866,6 +2863,24 @@ class Client:
             await self.__login()
 
         return await get_roomlist_by_fid.request(self._http_core, fid)
+
+    @handle_exception(get_chatroom_detail.ChatroomDetail)
+    async def get_chatroom_detail(
+        self, chatroom_id: int, last_msg_id: int = 0, last_time: int = 0
+    ) -> get_chatroom_detail.ChatroomDetail:
+        """
+        获取聊天室详情
+
+        Args:
+            chatroom_id (int): 聊天室id
+            last_msg_id (int, optional): 本地最新消息id. Defaults to 0.
+            last_time (int, optional): 本地最新消息时间. Defaults to 0.
+
+        Returns:
+            ChatroomDetail: 聊天室详情 其中`robots`包含机器人及其技能信息
+        """
+
+        return await get_chatroom_detail.request(self._http_core, chatroom_id, last_msg_id, last_time)
 
     def get_chat_message_queue(self) -> asyncio.Queue:
         """
@@ -2891,12 +2906,60 @@ class Client:
 
         if not self.account.user.user_id:
             await self.__login()
-        if not self._blcp_core.is_logged_in:
+        if self._blcp_core.conn.status is not BLCPStatus.LOGGED_IN:
             await self.__init_blcp()
 
-        try:
-            await self._blcp_core.join_chatroom(chatroom_id)
-        except Exception as err:
-            raise Exception("加入房间失败") from err
+        await self.__join_chatroom(chatroom_id)
 
         return BoolResponse()
+
+    async def __join_chatroom(self, chatroom_id: int) -> None:
+        await join_chatroom.request(self._blcp_core, chatroom_id)
+        await fetch_chatroom_msg.request(self._http_core, chatroom_id)
+
+    @handle_exception(BoolResponse, ok_log_level=logging.INFO)
+    async def send_chatroom_msg(
+        self, chatroom_id: int, fid: int, text: str, at_user_ids: Iterable[int] | None = None, robot: int = -1
+    ) -> BoolResponse:
+        """
+        向吧群发送信息，仅限简单文本
+        如需要@他人需要指定at_user_ids
+        如需与bot交互需要指定at_user_ids和robot
+
+        Args:
+            chatroom_id (int): 聊天室id
+            fid (int): 吧id
+            text (str): 待发送内容
+            at_user_ids (Iterable[int], optional): 需要@的人的user_id列表
+            robot (int, optional): 机器人技能id 机器人靠此分辨指令而非text内容 可通过`get_chatroom_detail`获取
+
+        Returns:
+            BoolResponse: True成功 False失败
+        """
+
+        if not self.account.user.user_id:
+            await self.__login()
+        if not self.account.user.nick_name:
+            # 吧群消息中的name必须与个人资料昵称一致 仅HTTP登录时该字段为空 服务端会返回1507
+            user = await self._get_uinfo_profile(self.account.user.user_id)
+            self.account.user |= user
+        if self._blcp_core.conn.status is not BLCPStatus.LOGGED_IN:
+            await self.__init_blcp()
+
+        level_info = await self.__get_forum_level(fid)
+        level = level_info.user_level
+
+        # 处理@
+        at_data = []
+        if at_user_ids:
+            for count, user_id in enumerate(at_user_ids):
+                at_user = await self._get_uinfo_profile(user_id)
+                at_data.append({
+                    "at_type": "user",
+                    "at_baidu_uk": user_id2bduk(user_id),
+                    "at_name": at_user.nick_name,
+                    "at_portrait": at_user.portrait,
+                    "position": str(count),
+                })
+
+        return await send_chatroom_msg.request(self._blcp_core, chatroom_id, text, fid, level, at_data, robot)

@@ -6,14 +6,13 @@ from http.cookies import Morsel
 from typing import TYPE_CHECKING
 
 import aiohttp
+import yarl
 
 from ..__version__ import __version__
 from ..const import APP_BASE_HOST
 from ..helper.crypto import APP_SALT, sign
 
 if TYPE_CHECKING:
-    import yarl
-
     from .account import Account
     from .net import NetCore
 
@@ -112,6 +111,41 @@ class HttpCore:
             url,
             headers=self.app.headers,
             data=payload,
+            proxy=self.net_core.proxy.url,
+            proxy_auth=self.net_core.proxy.auth,
+            ssl=False,
+        )
+
+        return request
+
+    def pack_pim_request(
+        self, path: str, data: list[tuple[str, str | int]], *, with_cookie: bool = False
+    ) -> aiohttp.ClientRequest:
+        """
+        打包发往pim.baidu.com的JSON请求
+
+        Args:
+            path (str): 请求路径
+            data (list[tuple[str, str | int]]): 参数元组列表
+            with_cookie (bool, optional): 是否携带BDUSS. Defaults to False.
+
+        Returns:
+            aiohttp.ClientRequest
+        """
+
+        headers = {
+            "Accept-Encoding": "gzip",
+            "User-Agent": "okhttp/3.11.0",
+            "Host": "pim.baidu.com",
+        }
+        cookies = {"BDUSS": self.account.BDUSS} if with_cookie else None
+
+        request = aiohttp.ClientRequest(
+            aiohttp.hdrs.METH_POST,
+            yarl.URL.build(scheme="https", host="pim.baidu.com", path=path, port=443),
+            headers=headers,
+            cookies=cookies,
+            data=aiohttp.payload.JsonPayload(dict(data)),
             proxy=self.net_core.proxy.url,
             proxy_auth=self.net_core.proxy.auth,
             ssl=False,

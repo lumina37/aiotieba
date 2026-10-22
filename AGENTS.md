@@ -27,17 +27,20 @@ aiotieba/
 │   │   ├── account.py          # Account类（用户token与当前用户信息）
 │   │   ├── net.py              # NetCore（连接池、代理与超时配置）
 │   │   ├── http.py             # HttpCore（http会话）
-│   │   ├── websocket.py        # WsCore（websocket会话）
+│   │   ├── websocket/          # websocket会话
+│   │   │   ├── core.py         # WsCore（连接 + 请求响应配对）
+│   │   │   ├── helper.py       # 报文加解密与压缩
+│   │   │   └── msgid.py        # msg_id与私信游标管理
 │   │   └── blcp/               # BLCP私有协议
 │   │       ├── const.py        # 跨模块常量（appid/sdk版本）
 │   │       ├── enums.py        # 服务号、方法号、压缩类型
 │   │       ├── packet.py       # 报文对象（帧/RpcMeta/报文体）的序列化
 │   │       ├── conn.py         # BLCPConn（传输 + RPC + 心跳）
-│   │       └── core.py         # BLCPCore（登录 + 吧群/聊天室等业务）
+│   │       └── core.py         # BLCPCore（业务请求与事件队列）
 │   └── helper/                 # 内部辅助工具
 │       ├── utils.py            # 实用方法
 │       ├── cache.py            # 吧名↔fid的双向缓存
-│       └── crypto/             # 密码学 C 扩展
+│       └── crypto/             # 密码学工具
 │           ├── CMakeLists.txt  # C扩展构建
 │           └── csrc/           # C扩展源码
 ├── tests/                      # pytest单元测试
@@ -82,7 +85,7 @@ aiotieba/
 4. **`HttpCore`**：HTTP的会话状态容器
 5. **`WsCore`**：WebSocket的会话状态容器
 6. **`BLCPConn`**：BLCP连接层。负责传输、RPC配对与心跳维持
-7. **`BLCPCore`**：BLCP业务层。负责登录、吧群等业务与pim HTTP请求，内部持有`BLCPConn`
+7. **`BLCPCore`**：BLCP业务层。提供业务请求与事件队列，内部持有`BLCPConn`
 
 ### 数据流概览
 

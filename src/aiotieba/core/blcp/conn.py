@@ -39,12 +39,9 @@ class BLCPFuture:
         self.correlation_id = correlation_id
         self.read_timeout = read_timeout
 
-    async def read(self, read_timeout: float | None = None) -> BLCPResponse:
+    async def read(self) -> BLCPResponse:
         """
         等待并读取响应
-
-        Args:
-            read_timeout (float | None, optional): 本次读取的超时时间. Defaults to None.
 
         Returns:
             BLCPResponse: 响应报文
@@ -53,10 +50,8 @@ class BLCPFuture:
             TimeoutError: 读取超时
         """
 
-        delay = self.read_timeout if read_timeout is None else read_timeout
-
         try:
-            async with timeout(delay, self.loop):
+            async with timeout(self.read_timeout, self.loop):
                 return await self.future
         except TimeoutError as err:
             self.future.cancel()
@@ -81,11 +76,6 @@ class BLCPWaiter:
     def __init__(self, read_timeout: float) -> None:
         self.waiter = weakref.WeakValueDictionary()
         self.read_timeout = read_timeout
-        weakref.finalize(self, self.__cancel_all)
-
-    def __cancel_all(self) -> None:
-        for future in self.waiter.values():
-            future.future.cancel()
 
     def new(self, correlation_id: int) -> BLCPFuture:
         """
@@ -132,7 +122,7 @@ class BLCPWaiter:
 @dcs.dataclass
 class BLCPConn:
     """
-    BLCP连接层 负责传输、RPC配对与心跳维持
+    BLCP连接层
 
     Args:
         timeout (TimeoutConfig, optional): 超时配置. Defaults to None.
@@ -173,7 +163,11 @@ class BLCPConn:
         连接是否可用
         """
 
-        return self.status is BLCPStatus.OPEN and self.writer is not None and not self.writer.is_closing()
+        return (
+            self.status in (BLCPStatus.OPEN, BLCPStatus.LOGGED_IN)
+            and self.writer is not None
+            and not self.writer.is_closing()
+        )
 
     async def connect(self) -> None:
         """
@@ -194,7 +188,7 @@ class BLCPConn:
         )
 
         self.waiter = BLCPWaiter(self.timeout.blcp_read)
-        self.dispatcher = self.loop.create_task(self._dispatch(), name="blcp_dispatcher")
+        self.dispatcher = self.loop.create_task(self.__dispatch(), name="blcp_dispatcher")
         self.status = BLCPStatus.OPEN
 
     async def heartbeat(self) -> None:
@@ -205,42 +199,35 @@ class BLCPConn:
         correlation_id = random.randint(0, LONG_MAX)
         body = LcmBody.heartbeat(log_id=correlation_id, timestamp=int(time.time() * 1000))
 
-        await self.send(
+        await self.send_nowait(
             BLCPRequest.create(BLCPServiceID.LCM, BLCPMethodID.HEARTBEAT, body, correlation_id=correlation_id)
         )
 
-    async def request(self, request: BLCPRequest, read_timeout: float | None = None) -> BLCPResponse:
+    async def send(self, request: BLCPRequest) -> BLCPResponse:
         """
-        发送请求并等待响应
+        发送请求报文并等待响应
 
         Args:
             request (BLCPRequest): 请求报文
-            read_timeout (float | None, optional): 读超时时间. Defaults to None.
 
         Returns:
             BLCPResponse: 响应报文
         """
-
-        if self.waiter is None or self.writer is None or self.writer.is_closing():
-            raise BLCPConnectionError("BLCP连接未建立")
 
         future = self.waiter.new(request.correlation_id)
 
         self.writer.write(request.to_bytes())
         await self.writer.drain()
 
-        return await future.read(read_timeout)
+        return await future.read()
 
-    async def send(self, packet: BLCPPacket) -> None:
+    async def send_nowait(self, packet: BLCPPacket) -> None:
         """
-        发送报文 不等待响应
+        发送请求报文但不等待响应
 
         Args:
-            packet (BLCPPacket): 报文
+            packet (BLCPPacket): 请求报文
         """
-
-        if self.writer is None or self.writer.is_closing():
-            raise BLCPConnectionError("BLCP连接未建立")
 
         self.writer.write(packet.to_bytes())
         await self.writer.drain()
@@ -291,9 +278,9 @@ class BLCPConn:
         if not interval or interval <= 0:
             return
 
-        self.heartbeater = self.loop.create_task(self._heartbeat_loop(), name="blcp_heartbeater")
+        self.heartbeater = self.loop.create_task(self.__heartbeat_loop(), name="blcp_heartbeater")
 
-    async def _heartbeat_loop(self) -> None:
+    async def __heartbeat_loop(self) -> None:
         while True:
             await asyncio.sleep(self.heartbeat_interval)
 
@@ -303,16 +290,16 @@ class BLCPConn:
                 self.status = BLCPStatus.CLOSED
                 return
 
-    async def _dispatch(self) -> None:
+    async def __dispatch(self) -> None:
         try:
             while True:
                 frame = await LCPFrame.read_from(self.reader)
                 packet = BLCPPacket.from_frame(frame)
 
                 if isinstance(packet, BLCPResponse):
-                    self._on_response(packet)
+                    self.__on_response(packet)
                 elif isinstance(packet, BLCPNotify):
-                    self._on_notify(packet)
+                    self.__on_notify(packet)
 
         except asyncio.CancelledError:
             raise
@@ -323,7 +310,7 @@ class BLCPConn:
             if self.waiter is not None:
                 self.waiter.fail_all(BLCPConnectionError("BLCP连接已断开"))
 
-    def _on_response(self, response: BLCPResponse) -> None:
+    def __on_response(self, response: BLCPResponse) -> None:
         if response.service_id == BLCPServiceID.LCM and response.method_id == BLCPMethodID.HEARTBEAT:
             lcm = response.lcm
             if lcm is not None and lcm.next_interval_ms > 0:
@@ -332,7 +319,7 @@ class BLCPConn:
         if self.waiter is not None:
             self.waiter.set_done(response.correlation_id, response)
 
-    def _on_notify(self, notify: BLCPNotify) -> None:
+    def __on_notify(self, notify: BLCPNotify) -> None:
         if self.notifies.full():
             self.notifies.get_nowait()
 

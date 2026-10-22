@@ -2,16 +2,11 @@ from __future__ import annotations
 
 import json
 import time
-from dataclasses import dataclass
+from typing import Any
 
 from ...core import CHAT_APPID, CHAT_SDK_VERSION, BLCPCore, BLCPMethodID, BLCPServiceID
 from ...exception import BoolResponse, TiebaServerError
-
-
-@dataclass
-class AppConstants:
-    appid: int = CHAT_APPID
-    sdk_version: int = CHAT_SDK_VERSION
+from ...helper.crypto import compute_msg_key, user_id2bduk
 
 
 def construct_request_data(
@@ -22,9 +17,7 @@ def construct_request_data(
     level: int,
     atdata: list[dict] | None = None,
     robot: int = -1,
-):
-    constants = AppConstants()
-
+) -> dict[str, Any]:
     user = core.account.user
     uk = user.uk
     user_id = user.user_id
@@ -49,7 +42,7 @@ def construct_request_data(
             "content_type": "0",
             "content_body": json.dumps({"text": text}, ensure_ascii=False),
             "src": "",
-            "baidu_uk": core.get_bduk(user_id),
+            "baidu_uk": user_id2bduk(user_id),
             "ext": {},
         }
     }
@@ -156,19 +149,19 @@ def construct_request_data(
 
     # 构造最终请求数据
     request_data = {
-        "method": int(BLCPMethodID.SEND_MCAST_MSG),
+        "method": BLCPMethodID.SEND_MCAST_MSG,
         "mcast_id": chatroom_id,
         "role": 3,
         "token": core.account.BDUSS,
-        "appid": constants.appid,
+        "appid": CHAT_APPID,
         "uk": uk,
         "origin_id": origin_id,
         "type": 81,
         "app_safe_ext": json.dumps(app_safe_ext, ensure_ascii=False),
         "content": content,
-        "msg_key": core.make_msg_key(core.get_bduk(user_id)),
+        "msg_key": compute_msg_key(user_id2bduk(user_id)),
         "account_type": 1,
-        "sdk_version": constants.sdk_version,
+        "sdk_version": CHAT_SDK_VERSION,
         "event_list": [
             {"event": "CClickSendBegin", "timestamp_ms": 0},
             {"event": "CSendBegin", "timestamp_ms": 0},
@@ -179,18 +172,18 @@ def construct_request_data(
     return request_data
 
 
-async def send_request(core: BLCPCore, request_data: dict) -> BoolResponse:
+async def send_request(core: BLCPCore, request_data: dict[str, Any]) -> BoolResponse:
     request_data["client_logid"] = int(time.time() * 1_000_000)
     request_data["rpc"] = '{"rpc_retry_time":0}'
 
     response = await core.request(BLCPServiceID.MCAST, BLCPMethodID.SEND_MCAST_MSG, request_data)
 
     payload = response.payload
-    err_code = payload.get("err_code", -1)
+    err_code = payload["err_code"]
     if err_code == 0:
         return BoolResponse()
 
-    raise TiebaServerError(err_code, payload.get("msg", "发送群聊消息失败"))
+    raise TiebaServerError(err_code, payload["msg"])
 
 
 async def request(
@@ -201,6 +194,8 @@ async def request(
     level: int,
     atdata: list[dict] | None = None,
     robot: int = -1,
-):
+) -> BoolResponse:
     request_data = construct_request_data(core, chatroom_id, text, fid, level, atdata, robot)
-    return await send_request(core, request_data)
+    response = await send_request(core, request_data)
+
+    return response
