@@ -219,10 +219,6 @@ class WsCore:
 
         websocket = self.websocket
         waiter = self.waiter
-        if websocket is None or waiter is None:
-            await self.close()
-            raise aiohttp.ServerDisconnectedError("websocket连接已关闭")
-
         self.ws_dispatcher = self.loop.create_task(self.__ws_dispatch(websocket, waiter), name="ws_dispatcher")
 
     async def close(self) -> None:

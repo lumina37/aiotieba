@@ -2781,8 +2781,6 @@ class Client:
 
         ws_core = self._ws_cores[CHAT_VERSION]
         groups = await get_group_msg.request(ws_core, group_ids, get_type)
-        if groups.err is not None:
-            return groups
 
         mid_manager = ws_core.mid_manager
 
@@ -2810,9 +2808,6 @@ class Client:
         return groups
 
     async def __init_blcp(self) -> None:
-        if self._blcp_core.conn.status is BLCPStatus.LOGGED_IN:
-            return
-
         token = await self.__get_lcm_token()
 
         if not self._blcp_core.conn.is_open:
@@ -2859,9 +2854,6 @@ class Client:
             RoomList: 群信息
         """
 
-        if not self.account.user.user_id:
-            await self.__login()
-
         return await get_roomlist_by_fid.request(self._http_core, fid)
 
     @handle_exception(get_chatroom_detail.ChatroomDetail)
@@ -2904,8 +2896,6 @@ class Client:
             BoolResponse: True成功 False失败
         """
 
-        if not self.account.user.user_id:
-            await self.__login()
         if self._blcp_core.conn.status is not BLCPStatus.LOGGED_IN:
             await self.__init_blcp()
 
