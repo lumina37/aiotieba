@@ -20,15 +20,16 @@
 
 ## 代码风格
 
-- Python代码风格遵循`ruff.toml`
-- C代码风格遵循`.clang-format`
-- 将数据类装入`_classdef.py`文件
-- 数据类都需要由`dataclass`装饰
-- 数据类都需要由类静态成员函数构造，如通过`from_json`构造，避免`__init__`包揽多种初始化实现
-- 在初始化数据类时，参数列表必须是单一变量的列表，不得出现表达式计算，同时为保持风格统一，尽量不使用关键字形参
-- 尽可能避免出现可能为空的字段，尽可能保证用户从数据类中取到的字段都是有效的
-- 尽可能避免直接返回非布尔值，方便加断点调试
-- 取值时避免过度防腐，只需要考虑正常情况下的返回，其余状况一律交给`handle_exception`兜底
+- Python代码风格遵循`ruff.toml`，C代码风格遵循`.clang-format`
+- 除`__init__.py`、`const.py`、`typing.py`等纯声明模块外，文件首行写`from __future__ import annotations`；公开函数、方法与数据类字段均需类型标注，仅用于标注的导入放入`if TYPE_CHECKING:`块
+- 注释与文档使用中文，JSON解析统一用`parse_json`、序列化优先用`pack_json`，以兼容orjson
+- API的数据类统一放在`_classdef.py`并由`dataclass`装饰；优先组合，尽量不使用多级继承，字段集合不同的场景单独建模，顶层容器继承`TbErrorExt`
+- 数据类优先通过静态方法构造（`from_json`、`from_proto`，返回`Self`），不把多种初始化方式塞进`__init__`
+- 构造数据类实例时尽量只使用位置参数（实参为单一变量，不写表达式），避免关键字传参
+- 数据类字段尽量不用`None`做默认值，保证用户取到的字段始终有效；API返回时所有字段都应被赋值，未赋值的字段从类定义中删除
+- 非布尔返回值尽量先赋给局部变量再`return`，便于断点观察；布尔值可直接返回
+- 解析回包时只考虑正常情况：不做多余的类型转换、`.get`兜底、不可达的`raise`或条件判断，其余异常交给`@handle_exception`兜底
+- `api/*/_api.py`的内部函数（`pack_*`、`request`、`parse_body`）不写docstring，文档写在`Client`的公开方法上
 
 ## 命名约定
 
