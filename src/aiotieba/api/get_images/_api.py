@@ -39,7 +39,7 @@ async def _request_bytes(http_core: HttpCore, url: yarl.URL) -> bytes:
         extra_headers={aiohttp.hdrs.REFERER: "tieba.baidu.com"},
     )
 
-    body = await http_core.net_core.send_request(request, headers_checker=_headers_checker)
+    body = await http_core.net_core.send(request, headers_checker=_headers_checker)
 
     return body
 

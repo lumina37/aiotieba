@@ -44,7 +44,7 @@ async def request_http(http_core: HttpCore, fid: int) -> Forum_detail:
         data,
     )
 
-    body = await http_core.net_core.send_request(request)
+    body = await http_core.net_core.send(request)
     return parse_body(body)
 
 

@@ -50,7 +50,7 @@ async def request_http(http_core: HttpCore, uid_or_portrait: str | int) -> UserI
         data,
     )
 
-    body = await http_core.net_core.send_request(request)
+    body = await http_core.net_core.send(request)
     return parse_body(body)
 
 

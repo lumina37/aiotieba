@@ -36,5 +36,5 @@ async def request(http_core: HttpCore, user_name: str) -> UserInfo_json:
         yarl.URL.build(scheme="http", host=WEB_BASE_HOST, path="/i/sys/user_json"), params
     )
 
-    body = await http_core.net_core.send_request(request)
+    body = await http_core.net_core.send(request)
     return parse_body(body)

@@ -35,8 +35,7 @@ aiotieba/
 │   │       ├── const.py        # 跨模块常量（appid/sdk版本）
 │   │       ├── enums.py        # 服务号、方法号、压缩类型
 │   │       ├── packet.py       # 报文对象（帧/RpcMeta/报文体）的序列化
-│   │       ├── conn.py         # BLCPConn（传输 + RPC + 心跳）
-│   │       └── core.py         # BLCPCore（业务请求与事件队列）
+│   │       └── core.py         # BLCPCore（连接 + 传输 + RPC + 心跳）
 │   └── helper/                 # 内部辅助工具
 │       ├── utils.py            # 实用方法
 │       ├── cache.py            # 吧名↔fid的双向缓存
@@ -84,8 +83,7 @@ aiotieba/
 3. **`NetCore`**：管理TCP连接池。同时保存代理、超时等配置信息
 4. **`HttpCore`**：HTTP的会话状态容器
 5. **`WsCore`**：WebSocket的会话状态容器
-6. **`BLCPConn`**：BLCP连接层。负责传输、RPC配对与心跳维持
-7. **`BLCPCore`**：BLCP业务层。提供业务请求与事件队列，内部持有`BLCPConn`
+6. **`BLCPCore`**：BLCP核心容器。负责连接、报文收发、RPC配对与心跳维持
 
 ### 数据流概览
 

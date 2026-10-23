@@ -40,6 +40,6 @@ async def request(http_core: HttpCore, chatroom_id: int, last_msg_id: int = 0, l
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/f/chat/getChatRoomDetail"), params
     )
 
-    body = await http_core.net_core.send_request(request)
+    body = await http_core.net_core.send(request)
 
     return parse_body(body)

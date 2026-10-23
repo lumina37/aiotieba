@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ...core import BLCPLoginError, BLCPMethodID, BLCPServiceID
+from ...core import BLCPLoginError, BLCPMethodID, BLCPRequest, BLCPServiceID, JsonBody
 from ...helper.crypto import enuid
 
 if TYPE_CHECKING:
@@ -29,7 +29,8 @@ async def request(core: BLCPCore) -> None:
         "filter": {"aps": {"cpu_abi": "armeabi-v7a"}, "command": {"step": "0"}},
     }
 
-    response = await core.request(BLCPServiceID.CLOUD_CONTROL, BLCPMethodID.LOGIN, request_data)
+    request = BLCPRequest.create(BLCPServiceID.CLOUD_CONTROL, BLCPMethodID.LOGIN, JsonBody(request_data))
+    response = await core.send(request)
     if response.error_code != 0:
         raise BLCPLoginError(f"云控登录失败 code={response.error_code} text={response.error_text!r}")
 

@@ -44,7 +44,7 @@ async def request_http(http_core: HttpCore, tid: int, options: Iterable[int]) ->
         data,
     )
 
-    body = await http_core.net_core.send_request(request)
+    body = await http_core.net_core.send(request)
     parse_body(body)
 
     return BoolResponse()

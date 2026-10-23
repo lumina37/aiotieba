@@ -38,6 +38,6 @@ async def request(http_core: HttpCore) -> str:
 
     request = http_core.pack_pim_request("/rest/5.0/generate_lcm_token", data)
 
-    body = await http_core.net_core.send_request(request)
+    body = await http_core.net_core.send(request)
 
     return parse_body(body)

@@ -1,6 +1,5 @@
-from .conn import BLCPConn, BLCPFuture, BLCPWaiter
 from .const import CHAT_APPID, CHAT_SDK_VERSION, LCP_SDK_VERSION
-from .core import BLCPCore
+from .core import BLCPCore, BLCPFuture, BLCPWaiter
 from .enums import BLCPMethodID, BLCPServiceID, CompressType
 from .exception import BLCPConnectionError, BLCPError, BLCPLoginError, BLCPProtocolError
 from .packet import (

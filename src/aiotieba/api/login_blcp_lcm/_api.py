@@ -33,7 +33,7 @@ async def request(core: BLCPCore, token: str) -> int:
     )
     request = BLCPRequest.create(BLCPServiceID.LCM, BLCPMethodID.LOGIN, body, correlation_id=correlation_id)
 
-    response = await core.conn.send(request)
+    response = await core.send(request)
     if not response.ok:
         raise BLCPLoginError(f"LCP握手失败 code={response.error_code} text={response.error_text!r}")
 

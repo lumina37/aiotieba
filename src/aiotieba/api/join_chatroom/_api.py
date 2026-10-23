@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ...core import CHAT_APPID, BLCPError, BLCPMethodID, BLCPServiceID
+from ...core import CHAT_APPID, BLCPError, BLCPMethodID, BLCPRequest, BLCPServiceID, JsonBody
 
 if TYPE_CHECKING:
     from ...core import BLCPCore
@@ -17,7 +17,8 @@ async def request(core: BLCPCore, chatroom_id: int) -> None:
         "uk": core.account.user.uk,
     }
 
-    response = await core.request(BLCPServiceID.MCAST, method, request_data)
+    request = BLCPRequest.create(BLCPServiceID.MCAST, method, JsonBody(request_data))
+    response = await core.send(request)
     if response.error_code != 0:
         raise BLCPError(f"加入聊天室失败 code={response.error_code} text={response.error_text!r}")
 

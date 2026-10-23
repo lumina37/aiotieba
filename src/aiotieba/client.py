@@ -2819,21 +2819,21 @@ class Client:
     async def __init_blcp(self) -> None:
         token = await self.__get_lcm_token()
 
-        if not self._blcp_core.conn.is_open:
-            await self._blcp_core.conn.connect()
+        if not self._blcp_core.is_open:
+            await self._blcp_core.connect()
 
         await self.__login_blcp_lcm(token)
         await self.__login_blcp_cc()
         await self.__login_blcp_im()
 
-        self._blcp_core.conn.status = BLCPStatus.LOGGED_IN
+        self._blcp_core.status = BLCPStatus.LOGGED_IN
 
     async def __get_lcm_token(self) -> str:
         return await get_lcm_token.request(self._http_core)
 
     async def __login_blcp_lcm(self, token: str) -> None:
         interval_ms = await login_blcp_lcm.request(self._blcp_core, token)
-        self._blcp_core.conn.start_heartbeat(interval_ms)
+        self._blcp_core.start_heartbeat(interval_ms)
 
     async def __login_blcp_cc(self) -> None:
         await login_blcp_cc.request(self._blcp_core)
@@ -2905,7 +2905,7 @@ class Client:
             BoolResponse: True成功 False失败
         """
 
-        if self._blcp_core.conn.status is not BLCPStatus.LOGGED_IN:
+        if self._blcp_core.status is not BLCPStatus.LOGGED_IN:
             await self.__init_blcp()
 
         await self.__join_chatroom(chatroom_id)
@@ -2941,7 +2941,7 @@ class Client:
         if not self.account.user.nick_name_new:
             # 吧群消息中的name必须与个人资料昵称一致 仅HTTP登录时该字段为空 服务端会返回1507
             await self.get_self_info(ReqUInfo.NICK_NAME)
-        if self._blcp_core.conn.status is not BLCPStatus.LOGGED_IN:
+        if self._blcp_core.status is not BLCPStatus.LOGGED_IN:
             await self.__init_blcp()
 
         level_info = await self.__get_forum_level(fid)

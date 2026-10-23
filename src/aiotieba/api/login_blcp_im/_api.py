@@ -5,7 +5,7 @@ import time
 from typing import TYPE_CHECKING
 
 from ...const import CHAT_VERSION
-from ...core import CHAT_APPID, CHAT_SDK_VERSION, BLCPLoginError, BLCPMethodID, BLCPServiceID
+from ...core import CHAT_APPID, CHAT_SDK_VERSION, BLCPLoginError, BLCPMethodID, BLCPRequest, BLCPServiceID, JsonBody
 from ._classdef import LoginIMResult
 
 if TYPE_CHECKING:
@@ -42,7 +42,8 @@ async def request(core: BLCPCore) -> LoginIMResult:
         "client_logid": int(time.time() * 1_000_000),
     }
 
-    response = await core.request(BLCPServiceID.IM, method, request_data)
+    request = BLCPRequest.create(BLCPServiceID.IM, method, JsonBody(request_data))
+    response = await core.send(request)
     if response.error_code != 0:
         raise BLCPLoginError(f"IM登录失败 code={response.error_code} text={response.error_text!r}")
 

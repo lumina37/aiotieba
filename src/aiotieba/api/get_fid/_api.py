@@ -33,5 +33,5 @@ async def request(http_core: HttpCore, fname: str) -> int:
         yarl.URL.build(scheme="http", host=WEB_BASE_HOST, path="/f/commit/share/fnameShareApi"), params
     )
 
-    body = await http_core.net_core.send_request(request)
+    body = await http_core.net_core.send(request)
     return parse_body(body)

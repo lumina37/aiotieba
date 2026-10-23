@@ -4,7 +4,6 @@ from .blcp import (
     CHAT_SDK_VERSION,
     LCP_SDK_VERSION,
     BLCPBody,
-    BLCPConn,
     BLCPCore,
     BLCPError,
     BLCPFuture,

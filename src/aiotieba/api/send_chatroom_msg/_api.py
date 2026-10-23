@@ -4,7 +4,7 @@ import json
 import time
 from typing import Any
 
-from ...core import CHAT_APPID, CHAT_SDK_VERSION, BLCPCore, BLCPMethodID, BLCPServiceID
+from ...core import CHAT_APPID, CHAT_SDK_VERSION, BLCPCore, BLCPMethodID, BLCPRequest, BLCPServiceID, JsonBody
 from ...exception import BoolResponse, TiebaServerError
 from ...helper.crypto import compute_msg_key, user_id2bduk
 
@@ -176,7 +176,8 @@ async def send_request(core: BLCPCore, request_data: dict[str, Any]) -> BoolResp
     request_data["client_logid"] = int(time.time() * 1_000_000)
     request_data["rpc"] = '{"rpc_retry_time":0}'
 
-    response = await core.request(BLCPServiceID.MCAST, BLCPMethodID.SEND_MCAST_MSG, request_data)
+    request = BLCPRequest.create(BLCPServiceID.MCAST, BLCPMethodID.SEND_MCAST_MSG, JsonBody(request_data))
+    response = await core.send(request)
 
     payload = response.payload
     err_code = payload["err_code"]

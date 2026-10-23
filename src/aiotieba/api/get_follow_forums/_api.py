@@ -36,5 +36,5 @@ async def request(http_core: HttpCore, user_id: int, pn: int, rn: int) -> Follow
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/f/forum/like"), data
     )
 
-    body = await http_core.net_core.send_request(request)
+    body = await http_core.net_core.send(request)
     return parse_body(body)

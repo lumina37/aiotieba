@@ -40,6 +40,6 @@ async def request(http_core: HttpCore, chatroom_id: int) -> list[ChatroomMessage
 
     request = http_core.pack_pim_request("/rest/3.0/im/fetch_mcast_msg_client", data, with_cookie=True)
 
-    body = await http_core.net_core.send_request(request)
+    body = await http_core.net_core.send(request)
 
     return parse_body(body)
