@@ -355,14 +355,14 @@ class Client:
 
         user = self.account.user
 
-        if not user.user_id:
-            if require & ReqUInfo.BASIC:
-                await self.__login()
-        if not user.tieba_uid:
-            if require == ReqUInfo.ALL:
+        if not user.user_id and require & (ReqUInfo.BASIC | ReqUInfo.NICK_NAME | ReqUInfo.OTHER):
+            await self.__login()
+
+        if require & (ReqUInfo.NICK_NAME | ReqUInfo.OTHER):
+            if not user.nick_name_new or (require & ReqUInfo.OTHER and not user.tieba_uid):
                 user |= await self._get_uinfo_profile(user.user_id)
-            elif require & (ReqUInfo.TIEBA_UID | ReqUInfo.NICK_NAME):
-                await self.__init_selfinfo_initNickname()
+        elif require & ReqUInfo.TIEBA_UID and not user.tieba_uid:
+            await self.__init_selfinfo_initNickname()
 
         return user
 
@@ -828,31 +828,40 @@ class Client:
             return UserInfo()
 
         if isinstance(id_, int):
-            if (require | ReqUInfo.BASIC) == ReqUInfo.BASIC:
+            if not require & (ReqUInfo.NICK_NAME | ReqUInfo.TIEBA_UID | ReqUInfo.OTHER):
                 # 仅有BASIC需求
                 return await self._get_uinfo_getuserinfo(id_)
             if self.account.BDUSS and not require & (ReqUInfo.TIEBA_UID | ReqUInfo.OTHER):
+                # 仅有BASIC和NICK_NAME需求
                 return await self._get_uinfo_getUserInfo(id_)
+            if not require & (ReqUInfo.USER_ID | ReqUInfo.USER_NAME | ReqUInfo.OTHER):
+                # 仅有PORTRAIT NICK_NAME TIEBA_UID需求
+                user = await self._get_uinfo_getuserinfo(id_)
+                return await self._get_uinfo_userCard(user.portrait)
             return await self._get_uinfo_profile(id_)
-        elif is_portrait(id_):
-            if (require | ReqUInfo.BASIC) == ReqUInfo.BASIC:
-                # 仅有BASIC需求
-                if not require & ReqUInfo.USER_ID:
-                    # 无USER_ID需求
-                    return await self._get_uinfo_panel(id_)
-            if (require | (ReqUInfo.NICK_NAME | ReqUInfo.TIEBA_UID)) == (ReqUInfo.NICK_NAME | ReqUInfo.TIEBA_UID):
-                # 仅有NICK_NAME和TIEBA_UID需求
+
+        if is_portrait(id_):
+            if require & (ReqUInfo.USER_ID | ReqUInfo.OTHER):
+                return await self._get_uinfo_profile(id_)
+            if require & (ReqUInfo.NICK_NAME | ReqUInfo.TIEBA_UID) and not require & ReqUInfo.USER_NAME:
+                # 仅有PORTRAIT NICK_NAME TIEBA_UID需求
                 return await self._get_uinfo_userCard(id_)
-            return await self._get_uinfo_profile(id_)
-        else:
-            if (require | ReqUInfo.BASIC) == ReqUInfo.BASIC:
-                return await self._get_uinfo_user_json(id_)
-            elif require & ReqUInfo.NICK_NAME and not require & (ReqUInfo.USER_ID | ReqUInfo.TIEBA_UID):
-                # 有NICK_NAME需求但无USER_ID和TIEBA_UID需求
-                return await self._get_uinfo_panel(id_)
-            else:
-                user = await self._get_uinfo_user_json(id_)
-                return await self._get_uinfo_profile(user.portrait)
+            if require & ReqUInfo.TIEBA_UID:
+                return await self._get_uinfo_profile(id_)
+            return await self._get_uinfo_panel(id_)
+
+        if not require & (ReqUInfo.NICK_NAME | ReqUInfo.TIEBA_UID | ReqUInfo.OTHER):
+            # 仅有BASIC需求
+            return await self._get_uinfo_user_json(id_)
+        if not require & (ReqUInfo.USER_ID | ReqUInfo.TIEBA_UID | ReqUInfo.OTHER):
+            # 仅有PORTRAIT USER_NAME NICK_NAME需求
+            return await self._get_uinfo_panel(id_)
+
+        user = await self._get_uinfo_user_json(id_)
+        if not require & (ReqUInfo.USER_ID | ReqUInfo.USER_NAME | ReqUInfo.OTHER):
+            # 仅有PORTRAIT NICK_NAME TIEBA_UID需求
+            return await self._get_uinfo_userCard(user.portrait)
+        return await self._get_uinfo_profile(user.portrait)
 
     @handle_exception(tieba_uid2user_info.UserInfo_TUid)
     @_try_websocket()
@@ -2929,10 +2938,9 @@ class Client:
 
         if not self.account.user.user_id:
             await self.__login()
-        if not self.account.user.nick_name:
+        if not self.account.user.nick_name_new:
             # 吧群消息中的name必须与个人资料昵称一致 仅HTTP登录时该字段为空 服务端会返回1507
-            user = await self._get_uinfo_profile(self.account.user.user_id)
-            self.account.user |= user
+            await self.get_self_info(ReqUInfo.NICK_NAME)
         if self._blcp_core.conn.status is not BLCPStatus.LOGGED_IN:
             await self.__init_blcp()
 
@@ -2943,7 +2951,7 @@ class Client:
         at_data = []
         if at_user_ids:
             for count, user_id in enumerate(at_user_ids):
-                at_user = await self._get_uinfo_profile(user_id)
+                at_user = await self.get_user_info(user_id, ReqUInfo.NICK_NAME | ReqUInfo.PORTRAIT)
                 at_data.append({
                     "at_type": "user",
                     "at_baidu_uk": user_id2bduk(user_id),
