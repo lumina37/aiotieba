@@ -1,6 +1,6 @@
 LATEST_VERSION = "22.12.1.0"  # 通常用于大部分API
 LEGACY_VERSION = "12.64.1.1"  # 通常用于部分依赖旧版格式的API (`get_threads`...)
-CHAT_VERSION = "12.68.1.0"
+CHAT_VERSION = "22.12.1.0"
 
 LAST_REPLYERS_VERSION = "6.0.1"  # `get_last_replyers`专用
 USER_POSTS_VERSION = "8"  # `get_user_posts`专用

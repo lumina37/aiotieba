@@ -71,5 +71,5 @@ class WsMsgGroups(TbErrorExt, Containers[WsMsgGroup]):
 
     @classmethod
     def from_proto(cls, data_proto: TypeMessage) -> Self:
-        objs = [WsMsgGroup.from_proto(p) for p in data_proto.groupInfo]
+        objs = [WsMsgGroup.from_proto(p) for p in data_proto.groupInfo if p.groupInfo.groupId]
         return cls(objs)
