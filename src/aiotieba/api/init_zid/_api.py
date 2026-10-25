@@ -37,7 +37,9 @@ async def request(http_core: HttpCore):
 
     padder = padding.PKCS7(algorithms.AES.block_size).padder()
     padded_req_body = padder.update(req_body) + padder.finalize()
-    aes_encryptor = http_core.account.aes_cbc_chiper.encryptor()
+    iv = b"\x00" * 16
+    zid_chiper = Cipher(algorithms.AES(http_core.account.zid_sec_key), modes.CBC(iv))
+    aes_encryptor = zid_chiper.encryptor()
     req_body_aes = aes_encryptor.update(padded_req_body) + aes_encryptor.finalize()
 
     req_body_md5 = hashlib.md5(req_body).digest()
@@ -55,7 +57,7 @@ async def request(http_core: HttpCore):
 
     path_combine = "".join((app_key, current_ts, sec_key))
     path_combine_md5 = hashlib.md5(path_combine.encode("ascii")).hexdigest()
-    req_query_skey = rc4_42(xyus_md5_str, http_core.account.aes_cbc_sec_key)
+    req_query_skey = rc4_42(xyus_md5_str, http_core.account.zid_sec_key)
     req_query_skey = binascii.b2a_base64(req_query_skey).decode("ascii")
     url = yarl.URL.build(
         scheme="https",
@@ -81,7 +83,6 @@ async def request(http_core: HttpCore):
     res_aes_sec_key = rc4_42(xyus_md5_str, res_query_skey)
     res_data = binascii.a2b_base64(res_json["data"])
 
-    iv = b"\x00" * 16
     aes_chiper = Cipher(algorithms.AES(res_aes_sec_key), modes.CBC(iv))
     aes_decryptor = aes_chiper.decryptor()
     decrypted_res_data = aes_decryptor.update(res_data) + aes_decryptor.finalize()

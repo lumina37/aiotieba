@@ -6,8 +6,8 @@ from aiotieba.helper.crypto import APP_SALT, compute_sign, rc4_42
 
 @pytest.mark.asyncio
 async def test_clib(client: tb.Client):
-    # await client._Client__init_z_id()
-    # assert client.account.z_id != ''
+    # await client._Client__init_zid()
+    # assert client.account.zid != ''
 
     account = client.account
     account.android_id = "6723280942424242"

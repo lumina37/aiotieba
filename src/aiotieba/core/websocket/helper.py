@@ -3,11 +3,28 @@ from __future__ import annotations
 import gzip
 from typing import TYPE_CHECKING
 
-from cryptography.hazmat.primitives import padding
-from cryptography.hazmat.primitives.ciphers import algorithms
+from cryptography.hazmat.primitives import hashes, padding
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 if TYPE_CHECKING:
     from ..account import Account
+
+
+def _create_ws_chiper(account: Account) -> Cipher[modes.ECB]:
+    """
+    构造供websocket使用的AES-ECB加密器
+
+    Args:
+        account (Account): 贴吧的用户参数容器
+
+    Returns:
+        Cipher[modes.ECB]: AES-ECB加密器
+    """
+
+    kdf = PBKDF2HMAC(hashes.SHA1(), 32, b"\xa4\x0b\xc8\x34\xd6\x95\xf3\x13", 5)
+    ws_secret_key = kdf.derive(account.ws_sec_key)
+    return Cipher(algorithms.AES(ws_secret_key), modes.ECB())
 
 
 def pack_ws_bytes(
@@ -37,7 +54,8 @@ def pack_ws_bytes(
         flag |= 0b10000000
         padder = padding.PKCS7(algorithms.AES.block_size).padder()
         data = padder.update(data) + padder.finalize()
-        encryptor = account.aes_ecb_chiper.encryptor()
+        ws_chiper = _create_ws_chiper(account)
+        encryptor = ws_chiper.encryptor()
         data = encryptor.update(data) + encryptor.finalize()
 
     data = b"".join([
@@ -69,7 +87,8 @@ def parse_ws_bytes(account: Account, data: bytes) -> tuple[bytes, int, int]:
 
     data = data_view[9:].tobytes()
     if flag & 0b10000000:
-        decryptor = account.aes_ecb_chiper.decryptor()
+        ws_chiper = _create_ws_chiper(account)
+        decryptor = ws_chiper.decryptor()
         data = decryptor.update(data) + decryptor.finalize()
         unpadder = padding.PKCS7(algorithms.AES.block_size).unpadder()
         data = unpadder.update(data) + unpadder.finalize()

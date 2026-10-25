@@ -82,7 +82,7 @@ from .api import (
     good,
     handle_unblock_appeals,
     init_baidu_id,
-    init_z_id,
+    init_zid,
     join_chatroom,
     login,
     login_blcp_cloud_ctrl,
@@ -327,7 +327,7 @@ class Client:
         if full:
             await self.__init_client_id()
             await self.__init_sample_id()
-            await self.__init_z_id()
+            await self.__init_zid()
             await self.__init_baidu_id()
 
         info = await upload_ws_sec.request(ws_core, full)
@@ -394,12 +394,12 @@ class Client:
         self.account.client_id = client_id
         self.account.sample_id = sample_id
 
-    async def __init_z_id(self) -> None:
-        if self.account.z_id:
+    async def __init_zid(self) -> None:
+        if self.account.zid:
             return
 
-        z_id = await init_z_id.request(self._http_core)
-        self.account.z_id = z_id
+        zid = await init_zid.request(self._http_core)
+        self.account.zid = zid
 
     async def __init_baidu_id(self) -> None:
         if self.account.baidu_id:

@@ -73,11 +73,6 @@ class RpcRequestMeta:
             item.timestamp_ms = event.timestamp_ms
         return proto
 
-    @classmethod
-    def from_proto(cls, proto: Rpc_pb2.RpcRequestMeta) -> Self:
-        events = [EventTimestamp(item.event, item.timestamp_ms) for item in proto.event_list]
-        return cls(proto.service_id, proto.method_id, proto.log_id, proto.need_common, events)
-
 
 @dcs.dataclass
 class RpcResponseMeta:
@@ -161,14 +156,6 @@ class RpcMeta:
     accept_compress_type: CompressType = CompressType.GZIP
 
     @property
-    def is_request(self) -> bool:
-        return self.request is not None
-
-    @property
-    def is_response(self) -> bool:
-        return self.response is not None
-
-    @property
     def is_notify(self) -> bool:
         return self.notify is not None
 
@@ -207,14 +194,25 @@ class RpcMeta:
 
     @classmethod
     def from_proto(cls, proto: Rpc_pb2.RpcMeta) -> Self:
-        return cls(
-            correlation_id=proto.correlation_id,
-            request=RpcRequestMeta.from_proto(proto.request) if proto.HasField("request") else None,
-            response=RpcResponseMeta.from_proto(proto.response) if proto.HasField("response") else None,
-            notify=RpcNotifyMeta.from_proto(proto.notify) if proto.HasField("notify") else None,
-            compress_type=CompressType(proto.compress_type),
-            accept_compress_type=CompressType(proto.accept_compress_type),
-        )
+        """
+        从protobuf解析帧头
+
+        Args:
+            proto (Rpc_pb2.RpcMeta): 帧头
+
+        Returns:
+            RpcMeta: 帧头
+        """
+
+        correlation_id = proto.correlation_id
+        compress_type = CompressType(proto.compress_type)
+
+        if proto.HasField("notify"):
+            notify = RpcNotifyMeta.from_proto(proto.notify)
+            return cls(correlation_id, None, None, notify, compress_type)
+
+        response = RpcResponseMeta.from_proto(proto.response)
+        return cls(correlation_id, None, response, None, compress_type)
 
     def encode(self) -> bytes:
         return self.to_proto().SerializeToString()
@@ -534,11 +532,9 @@ class BLCPPacket:
         meta = RpcMeta.decode(frame.header)
         body = BLCPBody.decode_for(meta, frame.body)
 
-        if meta.is_request:
-            return BLCPRequest(meta, body)
-        if meta.is_response:
-            return BLCPResponse(meta, body)
-        return BLCPNotify(meta, body)
+        if meta.is_notify:
+            return BLCPNotify(meta, body)
+        return BLCPResponse(meta, body)
 
 
 @dcs.dataclass

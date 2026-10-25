@@ -28,7 +28,7 @@ def construct_request_data(
     glevel = user.glevel
 
     # 构造app_safe_ext
-    app_safe_ext = {"haotianjing": {"zid": core.account.z_id or ""}}
+    app_safe_ext = {"haotianjing": {"zid": core.account.zid or ""}}
 
     # 构造content
     content = {

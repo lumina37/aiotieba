@@ -57,7 +57,7 @@ def pack_full_device(account: Account, client_version: str) -> dict[str, str]:
         "cuid_gid": "",
         "timestamp": str(now),
         "sample_id": account.sample_id,
-        "z_id": account.z_id,
+        "z_id": account.zid,
         "baiduid": account.baidu_id,
         "sdk_ver": "3.36.0",
         "framework_ver": "",
@@ -93,10 +93,13 @@ def pack_proto(account: Account, client_version: str, full: bool) -> bytes:
     req_proto.data.device = pack_json(device)
 
     rsa_chiper = load_der_public_key(PUBLIC_KEY)
-    secret_key = rsa_chiper.encrypt(account.aes_ecb_sec_key, PKCS1v15())
+    secret_key = rsa_chiper.encrypt(account.ws_sec_key, PKCS1v15())
     req_proto.data.secretKey = secret_key
-    req_proto.data.stoken = account.STOKEN
-    req_proto.cuid = f"{account.cuid if full else '-'}|com.baidu.tieba{client_version}"
+    if full:
+        req_proto.data.stoken = account.STOKEN
+        req_proto.cuid = f"{account.cuid}|com.baidu.tieba{client_version}"
+    else:
+        req_proto.cuid = f"-|com.baidu.tieba{client_version}"
 
     return req_proto.SerializeToString()
 
