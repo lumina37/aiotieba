@@ -115,3 +115,7 @@ aiotieba/
 ## 可用的skills
 
 可用的skills位于`.agent/skills`目录下
+
+# 可用的账号
+
+一般放在`.secrets/account.toml`
