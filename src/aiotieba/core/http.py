@@ -135,7 +135,7 @@ class HttpCore:
 
         headers = {
             "Accept-Encoding": "gzip",
-            "User-Agent": "okhttp/3.11.0",
+            "User-Agent": f"aiotieba/{__version__}",
             "Host": "pim.baidu.com",
         }
         cookies = {"BDUSS": self.account.BDUSS} if with_cookie else None

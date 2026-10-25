@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from cryptography.hazmat.primitives.asymmetric.padding import PKCS1v15
 from cryptography.hazmat.primitives.serialization import load_der_public_key
 
+from ...__version__ import __version__
 from ...exception import TiebaServerError, TiebaValueError
 from ...helper import pack_json
 from ._classdef import InitWsInfo
@@ -43,11 +44,7 @@ def pack_full_device(account: Account, client_version: str) -> dict[str, str]:
         "mac": "",
         "_client_type": "2",
         "_client_version": client_version,
-        "user_agent": (
-            "Mozilla/5.0 (Linux; Android 13; PDEM10 Build/TKQ1.221114.001; wv) AppleWebKit/537.36 "
-            "(KHTML, like Gecko) Version/4.0 Chrome/114.0.5735.196 Mobile Safari/537.36 "
-            f"tieba/{client_version}"
-        ),
+        "user_agent": f"aiotieba/{__version__}",
         "_client_id": account.client_id,
         "net_type": "1",
         "net": "1",
