@@ -306,7 +306,7 @@ class Client:
         if ws_core.status == WsStatus.CLOSED:
             try:
                 await ws_core.connect()
-                await self.__upload_sec_key(ws_core)
+                await self.__upload_ws_sec(ws_core)
             except BaseException:
                 await ws_core.close()
                 raise
@@ -320,10 +320,10 @@ class Client:
 
         return ws_core
 
-    async def __upload_sec_key(self, ws_core: WsCore) -> None:
-        from .api import init_websocket
+    async def __upload_ws_sec(self, ws_core: WsCore) -> None:
+        from .api import upload_ws_sec
 
-        info = await init_websocket.request(ws_core)
+        info = await upload_ws_sec.request(ws_core)
 
         mid_manager = ws_core.mid_manager
         for group in info.groups:
