@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from ...core import HttpCore
 
 
-def parse_body(body: bytes) -> list[dict[str, str | int]]:
+def parse_body(body: bytes) -> list[dict[str, int]]:
     res_json = parse_json(body)
     if code := int(res_json["error_code"]):
         raise TiebaServerError(code, res_json["error_msg"])
@@ -22,7 +22,7 @@ def parse_body(body: bytes) -> list[dict[str, str | int]]:
     return cates
 
 
-async def request(http_core: HttpCore, fname: str) -> list[dict[str, str | int]]:
+async def request(http_core: HttpCore, fname: str) -> list[dict[str, int]]:
     data = [
         ("BDUSS", http_core.account.BDUSS),
         ("word", fname),
