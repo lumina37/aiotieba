@@ -85,7 +85,7 @@ from .api import (
     init_z_id,
     join_chatroom,
     login,
-    login_blcp_cc,
+    login_blcp_cloud_ctrl,
     login_blcp_im,
     login_blcp_lcm,
     move,
@@ -2830,7 +2830,7 @@ class Client:
             await self._blcp_core.connect()
 
         await self.__login_blcp_lcm(token)
-        await self.__login_blcp_cc()
+        await self.__login_blcp_cloud_ctrl()
         await self.__login_blcp_im()
 
         self._blcp_core.status = BLCPStatus.LOGGED_IN
@@ -2842,8 +2842,8 @@ class Client:
         interval_ms = await login_blcp_lcm.request(self._blcp_core, token)
         self._blcp_core.start_heartbeat(interval_ms)
 
-    async def __login_blcp_cc(self) -> None:
-        await login_blcp_cc.request(self._blcp_core)
+    async def __login_blcp_cloud_ctrl(self) -> None:
+        await login_blcp_cloud_ctrl.request(self._blcp_core)
 
     async def __login_blcp_im(self) -> None:
         result = await login_blcp_im.request(self._blcp_core)
