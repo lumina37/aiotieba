@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ...exception import TiebaServerError
+from ...exception import TiebaServerError, TiebaValueError
+from ._classdef import SendMsgResult
 from .protobuf import CommitPersonalMsgReqIdl_pb2, CommitPersonalMsgResIdl_pb2
 
 if TYPE_CHECKING:
@@ -11,17 +12,17 @@ if TYPE_CHECKING:
 CMD = 205001
 
 
-def pack_proto(user_id: int, content: str, record_id: int) -> bytes:
+def pack_proto(user_id: int, content: str, local_msg_id: int) -> bytes:
     req_proto = CommitPersonalMsgReqIdl_pb2.CommitPersonalMsgReqIdl()
     req_proto.data.toUid = user_id
     req_proto.data.content = content
     req_proto.data.msgType = 1
-    req_proto.data.recordId = record_id
+    req_proto.data.recordId = local_msg_id
 
     return req_proto.SerializeToString()
 
 
-def parse_body(body: bytes) -> int:
+def parse_body(body: bytes) -> SendMsgResult:
     res_proto = CommitPersonalMsgResIdl_pb2.CommitPersonalMsgResIdl()
     res_proto.ParseFromString(body)
 
@@ -29,15 +30,19 @@ def parse_body(body: bytes) -> int:
         raise TiebaServerError(code, res_proto.error.errmsg)
     if code := res_proto.data.blockInfo.blockErrno:
         raise TiebaServerError(code, res_proto.data.blockInfo.blockErrmsg)
+    if not res_proto.data.msgId:
+        raise TiebaValueError("msgId is 0")
 
-    msg_id = res_proto.data.msgId
-    return msg_id
+    result = SendMsgResult.from_proto(res_proto.data)
+
+    return result
 
 
-async def request(ws_core: WsCore, user_id: int, content: str) -> int:
-    data = pack_proto(user_id, content, ws_core.mid_manager.get_record_id())
+async def request(ws_core: WsCore, user_id: int, content: str) -> SendMsgResult:
+    local_msg_id = ws_core.mid_manager.get_local_msg_id(user_id)
+    data = pack_proto(user_id, content, local_msg_id)
 
     resp = await ws_core.send(data, CMD)
-    msg_id = parse_body(await resp.read())
+    result = parse_body(await resp.read())
 
-    return msg_id
+    return result

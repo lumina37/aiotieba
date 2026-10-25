@@ -24,15 +24,22 @@ aiotieba/
 │   │   ├── _protobuf/          # 通用protobuf定义
 │   │   └── get_xx...           # 各个API模块
 │   ├── core/                   # 网络会话类
-│   │   ├── account.py          # Account类（存放与用户信息相关的不变量）
+│   │   ├── account.py          # Account类（用户token与当前用户信息）
 │   │   ├── net.py              # NetCore（连接池、代理与超时配置）
 │   │   ├── http.py             # HttpCore（http会话）
-│   │   ├── websocket.py        # WsCore（websocket会话）
-│   │   └── blcp.py             # BLCPCore（BLCP私有协议会话）
+│   │   ├── websocket/          # websocket会话
+│   │   │   ├── core.py         # WsCore（连接 + 请求响应配对）
+│   │   │   ├── helper.py       # 报文加解密与压缩
+│   │   │   └── msgid.py        # msg_id与私信游标管理
+│   │   └── blcp/               # BLCP私有协议
+│   │       ├── const.py        # 跨模块常量（appid/sdk版本）
+│   │       ├── enums.py        # 服务号、方法号、压缩类型
+│   │       ├── packet.py       # 报文对象（帧/RpcMeta/报文体）的序列化
+│   │       └── core.py         # BLCPCore（连接 + 传输 + RPC + 心跳）
 │   └── helper/                 # 内部辅助工具
 │       ├── utils.py            # 实用方法
 │       ├── cache.py            # 吧名↔fid的双向缓存
-│       └── crypto/             # 密码学 C 扩展
+│       └── crypto/             # 密码学工具
 │           ├── CMakeLists.txt  # C扩展构建
 │           └── csrc/           # C扩展源码
 ├── tests/                      # pytest单元测试
@@ -72,11 +79,11 @@ aiotieba/
 ### 核心状态容器
 
 1. **`Client`**：主客户端类，封装所有贴吧API的入口
-2. **`Account`**：BDUSS等用户身份相关token的容器
+2. **`Account`**：BDUSS等身份token与当前用户信息`user`的容器
 3. **`NetCore`**：管理TCP连接池。同时保存代理、超时等配置信息
 4. **`HttpCore`**：HTTP的会话状态容器
 5. **`WsCore`**：WebSocket的会话状态容器
-6. **`BLCPCore`**：百度直播聊天协议的会话状态容器
+6. **`BLCPCore`**：BLCP核心容器。负责连接、报文收发、RPC配对与心跳维持
 
 ### 数据流概览
 
@@ -84,7 +91,7 @@ aiotieba/
 用户调用 Client.get_threads("天堂鸡汤")
     │
     ├── @handle_exception(Threads) 装饰器（异常捕获 + 日志）
-    ├── @_try_websocket 装饰器（优先 WebSocket，失败降级 HTTP）
+    ├── @_try_websocket(LEGACY_VERSION) 装饰器（优先 WebSocket，失败降级 HTTP）
     │
     ├── WebSocket 路径:
     │   ├── pack_proto() → 构造请求
@@ -108,3 +115,7 @@ aiotieba/
 ## 可用的skills
 
 可用的skills位于`.agent/skills`目录下
+
+# 可用的账号
+
+一般放在`.secrets/account.toml`

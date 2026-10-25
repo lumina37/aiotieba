@@ -5,4 +5,11 @@ import "Error.proto";
 
 message CommitReceivedPmsgResIdl {
     Error error = 1;
+    message DataRes {
+        int64 readMsgId = 1;
+        int64 groupId = 2;
+        int64 toUid = 3;
+        int32 toUserType = 4;
+    }
+    DataRes data = 2;
 }

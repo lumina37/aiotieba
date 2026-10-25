@@ -34,5 +34,5 @@ async def request(http_core: HttpCore, user_id: int, pn: int) -> Fans:
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/u/fans/page"), data
     )
 
-    body = await http_core.net_core.send_request(request)
+    body = await http_core.net_core.send(request)
     return parse_body(body)

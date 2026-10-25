@@ -31,7 +31,7 @@ async def request(http_core: HttpCore, fid: int, tid: int, to_tab_id: int, from_
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/c/bawu/moveTabThread"), data
     )
 
-    body = await http_core.net_core.send_request(request)
+    body = await http_core.net_core.send(request)
     parse_body(body)
 
     return BoolResponse()

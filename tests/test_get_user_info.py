@@ -8,12 +8,12 @@ import aiotieba as tb
 async def test_get_user_info(client: tb.Client):
     self_info = await client.get_self_info(tb.ReqUInfo.BASIC)
     assert self_info.user_id > 0
-    assert self_info.portrait != ""
+    assert self_info.portrait.startswith("tb.")
     assert self_info.user_name != ""
 
     self_info = await client.get_self_info()
     assert self_info.user_id > 0
-    assert self_info.portrait != ""
+    assert self_info.portrait.startswith("tb.")
     assert self_info.user_name != ""
     assert self_info.nick_name_new != ""
     assert self_info.tieba_uid > 0
@@ -81,7 +81,7 @@ async def test_get_user_info(client: tb.Client):
 async def test_get_uinfo_xx(client: tb.Client):
     user = await client._get_uinfo_profile(957339815)
     assert user.user_id > 0
-    assert user.portrait != ""
+    assert user.portrait.startswith("tb.")
     assert user.user_name != ""
     assert user.nick_name_new != ""
     assert user.tieba_uid > 0
@@ -102,7 +102,7 @@ async def test_get_uinfo_xx(client: tb.Client):
 
     user = await client._get_uinfo_profile("tb.1.8277e641.gUE2cTq4A4z5fi2EHn5k3Q")
     assert user.user_id > 0
-    assert user.portrait != ""
+    assert user.portrait.startswith("tb.")
     assert user.user_name != ""
     assert user.nick_name_new != ""
     assert user.tieba_uid > 0
@@ -123,24 +123,24 @@ async def test_get_uinfo_xx(client: tb.Client):
 
     user = await client._get_uinfo_getuserinfo(957339815)
     assert user.user_id > 0
-    assert user.portrait != ""
+    assert user.portrait.startswith("tb.")
     assert user.user_name != ""
     assert user.nick_name_old != ""
     assert user.gender != tb.Gender.UNKNOWN
 
     user = await client._get_uinfo_getUserInfo(957339815)
     assert user.user_id > 0
-    assert user.portrait != ""
+    assert user.portrait.startswith("tb.")
     assert user.user_name != ""
     assert user.nick_name_new != ""
 
     user = await client._get_uinfo_user_json("LuminaOvO")
     assert user.user_id > 0
-    assert user.portrait != ""
+    assert user.portrait.startswith("tb.")
     assert user.user_name != ""
 
     user = await client._get_uinfo_panel("LuminaOvO")
-    assert user.portrait != ""
+    assert user.portrait.startswith("tb.")
     assert user.user_name != ""
     assert user.nick_name_new != ""
     assert user.nick_name_old != ""
@@ -151,7 +151,7 @@ async def test_get_uinfo_xx(client: tb.Client):
     assert user.is_vip is True
 
     user = await client._get_uinfo_panel("tb.1.8277e641.gUE2cTq4A4z5fi2EHn5k3Q")
-    assert user.portrait != ""
+    assert user.portrait.startswith("tb.")
     assert user.user_name != ""
     assert user.nick_name_new != ""
     assert user.nick_name_old != ""
@@ -162,7 +162,7 @@ async def test_get_uinfo_xx(client: tb.Client):
     assert user.is_vip is True
 
     user = await client._get_uinfo_userCard("tb.1.8277e641.gUE2cTq4A4z5fi2EHn5k3Q")
-    assert user.portrait != ""
+    assert user.portrait.startswith("tb.")
     assert user.nick_name_new != ""
     assert user.tieba_uid > 0
     assert user.gender != tb.Gender.UNKNOWN

@@ -41,5 +41,5 @@ async def request(
         yarl.URL.build(scheme="http", host=APP_BASE_HOST, path="/c/s/searchpost"), data
     )
 
-    body = await http_core.net_core.send_request(request)
+    body = await http_core.net_core.send(request)
     return parse_body(body)

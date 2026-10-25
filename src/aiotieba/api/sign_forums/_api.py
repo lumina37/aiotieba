@@ -32,7 +32,7 @@ async def request(http_core: HttpCore) -> BoolResponse:
         extra_headers={"Subapp-Type": "hybrid"},
     )
 
-    body = await http_core.net_core.send_request(request)
+    body = await http_core.net_core.send(request)
     parse_body(body)
 
     return BoolResponse()

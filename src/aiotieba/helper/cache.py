@@ -9,8 +9,8 @@ class ForumInfoCache:
     吧信息缓存
     """
 
-    _fname2fid: ClassVar[OrderedDict] = OrderedDict()
-    _fid2fname: ClassVar[OrderedDict] = OrderedDict()
+    _maxsize: ClassVar[int] = 128
+    _fname2fid: ClassVar[OrderedDict[str, int]] = OrderedDict()
 
     @classmethod
     def get_fid(cls, fname: str) -> int:
@@ -24,7 +24,12 @@ class ForumInfoCache:
             int: 该贴吧的forum_id
         """
 
-        return cls._fname2fid.get(fname, 0)
+        if (fid := cls._fname2fid.get(fname)) is None:
+            return 0
+
+        cls._fname2fid.move_to_end(fname)
+
+        return fid
 
     @classmethod
     def get_fname(cls, fid: int) -> str:
@@ -38,7 +43,12 @@ class ForumInfoCache:
             str: 该贴吧的贴吧名
         """
 
-        return cls._fid2fname.get(fid, "")
+        for fname, cached_fid in reversed(cls._fname2fid.items()):
+            if cached_fid == fid:
+                cls._fname2fid.move_to_end(fname)
+                return fname
+
+        return ""
 
     @classmethod
     def add_forum(cls, fname: str, fid: int) -> None:
@@ -50,9 +60,9 @@ class ForumInfoCache:
             fid (int): 贴吧id
         """
 
-        if len(cls._fname2fid) == 128:
+        if fname in cls._fname2fid:
+            cls._fname2fid.move_to_end(fname)
+        elif len(cls._fname2fid) >= cls._maxsize:
             cls._fname2fid.popitem(last=False)
-            cls._fid2fname.popitem(last=False)
 
         cls._fname2fid[fname] = fid
-        cls._fid2fname[fid] = fname

@@ -29,7 +29,7 @@ async def test_Threads(client: tb.Client):
             # UserInfo_t
             user = thread.user
             assert user.user_id > 0
-            assert user.portrait != ""
+            assert user.portrait.startswith("tb.")
             assert user.user_name != ""
             assert user.nick_name_new != ""
             assert user.nick_name == user.nick_name_new
@@ -66,7 +66,7 @@ async def test_Threads(client: tb.Client):
             frag = thread.contents.ats[0]
             assert frag.text != ""
             assert frag.user_id > 0
-            assert frag.portrait != ""
+            assert frag.portrait.startswith("tb.")
 
             # FragVoice
             frag = thread.contents.voice
@@ -116,7 +116,7 @@ async def test_Threads(client: tb.Client):
             frag = sthread.contents.ats[0]
             assert frag.text != ""
             assert frag.user_id != 0
-            assert frag.portrait != ""
+            assert frag.portrait.startswith("tb.")
 
             # FragLink
             frag = sthread.contents.links[0]

@@ -32,7 +32,7 @@ async def request(http_core: HttpCore, fid: int, portrait: str, bawu_type: BawuT
         yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/mo/q/bawuteamclear"), data
     )
 
-    body = await http_core.net_core.send_request(request)
+    body = await http_core.net_core.send(request)
     parse_body(body)
 
     return BoolResponse()

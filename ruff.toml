@@ -47,6 +47,7 @@ allowed-confusables = ["，", "：", "（", "）"]
 [lint.per-file-ignores]
 "__init__.py" = ["unused-import"]
 "typing.py" = ["unused-import"]
+"*_pb2.py" = ["unused-import"]
 
 [lint.isort]
 known-first-party = ["aiotieba"]

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import yarl
 
-from ...const import APP_BASE_HOST
+from ...const import APP_BASE_HOST, LAST_REPLYERS_VERSION
 from ...exception import TiebaServerError
 from ._classdef import Threads_lp
 from .protobuf import FrsPageReqIdl4lp_pb2, FrsPageResIdl4lp_pb2
@@ -18,7 +18,7 @@ CMD = 301001
 def pack_proto(fname: str, pn: int, rn: int, sort: int, is_good: bool) -> bytes:
     req_proto = FrsPageReqIdl4lp_pb2.FrsPageReqIdl4lp()
     req_proto.data.common._client_type = 2
-    req_proto.data.common._client_version = "6.0.1"
+    req_proto.data.common._client_version = LAST_REPLYERS_VERSION
     req_proto.data.kw = fname
     req_proto.data.pn = 0 if pn == 1 else pn
     req_proto.data.rn = rn
@@ -50,7 +50,7 @@ async def request_http(http_core: HttpCore, fname: str, pn: int, rn: int, sort: 
         data,
     )
 
-    body = await http_core.net_core.send_request(request)
+    body = await http_core.net_core.send(request)
     return parse_body(body)
 
 

@@ -18,7 +18,7 @@ async def test_Replys(client: tb.Client):
     assert reply.fname != ""
     assert reply.create_time > 0
     assert reply.user.user_id > 0
-    assert reply.user.portrait != ""
+    assert reply.user.portrait.startswith("tb.")
 
     ##### Contents_rep #####
     assert len(reply.contents) > 0

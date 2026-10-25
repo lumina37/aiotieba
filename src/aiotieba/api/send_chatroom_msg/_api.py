@@ -2,38 +2,33 @@ from __future__ import annotations
 
 import json
 import time
-from dataclasses import dataclass
+from typing import Any
 
-from ...core import BLCPCore, BLCPData
-from ...exception import BoolResponse
-
-
-@dataclass
-class AppConstants:
-    appid: int = 10773430
-    sdk_version: int = 11250036
+from ...core import CHAT_APPID, CHAT_SDK_VERSION, BLCPCore, BLCPMethodID, BLCPRequest, BLCPServiceID, JsonBody
+from ...exception import BoolResponse, TiebaServerError
+from ...helper.crypto import compute_msg_key, user_id2bduk
 
 
-async def construct_request_data(
-    blcpcore,
-    chatroom_id,
-    uk,
-    user_id,
-    origin_id,
-    name,
-    portrait,
-    text,
-    fid,
-    level,
-    is_vip,
-    glevel,
-    atdata=None,
-    robot=-1,
-):
-    constants = AppConstants()
+def construct_request_data(
+    core: BLCPCore,
+    chatroom_id: int,
+    text: str,
+    fid: int,
+    level: int,
+    atdata: list[dict] | None = None,
+    robot: int = -1,
+) -> dict[str, Any]:
+    user = core.account.user
+    uk = user.uk
+    user_id = user.user_id
+    origin_id = user.trigger_id
+    name = user.nick_name
+    portrait = user.portrait
+    is_vip = user.is_vip
+    glevel = user.glevel
 
     # 构造app_safe_ext
-    app_safe_ext = {"haotianjing": {"zid": blcpcore.account.z_id or ""}}
+    app_safe_ext = {"haotianjing": {"zid": core.account.zid or ""}}
 
     # 构造content
     content = {
@@ -47,7 +42,7 @@ async def construct_request_data(
             "content_type": "0",
             "content_body": json.dumps({"text": text}, ensure_ascii=False),
             "src": "",
-            "baidu_uk": blcpcore.getBDUKfromUserId(str(user_id)),
+            "baidu_uk": user_id2bduk(user_id),
             "ext": {},
         }
     }
@@ -132,7 +127,7 @@ async def construct_request_data(
     content["text"]["ext"].update(ext_data)
 
     # 携带文字、气泡信息，但这部分内容比较多，暂且未开发，注释之
-    # content['text']['ext']['bubble_info'] = {'color_info': {'at_text_color': '', 'at_text_color_dark': 'AF9EFF', 'text_color': '141414', 'text_color_dark': 'FFFFFF'}, 'end_time': 0, 'id': 1380005, 'img_info': {'android_left': 'https://tieba-ares.cdn.bcebos.com/mis/2023-3/1678971300129/4d9fd67c26e3.png', 'android_left_dark': 'https://tieba-ares.cdn.bcebos.com/mis/2023-3/1678971300129/4d9fd67c26e3.png', 'android_right': 'https://tieba-ares.cdn.bcebos.com/mis/2023-3/1678971357436/745549b2ae39.png', 'android_right_dark': 'https://tieba-ares.cdn.bcebos.com/mis/2023-3/1678971357436/745549b2ae39.png', 'ios_left': 'https://tieba-ares.cdn.bcebos.com/mis/2023-3/1678876082814/0a1741207e0d.png', 'ios_left_dark': 'https://tieba-ares.cdn.bcebos.com/mis/2023-3/1678876082814/0a1741207e0d.png', 'ios_right': 'https://tieba-ares.cdn.bcebos.com/mis/2023-3/1678876082435/c07fbaa4ad57.png', 'ios_right_dark': 'https://tieba-ares.cdn.bcebos.com/mis/2023-3/1678876082435/c07fbaa4ad57.png'}, 'jump_url': 'https://tieba.baidu.com/mo/q/hybrid/decorator?pageType=4&from_page=4&nonavigationbar=1&customfullscreen=1&decoratorId=1380005', 'type': 2}
+    # content['text']['ext']['bubble_info'] = {...}
 
     if robot == -1:
         # 没有机器人指令
@@ -154,19 +149,19 @@ async def construct_request_data(
 
     # 构造最终请求数据
     request_data = {
-        "method": 185,
+        "method": BLCPMethodID.SEND_MCAST_MSG,
         "mcast_id": chatroom_id,
         "role": 3,
-        "token": blcpcore.account.BDUSS,
-        "appid": constants.appid,
+        "token": core.account.BDUSS,
+        "appid": CHAT_APPID,
         "uk": uk,
         "origin_id": origin_id,
         "type": 81,
         "app_safe_ext": json.dumps(app_safe_ext, ensure_ascii=False),
         "content": content,
-        "msg_key": blcpcore.getmsgkey(blcpcore.getBDUKfromUserId(str(user_id))),
+        "msg_key": compute_msg_key(user_id2bduk(user_id)),
         "account_type": 1,
-        "sdk_version": constants.sdk_version,
+        "sdk_version": CHAT_SDK_VERSION,
         "event_list": [
             {"event": "CClickSendBegin", "timestamp_ms": 0},
             {"event": "CSendBegin", "timestamp_ms": 0},
@@ -177,46 +172,31 @@ async def construct_request_data(
     return request_data
 
 
-async def send_request(blcpcore, request_data):
-    loginBLCPRequest = BLCPData(serviceId=3, methodId=185)
-    loginBLCPRequest.correlationId = int(time.time() * 1000 * 1000)
-    loginBLCPRequest.RpcBody = blcpcore.buildRpcBody(
-        serviceId=3, methodId=185, correlationId=loginBLCPRequest.correlationId
-    )
-
-    request_data["client_logid"] = loginBLCPRequest.correlationId
+async def send_request(core: BLCPCore, request_data: dict[str, Any]) -> BoolResponse:
+    request_data["client_logid"] = int(time.time() * 1_000_000)
     request_data["rpc"] = '{"rpc_retry_time":0}'
 
-    loginBLCPRequest.LcmBody = json.dumps(request_data, ensure_ascii=False).encode("utf-8")
-    response = blcpcore.waiter.new(loginBLCPRequest.correlationId)
-    blcpcore.writer.write(loginBLCPRequest.toBytes())
-    reps = await response.read()
-    try:
-        err_code = json.loads(reps.LcmBody)["err_code"]
-    except json.JSONDecodeError:
-        raise
+    request = BLCPRequest.create(BLCPServiceID.MCAST, BLCPMethodID.SEND_MCAST_MSG, JsonBody(request_data))
+    response = await core.send(request)
+
+    payload = response.payload
+    err_code = payload["err_code"]
     if err_code == 0:
         return BoolResponse()
-    raise
+
+    raise TiebaServerError(err_code, payload["msg"])
 
 
 async def request(
-    blcpcore: BLCPCore,
+    core: BLCPCore,
     chatroom_id: int,
-    uk: int,
-    user_id: int,
-    origin_id: int,
-    name: str,
-    portrait: str,
     text: str,
     fid: int,
     level: int,
-    is_vip: bool,
-    glevel: int,
     atdata: list[dict] | None = None,
-    robot=-1,
-):
-    request_data = await construct_request_data(
-        blcpcore, chatroom_id, uk, user_id, origin_id, name, portrait, text, fid, level, is_vip, glevel, atdata, robot
-    )
-    return await send_request(blcpcore, request_data)
+    robot: int = -1,
+) -> BoolResponse:
+    request_data = construct_request_data(core, chatroom_id, text, fid, level, atdata, robot)
+    response = await send_request(core, request_data)
+
+    return response

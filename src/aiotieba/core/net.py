@@ -90,7 +90,7 @@ class NetCore:
 
         return response
 
-    async def send_request(
+    async def send(
         self,
         request: aiohttp.ClientRequest,
         headers_checker: TypeHeadersChecker = check_status_code,

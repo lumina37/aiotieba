@@ -3,16 +3,13 @@ from __future__ import annotations
 import random
 from typing import ClassVar, Self
 
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-
+from ..api._classdef import UserInfo
 from ..helper.crypto import c3_aid, cuid_galaxy2
 
 
 class Account:
     """
-    贴吧的用户参数容器
+    贴吧的账号与用户信息容器
 
     Args:
         BDUSS (str, optional): BDUSS. Defaults to ''.
@@ -21,6 +18,7 @@ class Account:
     Attributes:
         BDUSS (str): BDUSS
         STOKEN (str): 网页STOKEN
+        user (UserInfo): 当前用户信息 不参与序列化
         tbs (str): 长度为26的小写16进制字符串 例:91be894d01799c4991be894d01
         android_id (str): 长度为16的小写16进制字符串 包含8字节信息 例:91be894d01799c49
         uuid (str): 包含16字节信息 例:e4200716-58a8-4170-af15-ea7edeb8e513
@@ -29,16 +27,16 @@ class Account:
         cuid (str): 例:baidutiebaappe4200716-58a8-4170-af15-ea7edeb8e513
         cuid_galaxy2 (str): 例:A3ED2D7B9CFC28E8934A3FBD3A9579C7|VZ5FKB5XS
         c3_aid (str): 例:A00-ZNU3O3EP74D727LMQY745CZSGZQJQZGP-3JXCKC7X
-        z_id (str): z_id
-        aes_ecb_sec_key (bytes): 供贴吧AES-ECB加密使用的随机密码 长度为31字节
-        aes_ecb_chiper (Any): AES-ECB加密器
-        aes_cbc_sec_key (bytes): 供贴吧AES-CBC加密使用的随机密码 长度为16字节
-        aes_cbc_chiper (Any): AES-CBC加密器
+        baidu_id (str): 例:1A2B3C4D5E6F708192A3B4C5D6E7F809:FG=1
+        zid (str): zid
+        ws_sec_key (bytes): 供贴吧websocket加密使用的随机密码 长度为31字节
+        zid_sec_key (bytes): 供贴吧zid加密使用的随机密码 长度为16字节
     """
 
     __slots__ = [
         "_BDUSS",
         "_STOKEN",
+        "user",
         "_tbs",
         "_android_id",
         "_uuid",
@@ -47,11 +45,10 @@ class Account:
         "_cuid",
         "_cuid_galaxy2",
         "_c3_aid",
-        "_z_id",
-        "_aes_ecb_sec_key",
-        "_aes_ecb_chiper",
-        "_aes_cbc_sec_key",
-        "_aes_cbc_chiper",
+        "_baidu_id",
+        "_zid",
+        "_ws_sec_key",
+        "_zid_sec_key",
     ]
 
     __serialize__: ClassVar[list[str]] = [
@@ -65,15 +62,17 @@ class Account:
         "_cuid",
         "_cuid_galaxy2",
         "_c3_aid",
-        "_z_id",
-        "_aes_ecb_sec_key",
-        "_aes_cbc_sec_key",
+        "_baidu_id",
+        "_zid",
+        "_ws_sec_key",
+        "_zid_sec_key",
     ]
 
     def __init__(self, BDUSS: str = "", STOKEN: str = "") -> None:
         self.BDUSS = BDUSS
         self.STOKEN = STOKEN
 
+        self.user = UserInfo()
         self._tbs: str = None
         self._android_id: str = None
         self._uuid: str = None
@@ -82,11 +81,10 @@ class Account:
         self._cuid: str = None
         self._cuid_galaxy2: str = None
         self._c3_aid: str = None
-        self._z_id: str = None
-        self._aes_ecb_sec_key: bytes = None
-        self._aes_ecb_chiper = None
-        self._aes_cbc_sec_key: bytes = None
-        self._aes_cbc_chiper = None
+        self._baidu_id: str = None
+        self._zid: str = None
+        self._ws_sec_key: bytes = None
+        self._zid_sec_key: bytes = None
 
     def __repr__(self) -> str:
         return str(self.to_dict())
@@ -357,9 +355,30 @@ class Account:
         self._c3_aid = new_c3_aid
 
     @property
-    def z_id(self) -> str:
+    def baidu_id(self) -> str:
         """
-        返回一个可作为请求参数的z_id
+        返回一个可作为请求参数的baidu_id
+
+        Returns:
+            str
+
+        Examples:
+            1A2B3C4D5E6F708192A3B4C5D6E7F809:FG=1
+
+        Note:
+            在初始化后该属性便不会再发生变化
+        """
+
+        return self._baidu_id
+
+    @baidu_id.setter
+    def baidu_id(self, new_baidu_id: str) -> None:
+        self._baidu_id = new_baidu_id
+
+    @property
+    def zid(self) -> str:
+        """
+        返回一个可作为请求参数的zid
 
         Returns:
             str
@@ -369,16 +388,16 @@ class Account:
             此实现与12.x版本及以前的官方实现一致
         """
 
-        return self._z_id
+        return self._zid
 
-    @z_id.setter
-    def z_id(self, new_z_id: str) -> None:
-        self._z_id = new_z_id
+    @zid.setter
+    def zid(self, new_zid: str) -> None:
+        self._zid = new_zid
 
     @property
-    def aes_ecb_sec_key(self) -> bytes:
+    def ws_sec_key(self) -> bytes:
         """
-        返回一个供贴吧AES-ECB加密使用的随机密码
+        返回一个供贴吧websocket加密使用的随机密码
 
         Returns:
             bytes: 长度为31字节的随机密码
@@ -387,35 +406,18 @@ class Account:
             在初始化后该属性便不会再发生变化
         """
 
-        if self._aes_ecb_sec_key is None:
-            self._aes_ecb_sec_key = random.randbytes(31)
-        return self._aes_ecb_sec_key
+        if self._ws_sec_key is None:
+            self._ws_sec_key = random.randbytes(31)
+        return self._ws_sec_key
 
-    @aes_ecb_sec_key.setter
-    def aes_ecb_sec_key(self, new_aes_ecb_sec_key: bytes) -> None:
-        self._aes_ecb_sec_key = new_aes_ecb_sec_key
-
-    @property
-    def aes_ecb_chiper(self) -> Cipher[modes.ECB]:
-        """
-        获取供贴吧websocket使用的AES-ECB加密器
-
-        Returns:
-            Cipher[modes.ECB]: AES-ECB加密器
-        """
-
-        if self._aes_ecb_chiper is None:
-            salt = b"\xa4\x0b\xc8\x34\xd6\x95\xf3\x13"
-            kdf = PBKDF2HMAC(hashes.SHA1(), 32, salt, 5)
-            ws_secret_key = kdf.derive(self.aes_ecb_sec_key)
-            self._aes_ecb_chiper = Cipher(algorithms.AES(ws_secret_key), modes.ECB())
-
-        return self._aes_ecb_chiper
+    @ws_sec_key.setter
+    def ws_sec_key(self, new_ws_sec_key: bytes) -> None:
+        self._ws_sec_key = new_ws_sec_key
 
     @property
-    def aes_cbc_sec_key(self) -> bytes:
+    def zid_sec_key(self) -> bytes:
         """
-        返回一个供贴吧AES-CBC加密使用的随机密码
+        返回一个供贴吧zid加密使用的随机密码
 
         Returns:
             bytes: 长度为16字节的随机密码
@@ -424,25 +426,10 @@ class Account:
             在初始化后该属性便不会再发生变化
         """
 
-        if self._aes_cbc_sec_key is None:
-            self._aes_cbc_sec_key = random.randbytes(16)
-        return self._aes_cbc_sec_key
+        if self._zid_sec_key is None:
+            self._zid_sec_key = random.randbytes(16)
+        return self._zid_sec_key
 
-    @aes_cbc_sec_key.setter
-    def aes_cbc_sec_key(self, new_aes_cbc_sec_key: bytes) -> None:
-        self._aes_cbc_sec_key = new_aes_cbc_sec_key
-
-    @property
-    def aes_cbc_chiper(self) -> Cipher[modes.CBC]:
-        """
-        获取供贴吧客户端使用的AES-CBC加密器
-
-        Returns:
-            Cipher[modes.CBC]: AES-CBC加密器
-        """
-
-        if self._aes_cbc_chiper is None:
-            iv = b"\x00" * 16
-            self._aes_cbc_chiper = Cipher(algorithms.AES(self.aes_cbc_sec_key), modes.CBC(iv))
-
-        return self._aes_cbc_chiper
+    @zid_sec_key.setter
+    def zid_sec_key(self, new_zid_sec_key: bytes) -> None:
+        self._zid_sec_key = new_zid_sec_key

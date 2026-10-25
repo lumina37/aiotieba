@@ -29,7 +29,7 @@ async def request(http_core: HttpCore, fid: int) -> BoolResponse:
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/c/forum/unfavolike"), data
     )
 
-    body = await http_core.net_core.send_request(request)
+    body = await http_core.net_core.send(request)
     parse_body(body)
 
     return BoolResponse()

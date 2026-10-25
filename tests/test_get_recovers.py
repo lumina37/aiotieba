@@ -19,7 +19,7 @@ async def test_Recovers(client: tb.Client):
     ##### Thread_rec #####
     assert recover.thread.tid == recover.tid
     assert recover.thread.title != ""
-    assert recover.thread.user.portrait != ""
+    assert recover.thread.user.portrait.startswith("tb.")
 
     ##### Post_rec #####
     if recover.content_type is ContentType.COMMENT:
@@ -29,7 +29,7 @@ async def test_Recovers(client: tb.Client):
         assert not recover.post
 
     ##### Recover #####
-    assert recover.user.portrait != ""
+    assert recover.user.portrait.startswith("tb.")
     if recover.content_type is ContentType.THREAD:
         assert recover.pid == 0
     else:

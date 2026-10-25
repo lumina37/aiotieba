@@ -49,8 +49,11 @@ class TimeoutConfig:
         ws_send (float, optional): websocket发送数据的超时时间. Defaults to 3.0.
         ws_read (float, optional): 从发送websocket数据到结束等待响应的超时时间. Defaults to 8.0.
         ws_close (float, optional): 等待websocket终止连接的时间. Defaults to 10.0.
-        ws_keepalive (float | None, optional): websocket在长达ws_keepalive的时间内未收到任何数据则关闭连接. 为None则不限制. Defaults to 300.0.
-        ws_heartbeat (float | None, optional): websocket心跳间隔. 为None则不发送心跳. Defaults to None.
+        ws_keepalive (float | None, optional): websocket在长达ws_keepalive的时间内未收到任何数据则关闭连接. 为None则不限制. Defaults to 900.0.
+        ws_heartbeat (float | None, optional): websocket心跳间隔. 为None则不发送心跳. Defaults to 180.0.
+        blcp_connect (float, optional): BLCP建立TCP连接的超时时间. Defaults to 10.0.
+        blcp_read (float, optional): BLCP从发送请求到读取响应的超时时间. Defaults to 10.0.
+        blcp_heartbeat (float | None, optional): BLCP心跳间隔. 为None则不发送心跳. Defaults to 60.0.
         dns_ttl (int, optional): dns的本地缓存超时时间. Defaults to 600.
 
     Note:
@@ -64,8 +67,11 @@ class TimeoutConfig:
     ws_send: float = 3.0
     ws_read: float = 8.0
     ws_close: float = 10.0
-    ws_keepalive: float | None = 300.0
-    ws_heartbeat: float | None = None
+    ws_keepalive: float | None = 900.0
+    ws_heartbeat: float | None = 180.0
+    blcp_connect: float = 10.0
+    blcp_read: float = 10.0
+    blcp_heartbeat: float | None = 60.0
     dns_ttl: int = 600
 
     @property
