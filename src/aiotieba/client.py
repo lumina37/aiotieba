@@ -288,12 +288,13 @@ class Client:
         self._blcp_core.set_account(new_account)
 
     @handle_exception(BoolResponse)
-    async def init_websocket(self, client_version: str = LATEST_VERSION) -> BoolResponse:
+    async def init_websocket(self, client_version: str = LATEST_VERSION, *, full: bool = False) -> BoolResponse:
         """
         初始化指定版本的websocket
 
         Args:
             client_version (str, optional): 客户端版本. Defaults to LATEST_VERSION.
+            full (bool, optional): True则上传完整字段 False则仅上传必需字段. Defaults to False.
 
         Returns:
             BoolResponse: True无须执行 False失败
@@ -306,7 +307,7 @@ class Client:
         if ws_core.status == WsStatus.CLOSED:
             try:
                 await ws_core.connect()
-                await self.__upload_ws_sec(ws_core)
+                await self.__upload_ws_sec(ws_core, full)
             except BaseException:
                 await ws_core.close()
                 raise
@@ -320,10 +321,16 @@ class Client:
 
         return ws_core
 
-    async def __upload_ws_sec(self, ws_core: WsCore) -> None:
+    async def __upload_ws_sec(self, ws_core: WsCore, full: bool = False) -> None:
         from .api import upload_ws_sec
 
-        info = await upload_ws_sec.request(ws_core)
+        if full:
+            await self.__init_client_id()
+            await self.__init_sample_id()
+            await self.__init_z_id()
+            await self.__init_baidu_id()
+
+        info = await upload_ws_sec.request(ws_core, full)
 
         mid_manager = ws_core.mid_manager
         for group in info.groups:

@@ -23,25 +23,80 @@ PUBLIC_KEY = binascii.a2b_base64(
 )
 
 
-def pack_proto(account: Account, client_version: str) -> bytes:
+def pack_min_device(account: Account, client_version: str) -> dict[str, str]:
+    return {
+        "_client_type": "2",
+        "_client_version": client_version,
+    }
+
+
+def pack_full_device(account: Account, client_version: str) -> dict[str, str]:
+    now = int(time.time() * 1000)
+    date = time.localtime()
+
+    device = {
+        "model": "PDEM10",
+        "brand": "Xiaomi",
+        "_phone_imei": "000000000000000",
+        "_os_version": "13",
+        "android_id": account.android_id,
+        "mac": "",
+        "_client_type": "2",
+        "_client_version": client_version,
+        "user_agent": (
+            "Mozilla/5.0 (Linux; Android 13; PDEM10 Build/TKQ1.221114.001; wv) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Version/4.0 Chrome/114.0.5735.196 Mobile Safari/537.36 "
+            f"tieba/{client_version}"
+        ),
+        "_client_id": account.client_id,
+        "net_type": "1",
+        "net": "1",
+        "cuid": account.cuid_galaxy2,
+        "cuid_galaxy2": account.cuid_galaxy2,
+        "c3_aid": account.c3_aid,
+        "cuid_gid": "",
+        "timestamp": str(now),
+        "sample_id": account.sample_id,
+        "z_id": account.z_id,
+        "baiduid": account.baidu_id,
+        "sdk_ver": "3.36.0",
+        "framework_ver": "",
+        "naws_game_ver": "",
+        "_phone_screen": "1080,2340",
+        "_msg_status": "0",
+        "_pic_quality": "0",
+        "pversion": "1.0.3",
+        "q_type": "0",
+        "scr_h": "2340",
+        "scr_w": "1080",
+        "scr_dip": "2.75",
+        "active_timestamp": str(now),
+        "first_install_time": str(now - 86400000),
+        "update_time": str(now - 3600000),
+        "event_day": f"{date.tm_year}{date.tm_mon}{date.tm_mday}",
+        "cmode": "1",
+        "extra": "",
+        "personalized_rec_switch": "1",
+        "ad_context": "",
+        "start_type": "99",
+        "start_scheme": "",
+    }
+
+    return device
+
+
+def pack_proto(account: Account, client_version: str, full: bool) -> bytes:
     req_proto = UpdateClientInfoReqIdl_pb2.UpdateClientInfoReqIdl()
     req_proto.data.bduss = account.BDUSS
 
-    device = {
-        "cuid": account.cuid,
-        "_client_version": client_version,
-        "_msg_status": "1",
-        "cuid_galaxy2": account.cuid_galaxy2,
-        "_client_type": "2",
-        "timestamp": str(int(time.time() * 1000)),
-    }
+    device = pack_full_device(account, client_version) if full else pack_min_device(account, client_version)
     req_proto.data.device = pack_json(device)
 
     rsa_chiper = load_der_public_key(PUBLIC_KEY)
     secret_key = rsa_chiper.encrypt(account.aes_ecb_sec_key, PKCS1v15())
     req_proto.data.secretKey = secret_key
     req_proto.data.stoken = account.STOKEN
-    req_proto.cuid = f"{account.cuid}|com.baidu.tieba{client_version}"
+    req_proto.cuid = f"{account.cuid if full else '-'}|com.baidu.tieba{client_version}"
 
     return req_proto.SerializeToString()
 
@@ -63,8 +118,8 @@ def parse_body(body: bytes) -> InitWsInfo:
     return info
 
 
-async def request(ws_core: WsCore) -> InitWsInfo:
-    data = pack_proto(ws_core.account, ws_core.client_version)
+async def request(ws_core: WsCore, full: bool) -> InitWsInfo:
+    data = pack_proto(ws_core.account, ws_core.client_version, full)
 
     resp = await ws_core.send(data, CMD, compress=False, encrypt=False)
     info = parse_body(await resp.read())
