@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from ...const import CHAT_VERSION
 from ...core import BLCPLoginError, BLCPMethodID, BLCPRequest, BLCPServiceID, JsonBody
 from ...helper.crypto import enuid
 
@@ -15,7 +16,7 @@ async def request(core: BLCPCore) -> None:
         "params": {
             "appname": "tieba",
             "sid": account.sample_id,
-            "ua": "900_1600_android_12.68.1.0_240",
+            "ua": f"900_1600_android_{CHAT_VERSION}_240",
             "uid": enuid(account.cuid_galaxy2),
             "cfrom": "1008550l",
             "from": "1008550l",
@@ -26,7 +27,10 @@ async def request(core: BLCPCore) -> None:
             "c3_aid": account.c3_aid,
             "type_id": "0",
         },
-        "filter": {"aps": {"cpu_abi": "armeabi-v7a"}, "command": {"step": "0"}},
+        "filter": {
+            "aps": {"cpu_abi": "armeabi-v7a"},
+            "command": {"step": "0"},
+        },
     }
 
     request = BLCPRequest.create(BLCPServiceID.CLOUD_CONTROL, BLCPMethodID.LOGIN, JsonBody(request_data))

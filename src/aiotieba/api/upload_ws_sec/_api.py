@@ -32,8 +32,9 @@ def pack_min_device(account: Account, client_version: str) -> dict[str, str]:
 
 
 def pack_full_device(account: Account, client_version: str) -> dict[str, str]:
-    now = int(time.time() * 1000)
-    date = time.localtime()
+    tsec = int(time.time())
+    tmsec = tsec * 1000
+    date = time.localtime(tsec)
 
     device = {
         "model": "PDEM10",
@@ -52,7 +53,7 @@ def pack_full_device(account: Account, client_version: str) -> dict[str, str]:
         "cuid_galaxy2": account.cuid_galaxy2,
         "c3_aid": account.c3_aid,
         "cuid_gid": "",
-        "timestamp": str(now),
+        "timestamp": str(tmsec),
         "sample_id": account.sample_id,
         "z_id": account.zid,
         "baiduid": account.baidu_id,
@@ -67,9 +68,9 @@ def pack_full_device(account: Account, client_version: str) -> dict[str, str]:
         "scr_h": "2340",
         "scr_w": "1080",
         "scr_dip": "2.75",
-        "active_timestamp": str(now),
-        "first_install_time": str(now - 86400000),
-        "update_time": str(now - 3600000),
+        "active_timestamp": str(tmsec),
+        "first_install_time": str(tmsec - 86400000),
+        "update_time": str(tmsec - 3600000),
         "event_day": f"{date.tm_year}{date.tm_mon}{date.tm_mday}",
         "cmode": "1",
         "extra": "",

@@ -62,21 +62,18 @@ class NetCore:
             ClientResponse: 响应
         """
 
-        # 获取TCP连接
         try:
             async with timeout(self.timeout.http_connect, self.connector._loop):
                 conn = await self.connector.connect(request, [], self.timeout.http_timeout)
         except TimeoutError as exc:
             raise aiohttp.ServerTimeoutError(f"Connection timeout to host {request.url}") from exc
 
-        # 设置响应解析流程
         conn.protocol.set_response_params(
             read_until_eof=read_until_eof,
             auto_decompress=True,
             read_timeout=self.timeout.http_read,
         )
 
-        # 发送请求
         try:
             response = await request.send(conn)
         except BaseException:
@@ -109,14 +106,11 @@ class NetCore:
 
         response = await self.req2res(request, True)
 
-        # 检查headers
         headers_checker(response)
 
-        # 读取响应
         response._body = await response.content.read()
         body = response._body
 
-        # 释放连接
         response.release()
 
         return body

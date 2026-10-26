@@ -2811,15 +2811,12 @@ class Client:
 
                 mid_manager.update_pulled_msg_id(user_id, message.msg_id)
 
-                if message.msg_type != MsgType.READED:
-                    continue
-
-                content: dict = parse_json(message.text)
-                if int(content.get("eventId", 0)) != 22001:
-                    continue
-
-                read_msg_id = int(content["eventParam"]["readMsgId"])
-                mid_manager.update_read_msg_id(user_id, read_msg_id)
+                if message.msg_type == MsgType.READED:
+                    content: dict = parse_json(message.text)
+                    if content["eventId"] != 22001:
+                        continue
+                    read_msg_id = content["eventParam"]["readMsgId"]
+                    mid_manager.update_read_msg_id(user_id, read_msg_id)
 
         return groups
 

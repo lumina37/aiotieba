@@ -28,7 +28,6 @@ async def request(http_core: HttpCore, fid: int) -> RoomList:
     data = [
         ("BDUSS", http_core.account.BDUSS),
         ("_client_version", CHAT_VERSION),
-        ("call_from", "frs"),
         ("fid", fid),
     ]
 
