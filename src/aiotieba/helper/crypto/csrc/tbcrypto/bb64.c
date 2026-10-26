@@ -1,146 +1,72 @@
-#include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 
 #include "tbcrypto/bb64.h"
 
-#define LAST_IND(x, part_type) (sizeof(x) / sizeof(part_type) - 1)
-#if defined(__BYTE_ORDER) && __BYTE_ORDER == __BIG_ENDIAN
-#    define LOW_IND(x, part_type) LAST_IND(x, part_type)
-#    define HIGH_IND(x, part_type) 0
-#else
-#    define HIGH_IND(x, part_type) LAST_IND(x, part_type)
-#    define LOW_IND(x, part_type) 0
-#endif
+// variant base64 alphabet, completely different from the standard one
+static const unsigned char BB64_ALPHABET[] = "qogjOuCRNkfil5p4SQ3LAmxGKZTdesvB6z_YPahMI9t80rJyHW1DEwFbc7nUVX2-";
 
-#define LOBYTE(x) BYTEn(x, LOW_IND(x, unsigned char))
-#define HIBYTE(x) BYTEn(x, HIGH_IND(x, unsigned char))
+// seed used by the 32bit word obfuscation
+#define BB64_SEED 758653732u
 
-#define BYTEn(x, n) (*((unsigned char *)&(x) + n))
-#define BYTE1(x) BYTEn(x, 1)
-#define BYTE2(x) BYTEn(x, 2)
+#define BB64_BYTES_PER_GROUP 3
+#define BB64_CHARS_PER_GROUP 4
 
-unsigned char *B6417 = "qogjOuCRNkfil5p4SQ3LAmxGKZTdesvB6z_YPahMI9t80rJyHW1DEwFbc7nUVX2-";
+static uint32_t bb64_rotr(uint32_t value, unsigned int bits) { return (value >> bits) | (value << (32u - bits)); }
 
-unsigned int BB64ResultLen(int srcLen) { return 4 * ((srcLen + 2) / 3u) + 2; }
+static uint32_t bb64_key(int mode) {
+    const uint32_t rotated = bb64_rotr((uint32_t)mode, 5);
+    return rotated ^ (BB64_SEED << (rotated & 0xFu));
+}
 
-unsigned char *B6411(unsigned char *result, unsigned char a2, int a3)  // int result
-{
-    while (a3) {
-        --a3;
-        *(unsigned char *)(result + a3) = a2;
+static unsigned int bb64_mixed_byte(const unsigned char* src, int srcLen, uint32_t key, int index) {
+    const unsigned int shift = ((unsigned int)index & 3u) * 8u;
+
+    if (index < (srcLen & ~3)) {
+        uint32_t word;
+        memcpy(&word, src + (index & ~3), sizeof(word));
+        return ((key ^ bb64_rotr(word, 3)) >> shift) & 0xFFu;
     }
-    return result;
+    return ((unsigned int)src[index] ^ (key >> shift)) & 0xFFu;
 }
 
-unsigned char *B6412(unsigned char *result, const unsigned char *a2, int a3) {
-    while (a3) {
-        --a3;
-        *(unsigned char *)(result + a3) = *(unsigned char *)(a2 + a3);
+static void bb64_encode_group(unsigned int b0, unsigned int b1, unsigned int b2, unsigned int tableOffset,
+                              unsigned char* dst) {
+    const unsigned int lastSextet = ((b0 >> 6) << 4) | ((b1 >> 6) << 2) | (b2 >> 6);
+
+    dst[0] = BB64_ALPHABET[((b0 & 0x3Fu) + tableOffset) & 0x3Fu];
+    dst[1] = BB64_ALPHABET[((b1 & 0x3Fu) + tableOffset) & 0x3Fu];
+    dst[2] = BB64_ALPHABET[((b2 & 0x3Fu) + tableOffset) & 0x3Fu];
+    dst[3] = BB64_ALPHABET[(lastSextet + tableOffset) & 0x3Fu];
+}
+
+void tbc_BB64Encode(const unsigned char* inputArray, int srcLen, int mode, unsigned char* dst) {
+    const uint32_t key = bb64_key(mode);
+    const unsigned int tableOffset = (unsigned int)mode & 0x3Fu;
+
+    if (srcLen <= 0) {
+        dst[0] = 0;
+        dst[1] = 0;
+        return;
     }
-    return result;
-}
 
-unsigned char *B6413(int *a1, int a2, int a3) {
-    int v3;                 // r6
-    int v4;                 // r8
-    int v7;                 // r7
-    unsigned char *result;  // r0
-    int i;                  // r3
-
-    v3 = a2 & 0x3F;
-    v4 = 64 - v3;
-    v7 = (a2 << (32 - 5) | (a2 >> 5));
-    B6412((unsigned char *)(a1 + 33), &B6417[v3], v4);
-    result = B6412((unsigned char *)a1 + v4 + 132, B6417, v3);
-    *a1 = v7 ^ (758653732 << (v7 & 0xF));
-    if (a3) {
-        result = B6411((unsigned char *)(a1 + 1), 64, 128);
-        for (i = 0; i != 64; ++i) *((unsigned char *)a1 + *((unsigned char *)a1 + i + 132) + 4) = i;
+    int index = 0;
+    for (; index + BB64_BYTES_PER_GROUP <= srcLen; index += BB64_BYTES_PER_GROUP, dst += BB64_CHARS_PER_GROUP) {
+        bb64_encode_group(bb64_mixed_byte(inputArray, srcLen, key, index),
+                          bb64_mixed_byte(inputArray, srcLen, key, index + 1),
+                          bb64_mixed_byte(inputArray, srcLen, key, index + 2), tableOffset, dst);
     }
-    return result;
-}
 
-int *B6419(const int *a1, int *a2, unsigned int a3) {
-    unsigned int v3;  // r3
-    int v4;           // r4
-    int *result;      // r0
-
-    v3 = a3 >> 2;
-    v4 = *a1;
-    for (result = a2; result != &a2[a3 >> 2]; ++result) *result = v4 ^ (*result << (32 - 3) | (*result >> 3));
-    if (v3 < (a3 + 3) >> 2) a2[v3] ^= v4;
-    return result;
-}
-
-unsigned char *B6414(unsigned char *a1, const unsigned char *a2, int *a3) {
-    unsigned int v3;        // r5
-    unsigned int v4;        // r4
-    unsigned int v5;        // r3
-    unsigned char *v6;      // r1
-    unsigned char *result;  // r0
-    int v8;                 // [sp+4h] [bp-14h]
-
-    v3 = (unsigned int)*a2;
-    v4 = (unsigned int)a2[1];
-    LOBYTE(v8) = *(unsigned char *)((v3 & 0x3F) + a1 + 132);
-    BYTE1(v8) = *(unsigned char *)((v4 & 0x3F) + a1 + 132);
-    v5 = (unsigned int)a2[2];
-    v6 = (v5 & 0x3F) + a1;
-    result = a1 + ((4 * (v4 >> 6)) | (16 * (v3 >> 6)) | (v5 >> 6));
-    BYTE2(v8) = *(unsigned char *)(v6 + 132);
-    HIBYTE(v8) = *(unsigned char *)(result + 132);
-    *a3 = v8;
-    return result;
-}
-
-unsigned int GC02(unsigned char *preResultArray, unsigned int inputArrayLen, int mode) {
-    unsigned int v5;             // r9
-    unsigned int v6;             // r5
-    unsigned int v7;             // r8
-    unsigned int v8;             // r7
-    unsigned char *v9;           // r11
-    unsigned char *v10;          // r10
-    int i;                       // r8
-    unsigned int result;         // r0
-    unsigned char v13[4] = {0};  // [sp+Ch] [bp-F4h] BYREF
-    unsigned char v14[196];      // [sp+10h] [bp-F0h] BYREF
-
-    if (!inputArrayLen || !preResultArray) return -1;
-    v5 = inputArrayLen % 3;
-    v6 = inputArrayLen / 3;
-    v7 = 4 * (inputArrayLen / 3);
-    B6413((int *)v14, mode, 0);
-    B6419((int *)v14, (int *)preResultArray, inputArrayLen);
-    if (v5) {
-        B6412(v13, preResultArray + 3 * v6, v5);
-        B6414(v14, (unsigned char *)v13, (int *)(preResultArray + 3 * v6 + v6));
-        v8 = v7 + 4;
-    } else {
-        v8 = 4 * (inputArrayLen / 3);
+    // the trailing bytes are zero-padded to a complete group
+    // the client leaves these padding bytes UB, which only matters when srcLen % 3 != 0
+    if (index < srcLen) {
+        const unsigned int b0 = bb64_mixed_byte(inputArray, srcLen, key, index);
+        const unsigned int b1 = (index + 1 < srcLen) ? bb64_mixed_byte(inputArray, srcLen, key, index + 1) : 0u;
+        const unsigned int b2 = (index + 2 < srcLen) ? bb64_mixed_byte(inputArray, srcLen, key, index + 2) : 0u;
+        bb64_encode_group(b0, b1, b2, tableOffset, dst);
+        dst += BB64_CHARS_PER_GROUP;
     }
-    v9 = preResultArray + 3 * v6;
-    v10 = preResultArray + v7 - 4;
-    for (i = 0;; ++i) {
-        v9 -= 3;
-        if (i == v6) break;
-        B6414(v14, v9, (int *)(v10 - 4 * i));
-    }
-    *(unsigned char *)(preResultArray + v8) = v5 + 65;
-    result = v8 + 2;
-    *(unsigned char *)(preResultArray + v8 + 1) = 0;
-    return result;
-}
 
-void tbc_BB64Encode(const unsigned char *inputArray, int srcLen, int mode, unsigned char *dst) {
-    signed int inputArrayLen;  // r8
-    void *v12;                 // r5
-
-    inputArrayLen = srcLen;  // GetArrayLength
-
-    unsigned int resultLen = BB64ResultLen(inputArrayLen);
-    v12 = (unsigned char *)malloc(resultLen);
-    memset(v12, 0, resultLen);
-    memcpy(v12, inputArray, inputArrayLen);
-    memcpy(dst, v12, resultLen * sizeof(unsigned char));  // memcpy
-    free(v12);
+    dst[0] = (unsigned char)('A' + srcLen % BB64_BYTES_PER_GROUP);
+    dst[1] = 0;
 }

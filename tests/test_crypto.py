@@ -1,7 +1,36 @@
 import pytest
 
 import aiotieba as tb
-from aiotieba.helper.crypto import APP_SALT, compute_sign, rc4_42
+from aiotieba.helper.crypto import APP_SALT, compute_sign, enuid, rc4_42
+
+ENUID_CASES = [
+    (
+        "A3ED2D7B9CFC28E8934A3FBD3A9579C7|VZ5FKB5XS",
+        "luHTu_ii2ajm8SuE_OHNtjaxvu_j8HuZgiBgigOQSi8-9L8TltSx8VHwA",
+    ),
+    (
+        "06C7F37D41256F25FABA97B885DB6EFB|VAPUDW7TA",
+        "_uSb8luR2ag0av8T_8vF8l8WSaj4aHfSjaH9ag8iHa8BkHMgJi3yiH_aA",
+    ),
+    (
+        "00000000000000000000000000000000|V00000000",
+        "_a2q8_aq28_qa28q_a2q8_aq28_qa28q_a2q8_aq288j928g_a2q8ALqA",
+    ),
+    (
+        "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF|VZZZZZZZZ",
+        "08H-a08-Ha0-8Ha-08H-a08-Ha0-8Ha-08H-a08-Ha8-9DhxyIDmh27mA",
+    ),
+]
+
+
+@pytest.mark.parametrize(("cuid_galaxy2", "expected"), ENUID_CASES)
+def test_enuid(cuid_galaxy2: str, expected: str):
+    result = enuid(cuid_galaxy2)
+
+    assert result == expected
+    assert len(result) == 57
+    assert result.isascii()
+    assert result[-1] == "A"
 
 
 @pytest.mark.asyncio

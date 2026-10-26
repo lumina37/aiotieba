@@ -10,9 +10,6 @@ def cuid_galaxy2(android_id: str) -> str:
 
     Examples:
         A3ED2D7B9CFC28E8934A3FBD3A9579C7|VZ5FKB5XS
-
-    Note:
-        此实现与12.x版本及以前的官方实现一致
     """
 
 def c3_aid(android_id: str, uuid: str) -> str:
@@ -28,9 +25,6 @@ def c3_aid(android_id: str, uuid: str) -> str:
 
     Examples:
         A00-ZNU3O3EP74D727LMQY745CZSGZQJQZGP-3JXCKC7X
-
-    Note:
-        此实现与12.x版本及以前的官方实现一致
     """
 
 def rc4_42(xyus_md5_str: str, zid_sec_key: bytes) -> bytes:
@@ -54,4 +48,7 @@ def enuid(cuid_galaxy2: str) -> str:
 
     Returns:
         str: 变种base64编码后的enuid
+
+    Examples:
+        luHTu_ii2ajm8SuE_OHNtjaxvu_j8HuZgiBgigOQSi8-9L8TltSx8VHwA
     """
