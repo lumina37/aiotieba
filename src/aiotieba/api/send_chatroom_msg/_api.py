@@ -4,13 +4,13 @@ import json
 import time
 from typing import Any
 
-from ...core import CHAT_APPID, CHAT_SDK_VERSION, BLCPCore, BLCPMethodID, BLCPRequest, BLCPServiceID, JsonBody
+from ...core import CHAT_APPID, CHAT_SDK_VERSION, BlcpCore, BlcpMethodID, BlcpRequest, BlcpServiceID, JsonBody
 from ...exception import BoolResponse, TiebaServerError
 from ...helper.crypto import compute_msg_key, user_id2bduk
 
 
 def construct_request_data(
-    core: BLCPCore,
+    core: BlcpCore,
     chatroom_id: int,
     text: str,
     fid: int,
@@ -149,7 +149,7 @@ def construct_request_data(
 
     # 构造最终请求数据
     request_data = {
-        "method": BLCPMethodID.SEND_MCAST_MSG,
+        "method": BlcpMethodID.SEND_MCAST_MSG,
         "mcast_id": chatroom_id,
         "role": 3,
         "token": core.account.BDUSS,
@@ -172,11 +172,11 @@ def construct_request_data(
     return request_data
 
 
-async def send_request(core: BLCPCore, request_data: dict[str, Any]) -> BoolResponse:
+async def send_request(core: BlcpCore, request_data: dict[str, Any]) -> BoolResponse:
     request_data["client_logid"] = int(time.time() * 1_000_000)
     request_data["rpc"] = '{"rpc_retry_time":0}'
 
-    request = BLCPRequest.create(BLCPServiceID.MCAST, BLCPMethodID.SEND_MCAST_MSG, JsonBody(request_data))
+    request = BlcpRequest.create(BlcpServiceID.MCAST, BlcpMethodID.SEND_MCAST_MSG, JsonBody(request_data))
     response = await core.send(request)
 
     payload = response.payload
@@ -188,7 +188,7 @@ async def send_request(core: BLCPCore, request_data: dict[str, Any]) -> BoolResp
 
 
 async def request(
-    core: BLCPCore,
+    core: BlcpCore,
     chatroom_id: int,
     text: str,
     fid: int,

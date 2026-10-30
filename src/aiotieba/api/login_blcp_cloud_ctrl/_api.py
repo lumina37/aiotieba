@@ -3,14 +3,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from ...const import CHAT_VERSION
-from ...core import BLCPLoginError, BLCPMethodID, BLCPRequest, BLCPServiceID, JsonBody
+from ...core import BlcpLoginError, BlcpMethodID, BlcpRequest, BlcpServiceID, JsonBody
 from ...helper.crypto import enuid
 
 if TYPE_CHECKING:
-    from ...core import BLCPCore
+    from ...core import BlcpCore
 
 
-async def request(core: BLCPCore) -> None:
+async def request(core: BlcpCore) -> None:
     account = core.account
     request_data = {
         "params": {
@@ -33,11 +33,11 @@ async def request(core: BLCPCore) -> None:
         },
     }
 
-    request = BLCPRequest.create(BLCPServiceID.CLOUD_CONTROL, BLCPMethodID.LOGIN, JsonBody(request_data))
+    request = BlcpRequest.create(BlcpServiceID.CLOUD_CONTROL, BlcpMethodID.LOGIN, JsonBody(request_data))
     response = await core.send(request)
     if response.error_code != 0:
-        raise BLCPLoginError(f"云控登录失败 code={response.error_code} text={response.error_text!r}")
+        raise BlcpLoginError(f"云控登录失败 code={response.error_code} text={response.error_text!r}")
 
     errno = int(response.payload["errno"])
     if errno != 0:
-        raise BLCPLoginError(f"云控登录失败 errno={errno}")
+        raise BlcpLoginError(f"云控登录失败 errno={errno}")

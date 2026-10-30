@@ -332,7 +332,7 @@ class WsStatus(enum.IntEnum):
     OPEN = enum.auto()
 
 
-class BLCPStatus(enum.IntEnum):
+class BlcpStatus(enum.IntEnum):
     """
     BLCP状态
 

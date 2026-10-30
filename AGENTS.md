@@ -33,9 +33,9 @@ aiotieba/
 │   │   │   └── msgid.py        # msg_id与私信游标管理
 │   │   └── blcp/               # BLCP私有协议
 │   │       ├── const.py        # 跨模块常量（appid/sdk版本）
-│   │       ├── enums.py        # 服务号、方法号、压缩类型
-│   │       ├── packet.py       # 报文对象（帧/RpcMeta/报文体）的序列化
-│   │       └── core.py         # BLCPCore（连接 + 传输 + RPC + 心跳）
+│   │       ├── enums.py        # 服务号、方法号、meta类型、压缩类型
+│   │       ├── packet.py       # 报文对象（帧/BlcpHeader/报文体）的序列化
+│   │       └── core.py         # BlcpCore（连接 + 传输 + 请求响应配对 + 心跳）
 │   └── helper/                 # 内部辅助工具
 │       ├── utils.py            # 实用方法
 │       ├── cache.py            # 吧名↔fid的双向缓存
@@ -83,7 +83,7 @@ aiotieba/
 3. **`NetCore`**：管理TCP连接池。同时保存代理、超时等配置信息
 4. **`HttpCore`**：HTTP的会话状态容器
 5. **`WsCore`**：WebSocket的会话状态容器
-6. **`BLCPCore`**：BLCP核心容器。负责连接、报文收发、RPC配对与心跳维持
+6. **`BlcpCore`**：BLCP核心容器。负责连接、报文收发、请求响应配对与心跳维持
 
 ### 数据流概览
 

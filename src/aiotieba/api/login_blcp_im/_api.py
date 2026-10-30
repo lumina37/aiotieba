@@ -5,16 +5,16 @@ import time
 from typing import TYPE_CHECKING
 
 from ...const import CHAT_VERSION
-from ...core import CHAT_APPID, CHAT_SDK_VERSION, BLCPLoginError, BLCPMethodID, BLCPRequest, BLCPServiceID, JsonBody
+from ...core import CHAT_APPID, CHAT_SDK_VERSION, BlcpLoginError, BlcpMethodID, BlcpRequest, BlcpServiceID, JsonBody
 from ._classdef import LoginIMResult
 
 if TYPE_CHECKING:
-    from ...core import BLCPCore
+    from ...core import BlcpCore
 
 
-async def request(core: BLCPCore) -> LoginIMResult:
+async def request(core: BlcpCore) -> LoginIMResult:
     account = core.account
-    method = BLCPMethodID.LOGIN_BY_TOKEN
+    method = BlcpMethodID.LOGIN_BY_TOKEN
     request_data = {
         "method": method,
         "appid": CHAT_APPID,
@@ -42,15 +42,15 @@ async def request(core: BLCPCore) -> LoginIMResult:
         "client_logid": int(time.time() * 1_000_000),
     }
 
-    request = BLCPRequest.create(BLCPServiceID.IM, method, JsonBody(request_data))
+    request = BlcpRequest.create(BlcpServiceID.IM, method, JsonBody(request_data))
     response = await core.send(request)
     if response.error_code != 0:
-        raise BLCPLoginError(f"IM登录失败 code={response.error_code} text={response.error_text!r}")
+        raise BlcpLoginError(f"IM登录失败 code={response.error_code} text={response.error_text!r}")
 
     payload = response.payload
     err_code = payload["err_code"]
     if err_code != 0:
-        raise BLCPLoginError(f"IM登录失败 err_code={err_code}")
+        raise BlcpLoginError(f"IM登录失败 err_code={err_code}")
 
     result = LoginIMResult.from_json(payload)
 

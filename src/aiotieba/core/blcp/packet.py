@@ -1,24 +1,23 @@
 from __future__ import annotations
 
-import abc
 import dataclasses as dcs
 import gzip
 import json
 import random
 import time
 from sys import maxsize as LONG_MAX
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol, Self, cast
 
 from ...api._protobuf import Lcm_pb2, Rpc_pb2
 from ...helper import parse_json
-from .enums import BLCPServiceID, CompressType
-from .exception import BLCPProtocolError
+from .enums import BlcpMetaType, BlcpServiceID, CompressType
+from .exception import BlcpProtocolError
 
 if TYPE_CHECKING:
     from asyncio import StreamReader
 
-FRAME_PREFIX = b"lcp\x01"
-"""帧前缀 最后一位为协议版本号"""
+BLCP_FRAME_PREFIX = b"lcp\x01"
+"""BLCP帧前缀 最后一位为协议版本号 线上magic仍为lcp"""
 
 
 @dcs.dataclass
@@ -50,9 +49,9 @@ class EventTimestamp:
 
 
 @dcs.dataclass
-class RpcRequestMeta:
+class BlcpRequestMeta:
     """
-    RPC请求元信息
+    BLCP请求元信息
     """
 
     service_id: int
@@ -73,11 +72,16 @@ class RpcRequestMeta:
             item.timestamp_ms = event.timestamp_ms
         return proto
 
+    @classmethod
+    def from_proto(cls, proto: Rpc_pb2.RpcRequestMeta) -> Self:
+        events = [EventTimestamp(item.event, item.timestamp_ms) for item in proto.event_list]
+        return cls(proto.service_id, proto.method_id, proto.log_id, proto.need_common, events)
+
 
 @dcs.dataclass
-class RpcResponseMeta:
+class BlcpResponseMeta:
     """
-    RPC响应元信息
+    BLCP响应元信息
     """
 
     service_id: int = 0
@@ -107,9 +111,9 @@ class RpcResponseMeta:
 
 
 @dcs.dataclass
-class RpcNotifyMeta:
+class BlcpNotifyMeta:
     """
-    RPC推送元信息
+    BLCP推送元信息
     """
 
     service_id: int = 0
@@ -134,59 +138,74 @@ class RpcNotifyMeta:
         return cls(proto.service_id, proto.method_id, proto.log_id, events)
 
 
-@dcs.dataclass
-class RpcMeta:
+class TypeBlcpBody(Protocol):
     """
-    帧头 描述一次RPC的元信息
+    报文体类型 负责自身的序列化
+    """
+
+    def encode(self) -> bytes:
+        """
+        将报文体序列化为字节
+
+        Returns:
+            bytes: 报文体
+        """
+
+        ...
+
+
+@dcs.dataclass
+class BlcpHeader:
+    """
+    帧头 描述一次BLCP调用的元信息
+
+    Note:
+        底层protobuf沿用app反编译结果的RpcMeta命名
 
     Attributes:
+        meta_type (BlcpMetaType): meta类型
+        meta (BlcpRequestMeta | BlcpResponseMeta | BlcpNotifyMeta): 请求/响应/推送元信息
         correlation_id (int): 请求id 响应会原样回传
-        request (RpcRequestMeta | None): 请求元信息
-        response (RpcResponseMeta | None): 响应元信息
-        notify (RpcNotifyMeta | None): 推送元信息
         compress_type (CompressType): 报文体压缩类型
         accept_compress_type (CompressType): 期望的响应压缩类型
     """
 
+    meta_type: BlcpMetaType
+    meta: BlcpRequestMeta | BlcpResponseMeta | BlcpNotifyMeta
     correlation_id: int = 0
-    request: RpcRequestMeta | None = None
-    response: RpcResponseMeta | None = None
-    notify: RpcNotifyMeta | None = None
     compress_type: CompressType = CompressType.NONE
     accept_compress_type: CompressType = CompressType.GZIP
 
-    @property
-    def is_notify(self) -> bool:
-        return self.notify is not None
-
-    @property
-    def __inner(self) -> RpcRequestMeta | RpcResponseMeta | RpcNotifyMeta | None:
-        if self.response is not None:
-            return self.response
-        if self.notify is not None:
-            return self.notify
-        return self.request
+    def __post_init__(self) -> None:
+        self.meta_type = BlcpMetaType(self.meta_type)
+        expected_type = {
+            BlcpMetaType.REQUEST: BlcpRequestMeta,
+            BlcpMetaType.RESPONSE: BlcpResponseMeta,
+            BlcpMetaType.NOTIFY: BlcpNotifyMeta,
+        }[self.meta_type]
+        if not isinstance(self.meta, expected_type):
+            raise BlcpProtocolError(f"meta类型不匹配: {self.meta_type!r} {type(self.meta).__name__}")
 
     @property
     def service_id(self) -> int:
-        return self.__inner.service_id
+        return self.meta.service_id
 
     @property
     def method_id(self) -> int:
-        return self.__inner.method_id
+        return self.meta.method_id
 
     @property
     def log_id(self) -> int:
-        return self.__inner.log_id
+        return self.meta.log_id
 
     def to_proto(self) -> Rpc_pb2.RpcMeta:
         proto = Rpc_pb2.RpcMeta()
-        if self.request is not None:
-            proto.request.CopyFrom(self.request.to_proto())
-        if self.response is not None:
-            proto.response.CopyFrom(self.response.to_proto())
-        if self.notify is not None:
-            proto.notify.CopyFrom(self.notify.to_proto())
+        if self.meta_type is BlcpMetaType.REQUEST:
+            proto.request.CopyFrom(self.meta.to_proto())
+        elif self.meta_type is BlcpMetaType.RESPONSE:
+            proto.response.CopyFrom(self.meta.to_proto())
+        elif self.meta_type is BlcpMetaType.NOTIFY:
+            proto.notify.CopyFrom(self.meta.to_proto())
         proto.compress_type = self.compress_type
         proto.correlation_id = self.correlation_id
         proto.accept_compress_type = self.accept_compress_type
@@ -201,18 +220,26 @@ class RpcMeta:
             proto (Rpc_pb2.RpcMeta): 帧头
 
         Returns:
-            RpcMeta: 帧头
+            BlcpHeader: 帧头
         """
 
         correlation_id = proto.correlation_id
         compress_type = CompressType(proto.compress_type)
 
         if proto.HasField("notify"):
-            notify = RpcNotifyMeta.from_proto(proto.notify)
-            return cls(correlation_id, None, None, notify, compress_type)
+            meta_type = BlcpMetaType.NOTIFY
+            meta = BlcpNotifyMeta.from_proto(proto.notify)
+        elif proto.HasField("response"):
+            meta_type = BlcpMetaType.RESPONSE
+            meta = BlcpResponseMeta.from_proto(proto.response)
+        elif proto.HasField("request"):
+            meta_type = BlcpMetaType.REQUEST
+            meta = BlcpRequestMeta.from_proto(proto.request)
+        else:
+            meta_type = BlcpMetaType.RESPONSE
+            meta = BlcpResponseMeta()
 
-        response = RpcResponseMeta.from_proto(proto.response)
-        return cls(correlation_id, None, response, None, compress_type)
+        return cls(meta_type, meta, correlation_id, compress_type)
 
     def encode(self) -> bytes:
         return self.to_proto().SerializeToString()
@@ -224,58 +251,19 @@ class RpcMeta:
         return cls.from_proto(proto)
 
 
-class BLCPBody(abc.ABC):
+class TypeBlcpMsg(Protocol):
     """
-    报文体的抽象基类 负责自身的序列化与反序列化
+    BLCP报文类型 帧头与报文体的组合
     """
 
-    @abc.abstractmethod
-    def encode(self) -> bytes:
-        """
-        将报文体序列化为字节
-
-        Returns:
-            bytes: 报文体
-        """
-
-    @classmethod
-    @abc.abstractmethod
-    def decode(cls, data: bytes) -> Self:
-        """
-        从字节反序列化为报文体
-
-        Args:
-            data (bytes): 报文体
-
-        Returns:
-            Self: 报文体对象
-        """
-
-    @classmethod
-    def decode_for(cls, meta: RpcMeta, data: bytes) -> BLCPBody:
-        """
-        依据帧头选择报文体类型并反序列化
-
-        Args:
-            meta (RpcMeta): 帧头
-            data (bytes): 原始报文体
-
-        Returns:
-            BLCPBody: 报文体对象
-        """
-
-        if meta.compress_type == CompressType.GZIP:
-            data = gzip.decompress(data)
-
-        # 控制面使用protobuf 业务面使用json
-        body_type: type[BLCPBody] = LcmBody if meta.service_id == BLCPServiceID.LCM else JsonBody
-        return body_type.decode(data)
+    header: BlcpHeader
+    body: TypeBlcpBody
 
 
 @dcs.dataclass
-class LcmBody(BLCPBody):
+class ProtoLcmBody:
     """
-    LCP控制面报文体 protobuf编码
+    LCM控制面报文体 protobuf编码 底层为app的RpcData
     """
 
     data: Lcm_pb2.RpcData
@@ -284,98 +272,24 @@ class LcmBody(BLCPBody):
         return self.data.SerializeToString()
 
     @classmethod
+    def from_proto(cls, proto: Lcm_pb2.RpcData) -> Self:
+        """
+        从protobuf构造报文体
+
+        Args:
+            proto (Lcm_pb2.RpcData): LCM报文体
+
+        Returns:
+            ProtoLcmBody: 报文体
+        """
+
+        return cls(proto)
+
+    @classmethod
     def decode(cls, data: bytes) -> Self:
         rpc_data = Lcm_pb2.RpcData()
         rpc_data.ParseFromString(data)
-        return cls(rpc_data)
-
-    @classmethod
-    def login(
-        cls,
-        *,
-        log_id: int,
-        token: str,
-        timestamp: int,
-        cuid: str,
-        app_id: int,
-        app_version: str,
-        sdk_version: str,
-        network: str = "wifi",
-        device_type: str = "android",
-        start_type: int = -1,
-        conn_type: int = 1,
-    ) -> Self:
-        """
-        构造LCM登录请求
-
-        Args:
-            log_id (int): 请求id
-            token (str): LCP token
-            timestamp (int): 毫秒时间戳
-            cuid (str): 设备标识
-            app_id (int): appid
-            app_version (str): 客户端版本
-            sdk_version (str): LCP SDK版本
-            network (str, optional): 网络类型. Defaults to "wifi".
-            device_type (str, optional): 设备类型. Defaults to "android".
-            start_type (int, optional): 启动类型. Defaults to -1.
-            conn_type (int, optional): 连接类型. Defaults to 1.
-
-        Returns:
-            LcmBody: 报文体
-        """
-
-        rpc_data = Lcm_pb2.RpcData()
-        request = rpc_data.lcm_request
-        request.log_id = log_id
-        request.token = token
-        request.timestamp = timestamp
-        request.start_type = start_type
-        request.conn_type = conn_type
-        common = request.common
-        common.cuid = cuid
-        common.device = device_type
-        common.app_id = str(app_id)
-        common.app_version = app_version
-        common.sdk_version = sdk_version
-        common.network = network
-        return cls(rpc_data)
-
-    @classmethod
-    def heartbeat(cls, *, log_id: int, timestamp: int) -> Self:
-        """
-        构造LCM心跳请求
-
-        Args:
-            log_id (int): 请求id
-            timestamp (int): 毫秒时间戳
-
-        Returns:
-            LcmBody: 报文体
-        """
-
-        rpc_data = Lcm_pb2.RpcData()
-        rpc_data.lcm_request.log_id = log_id
-        rpc_data.lcm_request.timestamp = timestamp
-        return cls(rpc_data)
-
-    @classmethod
-    def logout(cls, *, log_id: int, timestamp: int) -> Self:
-        """
-        构造LCM登出请求
-
-        Args:
-            log_id (int): 请求id
-            timestamp (int): 毫秒时间戳
-
-        Returns:
-            LcmBody: 报文体
-        """
-
-        rpc_data = Lcm_pb2.RpcData()
-        rpc_data.lcm_request.log_id = log_id
-        rpc_data.lcm_request.timestamp = timestamp
-        return cls(rpc_data)
+        return cls.from_proto(rpc_data)
 
     @property
     def response(self) -> Lcm_pb2.LcmResponse:
@@ -395,9 +309,9 @@ class LcmBody(BLCPBody):
 
 
 @dcs.dataclass
-class JsonBody(BLCPBody):
+class JsonBody:
     """
-    LCP业务面报文体 json编码
+    BLCP业务面报文体 json编码
     """
 
     data: dict[str, Any]
@@ -411,7 +325,7 @@ class JsonBody(BLCPBody):
 
 
 @dcs.dataclass
-class BytesBody(BLCPBody):
+class BytesBody:
     """
     原始字节报文体 用于无内容的请求
     """
@@ -426,18 +340,52 @@ class BytesBody(BLCPBody):
         return cls(data)
 
 
-@dcs.dataclass
-class LCPFrame:
+def decode_body(header: BlcpHeader, data: bytes) -> TypeBlcpBody:
     """
-    LCP帧 负责帧头与报文体的拼装和拆解
+    依据帧头解压并反序列化报文体
+
+    Args:
+        header (BlcpHeader): 帧头
+        data (bytes): 原始报文体
+
+    Returns:
+        TypeBlcpBody: 报文体对象
+    """
+
+    if header.compress_type == CompressType.GZIP:
+        data = gzip.decompress(data)
+
+    # 控制面使用protobuf 业务面使用json
+    body_type = ProtoLcmBody if header.service_id == BlcpServiceID.LCM else JsonBody
+    return body_type.decode(data)
+
+
+@dcs.dataclass
+class BlcpFrame:
+    """
+    BLCP帧 负责帧头与报文体的拼装和拆解
 
     Attributes:
-        header (bytes): 帧头 RpcMeta的序列化结果
+        header (bytes): 帧头 BlcpHeader的序列化结果
         body (bytes): 报文体
     """
 
     header: bytes
     body: bytes
+
+    @classmethod
+    def from_msg(cls, msg: TypeBlcpMsg) -> Self:
+        """
+        从报文创建帧
+
+        Args:
+            msg (TypeBlcpMsg): 报文
+
+        Returns:
+            BlcpFrame: 帧
+        """
+
+        return cls(msg.header.encode(), msg.body.encode())
 
     def encode(self) -> bytes:
         """
@@ -450,7 +398,7 @@ class LCPFrame:
         header_len = len(self.header)
         total_len = header_len + len(self.body)
         return b"".join((
-            FRAME_PREFIX,
+            BLCP_FRAME_PREFIX,
             total_len.to_bytes(4, "big"),
             header_len.to_bytes(4, "big"),
             self.header,
@@ -466,13 +414,13 @@ class LCPFrame:
             reader (StreamReader): 数据流
 
         Returns:
-            LCPFrame: 帧
+            BlcpFrame: 帧
 
         Raises:
             asyncio.IncompleteReadError: 连接被关闭
         """
 
-        await reader.readuntil(FRAME_PREFIX)
+        await reader.readuntil(BLCP_FRAME_PREFIX)
         lengths = await reader.readexactly(8)
 
         total_len = int.from_bytes(lengths[0:4], "big")
@@ -485,70 +433,40 @@ class LCPFrame:
 
 
 @dcs.dataclass
-class BLCPPacket:
-    """
-    LCP报文 帧头与报文体的组合
-
-    Attributes:
-        meta (RpcMeta): 帧头
-        body (BLCPBody): 报文体
-    """
-
-    meta: RpcMeta
-    body: BLCPBody
-
-    def to_frame(self) -> LCPFrame:
-        """
-        转换为帧
-
-        Returns:
-            LCPFrame: 帧
-        """
-
-        return LCPFrame(self.meta.encode(), self.body.encode())
-
-    def to_bytes(self) -> bytes:
-        """
-        序列化为可直接发送的字节
-
-        Returns:
-            bytes: 帧
-        """
-
-        return self.to_frame().encode()
-
-    @classmethod
-    def from_frame(cls, frame: LCPFrame) -> Self:
-        """
-        从帧反序列化为报文
-
-        Args:
-            frame (LCPFrame): 帧
-
-        Returns:
-            BLCPPacket: 报文 具体类型由帧头决定
-        """
-
-        meta = RpcMeta.decode(frame.header)
-        body = BLCPBody.decode_for(meta, frame.body)
-
-        if meta.is_notify:
-            return BLCPNotify(meta, body)
-        return BLCPResponse(meta, body)
-
-
-@dcs.dataclass
-class BLCPRequest(BLCPPacket):
+class BlcpRequest:
     """
     请求报文
+
+    Attributes:
+        header (BlcpHeader): 帧头
+        body (TypeBlcpBody): 报文体
     """
+
+    header: BlcpHeader
+    body: TypeBlcpBody
+
+    @classmethod
+    def from_frame(cls, frame: BlcpFrame) -> Self:
+        """
+        从帧反序列化为请求报文
+
+        Args:
+            frame (BlcpFrame): 帧
+
+        Returns:
+            BlcpRequest: 请求报文
+        """
+
+        header = BlcpHeader.decode(frame.header)
+        body = decode_body(header, frame.body)
+        return cls(header, body)
 
     @classmethod
     def create(
         cls,
         service_id: int,
         method_id: int,
-        body: BLCPBody | None = None,
+        body: TypeBlcpBody | None = None,
         *,
         correlation_id: int | None = None,
         need_common: int = 1,
@@ -560,77 +478,101 @@ class BLCPRequest(BLCPPacket):
         Args:
             service_id (int): 服务号
             method_id (int): 方法号
-            body (BLCPBody | None, optional): 报文体. Defaults to None.
+            body (TypeBlcpBody | None, optional): 报文体. Defaults to None.
             correlation_id (int | None, optional): 请求id 为空时随机生成. Defaults to None.
             need_common (int, optional): 是否需要公共参数. Defaults to 1.
             event (str | None, optional): 埋点事件名 为空则不添加. Defaults to "CLCPReqBegin".
 
         Returns:
-            BLCPRequest: 请求报文
+            BlcpRequest: 请求报文
         """
 
         if correlation_id is None:
             correlation_id = random.randint(0, LONG_MAX)
 
         events = [EventTimestamp.now(event)] if event else []
-        request_meta = RpcRequestMeta(service_id, method_id, correlation_id, need_common, events)
-        meta = RpcMeta(correlation_id, request_meta)
+        request_meta = BlcpRequestMeta(service_id, method_id, correlation_id, need_common, events)
+        header = BlcpHeader(BlcpMetaType.REQUEST, request_meta, correlation_id)
 
         if body is None:
             body = BytesBody()
 
-        return cls(meta, body)
+        return cls(header, body)
 
     @property
     def correlation_id(self) -> int:
-        return self.meta.correlation_id
+        return self.header.correlation_id
 
     @property
     def service_id(self) -> int:
-        return self.meta.request.service_id
+        return self.header.service_id
 
     @property
     def method_id(self) -> int:
-        return self.meta.request.method_id
+        return self.header.method_id
 
 
 @dcs.dataclass
-class BLCPResponse(BLCPPacket):
+class BlcpResponse:
     """
     响应报文
+
+    Attributes:
+        header (BlcpHeader): 帧头
+        body (TypeBlcpBody): 报文体
     """
+
+    header: BlcpHeader
+    body: TypeBlcpBody
+
+    @classmethod
+    def from_frame(cls, frame: BlcpFrame) -> Self:
+        """
+        从帧反序列化为响应报文
+
+        Args:
+            frame (BlcpFrame): 帧
+
+        Returns:
+            BlcpResponse: 响应报文
+        """
+
+        header = BlcpHeader.decode(frame.header)
+        body = decode_body(header, frame.body)
+        return cls(header, body)
 
     @property
     def correlation_id(self) -> int:
-        return self.meta.correlation_id
+        return self.header.correlation_id
 
     @property
     def service_id(self) -> int:
-        return self.meta.response.service_id
+        return self.header.service_id
 
     @property
     def method_id(self) -> int:
-        return self.meta.response.method_id
+        return self.header.method_id
 
     @property
     def error_code(self) -> int:
-        return self.meta.response.error_code
+        return self.header.meta.error_code
 
     @property
     def error_text(self) -> str:
-        return self.meta.response.error_text
+        return self.header.meta.error_text
 
     @property
     def ok(self) -> bool:
         """
-        是否成功 同时校验RPC层与控制面错误码
+        是否成功 同时校验BLCP层与控制面错误码
         """
 
         if self.error_code != 0:
             return False
 
         lcm = self.lcm
-        return lcm is None or lcm.error_code == 0
+        ok = lcm is None or lcm.error_code == 0
+        return ok
 
     @property
     def lcm(self) -> Lcm_pb2.LcmResponse | None:
@@ -638,7 +580,7 @@ class BLCPResponse(BLCPPacket):
         控制面响应 非控制面报文返回None
         """
 
-        if isinstance(self.body, LcmBody):
+        if isinstance(self.body, ProtoLcmBody):
             return self.body.data.lcm_response
         return None
 
@@ -646,43 +588,84 @@ class BLCPResponse(BLCPPacket):
     def payload(self) -> dict[str, Any]:
         """
         业务面响应内容
-
-        Raises:
-            BLCPProtocolError: 报文体不是JSON
         """
 
-        if isinstance(self.body, JsonBody):
-            return self.body.data
-        raise BLCPProtocolError(f"期望JSON报文体 实际为{type(self.body).__name__}")
+        return cast("JsonBody", self.body).data
 
 
 @dcs.dataclass
-class BLCPNotify(BLCPPacket):
+class BlcpNotify:
     """
     服务端推送报文
+
+    Attributes:
+        header (BlcpHeader): 帧头
+        body (TypeBlcpBody): 报文体
     """
+
+    header: BlcpHeader
+    body: TypeBlcpBody
+
+    @classmethod
+    def from_frame(cls, frame: BlcpFrame) -> Self:
+        """
+        从帧反序列化为推送报文
+
+        Args:
+            frame (BlcpFrame): 帧
+
+        Returns:
+            BlcpNotify: 推送报文
+        """
+
+        header = BlcpHeader.decode(frame.header)
+        body = decode_body(header, frame.body)
+        return cls(header, body)
 
     @property
     def service_id(self) -> int:
-        return self.meta.notify.service_id
+        return self.header.service_id
 
     @property
     def method_id(self) -> int:
-        return self.meta.notify.method_id
+        return self.header.method_id
 
     @property
     def log_id(self) -> int:
-        return self.meta.notify.log_id
+        return self.header.log_id
 
     @property
     def payload(self) -> dict[str, Any]:
         """
         推送内容
-
-        Raises:
-            BLCPProtocolError: 报文体不是JSON
         """
 
-        if isinstance(self.body, JsonBody):
-            return self.body.data
-        raise BLCPProtocolError(f"期望JSON报文体 实际为{type(self.body).__name__}")
+        return cast("JsonBody", self.body).data
+
+
+class BlcpMsgFactory:
+    """
+    BLCP报文工厂 依据帧头类型动态生成对应类型的报文
+    """
+
+    _MSG_TYPES: ClassVar[dict[BlcpMetaType, type[BlcpRequest] | type[BlcpResponse] | type[BlcpNotify]]] = {
+        BlcpMetaType.REQUEST: BlcpRequest,
+        BlcpMetaType.RESPONSE: BlcpResponse,
+        BlcpMetaType.NOTIFY: BlcpNotify,
+    }
+
+    @classmethod
+    def from_frame(cls, frame: BlcpFrame) -> TypeBlcpMsg:
+        """
+        从帧动态生成报文
+
+        Args:
+            frame (BlcpFrame): 帧
+
+        Returns:
+            TypeBlcpMsg: 报文
+        """
+
+        header = BlcpHeader.decode(frame.header)
+        msg_type = cls._MSG_TYPES[header.meta_type]
+        return msg_type.from_frame(frame)

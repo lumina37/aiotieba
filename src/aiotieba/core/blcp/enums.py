@@ -3,7 +3,7 @@ from __future__ import annotations
 import enum
 
 
-class BLCPServiceID(enum.IntEnum):
+class BlcpServiceID(enum.IntEnum):
     """
     BLCP服务号
 
@@ -20,23 +20,42 @@ class BLCPServiceID(enum.IntEnum):
     CLOUD_CONTROL = 4
 
 
-class BLCPMethodID(enum.IntEnum):
+class BlcpMethodID(enum.IntEnum):
     """
-    BLCP方法号 需与BLCPServiceID配合使用
+    BLCP方法号 需与BlcpServiceID配合使用
 
     Note:
         LOGIN 登录 LCM登录/云控登录\n
+        CLOSE 关闭 LCM关闭连接\n
         HEARTBEAT 心跳\n
+        ABORT 强制关闭 LCM强制关闭连接\n
         LOGIN_BY_TOKEN IM登录\n
         SEND_MCAST_MSG 发送吧群消息\n
         JOIN_CAST 加入吧群
     """
 
     LOGIN = 1
+    CLOSE = 2
     HEARTBEAT = 3
+    ABORT = 4
     LOGIN_BY_TOKEN = 50
     SEND_MCAST_MSG = 185
     JOIN_CAST = 201
+
+
+class BlcpMetaType(enum.IntEnum):
+    """
+    BLCP帧头meta类型
+
+    Note:
+        REQUEST 请求\n
+        RESPONSE 响应\n
+        NOTIFY 推送
+    """
+
+    REQUEST = 1
+    RESPONSE = 2
+    NOTIFY = 3
 
 
 class CompressType(enum.IntEnum):

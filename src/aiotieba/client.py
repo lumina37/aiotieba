@@ -118,13 +118,13 @@ from .api import (
 from .api._classdef import UserInfo
 from .config import ProxyConfig, TimeoutConfig
 from .const import CHAT_VERSION, LAST_REPLYERS_VERSION, LATEST_VERSION, LEGACY_VERSION, USER_POSTS_VERSION
-from .core import Account, BLCPCore, HttpCore, NetCore, WsCore
+from .core import Account, BlcpCore, HttpCore, NetCore, WsCore
 from .enums import (
     BawuPermType,
     BawuSearchType,
     BawuType,
     BlacklistType,
-    BLCPStatus,
+    BlcpStatus,
     CommentSortType,
     Gender,
     GroupType,
@@ -246,7 +246,7 @@ class Client:
         net_core = NetCore(connector, self._proxy, self._timeout)
         self._http_core = HttpCore(self._account, net_core)
         self._ws_cores: dict[str, WsCore] = {}
-        self._blcp_core = BLCPCore(account=self._account)
+        self._blcp_core = BlcpCore(account=self._account)
 
         return self
 
@@ -2830,7 +2830,7 @@ class Client:
         await self.__login_blcp_cloud_ctrl()
         await self.__login_blcp_im()
 
-        self._blcp_core.status = BLCPStatus.LOGGED_IN
+        self._blcp_core.status = BlcpStatus.LOGGED_IN
 
     async def __get_lcm_token(self) -> str:
         return await get_lcm_token.request(self._http_core)
@@ -2909,7 +2909,7 @@ class Client:
             BoolResponse: True成功 False失败
         """
 
-        if self._blcp_core.status is not BLCPStatus.LOGGED_IN:
+        if self._blcp_core.status is not BlcpStatus.LOGGED_IN:
             await self.__init_blcp()
 
         await self.__join_chatroom(chatroom_id)
@@ -2945,7 +2945,7 @@ class Client:
         if not self.account.user.nick_name_new:
             # 吧群消息中的name必须与个人资料昵称一致 仅HTTP登录时该字段为空 服务端会返回1507
             await self.get_self_info(ReqUInfo.NICK_NAME)
-        if self._blcp_core.status is not BLCPStatus.LOGGED_IN:
+        if self._blcp_core.status is not BlcpStatus.LOGGED_IN:
             await self.__init_blcp()
 
         level_info = await self.__get_forum_level(fid)

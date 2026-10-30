@@ -1,20 +1,22 @@
-from .const import CHAT_APPID, CHAT_SDK_VERSION, LCP_SDK_VERSION
-from .core import BLCPCore, BLCPFuture, BLCPWaiter
-from .enums import BLCPMethodID, BLCPServiceID, CompressType
-from .exception import BLCPConnectionError, BLCPError, BLCPLoginError, BLCPProtocolError
+from .const import BLCP_SDK_VERSION, CHAT_APPID, CHAT_SDK_VERSION
+from .core import BlcpCore, BlcpFuture, BlcpWaiter
+from .enums import BlcpMetaType, BlcpMethodID, BlcpServiceID, CompressType
+from .exception import BlcpConnectionError, BlcpError, BlcpLoginError, BlcpProtocolError
 from .packet import (
-    BLCPBody,
-    BLCPNotify,
-    BLCPPacket,
-    BLCPRequest,
-    BLCPResponse,
+    BlcpFrame,
+    BlcpHeader,
+    BlcpMsgFactory,
+    BlcpNotify,
+    BlcpNotifyMeta,
+    BlcpRequest,
+    BlcpRequestMeta,
+    BlcpResponse,
+    BlcpResponseMeta,
     BytesBody,
     EventTimestamp,
     JsonBody,
-    LcmBody,
-    LCPFrame,
-    RpcMeta,
-    RpcNotifyMeta,
-    RpcRequestMeta,
-    RpcResponseMeta,
+    ProtoLcmBody,
+    TypeBlcpBody,
+    TypeBlcpMsg,
+    decode_body,
 )
