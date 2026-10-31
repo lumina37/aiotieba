@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from cryptography.hazmat.primitives.asymmetric.padding import PKCS1v15
 from cryptography.hazmat.primitives.serialization import load_der_public_key
 
+from ...__version__ import __version__
 from ...exception import TiebaServerError, TiebaValueError
 from ...helper import pack_json
 from ._classdef import InitWsInfo
@@ -31,8 +32,9 @@ def pack_min_device(account: Account, client_version: str) -> dict[str, str]:
 
 
 def pack_full_device(account: Account, client_version: str) -> dict[str, str]:
-    now = int(time.time() * 1000)
-    date = time.localtime()
+    tsec = int(time.time())
+    tmsec = tsec * 1000
+    date = time.localtime(tsec)
 
     device = {
         "model": "PDEM10",
@@ -43,11 +45,7 @@ def pack_full_device(account: Account, client_version: str) -> dict[str, str]:
         "mac": "",
         "_client_type": "2",
         "_client_version": client_version,
-        "user_agent": (
-            "Mozilla/5.0 (Linux; Android 13; PDEM10 Build/TKQ1.221114.001; wv) AppleWebKit/537.36 "
-            "(KHTML, like Gecko) Version/4.0 Chrome/114.0.5735.196 Mobile Safari/537.36 "
-            f"tieba/{client_version}"
-        ),
+        "user_agent": f"aiotieba/{__version__}",
         "_client_id": account.client_id,
         "net_type": "1",
         "net": "1",
@@ -55,7 +53,7 @@ def pack_full_device(account: Account, client_version: str) -> dict[str, str]:
         "cuid_galaxy2": account.cuid_galaxy2,
         "c3_aid": account.c3_aid,
         "cuid_gid": "",
-        "timestamp": str(now),
+        "timestamp": str(tmsec),
         "sample_id": account.sample_id,
         "z_id": account.zid,
         "baiduid": account.baidu_id,
@@ -70,9 +68,9 @@ def pack_full_device(account: Account, client_version: str) -> dict[str, str]:
         "scr_h": "2340",
         "scr_w": "1080",
         "scr_dip": "2.75",
-        "active_timestamp": str(now),
-        "first_install_time": str(now - 86400000),
-        "update_time": str(now - 3600000),
+        "active_timestamp": str(tmsec),
+        "first_install_time": str(tmsec - 86400000),
+        "update_time": str(tmsec - 3600000),
         "event_day": f"{date.tm_year}{date.tm_mon}{date.tm_mday}",
         "cmode": "1",
         "extra": "",

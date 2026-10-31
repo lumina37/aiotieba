@@ -5,7 +5,7 @@ import time
 from typing import TYPE_CHECKING
 
 from ...const import CHAT_VERSION
-from ...core import CHAT_APPID, LCP_SDK_VERSION
+from ...core import BLCP_SDK_VERSION, CHAT_APPID
 from ...helper import parse_json
 
 if TYPE_CHECKING:
@@ -30,7 +30,7 @@ async def request(http_core: HttpCore) -> str:
         ("manufacture", ""),
         ("model_type", ""),
         ("request_id", str(ts)),
-        ("sdk_version", LCP_SDK_VERSION),
+        ("sdk_version", BLCP_SDK_VERSION),
         ("sign", hashlib.md5(f"{CHAT_APPID}{cuid}android{ts}".encode()).hexdigest()),
         ("ts", ts),
         ("user_key", ""),

@@ -96,6 +96,7 @@ nav:
           - tab_map: ref/classdef/tab_map.md
           - user_forum_info: ref/classdef/user_forum_info.md
           - chatroom_detail: ref/classdef/chatroom_detail.md
+          - bawu_task: ref/classdef/bawu_task.md
 
 validation:
   nav:

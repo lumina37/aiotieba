@@ -27,6 +27,7 @@ from .api import (
     dislike_forum,
     fetch_chatroom_msg,
     follow_forum,
+    follow_forums,
     follow_user,
     get_ats,
     get_bawu_blacklist,
@@ -34,6 +35,7 @@ from .api import (
     get_bawu_memberlist,
     get_bawu_perm,
     get_bawu_postlogs,
+    get_bawu_task,
     get_bawu_userlogs,
     get_blacklist,
     get_blacklist_old,
@@ -93,6 +95,7 @@ from .api import (
     recommend,
     recover,
     remove_fan,
+    remove_invalid_fans,
     search_global,
     search_in_forum,
     send_chatroom_msg,
@@ -118,13 +121,13 @@ from .api import (
 from .api._classdef import UserInfo
 from .config import ProxyConfig, TimeoutConfig
 from .const import CHAT_VERSION, LAST_REPLYERS_VERSION, LATEST_VERSION, LEGACY_VERSION, USER_POSTS_VERSION
-from .core import Account, BLCPCore, HttpCore, NetCore, WsCore
+from .core import Account, BlcpCore, HttpCore, NetCore, WsCore
 from .enums import (
     BawuPermType,
     BawuSearchType,
     BawuType,
     BlacklistType,
-    BLCPStatus,
+    BlcpStatus,
     CommentSortType,
     Gender,
     GroupType,
@@ -246,7 +249,7 @@ class Client:
         net_core = NetCore(connector, self._proxy, self._timeout)
         self._http_core = HttpCore(self._account, net_core)
         self._ws_cores: dict[str, WsCore] = {}
-        self._blcp_core = BLCPCore(account=self._account)
+        self._blcp_core = BlcpCore(account=self._account)
 
         return self
 
@@ -1525,6 +1528,23 @@ class Client:
 
         return await set_bawu_perm.request(self._http_core, fid, portrait, perms)
 
+    @handle_exception(get_bawu_task.BawuTask)
+    async def get_bawu_task(self, fname_or_fid: str | int) -> get_bawu_task.BawuTask:
+        """
+        获取吧主考核信息
+
+        Args:
+            fname_or_fid (str | int): 目标贴吧名或fid 优先fid
+
+        Returns:
+            BawuTask: 吧主考核信息
+        """
+
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
+        await self.__init_tbs()
+
+        return await get_bawu_task.request(self._http_core, fid)
+
     @handle_exception(get_tab_map.TabMap)
     @_try_websocket()
     async def get_tab_map(self, fname_or_fid: str | int) -> get_tab_map.TabMap:
@@ -1783,7 +1803,7 @@ class Client:
 
     @handle_exception(get_unblock_appeals.Appeals)
     async def get_unblock_appeals(
-        self, fname_or_fid: str | int, /, pn: int = 1, *, rn: int = 5
+        self, fname_or_fid: str | int, /, pn: int = 1, *, rn: int = 5, query: str = ""
     ) -> get_unblock_appeals.Appeals:
         """
         获取吧务后台申诉请求列表
@@ -1792,6 +1812,7 @@ class Client:
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先fid
             pn (int, optional): 页码. Defaults to 1.
             rn (int, optional): 请求的条目数. Range [1, 50]. Defaults to 5.
+            query (str, optional): 通过申诉用户的用户名/昵称精确查询 默认为空即查询全部. Defaults to ''.
 
         Returns:
             Appeals: 申诉请求列表
@@ -1801,29 +1822,27 @@ class Client:
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
         await self.__init_tbs()
 
-        return await get_unblock_appeals.request(self._http_core, fid, pn, rn)
+        return await get_unblock_appeals.request(self._http_core, fid, pn, rn, query)
 
     @handle_exception(get_bawu_blacklist.BawuBlacklistUsers)
     async def get_bawu_blacklist(
-        self, fname_or_fid: str | int, /, pn: int = 1
+        self, fname_or_fid: str | int, /, pn: int = 1, *, name: str = ""
     ) -> get_bawu_blacklist.BawuBlacklistUsers:
         """
         获取吧务后台黑名单列表
 
         Args:
-            fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先贴吧名
+            fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先fid
             pn (int, optional): 页码. Defaults to 1.
+            name (str, optional): 通过用户名精确查询 默认为空即查询全部. Defaults to ''.
 
         Returns:
             BawuBlacklistUsers: 吧务黑名单列表
-
-        Note:
-            本接口需要STOKEN
         """
 
-        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
 
-        return await get_bawu_blacklist.request(self._http_core, fname, pn)
+        return await get_bawu_blacklist.request(self._http_core, fid, pn, name)
 
     @handle_exception(get_statistics.Statistics)
     async def get_statistics(self, fname_or_fid: str | int) -> get_statistics.Statistics:
@@ -2469,6 +2488,19 @@ class Client:
         return await remove_fan.request(self._http_core, user_id)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
+    async def remove_invalid_fans(self) -> BoolResponse:
+        """
+        移除全部违禁粉丝
+
+        Returns:
+            BoolResponse: True成功 False失败
+        """
+
+        await self.__init_tbs()
+
+        return await remove_invalid_fans.request(self._http_core)
+
+    @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     @_try_websocket()
     async def set_blacklist(self, id_: str | int, *, btype: BlacklistType = BlacklistType.ALL) -> BoolResponse:
         """
@@ -2549,6 +2581,25 @@ class Client:
         await self.__init_tbs()
 
         return await follow_forum.request(self._http_core, fid)
+
+    @handle_exception(BoolResponse, ok_log_level=logging.INFO)
+    async def follow_forums(self, fnames_or_fids: Iterable[str | int]) -> BoolResponse:
+        """
+        批量关注贴吧
+
+        Args:
+            fnames_or_fids (Iterable[str | int]): 待关注贴吧的贴吧名或fid列表 优先fid
+
+        Returns:
+            BoolResponse: True成功 False失败
+        """
+
+        fids = []
+        for fname_or_fid in fnames_or_fids:
+            fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
+            fids.append(fid)
+
+        return await follow_forums.request(self._http_core, fids)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def unfollow_forum(self, fname_or_fid: str | int) -> BoolResponse:
@@ -2811,15 +2862,12 @@ class Client:
 
                 mid_manager.update_pulled_msg_id(user_id, message.msg_id)
 
-                if message.msg_type != MsgType.READED:
-                    continue
-
-                content: dict = parse_json(message.text)
-                if int(content.get("eventId", 0)) != 22001:
-                    continue
-
-                read_msg_id = int(content["eventParam"]["readMsgId"])
-                mid_manager.update_read_msg_id(user_id, read_msg_id)
+                if message.msg_type == MsgType.READED:
+                    content: dict = parse_json(message.text)
+                    if content["eventId"] != 22001:
+                        continue
+                    read_msg_id = content["eventParam"]["readMsgId"]
+                    mid_manager.update_read_msg_id(user_id, read_msg_id)
 
         return groups
 
@@ -2833,7 +2881,7 @@ class Client:
         await self.__login_blcp_cloud_ctrl()
         await self.__login_blcp_im()
 
-        self._blcp_core.status = BLCPStatus.LOGGED_IN
+        self._blcp_core.status = BlcpStatus.LOGGED_IN
 
     async def __get_lcm_token(self) -> str:
         return await get_lcm_token.request(self._http_core)
@@ -2912,7 +2960,7 @@ class Client:
             BoolResponse: True成功 False失败
         """
 
-        if self._blcp_core.status is not BLCPStatus.LOGGED_IN:
+        if self._blcp_core.status is not BlcpStatus.LOGGED_IN:
             await self.__init_blcp()
 
         await self.__join_chatroom(chatroom_id)
@@ -2948,7 +2996,7 @@ class Client:
         if not self.account.user.nick_name_new:
             # 吧群消息中的name必须与个人资料昵称一致 仅HTTP登录时该字段为空 服务端会返回1507
             await self.get_self_info(ReqUInfo.NICK_NAME)
-        if self._blcp_core.status is not BLCPStatus.LOGGED_IN:
+        if self._blcp_core.status is not BlcpStatus.LOGGED_IN:
             await self.__init_blcp()
 
         level_info = await self.__get_forum_level(fid)

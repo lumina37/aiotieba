@@ -48,10 +48,8 @@ class Appeal:
     @classmethod
     def from_json(cls, data_map: Mapping) -> Self:
         user_map = data_map["user"]
-        user_id = user_map["id"]
-        portrait = user_map["portrait"]
-        if "?" in portrait:
-            portrait = portrait[:-13]
+        user_id = data_map["user_id"]
+        portrait = data_map["portrait"]
         user_name = user_map["name"]
         nick_name = user_map["name_show"]
         appeal_id = int(data_map["appeal_id"])
