@@ -28,7 +28,6 @@ from .blcp import (
     ProtoLcmBody,
     TypeBlcpBody,
     TypeBlcpMsg,
-    decode_body,
 )
 from .http import HttpCore
 from .net import NetCore

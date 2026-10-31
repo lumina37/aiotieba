@@ -340,18 +340,7 @@ class BytesBody:
         return cls(data)
 
 
-def decode_body(header: BlcpHeader, data: bytes) -> TypeBlcpBody:
-    """
-    依据帧头解压并反序列化报文体
-
-    Args:
-        header (BlcpHeader): 帧头
-        data (bytes): 原始报文体
-
-    Returns:
-        TypeBlcpBody: 报文体对象
-    """
-
+def _decode_body(header: BlcpHeader, data: bytes) -> TypeBlcpBody:
     if header.compress_type == CompressType.GZIP:
         data = gzip.decompress(data)
 
@@ -458,7 +447,7 @@ class BlcpRequest:
         """
 
         header = BlcpHeader.decode(frame.header)
-        body = decode_body(header, frame.body)
+        body = _decode_body(header, frame.body)
         return cls(header, body)
 
     @classmethod
@@ -538,7 +527,7 @@ class BlcpResponse:
         """
 
         header = BlcpHeader.decode(frame.header)
-        body = decode_body(header, frame.body)
+        body = _decode_body(header, frame.body)
         return cls(header, body)
 
     @property
@@ -619,7 +608,7 @@ class BlcpNotify:
         """
 
         header = BlcpHeader.decode(frame.header)
-        body = decode_body(header, frame.body)
+        body = _decode_body(header, frame.body)
         return cls(header, body)
 
     @property

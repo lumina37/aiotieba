@@ -18,5 +18,4 @@ from .packet import (
     ProtoLcmBody,
     TypeBlcpBody,
     TypeBlcpMsg,
-    decode_body,
 )
