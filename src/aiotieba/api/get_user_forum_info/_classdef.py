@@ -3,6 +3,7 @@ from __future__ import annotations
 import dataclasses as dcs
 from typing import TYPE_CHECKING, Self
 
+from ...enums import BawuType
 from ...exception import TbErrorExt
 
 if TYPE_CHECKING:
@@ -73,6 +74,7 @@ class UserForumInfo(TbErrorExt):
         exp (int): 当前经验
         levelup_exp (int): 升级经验
         role_name (str): 吧务名称
+        bawu_type (BawuType): 吧务类型
         high_light_sign_days (int): 连续签到天数
     """
 
@@ -92,6 +94,7 @@ class UserForumInfo(TbErrorExt):
     exp: int = 0
     levelup_exp: int = 0
     role_name: str = ""
+    bawu_type: BawuType = BawuType.UNKNOWN
     high_light_sign_days: int = 0
 
     @classmethod
@@ -115,6 +118,7 @@ class UserForumInfo(TbErrorExt):
         exp = user_forum["cur_score"]
         levelup_exp = user_forum["levelup_score"]
         role_name = user_forum["role_name"]
+        bawu_type = BawuType.from_zhcn(role_name)
         high_light_sign_days = user_forum["high_light_sign_days"]
 
         return cls(
@@ -132,5 +136,6 @@ class UserForumInfo(TbErrorExt):
             exp,
             levelup_exp,
             role_name,
+            bawu_type,
             high_light_sign_days,
         )

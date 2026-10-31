@@ -255,9 +255,37 @@ class BawuType(enum.StrEnum):
     PROFESS_ADMIN = "profess_admin"
     FOURTH_ADMIN = "fourth_admin"
 
+    ZHCN_MAP = enum.nonmember({
+        "吧主": "manager",
+        "小吧主": "assist",
+        "语音小编": "voiceadmin",
+        "图片小编": "picadmin",
+        "视频小编": "videoadmin",
+        "广播小编": "broadcast_admin",
+        "吧刊主编": "publication_editor",
+        "吧刊小编": "publication",
+        "职业吧主": "profess_admin",
+        "第四吧主": "fourth_admin",
+    })
+
     @classmethod
     def _missing_(cls, _: object) -> BawuType:
         return BawuType.UNKNOWN
+
+    @classmethod
+    def from_zhcn(cls, role_name: str) -> BawuType:
+        """
+        通过中文吧务名称获取吧务类型
+
+        Args:
+            role_name (str): 吧务名称 如'吧主' '小吧主'
+
+        Returns:
+            BawuType: 吧务类型 无法识别时为UNKNOWN
+        """
+
+        code = cls.ZHCN_MAP.get(role_name)
+        return cls(code)
 
 
 class BawuPermType(enum.Flag):
