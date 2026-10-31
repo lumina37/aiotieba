@@ -1802,7 +1802,7 @@ class Client:
 
     @handle_exception(get_unblock_appeals.Appeals)
     async def get_unblock_appeals(
-        self, fname_or_fid: str | int, /, pn: int = 1, *, rn: int = 5
+        self, fname_or_fid: str | int, /, pn: int = 1, *, rn: int = 5, query: str = ""
     ) -> get_unblock_appeals.Appeals:
         """
         获取吧务后台申诉请求列表
@@ -1811,6 +1811,7 @@ class Client:
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先fid
             pn (int, optional): 页码. Defaults to 1.
             rn (int, optional): 请求的条目数. Range [1, 50]. Defaults to 5.
+            query (str, optional): 通过申诉用户的用户名/昵称精确查询 默认为空即查询全部. Defaults to ''.
 
         Returns:
             Appeals: 申诉请求列表
@@ -1820,11 +1821,11 @@ class Client:
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
         await self.__init_tbs()
 
-        return await get_unblock_appeals.request(self._http_core, fid, pn, rn)
+        return await get_unblock_appeals.request(self._http_core, fid, pn, rn, query)
 
     @handle_exception(get_bawu_blacklist.BawuBlacklistUsers)
     async def get_bawu_blacklist(
-        self, fname_or_fid: str | int, /, pn: int = 1
+        self, fname_or_fid: str | int, /, pn: int = 1, *, name: str = ""
     ) -> get_bawu_blacklist.BawuBlacklistUsers:
         """
         获取吧务后台黑名单列表
@@ -1832,6 +1833,7 @@ class Client:
         Args:
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先fid
             pn (int, optional): 页码. Defaults to 1.
+            name (str, optional): 通过用户名精确查询 默认为空即查询全部. Defaults to ''.
 
         Returns:
             BawuBlacklistUsers: 吧务黑名单列表
@@ -1839,7 +1841,7 @@ class Client:
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
 
-        return await get_bawu_blacklist.request(self._http_core, fid, pn)
+        return await get_bawu_blacklist.request(self._http_core, fid, pn, name)
 
     @handle_exception(get_statistics.Statistics)
     async def get_statistics(self, fname_or_fid: str | int) -> get_statistics.Statistics:

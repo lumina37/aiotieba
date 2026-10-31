@@ -23,11 +23,11 @@ def parse_body(body: bytes) -> BawuBlacklistUsers:
     return bawu_blacklist_users
 
 
-async def request(http_core: HttpCore, fid: int, pn: int) -> BawuBlacklistUsers:
+async def request(http_core: HttpCore, fid: int, pn: int, name: str) -> BawuBlacklistUsers:
     params = [
         ("fn", "-"),
         ("fid", fid),
-        ("word", ""),
+        ("word", name),
         ("is_ajax", 1),
         ("pn", pn),
     ]

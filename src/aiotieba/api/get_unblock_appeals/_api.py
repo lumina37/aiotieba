@@ -23,12 +23,13 @@ def parse_body(body: bytes) -> Appeals:
     return appeals
 
 
-async def request(http_core: HttpCore, fid: int, pn: int, rn: int) -> Appeals:
+async def request(http_core: HttpCore, fid: int, pn: int, rn: int, query: str) -> Appeals:
     data = [
         ("fn", "-"),
         ("fid", fid),
         ("pn", pn),
         ("rn", rn),
+        ("query", query),
         ("tbs", http_core.account.tbs),
     ]
 
