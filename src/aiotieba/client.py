@@ -34,6 +34,7 @@ from .api import (
     get_bawu_memberlist,
     get_bawu_perm,
     get_bawu_postlogs,
+    get_bawu_task,
     get_bawu_userlogs,
     get_blacklist,
     get_blacklist_old,
@@ -1525,6 +1526,23 @@ class Client:
             portrait = id_
 
         return await set_bawu_perm.request(self._http_core, fid, portrait, perms)
+
+    @handle_exception(get_bawu_task.BawuTask)
+    async def get_bawu_task(self, fname_or_fid: str | int) -> get_bawu_task.BawuTask:
+        """
+        获取吧主考核信息
+
+        Args:
+            fname_or_fid (str | int): 目标贴吧名或fid 优先fid
+
+        Returns:
+            BawuTask: 吧主考核信息
+        """
+
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
+        await self.__init_tbs()
+
+        return await get_bawu_task.request(self._http_core, fid)
 
     @handle_exception(get_tab_map.TabMap)
     @_try_websocket()
