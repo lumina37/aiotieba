@@ -1830,19 +1830,16 @@ class Client:
         获取吧务后台黑名单列表
 
         Args:
-            fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先贴吧名
+            fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先fid
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
             BawuBlacklistUsers: 吧务黑名单列表
-
-        Note:
-            本接口需要STOKEN
         """
 
-        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
 
-        return await get_bawu_blacklist.request(self._http_core, fname, pn)
+        return await get_bawu_blacklist.request(self._http_core, fid, pn)
 
     @handle_exception(get_statistics.Statistics)
     async def get_statistics(self, fname_or_fid: str | int) -> get_statistics.Statistics:
