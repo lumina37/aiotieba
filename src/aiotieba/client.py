@@ -27,6 +27,7 @@ from .api import (
     dislike_forum,
     fetch_chatroom_msg,
     follow_forum,
+    follow_forums,
     follow_user,
     get_ats,
     get_bawu_blacklist,
@@ -2580,6 +2581,25 @@ class Client:
         await self.__init_tbs()
 
         return await follow_forum.request(self._http_core, fid)
+
+    @handle_exception(BoolResponse, ok_log_level=logging.INFO)
+    async def follow_forums(self, fnames_or_fids: Iterable[str | int]) -> BoolResponse:
+        """
+        批量关注贴吧
+
+        Args:
+            fnames_or_fids (Iterable[str | int]): 待关注贴吧的贴吧名或fid列表 优先fid
+
+        Returns:
+            BoolResponse: True成功 False失败
+        """
+
+        fids = []
+        for fname_or_fid in fnames_or_fids:
+            fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
+            fids.append(fid)
+
+        return await follow_forums.request(self._http_core, fids)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def unfollow_forum(self, fname_or_fid: str | int) -> BoolResponse:
