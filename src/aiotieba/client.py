@@ -93,6 +93,7 @@ from .api import (
     recommend,
     recover,
     remove_fan,
+    remove_invalid_fans,
     search_global,
     search_in_forum,
     send_chatroom_msg,
@@ -2467,6 +2468,19 @@ class Client:
         await self.__init_tbs()
 
         return await remove_fan.request(self._http_core, user_id)
+
+    @handle_exception(BoolResponse, ok_log_level=logging.INFO)
+    async def remove_invalid_fans(self) -> BoolResponse:
+        """
+        移除全部违禁粉丝
+
+        Returns:
+            BoolResponse: True成功 False失败
+        """
+
+        await self.__init_tbs()
+
+        return await remove_invalid_fans.request(self._http_core)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     @_try_websocket()
