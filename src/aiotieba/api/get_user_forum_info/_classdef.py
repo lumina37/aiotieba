@@ -99,7 +99,6 @@ class UserForumInfo(TbErrorExt):
 
     @classmethod
     def from_json(cls, data_map: Mapping) -> Self:
-        # 本接口强制要求BDUSS可用 服务端必定下发user_info
         user = UserInfo_uf.from_json(data_map["user_info"])
         user_forum = data_map["user_forum_info"]
         forum = data_map["forum_info"]
