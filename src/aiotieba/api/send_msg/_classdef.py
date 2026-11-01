@@ -15,19 +15,19 @@ class SendMsgResult:
     Attributes:
         group_id (int): 私信消息组id
         local_msg_id (int): 本端消息id 由服务端回显
-        to_uid (int): 接收方user_id
+        to_user_id (int): 接收方user_id
         to_user_type (int): 接收方用户类别
     """
 
     group_id: int = 0
     local_msg_id: int = 0
-    to_uid: int = 0
+    to_user_id: int = 0
     to_user_type: int = 0
 
     @classmethod
     def from_proto(cls, data_proto: TypeMessage) -> Self:
         group_id = data_proto.groupId
         local_msg_id = data_proto.recordId
-        to_uid = data_proto.toUid
+        to_user_id = data_proto.toUid
         to_user_type = data_proto.toUserType
-        return cls(group_id, local_msg_id, to_uid, to_user_type)
+        return cls(group_id, local_msg_id, to_user_id, to_user_type)

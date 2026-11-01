@@ -6,7 +6,7 @@ from typing import Any
 
 from ...core import CHAT_APPID, CHAT_SDK_VERSION, BlcpCore, BlcpMethodID, BlcpRequest, BlcpServiceID, JsonBody
 from ...exception import BoolResponse, TiebaServerError
-from ...helper.crypto import compute_msg_key, user_id2bduk
+from ...helper.crypto import compute_msg_key
 
 
 def construct_request_data(
@@ -20,7 +20,7 @@ def construct_request_data(
 ) -> dict[str, Any]:
     user = core.account.user
     uk = user.uk
-    user_id = user.user_id
+    bduk = core.account.bduk
     origin_id = user.trigger_id
     name = user.nick_name
     portrait = user.portrait
@@ -42,7 +42,7 @@ def construct_request_data(
             "content_type": "0",
             "content_body": json.dumps({"text": text}, ensure_ascii=False),
             "src": "",
-            "baidu_uk": user_id2bduk(user_id),
+            "baidu_uk": bduk,
             "ext": {},
         }
     }
@@ -159,7 +159,7 @@ def construct_request_data(
         "type": 81,
         "app_safe_ext": json.dumps(app_safe_ext, ensure_ascii=False),
         "content": content,
-        "msg_key": compute_msg_key(user_id2bduk(user_id)),
+        "msg_key": compute_msg_key(bduk),
         "account_type": 1,
         "sdk_version": CHAT_SDK_VERSION,
         "event_list": [

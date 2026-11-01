@@ -2805,7 +2805,7 @@ class Client:
         result = await send_msg.request(ws_core, user_id, content)
 
         mid_manager = ws_core.mid_manager
-        user_id = result.to_uid or user_id
+        user_id = result.to_user_id or user_id
         mid_manager.update_local_msg_id(user_id, result.local_msg_id)
         if result.group_id and result.to_user_type == 0:
             mid_manager.priv_gid = result.group_id
@@ -2829,7 +2829,7 @@ class Client:
         result = await set_msg_readed.request(ws_core, message)
 
         mid_manager = ws_core.mid_manager
-        user_id = result.to_uid or message.user.user_id
+        user_id = result.to_user_id or message.user.user_id
         if result.read_msg_id:
             mid_manager.update_sent_msg_id(user_id, result.read_msg_id)
         if result.group_id and result.to_user_type == 0:
@@ -2903,7 +2903,7 @@ class Client:
         user = self.account.user
         user.trigger_id = result.trigger_id
         user.uk = result.uk
-        user.bduk = result.bduk
+        user.user_id = result.user_id
 
     async def __get_forum_level(self, fid: int) -> get_forum_level.LevelInfo:
         if not self.account.user.user_id:

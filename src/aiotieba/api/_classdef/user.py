@@ -38,7 +38,6 @@ class UserInfo:
         is_vip (bool): 是否会员
         is_blocked (bool): 是否被永久封禁屏蔽
         uk (int): 群聊账号标识 来自群聊服务的登录回包
-        bduk (str): 群聊账号标识bd_uid 来自群聊服务的登录回包
         trigger_id (int): 群聊会话标识 作为群聊请求的origin_id字段
         priv_like (PrivLike): 关注吧列表的公开状态
         priv_reply (PrivReply): 帖子评论权限
@@ -71,7 +70,6 @@ class UserInfo:
     is_vip: bool = False
     is_blocked: bool = False
     uk: int = 0
-    bduk: str = ""
     trigger_id: int = 0
     priv_like: PrivLike = PrivLike.PUBLIC
     priv_reply: PrivReply = PrivReply.ALL
