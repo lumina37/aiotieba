@@ -36,8 +36,8 @@ async def request(core: BlcpCore) -> None:
     request = BlcpRequest.create(BlcpServiceID.CLOUD_CONTROL, BlcpMethodID.LOGIN, JsonBody(request_data))
     response = await core.send(request)
     if response.error_code != 0:
-        raise BlcpLoginError(f"云控登录失败 code={response.error_code} text={response.error_text!r}")
+        raise BlcpLoginError(f"Cloud control login failed: code={response.error_code} text={response.error_text!r}")
 
     errno = int(response.payload["errno"])
     if errno != 0:
-        raise BlcpLoginError(f"云控登录失败 errno={errno}")
+        raise BlcpLoginError(f"Cloud control login failed: errno={errno}")

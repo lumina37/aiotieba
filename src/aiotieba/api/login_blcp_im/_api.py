@@ -45,12 +45,12 @@ async def request(core: BlcpCore) -> LoginIMResult:
     request = BlcpRequest.create(BlcpServiceID.IM, method, JsonBody(request_data))
     response = await core.send(request)
     if response.error_code != 0:
-        raise BlcpLoginError(f"IM登录失败 code={response.error_code} text={response.error_text!r}")
+        raise BlcpLoginError(f"IM login failed: code={response.error_code} text={response.error_text!r}")
 
     payload = response.payload
     err_code = payload["err_code"]
     if err_code != 0:
-        raise BlcpLoginError(f"IM登录失败 err_code={err_code}")
+        raise BlcpLoginError(f"IM login failed: err_code={err_code}")
 
     result = LoginIMResult.from_json(payload)
 

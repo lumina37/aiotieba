@@ -44,6 +44,6 @@ async def request(core: BlcpCore, token: str) -> int:
 
     response = await core.send(request)
     if not response.ok:
-        raise BlcpLoginError(f"BLCP握手失败 code={response.error_code} text={response.error_text!r}")
+        raise BlcpLoginError(f"BLCP handshake failed: code={response.error_code} text={response.error_text!r}")
 
     return response.lcm.next_interval_ms

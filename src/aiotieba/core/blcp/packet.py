@@ -184,7 +184,7 @@ class BlcpHeader:
             BlcpMetaType.NOTIFY: BlcpNotifyMeta,
         }[self.meta_type]
         if not isinstance(self.meta, expected_type):
-            raise BlcpProtocolError(f"meta类型不匹配: {self.meta_type!r} {type(self.meta).__name__}")
+            raise BlcpProtocolError(f"meta type mismatch: {self.meta_type!r} {type(self.meta).__name__}")
 
     @property
     def service_id(self) -> int:
