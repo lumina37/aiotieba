@@ -17,6 +17,7 @@ from .api import (
     add_poll,
     agree,
     block,
+    block_chatroom_user,
     del_bawu,
     del_bawu_blacklist,
     del_blacklist_old,
@@ -25,7 +26,6 @@ from .api import (
     del_thread,
     del_threads,
     dislike_forum,
-    fetch_chatroom_msg,
     follow_forum,
     follow_forums,
     follow_user,
@@ -41,6 +41,7 @@ from .api import (
     get_blacklist_old,
     get_blocks,
     get_chatroom_detail,
+    get_chatroom_msgs,
     get_cid,
     get_comments,
     get_dislike_forums,
@@ -113,10 +114,12 @@ from .api import (
     tieba_uid2user_info,
     top,
     unblock,
+    unblock_chatroom_user,
     undislike_forum,
     unfollow_forum,
     unfollow_user,
     ungood,
+    withdraw_chatroom_msg,
 )
 from .api._classdef import UserInfo
 from .config import ProxyConfig, TimeoutConfig
@@ -128,6 +131,7 @@ from .enums import (
     BawuType,
     BlacklistType,
     BlcpStatus,
+    ChatroomMuteDuration,
     CommentSortType,
     Gender,
     GroupType,
@@ -2969,7 +2973,7 @@ class Client:
 
     async def __join_chatroom(self, chatroom_id: int) -> None:
         await join_chatroom.request(self._blcp_core, chatroom_id)
-        await fetch_chatroom_msg.request(self._http_core, chatroom_id)
+        await get_chatroom_msgs.request(self._http_core, chatroom_id)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def send_chatroom_msg(
@@ -3016,3 +3020,94 @@ class Client:
                 })
 
         return await send_chatroom_msg.request(self._blcp_core, chatroom_id, text, fid, level, at_data, robot)
+
+    @handle_exception(get_chatroom_msgs.ChatroomMsgs)
+    async def get_chatroom_msgs(self, chatroom_id: int) -> get_chatroom_msgs.ChatroomMsgs:
+        """
+        获取吧群最近60条消息
+
+        Args:
+            chatroom_id (int): 聊天室id
+
+        Returns:
+            ChatroomMsgs: 吧群消息列表
+        """
+
+        msgs = await get_chatroom_msgs.request(self._http_core, chatroom_id)
+
+        return msgs
+
+    @handle_exception(BoolResponse, ok_log_level=logging.INFO)
+    async def block_chatroom_user(
+        self,
+        fid: int,
+        chatroom_id: int,
+        user_id: int,
+        duration: ChatroomMuteDuration = ChatroomMuteDuration.HOUR_1,
+    ) -> BoolResponse:
+        """
+        禁言吧群用户 需要吧务权限
+
+        Args:
+            fid (int): 吧id
+            chatroom_id (int): 聊天室id
+            user_id (int): 待禁言用户的user_id
+            duration (ChatroomMuteDuration, optional): 禁言时长. Defaults to ChatroomMuteDuration.HOUR_1.
+
+        Returns:
+            BoolResponse: True成功 False失败
+
+        Note:
+            重复调用可修改禁言时长\n
+            禁言时长仅支持1小时、12小时、1天、7天、15天、30天
+        """
+
+        user = await self.get_user_info(user_id, ReqUInfo.PORTRAIT)
+        await self.__init_tbs()
+
+        return await block_chatroom_user.request(self._http_core, fid, chatroom_id, user.portrait, duration)
+
+    @handle_exception(BoolResponse, ok_log_level=logging.INFO)
+    async def unblock_chatroom_user(self, fid: int, chatroom_id: int, user_id: int) -> BoolResponse:
+        """
+        解除吧群用户的禁言 需要吧务权限
+
+        Args:
+            fid (int): 吧id
+            chatroom_id (int): 聊天室id
+            user_id (int): 待解除禁言用户的user_id
+
+        Returns:
+            BoolResponse: True成功 False失败
+        """
+
+        await self.__init_tbs()
+
+        return await unblock_chatroom_user.request(self._http_core, fid, chatroom_id, user_id)
+
+    @handle_exception(BoolResponse, ok_log_level=logging.INFO)
+    async def withdraw_chatroom_msg(
+        self, fid: int, chatroom_id: int, msg: get_chatroom_msgs.ChatroomMsg
+    ) -> BoolResponse:
+        """
+        撤回吧群消息
+        撤回自己发送的消息或（吧务）撤回他人发送的消息
+
+        Args:
+            fid (int): 吧id
+            chatroom_id (int): 聊天室id
+            msg (ChatroomMsg): 待撤回的消息 可通过`get_chatroom_msgs`获取
+
+        Returns:
+            BoolResponse: True成功 False失败
+
+        Note:
+            高频率调用会触发限流
+        """
+
+        user = await self.get_user_info(msg.content["portrait"], ReqUInfo.USER_ID)
+        await self.__init_tbs()
+
+        return await withdraw_chatroom_msg.request(
+            self._http_core, fid, chatroom_id, msg.msg_id, msg.msg_key, user.user_id
+        )

@@ -3,14 +3,16 @@ from __future__ import annotations
 import dataclasses as dcs
 from typing import TYPE_CHECKING, Self
 
+from ...exception import TbErrorExt
 from ...helper import parse_json
+from .._classdef import Containers
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
 
 @dcs.dataclass
-class ChatroomMessage:
+class ChatroomMsg:
     """
     吧群消息
 
@@ -20,6 +22,7 @@ class ChatroomMessage:
         user_id (int): 发送者user_id 为0时表示系统消息
         create_time (int): 发送时间 10位时间戳 以秒为单位
         content (dict): 消息内容 结构随消息类型变化
+        msg_key (str): 消息key 用于撤回消息
     """
 
     msg_id: int = 0
@@ -27,6 +30,7 @@ class ChatroomMessage:
     user_id: int = 0
     create_time: int = 0
     content: dict = dcs.field(default_factory=dict)
+    msg_key: str = ""
 
     @classmethod
     def from_json(cls, data_map: Mapping) -> Self:
@@ -35,5 +39,22 @@ class ChatroomMessage:
         user_id = data_map["from_user"]
         create_time = data_map["create_time"]
         content = parse_json(parse_json(data_map["content"])["text"])
+        msg_key = data_map["msg_key"]
 
-        return cls(msg_id, msg_type, user_id, create_time, content)
+        return cls(msg_id, msg_type, user_id, create_time, content, msg_key)
+
+
+@dcs.dataclass
+class ChatroomMsgs(TbErrorExt, Containers[ChatroomMsg]):
+    """
+    吧群消息列表
+
+    Attributes:
+        objs (list[ChatroomMsg]): 吧群消息列表
+        err (Exception | None): 捕获的异常
+    """
+
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
+        objs = [ChatroomMsg.from_json(m) for m in data_map["messages"]]
+        return cls(objs)

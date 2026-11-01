@@ -9,22 +9,23 @@ from ...core import CHAT_APPID, CHAT_SDK_VERSION
 from ...exception import TiebaServerError
 from ...helper import parse_json
 from ...helper.crypto import sign
-from ._classdef import ChatroomMessage
+from ._classdef import ChatroomMsgs
 
 if TYPE_CHECKING:
     from ...core import HttpCore
 
 
-def parse_body(body: bytes) -> list[ChatroomMessage]:
+def parse_body(body: bytes) -> ChatroomMsgs:
     res_json = parse_json(body)
     if code := res_json["err_code"]:
         raise TiebaServerError(code, res_json["err_msg"])
 
-    messages = [ChatroomMessage.from_json(x) for x in res_json["messages"]]
+    messages = ChatroomMsgs.from_json(res_json)
+
     return messages
 
 
-async def request(http_core: HttpCore, chatroom_id: int) -> list[ChatroomMessage]:
+async def request(http_core: HttpCore, chatroom_id: int) -> ChatroomMsgs:
     data = [
         ("appid", CHAT_APPID),
         ("mcast_id", chatroom_id),
