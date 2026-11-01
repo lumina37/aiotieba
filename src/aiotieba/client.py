@@ -29,6 +29,7 @@ from .api import (
     follow_forum,
     follow_forums,
     follow_user,
+    get_agrees,
     get_ats,
     get_bawu_blacklist,
     get_bawu_info,
@@ -1282,6 +1283,26 @@ class Client:
         """
 
         return await get_ats.request(self._http_core, pn)
+
+    @handle_exception(get_agrees.Agrees)
+    async def get_agrees(self, last_agree_id: int = 0, rn: int = 20) -> get_agrees.Agrees:
+        """
+        获取点赞信息
+
+        Args:
+            last_agree_id (int, optional): 上一页最后一条点赞记录的id 取0表示获取最新的一页. Defaults to 0.
+            rn (int, optional): 请求的条目数. Defaults to 20.
+
+        Returns:
+            Agrees: 点赞信息列表
+
+        Note:
+            该接口只能按`agree_id`向前翻页 不支持pn
+        """
+
+        agrees = await get_agrees.request(self._http_core, last_agree_id, rn)
+
+        return agrees
 
     @handle_exception(get_images.ImageBytes)
     async def get_image_bytes(self, img_url: str) -> get_images.ImageBytes:
