@@ -17,13 +17,6 @@ _LEFT_TIME_PATTERN = re.compile(r"(\d+)(天|小时|分钟)")
 _TIME_UNIT_SECONDS = {"天": 86400, "小时": 3600, "分钟": 60}
 
 
-def _parse_left_time_tip(tip: str) -> datetime:
-    match = _LEFT_TIME_PATTERN.match(tip)
-    seconds = int(match[1]) * _TIME_UNIT_SECONDS[match[2]]
-
-    return datetime.now() + timedelta(seconds=seconds)
-
-
 @dcs.dataclass
 class ChatroomBlock:
     """
@@ -50,7 +43,10 @@ class ChatroomBlock:
         portrait = data_map["portrait_id"]
         if "?" in portrait:
             portrait = portrait[:-13]
-        approx_end_dt = _parse_left_time_tip(data_map["left_time_tip"])
+
+        match = _LEFT_TIME_PATTERN.match(data_map["left_time_tip"])
+        seconds = int(match[1]) * _TIME_UNIT_SECONDS[match[2]]
+        approx_end_dt = datetime.now() + timedelta(seconds=seconds)
 
         return cls(user_name, nick_name_new, portrait, approx_end_dt)
 
