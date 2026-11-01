@@ -40,6 +40,7 @@ from .api import (
     get_blacklist,
     get_blacklist_old,
     get_blocks,
+    get_chatroom_blocks,
     get_chatroom_detail,
     get_chatroom_msgs,
     get_cid,
@@ -3037,6 +3038,26 @@ class Client:
 
         return msgs
 
+    @handle_exception(get_chatroom_blocks.ChatroomBlocks)
+    async def get_chatroom_blocks(
+        self, chatroom_id: int, pn: int = 1, rn: int = 15
+    ) -> get_chatroom_blocks.ChatroomBlocks:
+        """
+        获取吧群禁言用户列表
+
+        Args:
+            chatroom_id (int): 聊天室id
+            pn (int, optional): 页码. Defaults to 1.
+            rn (int, optional): 请求的条目数. Defaults to 15.
+
+        Returns:
+            ChatroomBlocks: 吧群禁言用户列表
+        """
+
+        blocks = await get_chatroom_blocks.request(self._http_core, chatroom_id, pn, rn)
+
+        return blocks
+
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def block_chatroom_user(
         self,
@@ -3056,10 +3077,6 @@ class Client:
 
         Returns:
             BoolResponse: True成功 False失败
-
-        Note:
-            重复调用可修改禁言时长\n
-            禁言时长仅支持1小时、12小时、1天、7天、15天、30天
         """
 
         user = await self.get_user_info(user_id, ReqUInfo.PORTRAIT)
@@ -3091,12 +3108,11 @@ class Client:
     ) -> BoolResponse:
         """
         撤回吧群消息
-        撤回自己发送的消息或（吧务）撤回他人发送的消息
 
         Args:
             fid (int): 吧id
             chatroom_id (int): 聊天室id
-            msg (ChatroomMsg): 待撤回的消息 可通过`get_chatroom_msgs`获取
+            msg (ChatroomMsg): 待撤回的消息
 
         Returns:
             BoolResponse: True成功 False失败
