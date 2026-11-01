@@ -394,3 +394,24 @@ class MsgType(enum.IntEnum):
     PRIVATE_MSG = 1
     MISC = 10
     READED = 22
+
+
+class ChatroomBlockDuration(enum.IntEnum):
+    """
+    吧群禁言时长
+
+    Note:
+        HOUR_1 1小时\n
+        HOUR_12 12小时\n
+        DAY_1 1天\n
+        DAY_7 7天\n
+        DAY_15 15天\n
+        DAY_30 30天
+    """
+
+    HOUR_1 = 3600
+    HOUR_12 = 43200
+    DAY_1 = 86400
+    DAY_7 = 604800
+    DAY_15 = 1296000
+    DAY_30 = 2592000

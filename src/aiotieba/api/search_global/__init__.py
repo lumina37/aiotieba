@@ -1,2 +1,2 @@
 from ._api import parse_body, request
-from ._classdef import SearchGlobal, SearchGlobals
+from ._classdef import SearchGlobal, SearchGlobals, UserInfo_sg

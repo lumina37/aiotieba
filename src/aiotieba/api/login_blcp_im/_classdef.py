@@ -14,18 +14,18 @@ class LoginIMResult:
 
     Attributes:
         trigger_id (int): 群聊会话标识 作为群聊请求的origin_id字段
-        uk (int): 群聊账号标识 作为群聊请求的uk字段
-        bduk (str): 群聊账号标识bd_uid
+        uk (int): IM账号标识 作为群聊请求的uk字段
+        user_id (int): user_id 用于生成baidu_uk
     """
 
     trigger_id: int = 0
     uk: int = 0
-    bduk: str = ""
+    user_id: int = 0
 
     @classmethod
     def from_json(cls, data_map: Mapping) -> Self:
         trigger_id = data_map["trigger_id"][0]
         uk = data_map["uk"]
-        bduk = str(data_map["bd_uid"])
+        user_id = data_map["bd_uid"]
 
-        return cls(trigger_id, uk, bduk)
+        return cls(trigger_id, uk, user_id)

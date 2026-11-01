@@ -243,7 +243,7 @@ class BlcpCore:
         self.reader = None
 
         if self.waiter is not None:
-            self.waiter.fail_all(BlcpConnectionError("BLCP连接已关闭"))
+            self.waiter.fail_all(BlcpConnectionError("BLCP connection closed"))
             self.waiter = None
 
     async def send(self, request: BlcpRequest) -> BlcpResponse:
@@ -338,7 +338,7 @@ class BlcpCore:
         finally:
             self.status = BlcpStatus.CLOSED
             if self.waiter is not None:
-                self.waiter.fail_all(BlcpConnectionError("BLCP连接已断开"))
+                self.waiter.fail_all(BlcpConnectionError("BLCP connection disconnected"))
 
     def __on_response(self, response: BlcpResponse) -> None:
         if response.service_id == BlcpServiceID.LCM and response.method_id == BlcpMethodID.HEARTBEAT:

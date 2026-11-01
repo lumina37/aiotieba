@@ -17,6 +17,7 @@ from .api import (
     add_poll,
     agree,
     block,
+    block_chatroom_user,
     del_bawu,
     del_bawu_blacklist,
     del_blacklist_old,
@@ -25,10 +26,10 @@ from .api import (
     del_thread,
     del_threads,
     dislike_forum,
-    fetch_chatroom_msg,
     follow_forum,
     follow_forums,
     follow_user,
+    get_agrees,
     get_ats,
     get_bawu_blacklist,
     get_bawu_info,
@@ -40,7 +41,9 @@ from .api import (
     get_blacklist,
     get_blacklist_old,
     get_blocks,
+    get_chatroom_blocks,
     get_chatroom_detail,
+    get_chatroom_msgs,
     get_cid,
     get_comments,
     get_dislike_forums,
@@ -113,10 +116,12 @@ from .api import (
     tieba_uid2user_info,
     top,
     unblock,
+    unblock_chatroom_user,
     undislike_forum,
     unfollow_forum,
     unfollow_user,
     ungood,
+    withdraw_chatroom_msg,
 )
 from .api._classdef import UserInfo
 from .config import ProxyConfig, TimeoutConfig
@@ -128,6 +133,7 @@ from .enums import (
     BawuType,
     BlacklistType,
     BlcpStatus,
+    ChatroomBlockDuration,
     CommentSortType,
     Gender,
     GroupType,
@@ -317,7 +323,7 @@ class Client:
 
         return BoolResponse()
 
-    def __get_open_ws_core(self, client_version: str = LATEST_VERSION) -> WsCore | None:
+    def __get_ws_core(self, client_version: str = LATEST_VERSION) -> WsCore | None:
         ws_core = self._ws_cores.get(client_version)
         if ws_core is None or ws_core.status != WsStatus.OPEN:
             return None
@@ -443,7 +449,7 @@ class Client:
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
 
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             return await get_forum_detail.request_ws(ws_core, fid)
 
         return await get_forum_detail.request_http(self._http_core, fid)
@@ -528,7 +534,7 @@ class Client:
         check_rn(rn, 1, 100)
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
-        if ws_core := self.__get_open_ws_core(LEGACY_VERSION):
+        if ws_core := self.__get_ws_core(LEGACY_VERSION):
             return await get_threads.request_ws(ws_core, fname, pn, rn, sort, is_good, LEGACY_VERSION)
 
         return await get_threads.request_http(self._http_core, fname, pn, rn, sort, is_good, LEGACY_VERSION)
@@ -571,7 +577,7 @@ class Client:
         elif comment_rn != 4 or comment_sort_by_agree is not True:
             LOG().warning("comment_rn and comment_sort_by_agree are ignored because with_comments is False")
 
-        if ws_core := self.__get_open_ws_core(LEGACY_VERSION):
+        if ws_core := self.__get_ws_core(LEGACY_VERSION):
             return await get_posts.request_ws(
                 ws_core, tid, pn, rn, sort, only_thread_author, with_comments, comment_sort_by_agree, comment_rn
             )
@@ -606,7 +612,7 @@ class Client:
             Comments: 楼中楼列表
         """
 
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             return await get_comments.request_ws(ws_core, tid, pid, pn, is_comment, sort)
 
         return await get_comments.request_http(self._http_core, tid, pid, pn, is_comment, sort)
@@ -643,7 +649,7 @@ class Client:
         check_rn(rn, 1, 100)
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
-        if ws_core := self.__get_open_ws_core(LAST_REPLYERS_VERSION):
+        if ws_core := self.__get_ws_core(LAST_REPLYERS_VERSION):
             return await get_last_replyers.request_ws(ws_core, fname, pn, rn, sort, is_good)
 
         return await get_last_replyers.request_http(self._http_core, fname, pn, rn, sort, is_good)
@@ -723,7 +729,7 @@ class Client:
             UserInfo_pf: 包含最全面的用户信息
         """
 
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             return await profile.get_uinfo_profile.request_ws(ws_core, uid_or_portrait)
 
         return await profile.get_uinfo_profile.request_http(self._http_core, uid_or_portrait)
@@ -741,7 +747,7 @@ class Client:
             UserInfo_guinfo_app: 包含 user_id / portrait / user_name / 旧版昵称 / 性别 / 是否会员
         """
 
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             user = await get_uinfo_getuserinfo_app.request_ws(ws_core, user_id)
 
         else:
@@ -889,7 +895,7 @@ class Client:
             请注意tieba_uid与旧版user_id的区别
         """
 
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             return await tieba_uid2user_info.request_ws(ws_core, tieba_uid)
 
         return await tieba_uid2user_info.request_http(self._http_core, tieba_uid)
@@ -914,7 +920,7 @@ class Client:
         else:
             user_id = id_
 
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             return await profile.get_homepage.request_ws(ws_core, user_id, pn)
 
         return await profile.get_homepage.request_http(self._http_core, user_id, pn)
@@ -995,7 +1001,7 @@ class Client:
         """
 
         check_rn(rn, 1, 0xFFFFFFFF)
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             return await get_blacklist_old.request_ws(ws_core, pn, rn)
 
         return await get_blacklist_old.request_http(self._http_core, pn, rn)
@@ -1111,7 +1117,7 @@ class Client:
         """
 
         check_rn(rn, 1, 50)
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             return await get_dislike_forums.request_ws(ws_core, pn, rn)
 
         return await get_dislike_forums.request_http(self._http_core, pn, rn)
@@ -1134,7 +1140,7 @@ class Client:
         user = await self.get_self_info(ReqUInfo.USER_ID)
         user_id = user.user_id
 
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             return await get_user_contents.get_posts.request_ws(ws_core, user_id, pn, rn, LATEST_VERSION)
 
         return await get_user_contents.get_posts.request_http(self._http_core, user_id, pn, rn, LATEST_VERSION)
@@ -1184,7 +1190,7 @@ class Client:
         else:
             user_id = id_
 
-        if ws_core := self.__get_open_ws_core(USER_POSTS_VERSION):
+        if ws_core := self.__get_ws_core(USER_POSTS_VERSION):
             return await get_user_contents.get_posts.request_ws(ws_core, user_id, pn, rn, USER_POSTS_VERSION)
 
         return await get_user_contents.get_posts.request_http(self._http_core, user_id, pn, rn, USER_POSTS_VERSION)
@@ -1206,7 +1212,7 @@ class Client:
         user = await self.get_self_info(ReqUInfo.USER_ID)
         user_id = user.user_id
 
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             return await get_user_contents.get_threads.request_ws(
                 ws_core, user_id, pn, is_self=True, public_only=public_only
             )
@@ -1237,7 +1243,7 @@ class Client:
 
         is_self = user_id == self.account.user.user_id
 
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             return await get_user_contents.get_threads.request_ws(
                 ws_core, user_id, pn, is_self=is_self, public_only=False
             )
@@ -1259,7 +1265,7 @@ class Client:
             Replys: 回复列表
         """
 
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             return await get_replys.request_ws(ws_core, pn)
 
         return await get_replys.request_http(self._http_core, pn)
@@ -1277,6 +1283,26 @@ class Client:
         """
 
         return await get_ats.request(self._http_core, pn)
+
+    @handle_exception(get_agrees.Agrees)
+    async def get_agrees(self, last_agree_id: int = 0, rn: int = 20) -> get_agrees.Agrees:
+        """
+        获取点赞信息
+
+        Args:
+            last_agree_id (int, optional): 上一页最后一条点赞记录的id 取0表示获取最新的一页. Defaults to 0.
+            rn (int, optional): 请求的条目数. Defaults to 20.
+
+        Returns:
+            Agrees: 点赞信息列表
+
+        Note:
+            该接口只能按`agree_id`向前翻页 不支持pn
+        """
+
+        agrees = await get_agrees.request(self._http_core, last_agree_id, rn)
+
+        return agrees
 
     @handle_exception(get_images.ImageBytes)
     async def get_image_bytes(self, img_url: str) -> get_images.ImageBytes:
@@ -1400,7 +1426,7 @@ class Client:
         """
 
         check_rn(rn, 1, 1000)
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             return await get_square_forums.request_ws(ws_core, cname, pn, rn)
 
         return await get_square_forums.request_http(self._http_core, cname, pn, rn)
@@ -1420,7 +1446,7 @@ class Client:
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
 
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             return await get_bawu_info.request_ws(ws_core, fid)
 
         return await get_bawu_info.request_http(self._http_core, fid)
@@ -1560,7 +1586,7 @@ class Client:
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             return await get_tab_map.request_ws(ws_core, fname)
 
         return await get_tab_map.request_http(self._http_core, fname)
@@ -2520,7 +2546,7 @@ class Client:
         else:
             user_id = id_
 
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             return await set_blacklist.request_ws(ws_core, user_id, btype)
 
         return await set_blacklist.request_http(self._http_core, user_id, btype)
@@ -2771,7 +2797,7 @@ class Client:
             BoolResponse: 投票是否成功
         """
 
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             return await add_poll.request_ws(ws_core, tid, options)
 
         return await add_poll.request_http(self._http_core, tid, options)
@@ -2800,7 +2826,7 @@ class Client:
         result = await send_msg.request(ws_core, user_id, content)
 
         mid_manager = ws_core.mid_manager
-        user_id = result.to_uid or user_id
+        user_id = result.to_user_id or user_id
         mid_manager.update_local_msg_id(user_id, result.local_msg_id)
         if result.group_id and result.to_user_type == 0:
             mid_manager.priv_gid = result.group_id
@@ -2824,7 +2850,7 @@ class Client:
         result = await set_msg_readed.request(ws_core, message)
 
         mid_manager = ws_core.mid_manager
-        user_id = result.to_uid or message.user.user_id
+        user_id = result.to_user_id or message.user.user_id
         if result.read_msg_id:
             mid_manager.update_sent_msg_id(user_id, result.read_msg_id)
         if result.group_id and result.to_user_type == 0:
@@ -2898,7 +2924,7 @@ class Client:
         user = self.account.user
         user.trigger_id = result.trigger_id
         user.uk = result.uk
-        user.bduk = result.bduk
+        user.user_id = result.user_id
 
     async def __get_forum_level(self, fid: int) -> get_forum_level.LevelInfo:
         if not self.account.user.user_id:
@@ -2969,7 +2995,7 @@ class Client:
 
     async def __join_chatroom(self, chatroom_id: int) -> None:
         await join_chatroom.request(self._blcp_core, chatroom_id)
-        await fetch_chatroom_msg.request(self._http_core, chatroom_id)
+        await get_chatroom_msgs.request(self._http_core, chatroom_id)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def send_chatroom_msg(
@@ -3016,3 +3042,109 @@ class Client:
                 })
 
         return await send_chatroom_msg.request(self._blcp_core, chatroom_id, text, fid, level, at_data, robot)
+
+    @handle_exception(get_chatroom_msgs.ChatroomMsgs)
+    async def get_chatroom_msgs(self, chatroom_id: int) -> get_chatroom_msgs.ChatroomMsgs:
+        """
+        获取吧群最近60条消息
+
+        Args:
+            chatroom_id (int): 聊天室id
+
+        Returns:
+            ChatroomMsgs: 吧群消息列表
+        """
+
+        msgs = await get_chatroom_msgs.request(self._http_core, chatroom_id)
+
+        return msgs
+
+    @handle_exception(get_chatroom_blocks.ChatroomBlocks)
+    async def get_chatroom_blocks(
+        self, chatroom_id: int, pn: int = 1, rn: int = 15
+    ) -> get_chatroom_blocks.ChatroomBlocks:
+        """
+        获取吧群禁言用户列表
+
+        Args:
+            chatroom_id (int): 聊天室id
+            pn (int, optional): 页码. Defaults to 1.
+            rn (int, optional): 请求的条目数. Defaults to 15.
+
+        Returns:
+            ChatroomBlocks: 吧群禁言用户列表
+        """
+
+        blocks = await get_chatroom_blocks.request(self._http_core, chatroom_id, pn, rn)
+
+        return blocks
+
+    @handle_exception(BoolResponse, ok_log_level=logging.INFO)
+    async def block_chatroom_user(
+        self,
+        fid: int,
+        chatroom_id: int,
+        user_id: int,
+        duration: ChatroomBlockDuration = ChatroomBlockDuration.HOUR_1,
+    ) -> BoolResponse:
+        """
+        禁言吧群用户 需要吧务权限
+
+        Args:
+            fid (int): 吧id
+            chatroom_id (int): 聊天室id
+            user_id (int): 待禁言用户的user_id
+            duration (ChatroomBlockDuration, optional): 禁言时长. Defaults to ChatroomBlockDuration.HOUR_1.
+
+        Returns:
+            BoolResponse: True成功 False失败
+        """
+
+        user = await self.get_user_info(user_id, ReqUInfo.PORTRAIT)
+        await self.__init_tbs()
+
+        return await block_chatroom_user.request(self._http_core, fid, chatroom_id, user.portrait, duration)
+
+    @handle_exception(BoolResponse, ok_log_level=logging.INFO)
+    async def unblock_chatroom_user(self, fid: int, chatroom_id: int, user_id: int) -> BoolResponse:
+        """
+        解除吧群用户的禁言 需要吧务权限
+
+        Args:
+            fid (int): 吧id
+            chatroom_id (int): 聊天室id
+            user_id (int): 待解除禁言用户的user_id
+
+        Returns:
+            BoolResponse: True成功 False失败
+        """
+
+        await self.__init_tbs()
+
+        return await unblock_chatroom_user.request(self._http_core, fid, chatroom_id, user_id)
+
+    @handle_exception(BoolResponse, ok_log_level=logging.INFO)
+    async def withdraw_chatroom_msg(
+        self, fid: int, chatroom_id: int, msg: get_chatroom_msgs.ChatroomMsg
+    ) -> BoolResponse:
+        """
+        撤回吧群消息
+
+        Args:
+            fid (int): 吧id
+            chatroom_id (int): 聊天室id
+            msg (ChatroomMsg): 待撤回的消息
+
+        Returns:
+            BoolResponse: True成功 False失败
+
+        Note:
+            高频率调用会触发限流
+        """
+
+        user = await self.get_user_info(msg.content["portrait"], ReqUInfo.USER_ID)
+        await self.__init_tbs()
+
+        return await withdraw_chatroom_msg.request(
+            self._http_core, fid, chatroom_id, msg.msg_id, msg.msg_key, user.user_id
+        )

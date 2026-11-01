@@ -237,7 +237,7 @@ class WsCore:
         waiter, self.waiter = self.waiter, None
 
         if waiter is not None:
-            waiter.fail_all(aiohttp.ServerDisconnectedError("websocket连接已关闭"))
+            waiter.fail_all(aiohttp.ServerDisconnectedError("websocket connection closed"))
 
         try:
             if websocket is not None:
@@ -284,7 +284,7 @@ class WsCore:
                 await websocket.close()
         finally:
             self._status = WsStatus.CLOSED
-            waiter.fail_all(aiohttp.ServerDisconnectedError("websocket连接已断开"))
+            waiter.fail_all(aiohttp.ServerDisconnectedError("websocket connection disconnected"))
 
     @property
     def status(self) -> WsStatus:
@@ -320,7 +320,7 @@ class WsCore:
         waiter = self.waiter
         websocket = self.websocket
         if waiter is None or websocket is None or websocket.closed:
-            raise aiohttp.ServerDisconnectedError("websocket连接未建立")
+            raise aiohttp.ServerDisconnectedError("websocket connection not established")
 
         response = waiter.new()
         req_data = pack_ws_bytes(self.account, data, cmd, response.req_id, compress=compress, encrypt=encrypt)

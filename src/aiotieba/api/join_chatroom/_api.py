@@ -20,8 +20,8 @@ async def request(core: BlcpCore, chatroom_id: int) -> None:
     request = BlcpRequest.create(BlcpServiceID.MCAST, method, JsonBody(request_data))
     response = await core.send(request)
     if response.error_code != 0:
-        raise BlcpError(f"加入聊天室失败 code={response.error_code} text={response.error_text!r}")
+        raise BlcpError(f"Failed to join chatroom: code={response.error_code} text={response.error_text!r}")
 
     err_code = response.payload["err_code"]
     if err_code != 0:
-        raise BlcpError(f"加入聊天室失败 err_code={err_code}")
+        raise BlcpError(f"Failed to join chatroom: err_code={err_code}")

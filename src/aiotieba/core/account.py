@@ -4,7 +4,7 @@ import random
 from typing import ClassVar, Self
 
 from ..api._classdef import UserInfo
-from ..helper.crypto import c3_aid, cuid_galaxy2
+from ..helper.crypto import c3_aid, cuid_galaxy2, user_id2bduk
 
 
 class Account:
@@ -24,6 +24,7 @@ class Account:
         uuid (str): 包含16字节信息 例:e4200716-58a8-4170-af15-ea7edeb8e513
         client_id (str): 例:wappc_1653660000000_123
         sample_id (str): 例:104505_3-105324_2-...-107269_1
+        bduk (str): 供吧群报文加密鉴权使用的bduk 由user_id加密得到
         cuid (str): 例:baidutiebaappe4200716-58a8-4170-af15-ea7edeb8e513
         cuid_galaxy2 (str): 例:A3ED2D7B9CFC28E8934A3FBD3A9579C7|VZ5FKB5XS
         c3_aid (str): 例:A00-ZNU3O3EP74D727LMQY745CZSGZQJQZGP-3JXCKC7X
@@ -42,6 +43,7 @@ class Account:
         "_uuid",
         "_client_id",
         "_sample_id",
+        "_bduk",
         "_cuid",
         "_cuid_galaxy2",
         "_c3_aid",
@@ -78,6 +80,7 @@ class Account:
         self._uuid: str = None
         self._client_id: str = None
         self._sample_id: str = None
+        self._bduk: str = None
         self._cuid: str = None
         self._cuid_galaxy2: str = None
         self._c3_aid: str = None
@@ -281,6 +284,27 @@ class Account:
     @sample_id.setter
     def sample_id(self, new_sample_id: str) -> None:
         self._sample_id = new_sample_id
+
+    @property
+    def bduk(self) -> str:
+        """
+        返回一个供吧群报文加密鉴权使用的bduk
+
+        Returns:
+            str
+
+        Note:
+            由user_id加密得到\n
+            在初始化后该属性便不会再发生变化
+        """
+
+        if self._bduk is None:
+            self._bduk = user_id2bduk(self.user.user_id)
+        return self._bduk
+
+    @bduk.setter
+    def bduk(self, new_bduk: str) -> None:
+        self._bduk = new_bduk
 
     @property
     def cuid(self) -> str:
