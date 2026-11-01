@@ -133,7 +133,7 @@ from .enums import (
     BawuType,
     BlacklistType,
     BlcpStatus,
-    ChatroomMuteDuration,
+    ChatroomBlockDuration,
     CommentSortType,
     Gender,
     GroupType,
@@ -3085,7 +3085,7 @@ class Client:
         fid: int,
         chatroom_id: int,
         user_id: int,
-        duration: ChatroomMuteDuration = ChatroomMuteDuration.HOUR_1,
+        duration: ChatroomBlockDuration = ChatroomBlockDuration.HOUR_1,
     ) -> BoolResponse:
         """
         禁言吧群用户 需要吧务权限
@@ -3094,7 +3094,7 @@ class Client:
             fid (int): 吧id
             chatroom_id (int): 聊天室id
             user_id (int): 待禁言用户的user_id
-            duration (ChatroomMuteDuration, optional): 禁言时长. Defaults to ChatroomMuteDuration.HOUR_1.
+            duration (ChatroomBlockDuration, optional): 禁言时长. Defaults to ChatroomBlockDuration.HOUR_1.
 
         Returns:
             BoolResponse: True成功 False失败

@@ -396,7 +396,7 @@ class MsgType(enum.IntEnum):
     READED = 22
 
 
-class ChatroomMuteDuration(enum.IntEnum):
+class ChatroomBlockDuration(enum.IntEnum):
     """
     吧群禁言时长
 

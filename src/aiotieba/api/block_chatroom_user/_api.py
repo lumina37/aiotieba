@@ -10,7 +10,7 @@ from ...helper import parse_json
 
 if TYPE_CHECKING:
     from ...core import HttpCore
-    from ...enums import ChatroomMuteDuration
+    from ...enums import ChatroomBlockDuration
 
 
 def parse_body(body: bytes) -> None:
@@ -20,7 +20,7 @@ def parse_body(body: bytes) -> None:
 
 
 async def request(
-    http_core: HttpCore, fid: int, chatroom_id: int, portrait: str, duration: ChatroomMuteDuration
+    http_core: HttpCore, fid: int, chatroom_id: int, portrait: str, duration: ChatroomBlockDuration
 ) -> BoolResponse:
     data = [
         ("forum_id", fid),
