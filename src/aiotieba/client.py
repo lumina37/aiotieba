@@ -317,7 +317,7 @@ class Client:
 
         return BoolResponse()
 
-    def __get_open_ws_core(self, client_version: str = LATEST_VERSION) -> WsCore | None:
+    def __get_ws_core(self, client_version: str = LATEST_VERSION) -> WsCore | None:
         ws_core = self._ws_cores.get(client_version)
         if ws_core is None or ws_core.status != WsStatus.OPEN:
             return None
@@ -443,7 +443,7 @@ class Client:
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
 
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             return await get_forum_detail.request_ws(ws_core, fid)
 
         return await get_forum_detail.request_http(self._http_core, fid)
@@ -528,7 +528,7 @@ class Client:
         check_rn(rn, 1, 100)
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
-        if ws_core := self.__get_open_ws_core(LEGACY_VERSION):
+        if ws_core := self.__get_ws_core(LEGACY_VERSION):
             return await get_threads.request_ws(ws_core, fname, pn, rn, sort, is_good, LEGACY_VERSION)
 
         return await get_threads.request_http(self._http_core, fname, pn, rn, sort, is_good, LEGACY_VERSION)
@@ -571,7 +571,7 @@ class Client:
         elif comment_rn != 4 or comment_sort_by_agree is not True:
             LOG().warning("comment_rn and comment_sort_by_agree are ignored because with_comments is False")
 
-        if ws_core := self.__get_open_ws_core(LEGACY_VERSION):
+        if ws_core := self.__get_ws_core(LEGACY_VERSION):
             return await get_posts.request_ws(
                 ws_core, tid, pn, rn, sort, only_thread_author, with_comments, comment_sort_by_agree, comment_rn
             )
@@ -606,7 +606,7 @@ class Client:
             Comments: 楼中楼列表
         """
 
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             return await get_comments.request_ws(ws_core, tid, pid, pn, is_comment, sort)
 
         return await get_comments.request_http(self._http_core, tid, pid, pn, is_comment, sort)
@@ -643,7 +643,7 @@ class Client:
         check_rn(rn, 1, 100)
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
-        if ws_core := self.__get_open_ws_core(LAST_REPLYERS_VERSION):
+        if ws_core := self.__get_ws_core(LAST_REPLYERS_VERSION):
             return await get_last_replyers.request_ws(ws_core, fname, pn, rn, sort, is_good)
 
         return await get_last_replyers.request_http(self._http_core, fname, pn, rn, sort, is_good)
@@ -723,7 +723,7 @@ class Client:
             UserInfo_pf: 包含最全面的用户信息
         """
 
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             return await profile.get_uinfo_profile.request_ws(ws_core, uid_or_portrait)
 
         return await profile.get_uinfo_profile.request_http(self._http_core, uid_or_portrait)
@@ -741,7 +741,7 @@ class Client:
             UserInfo_guinfo_app: 包含 user_id / portrait / user_name / 旧版昵称 / 性别 / 是否会员
         """
 
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             user = await get_uinfo_getuserinfo_app.request_ws(ws_core, user_id)
 
         else:
@@ -889,7 +889,7 @@ class Client:
             请注意tieba_uid与旧版user_id的区别
         """
 
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             return await tieba_uid2user_info.request_ws(ws_core, tieba_uid)
 
         return await tieba_uid2user_info.request_http(self._http_core, tieba_uid)
@@ -914,7 +914,7 @@ class Client:
         else:
             user_id = id_
 
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             return await profile.get_homepage.request_ws(ws_core, user_id, pn)
 
         return await profile.get_homepage.request_http(self._http_core, user_id, pn)
@@ -995,7 +995,7 @@ class Client:
         """
 
         check_rn(rn, 1, 0xFFFFFFFF)
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             return await get_blacklist_old.request_ws(ws_core, pn, rn)
 
         return await get_blacklist_old.request_http(self._http_core, pn, rn)
@@ -1111,7 +1111,7 @@ class Client:
         """
 
         check_rn(rn, 1, 50)
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             return await get_dislike_forums.request_ws(ws_core, pn, rn)
 
         return await get_dislike_forums.request_http(self._http_core, pn, rn)
@@ -1134,7 +1134,7 @@ class Client:
         user = await self.get_self_info(ReqUInfo.USER_ID)
         user_id = user.user_id
 
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             return await get_user_contents.get_posts.request_ws(ws_core, user_id, pn, rn, LATEST_VERSION)
 
         return await get_user_contents.get_posts.request_http(self._http_core, user_id, pn, rn, LATEST_VERSION)
@@ -1184,7 +1184,7 @@ class Client:
         else:
             user_id = id_
 
-        if ws_core := self.__get_open_ws_core(USER_POSTS_VERSION):
+        if ws_core := self.__get_ws_core(USER_POSTS_VERSION):
             return await get_user_contents.get_posts.request_ws(ws_core, user_id, pn, rn, USER_POSTS_VERSION)
 
         return await get_user_contents.get_posts.request_http(self._http_core, user_id, pn, rn, USER_POSTS_VERSION)
@@ -1206,7 +1206,7 @@ class Client:
         user = await self.get_self_info(ReqUInfo.USER_ID)
         user_id = user.user_id
 
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             return await get_user_contents.get_threads.request_ws(
                 ws_core, user_id, pn, is_self=True, public_only=public_only
             )
@@ -1237,7 +1237,7 @@ class Client:
 
         is_self = user_id == self.account.user.user_id
 
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             return await get_user_contents.get_threads.request_ws(
                 ws_core, user_id, pn, is_self=is_self, public_only=False
             )
@@ -1259,7 +1259,7 @@ class Client:
             Replys: 回复列表
         """
 
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             return await get_replys.request_ws(ws_core, pn)
 
         return await get_replys.request_http(self._http_core, pn)
@@ -1400,7 +1400,7 @@ class Client:
         """
 
         check_rn(rn, 1, 1000)
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             return await get_square_forums.request_ws(ws_core, cname, pn, rn)
 
         return await get_square_forums.request_http(self._http_core, cname, pn, rn)
@@ -1420,7 +1420,7 @@ class Client:
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
 
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             return await get_bawu_info.request_ws(ws_core, fid)
 
         return await get_bawu_info.request_http(self._http_core, fid)
@@ -1560,7 +1560,7 @@ class Client:
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             return await get_tab_map.request_ws(ws_core, fname)
 
         return await get_tab_map.request_http(self._http_core, fname)
@@ -2520,7 +2520,7 @@ class Client:
         else:
             user_id = id_
 
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             return await set_blacklist.request_ws(ws_core, user_id, btype)
 
         return await set_blacklist.request_http(self._http_core, user_id, btype)
@@ -2771,7 +2771,7 @@ class Client:
             BoolResponse: 投票是否成功
         """
 
-        if ws_core := self.__get_open_ws_core():
+        if ws_core := self.__get_ws_core():
             return await add_poll.request_ws(ws_core, tid, options)
 
         return await add_poll.request_http(self._http_core, tid, options)
