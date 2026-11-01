@@ -5,7 +5,7 @@ import logging
 import socket
 import ssl
 from functools import wraps
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import aiohttp
 import yarl
@@ -182,6 +182,15 @@ def _force_websocket(client_version: str = LATEST_VERSION):
         return awrapper
 
     return decorator
+
+
+def _merge_user_info(*users: Any) -> UserInfo:
+    merged = UserInfo()
+    for user in users:
+        if getattr(user, "err", None) is not None:
+            continue
+        merged |= user
+    return merged
 
 
 class Client:
@@ -371,14 +380,30 @@ class Client:
 
         user = self.account.user
 
-        if not user.user_id and require & (ReqUInfo.BASIC | ReqUInfo.NICK_NAME | ReqUInfo.OTHER):
+        if not user.user_id and require & (
+            ReqUInfo.BASIC | ReqUInfo.NICK_NAME_OLD | ReqUInfo.NICK_NAME_NEW | ReqUInfo.OTHER
+        ):
             await self.__login()
 
-        if require & (ReqUInfo.NICK_NAME | ReqUInfo.OTHER):
-            if not user.nick_name_new or (require & ReqUInfo.OTHER and not user.tieba_uid):
-                user |= await self._get_uinfo_profile(user.user_id)
-        elif require & ReqUInfo.TIEBA_UID and not user.tieba_uid:
+        if require & ReqUInfo.OTHER:
+            user |= await self._get_uinfo_profile(user.user_id)
+            if require & ReqUInfo.NICK_NAME_OLD and not user.nick_name_old:
+                await self.__init_selfinfo_initNickname()
+            return user
+
+        if (require & ReqUInfo.NICK_NAME_OLD and not user.nick_name_old) or (
+            require & ReqUInfo.TIEBA_UID and not user.tieba_uid
+        ):
             await self.__init_selfinfo_initNickname()
+
+        if require & ReqUInfo.NICK_NAME_NEW and not user.nick_name_new:
+            if self.account.BDUSS:
+                web_user = await self._get_uinfo_getUserInfo(user.user_id)
+                if web_user.err is None:
+                    user |= web_user
+                    return user
+            if user.portrait:
+                user |= await self._get_uinfo_userCard(user.portrait)
 
         return user
 
@@ -844,40 +869,115 @@ class Client:
             return UserInfo()
 
         if isinstance(id_, int):
-            if not require & (ReqUInfo.NICK_NAME | ReqUInfo.TIEBA_UID | ReqUInfo.OTHER):
-                # 仅有BASIC需求
-                return await self._get_uinfo_getuserinfo(id_)
-            if self.account.BDUSS and not require & (ReqUInfo.TIEBA_UID | ReqUInfo.OTHER):
-                # 仅有BASIC和NICK_NAME需求
-                return await self._get_uinfo_getUserInfo(id_)
-            if not require & (ReqUInfo.USER_ID | ReqUInfo.USER_NAME | ReqUInfo.OTHER):
-                # 仅有PORTRAIT NICK_NAME TIEBA_UID需求
-                user = await self._get_uinfo_getuserinfo(id_)
-                return await self._get_uinfo_userCard(user.portrait)
-            return await self._get_uinfo_profile(id_)
-
+            return await self.__get_user_info_by_uid(id_, require)
         if is_portrait(id_):
-            if require & (ReqUInfo.USER_ID | ReqUInfo.OTHER):
-                return await self._get_uinfo_profile(id_)
-            if require & (ReqUInfo.NICK_NAME | ReqUInfo.TIEBA_UID) and not require & ReqUInfo.USER_NAME:
-                # 仅有PORTRAIT NICK_NAME TIEBA_UID需求
-                return await self._get_uinfo_userCard(id_)
+            return await self.__get_user_info_by_portrait(id_, require)
+        return await self.__get_user_info_by_user_name(id_, require)
+
+    async def __gather_user_info(self, *coros: Any) -> UserInfo:
+        users = await asyncio.gather(*coros)
+        return _merge_user_info(*users)
+
+    async def __get_user_info_by_uid(self, user_id: int, require: ReqUInfo) -> UserInfo:
+        if require & ReqUInfo.OTHER:
+            user = await self._get_uinfo_profile(user_id)
+            if require & ReqUInfo.NICK_NAME_OLD:
+                old_user = await self._get_uinfo_getuserinfo(user_id)
+                return _merge_user_info(user, old_user)
+            return user
+
+        if require & ReqUInfo.NICK_NAME_OLD:
             if require & ReqUInfo.TIEBA_UID:
-                return await self._get_uinfo_profile(id_)
-            return await self._get_uinfo_panel(id_)
+                user = await self._get_uinfo_getuserinfo(user_id)
+                if user.err is not None:
+                    return user
 
-        if not require & (ReqUInfo.NICK_NAME | ReqUInfo.TIEBA_UID | ReqUInfo.OTHER):
-            # 仅有BASIC需求
-            return await self._get_uinfo_user_json(id_)
-        if not require & (ReqUInfo.USER_ID | ReqUInfo.TIEBA_UID | ReqUInfo.OTHER):
-            # 仅有PORTRAIT USER_NAME NICK_NAME需求
-            return await self._get_uinfo_panel(id_)
+                card = await self._get_uinfo_userCard(user.portrait)
+                return _merge_user_info(user, card)
 
-        user = await self._get_uinfo_user_json(id_)
-        if not require & (ReqUInfo.USER_ID | ReqUInfo.USER_NAME | ReqUInfo.OTHER):
-            # 仅有PORTRAIT NICK_NAME TIEBA_UID需求
-            return await self._get_uinfo_userCard(user.portrait)
-        return await self._get_uinfo_profile(user.portrait)
+            if require & ReqUInfo.NICK_NAME_NEW:
+                if self.account.BDUSS:
+                    return await self.__gather_user_info(
+                        self._get_uinfo_getuserinfo(user_id),
+                        self._get_uinfo_getUserInfo(user_id),
+                    )
+
+                user = await self._get_uinfo_getuserinfo(user_id)
+                if user.err is not None:
+                    return user
+
+                card = await self._get_uinfo_userCard(user.portrait)
+                return _merge_user_info(user, card)
+
+            return await self._get_uinfo_getuserinfo(user_id)
+
+        if require & ReqUInfo.TIEBA_UID:
+            base = await self._get_uinfo_getuserinfo(user_id)
+            if base.err is not None:
+                return base
+
+            card = await self._get_uinfo_userCard(base.portrait)
+            return _merge_user_info(base, card)
+
+        if require & ReqUInfo.NICK_NAME_NEW:
+            if self.account.BDUSS:
+                return await self._get_uinfo_getUserInfo(user_id)
+
+            base = await self._get_uinfo_getuserinfo(user_id)
+            if base.err is not None:
+                return base
+
+            card = await self._get_uinfo_userCard(base.portrait)
+            return _merge_user_info(base, card)
+
+        return await self._get_uinfo_getuserinfo(user_id)
+
+    async def __get_user_info_by_portrait(self, portrait: str, require: ReqUInfo) -> UserInfo:
+        if require & (ReqUInfo.USER_ID | ReqUInfo.USER_NAME | ReqUInfo.NICK_NAME_OLD | ReqUInfo.OTHER):
+            user = await self._get_uinfo_profile(portrait)
+            if require & ReqUInfo.NICK_NAME_OLD and user.user_id:
+                old_user = await self._get_uinfo_getuserinfo(user.user_id)
+                return _merge_user_info(user, old_user)
+            return user
+
+        return await self._get_uinfo_userCard(portrait)
+
+    async def __get_user_info_by_user_name(self, user_name: str, require: ReqUInfo) -> UserInfo:
+        if require & ReqUInfo.OTHER:
+            base = await self._get_uinfo_user_json(user_name)
+            if base.err is not None:
+                return base
+
+            user = await self._get_uinfo_profile(base.portrait)
+            if require & ReqUInfo.NICK_NAME_OLD and user.user_id:
+                old_user = await self._get_uinfo_getuserinfo(user.user_id)
+                return _merge_user_info(user, old_user)
+            return user
+
+        user = await self._get_uinfo_user_json(user_name)
+        if user.err is not None:
+            return user
+
+        need_old = bool(require & ReqUInfo.NICK_NAME_OLD)
+        need_new = bool(require & ReqUInfo.NICK_NAME_NEW)
+
+        extras = []
+        if require & ReqUInfo.TIEBA_UID:
+            extras.append(self._get_uinfo_userCard(user.portrait))
+            need_new = False
+        elif need_new:
+            if self.account.BDUSS:
+                extras.append(self._get_uinfo_getUserInfo(user.user_id))
+            else:
+                extras.append(self._get_uinfo_userCard(user.portrait))
+                need_new = False
+        if need_old:
+            extras.append(self._get_uinfo_getuserinfo(user.user_id))
+
+        if extras:
+            users = await asyncio.gather(*extras)
+            return _merge_user_info(user, *users)
+        return user
 
     @handle_exception(tieba_uid2user_info.UserInfo_TUid)
     @_try_websocket()
@@ -1652,13 +1752,15 @@ class Client:
         return await get_rank_forums.request(self._http_core, fname, pn, rank_type)
 
     @handle_exception(get_blocks.Blocks)
-    async def get_blocks(self, fname_or_fid: str | int, /, name: str = "", pn: int = 1) -> get_blocks.Blocks:
+    async def get_blocks(
+        self, fname_or_fid: str | int, /, id_: str | int | None = None, pn: int = 1
+    ) -> get_blocks.Blocks:
         """
         获获取吧务后台待解封用户列表
 
         Args:
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先fid
-            name (str, optional): 通过被封禁用户的用户名/昵称查询 默认为空即查询全部. Defaults to ''.
+            id_ (str | int | None, optional): 待解封用户的id user_id / user_name / portrait / 旧版昵称 优先user_name 默认为None即查询全部. Defaults to None.
             pn (int, optional): 页码. Defaults to 1.
 
         Returns:
@@ -1666,6 +1768,12 @@ class Client:
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
+
+        if isinstance(id_, int) or is_portrait(id_):
+            user = await self.get_user_info(id_, ReqUInfo.USER_NAME | ReqUInfo.NICK_NAME_OLD)
+            name = user.user_name or user.nick_name_old
+        else:
+            name = id_ or ""
 
         return await get_blocks.request(self._http_core, fid, name, pn)
 
@@ -1724,7 +1832,7 @@ class Client:
         /,
         pn: int = 1,
         *,
-        search_value: str = "",
+        id_: str | int | None = None,
     ) -> get_bawu_memberlist.BawuListMemberUsers:
         """
         获取吧务后台吧会员列表
@@ -1732,7 +1840,7 @@ class Client:
         Args:
             fname_or_fid (str | int): 目标贴吧名或fid 优先贴吧名
             pn (int, optional): 页码. Defaults to 1.
-            search_value (str, optional): 搜索用户名. Defaults to ''.
+            id_ (str | int | None, optional): 待搜索用户的id user_id / user_name / portrait / 旧版昵称 优先user_name 默认为None即查询全部. Defaults to None.
 
         Returns:
             BawuListMemberUsers: 吧会员列表
@@ -1743,7 +1851,13 @@ class Client:
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
 
-        return await get_bawu_memberlist.request(self._http_core, fname, pn, search_value)
+        if isinstance(id_, int) or is_portrait(id_):
+            user = await self.get_user_info(id_, ReqUInfo.USER_NAME | ReqUInfo.NICK_NAME_OLD)
+            name = user.user_name or user.nick_name_old
+        else:
+            name = id_ or ""
+
+        return await get_bawu_memberlist.request(self._http_core, fname, pn, name)
 
     @handle_exception(get_bawu_userlogs.BawuUserLogs)
     async def get_bawu_userlogs(
@@ -1752,7 +1866,7 @@ class Client:
         /,
         pn: int = 1,
         *,
-        search_value: str = "",
+        id_: str | int | None = None,
         search_type: BawuSearchType = BawuSearchType.USER,
         start_dt: dt.datetime | None = None,
         end_dt: dt.datetime | None = None,
@@ -1764,7 +1878,7 @@ class Client:
         Args:
             fname_or_fid (str | int): 目标贴吧名或fid 优先贴吧名
             pn (int, optional): 页码. Defaults to 1.
-            search_value (str, optional): 搜索关键字. Defaults to ''.
+            id_ (str | int | None, optional): 待搜索用户的id user_id / user_name / portrait / 旧版昵称 优先user_name 默认为None即查询全部. Defaults to None.
             search_type (BawuSearchType, optional): 搜索类型. Defaults to BawuSearchType.USER.
             start_dt (datetime.datetime | None, optional): 搜索的起始时间(含). Defaults to None.
             end_dt (datetime.datetime | None, optional): 搜索的结束时间(含). Defaults to None.
@@ -1782,9 +1896,17 @@ class Client:
         if end_dt is not None and start_dt is None:
             LOG().warning("end_dt is ignored because start_dt is None")
 
-        return await get_bawu_userlogs.request(
-            self._http_core, fname, pn, search_value, search_type, start_dt, end_dt, op_type
-        )
+        if isinstance(id_, int) or is_portrait(id_):
+            if search_type is BawuSearchType.USER:
+                user = await self.get_user_info(id_, ReqUInfo.USER_NAME | ReqUInfo.NICK_NAME_OLD)
+                name = user.user_name or user.nick_name_old
+            else:
+                user = await self.get_user_info(id_, ReqUInfo.USER_NAME)
+                name = user.user_name
+        else:
+            name = id_ or ""
+
+        return await get_bawu_userlogs.request(self._http_core, fname, pn, name, search_type, start_dt, end_dt, op_type)
 
     @handle_exception(get_bawu_postlogs.BawuPostLogs)
     async def get_bawu_postlogs(
@@ -1793,7 +1915,7 @@ class Client:
         /,
         pn: int = 1,
         *,
-        search_value: str = "",
+        id_: str | int | None = None,
         search_type: BawuSearchType = BawuSearchType.USER,
         start_dt: dt.datetime | None = None,
         end_dt: dt.datetime | None = None,
@@ -1805,7 +1927,7 @@ class Client:
         Args:
             fname_or_fid (str | int): 目标贴吧名或fid 优先贴吧名
             pn (int, optional): 页码. Defaults to 1.
-            search_value (str, optional): 搜索关键字. Defaults to ''.
+            id_ (str | int | None, optional): 待搜索用户的id user_id / user_name / portrait / 旧版昵称 优先user_name 默认为None即查询全部. Defaults to None.
             search_type (BawuSearchType, optional): 搜索类型. Defaults to BawuSearchType.USER.
             start_dt (datetime.datetime | None, optional): 搜索的起始时间(含). Defaults to None.
             end_dt (datetime.datetime | None, optional): 搜索的结束时间(含). Defaults to None.
@@ -1823,13 +1945,21 @@ class Client:
         if end_dt is not None and start_dt is None:
             LOG().warning("end_dt is ignored because start_dt is None")
 
-        return await get_bawu_postlogs.request(
-            self._http_core, fname, pn, search_value, search_type, start_dt, end_dt, op_type
-        )
+        if isinstance(id_, int) or is_portrait(id_):
+            if search_type is BawuSearchType.USER:
+                user = await self.get_user_info(id_, ReqUInfo.USER_NAME | ReqUInfo.NICK_NAME_OLD)
+                name = user.user_name or user.nick_name_old
+            else:
+                user = await self.get_user_info(id_, ReqUInfo.USER_NAME)
+                name = user.user_name
+        else:
+            name = id_ or ""
+
+        return await get_bawu_postlogs.request(self._http_core, fname, pn, name, search_type, start_dt, end_dt, op_type)
 
     @handle_exception(get_unblock_appeals.Appeals)
     async def get_unblock_appeals(
-        self, fname_or_fid: str | int, /, pn: int = 1, *, rn: int = 5, query: str = ""
+        self, fname_or_fid: str | int, /, pn: int = 1, *, rn: int = 5, id_: str | int | None = None
     ) -> get_unblock_appeals.Appeals:
         """
         获取吧务后台申诉请求列表
@@ -1838,7 +1968,7 @@ class Client:
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先fid
             pn (int, optional): 页码. Defaults to 1.
             rn (int, optional): 请求的条目数. Range [1, 50]. Defaults to 5.
-            query (str, optional): 通过申诉用户的用户名/昵称精确查询 默认为空即查询全部. Defaults to ''.
+            id_ (str | int | None, optional): 申诉用户的id user_id / user_name / portrait / 旧版昵称 优先user_name 默认为None即查询全部. Defaults to None.
 
         Returns:
             Appeals: 申诉请求列表
@@ -1848,11 +1978,17 @@ class Client:
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
         await self.__init_tbs()
 
-        return await get_unblock_appeals.request(self._http_core, fid, pn, rn, query)
+        if isinstance(id_, int) or is_portrait(id_):
+            user = await self.get_user_info(id_, ReqUInfo.USER_NAME | ReqUInfo.NICK_NAME_OLD)
+            name = user.user_name or user.nick_name_old
+        else:
+            name = id_ or ""
+
+        return await get_unblock_appeals.request(self._http_core, fid, pn, rn, name)
 
     @handle_exception(get_bawu_blacklist.BawuBlacklistUsers)
     async def get_bawu_blacklist(
-        self, fname_or_fid: str | int, /, pn: int = 1, *, name: str = ""
+        self, fname_or_fid: str | int, /, pn: int = 1, *, id_: str | int | None = None
     ) -> get_bawu_blacklist.BawuBlacklistUsers:
         """
         获取吧务后台黑名单列表
@@ -1860,13 +1996,19 @@ class Client:
         Args:
             fname_or_fid (str | int): 目标贴吧的贴吧名或fid 优先fid
             pn (int, optional): 页码. Defaults to 1.
-            name (str, optional): 通过用户名精确查询 默认为空即查询全部. Defaults to ''.
+            id_ (str | int | None, optional): 黑名单用户的id user_id / user_name / portrait / 旧版昵称 优先user_name 默认为None即查询全部. Defaults to None.
 
         Returns:
             BawuBlacklistUsers: 吧务黑名单列表
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
+
+        if isinstance(id_, int) or is_portrait(id_):
+            user = await self.get_user_info(id_, ReqUInfo.USER_NAME | ReqUInfo.NICK_NAME_OLD)
+            name = user.user_name or user.nick_name_old
+        else:
+            name = id_ or ""
 
         return await get_bawu_blacklist.request(self._http_core, fid, pn, name)
 
@@ -3020,8 +3162,7 @@ class Client:
         if not self.account.user.user_id:
             await self.__login()
         if not self.account.user.nick_name_new:
-            # 吧群消息中的name必须与个人资料昵称一致 仅HTTP登录时该字段为空 服务端会返回1507
-            await self.get_self_info(ReqUInfo.NICK_NAME)
+            await self.get_self_info(ReqUInfo.NICK_NAME_NEW)
         if self._blcp_core.status is not BlcpStatus.LOGGED_IN:
             await self.__init_blcp()
 
@@ -3032,7 +3173,7 @@ class Client:
         at_data = []
         if at_user_ids:
             for count, user_id in enumerate(at_user_ids):
-                at_user = await self.get_user_info(user_id, ReqUInfo.NICK_NAME | ReqUInfo.PORTRAIT)
+                at_user = await self.get_user_info(user_id, ReqUInfo.NICK_NAME_NEW | ReqUInfo.PORTRAIT)
                 at_data.append({
                     "at_type": "user",
                     "at_baidu_uk": user_id2bduk(user_id),

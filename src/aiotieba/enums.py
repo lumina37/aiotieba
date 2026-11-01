@@ -123,18 +123,20 @@ class ReqUInfo(enum.Flag):
     使用该枚举类指定待获取的用户信息字段
 
     Note:
-        各bit位的含义由高到低分别为 OTHER, TIEBA_UID, NICK_NAME, USER_NAME, PORTRAIT, USER_ID\n
-        其中BASIC = USER_ID | PORTRAIT | USER_NAME
+        各bit位的含义由高到低分别为 OTHER, TIEBA_UID, NICK_NAME_NEW, NICK_NAME_OLD, USER_NAME, PORTRAIT, USER_ID\n
+        其中BASIC = USER_ID | PORTRAIT | USER_NAME\n
+        旧版昵称不包含在ALL中 需要显式指定NICK_NAME_OLD且仅部分接口支持
     """
 
     USER_ID = enum.auto()
     PORTRAIT = enum.auto()
     USER_NAME = enum.auto()
-    NICK_NAME = enum.auto()
+    NICK_NAME_OLD = enum.auto()
+    NICK_NAME_NEW = enum.auto()
     TIEBA_UID = enum.auto()
     OTHER = enum.auto()
     BASIC = USER_ID | PORTRAIT | USER_NAME
-    ALL = BASIC | NICK_NAME | TIEBA_UID | OTHER
+    ALL = BASIC | NICK_NAME_NEW | TIEBA_UID | OTHER
 
 
 class ThreadSortType(enum.IntEnum):

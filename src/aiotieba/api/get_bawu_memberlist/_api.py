@@ -24,7 +24,7 @@ async def request(
     http_core: HttpCore,
     fname: str,
     pn: int,
-    search_value: str,
+    user_name: str,
 ) -> BawuListMemberUsers:
     params = [
         ("word", fname),
@@ -32,10 +32,10 @@ async def request(
         ("ie", "utf-8"),
     ]
 
-    if search_value:
-        search_value = quote(search_value)
+    if user_name:
+        user_name = quote(user_name)
         extend_params = [
-            ("svalue", search_value),
+            ("svalue", user_name),
             ("stype", "uname"),
         ]
         params += extend_params
