@@ -1,5 +1,3 @@
-from typing import TypeVar
+from typing import Any, TypeAlias
 
-from google.protobuf.message import Message
-
-TypeMessage = TypeVar("TypeMessage", bound=Message)
+TypeMessage: TypeAlias = Any
