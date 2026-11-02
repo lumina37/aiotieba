@@ -75,19 +75,19 @@ class Account:
         self.STOKEN = STOKEN
 
         self.user = UserInfo()
-        self._tbs: str = None
-        self._android_id: str = None
-        self._uuid: str = None
-        self._client_id: str = None
-        self._sample_id: str = None
-        self._bduk: str = None
-        self._cuid: str = None
-        self._cuid_galaxy2: str = None
-        self._c3_aid: str = None
-        self._baidu_id: str = None
-        self._zid: str = None
-        self._ws_sec_key: bytes = None
-        self._zid_sec_key: bytes = None
+        self._tbs: str = ""
+        self._android_id: str = ""
+        self._uuid: str = ""
+        self._client_id: str = ""
+        self._sample_id: str = ""
+        self._bduk: str = ""
+        self._cuid: str = ""
+        self._cuid_galaxy2: str = ""
+        self._c3_aid: str = ""
+        self._baidu_id: str = ""
+        self._zid: str = ""
+        self._ws_sec_key: bytes = b""
+        self._zid_sec_key: bytes = b""
 
     def __repr__(self) -> str:
         return str(self.to_dict())
@@ -188,7 +188,7 @@ class Account:
             在初始化后该属性便不会再发生变化
         """
 
-        if self._android_id is None:
+        if not self._android_id:
             self._android_id = random.randbytes(8).hex()
         return self._android_id
 
@@ -211,7 +211,7 @@ class Account:
             在初始化后该属性便不会再发生变化
         """
 
-        if self._uuid is None:
+        if not self._uuid:
             import uuid
 
             self._uuid = str(uuid.uuid4())
@@ -298,7 +298,7 @@ class Account:
             在初始化后该属性便不会再发生变化
         """
 
-        if self._bduk is None:
+        if not self._bduk:
             self._bduk = user_id2bduk(self.user.user_id)
         return self._bduk
 
@@ -322,7 +322,7 @@ class Account:
             此实现仅用于9.x等旧版本 11.x后请使用cuid_galaxy2填充对应字段
         """
 
-        if self._cuid is None:
+        if not self._cuid:
             self._cuid = f"baidutiebaapp{self.uuid}"
         return self._cuid
 
@@ -346,7 +346,7 @@ class Account:
             此实现与12.x版本及以前的官方实现一致
         """
 
-        if self._cuid_galaxy2 is None:
+        if not self._cuid_galaxy2:
             self._cuid_galaxy2 = cuid_galaxy2(self.android_id)
         return self._cuid_galaxy2
 
@@ -370,7 +370,7 @@ class Account:
             此实现与12.x版本及以前的官方实现一致
         """
 
-        if self._c3_aid is None:
+        if not self._c3_aid:
             self._c3_aid = c3_aid(self.android_id, self.uuid)
         return self._c3_aid
 
@@ -430,7 +430,7 @@ class Account:
             在初始化后该属性便不会再发生变化
         """
 
-        if self._ws_sec_key is None:
+        if not self._ws_sec_key:
             self._ws_sec_key = random.randbytes(31)
         return self._ws_sec_key
 
@@ -450,7 +450,7 @@ class Account:
             在初始化后该属性便不会再发生变化
         """
 
-        if self._zid_sec_key is None:
+        if not self._zid_sec_key:
             self._zid_sec_key = random.randbytes(16)
         return self._zid_sec_key
 

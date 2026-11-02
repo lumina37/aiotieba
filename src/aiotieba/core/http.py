@@ -13,6 +13,8 @@ from ..const import APP_BASE_HOST
 from ..helper.crypto import APP_SALT, sign
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from .account import Account
     from .net import NetCore
 
@@ -87,14 +89,14 @@ class HttpCore:
         STOKEN_morsel["domain"] = "tieba.baidu.com"
         self.web.cookie_jar._cookies["tieba.baidu.com", ""]["STOKEN"] = STOKEN_morsel
 
-    def pack_form_request(self, url: yarl.URL, data: list[tuple[str, str]]) -> aiohttp.ClientRequest:
+    def pack_form_request(self, url: yarl.URL, data: Sequence[tuple[str, str | int]]) -> aiohttp.ClientRequest:
         """
         自动签名参数元组列表
         并将其打包为移动端表单请求
 
         Args:
             url (yarl.URL): 链接
-            data (list[tuple[str, str]]): 参数元组列表
+            data (Sequence[tuple[str, str | int]]): 参数元组列表
 
         Returns:
             aiohttp.ClientRequest
@@ -188,14 +190,14 @@ class HttpCore:
         return request
 
     def pack_web_get_request(
-        self, url: yarl.URL, params: list[tuple[str, str]], *, extra_headers: dict[str, str] | None = None
+        self, url: yarl.URL, params: Sequence[tuple[str, str | int]], *, extra_headers: dict[str, str] | None = None
     ) -> aiohttp.ClientRequest:
         """
         打包网页端参数请求
 
         Args:
             url (yarl.URL): 链接
-            params (list[tuple[str, str]]): 参数元组列表
+            params (Sequence[tuple[str, str | int]]): 参数元组列表
             extra_headers (dict[str, str] | None): 额外的请求头
 
         Returns:
@@ -220,14 +222,14 @@ class HttpCore:
         return request
 
     def pack_web_form_request(
-        self, url: yarl.URL, data: list[tuple[str, str]], *, extra_headers: dict[str, str] | None = None
+        self, url: yarl.URL, data: Sequence[tuple[str, str | int]], *, extra_headers: dict[str, str] | None = None
     ) -> aiohttp.ClientRequest:
         """
         打包网页端表单请求
 
         Args:
             url (yarl.URL): 链接
-            data (list[tuple[str, str]]): 参数元组列表
+            data (Sequence[tuple[str, str | int]]): 参数元组列表
             extra_headers (dict[str, str] | None): 额外的请求头
 
         Returns:

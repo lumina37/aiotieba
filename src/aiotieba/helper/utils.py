@@ -6,7 +6,7 @@ import logging
 import sys
 import time
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeGuard
 
 from ..logging import get_logger
 
@@ -28,23 +28,23 @@ except ImportError:
 parse_json = jsonlib.loads
 
 
-def is_portrait(portrait: Any) -> bool:
+def is_portrait(portrait: object) -> TypeGuard[str]:
     """
     简单判断输入是否符合portrait格式
 
     Returns:
-        bool: 输入是否符合portrait格式
+        TypeGuard[str]: 输入是否符合portrait格式
     """
 
     return isinstance(portrait, str) and portrait.startswith("tb.")
 
 
-def is_user_name(user_name: Any) -> bool:
+def is_user_name(user_name: object) -> TypeGuard[str]:
     """
     简单判断输入是否符合user_name格式
 
     Returns:
-        bool: 输入是否符合user_name格式
+        TypeGuard[str]: 输入是否符合user_name格式
     """
 
     return isinstance(user_name, str) and not user_name.startswith("tb.")
