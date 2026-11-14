@@ -22,6 +22,7 @@ from .api import (
     del_bawu_blacklist,
     del_blacklist_old,
     del_post,
+    del_post_pc,
     del_posts,
     del_thread,
     del_threads,
@@ -2245,6 +2246,30 @@ class Client:
         await self.__init_tbs()
 
         return await del_posts.request(self._http_core, fid, tid, pids, block)
+
+    @handle_exception(BoolResponse, ok_log_level=logging.INFO)
+    async def del_post_pc(self, fname_or_fid: str | int, /, tid: int, pid: int) -> BoolResponse:
+        """
+        删除回复（网页端接口）
+
+        Args:
+            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid 优先fid
+            tid (int): 所在主题帖tid
+            pid (int): 待删除的回复pid
+
+        Returns:
+            BoolResponse: True成功 False失败
+
+        Note:
+            相比 `del_post` 更宽松：主题帖已被删除时依然可以删除其中的回复。
+            该接口是幂等的，对已删除的回复同样返回成功
+        """
+
+        fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fid)
+        await self.__init_tbs()
+
+        return await del_post_pc.request(self._http_core, fid, tid, pid, fname)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def unhide_thread(self, fname_or_fid: str | int, /, tid: int) -> BoolResponse:
