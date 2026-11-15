@@ -2277,7 +2277,7 @@ class Client:
         解除主题帖屏蔽
 
         Args:
-            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid 优先fid
+            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
             tid (int): 待解除屏蔽的主题帖tid
 
         Returns:
@@ -2285,9 +2285,10 @@ class Client:
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fid)
         await self.__init_tbs()
 
-        return await recover.request(self._http_core, fid, tid, 0, is_hide=True)
+        return await recover.request(self._http_core, fid, fname, tid, 0, is_hide=True)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def recover_thread(self, fname_or_fid: str | int, /, tid: int) -> BoolResponse:
@@ -2295,7 +2296,7 @@ class Client:
         恢复主题帖
 
         Args:
-            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid 优先fid
+            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
             tid (int): 待恢复的主题帖tid
 
         Returns:
@@ -2303,9 +2304,10 @@ class Client:
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fid)
         await self.__init_tbs()
 
-        return await recover.request(self._http_core, fid, tid, 0, is_hide=False)
+        return await recover.request(self._http_core, fid, fname, tid, 0, is_hide=False)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def recover_post(self, fname_or_fid: str | int, /, pid: int) -> BoolResponse:
@@ -2313,7 +2315,7 @@ class Client:
         恢复回复
 
         Args:
-            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid 优先fid
+            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
             pid (int): 待恢复的回复pid
 
         Returns:
@@ -2321,9 +2323,10 @@ class Client:
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fid)
         await self.__init_tbs()
 
-        return await recover.request(self._http_core, fid, 0, pid, is_hide=False)
+        return await recover.request(self._http_core, fid, fname, 0, pid, is_hide=False)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def recover(
@@ -2333,7 +2336,7 @@ class Client:
         帖子恢复相关操作
 
         Args:
-            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid 优先fid
+            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
             tid (int, optional): 待恢复的主题帖tid. Defaults to 0.
             pid (int, optional): 待恢复的回复pid. Defaults to 0.
             is_hide (bool, optional): True则取消屏蔽主题帖 False则恢复删帖. Defaults to False.
@@ -2343,9 +2346,10 @@ class Client:
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
+        fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fid)
         await self.__init_tbs()
 
-        return await recover.request(self._http_core, fid, tid, pid, is_hide)
+        return await recover.request(self._http_core, fid, fname, tid, pid, is_hide)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
     async def good(self, fname_or_fid: str | int, /, tid: int, *, cname: str = "") -> BoolResponse:
