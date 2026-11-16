@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import yarl
 
-from ...const import APP_BASE_HOST, LATEST_VERSION
+from ...const import APP_BASE_HOST
 from ...exception import TiebaServerError
 from ...helper import parse_json
 from ._classdef import UserForumInfo
@@ -26,13 +26,11 @@ def parse_body(body: bytes) -> UserForumInfo:
 
 async def request(http_core: HttpCore, fid: int, friend_portrait: str) -> UserForumInfo:
     data = [
-        ("BDUSS", http_core.account.BDUSS),
-        ("_client_version", LATEST_VERSION),
         ("forum_id", fid),
         ("friend_portrait", friend_portrait),
     ]
 
-    request = http_core.pack_form_request(
+    request = http_core.pack_web_sign_form_request(
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/f/forum/getUserForumLevelInfo"), data
     )
 

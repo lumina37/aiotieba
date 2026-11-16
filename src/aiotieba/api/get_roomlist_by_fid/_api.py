@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import yarl
 
-from ...const import APP_BASE_HOST, CHAT_VERSION
+from ...const import APP_BASE_HOST
 from ...exception import TiebaServerError
 from ...helper import parse_json
 from ._classdef import RoomList
@@ -26,12 +26,10 @@ def parse_body(body: bytes) -> RoomList:
 
 async def request(http_core: HttpCore, fid: int) -> RoomList:
     data = [
-        ("BDUSS", http_core.account.BDUSS),
-        ("_client_version", CHAT_VERSION),
         ("fid", fid),
     ]
 
-    request = http_core.pack_form_request(
+    request = http_core.pack_web_sign_form_request(
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/f/chat/getRoomListByFid"),
         data,
     )

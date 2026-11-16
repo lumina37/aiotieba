@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import yarl
 
-from ...const import APP_BASE_HOST, LATEST_VERSION
+from ...const import APP_BASE_HOST
 from ...exception import TiebaServerError
 from ...helper import parse_json
 from ._classdef import SearchInForums
@@ -28,7 +28,6 @@ async def request(
     http_core: HttpCore, fname: str, query: str, pn: int, rn: int, search_type: SearchInForumType, only_thread: bool
 ) -> SearchInForums:
     data = [
-        ("_client_version", LATEST_VERSION),
         ("kw", fname),
         ("only_thread", int(only_thread)),
         ("pn", pn),
@@ -37,7 +36,7 @@ async def request(
         ("word", query),
     ]
 
-    request = http_core.pack_form_request(
+    request = http_core.pack_web_sign_form_request(
         yarl.URL.build(scheme="http", host=APP_BASE_HOST, path="/c/s/searchpost"), data
     )
 

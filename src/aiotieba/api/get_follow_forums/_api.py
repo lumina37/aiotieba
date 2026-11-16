@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import yarl
 
-from ...const import APP_BASE_HOST, LATEST_VERSION
+from ...const import APP_BASE_HOST
 from ...exception import TiebaServerError
 from ...helper import parse_json
 from ._classdef import FollowForums
@@ -25,14 +25,12 @@ def parse_body(body: bytes) -> FollowForums:
 
 async def request(http_core: HttpCore, user_id: int, pn: int, rn: int) -> FollowForums:
     data = [
-        ("BDUSS", http_core.account.BDUSS),
-        ("_client_version", LATEST_VERSION),
         ("friend_uid", user_id),
         ("page_no", pn),
         ("page_size", rn),
     ]
 
-    request = http_core.pack_form_request(
+    request = http_core.pack_web_sign_form_request(
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/f/forum/like"), data
     )
 

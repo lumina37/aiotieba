@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import yarl
 
-from ...const import APP_BASE_HOST, LATEST_VERSION
+from ...const import APP_BASE_HOST
 from ...exception import TiebaServerError
 from ...helper import parse_json
 from ._classdef import Follows
@@ -25,12 +25,11 @@ def parse_body(body: bytes) -> Follows:
 
 async def request(http_core: HttpCore, user_id: int, pn: int) -> Follows:
     data = [
-        ("_client_version", LATEST_VERSION),
         ("pn", pn),
         ("uid", user_id),
     ]
 
-    request = http_core.pack_form_request(
+    request = http_core.pack_web_sign_form_request(
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/u/follow/followList"), data
     )
 

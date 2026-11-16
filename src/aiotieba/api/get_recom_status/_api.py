@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import yarl
 
-from ...const import APP_BASE_HOST, LATEST_VERSION
+from ...const import APP_BASE_HOST
 from ...exception import TiebaServerError
 from ...helper import parse_json
 from ._classdef import RecomStatus
@@ -25,14 +25,12 @@ def parse_body(body: bytes) -> RecomStatus:
 
 async def request(http_core: HttpCore, fid: int) -> RecomStatus:
     data = [
-        ("BDUSS", http_core.account.BDUSS),
-        ("_client_version", LATEST_VERSION),
         ("forum_id", fid),
         ("pn", 1),
         ("rn", 0),
     ]
 
-    request = http_core.pack_form_request(
+    request = http_core.pack_web_sign_form_request(
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/f/bawu/getRecomThreadList"), data
     )
 

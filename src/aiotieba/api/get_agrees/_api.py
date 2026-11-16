@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import yarl
 
-from ...const import APP_BASE_HOST, LATEST_VERSION
+from ...const import APP_BASE_HOST
 from ...exception import TiebaServerError
 from ...helper import parse_json
 from ._classdef import Agrees
@@ -25,13 +25,11 @@ def parse_body(body: bytes) -> Agrees:
 
 async def request(http_core: HttpCore, last_agree_id: int, rn: int) -> Agrees:
     data = [
-        ("BDUSS", http_core.account.BDUSS),
-        ("_client_version", LATEST_VERSION),
         ("id", last_agree_id),
         ("rn", rn),
     ]
 
-    request = http_core.pack_form_request(
+    request = http_core.pack_web_sign_form_request(
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/u/feed/agreeme"), data
     )
 

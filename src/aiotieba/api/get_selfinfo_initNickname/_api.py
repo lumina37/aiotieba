@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import yarl
 
-from ...const import APP_BASE_HOST, LATEST_VERSION
+from ...const import APP_BASE_HOST
 from ...exception import TiebaServerError
 from ...helper import parse_json
 from ._classdef import UserInfo_selfinit
@@ -25,13 +25,8 @@ def parse_body(body: bytes) -> UserInfo_selfinit:
 
 
 async def request(http_core: HttpCore) -> UserInfo_selfinit:
-    data = [
-        ("BDUSS", http_core.account.BDUSS),
-        ("_client_version", LATEST_VERSION),
-    ]
-
-    request = http_core.pack_form_request(
-        yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/s/initNickname"), data
+    request = http_core.pack_web_sign_form_request(
+        yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/s/initNickname"), []
     )
 
     body = await http_core.net_core.send(request)
