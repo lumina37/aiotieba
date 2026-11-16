@@ -79,7 +79,7 @@ async def request_http(
         comment_rn,
     )
 
-    request = http_core.pack_proto_request(
+    request = http_core.pack_app_proto_request(
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/f/pb/page", query_string=f"cmd={CMD}"),
         data,
     )

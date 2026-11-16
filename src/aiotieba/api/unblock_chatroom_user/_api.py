@@ -28,7 +28,7 @@ async def request(http_core: HttpCore, fid: int, chatroom_id: int, user_id: int)
         ("tbs", http_core.account.tbs),
     ]
 
-    request = http_core.pack_form_request(
+    request = http_core.pack_app_form_request(
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/c/chatroom/controlSpeak"), data
     )
 

@@ -28,7 +28,7 @@ async def request(http_core: HttpCore, fname: str) -> list[dict[str, int]]:
         ("word", fname),
     ]
 
-    request = http_core.pack_form_request(
+    request = http_core.pack_app_form_request(
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/c/bawu/goodlist"), data
     )
 

@@ -46,7 +46,7 @@ def parse_body(body: bytes) -> Comments:
 async def request_http(http_core: HttpCore, tid: int, pid: int, pn: int, is_comment: bool, sort: int) -> Comments:
     data = pack_proto(tid, pid, pn, is_comment, sort)
 
-    request = http_core.pack_proto_request(
+    request = http_core.pack_app_proto_request(
         yarl.URL.build(scheme="http", host=APP_BASE_HOST, path="/c/f/pb/floor", query_string=f"cmd={CMD}"),
         data,
     )

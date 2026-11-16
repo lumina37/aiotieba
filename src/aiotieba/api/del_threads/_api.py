@@ -29,7 +29,7 @@ async def request(http_core: HttpCore, fid: int, tids: Iterable[int], block: boo
         ("type", 2 if block else 1),
     ]
 
-    request = http_core.pack_form_request(
+    request = http_core.pack_app_form_request(
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/c/bawu/multiDelThread"), data
     )
 

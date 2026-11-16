@@ -41,7 +41,7 @@ def parse_body(body: bytes) -> DislikeForums:
 async def request_http(http_core: HttpCore, pn: int, rn: int) -> DislikeForums:
     data = pack_proto(http_core.account, pn, rn)
 
-    request = http_core.pack_proto_request(
+    request = http_core.pack_app_proto_request(
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/u/user/getDislikeList", query_string=f"cmd={CMD}"),
         data,
     )

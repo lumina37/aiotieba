@@ -27,7 +27,7 @@ def parse_body(body: bytes) -> Forum:
 async def request(http_core: HttpCore, fname: str) -> Forum:
     data = [("kw", fname)]
 
-    request = http_core.pack_form_request(
+    request = http_core.pack_app_form_request(
         yarl.URL.build(scheme="http", host=APP_BASE_HOST, path="/c/f/frs/frsBottom"), data
     )
 

@@ -42,7 +42,7 @@ def parse_body(body: bytes) -> SquareForums:
 async def request_http(http_core: HttpCore, cname: str, pn: int, rn: int) -> SquareForums:
     data = pack_proto(http_core.account, cname, pn, rn)
 
-    request = http_core.pack_proto_request(
+    request = http_core.pack_app_proto_request(
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/f/forum/getForumSquare", query_string=f"cmd={CMD}"),
         data,
     )

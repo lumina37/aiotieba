@@ -38,7 +38,7 @@ def parse_body(body: bytes) -> UserInfo_guinfo_app:
 async def request_http(http_core: HttpCore, user_id: int) -> UserInfo_guinfo_app:
     data = pack_proto(user_id)
 
-    request = http_core.pack_proto_request(
+    request = http_core.pack_app_proto_request(
         yarl.URL.build(scheme="http", host=APP_BASE_HOST, path="/c/u/user/getuserinfo", query_string=f"cmd={CMD}"),
         data,
     )

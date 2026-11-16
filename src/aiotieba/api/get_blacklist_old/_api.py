@@ -41,7 +41,7 @@ def parse_body(body: bytes) -> BlacklistOldUsers:
 async def request_http(http_core: HttpCore, pn: int, rn: int) -> BlacklistOldUsers:
     data = pack_proto(http_core.account, pn, rn)
 
-    request = http_core.pack_proto_request(
+    request = http_core.pack_app_proto_request(
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/u/user/userMuteQuery", query_string=f"cmd={CMD}"),
         data,
     )

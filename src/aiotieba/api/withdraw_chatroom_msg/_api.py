@@ -31,7 +31,7 @@ async def request(
         ("tbs", http_core.account.tbs),
     ]
 
-    request = http_core.pack_form_request(
+    request = http_core.pack_app_form_request(
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/c/chatroom/withdrawMsg"), data
     )
 

@@ -89,7 +89,7 @@ class HttpCore:
         STOKEN_morsel["domain"] = "tieba.baidu.com"
         self.web.cookie_jar._cookies["tieba.baidu.com", ""]["STOKEN"] = STOKEN_morsel
 
-    def pack_form_request(self, url: yarl.URL, data: Sequence[tuple[str, str | int]]) -> aiohttp.ClientRequest:
+    def pack_app_form_request(self, url: yarl.URL, data: Sequence[tuple[str, str | int]]) -> aiohttp.ClientRequest:
         """
         自动签名参数元组列表
         并将其打包为移动端表单请求
@@ -120,7 +120,7 @@ class HttpCore:
 
         return request
 
-    def pack_proto_request(self, url: yarl.URL, data: bytes) -> aiohttp.ClientRequest:
+    def pack_app_proto_request(self, url: yarl.URL, data: bytes) -> aiohttp.ClientRequest:
         """
         打包移动端protobuf请求
 

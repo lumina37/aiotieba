@@ -27,7 +27,7 @@ async def request(http_core: HttpCore, nick_name: str, sign: str, gender: Gender
         ("sex", int(gender)),
     ]
 
-    request = http_core.pack_form_request(
+    request = http_core.pack_app_form_request(
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/c/profile/modify"), data
     )
 

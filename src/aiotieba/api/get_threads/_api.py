@@ -47,7 +47,7 @@ async def request_http(
 ) -> Threads:
     data = pack_proto(fname, pn, rn, sort, is_good, version)
 
-    request = http_core.pack_proto_request(
+    request = http_core.pack_app_proto_request(
         yarl.URL.build(scheme="http", host=APP_BASE_HOST, path="/c/f/frs/page", query_string=f"cmd={CMD}"),
         data,
     )

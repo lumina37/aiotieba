@@ -40,7 +40,7 @@ def parse_body(body: bytes) -> TabMap:
 async def request_http(http_core: HttpCore, fname: str) -> TabMap:
     data = pack_proto(http_core.account, fname)
 
-    request = http_core.pack_proto_request(
+    request = http_core.pack_app_proto_request(
         yarl.URL.build(
             scheme="https", host=APP_BASE_HOST, path="/c/f/forum/searchPostForum", query_string=f"cmd={CMD}"
         ),

@@ -49,7 +49,7 @@ async def request_app(http_core: HttpCore, act_type: str) -> BoolResponse:
         ("tbs", http_core.account.tbs),
     ]
 
-    request = http_core.pack_form_request(
+    request = http_core.pack_app_form_request(
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/c/user/commitUGTaskInfo"), data
     )
 

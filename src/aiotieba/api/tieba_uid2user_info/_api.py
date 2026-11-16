@@ -39,7 +39,7 @@ def parse_body(body: bytes) -> UserInfo_TUid:
 async def request_http(http_core: HttpCore, tieba_uid: int) -> UserInfo_TUid:
     data = pack_proto(tieba_uid)
 
-    request = http_core.pack_proto_request(
+    request = http_core.pack_app_proto_request(
         yarl.URL.build(
             scheme="http",
             host=APP_BASE_HOST,
