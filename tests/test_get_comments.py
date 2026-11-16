@@ -55,8 +55,8 @@ async def test_Comments(client: tb.Client):
     assert user.level > 0
     assert user.gender > 0
     assert user.is_bawu is True
-    assert user.priv_like != 0
-    assert user.priv_reply != 0
+    assert user.priv.like != 0
+    assert user.priv.reply != 0
     assert user.log_name != ""
 
     # Post_c
@@ -114,8 +114,8 @@ async def test_Comments(client: tb.Client):
     assert user.level > 0
     assert user.gender > 0
     assert user.is_bawu is True
-    assert user.priv_like != 0
-    assert user.priv_reply != 0
+    assert user.priv.like != 0
+    assert user.priv.reply != 0
     assert len(user.icons) > 0
     assert user.log_name != ""
 

@@ -14,26 +14,16 @@ class User(_message.Message):
         name: str
         def __init__(self, name: _Optional[str] = ...) -> None: ...
     class PrivSets(_message.Message):
-        __slots__ = ("location", "like", "group", "post", "friend", "live", "reply", "bazhu_show_inside", "bazhu_show_outside")
-        LOCATION_FIELD_NUMBER: _ClassVar[int]
+        __slots__ = ("like", "post", "reply", "follow")
         LIKE_FIELD_NUMBER: _ClassVar[int]
-        GROUP_FIELD_NUMBER: _ClassVar[int]
         POST_FIELD_NUMBER: _ClassVar[int]
-        FRIEND_FIELD_NUMBER: _ClassVar[int]
-        LIVE_FIELD_NUMBER: _ClassVar[int]
         REPLY_FIELD_NUMBER: _ClassVar[int]
-        BAZHU_SHOW_INSIDE_FIELD_NUMBER: _ClassVar[int]
-        BAZHU_SHOW_OUTSIDE_FIELD_NUMBER: _ClassVar[int]
-        location: int
+        FOLLOW_FIELD_NUMBER: _ClassVar[int]
         like: int
-        group: int
         post: int
-        friend: int
-        live: int
         reply: int
-        bazhu_show_inside: int
-        bazhu_show_outside: int
-        def __init__(self, location: _Optional[int] = ..., like: _Optional[int] = ..., group: _Optional[int] = ..., post: _Optional[int] = ..., friend: _Optional[int] = ..., live: _Optional[int] = ..., reply: _Optional[int] = ..., bazhu_show_inside: _Optional[int] = ..., bazhu_show_outside: _Optional[int] = ...) -> None: ...
+        follow: int
+        def __init__(self, like: _Optional[int] = ..., post: _Optional[int] = ..., reply: _Optional[int] = ..., follow: _Optional[int] = ...) -> None: ...
     class LikeForumInfo(_message.Message):
         __slots__ = ("forum_name", "forum_id")
         FORUM_NAME_FIELD_NUMBER: _ClassVar[int]

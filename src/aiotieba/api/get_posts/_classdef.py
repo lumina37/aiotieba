@@ -4,10 +4,10 @@ import dataclasses as dcs
 from functools import cached_property
 from typing import Self
 
-from ...enums import Gender, PrivLike, PrivReply, ThreadType
+from ...enums import Gender, ThreadType
 from ...exception import TbErrorExt
 from ...logging import get_logger as LOG
-from .._classdef import Containers, TypeMessage, VoteInfo
+from .._classdef import Containers, PrivSets, TypeMessage, VoteInfo
 from .._classdef.contents import (
     _IMAGEHASH_EXP,
     FragAt,
@@ -343,8 +343,7 @@ class UserInfo_p:
 
         is_bawu (bool): 是否吧务
         is_vip (bool): 是否会员
-        priv_like (PrivLike): 关注吧列表的公开状态
-        priv_reply (PrivReply): 帖子评论权限
+        priv (PrivSets): 隐私设置
 
         nick_name (str): 用户昵称
         show_name (str): 显示名称
@@ -364,8 +363,7 @@ class UserInfo_p:
 
     is_bawu: bool = False
     is_vip: bool = False
-    priv_like: PrivLike = PrivLike.PUBLIC
-    priv_reply: PrivReply = PrivReply.ALL
+    priv: PrivSets = dcs.field(default_factory=PrivSets)
 
     @classmethod
     def from_proto(cls, data_proto: TypeMessage) -> Self:
@@ -382,8 +380,7 @@ class UserInfo_p:
         icons = [name for i in data_proto.iconinfo if (name := i.name)]
         is_bawu = bool(data_proto.is_bawu)
         is_vip = data_proto.is_mem != 0
-        priv_like = PrivLike(priv_like) if (priv_like := data_proto.priv_sets.like) else PrivLike.PUBLIC
-        priv_reply = PrivReply(priv_reply) if (priv_reply := data_proto.priv_sets.reply) else PrivReply.ALL
+        priv = PrivSets.from_proto(data_proto.priv_sets)
         return cls(
             user_id,
             portrait,
@@ -396,8 +393,7 @@ class UserInfo_p:
             icons,
             is_bawu,
             is_vip,
-            priv_like,
-            priv_reply,
+            priv,
         )
 
     def __str__(self) -> str:
@@ -823,8 +819,7 @@ class UserInfo_pt:
         icons (list[str]): 印记信息
 
         is_bawu (bool): 是否吧务
-        priv_like (PrivLike): 关注吧列表的公开状态
-        priv_reply (PrivReply): 帖子评论权限
+        priv (PrivSets): 隐私设置
 
         nick_name (str): 用户昵称
         show_name (str): 显示名称
@@ -843,8 +838,7 @@ class UserInfo_pt:
     icons: list[str] = dcs.field(default_factory=list)
 
     is_bawu: bool = False
-    priv_like: PrivLike = PrivLike.PUBLIC
-    priv_reply: PrivReply = PrivReply.ALL
+    priv: PrivSets = dcs.field(default_factory=PrivSets)
 
     @classmethod
     def from_proto(cls, data_proto: TypeMessage) -> Self:
@@ -860,8 +854,7 @@ class UserInfo_pt:
         ip = data_proto.ip_address
         icons = [name for i in data_proto.iconinfo if (name := i.name)]
         is_bawu = bool(data_proto.is_bawu)
-        priv_like = PrivLike(priv_like) if (priv_like := data_proto.priv_sets.like) else PrivLike.PUBLIC
-        priv_reply = PrivReply(priv_reply) if (priv_reply := data_proto.priv_sets.reply) else PrivReply.ALL
+        priv = PrivSets.from_proto(data_proto.priv_sets)
         return cls(
             user_id,
             portrait,
@@ -873,8 +866,7 @@ class UserInfo_pt:
             ip,
             icons,
             is_bawu,
-            priv_like,
-            priv_reply,
+            priv,
         )
 
     def __str__(self) -> str:

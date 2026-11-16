@@ -21,8 +21,8 @@ async def test_get_user_info(client: tb.Client):
     assert self_info.age > 0
     assert self_info.ip != ""
     assert self_info.post_num > 0
-    assert self_info.priv_like != tb.PrivLike.UNKNOWN
-    assert self_info.priv_reply != tb.PrivReply.UNKNOWN
+    assert self_info.priv.like != tb.PrivLike.UNKNOWN
+    assert self_info.priv.reply != tb.PrivReply.UNKNOWN
 
     user = await client.get_user_info(self_info.portrait, tb.enums.ReqUInfo.BASIC)
     assert user.user_id == self_info.user_id
@@ -48,8 +48,8 @@ async def test_get_user_info(client: tb.Client):
     assert user.age > 0
     assert user.ip != ""
     assert user.post_num > 0
-    assert user.priv_like != tb.PrivLike.UNKNOWN
-    assert user.priv_reply != tb.PrivReply.UNKNOWN
+    assert user.priv.like != tb.PrivLike.UNKNOWN
+    assert user.priv.reply != tb.PrivReply.UNKNOWN
 
     user = await client.get_user_info(user.user_id)
     assert user.user_id == self_info.user_id
@@ -60,8 +60,8 @@ async def test_get_user_info(client: tb.Client):
     assert user.age > 0
     assert user.ip != ""
     assert user.post_num > 0
-    assert user.priv_like != tb.PrivLike.UNKNOWN
-    assert user.priv_reply != tb.PrivReply.UNKNOWN
+    assert user.priv.like != tb.PrivLike.UNKNOWN
+    assert user.priv.reply != tb.PrivReply.UNKNOWN
 
     user = await client.get_user_info(user.portrait)
     assert user.user_id == self_info.user_id
@@ -72,8 +72,8 @@ async def test_get_user_info(client: tb.Client):
     assert user.age > 0
     assert user.ip != ""
     assert user.post_num > 0
-    assert user.priv_like != tb.PrivLike.UNKNOWN
-    assert user.priv_reply != tb.PrivReply.UNKNOWN
+    assert user.priv.like != tb.PrivLike.UNKNOWN
+    assert user.priv.reply != tb.PrivReply.UNKNOWN
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=5.0)
@@ -97,8 +97,8 @@ async def test_get_uinfo_xx(client: tb.Client):
     assert user.sign != ""
     assert user.ip != ""
     assert len(user.icons) > 0
-    assert user.priv_like != tb.PrivLike.UNKNOWN
-    assert user.priv_reply != tb.PrivReply.UNKNOWN
+    assert user.priv.like != tb.PrivLike.UNKNOWN
+    assert user.priv.reply != tb.PrivReply.UNKNOWN
 
     user = await client._get_uinfo_profile("tb.1.8277e641.gUE2cTq4A4z5fi2EHn5k3Q")
     assert user.user_id > 0
@@ -118,8 +118,8 @@ async def test_get_uinfo_xx(client: tb.Client):
     assert user.sign != ""
     assert user.ip != ""
     assert len(user.icons) > 0
-    assert user.priv_like != tb.PrivLike.UNKNOWN
-    assert user.priv_reply != tb.PrivReply.UNKNOWN
+    assert user.priv.like != tb.PrivLike.UNKNOWN
+    assert user.priv.reply != tb.PrivReply.UNKNOWN
 
     user = await client._get_uinfo_getuserinfo(957339815)
     assert user.user_id > 0

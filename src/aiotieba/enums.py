@@ -47,17 +47,61 @@ class PrivReply(enum.IntEnum):
         UNKNOWN 未知\n
         ALL 允许所有人\n
         FANS 仅允许我的粉丝\n
-        FOLLOW 仅允许我的关注
+        FOLLOW 仅允许我的关注\n
+        SELF 仅允许自己
     """
 
     UNKNOWN = 0
     ALL = 1
     FANS = 5
     FOLLOW = 6
+    SELF = 7
 
     @classmethod
     def _missing_(cls, _: int) -> PrivReply:
         return PrivReply.UNKNOWN
+
+
+class PrivPost(enum.IntEnum):
+    """
+    我的贴子的公开状态
+
+    Note:
+        UNKNOWN 未知\n
+        PUBLIC 所有人可见\n
+        FRIEND 好友可见\n
+        HIDE 完全隐藏
+    """
+
+    UNKNOWN = 0
+    PUBLIC = 1
+    FRIEND = 2
+    HIDE = 3
+
+    @classmethod
+    def _missing_(cls, _: int) -> PrivPost:
+        return PrivPost.UNKNOWN
+
+
+class PrivFollow(enum.IntEnum):
+    """
+    关注与粉丝列表的公开状态
+
+    Note:
+        UNKNOWN 未知\n
+        PUBLIC 所有人可见\n
+        FRIEND 好友可见\n
+        HIDE 完全隐藏
+    """
+
+    UNKNOWN = 0
+    PUBLIC = 1
+    FRIEND = 2
+    HIDE = 3
+
+    @classmethod
+    def _missing_(cls, _: int) -> PrivFollow:
+        return PrivFollow.UNKNOWN
 
 
 class ThreadType(enum.IntEnum):

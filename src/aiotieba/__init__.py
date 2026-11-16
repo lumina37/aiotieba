@@ -8,6 +8,7 @@ Asynchronous I/O Client/Reviewer for Baidu Tieba
 
 from . import const, core, enums, exception, logging, typing
 from .__version__ import __version__
+from .api._classdef import PrivSets
 from .client import Client
 from .config import ProxyConfig, TimeoutConfig
 from .core import Account
