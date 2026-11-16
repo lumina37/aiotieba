@@ -20,14 +20,12 @@ def parse_body(body: bytes) -> None:
 
 async def request(http_core: HttpCore, fname: str, fid: int, tid: int) -> BoolResponse:
     data = [
-        ("BDUSS", http_core.account.BDUSS),
         ("fid", fid),
-        ("tbs", http_core.account.tbs),
         ("word", fname),
         ("z", tid),
     ]
 
-    request = http_core.pack_form_request(
+    request = http_core.pack_web_sign_form_request(
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/c/bawu/commitgood"), data
     )
 

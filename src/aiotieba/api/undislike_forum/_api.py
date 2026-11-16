@@ -20,12 +20,11 @@ def parse_body(body: bytes) -> None:
 
 async def request(http_core: HttpCore, fid: int) -> BoolResponse:
     data = [
-        ("BDUSS", http_core.account.BDUSS),
-        ("cuid", http_core.account.cuid),
+        ("cuid", "-"),
         ("forum_id", fid),
     ]
 
-    request = http_core.pack_form_request(
+    request = http_core.pack_web_sign_form_request(
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/c/excellent/submitCancelDislike"), data
     )
 

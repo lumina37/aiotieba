@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import yarl
 
-from ...const import APP_BASE_HOST, LATEST_VERSION
+from ...const import APP_BASE_HOST
 from ...exception import BoolResponse, TiebaServerError
 from ...helper import parse_json
 
@@ -27,18 +27,14 @@ async def request(
         content_type = 3
 
     data = [
-        ("BDUSS", http_core.account.BDUSS),
-        ("_client_version", LATEST_VERSION),
         ("agree_type", 5 if is_disagree else 2),
-        ("cuid", http_core.account.cuid_galaxy2),
         ("content_type", content_type),
         ("op_type", str(int(is_undo))),
         ("post_id", pid),
-        ("tbs", http_core.account.tbs),
         ("thread_id", tid),
     ]
 
-    request = http_core.pack_form_request(
+    request = http_core.pack_web_sign_form_request(
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/c/agree/opAgree"), data
     )
 

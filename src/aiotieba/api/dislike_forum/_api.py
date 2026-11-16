@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 import yarl
 
-from ...const import APP_BASE_HOST, LATEST_VERSION
+from ...const import APP_BASE_HOST
 from ...exception import BoolResponse, TiebaServerError
 from ...helper import pack_json, parse_json
 
@@ -21,8 +21,6 @@ def parse_body(body: bytes) -> None:
 
 async def request(http_core: HttpCore, fid: int) -> BoolResponse:
     data = [
-        ("BDUSS", http_core.account.BDUSS),
-        ("_client_version", LATEST_VERSION),
         (
             "dislike",
             pack_json([{"tid": 1, "dislike_ids": 7, "fid": fid, "click_time": int(time.time() * 1000)}]),
@@ -30,7 +28,7 @@ async def request(http_core: HttpCore, fid: int) -> BoolResponse:
         ("dislike_from", "homepage"),
     ]
 
-    request = http_core.pack_form_request(
+    request = http_core.pack_web_sign_form_request(
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/c/excellent/submitDislike"), data
     )
 

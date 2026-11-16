@@ -2070,8 +2070,6 @@ class Client:
         else:
             portrait = id_
 
-        await self.__init_tbs()
-
         return await block.request(self._http_core, fid, portrait, day, reason)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
@@ -2163,7 +2161,6 @@ class Client:
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
-        await self.__init_tbs()
 
         return await del_thread.request(self._http_core, fid, tid, is_hide=True)
 
@@ -2181,7 +2178,6 @@ class Client:
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
-        await self.__init_tbs()
 
         return await del_thread.request(self._http_core, fid, tid, is_hide=False)
 
@@ -2212,7 +2208,7 @@ class Client:
         删除回复
 
         Args:
-            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid
+            fname_or_fid (str | int): 帖子所在贴吧的贴吧名或fid 优先fid
             tid (int): 所在主题帖tid
             pid (int): 待删除的回复pid
 
@@ -2350,8 +2346,6 @@ class Client:
             fid = fname_or_fid
             fname = await self.__get_fname(fid)
 
-        await self.__init_tbs()
-
         cid = await self.__get_cid(fname_or_fid, cname)
 
         return await good.request(self._http_core, fname, fid, tid, cid)
@@ -2375,8 +2369,6 @@ class Client:
         else:
             fid = fname_or_fid
             fname = await self.__get_fname(fid)
-
-        await self.__init_tbs()
 
         return await ungood.request(self._http_core, fname, fid, tid)
 
@@ -2433,8 +2425,6 @@ class Client:
             fid = fname_or_fid
             fname = await self.__get_fname(fid)
 
-        await self.__init_tbs()
-
         return await top.request(self._http_core, fname, fid, tid, is_vip, True)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
@@ -2457,8 +2447,6 @@ class Client:
         else:
             fid = fname_or_fid
             fname = await self.__get_fname(fid)
-
-        await self.__init_tbs()
 
         return await top.request(self._http_core, fname, fid, tid, is_vip, False)
 
@@ -2538,8 +2526,6 @@ class Client:
             高频率调用会导致<发帖秒删>! 请谨慎使用!
         """
 
-        await self.__init_tbs()
-
         return await agree.request(self._http_core, tid, pid, is_comment, is_disagree=False, is_undo=False)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
@@ -2555,8 +2541,6 @@ class Client:
         Returns:
             BoolResponse: True成功 False失败
         """
-
-        await self.__init_tbs()
 
         return await agree.request(self._http_core, tid, pid, is_comment, is_disagree=False, is_undo=True)
 
@@ -2574,8 +2558,6 @@ class Client:
             BoolResponse: True成功 False失败
         """
 
-        await self.__init_tbs()
-
         return await agree.request(self._http_core, tid, pid, is_comment, is_disagree=True, is_undo=False)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
@@ -2591,8 +2573,6 @@ class Client:
         Returns:
             BoolResponse: True成功 False失败
         """
-
-        await self.__init_tbs()
 
         return await agree.request(self._http_core, tid, pid, is_comment, is_disagree=True, is_undo=True)
 
@@ -2614,8 +2594,6 @@ class Client:
         else:
             portrait = id_
 
-        await self.__init_tbs()
-
         return await follow_user.request(self._http_core, portrait)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
@@ -2636,8 +2614,6 @@ class Client:
         else:
             portrait = id_
 
-        await self.__init_tbs()
-
         return await unfollow_user.request(self._http_core, portrait)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
@@ -2657,8 +2633,6 @@ class Client:
             user_id = user.user_id
         else:
             user_id = id_
-
-        await self.__init_tbs()
 
         return await remove_fan.request(self._http_core, user_id)
 
@@ -2753,8 +2727,6 @@ class Client:
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
-        await self.__init_tbs()
-
         return await follow_forum.request(self._http_core, fid)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
@@ -2789,8 +2761,6 @@ class Client:
         """
 
         fid = fname_or_fid if isinstance(fname_or_fid, int) else await self.__get_fid(fname_or_fid)
-        await self.__init_tbs()
-
         return await unfollow_forum.request(self._http_core, fid)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)
@@ -2904,8 +2874,6 @@ class Client:
         """
 
         fname = fname_or_fid if isinstance(fname_or_fid, str) else await self.__get_fname(fname_or_fid)
-        await self.__init_tbs()
-
         return await sign_forum.request(self._http_core, fname)
 
     @handle_exception(BoolResponse, ok_log_level=logging.INFO)

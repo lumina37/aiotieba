@@ -4,10 +4,9 @@ from typing import TYPE_CHECKING
 
 import yarl
 
-from ...const import WEB_BASE_HOST
+from ...const import APP_BASE_HOST
 from ...exception import BoolResponse, TiebaServerError
 from ...helper import parse_json
-from ...helper.crypto import PC_SALT, sign
 
 if TYPE_CHECKING:
     from ...core import HttpCore
@@ -20,16 +19,14 @@ def parse_body(body: bytes) -> None:
 
 
 async def request(http_core: HttpCore, fid: int, tid: int, pid: int) -> BoolResponse:
-    data: list[tuple[str, str | int]] = [
+    data = [
         ("fid", fid),
-        ("z", tid),
         ("pid", pid),
-        ("_client_type", 20),
+        ("z", tid),
     ]
-    data = sign(data, salt=PC_SALT)
 
-    request = http_core.pack_web_get_request(
-        yarl.URL.build(scheme="https", host=WEB_BASE_HOST, path="/c/c/bawu/delpost_pc"), data
+    request = http_core.pack_web_sign_form_request(
+        yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/c/bawu/delpost"), data
     )
 
     body = await http_core.net_core.send(request)

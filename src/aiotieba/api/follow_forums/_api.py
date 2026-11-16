@@ -25,11 +25,10 @@ async def request(http_core: HttpCore, fids: Iterable[int]) -> BoolResponse:
     interest_list = {"": {str(fid): "" for fid in fids}}
     encoded_interest_list = quote(pack_json(interest_list), safe="")
     data = [
-        ("BDUSS", http_core.account.BDUSS),
         ("interestList", encoded_interest_list),
     ]
 
-    request = http_core.pack_form_request(
+    request = http_core.pack_web_sign_form_request(
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/s/newUserInterestSave"), data
     )
 

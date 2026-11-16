@@ -20,12 +20,10 @@ def parse_body(body: bytes) -> None:
 
 async def request(http_core: HttpCore, portrait: str) -> BoolResponse:
     data = [
-        ("BDUSS", http_core.account.BDUSS),
         ("portrait", portrait),
-        ("tbs", http_core.account.tbs),
     ]
 
-    request = http_core.pack_form_request(
+    request = http_core.pack_web_sign_form_request(
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/c/user/follow"), data
     )
 

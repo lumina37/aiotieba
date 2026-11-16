@@ -20,14 +20,13 @@ def parse_body(body: bytes) -> None:
 
 async def request(http_core: HttpCore, fid: int, tid: int, pid: int, is_hide: bool) -> BoolResponse:
     data = [
-        ("BDUSS", http_core.account.BDUSS),
         ("forum_id", fid),
         ("is_hide", str(int(is_hide))),
         ("post_id", pid),
         ("thread_id", tid),
     ]
 
-    request = http_core.pack_form_request(
+    request = http_core.pack_web_sign_form_request(
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/c/thread/setPrivacy"), data
     )
 

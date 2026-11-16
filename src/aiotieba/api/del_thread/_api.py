@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import aiohttp
 import yarl
 
 from ...const import APP_BASE_HOST
@@ -20,15 +21,15 @@ def parse_body(body: bytes) -> None:
 
 async def request(http_core: HttpCore, fid: int, tid: int, is_hide: bool) -> BoolResponse:
     data = [
-        ("BDUSS", http_core.account.BDUSS),
         ("fid", fid),
         ("is_frs_mask", int(is_hide)),
-        ("tbs", http_core.account.tbs),
         ("z", tid),
     ]
 
-    request = http_core.pack_form_request(
-        yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/c/bawu/delthread"), data
+    request = http_core.pack_web_sign_form_request(
+        yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/c/bawu/delthread"),
+        data,
+        extra_headers={aiohttp.hdrs.REFERER: "https://tieba.baidu.com/"},
     )
 
     body = await http_core.net_core.send(request)

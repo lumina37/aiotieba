@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 def parse_body(body: bytes) -> None:
     res_json = parse_json(body)
-    if code := res_json["error_code"]:
+    if code := int(res_json["error_code"]):
         raise TiebaServerError(code, res_json["error_msg"])
     if (code := int(res_json["data"]["is_push_success"])) != 1:
         raise TiebaServerError(code, res_json["data"]["msg"])
@@ -22,12 +22,11 @@ def parse_body(body: bytes) -> None:
 
 async def request(http_core: HttpCore, fid: int, tid: int) -> BoolResponse:
     data = [
-        ("BDUSS", http_core.account.BDUSS),
         ("forum_id", fid),
         ("thread_id", tid),
     ]
 
-    request = http_core.pack_form_request(
+    request = http_core.pack_web_sign_form_request(
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/c/bawu/pushRecomToPersonalized"), data
     )
 
