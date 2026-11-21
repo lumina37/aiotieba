@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import json
 import logging
 import sys
 import time
@@ -13,19 +14,8 @@ from ..logging import get_logger
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
 
-try:
-    import orjson as jsonlib
 
-    def pack_json(obj: Any) -> str:
-        bjson: bytes = jsonlib.dumps(obj)
-        return bjson.decode("utf-8")
-
-except ImportError:
-    import json as jsonlib
-
-    pack_json = functools.partial(jsonlib.dumps, separators=(",", ":"))
-
-parse_json = jsonlib.loads
+pack_json = functools.partial(json.dumps, separators=(",", ":"))
 
 
 def is_portrait(portrait: object) -> TypeGuard[str]:

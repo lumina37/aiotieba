@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING
 
 import yarl
@@ -7,7 +8,6 @@ import yarl
 from ...const import WEB_BASE_HOST
 from ...enums import ContentType
 from ...exception import BoolResponse, TiebaServerError
-from ...helper import parse_json
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 def parse_body(body: bytes) -> None:
-    res_json = parse_json(body)
+    res_json = json.loads(body)
     if code := res_json["no"]:
         raise TiebaServerError(code, res_json["error"])
 

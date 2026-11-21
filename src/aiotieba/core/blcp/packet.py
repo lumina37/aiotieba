@@ -9,7 +9,7 @@ from sys import maxsize as LONG_MAX
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol, Self, cast
 
 from ...api._protobuf import Lcm_pb2, Rpc_pb2
-from ...helper import parse_json
+from ...helper import pack_json
 from .enums import BlcpMetaType, BlcpServiceID, CompressType
 from .exception import BlcpProtocolError
 
@@ -317,11 +317,11 @@ class JsonBody:
     data: dict[str, Any]
 
     def encode(self) -> bytes:
-        return json.dumps(self.data, ensure_ascii=False).encode()
+        return pack_json(self.data, ensure_ascii=False).encode()
 
     @classmethod
     def decode(cls, data: bytes) -> Self:
-        return cls(parse_json(data))
+        return cls(json.loads(data))
 
 
 @dcs.dataclass

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import json
 import time
 from typing import Any
 
 from ...core import CHAT_APPID, CHAT_SDK_VERSION, BlcpCore, BlcpMethodID, BlcpRequest, BlcpServiceID, JsonBody
 from ...exception import BoolResponse, TiebaServerError
+from ...helper import pack_json
 from ...helper.crypto import compute_msg_key
 
 
@@ -40,7 +40,7 @@ def construct_request_data(
             "name": name,
             "portrait": portrait + "?t=" + str(int(time.time())),
             "content_type": "0",
-            "content_body": json.dumps({"text": text}, ensure_ascii=False),
+            "content_body": pack_json({"text": text}, ensure_ascii=False),
             "src": "",
             "baidu_uk": bduk,
             "ext": {},
@@ -142,10 +142,10 @@ def construct_request_data(
     if atdata:
         # 携带艾特@信息
         content["text"]["at_data"] = atdata
-    content["text"]["ext"] = json.dumps(content["text"]["ext"], ensure_ascii=False)
+    content["text"]["ext"] = pack_json(content["text"]["ext"], ensure_ascii=False)
 
-    content["text"] = json.dumps(content["text"], ensure_ascii=False)
-    content = json.dumps(content, ensure_ascii=False)
+    content["text"] = pack_json(content["text"], ensure_ascii=False)
+    content = pack_json(content, ensure_ascii=False)
 
     # 构造最终请求数据
     request_data = {
@@ -157,7 +157,7 @@ def construct_request_data(
         "uk": uk,
         "origin_id": origin_id,
         "type": 81,
-        "app_safe_ext": json.dumps(app_safe_ext, ensure_ascii=False),
+        "app_safe_ext": pack_json(app_safe_ext, ensure_ascii=False),
         "content": content,
         "msg_key": compute_msg_key(bduk),
         "account_type": 1,

@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING
 
 import yarl
 
 from ...const import WEB_BASE_HOST
 from ...exception import TiebaServerError
-from ...helper import parse_json
 from ...helper.crypto import PC_SALT, sign
 from ._classdef import SearchGlobals
 
@@ -17,7 +17,7 @@ REFERER_GLOBAL = "https://tieba.baidu.com/f/search/res"
 
 
 def parse_body(body: bytes) -> SearchGlobals:
-    res_json = parse_json(body)
+    res_json = json.loads(body)
     if code := res_json["no"]:
         raise TiebaServerError(code, res_json["error"])
 

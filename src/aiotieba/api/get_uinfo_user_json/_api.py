@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING
 
 import yarl
 
 from ...const import WEB_BASE_HOST
 from ...exception import TiebaValueError
-from ...helper import parse_json
 from ._classdef import UserInfo_json
 
 if TYPE_CHECKING:
@@ -18,7 +18,7 @@ def parse_body(body: bytes) -> UserInfo_json:
         raise TiebaValueError("Empty body")
 
     text = body.decode("utf-8", errors="ignore")
-    res_json = parse_json(text)
+    res_json = json.loads(text)
 
     user_dict = res_json["creator"]
     user = UserInfo_json.from_json(user_dict)

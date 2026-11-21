@@ -1,4 +1,4 @@
-LATEST_VERSION = "22.13.1.1"  # 通常用于大部分API
+LATEST_VERSION = "22.15.1.0"  # 通常用于大部分API
 LEGACY_VERSION = "12.64.1.1"  # 通常用于部分依赖旧版格式的API (`get_threads`...)
 CHAT_VERSION = LATEST_VERSION
 

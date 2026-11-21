@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING
 
 import yarl
 
 from ...const import APP_BASE_HOST
 from ...exception import TiebaServerError
-from ...helper import parse_json
 from ._classdef import ChatroomBlocks
 
 if TYPE_CHECKING:
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 def parse_body(body: bytes) -> ChatroomBlocks:
-    res_json = parse_json(body)
+    res_json = json.loads(body)
     if code := res_json["no"]:
         raise TiebaServerError(code, res_json["error"])
 

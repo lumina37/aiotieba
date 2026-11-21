@@ -18,8 +18,8 @@ api/<api_name>/
 - Python代码风格遵循项目根目录的`ruff.toml`
 - 除`__init__.py`等纯声明模块外，文件首行写`from __future__ import annotations`
 - 公开函数、方法与数据类字段均需类型标注，仅用于标注的导入放入`if TYPE_CHECKING:`块
-- 注释与文档使用中文；JSON解析统一用`parse_json`、序列化优先用`pack_json`，以兼容orjson
 - 非布尔返回值尽量先赋给局部变量再`return`，便于断点观察；布尔值可直接返回
+- 注释与文档使用中文
 
 ## `_api.py`规范
 

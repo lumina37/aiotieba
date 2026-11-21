@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import dataclasses as dcs
+import json
 from typing import TYPE_CHECKING, Self
 
 from ...exception import TbErrorExt
-from ...helper import parse_json
 from .._classdef import Containers
 
 if TYPE_CHECKING:
@@ -90,7 +90,7 @@ class RankUsers(TbErrorExt, Containers[RankUser]):
     def from_xml(cls, data_soup: bs4.BeautifulSoup) -> Self:
         objs = [RankUser.from_xml(t) for t in data_soup("tr", class_=["drl_list_item", "drl_list_item_self"])]
         page_item = data_soup.find("ul", class_="p_rank_pager")
-        page_dict = parse_json(page_item["data-field"])
+        page_dict = json.loads(page_item["data-field"])
         page = Page_rank.from_json(page_dict)
         return cls(objs, page)
 

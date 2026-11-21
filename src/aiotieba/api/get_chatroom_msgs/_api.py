@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import time
 from sys import maxsize as LONG_MAX
 from typing import TYPE_CHECKING
@@ -7,7 +8,6 @@ from typing import TYPE_CHECKING
 from ...const import CHAT_VERSION
 from ...core import CHAT_APPID, CHAT_SDK_VERSION
 from ...exception import TiebaServerError
-from ...helper import parse_json
 from ...helper.crypto import sign
 from ._classdef import ChatroomMsgs
 
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 
 def parse_body(body: bytes) -> ChatroomMsgs:
-    res_json = parse_json(body)
+    res_json = json.loads(body)
     if code := res_json["err_code"]:
         raise TiebaServerError(code, res_json["err_msg"])
 

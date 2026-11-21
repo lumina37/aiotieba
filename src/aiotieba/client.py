@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import socket
 import ssl
@@ -150,7 +151,7 @@ from .enums import (
 from .exception import BoolResponse, IntResponse, StrResponse
 from .helper.cache import ForumInfoCache
 from .helper.crypto import user_id2bduk
-from .helper.utils import check_rn, handle_exception, is_portrait, is_user_name, parse_json
+from .helper.utils import check_rn, handle_exception, is_portrait, is_user_name
 from .logging import get_logger as LOG
 
 if TYPE_CHECKING:
@@ -3006,7 +3007,7 @@ class Client:
                 mid_manager.update_pulled_msg_id(user_id, message.msg_id)
 
                 if message.msg_type == MsgType.READED:
-                    content: dict = parse_json(message.text)
+                    content: dict = json.loads(message.text)
                     if content["eventId"] != 22001:
                         continue
                     read_msg_id = content["eventParam"]["readMsgId"]
