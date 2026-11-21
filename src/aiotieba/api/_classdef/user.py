@@ -3,10 +3,46 @@ from __future__ import annotations
 import dataclasses as dcs
 from typing import TYPE_CHECKING, Self
 
-from ...enums import Gender, PrivLike, PrivReply
+from ...enums import Gender, PrivFollow, PrivLike, PrivPost, PrivReply
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from .common import TypeMessage
+
+
+@dcs.dataclass
+class PrivSets:
+    """
+    用户的隐私设置
+
+    Attributes:
+        like (PrivLike): 关注吧列表的公开状态
+        reply (PrivReply): 帖子评论权限
+        post (PrivPost): 我的贴子的公开状态
+        follow (PrivFollow): 关注与粉丝列表的公开状态
+    """
+
+    like: PrivLike = PrivLike.PUBLIC
+    reply: PrivReply = PrivReply.ALL
+    post: PrivPost = PrivPost.PUBLIC
+    follow: PrivFollow = PrivFollow.PUBLIC
+
+    @classmethod
+    def from_proto(cls, data_proto: TypeMessage) -> Self:
+        like = PrivLike(data_proto.like) if data_proto.like else PrivLike.PUBLIC
+        reply = PrivReply(data_proto.reply) if data_proto.reply else PrivReply.ALL
+        post = PrivPost(data_proto.post) if data_proto.post else PrivPost.PUBLIC
+        follow = PrivFollow(data_proto.follow) if data_proto.follow else PrivFollow.PUBLIC
+        return cls(like, reply, post, follow)
+
+    @classmethod
+    def from_json(cls, data_map: Mapping) -> Self:
+        like = PrivLike(int(data_map["like"])) if data_map.get("like") else PrivLike.PUBLIC
+        reply = PrivReply(int(data_map["reply"])) if data_map.get("reply") else PrivReply.ALL
+        post = PrivPost(int(data_map["post"])) if data_map.get("post") else PrivPost.PUBLIC
+        follow = PrivFollow(int(data_map["follow"])) if data_map.get("follow") else PrivFollow.PUBLIC
+        return cls(like, reply, post, follow)
 
 
 @dcs.dataclass
@@ -39,8 +75,7 @@ class UserInfo:
         is_blocked (bool): 是否被永久封禁屏蔽
         uk (int): 群聊账号标识 来自群聊服务的登录回包
         trigger_id (int): 群聊会话标识 作为群聊请求的origin_id字段
-        priv_like (PrivLike): 关注吧列表的公开状态
-        priv_reply (PrivReply): 帖子评论权限
+        priv (PrivSets): 隐私设置
 
         nick_name (str): 用户昵称
         show_name (str): 显示名称
@@ -71,8 +106,7 @@ class UserInfo:
     is_blocked: bool = False
     uk: int = 0
     trigger_id: int = 0
-    priv_like: PrivLike = PrivLike.PUBLIC
-    priv_reply: PrivReply = PrivReply.ALL
+    priv: PrivSets = dcs.field(default_factory=PrivSets)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)

@@ -1,16 +1,17 @@
 from __future__ import annotations
 
 import dataclasses as dcs
+import json
 from typing import TYPE_CHECKING, Self
 
 from ...exception import TbErrorExt
-from ...helper import parse_json
+from ...helper.parse import class_tokens, text_of
 from .._classdef import Containers
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-    import bs4
+    from lxml import etree
 
 
 @dcs.dataclass
@@ -31,15 +32,14 @@ class RankUser:
     is_vip: bool = False
 
     @classmethod
-    def from_xml(cls, data_tag: bs4.element.Tag) -> Self:
-        user_name_item = data_tag.td.next_sibling
-        user_name = user_name_item.text
-        is_vip = "drl_item_vip" in user_name_item.div["class"]
-        level_item = user_name_item.next_sibling
+    def from_xml(cls, data_tag: etree._Element) -> Self:
+        tds = data_tag.xpath("./td")
+        user_name = text_of(tds[1])
+        is_vip = "drl_item_vip" in class_tokens(tds[1].xpath("./div")[0])
+        level_item = tds[2].xpath("./div")[0]
         # e.g. get level 16 from "bg_lv16" by slicing [5:]
-        level = int(level_item.div["class"][0][5:])
-        exp_item = level_item.next_sibling
-        exp = int(exp_item.text)
+        level = int(class_tokens(level_item)[0][5:])
+        exp = int(text_of(tds[3]))
         return cls(user_name, level, exp, is_vip)
 
 
@@ -87,10 +87,10 @@ class RankUsers(TbErrorExt, Containers[RankUser]):
     page: Page_rank = dcs.field(default_factory=Page_rank)
 
     @classmethod
-    def from_xml(cls, data_soup: bs4.BeautifulSoup) -> Self:
-        objs = [RankUser.from_xml(t) for t in data_soup("tr", class_=["drl_list_item", "drl_list_item_self"])]
-        page_item = data_soup.find("ul", class_="p_rank_pager")
-        page_dict = parse_json(page_item["data-field"])
+    def from_xml(cls, data_soup: etree._Element) -> Self:
+        objs = [RankUser.from_xml(t) for t in data_soup.xpath('//tr[contains(@class, "drl_list_item")]')]
+        page_item = data_soup.xpath('//ul[contains(concat(" ", normalize-space(@class), " "), " p_rank_pager ")]')[0]
+        page_dict = json.loads(page_item.get("data-field"))
         page = Page_rank.from_json(page_dict)
         return cls(objs, page)
 

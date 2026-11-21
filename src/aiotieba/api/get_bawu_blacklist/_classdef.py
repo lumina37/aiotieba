@@ -3,13 +3,14 @@ from __future__ import annotations
 import dataclasses as dcs
 from typing import TYPE_CHECKING, Self
 
-import bs4
-
 from ...exception import TbErrorExt
+from ...helper.parse import parse_html_fragment, text_stripped
 from .._classdef import Containers
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
+
+    from lxml import etree
 
 
 @dcs.dataclass
@@ -34,13 +35,15 @@ class BawuBlacklistUser:
     op_user_name: str = ""
 
     @classmethod
-    def from_xml(cls, data_tag: bs4.element.Tag) -> Self:
-        user_item = data_tag.a
-        user_id = int(user_item["attr-uid"])
-        user_name = user_item["attr-un"]
-        nick_name_old = user_item["attr-nn"]
-        op_user_name_item = data_tag.find("span", class_="black_list_item_operate_name")
-        op_user_name = op_user_name_item.get_text(strip=True).removeprefix("操作人：").rsplit("】", 1)[-1]
+    def from_xml(cls, data_tag: etree._Element) -> Self:
+        user_item = data_tag.xpath("./a")[0]
+        user_id = int(user_item.get("attr-uid"))
+        user_name = user_item.get("attr-un")
+        nick_name_old = user_item.get("attr-nn")
+        op_user_name_item = data_tag.xpath(
+            './/span[contains(concat(" ", normalize-space(@class), " "), " black_list_item_operate_name ")]'
+        )[0]
+        op_user_name = text_stripped(op_user_name_item).removeprefix("操作人：").rsplit("】", 1)[-1]
         return cls(user_id, user_name, nick_name_old, op_user_name)
 
     def __str__(self) -> str:
@@ -119,8 +122,8 @@ class BawuBlacklistUsers(TbErrorExt, Containers[BawuBlacklistUser]):
 
     @classmethod
     def from_json(cls, data_map: Mapping) -> Self:
-        data_soup = bs4.BeautifulSoup(data_map["data"]["content"], "lxml")
-        objs = [BawuBlacklistUser.from_xml(t) for t in data_soup("li")]
+        data_soup = parse_html_fragment(data_map["data"]["content"])
+        objs = [BawuBlacklistUser.from_xml(t) for t in data_soup.xpath(".//li")]
         page = Page_bwblacklist.from_json(data_map["data"]["page"])
         return cls(objs, page)
 

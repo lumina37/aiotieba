@@ -1,19 +1,19 @@
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING
 
 import yarl
 
 from ...const import WEB_BASE_HOST
 from ...exception import TiebaServerError, TiebaValueError
-from ...helper import parse_json
 
 if TYPE_CHECKING:
     from ...core import HttpCore
 
 
 def parse_body(body: bytes) -> int:
-    res_json = parse_json(body)
+    res_json = json.loads(body)
     if code := res_json["no"]:
         raise TiebaServerError(code, res_json["error"])
 

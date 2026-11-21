@@ -6,11 +6,12 @@ from typing import TYPE_CHECKING, Self
 
 from ...exception import TbErrorExt
 from ...helper import default_datetime
+from ...helper.parse import text_of
 from .._classdef import Containers
 from .._classdef.contents import _IMAGEHASH_EXP
 
 if TYPE_CHECKING:
-    import bs4
+    from lxml import etree
 
 
 @dcs.dataclass
@@ -29,14 +30,15 @@ class Media_postlog:
     hash: str = ""
 
     @classmethod
-    def from_xml(cls, data_tag: bs4.element.Tag) -> Self:
-        if img_item := data_tag.img:
-            src = img_item["original"]
+    def from_xml(cls, data_tag: etree._Element) -> Self:
+        img_items = data_tag.xpath(".//img")
+        if img_items:
+            src = img_items[0].get("original")
             hash_ = _IMAGEHASH_EXP.search(src).group(1)
         else:
             src = ""
             hash_ = ""
-        origin_src = data_tag["href"]
+        origin_src = data_tag.get("href")
         return cls(src, origin_src, hash_)
 
 
@@ -74,29 +76,32 @@ class BawuPostLog:
     op_time: datetime = dcs.field(default_factory=default_datetime)
 
     @classmethod
-    def from_xml(cls, data_tag: bs4.element.Tag) -> Self:
-        left_cell_item = data_tag.td
+    def from_xml(cls, data_tag: etree._Element) -> Self:
+        tds = data_tag.xpath("./td")
+        left_cell_item = tds[0]
 
-        post_meta_item = left_cell_item.find("div", class_="post_meta")
-        post_user_item = post_meta_item.div
-        post_portrait = post_user_item.a["href"][14:-17]
-        post_time_item = post_meta_item.time
-        post_time_str = post_time_item.text
+        post_meta_item = left_cell_item.xpath(
+            './/div[contains(concat(" ", normalize-space(@class), " "), " post_meta ")]'
+        )[0]
+        post_user_item = post_meta_item.xpath("./div")[0]
+        post_portrait = post_user_item.xpath("./a")[0].get("href")[14:-17]
+        post_time_item = post_meta_item.xpath("./time")[0]
+        post_time_str = text_of(post_time_item)
         post_time_month = int(post_time_str[:2])
         post_time_day = int(post_time_str[3:5])
         post_time_hour = int(post_time_str[7:9])
         post_time_minute = int(post_time_str[10:])
         post_time = datetime(1904, post_time_month, post_time_day, post_time_hour, post_time_minute)
 
-        post_content_item = post_meta_item.next_sibling
-        title_item = post_content_item.h1.a
-        url: str = title_item["href"]
+        post_content_item = post_meta_item.getnext()
+        title_item = post_content_item.xpath("./h1/a")[0]
+        url: str = title_item.get("href")
         tid = int(url[3 : url.find("?")])
         pid = int(url[url.rfind("#") + 1 :])
-        title: str = title_item["title"]
+        title: str = title_item.get("title")
 
-        text_item = post_content_item.div
-        text = text_item.string[12:]
+        text_item = post_content_item.xpath("./div")[0]
+        text = text_of(text_item)[12:]
 
         if pid == tid or not title.startswith("回复："):
             # is thread
@@ -105,19 +110,20 @@ class BawuPostLog:
         else:
             title = title.removeprefix("回复：")
 
-        if media_list_item := text_item.next_sibling:
-            medias = [Media_postlog.from_xml(tag) for tag in media_list_item.find_all("a")]
+        media_list_item = text_item.getnext()
+        if media_list_item is not None:
+            medias = [Media_postlog.from_xml(tag) for tag in media_list_item.xpath(".//a")]
         else:
             medias = []
 
-        op_type_item = left_cell_item.next_sibling
-        op_type = op_type_item.string
+        op_type_item = tds[1]
+        op_type = text_of(op_type_item).strip()
 
-        op_user_name_item = op_type_item.next_sibling
-        op_user_name = op_user_name_item.string
+        op_user_name_item = tds[2]
+        op_user_name = text_of(op_user_name_item).strip()
 
-        op_time_item = op_user_name_item.next_sibling
-        op_time = datetime.strptime(op_time_item.text, "%Y-%m-%d%H:%M")
+        op_time_item = tds[3]
+        op_time = datetime.strptime(text_of(op_time_item).strip(), "%Y-%m-%d%H:%M")
 
         return cls(text, title, medias, tid, pid, op_type, post_portrait, post_time, op_user_name, op_time)
 
@@ -144,12 +150,17 @@ class Page_postlog:
     has_prev: bool = False
 
     @classmethod
-    def from_xml(cls, data_soup: bs4.BeautifulSoup) -> Self:
-        total_count_tag = data_soup.find("div", class_="breadcrumbs")
-        total_count = int(total_count_tag.em.text)
+    def from_xml(cls, data_soup: etree._Element) -> Self:
+        total_count_tag = data_soup.xpath(
+            '//div[contains(concat(" ", normalize-space(@class), " "), " breadcrumbs ")]'
+        )[0]
+        total_count = int(text_of(total_count_tag.xpath(".//em")[0]))
 
-        page_tag = data_soup.find("div", class_="tbui_pagination").find("li", class_="active")
-        if page_tag is None:
+        page_tag_list = data_soup.xpath(
+            '//div[contains(concat(" ", normalize-space(@class), " "), " tbui_pagination ")]'
+            '//li[contains(concat(" ", normalize-space(@class), " "), " active ")]'
+        )
+        if not page_tag_list:
             if total_count != 0:
                 current_page = 1
                 total_page = 1
@@ -157,9 +168,10 @@ class Page_postlog:
                 current_page = 0
                 total_page = 0
         else:
-            current_page = int(page_tag.text)
-            total_page_item = page_tag.parent.next_sibling
-            total_page = int(total_page_item.text[1:-1])
+            page_tag = page_tag_list[0]
+            current_page = int(text_of(page_tag))
+            total_page_item = page_tag.getparent().getnext()
+            total_page = int(text_of(total_page_item)[1:-1])
 
         has_more = current_page < total_page
         has_prev = current_page > 1
@@ -183,8 +195,9 @@ class BawuPostLogs(TbErrorExt, Containers[BawuPostLog]):
     page: Page_postlog = dcs.field(default_factory=Page_postlog)
 
     @classmethod
-    def from_xml(cls, data_soup: bs4.BeautifulSoup) -> Self:
-        objs = [BawuPostLog.from_xml(t) for t in data_soup.find("tbody").find_all("tr")]
+    def from_xml(cls, data_soup: etree._Element) -> Self:
+        tbody = data_soup.xpath("//tbody")[0]
+        objs = [BawuPostLog.from_xml(t) for t in tbody.xpath(".//tr")]
         page = Page_postlog.from_xml(data_soup)
         return cls(objs, page)
 

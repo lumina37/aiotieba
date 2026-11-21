@@ -1,0 +1,95 @@
+from google.protobuf import descriptor as _descriptor
+from google.protobuf import message as _message
+from typing import ClassVar as _ClassVar, Optional as _Optional
+
+DESCRIPTOR: _descriptor.FileDescriptor
+
+class CommonReq(_message.Message):
+    __slots__ = ("_client_type", "_client_version", "_client_id", "_phone_imei", "_from", "cuid", "_timestamp", "model", "BDUSS", "tbs", "net_type", "pversion", "_os_version", "brand", "lego_lib_version", "applist", "stoken", "z_id", "cuid_galaxy2", "cuid_gid", "c3_aid", "sample_id", "scr_w", "scr_h", "scr_dip", "q_type", "is_teenager", "sdk_ver", "framework_ver", "naws_game_ver", "active_timestamp", "first_install_time", "last_update_time", "event_day", "android_id", "cmode", "start_scheme", "start_type", "idfv", "extra", "user_agent", "personalized_rec_switch", "device_score")
+    _CLIENT_TYPE_FIELD_NUMBER: _ClassVar[int]
+    _CLIENT_VERSION_FIELD_NUMBER: _ClassVar[int]
+    _CLIENT_ID_FIELD_NUMBER: _ClassVar[int]
+    _PHONE_IMEI_FIELD_NUMBER: _ClassVar[int]
+    _FROM_FIELD_NUMBER: _ClassVar[int]
+    CUID_FIELD_NUMBER: _ClassVar[int]
+    _TIMESTAMP_FIELD_NUMBER: _ClassVar[int]
+    MODEL_FIELD_NUMBER: _ClassVar[int]
+    BDUSS_FIELD_NUMBER: _ClassVar[int]
+    TBS_FIELD_NUMBER: _ClassVar[int]
+    NET_TYPE_FIELD_NUMBER: _ClassVar[int]
+    PVERSION_FIELD_NUMBER: _ClassVar[int]
+    _OS_VERSION_FIELD_NUMBER: _ClassVar[int]
+    BRAND_FIELD_NUMBER: _ClassVar[int]
+    LEGO_LIB_VERSION_FIELD_NUMBER: _ClassVar[int]
+    APPLIST_FIELD_NUMBER: _ClassVar[int]
+    STOKEN_FIELD_NUMBER: _ClassVar[int]
+    Z_ID_FIELD_NUMBER: _ClassVar[int]
+    CUID_GALAXY2_FIELD_NUMBER: _ClassVar[int]
+    CUID_GID_FIELD_NUMBER: _ClassVar[int]
+    C3_AID_FIELD_NUMBER: _ClassVar[int]
+    SAMPLE_ID_FIELD_NUMBER: _ClassVar[int]
+    SCR_W_FIELD_NUMBER: _ClassVar[int]
+    SCR_H_FIELD_NUMBER: _ClassVar[int]
+    SCR_DIP_FIELD_NUMBER: _ClassVar[int]
+    Q_TYPE_FIELD_NUMBER: _ClassVar[int]
+    IS_TEENAGER_FIELD_NUMBER: _ClassVar[int]
+    SDK_VER_FIELD_NUMBER: _ClassVar[int]
+    FRAMEWORK_VER_FIELD_NUMBER: _ClassVar[int]
+    NAWS_GAME_VER_FIELD_NUMBER: _ClassVar[int]
+    ACTIVE_TIMESTAMP_FIELD_NUMBER: _ClassVar[int]
+    FIRST_INSTALL_TIME_FIELD_NUMBER: _ClassVar[int]
+    LAST_UPDATE_TIME_FIELD_NUMBER: _ClassVar[int]
+    EVENT_DAY_FIELD_NUMBER: _ClassVar[int]
+    ANDROID_ID_FIELD_NUMBER: _ClassVar[int]
+    CMODE_FIELD_NUMBER: _ClassVar[int]
+    START_SCHEME_FIELD_NUMBER: _ClassVar[int]
+    START_TYPE_FIELD_NUMBER: _ClassVar[int]
+    IDFV_FIELD_NUMBER: _ClassVar[int]
+    EXTRA_FIELD_NUMBER: _ClassVar[int]
+    USER_AGENT_FIELD_NUMBER: _ClassVar[int]
+    PERSONALIZED_REC_SWITCH_FIELD_NUMBER: _ClassVar[int]
+    DEVICE_SCORE_FIELD_NUMBER: _ClassVar[int]
+    _client_type: int
+    _client_version: str
+    _client_id: str
+    _phone_imei: str
+    _from: str
+    cuid: str
+    _timestamp: int
+    model: str
+    BDUSS: str
+    tbs: str
+    net_type: int
+    pversion: str
+    _os_version: str
+    brand: str
+    lego_lib_version: str
+    applist: str
+    stoken: str
+    z_id: str
+    cuid_galaxy2: str
+    cuid_gid: str
+    c3_aid: str
+    sample_id: str
+    scr_w: int
+    scr_h: int
+    scr_dip: float
+    q_type: int
+    is_teenager: int
+    sdk_ver: str
+    framework_ver: str
+    naws_game_ver: str
+    active_timestamp: int
+    first_install_time: int
+    last_update_time: int
+    event_day: str
+    android_id: str
+    cmode: int
+    start_scheme: str
+    start_type: int
+    idfv: str
+    extra: str
+    user_agent: str
+    personalized_rec_switch: int
+    device_score: str
+    def __init__(self, _client_type: _Optional[int] = ..., _client_version: _Optional[str] = ..., _client_id: _Optional[str] = ..., _phone_imei: _Optional[str] = ..., _from: _Optional[str] = ..., cuid: _Optional[str] = ..., _timestamp: _Optional[int] = ..., model: _Optional[str] = ..., BDUSS: _Optional[str] = ..., tbs: _Optional[str] = ..., net_type: _Optional[int] = ..., pversion: _Optional[str] = ..., _os_version: _Optional[str] = ..., brand: _Optional[str] = ..., lego_lib_version: _Optional[str] = ..., applist: _Optional[str] = ..., stoken: _Optional[str] = ..., z_id: _Optional[str] = ..., cuid_galaxy2: _Optional[str] = ..., cuid_gid: _Optional[str] = ..., c3_aid: _Optional[str] = ..., sample_id: _Optional[str] = ..., scr_w: _Optional[int] = ..., scr_h: _Optional[int] = ..., scr_dip: _Optional[float] = ..., q_type: _Optional[int] = ..., is_teenager: _Optional[int] = ..., sdk_ver: _Optional[str] = ..., framework_ver: _Optional[str] = ..., naws_game_ver: _Optional[str] = ..., active_timestamp: _Optional[int] = ..., first_install_time: _Optional[int] = ..., last_update_time: _Optional[int] = ..., event_day: _Optional[str] = ..., android_id: _Optional[str] = ..., cmode: _Optional[int] = ..., start_scheme: _Optional[str] = ..., start_type: _Optional[int] = ..., idfv: _Optional[str] = ..., extra: _Optional[str] = ..., user_agent: _Optional[str] = ..., personalized_rec_switch: _Optional[int] = ..., device_score: _Optional[str] = ...) -> None: ...

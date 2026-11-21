@@ -1,19 +1,19 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import time
 from typing import TYPE_CHECKING
 
 from ...const import CHAT_VERSION
 from ...core import BLCP_SDK_VERSION, CHAT_APPID
-from ...helper import parse_json
 
 if TYPE_CHECKING:
     from ...core import HttpCore
 
 
 def parse_body(body: bytes) -> str:
-    res_json = parse_json(body)
+    res_json = json.loads(body)
 
     token = res_json["token"]
     return token
@@ -31,7 +31,7 @@ async def request(http_core: HttpCore) -> str:
         ("model_type", ""),
         ("request_id", str(ts)),
         ("sdk_version", BLCP_SDK_VERSION),
-        ("sign", hashlib.md5(f"{CHAT_APPID}{cuid}android{ts}".encode()).hexdigest()),
+        ("sign", hashlib.md5(f"{CHAT_APPID}{cuid}android{ts}".encode(), usedforsecurity=False).hexdigest()),
         ("ts", ts),
         ("user_key", ""),
     ]

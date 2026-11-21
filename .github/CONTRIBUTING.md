@@ -22,7 +22,6 @@
 
 - Python代码风格遵循`ruff.toml`，C代码风格遵循`.clang-format`
 - 除`__init__.py`、`const.py`、`typing.py`等纯声明模块外，文件首行写`from __future__ import annotations`；公开函数、方法与数据类字段均需类型标注，仅用于标注的导入放入`if TYPE_CHECKING:`块
-- 注释与文档使用中文，JSON解析统一用`parse_json`、序列化优先用`pack_json`，以兼容orjson
 - API的数据类统一放在`_classdef.py`并由`dataclass`装饰；优先组合，尽量不使用多级继承，字段集合不同的场景单独建模，顶层容器继承`TbErrorExt`
 - 数据类优先通过静态方法构造（`from_json`、`from_proto`，返回`Self`），不把多种初始化方式塞进`__init__`
 - 构造数据类实例时尽量只使用位置参数（实参为单一变量，不写表达式），避免关键字传参
@@ -30,6 +29,7 @@
 - 非布尔返回值尽量先赋给局部变量再`return`，便于断点观察；布尔值可直接返回
 - 解析回包时只考虑正常情况：不做多余的类型转换、`.get`兜底、不可达的`raise`或条件判断，其余异常交给`@handle_exception`兜底
 - `api/*/_api.py`的内部函数（`pack_*`、`request`、`parse_body`）不写docstring，文档写在`Client`的公开方法上
+- 注释与文档使用中文
 
 ## 命名约定
 
@@ -88,6 +88,6 @@ Note:
 - [ ] 在`src/aiotieba/client.py`顶部的import中导入新API模块
 - [ ] 如有新的protobuf定义，运行`python scripts/proto_compile.py`编译
 - [ ] 如有新的数据类型定义，添加到`src/aiotieba/api/<mod>/_classdef.py`
-- [ ] 如有新的数据类型定义，创建`docs/ref/classdef/<name>.md`并添加到`mkdocs.yml`的navigate列表末尾
+- [ ] 如有新的数据类型定义，确认`docs/ref/classdef/`下已自动生成对应页面
 - [ ] 如有新的枚举类型，添加到 `src/aiotieba/enums.py`
 - [ ] 运行`uvx ruff check .`和`uvx ruff format . --check`执行代码检查

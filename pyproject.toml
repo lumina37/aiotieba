@@ -1,6 +1,6 @@
 [project]
 name = "aiotieba"
-version = "4.8.4"
+version = "4.9.0"
 description = "Asynchronous I/O Client for Baidu Tieba"
 authors = [{ name = "lumina37", email = "starry.qvq@gmail.com" }]
 urls = { Repository = "https://github.com/lumina37/aiotieba/", Documentation = "https://aiotieba.cc/" }
@@ -23,19 +23,15 @@ classifiers = [
 ]
 requires-python = ">=3.11,<3.16"
 dependencies = [
-  "aiohttp>=3.9,<4;python_version=='3.11'",
-  "aiohttp>=3.10,<4;python_version=='3.12'",
-  "aiohttp>=3.11,<4;python_version=='3.13'",
-  "aiohttp>=3.13.1,<4;python_version=='3.14'",
+  "aiohttp>=3.14,<4;python_version<'3.15'",
   "aiohttp>=3.14.4,<4;python_version>='3.15'",
-  "beautifulsoup4>=4.7.1,<5",
   "lxml>=4.9.2,<7;python_version=='3.11'",
   "lxml>=4.9.3,<7;python_version=='3.12'",
   "lxml>=5.3.0,<7;python_version=='3.13'",
   "lxml>=6.0.1,<7;python_version=='3.14'",
   "lxml>=6.1.2,<7;python_version>='3.15'",
   "protobuf>=4.21.1,<8",
-  "cryptography>=35.0.0,<51",
+  "cryptography>=45.0.0,<51",
 ]
 
 [project.optional-dependencies]
@@ -45,30 +41,36 @@ img = [
 img-gui = [
   "opencv-contrib-python>=4.6.0.66,<6",
 ]
-speedup = [
-  "orjson>=3.7.10,<4;python_version=='3.11'",
-  "orjson>=3.9.10,<4;python_version=='3.12'",
-  "orjson>=3.10.7,<4;python_version=='3.13'",
-  "orjson>=3.11.1,<4;python_version=='3.14'",
-  "orjson>=3.12.0,<4;python_version>='3.15'",
-]
 
 [dependency-groups]
-dev = ["pytest==9.1.1", "pytest-asyncio==1.4.1", "pytest-rerunfailures==16.7"]
-docs = ["mkdocs-material", "mkdocstrings[python]"]
-
-[tool.uv]
-default-groups = ["dev"]
+dev = ["pytest==9.2.0", "pytest-asyncio==1.5.0", "pytest-rerunfailures==16.7"]
+docs = [
+  "mkdocs-material",
+  "mkdocstrings[python]",
+  "mkdocs-gen-files",
+  "mkdocs-literate-nav",
+]
 
 [build-system]
-requires = ["scikit-build-core>=1.0,<1.2"]
+requires = ["scikit-build-core>=1.1,<1.2"]
 build-backend = "scikit_build_core.build"
 
 [tool.scikit-build]
 minimum-version = "build-system.requires"
 build-dir = "build/{wheel_tag}"
-sdist.include = ["README.md", "pyproject.toml", "LICENSE"]
-sdist.exclude = [".*", "docs", "tests", "site*", "*.proto", "*.yml", "*.md", "*.toml", "*.ini", "*.so", "*.pyd"]
+sdist.inclusion-mode = "explicit"
+sdist.include = [
+  "README.md",
+  "LICENSE",
+  "pyproject.toml",
+  "CMakeLists.txt",
+  "src/**/*.py",
+  "src/**/*.pyi",
+  "src/**/*.c",
+  "src/**/*.h",
+  "src/**/CMakeLists.txt",
+]
+sdist.resolve-symlinks = "error"
 wheel.exclude = ["*.c", "*.h", "*.txt"]
 
 [[tool.scikit-build.generate]]

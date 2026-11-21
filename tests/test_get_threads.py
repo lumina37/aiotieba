@@ -36,8 +36,8 @@ async def test_Threads(client: tb.Client):
             assert user.show_name == user.nick_name_new
             assert user.level > 0
             assert user.glevel > 0
-            assert user.priv_like != 0
-            assert user.priv_reply != 0
+            assert user.priv.like != 0
+            assert user.priv.reply != 0
 
             # VoteInfo
             vote_info = thread.vote_info

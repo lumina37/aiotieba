@@ -26,7 +26,7 @@ TypeWebsocketCallback = Callable[["WsCore", bytes, int], Awaitable[None]]
 WS_URL = yarl.URL.build(scheme="ws", host="im.tieba.baidu.com", port=8000)
 
 
-@dcs.dataclass
+@dcs.dataclass(slots=True, weakref_slot=True)
 class WsResponse:
     """
     websocket响应
@@ -70,7 +70,7 @@ class WsResponse:
             raise
 
 
-@dcs.dataclass
+@dcs.dataclass(slots=True)
 class WsWaiter:
     """
     websocket等待映射
@@ -127,7 +127,7 @@ class WsWaiter:
                 ws_resp.future.set_exception(err)
 
 
-@dcs.dataclass
+@dcs.dataclass(slots=True)
 class WsCore:
     """
     保存websocket接口相关状态的核心容器
@@ -208,6 +208,7 @@ class WsCore:
                 autoclose=True,
                 autoping=True,
                 heartbeat=self.net_core.timeout.ws_heartbeat,
+                decode_text=False,
                 ssl=False,
                 compress=0,
                 proxy=proxy.url,

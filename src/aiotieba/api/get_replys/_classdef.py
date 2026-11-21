@@ -4,9 +4,9 @@ import dataclasses as dcs
 from functools import cached_property
 from typing import Self
 
-from ...enums import ContentType, PrivLike, PrivReply
+from ...enums import ContentType
 from ...exception import TbErrorExt
-from .._classdef import Containers, TypeMessage
+from .._classdef import Containers, PrivSets, TypeMessage
 from .._classdef.contents import (
     FragAt,
     FragEmoji,
@@ -105,8 +105,7 @@ class UserInfo_rep:
         user_name (str): 用户名
         nick_name_new (str): 新版昵称
 
-        priv_like (PrivLike): 关注吧列表的公开状态
-        priv_reply (PrivReply): 帖子评论权限
+        priv (PrivSets): 隐私设置
 
         nick_name (str): 用户昵称
         show_name (str): 显示名称
@@ -118,8 +117,7 @@ class UserInfo_rep:
     user_name: str = ""
     nick_name_new: str = ""
 
-    priv_like: PrivLike = PrivLike.PUBLIC
-    priv_reply: PrivReply = PrivReply.ALL
+    priv: PrivSets = dcs.field(default_factory=PrivSets)
 
     @classmethod
     def from_proto(cls, data_proto: TypeMessage) -> Self:
@@ -129,9 +127,8 @@ class UserInfo_rep:
             portrait = portrait[:-13]
         user_name = data_proto.name
         nick_name_new = data_proto.name_show
-        priv_like = PrivLike(priv_like) if (priv_like := data_proto.priv_sets.like) else PrivLike.PUBLIC
-        priv_reply = PrivReply(priv_reply) if (priv_reply := data_proto.priv_sets.reply) else PrivReply.ALL
-        return cls(user_id, portrait, user_name, nick_name_new, priv_like, priv_reply)
+        priv = PrivSets.from_proto(data_proto.priv_sets)
+        return cls(user_id, portrait, user_name, nick_name_new, priv)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)

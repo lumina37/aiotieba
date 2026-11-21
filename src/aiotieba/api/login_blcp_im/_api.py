@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import json
 import time
 from typing import TYPE_CHECKING
 
 from ...const import CHAT_VERSION
 from ...core import CHAT_APPID, CHAT_SDK_VERSION, BlcpLoginError, BlcpMethodID, BlcpRequest, BlcpServiceID, JsonBody
+from ...helper import pack_json
 from ._classdef import LoginIMResult
 
 if TYPE_CHECKING:
@@ -25,7 +25,7 @@ async def request(core: BlcpCore) -> LoginIMResult:
         "sdk_version": CHAT_SDK_VERSION,
         "app_version": CHAT_VERSION,
         "app_open_type": 0,
-        "client_identifier": json.dumps({"zid": "", "version_code": ""}),
+        "client_identifier": pack_json({"zid": "", "version_code": ""}),
         "tail": 0,
         "timeout": 10,
         "cookie": "",
@@ -37,7 +37,7 @@ async def request(core: BlcpCore) -> LoginIMResult:
             "from": "1008550l",
             "cfrom": "1008550l",
         },
-        "rpc": json.dumps({"rpc_retry_time": 0}),
+        "rpc": pack_json({"rpc_retry_time": 0}),
         "user_type": 0,
         "client_logid": int(time.time() * 1_000_000),
     }

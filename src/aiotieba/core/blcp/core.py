@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     from ..account import Account
 
 
-@dcs.dataclass
+@dcs.dataclass(slots=True, weakref_slot=True)
 class BlcpFuture:
     """
     BLCP响应占位
@@ -74,7 +74,7 @@ class BlcpFuture:
             raise
 
 
-@dcs.dataclass
+@dcs.dataclass(slots=True)
 class BlcpWaiter:
     """
     BLCP等待映射 以请求id为键
@@ -132,7 +132,7 @@ class BlcpWaiter:
                 future.future.set_exception(err)
 
 
-@dcs.dataclass
+@dcs.dataclass(slots=True)
 class BlcpCore:
     """
     BLCP核心容器 负责连接、报文收发与心跳维持

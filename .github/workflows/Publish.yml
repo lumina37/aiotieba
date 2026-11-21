@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Setup UV
-        uses: astral-sh/setup-uv@v10.3.2
+        uses: astral-sh/setup-uv@v10.3.3
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v4.3.5
@@ -42,7 +42,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Setup UV
-        uses: astral-sh/setup-uv@v10.3.2
+        uses: astral-sh/setup-uv@v10.3.3
 
       - name: Build sdist
         run: uv build --sdist

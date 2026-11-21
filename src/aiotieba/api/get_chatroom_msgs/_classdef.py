@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import dataclasses as dcs
+import json
 from typing import TYPE_CHECKING, Self
 
 from ...exception import TbErrorExt
-from ...helper import parse_json
 from .._classdef import Containers
 
 if TYPE_CHECKING:
@@ -43,13 +43,13 @@ class ChatroomMsg:
         msg_key = data_map["msg_key"]
         msg_type = data_map["type"]
         user_id = data_map["from_user"]
-        content = parse_json(data_map["content"])
+        content = json.loads(data_map["content"])
 
         text = ""
         if "text" in content:
-            text_map = parse_json(content["text"])
+            text_map = json.loads(content["text"])
             if "content_body" in text_map:
-                text_map = parse_json(text_map["content_body"])
+                text_map = json.loads(text_map["content_body"])
             if "text" in text_map:
                 text = text_map["text"]
 

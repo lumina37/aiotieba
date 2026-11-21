@@ -39,7 +39,7 @@ def pack_proto(account: Account, tid: int, options: Iterable[int]) -> bytes:
 async def request_http(http_core: HttpCore, tid: int, options: Iterable[int]) -> BoolResponse:
     data = pack_proto(http_core.account, tid, options)
 
-    request = http_core.pack_proto_request(
+    request = http_core.pack_app_proto_request(
         yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/c/post/addPollPost", query_string=f"cmd={CMD}"),
         data,
     )

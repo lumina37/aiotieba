@@ -4,10 +4,10 @@ import dataclasses as dcs
 from functools import cached_property
 from typing import TYPE_CHECKING, Self
 
-from ...enums import ContentType, Gender, PrivLike, PrivReply, ThreadType
+from ...enums import ContentType, Gender, ThreadType
 from ...exception import TbErrorExt
 from ...logging import get_logger as LOG
-from .._classdef import Containers
+from .._classdef import Containers, PrivSets
 from .._classdef.contents import (
     _IMAGEHASH_EXP,
     FragLink,
@@ -263,8 +263,7 @@ class UserInfo_pcu:
 
         gender (Gender): 性别
 
-        priv_like (PrivLike): 关注吧列表的公开状态
-        priv_reply (PrivReply): 帖子评论权限
+        priv (PrivSets): 隐私设置
 
         nick_name (str): 用户昵称
         show_name (str): 显示名称
@@ -278,8 +277,7 @@ class UserInfo_pcu:
 
     gender: Gender = Gender.UNKNOWN
 
-    priv_like: PrivLike = PrivLike.PUBLIC
-    priv_reply: PrivReply = PrivReply.ALL
+    priv: PrivSets = dcs.field(default_factory=PrivSets)
 
     @classmethod
     def from_json(cls, data_map: Mapping) -> Self:
@@ -292,9 +290,8 @@ class UserInfo_pcu:
 
         gender = Gender(data_map["gender"])
 
-        priv_sets = data_map.get("priv_sets") or {}
-        priv_like = PrivLike(priv_like) if (priv_like := priv_sets.get("like", 0)) else PrivLike.PUBLIC
-        priv_reply = PrivReply(priv_reply) if (priv_reply := priv_sets.get("reply", 0)) else PrivReply.ALL
+        priv_map = data_map.get("priv_sets") or {}
+        priv = PrivSets.from_json(priv_map)
 
         return cls(
             user_id,
@@ -302,8 +299,7 @@ class UserInfo_pcu:
             user_name,
             nick_name_new,
             gender,
-            priv_like,
-            priv_reply,
+            priv,
         )
 
     def __str__(self) -> str:

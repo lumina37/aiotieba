@@ -39,7 +39,7 @@ def parse_body(body: bytes) -> BawuInfo:
 async def request_http(http_core: HttpCore, fid: int) -> BawuInfo:
     data = pack_proto(fid)
 
-    request = http_core.pack_proto_request(
+    request = http_core.pack_app_proto_request(
         yarl.URL.build(scheme="http", host=APP_BASE_HOST, path="/c/f/forum/getBawuInfo", query_string=f"cmd={CMD}"),
         data,
     )

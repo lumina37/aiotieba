@@ -85,6 +85,7 @@ text=记录一下自己人生第一次当“老师”的经历^_^
 + [C#版本的贴吧接口库 (BaWuZhuShou/AioTieba4DotNet)](https://github.com/BaWuZhuShou/AioTieba4DotNet)
 + [基于aiotieba的贴吧管理器 (adk23333/tieba-admin)](https://github.com/adk23333/tieba-admin)
 + [VSCode贴吧摸鱼插件 (akacaijizhou/tieba-fish)](https://github.com/akacaijizhou/tieba-fish)
++ [贴吧吧务管理助手 (xylon666/TiebaManagementAssistant)](https://github.com/xylon666/TiebaManagementAssistant)
 + [贴吧protobuf定义文件合集 更新至22.5 (clb-128258/tbclient.protobuf)](https://github.com/clb-128258/tbclient.protobuf)
 
 ## 特别鸣谢

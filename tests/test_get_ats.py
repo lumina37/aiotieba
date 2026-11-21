@@ -19,8 +19,8 @@ async def test_Ats(client: tb.Client):
     assert user.nick_name_new != ""
     assert user.nick_name == user.nick_name_new
     assert user.show_name == user.nick_name_new
-    assert user.priv_like != 0
-    assert user.priv_reply != 0
+    assert user.priv.like != 0
+    assert user.priv.reply != 0
 
     # At
     assert at.text != ""

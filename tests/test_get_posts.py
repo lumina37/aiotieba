@@ -32,8 +32,8 @@ async def test_Posts(client: tb.Client):
     assert user.glevel > 0
     assert user.gender > 0
     assert user.ip != ""
-    assert user.priv_like != 0
-    assert user.priv_reply != 0
+    assert user.priv.like != 0
+    assert user.priv.reply != 0
 
     # VoteInfo
     vote_info = thread.vote_info
@@ -79,8 +79,8 @@ async def test_Posts(client: tb.Client):
     assert user.glevel > 0
     assert user.gender > 0
     assert user.ip != ""
-    assert user.priv_like != 0
-    assert user.priv_reply != 0
+    assert user.priv.like != 0
+    assert user.priv.reply != 0
 
     # Post
     assert post.text != ""

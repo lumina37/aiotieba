@@ -14,3 +14,5 @@ async with aiotieba.Client() as client:
 ## Client
 
 ::: aiotieba.Client
+    options:
+      summary: true

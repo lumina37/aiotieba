@@ -4,10 +4,11 @@ import dataclasses as dcs
 from typing import TYPE_CHECKING, Self
 
 from ...exception import TbErrorExt
+from ...helper.parse import class_tokens, text_of
 from .._classdef import Containers
 
 if TYPE_CHECKING:
-    import bs4
+    from lxml import etree
 
 
 @dcs.dataclass
@@ -32,17 +33,14 @@ class RankForum:
     has_bawu: bool = False
 
     @classmethod
-    def from_xml(cls, data_tag: bs4.element.Tag) -> Self:
-        rank_idx_item = data_tag.td
-        fname_item = rank_idx_item.find_next_sibling("td")
-        fname = fname_item.text
-        sign_num_item = fname_item.find_next_sibling("td")
-        sign_num = int(sign_num_item.text)
-        member_num_item = sign_num_item.find_next_sibling("td")
-        member_num = int(member_num_item.text)
-        manager_item = member_num_item.find_next_sibling("td", class_="clearfix")
-        manager_status_item = manager_item.div
-        has_bawu = manager_status_item["class"][0] != "no_bawu"
+    def from_xml(cls, data_tag: etree._Element) -> Self:
+        tds = data_tag.xpath("./td")
+        fname = text_of(tds[1])
+        sign_num = int(text_of(tds[2]))
+        member_num = int(text_of(tds[3]))
+        manager_item = data_tag.xpath('./td[contains(concat(" ", normalize-space(@class), " "), " clearfix ")]')[0]
+        manager_status_item = manager_item.xpath("./div")[0]
+        has_bawu = class_tokens(manager_status_item)[0] != "no_bawu"
         return cls(fname, sign_num, member_num, has_bawu)
 
 
@@ -66,12 +64,11 @@ class Page_rankforum:
     has_prev: bool = False
 
     @classmethod
-    def from_xml(cls, data_soup: bs4.BeautifulSoup) -> Self:
-        pages_item = data_soup.find("div", class_="pagination")
-        current_page_item = pages_item.span
-        current_page = int(current_page_item.text)
-        total_page_item = pages_item.find_all("a")[-1]
-        total_page_url: str = total_page_item["href"]
+    def from_xml(cls, data_soup: etree._Element) -> Self:
+        pages_item = data_soup.xpath('//div[contains(concat(" ", normalize-space(@class), " "), " pagination ")]')[0]
+        current_page = int(text_of(pages_item.xpath("./span")[0]))
+        total_page_item = pages_item.xpath("./a")[-1]
+        total_page_url: str = total_page_item.get("href")
         total_page_str = total_page_url[total_page_url.rfind("pn=") + 3 :]
         total_page = int(total_page_str)
         has_more = current_page < total_page
@@ -96,9 +93,12 @@ class RankForums(TbErrorExt, Containers[RankForum]):
     page: Page_rankforum = dcs.field(default_factory=Page_rankforum)
 
     @classmethod
-    def from_xml(cls, data_soup: bs4.BeautifulSoup) -> Self:
-        rank_table = data_soup.find("table")
-        objs = [RankForum.from_xml(t) for t in rank_table.find_all("tr", class_="j_rank_row")]
+    def from_xml(cls, data_soup: etree._Element) -> Self:
+        rank_table = data_soup.xpath("//table")[0]
+        objs = [
+            RankForum.from_xml(t)
+            for t in rank_table.xpath('.//tr[contains(concat(" ", normalize-space(@class), " "), " j_rank_row ")]')
+        ]
         page = Page_rankforum.from_xml(data_soup)
         return cls(objs, page)
 

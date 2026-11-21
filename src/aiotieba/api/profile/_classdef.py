@@ -4,9 +4,9 @@ import dataclasses as dcs
 from functools import cached_property
 from typing import Self
 
-from ...enums import Gender, PrivLike, PrivReply
+from ...enums import Gender
 from ...exception import TbErrorExt
-from .._classdef import Containers, TypeMessage, VoteInfo
+from .._classdef import Containers, PrivSets, TypeMessage, VoteInfo
 from .._classdef.contents import (
     _IMAGEHASH_EXP,
     FragEmoji,
@@ -80,8 +80,7 @@ class UserInfo_pf(TbErrorExt):
 
         is_vip (bool): 是否会员
         is_blocked (bool): 是否被永久封禁屏蔽
-        priv_like (PrivLike): 关注吧列表的公开状态
-        priv_reply (PrivReply): 帖子评论权限
+        priv (PrivSets): 隐私设置
 
         nick_name (str): 用户昵称
         show_name (str): 显示名称
@@ -109,8 +108,7 @@ class UserInfo_pf(TbErrorExt):
 
     is_vip: bool = False
     is_blocked: bool = False
-    priv_like: PrivLike = PrivLike.PUBLIC
-    priv_reply: PrivReply = PrivReply.ALL
+    priv: PrivSets = dcs.field(default_factory=PrivSets)
 
     @classmethod
     def from_proto(cls, data_proto: TypeMessage) -> Self:
@@ -140,8 +138,7 @@ class UserInfo_pf(TbErrorExt):
             is_blocked = True
         else:
             is_blocked = False
-        priv_like = PrivLike(priv_like) if (priv_like := user_proto.priv_sets.like) else PrivLike.PUBLIC
-        priv_reply = PrivReply(priv_reply) if (priv_reply := user_proto.priv_sets.reply) else PrivReply.ALL
+        priv = PrivSets.from_proto(user_proto.priv_sets)
         return cls(
             user_id,
             portrait,
@@ -162,8 +159,7 @@ class UserInfo_pf(TbErrorExt):
             icons,
             is_vip,
             is_blocked,
-            priv_like,
-            priv_reply,
+            priv,
         )
 
     def __str__(self) -> str:

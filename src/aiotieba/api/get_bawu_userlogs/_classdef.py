@@ -6,10 +6,11 @@ from typing import TYPE_CHECKING, Self
 
 from ...exception import TbErrorExt
 from ...helper import default_datetime
+from ...helper.parse import text_of
 from .._classdef import Containers
 
 if TYPE_CHECKING:
-    import bs4
+    from lxml import etree
 
 
 @dcs.dataclass
@@ -32,24 +33,20 @@ class BawuUserLog:
     op_time: datetime = dcs.field(default_factory=default_datetime)
 
     @classmethod
-    def from_xml(cls, data_tag: bs4.element.Tag) -> Self:
-        left_cell_item = data_tag.td
+    def from_xml(cls, data_tag: etree._Element) -> Self:
+        tds = data_tag.xpath("./td")
 
-        user_item = left_cell_item.a
-        user_portrait = user_item["href"][14:-17]
+        user_item = tds[0].xpath("./a")[0]
+        user_portrait = user_item.get("href")[14:-17]
 
-        op_type_item = left_cell_item.next_sibling.next_sibling
-        op_type = op_type_item.string
+        op_type = text_of(tds[2]).strip()
 
-        op_duration_item = op_type_item.next_sibling
-        op_duration = op_duration_item.string.replace(" ", "")
+        op_duration = text_of(tds[3]).strip().replace(" ", "")
         op_duration = 0 if "天" not in op_duration else int(op_duration[:-1])
 
-        op_user_name_item = op_duration_item.next_sibling
-        op_user_name = op_user_name_item.string
+        op_user_name = text_of(tds[4]).strip()
 
-        op_time_item = op_user_name_item.next_sibling
-        op_time = datetime.strptime(op_time_item.string, "%Y-%m-%d %H:%M")
+        op_time = datetime.strptime(text_of(tds[5]).strip(), "%Y-%m-%d %H:%M")
 
         return cls(op_type, op_duration, user_portrait, op_user_name, op_time)
 
@@ -76,12 +73,17 @@ class Page_userlog:
     has_prev: bool = False
 
     @classmethod
-    def from_xml(cls, data_soup: bs4.BeautifulSoup) -> Self:
-        total_count_tag = data_soup.find("div", class_="breadcrumbs")
-        total_count = int(total_count_tag.em.text)
+    def from_xml(cls, data_soup: etree._Element) -> Self:
+        total_count_tag = data_soup.xpath(
+            '//div[contains(concat(" ", normalize-space(@class), " "), " breadcrumbs ")]'
+        )[0]
+        total_count = int(text_of(total_count_tag.xpath(".//em")[0]))
 
-        page_tag = data_soup.find("div", class_="tbui_pagination").find("li", class_="active")
-        if page_tag is None:
+        page_tag_list = data_soup.xpath(
+            '//div[contains(concat(" ", normalize-space(@class), " "), " tbui_pagination ")]'
+            '//li[contains(concat(" ", normalize-space(@class), " "), " active ")]'
+        )
+        if not page_tag_list:
             if total_count != 0:
                 current_page = 1
                 total_page = 1
@@ -89,9 +91,10 @@ class Page_userlog:
                 current_page = 0
                 total_page = 0
         else:
-            current_page = int(page_tag.text)
-            total_page_item = page_tag.parent.next_sibling
-            total_page = int(total_page_item.text[1:-1])
+            page_tag = page_tag_list[0]
+            current_page = int(text_of(page_tag))
+            total_page_item = page_tag.getparent().getnext()
+            total_page = int(text_of(total_page_item)[1:-1])
 
         has_more = current_page < total_page
         has_prev = current_page > 1
@@ -115,8 +118,9 @@ class BawuUserLogs(TbErrorExt, Containers[BawuUserLog]):
     page: Page_userlog = dcs.field(default_factory=Page_userlog)
 
     @classmethod
-    def from_xml(cls, data_soup: bs4.BeautifulSoup) -> Self:
-        objs = [BawuUserLog.from_xml(t) for t in data_soup.find("tbody").find_all("tr")]
+    def from_xml(cls, data_soup: etree._Element) -> Self:
+        tbody = data_soup.xpath("//tbody")[0]
+        objs = [BawuUserLog.from_xml(t) for t in tbody.xpath(".//tr")]
         page = Page_userlog.from_xml(data_soup)
         return cls(objs, page)
 

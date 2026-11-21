@@ -10,14 +10,16 @@ import yarl
 
 from ..__version__ import __version__
 from ..const import APP_BASE_HOST
-from ..helper.crypto import APP_SALT, sign
+from ..helper.crypto import APP_SALT, PC_SALT, sign
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from .account import Account
     from .net import NetCore
 
 
-@dcs.dataclass
+@dcs.dataclass(slots=True)
 class HttpContainer:
     """
     用于保存会话headers与cookies的容器
@@ -31,7 +33,7 @@ class HttpContainer:
         self.cookie_jar: aiohttp.CookieJar = cookie_jar
 
 
-@dcs.dataclass
+@dcs.dataclass(slots=True)
 class HttpCore:
     """
     保存http接口相关状态的核心容器
@@ -87,14 +89,14 @@ class HttpCore:
         STOKEN_morsel["domain"] = "tieba.baidu.com"
         self.web.cookie_jar._cookies["tieba.baidu.com", ""]["STOKEN"] = STOKEN_morsel
 
-    def pack_form_request(self, url: yarl.URL, data: list[tuple[str, str]]) -> aiohttp.ClientRequest:
+    def pack_app_form_request(self, url: yarl.URL, data: Sequence[tuple[str, str | int]]) -> aiohttp.ClientRequest:
         """
         自动签名参数元组列表
         并将其打包为移动端表单请求
 
         Args:
             url (yarl.URL): 链接
-            data (list[tuple[str, str]]): 参数元组列表
+            data (Sequence[tuple[str, str | int]]): 参数元组列表
 
         Returns:
             aiohttp.ClientRequest
@@ -117,6 +119,131 @@ class HttpCore:
         )
 
         return request
+
+    def pack_app_proto_request(self, url: yarl.URL, data: bytes) -> aiohttp.ClientRequest:
+        """
+        打包移动端protobuf请求
+
+        Args:
+            url (yarl.URL): 链接
+            data (bytes): protobuf序列化后的二进制数据
+
+        Returns:
+            aiohttp.ClientRequest
+        """
+
+        writer = aiohttp.MultipartWriter("form-data", boundary="-*endfield-")
+        payload_headers = {
+            aiohttp.hdrs.CONTENT_DISPOSITION: aiohttp.helpers.content_disposition_header(
+                "form-data", name="data", filename="file"
+            )
+        }
+        payload = aiohttp.BytesPayload(data, content_type="", headers=payload_headers)
+        payload.headers.popone(aiohttp.hdrs.CONTENT_TYPE)
+        writer._parts.append((payload, None, None))
+
+        request = aiohttp.ClientRequest(
+            aiohttp.hdrs.METH_POST,
+            url,
+            headers=self.app_proto.headers,
+            data=writer,
+            proxy=self.net_core.proxy.url,
+            proxy_auth=self.net_core.proxy.auth,
+            ssl=False,
+        )
+
+        return request
+
+    def pack_web_get_request(
+        self, url: yarl.URL, params: Sequence[tuple[str, str | int]], *, extra_headers: dict[str, str] | None = None
+    ) -> aiohttp.ClientRequest:
+        """
+        打包网页端参数请求
+
+        Args:
+            url (yarl.URL): 链接
+            params (Sequence[tuple[str, str | int]]): 参数元组列表
+            extra_headers (dict[str, str] | None): 额外的请求头
+
+        Returns:
+            aiohttp.ClientRequest
+        """
+
+        url = url.update_query(params)
+        headers = self.web.headers
+        if extra_headers:
+            headers = headers | extra_headers
+
+        request = aiohttp.ClientRequest(
+            aiohttp.hdrs.METH_GET,
+            url,
+            headers=headers,
+            cookies=self.web.cookie_jar.filter_cookies(url),
+            proxy=self.net_core.proxy.url,
+            proxy_auth=self.net_core.proxy.auth,
+            ssl=False,
+        )
+
+        return request
+
+    def pack_web_form_request(
+        self, url: yarl.URL, data: Sequence[tuple[str, str | int]], *, extra_headers: dict[str, str] | None = None
+    ) -> aiohttp.ClientRequest:
+        """
+        打包网页端表单请求
+
+        Args:
+            url (yarl.URL): 链接
+            data (Sequence[tuple[str, str | int]]): 参数元组列表
+            extra_headers (dict[str, str] | None): 额外的请求头
+
+        Returns:
+            aiohttp.ClientRequest
+        """
+
+        headers = self.web.headers
+        if extra_headers:
+            headers = headers | extra_headers
+
+        payload = aiohttp.payload.BytesPayload(
+            urllib.parse.urlencode(data, doseq=True).encode("utf-8"),
+            content_type="application/x-www-form-urlencoded",
+        )
+
+        request = aiohttp.ClientRequest(
+            aiohttp.hdrs.METH_POST,
+            url,
+            headers=headers,
+            data=payload,
+            cookies=self.web.cookie_jar.filter_cookies(url),
+            proxy=self.net_core.proxy.url,
+            proxy_auth=self.net_core.proxy.auth,
+            ssl=False,
+        )
+
+        return request
+
+    def pack_web_sign_form_request(
+        self, url: yarl.URL, data: Sequence[tuple[str, str | int]], *, extra_headers: dict[str, str] | None = None
+    ) -> aiohttp.ClientRequest:
+        """
+        打包带PC签名的网页端参数请求
+
+        自动补充 `_client_type=20` 与 `sign`
+
+        Args:
+            url (yarl.URL): 链接
+            data (Sequence[tuple[str, str | int]]): 参数元组列表
+            extra_headers (dict[str, str] | None): 额外的请求头
+
+        Returns:
+            aiohttp.ClientRequest
+        """
+
+        signed_data = [*data, ("_client_type", 20)]
+        signed_data = sign(signed_data, salt=PC_SALT)
+
+        return self.pack_web_form_request(url, signed_data, extra_headers=extra_headers)
 
     def pack_pim_request(
         self, path: str, data: list[tuple[str, str | int]], *, with_cookie: bool = False
@@ -146,109 +273,6 @@ class HttpCore:
             headers=headers,
             cookies=cookies,
             data=aiohttp.payload.JsonPayload(dict(data)),
-            proxy=self.net_core.proxy.url,
-            proxy_auth=self.net_core.proxy.auth,
-            ssl=False,
-        )
-
-        return request
-
-    def pack_proto_request(self, url: yarl.URL, data: bytes) -> aiohttp.ClientRequest:
-        """
-        打包移动端protobuf请求
-
-        Args:
-            url (yarl.URL): 链接
-            data (bytes): protobuf序列化后的二进制数据
-
-        Returns:
-            aiohttp.ClientRequest
-        """
-
-        writer = aiohttp.MultipartWriter("form-data", boundary="-*_r1999")
-        payload_headers = {
-            aiohttp.hdrs.CONTENT_DISPOSITION: aiohttp.helpers.content_disposition_header(
-                "form-data", name="data", filename="file"
-            )
-        }
-        payload = aiohttp.BytesPayload(data, content_type="", headers=payload_headers)
-        payload.headers.popone(aiohttp.hdrs.CONTENT_TYPE)
-        writer._parts.append((payload, None, None))
-
-        request = aiohttp.ClientRequest(
-            aiohttp.hdrs.METH_POST,
-            url,
-            headers=self.app_proto.headers,
-            data=writer,
-            proxy=self.net_core.proxy.url,
-            proxy_auth=self.net_core.proxy.auth,
-            ssl=False,
-        )
-
-        return request
-
-    def pack_web_get_request(
-        self, url: yarl.URL, params: list[tuple[str, str]], *, extra_headers: dict[str, str] | None = None
-    ) -> aiohttp.ClientRequest:
-        """
-        打包网页端参数请求
-
-        Args:
-            url (yarl.URL): 链接
-            params (list[tuple[str, str]]): 参数元组列表
-            extra_headers (dict[str, str] | None): 额外的请求头
-
-        Returns:
-            aiohttp.ClientRequest
-        """
-
-        url = url.update_query(params)
-        headers = self.web.headers
-        if extra_headers:
-            headers = headers | extra_headers
-
-        request = aiohttp.ClientRequest(
-            aiohttp.hdrs.METH_GET,
-            url,
-            headers=headers,
-            cookies=self.web.cookie_jar.filter_cookies(url),
-            proxy=self.net_core.proxy.url,
-            proxy_auth=self.net_core.proxy.auth,
-            ssl=False,
-        )
-
-        return request
-
-    def pack_web_form_request(
-        self, url: yarl.URL, data: list[tuple[str, str]], *, extra_headers: dict[str, str] | None = None
-    ) -> aiohttp.ClientRequest:
-        """
-        打包网页端表单请求
-
-        Args:
-            url (yarl.URL): 链接
-            data (list[tuple[str, str]]): 参数元组列表
-            extra_headers (dict[str, str] | None): 额外的请求头
-
-        Returns:
-            aiohttp.ClientRequest
-        """
-
-        headers = self.web.headers
-        if extra_headers:
-            headers = headers | extra_headers
-
-        payload = aiohttp.payload.BytesPayload(
-            urllib.parse.urlencode(data, doseq=True).encode("utf-8"),
-            content_type="application/x-www-form-urlencoded",
-        )
-
-        request = aiohttp.ClientRequest(
-            aiohttp.hdrs.METH_POST,
-            url,
-            headers=headers,
-            data=payload,
-            cookies=self.web.cookie_jar.filter_cookies(url),
             proxy=self.net_core.proxy.url,
             proxy_auth=self.net_core.proxy.auth,
             ssl=False,

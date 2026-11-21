@@ -45,7 +45,7 @@ def parse_body(body: bytes) -> Threads_lp:
 async def request_http(http_core: HttpCore, fname: str, pn: int, rn: int, sort: int, is_good: bool) -> Threads_lp:
     data = pack_proto(fname, pn, rn, sort, is_good)
 
-    request = http_core.pack_proto_request(
+    request = http_core.pack_app_proto_request(
         yarl.URL.build(scheme="http", host=APP_BASE_HOST, path="/c/f/frs/page", query_string=f"cmd={CMD}"),
         data,
     )

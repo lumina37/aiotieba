@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING
 
 import yarl
 
-from ...const import APP_BASE_HOST, LATEST_VERSION
+from ...const import APP_BASE_HOST
 from ...exception import TiebaServerError
-from ...helper import parse_json
 from ._classdef import BlacklistUsers
 
 if TYPE_CHECKING:
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 def parse_body(body: bytes) -> BlacklistUsers:
-    res_json = parse_json(body)
+    res_json = json.loads(body)
     if code := int(res_json["error_code"]):
         raise TiebaServerError(code, res_json["error_msg"])
 
@@ -24,13 +24,8 @@ def parse_body(body: bytes) -> BlacklistUsers:
 
 
 async def request(http_core: HttpCore) -> BlacklistUsers:
-    data = [
-        ("BDUSS", http_core.account.BDUSS),
-        ("_client_version", LATEST_VERSION),
-    ]
-
-    request = http_core.pack_form_request(
-        yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/u/user/userBlackPage"), data
+    request = http_core.pack_web_sign_form_request(
+        yarl.URL.build(scheme="https", host=APP_BASE_HOST, path="/c/u/user/userBlackPage"), []
     )
 
     body = await http_core.net_core.send(request)

@@ -4,9 +4,9 @@ import dataclasses as dcs
 from functools import cached_property
 from typing import TYPE_CHECKING, Self
 
-from ...enums import ContentType, PrivLike, PrivReply
+from ...enums import ContentType
 from ...exception import TbErrorExt
-from .._classdef import Containers
+from .._classdef import Containers, PrivSets
 from .._classdef.contents import (
     _IMAGEHASH_EXP,
     FragLink,
@@ -221,8 +221,7 @@ class UserInfo_at:
         user_name (str): 用户名
         nick_name_new (str): 新版昵称
 
-        priv_like (PrivLike): 关注吧列表的公开状态
-        priv_reply (PrivReply): 帖子评论权限
+        priv (PrivSets): 隐私设置
 
         nick_name (str): 用户昵称
         show_name (str): 显示名称
@@ -234,8 +233,7 @@ class UserInfo_at:
     user_name: str = ""
     nick_name_new: str = ""
 
-    priv_like: PrivLike = PrivLike.PUBLIC
-    priv_reply: PrivReply = PrivReply.ALL
+    priv: PrivSets = dcs.field(default_factory=PrivSets)
 
     @classmethod
     def from_json(cls, data_map: Mapping) -> Self:
@@ -245,14 +243,12 @@ class UserInfo_at:
             portrait = portrait[:-13]
         user_name = data_map["name"]
         nick_name_new = data_map["name_show"]
-        if priv_sets := data_map["priv_sets"]:
-            priv_like = PrivLike(int(priv_sets.get("like", 1)))
-            priv_reply = PrivReply(int(priv_sets.get("reply", 1)))
+        if priv_map := data_map["priv_sets"]:
+            priv = PrivSets.from_json(priv_map)
         else:
-            priv_like = PrivLike.PUBLIC
-            priv_reply = PrivReply.ALL
+            priv = PrivSets()
 
-        return cls(user_id, portrait, user_name, nick_name_new, priv_like, priv_reply)
+        return cls(user_id, portrait, user_name, nick_name_new, priv)
 
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)

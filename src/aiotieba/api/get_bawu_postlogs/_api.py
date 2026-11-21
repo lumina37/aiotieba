@@ -4,11 +4,11 @@ import time
 from typing import TYPE_CHECKING
 from urllib.parse import quote
 
-import bs4
 import yarl
 
 from ...const import WEB_BASE_HOST
 from ...enums import BawuSearchType
+from ...helper.parse import parse_html
 from ._classdef import BawuPostLogs
 
 if TYPE_CHECKING:
@@ -18,8 +18,8 @@ if TYPE_CHECKING:
 
 
 def parse_body(body: bytes) -> BawuPostLogs:
-    soup = bs4.BeautifulSoup(body, "lxml")
-    bawu_postlogs = BawuPostLogs.from_xml(soup)
+    root = parse_html(body)
+    bawu_postlogs = BawuPostLogs.from_xml(root)
 
     return bawu_postlogs
 

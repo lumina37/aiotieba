@@ -3,6 +3,7 @@ from __future__ import annotations
 import binascii
 import gzip
 import hashlib
+import json
 import time
 from typing import TYPE_CHECKING
 
@@ -12,7 +13,7 @@ from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from ...const import LEGACY_VERSION
-from ...helper import pack_json, parse_json
+from ...helper import pack_json
 from ...helper.crypto import rc4_42
 
 if TYPE_CHECKING:
@@ -24,10 +25,11 @@ SOFIRE_HOST = "sofire.baidu.com"
 async def request(http_core: HttpCore):
     app_key = "200033"  # get by p/5/aio
     sec_key = "ea737e4f435b53786043369d2e5ace4f"
-    xyus = (
-        hashlib.md5((http_core.account.android_id + http_core.account.uuid).encode("ascii")).hexdigest().upper() + "|0"
+    xyus_md5 = hashlib.md5(
+        (http_core.account.android_id + http_core.account.uuid).encode("ascii"), usedforsecurity=False
     )
-    xyus_md5_str = hashlib.md5(xyus.encode("ascii")).hexdigest()
+    xyus = xyus_md5.hexdigest().upper() + "|0"
+    xyus_md5_str = hashlib.md5(xyus.encode("ascii"), usedforsecurity=False).hexdigest()
     current_ts = str(int(time.time()))
 
     params = {"module_section": [{"zid": xyus}]}
@@ -42,7 +44,7 @@ async def request(http_core: HttpCore):
     aes_encryptor = zid_chiper.encryptor()
     req_body_aes = aes_encryptor.update(padded_req_body) + aes_encryptor.finalize()
 
-    req_body_md5 = hashlib.md5(req_body).digest()
+    req_body_md5 = hashlib.md5(req_body, usedforsecurity=False).digest()
 
     payload = aiohttp.payload.BytesPayload(
         req_body_aes + req_body_md5,
@@ -56,7 +58,7 @@ async def request(http_core: HttpCore):
     }
 
     path_combine = "".join((app_key, current_ts, sec_key))
-    path_combine_md5 = hashlib.md5(path_combine.encode("ascii")).hexdigest()
+    path_combine_md5 = hashlib.md5(path_combine.encode("ascii"), usedforsecurity=False).hexdigest()
     req_query_skey = rc4_42(xyus_md5_str, http_core.account.zid_sec_key)
     req_query_skey = binascii.b2a_base64(req_query_skey).decode("ascii")
     url = yarl.URL.build(
@@ -77,7 +79,7 @@ async def request(http_core: HttpCore):
     )
 
     body = await http_core.net_core.send(request)
-    res_json = parse_json(body)
+    res_json = json.loads(body)
 
     res_query_skey = binascii.a2b_base64(res_json["skey"])
     res_aes_sec_key = rc4_42(xyus_md5_str, res_query_skey)
@@ -91,7 +93,7 @@ async def request(http_core: HttpCore):
     unpadded_data = unpadder.update(decrypted_res_data) + unpadder.finalize()
 
     res_data = unpadded_data.decode("utf-8")
-    res_data = parse_json(res_data)
+    res_data = json.loads(res_data)
     zid = res_data["token"]
 
     return zid

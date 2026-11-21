@@ -3,6 +3,8 @@ site_name: aiotieba
 site_description: aiotieba开发文档
 site_url: https://aiotieba.cc/
 
+strict: true
+
 repo_name: lumina37/aiotieba
 repo_url: https://github.com/lumina37/aiotieba/
 edit_uri: edit/develop/docs/
@@ -52,51 +54,7 @@ nav:
       - 枚举: ref/enums.md
       - 配置: ref/config.md
       - 异常处理: ref/exception.md
-      - 类型定义:
-          - forum_detail: ref/classdef/forum_detail.md
-          - threads: ref/classdef/threads.md
-          - posts: ref/classdef/posts.md
-          - comments: ref/classdef/comments.md
-          - last_replyers: ref/classdef/last_replyers.md
-          - searches_in_forum: ref/classdef/searches_in_forum.md
-          - searches_global: ref/classdef/searches_global.md
-          - user_info: ref/classdef/user_info.md
-          - profile: ref/classdef/profile.md
-          - follow_forums: ref/classdef/follow_forums.md
-          - self_follow_forums: ref/classdef/self_follow_forums.md
-          - user_contents: ref/classdef/user_contents.md
-          - images: ref/classdef/images.md
-          - replys: ref/classdef/replys.md
-          - ats: ref/classdef/ats.md
-          - follows: ref/classdef/follows.md
-          - fans: ref/classdef/fans.md
-          - blacklist: ref/classdef/blacklist.md
-          - blacklist_old: ref/classdef/blacklist_old.md
-          - dislike_forums: ref/classdef/dislike_forums.md
-          - square_forums: ref/classdef/square_forums.md
-          - bawu_info: ref/classdef/bawu_info.md
-          - bawu_perm: ref/classdef/bawu_perm.md
-          - rank_users: ref/classdef/rank_users.md
-          - member_users: ref/classdef/member_users.md
-          - blocks: ref/classdef/blocks.md
-          - recovers: ref/classdef/recovers.md
-          - recover_thread: ref/classdef/recover_thread.md
-          - bawu_userlogs: ref/classdef/bawu_userlogs.md
-          - bawu_postlogs: ref/classdef/bawu_postlogs.md
-          - unblock_appeals: ref/classdef/unblock_appeals.md
-          - bawu_blacklist: ref/classdef/bawu_blacklist.md
-          - statistics: ref/classdef/statistics.md
-          - recom_status: ref/classdef/recom_status.md
-          - group_msg: ref/classdef/group_msg.md
-          - bawu_memberlist: ref/classdef/bawu_memberlist.md
-          - forum: ref/classdef/forum.md
-          - forum_level: ref/classdef/forum_level.md
-          - login: ref/classdef/login.md
-          - rank_forums: ref/classdef/rank_forums.md
-          - tab_map: ref/classdef/tab_map.md
-          - user_forum_info: ref/classdef/user_forum_info.md
-          - chatroom_detail: ref/classdef/chatroom_detail.md
-          - bawu_task: ref/classdef/bawu_task.md
+      - 类型定义: ref/classdef/
 
 validation:
   nav:
@@ -124,8 +82,14 @@ markdown_extensions:
       toc_depth: 3
   # PyMdown Extensions（mkdocs-material自带）
   - pymdownx.betterem
+  - pymdownx.blocks.admonition
+  - pymdownx.blocks.details
+  - pymdownx.blocks.tab
   - pymdownx.caret
   - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span
@@ -133,13 +97,22 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.keys
   - pymdownx.mark
+  - pymdownx.snippets:
+      base_path: ["."]
+      check_paths: true
   - pymdownx.superfences
   - pymdownx.tilde
 
 plugins:
   - search:
       lang: zh
+  - gen-files:
+      scripts:
+        - docs/gen_ref_pages.py
+  - literate-nav:
+      nav_file: SUMMARY.md
   - mkdocstrings:
+      locale: zh
       handlers:
         python:
           paths: [src]
@@ -153,7 +126,7 @@ plugins:
             separate_signature: true
             signature_crossrefs: true
             show_signature_annotations: true
-            filters: ["!^_[^_]"]
+            filters: public
 
 extra_css:
   - css/custom.css

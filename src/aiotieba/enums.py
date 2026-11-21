@@ -47,17 +47,61 @@ class PrivReply(enum.IntEnum):
         UNKNOWN 未知\n
         ALL 允许所有人\n
         FANS 仅允许我的粉丝\n
-        FOLLOW 仅允许我的关注
+        FOLLOW 仅允许我的关注\n
+        SELF 仅允许自己
     """
 
     UNKNOWN = 0
     ALL = 1
     FANS = 5
     FOLLOW = 6
+    SELF = 7
 
     @classmethod
     def _missing_(cls, _: int) -> PrivReply:
         return PrivReply.UNKNOWN
+
+
+class PrivPost(enum.IntEnum):
+    """
+    我的贴子的公开状态
+
+    Note:
+        UNKNOWN 未知\n
+        PUBLIC 所有人可见\n
+        FRIEND 好友可见\n
+        HIDE 完全隐藏
+    """
+
+    UNKNOWN = 0
+    PUBLIC = 1
+    FRIEND = 2
+    HIDE = 3
+
+    @classmethod
+    def _missing_(cls, _: int) -> PrivPost:
+        return PrivPost.UNKNOWN
+
+
+class PrivFollow(enum.IntEnum):
+    """
+    关注与粉丝列表的公开状态
+
+    Note:
+        UNKNOWN 未知\n
+        PUBLIC 所有人可见\n
+        FRIEND 好友可见\n
+        HIDE 完全隐藏
+    """
+
+    UNKNOWN = 0
+    PUBLIC = 1
+    FRIEND = 2
+    HIDE = 3
+
+    @classmethod
+    def _missing_(cls, _: int) -> PrivFollow:
+        return PrivFollow.UNKNOWN
 
 
 class ThreadType(enum.IntEnum):
@@ -123,18 +167,20 @@ class ReqUInfo(enum.Flag):
     使用该枚举类指定待获取的用户信息字段
 
     Note:
-        各bit位的含义由高到低分别为 OTHER, TIEBA_UID, NICK_NAME, USER_NAME, PORTRAIT, USER_ID\n
-        其中BASIC = USER_ID | PORTRAIT | USER_NAME
+        各bit位的含义由高到低分别为 OTHER, TIEBA_UID, NICK_NAME_NEW, NICK_NAME_OLD, USER_NAME, PORTRAIT, USER_ID\n
+        其中BASIC = USER_ID | PORTRAIT | USER_NAME\n
+        旧版昵称不包含在ALL中 需要显式指定NICK_NAME_OLD且仅部分接口支持
     """
 
     USER_ID = enum.auto()
     PORTRAIT = enum.auto()
     USER_NAME = enum.auto()
-    NICK_NAME = enum.auto()
+    NICK_NAME_OLD = enum.auto()
+    NICK_NAME_NEW = enum.auto()
     TIEBA_UID = enum.auto()
     OTHER = enum.auto()
     BASIC = USER_ID | PORTRAIT | USER_NAME
-    ALL = BASIC | NICK_NAME | TIEBA_UID | OTHER
+    ALL = BASIC | NICK_NAME_NEW | TIEBA_UID | OTHER
 
 
 class ThreadSortType(enum.IntEnum):

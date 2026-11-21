@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING
 
 import yarl
 
 from ...const import APP_BASE_HOST
 from ...exception import TiebaServerError
-from ...helper import parse_json
 from ._classdef import Forum
 
 if TYPE_CHECKING:
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 def parse_body(body: bytes) -> Forum:
-    res_json = parse_json(body)
+    res_json = json.loads(body)
     if code := res_json["error_code"]:
         raise TiebaServerError(code, res_json["error_msg"])
 
@@ -27,7 +27,7 @@ def parse_body(body: bytes) -> Forum:
 async def request(http_core: HttpCore, fname: str) -> Forum:
     data = [("kw", fname)]
 
-    request = http_core.pack_form_request(
+    request = http_core.pack_app_form_request(
         yarl.URL.build(scheme="http", host=APP_BASE_HOST, path="/c/f/frs/frsBottom"), data
     )
 

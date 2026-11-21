@@ -1,7 +1,7 @@
 line-length = 120
 target-version = "py311"
 
-extend-exclude = ["*_pb2.py"]
+extend-exclude = ["*_pb2.py", "*_pb2.pyi"]
 
 preview = true
 

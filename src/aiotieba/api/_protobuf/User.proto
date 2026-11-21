@@ -25,15 +25,10 @@ message User {
     int32 is_mem = 39;
     int32 gender = 42;
     message PrivSets {
-        int32 location = 1;
         int32 like = 2;
-        int32 group = 3;
         int32 post = 4;
-        int32 friend = 5;
-        int32 live = 6;
         int32 reply = 7;
-        int32 bazhu_show_inside = 8;
-        int32 bazhu_show_outside = 9;
+        int32 follow = 10;
     }
     PrivSets priv_sets = 45;
     int32 is_friend = 46;
