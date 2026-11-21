@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from .net import NetCore
 
 
-@dcs.dataclass
+@dcs.dataclass(slots=True)
 class HttpContainer:
     """
     用于保存会话headers与cookies的容器
@@ -33,7 +33,7 @@ class HttpContainer:
         self.cookie_jar: aiohttp.CookieJar = cookie_jar
 
 
-@dcs.dataclass
+@dcs.dataclass(slots=True)
 class HttpCore:
     """
     保存http接口相关状态的核心容器

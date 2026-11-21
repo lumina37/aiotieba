@@ -77,8 +77,20 @@ PyObject* rc4_42(PyObject* Py_UNUSED(self), PyObject* const* args, Py_ssize_t na
 
     tbc_rc4_42(xyusMd5Str, cbcSecKey, dst);
 
-    // py315: should use [`PyBytesWriter`](https://peps.python.org/pep-0782/) instead
+#if PY_VERSION_HEX >= 0x030F0000 && !defined(Py_LIMITED_API)
+    // PEP 782: 3.15起可用PyBytesWriter直接构造bytes 省去一次中间拷贝
+    PyBytesWriter* writer = PyBytesWriter_Create(0);
+    if (writer == NULL) {
+        return NULL;
+    }
+    if (PyBytesWriter_WriteBytes(writer, dst, TBC_RC4_SIZE) < 0) {
+        PyBytesWriter_Discard(writer);
+        return NULL;
+    }
+    return PyBytesWriter_Finish(writer);
+#else
     return PyBytes_FromStringAndSize((char*)dst, TBC_RC4_SIZE);
+#endif
 }
 
 PyObject* enuid(PyObject* Py_UNUSED(self), PyObject* const* args, Py_ssize_t nargs) {

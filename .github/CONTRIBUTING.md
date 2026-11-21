@@ -88,6 +88,6 @@ Note:
 - [ ] 在`src/aiotieba/client.py`顶部的import中导入新API模块
 - [ ] 如有新的protobuf定义，运行`python scripts/proto_compile.py`编译
 - [ ] 如有新的数据类型定义，添加到`src/aiotieba/api/<mod>/_classdef.py`
-- [ ] 如有新的数据类型定义，创建`docs/ref/classdef/<name>.md`并添加到`mkdocs.yml`的navigate列表末尾
+- [ ] 如有新的数据类型定义，确认`docs/ref/classdef/`下已自动生成对应页面
 - [ ] 如有新的枚举类型，添加到 `src/aiotieba/enums.py`
 - [ ] 运行`uvx ruff check .`和`uvx ruff format . --check`执行代码检查

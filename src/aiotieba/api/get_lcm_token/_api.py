@@ -31,7 +31,7 @@ async def request(http_core: HttpCore) -> str:
         ("model_type", ""),
         ("request_id", str(ts)),
         ("sdk_version", BLCP_SDK_VERSION),
-        ("sign", hashlib.md5(f"{CHAT_APPID}{cuid}android{ts}".encode()).hexdigest()),
+        ("sign", hashlib.md5(f"{CHAT_APPID}{cuid}android{ts}".encode(), usedforsecurity=False).hexdigest()),
         ("ts", ts),
         ("user_key", ""),
     ]

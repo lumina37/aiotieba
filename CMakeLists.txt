@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
 
 if (NOT SKBUILD_PROJECT_NAME)
     set(SKBUILD_PROJECT_NAME "aiotieba")

@@ -27,6 +27,8 @@ class TiebaLogger(logging.Logger):
             name = Path(sys.argv[0]).stem
         super().__init__(name)
 
+        self.propagate = False
+
         stream_hd = logging.StreamHandler(sys.stdout)
         stream_hd.setLevel(stream_log_level)
         stream_hd.setFormatter(_FORMATTER)

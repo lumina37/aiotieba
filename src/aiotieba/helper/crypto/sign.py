@@ -19,7 +19,7 @@ def compute_sign(data: Sequence[tuple[str, str | int]], *, salt: bytes) -> str:
         str: 签名
     """
 
-    md5obj = hashlib.md5()
+    md5obj = hashlib.md5(usedforsecurity=False)
 
     for key, val in sorted(data):
         md5obj.update(f"{key}={val}".encode())

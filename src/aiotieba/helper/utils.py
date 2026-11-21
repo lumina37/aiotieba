@@ -7,34 +7,39 @@ import logging
 import sys
 import time
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, TypeGuard
+from typing import TYPE_CHECKING, Any
 
 from ..logging import get_logger
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
 
+if sys.version_info >= (3, 13):
+    from typing import TypeIs
+else:
+    from typing import TypeGuard as TypeIs
+
 
 pack_json = functools.partial(json.dumps, separators=(",", ":"))
 
 
-def is_portrait(portrait: object) -> TypeGuard[str]:
+def is_portrait(portrait: object) -> TypeIs[str]:
     """
     简单判断输入是否符合portrait格式
 
     Returns:
-        TypeGuard[str]: 输入是否符合portrait格式
+        TypeIs[str]: 输入是否符合portrait格式
     """
 
     return isinstance(portrait, str) and portrait.startswith("tb.")
 
 
-def is_user_name(user_name: object) -> TypeGuard[str]:
+def is_user_name(user_name: object) -> TypeIs[str]:
     """
     简单判断输入是否符合user_name格式
 
     Returns:
-        TypeGuard[str]: 输入是否符合user_name格式
+        TypeIs[str]: 输入是否符合user_name格式
     """
 
     return isinstance(user_name, str) and not user_name.startswith("tb.")
@@ -155,6 +160,14 @@ def handle_exception(
 
                 if ok_log_level:
                     _log(ok_log_level)
+
+            except ExceptionGroup as err:
+                _log(err_log_level, err.exceptions[0])
+
+                ret = null_factory()
+                ret.err = err
+
+                return ret
 
             except Exception as err:
                 _log(err_log_level, err)

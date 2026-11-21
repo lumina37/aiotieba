@@ -72,7 +72,7 @@ class SearchGlobal:
         title (str): 标题
         content (str): 正文
 
-        user (UserInfo_sg)
+        user (UserInfo_sg): 用户信息
         forum_id (int): 所在贴吧fid
         forum_name (str): 所在贴吧名
         tid (int): 所在主题帖id

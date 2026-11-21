@@ -18,7 +18,7 @@ def check_status_code(response: aiohttp.ClientResponse) -> None:
 TypeHeadersChecker = Callable[[aiohttp.ClientResponse], None]
 
 
-@dcs.dataclass
+@dcs.dataclass(slots=True)
 class NetCore:
     """
     网络请求相关容器
@@ -106,11 +106,10 @@ class NetCore:
 
         response = await self.req2res(request, True)
 
-        headers_checker(response)
-
-        response._body = await response.content.read()
-        body = response._body
-
-        response.release()
+        try:
+            headers_checker(response)
+            body = await response.read()
+        finally:
+            response.release()
 
         return body
