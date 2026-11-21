@@ -4,10 +4,11 @@ import dataclasses as dcs
 from typing import TYPE_CHECKING, Self
 
 from ...exception import TbErrorExt
+from ...helper.parse import class_tokens, text_of
 from .._classdef import Containers
 
 if TYPE_CHECKING:
-    import bs4
+    from lxml import etree
 
 
 @dcs.dataclass
@@ -26,12 +27,12 @@ class MemberUser:
     level: int = 0
 
     @classmethod
-    def from_xml(cls, data_tag: bs4.element.Tag) -> Self:
-        user_item = data_tag.a
-        user_name = user_item["title"]
-        portrait = user_item["href"][14:]
-        level_item = data_tag.span
-        level = int(level_item["class"][1][12:])
+    def from_xml(cls, data_tag: etree._Element) -> Self:
+        user_item = data_tag.xpath("./a")[0]
+        user_name = user_item.get("title")
+        portrait = user_item.get("href")[14:]
+        level_item = data_tag.xpath("./span")[0]
+        level = int(class_tokens(level_item)[1][12:])
         return cls(user_name, portrait, level)
 
 
@@ -55,10 +56,10 @@ class Page_member:
     has_prev: bool = False
 
     @classmethod
-    def from_xml(cls, data_tag: bs4.element.Tag) -> Self:
-        current_page = int(data_tag.text)
-        total_page_item = data_tag.parent.next_sibling
-        total_page = int(total_page_item.text[1:-1])
+    def from_xml(cls, data_tag: etree._Element) -> Self:
+        current_page = int(text_of(data_tag))
+        total_page_item = data_tag.getparent().getnext()
+        total_page = int(text_of(total_page_item)[1:-1])
         has_more = current_page < total_page
         has_prev = current_page > 1
         return cls(current_page, total_page, has_more, has_prev)
@@ -80,9 +81,16 @@ class MemberUsers(TbErrorExt, Containers[MemberUser]):
     page: Page_member = dcs.field(default_factory=Page_member)
 
     @classmethod
-    def from_xml(cls, data_soup: bs4.BeautifulSoup) -> Self:
-        objs = [MemberUser.from_xml(t) for t in data_soup("div", class_="name_wrap")]
-        page = Page_member.from_xml(data_soup.find("div", class_="tbui_pagination").find("li", class_="active"))
+    def from_xml(cls, data_soup: etree._Element) -> Self:
+        objs = [
+            MemberUser.from_xml(t)
+            for t in data_soup.xpath('//div[contains(concat(" ", normalize-space(@class), " "), " name_wrap ")]')
+        ]
+        page_tag = data_soup.xpath(
+            '//div[contains(concat(" ", normalize-space(@class), " "), " tbui_pagination ")]'
+            '//li[contains(concat(" ", normalize-space(@class), " "), " active ")]'
+        )[0]
+        page = Page_member.from_xml(page_tag)
         return cls(objs, page)
 
     @property

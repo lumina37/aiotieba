@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import bs4
 import yarl
 
 from ...const import WEB_BASE_HOST
+from ...helper.parse import parse_html
 from ._classdef import MemberUsers
 
 if TYPE_CHECKING:
@@ -13,8 +13,8 @@ if TYPE_CHECKING:
 
 
 def parse_body(body: bytes) -> MemberUsers:
-    soup = bs4.BeautifulSoup(body, "lxml")
-    member_users = MemberUsers.from_xml(soup)
+    root = parse_html(body)
+    member_users = MemberUsers.from_xml(root)
 
     return member_users
 

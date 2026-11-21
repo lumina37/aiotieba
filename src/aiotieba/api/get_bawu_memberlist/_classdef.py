@@ -6,10 +6,11 @@ from typing import TYPE_CHECKING, Self
 
 from ...exception import TbErrorExt
 from ...helper import default_datetime
+from ...helper.parse import text_of
 from .._classdef import Containers
 
 if TYPE_CHECKING:
-    import bs4
+    from lxml import etree
 
 
 @dcs.dataclass
@@ -42,31 +43,27 @@ class BawuListMemberUser:
     join_time: datetime = dcs.field(default_factory=default_datetime)
 
     @classmethod
-    def from_xml(cls, data_tag: bs4.element.Tag) -> Self:
-        left_cell_item = data_tag.td
+    def from_xml(cls, data_tag: etree._Element) -> Self:
+        tds = data_tag.xpath("./td")
+        left_cell_item = tds[0]
 
-        user_item = left_cell_item.a
-        user_name = user_item.text.lstrip()
+        user_item = left_cell_item.xpath("./a")[0]
+        user_name = text_of(user_item).lstrip()
 
-        exp_item = left_cell_item.next_sibling.next_sibling
-        exp = int(exp_item.string)
+        exp = int(text_of(tds[2]).strip())
 
-        level_item = exp_item.next_sibling
-        level = int(level_item.string)
+        level = int(text_of(tds[3]).strip())
 
-        thread_num_item = level_item.next_sibling
-        thread_num = int(thread_num_item.string)
+        thread_num = int(text_of(tds[4]).strip())
 
-        good_num_item = thread_num_item.next_sibling
-        good_num_text = good_num_item.string
+        good_num_text = text_of(tds[5]).strip()
         good_num = int(good_num_text) if good_num_text else 0
 
-        join_time_item = good_num_item.next_sibling
-        join_time = datetime.strptime(join_time_item.string, "%Y-%m-%d %H:%M")
+        join_time = datetime.strptime(text_of(tds[6]).strip(), "%Y-%m-%d %H:%M")
 
-        btn_group_item = join_time_item.next_sibling
-        user_id = int(btn_group_item["id"])
-        portrait = btn_group_item["portrait"]
+        btn_group_item = tds[7]
+        user_id = int(btn_group_item.get("id"))
+        portrait = btn_group_item.get("portrait")
 
         return cls(user_id, portrait, user_name, exp, level, thread_num, good_num, join_time)
 
@@ -82,6 +79,7 @@ class BawuListMemberUsers(TbErrorExt, Containers[BawuListMemberUser]):
     """
 
     @classmethod
-    def from_xml(cls, data_soup: bs4.BeautifulSoup) -> Self:
-        objs = [BawuListMemberUser.from_xml(t) for t in data_soup.find("tbody").find_all("tr")]
+    def from_xml(cls, data_soup: etree._Element) -> Self:
+        tbody = data_soup.xpath("//tbody")[0]
+        objs = [BawuListMemberUser.from_xml(t) for t in tbody.xpath(".//tr")]
         return cls(objs)

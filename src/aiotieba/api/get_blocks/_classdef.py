@@ -4,14 +4,15 @@ import dataclasses as dcs
 from datetime import datetime
 from typing import TYPE_CHECKING, Self
 
-import bs4
-
 from ...exception import TbErrorExt
 from ...helper import default_datetime
+from ...helper.parse import parse_html_fragment, text_of
 from .._classdef import Containers
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
+
+    from lxml import etree
 
 
 @dcs.dataclass
@@ -36,15 +37,17 @@ class Block:
     block_time: datetime = dcs.field(default_factory=default_datetime)
 
     @classmethod
-    def from_xml(cls, data_tag: bs4.element.Tag) -> Self:
-        id_tag = data_tag.a
-        user_id = int(id_tag["attr-uid"])
-        user_name = id_tag["attr-un"]
-        nick_name_new = id_tag["attr-nn"]
-        day = int(id_tag["attr-blockday"])
+    def from_xml(cls, data_tag: etree._Element) -> Self:
+        id_tag = data_tag.xpath("./a")[0]
+        user_id = int(id_tag.get("attr-uid"))
+        user_name = id_tag.get("attr-un")
+        nick_name_new = id_tag.get("attr-nn")
+        day = int(id_tag.get("attr-blockday"))
 
-        block_time_item = data_tag.find("span", class_="block_list_item_time")
-        block_time = datetime.strptime(block_time_item.string, "%Y-%m-%d %H:%M")
+        block_time_item = data_tag.xpath(
+            './/span[contains(concat(" ", normalize-space(@class), " "), " block_list_item_time ")]'
+        )[0]
+        block_time = datetime.strptime(text_of(block_time_item), "%Y-%m-%d %H:%M")
 
         return cls(user_id, user_name, nick_name_new, day, block_time)
 
@@ -100,8 +103,8 @@ class Blocks(TbErrorExt, Containers[Block]):
 
     @classmethod
     def from_json(cls, data_map: Mapping) -> Self:
-        data_soup = bs4.BeautifulSoup(data_map["data"]["content"], "lxml")
-        objs = [Block.from_xml(t) for t in data_soup("li")]
+        data_soup = parse_html_fragment(data_map["data"]["content"])
+        objs = [Block.from_xml(t) for t in data_soup.xpath(".//li")]
         page = Page_block.from_json(data_map["data"]["page"])
         return cls(objs, page)
 
