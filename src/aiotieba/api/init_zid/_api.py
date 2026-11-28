@@ -75,7 +75,6 @@ async def request(http_core: HttpCore):
         data=payload,
         proxy=http_core.net_core.proxy.url,
         proxy_auth=http_core.net_core.proxy.auth,
-        ssl=False,
     )
 
     body = await http_core.net_core.send(request)

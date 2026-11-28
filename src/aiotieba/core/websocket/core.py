@@ -209,7 +209,6 @@ class WsCore:
                 autoping=True,
                 heartbeat=self.net_core.timeout.ws_heartbeat,
                 decode_text=False,
-                ssl=False,
                 compress=0,
                 proxy=proxy.url,
                 proxy_headers=proxy_headers,

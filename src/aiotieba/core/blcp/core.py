@@ -4,15 +4,12 @@ import asyncio
 import contextlib
 import dataclasses as dcs
 import random
-import socket
-import ssl
 import time
 import weakref
 from sys import maxsize as LONG_MAX
 from typing import TYPE_CHECKING, cast
 
 from ...api._protobuf import Lcm_pb2
-from ...config import TimeoutConfig
 from ...enums import BlcpStatus
 from ...helper import timeout
 from .enums import BlcpMetaType, BlcpMethodID, BlcpServiceID
@@ -29,6 +26,7 @@ from .packet import (
 
 if TYPE_CHECKING:
     from ..account import Account
+    from ..net import NetCore
 
 
 @dcs.dataclass(slots=True, weakref_slot=True)
@@ -139,12 +137,12 @@ class BlcpCore:
 
     Args:
         account (Account): 用户参数容器
-        timeout (TimeoutConfig, optional): 超时配置. Defaults to None.
+        net_core (NetCore): 网络请求相关容器
         max_notify_queue (int, optional): 推送队列长度上限. Defaults to 100.
     """
 
     account: Account
-    timeout: TimeoutConfig
+    net_core: NetCore
     loop: asyncio.AbstractEventLoop
     status: BlcpStatus
     reader: asyncio.StreamReader | None
@@ -158,11 +156,11 @@ class BlcpCore:
     def __init__(
         self,
         account: Account,
-        timeout: TimeoutConfig | None = None,
+        net_core: NetCore,
         max_notify_queue: int = 100,
     ) -> None:
         self.account = account
-        self.timeout = timeout if isinstance(timeout, TimeoutConfig) else TimeoutConfig()
+        self.net_core = net_core
         self.loop = asyncio.get_running_loop()
 
         self.status = BlcpStatus.CLOSED
@@ -206,15 +204,11 @@ class BlcpCore:
 
         self.status = BlcpStatus.CONNECTING
 
-        ssl_context = ssl.create_default_context()
-        ssl_context.check_hostname = False
-
-        self.reader, self.writer = await asyncio.wait_for(
-            asyncio.open_connection("common.lcs.baidu.com", 443, ssl=ssl_context, family=socket.AF_INET),
-            timeout=self.timeout.blcp_connect,
+        self.reader, self.writer = await self.net_core.open_connection(
+            "common.lcs.baidu.com", 443, connect_timeout=self.net_core.timeout.blcp_connect
         )
 
-        self.waiter = BlcpWaiter(self.timeout.blcp_read)
+        self.waiter = BlcpWaiter(self.net_core.timeout.blcp_read)
         self.dispatcher = self.loop.create_task(self.__dispatch(), name="blcp_dispatcher")
         self.status = BlcpStatus.OPEN
 
@@ -302,7 +296,7 @@ class BlcpCore:
             self.heartbeater.cancel()
             self.heartbeater = None
 
-        interval = interval_ms / 1000 if interval_ms > 0 else self.timeout.blcp_heartbeat
+        interval = interval_ms / 1000 if interval_ms > 0 else self.net_core.timeout.blcp_heartbeat
         self.heartbeat_interval = interval
 
         if not interval or interval <= 0:

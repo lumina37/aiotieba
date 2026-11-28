@@ -246,13 +246,9 @@ class Client:
         self._try_ws = try_ws
 
     async def __aenter__(self) -> Client:
-        ssl_context = ssl.SSLContext(
-            ssl.PROTOCOL_TLS_CLIENT,
-            check_hostname=False,
-            verify_mode=ssl.CERT_NONE,
-            minimum_version=ssl.TLSVersion.TLSv1_2,
-            maximum_version=ssl.TLSVersion.TLSv1_2,
-        )
+        ssl_context = ssl.create_default_context()
+        ssl_context.minimum_version = ssl.TLSVersion.TLSv1_2
+        ssl_context.maximum_version = ssl.TLSVersion.TLSv1_2
 
         connector = aiohttp.TCPConnector(
             ttl_dns_cache=self._timeout.dns_ttl,
@@ -263,10 +259,10 @@ class Client:
         )
         self._connector = connector
 
-        net_core = NetCore(connector, self._proxy, self._timeout)
+        net_core = NetCore(connector, ssl_context, self._proxy, self._timeout)
         self._http_core = HttpCore(self._account, net_core)
         self._ws_cores: dict[str, WsCore] = {}
-        self._blcp_core = BlcpCore(account=self._account)
+        self._blcp_core = BlcpCore(self._account, net_core)
 
         return self
 

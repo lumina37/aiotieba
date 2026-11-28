@@ -115,7 +115,6 @@ class HttpCore:
             data=payload,
             proxy=self.net_core.proxy.url,
             proxy_auth=self.net_core.proxy.auth,
-            ssl=False,
         )
 
         return request
@@ -149,7 +148,6 @@ class HttpCore:
             data=writer,
             proxy=self.net_core.proxy.url,
             proxy_auth=self.net_core.proxy.auth,
-            ssl=False,
         )
 
         return request
@@ -181,7 +179,6 @@ class HttpCore:
             cookies=self.web.cookie_jar.filter_cookies(url),
             proxy=self.net_core.proxy.url,
             proxy_auth=self.net_core.proxy.auth,
-            ssl=False,
         )
 
         return request
@@ -218,7 +215,6 @@ class HttpCore:
             cookies=self.web.cookie_jar.filter_cookies(url),
             proxy=self.net_core.proxy.url,
             proxy_auth=self.net_core.proxy.auth,
-            ssl=False,
         )
 
         return request
@@ -275,7 +271,6 @@ class HttpCore:
             data=aiohttp.payload.JsonPayload(dict(data)),
             proxy=self.net_core.proxy.url,
             proxy_auth=self.net_core.proxy.auth,
-            ssl=False,
         )
 
         return request

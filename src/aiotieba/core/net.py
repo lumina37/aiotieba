@@ -1,13 +1,18 @@
 from __future__ import annotations
 
+import asyncio
 import dataclasses as dcs
 from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 import aiohttp
 
 from ..config import ProxyConfig, TimeoutConfig
 from ..exception import HTTPStatusError
 from ..helper import timeout
+
+if TYPE_CHECKING:
+    from ssl import SSLContext
 
 
 def check_status_code(response: aiohttp.ClientResponse) -> None:
@@ -21,25 +26,29 @@ TypeHeadersChecker = Callable[[aiohttp.ClientResponse], None]
 @dcs.dataclass(slots=True)
 class NetCore:
     """
-    网络请求相关容器
+    负责HTTP请求发送与TCP+TLS连接创建
 
     Args:
-        connector (aiohttp.TCPConnector): 用于生成TCP连接的连接器
+        connector (aiohttp.TCPConnector): 用于HTTP请求的TCP连接池
+        ssl_context (SSLContext): 与连接器共享的TLS上下文
         proxy (ProxyConfig, optional): 代理配置. Defaults to None.
         timeout (TimeoutConfig, optional): 超时配置. Defaults to None.
     """
 
     connector: aiohttp.TCPConnector
+    ssl_context: SSLContext
     proxy: ProxyConfig
     timeout: TimeoutConfig
 
     def __init__(
         self,
         connector: aiohttp.TCPConnector,
+        ssl_context: SSLContext,
         proxy: ProxyConfig | None = None,
         timeout: TimeoutConfig | None = None,
     ) -> None:
         self.connector = connector
+        self.ssl_context = ssl_context
 
         if not isinstance(proxy, ProxyConfig):
             proxy = ProxyConfig()
@@ -48,6 +57,34 @@ class NetCore:
         if not isinstance(timeout, TimeoutConfig):
             timeout = TimeoutConfig()
         self.timeout = timeout
+
+    async def open_connection(
+        self, host: str, port: int, *, connect_timeout: float
+    ) -> tuple[asyncio.StreamReader, asyncio.StreamWriter]:
+        """
+        使用共享TLS上下文建立TCP连接
+
+        Args:
+            host (str): 目标主机名或IP地址
+            port (int): 目标端口
+            connect_timeout (float): 建立连接的超时时间，单位为秒
+
+        Returns:
+            tuple[asyncio.StreamReader, asyncio.StreamWriter]: 连接的读取器与写入器
+
+        Raises:
+            TimeoutError: 建立连接超时
+
+        Note:
+            直接连接目标服务器，不经过代理和HTTP连接池
+            调用方负责关闭返回的连接
+        """
+
+        connection = await asyncio.wait_for(
+            asyncio.open_connection(host, port, ssl=self.ssl_context, family=self.connector.family),
+            timeout=connect_timeout,
+        )
+        return connection
 
     async def req2res(self, request: aiohttp.ClientRequest, read_until_eof: bool = True) -> aiohttp.ClientResponse:
         """
